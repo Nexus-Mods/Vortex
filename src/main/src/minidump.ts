@@ -23,9 +23,21 @@ export interface IMinidumpSummary {
   moduleVersion?: string;
   /** Faulting address relative to the module base, as hex */
   moduleOffset?: string;
+  /** Symbol-server id of the faulting module (PDB GUID + age, or ELF build
+   *  id), so the offset can be resolved against a symbol store */
+  moduleId?: string;
   /** Crashpad process-type annotation: browser, renderer, gpu-process, ... */
   processType?: string;
+  /** Version of the app that wrote the dump: Electron's `_version`
+   *  annotation, else the main module's file version */
+  appVersion?: string;
+  /** Chromium's LOG(FATAL) / CHECK message, when the crash was one */
+  fatalMessage?: string;
 }
+
+/** Exception code Chromium raises for DumpWithoutCrashing(): a dump was
+ *  written but the process carried on, so it is not a crash. */
+export const DUMP_WITHOUT_CRASHING_CODE = "0x517a7ed";
 
 const MINIDUMP_SIGNATURE = 0x504d444d; // "MDMP"
 
@@ -41,6 +53,9 @@ const VS_FIXEDFILEINFO_SIGNATURE = 0xfeef04bd;
 const MAX_DUMP_SIZE = 64 * 1024 * 1024;
 
 const WINDOWS_EXCEPTION_NAMES: Record<number, string> = {
+  0x0517a7ed: "DUMP_WITHOUT_CRASHING",
+  // Crashpad's SIGABRT handler: abort(), e.g. a Node fatal error
+  0x40000015: "FATAL_APP_EXIT",
   0x80000003: "BREAKPOINT",
   0xc0000005: "ACCESS_VIOLATION",
   0xc0000006: "IN_PAGE_ERROR",
@@ -123,14 +138,31 @@ export function parseMinidump(buffer: Buffer): IMinidumpSummary | undefined {
       exceptionAddress: hex(address),
     };
 
-    const faulting = findModule(view, streams.get(STREAM_MODULE_LIST), address);
+    const modules = readModules(view, streams.get(STREAM_MODULE_LIST));
+    const faulting = modules.find((m) => address >= m.base && address < m.base + m.size);
     if (faulting !== undefined) {
       summary.module = faulting.name;
       summary.moduleVersion = faulting.version;
       summary.moduleOffset = hex(address - faulting.base);
+      summary.moduleId = faulting.id;
     }
 
-    summary.processType = readCrashpadProcessType(view, streams.get(STREAM_CRASHPAD_INFO));
+    const annotations = readCrashpadAnnotations(view, streams.get(STREAM_CRASHPAD_INFO));
+    const processType = annotations.get("ptype") ?? annotations.get("process_type");
+    if (processType !== undefined) {
+      summary.processType = processType;
+    }
+    // the main executable is always the first module in the list; its file
+    // version is the app version with a fourth ".0" appended
+    const appVersion =
+      annotations.get("_version") ?? modules[0]?.version?.replace(/^(\d+\.\d+\.\d+)\.0$/, "$1");
+    if (appVersion !== undefined) {
+      summary.appVersion = appVersion;
+    }
+    const fatalMessage = annotations.get("LOG_FATAL");
+    if (fatalMessage !== undefined) {
+      summary.fatalMessage = fatalMessage;
+    }
 
     return summary;
   } catch {
@@ -157,33 +189,28 @@ function exceptionName(
   return WINDOWS_EXCEPTION_NAMES[code];
 }
 
-interface IFaultingModule {
+interface IModule {
   name: string;
   base: number;
+  size: number;
   version?: string;
+  id?: string;
 }
 
-function findModule(
-  view: DataView,
-  location: ILocation | undefined,
-  address: number,
-): IFaultingModule | undefined {
+function readModules(view: DataView, location: ILocation | undefined): IModule[] {
   if (location === undefined) {
-    return undefined;
+    return [];
   }
 
   // MINIDUMP_MODULE_LIST: NumberOfModules(0), then MINIDUMP_MODULE[n]:
   // BaseOfImage(0), SizeOfImage(8), CheckSum(12), TimeDateStamp(16),
-  // ModuleNameRva(20), VersionInfo(24, VS_FIXEDFILEINFO)
+  // ModuleNameRva(20), VersionInfo(24, VS_FIXEDFILEINFO), CvRecord(76, LOCATION)
+  const modules: IModule[] = [];
   const count = view.getUint32(location.rva, true);
   for (let i = 0; i < count; i++) {
     const entry = location.rva + 4 + i * MODULE_ENTRY_SIZE;
     const base = Number(view.getBigUint64(entry, true));
     const size = view.getUint32(entry + 8, true);
-    if (address < base || address >= base + size) {
-      continue;
-    }
-
     const name = readUtf16String(view, view.getUint32(entry + 20, true));
 
     let version: string | undefined;
@@ -193,36 +220,88 @@ function findModule(
       version = `${ms >>> 16}.${ms & 0xffff}.${ls >>> 16}.${ls & 0xffff}`;
     }
 
-    return { name: path.win32.basename(name), base, version };
+    const id = readModuleId(view, {
+      size: view.getUint32(entry + 76, true),
+      rva: view.getUint32(entry + 80, true),
+    });
+
+    modules.push({ name: path.win32.basename(name), base, size, version, id });
   }
 
+  return modules;
+}
+
+/** The module's debug identity as a symbol server spells it: CodeView
+ *  "RSDS" records give PDB GUID + age, Breakpad's "LEpB" gives the ELF
+ *  build id (GUID-formatted, age 0). */
+function readModuleId(view: DataView, location: ILocation): string | undefined {
+  if (location.rva === 0 || location.size < 24) {
+    return undefined;
+  }
+  const signature = String.fromCharCode(
+    view.getUint8(location.rva),
+    view.getUint8(location.rva + 1),
+    view.getUint8(location.rva + 2),
+    view.getUint8(location.rva + 3),
+  );
+  const guid = Buffer.from(view.buffer, view.byteOffset + location.rva + 4, 16);
+  if (signature === "RSDS") {
+    return (
+      formatGuid(guid) +
+      view
+        .getUint32(location.rva + 20, true)
+        .toString(16)
+        .toUpperCase()
+    );
+  }
+  if (signature === "LEpB") {
+    return formatGuid(guid) + "0";
+  }
   return undefined;
 }
 
-function readCrashpadProcessType(
+/** GUID as the symbol server spells it: mixed-endian fields, upper-case, no dashes. */
+function formatGuid(bytes: Buffer): string {
+  const hex = (b: Buffer): string => b.toString("hex").toUpperCase();
+  return (
+    hex(Buffer.from(bytes.subarray(0, 4)).reverse()) +
+    hex(Buffer.from(bytes.subarray(4, 6)).reverse()) +
+    hex(Buffer.from(bytes.subarray(6, 8)).reverse()) +
+    hex(bytes.subarray(8, 16))
+  );
+}
+
+/**
+ * Every string annotation in the dump, process-level first, then per module
+ * (where Chromium's crash keys such as ptype and LOG_FATAL live). The first
+ * value seen for a key wins.
+ */
+function readCrashpadAnnotations(
   view: DataView,
   location: ILocation | undefined,
-): string | undefined {
+): Map<string, string> {
+  const annotations = new Map<string, string>();
   if (location === undefined) {
-    return undefined;
+    return annotations;
   }
 
   try {
     // MinidumpCrashpadInfo: version(0), report_id(4), client_id(20),
     // simple_annotations(36, LOCATION), module_list(44, LOCATION)
-    const processLevel = readAnnotation(view, {
-      size: view.getUint32(location.rva + 36, true),
-      rva: view.getUint32(location.rva + 40, true),
-    });
-    if (processLevel !== undefined) {
-      return processLevel;
-    }
+    readSimpleAnnotations(
+      view,
+      {
+        size: view.getUint32(location.rva + 36, true),
+        rva: view.getUint32(location.rva + 40, true),
+      },
+      annotations,
+    );
 
     // MinidumpModuleCrashpadInfoList: count(0), then entries[count]:
     // module_list_index(0), location(4, LOCATION)
     const listRva = view.getUint32(location.rva + 48, true);
     if (listRva === 0) {
-      return undefined;
+      return annotations;
     }
     const moduleCount = view.getUint32(listRva, true);
     for (let i = 0; i < moduleCount; i++) {
@@ -230,55 +309,57 @@ function readCrashpadProcessType(
       const infoRva = view.getUint32(entry + 8, true);
       // MinidumpModuleCrashpadInfo: version(0), list_annotations(4),
       // simple_annotations(12, LOCATION), annotation_objects(20, LOCATION)
-      const fromSimple = readAnnotation(view, {
-        size: view.getUint32(infoRva + 12, true),
-        rva: view.getUint32(infoRva + 16, true),
-      });
-      if (fromSimple !== undefined) {
-        return fromSimple;
-      }
-      const fromObjects = readAnnotationObjects(view, {
-        size: view.getUint32(infoRva + 20, true),
-        rva: view.getUint32(infoRva + 24, true),
-      });
-      if (fromObjects !== undefined) {
-        return fromObjects;
-      }
+      readSimpleAnnotations(
+        view,
+        { size: view.getUint32(infoRva + 12, true), rva: view.getUint32(infoRva + 16, true) },
+        annotations,
+      );
+      readAnnotationObjects(
+        view,
+        { size: view.getUint32(infoRva + 20, true), rva: view.getUint32(infoRva + 24, true) },
+        annotations,
+      );
     }
   } catch {
     // annotations are best-effort
   }
 
-  return undefined;
+  return annotations;
 }
 
-/** Look up the process type in a MinidumpSimpleStringDictionary:
- *  count(0), then entries[count]: key_rva(0), value_rva(4) — both
- *  MinidumpUTF8String: length(0), utf8 data. */
-function readAnnotation(view: DataView, location: ILocation): string | undefined {
+/** MinidumpSimpleStringDictionary: count(0), then entries[count]:
+ *  key_rva(0), value_rva(4) — both MinidumpUTF8String: length(0), utf8 data. */
+function readSimpleAnnotations(
+  view: DataView,
+  location: ILocation,
+  into: Map<string, string>,
+): void {
   if (location.rva === 0 || location.size === 0) {
-    return undefined;
+    return;
   }
   const count = view.getUint32(location.rva, true);
   for (let i = 0; i < count; i++) {
     const entry = location.rva + 4 + i * 8;
     const key = readUtf8String(view, view.getUint32(entry, true));
-    if (key === "ptype" || key === "process_type") {
-      return readUtf8String(view, view.getUint32(entry + 4, true));
+    if (!into.has(key)) {
+      into.set(key, readUtf8String(view, view.getUint32(entry + 4, true)));
     }
   }
-  return undefined;
 }
 
 const ANNOTATION_TYPE_STRING = 1;
 
-/** Look up the process type in a MinidumpAnnotationList — the typed
- *  annotation objects where Electron's Crashpad puts ptype: count(0), then
+/** MinidumpAnnotationList — the typed annotation objects where Electron's
+ *  Crashpad puts ptype and Chromium its crash keys: count(0), then
  *  entries[count] of 12 bytes: name RVA (MinidumpUTF8String), type u16,
  *  reserved u16, value RVA (MinidumpByteArray: length u32 + utf8 data). */
-function readAnnotationObjects(view: DataView, location: ILocation): string | undefined {
+function readAnnotationObjects(
+  view: DataView,
+  location: ILocation,
+  into: Map<string, string>,
+): void {
   if (location.rva === 0 || location.size === 0) {
-    return undefined;
+    return;
   }
   const count = view.getUint32(location.rva, true);
   for (let i = 0; i < count; i++) {
@@ -287,11 +368,10 @@ function readAnnotationObjects(view: DataView, location: ILocation): string | un
       continue;
     }
     const key = readUtf8String(view, view.getUint32(entry, true));
-    if (key === "ptype" || key === "process_type") {
-      return readUtf8String(view, view.getUint32(entry + 8, true));
+    if (!into.has(key)) {
+      into.set(key, readUtf8String(view, view.getUint32(entry + 8, true)));
     }
   }
-  return undefined;
 }
 
 function readUtf16String(view: DataView, rva: number): string {
