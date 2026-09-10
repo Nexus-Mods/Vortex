@@ -63,6 +63,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
+    "@nexusmods/adaptor-api": "workspace:*",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/resources": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
