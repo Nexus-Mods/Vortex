@@ -312,15 +312,6 @@ async function collectCrashDumps(): Promise<IDumpFile[]> {
   return found;
 }
 
-// STATUS_DLL_INIT_FAILED_LOGOFF: a helper relaunched during logoff fails to start with this.
-// Fallback for when no window is alive to receive the session-end event
-const WINDOWS_SESSION_END_EXIT_CODE = -1073741205;
-
-/** Whether a process that died with `exitCode` faulted, rather than never starting at logoff. */
-export function isReportableExit(exitCode: number): boolean {
-  return exitCode !== WINDOWS_SESSION_END_EXIT_CODE;
-}
-
 /**
  * Create a short-lived OTel provider, record a crash error span,
  * flush the export, and shut down.

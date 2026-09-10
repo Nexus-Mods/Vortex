@@ -27,7 +27,7 @@ import { shutdownBsdiffWorker } from "./bsdiff/host";
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { installDevelExtensions } from "./devel";
 import { isQuitting, markQuitting, terminate, terminateAsync } from "./errorHandling";
-import { disableErrorReporting, isReportableExit, reportCrash } from "./errorReporting";
+import { disableErrorReporting, reportCrash } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { isUpdaterActive } from "./extensions/updater";
 import { validateFiles } from "./fileValidation";
@@ -259,7 +259,6 @@ class Application {
       if (
         !["clean-exit", "killed"].includes(details.reason) &&
         !isQuitting() &&
-        isReportableExit(details.exitCode) &&
         this.allowProcessGoneReport(`${details.type}:${details.reason}:${details.exitCode}`)
       ) {
         reportCrash(
@@ -332,8 +331,15 @@ class Application {
       contents.on("will-attach-webview", this.attachWebView);
     });
 
-    // Enable F12 to toggle DevTools in all builds
     app.on("browser-window-created", (_, window) => {
+      // The session is being ended, so we should not try to relaunch Vortex
+      window.on("session-end", (event) => {
+        log("info", "Windows session ending", { reasons: event.reasons });
+        markQuitting();
+        app.quit();
+      });
+
+      // Enable F12 to toggle DevTools in all builds
       const { webContents } = window;
       webContents.on("before-input-event", (_, input) => {
         if (input.type !== "keyDown") return;

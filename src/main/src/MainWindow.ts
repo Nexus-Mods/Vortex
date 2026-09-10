@@ -6,8 +6,8 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
-import { isQuitting, markQuitting, terminate, terminateAsync } from "./errorHandling";
-import { isReportableExit, reportCrash } from "./errorReporting";
+import { isQuitting, terminate, terminateAsync } from "./errorHandling";
+import { reportCrash } from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 import Debouncer from "./NodeDebouncer";
@@ -189,10 +189,7 @@ class MainWindow {
 
         // hard renderer crashes never reach the JS error handlers, so this
         // is the only place they can be reported
-        if (
-          !["clean-exit", "killed"].includes(details.reason) &&
-          isReportableExit(details.exitCode)
-        ) {
+        if (!["clean-exit", "killed"].includes(details.reason)) {
           reportCrash(
             "RenderProcessGone",
             {
@@ -464,13 +461,6 @@ class MainWindow {
     });
     this.mWindow.on("closed", () => {
       this.mWindow = null;
-    });
-    // point of no return: Windows terminates our helpers next and refuses to start
-    // replacements, so flag it before before-quit gets a chance to run
-    this.mWindow.on("session-end", (event) => {
-      log("info", "Windows session ending", { reasons: event.reasons });
-      markQuitting();
-      app.quit();
     });
     this.mWindow.on("maximize", () => this.sendWindowEvent("window:maximized", true));
     this.mWindow.on("unmaximize", () => this.sendWindowEvent("window:maximized", false));
