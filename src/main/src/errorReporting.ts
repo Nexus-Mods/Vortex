@@ -11,7 +11,11 @@ import { recordErrorOnSpan, SanitizingSpanExporter } from "@vortex/shared/teleme
 import { app } from "electron";
 
 import { log } from "./logging";
-import { type IMinidumpSummary, summarizeMinidumpFile } from "./minidump";
+import {
+  DUMP_WITHOUT_CRASHING_CODE,
+  type IMinidumpSummary,
+  summarizeMinidumpFile,
+} from "./minidump";
 import { createVortexResource } from "./telemetry/resources";
 import { COLLECTOR_URL, OTLP_HEADERS } from "./telemetry/setup";
 import { isTelemetryEnabled } from "./telemetry/state";
@@ -149,8 +153,10 @@ export async function sendPendingCrashReport(): Promise<void> {
  * crashinfo.json. Renderer/gpu dumps were already reported live by the
  * *-process-gone handlers, so they are deleted unreported; main-process
  * ("browser") dumps — and dumps too corrupt to attribute — get one
- * crash.report span for the newest one. Dumps are only deleted once the
- * report is sent, so a failed send retries on the next startup.
+ * crash.report span for the newest one. The dump folder outlives installs,
+ * so dumps written by another Vortex version are discarded rather than
+ * reported as this version's crashes. Dumps are only deleted once the report
+ * is sent, so a failed send retries on the next startup.
  *
  * Each dump is claimed by an atomic rename first (same protocol as
  * sendPendingCrashReport), so concurrent instances never sweep the same
@@ -158,8 +164,10 @@ export async function sendPendingCrashReport(): Promise<void> {
  */
 export async function sendPendingNativeCrashReport(): Promise<void> {
   const dumps = await claimCrashDumps();
+  const installedAt = await modifiedTime(process.execPath);
 
   const unreported: Array<{ path: string; summary: IMinidumpSummary | undefined }> = [];
+  let stale = 0;
   for (const dump of dumps) {
     // anything beyond the newest few is stale backlog, not worth a report
     if (unreported.length >= MAX_PROCESSED_DUMPS) {
@@ -167,18 +175,28 @@ export async function sendPendingNativeCrashReport(): Promise<void> {
       continue;
     }
     const summary = await summarizeMinidumpFile(dump.path);
-    if (summary?.processType !== undefined && summary.processType !== "browser") {
+    if (!isFromCurrentBuild(summary?.appVersion, app.getVersion(), dump.mtimeMs, installedAt)) {
+      stale += 1;
+      await removeQuietly(dump.path);
+    } else if (
+      summary?.exceptionCode === DUMP_WITHOUT_CRASHING_CODE ||
+      (summary?.processType !== undefined && summary.processType !== "browser")
+    ) {
       await removeQuietly(dump.path);
     } else {
       unreported.push({ path: dump.path, summary });
     }
+  }
+  if (stale > 0) {
+    log("info", "discarded crash dumps left by other Vortex versions", { count: stale });
   }
 
   if (unreported.length === 0) {
     return;
   }
 
-  const primary = unreported[0]?.summary;
+  // the newest dump we can actually read; unreadable ones only add to the count
+  const primary = unreported.find((dump) => dump.summary !== undefined)?.summary;
 
   const attributes: Record<string, string | number> = {
     "crash.native.dumpCount": unreported.length,
@@ -195,8 +213,14 @@ export async function sendPendingNativeCrashReport(): Promise<void> {
     if (primary.moduleOffset !== undefined) {
       attributes["crash.native.moduleOffset"] = primary.moduleOffset;
     }
+    if (primary.moduleId !== undefined) {
+      attributes["crash.native.moduleId"] = primary.moduleId;
+    }
     if (primary.processType !== undefined) {
       attributes["crash.native.processType"] = primary.processType;
+    }
+    if (primary.fatalMessage !== undefined) {
+      attributes["crash.native.fatalMessage"] = sanitizeFramePath(primary.fatalMessage);
     }
   }
 
@@ -233,6 +257,31 @@ export async function sendPendingNativeCrashReport(): Promise<void> {
 }
 
 const MAX_PROCESSED_DUMPS = 5;
+
+/**
+ * Whether a dump was written by the running build. Readable dumps carry the
+ * writer's version; an unreadable dump older than the executable predates
+ * this install.
+ */
+export function isFromCurrentBuild(
+  dumpVersion: string | undefined,
+  appVersion: string,
+  dumpMtimeMs: number,
+  installedAtMs: number | undefined,
+): boolean {
+  if (dumpVersion !== undefined) {
+    return dumpVersion === appVersion;
+  }
+  return installedAtMs === undefined || dumpMtimeMs >= installedAtMs;
+}
+
+async function modifiedTime(filePath: string): Promise<number | undefined> {
+  try {
+    return (await stat(filePath)).mtimeMs;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Claim every crash dump via atomic rename to *.sending — of concurrent
@@ -275,7 +324,8 @@ const describeNativeCrash = (summary: IMinidumpSummary | undefined, dumpCount: n
       ? `${summary.exceptionName} (${summary.exceptionCode})`
       : summary.exceptionCode;
   const where = summary.module !== undefined ? ` in ${summary.module}+${summary.moduleOffset}` : "";
-  return `Previous session crashed: ${what}${where}`;
+  const why = summary.fatalMessage !== undefined ? `: ${summary.fatalMessage}` : "";
+  return `Previous session crashed: ${what}${where}${why}`;
 };
 
 interface IDumpFile {
