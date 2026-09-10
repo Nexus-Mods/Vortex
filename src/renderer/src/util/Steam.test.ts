@@ -4,7 +4,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { Steam } from "./Steam";
 
-const BASE_FOLDER = path.join("C:", "Steam");
+// Steam.ts builds its singleton at import time, and on Linux that constructor calls
+// findLinuxSteamPath straight away - before any binding declared below this file's
+// imports exists. vi.hoisted runs ahead of the imports, so the mocks can read it.
+// (On Windows the equivalent RegGetValue call sits in a try/catch that swallows the
+// ReferenceError, which is why a plain `let` only fails on CI.)
+const steam = vi.hoisted(() => ({ installed: true, baseFolder: "C:\\Steam" }));
+
+const BASE_FOLDER = steam.baseFolder;
 const ALT_LIBRARY = path.join("D:", "SteamLibrary");
 const THIRD_LIBRARY = path.join("E:", "Games");
 const LIB_FOLDERS_FILE = path.resolve(BASE_FOLDER, "config", "libraryfolders.vdf");
@@ -46,21 +53,20 @@ const libraryFolders = (
 const gamePathIn = (library: string): string =>
   path.join(library, "steamapps", "common", "TestGame");
 
-let steamInstalled = true;
 let libraryFoldersError: NodeJS.ErrnoException | undefined;
 let libraryFoldersVdf = "";
 
 vi.mock("winapi-bindings", () => ({
   RegGetValue: () => {
-    if (!steamInstalled) {
+    if (!steam.installed) {
       throw new Error("registry key not found");
     }
-    return { value: BASE_FOLDER };
+    return { value: steam.baseFolder };
   },
 }));
 
 vi.mock("./linux/steamPaths", () => ({
-  findLinuxSteamPath: () => (steamInstalled ? BASE_FOLDER : undefined),
+  findLinuxSteamPath: () => (steam.installed ? steam.baseFolder : undefined),
 }));
 
 vi.mock("./linux/proton", () => ({
@@ -89,13 +95,13 @@ const fsError = (code: string): NodeJS.ErrnoException =>
 
 describe("Steam.allGames", () => {
   beforeEach(() => {
-    steamInstalled = true;
+    steam.installed = true;
     libraryFoldersError = undefined;
     libraryFoldersVdf = libraryFolders([]);
   });
 
   it("finds nothing when Steam isn't installed", async () => {
-    steamInstalled = false;
+    steam.installed = false;
 
     await expect(new Steam().allGames()).resolves.toEqual([]);
   });
