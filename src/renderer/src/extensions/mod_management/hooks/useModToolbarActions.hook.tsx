@@ -555,9 +555,14 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
 const useRegisteredActions = (group: string): IPositionedAction[] => {
   const objects = useExtensionObjects<IActionDefinition>(registerAction, undefined, group, true);
 
-  // Read through the store, so a notice can follow state rather than be fixed at registration.
+  // Read through the store, so a notice and a brand can follow state rather than be
+  // fixed at registration.
   const notices = useSelector(
     () => objects.map((definition) => definition.options?.notice?.()),
+    shallowEqual,
+  );
+  const brands = useSelector(
+    () => objects.map((definition) => definition.options?.brand?.()),
     shallowEqual,
   );
 
@@ -603,6 +608,7 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
         // what IconBar built its DOM ids from.
         id: definition.title,
         label: !notice ? definition.title : `${definition.title} (${notice})`,
+        brand: brands[index],
         iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
         pinned: definition.options?.pinned ?? false,
         disabled: typeof condition === "string",

@@ -31,3 +31,23 @@ describe("setProfilesVisible", () => {
     });
   });
 });
+
+describe("setAlwaysCompactHeaders", () => {
+  it("creates the correct action", () => {
+    expect(interfaceActions.setAlwaysCompactHeaders(true)).toEqual({
+      error: false,
+      type: "SET_ALWAYS_COMPACT_HEADERS",
+      payload: true,
+    });
+  });
+});
+
+describe("setReduceMotion", () => {
+  it("creates the correct action", () => {
+    expect(interfaceActions.setReduceMotion(true)).toEqual({
+      error: false,
+      type: "SET_REDUCE_MOTION",
+      payload: true,
+    });
+  });
+});

@@ -129,7 +129,7 @@ describe("InstallContext per-mod analytics", () => {
     h.ctx.finishInstallCB("failed", undefined, "bad archive", new DataInvalid("bad archive"));
     const failed = h.mixpanelEvents.find((e) => e.eventName === "mods_installation_failed");
     expect(failed?.properties).toMatchObject({
-      error_code: "data_invalid",
+      error_code: "data-invalid",
       error_message: "bad archive",
     });
   });

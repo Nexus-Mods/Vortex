@@ -1,3 +1,6 @@
+import { CAUSE_SEPARATOR, type VortexErrorKind } from "./errors/base";
+import { parseError } from "./errors/parser";
+
 /** Extracts an error message from an unknown value in a catch statement */
 export function getErrorMessage(err: unknown): string | null {
   if (err instanceof Error) {
@@ -54,6 +57,28 @@ export function getErrorCode(err: unknown): string | null {
 }
 
 /**
+ * Extracts the HTTP status code from a potential error object. What carries it
+ * varies by source - nexus-api raises both `NexusError` and `HTTPError` with a
+ * `statusCode` getter, and Vortex's own `HTTPError` matches them - so read the
+ * property rather than test for a class.
+ */
+export function getErrorStatusCode(err: unknown): number | null {
+  if (!(err instanceof Error)) {
+    return null;
+  }
+
+  if (!("statusCode" in err)) {
+    return null;
+  }
+
+  if (typeof err.statusCode !== "number") {
+    return null;
+  }
+
+  return err.statusCode;
+}
+
+/**
  * Extracts the native error code from Windows errors.
  * Checks both `nativeCode` and `systemCode` properties that are
  * attached by the native error handling in renderer.tsx.
@@ -86,17 +111,23 @@ export function getErrorNativeCode(err: unknown): number | bigint | null {
  * bug. Telemetry export filters these out — exporting them spams our error
  * tracking with issues we cannot fix in code.
  */
-const ENVIRONMENTAL_ERROR_CODES = new Set([
-  "EPERM", // Operation not permitted (e.g. write-protected Program Files folder)
-  "EACCES", // Permission denied (filesystem ACL or process lacks rights)
-  "ENOSPC", // No space left on the device (disk full)
-  "EROFS", // Read-only filesystem (mount option or hardware switch)
+const ENVIRONMENTAL_ERROR_KINDS = new Set<VortexErrorKind>([
+  "fs:no-permissions", // write-protected folder, ACL, or a file held by another process
+  "fs:no-space", // disk full
+  "fs:read-only", // read-only mount or hardware switch
 ]);
 
 /**
  * Returns true if the error represents a user-environment problem rather
  * than a Vortex bug. Honors an explicit `allowReport === false` flag set
- * by `prettifyNodeErrorMessage`, falling back to a code-based check.
+ * by `prettifyNodeErrorMessage`, falling back to the classified kind.
+ *
+ * Deliberately keyed on the kind rather than the raw code: the classifier only
+ * reaches an `fs:*` verdict when the failure actually names a path, so a bare
+ * EPERM/EACCES from `spawn`, `process.kill` or a socket bind stays reportable
+ * instead of being written off as the user's environment. Reading the kind also
+ * works for an error that crossed IPC, which arrives rebuilt from `data` alone
+ * and no longer carries a `code` property.
  */
 export function isEnvironmentalError(err: unknown): boolean {
   if (!(err instanceof Error)) {
@@ -105,8 +136,7 @@ export function isEnvironmentalError(err: unknown): boolean {
   if ("allowReport" in err && err.allowReport === false) {
     return true;
   }
-  const code = getErrorCode(err);
-  return code !== null && ENVIRONMENTAL_ERROR_CODES.has(code);
+  return ENVIRONMENTAL_ERROR_KINDS.has(parseError(err).data.kind);
 }
 
 type ErrorWithSystemCode = Error & { systemCode: number | bigint };
@@ -190,7 +220,9 @@ const FINGERPRINT_FRAME_LIMIT = 5;
  * fingerprint additionally:
  *   - drops the `:column` from each frame (unstable across builds and call sites),
  *   - keeps only the innermost {@link FINGERPRINT_FRAME_LIMIT} frames (calling
- *     context above the throw site varies per invocation).
+ *     context above the throw site varies per invocation),
+ *   - hashes only the wrapped error's section of a chained stack, so the same
+ *     throw site groups together whichever classifier wrapped it.
  *
  * An optional `discriminator` distinguishes error sub-types that share an
  * identical stack.
@@ -201,7 +233,10 @@ export const computeErrorFingerprint = (
   discriminator?: string,
 ): string | undefined => {
   if (stack === undefined) return undefined;
-  const frames = stack
+  // A VortexError's stack ends with the wrapped error's (see CAUSE_SEPARATOR);
+  // that last section is the throw site, the ones before it are wrappers.
+  const throwSite = stack.split(`\n${CAUSE_SEPARATOR}`).at(-1) ?? stack;
+  const frames = throwSite
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.startsWith("at "))

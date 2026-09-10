@@ -6,6 +6,8 @@ import * as _ from "lodash";
 import * as React from "react";
 import { Button } from "react-bootstrap";
 
+import * as bcp47 from "@/bcp47";
+
 import { ComponentEx } from "../../../../controls/ComponentEx";
 import EmptyPlaceholder from "../../../../controls/EmptyPlaceholder";
 import Icon from "../../../../controls/Icon";
@@ -102,7 +104,7 @@ const getCollator = (() => {
   return (locale: string) => {
     if (collator === undefined || locale !== lang) {
       lang = locale;
-      collator = new Intl.Collator(locale, { sensitivity: "base" });
+      collator = bcp47.getCollator(locale);
     }
     return collator;
   };
@@ -381,7 +383,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
         sortFunc: (lhs: string, rhs: string, locale: string): number => {
           if (this.mCollator === undefined || locale !== this.mLang) {
             this.mLang = locale;
-            this.mCollator = new Intl.Collator(locale, { sensitivity: "base" });
+            this.mCollator = bcp47.getCollator(locale);
           }
           return this.mCollator.compare(lhs, rhs);
         },
@@ -974,6 +976,7 @@ class ModsEditPage extends ComponentEx<IProps, IModsPageState> {
       <div className="collection-mods-container">
         <Table
           actions={this.mActions}
+          analyticsId="collection-mods-edit"
           data={entries}
           showDetails={false}
           staticElements={this.mColumns}

@@ -67,6 +67,7 @@ export interface VortexErrorKindMap {
   "fs:not-a-directory": FileSystemErrorData;
   "fs:not-a-file": FileSystemErrorData;
   "fs:not-found": FileSystemErrorData;
+  "fs:read-only": FileSystemErrorData;
 
   // HTTP.
   "http:bad-status": { url: string; statusCode: number };
@@ -92,7 +93,7 @@ export interface VortexErrorKindMap {
    * request context). `originalCode` carries the raw code for logging and
    * message lookup; it is not meant to be branched on.
    */
-  "os:generic": OsErrorData;
+  "os:generic": Pick<OsErrorData, "originalCode"> & Partial<OsErrorData>;
 
   /**
    * Nothing above matched. The parser/classifier that produced this
@@ -152,6 +153,17 @@ export type VortexErrorData = {
  *
  * @public
  */
+/**
+ * Introduces the wrapped error's stack in a {@link VortexError}'s stack. Also
+ * what `computeErrorFingerprint` splits on to find the throw site.
+ *
+ * @public
+ */
+export const CAUSE_SEPARATOR = "Caused by: ";
+
+/** How deep a cause chain is followed: by the stack walk here and by the wire form. */
+export const MAX_CAUSE_DEPTH = 5;
+
 export class VortexError extends Error {
   /** Error data keyed on the error kind. */
   readonly data: VortexErrorData;
@@ -189,6 +201,19 @@ export class VortexError extends Error {
 
     this.data = data;
     this.isTransient = meta?.isTransient ?? false;
+
+    // Our own frames point at whoever classified the error; the wrapped error
+    // carries the real throw site. Keep both so the fingerprint and the log
+    // see the chain down to the throw site. V8 leaves a plain Error's `cause`
+    // out of its stack, so walk those; a VortexError's stack already has its chain.
+    let cause = meta?.cause;
+    for (let depth = 0; depth < MAX_CAUSE_DEPTH && cause instanceof Error; depth += 1) {
+      if (cause.stack !== undefined) {
+        this.stack = `${this.stack}\n${CAUSE_SEPARATOR}${cause.stack}`;
+      }
+      if (cause instanceof VortexError) break;
+      cause = cause.cause;
+    }
   }
 }
 

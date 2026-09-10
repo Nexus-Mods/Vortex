@@ -1,5 +1,5 @@
 import {
-  mdiAlertOctagon,
+  mdiAlertOctagonOutline,
   mdiAlertOutline,
   mdiCheckCircleOutline,
   mdiInformationOutline,
@@ -18,7 +18,7 @@ import { NotificationContent } from "./NotificationContent";
 import { NotificationControls } from "./NotificationControls";
 
 const STATUS_MAP = {
-  error: { className: "text-danger-strong", icon: mdiAlertOctagon },
+  error: { className: "text-danger-strong", icon: mdiAlertOctagonOutline },
   warning: { className: "text-warning-strong", icon: mdiAlertOutline },
   success: { className: "text-success-strong", icon: mdiCheckCircleOutline },
   info: { className: "text-info-strong", icon: mdiInformationOutline },
@@ -94,7 +94,7 @@ export const NotificationItem = ({
         {type === "activity" && notification.progress !== undefined && (
           <div className="h-1 w-full overflow-hidden rounded-full bg-surface-high">
             <div
-              className="h-full rounded-full bg-info-strong transition-[width] duration-300"
+              className="h-full rounded-full bg-info-strong transition-[width] duration-300 reduce-motion:duration-0"
               style={{ width: `${notification.progress}%` }}
             />
           </div>

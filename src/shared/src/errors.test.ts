@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 
-import { computeErrorFingerprint, isEnvironmentalError, sanitizeFramePath } from "./errors";
+import {
+  computeErrorFingerprint,
+  getErrorStatusCode,
+  isEnvironmentalError,
+  sanitizeFramePath,
+} from "./errors";
+import { CAUSE_SEPARATOR, VortexError } from "./errors/base";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -397,11 +403,32 @@ describe("computeErrorFingerprint", () => {
 // isEnvironmentalError
 // ---------------------------------------------------------------------------
 
-const withCode = (code: string): Error => Object.assign(new Error(code), { code });
+/** A raw Node system error naming a path, which the classifier can reach an
+ *  `fs:*` verdict for. */
+const withCode = (code: string): Error =>
+  Object.assign(new Error(code), { code, errno: -1, syscall: "open", path: "C:/tmp/x" });
+
+/** The same code with no path — `spawn`, `process.kill`, a socket bind. The
+ *  classifier deliberately declines to call these filesystem errors. */
+const withCodeNoPath = (code: string): Error =>
+  Object.assign(new Error(code), { code, errno: -1, syscall: "kill" });
+
+/** A classified error as it arrives after crossing IPC: rebuilt from `data`
+ *  alone, so it carries a kind but no `code` property. */
+const classified = (kind: "fs:no-permissions" | "fs:not-found" | "os:generic"): VortexError =>
+  kind === "os:generic"
+    ? new VortexError("classified", { kind, originalCode: "EPERM", errno: -1, syscall: "kill" })
+    : new VortexError("classified", { kind, path: "C:/tmp/x", originalCode: "EPERM" });
 
 describe("isEnvironmentalError", () => {
-  it.each(["EPERM", "EACCES", "ENOSPC", "EROFS"])("returns true for %s", (code) => {
+  it.each(["EPERM", "EACCES", "ENOSPC", "EROFS"])("returns true for %s naming a path", (code) => {
     expect(isEnvironmentalError(withCode(code))).toBe(true);
+  });
+
+  it.each(["EPERM", "EACCES"])("returns false for a pathless %s", (code) => {
+    // Not a filesystem verdict, so it stays reportable rather than being
+    // written off as the user's environment.
+    expect(isEnvironmentalError(withCodeNoPath(code))).toBe(false);
   });
 
   it("returns false for unrelated error codes", () => {
@@ -412,6 +439,21 @@ describe("isEnvironmentalError", () => {
 
   it("returns false for plain Error without code", () => {
     expect(isEnvironmentalError(new Error("boom"))).toBe(false);
+  });
+
+  it("recognises an already-classified error that crossed IPC", () => {
+    expect(isEnvironmentalError(classified("fs:no-permissions"))).toBe(true);
+    expect(isEnvironmentalError(classified("fs:not-found"))).toBe(false);
+  });
+
+  it("ignores a payload code the classifier did not turn into an fs verdict", () => {
+    expect(isEnvironmentalError(classified("os:generic"))).toBe(false);
+  });
+
+  it("returns false for a VortexError carrying no code at all", () => {
+    expect(
+      isEnvironmentalError(new VortexError("nope", { kind: "user-canceled", skipped: false })),
+    ).toBe(false);
   });
 
   it("returns true when allowReport is explicitly false", () => {
@@ -429,5 +471,85 @@ describe("isEnvironmentalError", () => {
     expect(isEnvironmentalError(undefined)).toBe(false);
     expect(isEnvironmentalError(null)).toBe(false);
     expect(isEnvironmentalError({ code: "EPERM" })).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeErrorFingerprint on a chained stack
+// ---------------------------------------------------------------------------
+
+/** An error with a deterministic stack: header from name/message, then the given frames. */
+const withFrames = <T extends Error>(err: T, ...frames: string[]): T => {
+  err.stack = [`${err.name}: ${err.message}`, ...frames.map((f) => `    ${f}`)].join("\n");
+  return err;
+};
+
+const CAUSE_FRAME = "at open (node:internal/fs/promises:640:25)";
+
+/** A chained stack as VortexError builds one: wrapper frames, then the cause's. */
+const chained = (wrapperFrame: string, cause: Error): string =>
+  `${withFrames(new Error("wrapper"), wrapperFrame).stack}\n${CAUSE_SEPARATOR}${cause.stack}`;
+
+describe("computeErrorFingerprint on a chained stack", () => {
+  it("hashes the last section, i.e. the throw site", () => {
+    const cause = withFrames(new Error("EPERM"), CAUSE_FRAME);
+
+    expect(
+      computeErrorFingerprint(chained("at classify (src/parser.ts:1:1)", cause), VERSION),
+    ).toBe(computeErrorFingerprint(cause.stack, VERSION));
+  });
+
+  it("ignores the wrapper's frames, so different classifier paths still group together", () => {
+    const cause = withFrames(new Error("EPERM"), CAUSE_FRAME);
+
+    expect(computeErrorFingerprint(chained("at classifyA (src/a.ts:1:1)", cause), VERSION)).toBe(
+      computeErrorFingerprint(chained("at classifyB (src/b.ts:1:1)", cause), VERSION),
+    );
+  });
+
+  it("does not group a wrapped error with a bare error thrown from the wrapper's frame", () => {
+    const cause = withFrames(new Error("EPERM"), CAUSE_FRAME);
+    const bare = withFrames(new Error("wrapper"), "at classify (src/parser.ts:1:1)");
+
+    expect(
+      computeErrorFingerprint(chained("at classify (src/parser.ts:1:1)", cause), VERSION),
+    ).not.toBe(computeErrorFingerprint(bare.stack, VERSION));
+  });
+
+  it("uses the throw site of a VortexError built from a raw error", () => {
+    const raw = withFrames(new Error("EPERM"), CAUSE_FRAME);
+    const err = new VortexError("no permissions", { kind: "unknown" }, { cause: raw });
+
+    expect(computeErrorFingerprint(err.stack, VERSION)).toBe(
+      computeErrorFingerprint(raw.stack, VERSION),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getErrorStatusCode
+// ---------------------------------------------------------------------------
+
+/** An error carrying its status behind a getter, as nexus-api's NexusError does. */
+const withStatus = (statusCode: unknown) =>
+  Object.defineProperty(new Error("refused"), "statusCode", { get: () => statusCode });
+
+describe("getErrorStatusCode", () => {
+  it("reads the status off an error that has one", () => {
+    expect(getErrorStatusCode(withStatus(403))).toBe(403);
+  });
+
+  it("answers null for an error without one", () => {
+    expect(getErrorStatusCode(new Error("offline"))).toBeNull();
+  });
+
+  // a status that arrived as text can't be compared with a number, so it isn't one
+  it("answers null for a status that isn't a number", () => {
+    expect(getErrorStatusCode(withStatus("403"))).toBeNull();
+  });
+
+  it("answers null for anything that isn't an error", () => {
+    expect(getErrorStatusCode({ statusCode: 403 })).toBeNull();
+    expect(getErrorStatusCode(undefined)).toBeNull();
   });
 });

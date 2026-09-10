@@ -48,6 +48,23 @@ if (typeof window !== "undefined" && !(window as any).api) {
   };
 }
 
+// happy-dom has no matchMedia, and anything reading a media preference (reduced motion)
+// calls it during render. Reports "no preference" and accepts listeners without firing
+// them; a test that cares drives it by replacing window.matchMedia itself.
+if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
+  (window as any).matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    // Deprecated half of the MediaQueryList API, still what some libraries reach for.
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  });
+}
+
 // Initialize once per (isolated) test file so getVortexPath returns the stub paths above.
 // The instance getter throws until initialized; use that to init exactly once.
 beforeAll(async () => {

@@ -243,8 +243,8 @@ catalogs:
       specifier: 1.5.1-r.1
       version: 1.5.1-r.1
     '@electron/rebuild':
-      specifier: 4.1.0
-      version: 4.1.0
+      specifier: 4.2.0
+      version: 4.2.0
     '@electron/remote':
       specifier: 2.1.3
       version: 2.1.3
@@ -389,9 +389,6 @@ catalogs:
     '@types/jsonwebtoken':
       specifier: 9.0.10
       version: 9.0.10
-    '@types/libxmljs':
-      specifier: 0.18.13
-      version: 0.18.13
     '@types/lodash':
       specifier: 4.17.24
       version: 4.17.24
@@ -525,7 +522,7 @@ catalogs:
       specifier: 4.0.1
       version: 4.0.1
     bsatk:
-      specifier: github:Nexus-Mods/node-bsatk#5a3d15fae2177bfb0a42b794d3afb21eda563c59
+      specifier: github:Nexus-Mods/node-bsatk#99eb422d9b1a455ed8c2b4005f243439a0a34c8d
       version: 2.1.0
     classnames:
       specifier: 2.5.1
@@ -569,9 +566,6 @@ catalogs:
     d3:
       specifier: 5.16.0
       version: 5.16.0
-    date-fns:
-      specifier: 2.30.0
-      version: 2.30.0
     dayjs:
       specifier: 1.11.20
       version: 1.11.20
@@ -588,8 +582,8 @@ catalogs:
       specifier: github:TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
       version: 10.0.2
     electron:
-      specifier: 43.0.0
-      version: 43.0.0
+      specifier: 44.2.0
+      version: 44.2.0
     electron-builder:
       specifier: 24.13.3
       version: 24.13.3
@@ -705,7 +699,7 @@ catalogs:
       specifier: 4.17.23
       version: 4.17.23
     loot:
-      specifier: github:Nexus-Mods/node-loot#cc1515667f494be188e3b1172a3bc8db3dc52eb5
+      specifier: github:Nexus-Mods/node-loot#f558b3579d3a515ee92f08849818ba1b98bfdf2c
       version: 6.2.3
     lru-cache:
       specifier: 11.2.7
@@ -731,9 +725,6 @@ catalogs:
     nexus-api:
       specifier: github:Nexus-Mods/node-nexus-api#eeb7b953aab85bf2a336fd4999b38393a67c482a
       version: 1.7.3
-    node:
-      specifier: runtime:24.17.0
-      version: 24.17.0
     node-7z:
       specifier: github:Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
       version: 0.8.1
@@ -890,6 +881,9 @@ catalogs:
     tailwindcss:
       specifier: 4.3.2
       version: 4.3.2
+    temporal-polyfill:
+      specifier: 1.0.4
+      version: 1.0.4
     terser-webpack-plugin:
       specifier: 5.6.1
       version: 5.6.1
@@ -989,6 +983,7 @@ overrides:
   '@types/react-dom': '18'
   node-addon-api: 8.5.0
   node-gyp: 12.3.0
+  node-abi: 4.35.0
   '@types/node': 24.12.2
   react-dnd: 14.0.5
 
@@ -997,8 +992,8 @@ importers:
   .:
     dependencies:
       node:
-        specifier: 'catalog:'
-        version: runtime:24.17.0
+        specifier: runtime:24.20.0
+        version: runtime:24.20.0
     devDependencies:
       '@eslint-react/eslint-plugin':
         specifier: 'catalog:'
@@ -1075,6 +1070,9 @@ importers:
       minimist:
         specifier: 'catalog:'
         version: 1.2.8
+      node-abi:
+        specifier: 4.35.0
+        version: 4.35.0
       nx:
         specifier: 'catalog:'
         version: 23.0.1
@@ -1153,10 +1151,16 @@ importers:
       '@clickhouse/client':
         specifier: 'catalog:'
         version: 1.18.3
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
     devDependencies:
       '@types/node':
         specifier: 24.12.2
         version: 24.12.2
+      '@types/semver':
+        specifier: 'catalog:'
+        version: 7.7.1
       rolldown:
         specifier: 'catalog:'
         version: 1.1.4
@@ -1631,7 +1635,7 @@ importers:
         version: 3.7.2
       bsatk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59
+        version: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d
       copyfiles:
         specifier: 'catalog:'
         version: 2.4.1
@@ -1746,12 +1750,9 @@ importers:
       cytoscape-edgehandles:
         specifier: 'catalog:'
         version: 3.6.0(cytoscape@3.33.1)
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -1824,7 +1825,7 @@ importers:
     optionalDependencies:
       loot:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c
 
   extensions/gamebryo-savegame-management:
     dependencies:
@@ -2478,7 +2479,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -2627,84 +2628,6 @@ importers:
       '@vortex/game-extension-test':
         specifier: workspace:*
         version: link:../../../packages/game-extension-test
-
-  extensions/gamestore-gog:
-    devDependencies:
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/bluebird':
-        specifier: 'catalog:'
-        version: 3.5.20
-      '@types/node':
-        specifier: 24.12.2
-        version: 24.12.2
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      winapi-bindings:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
-
-  extensions/gamestore-origin:
-    devDependencies:
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/bluebird':
-        specifier: 'catalog:'
-        version: 3.5.20
-      '@types/libxmljs':
-        specifier: 'catalog:'
-        version: 0.18.13
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      turbowalk:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      winapi-bindings:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
-      xml2js:
-        specifier: 'catalog:'
-        version: 0.5.0
-
-  extensions/gamestore-uplay:
-    devDependencies:
-      '@nexusmods/vortex-api':
-        specifier: workspace:*
-        version: link:../../packages/vortex-api
-      '@types/bluebird':
-        specifier: 'catalog:'
-        version: 3.5.20
-      '@types/node':
-        specifier: 24.12.2
-        version: 24.12.2
-      bluebird:
-        specifier: 'catalog:'
-        version: 3.7.2
-      copyfiles:
-        specifier: 'catalog:'
-        version: 2.4.1
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      winapi-bindings:
-        specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
 
   extensions/gamestore-xbox:
     devDependencies:
@@ -3181,7 +3104,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3685,7 +3608,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3937,7 +3860,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -4096,12 +4019,9 @@ importers:
       '@types/redux':
         specifier: 'catalog:'
         version: 3.6.0
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
       i18next:
         specifier: 'catalog:'
         version: 21.10.0
@@ -4134,7 +4054,7 @@ importers:
         version: 1.5.1-r.1
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@43.0.0)
+        version: 2.1.3(electron@44.2.0)
       '@floating-ui/react':
         specifier: 'catalog:'
         version: 0.27.20(react-dom@18.3.1)(react@18.3.1)
@@ -4237,9 +4157,6 @@ importers:
       d3:
         specifier: 'catalog:'
         version: 5.16.0
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
       dayjs:
         specifier: 'catalog:'
         version: 1.11.20
@@ -4459,6 +4376,9 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.2
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.4
       tmp:
         specifier: 'catalog:'
         version: 0.1.0
@@ -4504,7 +4424,7 @@ importers:
     devDependencies:
       '@electron/rebuild':
         specifier: 'catalog:'
-        version: 4.1.0(supports-color@10.2.2)
+        version: 4.2.0(supports-color@10.2.2)
       '@pmmmwh/react-refresh-webpack-plugin':
         specifier: 'catalog:'
         version: 0.6.2(react-refresh@0.18.0)(type-fest@5.6.0)(webpack@5.108.4)
@@ -4609,13 +4529,13 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
       electron-extension-installer:
         specifier: 'catalog:'
-        version: 2.0.1(electron@43.0.0)
+        version: 2.0.1(electron@44.2.0)
       openapi-typescript:
         specifier: 'catalog:'
         version: 7.13.0(typescript@6.0.3)
@@ -4636,7 +4556,7 @@ importers:
         version: link:../shared
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
 
   src/renderer:
     dependencies:
@@ -4664,7 +4584,7 @@ importers:
         version: 7.16.8(@babel/core@7.29.7)
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@43.0.0)
+        version: 2.1.3(electron@44.2.0)
       '@floating-ui/react':
         specifier: 'catalog:'
         version: 0.27.20(react-dom@18.3.1)(react@18.3.1)
@@ -4899,9 +4819,6 @@ importers:
       d3:
         specifier: 'catalog:'
         version: 5.16.0
-      date-fns:
-        specifier: 'catalog:'
-        version: 2.30.0
       dayjs:
         specifier: 'catalog:'
         version: 1.11.20
@@ -4919,7 +4836,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 43.0.0(supports-color@10.2.2)
+        version: 44.2.0(supports-color@10.2.2)
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -5160,6 +5077,9 @@ importers:
 
   src/shared:
     dependencies:
+      '@nexusmods/adaptor-api':
+        specifier: workspace:*
+        version: link:../../packages/adaptor-api
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
@@ -5911,8 +5831,8 @@ packages:
     engines: {node: '>=12.0.0'}
     hasBin: true
 
-  '@electron/rebuild@4.1.0':
-    resolution: {integrity: sha512-GFky+1JeO8fpSqtZCh+2wFRN/MVbAhm7tXI2M7BA1Os79OR8LEoxRtAbRPyxvmKWhEMF/p10rNJkkgP1klI13g==}
+  '@electron/rebuild@4.2.0':
+    resolution: {integrity: sha512-RKL/O+jGoXJMxrx/5771y1n0xTKmFuOYGO3gMmwypBM6rsH0kou0mswwdXA2JrhIkE4xyC7v9vGk0n6NPzgOxQ==}
     engines: {node: '>=22.12.0'}
     hasBin: true
 
@@ -7742,9 +7662,6 @@ packages:
   '@types/level-codec@9.0.4':
     resolution: {integrity: sha512-N6v5EhpvF00Wv+1ixzqca9YD2wdK76JceSnUoiKfQh/vex+VFG852wzqohnlYf67nzKQoXeRzYd8W57fIkYCvg==}
 
-  '@types/libxmljs@0.18.13':
-    resolution: {integrity: sha512-0hBHqUYsKdEe15ZKDF/iihdhCLpaYYJ8jhEZMQoivGMkYUfUOXlKStjzs1NyV8kOyFCWZtFcddmjR07dM9FYug==}
-
   '@types/lodash@4.17.24':
     resolution: {integrity: sha512-gIW7lQLZbue7lRSWEFql49QJJWThrTFFeIMJdp3eH4tKoxm1OvEPg02rm4wCCSHS0cL3/Fizimb35b7k8atwsQ==}
 
@@ -8576,8 +8493,8 @@ packages:
   bs58@4.0.1:
     resolution: {integrity: sha512-Ok3Wdf5vOIlBrgCvTq96gBkJw+JUEzdBgyaza5HLtPm7yTHkjRy8+JzNyHF7BHa0bNWOQIp3m5YF0nnFcOIKLw==}
 
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59:
-    resolution: {gitHosted: true, integrity: sha512-x0ygf1FRt9qc22ffqKoSpwZwct/dNw8CVh3R9Djiyi3OzmGf1soOdWwFXwysHC3JEkSoeXKV0EXzPeGdOG8Q4Q==, tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59}
+  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d:
+    resolution: {gitHosted: true, integrity: sha512-lE+nQ4fV7W3Z44n7RyCKo/xGS1n/883nDAAeEApZAb7wwcAavoBp6H4CW8qoJtQTv/dovXG948wow1L5j26ryQ==, tarball: https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d}
     version: 2.1.0
     os: [win32, linux]
 
@@ -9320,8 +9237,8 @@ packages:
   electron-updater@6.8.9:
     resolution: {integrity: sha512-ZhVxM9iGONUpZGI1FxdMRgJjUFXi7AYGVa5PwKlO1tV1/4zDxQmfKpXOHVztKrd6L9rLcFjERvi1Mf2vxyTkig==}
 
-  electron@43.0.0:
-    resolution: {integrity: sha512-PV60GsWU6qufhuOhw3n+Yix3WPDcqDtBqE8orbEQGQGHEkgp9o/JCPgb7L4vIL0r1HnfPdqSRtboOTqbDkcFDQ==}
+  electron@44.2.0:
+    resolution: {integrity: sha512-oK1icjhapp3xsUZycO9WZaLmd3hJnA7ieobC4mpdtO1pEN+PPGWpA3m1Mgzzuc1wzSD2Wai4zcH4yfpGJqxFMA==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -10622,8 +10539,8 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5:
-    resolution: {gitHosted: true, integrity: sha512-eSEUw3b32+S+3Ex9vwAJif464JnoEX4ooQb3JPQVnT0sOSL6NRnwpGUn1c8hx/HB7jC5Aa/ZUk/qV+KzY964Vw==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5}
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c:
+    resolution: {gitHosted: true, integrity: sha512-AD/wtAiTibmQ7i3y99xGyvqaQZNnr25qBlDVMIN74KeyCPZHhAbc76FDtqrWA/YlZA7IC0GUJvBm7f0ErqvmKQ==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c}
     version: 6.2.3
 
   lowercase-keys@3.0.0:
@@ -10930,12 +10847,8 @@ packages:
     resolution: {gitHosted: true, integrity: sha512-hFgO6i7T1ZGj3QwgI4OhpbevPJRQI6DBJq1h2VFxPnyO6Nx9NLTu76EmokUDqUMo0ei7IqMOwwD1soEC3IqWUQ==, tarball: https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/b75def8d0d7d81a03f4526c52b8ada9a34a06479}
     version: 0.8.1
 
-  node-abi@3.89.0:
-    resolution: {integrity: sha512-6u9UwL0HlAl21+agMN3YAMXcKByMqwGx+pq+P76vii5f7hTPtKDp08/H9py6DY+cfDw7kQNTGEj/rly3IgbNQA==}
-    engines: {node: '>=10'}
-
-  node-abi@4.31.0:
-    resolution: {integrity: sha512-Erq5w/t3syw3s4sDsUaX4QttIdBPsGKTT1DTRsCkTonGggczhlDKm/wDX3o+HPJpQ41EjXCbcmXf0tgr5YZJXw==}
+  node-abi@4.35.0:
+    resolution: {integrity: sha512-ymk4aIzxdPopw2giv8Fs1Ec6vybGkjmyxUwVqhkI4MCy2tVfXdkOGGWieWVjL0THgH+7a8lRdevyupoYj3Js/Q==}
     engines: {node: '>=22.12.0'}
 
   node-abort-controller@3.1.1:
@@ -10973,7 +10886,7 @@ packages:
   node-releases@2.0.36:
     resolution: {integrity: sha512-TdC8FSgHz8Mwtw9g5L4gR/Sh9XhSP/0DEkQxfEFXOpiul5IiHgHan2VhYYb6agDSfp4KuvltmGApc8HMgUrIkA==}
 
-  node@runtime:24.17.0:
+  node@runtime:24.20.0:
     resolution:
       type: variations
       variants:
@@ -10981,9 +10894,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-Men8JJx0o6bf7KR1ginwA2IEWbQsN0n3xCPymZ0Jpyc=
+            integrity: sha256-FLW9etQKtfRxX7Ti+WSFjYINlCX+KR09ZfmJJua4nB4=
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-aix-ppc64.tar.gz
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-aix-ppc64.tar.gz
           targets:
             - cpu: ppc64
               os: aix
@@ -10991,9 +10904,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-T8MmajcC7rw5zDdmHPTuzureMH4kKrZOTXznlJGX4R8=
+            integrity: sha256-QOVgfl7LPbkZJyN3baLXXZZiYPx0p6nnMcG9Z92pa8g=
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-darwin-arm64.tar.gz
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-darwin-arm64.tar.gz
           targets:
             - cpu: arm64
               os: darwin
@@ -11001,9 +10914,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-gNpVL+A3KQyxMOnepZD17ut6pFBjbwyJq0FBVRHB7Cc=
+            integrity: sha256-nlsmRM8Qe++2rvymdrltMpa8EBOAlvAi7TeNYjPtgfQ=
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-darwin-x64.tar.gz
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-darwin-x64.tar.gz
           targets:
             - cpu: x64
               os: darwin
@@ -11011,9 +10924,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-+qDVm6f+cEXJUO0JsZBXj7ju5z5DWGhtOPzJnKWMFIA=
+            integrity: sha256-NRVgPiSHh5o5vHVxbxoq/9AnUAxkulDoRc9yyzMhkBM=
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-arm64.tar.gz
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-linux-arm64.tar.gz
           targets:
             - cpu: arm64
               os: linux
@@ -11021,9 +10934,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-gE7UoaDvKNWSQIuErCqF6FirkSTa2TPhK0MjYJQRuAk=
+            integrity: sha256-pzSzbI0dFs5FXA65wymwfdEhwshVQ1UGSphhvJbDrcw=
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-ppc64le.tar.gz
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-linux-ppc64le.tar.gz
           targets:
             - cpu: ppc64le
               os: linux
@@ -11031,9 +10944,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-plnpwm/NZI8zWdv9KS8HhDQWgEDy+xrPPJwbzT/Deys=
+            integrity: sha256-2MIktG7wHweKUj2bfbeSgjBvrigemGoVotv/6UfFMB4=
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-s390x.tar.gz
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-linux-s390x.tar.gz
           targets:
             - cpu: s390x
               os: linux
@@ -11041,9 +10954,20 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-4EckJ6p5GtgL3EJv98xzzdKO0PYW0f+WiaI6f0fxJl8=
+            integrity: sha256-1ubRu7mtSssW1YC4m+ipyafkkJJuk708MKINRuFSv4o=
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-x64.tar.gz
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-linux-x64-musl.tar.gz
+          targets:
+            - cpu: x64
+              os: linux
+              libc: musl
+        - resolution:
+            archive: tarball
+            bin:
+              node: bin/node
+            integrity: sha256-hV1YH4pOsagRfjQm3iX+AncFkv68+zE2mu4f+/7p6Ow=
+            type: binary
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-linux-x64.tar.gz
           targets:
             - cpu: x64
               os: linux
@@ -11051,10 +10975,10 @@ packages:
             archive: zip
             bin:
               node: node.exe
-            integrity: sha256-SVdxL2f85Vd5zHlNm0354OgCoYyEGtWk5C8XvkkOY00=
-            prefix: node-v24.17.0-win-arm64
+            integrity: sha256-McZ5l0TeilRgFkMJgEDGjDaX5WyU5AfWHQ5fpfNBkdc=
+            prefix: node-v24.20.0-win-arm64
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-win-arm64.zip
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-win-arm64.zip
           targets:
             - cpu: arm64
               os: win32
@@ -11062,10 +10986,10 @@ packages:
             archive: zip
             bin:
               node: node.exe
-            integrity: sha256-8qozs1t1rKXz97hWdab2QjIBBT6TgZEeZJYfO9olKKs=
-            prefix: node-v24.17.0-win-x64
+            integrity: sha256-bKyf+8qPakcJHktcdy4GBgScOHHLZ9kAwM7d5jDlRbo=
+            prefix: node-v24.20.0-win-x64
             type: binary
-            url: https://nodejs.org/download/release/v24.17.0/node-v24.17.0-win-x64.zip
+            url: https://nodejs.org/download/release/v24.20.0/node-v24.20.0-win-x64.zip
           targets:
             - cpu: x64
               os: win32
@@ -11073,9 +10997,9 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-zFT3OhpBCNnjJesgHZCyXuq2DtySsqEyQLKHenTFlto=
+            integrity: sha256-LIxQfMsPIIEtlSa6jKRUsWUqre9o/IutBvB/sRIt0e8=
             type: binary
-            url: https://unofficial-builds.nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-arm64-musl.tar.gz
+            url: https://unofficial-builds.nodejs.org/download/release/v24.20.0/node-v24.20.0-linux-arm64-musl.tar.gz
           targets:
             - cpu: arm64
               os: linux
@@ -11084,14 +11008,14 @@ packages:
             archive: tarball
             bin:
               node: bin/node
-            integrity: sha256-+ITJWMBlL3zQ6kP9w53d0amEVuqbGt7KhZZIR+Ljn7A=
+            integrity: sha256-muE5n+9L2JkOFXc84TJ7M2oguel9jHVJ9PQspzxD9WI=
             type: binary
-            url: https://unofficial-builds.nodejs.org/download/release/v24.17.0/node-v24.17.0-linux-x64-musl.tar.gz
+            url: https://unofficial-builds.nodejs.org/download/release/v24.20.0/node-v24.20.0-linux-x64-musl.tar.gz
           targets:
             - cpu: x64
               os: linux
               libc: musl
-    version: 24.17.0
+    version: 24.20.0
     hasBin: true
 
   noms@0.0.0:
@@ -12321,6 +12245,15 @@ packages:
 
   temp-file@3.4.0:
     resolution: {integrity: sha512-C5tjlC/HCtVUOi3KWVokd4vHVViOmGjtLwIh4MuzPo/nMYTV/p1urt3RnMz2IWXDdKEGJH3k5+KPxtqRsUYGtg==}
+
+  temporal-polyfill@1.0.4:
+    resolution: {integrity: sha512-MLEU0qOD2uXlz24oINNtdLZQl8RgmMxSnRtKEGZGGetTJjlRwQJjk+VsJ4EREaUoiaTb8NJOcUiKtoAiWn9EBg==}
+
+  temporal-spec@1.0.1:
+    resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
+
+  temporal-utils@1.0.2:
+    resolution: {integrity: sha512-1B8Dl4KzrOvsNUlpoWGno2VLQlxroLjDgc5NBjVC9ax9ymdo+ezfyvhyjEMx+IVfhINr6CIG2gcnlP95iRrybQ==}
 
   terser-webpack-plugin@5.6.1:
     resolution: {integrity: sha512-201R5j+sJpK8nFWwKVyNfZot8FaJbLZDq5evriVzbV1wDtSXDjRUDRfJzHpAaxFDMEhsZL1QkeqM61wgsS3KaQ==}
@@ -14016,20 +13949,20 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/rebuild@4.1.0(supports-color@10.2.2)':
+  '@electron/rebuild@4.2.0(supports-color@10.2.2)':
     dependencies:
       '@malept/cross-spawn-promise': 2.0.0
       debug: 4.4.3(supports-color@10.2.2)
-      node-abi: 4.31.0
+      node-abi: 4.35.0
       node-api-version: 0.2.1
       node-gyp: 12.3.0
       read-binary-file-arch: 1.0.6(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@43.0.0)':
+  '@electron/remote@2.1.3(electron@44.2.0)':
     dependencies:
-      electron: 43.0.0(supports-color@10.2.2)
+      electron: 44.2.0(supports-color@10.2.2)
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -15664,10 +15597,6 @@ snapshots:
 
   '@types/level-codec@9.0.4': {}
 
-  '@types/libxmljs@0.18.13':
-    dependencies:
-      '@types/node': 24.12.2
-
   '@types/lodash@4.17.24': {}
 
   '@types/mdast@3.0.15':
@@ -16569,7 +16498,7 @@ snapshots:
     dependencies:
       base-x: 3.0.11
 
-  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/5a3d15fae2177bfb0a42b794d3afb21eda563c59:
+  bsatk@https://codeload.github.com/Nexus-Mods/node-bsatk/tar.gz/99eb422d9b1a455ed8c2b4005f243439a0a34c8d:
     dependencies:
       autogypi: 0.2.2
       node-addon-api: 8.5.0
@@ -17353,9 +17282,9 @@ snapshots:
       pupa: 2.1.1
       unused-filename: 2.1.0
 
-  electron-extension-installer@2.0.1(electron@43.0.0):
+  electron-extension-installer@2.0.1(electron@44.2.0):
     dependencies:
-      electron: 43.0.0(supports-color@10.2.2)
+      electron: 44.2.0(supports-color@10.2.2)
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -17395,7 +17324,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@43.0.0(supports-color@10.2.2):
+  electron@44.2.0(supports-color@10.2.2):
     dependencies:
       '@electron-internal/extract-zip': 1.0.4
       '@electron/get': 5.0.0(supports-color@10.2.2)
@@ -18767,7 +18696,7 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/cc1515667f494be188e3b1172a3bc8db3dc52eb5:
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/f558b3579d3a515ee92f08849818ba1b98bfdf2c:
     dependencies:
       autogypi: 0.2.2
       lodash: 4.17.23
@@ -19026,11 +18955,7 @@ snapshots:
       7z-bin: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/025786f01319526b56400b0410af6268adc1125c
       bluebird: 3.7.2
 
-  node-abi@3.89.0:
-    dependencies:
-      semver: 7.8.5
-
-  node-abi@4.31.0:
+  node-abi@4.35.0:
     dependencies:
       semver: 7.8.5
 
@@ -19065,7 +18990,7 @@ snapshots:
 
   node-releases@2.0.36: {}
 
-  node@runtime:24.17.0: {}
+  node@runtime:24.20.0: {}
 
   noms@0.0.0:
     dependencies:
@@ -19536,7 +19461,7 @@ snapshots:
       minimist: 1.2.8
       mkdirp-classic: 0.5.3
       napi-build-utils: 1.0.2
-      node-abi: 3.89.0
+      node-abi: 4.35.0
       npmlog: 4.1.2
       pump: 3.0.4
       rc: 1.2.8
@@ -19552,7 +19477,7 @@ snapshots:
       minimist: 1.2.8
       mkdirp-classic: 0.5.3
       napi-build-utils: 2.0.0
-      node-abi: 3.89.0
+      node-abi: 4.35.0
       pump: 3.0.4
       rc: 1.2.8
       simple-get: 4.0.1
@@ -20574,6 +20499,15 @@ snapshots:
       async-exit-hook: 2.0.1
       fs-extra: 10.1.0
 
+  temporal-polyfill@1.0.4:
+    dependencies:
+      temporal-spec: 1.0.1
+      temporal-utils: 1.0.2
+
+  temporal-spec@1.0.1: {}
+
+  temporal-utils@1.0.2: {}
+
   terser-webpack-plugin@5.6.1(esbuild@0.28.0)(webpack@5.108.4):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
@@ -21012,7 +20946,7 @@ snapshots:
       es-module-lexer: 2.1.0
       expect-type: 1.3.0
       magic-string: 0.30.21
-      obug: 2.1.3
+      obug: 2.1.4
       pathe: 2.0.3
       picomatch: 4.0.4
       std-env: 4.0.0

@@ -7,6 +7,7 @@ import { appendFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import { QualifiedPath, type FileSystem } from "@nexusmods/adaptor-api/fs";
 import type { HashAlgorithm, VortexPaths } from "@vortex/shared/ipc";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {
@@ -44,7 +45,7 @@ export interface GlobalWithRedux {
   getReduxStateMsgpack?: (idx: number) => string;
 }
 
-export function init() {
+export function init(fs: FileSystem) {
   // Build paths lazily so that paths overridden later (e.g. "temp" in
   // Application constructor) are resolved at call time, not at init time.
   function resolveVortexPaths(): VortexPaths {
@@ -573,8 +574,8 @@ export function init() {
   // Clipboard operations
   // ============================================================================
 
-  betterIpcMain.handle("clipboard:writeText", (_event: IpcMainInvokeEvent, text: string) => {
-    clipboard.writeText(text);
+  betterIpcMain.handle("clipboard:writeText", async (_event: IpcMainInvokeEvent, text: string) => {
+    await clipboard.writeText(text);
   });
 
   betterIpcMain.handle("clipboard:readText", () => {
@@ -657,5 +658,34 @@ export function init() {
     "hash:compute",
     (_event: IpcMainInvokeEvent, algorithm: HashAlgorithm, filePath: string) =>
       hashFile(algorithm, filePath),
+  );
+
+  // FS
+  betterIpcMain.handle("fs:copy", (_event, source, target, options) =>
+    fs.copy(QualifiedPath.parse(source), QualifiedPath.parse(target), options),
+  );
+
+  betterIpcMain.handle("fs:createDirectory", (_event, dirPath) =>
+    fs.createDirectory(QualifiedPath.parse(dirPath)),
+  );
+
+  betterIpcMain.handle("fs:createLink", (_event, from, to, type) =>
+    fs.createLink(QualifiedPath.parse(from), QualifiedPath.parse(to), type),
+  );
+
+  betterIpcMain.handle("fs:delete", (_event, inputPath) =>
+    fs.delete(QualifiedPath.parse(inputPath)),
+  );
+
+  betterIpcMain.handle("fs:deleteRecursive", (_event, inputPath) =>
+    fs.deleteRecursive(QualifiedPath.parse(inputPath)),
+  );
+
+  betterIpcMain.handle("fs:move", (_event, source, target, options) =>
+    fs.move(QualifiedPath.parse(source), QualifiedPath.parse(target), options),
+  );
+
+  betterIpcMain.handle("fs:stat", (_event, inputPath, options) =>
+    fs.stat(QualifiedPath.parse(inputPath), options),
   );
 }

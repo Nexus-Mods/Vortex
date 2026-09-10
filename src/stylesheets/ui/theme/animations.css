@@ -1,0 +1,14 @@
+@theme {
+    --animate-deferred-fade-in: deferred-fade-in var(--default-transition-duration) linear 250ms
+        both;
+
+    @keyframes deferred-fade-in {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+}

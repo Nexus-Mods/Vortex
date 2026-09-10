@@ -1,4 +1,4 @@
-import { render, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import type * as ReactRedux from "react-redux";
@@ -137,9 +137,6 @@ describe("DownloadButton", () => {
     });
   });
 
-  // LAZ-984: the ring is the button's only active affordance while a download is
-  // running — there's no border in that branch — so both of its strokes have to
-  // respond to selection.
   describe("ring colours", () => {
     it("keeps the track subdued while another page is open", () => {
       setStore([{ state: "started", size: 1000, received: 250 }], 8.6);
@@ -211,6 +208,82 @@ describe("DownloadButton", () => {
       await userEvent.click(button);
 
       expect(mocks.selectDownloads).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("flyout", () => {
+    it("keeps to the plain label while nothing is downloading", async () => {
+      const { button } = renderComponent();
+
+      await userEvent.hover(button);
+      await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+      expect(screen.queryByTestId("download-flyout-estimating")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("download-flyout-name")).not.toBeInTheDocument();
+    });
+
+    it("shows itself when a download arrives, with nobody hovering", async () => {
+      const { rerender } = render(<DownloadButton />);
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+
+      setStore([{ state: "started", size: 1000, received: 0 }], 1);
+      rerender(<DownloadButton />);
+
+      await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+      expect(screen.getByTestId("download-flyout-estimating")).toBeInTheDocument();
+    });
+
+    it("counts the rest of the queue behind the download it names", async () => {
+      const { rerender } = render(<DownloadButton />);
+
+      setStore(
+        [
+          { state: "started", size: 1000, received: 0 },
+          { state: "started", size: 1000, received: 0 },
+        ],
+        1,
+      );
+      rerender(<DownloadButton />);
+
+      await waitFor(() => expect(screen.getByTestId("download-flyout-more")).toBeInTheDocument());
+    });
+
+    // The estimate is sampled by the button, not the panel, because the panel unmounts
+    // when it closes — sampling in there started from nothing on every reopen.
+    it("keeps its estimate when the flyout is closed and brought back", async () => {
+      // Arriving after mount, since a download already running when it mounts is
+      // deliberately not announced.
+      const { rerender } = render(<DownloadButton />);
+      const button = screen.getByRole("button", { name: "Downloads" });
+      setStore([{ state: "started", size: 1000, received: 0 }], 1);
+      rerender(<DownloadButton />);
+      await waitFor(() =>
+        expect(screen.getByTestId("download-flyout-estimating")).toBeInTheDocument(),
+      );
+
+      // Two readings far enough apart to measure a rate.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setStore([{ state: "started", size: 1000, received: 100 }], 1);
+      rerender(<DownloadButton />);
+      await waitFor(() =>
+        expect(screen.getByTestId("download-flyout-remaining")).toBeInTheDocument(),
+      );
+
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+
+      await userEvent.hover(button);
+      await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+      expect(screen.getByTestId("download-flyout-remaining")).toBeInTheDocument();
+      expect(screen.queryByTestId("download-flyout-estimating")).not.toBeInTheDocument();
+    });
+
+    it("stays down for downloads already running when it mounted", () => {
+      setStore([{ state: "started", size: 1000, received: 250 }], 8.6);
+      renderComponent();
+
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
     });
   });
 });

@@ -26,6 +26,7 @@ import {
   getErrorCode,
   getErrorMessage,
   getErrorMessageOrDefault,
+  getErrorStatusCode,
   unknownToError,
 } from "@vortex/shared";
 import { VortexError } from "@vortex/shared";
@@ -1955,6 +1956,38 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
   //Promise.resolve(getUserInfo(api, nexus));
 }
 
+// nexus-api retries a 401 through a token refresh of its own and rethrows it only once that
+// hasn't helped, so one reaching us is final; 403 is an account we may no longer act for at all.
+const REFUSED_STATUS_CODES = [401, 403];
+
+/**
+ * Whether the site turned the credentials down, which is the only answer that means the session
+ * is over — every other way a request can fail says nothing about the credentials.
+ */
+const isLoginRefused = (err: unknown): boolean =>
+  REFUSED_STATUS_CODES.includes(getErrorStatusCode(err) ?? 0);
+
+/**
+ * The account the access token describes on its own. All of this is signed into the token, so
+ * reading it needs no request, which makes it the fallback for a session we hold credentials
+ * for but can't reach the site to flesh out. The avatar and email only exist server-side and
+ * come out empty; the header falls back to the generic account icon for an empty avatar.
+ */
+export function userInfoFromToken(token: string): IValidateKeyDataV2 | undefined {
+  const parsed = accessTokenSchema.safeParse(jwt.decode(token));
+  if (!parsed.success) {
+    return undefined;
+  }
+
+  return {
+    email: "",
+    name: parsed.data.user.username,
+    profileUrl: "",
+    userId: parsed.data.user.id,
+    ...deriveMembership(parsed.data.user),
+  };
+}
+
 export function updateToken(
   api: IExtensionApi,
   nexus: Nexus,
@@ -1980,11 +2013,32 @@ export function updateToken(
   )
     .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
     .then(() => true)
-    .catch((err) => {
-      api.showErrorNotification("Authentication failed, please log in again", err, {
-        allowReport: false,
+    .catch((err: unknown) => {
+      if (isLoginRefused(err)) {
+        api.showErrorNotification("Authentication failed, please log in again", err, {
+          allowReport: false,
+        });
+        api.store.dispatch(setUserInfo(undefined));
+        api.events.emit("did-login", err);
+        return false;
+      }
+
+      // Anything else - offline, a timeout, a 500 - leaves the session untouched, and
+      // setOAuthCredentials has already kept the credentials by the time the avatar request
+      // that failed here was made, so the last known account is still the best answer we have.
+      // Clearing it left the header with no account *and* no login button, because the
+      // credentials that stay in state still count as logged in.
+      log("info", "couldn't validate the login, keeping the known account", {
+        message: getErrorMessage(err),
       });
-      api.store.dispatch(setUserInfo(undefined));
+      if (userInfoSelector(api.getState()) === undefined) {
+        // nothing persisted to keep - a first run offline, or a session an older build
+        // already wiped - so fall back to what the token itself says
+        const fromToken = userInfoFromToken(credentials.token);
+        if (fromToken !== undefined) {
+          api.store.dispatch(setUserInfo(fromToken));
+        }
+      }
       api.events.emit("did-login", err);
       return false;
     });

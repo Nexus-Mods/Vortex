@@ -17,6 +17,8 @@ import {
   setCollapsedGroups,
   setGroupingAttribute,
 } from "../actions/tables";
+import { numericNexusGameId } from "../extensions/analytics/mixpanel/numericGameId";
+import { activeGameId } from "../extensions/profile_management/selectors";
 import smoothScroll from "../smoothScroll";
 import type { IActionDefinition } from "../types/IActionDefinition";
 import type { IAttributeState } from "../types/IAttributeState";
@@ -31,6 +33,13 @@ import { getSafe, setSafe } from "../util/storeHelper";
 import { makeUnique, sanitizeCSSId, truthy } from "../util/util";
 import { ComponentEx, connect, extend, translate } from "./ComponentEx";
 import IconBar from "./IconBar";
+import {
+  columnsOf,
+  emitTableColumnsViewed,
+  emitTableColumnToggled,
+  gameIdPending,
+  isColumn,
+} from "./table/columnAnalytics";
 import GroupingRow, { EMPTY_ID } from "./table/GroupingRow";
 import HeaderCell from "./table/HeaderCell";
 import { Table, TBody, TD, TH, THead, TR } from "./table/MyTable";
@@ -50,6 +59,8 @@ export interface ITableRowAction extends IActionDefinition {
 
 export interface IBaseProps {
   tableId: string;
+  /** This table's id in the analytics. Defaults to `tableId`; set where two tables share one. */
+  analyticsId?: string;
   data: { [rowId: string]: any };
   // cheap-ass way to force the table to refresh its data cache. This will only affect
   // 'volatile' fields as normal data fields would prompt a table refresh anyway
@@ -140,6 +151,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   // this improves scroll smoothness at the expense of memory
   private static SCROLL_DEBOUNCE = 5000;
 
+  // How long the set of columns has to hold still before it's reported. Attributes come
+  // from extensions and can be gated on state, so what a table shows in its first frame
+  // isn't yet what the user is looking at.
+  private static COLUMN_REPORT_DEBOUNCE = 2000;
+
+  // How many of those to wait through for the games list before reporting with no game
+  // rather than the wrong one. A cold start has been seen to take 21.6s.
+  private static COLUMN_REPORT_MAX_WAITS = 12;
+
   private mVisibleAttributes: ITableAttribute[];
   private mVisibleDetails: ITableAttribute[];
   private mVisibleInlines: ITableAttribute[];
@@ -162,6 +182,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mVisibleHeaderRef: HTMLElement;
   private mHeaderUpdateDebouncer: Debouncer;
   private mUpdateCalculatedDebouncer: Debouncer;
+  private mColumnReportDebouncer: Debouncer;
+  private mColumnReportWaits: number = 0;
   private mLastScroll: number;
   private mWillSetVisibility: boolean = false;
   private mMounted: boolean = false;
@@ -217,6 +239,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       200,
       true,
     );
+
+    this.mColumnReportDebouncer = new Debouncer(
+      () => {
+        this.reportColumns();
+        return PromiseBB.resolve();
+      },
+      SuperTable.COLUMN_REPORT_DEBOUNCE,
+      true,
+    );
   }
 
   public componentDidMount() {
@@ -233,12 +264,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
     this.mMounted = true;
     window.addEventListener("resize", this.onResize);
+    this.mColumnReportDebouncer.schedule();
   }
 
   public componentWillUnmount() {
     this.context.api.events.removeAllListeners(this.props.tableId + "-scroll-to");
     window.removeEventListener("resize", this.onResize);
     this.mMounted = false;
+    this.mColumnReportDebouncer.clear();
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -252,6 +285,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.mVisibleAttributes = table;
       this.mVisibleDetails = detail;
       this.mVisibleInlines = inline;
+
+      // The columns just changed, so give them longer to hold still before reporting
+      // them. Once reported, this is a no-op for the rest of the session.
+      this.mColumnReportDebouncer.schedule();
 
       if (
         Object.keys(newProps.attributeState).find(
@@ -739,7 +776,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           prev[attr.placement === "inline" ? "inlines" : visible ? "columns" : "disabled"].push({
             icon: attributeState.enabled ? "checkbox-checked" : "checkbox-unchecked",
             title: attr.name,
-            action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
+            action: (arg) => this.setAttributeVisible(attr, !attributeState.enabled),
           });
         }
         return prev;
@@ -1620,9 +1657,55 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }, []);
   }
 
-  private setAttributeVisible = (attributeId: string, visible: boolean) => {
-    const { onSetAttributeVisible, tableId } = this.props;
-    onSetAttributeVisible(tableId, attributeId, visible);
+  /**
+   * Says which of this table's columns the user has in front of them, so the case for
+   * dropping one can be made from how many installs still show it. See
+   * {@link emitTableColumnsViewed} for why this happens once a game a session.
+   *
+   * The game is read here rather than taken from props so it is the one in effect when
+   * the debounce fires, which is what the columns being reported were built from.
+   */
+  private reportColumns() {
+    const { analyticsId, columnBlacklist, objects, tableId } = this.props;
+
+    const activeGame = activeGameId(this.context.api.getState());
+    const game = activeGame === undefined ? null : numericNexusGameId(activeGame);
+
+    // Giving up reports under no game rather than staying silent: a row with no game can
+    // be filtered out, silence can't be seen. That also leaves the real game's slot
+    // unspent, so the table reports properly if its columns change once the list lands.
+    if (
+      gameIdPending(activeGame, game) &&
+      this.mColumnReportWaits < SuperTable.COLUMN_REPORT_MAX_WAITS
+    ) {
+      this.mColumnReportWaits += 1;
+      this.mColumnReportDebouncer.schedule();
+      return;
+    }
+
+    emitTableColumnsViewed(
+      this.context.api,
+      analyticsId ?? tableId,
+      game,
+      columnsOf({
+        attributes: objects,
+        visible: this.mVisibleAttributes ?? [],
+        blacklist: columnBlacklist,
+      }),
+    );
+  }
+
+  private setAttributeVisible = (attribute: ITableAttribute, visible: boolean) => {
+    const { analyticsId, onSetAttributeVisible, tableId } = this.props;
+
+    // The same menu toggles attributes that are never columns, and hiding one of those
+    // says nothing about the columns this is counting.
+    if (isColumn(attribute)) {
+      emitTableColumnToggled(this.context.api, analyticsId ?? tableId, attribute.id, visible);
+    }
+
+    // The layout is stored against `tableId`, so that stays whatever the numbers call it.
+    onSetAttributeVisible(tableId, attribute.id, visible);
   };
 
   private getClasses(element: HTMLElement): string {

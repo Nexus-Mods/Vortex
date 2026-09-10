@@ -1,5 +1,5 @@
 import { z } from "../zodJitless";
-import { VortexError } from "./base";
+import { VortexError, type VortexErrorKindMap } from "./base";
 
 /**
  * Tries to parse the input as an error.
@@ -56,7 +56,14 @@ function parseNodeSystemError(
 ): { message: string; data: VortexError["data"]; isTransient?: boolean } | undefined {
   const data = parseNodeSystemErrorData(cause);
   if (!data) {
-    return undefined;
+    // Node reports a peer closing the socket with a plain Error carrying only `code: "ECONNRESET"`,
+    // no errno or syscall: "socket hang up" from the http client and the TLS wrap's onerror.
+    // https://github.com/nodejs/node/blob/51c992f99bc0ec6dc1cafdc9f00defa28eead3ea/lib/internal/errors.js#L847-L856
+    // https://github.com/nodejs/node/blob/51c992f99bc0ec6dc1cafdc9f00defa28eead3ea/lib/internal/tls/wrap.js#L1361-L1366
+    const code = "code" in cause ? cause.code : undefined;
+    return code === "ECONNRESET"
+      ? networkError({ originalCode: code }, cause.message, context)
+      : undefined;
   }
 
   const { code: originalCode, errno, syscall } = data;
@@ -87,6 +94,12 @@ function parseNodeSystemError(
     return {
       message: `File at '${path}' already exists`,
       data: { kind: "fs:already-exists", ...osData, path },
+    };
+  } else if (originalCode === "EROFS") {
+    // EROFS: Read-only filesystem (POSIX.1-2001).
+    return {
+      message: `Filesystem is read-only: '${path}'`,
+      data: { kind: "fs:read-only", ...osData, path },
     };
   } else if (originalCode === "ENOSPC") {
     // ENOSPC: No space left on device (POSIX.1-2001)
@@ -127,20 +140,28 @@ function parseNodeSystemError(
       isTransient: true,
     };
   } else if (NETWORK_POSIX_CODES.has(originalCode)) {
-    const isTransient = originalCode === "ETIMEDOUT";
-
-    if (context?.url !== undefined) {
-      return {
-        message: `Network error (${originalCode}) for '${context.url}': ${message}`,
-        data: { kind: "http:generic", url: context.url, ...osData },
-        isTransient,
-      };
-    }
-
-    return { message, data: { kind: "os:generic", ...osData }, isTransient };
+    return networkError(osData, message, context);
   }
 
   return { message, data: { kind: "os:generic", ...osData } };
+}
+
+function networkError(
+  osData: VortexErrorKindMap["os:generic"],
+  message: string,
+  context?: { path?: string; url?: string },
+): { message: string; data: VortexError["data"]; isTransient: boolean } {
+  const isTransient = osData.originalCode === "ETIMEDOUT";
+
+  if (context?.url !== undefined) {
+    return {
+      message: `Network error (${osData.originalCode}) for '${context.url}': ${message}`,
+      data: { kind: "http:generic", url: context.url, ...osData },
+      isTransient,
+    };
+  }
+
+  return { message, data: { kind: "os:generic", ...osData }, isTransient };
 }
 
 export function parseNodeSystemErrorData(input: unknown): NodeSystemErrorData | undefined {

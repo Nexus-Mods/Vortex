@@ -2,6 +2,8 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
+import type { FileSystem } from "@nexusmods/adaptor-api/fs";
+
 import type { SerializedVortexError } from "../errors/serialization";
 import type { SerializedSpan } from "../telemetry/types";
 import type { DownloadCheckpoint, DownloadProgress, DownloadStatus } from "./download";
@@ -572,6 +574,29 @@ export interface InvokeChannels {
     path: { value: string };
     regex?: string;
   }) => Promise<string>;
+
+  "fs:copy": (
+    source: string,
+    target: string,
+    options: Parameters<FileSystem["copy"]>[2],
+  ) => Promise<void>;
+  "fs:createDirectory": (path: string) => Promise<void>;
+  "fs:createLink": (
+    from: string,
+    to: string,
+    type: Parameters<FileSystem["createLink"]>[2],
+  ) => Promise<void>;
+  "fs:delete": (path: string) => Promise<void>;
+  "fs:deleteRecursive": (path: string) => Promise<void>;
+  "fs:move": (
+    source: string,
+    target: string,
+    options: Parameters<FileSystem["move"]>[2],
+  ) => Promise<void>;
+  "fs:stat": (
+    path: string,
+    options: Parameters<FileSystem["stat"]>[1],
+  ) => Promise<Awaited<ReturnType<FileSystem["stat"]>>>;
 }
 
 /** Represents all IPC-safe typed arrays */
@@ -620,38 +645,3 @@ export type Serializable =
   | { [key: string]: Serializable }
   | Map<Serializable, Serializable>
   | Set<Serializable>;
-
-type IsAny<T> = 0 extends 1 & T ? true : false;
-
-type HasError<T> = T extends { __error__: string }
-  ? true
-  : T extends object
-    ? { [K in keyof T]: HasError<T[K]> }[keyof T] extends true
-      ? true
-      : false
-    : false;
-
-// NOTE(erri120): If you found this type because you got an error, that means you're trying to pass data across the IPC
-// that can't be serialized. Check the list of supported types above and pick one of them. If you think there is a type missing
-// from the list above, write a small proof and we can discuss it.
-//
-/** Utility type to assert that the type is serializable */
-export type AssertSerializable<T> =
-  // any
-  IsAny<T> extends true
-    ? { __error__: "any is not serializable for IPC" }
-    : // known serializables
-      T extends Serializable
-      ? T
-      : // objects
-        T extends object
-        ? HasError<{ [K in keyof T]: AssertSerializable<T[K]> }> extends true
-          ? { __error__: "Type is not serializable for IPC" }
-          : T
-        : // everything else
-          { __error__: "Type is not serializable for IPC" };
-
-/** Utility type to check all args are serializable */
-export type SerializableArgs<T extends readonly unknown[]> = {
-  [K in keyof T]: AssertSerializable<T[K]>;
-};

@@ -9,6 +9,7 @@ export default mergeConfig(
       name: "@vortex/main",
       environment: "node",
       include: ["src/**/*.test.ts", "*.test.ts"],
+      setupFiles: "./src/test-setup.ts",
     },
   }),
 );

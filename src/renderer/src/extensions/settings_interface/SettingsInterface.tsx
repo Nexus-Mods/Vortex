@@ -10,23 +10,26 @@ import { useSelector } from "react-redux";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import { showDialog } from "../../actions/notifications";
-import { resetSuppression } from "../../actions/notificationSettings";
-import { setCustomTitlebar } from "../../actions/window";
+import { showDialog } from "@/actions";
+import { resetSuppression } from "@/actions";
+import { setCustomTitlebar } from "@/actions";
+import type { IAvailableExtension } from "@/types/extensions";
+import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "@/types/IDialog";
+import type { IState } from "@/types/IState";
+import { Button } from "@/ui/components/button/Button";
+import { Picker } from "@/ui/components/picker/Picker";
+import { Typography } from "@/ui/components/typography/Typography";
+import { relaunch } from "@/util/commandLine";
+import { log } from "@/util/log";
+import { getPreloadApi } from "@/util/preloadAccess";
+import { useReduceMotion } from "@/util/reduceMotion";
+import { truthy } from "@/util/util";
+
+import { displayBcp47, isValidBcp47 } from "../../bcp47";
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
 import Toggle from "../../controls/Toggle";
-import type { IAvailableExtension } from "../../types/extensions";
-import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../../types/IDialog";
-import type { IState } from "../../types/IState";
-import { Button } from "../../ui/components/button/Button";
-import { Picker } from "../../ui/components/picker/Picker";
-import { Typography } from "../../ui/components/typography/Typography";
-import { relaunch } from "../../util/commandLine";
 import getVortexPath from "../../util/getVortexPath";
-import { log } from "../../util/log";
-import { getPreloadApi } from "../../util/preloadAccess";
-import { truthy } from "../../util/util";
 import getTextModManagement from "../mod_management/texts";
 import getTextProfiles from "../profile_management/texts";
 import {
@@ -38,14 +41,15 @@ import {
 } from "./actions/automation";
 import {
   setAdvancedMode,
+  setAlwaysCompactHeaders,
   setDesktopNotifications,
   setForegroundDL,
   setHideTopLevelCategory,
   setLanguage,
   setProfilesVisible,
+  setReduceMotion,
   setRelativeTimes,
 } from "./actions/interface";
-import { nativeCountryName, nativeLanguageName } from "./languagemap";
 import { buildLanguageOptions, type ILanguage, type ILanguageOption } from "./languageOptions";
 import getText from "./texts";
 
@@ -56,6 +60,7 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   profilesVisible: boolean;
+  alwaysCompactHeaders: boolean;
   autoDeployment: boolean;
   autoInstall: boolean;
   autoEnable: boolean;
@@ -73,6 +78,8 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetLanguage: (language: string) => void;
+  onSetAlwaysCompactHeaders: (enabled: boolean) => void;
+  onSetReduceMotion: (enabled: boolean) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
   onSetAutoInstall: (enabled: boolean) => void;
   onSetAutoEnable: (enabled: boolean) => void;
@@ -98,6 +105,7 @@ type IProps = IBaseProps &
   IActionProps &
   IConnectedProps & {
     currentLanguage: string;
+    reduceMotion: boolean;
     extensions: IAvailableExtension[];
     languages: ILanguage[];
     onReloadLanguages: () => void;
@@ -126,6 +134,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const {
       t,
+      alwaysCompactHeaders,
       autoDeployment,
       autoEnable,
       autoInstall,
@@ -138,6 +147,8 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
       profilesVisible,
       hideTopLevelCategory,
       onSetForegroundDL,
+      onSetReduceMotion,
+      reduceMotion,
       relativeTimes,
       startup,
       startMinimized,
@@ -228,6 +239,26 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
             <div>
               <Toggle checked={relativeTimes} onToggle={this.toggleRelativeTimes}>
                 {t('Use relative times (e.g. "3 months ago")')}
+              </Toggle>
+            </div>
+
+            <div>
+              <Toggle checked={alwaysCompactHeaders} onToggle={this.toggleAlwaysCompactHeaders}>
+                {t("Always use compact headers")}
+
+                <Typography appearance="subdued" typographyType="body-sm">
+                  {t("Keep page headers compact for less motion and more vertical space.")}
+                </Typography>
+              </Toggle>
+            </div>
+
+            <div>
+              <Toggle checked={reduceMotion} onToggle={onSetReduceMotion}>
+                {t("Reduce motion")}
+
+                <Typography appearance="subdued" typographyType="body-sm">
+                  {t("Minimise non-essential animations and visual effects.")}
+                </Typography>
               </Toggle>
             </div>
           </div>
@@ -336,6 +367,11 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
 
   private toggleAcceleration = () => {
     this.props.changeStartup("disableGPU", this.props.startup.disableGPU !== true);
+  };
+
+  private toggleAlwaysCompactHeaders = () => {
+    const { alwaysCompactHeaders, onSetAlwaysCompactHeaders } = this.props;
+    onSetAlwaysCompactHeaders(!alwaysCompactHeaders);
   };
 
   private toggleRelativeTimes = () => {
@@ -486,6 +522,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
     relativeTimes: state.settings.interface.relativeTimes,
+    alwaysCompactHeaders: state.settings.interface.alwaysCompactHeaders === true,
     suppressedNotifications: state.settings.notifications.suppress,
     foregroundDL: state.settings.interface.foregroundDL,
   };
@@ -529,6 +566,12 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetRelativeTimes: (enabled: boolean) => {
       dispatch(setRelativeTimes(enabled));
     },
+    onSetAlwaysCompactHeaders: (enabled: boolean) => {
+      dispatch(setAlwaysCompactHeaders(enabled));
+    },
+    onSetReduceMotion: (enabled: boolean) => {
+      dispatch(setReduceMotion(enabled));
+    },
     onResetNotificationSuppression: () => {
       dispatch(resetSuppression(null));
     },
@@ -539,19 +582,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 const SettingsInterfaceMapped = translate(["common"])(
   connect(mapStateToProps, mapDispatchToProps)(SettingsInterfaceImpl),
 );
-
-function isValidLanguageCode(langId: string) {
-  if (!truthy(langId)) {
-    return false;
-  }
-  try {
-    new Date().toLocaleString(langId);
-    return true;
-  } catch (err) {
-    log("warn", "Not a valid language code", langId);
-    return false;
-  }
-}
 
 /** List the subdirectories of a base directory; a missing base yields none. */
 async function listSubdirectories(basePath: string): Promise<string[]> {
@@ -566,7 +596,10 @@ async function listSubdirectories(basePath: string): Promise<string[]> {
   }
 }
 
-async function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage[]> {
+async function readLocales(
+  extensions: IAvailableExtension[],
+  uiLocale: string,
+): Promise<ILanguage[]> {
   const bundledLanguages = getVortexPath("locales");
   const userLanguages = path.normalize(path.join(getVortexPath("userData"), "locales"));
 
@@ -582,7 +615,7 @@ async function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage
     // providing the same language
     const keys = Array.from(
       new Set([...local, ...translationExts.map((ext) => ext.language)]),
-    ).filter((langId): langId is string => langId !== undefined && isValidLanguageCode(langId));
+    ).filter((langId): langId is string => langId !== undefined && isValidBcp47(langId));
 
     const loc = new Set(local);
     // keyed by locale code
@@ -593,14 +626,10 @@ async function readLocales(extensions: IAvailableExtension[]): Promise<ILanguage
     }
 
     return keys.map((key) => {
-      const [languageKey, countryKey] = key.split("-");
-      const language = nativeLanguageName(languageKey);
-      const country = countryKey !== undefined ? nativeCountryName(countryKey) : undefined;
-
       const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
         ? []
         : (extsByLanguage.get(key) ?? []);
-      return { key, language, country, ext };
+      return { key, displayName: displayBcp47(key, uiLocale), ext };
     });
   } catch (err) {
     log("warn", "failed to read locales", err);
@@ -621,14 +650,18 @@ function SettingsInterface(props: IBaseProps) {
 
   const forceReload = React.useCallback(() => setIteration((i) => i + 1), []);
 
+  // Effective rather than stored, so the toggle shows what the OS asked for until the
+  // user makes a choice of their own.
+  const reduceMotion = useReduceMotion();
+
   React.useEffect(() => {
     (async () => {
-      const langs = await readLocales(exts);
+      const langs = await readLocales(exts, lang);
       // ensure the selected language is always an option
       if (langs.length === 0) {
         langs.push({
           key: lang,
-          language: nativeLanguageName(lang),
+          displayName: displayBcp47(lang, lang),
           ext: [],
         });
       }
@@ -642,6 +675,7 @@ function SettingsInterface(props: IBaseProps) {
       currentLanguage={lang}
       extensions={exts}
       languages={languages}
+      reduceMotion={reduceMotion}
       onReloadLanguages={forceReload}
     />
   );

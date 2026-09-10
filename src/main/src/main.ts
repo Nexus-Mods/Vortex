@@ -1,3 +1,7 @@
+// TODO: remove polyfill with Node.js 26 upgrade
+import { install } from "temporal-polyfill/shim";
+install();
+
 // IPC handler for forked child processes requesting Electron app info
 if (process.send) {
   process.on("message", (msg: unknown) => {
@@ -41,6 +45,8 @@ if (process.env.VORTEX_E2E === "1") {
   }
 }
 
+import type { PathResolver } from "@nexusmods/adaptor-api";
+
 import Application from "./Application";
 import { parseCommandline } from "./cli";
 import { init as initDownloadIpc } from "./downloading/ipc";
@@ -53,6 +59,11 @@ import {
   sendPendingNativeCrashReport,
   sendReportFile,
 } from "./errorReporting";
+import { NodeFileSystemBackendImpl } from "./filesystem/backend";
+import { NodeFileSystemImpl } from "./filesystem/filesystem-impl";
+import { PathResolverRegistryImpl } from "./filesystem/path-resolver-registry";
+import { LinuxPathProviderImpl } from "./filesystem/paths.linux";
+import { WindowsPathProviderImpl } from "./filesystem/paths.windows";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
@@ -300,7 +311,19 @@ async function main(): Promise<void> {
   const downloadManager = new DownloadManager({ concurrency: 1 });
   const uploadManager = new UploadManager({ userAgent: `Vortex/${app.getVersion()}` });
 
-  initIpcHandlers();
+  const pathResolvers: PathResolver[] = [];
+  if (process.platform === "win32") {
+    pathResolvers.push(new WindowsPathProviderImpl());
+  } else if (process.platform === "linux") {
+    pathResolvers.push(new LinuxPathProviderImpl());
+  }
+
+  const fs = new NodeFileSystemImpl(
+    new NodeFileSystemBackendImpl(),
+    new PathResolverRegistryImpl(pathResolvers),
+  );
+
+  initIpcHandlers(fs);
   initDownloadIpc(downloadManager);
   initUploadIpc(uploadManager);
   initTelemetryIpcHandler();

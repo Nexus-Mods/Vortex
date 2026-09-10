@@ -1,4 +1,4 @@
-import React, { useState, type FC, useLayoutEffect, useRef, useEffect } from "react";
+import React, { useState, type FC, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
@@ -33,7 +33,6 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
   const { visibleTools } = useToolsContext();
   const toolCount = visibleTools.length;
   const [canScrollUp, setCanScrollUp] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   const onScroll = (event: Event) => setCanScrollUp((event.target as HTMLDivElement).scrollTop > 0);
 
@@ -46,13 +45,6 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
     element.addEventListener("scroll", onScroll);
     return () => element.removeEventListener("scroll", onScroll);
   }, [scrollRef]);
-
-  useLayoutEffect(() => {
-    setIsAnimating(true);
-    const timer = setTimeout(() => setIsAnimating(false), 150);
-
-    return () => clearTimeout(timer);
-  }, [menuIsCollapsed]);
 
   return (
     <TooltipDelayGroup
@@ -100,7 +92,7 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
         <div className="pointer-events-none absolute right-0 bottom-0 size-3 bg-surface-base" />
       </div>
 
-      <ToolsSection isAnimating={isAnimating} />
+      <ToolsSection />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
     </TooltipDelayGroup>

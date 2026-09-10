@@ -6,6 +6,16 @@ on:
       - master
       - "v*"
       - "release/*"
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: "Merged pull request number to scan."
+        required: true
+        type: number
+      dry-run:
+        description: "Log the rows without writing them to ClickHouse."
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -17,14 +27,18 @@ jobs:
     # (head branches always start with `cherry-pick/`); the original PR is
     # what fixes the fingerprint, the cherry-pick is just propagation.
     if: >-
-      github.event.pull_request.merged == true &&
-      !startsWith(github.event.pull_request.head.ref, 'cherry-pick/')
-    runs-on: platform-cluster
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+      !startsWith(github.event.pull_request.head.ref, 'cherry-pick/'))
+    runs-on: platform-cluster-public
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/fingerprints
         with:
           mode: pr
+          # only read when there is no pull_request payload (workflow_dispatch)
+          pr-number: ${{ inputs.pr-number }}
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
           clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
           clickhouse-user: ${{ secrets.CLICKHOUSE_USER }}
           clickhouse-password: ${{ secrets.CLICKHOUSE_PASSWORD }}

@@ -1,0 +1,22 @@
+name: Setup pnpm
+description: >-
+  Install pnpm and the pinned Node.js runtime (devEngines.runtime in
+  package.json) with store caching. Owns the pnpm/setup version pin,
+  so bumping it is a one-file change.
+
+runs:
+  using: composite
+  steps:
+    # pnpm's standalone binary needs libatomic1, which our custom Linux
+    # runner images (platform-cluster) don't ship. Hosted ubuntu images
+    # already have it; the dpkg guard makes this free there.
+    - name: Install libatomic
+      if: runner.os == 'Linux'
+      shell: bash
+      run: dpkg -s libatomic1 >/dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y libatomic1)
+
+    - name: Install pnpm and Node.js
+      uses: pnpm/setup@v2.0.2
+      with:
+        cache: true
+        install: false
