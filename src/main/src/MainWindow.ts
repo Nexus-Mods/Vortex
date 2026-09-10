@@ -6,7 +6,7 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
-import { terminate, terminateAsync } from "./errorHandling";
+import { isQuitting, markQuitting, terminate, terminateAsync } from "./errorHandling";
 import { isReportableExit, reportCrash } from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
@@ -181,6 +181,11 @@ class MainWindow {
           exitCode: details.exitCode,
           reason: details.reason,
         });
+
+        // a renderer lost while quitting isn't worth reviving or reporting
+        if (isQuitting()) {
+          return;
+        }
 
         // hard renderer crashes never reach the JS error handlers, so this
         // is the only place they can be reported
@@ -459,6 +464,13 @@ class MainWindow {
     });
     this.mWindow.on("closed", () => {
       this.mWindow = null;
+    });
+    // point of no return: Windows terminates our helpers next and refuses to start
+    // replacements, so flag it before before-quit gets a chance to run
+    this.mWindow.on("session-end", (event) => {
+      log("info", "Windows session ending", { reasons: event.reasons });
+      markQuitting();
+      app.quit();
     });
     this.mWindow.on("maximize", () => this.sendWindowEvent("window:maximized", true));
     this.mWindow.on("unmaximize", () => this.sendWindowEvent("window:maximized", false));

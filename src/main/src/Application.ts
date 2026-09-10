@@ -26,7 +26,7 @@ import winapi from "winapi-bindings";
 import { shutdownBsdiffWorker } from "./bsdiff/host";
 import { parseCommandline, updateStartupSettings } from "./cli";
 import { installDevelExtensions } from "./devel";
-import { terminate, terminateAsync } from "./errorHandling";
+import { isQuitting, markQuitting, terminate, terminateAsync } from "./errorHandling";
 import { disableErrorReporting, isReportableExit, reportCrash } from "./errorReporting";
 import { setupMainExtensions } from "./extensions";
 import { isUpdaterActive } from "./extensions/updater";
@@ -207,6 +207,8 @@ class Application {
   }
 
   private setupAppEvents(args: IParameters): void {
+    app.on("before-quit", () => markQuitting());
+
     app.on("window-all-closed", () => {
       log("info", "Vortex closing");
       finalizeMainWrite()
@@ -256,6 +258,7 @@ class Application {
       // GPU/utility crashes never reach the JS error handlers
       if (
         !["clean-exit", "killed"].includes(details.reason) &&
+        !isQuitting() &&
         isReportableExit(details.exitCode) &&
         this.allowProcessGoneReport(`${details.type}:${details.reason}:${details.exitCode}`)
       ) {

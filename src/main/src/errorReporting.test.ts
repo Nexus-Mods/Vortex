@@ -32,7 +32,7 @@ describe("errorToReportableError", () => {
 });
 
 describe("isReportableExit", () => {
-  it("skips processes torn down by a Windows logoff", () => {
+  it("skips helpers that failed to start during a Windows logoff", () => {
     expect(isReportableExit(-1073741205)).toBe(false);
   });
 
