@@ -6,7 +6,7 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
-import { terminate, terminateAsync } from "./errorHandling";
+import { isQuitting, terminate, terminateAsync } from "./errorHandling";
 import { reportCrash } from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
@@ -181,6 +181,11 @@ class MainWindow {
           exitCode: details.exitCode,
           reason: details.reason,
         });
+
+        // a renderer lost while quitting isn't worth reviving or reporting
+        if (isQuitting()) {
+          return;
+        }
 
         // hard renderer crashes never reach the JS error handlers, so this
         // is the only place they can be reported

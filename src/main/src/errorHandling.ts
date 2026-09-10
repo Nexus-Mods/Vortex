@@ -11,6 +11,17 @@ import {
 import { log } from "./logging";
 import { isTelemetryEnabled } from "./telemetry/state";
 
+let quitting = false;
+
+/** Set once the app has started shutting down, so process-gone handlers stop reviving and reporting. */
+export function markQuitting(): void {
+  quitting = true;
+}
+
+export function isQuitting(): boolean {
+  return quitting;
+}
+
 /** Terminates the applpication on an error */
 export function terminate(error: Error): void {
   terminateAsync(error).catch(() => {
