@@ -503,8 +503,9 @@ class GameModeManager {
   }
 
   private onDiscoveredTool = (gameId: string, result: IDiscoveredTool) => {
+    const state = this.mStore.getState();
     const existing = getSafe(
-      this.mStore.getState(),
+      state,
       ["settings", "gameMode", "discovered", gameId, "tools", result.id],
       undefined,
     );
@@ -512,6 +513,20 @@ class GameModeManager {
     if (existing === undefined || !existing.custom) {
       delete result.executable;
       this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result, false));
+    }
+    // Tool discovery also runs after deployment and on an already-active game. Previously the
+    // default was selected only during the narrow game-activation path, so a script extender that
+    // appeared later was shown in Tools but Quick Launch kept starting the vanilla executable.
+    // Select any game's declared default as soon as it becomes available, while preserving every
+    // explicit user choice.
+    const active = activeProfile(this.mStore.getState());
+    const primary = getSafe(
+      this.mStore.getState(),
+      ["settings", "interface", "primaryTool", gameId],
+      undefined,
+    );
+    if (active?.gameId === gameId && primary === undefined && result.defaultPrimary === true) {
+      this.mStore.dispatch(setPrimaryTool(gameId, result.id));
     }
   };
 
