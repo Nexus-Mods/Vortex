@@ -1,8 +1,7 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import type PromiseBB from "bluebird";
 import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
-import React, { type ComponentClass, useCallback, useMemo, useRef, useState } from "react";
+import React, { type ComponentClass, useMemo, useRef, useState } from "react";
 import type { WithTranslation } from "react-i18next";
 
 import type { IAvailableExtension } from "@/types/extensions";
@@ -55,8 +54,8 @@ interface IBaseProps {
   active?: boolean;
   pageId?: string;
   secondary?: boolean;
-  onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
-  onBrowseGameLocation: (gameId: string) => PromiseBB<void>;
+  onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
+  onBrowseGameLocation: (gameId: string) => PromiseLike<void>;
   nexusGames: IGameListEntry[];
 }
 
@@ -375,10 +374,7 @@ const GamePicker = ({
               />
             ) : (
               <GamesGrid
-                discoveredGames={discoveredGames}
-                gameMode={gameMode}
                 games={filteredManaged}
-                t={t}
                 type="managed"
                 onRefreshGameInfo={onRefreshGameInfo}
               />
@@ -430,10 +426,7 @@ const GamePicker = ({
                 />
               ) : (
                 <GamesGrid
-                  discoveredGames={discoveredGames}
-                  gameMode={gameMode}
                   games={pagedUnmanaged}
-                  t={t}
                   type="unmanaged"
                   onRefreshGameInfo={onRefreshGameInfo}
                 />
