@@ -146,7 +146,7 @@ export const fileRequirementsHealthCheck: IHealthCheck = {
   ],
   check: async (api: IExtensionApi, signal?: AbortSignal): Promise<IHealthCheckResult> => {
     // Reading the flag through FlagService reports an evaluation metric to the server.
-    const flagEnabled = FlagService.instance.getFlag(FILE_REQUIREMENTS_FLAG) !== undefined;
+    const flagEnabled = FlagService.instance?.getFlag(FILE_REQUIREMENTS_FLAG) !== undefined;
     if (!flagEnabled || !isFileRequirementsUserEnabled(api.getState())) {
       return {
         checkId: FILE_REQUIREMENTS_CHECK_ID,
