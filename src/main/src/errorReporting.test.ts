@@ -5,7 +5,7 @@ vi.mock("electron", () => ({ app: { getPath: vi.fn(), getVersion: vi.fn() } }));
 vi.mock("./logging", () => ({ log: vi.fn() }));
 vi.mock("./minidump", () => ({ summarizeMinidumpFile: vi.fn() }));
 
-import { crashFingerprint, errorToReportableError } from "./errorReporting";
+import { crashFingerprint, errorToReportableError, isFromCurrentBuild } from "./errorReporting";
 
 describe("errorToReportableError", () => {
   it("renders a VortexError's payload fields legibly in details", () => {
@@ -80,5 +80,20 @@ describe("crashFingerprint", () => {
     const withVersion = (version: string) =>
       crashFingerprint(version, "EarlyCrash", { message: "boom" }, {});
     expect(withVersion("2.7.0")).not.toBe(withVersion("2.7.1"));
+  });
+});
+
+describe("isFromCurrentBuild", () => {
+  it("keeps only dumps written by the running version", () => {
+    expect(isFromCurrentBuild("2.6.3", "2.6.3", 0, 100)).toBe(true);
+    expect(isFromCurrentBuild("2.7.0-beta.2", "2.7.0-beta.2", 0, 100)).toBe(true);
+    expect(isFromCurrentBuild("2.7.0-beta.1", "2.7.0-beta.2", 200, 100)).toBe(false);
+    expect(isFromCurrentBuild("2.0.2", "2.6.3", 200, 100)).toBe(false);
+  });
+
+  it("falls back to the install time for unreadable dumps", () => {
+    expect(isFromCurrentBuild(undefined, "2.6.3", 50, 100)).toBe(false);
+    expect(isFromCurrentBuild(undefined, "2.6.3", 150, 100)).toBe(true);
+    expect(isFromCurrentBuild(undefined, "2.6.3", 50, undefined)).toBe(true);
   });
 });
