@@ -503,9 +503,8 @@ class GameModeManager {
   }
 
   private onDiscoveredTool = (gameId: string, result: IDiscoveredTool) => {
-    const state = this.mStore.getState();
     const existing = getSafe(
-      state,
+      this.mStore.getState(),
       ["settings", "gameMode", "discovered", gameId, "tools", result.id],
       undefined,
     );
@@ -519,12 +518,9 @@ class GameModeManager {
     // appeared later was shown in Tools but Quick Launch kept starting the vanilla executable.
     // Select any game's declared default as soon as it becomes available, while preserving every
     // explicit user choice.
-    const active = activeProfile(this.mStore.getState());
-    const primary = getSafe(
-      this.mStore.getState(),
-      ["settings", "interface", "primaryTool", gameId],
-      undefined,
-    );
+    const state = this.mStore.getState();
+    const active = activeProfile(state);
+    const primary = state.settings.interface.primaryTool?.[gameId];
     if (active?.gameId === gameId && primary === undefined && result.defaultPrimary === true) {
       this.mStore.dispatch(setPrimaryTool(gameId, result.id));
     }
