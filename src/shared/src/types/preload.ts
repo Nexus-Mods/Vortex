@@ -1,5 +1,4 @@
-import type { FileSystem } from "@nexusmods/adaptor-api/fs";
-
+import type { FileSystem } from "../fs/filesystem";
 import type { SerializedSpan } from "../telemetry/types";
 import type {
   BrowserViewConstructorOptions,

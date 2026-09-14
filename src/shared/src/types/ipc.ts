@@ -2,9 +2,8 @@
 // Everything in here is compile-time only, meaning the interfaces you find here
 // are never used to create an object. They are only used for type inferrence.
 
-import type { FileSystem } from "@nexusmods/adaptor-api/fs";
-
 import type { SerializedVortexError } from "../errors/serialization";
+import type { FileSystem } from "../fs/filesystem";
 import type { SerializedSpan } from "../telemetry/types";
 import type { DownloadCheckpoint, DownloadProgress, DownloadStatus } from "./download";
 import type {

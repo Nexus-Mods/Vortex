@@ -7,12 +7,12 @@ import type {
   ResolvedPath,
   WindowsPathBase,
   WindowsPathProvider,
-} from "@nexusmods/adaptor-api/fs";
+} from "@vortex/shared/filesystem";
 import {
   PathProviderError,
   PathResolverError,
   QualifiedPath as QP,
-} from "@nexusmods/adaptor-api/fs";
+} from "@vortex/shared/filesystem";
 
 /**
  * Node-backed implementation of {@link WindowsPathProvider}.

@@ -259,10 +259,10 @@ catalog:
   typescript-eslint: 8.62.1
   universal-analytics: 0.4.23
   uuid: 3.4.0
-  vite: 8.1.3
   vite-plugin-doctest: 2.0.0
-  vitest: 4.1.9
+  vite: 8.1.3
   vitest-fetch-mock: 0.4.5
+  vitest: 4.1.9
   vortex-parse-ini: github:Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
   webpack: 5.108.4
   webpack-cli: 7.2.1

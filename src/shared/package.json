@@ -35,6 +35,11 @@
       "import": "./dist/errors.js",
       "require": "./dist/errors.cjs"
     },
+    "./filesystem": {
+      "development": "./src/api/filesystem.ts",
+      "import": "./dist/filesystem.js",
+      "require": "./dist/filesystem.cjs"
+    },
     "./flags": {
       "development": "./src/api/flags.ts",
       "import": "./dist/flags.js",
@@ -63,7 +68,6 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@nexusmods/adaptor-api": "workspace:*",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/resources": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
@@ -71,6 +75,9 @@
   },
   "peerDependencies": {
     "@opentelemetry/api": "catalog:"
+  },
+  "devDependencies": {
+    "vite-plugin-doctest": "catalog:"
   },
   "publishConfig": {
     "exports": {
@@ -89,6 +96,10 @@
       "./errors": {
         "import": "./dist/errors.js",
         "require": "./dist/errors.cjs"
+      },
+      "./filesystem": {
+        "import": "./dist/filesystem.js",
+        "require": "./dist/filesystem.cjs"
       },
       "./flags": {
         "import": "./dist/flags.js",

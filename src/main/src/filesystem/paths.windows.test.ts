@@ -1,6 +1,6 @@
 import { homedir, tmpdir } from "node:os";
 
-import { PathProviderError, PathResolverError, QualifiedPath } from "@nexusmods/adaptor-api/fs";
+import { PathProviderError, PathResolverError, QualifiedPath } from "@vortex/shared/filesystem";
 import { describe, expect, it } from "vitest";
 
 import { WindowsPathProviderImpl } from "./paths.windows";

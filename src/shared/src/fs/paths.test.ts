@@ -17,7 +17,7 @@ describe("QualifiedPath.parse", () => {
   });
 
   it.each([["no-separator"], ["foo/bar/baz"]])('throws on invalid input "%s"', (input) => {
-    expect(() => QualifiedPath.parse(input)).toThrow();
+    expect(() => QualifiedPath.parse(input)).toThrow(Error);
   });
 });
 
