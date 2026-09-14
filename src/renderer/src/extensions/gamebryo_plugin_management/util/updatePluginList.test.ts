@@ -1,16 +1,19 @@
 import * as path from "node:path";
 
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 
-import { startActivity, stopActivity } from "../../actions/session";
-import { makeMod, makePlugin } from "../../test-utils/builders";
-import { seedPluginDir, test, type IGamebryoFixtures } from "../../test-utils/gamebryoTest";
-import { makeTempDir } from "../../test-utils/tempDir";
-import { setDeploymentNecessary } from "../mod_management/actions/deployment";
-import type { IMod } from "../mod_management/types/IMod";
-import { setPluginList } from "./actions/plugins";
-import { updatePluginList } from "./index";
-import { initGameSupport } from "./util/gameSupport";
+import { startActivity, stopActivity } from "../../../actions/session";
+import { makeMod, makePlugin } from "../../../test-utils/builders";
+import { seedPluginDir, test, type IGamebryoFixtures } from "../../../test-utils/gamebryoTest";
+import { makeTempDir } from "../../../test-utils/tempDir";
+import type { ThunkStore } from "../../../types/IExtensionContext";
+import { setDeploymentNecessary } from "../../mod_management/actions/deployment";
+import type { IMod } from "../../mod_management/types/IMod";
+import { setPluginList } from "../actions/plugins";
+import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
+import { initGameSupport } from "./gameSupport";
+import type PluginPersistor from "./PluginPersistor";
+import { makeUpdatePluginList } from "./updatePluginList";
 
 interface IScenario {
   // plugin files staged per mod (the mod id doubles as its staging folder name); null seeds the
@@ -52,11 +55,16 @@ async function arrange(makeGamebryo: IGamebryoFixtures["makeGamebryo"], spec: IS
   const modList = Object.fromEntries(
     Object.keys(mods).map((modId) => [modId, { enabled: !(spec.disabled ?? []).includes(modId) }]),
   );
+  const persistor = { setKnownPlugins: vi.fn<PluginPersistor["setKnownPlugins"]>() };
+  const updatePluginList = makeUpdatePluginList(() => persistor);
+  // the fake api types its store loosely; the scan reads the gamebryo hives off it
+  const store = harness.api.store as ThunkStore<IStateWithGamebryo>;
   return {
     harness,
     dataPath,
-    // the scan under test, against the seeded mods and the harness game
-    scan: () => updatePluginList(harness.api.store, modList, harness.gameId),
+    persistor,
+    // the scan under test
+    scan: () => updatePluginList(store, modList, harness.gameId),
   };
 }
 
@@ -168,6 +176,61 @@ describe("updatePluginList", () => {
 
     await scan();
 
+    expect(harness.dispatched).toContainEqual(startActivity("plugins", "update-plugin-list"));
+    expect(harness.dispatched).toContainEqual(stopActivity("plugins", "update-plugin-list"));
+  });
+
+  // the persistor writes the values (on-disk spelling) into plugins.txt, keyed by lowercased id
+  test("hands the persistor the known plugins by id with their on-disk names", async ({
+    makeGamebryo,
+  }) => {
+    const { persistor, scan } = await arrange(makeGamebryo, {
+      staged: { modX: ["SnowFix.ESP"] },
+      deployed: ["Vanilla.esm"],
+    });
+
+    await scan();
+
+    expect(persistor.setKnownPlugins).toHaveBeenCalledWith(
+      { "snowfix.esp": "SnowFix.ESP", "vanilla.esm": "Vanilla.esm" },
+      undefined,
+    );
+  });
+
+  test("marks the game's own plugins as native", async ({ makeGamebryo }) => {
+    const { harness, scan } = await arrange(makeGamebryo, {
+      staged: {},
+      deployed: ["Skyrim.esm", "Mod.esp"],
+    });
+
+    await scan();
+
+    expect(harness.pluginList()["skyrim.esm"].isNative).toBe(true);
+    expect(harness.pluginList()["mod.esp"].isNative).toBe(false);
+  });
+
+  test("settles and closes the activity when the persistor rejects the handoff", async ({
+    makeGamebryo,
+  }) => {
+    const { harness, persistor, scan } = await arrange(makeGamebryo, {
+      staged: { modX: ["One.esp"] },
+    });
+    persistor.setKnownPlugins.mockImplementation(() => {
+      throw new Error("plugins.txt is locked");
+    });
+
+    await expect(scan()).resolves.toBeUndefined();
+
+    expect(harness.dispatched).toContainEqual(stopActivity("plugins", "update-plugin-list"));
+  });
+
+  test("does nothing for a game that is not discovered", async ({ makeGamebryo }) => {
+    const harness = makeGamebryo();
+    const updatePluginList = makeUpdatePluginList(() => undefined);
+
+    await updatePluginList(harness.api.store as ThunkStore<IStateWithGamebryo>, {}, harness.gameId);
+
+    expect(harness.pluginList()).toEqual({});
     expect(harness.dispatched).toContainEqual(startActivity("plugins", "update-plugin-list"));
     expect(harness.dispatched).toContainEqual(stopActivity("plugins", "update-plugin-list"));
   });
