@@ -302,7 +302,7 @@ function withActivity<T>(
   });
 }
 
-function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameId: string) {
+export function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameId: string) {
   return withActivity(store, "plugins", "update-plugin-list", () =>
     updatePluginListImpl(store, newModList, gameId),
   );
