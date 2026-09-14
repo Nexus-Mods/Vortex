@@ -49,6 +49,7 @@ import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type { ICycleEdge, ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
 import type { IPlugin, IPluginLoot } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import { getGame } from "../extensions/gamemode_management/util/getGame";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type {
   HealthCheckId,
@@ -494,6 +495,13 @@ export function makeInstallState(
   };
 }
 
+/** Set or clear the active collection-install session on a harness store. */
+export function setCollectionSession(harness: IApiHarness, active: boolean): void {
+  harness.setState((draft) => {
+    draft.session.collections.activeSession = active ? makeSession() : undefined;
+  });
+}
+
 /**
  * Assemble a session's `mods` map from a compact list, keyed by an explicit ruleId.
  * Saves tests from spelling out a full ICollectionModInstallInfo per member mod.
@@ -661,6 +669,7 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
     activeProfileId: undefined,
     lastActiveProfile: {},
     installPath: {},
+    discovered: {},
     ...overrides,
   };
   // a structurally-partial IState holding only the slices the driver reads; the single cast
@@ -686,8 +695,8 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       // download path pattern so downloadPathForGame resolves a concrete per-game folder
       downloads: { collectionsInstallWhileDownloading: false, path: "{USERDATA}\\downloads" },
       interface: { language: "en", foregroundDL: false },
-      gameMode: { discovered: {} },
-      mods: { installPath: slices.installPath },
+      gameMode: { discovered: slices.discovered },
+      mods: { installPath: slices.installPath, activator: {} },
       profiles: {
         activeProfileId: slices.activeProfileId,
         nextProfileId: undefined,
@@ -938,8 +947,16 @@ export function makeApiHarness(
 }
 
 /**
- * A fake api seeded with an active profile on a game (active + last-active set in state) and the
- * game's installed mods: the shared base the game-scoped domain harnesses build on.
+ * The staging folder a harness seeds for a game
+ */
+export function harnessStagingPath(gameId: string): string {
+  return path.join(os.tmpdir(), "vortex-staging", gameId);
+}
+
+/**
+ * A fake api seeded with an active profile on a game (active + last-active set in state), the
+ * game's installed mods and its staging folder: the shared base the game-scoped domain harnesses
+ * build on.
  */
 export function makeGameHarness(
   opts: IGameHarnessOpts = {},
@@ -947,17 +964,22 @@ export function makeGameHarness(
 ): IGameHarness {
   const gameId = opts.gameId ?? "skyrimse";
   const profileId = opts.profileId ?? "profile-1";
+  const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
+  const gamePath = opts.gamePath;
+  registerHarnessGame(gameId);
   const base = makeApiHarness(
     {
       profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
       mods: { [gameId]: opts.mods ?? {} },
       activeProfileId: profileId,
       lastActiveProfile: { [gameId]: profileId },
-      installPath: opts.installPath ?? {},
+      installPath: { ...opts.installPath, [gameId]: stagingPath },
+      discovered: gamePath !== undefined ? { [gameId]: { path: gamePath } } : {},
     },
     extraReducers,
   );
-  return { ...base, gameId, profileId };
+  const dataPath = gamePath !== undefined ? getGame(gameId).getModPaths(gamePath)[""] : undefined;
+  return { ...base, gameId, profileId, stagingPath, dataPath };
 }
 
 /**
@@ -1026,8 +1048,11 @@ export function makeInstallManagerHarness(
   gameId = "skyrimse",
 ): IInstallManagerHarness {
   registerHarnessGame(gameId);
-  const base = makeApiHarness({ installPath: { [gameId]: `C:/staging/${gameId}` }, ...overrides });
-  const manager = new ManagerCtor(base.api, (gid: string) => `C:/staging/${gid}`);
+  const base = makeApiHarness({
+    installPath: { [gameId]: harnessStagingPath(gameId) },
+    ...overrides,
+  });
+  const manager = new ManagerCtor(base.api, harnessStagingPath);
   // single seam: reach the manager's private phase map once here so suites get a typed handle
   // instead of casting the manager per test
   const phaseTracker = (manager as unknown as { mPhaseTracker: InstallPhaseTracker }).mPhaseTracker;

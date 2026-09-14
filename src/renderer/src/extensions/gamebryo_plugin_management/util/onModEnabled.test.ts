@@ -1,6 +1,6 @@
 import { describe, expect, vi } from "vitest";
 
-import { makeMod, makeSession } from "../../../test-utils/builders";
+import { makeMod, setCollectionSession } from "../../../test-utils/builders";
 import { test, type IGamebryoFixtures } from "../../../test-utils/gamebryoTest";
 import type { IGamebryoHarness } from "../../../test-utils/harnessTypes";
 import type * as fsModule from "../../../util/fs";
@@ -32,12 +32,6 @@ function arrange(
   const harness = makeGamebryo({ mods: { [mod.id]: mod } });
   readdirAsyncMock.mockResolvedValue(pluginFiles);
   return harness;
-}
-
-function setCollectionSession(harness: IGamebryoHarness, active: boolean): void {
-  harness.setState((draft) => {
-    draft.session.collections.activeSession = active ? makeSession() : undefined;
-  });
 }
 
 describe("handleModEnabled", () => {

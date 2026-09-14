@@ -1,5 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import * as os from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
 import { onTestFinished, vi } from "vitest";
@@ -23,6 +22,7 @@ import type {
   ILootHarness,
   ILootHarnessOpts,
 } from "./harnessTypes";
+import { makeTempDir } from "./tempDir";
 
 const asGamebryo = (state: IState): IStateWithGamebryo => state as IStateWithGamebryo;
 
@@ -42,13 +42,27 @@ const GAMEBRYO_BINDINGS: IHarnessReducerBinding[] = [...REDUCER_BINDINGS, ...COR
  * reducers.
  */
 export function makeGamebryoHarness(opts: IGamebryoHarnessOpts = {}): IGamebryoHarness {
-  // seed a staging folder so the real installPath selector resolves a concrete path
-  const gameId = opts.gameId ?? "skyrimse";
-  const base = makeGameHarness(
-    { installPath: { [gameId]: `C:/staging/${gameId}` }, ...opts },
-    GAMEBRYO_BINDINGS,
-  );
-  return { ...base, getGamebryoState: () => asGamebryo(base.getState()) };
+  const base = makeGameHarness(opts, GAMEBRYO_BINDINGS);
+  const getGamebryoState = () => asGamebryo(base.getState());
+  return {
+    ...base,
+    getGamebryoState,
+    pluginList: () => getGamebryoState().session.plugins.pluginList,
+  };
+}
+
+/** Write a stub plugin file (the scans only stat it or sniff its magic) and return its path. */
+export async function writePluginFile(dir: string, name: string): Promise<string> {
+  const filePath = path.join(dir, name);
+  await writeFile(filePath, "TES4");
+  return filePath;
+}
+
+/** Create a directory holding stub plugin files with the given names; returns the directory. */
+export async function seedPluginDir(dir: string, names: string[]): Promise<string> {
+  await mkdir(dir, { recursive: true });
+  await Promise.all(names.map((name) => writePluginFile(dir, name)));
+  return dir;
 }
 
 /**
@@ -67,10 +81,9 @@ export async function makeLootHarness(
   const { initError, invalidPlugins, ...gamebryoOpts } = opts;
   const gameId = gamebryoOpts.gameId ?? "skyrimse";
 
-  const tempDir = await mkdtemp(path.join(os.tmpdir(), "vortex-loot-"));
-  onTestFinished(async () => {
+  const tempDir = await makeTempDir("vortex-loot-");
+  onTestFinished(() => {
     seams.loot = undefined;
-    await rm(tempDir, { recursive: true, force: true });
   });
   seams.base = tempDir;
   seams.gameId = gameId;
@@ -98,11 +111,7 @@ export async function makeLootHarness(
   // drop the init traffic (createAsync, one loadListsAsync, the masterlist download)
   vi.clearAllMocks();
 
-  const addPluginFile = async (name: string): Promise<string> => {
-    const filePath = path.join(pluginsDir, name);
-    await writeFile(filePath, "TES4");
-    return filePath;
-  };
+  const addPluginFile = (name: string): Promise<string> => writePluginFile(pluginsDir, name);
 
   return {
     ...base,
@@ -130,6 +139,9 @@ export async function makeLootHarness(
       new Promise((resolve) => {
         base.emit("plugin-details", gameId, plugins, (result: IPluginsLoot) => resolve(result));
       }),
+    restartHelpers: () => {
+      base.emit("restart-helpers");
+    },
   };
 }
 
