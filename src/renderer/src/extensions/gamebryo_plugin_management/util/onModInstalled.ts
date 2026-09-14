@@ -12,20 +12,18 @@ import { setPluginList } from "../actions/plugins";
 import type { IPlugins } from "../types/IPlugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { gameSupported, isNativePlugin } from "./gameSupport";
+import { selectPluginFiles } from "./isPlugin";
 import toPluginId from "./toPluginId";
 
 /**
  * When a mod is installed during a collection install, scan its staging folder for plugin files
  * and merge them into the real plugin list. This ensures FOMOD prerequisite checks in subsequent
  * installs can see plugins from earlier-phase mods that haven't been deployed yet.
- *
- * isPlugin is injected from the entry module, which owns the extension-wide plugin-file check.
  */
 export async function handleModInstalled(
   api: IExtensionApi,
   gameId: string,
   modId: string,
-  isPlugin: (filePath: string, fileName: string, gameMode: string) => PromiseLike<boolean>,
 ): Promise<void> {
   if (!gameSupported(gameId)) {
     return;
@@ -59,13 +57,7 @@ export async function handleModInstalled(
     const deployedNames = fileNames.map(
       (fileName) => activator?.getDeployedPath(fileName) ?? fileName,
     );
-    const pluginFileNames = (
-      await Promise.all(
-        deployedNames.map(async (fileName) =>
-          (await isPlugin(modInstPath, fileName, gameId)) ? fileName : undefined,
-        ),
-      )
-    ).filter((fileName): fileName is string => fileName !== undefined);
+    const pluginFileNames = await selectPluginFiles(modInstPath, deployedNames, gameId);
     if (pluginFileNames.length === 0) {
       return;
     }

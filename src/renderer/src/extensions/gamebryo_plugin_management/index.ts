@@ -4,14 +4,11 @@ import * as path from "path";
 import * as nodeUtil from "util";
 
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
-import { UserCanceled } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import type I18next from "i18next";
 import type * as Redux from "redux";
 import { createSelector } from "reselect";
 
-import { dismissNotification } from "../../actions/notifications";
-import { startActivity, stopActivity } from "../../actions/session";
 import { setAttributeFilter } from "../../actions/tables";
 import { log } from "../../logging";
 import ReduxProp from "../../ReduxProp";
@@ -20,22 +17,18 @@ import type {
   IErrorOptions,
   IExtensionApi,
   IExtensionContext,
-  ThunkStore,
 } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
-import { showError } from "../../util/message";
 import opn from "../../util/opn";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, delay, setdefault } from "../../util/util";
 import { currentGameDiscovery, discoveryByGame } from "../gamemode_management/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
-import { setDeploymentNecessary } from "../mod_management/actions/deployment";
 import { installPathForGame } from "../mod_management/selectors";
-import { getCurrentActivator } from "../mod_management/util/deploymentMethods";
 import {
   activeGameId,
   activeProfile,
@@ -64,7 +57,7 @@ import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
 import { ILOOTList, ILootReference } from "./types/ILOOTList";
 import { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
-import { IPlugin, IPluginCombined, IPlugins } from "./types/IPlugins";
+import { IPlugin, IPluginCombined } from "./types/IPlugins";
 import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import {
   gameDataPath,
@@ -72,7 +65,6 @@ import {
   getGameSupport,
   IGameSupport,
   initGameSupport,
-  isNativePlugin,
   minRevision,
   nativePlugins,
   pluginExtensions,
@@ -92,6 +84,7 @@ import { handleModInstalled } from "./util/onModInstalled";
 import PluginHistory from "./util/PluginHistory";
 import PluginPersistor from "./util/PluginPersistor";
 import toPluginId from "./util/toPluginId";
+import { makeUpdatePluginList } from "./util/updatePluginList";
 import UserlistPersistor from "./util/UserlistPersistor";
 import Connector from "./views/Connector";
 import GroupEditor from "./views/GroupEditor";
@@ -101,212 +94,6 @@ import Settings from "./views/Settings";
 import UserlistEditor from "./views/UserlistEditor";
 
 type TranslationFunction = typeof I18next.t;
-
-interface IModState {
-  enabled: boolean;
-}
-
-interface IModStates {
-  [modId: string]: IModState;
-}
-
-function isFile(fileName: string): Bluebird<boolean> {
-  return (
-    fs
-      .isDirectoryAsync(fileName)
-      .then((res) => !res)
-      // Given that this function runs asynchronously, Vortex may be creating/modifying
-      //  its temporary deployment files 'vortex.deployment.json.XXXXXX.tmp' in the background,
-      //  which may be removed by the time isDirectoryAsync finishes its operations,
-      //  throwing an ENOENT error.
-      //  This is an arguably acceptable scenario given that the .tmp file extension would've failed
-      //  the following isPlugin predicate anyway so we can just return false here.
-      .catch((err) =>
-        ["ENOENT", "UNKNOWN"].indexOf(err.code) !== -1
-          ? Bluebird.resolve(true)
-          : Bluebird.reject(err),
-      )
-  );
-}
-
-function isPlugin(filePath: string, fileName: string, gameMode: string): Bluebird<boolean> {
-  if (path.extname(fileName) === GHOST_EXT) {
-    fileName = path.basename(fileName, GHOST_EXT);
-  }
-
-  if (
-    !fileName ||
-    pluginExtensions(gameMode).indexOf(path.extname(path.basename(fileName)).toLowerCase()) === -1
-  ) {
-    return Bluebird.resolve(false);
-  }
-  return isFile(path.join(filePath, fileName)).catch(UserCanceled, () => false);
-}
-
-/**
- * updates the list of known plugins for the managed game
- */
-function updatePluginListImpl(
-  store: ThunkStore<any>,
-  newModList: IModStates,
-  gameId: string,
-): Bluebird<void> {
-  const state: IState = store.getState();
-
-  const pluginSources: { [pluginName: string]: string } = {};
-  const pluginStates: IPlugins = {};
-
-  const setPluginState = (basePath: string, fileName: string, deployed: boolean) => {
-    const modId = pluginSources[fileName] !== undefined ? pluginSources[fileName] : "";
-    const pluginId = toPluginId(fileName);
-    pluginStates[pluginId] = {
-      modId,
-      filePath: path.join(basePath, fileName),
-      isNative: isNativePlugin(gameId, fileName),
-      warnings: getSafe(state, ["session", "plugins", "pluginList", pluginId, "warnings"], {}),
-      deployed,
-    };
-    return Bluebird.resolve();
-  };
-
-  const discovery = discoveryByGame(state, gameId);
-  if (discovery === undefined || discovery.path === undefined) {
-    // paranoia, this shouldn't happen
-    return Bluebird.resolve();
-  }
-  const readErrors = [];
-
-  const gameMods = state.persistent.mods[gameId] || {};
-  const game = getGame(gameId);
-  if (game === undefined) {
-    // we may get here if the active game is no longer supported due to
-    // the extension being disabled.
-    return Bluebird.resolve();
-  }
-
-  const modType = game.details?.dataModType || "";
-  const modPath = game.getModPaths(discovery.path)[modType];
-
-  const enabledModIds = Object.keys(gameMods).filter((modId) =>
-    getSafe(newModList, [modId, "enabled"], false),
-  );
-
-  const activator = getCurrentActivator(state, gameId, true);
-
-  const installBasePath = installPathForGame(state, gameId);
-  // create a cache of all plugins that originate from a mod so we can assign
-  // the correct origin further down
-  return Bluebird.map(enabledModIds, (modId: string) => {
-    const mod = gameMods[modId];
-    if (mod === undefined || mod.installationPath === undefined) {
-      log("error", "mod not found", { gameId, modId });
-      return;
-    }
-    const isOverriden = (fileName: string) =>
-      (mod.fileOverrides ?? []).some((override) => path.basename(override) === fileName);
-    const modInstPath = path.join(installBasePath, mod.installationPath);
-    return fs
-      .readdirAsync(modInstPath)
-      .map((fileName) =>
-        activator !== undefined ? (activator as any).getDeployedPath(fileName) : fileName,
-      )
-      .filter((fileName: string) =>
-        isPlugin(modInstPath, fileName, gameId).then((res) =>
-          Bluebird.resolve(res && !isOverriden(fileName)),
-        ),
-      )
-      .each((fileName: string) => {
-        pluginSources[fileName] = mod.id;
-        return setPluginState(modInstPath, fileName, false);
-      })
-      .catch((err: Error) => {
-        readErrors.push(mod.id);
-        log("warn", "failed to read mod directory", {
-          path: mod.installationPath,
-          error: err.message,
-        });
-      });
-  })
-    .then(() => {
-      if (readErrors.length > 0) {
-        showError(
-          store.dispatch,
-          "Failed to read some mods",
-          "The following mods could not be searched (see log for details):\n" +
-            readErrors.map((error) => `"${error}"`).join("\n"),
-          { allowReport: false, id: "failed-to-read-mods" },
-        );
-      } else {
-        store.dispatch(dismissNotification("failed-to-read-mods"));
-      }
-
-      if (discovery === undefined) {
-        return Bluebird.resolve([]);
-      }
-      // if reading the mod directory fails that's probably a broken installation,
-      // but it's not the responsible of this extension to report that, the
-      // game mode management will notice this as well.
-      return fs.readdirAsync(modPath).catch((err) => []);
-    })
-    .then(async (fileNames: string[]) => {
-      return Bluebird.filter(fileNames, (val) => isPlugin(modPath, val, gameId))
-        .each((fileName: string) => setPluginState(modPath, fileName, true))
-        .then(async () => {
-          store.dispatch(setPluginList(pluginStates));
-          if (Object.keys(pluginStates).length > 0) {
-            const notDeployed = Object.keys(pluginStates).find(
-              (key) => !pluginStates[key].deployed,
-            );
-            if (notDeployed !== undefined) {
-              store.dispatch(setDeploymentNecessary(gameId, true));
-            }
-            const knownPlugins = Object.keys(pluginStates).reduce((prev, pluginId) => {
-              prev[pluginId] = path.basename(pluginStates[pluginId].filePath);
-              return prev;
-            }, {});
-            if (pluginPersistor !== undefined) {
-              let blueprintIds: Set<string> | undefined;
-              if (supportsBlueprintPlugins(gameId)) {
-                blueprintIds = new Set<string>();
-                for (const pluginId of Object.keys(pluginStates)) {
-                  try {
-                    const esp = await ESPFile.open(pluginStates[pluginId].filePath, gameId);
-                    if (esp.isBlueprint) {
-                      blueprintIds.add(pluginId);
-                    }
-                  } catch (err) {
-                    // parse failures are already reported elsewhere; skip
-                  }
-                }
-              }
-              pluginPersistor.setKnownPlugins(knownPlugins, blueprintIds);
-            }
-          }
-          return Bluebird.resolve();
-        });
-    })
-    .catch((err: Error) => {
-      showError(store.dispatch, "Failed to update plugin list", err);
-    });
-}
-
-function withActivity<T>(
-  store: Redux.Store<any>,
-  groupId: string,
-  activity: string,
-  cb: () => Bluebird<T>,
-): Bluebird<T> {
-  store.dispatch(startActivity(groupId, activity));
-  return cb().finally(() => {
-    store.dispatch(stopActivity(groupId, activity));
-  });
-}
-
-export function updatePluginList(store: Redux.Store<any>, newModList: IModStates, gameId: string) {
-  return withActivity(store, "plugins", "update-plugin-list", () =>
-    updatePluginListImpl(store, newModList, gameId),
-  );
-}
 
 function renamePlugin(
   api: IExtensionApi,
@@ -347,6 +134,8 @@ let masterlistPersistor: UserlistPersistor;
 let loot: LootInterface;
 let refreshTimer: NodeJS.Timeout;
 let deployWatcher: IDeployWatcher = { isDeploying: () => false };
+
+const updatePluginList = makeUpdatePluginList(() => pluginPersistor);
 
 function makeSetPluginGhost(api: IExtensionApi) {
   return (pluginId: string, gameMode: string, ghosted: boolean, enabled: boolean) => {
@@ -1659,7 +1448,7 @@ function onDidDeploy(api: IExtensionApi, profileId: string): Bluebird<void> {
   return discovery?.path != null &&
     profile?.gameId === currentGameId &&
     gameSupported(profile?.gameId)
-    ? updatePluginList(api.store, profile.modState, profile.gameId)
+    ? Bluebird.resolve(updatePluginList(api.store, profile.modState, profile.gameId))
         .then(
           () =>
             new Bluebird<void>((resolve) => {
@@ -1785,7 +1574,7 @@ function init(context: IExtensionContextExt) {
         context.api.events.on(
           "did-install-mod",
           (gameId: string, _archiveId: string, modId: string) => {
-            handleModInstalled(context.api, gameId, modId, isPlugin);
+            handleModInstalled(context.api, gameId, modId);
           },
         );
 
