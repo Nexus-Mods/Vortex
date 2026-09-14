@@ -47,7 +47,12 @@ import type { IDownload, IModInfo } from "../extensions/download_management/type
 import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type { ICycleEdge, ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
-import type { IPlugin, IPluginLoot } from "../extensions/gamebryo_plugin_management/types/IPlugins";
+import type {
+  IPlugin,
+  IPluginCombined,
+  IPluginLoot,
+} from "../extensions/gamebryo_plugin_management/types/IPlugins";
+import toPluginId from "../extensions/gamebryo_plugin_management/util/toPluginId";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
@@ -188,6 +193,30 @@ export function makePlugin(overrides: Partial<IPlugin> = {}): IPlugin {
     filePath: path.join(os.tmpdir(), "vortex-test-plugins", "One.esp"),
     isNative: false,
     deployed: true,
+    ...overrides,
+  };
+}
+
+/** A plugin row as the plugins table sees it: file, load order, header and LOOT data combined. */
+export function makePluginCombined(overrides: Partial<IPluginCombined> = {}): IPluginCombined {
+  const name = overrides.name ?? "One.esp";
+  return {
+    ...makePlugin(),
+    ...makePluginLoot(),
+    id: toPluginId(name),
+    name,
+    modIndex: 0,
+    enabled: true,
+    loadOrder: 0,
+    isMaster: false,
+    isLight: false,
+    isMedium: false,
+    isBlueprint: false,
+    parseFailed: false,
+    masterList: [],
+    author: "",
+    description: "",
+    revision: 0,
     ...overrides,
   };
 }

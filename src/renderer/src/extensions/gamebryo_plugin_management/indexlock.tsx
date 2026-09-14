@@ -9,6 +9,7 @@ import { activeGameId } from "../profile_management/selectors";
 import type { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
 import type { IPluginCombined } from "./types/IPlugins";
 import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
+import { lockedIndex } from "./util/lockedIndex";
 import LockIndex from "./views/LockIndex";
 
 export function genLockIndexAttribute(api: IExtensionApi): ITableAttribute<IPluginCombined> {
@@ -30,10 +31,8 @@ export function genLockIndexAttribute(api: IExtensionApi): ITableAttribute<IPlug
       <LockIndex plugin={plugin} gameMode={activeGameId(api.store.getState())} />
     ),
     calc: (plugin: IPluginCombined) => {
-      const state: IState = api.store.getState();
-      const gameMode = activeGameId(state);
-      const statePath = ["persistent", "plugins", "lockedIndices", gameMode, plugin.name];
-      return getSafe(state, statePath, undefined);
+      const state = api.getState<IStateWithGamebryo>();
+      return lockedIndex(state, activeGameId(state), plugin.id);
     },
     placement: "detail",
     isVolatile: true,

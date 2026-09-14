@@ -6,11 +6,11 @@ import type * as Redux from "redux";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
 import FlexLayout from "../../../controls/FlexLayout";
-import type { IState } from "../../../types/IState";
-import { getSafe } from "../../../util/storeHelper";
 import { lockPluginIndex } from "../actions/indexlock";
 import { NAMESPACE } from "../statics";
 import type { IPluginCombined } from "../types/IPlugins";
+import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
+import { lockedIndex } from "../util/lockedIndex";
 
 // look translations up in the extension namespace first, then the pre-fold extension's own
 // namespace so existing community translation packs keep working
@@ -37,7 +37,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onLockPluginIndex: (gameId: string, pluginName: string, modIndex: number) => void;
+  onLockPluginIndex: (gameId: string, pluginId: string, modIndex?: number) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -97,7 +97,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
 
   private onToggle = (newValue: boolean) => {
     const { gameMode, onLockPluginIndex, plugin } = this.props;
-    onLockPluginIndex(gameMode, plugin.name.toLowerCase(), newValue ? plugin.modIndex : undefined);
+    onLockPluginIndex(gameMode, plugin.id, newValue ? plugin.modIndex : undefined);
     this.forceUpdate();
   };
 
@@ -110,22 +110,13 @@ class LockIndex extends ComponentEx<IProps, {}> {
     const { gameMode, onLockPluginIndex, plugin } = this.props;
     const newValue = Number.parseInt(evt.currentTarget.value, 16);
     if (!isNaN(newValue) && newValue <= 0xff) {
-      onLockPluginIndex(gameMode, plugin.name.toLowerCase(), newValue);
+      onLockPluginIndex(gameMode, plugin.id, newValue);
     }
   };
 }
 
-function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
-  const statePath = [
-    "persistent",
-    "plugins",
-    "lockedIndices",
-    ownProps.gameMode,
-    ownProps.plugin.name.toLowerCase(),
-  ];
-  return {
-    lockedIndex: getSafe(state, statePath, undefined),
-  };
+function mapStateToProps(state: IStateWithGamebryo, ownProps: IBaseProps): IConnectedProps {
+  return { lockedIndex: lockedIndex(state, ownProps.gameMode, ownProps.plugin.id) };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
