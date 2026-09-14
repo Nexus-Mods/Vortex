@@ -494,6 +494,13 @@ export function makeInstallState(
   };
 }
 
+/** Set or clear the active collection-install session on a harness store. */
+export function setCollectionSession(harness: IApiHarness, active: boolean): void {
+  harness.setState((draft) => {
+    draft.session.collections.activeSession = active ? makeSession() : undefined;
+  });
+}
+
 /**
  * Assemble a session's `mods` map from a compact list, keyed by an explicit ruleId.
  * Saves tests from spelling out a full ICollectionModInstallInfo per member mod.
