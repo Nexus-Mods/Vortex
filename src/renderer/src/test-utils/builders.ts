@@ -49,6 +49,7 @@ import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type { ICycleEdge, ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
 import type { IPlugin, IPluginLoot } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
+import { getGame } from "../extensions/gamemode_management/util/getGame";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type {
   HealthCheckId,
@@ -668,6 +669,7 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
     activeProfileId: undefined,
     lastActiveProfile: {},
     installPath: {},
+    discovered: {},
     ...overrides,
   };
   // a structurally-partial IState holding only the slices the driver reads; the single cast
@@ -693,7 +695,7 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       // download path pattern so downloadPathForGame resolves a concrete per-game folder
       downloads: { collectionsInstallWhileDownloading: false, path: "{USERDATA}\\downloads" },
       interface: { language: "en", foregroundDL: false },
-      gameMode: { discovered: {} },
+      gameMode: { discovered: slices.discovered },
       mods: { installPath: slices.installPath, activator: {} },
       profiles: {
         activeProfileId: slices.activeProfileId,
@@ -962,8 +964,9 @@ export function makeGameHarness(
 ): IGameHarness {
   const gameId = opts.gameId ?? "skyrimse";
   const profileId = opts.profileId ?? "profile-1";
-  registerHarnessGame(gameId);
   const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
+  const gamePath = opts.gamePath;
+  registerHarnessGame(gameId);
   const base = makeApiHarness(
     {
       profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
@@ -971,10 +974,12 @@ export function makeGameHarness(
       activeProfileId: profileId,
       lastActiveProfile: { [gameId]: profileId },
       installPath: { ...opts.installPath, [gameId]: stagingPath },
+      discovered: gamePath !== undefined ? { [gameId]: { path: gamePath } } : {},
     },
     extraReducers,
   );
-  return { ...base, gameId, profileId, stagingPath };
+  const dataPath = gamePath !== undefined ? getGame(gameId).getModPaths(gamePath)[""] : undefined;
+  return { ...base, gameId, profileId, stagingPath, dataPath };
 }
 
 /**
