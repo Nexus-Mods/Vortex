@@ -2,7 +2,7 @@ import * as path from "node:path";
 
 import { describe, expect, vi } from "vitest";
 
-import { startActivity } from "../../actions/session";
+import { startActivity, stopActivity } from "../../actions/session";
 import { flushAsync } from "../../test-utils/async";
 import { makeProfile } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
@@ -39,16 +39,33 @@ describe("LootInterface autosort-plugins", () => {
     expect(harness.notifications).toEqual([]);
   });
 
-  // the desired contract from LAZ-1092: deployment relinks plugin files, so a sort started
-  // mid-deployment sees transient missing plugins; the implementation only defers on
-  // installing_dependencies. Expected-fail until the fix lands, which flips this to a plain test.
-  test.fails("defers sorting while a mod deployment is running", async ({ makeLoot }) => {
+  // deployment relinks plugin files, so a sort started mid-deployment sees transient missing plugins
+  test("defers sorting while a mod deployment is running and sorts once it ends", async ({
+    makeLoot,
+  }) => {
     const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
     harness.api.store.dispatch(startActivity("mods", "deployment"));
 
     await harness.sort(false);
-
     expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]));
+  });
+
+  test("runs a manual sort deferred behind a deployment even with auto-sort disabled", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(setAutoSortEnabled(false));
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+
+    await harness.sort(true);
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+
+    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(1));
   });
 
   test("skips sorting when not manual and autoSort is disabled", async ({ makeLoot }) => {
@@ -60,9 +77,7 @@ describe("LootInterface autosort-plugins", () => {
     expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
   });
 
-  // the desired contract from LAZ-1049: the implementation still toasts success on this skip
-  // path. Expected-fail until the fix lands, which flips this to a plain test.
-  test.fails("does not claim a successful sort when the autoSort gate skipped sorting", async ({
+  test("does not claim a successful sort when the autoSort gate skipped sorting", async ({
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);
