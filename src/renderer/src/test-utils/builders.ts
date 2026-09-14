@@ -962,6 +962,7 @@ export function makeGameHarness(
 ): IGameHarness {
   const gameId = opts.gameId ?? "skyrimse";
   const profileId = opts.profileId ?? "profile-1";
+  registerHarnessGame(gameId);
   const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
   const base = makeApiHarness(
     {

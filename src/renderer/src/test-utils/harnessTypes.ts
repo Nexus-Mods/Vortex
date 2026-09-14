@@ -16,6 +16,7 @@ import type LootInterface from "../extensions/gamebryo_plugin_management/autosor
 import type { ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
 import type {
   IPlugin,
+  IPlugins,
   IPluginsLoot,
 } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type { IStateWithGamebryo } from "../extensions/gamebryo_plugin_management/types/IStateWithGamebryo";
@@ -67,6 +68,8 @@ export interface IDriverHarnessState {
   lastActiveProfile: Record<string, string>;
   // staging folder per game, keyed by gameId (state.settings.mods.installPath)
   installPath: Record<string, string>;
+  // discovered game folders, keyed by gameId (state.settings.gameMode.discovered)
+  discovered: Record<string, { path: string }>;
 }
 
 export interface IApiHarness {
@@ -111,12 +114,16 @@ export interface IGameHarnessOpts {
   mods?: Record<string, IMod>;
   // staging folder per game, keyed by gameId (state.settings.mods.installPath)
   installPath?: Record<string, string>;
+  // the game's discovered install folder (state.settings.gameMode.discovered[gameId].path);
+  // undiscovered unless set
+  gamePath?: string;
 }
 
 export interface IGameHarness extends IApiHarness {
   gameId: string;
   profileId: string;
   stagingPath: string;
+  dataPath?: string;
 }
 
 /** What a file-based load order test arranges. */
@@ -136,6 +143,8 @@ export type IGamebryoHarnessOpts = IGameHarnessOpts;
 export interface IGamebryoHarness extends IGameHarness {
   // read the live fake state including the gamebryo hives
   getGamebryoState: () => IStateWithGamebryo;
+  // read the live session.plugins.pluginList hive
+  pluginList: () => IPlugins;
 }
 
 /**

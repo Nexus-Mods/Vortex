@@ -51,7 +51,7 @@ describe("handleModInstalled", () => {
 
     await handleModInstalled(harness.api, "skyrimse", "modX", isPlugin);
 
-    expect(harness.getGamebryoState().session.plugins.pluginList).toEqual({
+    expect(harness.pluginList()).toEqual({
       "one.esp": {
         modId: "modX",
         filePath: path.join(harness.stagingPath, "modX", "One.esp"),
@@ -71,7 +71,7 @@ describe("handleModInstalled", () => {
     await handleModInstalled(harness.api, "skyrimse", "modX", isPlugin);
 
     expect(readdirAsyncMock).not.toHaveBeenCalled();
-    expect(harness.getGamebryoState().session.plugins.pluginList).toEqual({});
+    expect(harness.pluginList()).toEqual({});
   });
 
   test("leaves the plugin list untouched for a mod without a staging folder", async ({
@@ -82,7 +82,7 @@ describe("handleModInstalled", () => {
     await handleModInstalled(harness.api, "skyrimse", "unknown-mod", isPlugin);
 
     expect(readdirAsyncMock).not.toHaveBeenCalled();
-    expect(harness.getGamebryoState().session.plugins.pluginList).toEqual({});
+    expect(harness.pluginList()).toEqual({});
   });
 
   test("keeps existing plugin entries over staged duplicates", async ({ makeGamebryo }) => {
@@ -93,7 +93,7 @@ describe("handleModInstalled", () => {
 
     await handleModInstalled(harness.api, "skyrimse", "modX", isPlugin);
 
-    const pluginList = harness.getGamebryoState().session.plugins.pluginList;
+    const pluginList = harness.pluginList();
     expect(pluginList["one.esp"]).toEqual(existing);
     expect(pluginList["two.esp"]).toEqual(expect.objectContaining({ modId: "modX" }));
   });
@@ -108,7 +108,7 @@ describe("handleModInstalled", () => {
 
     await handleModInstalled(harness.api, "skyrimse", "modX", isPlugin);
 
-    expect(harness.getGamebryoState().session.plugins.pluginList).toEqual({
+    expect(harness.pluginList()).toEqual({
       "one.esp": existing,
     });
   });
