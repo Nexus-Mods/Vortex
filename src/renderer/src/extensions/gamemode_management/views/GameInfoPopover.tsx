@@ -1,4 +1,3 @@
-import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as React from "react";
 
@@ -13,7 +12,7 @@ import type { IGameStored } from "../types/IGameStored";
 export interface IBaseProps {
   t: TFunction;
   game: IGameStored;
-  onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
+  onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
   /**
    * Only for a host that has to reposition itself when the info arrives. The
    * design-system popover follows its own content, so it doesn't pass one.

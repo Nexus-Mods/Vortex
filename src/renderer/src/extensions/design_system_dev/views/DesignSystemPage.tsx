@@ -15,6 +15,7 @@ import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
 import { InputDemo } from "@/ui/components/form/input/Input.demo";
 import { SelectDemo } from "@/ui/components/form/select/Select.demo";
 import { SwitchDemo } from "@/ui/components/form/switch/Switch.demo";
+import { GameTileDemo } from "@/ui/components/game_tile/GameTile.demo";
 import { IconDemo } from "@/ui/components/icon/Icon.demo";
 import { ImageDemo } from "@/ui/components/image/Image.demo";
 import { ListingDemo } from "@/ui/components/listing/Listing.demo";
@@ -82,6 +83,7 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
             <TabButton name="Table" panelId="table" />
 
             <TabButton name="Collection Tile" panelId="collection-tile" />
+            <TabButton name="Game Tile" panelId="game-tile" />
 
             <TabButton name="Toolbar" panelId="toolbar" />
 
@@ -239,6 +241,10 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
 
             <TabPanel id="collection-tile">
               <CollectionTileDemo api={api} />
+            </TabPanel>
+
+            <TabPanel id="game-tile">
+              <GameTileDemo />
             </TabPanel>
 
             <TabPanel id="toolbar">
