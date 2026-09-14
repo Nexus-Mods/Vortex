@@ -56,6 +56,7 @@ import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
 import { testIncompatibleArchives } from "./archiveCheck";
 import LootInterface from "./autosort";
+import { startDeployWatcher, type IDeployWatcher } from "./deployWatcher";
 import { ESPFile } from "./esp/ESPFile";
 import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
 import { REDUCER_BINDINGS } from "./reducers/bindings";
@@ -344,7 +345,7 @@ let userlistPersistor: UserlistPersistor;
 let masterlistPersistor: UserlistPersistor;
 let loot: LootInterface;
 let refreshTimer: NodeJS.Timeout;
-let deploying = false;
+let deployWatcher: IDeployWatcher = { isDeploying: () => false };
 
 function makeSetPluginGhost(api: IExtensionApi) {
   return (pluginId: string, gameMode: string, ghosted: boolean, enabled: boolean) => {
@@ -936,7 +937,7 @@ function startSync(api: IExtensionApi): Bluebird<void> {
           return;
         }
 
-        if (deploying) {
+        if (deployWatcher.isDeploying()) {
           // during deployment we expect plugins to be added constantly so don't autosort now,
           // it has to be triggered upon finishing deployment
           return;
@@ -1793,11 +1794,13 @@ function init(context: IExtensionContextExt) {
 
         loot = new LootInterface(context.api);
 
+        deployWatcher = startDeployWatcher(context.api, (profileId) =>
+          onDidDeploy(context.api, profileId),
+        );
+
         // folded gamebryo-plugin-indexlock wiring; only attaches listeners, no ordering
         // dependency within this block
-        onceIndexLock(context.api, () => deploying);
-
-        let pluginsChangedQueued = false;
+        onceIndexLock(context.api, deployWatcher.isDeploying);
 
         context.api.events.on(
           "will-install-dependencies",
@@ -1892,11 +1895,6 @@ function init(context: IExtensionContextExt) {
           },
         );
 
-        context.api.onAsync("will-deploy", () => {
-          deploying = true;
-          return Bluebird.resolve();
-        });
-
         context.api.events.on(
           "collection-postprocess-complete",
           (gameId: string, collectionModId: string) => {
@@ -1921,41 +1919,6 @@ function init(context: IExtensionContextExt) {
             flushed.then(() => onDidDeploy(context.api, profileId));
           },
         );
-
-        // this handles the case that the content of a profile changes
-        context.api.onAsync(
-          "did-deploy",
-          (
-            profileId: string,
-            deployment,
-            progressCB,
-            deployOptions?: { isCollectionPostprocessCall?: boolean },
-          ) => {
-            deploying = false;
-            if (pluginsChangedQueued) {
-              pluginsChangedQueued = false;
-              context.api.events.emit("trigger-test-run", "plugins-changed", 500);
-            }
-            const activeCollection = getCollectionActiveSession(context.api.getState());
-            if (activeCollection || deployOptions?.isCollectionPostprocessCall) {
-              // handled in 'collection-postprocess-complete' event
-              return Bluebird.resolve();
-            }
-            return onDidDeploy(context.api, profileId);
-          },
-        );
-
-        context.api.onAsync("did-purge", (profileId: string) => {
-          return onDidDeploy(context.api, profileId);
-        });
-
-        context.api.onStateChange(["loadOrder"], () => {
-          if (deploying) {
-            pluginsChangedQueued = true;
-          } else {
-            context.api.events.emit("trigger-test-run", "plugins-changed", 500);
-          }
-        });
 
         context.api.onStateChange(["settings", "gameMode", "discovered"], (previous, current) => {
           initGameSupport(context.api).then(() => null);
