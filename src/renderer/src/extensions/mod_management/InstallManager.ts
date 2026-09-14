@@ -78,6 +78,7 @@ import type { ICollectionModInstallInfo } from "../../types/collections/ICollect
 import type { ICheckbox, IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import type { IProfile, IState } from "../../types/IState";
+import { withActivityTracking } from "../../util/activity";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import calculateFolderSize from "../../util/calculateFolderSize";
 import {
@@ -326,18 +327,6 @@ function getReadyDownloadId(
 
 function getModsByPhase(allMods: any[], phase: number): any[] {
   return allMods.filter((mod: any) => (mod.phase ?? 0) === phase);
-}
-
-function withActivityTracking<T>(
-  api: IExtensionApi,
-  activityType: string,
-  activityId: string,
-  promise: PromiseLike<T>,
-): Promise<T> {
-  api.store.dispatch(startActivity(activityType, activityId));
-  return Promise.resolve(promise).finally(() => {
-    api.store.dispatch(stopActivity(activityType, activityId));
-  });
 }
 
 function findCollectionByDownload(
@@ -617,7 +606,7 @@ class InstallManager {
 
         if (recommended) {
           return withActivityTracking(
-            api,
+            api.store.dispatch,
             "installing_dependencies",
             dependentId,
             this.withDependenciesContext("install-recommendations", profile.id, () =>
@@ -635,7 +624,7 @@ class InstallManager {
           );
         } else {
           return withActivityTracking(
-            api,
+            api.store.dispatch,
             "installing_dependencies",
             dependentId,
             this.withDependenciesContext("install-collections", profile.id, () =>
@@ -2200,7 +2189,7 @@ class InstallManager {
     );
 
     return withActivityTracking(
-      api,
+      api.store.dispatch,
       "installing_dependencies",
       mod.id,
       this.withDependenciesContext("install-dependencies", profile.id, () =>
@@ -2242,7 +2231,7 @@ class InstallManager {
     log("info", "start installing recommendations", { modId });
 
     return withActivityTracking(
-      api,
+      api.store.dispatch,
       "installing_dependencies",
       mod.id,
       this.withDependenciesContext("install-recommendations", profile.id, () =>
