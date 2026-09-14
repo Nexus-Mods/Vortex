@@ -2,8 +2,8 @@ import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { VortexError } from "@vortex/shared";
+import { QualifiedPath } from "@vortex/shared/filesystem";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { NodeFileSystemBackendImpl } from "./backend";

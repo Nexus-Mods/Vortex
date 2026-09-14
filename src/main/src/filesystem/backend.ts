@@ -16,17 +16,17 @@ import {
 import { join, dirname } from "node:path";
 import { Readable, Writable } from "node:stream";
 
+import { parseError, VortexError } from "@vortex/shared";
 import type {
   DirectoryStatus,
   FileStatus,
   StatResult,
   Status,
   StatusTime,
-} from "@nexusmods/adaptor-api/fs";
-import type { Pattern, ResolvedPath } from "@nexusmods/adaptor-api/fs";
-import type { FileSystemBackend as NodeFileSystemBackend } from "@nexusmods/adaptor-api/fs";
-import { matches } from "@nexusmods/adaptor-api/fs";
-import { parseError, VortexError } from "@vortex/shared";
+} from "@vortex/shared/filesystem";
+import type { Pattern, ResolvedPath } from "@vortex/shared/filesystem";
+import type { FileSystemBackend as NodeFileSystemBackend } from "@vortex/shared/filesystem";
+import { matches } from "@vortex/shared/filesystem";
 
 /**
  * Node-backed implementation of {@link NodeFileSystemBackend}. Operates on

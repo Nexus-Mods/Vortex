@@ -7,7 +7,7 @@ import { appendFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { QualifiedPath, type FileSystem } from "@nexusmods/adaptor-api/fs";
+import { QualifiedPath, type FileSystem } from "@vortex/shared/filesystem";
 import type { HashAlgorithm, VortexPaths } from "@vortex/shared/ipc";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {

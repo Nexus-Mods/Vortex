@@ -6,13 +6,13 @@ import type {
   LinuxPathProvider,
   LinuxPathBase,
   XDGBase,
-} from "@nexusmods/adaptor-api/fs";
+} from "@vortex/shared/filesystem";
 import {
   QualifiedPath,
   PathResolverError,
   PathProviderError,
   XDG,
-} from "@nexusmods/adaptor-api/fs";
+} from "@vortex/shared/filesystem";
 
 export class LinuxPathProviderImpl implements LinuxPathProvider {
   readonly platform = "linux" as const;

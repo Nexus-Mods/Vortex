@@ -45,7 +45,7 @@ if (process.env.VORTEX_E2E === "1") {
   }
 }
 
-import type { PathResolver } from "@nexusmods/adaptor-api";
+import type { PathResolver } from "@vortex/shared/filesystem";
 
 import Application from "./Application";
 import { parseCommandline } from "./cli";

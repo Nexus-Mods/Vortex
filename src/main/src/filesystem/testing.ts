@@ -4,8 +4,8 @@
  * both Linux and Windows.
  */
 
-import type { PathResolver } from "@nexusmods/adaptor-api/fs";
-import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
+import type { PathResolver } from "@vortex/shared/filesystem";
+import { QualifiedPath } from "@vortex/shared/filesystem";
 
 import { LinuxPathProviderImpl } from "./paths.linux";
 import { WindowsPathProviderImpl } from "./paths.windows";
