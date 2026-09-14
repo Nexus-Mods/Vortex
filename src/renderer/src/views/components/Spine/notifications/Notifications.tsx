@@ -22,15 +22,16 @@ import { useNotificationItems } from "./hooks/useNotificationItems.hook";
  * tray for whoever opens it, but isn't news worth interrupting anyone for.
  */
 const QUIET_TYPES: NotificationType[] = ["activity", "silent"];
+type Focusable<T extends HTMLElement> = T & { focus?: () => undefined };
 
 /** Opens the tray as its button would, minus the focus Headless UI's handler takes. */
-const openWithoutTakingFocus = (button: HTMLButtonElement) => {
+const openWithoutTakingFocus = (button: Focusable<HTMLButtonElement>) => {
   Object.defineProperty(button, "focus", { configurable: true, value: () => undefined });
 
   try {
     button.click();
   } finally {
-    delete (button as unknown as { focus?: () => void }).focus;
+    delete button.focus;
   }
 };
 
