@@ -694,7 +694,7 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       downloads: { collectionsInstallWhileDownloading: false, path: "{USERDATA}\\downloads" },
       interface: { language: "en", foregroundDL: false },
       gameMode: { discovered: {} },
-      mods: { installPath: slices.installPath },
+      mods: { installPath: slices.installPath, activator: {} },
       profiles: {
         activeProfileId: slices.activeProfileId,
         nextProfileId: undefined,
