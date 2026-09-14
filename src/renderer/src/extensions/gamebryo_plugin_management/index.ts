@@ -24,7 +24,6 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
-import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
@@ -89,6 +88,7 @@ import { missingGroupFixes } from "./util/groups";
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from "./util/masterlist";
 import { markdownToBBCode } from "./util/mdtobb";
 import { handleModEnabled } from "./util/onModEnabled";
+import { handleModInstalled } from "./util/onModInstalled";
 import PluginHistory from "./util/PluginHistory";
 import PluginPersistor from "./util/PluginPersistor";
 import toPluginId from "./util/toPluginId";
@@ -1782,78 +1782,10 @@ function init(context: IExtensionContextExt) {
           },
         );
 
-        // When a mod is installed during a collection install, scan its staging folder
-        // for plugin files and merge them into the real plugin list. This ensures
-        // FOMOD prerequisite checks in subsequent installs can see plugins from
-        // earlier-phase mods that haven't been deployed yet.
         context.api.events.on(
           "did-install-mod",
           (gameId: string, _archiveId: string, modId: string) => {
-            if (!gameSupported(gameId)) {
-              return;
-            }
-
-            const state = context.api.getState<IStateWithGamebryo>();
-
-            // Only during collection dependency installation
-            const activeSession = getCollectionActiveSession(state);
-            if (activeSession === undefined) {
-              return;
-            }
-
-            const mod = state.persistent.mods[gameId]?.[modId];
-            if (mod?.installationPath === undefined) {
-              return;
-            }
-
-            const installBasePath = installPathForGame(state, gameId);
-            if (installBasePath === undefined) {
-              return;
-            }
-
-            const modInstPath = path.join(installBasePath, mod.installationPath);
-            const activator = getCurrentActivator(state, gameId, true);
-
-            fs.readdirAsync(modInstPath)
-              .map((fileName: string) =>
-                activator ? activator.getDeployedPath(fileName) : fileName,
-              )
-              .filter((fileName: string) => isPlugin(modInstPath, fileName, gameId))
-              .then((pluginFileNames: string[]) => {
-                if (pluginFileNames.length === 0) {
-                  return;
-                }
-
-                // Read fresh state and merge new entries into existing plugin list
-                const currentState = context.api.getState<IStateWithGamebryo>();
-                const existingPlugins: IPlugins = getSafe(
-                  currentState,
-                  ["session", "plugins", "pluginList"],
-                  {},
-                );
-                const merged = { ...existingPlugins };
-
-                for (const fileName of pluginFileNames) {
-                  const pluginId = toPluginId(fileName);
-                  if (!merged[pluginId]) {
-                    merged[pluginId] = {
-                      modId: mod.id,
-                      filePath: path.join(modInstPath, fileName),
-                      isNative: isNativePlugin(gameId, fileName),
-                      warnings: {},
-                      deployed: false,
-                    };
-                  }
-                }
-
-                context.api.store?.dispatch(setPluginList(merged));
-              })
-              .catch((err: Error) => {
-                log("warn", "failed to update plugin list for collection install", {
-                  modId,
-                  error: err.message,
-                });
-              });
+            handleModInstalled(context.api, gameId, modId, isPlugin);
           },
         );
 
