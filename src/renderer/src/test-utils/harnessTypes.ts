@@ -116,6 +116,7 @@ export interface IGameHarnessOpts {
 export interface IGameHarness extends IApiHarness {
   gameId: string;
   profileId: string;
+  stagingPath: string;
 }
 
 /** What a file-based load order test arranges. */

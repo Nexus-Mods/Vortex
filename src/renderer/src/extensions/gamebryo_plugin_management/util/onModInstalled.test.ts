@@ -54,7 +54,7 @@ describe("handleModInstalled", () => {
     expect(harness.getGamebryoState().session.plugins.pluginList).toEqual({
       "one.esp": {
         modId: "modX",
-        filePath: path.join("C:/staging/skyrimse", "modX", "One.esp"),
+        filePath: path.join(harness.stagingPath, "modX", "One.esp"),
         isNative: false,
         warnings: {},
         deployed: false,

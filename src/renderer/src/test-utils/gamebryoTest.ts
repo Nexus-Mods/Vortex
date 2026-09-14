@@ -42,12 +42,7 @@ const GAMEBRYO_BINDINGS: IHarnessReducerBinding[] = [...REDUCER_BINDINGS, ...COR
  * reducers.
  */
 export function makeGamebryoHarness(opts: IGamebryoHarnessOpts = {}): IGamebryoHarness {
-  // seed a staging folder so the real installPath selector resolves a concrete path
-  const gameId = opts.gameId ?? "skyrimse";
-  const base = makeGameHarness(
-    { installPath: { [gameId]: `C:/staging/${gameId}` }, ...opts },
-    GAMEBRYO_BINDINGS,
-  );
+  const base = makeGameHarness(opts, GAMEBRYO_BINDINGS);
   return { ...base, getGamebryoState: () => asGamebryo(base.getState()) };
 }
 

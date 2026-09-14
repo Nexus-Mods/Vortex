@@ -945,8 +945,16 @@ export function makeApiHarness(
 }
 
 /**
- * A fake api seeded with an active profile on a game (active + last-active set in state) and the
- * game's installed mods: the shared base the game-scoped domain harnesses build on.
+ * The staging folder a harness seeds for a game
+ */
+export function harnessStagingPath(gameId: string): string {
+  return path.join(os.tmpdir(), "vortex-staging", gameId);
+}
+
+/**
+ * A fake api seeded with an active profile on a game (active + last-active set in state), the
+ * game's installed mods and its staging folder: the shared base the game-scoped domain harnesses
+ * build on.
  */
 export function makeGameHarness(
   opts: IGameHarnessOpts = {},
@@ -954,17 +962,18 @@ export function makeGameHarness(
 ): IGameHarness {
   const gameId = opts.gameId ?? "skyrimse";
   const profileId = opts.profileId ?? "profile-1";
+  const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
   const base = makeApiHarness(
     {
       profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
       mods: { [gameId]: opts.mods ?? {} },
       activeProfileId: profileId,
       lastActiveProfile: { [gameId]: profileId },
-      installPath: opts.installPath ?? {},
+      installPath: { ...opts.installPath, [gameId]: stagingPath },
     },
     extraReducers,
   );
-  return { ...base, gameId, profileId };
+  return { ...base, gameId, profileId, stagingPath };
 }
 
 /**
@@ -1033,8 +1042,11 @@ export function makeInstallManagerHarness(
   gameId = "skyrimse",
 ): IInstallManagerHarness {
   registerHarnessGame(gameId);
-  const base = makeApiHarness({ installPath: { [gameId]: `C:/staging/${gameId}` }, ...overrides });
-  const manager = new ManagerCtor(base.api, (gid: string) => `C:/staging/${gid}`);
+  const base = makeApiHarness({
+    installPath: { [gameId]: harnessStagingPath(gameId) },
+    ...overrides,
+  });
+  const manager = new ManagerCtor(base.api, harnessStagingPath);
   // single seam: reach the manager's private phase map once here so suites get a typed handle
   // instead of casting the manager per test
   const phaseTracker = (manager as unknown as { mPhaseTracker: InstallPhaseTracker }).mPhaseTracker;
