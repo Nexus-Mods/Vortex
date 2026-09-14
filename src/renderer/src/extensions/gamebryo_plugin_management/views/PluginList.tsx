@@ -55,6 +55,7 @@ import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
 import { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import { IPluginCombined, IPluginLoot, IPluginParsed, IPlugins } from "../types/IPlugins";
 import GroupFilter from "../util/GroupFilter";
+import { mergeLoadOrder } from "../util/mergeLoadOrder";
 import toPluginId from "../util/toPluginId";
 import DependencyIcon from "./DependencyIcon";
 import MasterList from "./MasterList";
@@ -1043,16 +1044,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { pluginsCombined } = this.state;
 
     const updateSet = {};
-    const pluginsFlat = Object.keys(pluginsCombined).map((pluginId) => pluginsCombined[pluginId]);
-    pluginsFlat.forEach((plugin, idx) => {
-      const lo = loadOrder[plugin.id] || {
-        enabled: false,
-        loadOrder: undefined,
-      };
-      Object.assign(pluginsFlat[idx], lo);
+    const pluginsFlat = mergeLoadOrder(Object.values(pluginsCombined), loadOrder);
+    pluginsFlat.forEach((plugin) => {
       updateSet[plugin.id] = {
-        enabled: { $set: lo.enabled },
-        loadOrder: { $set: lo.loadOrder },
+        enabled: { $set: plugin.enabled },
+        loadOrder: { $set: plugin.loadOrder },
       };
     });
     const modIndices = this.modIndices(pluginsFlat);

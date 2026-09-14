@@ -37,7 +37,7 @@ import {
 } from "../profile_management/selectors";
 import type { IProfile } from "../profile_management/types/IProfile";
 /* eslint-disable */
-import { setPluginEnabled, setPluginOrder, updatePluginOrder } from "./actions/loadOrder";
+import { setPluginEnabled, setPluginOrder } from "./actions/loadOrder";
 import {
   clearNewPluginCounter,
   setPluginFilePath,
@@ -81,6 +81,7 @@ import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from "./ut
 import { markdownToBBCode } from "./util/mdtobb";
 import { handleModEnabled } from "./util/onModEnabled";
 import { handleModInstalled } from "./util/onModInstalled";
+import { handleSetPluginList } from "./util/onSetPluginList";
 import PluginHistory from "./util/PluginHistory";
 import PluginPersistor from "./util/PluginPersistor";
 import toPluginId from "./util/toPluginId";
@@ -1679,14 +1680,7 @@ function init(context: IExtensionContextExt) {
         });
 
         context.api.events.on("set-plugin-list", (newPlugins: string[], setEnabled?: boolean) => {
-          const state = context.api.store.getState();
-          store.dispatch(
-            updatePluginOrder(
-              newPlugins.map((name) => name.toLowerCase()),
-              setEnabled !== false,
-              state.settings.plugins.autoEnable,
-            ),
-          );
+          handleSetPluginList(context.api, newPlugins, setEnabled);
         });
 
         context.api.events.on(
