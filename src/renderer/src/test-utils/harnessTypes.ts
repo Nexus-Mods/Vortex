@@ -170,6 +170,8 @@ export interface ILootHarness extends IGamebryoHarness {
   sort: (manual: boolean) => Promise<Error | null>;
   // emit plugin-details for the harness game and resolve with the answered details
   requestDetails: (plugins: string[]) => Promise<IPluginsLoot>;
+  // emit restart-helpers, which replaces the loot instance (fire-and-forget in production)
+  restartHelpers: () => void;
 }
 
 // What a download-adapter test arranges: the single seeded download's fields, an optional stored

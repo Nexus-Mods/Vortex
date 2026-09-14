@@ -130,6 +130,9 @@ export async function makeLootHarness(
       new Promise((resolve) => {
         base.emit("plugin-details", gameId, plugins, (result: IPluginsLoot) => resolve(result));
       }),
+    restartHelpers: () => {
+      base.emit("restart-helpers");
+    },
   };
 }
 

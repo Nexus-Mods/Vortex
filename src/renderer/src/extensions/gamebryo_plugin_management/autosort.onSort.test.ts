@@ -3,6 +3,7 @@ import * as path from "node:path";
 import { describe, expect, vi } from "vitest";
 
 import { startActivity } from "../../actions/session";
+import { flushAsync } from "../../test-utils/async";
 import { makeProfile } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
 import { setPluginOrder } from "./actions/loadOrder";
@@ -26,14 +27,6 @@ vi.mock(
   "./util/findInvalidPlugins",
   async () => (await import("./lootMocks.js")).invalidPluginsModule,
 );
-
-// drain the queued Bluebird continuations (setImmediate-scheduled) and microtasks so an emitted
-// sort settles before a negative assertion, without betting on a wall-clock delay
-async function flushAsync(): Promise<void> {
-  for (let round = 0; round < 5; round += 1) {
-    await new Promise((resolve) => setImmediate(resolve));
-  }
-}
 
 describe("LootInterface autosort-plugins", () => {
   test("defers sorting while a dependency install is running", async ({ makeLoot }) => {
