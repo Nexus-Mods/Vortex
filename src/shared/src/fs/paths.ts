@@ -76,6 +76,7 @@ export function relativePath(raw: string): RelativePath {
     throw new RelativePathError(`RelativePath must not contain '..' segments: "${raw}"`);
   }
 
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return segments.join("/") as RelativePath;
 }
 
@@ -357,6 +358,7 @@ export class QualifiedPath {
     const iterator: Iterator<PathComponent, never, never> = {
       next() {
         if (pos >= path.length) {
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           return { done: true, value: undefined as never };
         }
         const end = path.indexOf("/", pos);
