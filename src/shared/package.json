@@ -76,6 +76,9 @@
   "peerDependencies": {
     "@opentelemetry/api": "catalog:"
   },
+  "devDependencies": {
+    "vite-plugin-doctest": "catalog:"
+  },
   "publishConfig": {
     "exports": {
       ".": {
