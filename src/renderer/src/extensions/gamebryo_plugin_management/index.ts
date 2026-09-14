@@ -3,7 +3,7 @@ import { stat as fsStat } from "fs/promises";
 import * as path from "path";
 import * as nodeUtil from "util";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import { UserCanceled } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import type I18next from "i18next";
@@ -59,10 +59,11 @@ import LootInterface from "./autosort";
 import { startDeployWatcher, type IDeployWatcher } from "./deployWatcher";
 import { ESPFile } from "./esp/ESPFile";
 import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
+import { makeLootSortAsync } from "./lootSortAsync";
 import { REDUCER_BINDINGS } from "./reducers/bindings";
 import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
-import { ILOOTList, ILootReference, ILOOTSortApiCall } from "./types/ILOOTList";
+import { ILOOTList, ILootReference } from "./types/ILOOTList";
 import { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
 import { IPlugin, IPluginCombined, IPlugins } from "./types/IPlugins";
 import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
@@ -541,50 +542,11 @@ function register(
 
   context.registerAPI(
     "lootSortAsync",
-    async (sortCall: ILOOTSortApiCall) => {
-      const { pluginFilePaths, onSortCallback } = sortCall;
-      if (!Array.isArray(pluginFilePaths) || onSortCallback === undefined) {
-        log("error", "incorrect lootSortAsync call parameters");
-        onSortCallback(new Error("incorrect lootSortAsync call parameters"), []);
-        return;
-      }
-      const profile = activeProfile(context.api.store.getState());
-      try {
-        const masterListExists = await masterlistExists(profile.gameId);
-        if (!masterListExists) {
-          await loot.downloadMasterlist(profile.gameId);
-        }
-        await updatePluginList(context.api.store, profile.modState, profile.gameId);
-        await new Bluebird((resolve, reject) => {
-          const pluginList = getSafe(
-            context.api.getState(),
-            ["session", "plugins", "pluginList"],
-            {},
-          );
-          context.api.events.emit(
-            "plugin-details",
-            profile.gameId,
-            Object.keys(pluginList ?? {}),
-            resolve,
-          );
-        });
-        context.api.events.emit("autosort-plugins", true, (err: Error) => {
-          if (err) {
-            onSortCallback(err, []);
-          }
-          const sortedLO = context.api.getState()?.["loadOrder"] || {};
-          const sortedList = Object.keys(sortedLO)
-            .sort((lhs, rhs) => sortedLO[lhs].loadOrder - sortedLO[rhs].loadOrder)
-            .map((pluginName: string) => pluginName.toLowerCase());
-
-          onSortCallback(null, sortedList);
-        });
-      } catch (err) {
-        log("error", "failed to update plugin list", err);
-        onSortCallback(unknownToError(err), []);
-        return;
-      }
-    },
+    makeLootSortAsync(context.api, {
+      masterlistExists,
+      downloadMasterlist: (gameMode) => loot.downloadMasterlist(gameMode),
+      updatePluginList: (modState, gameId) => updatePluginList(context.api.store, modState, gameId),
+    }),
     { minArguments: 1 },
   );
 
