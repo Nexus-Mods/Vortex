@@ -336,6 +336,7 @@ function register(
       masterlistExists,
       downloadMasterlist: (gameMode) => loot.downloadMasterlist(gameMode),
       updatePluginList: (modState, gameId) => updatePluginList(context.api.store, modState, gameId),
+      sortFiles: (pluginFilePaths) => loot.sortFiles(pluginFilePaths),
     }),
     { minArguments: 1 },
   );

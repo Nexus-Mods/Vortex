@@ -167,14 +167,14 @@ export interface ILootHarness extends IGamebryoHarness {
   loot: IFakeLoot;
   // the LootInterface under test, constructed against the fake api and awaited through init
   lootInterface: LootInterface;
-  // create a real plugin file (the sort path stats plugin files) and return its absolute path
+  // create a real plugin file in dataDir (the sort path stats plugin files) and return its path
   addPluginFile: (name: string) => Promise<string>;
   // seed session.plugins.pluginList, keyed by toPluginId, with a real file per plugin (unless
   // filePath is overridden); a spec is a file name or a name plus IPlugin overrides
   seedPlugins: (specs: Array<string | ({ name: string } & Partial<IPlugin>)>) => Promise<void>;
   // where readLists looks for the game's userlist.yaml (absent unless a test creates it)
   userlistPath: string;
-  // where gameDataPath resolves for the harness game (a real, empty directory)
+  // the game's Data folder as gameDataPath resolves it; seeded plugin files live here
   dataDir: string;
   // emit autosort-plugins and resolve with the value the sort passed to its callback
   sort: (manual: boolean) => Promise<Error | null>;

@@ -92,11 +92,9 @@ export async function makeLootHarness(
 
   const masterlistDir = path.join(tempDir, "userData", gameId, "masterlist");
   const dataDir = path.join(tempDir, "data");
-  const pluginsDir = path.join(tempDir, "plugins");
   await Promise.all([
     mkdir(masterlistDir, { recursive: true }),
     mkdir(dataDir, { recursive: true }),
-    mkdir(pluginsDir, { recursive: true }),
   ]);
   await writeFile(path.join(masterlistDir, "masterlist.yaml"), "");
 
@@ -111,7 +109,7 @@ export async function makeLootHarness(
   // drop the init traffic (createAsync, one loadListsAsync, the masterlist download)
   vi.clearAllMocks();
 
-  const addPluginFile = (name: string): Promise<string> => writePluginFile(pluginsDir, name);
+  const addPluginFile = (name: string): Promise<string> => writePluginFile(dataDir, name);
 
   return {
     ...base,

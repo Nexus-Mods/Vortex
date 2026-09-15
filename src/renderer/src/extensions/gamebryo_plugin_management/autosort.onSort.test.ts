@@ -90,10 +90,7 @@ describe("LootInterface autosort-plugins", () => {
     );
   });
 
-  // the desired contract from LAZ-1048: the implementation still returns without answering,
-  // which is the silent hang lootSortAsync's stuck spinner is built on. Expected-fail until the
-  // fix lands, which flips this to a plain test.
-  test.fails("answers the callback when the active game changed since initialization", async ({
+  test("answers the callback when the active game changed since initialization", async ({
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);
@@ -146,17 +143,17 @@ describe("LootInterface autosort-plugins", () => {
     expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["One.esp", "Four.esp"]);
   });
 
-  test("hands plugins to loot in current load order, unknown plugins first", async ({
+  test("hands plugins to loot in current load order, unknown plugins last", async ({
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);
-    await harness.seedPlugins(["A.esp", "B.esp", "C.esp"]);
-    // A and B have load order 0 and 1; C is unknown to the hive and defaults to -1
+    await harness.seedPlugins(["C.esp", "A.esp", "B.esp"]);
+    // A and B have load order 0 and 1; C is not in the hive yet
     harness.api.store.dispatch(setPluginOrder(["A.esp", "B.esp"], true));
 
     await harness.sort(true);
 
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["C.esp", "A.esp", "B.esp"]);
+    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp", "B.esp", "C.esp"]);
   });
 
   test("drops plugins whose file is missing and passes file basenames", async ({ makeLoot }) => {
@@ -170,6 +167,45 @@ describe("LootInterface autosort-plugins", () => {
     await harness.sort(true);
 
     expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["Real.esp"]);
+  });
+
+  test("sorts exactly the given files in their current order and answers libloot's order", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp", "B.esp", "C.esp"]);
+    harness.api.store.dispatch(setPluginOrder(["C.esp", "B.esp", "A.esp"], true));
+    harness.loot.sortPluginsAsync.mockResolvedValueOnce(["A.esp", "B.esp"]);
+
+    const sorted = await harness.lootInterface.sortFiles([
+      path.join(harness.dataDir, "A.esp"),
+      path.join(harness.dataDir, "Gone.esp"),
+      path.join(harness.dataDir, "B.esp"),
+    ]);
+
+    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["B.esp", "A.esp"]);
+    expect(sorted).toEqual(["A.esp", "B.esp"]);
+  });
+
+  test("answers an empty list when none of the given files exist", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+
+    await expect(
+      harness.lootInterface.sortFiles([path.join(harness.dataDir, "Gone.esp")]),
+    ).resolves.toEqual([]);
+  });
+
+  test("rejects a file sort requested during a deployment instead of answering unsorted", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+
+    await expect(
+      harness.lootInterface.sortFiles([path.join(harness.dataDir, "A.esp")]),
+    ).rejects.toMatchObject({ data: { kind: "process-canceled" } });
+    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
   });
 
   test("queues a second sort behind the pending one", async ({ makeLoot }) => {

@@ -20,7 +20,7 @@ declare module "@vortex/shared/errors" {
     "loot:condition-failed": { executable?: string };
     /** The libloot worker process died. */
     "loot:process-died": NoPayload;
-    /** A libloot failure the classifier does not recognise. */
+    /** A libloot call that failed for no recognised reason or did not answer. */
     "loot:failed": NoPayload;
   }
 }
