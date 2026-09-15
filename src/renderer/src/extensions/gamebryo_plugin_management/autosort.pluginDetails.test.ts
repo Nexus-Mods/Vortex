@@ -68,6 +68,18 @@ describe("LootInterface plugin-details", () => {
     expect(result).toEqual({});
   });
 
+  test("answers with no details when loot closes while loading the plugins", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.api.store.dispatch(setPluginList({ "one.esp": makePlugin() }));
+    harness.loot.loadPluginsAsync.mockRejectedValueOnce(new Error("Already closed"));
+
+    const result = await harness.requestDetails(["one.esp"]);
+
+    expect(result).toEqual({});
+  });
+
   test("answers with no details when loot failed to initialize", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface, { initError: new Error("no loot binding") });
 

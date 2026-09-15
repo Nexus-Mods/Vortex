@@ -62,7 +62,11 @@ export interface ILOOTList {
   __isLoaded?: boolean;
 }
 
+/**
+ * A call to the lootSortAsync extension API. libloot sorts exactly the given plugin files (those
+ * that exist on disk) and the callback is answered once with their file names in sorted order.
+ */
 export interface ILOOTSortApiCall {
   pluginFilePaths: string[];
-  onSortCallback: (err: Error, result: string[]) => void;
+  onSortCallback: (err: Error | null, result: string[]) => void;
 }

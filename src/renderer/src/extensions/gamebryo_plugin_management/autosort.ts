@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
 import { ProcessCanceled, UserCanceled, VortexError } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import { pl } from "date-fns/locale";
@@ -40,8 +40,11 @@ const MAX_RESTARTS = 3;
 
 /** How a sort attempt ended; only "sorted" changed the load order. */
 type SortOutcome =
-  | { result: "sorted" | "nothing-to-sort" | "interrupted" }
+  | { result: "sorted"; sorted: string[] }
+  | { result: "deferred" | "skipped" | "nothing-to-sort" | "interrupted" }
   | { result: "failed"; error: VortexError };
+
+const failed = (error: VortexError): SortOutcome => ({ result: "failed", error });
 
 // A CJS module at a runtime path has to come in through the raw node require,
 // the renderer's own import() resolves through the browser loader, which cannot load it.
@@ -213,103 +216,147 @@ class LootInterface {
   }
 
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
-    const { store } = this.mExtensionApi;
-    try {
-      if (this.shouldDeferLootActivities()) {
-        // a manual request stays manual so the deferred run is not gated by the autoSort setting
-        this.mDeferredSort = { manual: manual || (this.mDeferredSort?.manual ?? false) };
-        if (callback !== undefined) {
-          callback(null);
-        }
-        return Promise.resolve();
-      }
-      if (manual || store.getState().settings.plugins.autoSort) {
-        // ensure initialisation is done
-        const { game, loot } = await this.mInitPromise;
-
-        const gameMode = activeGameId(store.getState());
-        if (gameMode !== game || !gameSupported(gameMode, true)) {
-          return;
-        }
-
-        if (loot === undefined || loot.isClosed()) {
-          if (callback !== undefined) {
-            callback(new Error("LOOT is uninitialized/closed"));
-          }
-          return;
-        }
-
-        // ensure no other sort is in progress
-        try {
-          await this.mSortPromise;
-          // tslint:disable-next-line:no-empty
-        } catch (err) {}
-
-        // work with up-to-date state
-        const state = store.getState();
-
-        const pluginList: IPlugins = state.session.plugins.pluginList;
-
-        const lo = (pluginKey: string) =>
-          (state.loadOrder[pluginKey] || { loadOrder: -1 }).loadOrder;
-
-        const isValid = (pluginKey: string) => {
-          const isDeployed = pluginList[pluginKey]?.deployed || false;
-          const isGhost =
-            pluginList[pluginKey]?.filePath &&
-            path.extname(pluginList[pluginKey]?.filePath) === GHOST_EXT;
-          const isNative = pluginList[pluginKey]?.isNative || false;
-          return (isDeployed && !isGhost) || isNative;
-        };
-
-        let pluginIds: string[] = Object
-          // from all plugins
-          .keys(pluginList)
-          .filter((pluginId: string) => isValid(pluginId))
-          // apply existing ordering (as far as available)
-          .sort((lhs, rhs) => lo(lhs) - lo(rhs));
-
-        // make sure we only pass files to loot that really exist on disk (and are accessible)
-        // this should be a waste of time, pluginList should already only contain files
-        // that are really there but loot produces really annoying error messages so I want to
-        // be sure.
-        pluginIds = await Bluebird.filter(pluginIds, (pluginId) =>
-          fs
-            .statAsync(pluginList[pluginId].filePath)
-            .then(() => true)
-            .catch(() => false),
-        );
-
-        const pluginNames = pluginIds.map((pluginId: string) =>
-          path.basename(pluginList[pluginId].filePath),
-        );
-
-        const outcome = await this.doSort(pluginNames, gameMode, loot);
-        if (outcome.result === "failed") {
-          if (callback !== undefined) {
-            callback(outcome.error);
-          }
-          return Promise.resolve();
-        }
-        if (outcome.result === "sorted") {
-          this.mExtensionApi.sendNotification({
-            id: "loot-sorted",
-            type: "success",
-            message: "LOOT sorting successful",
-            displayMS: 3000,
-          });
-        }
-      }
-      if (callback !== undefined) {
-        callback(null);
-      }
-      return Promise.resolve();
-    } catch (err) {
-      if (callback !== undefined) {
-        callback(unknownToError(err));
-      }
+    const outcome = await this.runSort(manual);
+    if (outcome.result === "sorted") {
+      this.mExtensionApi.sendNotification({
+        id: "loot-sorted",
+        type: "success",
+        message: "LOOT sorting successful",
+        displayMS: 3000,
+      });
+    }
+    if (callback !== undefined) {
+      callback(outcome.result === "failed" ? outcome.error : null);
     }
   };
+
+  /**
+   * Sorts exactly the given plugin files, for the lootSortAsync extension API, and resolves with
+   * their names in the order libloot chose. A sort that did not run rejects: the caller writes the
+   * answer to its plugins file, so an unsorted list must never pass as one.
+   */
+  public async sortFiles(pluginFilePaths: string[]): Promise<string[]> {
+    const outcome = await this.runSort(true, pluginFilePaths);
+    switch (outcome.result) {
+      case "sorted":
+        return outcome.sorted;
+      case "nothing-to-sort":
+        return [];
+      case "failed":
+        throw outcome.error;
+      case "deferred":
+        throw new VortexError("a mod operation is running, sort again once it finishes", {
+          kind: "process-canceled",
+        });
+      case "skipped":
+      case "interrupted":
+        throw new VortexError("LOOT stopped before the sort finished", {
+          kind: "process-canceled",
+        });
+    }
+  }
+
+  /** The gates every sort passes before doSort; the API path supplies the files to sort. */
+  private async runSort(manual: boolean, pluginFilePaths?: string[]): Promise<SortOutcome> {
+    const { store } = this.mExtensionApi;
+    if (this.shouldDeferLootActivities()) {
+      // only a state sort can run later from the deferred slot: it holds no file list and no
+      // caller to answer, so a file sort is refused instead
+      if (pluginFilePaths === undefined) {
+        // a manual request stays manual so the deferred run is not gated by the autoSort setting
+        this.mDeferredSort = { manual: manual || (this.mDeferredSort?.manual ?? false) };
+      }
+      return { result: "deferred" };
+    }
+    if (!manual && !store.getState().settings.plugins.autoSort) {
+      return { result: "skipped" };
+    }
+    try {
+      // ensure initialisation is done
+      const { game, loot } = await this.mInitPromise;
+      const gameMode = activeGameId(store.getState());
+      if (gameMode !== game) {
+        // a game switch is tearing this instance down; the new game's activation sorts again
+        return failed(
+          new VortexError("LOOT is initializing for a different game", {
+            kind: "process-canceled",
+          }),
+        );
+      }
+      if (!gameSupported(gameMode, true)) {
+        return failed(
+          new VortexError("plugin sorting is not supported for this game", {
+            kind: "not-supported",
+            feature: "plugin sorting",
+          }),
+        );
+      }
+      if (loot === undefined || loot.isClosed()) {
+        return failed(new VortexError("LOOT is uninitialized/closed", { kind: "loot:failed" }));
+      }
+      // ensure no other sort is in progress
+      try {
+        await this.mSortPromise;
+      } catch {
+        // the previous sort reported its own failure
+      }
+      const pluginNames = await this.sortInput(pluginFilePaths);
+      return await this.doSort(pluginNames, gameMode, loot);
+    } catch (err) {
+      // doSort classifies libloot's own failures; anything reaching here failed before the call
+      return failed(parseError(err));
+    }
+  }
+
+  /**
+   * The plugin file names to hand libloot in their current load order, which is libloot's
+   * tie-break; plugins the load order does not know yet rank last, like a plugin the game has
+   * not seen before. Only files that exist on disk: the given files, or the deployed non-ghost
+   * plugins plus the natives from the plugin list.
+   */
+  private async sortInput(pluginFilePaths?: string[]): Promise<string[]> {
+    const state = this.mExtensionApi.store.getState();
+    const ranks = new Map<string, number>();
+    const rank = (filePath: string) => {
+      let value = ranks.get(filePath);
+      if (value === undefined) {
+        value = state.loadOrder[toPluginId(filePath)]?.loadOrder ?? Number.MAX_SAFE_INTEGER;
+        ranks.set(filePath, value);
+      }
+      return value;
+    };
+    const byRank = (lhs: string, rhs: string) => rank(lhs) - rank(rhs);
+    let filePaths: string[];
+    if (pluginFilePaths !== undefined) {
+      filePaths = [...pluginFilePaths].sort(byRank);
+    } else {
+      const pluginList: IPlugins = state.session.plugins.pluginList;
+      const isValid = (pluginKey: string) => {
+        const isDeployed = pluginList[pluginKey]?.deployed || false;
+        const isGhost =
+          pluginList[pluginKey]?.filePath &&
+          path.extname(pluginList[pluginKey]?.filePath) === GHOST_EXT;
+        const isNative = pluginList[pluginKey]?.isNative || false;
+        return (isDeployed && !isGhost) || isNative;
+      };
+      filePaths = Object.keys(pluginList)
+        .filter(isValid)
+        .map((pluginId) => pluginList[pluginId].filePath)
+        .sort(byRank);
+    }
+    // loot produces really annoying error messages for files that are not there
+    const existing = await Promise.all(
+      filePaths.map((filePath) =>
+        fs
+          .statAsync(filePath)
+          .then(() => filePath)
+          .catch(() => undefined),
+      ),
+    );
+    return existing
+      .filter((filePath): filePath is string => filePath !== undefined)
+      .map((filePath) => path.basename(filePath));
+  }
 
   private get gamePath() {
     const { store } = this.mExtensionApi;
@@ -367,10 +414,7 @@ class LootInterface {
       if (sorted === undefined) {
         // loot return an undefined result? how?
         log("error", "failed to sort plugins, empty loot result");
-        return {
-          result: "failed",
-          error: new VortexError("LOOT returned no result", { kind: "loot:failed" }),
-        };
+        return failed(new VortexError("LOOT returned no result", { kind: "loot:failed" }));
       }
       store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
       log("debug", "sorting plugins finished", {
@@ -393,7 +437,7 @@ class LootInterface {
       if (sortedProfileId !== undefined) {
         store.dispatch(clearPendingPluginSort(sortedProfileId));
       }
-      return { result: "sorted" };
+      return { result: "sorted", sorted };
     } catch (rawErr) {
       const err = toLootError(rawErr);
       log("info", "loot failed", { kind: err.data.kind, error: err.message });
@@ -486,7 +530,7 @@ class LootInterface {
         default:
           this.notifyOperationFailed(err);
       }
-      return { result: "failed", error: err };
+      return failed(err);
     } finally {
       store.dispatch(stopActivity("plugins", "sorting"));
     }
@@ -616,6 +660,7 @@ class LootInterface {
     } catch (rawErr) {
       const err = unknownToError(rawErr);
       if (err.message.toLowerCase() === "already closed") {
+        callback({});
         return;
       }
       // libloot rejected a plugin ESPFile considered valid, so a header-parse exclusion can't help;
