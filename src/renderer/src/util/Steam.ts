@@ -212,62 +212,64 @@ class Steam implements IGameStore {
     return "appId" in object;
   }
 
-  private async resolveSteamPaths(): Promise<string[]> {
+  private resolveSteamPaths(): PromiseBB<string[]> {
     log("debug", "resolving Steam game paths");
-    const basePath = await this.mBaseFolder;
-    if (basePath === undefined) {
-      // Steam not found/installed
-      return [];
-    }
-
-    const steamPaths: string[] = [basePath];
-
-    let data: Buffer;
-    try {
-      data = await fsOG.readFile(path.resolve(basePath, "config", "libraryfolders.vdf"));
-    } catch (err) {
-      // A Steam update has changed the way we resolve the steam library paths
-      //  (we used to get these from config.vdf) the libraryfolders.vdf file
-      //  appears to at times hold a reference to _all_ library folders; other times
-      //  it only holds the path to the alternate steam libraries (the ones that aren't
-      //  part of the base Steam installation folder)
-      log("warn", "failed to read steam library folders file", err);
-      const code = getErrorCode(err);
-      if (code !== null && ["EPERM", "ENOENT"].includes(code)) {
-        return steamPaths;
+    return this.mBaseFolder.then((basePath: string) => {
+      if (basePath === undefined) {
+        // Steam not found/installed
+        return PromiseBB.resolve([]);
       }
-      throw err;
-    }
 
-    let parsedObj: VDFObject;
-    try {
-      parsedObj = parse(data.toString());
-    } catch (err) {
-      log("warn", "unable to parse steamfolders.vdf", err);
-      return steamPaths;
-    }
+      const steamPaths: string[] = [basePath];
+      return PromiseBB.resolve(
+        fsOG.readFile(path.resolve(basePath, "config", "libraryfolders.vdf")),
+      )
+        .then((data: Buffer) => {
+          let parsedObj: VDFObject;
+          try {
+            parsedObj = parse(data.toString());
+          } catch (err) {
+            log("warn", "unable to parse steamfolders.vdf", err);
+            return PromiseBB.resolve(steamPaths);
+          }
 
-    // older Steam versions spelled this key in mixed case
-    const libKey = Object.keys(parsedObj).find((key) => key.toLowerCase() === "libraryfolders");
-    const libObj = asBlock(libKey !== undefined ? parsedObj[libKey] : undefined) ?? {};
+          // older Steam versions spelled this key in mixed case
+          const libKey = Object.keys(parsedObj).find(
+            (key) => key.toLowerCase() === "libraryfolders",
+          );
+          const libObj = asBlock(libKey !== undefined ? parsedObj[libKey] : undefined) ?? {};
 
-    // libraries are numbered contiguously, from 0 or 1 depending on the Steam version
-    let counter = libObj["0"] !== undefined ? 0 : 1;
-    let lib = asBlock(libObj[`${counter}`]);
-    while (lib !== undefined) {
-      const libPath = lib["path"];
-      if (typeof libPath === "string" && libPath && !steamPaths.includes(libPath)) {
-        steamPaths.push(libPath);
-      }
-      ++counter;
-      lib = asBlock(libObj[`${counter}`]);
-    }
-    log("debug", "found steam install folders", { steamPaths });
-    return steamPaths;
+          // libraries are numbered contiguously, from 0 or 1 depending on the Steam version
+          let counter = libObj["0"] !== undefined ? 0 : 1;
+          let lib = asBlock(libObj[`${counter}`]);
+          while (lib !== undefined) {
+            const libPath = lib["path"];
+            if (typeof libPath === "string" && libPath && !steamPaths.includes(libPath)) {
+              steamPaths.push(libPath);
+            }
+            ++counter;
+            lib = asBlock(libObj[`${counter}`]);
+          }
+          log("debug", "found steam install folders", { steamPaths });
+          return PromiseBB.resolve(steamPaths);
+        })
+        .catch((err) => {
+          // A Steam update has changed the way we resolve the steam library paths
+          //  (we used to get these from config.vdf) the libraryfolders.vdf file
+          //  appears to at times hold a reference to _all_ library folders; other times
+          //  it only holds the path to the alternate steam libraries (the ones that aren't
+          //  part of the base Steam installation folder)
+          log("warn", "failed to read steam library folders file", err);
+          const code = getErrorCode(err);
+          return code !== null && ["EPERM", "ENOENT"].includes(code)
+            ? PromiseBB.resolve(steamPaths)
+            : PromiseBB.reject(err);
+        });
+    });
   }
 
   private parseManifests(): PromiseBB<ISteamEntry[]> {
-    return PromiseBB.resolve(this.resolveSteamPaths()).then((steamPaths: string[]) =>
+    return this.resolveSteamPaths().then((steamPaths: string[]) =>
       PromiseBB.mapSeries(steamPaths, (steamPath) => {
         log("debug", "reading steam install folder", { steamPath });
         const steamAppsPath = path.join(steamPath, "steamapps");
