@@ -1,21 +1,23 @@
 import * as fsOG from "fs/promises";
 import * as path from "path";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
-import { parse } from "simple-vdf";
+import { parse, type VDFObject, type VDFValue } from "simple-vdf";
 import * as winapi from "winapi-bindings";
 
 import type { ICustomExecutionInfo, IExecInfo, IGameStore, IGameStoreEntry } from "../types/api";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import { GameEntryNotFound } from "../types/IGameStore";
 import * as fs from "./fs";
-import getVortexPath from "./getVortexPath";
 import { getProtonInfo, buildProtonEnvironment, buildProtonCommand } from "./linux/proton";
 import { findLinuxSteamPath } from "./linux/steamPaths";
 import { log } from "./log";
 import opn from "./opn";
-import { getSafeCI } from "./storeHelper";
+
+/** VDF leaves are plain strings, so only nested blocks can be indexed further. */
+const asBlock = (value: VDFValue | undefined): VDFObject | undefined =>
+  typeof value === "object" ? value : undefined;
 
 const STORE_ID = "steam";
 const STORE_NAME = "Steam";
@@ -132,7 +134,7 @@ class Steam implements IGameStore {
       }
       return this.mBaseFolder.then((basePath) => {
         const steamExec = {
-          execPath: path.join(basePath!, STEAM_EXEC),
+          execPath: path.join(basePath, STEAM_EXEC),
           arguments: ["-applaunch", appId, ...parameters],
         };
         return PromiseBB.resolve(steamExec);
@@ -219,27 +221,34 @@ class Steam implements IGameStore {
       }
 
       const steamPaths: string[] = [basePath];
-      return fs
-        .readFileAsync(path.resolve(basePath, "config", "libraryfolders.vdf"))
+      return PromiseBB.resolve(
+        fsOG.readFile(path.resolve(basePath, "config", "libraryfolders.vdf")),
+      )
         .then((data: Buffer) => {
-          if (data === undefined) {
-            return PromiseBB.resolve(steamPaths);
-          }
-          let parsedObj;
+          let parsedObj: VDFObject;
           try {
             parsedObj = parse(data.toString());
           } catch (err) {
             log("warn", "unable to parse steamfolders.vdf", err);
             return PromiseBB.resolve(steamPaths);
           }
-          const libObj: any = getSafeCI(parsedObj, ["libraryfolders"], {});
-          let counter = libObj.hasOwnProperty("0") ? 0 : 1;
-          while (libObj.hasOwnProperty(`${counter}`)) {
-            const libPath = libObj[`${counter}`]["path"];
-            if (libPath && !steamPaths.includes(libPath)) {
-              steamPaths.push(libObj[`${counter}`]["path"]);
+
+          // older Steam versions spelled this key in mixed case
+          const libKey = Object.keys(parsedObj).find(
+            (key) => key.toLowerCase() === "libraryfolders",
+          );
+          const libObj = asBlock(libKey !== undefined ? parsedObj[libKey] : undefined) ?? {};
+
+          // libraries are numbered contiguously, from 0 or 1 depending on the Steam version
+          let counter = libObj["0"] !== undefined ? 0 : 1;
+          let lib = asBlock(libObj[`${counter}`]);
+          while (lib !== undefined) {
+            const libPath = lib["path"];
+            if (typeof libPath === "string" && libPath && !steamPaths.includes(libPath)) {
+              steamPaths.push(libPath);
             }
             ++counter;
+            lib = asBlock(libObj[`${counter}`]);
           }
           log("debug", "found steam install folders", { steamPaths });
           return PromiseBB.resolve(steamPaths);
@@ -251,8 +260,8 @@ class Steam implements IGameStore {
           //  it only holds the path to the alternate steam libraries (the ones that aren't
           //  part of the base Steam installation folder)
           log("warn", "failed to read steam library folders file", err);
-          const code = getErrorMessageOrDefault(err);
-          return ["EPERM", "ENOENT"].includes(code)
+          const code = getErrorCode(err);
+          return code !== null && ["EPERM", "ENOENT"].includes(code)
             ? PromiseBB.resolve(steamPaths)
             : PromiseBB.reject(err);
         });
