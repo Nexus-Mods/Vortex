@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { describe, expect, vi } from "vitest";
 
 import { makeUserInfo } from "@/test-utils/builders";
+import type { IHarnessFixtures } from "@/test-utils/harnessTest";
 import { test } from "@/test-utils/harnessTest";
 import { ProcessCanceled } from "@/util/CustomErrors";
 
@@ -54,6 +55,23 @@ const refused = (statusCode: number) =>
   new NexusError("Unauthorized", statusCode, "https://api.nexusmods.com", "unauthorized");
 
 /**
+ * What the OAuth token endpoint answers a refresh with a dead refresh token (revoked, or rotated
+ * away by another install). nexus-api attempts the refresh on behalf of the request that hit the
+ * expired access token and hands this back in place of the site's 401.
+ */
+const deadRefreshToken = () =>
+  new NexusError(
+    "invalid_grant",
+    400,
+    "https://users.nexusmods.com/oauth/token",
+    "invalid_grant",
+    "The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.",
+  );
+
+const storedCredentials = (harness: ReturnType<IHarnessFixtures["makeApi"]>) =>
+  harness.getState().confidential.account["nexus"].OAuthCredentials;
+
+/**
  * setOAuthCredentials keeps the credentials it is handed and then looks the avatar up over the
  * network, so most of the ways that call can fail say nothing about the session. Only the site
  * turning the credentials down means the user has to log in again — and clearing the account on
@@ -69,6 +87,20 @@ describe("updateToken", () => {
       await updateToken(harness.api, nexus, credentials());
 
       expect(harness.getState().persistent["nexus"].userInfo).toBeUndefined();
+      expect(storedCredentials(harness)).toBeUndefined();
+      expect(harness.errorNotifications).toEqual([
+        expect.objectContaining({ title: "Authentication failed, please log in again" }),
+      ]);
+    });
+
+    test("signs out when the refresh token is dead", async ({ makeApi }) => {
+      const harness = makeApi({ userInfo: makeUserInfo({ name: "Ada" }) });
+      const { nexus } = makeNexus(deadRefreshToken());
+
+      await updateToken(harness.api, nexus, credentials());
+
+      expect(harness.getState().persistent["nexus"].userInfo).toBeUndefined();
+      expect(storedCredentials(harness)).toBeUndefined();
       expect(harness.errorNotifications).toEqual([
         expect.objectContaining({ title: "Authentication failed, please log in again" }),
       ]);
@@ -94,6 +126,7 @@ describe("updateToken", () => {
       await updateToken(harness.api, nexus, credentials());
 
       expect(harness.getState().persistent["nexus"].userInfo?.name).toBe("Ada");
+      expect(storedCredentials(harness)).toBeDefined();
       expect(harness.errorNotifications).toEqual([]);
     });
 
