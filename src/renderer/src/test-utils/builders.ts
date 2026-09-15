@@ -63,6 +63,7 @@ import type {
 } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
+import { accountReducer as nexusAccountReducer } from "../extensions/nexus_integration/reducers/account";
 import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus_integration/reducers/persistent";
 import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
@@ -701,6 +702,13 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     const nexusPersistent = nexusPersistentReducer.reducers[action.type];
     if (nexusPersistent !== undefined) {
       state.persistent["nexus"] = nexusPersistent(state.persistent["nexus"], action.payload);
+    }
+    const nexusAccount = nexusAccountReducer.reducers[action.type];
+    if (nexusAccount !== undefined) {
+      state.confidential.account["nexus"] = nexusAccount(
+        state.confidential.account["nexus"],
+        action.payload,
+      );
     }
     const downloadReducerFn = downloadReducers[action.type];
     if (downloadReducerFn !== undefined) {
