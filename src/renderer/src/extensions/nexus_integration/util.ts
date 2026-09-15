@@ -70,6 +70,7 @@ import type { RedownloadMode } from "../download_management/types/IDownload";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameById, knownGames } from "../gamemode_management/selectors";
 import modName from "../mod_management/util/modName";
+import { clearOAuthCredentials } from "./actions/account";
 import { setUserInfo } from "./actions/persistent";
 import { setLoginId, setOauthPending } from "./actions/session";
 import { OAUTH_CLIENT_ID, OAUTH_REDIRECT_URL, OAUTH_URL, getOAuthRedirectUrl } from "./constants";
@@ -1960,12 +1961,18 @@ function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, n
 // hasn't helped, so one reaching us is final; 403 is an account we may no longer act for at all.
 const REFUSED_STATUS_CODES = [401, 403];
 
+// A dead refresh token is turned down by the OAuth token endpoint with 400 invalid_grant
+// (RFC 6749 §5.2), and that is the error nexus-api surfaces for the request that needed the
+// refresh - not the site's 401 for the expired access token.
+const REFUSED_OAUTH_CODES = ["invalid_grant"];
+
 /**
  * Whether the site turned the credentials down, which is the only answer that means the session
  * is over — every other way a request can fail says nothing about the credentials.
  */
 const isLoginRefused = (err: unknown): boolean =>
-  REFUSED_STATUS_CODES.includes(getErrorStatusCode(err) ?? 0);
+  REFUSED_STATUS_CODES.includes(getErrorStatusCode(err) ?? 0) ||
+  REFUSED_OAUTH_CODES.includes(getErrorCode(err) ?? "");
 
 /**
  * The account the access token describes on its own. All of this is signed into the token, so
@@ -2018,6 +2025,7 @@ export function updateToken(
         api.showErrorNotification("Authentication failed, please log in again", err, {
           allowReport: false,
         });
+        api.store.dispatch(clearOAuthCredentials(null));
         api.store.dispatch(setUserInfo(undefined));
         api.events.emit("did-login", err);
         return false;
