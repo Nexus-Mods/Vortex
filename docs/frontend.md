@@ -82,6 +82,38 @@ build/test/format loop.
 - Shared components also expose semantic `nxm-`-prefixed classes
   (`nxm-tab-button`). Keep that pattern for reusable primitives.
 
+### Scrims
+
+A scrim darkens a **backdrop** so whatever sits on top stays readable: game art
+behind a tile's title, the app behind a modal. Use `bg-scrim-*` (or
+`from-`/`via-`/`to-scrim-*` for a gradient) and colour the content on it with
+`text-on-scrim-*`, or `<Typography brand="neutral-on-scrim">`.
+
+A scrim is not the same thing as tinting a surface for state or depth - a row
+hover, an input fill, a pressed state. Those are overlays, and they use the
+`translucent-*` / `translucent-dark-*` ramps.
+
+The distinction matters because the two behave differently when the theme
+changes, and the names are the only thing carrying that:
+
+- **A scrim never flips.** A photograph needs darkening whether the UI is light
+  or dark, and a modal backdrop stays dark in a light theme. `--color-scrim-*`
+  and `--color-on-scrim-*` are built from fixed black and white, and themes
+  leave them alone - see `src/stylesheets/ui/themes/light.css`, which overrides
+  every other family and deliberately omits these two.
+- **An overlay must flip.** A wash that lightens a dark surface has to darken a
+  light one, or it stops reading as a state change at all.
+
+> [!IMPORTANT]
+> Text laid on a scrim must use `on-scrim-*`, not the ordinary text tokens. A
+> theme-relative colour like `text-neutral-strong` flips to dark in a light
+> theme, and the scrim beneath it does not - so the label disappears.
+
+Both ramps live in `src/stylesheets/ui/theme/colours.css`.
+`src/stylesheets/ui/elements/modal.css` and the gradient in
+`src/renderer/src/ui/components/game_tile/GameTile.tsx` are the two worked
+examples.
+
 ## Motion
 
 Users can turn non-essential animation down: **Settings → Interface → Reduce motion**,

@@ -175,7 +175,7 @@ import { Typography } from "../../ui/components/typography/Typography";
 
 **Elements:** `h1`–`h6`, `p`, `span`, `div`, `ul`
 **Types:** `heading-2xl` through `heading-xs`, `title-md` through `title-xs`, `body-2xl` through `body-xs`
-**Brands:** `neutral` (default), `primary`, `info`, `success`, `premium`, `danger`, `warning`, `neutral-translucent` (white-alpha translucent ramp), `none` (opt out of colour)
+**Brands:** `neutral` (default), `primary`, `info`, `success`, `premium`, `danger`, `warning`, `neutral-translucent` (white-alpha translucent ramp), `neutral-on-scrim` (the fixed `on-scrim` ramp, for text laid over a scrim — stays light whatever the theme), `none` (opt out of colour)
 **Appearances:** `weak`, `subdued`, `moderate`, `strong` — plus `inverted` on `neutral` and `neutral-translucent` only. Setting `appearance` with `brand="none"` is disallowed (it would be redundant).
 
 ### TypographyLink

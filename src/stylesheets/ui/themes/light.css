@@ -1,0 +1,86 @@
+/*
+ * Light theme. The app stamps `data-theme="light"` on <html>; see util/theme.ts. Right-click
+ * the dev layout switcher to toggle it.
+ *
+ * Values are the "Light theme" column of Elements - Colours in the Nexus Mods Variables
+ * file. Only the semantic layer is overridden — the primitives are the same in both themes
+ * there, and here, which is why this works: `ui/theme/colours.css` declares the semantic
+ * layer with `@theme` rather than `@theme inline`, so `.bg-surface-mid` ships as
+ * `var(--color-surface-mid)` and follows whatever is set below.
+ *
+ * This is also the shape a user theme takes: a block of semantic overrides, nothing more.
+ *
+ * Scrims are deliberately absent. Figma gives Surface/Scrim and Neutral/Scrim identical
+ * values in both themes, matching the rule that a scrim darkens a backdrop whatever the
+ * UI is set to — so `--color-scrim-*` and `--color-on-scrim-*` are left alone.
+ */
+:root[data-theme="light"] {
+    /* Surface — elevation climbs towards white rather than away from black. */
+    --color-surface-base: var(--color-neutral-300);
+    --color-surface-low: var(--color-neutral-200);
+    --color-surface-mid: var(--color-neutral-100);
+    --color-surface-high: var(--color-neutral-50);
+    --color-surface-inverted: var(--color-neutral-950);
+    --color-surface-translucent-low: var(--color-translucent-700);
+    --color-surface-translucent-mid: var(--color-translucent-800);
+    --color-surface-translucent-high: var(--color-translucent-900);
+
+    /* Neutral — text darkens as it gains emphasis. */
+    --color-neutral-weak: var(--color-neutral-500);
+    --color-neutral-subdued: var(--color-neutral-600);
+    --color-neutral-moderate: var(--color-neutral-700);
+    --color-neutral-strong: var(--color-neutral-900);
+    --color-neutral-inverted: var(--color-neutral-50);
+
+    /* Neutral / Translucent — the washes swap to black over a light ground. */
+    --color-translucent-weaker: var(--color-translucent-dark-100);
+    --color-translucent-weak: var(--color-translucent-dark-500);
+    --color-translucent-subdued: var(--color-translucent-dark-700);
+    --color-translucent-moderate: var(--color-translucent-dark-800);
+    --color-translucent-strong: var(--color-translucent-dark-950);
+    --color-translucent-inverted: var(--color-translucent-950);
+
+    /* Stroke / Neutral / Translucent */
+    --color-stroke-weak: var(--color-translucent-dark-200);
+    --color-stroke-subdued: var(--color-translucent-dark-200);
+    --color-stroke-moderate: var(--color-translucent-dark-300);
+    --color-stroke-strong: var(--color-translucent-dark-400);
+
+    /* Brands — the ramps are unchanged; which step each role takes is reversed. */
+    --color-primary-weak: var(--color-primary-300);
+    --color-primary-subdued: var(--color-primary-400);
+    --color-primary-moderate: var(--color-primary-500);
+    --color-primary-strong: var(--color-primary-600);
+
+    --color-info-weak: var(--color-info-300);
+    --color-info-subdued: var(--color-info-400);
+    --color-info-moderate: var(--color-info-500);
+    --color-info-strong: var(--color-info-700);
+
+    --color-focus-subdued: var(--color-info-400);
+
+    --color-success-weak: var(--color-success-300);
+    --color-success-subdued: var(--color-success-500);
+    --color-success-moderate: var(--color-success-700);
+    --color-success-strong: var(--color-success-800);
+
+    --color-warning-weak: var(--color-warning-400);
+    --color-warning-subdued: var(--color-warning-500);
+    --color-warning-moderate: var(--color-warning-700);
+    --color-warning-strong: var(--color-warning-900);
+
+    --color-danger-weak: var(--color-danger-400);
+    --color-danger-subdued: var(--color-danger-500);
+    --color-danger-moderate: var(--color-danger-600);
+    --color-danger-strong: var(--color-danger-800);
+
+    --color-premium-weak: var(--color-premium-400);
+    --color-premium-subdued: var(--color-premium-600);
+    --color-premium-moderate: var(--color-premium-800);
+    --color-premium-strong: var(--color-premium-950);
+
+    --color-creator-weak: var(--color-creator-300);
+    --color-creator-subdued: var(--color-creator-400);
+    --color-creator-moderate: var(--color-creator-500);
+    --color-creator-strong: var(--color-creator-950);
+}
