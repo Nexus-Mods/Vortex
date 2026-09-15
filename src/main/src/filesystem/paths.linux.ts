@@ -1,26 +1,22 @@
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path/posix";
 
-import type {
-  ResolvedPath,
-  LinuxPathProvider,
-  LinuxPathBase,
-  XDGBase,
-} from "@vortex/shared/filesystem";
-import {
-  QualifiedPath,
-  PathResolverError,
-  PathProviderError,
-  XDG,
-} from "@vortex/shared/filesystem";
+import type { LinuxPathProvider, LinuxPathBase, XDGBase } from "@vortex/shared/filesystem";
+import { QualifiedPath, PathProviderError, XDG } from "@vortex/shared/filesystem";
 
+/**
+ * Node-backed implementation of {@link LinuxPathProvider}.
+ *
+ * A pure factory: wraps well-known Linux locations (and the XDG Base
+ * Directory specification) as `native://` {@link QualifiedPath}s via
+ * {@link QualifiedPath.fromNative}. It does not resolve anything - decoding
+ * `native://` paths is the {@link NativePathResolver}'s job.
+ */
 export class LinuxPathProviderImpl implements LinuxPathProvider {
   readonly platform = "linux" as const;
-  readonly scheme = "linux" as const;
-  readonly parent = null;
 
   #create(path: string): Promise<QualifiedPath> {
-    return Promise.resolve(QualifiedPath.of({ scheme: this.scheme, data: "", path, root: "" }));
+    return Promise.resolve(QualifiedPath.fromNative(path));
   }
 
   fromBase(base: LinuxPathBase): Promise<QualifiedPath> {
@@ -68,11 +64,5 @@ export class LinuxPathProviderImpl implements LinuxPathProvider {
 
     const value = join(homedir(), relative);
     return this.#create(value);
-  }
-
-  resolve(path: QualifiedPath): Promise<ResolvedPath> {
-    if (path.scheme !== this.scheme)
-      return Promise.reject(new PathResolverError(`Unsupported scheme '${path.scheme}'`));
-    return Promise.resolve(path.path);
   }
 }

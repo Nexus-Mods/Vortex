@@ -18,7 +18,7 @@ export type WindowsPathBase = OSPathBase | (typeof WindowsPath)[keyof typeof Win
 /** @public */
 export interface WindowsPathProvider extends PathProvider<WindowsPathBase> {
   readonly platform: "windows";
-  readonly scheme: "windows";
 
+  /** Returns the drive-letter roots available on the host. */
   enumerateDrives(): Promise<QualifiedPath[]>;
 }

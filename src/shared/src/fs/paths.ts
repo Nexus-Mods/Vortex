@@ -101,9 +101,6 @@ export type PathResolver = {
   /** Unique scheme to map {@link QualifiedPath} to this instance. Without the `://` at the end. */
   readonly scheme: string;
 
-  /** Parent resolver for chaining. */
-  readonly parent: PathResolver | null;
-
   /** Resolves {@link QualifiedPath} to {@link ResolvedPath}.
    * @throws PathResolverError on failure.
    * */
@@ -145,12 +142,14 @@ export interface PathResolverRegistry {
 }
 
 /**
- * Creates {@link QualifiedPath} instances from a base.
+ * Creates {@link QualifiedPath} instances from well-known bases. Providers
+ * are factories for the paths of the scheme they serve; resolving those
+ * paths back to native ones is a {@link PathResolver}'s job.
  *
  * @public */
-export type PathProvider<TBase extends string> = PathResolver & {
+export type PathProvider<TBase extends string> = {
   /**
-   * Creates {@link QualifiedPath} instances from a base.
+   * Creates a {@link QualifiedPath} from a well-known base.
    * @throws PathProviderError on invalid inputs.
    * */
   fromBase(base: TBase): Promise<QualifiedPath>;

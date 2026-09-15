@@ -7,7 +7,6 @@ import { PathResolverRegistryImpl } from "./path-resolver-registry";
 function mkResolver(scheme: string, prefix: string): PathResolver {
   return {
     scheme,
-    parent: null,
     resolve(path: QualifiedPath): Promise<ResolvedPath> {
       if (path.scheme !== scheme) {
         return Promise.reject(new PathResolverError(`Unsupported scheme '${path.scheme}'`));
