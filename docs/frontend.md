@@ -114,6 +114,29 @@ Both ramps live in `src/stylesheets/ui/theme/colours.css`.
 `src/renderer/src/ui/components/game_tile/GameTile.tsx` are the two worked
 examples.
 
+#### Naming a scrim-aware prop
+
+Components name this after **what they paint, not what they sit on**, so the two
+halves of the idea stay tellable apart:
+
+- A component that _is_ a scrim - it paints the fill - takes
+  `appearance="scrim"`. `Pill` is the worked example, and the name matches the
+  `Appearance=Scrim` variant in Figma.
+- Something laid _on_ a scrim someone else painted draws from the `on-scrim`
+  ramp. `Typography`'s `brand="neutral-on-scrim"` is the worked example.
+
+That the two land on different props is deliberate rather than drift. `Pill`'s
+`appearance` is a whole treatment - fill, border, hover - and has to stay
+orthogonal to `brand`, because a branded icon on a scrim is a real combination.
+`Typography`'s `brand` picks a ramp and `appearance` picks a step within it, so
+for text the scrim really is just another ramp.
+
+Only the achromatic ramp has a scrim counterpart: the design system has
+`Neutral/Scrim`, but no `Success/Scrim`. That is why the Typography brand is
+spelled `neutral-on-scrim` - there is deliberately no way to ask for
+`success-on-scrim`. A branded icon on a scrim still takes its colour from the
+ordinary, theme-relative brand ramp, and will shift with the theme.
+
 ## Motion
 
 Users can turn non-essential animation down: **Settings → Interface → Reduce motion**,

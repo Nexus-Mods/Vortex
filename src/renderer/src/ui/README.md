@@ -771,16 +771,23 @@ import { mdiViewGrid } from "@mdi/js";
 
 Compact, rounded label for tags and statuses. Renders as a non-interactive `div` by default, or as a `button` when given `as="button"`. Accepts an icon via either `iconPath` (an MDI/Nexus path string) or `icon` (a custom node) — not both.
 
-**Defaults:** `pillType="default"`
+**Defaults:** `brand="neutral"`, `appearance="subdued"` — only set these when you need something different.
 
 ```tsx
 import { Pill } from "../../ui/components/pill/Pill";
 import { mdiCheckCircleOutline, mdiTag } from "@mdi/js";
 
-// Variants
+// Uses defaults (neutral, subdued)
 <Pill>Default</Pill>
-<Pill pillType="success" iconPath={mdiCheckCircleOutline}>Success</Pill>
-<Pill pillType="none">Unstyled</Pill>
+
+// Brand tints the icon, so it needs one to say anything
+<Pill brand="success" iconPath={mdiCheckCircleOutline}>Enabled</Pill>
+
+// For laying over a scrim — game art, a modal backdrop
+<Pill appearance="scrim" iconPath={mdiSteam}>Steam</Pill>
+
+// Opt out of the treatment entirely
+<Pill appearance="none">Unstyled</Pill>
 
 // With an icon (path or custom node)
 <Pill iconPath={mdiTag}>Tagged</Pill>
@@ -791,7 +798,25 @@ import { mdiCheckCircleOutline, mdiTag } from "@mdi/js";
 <Pill as="button" disabled>Disabled</Pill>
 ```
 
-**Types:** `default`, `success`, `none` (opts out of styling) — more variants to come
+**Brands:** `primary`, `info`, `neutral`, `light`, `success`, `danger`, `warning`, `premium` — Button's set plus `warning`, which the design uses on pills but not on buttons, and `light`.
+
+`light` is the achromatic brand that still wants a bright icon: `neutral` lets the icon sit at the label's weight, `light` lifts it to the strong step. It is the one brand whose icon colour depends on the appearance — the solid `--color-neutral-strong` on a surface, the fixed `--color-on-scrim-strong` over a scrim.
+
+**Appearances:** `subdued` (the bordered, transparent treatment, coloured from the theme-relative ramps), `scrim` (the same shape, painting a scrim fill of its own and drawing its achromatic colours from the fixed Scrim families, so it reads over artwork whatever the theme) and `none`, which opts out of both.
+
+`scrim` carries its own fill (`--color-scrim-moderate`), so it reads over artwork on its own and does not need a scrim already behind it. Hover firms the border rather than washing the fill.
+
+In both appearances hover lifts **the label** to the strong step, leaving the icon on whatever its brand gives it. See the **Scrims** section in `docs/frontend.md` for when a scrim is the right tool.
+
+> [!NOTE]
+> The name follows what the component paints, not what it sits on. A component that **is** a scrim takes `appearance="scrim"`; text laid **on** someone else's scrim draws from the `on-scrim` ramp instead — see `Typography`'s `neutral-on-scrim` brand.
+
+> [!NOTE]
+> `brand` still tints the icon from the ordinary brand ramps, which _are_ theme-relative. A branded icon on a scrim will shift with the theme; only the achromatic parts are pinned. `neutral` is fully scrim-safe.
+
+`brand` tints **only the icon**, leaving the label and border alone so a pill stays the quiet thing it is. A pill with no icon therefore looks the same whatever its brand — give it an `iconPath` if the colour needs to read.
+
+> **Migration note:** `pillType` was replaced by `brand` + `appearance`. `pillType="default"` is now the default (drop it), `pillType="success"` is `brand="success"`, and `pillType="none"` is `appearance="none"`.
 
 ### Image
 

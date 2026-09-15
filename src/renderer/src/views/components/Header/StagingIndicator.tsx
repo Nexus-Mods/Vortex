@@ -10,5 +10,5 @@ export const StagingIndicator: FC<React.PropsWithChildren<unknown>> = () => {
     return null;
   }
 
-  return <Pill pillType="success">{t("STAGING")}</Pill>;
+  return <Pill brand="success">{t("STAGING")}</Pill>;
 };

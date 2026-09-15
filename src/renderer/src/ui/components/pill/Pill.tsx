@@ -12,9 +12,24 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
+/** Colour family. Tints the icon only; `light` takes the strong step where `neutral` does not. */
+export type IPillBrand =
+  | "primary"
+  | "info"
+  | "neutral"
+  | "light"
+  | "success"
+  | "danger"
+  | "warning"
+  | "premium";
+
+/** The pill's treatment. `scrim` paints a scrim fill of its own; `none` opts out of both. */
+export type IPillAppearance = "subdued" | "scrim" | "none";
+
 type IBasePillProps = {
+  appearance?: IPillAppearance;
+  brand?: IPillBrand;
   children: string;
-  pillType?: "default" | "none" | "success";
 } & XOr<{ iconPath?: string }, { icon?: ReactNode }>;
 
 type IPillDefaultProps = HTMLAttributes<HTMLDivElement> & {
@@ -32,10 +47,10 @@ type IPillProps = IPillDefaultProps | IButtonPillProps;
 type IPillElement = HTMLButtonElement | HTMLDivElement;
 type IPill = ForwardRefExoticComponent<IPillProps & RefAttributes<IPillElement>>;
 
-const getPillClasses = ({ pillType = "default" }: Pick<IBasePillProps, "pillType">) =>
-  joinClasses("nxm-pill", {
-    [`nxm-pill-${pillType}`]: pillType !== "none",
-  });
+const getPillClasses = (
+  { appearance = "subdued", brand = "neutral" }: Pick<IBasePillProps, "appearance" | "brand">,
+  className?: string,
+) => joinClasses(["nxm-pill", `nxm-pill-${brand}`, `nxm-pill-${appearance}`, className]);
 
 const Content = ({
   icon,
@@ -52,7 +67,7 @@ const Content = ({
 );
 
 export const Pill: IPill = forwardRef<IPillElement, IPillProps>((allProps, ref) => {
-  const { children, className, icon, iconPath, pillType, ...rest } = allProps;
+  const { appearance, brand, children, className, icon, iconPath, ...rest } = allProps;
 
   const content = <Content icon={icon} iconPath={iconPath} label={children} />;
 
@@ -61,7 +76,7 @@ export const Pill: IPill = forwardRef<IPillElement, IPillProps>((allProps, ref) 
 
     return (
       <button
-        className={joinClasses([getPillClasses({ pillType }), className])}
+        className={getPillClasses({ appearance, brand }, className)}
         disabled={disabled}
         ref={ref as Ref<HTMLButtonElement>}
         type="button"
@@ -76,7 +91,7 @@ export const Pill: IPill = forwardRef<IPillElement, IPillProps>((allProps, ref) 
 
   return (
     <div
-      className={joinClasses([getPillClasses({ pillType }), className])}
+      className={getPillClasses({ appearance, brand }, className)}
       ref={ref as Ref<HTMLDivElement>}
       {...props}
     >

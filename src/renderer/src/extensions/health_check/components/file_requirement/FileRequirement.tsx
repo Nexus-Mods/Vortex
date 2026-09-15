@@ -144,7 +144,7 @@ export function FileRequirement({
               <Pill iconPath={mdiMonitorArrowDownVariant}>{t("detail::item::installed")}</Pill>
 
               {file.enabled ? (
-                <Pill iconPath={mdiCheckCircleOutline} pillType="success">
+                <Pill iconPath={mdiCheckCircleOutline} brand="success">
                   {t("detail::item::enabled")}
                 </Pill>
               ) : (
