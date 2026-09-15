@@ -54,6 +54,12 @@ Project and coding documentation. To set up and build Vortex, start with
   [generic](install-instructions/generic.md) ·
   [shared setup](install-instructions/shared.md)
 
+## Decisions
+
+Architecture decision records: what changed in behaviour, why, and what it costs.
+
+- [adr/0001-plugin-sort-loads-its-plugins.md](adr/0001-plugin-sort-loads-its-plugins.md) - The Bethesda plugin sort runs libloot's pre-sort load sequence itself, as the LOOT application does
+
 ## Research
 
 These describe other products, as prior art. They are not documentation of

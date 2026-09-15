@@ -19,6 +19,8 @@ interface ILootSeams {
   gameId: string;
   // the plugin names findInvalidPlugins reports as invalid
   invalid: string[];
+  // the harness game's native plugins (lowercase), the first being its main master
+  nativePlugins: string[];
   // the loot instance createAsync resolves; makeLootHarness arranges a fresh fake per test
   loot: IFakeLoot | undefined;
 }
@@ -28,6 +30,7 @@ export const seams: ILootSeams = {
   base: "",
   gameId: "",
   invalid: [],
+  nativePlugins: [],
   loot: undefined,
 };
 
@@ -53,7 +56,7 @@ export const gameSupportModule = {
   gameSupported: (gameMode: string) => gameMode === seams.gameId,
   pluginPath: (gameMode: string) => path.join(seams.base, "local", gameMode),
   gameDataPath: () => path.join(seams.base, "data"),
-  nativePlugins: () => [] as string[],
+  nativePlugins: () => seams.nativePlugins,
 };
 
 export const downloadMasterlistMock = vi.fn<(gameId: string, localPath: string) => Promise<void>>(

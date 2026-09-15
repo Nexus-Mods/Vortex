@@ -1,3 +1,4 @@
+import { stat } from "node:fs/promises";
 import * as path from "path";
 
 import { getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
@@ -37,6 +38,8 @@ import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
+
+const basename = (filePath: string) => path.basename(filePath);
 
 /** How a sort attempt ended; only "sorted" changed the load order. */
 type SortOutcome =
@@ -300,8 +303,8 @@ class LootInterface {
       } catch {
         // the previous sort reported its own failure
       }
-      const pluginNames = await this.sortInput(pluginFilePaths);
-      return await this.doSort(pluginNames, gameMode, loot);
+      const filePaths = await this.sortInput(pluginFilePaths);
+      return await this.doSort(filePaths, gameMode, loot);
     } catch (err) {
       // doSort classifies libloot's own failures; anything reaching here failed before the call
       return failed(parseError(err));
@@ -309,10 +312,10 @@ class LootInterface {
   }
 
   /**
-   * The plugin file names to hand libloot in their current load order, which is libloot's
-   * tie-break; plugins the load order does not know yet rank last, like a plugin the game has
-   * not seen before. Only files that exist on disk: the given files, or the deployed non-ghost
-   * plugins plus the natives from the plugin list.
+   * The plugin files to hand libloot in their current load order, which is libloot's tie-break;
+   * plugins the load order does not know yet rank last, like a plugin the game has not seen
+   * before. Only files that exist on disk: the given files, or the deployed non-ghost plugins
+   * plus the natives from the plugin list.
    */
   private async sortInput(pluginFilePaths?: string[]): Promise<string[]> {
     const state = this.mExtensionApi.store.getState();
@@ -347,15 +350,43 @@ class LootInterface {
     // loot produces really annoying error messages for files that are not there
     const existing = await Promise.all(
       filePaths.map((filePath) =>
-        fs
-          .statAsync(filePath)
+        stat(filePath)
           .then(() => filePath)
           .catch(() => undefined),
       ),
     );
-    return existing
-      .filter((filePath): filePath is string => filePath !== undefined)
-      .map((filePath) => path.basename(filePath));
+    return existing.filter((filePath): filePath is string => filePath !== undefined);
+  }
+
+  /**
+   * The LOOT application's pre-sort sequence: refresh the load-order state, hold the game's main
+   * master headers-only, fully load everything else being sorted. The master is resolved from the
+   * Data folder so a Starfield batch is valid even when the caller did not list it.
+   */
+  private async loadForSort(gameMode: string, loot: ILootProm, filePaths: string[]): Promise<void> {
+    await loot.loadCurrentLoadOrderStateAsync();
+    // the game's own master file is the first plugin in its hardcoded load order
+    const mainMaster = nativePlugins(gameMode)[0];
+    const isMainMaster = (filePath: string) => toPluginId(filePath) === mainMaster;
+    if (mainMaster !== undefined && (await loot.getPluginAsync(mainMaster)) === undefined) {
+      const pluginList: IPlugins = this.mExtensionApi.store.getState().session.plugins.pluginList;
+      const masterPath =
+        filePaths.find(isMainMaster) ??
+        pluginList?.[mainMaster]?.filePath ??
+        path.join(gameDataPath(gameMode), mainMaster);
+      if (
+        await stat(masterPath).then(
+          () => true,
+          () => false,
+        )
+      ) {
+        await loot.loadPluginsAsync([masterPath], true);
+      }
+    }
+    const others = filePaths.filter((filePath) => !isMainMaster(filePath));
+    if (others.length > 0) {
+      await loot.loadPluginsAsync(others, false);
+    }
   }
 
   private get gamePath() {
@@ -381,7 +412,7 @@ class LootInterface {
   }
 
   private async doSort(
-    pluginNames: string[],
+    filePaths: string[],
     gameMode: string,
     loot: ILootProm,
     excluded: string[] = [],
@@ -391,10 +422,12 @@ class LootInterface {
     // the full state-built list, so a plugin libloot couldn't load would throw PluginNotLoaded;
     // pre-filtering avoids re-running the whole sort once per bad plugin.
     const pluginList: IPlugins = store.getState().session.plugins.pluginList ?? {};
+    let pluginNames = filePaths.map(basename);
     const invalid = await findInvalidPlugins(pluginNames, pluginList, gameMode);
     if (invalid.size > 0) {
       excluded = [...excluded, ...pluginNames.filter((id) => invalid.has(id))];
-      pluginNames = pluginNames.filter((id) => !invalid.has(id));
+      filePaths = filePaths.filter((filePath) => !invalid.has(basename(filePath)));
+      pluginNames = filePaths.map(basename);
       log("warn", "excluding invalid plugins from sort", { plugins: [...invalid] });
     }
     try {
@@ -402,6 +435,7 @@ class LootInterface {
       const timeBefore = Date.now();
       store.dispatch(startActivity("plugins", "sorting"));
       this.mSortPromise = this.readLists(gameMode, loot)
+        .then(() => this.loadForSort(gameMode, loot, filePaths))
         .then(() => loot.sortPluginsAsync(pluginNames))
         .catch((err) =>
           err.message.toLowerCase() === "already closed"
@@ -466,7 +500,7 @@ class LootInterface {
             // userlist from disk, and give the persistor a moment to flush it before re-sorting
             this.mUserlistTime = undefined;
             await new Promise((resolve) => setTimeout(resolve, 500));
-            return this.doSort(pluginNames, gameMode, loot);
+            return this.doSort(filePaths, gameMode, loot);
           }
           this.notifyNotSorted(err.message);
           break;

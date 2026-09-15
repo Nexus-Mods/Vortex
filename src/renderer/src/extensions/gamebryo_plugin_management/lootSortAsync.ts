@@ -6,7 +6,6 @@ import type { IExtensionApi } from "../../types/IExtensionContext";
 import { activeProfile } from "../profile_management/selectors";
 import type { IProfile } from "../profile_management/types/IProfile";
 import type { ILOOTSortApiCall } from "./types/ILOOTList";
-import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 
 // all late-bound from the entry module, where the LootInterface and the plugin-list scan live
 export interface ILootSortDeps {
@@ -20,7 +19,6 @@ export interface ILootSortDeps {
 export const LOOT_SORT_API_DEADLINE_MS = 120_000;
 
 async function sortPlugins(
-  api: IExtensionApi,
   deps: ILootSortDeps,
   profile: IProfile,
   pluginFilePaths: string[],
@@ -29,19 +27,14 @@ async function sortPlugins(
     await deps.downloadMasterlist(profile.gameId);
   }
   await deps.updatePluginList(profile.modState, profile.gameId);
-  // libloot only sorts plugins it has loaded; plugin-details loads every deployed one
-  await new Promise((resolve) => {
-    const pluginList = api.getState<IStateWithGamebryo>().session.plugins?.pluginList ?? {};
-    api.events.emit("plugin-details", profile.gameId, Object.keys(pluginList), resolve);
-  });
   return deps.sortFiles(pluginFilePaths);
 }
 
 /**
  * The handler behind the lootSortAsync extension API: downloads the masterlist when none exists,
- * refreshes the plugin list, loads the plugins into libloot, then sorts exactly the given files.
- * The callback is answered exactly once, within the deadline, with the file names in the order
- * libloot sorted them into.
+ * refreshes the plugin list, then sorts exactly the given files (the sort loads them into libloot
+ * itself). The callback is answered exactly once, within the deadline, with the file names in the
+ * order libloot sorted them into.
  */
 export function makeLootSortAsync(
   api: IExtensionApi,
@@ -72,10 +65,7 @@ export function makeLootSortAsync(
       }, LOOT_SORT_API_DEADLINE_MS);
     });
     try {
-      const sorted = await Promise.race([
-        sortPlugins(api, deps, profile, pluginFilePaths),
-        timedOut,
-      ]);
+      const sorted = await Promise.race([sortPlugins(deps, profile, pluginFilePaths), timedOut]);
       onSortCallback(null, sorted);
     } catch (err) {
       log("warn", "lootSortAsync failed", {
