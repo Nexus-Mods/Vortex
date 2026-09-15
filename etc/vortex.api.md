@@ -5275,7 +5275,7 @@ export interface VortexErrorKindMap {
     "not-supported": {
         feature?: string;
     };
-    "os:generic": Pick<OsErrorData, "originalCode"> & Partial<OsErrorData>;
+    "os:generic": OsErrorData;
     "os:unsupported": {};
     "process-canceled": {
         extraInfo?: unknown;

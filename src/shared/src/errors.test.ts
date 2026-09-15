@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   computeErrorFingerprint,
+  computeIdentityFingerprint,
   getErrorStatusCode,
   isEnvironmentalError,
   sanitizeFramePath,
@@ -551,5 +552,34 @@ describe("getErrorStatusCode", () => {
   it("answers null for anything that isn't an error", () => {
     expect(getErrorStatusCode({ statusCode: 403 })).toBeNull();
     expect(getErrorStatusCode(undefined)).toBeNull();
+  });
+});
+
+describe("computeIdentityFingerprint", () => {
+  it("is an 8-char hex hash, stable for the same parts", () => {
+    const first = computeIdentityFingerprint(
+      "2.7.0",
+      "PreviousSessionCrash",
+      "Vortex.exe",
+      "0x398fe0",
+    );
+    expect(first).toMatch(/^[0-9a-f]{8}$/);
+    expect(
+      computeIdentityFingerprint("2.7.0", "PreviousSessionCrash", "Vortex.exe", "0x398fe0"),
+    ).toBe(first);
+  });
+
+  it("changes when any part or the version changes", () => {
+    const base = computeIdentityFingerprint("2.7.0", "ChildProcessGone", "utility", "133");
+    expect(computeIdentityFingerprint("2.7.0", "ChildProcessGone", "gpu", "133")).not.toBe(base);
+    expect(computeIdentityFingerprint("2.7.1", "ChildProcessGone", "utility", "133")).not.toBe(
+      base,
+    );
+  });
+
+  it("does not collide when parts are shifted", () => {
+    expect(computeIdentityFingerprint("2.7.0", "a", "b")).not.toBe(
+      computeIdentityFingerprint("2.7.0", "ab", ""),
+    );
   });
 });

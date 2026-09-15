@@ -252,6 +252,14 @@ export const computeErrorFingerprint = (
   return fnv1aHash(input);
 };
 
+/**
+ * Fingerprint for a failure with no stack to hash (native crashes, processes
+ * gone): the identifying `parts` plus the app version, hashed like
+ * {@link computeErrorFingerprint} so the backend dedupes both the same way.
+ */
+export const computeIdentityFingerprint = (appVersion: string, ...parts: string[]): string =>
+  fnv1aHash([...parts, appVersion].join("\n"));
+
 /** FNV-1a hash producing an 8-char hex string. Not cryptographic —
  *  used only for error deduplication fingerprints. */
 const fnv1aHash = (input: string): string => {
