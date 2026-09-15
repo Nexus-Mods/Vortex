@@ -10,6 +10,7 @@ export default mergeConfig(
       environment: "node",
       include: ["src/**/*.test.integration.ts"],
       testTimeout: 30_000,
+      setupFiles: "./src/test-setup.ts",
     },
   }),
 );

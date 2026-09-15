@@ -155,28 +155,32 @@ export class TemporaryError extends Error {
   }
 }
 
-export class HTTPError extends Error {
-  private mCode: number;
-  private mMessage: string;
-  private mURL: string;
+/**
+ * @public
+ * @deprecated Use `VortexError` directly
+ */
+export class HTTPError extends VortexError {
+  #statusCode: number;
+  #statusMessage: string;
+  #url: string;
+
   constructor(statusCode: number, message: string, url: string) {
-    super(`HTTP (${statusCode}) - ${message}`);
-    this.name = this.constructor.name;
-    this.mCode = statusCode;
-    this.mMessage = message;
-    this.mURL = url;
+    super(`HTTP (${statusCode}) - ${message}`, { kind: "http:bad-status", url, statusCode });
+    this.#statusCode = statusCode;
+    this.#statusMessage = message;
+    this.#url = url;
   }
 
   public get statusCode(): number {
-    return this.mCode;
+    return this.#statusCode;
   }
 
   public get statusMessage(): string {
-    return this.mMessage;
+    return this.#statusMessage;
   }
 
   public get url(): string {
-    return this.mURL;
+    return this.#url;
   }
 }
 

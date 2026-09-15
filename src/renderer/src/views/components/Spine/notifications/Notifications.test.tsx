@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { INotification, NotificationType } from "@/types/INotification";
 
 const mocks = vi.hoisted(() => ({
+  items: [] as INotification[],
   notifications: [] as INotification[],
 }));
 
@@ -21,8 +22,11 @@ vi.mock("@/ExtensionProvider", () => ({
 // redux store; the trigger is what moved, so the panel hooks are stubbed to empty.
 vi.mock("./hooks/useNotificationFiltering.hook", () => ({ useNotificationFiltering: () => [] }));
 vi.mock("./hooks/useNotificationItems.hook", () => ({
-  useNotificationItems: () => ({ items: [], collapsed: {} }),
+  useNotificationItems: () => ({ items: mocks.items, collapsed: {} }),
 }));
+
+// The panel's rows are someone else's tests; the beak is what this file cares about.
+vi.mock("./components/NotificationItem", () => ({ NotificationItem: () => null }));
 vi.mock("./hooks/useNotificationActions.hook", () => ({
   useNotificationActions: () => ({
     dismissAll: vi.fn(),
@@ -55,6 +59,7 @@ const renderComponent = (types: NotificationType[]) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.items = [];
   mocks.notifications = [];
 });
 
@@ -170,5 +175,30 @@ describe("Notifications trigger", () => {
     renderComponent([]);
     // The resting border is transparent — it only paints on hover or while open.
     expect(screen.getByRole("button", { name: "Notifications" })).toHaveClass("border-transparent");
+  });
+});
+
+// LAZ-999: the tray sits directly above the download flyout in the spine, so the two
+// have to read as the same kind of panel — same beak, same distance from their button.
+describe("Notifications beak", () => {
+  it("points back at the bell with the same arrow the download flyout uses", async () => {
+    mocks.items = [notification("info")];
+    renderComponent(["info"]);
+
+    await waitFor(() => {
+      expect(document.querySelector(".nxm-overlay-arrow")).toBeInTheDocument();
+    });
+  });
+
+  it("draws no hand-rolled beak of its own any more", async () => {
+    mocks.items = [notification("info")];
+    const { container } = renderComponent(["info"]);
+
+    await waitFor(() => {
+      expect(document.querySelector(".nxm-overlay-arrow")).toBeInTheDocument();
+    });
+
+    // The old beak was a rotated square, which could never match the tooltip's 12x8.
+    expect(container.querySelector("span.rotate-45")).not.toBeInTheDocument();
   });
 });

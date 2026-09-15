@@ -26,7 +26,10 @@ function PlaceholderTextArea(props: IPlaceholderTextAreaProps) {
   const [value, setValue] = React.useState("");
 
   const handlePaste = () => {
-    setValue(clipboard.readText());
+    clipboard
+      .readText()
+      .then((x) => setValue(x))
+      .catch(() => {});
   };
 
   const onShowContext = (event: React.MouseEvent<any>) => {

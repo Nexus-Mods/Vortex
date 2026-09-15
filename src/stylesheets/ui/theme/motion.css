@@ -1,0 +1,19 @@
+/* Reduced motion. The app stamps `data-reduce-motion` on <html> - see util/reduceMotion.ts. */
+
+/* The app-aware counterpart to Tailwind's `motion-reduce:`, which only ever sees the OS. */
+@custom-variant reduce-motion ([data-reduce-motion="true"] &);
+
+@layer theme {
+    [data-reduce-motion="true"] {
+        /* Flattens every `transition-*`; an explicit `duration-*` survives it on purpose. */
+        --default-transition-duration: 0.01ms; /* not 0s: that fires no transitionend */
+    }
+}
+
+@layer utilities {
+    [data-reduce-motion="true"] {
+        .animate-pulse {
+            animation: none;
+        }
+    }
+}

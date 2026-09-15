@@ -76,24 +76,8 @@ runs:
       shell: pwsh
       run: .\download-codesigntool.ps1
 
-    - name: Read Node.js version from package.json
-      id: node-version
-      shell: pwsh
-      run: |
-        $packageJson = Get-Content package.json | ConvertFrom-Json
-        $nodeVersion = $packageJson.engines.node
-        echo "NODE_VERSION=$nodeVersion" >> $env:GITHUB_OUTPUT
-        echo "Using Node.js version: $nodeVersion"
-
     - name: Install pnpm
-      uses: pnpm/action-setup@v6
-
-    - name: Use Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
-        cache: "pnpm"
-        registry-url: "https://registry.npmjs.org"
+      uses: ./.github/actions/setup-pnpm
 
     - name: Bump versions
       shell: pwsh
@@ -149,7 +133,7 @@ runs:
       if: steps.packaged-native-cache.outputs.cache-hit != 'true' # skip when cached
       shell: pwsh
       working-directory: src/main/dist
-      run: npx electron-rebuild
+      run: pnpm exec electron-rebuild
 
     - name: Build Installer
       shell: pwsh

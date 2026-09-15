@@ -16,17 +16,17 @@ import {
 import { join, dirname } from "node:path";
 import { Readable, Writable } from "node:stream";
 
+import { parseError, VortexError } from "@vortex/shared";
 import type {
   DirectoryStatus,
   FileStatus,
   StatResult,
   Status,
   StatusTime,
-} from "@nexusmods/adaptor-api/fs";
-import type { Pattern, ResolvedPath } from "@nexusmods/adaptor-api/fs";
-import type { FileSystemBackend as NodeFileSystemBackend } from "@nexusmods/adaptor-api/fs";
-import { matches } from "@nexusmods/adaptor-api/fs";
-import { parseError, VortexError } from "@vortex/shared";
+} from "@vortex/shared/filesystem";
+import type { Pattern, ResolvedPath } from "@vortex/shared/filesystem";
+import type { FileSystemBackend as NodeFileSystemBackend } from "@vortex/shared/filesystem";
+import { matches } from "@vortex/shared/filesystem";
 
 /**
  * Node-backed implementation of {@link NodeFileSystemBackend}. Operates on
@@ -381,7 +381,12 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         }
       },
       return: async () => {
-        await dir.close().catch(() => undefined);
+        try {
+          await dir.close();
+        } catch {
+          // ignored
+        }
+
         return { done: true, value: undefined };
       },
     };
@@ -408,11 +413,12 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
 }
 
 function parseTime(stats: BigIntStats): StatusTime {
+  // TODO: Node.js v26.2.0 added `Temporal.Instant` support to `fs.Stats`, replace custom code once upgraded
   const times: StatusTime = {
-    accessTime: stats.atimeNs,
-    modifiedTime: stats.mtimeNs,
-    changeTime: stats.ctimeNs,
-    creationTime: stats.birthtimeNs,
+    accessTime: Temporal.Instant.fromEpochNanoseconds(stats.atimeNs),
+    modifiedTime: Temporal.Instant.fromEpochNanoseconds(stats.mtimeNs),
+    changeTime: Temporal.Instant.fromEpochNanoseconds(stats.ctimeNs),
+    creationTime: Temporal.Instant.fromEpochNanoseconds(stats.birthtimeNs),
   };
 
   return times;

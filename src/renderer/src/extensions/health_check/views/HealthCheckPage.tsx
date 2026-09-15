@@ -351,10 +351,10 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     <HealthCheckTrackingProvider api={api}>
       <Page active={active} id="health-check-page" scrollable={false}>
         <PageHeader
-          customTitle={(scrolled) => (
+          customTitle={(compact) => (
             <div className="flex items-center gap-x-1.5">
               <Typography
-                appearance={scrolled ? "subdued" : "moderate"}
+                appearance={compact ? "subdued" : "moderate"}
                 as="h2"
                 className="transition-colors"
                 typographyType="heading-xs"
@@ -362,7 +362,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
                 {t("listing::title")}
               </Typography>
 
-              <BetaBadge isSubdued={scrolled} />
+              <BetaBadge isSubdued={compact} />
             </div>
           )}
           pictogramName="health-check"

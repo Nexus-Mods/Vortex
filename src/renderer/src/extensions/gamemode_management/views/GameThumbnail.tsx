@@ -1,7 +1,3 @@
-import * as path from "path";
-import * as url from "url";
-
-import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button, Panel } from "react-bootstrap";
@@ -10,7 +6,6 @@ import { Provider } from "react-redux";
 import { connect, PureComponentEx } from "@/controls/ComponentEx";
 import Icon from "@/controls/Icon";
 import IconBar from "@/controls/IconBar";
-import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameTileImageURL";
 import type { IActionDefinition } from "@/types/api";
 import type { IMod, IProfile, IState } from "@/types/IState";
 import { Image } from "@/ui/components/image/Image";
@@ -23,6 +18,7 @@ import { getSafe } from "@/util/storeHelper";
 import { countIf } from "@/util/util";
 
 import type { IGameStored } from "../types/IGameStored";
+import { gameArtURL } from "../util/gameArtURL";
 import ActiveModCount from "./ActiveModCount";
 import GameInfoPopover from "./GameInfoPopover";
 import GameName from "./GameName";
@@ -32,7 +28,7 @@ export interface IBaseProps {
   game: IGameStored;
   active: boolean;
   discovered?: boolean;
-  onRefreshGameInfo?: (gameId: string) => PromiseBB<void>;
+  onRefreshGameInfo?: (gameId: string) => PromiseLike<void>;
   type: string;
   onLaunch?: () => void;
   // artwork-only tile for tight spots like the Recently Managed dashlet:
@@ -66,15 +62,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       return null;
     }
 
-    // Prefer the Nexus "tile" art so it matches the website. Fall back to a
-    // local extension logo / imageURL when no Nexus tile can be resolved.
-    let logoPath: string | undefined = gameTileImageURL(game);
-    if (logoPath == null) {
-      logoPath =
-        game.extensionPath !== undefined && game.logo !== undefined
-          ? path.join(game.extensionPath, game.logo)
-          : game.imageURL;
-    }
+    const imgurl = gameArtURL(game);
 
     // Mod count should only be shown for Managed and Discovered games as
     //  the supported type suggests that the game has been removed from the machine.
@@ -90,21 +78,6 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       "game-thumbnail",
       `game-thumbnail-${discovered !== false ? "discovered" : "undiscovered"}`,
     ];
-
-    let imgurl = null;
-    if (logoPath != null) {
-      let protocol = null;
-      try {
-        const parsedUrl = new URL(logoPath);
-        protocol = parsedUrl.protocol;
-      } catch (err) {
-        // If URL parsing fails, treat as file path
-      }
-      imgurl =
-        protocol !== null && protocol.startsWith("http")
-          ? logoPath
-          : url.pathToFileURL(logoPath).href;
-    }
 
     return (
       <Panel

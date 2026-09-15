@@ -21,7 +21,9 @@ describe("parseMinidump", () => {
       module: "electron.exe",
       moduleVersion: "43.0.0.0",
       moduleOffset: "0x3aeaef0",
+      moduleId: "E9212FAA5978A9E44C4C44205044422E1",
       processType: "browser",
+      appVersion: "43.0.0",
     });
   });
 
@@ -33,7 +35,9 @@ describe("parseMinidump", () => {
       module: "electron.exe",
       moduleVersion: "43.0.0.0",
       moduleOffset: "0x3aeaef0",
+      moduleId: "E9212FAA5978A9E44C4C44205044422E1",
       processType: "renderer",
+      appVersion: "43.0.0",
     });
   });
 
@@ -44,6 +48,7 @@ describe("parseMinidump", () => {
       exceptionName: "SIGSEGV",
       exceptionAddress: "0x0",
       processType: "browser",
+      appVersion: "1.0.0",
     });
   });
 
@@ -53,6 +58,7 @@ describe("parseMinidump", () => {
       exceptionName: "SIGSEGV",
       exceptionAddress: "0x0",
       processType: "renderer",
+      appVersion: "1.0.0",
     });
   });
 

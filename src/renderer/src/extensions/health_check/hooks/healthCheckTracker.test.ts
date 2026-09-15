@@ -114,21 +114,12 @@ describe("createHealthCheckTracker", () => {
     expect(events[0].properties).not.toHaveProperty("check_id");
   });
 
-  it("emits the scan lifecycle pair", () => {
+  it("emits the scan trigger, and nothing on completion", () => {
     const { tracker, events } = harness();
     tracker.trackScanTriggered({ is_manual: true, previous_issue_count: 4 });
-    tracker.trackScanCompleted({
-      duration_ms: 1200,
-      total_issues_found: 2,
-      warning_count: 1,
-      suggestion_count: 1,
-      health_check_passed: false,
-    });
-    expect(events.map((e) => e.eventName)).toEqual([
-      "health_check_scan_triggered",
-      "health_check_scan_completed",
-    ]);
+    expect(events.map((e) => e.eventName)).toEqual(["health_check_scan_triggered"]);
     expect(events[0].properties).toEqual({ is_manual: true, previous_issue_count: 4 });
+    expect(tracker).not.toHaveProperty("trackScanCompleted");
   });
 
   it("omits issue_id from install events when the install isn't tied to one issue", () => {

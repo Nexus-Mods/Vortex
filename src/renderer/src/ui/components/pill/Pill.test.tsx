@@ -96,5 +96,31 @@ describe("Pill", () => {
       renderComponent({ id: "my-pill" });
       expect(document.querySelector("#my-pill")).toBeInTheDocument();
     });
+
+    // Anything anchoring to a pill — a Tooltip, a popover — positions itself off this
+    // node, and a plain function component would never have been handed the ref.
+    it("hands a ref to the div it renders", () => {
+      const ref = React.createRef<HTMLDivElement>();
+
+      render(
+        <Pill ref={ref} id="my-pill">
+          Label
+        </Pill>,
+      );
+
+      expect(ref.current).toBe(document.querySelector("#my-pill"));
+    });
+
+    it("hands a ref to the button variant too", () => {
+      const ref = React.createRef<HTMLButtonElement>();
+
+      render(
+        <Pill as="button" ref={ref}>
+          Label
+        </Pill>,
+      );
+
+      expect(ref.current).toBe(screen.getByRole("button", { name: /label/i }));
+    });
   });
 });

@@ -538,14 +538,6 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<v
     const stubDownloadInfo = getGameStubDownloadInfo(gameId);
     let extension: IExtensionDownloadInfo;
     if (stubDownloadInfo !== undefined) {
-      if (stubDownloadInfo.modId !== undefined && stubDownloadInfo.fileId === undefined) {
-        const manifestEntry = state.session.extensions.available.find(
-          (ext) => ext.modId === stubDownloadInfo.modId,
-        );
-        if (manifestEntry !== undefined) {
-          stubDownloadInfo.fileId = manifestEntry.fileId;
-        }
-      }
       extension = stubDownloadInfo;
     } else {
       extension = state.session.extensions.available.find(

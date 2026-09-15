@@ -1,5 +1,6 @@
 import { pathToFileURL } from "url";
 
+import { Transition } from "@headlessui/react";
 import { mdiPlay } from "@mdi/js";
 import React, { type FC, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -128,11 +129,7 @@ const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
   );
 };
 
-interface ToolsSectionProps {
-  isAnimating: boolean;
-}
-
-export const ToolsSection: FC<React.PropsWithChildren<ToolsSectionProps>> = ({ isAnimating }) => {
+export const ToolsSection = () => {
   const { menuIsCollapsed } = useWindowContext();
   const { selection } = useSpineContext();
   const {
@@ -160,12 +157,19 @@ export const ToolsSection: FC<React.PropsWithChildren<ToolsSectionProps>> = ({ i
       ])}
     >
       {!!visibleTools.length && (
-        <div
+        <Transition
+          appear
+          show
+          as="div"
           className={joinClasses([
-            "flex items-center gap-1 border-b border-stroke-weak pb-3 transition-[translate,opacity]",
+            "flex items-center gap-1 border-b border-stroke-weak pb-3",
             menuIsCollapsed ? "w-10 flex-wrap justify-center" : "w-full flex-wrap-reverse",
-            isAnimating ? "translate-y-6 opacity-0 duration-0" : "duration-200",
           ])}
+          data-testid="menu-tools"
+          enter="transition-[translate,opacity] delay-150 duration-200 reduce-motion:delay-0"
+          enterFrom="translate-y-6 opacity-0 reduce-motion:translate-y-0 reduce-motion:opacity-100"
+          enterTo="translate-y-0 opacity-100"
+          key={menuIsCollapsed ? "collapsed" : "expanded"}
         >
           {visibleTools.map((starter) => (
             <ToolButton
@@ -175,7 +179,7 @@ export const ToolsSection: FC<React.PropsWithChildren<ToolsSectionProps>> = ({ i
               onClick={() => startTool(starter)}
             />
           ))}
-        </div>
+        </Transition>
       )}
 
       <PlayButton

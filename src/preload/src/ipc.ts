@@ -11,8 +11,6 @@ import type {
   InvokeChannels,
   MainChannels,
   CallbackChannels,
-  SerializableArgs,
-  AssertSerializable,
   WireReply,
 } from "@vortex/shared/ipc";
 import { ipcRenderer } from "electron";
@@ -49,10 +47,12 @@ export const errorOriginTracker: ErrorOriginTracker = {
 
 export async function rendererInvoke<C extends keyof InvokeChannels>(
   channel: C,
-  ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
-): Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> {
-  const reply: WireReply<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>> =
-    await ipcRenderer.invoke(channel, ...args);
+  ...args: Parameters<InvokeChannels[C]>
+): Promise<Awaited<ReturnType<InvokeChannels[C]>>> {
+  const reply: WireReply<Awaited<ReturnType<InvokeChannels[C]>>> = await ipcRenderer.invoke(
+    channel,
+    ...args,
+  );
   if (reply.error) {
     throw deserializeVortexError(reply.error, errorOriginTracker);
   } else {
@@ -62,27 +62,21 @@ export async function rendererInvoke<C extends keyof InvokeChannels>(
 
 export function rendererSend<C extends keyof RendererChannels>(
   channel: C,
-  ...args: SerializableArgs<Parameters<RendererChannels[C]>>
+  ...args: Parameters<RendererChannels[C]>
 ): void {
   ipcRenderer.send(channel, ...args);
 }
 
 export function rendererOn<C extends keyof MainChannels>(
   channel: C,
-  listener: (
-    event: Electron.IpcRendererEvent,
-    ...args: SerializableArgs<Parameters<MainChannels[C]>>
-  ) => void,
+  listener: (event: Electron.IpcRendererEvent, ...args: Parameters<MainChannels[C]>) => void,
 ): void {
   ipcRenderer.on(channel, listener);
 }
 
 export function rendererOff<C extends keyof MainChannels>(
   channel: C,
-  listener: (
-    event: Electron.IpcRendererEvent,
-    ...args: SerializableArgs<Parameters<MainChannels[C]>>
-  ) => void,
+  listener: (event: Electron.IpcRendererEvent, ...args: Parameters<MainChannels[C]>) => void,
 ): void {
   ipcRenderer.off(channel, listener);
 }
@@ -97,13 +91,13 @@ export function rendererCallback<C extends keyof CallbackChannels>(
   channel: C,
   handler: (
     collationId: number,
-    ...args: SerializableArgs<Parameters<CallbackChannels[C]>>
+    ...args: Parameters<CallbackChannels[C]>
   ) => Promise<Awaited<ReturnType<CallbackChannels[C]>>>,
 ): () => void {
   const listener = (
     _event: Electron.IpcRendererEvent,
     collationId: number,
-    ...args: SerializableArgs<Parameters<CallbackChannels[C]>>
+    ...args: Parameters<CallbackChannels[C]>
   ) => {
     handler(collationId, ...args)
       .then((value) => {

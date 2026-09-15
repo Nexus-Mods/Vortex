@@ -333,6 +333,26 @@ describeOnWindows("sanitizeFilename", () => {
   });
 });
 
+describe("timeToString", () => {
+  // Zero-padded: the download flyout and the downloads page both read off this, so a
+  // download has to show the same "01:23" in either place.
+  it("pads minutes and seconds to two digits", () => {
+    expect(util.timeToString(486)).toBe("08:06");
+  });
+
+  it("leaves two-digit minutes alone", () => {
+    expect(util.timeToString(754)).toBe("12:34");
+  });
+
+  it("adds the hour once there is one", () => {
+    expect(util.timeToString(3723)).toBe("01:02:03");
+  });
+
+  it("floors part-seconds", () => {
+    expect(util.timeToString(1.9)).toBe("00:01");
+  });
+});
+
 describe("nexusModsURL", () => {
   it("creates basic urls", () => {
     expect(util.nexusModsURL(["foo", "bar"])).toBe("https://www.nexusmods.com/foo/bar");

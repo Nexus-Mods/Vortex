@@ -3,8 +3,6 @@ import type {
   RendererChannels,
   MainChannels,
   InvokeChannels,
-  SerializableArgs,
-  AssertSerializable,
   CallbackChannels,
   MainCallbackChannels,
   WireReply,
@@ -47,15 +45,12 @@ function ipcLogger(
 
 function mainOn<C extends keyof RendererChannels>(
   channel: C,
-  listener: (
-    event: Electron.IpcMainEvent,
-    ...args: SerializableArgs<Parameters<RendererChannels[C]>>
-  ) => void,
+  listener: (event: Electron.IpcMainEvent, ...args: Parameters<RendererChannels[C]>) => void,
   logOptions: LogOptions = false,
 ): () => void {
   const outerListener = (
     event: Electron.IpcMainEvent,
-    ...args: SerializableArgs<Parameters<RendererChannels[C]>>
+    ...args: Parameters<RendererChannels[C]>
   ) => {
     ipcLogger(logOptions, channel, event, args);
     assertTrustedSender(event);
@@ -70,21 +65,17 @@ function mainCallback<C extends keyof CallbackChannels>(
   channel: C,
   webContents: WebContents,
   timeout: number,
-  ...args: SerializableArgs<Parameters<MainCallbackChannels[C]>>
-): Promise<AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>> {
+  ...args: Parameters<MainCallbackChannels[C]>
+): Promise<Awaited<ReturnType<CallbackChannels[C]>>> {
   const collationId = args[0];
 
-  let resolve:
-    | ((value: AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>) => void)
-    | undefined = undefined;
+  let resolve: ((value: Awaited<ReturnType<CallbackChannels[C]>>) => void) | undefined = undefined;
   let reject: ((reason?: Error) => void) | undefined = undefined;
 
-  const promise = new Promise<AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>>(
-    (res, rej) => {
-      resolve = res;
-      reject = rej;
-    },
-  );
+  const promise = new Promise<Awaited<ReturnType<CallbackChannels[C]>>>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
 
   const settle = () => {
     resolve = undefined;
@@ -130,9 +121,8 @@ function mainCallback<C extends keyof CallbackChannels>(
     resolve = undefined;
     reject = undefined;
 
-    const result = args[1] as unknown as WireReply<
-      AssertSerializable<Awaited<ReturnType<CallbackChannels[C]>>>
-    >;
+    const result = args[1] as unknown as WireReply<Awaited<ReturnType<CallbackChannels[C]>>>;
+
     if (result.error) {
       rej(deserializeVortexError(result.error));
     } else {
@@ -152,18 +142,16 @@ function mainHandle<C extends keyof InvokeChannels>(
   channel: C,
   listener: (
     event: Electron.IpcMainInvokeEvent,
-    ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
-  ) =>
-    | Promise<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>
-    | AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>,
+    ...args: Parameters<InvokeChannels[C]>
+  ) => Promise<Awaited<ReturnType<InvokeChannels[C]>>> | Awaited<ReturnType<InvokeChannels[C]>>,
   logOptions: LogOptions = false,
 ): void {
   ipcMain.handle(
     channel,
     async (
       event,
-      ...args: SerializableArgs<Parameters<InvokeChannels[C]>>
-    ): Promise<WireReply<AssertSerializable<Awaited<ReturnType<InvokeChannels[C]>>>>> => {
+      ...args: Parameters<InvokeChannels[C]>
+    ): Promise<WireReply<Awaited<ReturnType<InvokeChannels[C]>>>> => {
       ipcLogger(logOptions, channel, event, args);
       try {
         assertTrustedSender(event);
@@ -179,7 +167,7 @@ function mainHandle<C extends keyof InvokeChannels>(
 function mainSend<C extends keyof MainChannels>(
   webContents: WebContents,
   channel: C,
-  ...args: SerializableArgs<Parameters<MainChannels[C]>>
+  ...args: Parameters<MainChannels[C]>
 ): void {
   webContents.send(channel, ...args);
 }

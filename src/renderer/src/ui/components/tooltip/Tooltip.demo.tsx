@@ -12,7 +12,7 @@ import {
   mdiRefresh,
   mdiTune,
 } from "@mdi/js";
-import React from "react";
+import React, { useState } from "react";
 
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -56,6 +56,41 @@ const ModHealthContent = () => (
     </div>
   </div>
 );
+
+/** A tooltip the caller can show with nothing on the trigger, as the download flyout does. */
+const ControlledTooltip = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isPersistent, setIsPersistent] = useState(false);
+
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      <Tooltip
+        content="Shown because the caller said so, not because you hovered."
+        open={isOpen}
+        persistent={isPersistent}
+        onOpenChange={(next) => {
+          setIsOpen(next);
+          // Handing over to the pointer.
+          setIsPersistent(false);
+        }}
+      >
+        <Button appearance="subdued" brand="neutral">
+          Controlled trigger
+        </Button>
+      </Tooltip>
+
+      <Button
+        brand="primary"
+        onClick={() => {
+          setIsPersistent(!isOpen);
+          setIsOpen(!isOpen);
+        }}
+      >
+        {isOpen ? "Hide it" : "Announce it"}
+      </Button>
+    </div>
+  );
+};
 
 export const TooltipDemo = () => (
   <div className="space-y-8">
@@ -323,6 +358,20 @@ export const TooltipDemo = () => (
           </Button>
         </Tooltip>
       </div>
+    </div>
+
+    <div className="space-y-4">
+      <Typography as="h3" typographyType="heading-xs">
+        Controlled open state
+      </Typography>
+
+      <Typography appearance="subdued" typographyType="body-sm">
+        Pass `open` and the caller owns whether the tooltip is showing; `onOpenChange` reports every
+        hover, focus and dismissal along with Floating UI's reason for it, so the caller can tell
+        those apart from an open it asked for itself. Omit both and hover owns it.
+      </Typography>
+
+      <ControlledTooltip />
     </div>
 
     <div className="space-y-4">

@@ -211,6 +211,46 @@ export const ImageDemo = () => (
 
     <div className="space-y-4">
       <Typography as="h3" typographyType="heading-xs">
+        Loading
+      </Typography>
+
+      <Typography appearance="subdued" typographyType="body-sm">
+        A spinner stands in until the image has loaded, and the image fades in once it has. The
+        spinner is held back a moment, so anything that resolves in a frame or two — a local file,
+        or one already cached — never flashes one. This source never answers, so it keeps spinning.
+      </Typography>
+
+      <Typography appearance="subdued" typographyType="body-sm">
+        With no `src` there is nothing to wait on, so an empty frame stays empty — most absent
+        sources never resolve. Pass `isLoading` where one is genuinely on its way, as the download
+        flyout does while a mod's metadata is still being fetched.
+      </Typography>
+
+      <Typography appearance="subdued" typographyType="body-sm">
+        The spinner is capped at three quarters of the frame's height, so it shrinks into a small
+        one rather than overflowing it. Both of these are waiting on the same source: the 30px
+        thumbnail on the right is the size the download flyout uses.
+      </Typography>
+
+      <div className="flex items-start gap-x-4">
+        <Image
+          alt="Loading example"
+          className="w-48"
+          imageType="collection"
+          src="https://10.255.255.1/never-answers.png"
+        />
+
+        <Image
+          alt="Small loading example"
+          className="w-7.5"
+          imageType="mod"
+          src="https://10.255.255.1/never-answers.png"
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <Typography as="h3" typographyType="heading-xs">
         Error Fallback
       </Typography>
 

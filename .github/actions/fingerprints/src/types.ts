@@ -36,8 +36,9 @@ export const Mode = {
    */
   PR: "pr",
   /**
-   * On a `v*` tag push, walk PRs merged since the previous tag and mark
-   * each referenced fingerprint as `released` for that version.
+   * On a published `release` event, walk PRs merged since the previous
+   * release on the same channel and mark each referenced fingerprint as
+   * `released` for that version.
    */
   Release: "release",
   /**

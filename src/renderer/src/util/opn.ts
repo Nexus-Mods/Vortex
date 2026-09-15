@@ -21,7 +21,7 @@ function isUrlTarget(target: string): boolean {
   }
 }
 
-/** @deprecated */
+/** @deprecated use preload api window.api.shell openUrl or openFile */
 function open(target: string, _wait?: boolean): PromiseBB<void> {
   if (!target) {
     log("warn", "No target provided to open function");

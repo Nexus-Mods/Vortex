@@ -38,7 +38,6 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
-      id-token: write # OIDC token for npm provenance attestation
     outputs:
       raw-version: ${{ steps.package.outputs.raw-version }}
       tag-version: ${{ steps.package.outputs.tag-version }}
@@ -85,11 +84,6 @@ jobs:
             ./dist/latest.yml
           if-no-files-found: error
           retention-days: 90
-
-      - name: Publish @nexusmods/vortex-api
-        if: ${{ inputs.release }}
-        shell: pwsh
-        run: pnpm -F "@nexusmods/vortex-api" publish --provenance --access public --no-git-checks
 
   create-github-releases:
     name: Create Draft Releases
@@ -140,7 +134,7 @@ jobs:
     name: Upload Installer to R2
     needs: build
     if: ${{ inputs.upload-to-r2 }}
-    runs-on: platform-cluster
+    runs-on: platform-cluster-public
     permissions:
       contents: read
     steps:

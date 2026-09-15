@@ -82,6 +82,47 @@ build/test/format loop.
 - Shared components also expose semantic `nxm-`-prefixed classes
   (`nxm-tab-button`). Keep that pattern for reusable primitives.
 
+## Motion
+
+Users can turn non-essential animation down: **Settings → Interface → Reduce motion**,
+which follows the OS `prefers-reduced-motion` preference until they set it themselves.
+The answer is published as `data-reduce-motion="true"` on `<html>`
+(`util/reduceMotion.ts`); the rules keyed off it live in
+`src/stylesheets/ui/theme/motion.css`.
+
+- **Reduced means instant, not gentler.** Don't swap movement for a fade - a state change
+  lands immediately. Neutralise a transition by starting it from its final state rather
+  than by zeroing the duration:
+  `enterFrom="translate-y-6 opacity-0 reduce-motion:translate-y-0 reduce-motion:opacity-100"`.
+  That leaves nothing to animate while keeping the duration a `Transition` reads to time
+  itself. Drop delays too (`reduce-motion:delay-0`) - there is nothing left to wait for.
+- Prefer `transition-*` **without** an explicit `duration-*`. Those resolve their
+  duration through `--default-transition-duration`, which the attribute overrides, so
+  they flatten for free. A `duration-*` utility sets the duration directly and survives
+  on purpose - a component that names its own duration often depends on it - so opt
+  decorative ones out with the `reduce-motion:` variant:
+  `transition-[width] duration-300 reduce-motion:duration-0`.
+- Custom keyframes live in `src/stylesheets/ui/theme/animations.css`, registered as
+  `--animate-*` theme entries. Take the duration from `--default-transition-duration` for
+  the same reason as above, so the animation flattens without needing its own rule in
+  `motion.css`. A _delay_ is timing rather than motion, so keep it - a loader held back so
+  it never flashes on a short wait should still be held back.
+- **Don't use Tailwind's `motion-reduce:` / `motion-safe:` variants.** They compile to
+  `prefers-reduced-motion` media queries, so they follow the OS and can't see the app's
+  own setting. `reduce-motion:` is the app-aware equivalent.
+- In JavaScript, use `useReduceMotion()` in components and `isReduceMotionActive()`
+  elsewhere - for movement computed in JS rather than declared in CSS: a scroll tween, an
+  autoplay interval, a staged sequence. Clear any "is animating" flag when the preference
+  is on rather than leaving it set; an animation that never runs never fires
+  `animationend`.
+- **Keep essential motion.** Spinners (`animate-spin`), and anything whose movement _is_
+  the information (a countdown ring, a progress bar's width), have to keep working - a
+  static spinner says nothing. Skeleton shimmer (`animate-pulse`) is not essential and is
+  switched off centrally.
+- Only the Tailwind/`nxm-` surface responds so far. The legacy SCSS
+  (`src/stylesheets/vortex/**`, bundled Bootstrap) compiles its durations in and is not
+  covered yet, so the classic toolbar's flashing buttons still flash.
+
 ## State (Redux)
 
 - `useSelector` with a **stable selector reference**: a module-level function,

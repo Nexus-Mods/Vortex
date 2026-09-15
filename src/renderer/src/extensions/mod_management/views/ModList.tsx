@@ -9,6 +9,7 @@ import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import * as semver from "semver";
 
+import * as bcp47 from "@/bcp47";
 import { Button } from "@/ui/components/button/Button";
 import { Dropdown } from "@/ui/components/dropdown/Dropdown";
 import { DropdownButton as UiDropdownButton } from "@/ui/components/dropdown/DropdownButton";
@@ -830,7 +831,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
         if (collator === undefined || locale !== lang) {
           lang = locale;
-          collator = new Intl.Collator(locale, { sensitivity: "base" });
+          collator = bcp47.getCollator(locale);
         }
         return collator.compare(lhs, rhs);
       },

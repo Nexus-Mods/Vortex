@@ -2,8 +2,7 @@ import type { IExtensionDownloadInfo } from "../../types/extensions";
 
 export interface ILanguage {
   key: string;
-  language: string;
-  country?: string;
+  displayName: string;
   ext: Array<Partial<IExtensionDownloadInfo>>;
 }
 
@@ -19,12 +18,6 @@ export interface ILanguageOption {
   key: string;
   extName?: string;
   label: string;
-}
-
-export function languageName(language: ILanguage): string {
-  return language.country === undefined
-    ? language.language
-    : `${language.language} (${language.country})`;
 }
 
 /**
@@ -47,8 +40,8 @@ export function buildLanguageOptions(
     extName: ext.name,
     label:
       ext.modId !== undefined
-        ? `${languageName(language)} (${t("Extension")} by ${ext["author"] || "unknown author"})`
-        : languageName(language),
+        ? `${language.displayName} (${t("Extension")} by ${ext["author"] || "unknown author"})`
+        : language.displayName,
   });
 
   return languages.reduce<ILanguageOption[]>((prev, language) => {

@@ -6,6 +6,7 @@ import I18next from "i18next";
 import FSBackend from "i18next-fs-backend";
 import { initReactI18next } from "react-i18next";
 
+import { isValidBcp47 } from "../bcp47";
 import type { IExtension } from "../types/extensions";
 import getVortexPath from "./getVortexPath";
 
@@ -143,9 +144,7 @@ export async function init(
   translationExts: () => IExtension[],
 ): Promise<{ i18n: i18n; tFunc: TFunction; error?: unknown }> {
   // reset to english if the language isn't valid
-  try {
-    new Date().toLocaleString(language);
-  } catch {
+  if (!isValidBcp47(language)) {
     language = "en";
   }
 

@@ -4,6 +4,10 @@ import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type * as Redux from "redux";
 
+import { GoGLauncher } from "@/util/GOGLauncher";
+import { OriginLauncher } from "@/util/OriginStore";
+import { UPlayLauncher } from "@/util/UplayStore";
+
 import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
 import type { IExtensionDownloadInfo } from "../../types/extensions";
@@ -69,7 +73,14 @@ class GameModeManager {
     this.mStore = null;
     this.mKnownGames = extensionGames;
     this.mGameStubs = gameStubs;
-    this.mKnownGameStores = [Steam, EpicGamesLauncher, ...gameStoreExtensions].filter(Boolean);
+    this.mKnownGameStores = [
+      Steam,
+      EpicGamesLauncher,
+      GoGLauncher.create(),
+      OriginLauncher.create(),
+      UPlayLauncher.create(),
+      ...gameStoreExtensions,
+    ].filter(Boolean);
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
   }

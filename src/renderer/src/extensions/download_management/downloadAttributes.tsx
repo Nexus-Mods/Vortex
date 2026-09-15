@@ -5,6 +5,8 @@ import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as React from "react";
 
+import * as bcp47 from "@/bcp47";
+
 import { SITE_GAME_NAME } from "../../controls/constants";
 import ProgressBar from "../../controls/ProgressBar";
 import Spinner from "../../controls/Spinner";
@@ -116,7 +118,7 @@ function createColumns(
   const getCollator = (locale: string) => {
     if (collator === undefined || locale !== lang) {
       lang = locale;
-      collator = new Intl.Collator(locale, { sensitivity: "base" });
+      collator = bcp47.getCollator(locale);
     }
     return collator;
   };

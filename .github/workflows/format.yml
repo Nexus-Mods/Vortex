@@ -33,13 +33,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
-      - name: Install volta, Node.js
-        uses: volta-cli/action@v5
-      - uses: pnpm/action-setup@v6.0.9
-        with:
-          cache: true
-      - name: Fix pnpm node-gyp permissions
-        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
+      - uses: ./.github/actions/setup-pnpm
+
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
         run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
