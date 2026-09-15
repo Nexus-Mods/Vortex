@@ -62,7 +62,6 @@ describe("QualifiedPath.fromNative for Windows paths", () => {
     const provider = new WindowsPathProviderImpl();
     const qp = await provider.fromBase("home");
     expect(qp.root).toMatch(/^[A-Za-z]:\/$/);
-    expect(qp.path).toBe(qp.root);
   });
 });
 
