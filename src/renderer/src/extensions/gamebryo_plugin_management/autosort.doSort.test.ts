@@ -66,10 +66,7 @@ describe("LootInterface doSort", () => {
     expect(pendingSort(harness)).toBeUndefined();
   });
 
-  // the desired contract from LAZ-1049: the implementation still clears the marker and toasts
-  // success when the plugin list was empty. Expected-fail until the fix lands, which flips this
-  // to a plain test.
-  test.fails("reports an empty-list sort as a distinct outcome instead of success", async ({
+  test("reports an empty-list sort as a distinct outcome instead of success", async ({
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);
@@ -83,10 +80,7 @@ describe("LootInterface doSort", () => {
     expect(pendingSort(harness)).toEqual({ "col-1": 1 });
   });
 
-  // the desired contract from LAZ-1092 and LAZ-1049: the implementation answers the callback
-  // with null and toasts success after handling the failure internally. Expected-fail until the
-  // fix lands, which flips this to a plain test.
-  test.fails("reports a failed sort to its caller instead of success", async ({ makeLoot }) => {
+  test("reports a failed sort to its caller instead of success", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp"]);
     harness.loot.sortPluginsAsync.mockRejectedValueOnce(new Error("access violation"));
@@ -249,7 +243,13 @@ describe("LootInterface doSort", () => {
         expect.objectContaining({ title: "LOOT operation failed", allowReport: false }),
       );
     });
-    expect(sortError.message).toContain("pirated copies of the game");
+    const report = harness.errorNotifications.find(
+      (notification) => notification.title === "LOOT operation failed",
+    );
+    const details = report?.message as { error: Error; File: string; Exists: boolean };
+    expect(details.error.message).toContain("pirated copies of the game");
+    expect(details.File).toBe(path.join(harness.dataDir, "SkyrimSE.exe"));
+    expect(details.Exists).toBe(true);
   });
 
   test("reports a died loot process without offering a report", async ({ makeLoot }) => {

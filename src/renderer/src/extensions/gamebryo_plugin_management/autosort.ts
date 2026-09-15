@@ -1,7 +1,7 @@
 import * as path from "path";
 
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-import { ProcessCanceled, UserCanceled } from "@vortex/shared/errors";
+import { ProcessCanceled, UserCanceled, VortexError } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import { pl } from "date-fns/locale";
 import getVersion from "exe-version";
@@ -32,11 +32,16 @@ import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
 import { findInvalidPlugins } from "./util/findInvalidPlugins";
 import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/gameSupport";
 import { missingGroupFixes } from "./util/groups";
-import { invalidPluginsFromError } from "./util/invalidPlugins";
+import { toLootError } from "./util/lootErrors";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
+
+/** How a sort attempt ended; only "sorted" changed the load order. */
+type SortOutcome =
+  | { result: "sorted" | "nothing-to-sort" | "interrupted" }
+  | { result: "failed"; error: VortexError };
 
 // A CJS module at a runtime path has to come in through the raw node require,
 // the renderer's own import() resolves through the browser loader, which cannot load it.
@@ -96,6 +101,8 @@ class LootInterface {
 
   private mUserlistTime: Date;
   private mRestarts: number = MAX_RESTARTS;
+  // a sort requested while an activity blocked it, run once the activity ends
+  private mDeferredSort: { manual: boolean } | undefined;
 
   constructor(api: IExtensionApi) {
     const store = api.store;
@@ -122,6 +129,7 @@ class LootInterface {
 
     // on demand, re-sort the plugin list
     api.events.on("autosort-plugins", this.onSort);
+    api.onStateChange(["session", "base", "activity"], this.runDeferredSort);
 
     api.events.on(
       "plugin-details",
@@ -170,18 +178,46 @@ class LootInterface {
 
   private shouldDeferLootActivities = () => {
     const state = this.mExtensionApi.store.getState();
-    const deferOnActivities = ["installing_dependencies"];
+    const deferOnActivities = ["installing_dependencies", "mods"];
     const isActivityRunning = (activity: string) =>
       getSafe(state, ["session", "base", "activity", activity], []).length > 0;
     const deferActivities = deferOnActivities.filter((activity) => isActivityRunning(activity));
     return deferActivities.length > 0;
   };
 
+  private runDeferredSort = () => {
+    if (this.mDeferredSort === undefined || this.shouldDeferLootActivities()) {
+      return;
+    }
+    const { manual } = this.mDeferredSort;
+    this.mDeferredSort = undefined;
+    void this.onSort(manual);
+  };
+
+  private notifyNotSorted(reason: string) {
+    this.mExtensionApi.sendNotification({
+      id: "loot-failed",
+      type: "warning",
+      message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
+        replace: { msg: reason },
+        ns: NAMESPACE,
+      }),
+    });
+  }
+
+  private notifyOperationFailed(err: VortexError) {
+    this.mExtensionApi.showErrorNotification("LOOT operation failed", err, {
+      id: "loot-failed",
+      allowReport: false,
+    });
+  }
+
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const { store } = this.mExtensionApi;
     try {
       if (this.shouldDeferLootActivities()) {
-        // Defer - the plugins will be sorted once the activity is done
+        // a manual request stays manual so the deferred run is not gated by the autoSort setting
+        this.mDeferredSort = { manual: manual || (this.mDeferredSort?.manual ?? false) };
         if (callback !== undefined) {
           callback(null);
         }
@@ -248,17 +284,25 @@ class LootInterface {
           path.basename(pluginList[pluginId].filePath),
         );
 
-        await this.doSort(pluginNames, gameMode, loot);
+        const outcome = await this.doSort(pluginNames, gameMode, loot);
+        if (outcome.result === "failed") {
+          if (callback !== undefined) {
+            callback(outcome.error);
+          }
+          return Promise.resolve();
+        }
+        if (outcome.result === "sorted") {
+          this.mExtensionApi.sendNotification({
+            id: "loot-sorted",
+            type: "success",
+            message: "LOOT sorting successful",
+            displayMS: 3000,
+          });
+        }
       }
       if (callback !== undefined) {
         callback(null);
       }
-      this.mExtensionApi.sendNotification({
-        id: "loot-sorted",
-        type: "success",
-        message: "LOOT sorting successful",
-        displayMS: 3000,
-      });
       return Promise.resolve();
     } catch (err) {
       if (callback !== undefined) {
@@ -294,7 +338,7 @@ class LootInterface {
     gameMode: string,
     loot: ILootProm,
     excluded: string[] = [],
-  ) {
+  ): Promise<SortOutcome> {
     const { store } = this.mExtensionApi;
     // Exclude every invalid plugin in one header-parse pass before sorting. sortPlugins is handed
     // the full state-built list, so a plugin libloot couldn't load would throw PluginNotLoaded;
@@ -320,146 +364,129 @@ class LootInterface {
       const sorted: string[] = await this.mSortPromise;
       this.mRestarts = MAX_RESTARTS;
       const state = store.getState();
-      if (sorted !== undefined) {
-        store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
-        log("debug", "sorting plugins finished", {
-          elapsedMS: Date.now() - timeBefore,
-        });
-        // An empty result while plugins were still queued means LOOT closed mid-sort (the
-        // 'already closed' catch above resolves to []), which is an interruption: keep the durable
-        // "sort owed" marker so the sort is retried on the next activation of the profile. A
-        // genuine sort (non-empty, or nothing to sort) satisfies the marker.
-        if (sorted.length > 0 || pluginNames.length === 0) {
-          const sortedProfileId = activeProfile(state)?.id;
-          if (sortedProfileId !== undefined) {
-            store.dispatch(clearPendingPluginSort(sortedProfileId));
-          }
-          if (excluded.length > 0) {
-            reportSkippedInvalidPlugins(this.mExtensionApi, excluded);
-          }
-        }
-      } else {
-        // loot didn't return an error but an undefined result. Reviewing the code it doesn't
-        // seem to be an error on our end, don't have a clue how to even investigate further.
-        // It's also ultra rare so probably not worth the time
+      if (sorted === undefined) {
+        // loot return an undefined result? how?
         log("error", "failed to sort plugins, empty loot result");
+        return {
+          result: "failed",
+          error: new VortexError("LOOT returned no result", { kind: "loot:failed" }),
+        };
       }
+      store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
+      log("debug", "sorting plugins finished", {
+        elapsedMS: Date.now() - timeBefore,
+      });
+      if (excluded.length > 0) {
+        reportSkippedInvalidPlugins(this.mExtensionApi, excluded);
+      }
+      if (pluginNames.length === 0) {
+        // nothing was sorted, so the durable "sort owed" marker stays until a real sort happens
+        log("warn", "nothing to sort", { gameMode, excluded: excluded.length });
+        return { result: "nothing-to-sort" };
+      }
+      if (sorted.length === 0) {
+        // the 'already closed' catch above resolves to [] when LOOT closed mid-sort; the marker
+        // stays so the sort is retried on the next activation of the profile
+        return { result: "interrupted" };
+      }
+      const sortedProfileId = activeProfile(state)?.id;
+      if (sortedProfileId !== undefined) {
+        store.dispatch(clearPendingPluginSort(sortedProfileId));
+      }
+      return { result: "sorted" };
     } catch (rawErr) {
-      const err = unknownToError(rawErr) as Error & { plugin?: string };
-      log("info", "loot failed", { error: err.message });
-      // sortPlugins is handed the full list (built from state, not the load result), so LOOT throws
-      // PluginNotLoaded for any plugin the load path had to drop. That error carries the offending
-      // plugin name as a structured field; otherwise parse the message for the
-      // "invalid plugin"/"invalid header" forms.
-      const isInvalidPluginError =
-        (err.name === "PluginNotLoaded" &&
-          typeof err.plugin === "string" &&
-          err.plugin.length > 0) ||
-        invalidPluginsFromError(err.message).length > 0;
-      if (err.message.startsWith("Cyclic interaction")) {
-        this.reportCycle(err, loot);
-      } else if (isInvalidPluginError) {
-        // Invalid plugins are excluded by header parse before sorting, so reaching here means
-        // libloot rejected a plugin ESPFile considered valid. Report it rather than re-sorting per
-        // plugin, which stalled the app on large lists.
-        this.mExtensionApi.sendNotification({
-          id: "loot-failed",
-          type: "warning",
-          message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
-            replace: { msg: err.message },
-            ns: NAMESPACE,
-          }),
-        });
-      } else if (err.message.match(/The group "[^"]*" does not exist/)) {
-        // A collection (or the user) assigned plugins to a LOOT group that no longer exists -
-        // typically a masterlist group that was renamed or removed after the collection was
-        // authored. Rather than failing the entire sort, drop every dangling reference (the
-        // master-/userlist groups are in state) so the affected plugins fall back to their
-        // default group, then re-sort. If there's nothing to reset we can't recover this way,
-        // so just notify.
-        const { missing, actions } = missingGroupFixes(store.getState());
-        if (actions.length > 0) {
-          log("info", "resetting plugins assigned to missing loot group(s)", { missing });
-          batchDispatch(store, actions);
-          // invalidate the cached userlist mtime so readLists is forced to reload the updated
-          // userlist from disk, and give the persistor a moment to flush it before re-sorting
-          this.mUserlistTime = undefined;
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          return this.doSort(pluginNames, gameMode, loot);
-        }
-        this.mExtensionApi.sendNotification({
-          id: "loot-failed",
-          type: "warning",
-          message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
-            replace: { msg: err.message },
-            ns: NAMESPACE,
-          }),
-        });
-      } else if (err.message.indexOf("Failed to evaluate condition") !== -1) {
-        const match = err.message.match(
-          /Failed to evaluate condition ".*version\("([^"]*\.exe)",.*/,
-        );
-        if (match) {
-          let exists = false;
-          let fileSize = 0;
-          let md5sum = "";
-          let version = "";
-          const filePath = path.resolve(this.dataPath, match[1]);
-
-          const report = () => {
-            err.message +=
-              "\n\nThis error is usually caused by pirated copies of the game. " +
-              "If this is definitively not the case for you (and only then!), " +
-              "please report it.";
-            this.mExtensionApi.showErrorNotification(
-              "LOOT operation failed",
-              {
-                error: err,
-                File: filePath,
-                Exists: exists,
-                Size: fileSize,
-                MD5: md5sum,
-                Version: version,
-              },
-              {
-                id: "loot-failed",
-                allowReport: false,
-              },
-            );
-          };
-
-          try {
-            const stats = fs.statSync(filePath);
-            exists = true;
-            fileSize = stats.size;
-            version = getVersion(filePath) || "unknown";
-            fileMD5(filePath)
-              .then((hash) => (md5sum = hash))
-              .catch(() => null)
-              .finally(() => {
-                report();
-              });
-          } catch (err) {
-            report();
+      const err = toLootError(rawErr);
+      log("info", "loot failed", { kind: err.data.kind, error: err.message });
+      switch (err.data.kind) {
+        case "loot:cyclic-interaction":
+          this.reportCycle(err.data.cycle, loot);
+          break;
+        case "loot:invalid-plugin":
+          // Invalid plugins are excluded by header parse before sorting, so reaching here means
+          // libloot rejected a plugin ESPFile considered valid. Report it rather than re-sorting per
+          // plugin, which stalled the app on large lists.
+          this.notifyNotSorted(err.message);
+          break;
+        case "loot:missing-group": {
+          // A collection (or the user) assigned plugins to a LOOT group that no longer exists -
+          // typically a masterlist group that was renamed or removed after the collection was
+          // authored. Rather than failing the entire sort, drop every dangling reference (the
+          // master-/userlist groups are in state) so the affected plugins fall back to their
+          // default group, then re-sort. If there's nothing to reset we can't recover this way,
+          // so just notify.
+          const { missing, actions } = missingGroupFixes(store.getState());
+          if (actions.length > 0) {
+            log("info", "resetting plugins assigned to missing loot group(s)", { missing });
+            batchDispatch(store, actions);
+            // invalidate the cached userlist mtime so readLists is forced to reload the updated
+            // userlist from disk, and give the persistor a moment to flush it before re-sorting
+            this.mUserlistTime = undefined;
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            return this.doSort(pluginNames, gameMode, loot);
           }
-        } else {
-          this.mExtensionApi.showErrorNotification("LOOT operation failed", err, {
-            id: "loot-failed",
+          this.notifyNotSorted(err.message);
+          break;
+        }
+        case "loot:condition-failed":
+          if (err.data.executable !== undefined) {
+            let exists = false;
+            let fileSize = 0;
+            let md5sum = "";
+            let version = "";
+            const filePath = path.resolve(this.dataPath, err.data.executable);
+
+            const report = () => {
+              err.message +=
+                "\n\nThis error is usually caused by pirated copies of the game. " +
+                "If this is definitively not the case for you (and only then!), " +
+                "please report it.";
+              this.mExtensionApi.showErrorNotification(
+                "LOOT operation failed",
+                {
+                  error: err,
+                  File: filePath,
+                  Exists: exists,
+                  Size: fileSize,
+                  MD5: md5sum,
+                  Version: version,
+                },
+                {
+                  id: "loot-failed",
+                  allowReport: false,
+                },
+              );
+            };
+
+            try {
+              const stats = fs.statSync(filePath);
+              exists = true;
+              fileSize = stats.size;
+              version = getVersion(filePath) || "unknown";
+              fileMD5(filePath)
+                .then((hash) => (md5sum = hash))
+                .catch(() => null)
+                .finally(() => {
+                  report();
+                });
+            } catch (err) {
+              report();
+            }
+          } else {
+            this.notifyOperationFailed(err);
+          }
+          break;
+        case "process-canceled":
+          // the loot instance was closed underneath the call, the result is not needed anyway
+          return { result: "interrupted" };
+        case "loot:process-died":
+          this.mExtensionApi.showErrorNotification("LOOT process died", err, {
             allowReport: false,
           });
-        }
-      } else if (err.message.toLowerCase() === "already closed") {
-        // loot process terminated, don't really care about the result anyway
-      } else if (err.name === "RemoteDied") {
-        this.mExtensionApi.showErrorNotification("LOOT process died", err, {
-          allowReport: false,
-        });
-      } else {
-        this.mExtensionApi.showErrorNotification("LOOT operation failed", err, {
-          id: "loot-failed",
-          allowReport: false,
-        });
+          break;
+        default:
+          this.notifyOperationFailed(err);
       }
+      return { result: "failed", error: err };
     } finally {
       store.dispatch(stopActivity("plugins", "sorting"));
     }
@@ -1222,7 +1249,7 @@ class LootInterface {
     }
   }
 
-  private async reportCycle(err: Error, loot: ILootProm) {
+  private async reportCycle(cycle: ICycleEdge[], loot: ILootProm) {
     const api = this.mExtensionApi;
     const t = api.translate;
 
@@ -1230,8 +1257,8 @@ class LootInterface {
     let renderedCycle: string;
 
     try {
-      solutions = await this.getSolutions(t, (err as any).cycle, loot);
-      renderedCycle = await this.renderCycle(t, (err as any).cycle, loot);
+      solutions = await this.getSolutions(t, cycle, loot);
+      renderedCycle = await this.renderCycle(t, cycle, loot);
     } catch (rawErr) {
       const innerErr = unknownToError(rawErr);
       if (innerErr.message.toLowerCase() === "already closed") {
