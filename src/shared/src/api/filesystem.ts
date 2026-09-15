@@ -40,3 +40,5 @@ export type { LinuxPathBase, LinuxPathProvider, XDGBase } from "../fs/paths.linu
 
 export { WindowsPath } from "../fs/paths.windows";
 export type { WindowsPathBase, WindowsPathProvider } from "../fs/paths.windows";
+
+export type { VortexPathBase, IVortexPathProvider } from "../fs/paths.vortex";
