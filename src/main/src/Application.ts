@@ -264,12 +264,14 @@ class Application {
         reportCrash(
           "ChildProcessGone",
           {
+            title: `${details.type} process crashed`,
             message: `${details.type} process gone: ${details.reason} (exit code ${details.exitCode})`,
             code: details.reason,
           },
           undefined,
           details.type.toLowerCase(),
           isTelemetryEnabled(),
+          { "crash.exitCode": details.exitCode },
         ).catch((err: unknown) => {
           log("warn", "failed to report child process crash", {
             error: getErrorMessageOrDefault(err),

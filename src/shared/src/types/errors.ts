@@ -1,5 +1,18 @@
 import { VortexError } from "../errors/base";
 
+/**
+ * Catalog of every crash kind Vortex knows how to produce and classify.
+ * @public
+ */
+export type CrashType =
+  | "Crash"
+  | "EarlyCrash"
+  | "PreviousSessionCrash"
+  | "ChildProcessGone"
+  | "RenderProcessGone"
+  | "Installer failed"
+  | "Unknown error";
+
 export interface ReportableError {
   message: string;
   title?: string;
