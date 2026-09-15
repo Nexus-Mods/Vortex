@@ -30,7 +30,6 @@ export {
   OSPath,
   PathProviderError,
   PathResolverError,
-  RelativePathError,
   relativePath,
 } from "../fs/paths";
 

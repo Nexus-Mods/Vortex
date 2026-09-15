@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { QualifiedPath, RelativePathError, qpath, relativePath } from "./paths";
+import { VortexError } from "../errors/base";
+import { QualifiedPath, qpath, relativePath } from "./paths";
 
 describe("QualifiedPath.parse", () => {
   it.each([
@@ -178,7 +179,7 @@ describe("relativePath", () => {
     ["../foo", ".. segment at start"],
     ["foo/..", ".. segment at end"],
   ])('rejects "%s" (%s)', (input) => {
-    expect(() => relativePath(input)).toThrow(RelativePathError);
+    expect(() => relativePath(input)).toThrow(VortexError);
   });
 });
 
