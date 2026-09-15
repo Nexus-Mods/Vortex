@@ -1,49 +1,24 @@
 /**
- * Shared test helpers for filesystem tests in `src/main`. Provides a
- * platform-aware path resolver so tests produce valid QualifiedPaths on
- * both Linux and Windows.
+ * Shared test helpers for filesystem tests in `src/main`.
  */
 
-import type { PathResolver } from "@vortex/shared/filesystem";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 
 import { LinuxPathProviderImpl } from "./paths.linux";
 import { WindowsPathProviderImpl } from "./paths.windows";
 
 /**
- * Returns a {@link PathResolver} for the current platform using the real
+ * Returns the path provider for the current platform using the real
  * production implementations.
  */
-export function platformResolver(): PathResolver {
+export function platformProvider(): LinuxPathProviderImpl | WindowsPathProviderImpl {
   return process.platform === "win32" ? new WindowsPathProviderImpl() : new LinuxPathProviderImpl();
 }
 
 /**
- * Returns the QualifiedPath scheme for the current platform.
- */
-export function platformScheme(): string {
-  return process.platform === "win32" ? "windows" : "linux";
-}
-
-/**
- * Wraps a native temp-directory path as a {@link QualifiedPath} using the
- * platform-appropriate scheme and encoding.
- *
- * NOTE: The Windows encoding here must match WindowsPathProviderImpl.#create
- * (src/main/src/filesystem/paths.windows.ts) and nativeToQualifiedPath
- * (src/main/src/adaptors.ts).
+ * Wraps a native path as a {@link QualifiedPath} under the universal
+ * `native` scheme, exactly like production code does.
  */
 export function nativeToQP(nativePath: string): QualifiedPath {
-  const scheme = platformScheme();
-  if (scheme === "windows") {
-    const forward = nativePath.replace(/\\/g, "/");
-    const match = /^([A-Za-z]):\/(.*)$/.exec(forward);
-    if (match && match[1] && match[2]) {
-      const drive = match[1].toUpperCase();
-      const tail = match[2];
-      const path = tail.length > 0 ? `/${drive}/${tail}` : `/${drive}`;
-      return QualifiedPath.parse(`${scheme}://${path}`);
-    }
-  }
-  return QualifiedPath.parse(`${scheme}://${nativePath}`);
+  return QualifiedPath.fromNative(nativePath);
 }

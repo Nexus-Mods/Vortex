@@ -18,7 +18,6 @@ export type LinuxPathBase = OSPathBase | XDGBase;
 /** @public */
 export interface LinuxPathProvider extends PathProvider<LinuxPathBase> {
   readonly platform: "linux";
-  readonly scheme: "linux";
 
   /** Returns a path according to the XDG Base Directory Specification */
   fromXDGBase(base: XDGBase): Promise<QualifiedPath>;
