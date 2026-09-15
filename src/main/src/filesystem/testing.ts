@@ -42,8 +42,8 @@ export function nativeToQP(nativePath: string): QualifiedPath {
       const drive = match[1].toUpperCase();
       const tail = match[2];
       const path = tail.length > 0 ? `/${drive}/${tail}` : `/${drive}`;
-      return QualifiedPath.parse(`${scheme}://${path}`);
+      return QualifiedPath.of({ scheme, data: "", path, root: "" });
     }
   }
-  return QualifiedPath.parse(`${scheme}://${nativePath}`);
+  return QualifiedPath.of({ scheme, data: "", path: nativePath, root: "" });
 }

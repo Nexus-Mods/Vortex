@@ -61,7 +61,14 @@ export class WindowsPathProviderImpl implements WindowsPathProvider {
     const tail = nativePath.slice(root.length).replace(/\\/g, "/");
     const value =
       tail.length > 0 ? `${this.scheme}:///${drive}/${tail}` : `${this.scheme}:///${drive}`;
-    return Promise.resolve(QP.parse(value));
+    return Promise.resolve(
+      QP.of({
+        scheme: this.scheme,
+        data: "",
+        path: value.slice(this.scheme.length + 3),
+        root: "",
+      }),
+    );
   }
 
   #home(): string {

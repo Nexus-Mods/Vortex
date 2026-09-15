@@ -112,7 +112,12 @@ describe("NodeFileSystemImpl", () => {
   });
 
   it("rejects paths whose scheme has no registered resolver", async () => {
-    const unknown = QualifiedPath.parse("steam://SteamApps/common/Skyrim");
+    const unknown = QualifiedPath.of({
+      scheme: "steam",
+      data: "",
+      path: "SteamApps/common/Skyrim",
+      root: "",
+    });
     await expect(fs.readFile(unknown)).rejects.toThrow(/No resolver/);
   });
 });

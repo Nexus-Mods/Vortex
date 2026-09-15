@@ -20,7 +20,7 @@ export class LinuxPathProviderImpl implements LinuxPathProvider {
   readonly parent = null;
 
   #create(path: string): Promise<QualifiedPath> {
-    return Promise.resolve(QualifiedPath.parse(`${this.scheme}://${path}`));
+    return Promise.resolve(QualifiedPath.of({ scheme: this.scheme, data: "", path, root: "" }));
   }
 
   fromBase(base: LinuxPathBase): Promise<QualifiedPath> {

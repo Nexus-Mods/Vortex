@@ -153,15 +153,34 @@ export function getPathRoot(path: string): PathRoot {
     path.charAt(3) === DIRECTORY_SEPARATOR;
 
   if (!isDOSDevice) {
-    // UNC: `//Server/`
-    const separatorIndex = path.indexOf(DIRECTORY_SEPARATOR, 2);
-    if (separatorIndex === -1) {
-      throw new VortexError(`Invalid UNC path, missing directory separator: "${path}"`, {
+    // UNC: `//Server/Share/` - server and share together make up the volume
+    const rest = path.slice(2);
+    const shareSeparatorIndex = rest.indexOf(DIRECTORY_SEPARATOR);
+    if (shareSeparatorIndex === -1) {
+      throw new VortexError(`Invalid UNC path, missing share: "${path}"`, {
         kind: "fs:invalid-path",
         path,
       });
     }
-    return { span: path.slice(0, separatorIndex + 1), type: "UNC" };
+
+    const afterServer = rest.slice(shareSeparatorIndex + 1);
+    if (afterServer.length === 0) {
+      throw new VortexError(`Invalid UNC path, missing share: "${path}"`, {
+        kind: "fs:invalid-path",
+        path,
+      });
+    }
+
+    const shareEndIndex = afterServer.indexOf(DIRECTORY_SEPARATOR);
+    if (shareEndIndex === -1) {
+      // bare volume: the whole path is the root
+      return { span: path, type: "UNC" };
+    }
+
+    return {
+      span: path.slice(0, 2 + shareSeparatorIndex + 1 + shareEndIndex + 1),
+      type: "UNC",
+    };
   }
 
   // DOS device drive: `//./C:/` or `//?/C:/`
@@ -253,6 +272,14 @@ export function isPathSanitized(input: string): boolean {
   if (doubleSeparatorIndex > 0 || (doubleSeparatorIndex === 0 && input.length === 2)) return false;
 
   if (input.endsWith(" ")) return false;
+
+  // The bare UNC volume is the only rooted shape whose canonical form ends
+  // with a directory separator, so it must not appear without one.
+  const root = getPathRoot(input);
+  if (root.type === "UNC" && root.span === input && !input.endsWith(DIRECTORY_SEPARATOR)) {
+    return false;
+  }
+
   if (isRootDirectory(input)) return true;
   return !input.endsWith(DIRECTORY_SEPARATOR);
 }
@@ -272,7 +299,7 @@ export function isPathSanitized(input: string): boolean {
  * ```ts @import.meta.vitest
  * assert(sanitizePath("C:\\Users\\alice\\") === "C:/Users/alice");
  * assert(sanitizePath("/foo//bar///baz") === "/foo/bar/baz");
- * assert(sanitizePath("\\\\Server\\share\\") === "//Server/share");
+ * assert(sanitizePath("\\\\Server\\share\\") === "//Server/share/");
  * ```
  *
  * @public */
@@ -300,6 +327,14 @@ export function sanitizePath(input: string): string {
   }
 
   const trimmed = result.replace(/\s+$/, "");
+
+  // Every rooted path ends with a directory separator in its canonical
+  // form. The bare UNC volume (`//server/share`) is the only rooted shape
+  // that can appear without one, so append the separator here.
+  const root = getPathRoot(trimmed);
+  if (root.type === "UNC" && root.span === trimmed && !trimmed.endsWith(DIRECTORY_SEPARATOR)) {
+    return `${trimmed}/`;
+  }
 
   // Don't remove the trailing directory separator of root directories
   return isRootDirectory(trimmed) ? trimmed : removeTrailingDirectorySeparator(trimmed);

@@ -9,22 +9,27 @@ describe("WindowsPathProviderImpl.resolve", () => {
   const provider = new WindowsPathProviderImpl();
 
   it("maps rooted drive-letter paths to native Windows paths", async () => {
-    const qp = QualifiedPath.parse("windows:///C/Users/alice/file.txt");
+    const qp = QualifiedPath.of({
+      scheme: "windows",
+      data: "",
+      path: "/C/Users/alice/file.txt",
+      root: "",
+    });
     expect(await provider.resolve(qp)).toBe("C:\\Users\\alice\\file.txt");
   });
 
   it("maps drive-only paths to the drive root", async () => {
-    const qp = QualifiedPath.parse("windows:///C");
+    const qp = QualifiedPath.of({ scheme: "windows", data: "", path: "/C", root: "" });
     expect(await provider.resolve(qp)).toBe("C:\\");
   });
 
   it("uppercases lowercase drive letters on resolve", async () => {
-    const qp = QualifiedPath.parse("windows:///c/Users/alice");
+    const qp = QualifiedPath.of({ scheme: "windows", data: "", path: "/c/Users/alice", root: "" });
     expect(await provider.resolve(qp)).toBe("C:\\Users\\alice");
   });
 
   it("rejects unsupported schemes", async () => {
-    const qp = QualifiedPath.parse("linux:///home/alice");
+    const qp = QualifiedPath.of({ scheme: "linux", data: "", path: "/home/alice", root: "" });
     await expect(provider.resolve(qp)).rejects.toBeInstanceOf(PathResolverError);
   });
 
@@ -32,12 +37,12 @@ describe("WindowsPathProviderImpl.resolve", () => {
     // No leading '/' — the parse grammar would tolerate `windows://C/...`
     // (the `//` before `C` is treated as the data separator), so we guard
     // at resolve time.
-    const qp = QualifiedPath.parse("windows://C//Users/alice");
+    const qp = QualifiedPath.of({ scheme: "windows", data: "C", path: "Users/alice", root: "" });
     await expect(provider.resolve(qp)).rejects.toBeInstanceOf(PathResolverError);
   });
 
   it("rejects paths whose first component is not a single drive letter", async () => {
-    const qp = QualifiedPath.parse("windows:///CD/Users");
+    const qp = QualifiedPath.of({ scheme: "windows", data: "", path: "/CD/Users", root: "" });
     await expect(provider.resolve(qp)).rejects.toBeInstanceOf(PathResolverError);
   });
 });

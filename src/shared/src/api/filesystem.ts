@@ -26,12 +26,12 @@ export type {
 } from "../fs/paths";
 export {
   QualifiedPath,
-  qpath,
   OSPath,
   PathProviderError,
   PathResolverError,
   relativePath,
 } from "../fs/paths";
+export type { QualifiedPathWire } from "../fs/paths";
 
 export { XDG } from "../fs/paths.linux";
 export type { LinuxPathBase, LinuxPathProvider, XDGBase } from "../fs/paths.linux";

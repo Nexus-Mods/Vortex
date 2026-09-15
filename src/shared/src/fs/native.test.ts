@@ -22,7 +22,9 @@ describe("getPathRoot", () => {
     ["/foo/bar", "Unix", "/"],
     ["C:/foo/bar", "DOS", "C:/"],
     ["c:/foo", "DOS", "c:/"],
-    ["//Server/foo", "UNC", "//Server/"],
+    ["//Server/share/file.txt", "UNC", "//Server/share/"],
+    ["//Server/share/", "UNC", "//Server/share/"],
+    ["//Server/share", "UNC", "//Server/share"],
     ["//./C:/foo", "DOSDeviceDrive", "//./C:/"],
     ["//?/C:/foo", "DOSDeviceDrive", "//?/C:/"],
     [
@@ -44,7 +46,8 @@ describe("getPathRoot", () => {
   it.each([
     ["1:/foo", "invalid windows drive character"],
     ["//.", "too small to be a valid rooted path"],
-    ["//Server", "Invalid UNC path, missing directory separator"],
+    ["//Server", "Invalid UNC path, missing share"],
+    ["//Server/", "Invalid UNC path, missing share"],
     ["//./1:/foo", "invalid windows drive character"],
     ["//./Volume{bad}/foo", "Path is not a valid DOS Device Volume path"],
     ["//./Foo{b75e2c83-0000-0000-0000-602f00000000}/foo", "missing DOS Device Volume prefix"],
@@ -72,7 +75,9 @@ describe("sanitizePath", () => {
     ["C:\\", "C:/"],
     ["C:\\foo", "C:/foo"],
     ["C:\\foo\\", "C:/foo"],
-    ["\\\\Server\\\\foo", "//Server/foo"],
+    ["\\\\Server\\\\foo", "//Server/foo/"],
+    ["\\\\Server\\share", "//Server/share/"],
+    ["\\\\Server\\share\\", "//Server/share/"],
     ["\\\\.\\C:\\foo", "//./C:/foo"],
     ["\\\\?\\C:\\foo", "//?/C:/foo"],
     [
@@ -114,6 +119,10 @@ describe("isPathSanitized", () => {
     ["C:/foo/bar", true],
     ["C:/foo/bar.txt", true],
     ["C:/foo/", false],
+    ["//Server/share/", true],
+    ["//Server/share", false],
+    ["//Server/share/x", true],
+    ["//Server/share/x/", false],
     ["C:\\", false],
     ["C:\\foo", false],
     ["C:\\foo\\", false],
@@ -147,6 +156,9 @@ describe("getRootLength", () => {
     ["C:/foo", 3],
     ["C:/foo/", 3],
     ["C:/foo/bar", 3],
+    ["//Server/share", 14],
+    ["//Server/share/", 15],
+    ["//Server/share/x", 15],
   ])('"%s" -> %s', (path, expectedRootLength) => {
     expect(getRootLength(path)).toBe(expectedRootLength);
   });
@@ -181,6 +193,9 @@ describe("isRootDirectory", () => {
     ["C:/foo", false],
     ["C:/foo/", false],
     ["C:/foo/bar", false],
+    ["//Server/share", true],
+    ["//Server/share/", true],
+    ["//Server/share/x", false],
   ])('"%s" -> %s', (input, expected) => {
     expect(isRootDirectory(input)).toBe(expected);
   });

@@ -294,25 +294,25 @@ try {
 
     fs: {
       copy(source, target, options) {
-        return betterIpcRenderer.invoke("fs:copy", source.value, target.value, options);
+        return betterIpcRenderer.invoke("fs:copy", source.toWire(), target.toWire(), options);
       },
       createDirectory(path) {
-        return betterIpcRenderer.invoke("fs:createDirectory", path.value);
+        return betterIpcRenderer.invoke("fs:createDirectory", path.toWire());
       },
       createLink(from, to, type) {
-        return betterIpcRenderer.invoke("fs:createLink", from.value, to.value, type);
+        return betterIpcRenderer.invoke("fs:createLink", from.toWire(), to.toWire(), type);
       },
       delete(path) {
-        return betterIpcRenderer.invoke("fs:delete", path.value);
+        return betterIpcRenderer.invoke("fs:delete", path.toWire());
       },
       deleteRecursive(path) {
-        return betterIpcRenderer.invoke("fs:deleteRecursive", path.value);
+        return betterIpcRenderer.invoke("fs:deleteRecursive", path.toWire());
       },
       move(source, target, options) {
-        return betterIpcRenderer.invoke("fs:move", source.value, target.value, options);
+        return betterIpcRenderer.invoke("fs:move", source.toWire(), target.toWire(), options);
       },
       stat(path, options) {
-        return betterIpcRenderer.invoke("fs:stat", path.value, options);
+        return betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
       },
     },
   });

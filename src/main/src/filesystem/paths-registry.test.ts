@@ -24,17 +24,23 @@ describe("PathResolverRegistryImpl", () => {
       mkResolver("windows", "C:/windows"),
     ]);
 
-    const linuxResolved = await registry.resolve(QualifiedPath.parse("linux:///home/alice"));
+    const linuxResolved = await registry.resolve(
+      QualifiedPath.of({ scheme: "linux", data: "", path: "/home/alice", root: "" }),
+    );
     expect(linuxResolved).toBe("/linux/home/alice");
 
-    const winResolved = await registry.resolve(QualifiedPath.parse("windows://C:/Users/alice"));
+    const winResolved = await registry.resolve(
+      QualifiedPath.of({ scheme: "windows", data: "", path: "C:/Users/alice", root: "" }),
+    );
     expect(winResolved).toBe("C:/windowsC:/Users/alice");
   });
 
   it("rejects with PathResolverError when no resolver is registered for the scheme", async () => {
     const registry = new PathResolverRegistryImpl([mkResolver("linux", "/")]);
     await expect(
-      registry.resolve(QualifiedPath.parse("steam://SteamApps/common/Skyrim")),
+      registry.resolve(
+        QualifiedPath.of({ scheme: "steam", data: "", path: "SteamApps/common/Skyrim", root: "" }),
+      ),
     ).rejects.toBeInstanceOf(PathResolverError);
   });
 
@@ -42,7 +48,9 @@ describe("PathResolverRegistryImpl", () => {
     const registry = new PathResolverRegistryImpl([mkResolver("linux", "/first")]);
     registry.register(mkResolver("linux", "/second"));
 
-    const resolved = await registry.resolve(QualifiedPath.parse("linux:///x"));
+    const resolved = await registry.resolve(
+      QualifiedPath.of({ scheme: "linux", data: "", path: "/x", root: "" }),
+    );
     expect(resolved).toBe("/second/x");
   });
 
@@ -56,6 +64,8 @@ describe("PathResolverRegistryImpl", () => {
   it("accepts resolvers via register() when constructed empty", async () => {
     const registry = new PathResolverRegistryImpl();
     registry.register(mkResolver("linux", ""));
-    expect(await registry.resolve(QualifiedPath.parse("linux:///a"))).toBe("/a");
+    expect(
+      await registry.resolve(QualifiedPath.of({ scheme: "linux", data: "", path: "/a", root: "" })),
+    ).toBe("/a");
   });
 });
