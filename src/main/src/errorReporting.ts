@@ -11,7 +11,7 @@ import {
   getErrorMessageOrDefault,
   sanitizeFramePath,
 } from "@vortex/shared";
-import { type CrashType, type ReportableError, CrashTypeTitle } from "@vortex/shared/errors";
+import type { CrashType, ReportableError } from "@vortex/shared/errors";
 import { recordErrorOnSpan, SanitizingSpanExporter } from "@vortex/shared/telemetry";
 import { app } from "electron";
 
@@ -443,7 +443,7 @@ export async function reportCrash(
     const errorObj = new Error(error.message);
     errorObj.stack = error.stack;
     recordErrorOnSpan(span, errorObj, app.getVersion(), context, {
-      "error.title": error.title ?? CrashTypeTitle[type],
+      "error.title": error.title ?? `Native crash: ${type}`,
       // overridden by the stack fingerprint when the error has a stack
       "error.fingerprint": crashFingerprint(app.getVersion(), type, error, spanAttributes),
     });
