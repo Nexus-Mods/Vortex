@@ -21,6 +21,11 @@ const GAME_STORE_DEPRECATION =
 
 type SteamShim = Pick<typeof GameStoreHelper, "findByAppId" | "findByName"> & Pick<Steam, "id">;
 
+/** Deprecated shim, use GameStoreHelper instead.
+ *
+ * @public
+ * @deprecated
+ * */
 const steamShim: SteamShim = new Proxy<SteamShim>(
   {
     id: "steam",
@@ -48,6 +53,11 @@ type EpicGamesLauncherShim = Pick<
   "findByAppId" | "findByName" | "isGameInstalled"
 >;
 
+/** Deprecated shim, use GameStoreHelper instead.
+ *
+ * @public
+ * @deprecated
+ * */
 const epicGamesLauncherShim: EpicGamesLauncherShim = new Proxy<EpicGamesLauncherShim>(
   {
     findByAppId: (appId) => GameStoreHelper.findByAppId(appId, "epic"),
