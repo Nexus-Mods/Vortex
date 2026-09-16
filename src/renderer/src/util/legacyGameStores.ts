@@ -1,20 +1,7 @@
-import { log } from "../logging";
+import { registerDeprecatedApi, type DeprecatedApiReporter } from "./deprecatedApiUsage";
 import type { EpicGamesLauncher } from "./EpicGamesLauncher";
 import GameStoreHelper from "./GameStoreHelper";
 import type { Steam } from "./Steam";
-
-const warned = new Set<string>();
-
-function warnDeprecated(method: string, replacement: string) {
-  if (warned.has(method)) {
-    return;
-  }
-
-  warned.add(method);
-  log("warn", `"${method}" is deprecated`, {
-    replacement,
-  });
-}
 
 const GAME_STORE_DEPRECATION =
   "the steam / epicGamesLauncher exports on the extension api are deprecated";
@@ -26,27 +13,11 @@ type SteamShim = Pick<typeof GameStoreHelper, "findByAppId" | "findByName"> & Pi
  * @public
  * @deprecated
  * */
-const steamShim: SteamShim = new Proxy<SteamShim>(
-  {
-    id: "steam",
-    findByAppId: (appId) => GameStoreHelper.findByAppId(appId, "steam"),
-    findByName: (name: string) => GameStoreHelper.findByName(name, "steam"),
-  },
-  {
-    get(target, prop: keyof SteamShim) {
-      warnDeprecated(
-        `steam.${String(prop)}`,
-        `${GAME_STORE_DEPRECATION}; use GameStoreHelper instead`,
-      );
-
-      if (prop in target) {
-        return target[prop];
-      }
-
-      return undefined;
-    },
-  },
-);
+const steamShim: SteamShim = {
+  id: "steam",
+  findByAppId: (appId) => GameStoreHelper.findByAppId(appId, "steam"),
+  findByName: (name: string) => GameStoreHelper.findByName(name, "steam"),
+};
 
 type EpicGamesLauncherShim = Pick<
   EpicGamesLauncher,
@@ -58,33 +29,41 @@ type EpicGamesLauncherShim = Pick<
  * @public
  * @deprecated
  * */
-const epicGamesLauncherShim: EpicGamesLauncherShim = new Proxy<EpicGamesLauncherShim>(
-  {
-    findByAppId: (appId) => GameStoreHelper.findByAppId(appId, "epic"),
-    findByName: (name) => GameStoreHelper.findByName(name, "epic"),
-    isGameInstalled: (name) =>
-      GameStoreHelper.findByAppId(name, "epic")
-        .then(() => true)
-        .catch(() =>
-          GameStoreHelper.findByName(name, "epic")
-            .then(() => true)
-            .catch(() => false),
-        ),
-  },
-  {
-    get(target, prop: keyof EpicGamesLauncherShim) {
-      warnDeprecated(
-        `epicGamesLauncher.${String(prop)}`,
+const epicGamesLauncherShim: EpicGamesLauncherShim = {
+  findByAppId: (appId) => GameStoreHelper.findByAppId(appId, "epic"),
+  findByName: (name) => GameStoreHelper.findByName(name, "epic"),
+  isGameInstalled: (name) =>
+    GameStoreHelper.findByAppId(name, "epic")
+      .then(() => true)
+      .catch(() =>
+        GameStoreHelper.findByName(name, "epic")
+          .then(() => true)
+          .catch(() => false),
+      ),
+};
+
+function withAttribution<T extends object>(
+  surface: string,
+  target: T,
+  report: DeprecatedApiReporter,
+): T {
+  return new Proxy<T>(target, {
+    get(innerTarget, prop, receiver) {
+      report(
+        `${surface}.${String(prop)}`,
         `${GAME_STORE_DEPRECATION}; use GameStoreHelper instead`,
       );
-
-      if (prop in target) {
-        return target[prop];
-      }
-
-      return undefined;
+      return Reflect.get(innerTarget, prop, receiver);
     },
-  },
-);
+  });
+}
+
+registerDeprecatedApi("util.steam", {
+  makeForCaller: (report) => withAttribution("steam", steamShim, report),
+});
+
+registerDeprecatedApi("util.epicGamesLauncher", {
+  makeForCaller: (report) => withAttribution("epicGamesLauncher", epicGamesLauncherShim, report),
+});
 
 export { steamShim, epicGamesLauncherShim };
