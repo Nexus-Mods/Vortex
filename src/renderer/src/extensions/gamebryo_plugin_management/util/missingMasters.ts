@@ -24,16 +24,19 @@ import { pluginLink, showPluginCallbacks } from "./showPlugin";
 import toPluginId from "./toPluginId";
 
 /**
- * Why a plugin's master is not available to it. not-installed and not-enabled are the user's
- * install state; removed-externally and unscanned are the plugin list disagreeing with the game
- * folder, as is not-deployed once nothing is left to rescan.
+ * Why a plugin's master is not available to it. NotInstalled and NotEnabled are the user's install
+ * state; RemovedExternally and Unscanned are the plugin list disagreeing with the game folder, as
+ * is NotDeployed once nothing is left to rescan.
  */
-type MasterState =
-  | "not-installed"
-  | "not-deployed"
-  | "not-enabled"
-  | "removed-externally"
-  | "unscanned";
+export const MasterState = {
+  NotInstalled: "not-installed",
+  NotDeployed: "not-deployed",
+  NotEnabled: "not-enabled",
+  RemovedExternally: "removed-externally",
+  Unscanned: "unscanned",
+} as const;
+
+export type MasterState = (typeof MasterState)[keyof typeof MasterState];
 
 export interface IMissingMaster {
   // plugin id of the dependent
@@ -80,7 +83,9 @@ export function masterCheckOf(state: IStateWithGamebryo, gameMode: string): IMas
  */
 function contradictsPluginList(state: MasterState, settled: boolean): boolean {
   return (
-    state === "removed-externally" || state === "unscanned" || (state === "not-deployed" && settled)
+    state === MasterState.RemovedExternally ||
+    state === MasterState.Unscanned ||
+    (state === MasterState.NotDeployed && settled)
   );
 }
 
@@ -105,14 +110,14 @@ function masterLookup(check: IMasterCheck) {
     const known = check.pluginList[id];
     if (!(await isOnDisk(id, master))) {
       if (known === undefined) {
-        return "not-installed";
+        return MasterState.NotInstalled;
       }
-      return known.deployed === true ? "removed-externally" : "not-deployed";
+      return known.deployed === true ? MasterState.RemovedExternally : MasterState.NotDeployed;
     }
     if (known === undefined) {
-      return "unscanned";
+      return MasterState.Unscanned;
     }
-    return isEnabled(id) ? undefined : "not-enabled";
+    return isEnabled(id) ? undefined : MasterState.NotEnabled;
   };
   return { isEnabled, stateOf };
 }
@@ -139,7 +144,7 @@ export async function findMissingMasters(
         // present; an enabled one also needs them enabled for the game
         return masters.flatMap((master, idx) => {
           const state = states[idx];
-          return state === undefined || (state === "not-enabled" && !dependentEnabled)
+          return state === undefined || (state === MasterState.NotEnabled && !dependentEnabled)
             ? []
             : [{ plugin, master, state }];
         });
@@ -157,18 +162,18 @@ function describeMasterState(
 ): string {
   const options = { replace: { master }, ns: NAMESPACE };
   switch (state) {
-    case "not-installed":
+    case MasterState.NotInstalled:
       return translate('requires "{{master}}" to be installed, but it is missing', options);
-    case "not-deployed":
+    case MasterState.NotDeployed:
       return translate('requires "{{master}}", which is installed but not deployed', options);
-    case "not-enabled":
+    case MasterState.NotEnabled:
       return translate('requires "{{master}}" to be enabled, but it is disabled', options);
-    case "removed-externally":
+    case MasterState.RemovedExternally:
       return translate(
         'requires "{{master}}", which was in the game folder when Vortex last scanned it but is gone',
         options,
       );
-    case "unscanned":
+    case MasterState.Unscanned:
       return translate(
         'requires "{{master}}", which is in the game folder but not in Vortex\'s plugin list',
         options,

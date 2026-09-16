@@ -23,6 +23,7 @@ import {
   findMissingMasters,
   makeDescribeMissing,
   masterCheckOf,
+  MasterState,
   MissingMasterReporter,
   type IMissingMaster,
 } from "./missingMasters";
@@ -103,7 +104,7 @@ describe("findMissingMasters", () => {
     });
 
     expect(await check()).toEqual<IMissingMaster[]>([
-      { plugin: "a.esp", master: "M.esm", state: "not-installed" },
+      { plugin: "a.esp", master: "M.esm", state: MasterState.NotInstalled },
     ]);
   });
 
@@ -118,7 +119,7 @@ describe("findMissingMasters", () => {
     });
 
     expect(await check()).toEqual<IMissingMaster[]>([
-      { plugin: "a.esp", master: "M.esm", state: "not-deployed" },
+      { plugin: "a.esp", master: "M.esm", state: MasterState.NotDeployed },
     ]);
   });
 
@@ -132,7 +133,7 @@ describe("findMissingMasters", () => {
     });
 
     expect(await check()).toEqual<IMissingMaster[]>([
-      { plugin: "a.esp", master: "M.esm", state: "not-enabled" },
+      { plugin: "a.esp", master: "M.esm", state: MasterState.NotEnabled },
     ]);
   });
 
@@ -147,7 +148,7 @@ describe("findMissingMasters", () => {
     await rm(path.join(dataDir, "M.esm"));
 
     expect(await check()).toEqual<IMissingMaster[]>([
-      { plugin: "a.esp", master: "M.esm", state: "removed-externally" },
+      { plugin: "a.esp", master: "M.esm", state: MasterState.RemovedExternally },
     ]);
   });
 
@@ -162,7 +163,7 @@ describe("findMissingMasters", () => {
     });
 
     expect(await check()).toEqual<IMissingMaster[]>([
-      { plugin: "a.esp", master: "M.esm", state: "unscanned" },
+      { plugin: "a.esp", master: "M.esm", state: MasterState.Unscanned },
     ]);
   });
 
@@ -197,8 +198,8 @@ describe("findMissingMasters", () => {
     });
 
     expect(await check()).toEqual<IMissingMaster[]>([
-      { plugin: "a.esp", master: "M.esm", state: "not-installed" },
-      { plugin: "a.esp", master: "U.esm", state: "unscanned" },
+      { plugin: "a.esp", master: "M.esm", state: MasterState.NotInstalled },
+      { plugin: "a.esp", master: "U.esm", state: MasterState.Unscanned },
     ]);
   });
 });
@@ -333,10 +334,14 @@ describe("makeDescribeMissing", () => {
     });
     const state = harness.getGamebryoState();
     // the run found this one master missing, plus a master the user simply has not installed
-    const entry: IMissingMaster = { plugin: "a.esp", master: "M.esm", state: "not-deployed" };
+    const entry: IMissingMaster = {
+      plugin: "a.esp",
+      master: "M.esm",
+      state: MasterState.NotDeployed,
+    };
     const missing: IMissingMaster[] = [
       entry,
-      { plugin: "a.esp", master: "N.esm", state: "not-installed" },
+      { plugin: "a.esp", master: "N.esm", state: MasterState.NotInstalled },
     ];
     return makeDescribeMissing(state, "skyrimse", masterCheckOf(state, "skyrimse"), missing)(entry);
   };
@@ -390,8 +395,16 @@ describe("makeDescribeMissing", () => {
 });
 
 describe("MissingMasterReporter", () => {
-  const removed: IMissingMaster = { plugin: "a.esp", master: "M.esm", state: "removed-externally" };
-  const staged: IMissingMaster = { plugin: "a.esp", master: "N.esm", state: "not-deployed" };
+  const removed: IMissingMaster = {
+    plugin: "a.esp",
+    master: "M.esm",
+    state: MasterState.RemovedExternally,
+  };
+  const staged: IMissingMaster = {
+    plugin: "a.esp",
+    master: "N.esm",
+    state: MasterState.NotDeployed,
+  };
   const describe_ = (entry: IMissingMaster) => ({ "master.name": entry.master });
   const makeDescribe = () => describe_;
   const makeReporter = () => {
@@ -417,8 +430,8 @@ describe("MissingMasterReporter", () => {
     reporter.report(
       "skyrimse",
       [
-        { plugin: "a.esp", master: "M.esm", state: "not-installed" },
-        { plugin: "a.esp", master: "O.esm", state: "not-enabled" },
+        { plugin: "a.esp", master: "M.esm", state: MasterState.NotInstalled },
+        { plugin: "a.esp", master: "O.esm", state: MasterState.NotEnabled },
       ],
       true,
       makeDescribe,
@@ -466,7 +479,7 @@ describe("MissingMasterReporter", () => {
     const many: IMissingMaster[] = Array.from({ length: 40 }, (_unused, idx) => ({
       plugin: `a${idx}.esp`,
       master: `M${idx}.esm`,
-      state: "removed-externally",
+      state: MasterState.RemovedExternally,
     }));
 
     reporter.report("skyrimse", many, true, makeDescribe);
@@ -483,7 +496,7 @@ describe("MissingMasterReporter", () => {
 
     reporter.report(
       "skyrimse",
-      [removed, { plugin: "a.esp", master: "O.esm", state: "not-enabled" }],
+      [removed, { plugin: "a.esp", master: "O.esm", state: MasterState.NotEnabled }],
       true,
       () => describeSpy,
     );
@@ -497,7 +510,12 @@ describe("MissingMasterReporter", () => {
     const makeDescribeSpy = vi.fn(makeDescribe);
 
     reporter.report("skyrimse", [staged], false, makeDescribeSpy);
-    reporter.report("skyrimse", [{ ...staged, state: "not-enabled" }], true, makeDescribeSpy);
+    reporter.report(
+      "skyrimse",
+      [{ ...staged, state: MasterState.NotEnabled }],
+      true,
+      makeDescribeSpy,
+    );
     expect(makeDescribeSpy).not.toHaveBeenCalled();
 
     reporter.report("skyrimse", [removed], true, makeDescribeSpy);
