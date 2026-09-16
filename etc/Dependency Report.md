@@ -15,7 +15,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @hot-updater/bsdiff | 0.30.6 |
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
-| @nexusmods/adaptor-api | link:../../packages/adaptor-api |
 | @nexusmods/file-dependency-resolver | link:../../packages/file-dependency-resolver |
 | @nexusmods/fomod-installer-ipc | 0.13.3 |
 | @nexusmods/fomod-installer-native | 0.13.3 |
@@ -117,6 +116,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | source-map-support | 0.5.21 |
 | string-template | 1.0.0 |
 | tailwindcss | 4.3.2 |
+| temporal-polyfill | 1.0.4 |
 | tmp | 0.1.0 |
 | tough-cookie | 6.0.1 |
 | turbowalk | 3.1.1 |

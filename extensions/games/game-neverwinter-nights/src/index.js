@@ -90,9 +90,9 @@ function findGameEE() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam
-      .findByName("Neverwinter Nights: Enhanced Edition")
-      .then((game) => game.gamePath);
+    return util.GameStoreHelper.findByName("Neverwinter Nights: Enhanced Edition", "steam").then(
+      (game) => game.gamePath,
+    );
   }
 }
 

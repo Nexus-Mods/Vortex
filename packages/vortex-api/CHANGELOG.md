@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Deprecated
+
+- `util.steam` and `util.epicGamesLauncher` are deprecated as of 2.8 and will be removed in a later release. Both now delegate to `GameStoreHelper`: `util.steam.findByAppId(id)` becomes `GameStoreHelper.findByAppId(id, "steam")`, `util.steam.findByName(name)` becomes `GameStoreHelper.findByName(name, "steam")`, and likewise for `epicGamesLauncher` with `"epic"`. `util.steam.id` remains the constant `"steam"` string. Each deprecated call logs a warning (once per session); any other member access also warns and returns `undefined`
+
 ### Changed
 
 - React peer dependency upgraded to 18.3.1; `@types/react` and `@types/react-dom` peer dependencies are now 18. Extension source may need type-level fixes on next rebuild (explicit `children` props, removed type aliases) - see the [React 18 section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-18)

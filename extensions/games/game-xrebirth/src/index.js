@@ -4,7 +4,7 @@ const path = require("path");
 const { fs, log, util } = require("@nexusmods/vortex-api");
 
 function findGame() {
-  return util.steam.findByName("X Rebirth").then((game) => game.gamePath);
+  return util.GameStoreHelper.findByName("X Rebirth", "steam").then((game) => game.gamePath);
 }
 
 function testSupported(files, gameId) {

@@ -23,7 +23,7 @@ const STORE_PRIORITY = 60;
  *  .item manifest files which are stored inside the launchers Data folder
  *  "(C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests" by default
  */
-class EpicGamesLauncher implements IGameStore {
+export class EpicGamesLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
