@@ -64,20 +64,20 @@ Deprecation windows are counted in releases, not weeks, so they hold if the cade
 
 Each release cycle bumps the minor version: 2.7, then 2.8, then 2.9. So "two releases" means two of those minor bumps, currently about 4 weeks. Patch releases (2.7.1) are hotfixes and don't count toward the window.
 
-One thing shapes all of this: extensions can't say which Vortex version they need, and Vortex updates installed extensions automatically. An author publishes one build and it reaches everyone on their next restart, whatever version they're on. So a migration has to work on old and new Vortex at the same time.
+Extensions can't say which Vortex version they need, and Vortex updates installed extensions automatically. An author publishes one build and it reaches everyone on their next restart, whatever version they're on. So a migration has to work on old and new Vortex at the same time.
 
 ### vortex-api
 
 Where possible, API changes that affect extensions go through a two-release deprecation window. An API deprecated in one release is removed no earlier than two minor bumps later: deprecate in x.y, remove in x.y+2 at the earliest. Affected authors are notified at deprecation time.
 
-Two releases is a floor rather than a target. Bigger migrations get longer.
+Two releases is the minimum. Bigger migrations get longer.
 
 Two things have to be true before we deprecate anything:
 
-- **The replacement already works in the current stable.** If it arrives in the same release as the deprecation, there's nothing authors can move to that their existing users can run, and the window gives them nothing.
-- **We've scanned the published extensions to see who calls it.** That scan is what produces the list of authors we contact.
+- **The replacement already works in the current stable.** If it arrives in the same release as the deprecation, authors have nothing to move to that their existing users can run.
+- **We've scanned the published extensions to see who calls it.** That's how we know who to contact.
 
-The removal itself has to be merged before that release's beta cut, not before it ships. Miss the cut and it waits for the next release.
+The removal has to be merged before that release's beta cut, not before it ships. Miss the cut and it waits for the next release.
 
 For changes that can’t be deprecated (such as React upgrades), the breaking change ships in a single release. Affected authors are notified directly when the change lands on master, with the API diff and target stable date.
 
