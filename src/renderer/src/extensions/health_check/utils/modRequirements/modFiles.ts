@@ -1,6 +1,9 @@
+import { getErrorMessage, unknownToError } from "@vortex/shared";
+
 import type { IModDetails, IModFileInfo } from "@/extensions/health_check/types";
 import { getModDetails } from "@/extensions/health_check/utils/shared/modDetails";
 import { makeModUID } from "@/extensions/nexus_integration/util/UIDs";
+import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { createKeyedCache, type KeyedCache } from "@/util/keyedCache";
 
@@ -20,9 +23,17 @@ async function fetchModFilesFromApi(
   // Kick off the mod-details fetch (kept separate from the files call so its
   // IModDetails[] type isn't widened to any by the loosely-typed api.ext call),
   // then await both concurrently.
+  // Caught at creation: the early return below orphans this promise, so a 401/429 from the
+  // details endpoint would otherwise surface as an unhandled rejection.
   const modUID = makeModUID({ gameId, modId: modId.toString(), fileId: "0" });
   const detailsPromise: Promise<IModDetails[]> = modUID
-    ? getModDetails(api, [modUID])
+    ? getModDetails(api, [modUID]).catch((err: unknown): IModDetails[] => {
+        log("warn", "failed to fetch mod details for mod files", {
+          modUID,
+          error: getErrorMessage(unknownToError(err)),
+        });
+        return [];
+      })
     : Promise.resolve<IModDetails[]>([]);
 
   const modFiles = await api.ext.nexusGetModFiles?.(gameId, modId);
