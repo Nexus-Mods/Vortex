@@ -507,25 +507,5 @@ class GameStoreHelper {
   }
 }
 
-// const instance: GameStoreHelper = new GameStoreHelper();
-
-const instance: GameStoreHelper = new Proxy(
-  {},
-  {
-    get(target, name) {
-      if (target["inst"] === undefined) {
-        target["inst"] = new GameStoreHelper();
-      }
-      return target["inst"][name];
-    },
-    set(target, name, value) {
-      if (target["inst"] === undefined) {
-        target["inst"] = new GameStoreHelper();
-      }
-      target["inst"][name] = value;
-      return true;
-    },
-  },
-) as any;
-
+const instance: GameStoreHelper = new GameStoreHelper();
 export default instance;
