@@ -67,7 +67,6 @@ class GameModeManager {
     api: IExtensionApi,
     extensionGames: IGame[],
     gameStubs: IGameStub[],
-    gameStoreExtensions: IGameStore[],
     onGameModeActivated: (mode: string) => void,
   ) {
     this.mApi = api;
@@ -81,7 +80,6 @@ class GameModeManager {
       OriginLauncher.create(),
       UPlayLauncher.create(),
       XboxLauncher.create(),
-      ...gameStoreExtensions,
     ].filter(Boolean);
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;

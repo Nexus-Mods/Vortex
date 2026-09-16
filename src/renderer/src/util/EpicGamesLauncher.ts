@@ -5,8 +5,10 @@ import type * as winapiT from "winapi-bindings";
 import { z } from "zod";
 
 import { log } from "../logging";
-import type { IExtensionApi, IGameStore, IGameStoreEntry } from "../types/api";
-import { GameEntryNotFound } from "../types/api";
+import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IGameStore } from "../types/IGameStore";
+import { GameEntryNotFound } from "../types/IGameStore";
+import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import * as fs from "./fs";
 import lazyRequire from "./lazyRequire";
 import opn from "./opn";
