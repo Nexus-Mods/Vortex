@@ -98,9 +98,7 @@
     --color-zinc-800: #29292e;
     --color-zinc-900: #1d1d21;
     --color-zinc-950: #0f0f10;
-}
 
-@theme inline {
     --color-translucent-50: --alpha(var(--color-white) / 5%);
     --color-translucent-100: --alpha(var(--color-white) / 10%);
     --color-translucent-200: --alpha(var(--color-white) / 20%);
@@ -130,6 +128,39 @@
     --color-translucent-dark-800: --alpha(var(--color-black) / 80%);
     --color-translucent-dark-900: --alpha(var(--color-black) / 90%);
     --color-translucent-dark-950: --alpha(var(--color-black) / 95%);
+
+    --color-scrim-50: --alpha(var(--color-black) / 5%);
+    --color-scrim-100: --alpha(var(--color-black) / 10%);
+    --color-scrim-200: --alpha(var(--color-black) / 20%);
+    --color-scrim-300: --alpha(var(--color-black) / 30%);
+    --color-scrim-400: --alpha(var(--color-black) / 40%);
+    --color-scrim-500: --alpha(var(--color-black) / 50%);
+    --color-scrim-600: --alpha(var(--color-black) / 60%);
+    --color-scrim-700: --alpha(var(--color-black) / 70%);
+    --color-scrim-800: --alpha(var(--color-black) / 80%);
+    --color-scrim-900: --alpha(var(--color-black) / 90%);
+    --color-scrim-950: --alpha(var(--color-black) / 95%);
+    --color-scrim-weak: --alpha(var(--color-black) / 20%);
+    --color-scrim-subdued: --alpha(var(--color-black) / 50%);
+    --color-scrim-moderate: --alpha(var(--color-black) / 70%);
+    --color-scrim-strong: --alpha(var(--color-black) / 95%);
+
+    --color-on-scrim-50: --alpha(var(--color-white) / 5%);
+    --color-on-scrim-100: --alpha(var(--color-white) / 10%);
+    --color-on-scrim-200: --alpha(var(--color-white) / 20%);
+    --color-on-scrim-300: --alpha(var(--color-white) / 30%);
+    --color-on-scrim-400: --alpha(var(--color-white) / 40%);
+    --color-on-scrim-500: --alpha(var(--color-white) / 50%);
+    --color-on-scrim-600: --alpha(var(--color-white) / 60%);
+    --color-on-scrim-700: --alpha(var(--color-white) / 70%);
+    --color-on-scrim-800: --alpha(var(--color-white) / 80%);
+    --color-on-scrim-900: --alpha(var(--color-white) / 90%);
+    --color-on-scrim-950: --alpha(var(--color-white) / 95%);
+    --color-on-scrim-weaker: --alpha(var(--color-white) / 10%);
+    --color-on-scrim-weak: --alpha(var(--color-white) / 40%);
+    --color-on-scrim-subdued: --alpha(var(--color-white) / 50%);
+    --color-on-scrim-moderate: --alpha(var(--color-white) / 70%);
+    --color-on-scrim-strong: --alpha(var(--color-white) / 95%);
 
     --color-neutral-50: var(--color-zinc-50);
     --color-neutral-100: var(--color-zinc-100);

@@ -158,6 +158,24 @@ export const TypographyDemo = () => (
         </Typography>
       </div>
 
+      {/* neutral-on-scrim draws from the fixed on-scrim ramp, so it is shown over one */}
+      <div className="flex items-baseline gap-x-4 rounded-sm bg-scrim-800 p-3">
+        <Typography appearance="subdued" className="w-28 shrink-0" typographyType="body-sm">
+          on-scrim
+        </Typography>
+
+        {appearances.map((appearance) => (
+          <Typography
+            key={appearance}
+            appearance={appearance}
+            brand="neutral-on-scrim"
+            typographyType="body-sm"
+          >
+            {appearance}
+          </Typography>
+        ))}
+      </div>
+
       {/* neutral-translucent: the shared white-alpha translucent ramp, over a surface */}
       <div className="flex items-baseline gap-x-4 rounded-sm bg-surface-high p-3">
         <Typography appearance="subdued" className="w-28 shrink-0" typographyType="body-sm">

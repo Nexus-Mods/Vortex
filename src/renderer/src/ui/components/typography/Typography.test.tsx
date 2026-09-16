@@ -95,6 +95,22 @@ describe("Typography", () => {
     });
   });
 
+  describe('brand="neutral-on-scrim"', () => {
+    it("uses the fixed on-scrim ramp", () => {
+      render(
+        <Typography appearance="moderate" brand="neutral-on-scrim">
+          text
+        </Typography>,
+      );
+      expect(get()).toHaveClass("text-on-scrim-moderate");
+    });
+
+    it("defaults to the strong on-scrim colour", () => {
+      render(<Typography brand="neutral-on-scrim">text</Typography>);
+      expect(get()).toHaveClass("text-on-scrim-strong");
+    });
+  });
+
   describe("neutral-translucent brand", () => {
     it("uses the shared translucent ramp", () => {
       render(
