@@ -27,6 +27,35 @@ export interface IStoreQuery {
 /** Normalized form of one store's IGame.queryArgs entry. */
 export type IQueryArgEntry = string | IStoreQuery | IStoreQuery[];
 
+export interface IGameStoreHelper {
+  getGameStore(storeId: string): IGameStore | undefined;
+
+  isGameInstalled(id: string, storeId?: string): Bluebird<string | undefined>;
+
+  isGameStoreInstalled(storeId: string): Bluebird<boolean>;
+
+  registryLookup(lookup: string): Bluebird<IGameStoreEntry>;
+
+  find: (query: { [storeId: string]: IQueryArgEntry }) => Bluebird<IGameStoreEntry[]>;
+
+  findByName(name: string | string[], storeId?: string): Bluebird<IGameStoreEntry>;
+
+  findByAppId(appId: string | string[], storeId?: string): Bluebird<IGameStoreEntry>;
+
+  launchGameStore(
+    api: IExtensionApi,
+    gameStoreId: string,
+    parameters?: string[],
+    askConsent?: boolean,
+  ): Bluebird<void>;
+
+  identifyStore: (gamePath: string) => Bluebird<string | undefined>;
+
+  reloadGames(api?: IExtensionApi): Bluebird<void>;
+
+  storeIds(): IGameStore[];
+}
+
 /**
  * Normalize the polymorphic form `IGame.queryArgs` accepts (string app ID,
  * single query, or array) into a single array of IStoreQuery. Callers that
@@ -40,7 +69,7 @@ export function normalizeStoreQuery(raw: IQueryArgEntry | undefined): IStoreQuer
   return [raw];
 }
 
-class GameStoreHelper {
+class GameStoreHelper implements IGameStoreHelper {
   private mApi: IExtensionApi;
   private mStores: IGameStore[];
   private mStoresDict: { [storeId: string]: IGameStore };
