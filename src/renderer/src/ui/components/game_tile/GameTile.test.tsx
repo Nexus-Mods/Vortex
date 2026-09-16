@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { Button } from "@/ui/components/button/Button";
+
 import { GameTile } from "./GameTile";
 
 const menu = {
@@ -25,7 +27,10 @@ describe("GameTile", () => {
     const onClick = vi.fn();
 
     render(
-      <GameTile name="Skyrim Special Edition" primaryAction={{ label: "Add game", onClick }} />,
+      <GameTile
+        name="Skyrim Special Edition"
+        primaryAction={<Button onClick={onClick}>Add game</Button>}
+      />,
     );
 
     await userEvent.click(screen.getByRole("button", { name: "Add game" }));
@@ -63,14 +68,36 @@ describe("GameTile", () => {
     expect(screen.queryByRole("button", { name: "Game options" })).not.toBeInTheDocument();
   });
 
-  it("marks a game whose extension came from the community", async () => {
-    render(<GameTile contributedBy="RyukanoHi" name="Skyrim Special Edition" />);
+  it.each([
+    ["steam", "Steam"],
+    ["gog", "GOG"],
+    ["epic", "Epic Games"],
+    ["origin", "Origin"],
+    ["uplay", "Ubisoft"],
+    ["xbox", "Xbox"],
+  ])('names the %s store as "%s", with its icon', (store, label) => {
+    const { container } = render(<GameTile name="Skyrim Special Edition" store={store} />);
 
-    expect(screen.getByText("Community")).toBeInTheDocument();
+    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(container.querySelector(".nxm-pill-icon")).toBeInTheDocument();
+  });
+
+  // Better a bare id than nothing: the game still says where it came from.
+  it("shows a store it doesn't know, capitalised and without an icon", () => {
+    const { container } = render(<GameTile name="Skyrim Special Edition" store="tesco" />);
+
+    expect(screen.getByText("Tesco")).toBeInTheDocument();
+    expect(container.querySelector(".nxm-pill-icon")).not.toBeInTheDocument();
+  });
+
+  it("marks a game whose extension came from the community", async () => {
+    render(<GameTile name="Skyrim Special Edition" supportedBy="RyukanoHi" />);
+
+    expect(screen.getByText("Community supported")).toBeInTheDocument();
 
     // The attribution's wording is i18n's — a key comes back uninterpolated with no
-    // provider — so what's asserted is that hovering the pill attributes it at all.
-    await userEvent.hover(screen.getByText("Community"));
+    // provider — so what's asserted is that hovering it attributes the game at all.
+    await userEvent.hover(screen.getByText("Community supported"));
 
     await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument(), {
       timeout: 2000,
@@ -80,20 +107,6 @@ describe("GameTile", () => {
   it("says nothing about contributors for a game Vortex ships support for", () => {
     render(<GameTile name="Skyrim Special Edition" />);
 
-    expect(screen.queryByText("Community")).not.toBeInTheDocument();
-  });
-
-  it("shows a count of the game's active mods", () => {
-    render(<GameTile modCount={2} name="Skyrim Special Edition" />);
-
-    // The copy itself is i18n's: with no provider a key comes back untranslated, so the
-    // contract worth asserting is that the count is presented at all.
-    expect(screen.getByTestId("game-tile-mod-count")).toBeInTheDocument();
-  });
-
-  it("says nothing about mods for a game with none enabled", () => {
-    render(<GameTile modCount={0} name="Skyrim Special Edition" />);
-
-    expect(screen.queryByTestId("game-tile-mod-count")).not.toBeInTheDocument();
+    expect(screen.queryByText("Community supported")).not.toBeInTheDocument();
   });
 });

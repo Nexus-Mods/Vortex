@@ -15,9 +15,12 @@ import type { XOr } from "@/ui/utils/types";
 export type IButtonBrand = "primary" | "info" | "neutral" | "success" | "danger" | "premium";
 export type IButtonAppearance = "weak" | "subdued" | "moderate" | "strong";
 
+/** `scrim` paints a scrim, which only reads on the achromatic brand, so it is neutral-only. */
+export type IButtonColour =
+  | { appearance?: IButtonAppearance; brand?: IButtonBrand }
+  | { appearance: "scrim"; brand: "neutral" };
+
 export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  brand?: IButtonBrand;
-  appearance?: IButtonAppearance;
   isLoading?: boolean;
   size?: "sm" | "md";
   children?: string;
@@ -25,7 +28,8 @@ export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   disabled?: boolean;
   href?: never;
   isExternal?: never;
-} & XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
+} & IButtonColour &
+  XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
   XOr<{ rightIconPath?: string }, { rightIcon?: ReactNode }>;
 
 const ButtonIcon = ({

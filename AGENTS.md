@@ -14,6 +14,18 @@ Scope a single test with `pnpm run test -- <path>`.
 and a real game install. Passing it is not evidence that E2E passes, so say which
 suite you ran. Run E2E only when asked.
 
+**Don't run `verify` while `pnpm run dev` is live** — its `build` step writes
+production output into `src/main/build`, the directory the running app loads
+from. That overwrites the CSS `tailwind:watch` owns (watch only re-emits on a
+source change, so it never notices) and replaces the HMR renderer bundle,
+leaving the app with broken styles and dead HMR until dev is restarted. While a
+dev session is running, use checks that don't write there: `npx vitest run
+<path>` and `npx tsc --noEmit -p tsconfig.json` from `src/renderer`, plus
+`pnpm exec oxlint`. `pnpm run format` is safe. Save `verify` for the end.
+
+`verify` also regenerates `etc/Dependency Report.md` via `pnpm run assets`.
+Leave that out of your diff unless the dependency change is yours.
+
 Formatting, import order and Tailwind class order are owned by oxfmt and oxlint.
 Don't hand-fix them; let the formatter win.
 

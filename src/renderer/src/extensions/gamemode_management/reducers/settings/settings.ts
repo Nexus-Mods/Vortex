@@ -1,11 +1,12 @@
 import * as _ from "lodash";
 
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import type { ISettingsGameMode } from "../../../types/IState";
-import { deleteOrNop, getSafe, merge, setSafe } from "../../../util/storeHelper";
-import * as actions from "../actions/settings";
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IDiscoveredTool } from "@/types/IDiscoveredTool";
+import type { IReducerSpec } from "@/types/IExtensionContext";
+import type { ISettingsGameMode } from "@/types/IState";
+import { deleteOrNop, getSafe, merge, setSafe } from "@/util/storeHelper";
+
+import * as actions from "../../actions/settings";
+import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 
 /**
  * reducer for changes to the window state
@@ -22,7 +23,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
         const { path: _path, ...rest } = result;
         result = rest;
       }
-      const res = merge(state, gamePath, result);
+      let res = merge(state, gamePath, result);
       const merged = getSafe(res, gamePath, undefined);
       if (merged.executable === undefined) {
         // work around a problem where a value of undefined will be picked up as a
@@ -33,6 +34,14 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       if (result.path !== undefined && result.store === undefined) {
         // new path set but no store? fall back to default
         setSafe(res, [...gamePath, "store"], undefined);
+      }
+
+      // Stamp when the game turned up, but only the first time a path appears or when it
+      // moves. Discovery re-reports every installed game on every run, so stamping
+      // unconditionally would make them all look freshly found after any rescan.
+      const previousPath = getSafe(state, [...gamePath, "path"], undefined);
+      if (result.path !== undefined && result.path !== previousPath) {
+        res = setSafe(res, [...gamePath, "timestamp"], Date.now());
       }
 
       // avoid triggering unnecessary events
@@ -112,6 +121,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
     [actions.setSortManaged as any]: (state, payload) => setSafe(state, ["sortManaged"], payload),
     [actions.setSortUnmanaged as any]: (state, payload) =>
       setSafe(state, ["sortUnmanaged"], payload),
+    [actions.setSortDetected as any]: (state, payload) => setSafe(state, ["sortDetected"], payload),
   },
   defaults: {
     discovered: {},
@@ -119,5 +129,6 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
     pickerLayout: "small",
     sortManaged: "alphabetical",
     sortUnmanaged: "alphabetical",
+    sortDetected: "recentlydetected",
   },
 };
