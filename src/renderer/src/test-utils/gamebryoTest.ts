@@ -89,6 +89,7 @@ export async function makeLootHarness(
   seams.gameId = gameId;
   seams.invalid = invalidPlugins ?? [];
   seams.nativePlugins = nativePlugins ?? [];
+  seams.requiresLoadedMasters = false;
   seams.loot = makeFakeLoot();
 
   const masterlistDir = path.join(tempDir, "userData", gameId, "masterlist");

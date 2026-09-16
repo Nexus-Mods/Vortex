@@ -1,4 +1,4 @@
-import { utimes, writeFile } from "node:fs/promises";
+import { rm, utimes, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
 import { describe, expect, vi } from "vitest";
@@ -183,6 +183,46 @@ describe("LootInterface doSort", () => {
     expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(1);
     expect(harness.notifications).toContainEqual(
       expect.objectContaining({ id: "loot-failed", type: "warning" }),
+    );
+  });
+
+  test("explains a sort that failed on a master the user has not installed", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.loot.loadPluginsAsync.mockRejectedValueOnce(
+      Object.assign(new Error('The plugin "M.esm" has not been loaded'), { func: "loadPlugins" }),
+    );
+
+    await harness.sort(true);
+
+    const notSorted = harness.notifications.find(
+      (notification) => notification.id === "loot-failed",
+    );
+    expect(notSorted?.type).toBe("warning");
+    expect(notSorted?.message).toContain('"M.esm" to be installed, but it is missing');
+  });
+
+  // the plugin list says the master is deployed, the game folder has no such file
+  test("reports a sort that failed on a master Vortex deployed as an error", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp", "M.esm"]);
+    await rm(path.join(harness.dataDir, "M.esm"));
+    harness.loot.loadPluginsAsync.mockRejectedValueOnce(
+      Object.assign(new Error('The plugin "M.esm" has not been loaded'), { func: "loadPlugins" }),
+    );
+
+    await harness.sort(true);
+
+    const notSorted = harness.notifications.find(
+      (notification) => notification.id === "loot-failed",
+    );
+    expect(notSorted?.type).toBe("error");
+    expect(notSorted?.message).toBe(
+      'Plugins not sorted because: a plugin requires "M.esm", which was in the game folder when Vortex last scanned it but is gone',
     );
   });
 

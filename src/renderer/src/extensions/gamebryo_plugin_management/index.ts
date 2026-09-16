@@ -9,7 +9,6 @@ import type I18next from "i18next";
 import type * as Redux from "redux";
 import { createSelector } from "reselect";
 
-import { setAttributeFilter } from "../../actions/tables";
 import { log } from "../../logging";
 import ReduxProp from "../../ReduxProp";
 import type { IDialogResult } from "../../types/IDialog";
@@ -38,12 +37,7 @@ import {
 import type { IProfile } from "../profile_management/types/IProfile";
 /* eslint-disable */
 import { setPluginEnabled, setPluginOrder } from "./actions/loadOrder";
-import {
-  clearNewPluginCounter,
-  setPluginFilePath,
-  setPluginList,
-  updatePluginWarnings,
-} from "./actions/plugins";
+import { clearNewPluginCounter, setPluginFilePath, setPluginList } from "./actions/plugins";
 import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
 import { testIncompatibleArchives } from "./archiveCheck";
@@ -79,11 +73,13 @@ import {
 import { missingGroupFixes } from "./util/groups";
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from "./util/masterlist";
 import { markdownToBBCode } from "./util/mdtobb";
+import { checkMissingMasters } from "./util/missingMasters";
 import { handleModEnabled } from "./util/onModEnabled";
 import { handleModInstalled } from "./util/onModInstalled";
 import { handleSetPluginList } from "./util/onSetPluginList";
 import PluginHistory from "./util/PluginHistory";
 import PluginPersistor from "./util/PluginPersistor";
+import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
 import toPluginId from "./util/toPluginId";
 import { makeUpdatePluginList } from "./util/updatePluginList";
 import UserlistPersistor from "./util/UserlistPersistor";
@@ -455,11 +451,13 @@ function register(
   context.registerTest("plugins-locked", "gamemode-activated", () =>
     testPluginsLocked(activeGameId(context.api.store.getState())),
   );
+  const pluginMasters = async (filePath: string) =>
+    (await pluginInfoCache.getInfo(filePath)).masterList;
   context.registerTest("master-missing", "gamemode-activated", () =>
-    testMissingMasters(context.api, pluginInfoCache),
+    checkMissingMasters(context.api, pluginMasters),
   );
   context.registerTest("master-missing", "plugins-changed" as any, () =>
-    testMissingMasters(context.api, pluginInfoCache),
+    checkMissingMasters(context.api, pluginMasters),
   );
   context.registerTest("blueprint-master", "gamemode-activated", () =>
     testBlueprintMasters(context.api, pluginInfoCache),
@@ -1050,108 +1048,6 @@ function testTriggerSort(api: IExtensionApi): Bluebird<ITestResult> {
   });
 }
 
-async function testMissingMasters(
-  api: IExtensionApi,
-  infoCache: PluginInfoCache,
-): Promise<ITestResult> {
-  const { translate, store } = api;
-  const state = store.getState();
-  const gameMode = activeGameId(state);
-  if (!gameSupported(gameMode)) {
-    return Bluebird.resolve(undefined);
-  }
-
-  const pluginList = state.session.plugins.pluginList ?? {};
-  const natives = new Set<string>(nativePlugins(gameMode));
-  const loadOrder: { [plugin: string]: IPluginLoadOrderEntry } = state.loadOrder;
-  const enabledPlugins = Object.keys(loadOrder).filter(
-    (plugin: string) => loadOrder[plugin].enabled || natives.has(plugin),
-  );
-  const pluginDetails: { name: string; masterList: string[] }[] = [];
-  for (const plugin of enabledPlugins) {
-    if (pluginList[plugin] === undefined) continue;
-    try {
-      const info = await infoCache.getInfo(pluginList[plugin].filePath);
-      pluginDetails.push({ name: plugin, masterList: info.masterList });
-    } catch (err) {
-      log("warn", "failed to parse esp file", {
-        name: pluginList[plugin].filePath,
-        err: getErrorMessageOrDefault(err),
-      });
-      pluginDetails.push({ name: plugin, masterList: [] });
-    }
-  }
-
-  const activePlugins = new Set<string>(pluginDetails.map((plugin) => plugin.name));
-
-  const broken = pluginDetails.reduce((prev, plugin) => {
-    const missing = plugin.masterList.filter(
-      (requiredMaster) => !activePlugins.has(requiredMaster.toLowerCase()),
-    );
-    const oldWarn = getSafe(
-      state,
-      ["session", "plugins", "pluginList", plugin.name, "warnings", "missing-master"],
-      false,
-    );
-    const newWarn = missing.length > 0;
-    if (oldWarn !== newWarn) {
-      store.dispatch(updatePluginWarnings(plugin.name, "missing-master", newWarn));
-    }
-
-    if (missing.length > 0) {
-      prev[plugin.name] = missing;
-    }
-    return prev;
-  }, {});
-
-  if (Object.keys(broken).length === 0) {
-    return Bluebird.resolve(undefined);
-  } else {
-    const link = (pluginName: string) => {
-      return `[link="cb://showplugin/${pluginName}"]${pluginName}[/link]`;
-    };
-    return Bluebird.resolve({
-      description: {
-        short: "Missing Masters",
-        long:
-          translate("Some of the enabled plugins depend on others that are not enabled:") +
-          "[table][tbody]" +
-          Object.keys(broken)
-            .map((plugin) => {
-              const missing = broken[plugin].map(link).join("[br][/br]");
-              const detail = pluginList[plugin];
-              const name = detail !== undefined ? path.basename(detail.filePath) : plugin;
-              return (
-                "[tr]" +
-                [link(name), translate("depends on"), missing]
-                  .map((iter) => `[td]${iter}[/td]`)
-                  .join() +
-                "[/tr]" +
-                "[tr][/tr]"
-              );
-            })
-            .join("\n") +
-          "[/tbody][/table]",
-        context: {
-          callbacks: {
-            showplugin: (pluginName: string) => {
-              // have to update state and gameMode as they may have changed since the
-              // message was generated
-              const stateNow: IState = store.getState();
-              const gameModeNow = activeGameId(stateNow);
-              if (gameSupported(gameModeNow)) {
-                api.events.emit("show-main-page", "gamebryo-plugins");
-                store.dispatch(setAttributeFilter("gamebryo-plugins", "name", pluginName));
-              }
-            },
-          },
-        },
-      },
-      severity: "warning" as ProblemSeverity,
-    });
-  }
-}
-
 /**
  * For Starfield only. Verifies that no non-Blueprint plugin declares a Blueprint
  * plugin as a master. The game strips Blueprint masters from non-Blueprint
@@ -1228,8 +1124,6 @@ async function testBlueprintMasters(
     return Bluebird.resolve(undefined);
   }
 
-  const link = (pluginName: string) => `[link="cb://showplugin/${pluginName}"]${pluginName}[/link]`;
-
   return Bluebird.resolve({
     description: {
       short: translate("Blueprint plugin used as master"),
@@ -1243,12 +1137,12 @@ async function testBlueprintMasters(
         "[table][tbody]" +
         Object.keys(broken)
           .map((plugin) => {
-            const offending = broken[plugin].map(link).join("[br][/br]");
+            const offending = broken[plugin].map(pluginLink).join("[br][/br]");
             const detail = pluginList[plugin];
             const name = detail !== undefined ? path.basename(detail.filePath) : plugin;
             return (
               "[tr]" +
-              [link(name), translate("has Blueprint master"), offending]
+              [pluginLink(name), translate("has Blueprint master"), offending]
                 .map((iter) => `[td]${iter}[/td]`)
                 .join() +
               "[/tr]" +
@@ -1257,18 +1151,7 @@ async function testBlueprintMasters(
           })
           .join("\n") +
         "[/tbody][/table]",
-      context: {
-        callbacks: {
-          showplugin: (pluginName: string) => {
-            const stateNow: IState = store.getState();
-            const gameModeNow = activeGameId(stateNow);
-            if (gameSupported(gameModeNow)) {
-              api.events.emit("show-main-page", "gamebryo-plugins");
-              store.dispatch(setAttributeFilter("gamebryo-plugins", "name", pluginName));
-            }
-          },
-        },
-      },
+      context: { callbacks: showPluginCallbacks(api) },
     },
     severity: "error" as ProblemSeverity,
   });

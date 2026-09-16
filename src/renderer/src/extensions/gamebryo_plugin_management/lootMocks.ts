@@ -21,6 +21,8 @@ interface ILootSeams {
   invalid: string[];
   // the harness game's native plugins (lowercase), the first being its main master
   nativePlugins: string[];
+  // whether libloot needs the harness game's masters in the same load (Starfield)
+  requiresLoadedMasters: boolean;
   // the loot instance createAsync resolves; makeLootHarness arranges a fresh fake per test
   loot: IFakeLoot | undefined;
 }
@@ -31,6 +33,7 @@ export const seams: ILootSeams = {
   gameId: "",
   invalid: [],
   nativePlugins: [],
+  requiresLoadedMasters: false,
   loot: undefined,
 };
 
@@ -57,6 +60,7 @@ export const gameSupportModule = {
   pluginPath: (gameMode: string) => path.join(seams.base, "local", gameMode),
   gameDataPath: () => path.join(seams.base, "data"),
   nativePlugins: () => seams.nativePlugins,
+  requiresLoadedMasters: () => seams.requiresLoadedMasters,
 };
 
 export const downloadMasterlistMock = vi.fn<(gameId: string, localPath: string) => Promise<void>>(

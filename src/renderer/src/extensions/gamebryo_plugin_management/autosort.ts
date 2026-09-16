@@ -35,6 +35,7 @@ import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/g
 import { missingGroupFixes } from "./util/groups";
 import { toLootError } from "./util/lootErrors";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
+import { explainMasterNotLoaded } from "./util/missingMasters";
 import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
@@ -200,10 +201,10 @@ class LootInterface {
     void this.onSort(manual);
   };
 
-  private notifyNotSorted(reason: string) {
+  private notifyNotSorted(reason: string, type: "warning" | "error" = "warning") {
     this.mExtensionApi.sendNotification({
       id: "loot-failed",
-      type: "warning",
+      type,
       message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
         replace: { msg: reason },
         ns: NAMESPACE,
@@ -485,6 +486,15 @@ class LootInterface {
           // plugin, which stalled the app on large lists.
           this.notifyNotSorted(err.message);
           break;
+        case "loot:master-not-loaded": {
+          const verdict = await explainMasterNotLoaded(
+            this.mExtensionApi,
+            gameMode,
+            err.data.master,
+          );
+          this.notifyNotSorted(verdict.message, verdict.severity);
+          break;
+        }
         case "loot:missing-group": {
           // A collection (or the user) assigned plugins to a LOOT group that no longer exists -
           // typically a masterlist group that was renamed or removed after the collection was

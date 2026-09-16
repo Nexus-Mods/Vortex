@@ -37,6 +37,14 @@ describe("toLootError", () => {
     expect(toLootError(raw).data).toEqual({ kind: "loot:invalid-plugin", plugins: ["Bad.esp"] });
   });
 
+  test("classifies a master libloot could not load from a failed load", () => {
+    const raw = Object.assign(new Error('The plugin "M.esm" has not been loaded'), {
+      func: "loadPlugins",
+    });
+
+    expect(toLootError(raw).data).toEqual({ kind: "loot:master-not-loaded", master: "M.esm" });
+  });
+
   test("classifies a missing group with the group name", () => {
     const raw = new Error('The group "gone-group" does not exist.');
 
