@@ -188,13 +188,9 @@ describe("LootInterface libloot lifecycle", () => {
     );
   });
 
-  // lists are held in memory and nothing watches the files, so a downloaded masterlist has to be
-  // re-loaded to take effect; the implementation downloads without reloading, and readLists only
-  // reloads when the userlist mtime changed. Expected-fail until the fix lands, which flips this
-  // to a plain test.
-  test.fails("reloads the metadata lists after downloading a fresh masterlist", async ({
-    makeLoot,
-  }) => {
+  // the lists are held in memory and nothing watches the files, so a downloaded masterlist only
+  // reaches libloot through another load
+  test("reloads the metadata lists after downloading a fresh masterlist", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
 
     await harness.lootInterface.downloadMasterlist("skyrimse");
@@ -202,9 +198,8 @@ describe("LootInterface libloot lifecycle", () => {
     expect(harness.loot.loadListsAsync).toHaveBeenCalled();
   });
 
-  // a rule change reaches libloot by re-loading the rewritten userlist; only the sort path
-  // reloads, so plugin details answer from the stale lists
-  test.fails("answers plugin details from a reloaded userlist after a rule change", async ({
+  // a rule change rewrites the userlist, which the details path answers from
+  test("answers plugin details from a reloaded userlist after a rule change", async ({
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);

@@ -35,6 +35,7 @@ import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/g
 import { missingGroupFixes } from "./util/groups";
 import { toLootError } from "./util/lootErrors";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
+import { listPaths, MetadataLists } from "./util/metadataLists";
 import { explainMasterNotLoaded } from "./util/missingMasters";
 import toPluginId from "./util/toPluginId";
 
@@ -106,7 +107,9 @@ class LootInterface {
   });
   private mSortPromise: Bluebird<string[]> = Bluebird.resolve([]);
 
-  private mUserlistTime: Date;
+  private mLists = new MetadataLists();
+  // with the game it belongs to, so a download finishing after a game switch cannot load into it
+  private mLoot: { game: string; loot: ILootProm } | undefined;
   private mRestarts: number = MAX_RESTARTS;
   // a sort requested while an activity blocked it, run once the activity ends
   private mDeferredSort: { manual: boolean } | undefined;
@@ -146,14 +149,18 @@ class LootInterface {
   }
 
   public async downloadMasterlist(gameMode: string): Promise<void> {
-    const masterlistRepoPath = path.join(getVortexPath("userData"), gameMode, "masterlist");
-    const masterlistPath = path.join(masterlistRepoPath, "masterlist.yaml");
-    const preludePath = path.join(getVortexPath("userData"), "loot_prelude", "prelude.yaml");
+    const paths = listPaths(getVortexPath("userData"), gameMode);
     try {
-      await downloadPrelude(preludePath);
-      await downloadMasterlist(this.convertGameId(gameMode, true), masterlistPath);
+      await downloadPrelude(paths.prelude);
+      await downloadMasterlist(this.convertGameId(gameMode, true), paths.masterlist);
       log("info", "updated loot masterlist");
       this.mExtensionApi.events.emit("did-update-masterlist");
+      // the file time cannot tell a re-download from the masterlist already loaded
+      this.mLists.invalidate();
+      const current = this.mLoot;
+      if (current?.game === gameMode && !current.loot.isClosed()) {
+        await this.ensureLists(gameMode, current.loot);
+      }
     } catch (err) {
       const t = this.mExtensionApi.translate;
       this.mExtensionApi.showErrorNotification(
@@ -163,7 +170,7 @@ class LootInterface {
             "This might be a temporary network error. " +
               'If it persists, please delete "{{masterlistPath}}" to force Vortex to ' +
               "download a new copy.",
-            { replace: { masterlistPath: masterlistRepoPath } },
+            { replace: { masterlistPath: path.dirname(paths.masterlist) } },
           ),
           error: err,
         },
@@ -435,7 +442,7 @@ class LootInterface {
       this.mExtensionApi.dismissNotification("loot-cycle-warning");
       const timeBefore = Date.now();
       store.dispatch(startActivity("plugins", "sorting"));
-      this.mSortPromise = this.readLists(gameMode, loot)
+      this.mSortPromise = Bluebird.resolve(this.ensureLists(gameMode, loot))
         .then(() => this.loadForSort(gameMode, loot, filePaths))
         .then(() => loot.sortPluginsAsync(pluginNames))
         .catch((err) =>
@@ -506,9 +513,8 @@ class LootInterface {
           if (actions.length > 0) {
             log("info", "resetting plugins assigned to missing loot group(s)", { missing });
             batchDispatch(store, actions);
-            // invalidate the cached userlist mtime so readLists is forced to reload the updated
-            // userlist from disk, and give the persistor a moment to flush it before re-sorting
-            this.mUserlistTime = undefined;
+            // read the rewritten userlist again, once the persistor has flushed it
+            this.mLists.invalidate();
             await new Promise((resolve) => setTimeout(resolve, 500));
             return this.doSort(filePaths, gameMode, loot);
           }
@@ -602,6 +608,7 @@ class LootInterface {
   };
 
   private startStopLoot(api: IExtensionApi, gameMode: string, loot: ILootProm | undefined) {
+    this.mLoot = undefined;
     if (loot !== undefined) {
       // close the loot instance of the old game, but give it a little time, otherwise it may try to
       // to run instructions after being closed.
@@ -668,6 +675,8 @@ class LootInterface {
         callback({});
         return;
       }
+      // details are read off the metadata lists, so a rule change has to reach libloot first
+      await this.ensureLists(game, loot);
       await loot.loadCurrentLoadOrderStateAsync();
     } catch (err) {
       this.mExtensionApi.showErrorNotification(
@@ -818,117 +827,23 @@ class LootInterface {
     });
   };
 
-  public loadLists = async (gameMode: string, loot: ILootProm) => {
-    const masterlistPath = path.join(
-      getVortexPath("userData"),
-      gameMode,
-      "masterlist",
-      "masterlist.yaml",
-    );
-    const userlistPath = path.join(getVortexPath("userData"), gameMode, "userlist.yaml");
-    const preludePath = path.join(getVortexPath("userData"), "loot_prelude", "prelude.yaml");
-
-    let mtime: Date;
+  /**
+   * Brings libloot's metadata up to date with the masterlist and userlist on disk, which it holds
+   * in memory and never re-reads on its own.
+   */
+  private ensureLists = async (gameMode: string, loot: ILootProm) => {
+    const paths = listPaths(getVortexPath("userData"), gameMode);
     try {
-      mtime = (await fs.statAsync(userlistPath)).mtime;
-    } catch (err) {
-      mtime = null;
-    }
-
-    let usePrelude: boolean = false;
-    try {
-      await fs.statAsync(preludePath);
-      usePrelude = true;
-    } catch (err) {
-      // nop
-    }
-
-    // load & evaluate lists first time we need them and whenever
-    // the userlist has changed
-    if (
-      mtime !== null &&
-      // this.mUserlistTime could be undefined or null
-      (!this.mUserlistTime || this.mUserlistTime.getTime() !== mtime.getTime())
-    ) {
-      log("info", "(re-)loading loot lists", {
-        mtime,
-        masterlistPath,
-        userlistPath,
-        last: this.mUserlistTime,
-      });
-      try {
-        await fs.statAsync(masterlistPath);
-        await loot.loadListsAsync(
-          masterlistPath,
-          mtime !== null ? userlistPath : "",
-          usePrelude ? preludePath : "",
-        );
-        log("info", "loaded loot lists");
-        this.mUserlistTime = mtime;
-      } catch (err) {
-        this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
-          allowReport: false,
-        } as any);
+      if (await this.mLists.ensureLoaded(paths, loot)) {
+        log("info", "loaded loot lists", { gameMode, ...paths });
       }
+    } catch (err) {
+      this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
+        allowReport: false,
+        id: "gamebryo-plugins-loot-lists-error",
+      });
     }
   };
-
-  // tslint:disable-next-line:member-ordering
-  private readLists = Bluebird.method(async (gameMode: string, loot: ILootProm) => {
-    const t = this.mExtensionApi.translate;
-    const masterlistPath = path.join(
-      getVortexPath("userData"),
-      gameMode,
-      "masterlist",
-      "masterlist.yaml",
-    );
-    const userlistPath = path.join(getVortexPath("userData"), gameMode, "userlist.yaml");
-    const preludePath = path.join(getVortexPath("userData"), "loot_prelude", "prelude.yaml");
-
-    let mtime: Date;
-    try {
-      mtime = (await fs.statAsync(userlistPath)).mtime;
-    } catch (err) {
-      mtime = null;
-    }
-
-    let usePrelude: boolean = false;
-    try {
-      await fs.statAsync(preludePath);
-      usePrelude = true;
-    } catch (err) {
-      // nop
-    }
-
-    // load & evaluate lists first time we need them and whenever
-    // the userlist has changed
-    if (
-      mtime !== null &&
-      // this.mUserlistTime could be undefined or null
-      (!this.mUserlistTime || this.mUserlistTime.getTime() !== mtime.getTime())
-    ) {
-      log("info", "(re-)loading loot lists", {
-        mtime,
-        masterlistPath,
-        userlistPath,
-        last: this.mUserlistTime,
-      });
-      try {
-        await fs.statAsync(masterlistPath);
-        await loot.loadListsAsync(
-          masterlistPath,
-          mtime !== null ? userlistPath : "",
-          usePrelude ? preludePath : "",
-        );
-        log("info", "loaded loot lists");
-        this.mUserlistTime = mtime;
-      } catch (err) {
-        this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
-          allowReport: false,
-        } as any);
-      }
-    }
-  });
 
   private convertGameId(gameMode: string, masterlist: boolean) {
     // the vr games use the same masterlist as the base game but have their own game id within loot.
@@ -978,45 +893,21 @@ class LootInterface {
       } as any);
       return { game: gameMode, loot: undefined };
     }
-    const masterlistRepoPath = path.join(getVortexPath("userData"), gameMode, "masterlist");
-    const masterlistPath = path.join(masterlistRepoPath, "masterlist.yaml");
-    const preludePath = path.join(getVortexPath("userData"), "loot_prelude", "prelude.yaml");
+    // a fresh instance holds no lists, whatever was loaded for the game before it
+    this.mLists.invalidate();
     await this.downloadMasterlist(gameMode);
 
     try {
-      // we need to ensure lists get loaded at least once. before sorting there
-      // will always be a check if the userlist was changed
-      const userlistPath = path.join(getVortexPath("userData"), gameMode, "userlist.yaml");
-
-      let mtime: Date;
-      try {
-        mtime = (await fs.statAsync(userlistPath)).mtime;
-      } catch (err) {
-        mtime = null;
-      }
-
-      let usePrelude: boolean = false;
-      try {
-        await fs.statAsync(preludePath);
-        usePrelude = true;
-      } catch (err) {
-        // nop
-      }
-
-      // ensure masterlist is available
-      await fs.statAsync(masterlistPath);
-      await loot.loadListsAsync(
-        masterlistPath,
-        mtime !== null ? userlistPath : "",
-        usePrelude ? preludePath : "",
-      );
+      // the lists have to be loaded at least once, even when the download failed
+      await this.ensureLists(gameMode, loot);
       await loot.loadCurrentLoadOrderStateAsync();
-      this.mUserlistTime = mtime;
     } catch (err) {
       this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
         allowReport: false,
       } as any);
     }
+    // the instance is ready, so a download may load into it from here on
+    this.mLoot = { game: gameMode, loot };
 
     return { game: gameMode, loot };
   });
@@ -1419,10 +1310,8 @@ class LootInterface {
                   }
 
                   if (sorted.length > 0) {
-                    // invalidate the cached userlist mtime so that readLists
-                    // is forced to reload from disk even if the file write
-                    // lands within the same filesystem timestamp
-                    this.mUserlistTime = undefined;
+                    // the file write can land within the same file-time tick
+                    this.mLists.invalidate();
                     // small delay to allow the persistor to flush the
                     // updated userlist.yaml to disk before LOOT re-reads it
                     await new Promise((resolve) => setTimeout(resolve, 500));
