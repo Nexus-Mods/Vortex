@@ -1,6 +1,6 @@
 {
   "name": "game-oblivion",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Support for The Elder Scrolls IV: Oblivion",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
