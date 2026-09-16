@@ -6,7 +6,10 @@ import * as reduxAct from "redux-act";
 import * as api from "../api";
 import * as reactSelect from "../controls/ReactSelectWrap";
 import ExtensionManager from "../ExtensionManager";
+import { findInstalled } from "../extensions/extension_manager/queries";
 import type { IRegisteredExtension } from "../types/extensions";
+import type { IExtensionState } from "../types/IState";
+import { deprecatedApiGet } from "./deprecatedApiUsage";
 import type { LogLevel } from "./log";
 import { webpackRequireHack } from "./webpack-hacks";
 
@@ -14,8 +17,10 @@ const identity = (input) => input;
 
 class ExtProxyHandler implements ProxyHandler<typeof api> {
   private mExt: IRegisteredExtension;
-  constructor(ext: IRegisteredExtension) {
+  private mState: IExtensionState | undefined;
+  constructor(ext: IRegisteredExtension, state: IExtensionState | undefined) {
     this.mExt = ext;
+    this.mState = state;
   }
 
   public get(target: typeof api, p: PropertyKey, receiver: any): any {
@@ -23,9 +28,8 @@ class ExtProxyHandler implements ProxyHandler<typeof api> {
       return (level: LogLevel, message: string, metadata: any) => {
         target.log(level, `[${this.mExt.namespace}] ${message}`, metadata);
       };
-    } else {
-      return target[p];
     }
+    return deprecatedApiGet(target, p, "", this.mExt, this.mState, receiver);
   }
 }
 
@@ -101,14 +105,19 @@ const handlerMapReactAct: { [extId: string]: typeof reduxAct } = {};
  * @param {any} orig
  * @returns
  */
-function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
+function extensionRequire(
+  orig,
+  getExtensions: () => IRegisteredExtension[],
+  getInstalled: () => Record<string, IExtensionState>,
+) {
   const extensionPaths = ExtensionManager.getExtensionPaths();
   return function (id) {
     if (id === "vortex-api" || id === "@nexusmods/vortex-api") {
       const ext = getExtensions().find((iter) => this.filename.startsWith(iter.path));
       if (ext !== undefined) {
         if (handlerMapAPI[ext.name] === undefined) {
-          handlerMapAPI[ext.name] = new Proxy(api, new ExtProxyHandler(ext));
+          const state = findInstalled(getInstalled(), { path: ext.path })?.extension;
+          handlerMapAPI[ext.name] = new Proxy(api, new ExtProxyHandler(ext, state));
         }
         return handlerMapAPI[ext.name];
       } else {
@@ -144,7 +153,10 @@ function extensionRequire(orig, getExtensions: () => IRegisteredExtension[]) {
   };
 }
 
-export default function (getExtensions: () => IRegisteredExtension[]) {
+export default function (
+  getExtensions: () => IRegisteredExtension[],
+  getInstalled: () => Record<string, IExtensionState>,
+) {
   const orig = Module.prototype.require;
-  Module.prototype.require = extensionRequire(orig, getExtensions);
+  Module.prototype.require = extensionRequire(orig, getExtensions, getInstalled);
 }

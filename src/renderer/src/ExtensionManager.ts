@@ -3078,7 +3078,10 @@ class ExtensionManager {
       updater: () => require("./extensions/updater/index.ts"),
     };
 
-    require("./util/extensionRequire").default(() => this.extensions);
+    require("./util/extensionRequire").default(
+      () => this.extensions,
+      () => this.mExtensionState,
+    );
 
     const loadedExtensions = new Set<string>();
     let dynamicallyLoaded: IRegisteredExtension[] = [];
