@@ -51,7 +51,6 @@ import type { IActionOptions } from "./IActionDefinition";
 import type { IBannerOptions } from "./IBannerOptions";
 import type { DialogType, IDialogResult } from "./IDialog";
 import type { IGame } from "./IGame";
-import type { IGameStore } from "./IGameStore";
 import type { IHealthCheck, IModHealthCheck } from "./IHealthCheck";
 import type { ILookupOptions, IModLookupResult } from "./IModLookupResult";
 import type { INotification, INotificationAction } from "./INotification";
@@ -1309,13 +1308,6 @@ export interface IExtensionContext {
    * Vortex and might already be in use but are now maintained by a third party.
    */
   registerGameStub: (game: IGame, ext: IExtensionDownloadInfo) => void;
-
-  /**
-   * registers support for a game store.
-   *
-   * @param {IGameStore} gameStore
-   */
-  registerGameStore: (gameStore: IGameStore) => void;
 
   /**
    * registers a provider for general information about a game
