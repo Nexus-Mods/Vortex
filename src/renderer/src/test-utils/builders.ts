@@ -188,6 +188,19 @@ export function makeMod(overrides: Partial<IMod> = {}): IMod {
   };
 }
 
+/**
+ * A collection as it appears in persistent.mods: the container mod carrying the published
+ * collection's slug and revision, with one rule per member. Pass `rules` to give it members.
+ */
+export function makeInstalledCollection(overrides: Partial<IMod> = {}): IMod {
+  return makeMod({
+    id: "collection-1",
+    type: MOD_TYPE,
+    attributes: { collectionSlug: "slug-1", revisionNumber: 1 },
+    ...overrides,
+  });
+}
+
 export function makePlugin(overrides: Partial<IPlugin> = {}): IPlugin {
   return {
     filePath: path.join(os.tmpdir(), "vortex-test-plugins", "One.esp"),
@@ -709,6 +722,7 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       downloads: { files: slices.downloads },
       profiles: slices.profiles,
       collections: { collections: {}, revisions: {} },
+      deployment: { needToDeploy: {} },
       nexus: { ...nexusPersistentReducer.defaults, userInfo: slices.userInfo },
     },
     // a download path is inherently a signed-in one, and isLoggedIn dereferences account
@@ -937,7 +951,12 @@ export function makeApiHarness(
       dialogCalls.push({ type, title });
       return Promise.resolve(nextDialog);
     },
-    translate: (key: string) => key,
+    // interpolates {{name}} placeholders like the real translate, so assertions see the names
+    translate: (key: string, options?: { replace?: Record<string, string | number | boolean> }) =>
+      Object.entries(options?.replace ?? {}).reduce(
+        (text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
+        key,
+      ),
     ext: {
       awaitProfileSwitch: () => Promise.resolve(),
       addToHistory: (stack: string, entry: IHistoryEvent) => {
