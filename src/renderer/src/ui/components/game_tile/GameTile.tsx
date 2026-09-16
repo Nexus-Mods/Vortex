@@ -72,7 +72,9 @@ export const GameTile = ({
                   content={t("Contributed by {{name}}", { replace: { name: contributedBy } })}
                   placement="bottom"
                 >
-                  <Pill className={revealedWhenActive}>{t("Community")}</Pill>
+                  <Pill appearance="scrim" className={revealedWhenActive}>
+                    {t("Community")}
+                  </Pill>
                 </Tooltip>
               )}
 
@@ -116,7 +118,7 @@ export const GameTile = ({
               <Typography typographyType="body-sm">{name}</Typography>
 
               {!!modCount && (
-                <Pill data-testid="game-tile-mod-count" iconPath={nxmModOutline} pillType="success">
+                <Pill brand="success" data-testid="game-tile-mod-count" iconPath={nxmModOutline}>
                   {t("{{ count }} active mod", { count: modCount })}
                 </Pill>
               )}
