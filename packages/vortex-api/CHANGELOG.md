@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Deprecated
 
-- `util.steam` and `util.epicGamesLauncher` are deprecated as of 2.8 and will be removed in a later release. Both now delegate to `GameStoreHelper`: `util.steam.findByAppId(id)` becomes `GameStoreHelper.findByAppId(id, "steam")`, `util.steam.findByName(name)` becomes `GameStoreHelper.findByName(name, "steam")`, and likewise for `epicGamesLauncher` with `"epic"`. `util.steam.id` remains the constant `"steam"` string. Each deprecated call logs a warning (once per session); any other member access also warns and returns `undefined`
+- `util.steam` and `util.epicGamesLauncher` are deprecated as of 2.8 and will be removed in 2.10. Both now delegate to `GameStoreHelper`: `util.steam.findByAppId(id)` becomes `GameStoreHelper.findByAppId(id, "steam")`, `util.steam.findByName(name)` becomes `GameStoreHelper.findByName(name, "steam")`, and likewise for `epicGamesLauncher` with `"epic"`. `util.steam.id` remains the constant `"steam"` string. `epicGamesLauncher.isGameInstalled` has no drop-in replacement and needs inlining. Each deprecated call logs a warning (once per session); any other member access also warns and returns `undefined` - see the [game store section of the migration guide](./docs/MIGRATION.md#vortex-2x-utilsteam-and-utilepicgameslauncher)
 
 ### Changed
 
