@@ -6,9 +6,11 @@ import PromiseBB from "bluebird";
 import { parse, type VDFObject, type VDFValue } from "simple-vdf";
 import * as winapi from "winapi-bindings";
 
-import type { ICustomExecutionInfo, IExecInfo, IGameStore, IGameStoreEntry } from "../types/api";
+import type { IExecInfo } from "../types/IExecInfo";
 import type { IExtensionApi } from "../types/IExtensionContext";
+import type { ICustomExecutionInfo, IGameStore } from "../types/IGameStore";
 import { GameEntryNotFound } from "../types/IGameStore";
+import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import * as fs from "./fs";
 import { getProtonInfo, buildProtonEnvironment, buildProtonCommand } from "./linux/proton";
 import { findLinuxSteamPath } from "./linux/steamPaths";
