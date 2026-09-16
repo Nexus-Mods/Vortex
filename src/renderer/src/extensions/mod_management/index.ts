@@ -1515,6 +1515,10 @@ function once(api: IExtensionApi) {
     (profileId: string, gameId: string, modIds: string[], silent?: boolean) => {
       const state: IState = api.store.getState();
       const profile: IProfile = getSafe(state, ["persistent", "profiles", profileId], undefined);
+      if (profile === undefined) {
+        log("warn", "skipping dependency install, profile no longer exists", { profileId, modIds });
+        return;
+      }
 
       Promise.all(
         modIds.map((modId) =>
@@ -1541,6 +1545,7 @@ function once(api: IExtensionApi) {
         const profile: IProfile = getSafe(state, ["persistent", "profiles", profileId], undefined);
         if (profile === undefined) {
           api.showErrorNotification("Failed to install recommendations", "Invalid profile");
+          return;
         }
 
         Promise.all(
