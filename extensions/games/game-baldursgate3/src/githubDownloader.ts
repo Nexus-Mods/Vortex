@@ -178,6 +178,11 @@ async function startDownload(api: types.IExtensionApi, downloadLink: string) {
   const dlInfo = {
     game: GAME_ID,
     name: "LSLib/Divine Tool",
+    // LSLib is fetched from github.com/Norbyte/lslib, not from Nexus. Declaring the source
+    // stops a game-agnostic md5 lookup from re-stamping the download as a Nexus mod when a
+    // byte-identical copy has been re-uploaded to some mod page.
+    // See https://github.com/Nexus-Mods/Vortex/issues/21979.
+    source: "website",
   };
   api.events.emit(
     "start-download",

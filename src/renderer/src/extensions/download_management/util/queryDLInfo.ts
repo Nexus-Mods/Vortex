@@ -115,7 +115,13 @@ class MetadataLookupQueue {
   }
 }
 
-function queryInfoInternal(api: IExtensionApi, dlId: string, ignoreCache: boolean): Bluebird<void> {
+// exported for testing - the public entry point is queryInfo, which routes through
+// a 500ms interval queue that a unit test can't drive
+export function queryInfoInternal(
+  api: IExtensionApi,
+  dlId: string,
+  ignoreCache: boolean,
+): Bluebird<void> {
   const state: IState = api.store.getState();
 
   const actions: Action[] = [];
@@ -189,6 +195,19 @@ function queryInfoInternal(api: IExtensionApi, dlId: string, ignoreCache: boolea
         const dlNow = api.getState().persistent.downloads.files[dlId];
 
         setInfo("meta", info);
+
+        // #21979: an md5 lookup is game-agnostic, so a byte-identical third-party
+        // dependency (BepInEx, a config manager, a mod loader) that some other author
+        // re-uploaded to Nexus for a different game matches here and hands back that
+        // foreign mod's record. If an extension or a non-Nexus downloader has already
+        // stated where this file came from, that statement wins over the md5 guess:
+        // keep the looked-up `meta` blob for its description/author text, but don't
+        // stamp `source: 'nexus'`, don't copy the foreign nexus ids onto the download,
+        // and don't move it to the foreign game - each of those drives a bogus update
+        // check that can overwrite the dependency with an unrelated mod.
+        if (dlNow?.modInfo?.source !== undefined && dlNow?.modInfo?.source !== "nexus") {
+          return Promise.resolve();
+        }
 
         try {
           const nxmUrl = new NXMUrl(info.sourceURI);

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.11] - 2026-09-07
+
+- Fixed the automatically downloaded BepInEx package being attributed to an unrelated Nexus mod page
+
 ## [0.2.7] - 2025-01-13
 
 - Improved injector installer to support nested/non-standard BepInEx packaging

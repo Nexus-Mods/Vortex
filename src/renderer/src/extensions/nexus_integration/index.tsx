@@ -58,6 +58,7 @@ import { MainContext } from "../../views/MainWindow";
 import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
 import type { IDownload } from "../download_management/types/IDownload";
 import { SITE_ID } from "../gamemode_management/constants";
+import { knownGames } from "../gamemode_management/selectors";
 import type { IGameStored } from "../gamemode_management/types/IGameStored";
 import { getGame } from "../gamemode_management/util/getGame";
 import type { IMod, IModRepoId } from "../mod_management/types/IMod";
@@ -107,7 +108,7 @@ import {
   updateToken,
 } from "./util";
 import { checkModVersion } from "./util/checkModsVersion";
-import { nexusGameId } from "./util/convertGameId";
+import { downloadGameForNexusId, nexusGameId } from "./util/convertGameId";
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from "./util/guessModID";
 import { isStoragePathName } from "./util/healStoragePathNames";
 import retrieveCategoryList from "./util/retrieveCategories";
@@ -674,6 +675,17 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
       modId: input.download?.modInfo?.nexus?.ids?.modId ?? safeParseInt(input.meta?.details?.modId),
       fileId:
         input.download?.modInfo?.nexus?.ids?.fileId ?? safeParseInt(input.meta?.details?.fileId),
+      // #21979: pin downloadGame to whatever the modId above resolved from, so the update
+      // check runs that modId against the mod's *own* game rather than the managed game.
+      // When the modId came from the download's nexus record the game is that record's (an
+      // nxm resolve may not carry it - then this is undefined and download.game stands);
+      // only when the modId came from the md5 meta lookup is meta.domainName used.
+      downloadGame: downloadGameForNexusId(
+        knownGames(state),
+        input.download?.modInfo?.nexus?.ids?.modId,
+        input.download?.modInfo?.nexus?.ids?.gameId,
+        input.meta?.domainName,
+      ),
       collectionId:
         input.download?.modInfo?.nexus?.ids?.collectionId ?? nexusCollectionInfo?.collection?.id,
       revisionId: input.download?.modInfo?.nexus?.ids?.revisionId ?? nexusCollectionInfo?.id,

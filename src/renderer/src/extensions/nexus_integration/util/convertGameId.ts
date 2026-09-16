@@ -83,6 +83,38 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
 }
 
 /**
+ * the internal game id a downloaded file's nexus modId/fileId belong to, for use as a mod's
+ * `downloadGame` attribute so a later update check runs that id against the right game.
+ * undefined when the game can't be pinned - the caller then leaves `downloadGame` to the
+ * download's own game list.
+ *
+ * `nexusModId` is whatever `processAttributes` resolved the modId from:
+ *  - set: the id came from the download's own nexus record, so the game is that record's
+ *    `nexusGameId`. An nxm-protocol resolve (collection deps, downloadMatching) doesn't always
+ *    stamp `nexusGameId`; then this returns undefined and `download.game` stands - NOT
+ *    `metaDomainName`, which an md5 collision can point at a foreign game while the id is right.
+ *  - unset: the id itself was resolved from the md5 meta lookup, so pin the game to that same
+ *    lookup's `metaDomainName` - id and domain then agree.
+ *
+ * Issue #21979: an md5 lookup is game-agnostic, so a shared dependency (BepInEx, a config
+ * manager) re-uploaded to Nexus for another game returns that mod's record. A collection that
+ * lists such a loader as a Nexus dependency downloads the correct file with the correct id but
+ * an md5-collided meta blob; pinning `downloadGame` to the meta domain there would break an
+ * update check that works today.
+ */
+export function downloadGameForNexusId(
+  knownGamesList: IGameStored[],
+  nexusModId: number | string | undefined,
+  nexusGameId: string | undefined,
+  metaDomainName: string | undefined,
+): string | undefined {
+  if (nexusModId !== undefined) {
+    return convertGameIdReverse(knownGamesList, nexusGameId);
+  }
+  return convertGameIdReverse(knownGamesList, metaDomainName);
+}
+
+/**
  * the nexus page id (domain) for the game an nxm url names, mapping the link's game id through
  * the games Vortex knows about
  */
