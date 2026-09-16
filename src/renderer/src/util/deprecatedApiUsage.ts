@@ -1,16 +1,8 @@
 import AnalyticsMixpanel from "../extensions/analytics/mixpanel/MixpanelAnalytics";
 import { AppDeprecatedApiUsedEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
-import { findInstalled } from "../extensions/extension_manager/queries";
 import { log } from "../logging";
 import type { IRegisteredExtension } from "../types/extensions";
 import type { IExtensionState } from "../types/IState";
-
-/**
- * Provides the currently installed extensions map (the `app.extensions` state hive, keyed by
- * extension id). Threading rather than a module singleton so the source stays explicit; the getter
- * is valid from before the first extension init onwards.
- */
-export type GetInstalledExtensions = () => Record<string, IExtensionState>;
 
 /**
  * Bounded reporter handed to deprecated surface factories: emits the log warning (deduped per
@@ -21,7 +13,7 @@ export type DeprecatedApiReporter = (method: string, replacement?: string) => vo
 /**
  * A deprecated API surface. `makeForCaller` builds the per-caller instance handed out in place of
  * the shared export; the instance reports through the given reporter (which carries the calling
- * extension) on any property access.
+ * extension and its resolved installed state) on any property access.
  */
 export interface IDeprecatedApiSurface {
   makeForCaller(report: DeprecatedApiReporter): unknown;
@@ -54,30 +46,18 @@ function hasDeprecatedDescendant(exportPath: string): boolean {
 const warnedMethods = new Set<string>();
 const reportedPairs = new Set<string>();
 
-function resolveCallerState(
-  caller: IRegisteredExtension,
-  getInstalled?: GetInstalledExtensions,
-): IExtensionState | undefined {
-  if (getInstalled === undefined) {
-    return undefined;
-  }
-  try {
-    return findInstalled(getInstalled(), { path: caller.path })?.extension;
-  } catch {
-    return undefined;
-  }
-}
-
 /**
- * Reports a deprecated API access by the given caller. The log warning fires once per session per
- * method (method-global, matching the pre-telemetry shim behavior) with the extension named in the
- * metadata; the Mixpanel event fires once per session per extension-and-method pair.
+ * Reports a deprecated API access by the given caller. `state` is the caller's installed-extension
+ * entry, resolved by the handout point (or undefined when no state entry matched). The log warning
+ * fires once per session per method (method-global, matching the pre-telemetry shim behavior) with
+ * the extension named in the metadata; the Mixpanel event fires once per session per
+ * extension-and-method pair.
  */
 export function reportDeprecatedApiUsage(
   caller: IRegisteredExtension,
+  state: IExtensionState | undefined,
   method: string,
   replacement: string | undefined,
-  getInstalled?: GetInstalledExtensions,
 ): void {
   if (!warnedMethods.has(method)) {
     warnedMethods.add(method);
@@ -93,7 +73,6 @@ export function reportDeprecatedApiUsage(
   }
   reportedPairs.add(pairKey);
 
-  const state = resolveCallerState(caller, getInstalled);
   AnalyticsMixpanel.trackEvent(
     new AppDeprecatedApiUsedEvent({
       api_method: method,
@@ -106,16 +85,13 @@ export function reportDeprecatedApiUsage(
   );
 }
 
-/** Binds a caller (and the state getter) into a reporter closure for per-caller surfaces. */
+/** Binds a caller and its resolved installed state into a reporter closure for per-caller surfaces. */
 export function makeCallerReporter(
   caller: IRegisteredExtension,
-  getInstalled?: GetInstalledExtensions,
+  state: IExtensionState | undefined,
 ): DeprecatedApiReporter {
-  return (method, replacement) =>
-    reportDeprecatedApiUsage(caller, method, replacement, getInstalled);
+  return (method, replacement) => reportDeprecatedApiUsage(caller, state, method, replacement);
 }
-
-const NOT_DEPRECATED = Symbol("not-deprecated");
 
 // Per-caller instances, keyed by caller object then by export path, so identity stays stable
 // within an extension across repeated property reads.
@@ -141,36 +117,32 @@ function wrapNamespace<T extends object>(
   childTarget: T,
   exportPath: string,
   caller: IRegisteredExtension,
-  getInstalled?: GetInstalledExtensions,
+  state: IExtensionState | undefined,
 ): T {
   return new Proxy<T>(childTarget, {
-    get(target, prop, receiver) {
-      const resolved = resolveDeprecatedAccess(target, prop, exportPath, caller, getInstalled);
-      if (resolved !== NOT_DEPRECATED) {
-        return resolved;
-      }
-
-      return Reflect.get(target, prop, receiver);
-    },
+    get: (target, prop, receiver) =>
+      deprecatedApiGet(target, prop, exportPath, caller, state, receiver),
   });
 }
 
 /**
- * Generic delegation for a property read on an extension-api namespace object. Returns the
- * replacement value when the property (identified by its dotted `exportPath` within the api
- * namespace) is registered as deprecated, or when it is a namespace containing registered
- * exports (wrapped recursively); otherwise returns the NOT_DEPRECATED sentinel and the caller
- * should pass the property through untouched.
+ * The complete property-read trap for an extension-api namespace object handed to an extension.
+ * Registered deprecated surfaces are replaced by per-caller instances (cached per caller and
+ * export path, so identity stays stable); namespace members containing registered surfaces are
+ * wrapped recursively; everything else reads through untouched.
+ *
+ * `exportPath` is the dotted path of `target` within the api namespace ("" for the root).
  */
-export function resolveDeprecatedAccess<T extends object>(
+export function deprecatedApiGet<T extends object>(
   target: T,
   key: PropertyKey,
   exportPath: string,
   caller: IRegisteredExtension,
-  getInstalled?: GetInstalledExtensions,
+  state: IExtensionState | undefined,
+  receiver?: unknown,
 ): unknown {
   if (typeof key !== "string") {
-    return NOT_DEPRECATED;
+    return Reflect.get(target, key, receiver);
   }
 
   const childPath = exportPath === "" ? key : `${exportPath}.${key}`;
@@ -178,7 +150,7 @@ export function resolveDeprecatedAccess<T extends object>(
   const surface = findDeprecatedSurface(childPath);
   if (surface !== undefined) {
     return cachedForCaller(caller, childPath, () =>
-      surface.makeForCaller(makeCallerReporter(caller, getInstalled)),
+      surface.makeForCaller(makeCallerReporter(caller, state)),
     );
   }
 
@@ -186,10 +158,10 @@ export function resolveDeprecatedAccess<T extends object>(
     const child = Reflect.get(target, key);
     if (child !== null && (typeof child === "object" || typeof child === "function")) {
       return cachedForCaller(caller, childPath, () =>
-        wrapNamespace(child, childPath, caller, getInstalled),
+        wrapNamespace(child, childPath, caller, state),
       );
     }
   }
 
-  return NOT_DEPRECATED;
+  return Reflect.get(target, key, receiver);
 }
