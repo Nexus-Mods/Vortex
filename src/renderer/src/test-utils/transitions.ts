@@ -16,7 +16,10 @@ import { act } from "@testing-library/react";
 
 export const settleTransitions = (): Promise<void> =>
   act(async () => {
-    // enter is queued behind nextFrame(), which is two frames, then one more before it completes.
+    // @headlessui/react 2.2.10, dist/hooks/use-transition.js and dist/utils/disposables.js:
+    // the enter is started with `nextFrame(run)`, and `nextFrame` is rAF nested in rAF, so
+    // `run()` lands on the second frame. It nests one more requestAnimationFrame around the
+    // completion check, which puts `done()` on the third. Four leaves a frame of slack.
     for (let i = 0; i < 4; i += 1) {
       await new Promise((resolve) => requestAnimationFrame(resolve));
     }
