@@ -39,9 +39,14 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
       // Stamp when the game turned up, but only the first time a path appears or when it
       // moves. Discovery re-reports every installed game on every run, so stamping
       // unconditionally would make them all look freshly found after any rescan.
-      const previousPath = getSafe(state, [...gamePath, "path"], undefined);
-      if (result.path !== undefined && result.path !== previousPath) {
-        res = setSafe(res, [...gamePath, "timestamp"], Date.now());
+      if (result.path !== undefined && result.path !== state.discovered[payload.id]?.path) {
+        res = {
+          ...res,
+          discovered: {
+            ...res.discovered,
+            [payload.id]: { ...res.discovered[payload.id], timestamp: Date.now() },
+          },
+        };
       }
 
       // avoid triggering unnecessary events
@@ -121,7 +126,7 @@ export const settingsReducer: IReducerSpec<ISettingsGameMode> = {
     [actions.setSortManaged as any]: (state, payload) => setSafe(state, ["sortManaged"], payload),
     [actions.setSortUnmanaged as any]: (state, payload) =>
       setSafe(state, ["sortUnmanaged"], payload),
-    [actions.setSortDetected as any]: (state, payload) => setSafe(state, ["sortDetected"], payload),
+    [actions.setSortDetected as any]: (state, payload) => ({ ...state, sortDetected: payload }),
   },
   defaults: {
     discovered: {},
