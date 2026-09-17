@@ -70,4 +70,7 @@ export const lastActiveProfileForGame = createCachedSelector(
   (state: IState, gameId: string) => gameId,
   (lastActiveProfilesIn: { [gameId: string]: string }, gameId: string) =>
     lastActiveProfilesIn[gameId],
-)((state, gameId) => gameId);
+  // Callers pass activeGameId, which is undefined whenever no game is active, and
+  // re-reselect refuses an undefined cache key. Park those on one entry, as
+  // enabledModCountForProfile does.
+)((state, gameId) => gameId ?? "___empty");
