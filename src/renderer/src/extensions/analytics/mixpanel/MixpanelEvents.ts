@@ -877,6 +877,34 @@ export class AppExtensionInstalledEvent implements MixpanelEvent {
   }
 }
 
+/** Fields on the app_deprecated_api_used event. */
+export interface AppDeprecatedApiUsedProps {
+  /** name of the deprecated surface */
+  api_method: string;
+  /** name of the extension calling the deprecated API */
+  extension_name: string;
+  /** extension version */
+  extension_version?: string;
+  /** extension mod ID if it came from Nexus Mods */
+  mod_id?: number;
+  /** extension file ID if it came from Nexus Mods */
+  file_id?: number;
+  /** whether the extension is bundled or not */
+  bundled: boolean;
+}
+
+/**
+ * Sent when an extension touches a deprecated extension-api surface. Emitted once per session per
+ * extension and method, so a hot-looping extension cannot flood the tracker.
+ */
+export class AppDeprecatedApiUsedEvent implements MixpanelEvent {
+  readonly eventName = "app_deprecated_api_used";
+  readonly properties: Record<string, unknown>;
+  constructor(props: AppDeprecatedApiUsedProps) {
+    this.properties = { ...props };
+  }
+}
+
 /**
  * HEALTH CHECK EVENTS
  */
