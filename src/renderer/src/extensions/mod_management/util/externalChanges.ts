@@ -190,12 +190,27 @@ export type ExternalChangeBucket = "merged" | "autoResolved" | "rest";
  */
 export function classifyExternalChange(
   change: IFileChange,
-  context: { isInstallingCollection: boolean; recentChanges?: Set<string> },
+  context: {
+    isInstallingCollection: boolean;
+    recentChanges?: Set<string>;
+    installedSources?: Set<string>;
+  },
 ): ExternalChangeBucket {
   if (path.basename(change.source).startsWith(MERGED_PATH)) {
     return "merged";
   }
   if (context.isInstallingCollection || context.recentChanges?.has(change.source)) {
+    return "autoResolved";
+  }
+  // If Vortex has removed the owning mod from its state, a missing staging
+  // source is the expected result of uninstalling it.  The destination is a
+  // surviving hardlink, not a user edit, so silently drop the stale manifest
+  // entry instead of reporting "changed outside Vortex".
+  if (
+    change.changeType === "srcdeleted" &&
+    context.installedSources !== undefined &&
+    !context.installedSources.has(change.source)
+  ) {
     return "autoResolved";
   }
   return "rest";
@@ -287,7 +302,27 @@ export function dealWithExternalChanges(
       let count = 0;
       const state = api.store.getState() as IState;
       const isInstallingCollection = getCollectionActiveSession(state) !== undefined;
-      const context = { isInstallingCollection, recentChanges };
+      // Resolve the game the same way checkForExternalChanges does. profileId can
+      // be stale (that is why the activeProfile fallback exists there), and
+      // reading persistent.profiles[profileId] directly would yield undefined for
+      // a stale id, which would make every source look uninstalled.
+      //
+      // The unknown case is specifically "we could not work out which game this
+      // is": only then is undefined right, so classifyExternalChange skips the
+      // check. Once the game IS known, a missing or empty mod table means
+      // exactly what it says — nothing is installed — so an empty Set is
+      // correct. Treating that as unknown would miss the common case of
+      // removing the last remaining mod, where the game's mod table goes away.
+      const profile = profileById(state, profileId) ?? activeProfile(state);
+      const installedSources =
+        profile === undefined
+          ? undefined
+          : new Set(
+              Object.values(state.persistent.mods?.[profile.gameId] ?? {})
+                .map((mod) => mod?.installationPath)
+                .filter(truthy),
+            );
+      const context = { isInstallingCollection, recentChanges, installedSources };
 
       for (const typeId of Object.keys(changes)) {
         for (const change of changes[typeId]) {

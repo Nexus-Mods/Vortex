@@ -50,7 +50,7 @@ vi.mock("../actions/session", () => ({
 }));
 
 import InstallManager from "../InstallManager";
-import { dealWithExternalChanges } from "./externalChanges";
+import { classifyExternalChange, dealWithExternalChanges } from "./externalChanges";
 
 function makeRefchange(source: string, filePath: string): IFileChange {
   return {
@@ -62,24 +62,44 @@ function makeRefchange(source: string, filePath: string): IFileChange {
   };
 }
 
-function makeApi(opts: { externalChanges: IFileChange[]; activeSession?: unknown }): {
+function makeSrcDeleted(source: string, filePath: string): IFileChange {
+  return {
+    filePath,
+    source,
+    sourceTime: new Date(0),
+    destTime: new Date(0),
+    changeType: "srcdeleted",
+  };
+}
+
+function makeApi(opts: {
+  externalChanges: IFileChange[];
+  activeSession?: unknown;
+  // Mods Vortex still has in state, keyed by installationPath. Omitted means
+  // "no mods table for this game", which is deliberately distinct from an
+  // empty table.
+  mods?: { [installationPath: string]: unknown };
+  profiles?: { [profileId: string]: unknown };
+  activeProfileId?: string;
+}): {
   api: IExtensionApi;
   activator: IDeploymentMethod;
 } {
   const state = {
     persistent: {
-      profiles: {
+      profiles: opts.profiles ?? {
         "test-profile": {
           id: "test-profile",
           gameId: "skyrimse",
         },
       },
+      ...(opts.mods === undefined ? {} : { mods: { skyrimse: opts.mods } }),
     },
     session: {
       collections: { activeSession: opts.activeSession ?? undefined },
     },
     settings: {
-      profiles: { activeProfileId: "test-profile" },
+      profiles: { activeProfileId: opts.activeProfileId ?? "test-profile" },
     },
   } as unknown as IState;
 
@@ -257,5 +277,144 @@ describe("dealWithExternalChanges", () => {
 
     // The next deployment cycle would pick up B.
     expect(installManager.consumeRecentChanges()).toEqual(new Set([modB]));
+  });
+});
+
+describe("classifyExternalChange", () => {
+  it("auto-resolves a deleted source when its owning mod was uninstalled", () => {
+    const change: IFileChange = {
+      filePath: "SKSE/Plugins/example.dll",
+      source: "removed-mod-installation-path",
+      changeType: "srcdeleted",
+    };
+
+    expect(
+      classifyExternalChange(change, {
+        isInstallingCollection: false,
+        recentChanges: new Set(),
+        installedSources: new Set(),
+      }),
+    ).toBe("autoResolved");
+  });
+
+  it("still surfaces a deleted source for a mod Vortex considers installed", () => {
+    const change: IFileChange = {
+      filePath: "SKSE/Plugins/example.dll",
+      source: "installed-mod",
+      changeType: "srcdeleted",
+    };
+
+    expect(
+      classifyExternalChange(change, {
+        isInstallingCollection: false,
+        recentChanges: new Set(),
+        installedSources: new Set(["installed-mod"]),
+      }),
+    ).toBe("rest");
+  });
+});
+
+// Cross-session case. The recentChanges allow-list is in-memory, so after a
+// restart it is empty and cannot explain a srcdeleted left behind by a mod the
+// user uninstalled before quitting. Vortex's own state is the durable signal:
+// if the owning mod is gone, a missing staging source is expected.
+describe("dealWithExternalChanges: uninstalled mods", () => {
+  const KEEPER = "still-installed-mod";
+  const REMOVED = "uninstalled-mod";
+  const INSTALLED = { [KEEPER]: { id: KEEPER, installationPath: KEEPER } };
+
+  beforeEach(() => {
+    showExternalChangesCalls.length = 0;
+  });
+
+  const run = (changes: IFileChange[], recentChanges: Set<string> | undefined) => {
+    const { api, activator } = makeApi({ externalChanges: changes, mods: INSTALLED });
+    return dealWithExternalChanges(
+      api,
+      activator,
+      "test-profile",
+      FAKE_STAGING,
+      FAKE_MOD_PATHS,
+      FAKE_LAST_DEPLOYMENT,
+      recentChanges,
+    );
+  };
+
+  it("does not ask the user about a mod they uninstalled", async () => {
+    await run([makeSrcDeleted(REMOVED, "SKSE/Plugins/example.dll")], new Set());
+    expect(showExternalChangesCalls).toHaveLength(0);
+  });
+
+  it("does not ask the user when recentChanges is undefined", async () => {
+    await run([makeSrcDeleted(REMOVED, "SKSE/Plugins/example.dll")], undefined);
+    expect(showExternalChangesCalls).toHaveLength(0);
+  });
+
+  it("still surfaces a deleted source when the mod is still installed", async () => {
+    await run([makeSrcDeleted(KEEPER, "Data/keeper.esp")], new Set());
+    expect(showExternalChangesCalls).toHaveLength(1);
+    expect(showExternalChangesCalls[0][""]?.[0].source).toBe(KEEPER);
+  });
+
+  it("drops only the orphan when both appear in one batch", async () => {
+    await run(
+      [
+        makeSrcDeleted(REMOVED, "SKSE/Plugins/example.dll"),
+        makeSrcDeleted(KEEPER, "Data/keeper.esp"),
+      ],
+      new Set(),
+    );
+    expect(showExternalChangesCalls).toHaveLength(1);
+    const surfaced = showExternalChangesCalls[0][""];
+    expect(surfaced).toHaveLength(1);
+    expect(surfaced?.[0].source).toBe(KEEPER);
+  });
+
+  // Removing the LAST mod takes the game's whole mod table with it, so the
+  // lookup yields no table at all rather than an empty one. That still means
+  // "nothing installed", not "unknown", and the orphan must be dropped.
+  it("drops the orphan when the removed mod was the only one", async () => {
+    const { api, activator } = makeApi({
+      externalChanges: [makeSrcDeleted(REMOVED, "Data/only.esp")],
+      // no `mods` key at all for this game
+    });
+
+    await dealWithExternalChanges(
+      api,
+      activator,
+      "test-profile",
+      FAKE_STAGING,
+      FAKE_MOD_PATHS,
+      FAKE_LAST_DEPLOYMENT,
+      new Set(),
+    );
+
+    expect(showExternalChangesCalls).toHaveLength(0);
+  });
+
+  // checkForExternalChanges tolerates a stale profileId via its activeProfile
+  // fallback, so the suppression must resolve the game the same way. Deriving
+  // it from persistent.profiles[profileId] alone yields undefined for a stale
+  // id, and an empty installedSources Set would then make every source look
+  // uninstalled and auto-resolve genuine changes.
+  it("still surfaces a deleted source when profileId is stale", async () => {
+    const { api, activator } = makeApi({
+      externalChanges: [makeSrcDeleted(KEEPER, "Data/keeper.esp")],
+      mods: INSTALLED,
+      profiles: { "active-profile": { id: "active-profile", gameId: "skyrimse" } },
+      activeProfileId: "active-profile",
+    });
+
+    await dealWithExternalChanges(
+      api,
+      activator,
+      "stale-profile",
+      FAKE_STAGING,
+      FAKE_MOD_PATHS,
+      FAKE_LAST_DEPLOYMENT,
+      new Set(),
+    );
+
+    expect(showExternalChangesCalls).toHaveLength(1);
   });
 });
