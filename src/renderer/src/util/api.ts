@@ -79,7 +79,10 @@ import {
   withTrackedActivity,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
-import GameStoreHelper, { normalizeStoreQuery } from "./GameStoreHelper";
+import GameStoreHelperInstance, { normalizeStoreQuery } from "./GameStoreHelper";
+import type { IGameStoreHelper } from "./GameStoreHelper";
+
+const GameStoreHelper: IGameStoreHelper = GameStoreHelperInstance;
 
 /**
  * @deprecated Use window.api for IPC communication from renderer to main process.
