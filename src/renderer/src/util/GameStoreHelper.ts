@@ -28,15 +28,7 @@ export interface IStoreQuery {
 export type IQueryArgEntry = string | IStoreQuery | IStoreQuery[];
 
 export interface IGameStoreHelper {
-  getGameStore(storeId: string): IGameStore | undefined;
-
   isGameInstalled(id: string, storeId?: string): Bluebird<string | undefined>;
-
-  isGameStoreInstalled(storeId: string): Bluebird<boolean>;
-
-  registryLookup(lookup: string): Bluebird<IGameStoreEntry>;
-
-  find: (query: { [storeId: string]: IQueryArgEntry }) => Bluebird<IGameStoreEntry[]>;
 
   findByName(name: string | string[], storeId?: string): Bluebird<IGameStoreEntry>;
 
@@ -50,10 +42,6 @@ export interface IGameStoreHelper {
   ): Bluebird<void>;
 
   identifyStore: (gamePath: string) => Bluebird<string | undefined>;
-
-  reloadGames(api?: IExtensionApi): Bluebird<void>;
-
-  storeIds(): IGameStore[];
 }
 
 /**
