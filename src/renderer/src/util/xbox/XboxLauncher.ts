@@ -74,8 +74,8 @@ export class XboxLauncher implements IGameStore {
     this.mApi = api;
   }
 
-  public static create(): XboxLauncher | undefined {
-    return process.platform === "win32" ? new XboxLauncher() : undefined;
+  public static create(api?: IExtensionApi): XboxLauncher | undefined {
+    return process.platform === "win32" ? new XboxLauncher(api) : undefined;
   }
 
   // To successfully launch an Xbox game through the app we need to assemble

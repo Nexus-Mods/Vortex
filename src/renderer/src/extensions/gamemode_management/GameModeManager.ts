@@ -79,7 +79,7 @@ class GameModeManager {
       GoGLauncher.create(),
       OriginLauncher.create(),
       UPlayLauncher.create(),
-      XboxLauncher.create(),
+      XboxLauncher.create(api),
     ].filter(Boolean);
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
