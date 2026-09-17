@@ -1,5 +1,5 @@
 import { mdiChevronRight, mdiPinOffOutline, mdiPinOutline } from "@mdi/js";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -276,12 +276,12 @@ describe("PopoverMenu", () => {
       await userEvent.keyboard("{ArrowDown}");
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
 
-      screen.getByRole("button", { name: "Pin Refresh" }).focus();
+      act(() => screen.getByRole("button", { name: "Pin Refresh" }).focus());
 
       await userEvent.keyboard("{ArrowDown}");
       expect(screen.getByRole("menuitem", { name: "Logout" })).toHaveFocus();
 
-      screen.getByRole("button", { name: "Pin Logout" }).focus();
+      act(() => screen.getByRole("button", { name: "Pin Logout" }).focus());
 
       await userEvent.keyboard("{ArrowUp}");
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
