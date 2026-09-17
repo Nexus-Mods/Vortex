@@ -10,7 +10,13 @@ import { v1 as uuidv1 } from "uuid";
 
 import { ArgumentInvalid } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
-import { OAUTH_REDIRECT_URL, OAUTH_REDIRECT_BASE, getOAuthRedirectUrl } from "../constants";
+import {
+  OAUTH_CLIENT_ID,
+  OAUTH_REDIRECT_URL,
+  OAUTH_REDIRECT_BASE,
+  OAUTH_URL,
+  getOAuthRedirectUrl,
+} from "../constants";
 import NEXUSMODS_LOGO from "./nexusmodslogo";
 
 type TokenType = "Bearer";
@@ -82,6 +88,66 @@ function makeResultPage(success: boolean) {
   `);
 
   return html.join("");
+}
+
+async function postRequest(tokenUrl: string, request: any): Promise<string> {
+  const requestStr = querystring.stringify(request);
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(tokenUrl);
+    const req = https.request(
+      {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "Content-Length": requestStr.length,
+        },
+      },
+      (res) => {
+        let responseStr = "";
+        let error: Error;
+        res
+          .on("data", (chunk) => (responseStr += chunk.toString()))
+          .on("error", (err) => (error = err))
+          .on("end", () => {
+            if (error) {
+              reject(error);
+            } else if (res.statusCode !== 200) {
+              try {
+                const errDetails = JSON.parse(responseStr);
+                const err = new Error(`Invalid request: "${errDetails?.error}"`);
+                err["code"] = errDetails?.error;
+                // these details are explicitly intended for the developer, not for the user
+                err["details"] = errDetails?.error_description;
+                reject(err);
+              } catch (err) {
+                const errMessage = responseStr.includes("<!DOCTYPE html>")
+                  ? `Received HTML response from ${tokenUrl} when JSON was expected. Please check your connection settings.`
+                  : `Failed to parse failure response: "${responseStr.substring(0, 50)}"`;
+                reject(new Error(errMessage));
+              }
+            } else {
+              resolve(responseStr);
+            }
+          });
+      },
+    );
+    req.on("error", (err) => console.error("token req error", err));
+    req.write(requestStr);
+    req.end();
+  });
+}
+
+/** Trade a refresh token for a new token pair (RFC 6749 §6). */
+export async function requestTokenRefresh(refreshToken: string): Promise<ITokenReply> {
+  const reply = await postRequest(`${OAUTH_URL}/token`, {
+    grant_type: "refresh_token",
+    client_id: OAUTH_CLIENT_ID,
+    refresh_token: refreshToken,
+  });
+  return JSON.parse(reply);
 }
 
 /**
@@ -241,56 +307,6 @@ class OAuth {
     resp.end();
   }
 
-  private async postRequest(tokenUrl: string, request: any): Promise<string> {
-    const requestStr = querystring.stringify(request);
-    return new Promise((resolve, reject) => {
-      const parsedUrl = new URL(tokenUrl);
-      const req = https.request(
-        {
-          hostname: parsedUrl.hostname,
-          port: parsedUrl.port,
-          path: parsedUrl.pathname + parsedUrl.search,
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "Content-Length": requestStr.length,
-          },
-        },
-        (res) => {
-          let responseStr = "";
-          let error: Error;
-          res
-            .on("data", (chunk) => (responseStr += chunk.toString()))
-            .on("error", (err) => (error = err))
-            .on("end", () => {
-              if (error) {
-                reject(error);
-              } else if (res.statusCode !== 200) {
-                try {
-                  const errDetails = JSON.parse(responseStr);
-                  const err = new Error(`Invalid request: "${errDetails?.error}"`);
-                  err["code"] = errDetails?.error;
-                  // these details are explicitly intended for the developer, not for the user
-                  err["details"] = errDetails?.error_description;
-                  reject(err);
-                } catch (err) {
-                  const errMessage = responseStr.includes("<!DOCTYPE html>")
-                    ? `Received HTML response from ${tokenUrl} when JSON was expected. Please check your connection settings.`
-                    : `Failed to parse failure response: "${responseStr.substring(0, 50)}"`;
-                  reject(new Error(errMessage));
-                }
-              } else {
-                resolve(responseStr);
-              }
-            });
-        },
-      );
-      req.on("error", (err) => console.error("token req error", err));
-      req.write(requestStr);
-      req.end();
-    });
-  }
-
   // sanitize a base64 string to use in urls
   private static sanitizeBase64(input: string) {
     const replacements = {
@@ -327,7 +343,7 @@ class OAuth {
     };
     const tokenUrl = `${this.mServerSettings.baseUrl}/token`;
     // TODO: validate result
-    return JSON.parse(await this.postRequest(tokenUrl, request));
+    return JSON.parse(await postRequest(tokenUrl, request));
   }
 }
 
