@@ -1,8 +1,6 @@
 import AnalyticsMixpanel from "../extensions/analytics/mixpanel/MixpanelAnalytics";
-import {
-  AppDeprecatedApiUsedEvent,
-  AppDeprecatedApiUsedProps,
-} from "../extensions/analytics/mixpanel/MixpanelEvents";
+import type { AppDeprecatedApiUsedProps } from "../extensions/analytics/mixpanel/MixpanelEvents";
+import { AppDeprecatedApiUsedEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import { log } from "../logging";
 import type { IRegisteredExtension } from "../types/extensions";
 import type { IExtensionState } from "../types/IState";
