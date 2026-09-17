@@ -513,6 +513,17 @@ class GameModeManager {
       delete result.executable;
       this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result, false));
     }
+    // Tool discovery also runs after deployment and on an already-active game. Previously the
+    // default was selected only during the narrow game-activation path, so a script extender that
+    // appeared later was shown in Tools but Quick Launch kept starting the vanilla executable.
+    // Select any game's declared default as soon as it becomes available, while preserving every
+    // explicit user choice.
+    const state = this.mStore.getState();
+    const active = activeProfile(state);
+    const primary = state.settings.interface.primaryTool?.[gameId];
+    if (active?.gameId === gameId && primary === undefined && result.defaultPrimary === true) {
+      this.mStore.dispatch(setPrimaryTool(gameId, result.id));
+    }
   };
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
