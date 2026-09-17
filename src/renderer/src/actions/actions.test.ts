@@ -1,8 +1,44 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
+import { test } from "@/test-utils/harnessTest";
 import type { INotification } from "@/types/INotification";
 
 import * as actions from ".";
+
+describe("addNotification suppression", () => {
+  afterEach(() => {
+    actions.setupNotificationSuppression(() => false);
+  });
+
+  test("drops a notification the user has suppressed", async ({ makeApi }) => {
+    const harness = makeApi();
+    actions.setupNotificationSuppression((id) => id === "__hidden");
+
+    await harness.api.store.dispatch(
+      actions.addNotification({ id: "__hidden", type: "warning", message: "sample" }),
+    );
+
+    expect(harness.dispatched.map((action) => action.type)).toEqual([]);
+  });
+
+  test("shows a notification that may not be suppressed despite an earlier suppression", async ({
+    makeApi,
+  }) => {
+    const harness = makeApi();
+    actions.setupNotificationSuppression((id) => id === "__kept");
+
+    await harness.api.store.dispatch(
+      actions.addNotification({
+        id: "__kept",
+        type: "warning",
+        message: "sample",
+        allowSuppress: false,
+      }),
+    );
+
+    expect(harness.dispatched.map((action) => action.type)).toEqual(["ADD_NOTIFICATION"]);
+  });
+});
 
 describe("addNotification", () => {
   it("creates the correct action for minimal case", () => {

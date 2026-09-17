@@ -160,6 +160,8 @@ export interface ILootHarnessOpts extends IGamebryoHarnessOpts {
   initError?: Error;
   // the plugin names findInvalidPlugins reports as invalid
   invalidPlugins?: string[];
+  // the game's native plugins as lowercase ids, the first being its main master (default: none)
+  nativePlugins?: string[];
 }
 
 export interface ILootHarness extends IGamebryoHarness {

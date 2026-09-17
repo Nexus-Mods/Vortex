@@ -78,7 +78,7 @@ export async function makeLootHarness(
   LootCtor: new (api: IExtensionApi) => LootInterface,
   opts: ILootHarnessOpts = {},
 ): Promise<ILootHarness> {
-  const { initError, invalidPlugins, ...gamebryoOpts } = opts;
+  const { initError, invalidPlugins, nativePlugins, ...gamebryoOpts } = opts;
   const gameId = gamebryoOpts.gameId ?? "skyrimse";
 
   const tempDir = await makeTempDir("vortex-loot-");
@@ -88,6 +88,8 @@ export async function makeLootHarness(
   seams.base = tempDir;
   seams.gameId = gameId;
   seams.invalid = invalidPlugins ?? [];
+  seams.nativePlugins = nativePlugins ?? [];
+  seams.requiresLoadedMasters = false;
   seams.loot = makeFakeLoot();
 
   const masterlistDir = path.join(tempDir, "userData", gameId, "masterlist");

@@ -43,6 +43,9 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | content-disposition | 0.5.4 |
 | content-type | 1.0.5 |
 | crc-32 | 1.2.2 |
+| cytoscape | 3.33.1 |
+| cytoscape-cose-bilkent | 4.1.0 |
+| cytoscape-edgehandles | 3.6.0 |
 | d3 | 5.16.0 |
 | date-fns | 2.30.0 |
 | dayjs | 1.11.20 |
@@ -69,12 +72,14 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | ini | 6.0.0 |
 | interweave | 12.9.0 |
 | is-admin | 3.0.0 |
+| js-yaml | 4.1.1 |
 | json-socket | 0.3.0 |
 | jsonwebtoken | 9.0.3 |
 | leveldown | 5.6.0 |
 | levelup | 4.4.0 |
 | limiter | 3.0.0 |
 | lodash | 4.17.23 |
+| markdown-ast | 0.2.1 |
 | memoize-one | 5.2.1 |
 | minimatch | 3.1.5 |
 | mixpanel-browser | 2.79.0 |
@@ -83,6 +88,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | normalize-url | 6.1.0 |
 | numeral | 2.0.6 |
 | openapi-fetch | 0.17.0 |
+| p-limit | 7.3.0 |
 | p-queue | 9.3.0 |
 | packery | 2.1.2 |
 | permissions | 2.1.0 |

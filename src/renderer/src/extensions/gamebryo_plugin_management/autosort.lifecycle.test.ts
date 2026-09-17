@@ -7,11 +7,13 @@
  * autosort's responsibility.
  */
 import { writeFile } from "node:fs/promises";
+import * as path from "node:path";
 
 import { describe, expect, onTestFinished, vi } from "vitest";
 
+import { startActivity, stopActivity } from "../../actions/session";
 import { flushAsync } from "../../test-utils/async";
-import { makePlugin } from "../../test-utils/builders";
+import { makeLootPluginInterface, makePlugin } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
 import { setPluginList } from "./actions/plugins";
 import LootInterface from "./autosort";
@@ -89,9 +91,8 @@ describe("LootInterface libloot lifecycle", () => {
   });
 
   // LoadCurrentLoadOrderState "should be called whenever the load order or active state of
-  // plugins 'on disk' changes"; with stale state, sort tie-breaking degrades to filename order.
-  // Only init and plugin-details load it.
-  test.fails("loads the current load-order state before sorting", async ({ makeLoot }) => {
+  // plugins 'on disk' changes"; with stale state, sort tie-breaking degrades to filename order
+  test("loads the current load-order state before sorting", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp"]);
 
@@ -102,9 +103,9 @@ describe("LootInterface libloot lifecycle", () => {
     );
   });
 
-  // "All given plugins must have been loaded using LoadPlugins()" - a sort only succeeds when
-  // plugin-details loaded the plugins earlier (the LAZ-1092/LAZ-1036 PluginNotLoaded failures)
-  test.fails("loads the plugins being sorted before sorting them", async ({ makeLoot }) => {
+  // "All given plugins must have been loaded using LoadPlugins()", with full records: the sort
+  // reads record overlaps
+  test("loads the plugins being sorted before sorting them", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp"]);
 
@@ -117,13 +118,79 @@ describe("LootInterface libloot lifecycle", () => {
     expect(harness.loot.loadPluginsAsync).toHaveBeenCalledBefore(harness.loot.sortPluginsAsync);
   });
 
-  // lists are held in memory and nothing watches the files, so a downloaded masterlist has to be
-  // re-loaded to take effect; the implementation downloads without reloading, and readLists only
-  // reloads when the userlist mtime changed. Expected-fail until the fix lands, which flips this
-  // to a plain test.
-  test.fails("reloads the metadata lists after downloading a fresh masterlist", async ({
+  // LOOT holds the game's main master headers-only and keeps it out of the per-sort full load
+  test("loads the game's main master headers-only when the instance does not hold it", async ({
     makeLoot,
   }) => {
+    const harness = await makeLoot(LootInterface, { nativePlugins: ["skyrim.esm"] });
+    await harness.seedPlugins([{ name: "Skyrim.esm", isNative: true }, "A.esp"]);
+
+    await harness.sort(true);
+
+    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+      [expect.stringContaining("Skyrim.esm")],
+      true,
+    );
+    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+      [expect.stringContaining("A.esp")],
+      false,
+    );
+  });
+
+  // libloot needs a Starfield plugin's masters loaded, whether or not the caller listed them
+  test("loads the game's main master for a file sort that was not asked about it", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface, { nativePlugins: ["skyrim.esm"] });
+    await harness.seedPlugins([{ name: "Skyrim.esm", isNative: true }, "A.esp"]);
+
+    await harness.lootInterface.sortFiles([path.join(harness.dataDir, "A.esp")]);
+
+    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+      [path.join(harness.dataDir, "Skyrim.esm")],
+      true,
+    );
+    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]);
+  });
+
+  test("does not load the main master again when the instance already holds it", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface, { nativePlugins: ["skyrim.esm"] });
+    await harness.seedPlugins([{ name: "Skyrim.esm", isNative: true }, "A.esp"]);
+    harness.loot.getPluginAsync.mockResolvedValue(makeLootPluginInterface({ name: "Skyrim.esm" }));
+
+    await harness.sort(true);
+
+    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledTimes(1);
+    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+      [expect.stringContaining("A.esp")],
+      false,
+    );
+  });
+
+  // plugin details are deferred during a deployment, so the deferred sort is the first load of
+  // the new plugins
+  test("loads the plugins for a sort that was deferred behind a deployment", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+
+    await harness.sort(false);
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+
+    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]));
+    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+      [expect.stringContaining("A.esp")],
+      false,
+    );
+  });
+
+  // the lists are held in memory and nothing watches the files, so a downloaded masterlist only
+  // reaches libloot through another load
+  test("reloads the metadata lists after downloading a fresh masterlist", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
 
     await harness.lootInterface.downloadMasterlist("skyrimse");
@@ -131,9 +198,8 @@ describe("LootInterface libloot lifecycle", () => {
     expect(harness.loot.loadListsAsync).toHaveBeenCalled();
   });
 
-  // a rule change reaches libloot by re-loading the rewritten userlist; only the sort path
-  // reloads, so plugin details answer from the stale lists
-  test.fails("answers plugin details from a reloaded userlist after a rule change", async ({
+  // a rule change rewrites the userlist, which the details path answers from
+  test("answers plugin details from a reloaded userlist after a rule change", async ({
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);

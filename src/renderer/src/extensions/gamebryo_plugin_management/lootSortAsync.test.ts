@@ -2,10 +2,8 @@ import * as path from "node:path";
 
 import { describe, expect, onTestFinished, vi } from "vitest";
 
-import { makePlugin } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
 import type { IGamebryoHarness } from "../../test-utils/harnessTypes";
-import { setPluginList } from "./actions/plugins";
 import { LOOT_SORT_API_DEADLINE_MS, makeLootSortAsync } from "./lootSortAsync";
 import type { ILOOTSortApiCall } from "./types/ILOOTList";
 
@@ -13,12 +11,6 @@ function setup(harness: IGamebryoHarness) {
   const masterlistExists = vi.fn<(gameId: string) => Promise<boolean>>(() => Promise.resolve(true));
   const downloadMasterlist = vi.fn<(gameMode: string) => Promise<void>>(() => Promise.resolve());
   const updatePluginList = vi.fn<() => Promise<void>>(() => Promise.resolve());
-  const detailsListener = vi.fn(
-    (_gameId: string, _plugins: string[], cb: (result: object) => void) => {
-      cb({});
-    },
-  );
-  harness.api.events.on("plugin-details", detailsListener);
   // stands in for libloot: answers the given files in the order given
   const sortFiles = vi.fn<(pluginFilePaths: string[]) => Promise<string[]>>((pluginFilePaths) =>
     Promise.resolve(pluginFilePaths.map((filePath) => path.basename(filePath))),
@@ -36,7 +28,6 @@ function setup(harness: IGamebryoHarness) {
     masterlistExists,
     downloadMasterlist,
     updatePluginList,
-    detailsListener,
     sortFiles,
     handler,
     callback,
@@ -66,20 +57,12 @@ describe("lootSortAsync", () => {
     expect(sortFiles).toHaveBeenCalled();
   });
 
-  test("loads every known plugin into libloot before sorting", async ({ makeGamebryo }) => {
-    const harness = makeGamebryo();
-    const { updatePluginList, detailsListener, sortFiles, sort } = setup(harness);
-    harness.api.store.dispatch(setPluginList({ "one.esp": makePlugin(), "two.esp": makePlugin() }));
+  test("refreshes the plugin list before sorting", async ({ makeGamebryo }) => {
+    const { updatePluginList, sortFiles, sort } = setup(makeGamebryo());
 
     await sort();
 
-    expect(detailsListener).toHaveBeenCalledWith(
-      "skyrimse",
-      ["one.esp", "two.esp"],
-      expect.any(Function),
-    );
-    expect(updatePluginList).toHaveBeenCalledBefore(detailsListener);
-    expect(detailsListener).toHaveBeenCalledBefore(sortFiles);
+    expect(updatePluginList).toHaveBeenCalledBefore(sortFiles);
   });
 
   test("sorts exactly the given files and answers the order libloot chose", async ({

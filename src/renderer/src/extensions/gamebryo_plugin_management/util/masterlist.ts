@@ -4,6 +4,7 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
 import { rawRequest } from "../../../util/network";
+import { listPaths } from "./metadataLists";
 
 const LOOT_LIST_REVISION = "v0.29";
 const DOWNLOAD_THROTTLE_MS = 30 * 60 * 1000; // 30 minutes
@@ -71,5 +72,5 @@ export async function masterlistExists(gameId: string) {
 }
 
 export function masterlistFilePath(gameMode: string) {
-  return path.join(getVortexPath("userData"), gameMode, "masterlist", "masterlist.yaml");
+  return listPaths(getVortexPath("userData"), gameMode).masterlist;
 }

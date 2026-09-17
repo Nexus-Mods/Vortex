@@ -37,6 +37,8 @@ export interface IGameSupport {
   supportsESL?: boolean | (() => boolean);
   supportsMediumMasters?: boolean | (() => boolean);
   supportsBlueprintPlugins?: boolean | (() => boolean);
+  // libloot only fully loads a plugin whose masters are loaded or in the same load, enabled or not
+  requiresLoadedMasters?: boolean;
   minRevision?: number;
 }
 
@@ -185,6 +187,7 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
       supportsESL: true,
       supportsMediumMasters: true,
       supportsBlueprintPlugins: true,
+      requiresLoadedMasters: true,
     },
     oblivion: {
       appDataPath: "oblivion",
@@ -450,6 +453,10 @@ export const supportsMediumMasters = memoizeOne((gameMode: string): boolean => {
   }
   return supportsMediumMasters;
 });
+
+export function requiresLoadedMasters(gameMode: string): boolean {
+  return gameSupport.has(gameMode) && (gameSupport.get(gameMode, "requiresLoadedMasters") ?? false);
+}
 
 export const supportsBlueprintPlugins = memoizeOne((gameMode: string): boolean => {
   if (!gameSupport.has(gameMode)) {
