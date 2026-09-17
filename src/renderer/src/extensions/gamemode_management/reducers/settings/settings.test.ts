@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
-import type { ISettingsGameMode } from "../../../types/IState";
-import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import type { IDiscoveredTool } from "../../../../types/IDiscoveredTool";
+import type { ISettingsGameMode } from "../../../../types/IState";
+import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 import { settingsReducer } from "./settings";
 
 function makeTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
@@ -29,6 +29,7 @@ function makeSettings(discovered: Record<string, IDiscoveryResult>): ISettingsGa
     pickerLayout: "list",
     sortManaged: "name",
     sortUnmanaged: "name",
+    sortDetected: "recentlydetected",
   };
 }
 
@@ -214,6 +215,54 @@ describe("addDiscoveredGame", () => {
     });
     expect(result.discovered.gameId1.path).toBe("path2");
     expect(result.discovered.gameId2.path).toBe("path1");
+  });
+
+  describe("timestamp", () => {
+    it("stamps a game the first time a path turns up", () => {
+      const before = Date.now();
+      const result = settingsReducer.reducers.ADD_DISCOVERED_GAME(makeSettings({}), {
+        id: "gameId1",
+        result: makeGame({ path: "path1" }),
+      });
+
+      expect(result.discovered.gameId1.timestamp).toBeGreaterThanOrEqual(before);
+    });
+
+    // Discovery re-reports every installed game on every run. Re-stamping here would make
+    // the whole library look freshly found after any rescan.
+    it("leaves the stamp alone when a rescan reports the same path", () => {
+      const input = makeSettings({
+        gameId1: makeGame({ path: "path1", timestamp: 1_000 }),
+      });
+      const result = settingsReducer.reducers.ADD_DISCOVERED_GAME(input, {
+        id: "gameId1",
+        result: makeGame({ path: "path1" }),
+      });
+
+      expect(result.discovered.gameId1.timestamp).toBe(1_000);
+    });
+
+    it("re-stamps when the game moves", () => {
+      const input = makeSettings({
+        gameId1: makeGame({ path: "path1", timestamp: 1_000 }),
+      });
+      const result = settingsReducer.reducers.ADD_DISCOVERED_GAME(input, {
+        id: "gameId1",
+        result: makeGame({ path: "path2" }),
+      });
+
+      expect(result.discovered.gameId1.timestamp).toBeGreaterThan(1_000);
+    });
+
+    // Settings-only updates (a tool, a parameter) carry no path and mustn't look like a find.
+    it("doesn't stamp an update that carries no path", () => {
+      const result = settingsReducer.reducers.ADD_DISCOVERED_GAME(makeSettings({}), {
+        id: "gameId1",
+        result: makeGame({ store: "steam" }),
+      });
+
+      expect(result.discovered.gameId1.timestamp).toBeUndefined();
+    });
   });
 });
 

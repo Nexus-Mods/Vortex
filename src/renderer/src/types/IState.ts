@@ -260,6 +260,7 @@ export interface ISettingsGameMode {
   pickerLayout: "list" | "small" | "large";
   sortManaged: string;
   sortUnmanaged: string;
+  sortDetected: string;
 }
 
 export interface ISettingsDownloads {

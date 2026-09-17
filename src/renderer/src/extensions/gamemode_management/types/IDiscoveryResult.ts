@@ -24,6 +24,13 @@ export interface IDiscoveryResult {
 
   hidden?: boolean;
 
+  /**
+   * when the game's location was first discovered, as an epoch millisecond value.
+   * Only set the first time a path appears, or when the path changes - a rescan of an
+   * already-known game leaves it alone, so it means "found at" rather than "last seen".
+   */
+  timestamp?: number;
+
   id?: string;
   name?: string;
   shortName?: string;
