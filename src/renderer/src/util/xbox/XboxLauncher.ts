@@ -69,12 +69,12 @@ export class XboxLauncher implements IGameStore {
   private mCache: PromiseBB<IXboxEntry[]>;
   private mApi: IExtensionApi;
 
-  constructor(api?: IExtensionApi) {
+  constructor(api: IExtensionApi) {
     this.isXboxInstalled = gameStoreDetection();
     this.mApi = api;
   }
 
-  public static create(api?: IExtensionApi): XboxLauncher | undefined {
+  public static create(api: IExtensionApi): XboxLauncher | undefined {
     return process.platform === "win32" ? new XboxLauncher(api) : undefined;
   }
 
