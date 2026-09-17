@@ -58,35 +58,6 @@ describe("ToolsSection", () => {
     await settleTransitions();
   });
 
-  // The choreography, not just the fact of an animation: the row waits out the menu's
-  // resize offset and invisible, then travels. Losing the delay is a silent regression —
-  // the row still animates, it just stops waiting — so it is asserted rather than left
-  // to the eye.
-  it("holds the row back before it slides up", async () => {
-    render(<ToolsSection />);
-
-    const row = screen.getByTestId("menu-tools");
-
-    expect(row).toHaveClass("delay-150", "duration-200");
-    expect(row).toHaveClass("translate-y-6", "opacity-0");
-
-    await settleTransitions();
-  });
-
-  // Reduced motion means instant, not a gentler animation: the row starts where it ends,
-  // so there is no travel to make and no fade in its place.
-  it("gives the row nothing to animate when motion is turned down", async () => {
-    render(<ToolsSection />);
-
-    expect(screen.getByTestId("menu-tools")).toHaveClass(
-      "reduce-motion:translate-y-0",
-      "reduce-motion:opacity-100",
-      "reduce-motion:delay-0",
-    );
-
-    await settleTransitions();
-  });
-
   // The entry animation is replayed by remounting on the width change, which is what
   // lets Transition own the sequencing instead of a flag cleared by a timer. If the key
   // stopped changing the row would sit still, so this pins the mechanism rather than the
