@@ -29,7 +29,7 @@ class ExtProxyHandler implements ProxyHandler<typeof api> {
         target.log(level, `[${this.mExt.namespace}] ${message}`, metadata);
       };
     }
-    return deprecatedApiGet(target, p, "", this.mExt, this.mState, receiver);
+    return deprecatedApiGet(target, p as keyof typeof api, "", this.mExt, this.mState, receiver);
   }
 }
 

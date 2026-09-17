@@ -15,8 +15,8 @@ export type DeprecatedApiReporter = (method: string, replacement?: string) => vo
  * the shared export; the instance reports through the given reporter (which carries the calling
  * extension and its resolved installed state) on any property access.
  */
-export interface IDeprecatedApiSurface {
-  makeForCaller(report: DeprecatedApiReporter): unknown;
+export interface IDeprecatedApiSurface<T = unknown> {
+  makeForCaller(report: DeprecatedApiReporter): T;
 }
 
 /**
@@ -26,12 +26,22 @@ export interface IDeprecatedApiSurface {
  */
 const registry = new Map<string, IDeprecatedApiSurface>();
 
-export function registerDeprecatedApi(exportPath: string, surface: IDeprecatedApiSurface): void {
+export function registerDeprecatedApi<T>(
+  exportPath: string,
+  surface: IDeprecatedApiSurface<T>,
+): void {
   registry.set(exportPath, surface);
 }
 
-function findDeprecatedSurface(exportPath: string): IDeprecatedApiSurface | undefined {
-  return registry.get(exportPath);
+/** Clears session-level dedup state and the registry. For tests only. */
+export function resetDeprecatedApiState(): void {
+  registry.clear();
+  warnedMethods.clear();
+  reportedPairs.clear();
+}
+
+function findDeprecatedSurface<T>(exportPath: string): IDeprecatedApiSurface<T> | undefined {
+  return registry.get(exportPath) as IDeprecatedApiSurface<T>;
 }
 
 function hasDeprecatedDescendant(exportPath: string): boolean {
@@ -93,24 +103,44 @@ export function makeCallerReporter(
   return (method, replacement) => reportDeprecatedApiUsage(caller, state, method, replacement);
 }
 
+/**
+ * Builds the per-caller instance for a deprecated surface: a proxy over the shared target that
+ * reports every named member read as `<surface>.<member>` (functions and properties alike).
+ * Symbol-keyed reads (framework inspection such as Symbol.toStringTag) pass through silently -
+ * they are machinery, not API usage.
+ */
+export function wrapDeprecatedSurface<T extends object>(
+  surface: string,
+  replacement: string | undefined,
+  target: T,
+  report: DeprecatedApiReporter,
+): T {
+  return new Proxy(target, {
+    get: (innerTarget, prop, receiver) => {
+      if (typeof prop === "string") {
+        report(`${surface}.${prop}`, replacement);
+      }
+      return Reflect.get(innerTarget, prop, receiver);
+    },
+  });
+}
+
 // Per-caller instances, keyed by caller object then by export path, so identity stays stable
 // within an extension across repeated property reads.
 const callerWrappers = new WeakMap<IRegisteredExtension, Map<string, unknown>>();
 
-function cachedForCaller(
-  caller: IRegisteredExtension,
-  cacheKey: string,
-  make: () => unknown,
-): unknown {
+function cachedForCaller<T>(caller: IRegisteredExtension, cacheKey: string, make: () => T): T {
   let perCaller = callerWrappers.get(caller);
   if (perCaller === undefined) {
     perCaller = new Map();
     callerWrappers.set(caller, perCaller);
   }
+
   if (!perCaller.has(cacheKey)) {
     perCaller.set(cacheKey, make());
   }
-  return perCaller.get(cacheKey);
+
+  return perCaller.get(cacheKey) as T;
 }
 
 function wrapNamespace<T extends object>(
@@ -121,7 +151,7 @@ function wrapNamespace<T extends object>(
 ): T {
   return new Proxy<T>(childTarget, {
     get: (target, prop, receiver) =>
-      deprecatedApiGet(target, prop, exportPath, caller, state, receiver),
+      deprecatedApiGet(target, prop as keyof T, exportPath, caller, state, receiver),
   });
 }
 
@@ -133,21 +163,21 @@ function wrapNamespace<T extends object>(
  *
  * `exportPath` is the dotted path of `target` within the api namespace ("" for the root).
  */
-export function deprecatedApiGet<T extends object>(
+export function deprecatedApiGet<T extends object, TKey extends keyof T>(
   target: T,
-  key: PropertyKey,
+  key: TKey,
   exportPath: string,
   caller: IRegisteredExtension,
   state: IExtensionState | undefined,
   receiver?: unknown,
-): unknown {
+): T[TKey] {
   if (typeof key !== "string") {
     return Reflect.get(target, key, receiver);
   }
 
   const childPath = exportPath === "" ? key : `${exportPath}.${key}`;
 
-  const surface = findDeprecatedSurface(childPath);
+  const surface = findDeprecatedSurface<T[TKey]>(childPath);
   if (surface !== undefined) {
     return cachedForCaller(caller, childPath, () =>
       surface.makeForCaller(makeCallerReporter(caller, state)),
