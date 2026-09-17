@@ -17,10 +17,6 @@ vi.mock("@/ExtensionProvider", async (importOriginal) => ({
     group === "game-managed-buttons" ? objects.current : [],
 }));
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("react-redux", async () => {
   const actual = await vi.importActual<typeof ReactReduxTypes>("react-redux");
 
