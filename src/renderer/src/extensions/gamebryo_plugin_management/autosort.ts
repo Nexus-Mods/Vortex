@@ -105,7 +105,7 @@ class LootInterface {
     game: undefined,
     loot: undefined,
   });
-  private mSortPromise: Bluebird<string[]> = Bluebird.resolve([]);
+  private mSortPromise: Promise<string[]> = Promise.resolve([]);
 
   private mLists = new MetadataLists();
   // with the game it belongs to, so a download finishing after a game switch cannot load into it
@@ -442,11 +442,11 @@ class LootInterface {
       this.mExtensionApi.dismissNotification("loot-cycle-warning");
       const timeBefore = Date.now();
       store.dispatch(startActivity("plugins", "sorting"));
-      this.mSortPromise = Bluebird.resolve(this.ensureLists(gameMode, loot))
+      this.mSortPromise = this.ensureLists(gameMode, loot)
         .then(() => this.loadForSort(gameMode, loot, filePaths))
         .then(() => loot.sortPluginsAsync(pluginNames))
-        .catch((err) =>
-          err.message.toLowerCase() === "already closed"
+        .catch((err: unknown) =>
+          getErrorMessageOrDefault(err).toLowerCase() === "already closed"
             ? Promise.resolve([])
             : Promise.reject(err),
         );
