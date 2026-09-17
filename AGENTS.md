@@ -56,6 +56,7 @@ Read the doc for the area you're touching rather than the whole tree.
 
 - Finding your way around the repo: `docs/repo-layout.md`
 - Renderer, React, UI: `docs/frontend.md`
+- Redux state, reducers, actions: `docs/state.md`
 - Writing or fixing tests: `docs/testing.md`
 - Debugging, logs, diagnostics: `docs/DEBUGGING-GUIDE.md`
 - Collections, phased install: `docs/mod-management/collections.md`
