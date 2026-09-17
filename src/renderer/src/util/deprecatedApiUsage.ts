@@ -1,5 +1,8 @@
 import AnalyticsMixpanel from "../extensions/analytics/mixpanel/MixpanelAnalytics";
-import { AppDeprecatedApiUsedEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
+import {
+  AppDeprecatedApiUsedEvent,
+  AppDeprecatedApiUsedProps,
+} from "../extensions/analytics/mixpanel/MixpanelEvents";
 import { log } from "../logging";
 import type { IRegisteredExtension } from "../types/extensions";
 import type { IExtensionState } from "../types/IState";
@@ -69,11 +72,20 @@ export function reportDeprecatedApiUsage(
   method: string,
   replacement: string | undefined,
 ): void {
+  const props: AppDeprecatedApiUsedProps = {
+    api_method: method,
+    extension_name: state?.name ?? caller.name,
+    extension_version: state?.version,
+    mod_id: state?.modId,
+    file_id: state?.fileId,
+    bundled: Boolean(state?.bundled),
+  };
+
   if (!warnedMethods.has(method)) {
     warnedMethods.add(method);
     log("warn", `"${method}" is deprecated`, {
       replacement,
-      extension: caller.name,
+      ...props,
     });
   }
 
@@ -81,18 +93,10 @@ export function reportDeprecatedApiUsage(
   if (reportedPairs.has(pairKey)) {
     return;
   }
+
   reportedPairs.add(pairKey);
 
-  AnalyticsMixpanel.trackEvent(
-    new AppDeprecatedApiUsedEvent({
-      api_method: method,
-      extension_name: caller.name,
-      extension_version: state?.version,
-      mod_id: state?.modId,
-      file_id: state?.fileId,
-      bundled: Boolean(state?.bundled),
-    }),
-  );
+  AnalyticsMixpanel.trackEvent(new AppDeprecatedApiUsedEvent(props));
 }
 
 /** Binds a caller and its resolved installed state into a reporter closure for per-caller surfaces. */
