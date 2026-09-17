@@ -1,5 +1,7 @@
 import type { ForkFunction, LogCallback, LootAsync, PluginInterface, PluginMetadata } from "loot";
 
+import type { ProblemSeverity } from "../../../types/ITestResult";
+
 /** The edge kinds libloot reports on a getGroupsPath vertex. */
 export enum EdgeType {
   userGroup = "userGroup",
@@ -20,6 +22,15 @@ export enum EdgeType {
 export interface ICycleEdge {
   name: string;
   typeOfEdgeToNextVertex: EdgeType;
+}
+
+/** A loot failure in the user's words. The raw error goes to the log, never in here. */
+export interface ILootFailure {
+  // error when the plugin list or Vortex is at fault, warning for state the user can fix; a
+  // failure that leaves the load order as it was is never fatal
+  severity: Exclude<ProblemSeverity, "fatal">;
+  // the reason, phrased to follow "Plugins not sorted because:"
+  message: string;
 }
 
 /**

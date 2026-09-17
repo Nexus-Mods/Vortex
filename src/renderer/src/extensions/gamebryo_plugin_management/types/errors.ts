@@ -16,8 +16,12 @@ declare module "@vortex/shared/errors" {
     "loot:missing-group": { group: string };
     /** A masterlist condition could not be evaluated; a version check names the executable. */
     "loot:condition-failed": { executable?: string };
-    /** The libloot worker process died. */
-    "loot:process-died": NoPayload;
+    /** The libloot worker process died, on this call and with this socket error code. */
+    "loot:process-died": { call?: string; code?: string };
+    /** The worker answered with something that is not a message. */
+    "loot:invalid-response": { call?: string; frameBytes?: number };
+    /** The worker rejected the arguments a call gave it, which is this side's mistake. */
+    "loot:api-misuse": { detail: string };
     /** A libloot call that failed for no recognised reason or did not answer. */
     "loot:failed": NoPayload;
   }

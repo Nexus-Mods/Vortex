@@ -16,11 +16,13 @@ import { modsForGame, needToDeployForGame } from "../../mod_management/selectors
 import { activeGameId, activeProfile } from "../../profile_management/selectors";
 import { updatePluginWarnings } from "../actions/plugins";
 import { NAMESPACE } from "../statics";
+import type { ILootFailure } from "../types/ILoot";
 import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import type { IPlugins } from "../types/IPlugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { gameDataPath, gameSupported, nativePlugins, requiresLoadedMasters } from "./gameSupport";
 import { pluginLink, showPluginCallbacks } from "./showPlugin";
+import { definedAttributes, type SpanAttributes } from "./spanAttributes";
 import toPluginId from "./toPluginId";
 
 /**
@@ -276,7 +278,7 @@ export function makeDescribeMissing(
   return (entry) => {
     const dependent = originOf(entry.plugin);
     const master = originOf(toPluginId(entry.master));
-    const attributes: Record<string, string | number | boolean | undefined> = {
+    const attributes: SpanAttributes = {
       "master.state": entry.state,
       "master.name": entry.master,
       "master.mod_id": master.modId,
@@ -299,9 +301,7 @@ export function makeDescribeMissing(
       "missing.contradicting": contradicting,
       "plugins.count": Object.keys(check.pluginList).length,
     };
-    return Object.fromEntries(
-      Object.entries(attributes).filter(([, value]) => value !== undefined),
-    );
+    return definedAttributes(attributes);
   };
 }
 
@@ -368,19 +368,12 @@ export async function checkMissingMasters(
   };
 }
 
-interface IMasterNotLoadedVerdict {
-  // error when the plugin list got the master wrong, warning for the user's install state
-  severity: Exclude<ProblemSeverity, "fatal">;
-  // the reason, phrased to follow "Plugins not sorted because:"
-  message: string;
-}
-
 /** What to tell the user when libloot refused a load because this master is not loaded. */
 export async function explainMasterNotLoaded(
   api: IExtensionApi,
   gameMode: string,
   master: string,
-): Promise<IMasterNotLoadedVerdict> {
+): Promise<ILootFailure> {
   const check = masterCheckOf(api.getState<IStateWithGamebryo>(), gameMode);
   const masterState = await masterLookup(check).stateOf(master);
   const t = api.translate;

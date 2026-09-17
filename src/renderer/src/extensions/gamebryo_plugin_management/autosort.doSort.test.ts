@@ -130,8 +130,8 @@ describe("LootInterface doSort", () => {
     expect(harness.dispatched).toContainEqual(startActivity("plugins", "sorting"));
     expect(harness.dispatched).toContainEqual(stopActivity("plugins", "sorting"));
     expect(harness.getState().session.base.activity["plugins"] ?? []).toEqual([]);
-    expect(harness.errorNotifications).toContainEqual(
-      expect.objectContaining({ title: "LOOT operation failed", allowReport: false }),
+    expect(harness.notifications).toContainEqual(
+      expect.objectContaining({ id: "loot-failed", type: "error" }),
     );
   });
 
@@ -292,7 +292,7 @@ describe("LootInterface doSort", () => {
     expect(details.Exists).toBe(true);
   });
 
-  test("reports a died loot process without offering a report", async ({ makeLoot }) => {
+  test("says the loot process stopped rather than repeating its error", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     harness.loot.sortPluginsAsync.mockRejectedValueOnce(
       Object.assign(new Error("connection interrupted"), { name: "RemoteDied" }),
@@ -300,8 +300,12 @@ describe("LootInterface doSort", () => {
 
     await harness.sort(true);
 
-    expect(harness.errorNotifications).toContainEqual(
-      expect.objectContaining({ title: "LOOT process died", allowReport: false }),
+    expect(harness.notifications).toContainEqual(
+      expect.objectContaining({
+        id: "loot-failed",
+        type: "error",
+        message: "Plugins not sorted because: LOOT stopped unexpectedly",
+      }),
     );
   });
 

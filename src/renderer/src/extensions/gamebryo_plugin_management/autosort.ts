@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import * as path from "path";
 
-import { getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
+import { getErrorMessageOrDefault, parseError } from "@vortex/shared";
 import { ProcessCanceled, UserCanceled, VortexError } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import { pl } from "date-fns/locale";
@@ -33,6 +33,7 @@ import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
 import { findInvalidPlugins } from "./util/findInvalidPlugins";
 import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/gameSupport";
 import { missingGroupFixes } from "./util/groups";
+import { lootErrorReporter, LootPhase } from "./util/LootErrorReporter";
 import { toLootError } from "./util/lootErrors";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 import { listPaths, MetadataLists } from "./util/metadataLists";
@@ -134,7 +135,7 @@ class LootInterface {
     api.events.on("restart-helpers", async () => {
       const { game, loot } = await this.mInitPromise;
       const gameMode = activeGameId(store.getState());
-      this.startStopLoot(api, gameMode, loot);
+      this.startStopLoot(gameMode, loot);
     });
 
     // on demand, re-sort the plugin list
@@ -207,24 +208,6 @@ class LootInterface {
     this.mDeferredSort = undefined;
     void this.onSort(manual);
   };
-
-  private notifyNotSorted(reason: string, type: "warning" | "error" = "warning") {
-    this.mExtensionApi.sendNotification({
-      id: "loot-failed",
-      type,
-      message: this.mExtensionApi.translate("Plugins not sorted because: {{msg}}", {
-        replace: { msg: reason },
-        ns: NAMESPACE,
-      }),
-    });
-  }
-
-  private notifyOperationFailed(err: VortexError) {
-    this.mExtensionApi.showErrorNotification("LOOT operation failed", err, {
-      id: "loot-failed",
-      allowReport: false,
-    });
-  }
 
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const outcome = await this.runSort(manual);
@@ -479,6 +462,7 @@ class LootInterface {
       if (sortedProfileId !== undefined) {
         store.dispatch(clearPendingPluginSort(sortedProfileId));
       }
+      lootErrorReporter.succeeded(LootPhase.Sort);
       return { result: "sorted", sorted };
     } catch (rawErr) {
       const err = toLootError(rawErr);
@@ -487,19 +471,19 @@ class LootInterface {
         case "loot:cyclic-interaction":
           this.reportCycle(err.data.cycle, loot);
           break;
+        // invalid plugins are excluded by header parse before sorting, so reaching here means
+        // libloot rejected a plugin ESPFile considered valid
         case "loot:invalid-plugin":
-          // Invalid plugins are excluded by header parse before sorting, so reaching here means
-          // libloot rejected a plugin ESPFile considered valid. Report it rather than re-sorting per
-          // plugin, which stalled the app on large lists.
-          this.notifyNotSorted(err.message);
+          lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Sort);
           break;
         case "loot:master-not-loaded": {
-          const verdict = await explainMasterNotLoaded(
+          // which master is missing, and why, is more than the kind alone can say
+          const failure = await explainMasterNotLoaded(
             this.mExtensionApi,
             gameMode,
             err.data.master,
           );
-          this.notifyNotSorted(verdict.message, verdict.severity);
+          lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Sort, { failure });
           break;
         }
         case "loot:missing-group": {
@@ -518,7 +502,7 @@ class LootInterface {
             await new Promise((resolve) => setTimeout(resolve, 500));
             return this.doSort(filePaths, gameMode, loot);
           }
-          this.notifyNotSorted(err.message);
+          lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Sort);
           break;
         }
         case "loot:condition-failed":
@@ -566,19 +550,15 @@ class LootInterface {
               report();
             }
           } else {
-            this.notifyOperationFailed(err);
+            lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Sort);
           }
           break;
         case "process-canceled":
           // the loot instance was closed underneath the call, the result is not needed anyway
           return { result: "interrupted" };
-        case "loot:process-died":
-          this.mExtensionApi.showErrorNotification("LOOT process died", err, {
-            allowReport: false,
-          });
-          break;
         default:
-          this.notifyOperationFailed(err);
+          lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Sort);
+          break;
       }
       return failed(err);
     } finally {
@@ -602,12 +582,12 @@ class LootInterface {
       // no change
       return;
     } else {
-      this.startStopLoot(api, gameMode, loot);
+      this.startStopLoot(gameMode, loot);
       onRes(await this.mInitPromise);
     }
   };
 
-  private startStopLoot(api: IExtensionApi, gameMode: string, loot: ILootProm | undefined) {
+  private startStopLoot(gameMode: string, loot: ILootProm | undefined) {
     this.mLoot = undefined;
     if (loot !== undefined) {
       // close the loot instance of the old game, but give it a little time, otherwise it may try to
@@ -617,21 +597,9 @@ class LootInterface {
         loot.close();
       }, 5000);
     }
-    const gamePath = this.gamePath;
     if (gameSupported(gameMode, true)) {
-      try {
-        this.mInitPromise = this.init(gameMode);
-      } catch (err) {
-        api.showErrorNotification("Failed to initialize LOOT", {
-          error: err,
-          Game: gameMode,
-          Path: gamePath,
-        });
-        this.mInitPromise = Bluebird.resolve({
-          game: gameMode,
-          loot: undefined,
-        });
-      }
+      // init resolves to an undefined instance on failure, having reported it itself
+      this.mInitPromise = this.init(gameMode);
     } else {
       this.mInitPromise = Bluebird.resolve({ game: gameMode, loot: undefined });
     }
@@ -678,18 +646,15 @@ class LootInterface {
       // details are read off the metadata lists, so a rule change has to reach libloot first
       await this.ensureLists(game, loot);
       await loot.loadCurrentLoadOrderStateAsync();
-    } catch (err) {
-      this.mExtensionApi.showErrorNotification(
-        "There were errors getting plugin information from LOOT",
-        err,
-        { allowReport: false, id: "gamebryo-plugins-loot-meta-error" },
-      );
+      lootErrorReporter.succeeded(LootPhase.Metadata);
+    } catch (rawErr) {
+      lootErrorReporter.report(this.mExtensionApi, toLootError(rawErr), LootPhase.Metadata);
       callback({});
       return;
     }
 
     const result: IPluginsLoot = {};
-    let error: Error;
+    let error: VortexError;
     let pluginsLoaded = false;
     const state = this.mExtensionApi.store.getState();
     const pluginList: IPlugins = state.session.plugins.pluginList;
@@ -710,18 +675,16 @@ class LootInterface {
         false,
       );
       pluginsLoaded = true;
+      lootErrorReporter.succeeded(LootPhase.LoadPlugins);
     } catch (rawErr) {
-      const err = unknownToError(rawErr);
-      if (err.message.toLowerCase() === "already closed") {
+      const err = toLootError(rawErr);
+      if (err.data.kind === "process-canceled") {
         callback({});
         return;
       }
       // libloot rejected a plugin ESPFile considered valid, so a header-parse exclusion can't help;
       // surface it rather than retrying per plugin.
-      this.mExtensionApi.showErrorNotification("Failed to parse plugins", err, {
-        allowReport: false,
-        id: "loot-failed-to-parse",
-      });
+      lootErrorReporter.report(this.mExtensionApi, err, LootPhase.LoadPlugins);
     }
     if (invalid.size > 0) {
       reportSkippedInvalidPlugins(this.mExtensionApi, [...invalid]);
@@ -797,16 +760,15 @@ class LootInterface {
             version: pluginsLoaded && info !== undefined ? info.version : "",
           };
         } catch (rawErr) {
-          const err = unknownToError(rawErr) as Error & { arg?: unknown };
+          const err = toLootError(rawErr);
           result[pluginName] = createEmpty();
-          if (err.arg !== undefined) {
+          if ((rawErr as { arg?: unknown }).arg !== undefined) {
             // invalid parameter. This simply means that loot has no meta data for this plugin
             // so that's not a problem
+          } else if (err.data.kind === "process-canceled") {
+            closed = true;
+            return;
           } else {
-            if (err.message.toLowerCase() === "already closed") {
-              closed = true;
-              return;
-            }
             log("error", "Failed to get plugin meta data from loot", {
               pluginName,
               error: err.message,
@@ -817,11 +779,7 @@ class LootInterface {
       }),
     ).then(() => {
       if (error !== undefined && !closed) {
-        this.mExtensionApi.showErrorNotification(
-          "There were errors getting plugin information from LOOT",
-          error,
-          { allowReport: false, id: "gamebryo-plugins-loot-details-error" },
-        );
+        lootErrorReporter.report(this.mExtensionApi, error, LootPhase.Metadata);
       }
       callback(result);
     });
@@ -837,10 +795,9 @@ class LootInterface {
       if (await this.mLists.ensureLoaded(paths, loot)) {
         log("info", "loaded loot lists", { gameMode, ...paths });
       }
-    } catch (err) {
-      this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
-        allowReport: false,
-        id: "gamebryo-plugins-loot-lists-error",
+    } catch (rawErr) {
+      lootErrorReporter.report(this.mExtensionApi, toLootError(rawErr), LootPhase.Lists, {
+        context: { "loot.gamemode": gameMode },
       });
     }
   };
@@ -887,10 +844,12 @@ class LootInterface {
           this.fork,
         ),
       ) as unknown as ILootProm;
-    } catch (err) {
-      this.mExtensionApi.showErrorNotification("Failed to initialize LOOT", err, {
-        allowReport: false,
-      } as any);
+    } catch (rawErr) {
+      const err = toLootError(rawErr);
+      log("error", "failed to initialize LOOT", { kind: err.data.kind, error: err.message });
+      lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Init, {
+        context: { "loot.gamemode": gameMode },
+      });
       return { game: gameMode, loot: undefined };
     }
     // a fresh instance holds no lists, whatever was loaded for the game before it
@@ -901,10 +860,11 @@ class LootInterface {
       // the lists have to be loaded at least once, even when the download failed
       await this.ensureLists(gameMode, loot);
       await loot.loadCurrentLoadOrderStateAsync();
-    } catch (err) {
-      this.mExtensionApi.showErrorNotification("Failed to load master-/userlist", err, {
-        allowReport: false,
-      } as any);
+      lootErrorReporter.succeeded();
+    } catch (rawErr) {
+      lootErrorReporter.report(this.mExtensionApi, toLootError(rawErr), LootPhase.Lists, {
+        context: { "loot.gamemode": gameMode },
+      });
     }
     // the instance is ready, so a download may load into it from here on
     this.mLoot = { game: gameMode, loot };
@@ -939,14 +899,25 @@ class LootInterface {
       .catch(ProcessCanceled, () => null)
       .catch((err) => {
         log("warn", "LOOT process died", { error: err.message });
-        if (this.mRestarts > 0) {
+        const restarting = this.mRestarts > 0;
+        // the exit code and the worker's last words are all this side ever learns about the crash
+        lootErrorReporter.report(
+          this.mExtensionApi,
+          new VortexError(err.message, { kind: "loot:process-died" }, { cause: err }),
+          LootPhase.Worker,
+          {
+            recovering: restarting,
+            context: { "loot.restarts_left": this.mRestarts, "loot.exit_code": err.exitCode },
+          },
+        );
+        if (restarting) {
           const gameMode = activeGameId(this.mExtensionApi.store.getState());
           --this.mRestarts;
+          // the handle outlives the worker and answers isClosed() with false, so drop it here
+          this.mLoot = undefined;
           if (gameSupported(gameMode, true)) {
             this.mInitPromise = this.init(gameMode);
           }
-        } else {
-          this.mExtensionApi.showErrorNotification("LOOT process died", err);
         }
       });
   };
@@ -1240,13 +1211,11 @@ class LootInterface {
       solutions = await this.getSolutions(t, cycle, loot);
       renderedCycle = await this.renderCycle(t, cycle, loot);
     } catch (rawErr) {
-      const innerErr = unknownToError(rawErr);
-      if (innerErr.message.toLowerCase() === "already closed") {
-        return;
-      } else {
-        this.mExtensionApi.showErrorNotification("Failed to report plugin cycle", innerErr);
-        return;
+      const innerErr = toLootError(rawErr);
+      if (innerErr.data.kind !== "process-canceled") {
+        lootErrorReporter.report(api, innerErr, LootPhase.Cycle);
       }
+      return;
     }
 
     const errActions: IDialogAction[] = [
