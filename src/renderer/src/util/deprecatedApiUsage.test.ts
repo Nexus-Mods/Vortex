@@ -77,7 +77,12 @@ describe("reportDeprecatedApiUsage dedup", () => {
     expect(mocks.log).toHaveBeenCalledTimes(1);
     expect(mocks.log).toHaveBeenCalledWith("warn", '"steam.findByAppId" is deprecated', {
       replacement: "use GameStoreHelper",
-      extension: "ext-a",
+      api_method: "steam.findByAppId",
+      extension_name: "ext-a",
+      extension_version: undefined,
+      mod_id: undefined,
+      file_id: undefined,
+      bundled: false,
     });
   });
 
@@ -171,7 +176,12 @@ describe("deprecatedApiGet wrapping", () => {
     });
     expect(mocks.log).toHaveBeenCalledWith("warn", '"steam.findByAppId" is deprecated', {
       replacement: "use GameStoreHelper",
-      extension: "ext-a",
+      api_method: "steam.findByAppId",
+      extension_name: "ext-a",
+      extension_version: undefined,
+      mod_id: undefined,
+      file_id: undefined,
+      bundled: false,
     });
   });
 
