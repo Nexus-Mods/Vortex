@@ -10,6 +10,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { settleTransitions } from "@/test-utils/transitions";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import type { MixpanelEvent } from "../../../analytics/mixpanel/MixpanelEvents";
@@ -68,7 +69,7 @@ describe("EntryActions feedback analytics", () => {
     });
   });
 
-  it("emits feedback_not_helpful with the reasons on submit", () => {
+  it("emits feedback_not_helpful with the reasons on submit", async () => {
     const { events, onNotHelpful } = renderActions();
 
     fireEvent.click(screen.getByTestId("health-check-feedback-not-helpful"));
@@ -81,9 +82,11 @@ describe("EntryActions feedback analytics", () => {
     expect(events[0].properties.feedback_reasons).toEqual([]);
     // The owner still persists; only the analytics moved.
     expect(onNotHelpful).toHaveBeenCalledWith([]);
+
+    await settleTransitions();
   });
 
-  it("emits feedback_dismissed when the reasons modal is abandoned", () => {
+  it("emits feedback_dismissed when the reasons modal is abandoned", async () => {
     const { events, onNotHelpful } = renderActions();
 
     fireEvent.click(screen.getByTestId("health-check-feedback-not-helpful"));
@@ -94,5 +97,7 @@ describe("EntryActions feedback analytics", () => {
     expect(events[0].properties).not.toHaveProperty("resolution_type");
     // Abandoning isn't feedback, so nothing is persisted and the thumbs stay live.
     expect(onNotHelpful).not.toHaveBeenCalled();
+
+    await settleTransitions();
   });
 });
