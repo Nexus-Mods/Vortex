@@ -2,7 +2,7 @@ import type { IState } from "@/types/api";
 
 import type { IGameMediaPersistentState } from "./reducers/persistent";
 import type { IGameMediaSessionState } from "./reducers/session";
-import type { GameMediaModTag } from "./util/mediaTypes";
+import type { GameMediaItem, GameMediaModTag } from "./util/mediaTypes";
 
 const NO_DISABLED: readonly string[] = [];
 const NO_TAGS: readonly GameMediaModTag[] = [];
@@ -21,3 +21,11 @@ export const disabledSources = (state: IState, gameId: string) =>
 export const modTags = (state: IState, gameId: string, mediaId: string) =>
   mediaState(state).modTags[gameId]?.[mediaId] ?? NO_TAGS;
 export const sessionItems = (state: IState) => mediaSessionState(state).items;
+export const orphanedTagIds = (
+  state: IState,
+  gameId: string,
+  liveItems: readonly GameMediaItem[],
+) => {
+  const live = new Set(liveItems?.map((i) => i.id));
+  return Object.keys(mediaState(state).modTags[gameId] ?? {}).filter((id) => !live.has(id));
+};

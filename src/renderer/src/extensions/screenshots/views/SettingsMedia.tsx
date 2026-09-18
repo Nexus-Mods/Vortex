@@ -10,7 +10,11 @@ import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { activeGameId } from "../../../util/selectors";
-import { deleteGameMediaSource, setGameMediaSourceEnabled } from "../actions/persistent";
+import {
+  clearGameMediaModTags,
+  deleteGameMediaSource,
+  setGameMediaSourceEnabled,
+} from "../actions/persistent";
 import useGameMediaSources from "../hooks/GameMediaSourcesHook";
 import * as selectors from "../selectors";
 import type { GameMediaSource } from "../util/mediaTypes";
@@ -30,6 +34,8 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
   const dispatch = useDispatch();
   const gameId = useSelector(activeGameId);
   const disabledSources = useSelector((state: IState) => selectors.disabledSources(state, gameId));
+  const items = useSelector(selectors.sessionItems);
+  const orphans = useSelector((state: IState) => selectors.orphanedTagIds(state, gameId, items));
 
   const onToggleSource = useCallback(
     (sourceId: string) => {
@@ -107,7 +113,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
           {t("Default Sources")}
         </Typography>
 
-        {Object.entries(defaultSources).map(toggleItem)}
+        {Object.entries(defaultSources)?.map(toggleItem)}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -123,7 +129,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
         {!!customSources &&
           Object.keys(customSources).length > 0 &&
-          Object.entries(customSources).map(toggleItem)}
+          Object.entries(customSources)?.map(toggleItem)}
       </div>
 
       <Button
@@ -137,6 +143,25 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
       >
         {t("Add custom source")}
       </Button>
+
+      {items?.length && disabledSources.length === 0 && orphans.length > 0 && (
+        <div className="flex items-center gap-3">
+          <Typography appearance="subdued" typographyType="body-sm">
+            {t("{{count}} mod tags refer to media that is no longer in your sources.", {
+              count: orphans.length,
+            })}
+          </Typography>
+
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            size="sm"
+            onClick={() => dispatch(clearGameMediaModTags(gameId, orphans))}
+          >
+            {t("Remove")}
+          </Button>
+        </div>
+      )}
 
       <SettingsMediaAddSourceModal
         api={api}

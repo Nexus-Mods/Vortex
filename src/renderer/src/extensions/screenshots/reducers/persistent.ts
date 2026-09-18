@@ -79,6 +79,20 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
         },
       };
     }),
+    on(actions.clearGameMediaModTags, (state, payload) => {
+      const { gameId, mediaIds } = payload;
+      const gameTags = state.modTags[gameId];
+      if (!gameTags) return state;
+
+      const next = { ...gameTags };
+      for (const id of mediaIds) delete next[id];
+
+      const nextModTags = { ...state.modTags };
+      if (Object.keys(next).length === 0) delete nextModTags[gameId];
+      else nextModTags[gameId] = next;
+
+      return { ...state, modTags: nextModTags };
+    }),
   ]),
   defaults: {
     sources: {},

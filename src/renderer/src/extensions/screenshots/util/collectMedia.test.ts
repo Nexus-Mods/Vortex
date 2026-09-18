@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import collectMedia from "./collectMedia";
 import generateVideoPreview from "./generateVideoPreview";
 import type { GameMediaSource } from "./mediaTypes";
+import { previewKey } from "./previewCache";
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -199,15 +200,25 @@ describe("collectMedia", () => {
   });
 
   it("only calls generateVideoPreview for mp4s", async () => {
-    mockedFs.stat.mockResolvedValue({
+    const MTIME = new Date("2024-01-02");
+    const videoStats = {
       size: 1234,
       birthtime: new Date("2024-01-01"),
-      mtime: new Date("2024-01-02"),
-    } as Stats);
+      mtime: MTIME,
+      mtimeMs: MTIME.getTime(),
+    } as Stats;
+
+    mockedFs.stat.mockResolvedValue(videoStats);
     mockedFs.readdir.mockResolvedValue([
       { name: "someFile.png", isFile: () => true },
       { name: "video.mp4", isFile: () => true },
     ] as any);
+
+    const expectedKey = previewKey(
+      path.join("/tmp/media", "video.mp4"),
+      videoStats.mtimeMs,
+      videoStats.size,
+    );
 
     await collectMedia(
       {
@@ -221,7 +232,8 @@ describe("collectMedia", () => {
 
     expect(generateVideoPreview).toHaveBeenCalledWith(
       path.join("/tmp/media", "video.mp4"),
-      "75c55572557ed461",
+      expectedKey,
     );
+    expect(generateVideoPreview).toHaveBeenCalledTimes(1);
   });
 });

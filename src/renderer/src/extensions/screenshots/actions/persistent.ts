@@ -38,3 +38,8 @@ export const setGameMediaSourceEnabled = createAction(
     enabled,
   }),
 );
+
+export const clearGameMediaModTags = createAction(
+  "CLEAR_GAME_MEDIA_MOD_TAGS",
+  (gameId: string, mediaIds: string[]) => ({ gameId, mediaIds }),
+);
