@@ -14,8 +14,13 @@ export default function FloatingSearchBarResult({
   result,
 }: IFloatingSearchBarResultProps) {
   return (
-    <div className="flex gap-2 overflow-hidden px-2 py-1 hover:bg-surface-mid" onClick={onClick}>
+    <button
+      className="flex w-full gap-2 overflow-hidden px-2 py-1 hover:bg-surface-mid"
+      type="button"
+      onClick={onClick}
+    >
       <img
+        alt={result.name}
         className="aspect-mod max-h-16 w-24 rounded-sm"
         src={result.adult ? result.thumbnailBlurredUrl : result.thumbnailUrl}
       />
@@ -28,6 +33,6 @@ export default function FloatingSearchBarResult({
       >
         {result.name}
       </Typography>
-    </div>
+    </button>
   );
 }

@@ -36,11 +36,13 @@ export default function MediaListItem({ item, onClick, game }: IMediaListItemPro
   };
 
   return (
-    <div
+    <button
       className="border-inside group relative flex size-full items-center justify-center rounded-sm border-2 border-transparent hover:border-white/70"
+      type="button"
       onClick={onClick}
     >
       <img
+        alt={item.name}
         className="aspect-video object-cover object-right"
         decoding="async"
         key={item.id}
@@ -65,6 +67,6 @@ export default function MediaListItem({ item, onClick, game }: IMediaListItemPro
           <span className="line-clamp-1 rounded-sm bg-surface-high p-0.5">{item.name}</span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

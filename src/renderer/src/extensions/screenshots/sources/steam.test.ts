@@ -19,6 +19,13 @@ vi.mock("fs/promises", () => ({
   },
 }));
 
+vi.mock("../../../util/Steam", () => ({
+  default: {
+    getGameStorePath: vi.fn().mockResolvedValue("/steam"),
+    allGames: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 const fakeSteamScreenshotsVDF = `
 "screenshots"
 {
