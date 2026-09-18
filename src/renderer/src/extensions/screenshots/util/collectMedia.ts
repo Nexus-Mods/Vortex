@@ -67,5 +67,8 @@ export default async function collectMedia(
     }
   }
 
-  return res.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
+  return res.sort(sortMedia);
 }
+
+export const sortMedia = (a: GameMediaItem, b: GameMediaItem) =>
+  (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0);

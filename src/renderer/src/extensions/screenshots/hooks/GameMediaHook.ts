@@ -6,9 +6,10 @@ import type { IState } from "@/types/api";
 import { activeGameId, gameById, currentGameDiscovery } from "../../../util/selectors";
 import * as sessionActions from "../actions/session";
 import * as selectors from "../selectors";
-import collectMedia from "../util/collectMedia";
+import collectMedia, { sortMedia } from "../util/collectMedia";
 import type { GameMediaItem } from "../util/mediaTypes";
 import useGameMediaSources from "./GameMediaSourcesHook";
+import useGameMediaWatcher from "./GameMediaWatcherHook";
 
 export default function useGameMedia() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -31,6 +32,20 @@ export default function useGameMedia() {
     },
     [store],
   );
+
+  const rescanSource = useCallback(
+    async (sourceId: string) => {
+      const source = allSources[sourceId];
+      if (!source) return;
+      const found = await collectMedia({ [sourceId]: source }, []);
+      setItems([...(items ?? []).filter((i) => i.sourceId !== sourceId), ...found].sort(sortMedia));
+    },
+    [allSources, items, setItems],
+  );
+
+  useGameMediaWatcher(allSources, disabledSources, (id: string) => {
+    void rescanSource(id);
+  });
 
   useEffect(() => {
     if (!gameId || !discovery) return;
@@ -61,7 +76,6 @@ export default function useGameMedia() {
     try {
       setIsError(false);
       setIsLoading(true);
-      setItems([]);
       const res = await collectMedia(allSources, disabledSources);
       setItems(res);
     } catch (e) {

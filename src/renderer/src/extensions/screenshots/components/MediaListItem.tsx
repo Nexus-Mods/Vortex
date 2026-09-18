@@ -1,3 +1,5 @@
+import { pathToFileURL } from "url";
+
 import { mdiPlayCircleOutline } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,9 +23,12 @@ export default function MediaListItem({ item, onClick, game }: IMediaListItemPro
   const fallbackURL = "assets/images/ad-banner-large.png";
 
   const [src, setSrc] = useState(() => {
-    if (item.type === "image") return item.thumbnailPath ?? item.path;
+    if (item.type === "image") return pathToFileURL(item.thumbnailPath ?? item.path).toString();
     else if (item.type === "video")
-      return item.thumbnailPath ?? gameTileImageURL(game)?.replace("tile", "hero");
+      return (
+        pathToFileURL(item.thumbnailPath).toString() ??
+        gameTileImageURL(game)?.replace("tile", "hero")
+      );
   });
 
   const onError = () => {
