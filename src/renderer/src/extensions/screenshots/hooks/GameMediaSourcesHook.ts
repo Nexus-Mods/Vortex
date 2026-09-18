@@ -18,7 +18,7 @@ export default function useGameMediaSources() {
     selectors.customSources(state, gameId),
   );
 
-  const disabledSources: string[] = useSelector((state: IState) =>
+  const disabledSources: readonly string[] = useSelector((state: IState) =>
     selectors.disabledSources(state, gameId),
   );
 

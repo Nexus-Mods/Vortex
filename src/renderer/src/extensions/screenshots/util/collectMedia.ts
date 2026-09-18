@@ -9,7 +9,7 @@ const VIDEO_EXT = new Set([".mp4", ".webm", ".mkv", ".mpd"]);
 
 export default async function collectMedia(
   sources: Record<string, GameMediaSource>,
-  disabledSources: string[] | undefined,
+  disabledSources: readonly string[] | undefined,
 ): Promise<GameMediaItem[]> {
   let res: GameMediaItem[] = [];
 
