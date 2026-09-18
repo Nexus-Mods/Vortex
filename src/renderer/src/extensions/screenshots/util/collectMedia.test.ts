@@ -221,7 +221,7 @@ describe("collectMedia", () => {
 
     expect(generateVideoPreview).toHaveBeenCalledWith(
       path.join("/tmp/media", "video.mp4"),
-      "src::video.mp4",
+      "75c55572557ed461",
     );
   });
 });

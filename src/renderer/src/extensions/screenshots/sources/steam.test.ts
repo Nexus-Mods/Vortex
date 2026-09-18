@@ -1,4 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/require-await */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import fs from "fs/promises";
+import path from "path";
 
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
@@ -124,14 +129,17 @@ describe("clipsFolderBySteamID -> discoverSteamClips", () => {
   const mockedFs = vi.mocked(fs);
 
   it("maps Steam clips into the expected GameMediaItem", async () => {
+    const clipsDir = path.join("userData", "456", "gamerecordings", "clips");
+    const clipDir = path.join(clipsDir, "clip_123");
+    const videoDir = path.join(clipDir, "video");
     mockedFs.access.mockResolvedValue(undefined);
     mockedFs.stat.mockResolvedValue({
       birthtime: new Date("2011-08-01"),
       mtime: new Date("2011-08-01"),
     } as any);
     mockedFs.readdir.mockImplementation(async (p: string) => {
-      if (p === "userData\\456\\gamerecordings\\clips") return ["clip_123"] as any;
-      if (p === "userData\\456\\gamerecordings\\clips\\clip_123\\video") return ["video_1"] as any;
+      if (p === clipsDir) return ["clip_123"] as any;
+      if (p === videoDir) return ["video_1"] as any;
       else throw new Error(`Unexpected path ${p}`);
     });
     const sources = await clipsFolderBySteamID("userData", "123", "456");
@@ -145,10 +153,10 @@ describe("clipsFolderBySteamID -> discoverSteamClips", () => {
     expect(videoResult).toEqual({
       id: "steam-videos-456-clip_123",
       name: "clip_123",
-      path: "userData\\456\\gamerecordings\\clips\\clip_123\\video\\video_1\\session.mpd",
+      path: path.join(videoDir, "video_1", "session.mpd"),
       sourceId: "steam-videos-456",
       type: "video",
-      thumbnailPath: "userData\\456\\gamerecordings\\clips\\clip_123\\thumbnail.jpg",
+      thumbnailPath: path.join(clipDir, "thumbnail.jpg"),
       createdAt: new Date("2011-08-01"),
       modifiedAt: new Date("2011-08-01"),
     } satisfies GameMediaItem);

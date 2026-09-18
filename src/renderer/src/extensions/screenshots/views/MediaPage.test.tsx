@@ -27,6 +27,7 @@ vi.mock("react-redux", async (importOriginal) => {
   return {
     ...(actual as object),
     useDispatch: mockUseDispatch,
+    // eslint-disable-next-line @eslint-react/component-hook-factories
     useSelector: (selector: (s: unknown) => unknown) => selector(state),
   };
 });

@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { spawn, spawnSync } from "node:child_process";
 import path from "path";
 
-import getVortexPath from "@/util/getVortexPath";
+import { previewDir } from "./previewCache";
 
 let ffmpegAvailable: boolean | undefined;
 
@@ -15,14 +15,19 @@ export default async function generateVideoPreview(
 ): Promise<string | undefined> {
   const safeId = id.replace(/[<>:"/\\|?*]+/g, "_");
   if (!hasFfmpeg()) return undefined;
-  const baseDir = path.join(getVortexPath("temp"), "videopreviews");
+  const baseDir = previewDir();
   await fs.mkdir(baseDir, { recursive: true });
   const outPath = path.join(baseDir, safeId + ".jpg");
   const alreadyGenerated = await fs
     .access(outPath)
     .then(() => true)
     .catch(() => false);
-  if (alreadyGenerated) return outPath;
+  if (alreadyGenerated) {
+    // Set the dates on the image to show it's in use.
+    void fs.utimes(outPath, new Date(), new Date()).catch(() => undefined);
+    return outPath;
+  }
+  const tmpPath = `${outPath}.${process.pid}.tmp`;
   return new Promise<string | undefined>((resolve) => {
     const proc = spawn("ffmpeg", [
       "-y",
@@ -41,13 +46,16 @@ export default async function generateVideoPreview(
       "scale=480:-1",
       "-f",
       "image2",
-      outPath,
+      tmpPath,
     ]);
 
-    proc.on("exit", (code) => {
-      if (code === 0) return resolve(outPath);
-      window.api.log("warn", `ffmpeg failed: ${code} ${mp4Path}`);
-      resolve(undefined);
+    proc.on("exit", async (code) => {
+      if (code !== 0) {
+        window.api.log("warn", `ffmpeg failed: ${code} ${mp4Path}`);
+        resolve(undefined);
+      }
+      await fs.rename(tmpPath, outPath);
+      resolve(outPath);
     });
     proc.on("error", () => resolve(undefined));
   });

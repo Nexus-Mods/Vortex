@@ -10,6 +10,7 @@ import type { IExtensionContext } from "@/types/IExtensionContext";
 import { activeGameId } from "../../util/selectors";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
+import { prunePreviewCache } from "./util/previewCache";
 import MediaPage from "./views/MediaPage";
 import SettingsMedia from "./views/SettingsMedia";
 
@@ -39,6 +40,12 @@ function init(context: IExtensionContext) {
     () => activeGameId(context.api.getState()) !== undefined,
     80,
   );
+
+  context.once(() => {
+    void prunePreviewCache().catch((err: unknown) => {
+      window.api.log("debug", "media preview pruning failed", JSON.stringify(err));
+    });
+  });
 
   return true;
 }

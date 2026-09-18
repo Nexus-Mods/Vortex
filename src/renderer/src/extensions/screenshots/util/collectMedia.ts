@@ -3,6 +3,7 @@ import path from "path";
 
 import generateVideoPreview, { hasFfmpeg } from "./generateVideoPreview";
 import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
+import { previewKey } from "./previewCache";
 
 const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tga"]);
 const VIDEO_EXT = new Set([".mp4", ".webm", ".mkv", ".mpd"]);
@@ -40,7 +41,10 @@ export default async function collectMedia(
           const ext = path.extname(i.name).toLowerCase();
           let thumbnailPath: string | undefined = undefined;
           if (hasFfmpeg() && ext === ".mp4") {
-            thumbnailPath = await generateVideoPreview(imagePath, `${sourceId}::${i.name}`);
+            thumbnailPath = await generateVideoPreview(
+              imagePath,
+              previewKey(imagePath, stats.mtimeMs, stats.size),
+            );
           }
           return {
             id: `${sourceId}::${i.name}`,
