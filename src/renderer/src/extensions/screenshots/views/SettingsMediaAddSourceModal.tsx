@@ -74,7 +74,7 @@ export default function SettingsMediaAddSourceModal({
         <Input
           required
           id="media-source-name"
-          label="Source Name"
+          label={t("Source Name")}
           placeholder={t("e.g. My Screenshots")}
           type="text"
           value={sourceName}

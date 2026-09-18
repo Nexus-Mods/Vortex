@@ -45,14 +45,14 @@ vi.mock("react-redux", async (importOriginal) => {
 
 import type { IExtensionApi } from "@/types/api";
 
-vi.mock("../hooks/GameMediaHook", () => ({
+vi.mock("../hooks/GameMediaSourcesHook", () => ({
   default: vi.fn(),
 }));
 
 import { deleteGameMediaSource, setGameMediaSourceEnabled } from "../actions/persistent";
-import useGameMedia from "../hooks/GameMediaHook";
+import useGameMediaSources from "../hooks/GameMediaSourcesHook";
 
-const mockedUseGameMedia = vi.mocked(useGameMedia);
+const mockedUseGameMediaSources = vi.mocked(useGameMediaSources);
 
 const renderComponent = () => {
   const translate = vi.fn((key: string) => key);
@@ -70,11 +70,11 @@ describe("SettingsMedia", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     selectorState.persistent.game_media.disabledSources["game-1"] = [];
-    mockedUseGameMedia.mockReturnValue({ defaultSources: {}, customSources: {} } as any);
+    mockedUseGameMediaSources.mockReturnValue({ defaultSources: {}, customSources: {} } as any);
   });
 
   it("renders default and custom sources", async () => {
-    mockedUseGameMedia.mockReturnValue({
+    mockedUseGameMediaSources.mockReturnValue({
       defaultSources: {
         sourceA: { name: "Source A", path: "/source/A", description: "Example source A" },
       },
@@ -103,7 +103,7 @@ describe("SettingsMedia", () => {
   });
 
   it("shows an empty state where there are no custom sources", async () => {
-    mockedUseGameMedia.mockReturnValue({
+    mockedUseGameMediaSources.mockReturnValue({
       defaultSources: {
         sourceA: { name: "Source A", path: "/source/A", description: "Example source A" },
       },
@@ -117,7 +117,7 @@ describe("SettingsMedia", () => {
 
   it("reflects disabled sources", () => {
     selectorState.persistent.game_media.disabledSources["game-1"] = ["sourceB"];
-    mockedUseGameMedia.mockReturnValue({
+    mockedUseGameMediaSources.mockReturnValue({
       defaultSources: {
         sourceA: { name: "Source A", path: "/source/A" },
         sourceB: { name: "Source B", path: "/source/B" },
@@ -140,7 +140,7 @@ describe("SettingsMedia", () => {
 
   it("toggles sources correctly", async () => {
     selectorState.persistent.game_media.disabledSources["game-1"] = ["sourceB"];
-    mockedUseGameMedia.mockReturnValue({
+    mockedUseGameMediaSources.mockReturnValue({
       defaultSources: {
         sourceA: { name: "Source A", path: "/source/A" },
         sourceB: { name: "Source B", path: "/source/B" },
@@ -166,7 +166,7 @@ describe("SettingsMedia", () => {
   });
 
   it("deletes a custom source", async () => {
-    mockedUseGameMedia.mockReturnValue({
+    mockedUseGameMediaSources.mockReturnValue({
       defaultSources: {
         sourceA: { name: "Source A", path: "/source/A", description: "Example source A" },
       },
@@ -201,7 +201,7 @@ describe("SettingsMedia", () => {
   });
 
   it("opens the edit modal", async () => {
-    mockedUseGameMedia.mockReturnValue({
+    mockedUseGameMediaSources.mockReturnValue({
       defaultSources: {
         sourceA: { name: "Source A", path: "/source/A", description: "Example source A" },
       },
@@ -220,9 +220,9 @@ describe("SettingsMedia", () => {
     renderComponent();
     await user.click(screen.getByTestId("source-actions-edit-sourceB"));
 
-    expect(screen.getByText("Add Custom Media Source")).toBeInTheDocument();
-    expect(screen.getByLabelText("Source Name")).toHaveValue("Source B");
+    expect(screen.getByText("Edit Media Source")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Source Name/)).toHaveValue("Source B");
     expect(screen.getByLabelText("Description")).toHaveValue("Example source B (Custom)");
-    expect(screen.getByLabelText("Folder Path")).toHaveValue("/source/B");
+    expect(screen.getByLabelText(/^Folder Path/)).toHaveValue("/source/B");
   });
 });

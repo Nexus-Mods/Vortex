@@ -11,12 +11,13 @@ vi.mock("../hooks/GameMediaHook", () => ({
   default: vi.fn(),
 }));
 
-const { dispatch, mockUseDispatch } = vi.hoisted(() => {
+const { dispatch, mockUseDispatch, state } = vi.hoisted(() => {
   const dispatch = vi.fn();
 
   return {
     dispatch,
     mockUseDispatch: vi.fn(() => dispatch),
+    state: { settings: { interface: { alwaysCompactHeaders: false } } },
   };
 });
 
@@ -26,6 +27,7 @@ vi.mock("react-redux", async (importOriginal) => {
   return {
     ...(actual as object),
     useDispatch: mockUseDispatch,
+    useSelector: (selector: (s: unknown) => unknown) => selector(state),
   };
 });
 
@@ -139,6 +141,7 @@ describe("MediaPage", () => {
         videos: { name: "Videos", path: "/videos" },
       },
       items,
+      bySource: { screenshots: [items[0]], videos: [items[1]] },
     });
 
     renderComponent();
@@ -188,6 +191,9 @@ describe("MediaPage", () => {
         screenshots: { name: "Screenshots", path: "/screenshots" },
       },
       items: [item],
+      bySource: { screenshots: [item] },
+      pageItems: [item],
+      total: 1,
     });
 
     const user = userEvent.setup();
