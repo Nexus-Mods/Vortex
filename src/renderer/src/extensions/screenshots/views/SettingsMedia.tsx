@@ -144,7 +144,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
         {t("Add custom source")}
       </Button>
 
-      {items?.length && disabledSources.length === 0 && orphans.length > 0 && (
+      {!!items?.length && disabledSources.length === 0 && orphans.length > 0 && (
         <div className="flex items-center gap-3">
           <Typography appearance="subdued" typographyType="body-sm">
             {t("{{count}} mod tags refer to media that is no longer in your sources.", {

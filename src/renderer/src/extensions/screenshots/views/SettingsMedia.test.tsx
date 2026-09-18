@@ -14,9 +14,16 @@ const { dispatch, mockUseDispatch, mockUseSelector, selectorState } = vi.hoisted
   const selectorState = {
     persistent: {
       game_media: {
+        sources: {},
+        modTags: {},
         disabledSources: {
           "game-1": [] as string[],
         },
+      },
+    },
+    session: {
+      game_media: {
+        items: [] as GameMediaItem[],
       },
     },
   };
@@ -51,6 +58,7 @@ vi.mock("../hooks/GameMediaSourcesHook", () => ({
 
 import { deleteGameMediaSource, setGameMediaSourceEnabled } from "../actions/persistent";
 import useGameMediaSources from "../hooks/GameMediaSourcesHook";
+import type { GameMediaItem } from "../util/mediaTypes";
 
 const mockedUseGameMediaSources = vi.mocked(useGameMediaSources);
 

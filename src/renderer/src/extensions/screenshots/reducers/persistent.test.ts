@@ -333,3 +333,124 @@ describe("setGameMediaModTags", () => {
     expect(result.modTags.game2.media2.length).toEqual(1);
   });
 });
+
+describe("clearGameMediaModTags", () => {
+  const tag = (id: string): GameMediaModTag => ({
+    id,
+    name: `Mod ${id}`,
+    x: 0.5,
+    y: 0.5,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  });
+
+  it("removes only the listed media", () => {
+    const input: IGameMediaPersistentState = {
+      sources: {},
+      modTags: {
+        testGame: {
+          "sourceA::gone.png": [tag("1")],
+          "sourceA::kept.png": [tag("2")],
+        },
+      },
+      disabledSources: {},
+    };
+
+    const result = persistentReducer.reducers["CLEAR_GAME_MEDIA_MOD_TAGS"](input, {
+      gameId: "testGame",
+      mediaIds: ["sourceA::gone.png"],
+    });
+
+    expect(result.modTags.testGame["sourceA::gone.png"]).toBeUndefined();
+    expect(result.modTags.testGame["sourceA::kept.png"]).toEqual([tag("2")]);
+  });
+
+  it("leaves other games untouched", () => {
+    const input: IGameMediaPersistentState = {
+      sources: {},
+      modTags: {
+        testGame: { "sourceA::gone.png": [tag("1")] },
+        otherGame: { "sourceB::keep.png": [tag("2")] },
+      },
+      disabledSources: {},
+    };
+
+    const result = persistentReducer.reducers["CLEAR_GAME_MEDIA_MOD_TAGS"](input, {
+      gameId: "testGame",
+      mediaIds: ["sourceA::gone.png"],
+    });
+
+    expect(result.modTags.otherGame["sourceB::keep.png"]).toEqual([tag("2")]);
+  });
+
+  it("drops the game entry once its last tags are cleared", () => {
+    const input: IGameMediaPersistentState = {
+      sources: {},
+      modTags: {
+        testGame: {
+          "sourceA::one.png": [tag("1")],
+          "sourceA::two.png": [tag("2")],
+        },
+        otherGame: { "sourceB::keep.png": [tag("3")] },
+      },
+      disabledSources: {},
+    };
+
+    const result = persistentReducer.reducers["CLEAR_GAME_MEDIA_MOD_TAGS"](input, {
+      gameId: "testGame",
+      mediaIds: ["sourceA::one.png", "sourceA::two.png"],
+    });
+
+    expect(result.modTags.testGame).toBeUndefined();
+    expect(Object.keys(result.modTags)).toEqual(["otherGame"]);
+  });
+
+  it("returns the state unchanged when the game has no tags", () => {
+    const input: IGameMediaPersistentState = {
+      sources: {},
+      modTags: { otherGame: { "sourceB::keep.png": [tag("1")] } },
+      disabledSources: {},
+    };
+
+    const result = persistentReducer.reducers["CLEAR_GAME_MEDIA_MOD_TAGS"](input, {
+      gameId: "testGame",
+      mediaIds: ["sourceA::gone.png"],
+    });
+
+    expect(result).toBe(input);
+  });
+
+  it("ignores media ids that are not present", () => {
+    const input: IGameMediaPersistentState = {
+      sources: {},
+      modTags: { testGame: { "sourceA::kept.png": [tag("1")] } },
+      disabledSources: {},
+    };
+
+    const result = persistentReducer.reducers["CLEAR_GAME_MEDIA_MOD_TAGS"](input, {
+      gameId: "testGame",
+      mediaIds: ["sourceA::never-existed.png"],
+    });
+
+    expect(result.modTags.testGame["sourceA::kept.png"]).toEqual([tag("1")]);
+  });
+
+  it("does not mutate the previous state", () => {
+    const input: IGameMediaPersistentState = {
+      sources: {},
+      modTags: {
+        testGame: {
+          "sourceA::gone.png": [tag("1")],
+          "sourceA::kept.png": [tag("2")],
+        },
+      },
+      disabledSources: {},
+    };
+
+    persistentReducer.reducers["CLEAR_GAME_MEDIA_MOD_TAGS"](input, {
+      gameId: "testGame",
+      mediaIds: ["sourceA::gone.png"],
+    });
+
+    expect(input.modTags.testGame["sourceA::gone.png"]).toEqual([tag("1")]);
+  });
+});

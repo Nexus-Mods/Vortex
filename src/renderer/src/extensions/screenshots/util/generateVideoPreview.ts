@@ -13,11 +13,10 @@ export default async function generateVideoPreview(
   mp4Path: string,
   id: string,
 ): Promise<string | undefined> {
-  const safeId = id.replace(/[<>:"/\\|?*]+/g, "_");
   if (!hasFfmpeg()) return undefined;
   const baseDir = previewDir();
   await fs.mkdir(baseDir, { recursive: true });
-  const outPath = path.join(baseDir, safeId + ".jpg");
+  const outPath = path.join(baseDir, id + ".jpg");
   const alreadyGenerated = await fs
     .access(outPath)
     .then(() => true)
@@ -49,13 +48,14 @@ export default async function generateVideoPreview(
       tmpPath,
     ]);
 
-    proc.on("exit", async (code) => {
+    proc.on("exit", (code) => {
       if (code !== 0) {
         window.api.log("warn", `ffmpeg failed: ${code} ${mp4Path}`);
-        resolve(undefined);
+        return resolve(undefined);
       }
-      await fs.rename(tmpPath, outPath);
-      resolve(outPath);
+      fs.rename(tmpPath, outPath)
+        .then(() => resolve(outPath))
+        .catch(() => resolve(undefined));
     });
     proc.on("error", () => resolve(undefined));
   });

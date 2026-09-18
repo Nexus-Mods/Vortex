@@ -26,6 +26,7 @@ export const orphanedTagIds = (
   gameId: string,
   liveItems: readonly GameMediaItem[],
 ) => {
-  const live = new Set(liveItems?.map((i) => i.id));
+  if (!liveItems) return [];
+  const live = new Set(liveItems.map((i) => i.id));
   return Object.keys(mediaState(state).modTags[gameId] ?? {}).filter((id) => !live.has(id));
 };
