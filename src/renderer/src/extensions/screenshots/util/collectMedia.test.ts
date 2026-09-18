@@ -1,5 +1,6 @@
 import type { Stats } from "fs";
 import fs from "fs/promises";
+import path from "path";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -13,6 +14,7 @@ import type { GameMediaSource } from "./mediaTypes";
 
 vi.mock("./generateVideoPreview", () => ({
   default: vi.fn(),
+  hasFfmpeg: vi.fn(() => true),
 }));
 
 vi.mock("fs/promises", () => ({
@@ -217,6 +219,9 @@ describe("collectMedia", () => {
       [],
     );
 
-    expect(generateVideoPreview).toHaveBeenCalledWith("\\tmp\\media\\video.mp4", "src::video.mp4");
+    expect(generateVideoPreview).toHaveBeenCalledWith(
+      path.join("/tmp/media", "video.mp4"),
+      "src::video.mp4",
+    );
   });
 });
