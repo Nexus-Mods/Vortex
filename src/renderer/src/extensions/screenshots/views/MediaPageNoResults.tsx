@@ -1,5 +1,6 @@
 import { mdiCog, mdiImageRefresh, mdiRefresh } from "@mdi/js";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
 import { NoResults } from "@/ui/components/no_results/NoResults";
@@ -16,18 +17,21 @@ export default function MediaPageNoResults({
   refresh,
   openSettings,
 }: IMediaPageNoResultsProps) {
+  const { t } = useTranslation("media_page");
   return (
     <NoResults
       appearance="default"
       className="pt-8"
       iconPath={mdiImageRefresh}
       isError={false}
-      message="There are no screenshots or videos available based on your filters."
-      title="No media found"
+      message={t("There are no screenshots or videos available based on your filters.")}
+      title={t("No media found")}
     >
       {!!disabledSources && disabledSources.length > 0 && (
         <Typography appearance="strong" brand="info" typographyType="body-sm">
-          There are {disabledSources.length} disabled media sources in your settings.
+          {t("There are {{count}} disabled media sources in your settings.", {
+            count: disabledSources.length,
+          })}
         </Typography>
       )}
 
@@ -40,7 +44,7 @@ export default function MediaPageNoResults({
             leftIconPath={mdiRefresh}
             onClick={refresh}
           >
-            Scan again
+            {t("Scan again")}
           </Button>
         )}
 
@@ -52,7 +56,7 @@ export default function MediaPageNoResults({
             leftIconPath={mdiCog}
             onClick={openSettings}
           >
-            Settings
+            {t("Settings")}
           </Button>
         )}
       </div>

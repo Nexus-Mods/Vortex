@@ -3,7 +3,7 @@ import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { IExtensionApi } from "@/types/api";
+import type { IExtensionApi, IState } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
 import { Switch } from "@/ui/components/form/switch/Switch";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
@@ -11,9 +11,9 @@ import { Typography } from "@/ui/components/typography/Typography";
 
 import { activeGameId } from "../../../util/selectors";
 import { deleteGameMediaSource, setGameMediaSourceEnabled } from "../actions/persistent";
-import useGameMedia from "../hooks/GameMediaHook";
+import useGameMediaSources from "../hooks/GameMediaSourcesHook";
+import * as selectors from "../selectors";
 import type { GameMediaSource } from "../util/mediaTypes";
-import type { IStateWithGameMedia } from "../util/types";
 import SettingsMediaAddSourceModal from "./SettingsMediaAddSourceModal";
 
 interface ISettingsMediaProps {
@@ -29,9 +29,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
   const dispatch = useDispatch();
   const gameId = useSelector(activeGameId);
-  const disabledSources = useSelector(
-    (state: IStateWithGameMedia) => state.persistent.game_media.disabledSources[gameId] ?? [],
-  );
+  const disabledSources = useSelector((state: IState) => selectors.disabledSources(state, gameId));
 
   const onToggleSource = useCallback(
     (sourceId: string) => {
@@ -52,7 +50,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
     setShowAddModal(true);
   };
 
-  const { defaultSources, customSources } = useGameMedia();
+  const { defaultSources, customSources } = useGameMediaSources();
 
   const toggleItem = ([id, source]: [string, GameMediaSource]) => (
     <div className="flex w-max items-center gap-3" key={id}>

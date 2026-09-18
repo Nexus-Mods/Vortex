@@ -176,6 +176,7 @@ export async function init(
         "gamemode_management",
         "extension_manager",
         "health_check",
+        "media_page",
       ],
       defaultNS: "common",
 

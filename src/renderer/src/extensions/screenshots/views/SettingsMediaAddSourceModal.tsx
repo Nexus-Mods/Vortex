@@ -1,5 +1,3 @@
-import { randomUUID } from "crypto";
-
 import { mdiFolderCog } from "@mdi/js";
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
@@ -59,14 +57,19 @@ export default function SettingsMediaAddSourceModal({
       custom: true,
     };
 
-    const newSourceId = existingSource?.id ?? randomUUID();
+    const newSourceId = existingSource?.id ?? crypto.randomUUID();
 
     dispatch(addGameMediaSource(gameId, newSourceId, newSource));
     onCloseWithReset();
   };
 
   return (
-    <Modal isOpen={visible} size="sm" title="Add Custom Media Source" onClose={onCloseWithReset}>
+    <Modal
+      isOpen={visible}
+      size="sm"
+      title={existingSource ? t("Edit Media Source") : t("Add Custom Media Source")}
+      onClose={onCloseWithReset}
+    >
       <form className="flex flex-col gap-2">
         <Input
           required
@@ -89,6 +92,7 @@ export default function SettingsMediaAddSourceModal({
 
         <div className="flex items-end">
           <Input
+            readOnly
             required
             fieldClassName="grow"
             id="media-source-path"

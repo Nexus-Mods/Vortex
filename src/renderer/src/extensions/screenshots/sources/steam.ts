@@ -17,8 +17,8 @@ const STEAM64_OFFSET = 76561197960265728n;
 export async function getSteamMedia(
   gamePath: string,
   knownId?: string | number,
-): Promise<Record<string, MediaSource>> {
-  const res: Record<string, MediaSource> = {};
+): Promise<Record<string, GameMediaSource>> {
+  const res: Record<string, GameMediaSource> = {};
   const steamPathExe = await Steam.getGameStorePath();
   const steamPath = path.resolve(steamPathExe, "..");
   const steamGame = (await Steam.allGames()).find((g) => g.gamePath === gamePath);
@@ -92,8 +92,8 @@ export async function screenshotsFolderBySteamID(
       };
     }
   } catch (err) {
-    if (!(err as Error).message.includes("ENOENT"))
-      console.log("Failed to acccess VDF", { screenshotsVDF, err });
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT")
+      window.api.log("warn", "Failed to acccess VDF", JSON.stringify({ screenshotsVDF, err }));
   }
   return res;
 }
@@ -123,8 +123,12 @@ export async function clipsFolderBySteamID(
       };
     }
   } catch (err) {
-    if (!(err as Error).message.includes("ENOENT"))
-      console.log("Failed to acccess Steam videos folder", { videosFolder, err });
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT")
+      window.api.log(
+        "warn",
+        "Failed to acccess Steam videos folder",
+        JSON.stringify({ videosFolder, err }),
+      );
   }
 
   return res;

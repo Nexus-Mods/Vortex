@@ -1,5 +1,5 @@
 import { mdiCogOutline, mdiOpenInNew, mdiRefresh } from "@mdi/js";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
@@ -29,13 +29,19 @@ interface IMediaPageProps {
 }
 
 export default function MediaPage({ active, api }: IMediaPageProps) {
-  const { t } = useTranslation(["media_page", "common"]);
+  const { t } = useTranslation("media_page");
   const dispatch = useDispatch();
   const [selected, setSelected] = useState<GameMediaItem | null>(null);
   const [tab, setTab] = useState<string>("all");
 
   const { isLoading, isError, error, allSources, items, forceCollect, game, disabledSources } =
     useGameMedia();
+
+  const bySource = useMemo(() => {
+    const acc: Record<string, GameMediaItem[]> = {};
+    for (const item of items ?? []) (acc[item.sourceId] ??= []).push(item);
+    return acc;
+  }, [items]);
 
   const refreshAll = () => void forceCollect();
 
@@ -57,7 +63,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
   }
 
   return (
-    <Page active={active} id="health-check-page" scrollable={false}>
+    <Page active={active} id="media-page" scrollable={false}>
       <PageHeader
         pictogramName="camera"
         subtitle={t("Screenshots and videos from your selected game.")}
@@ -71,7 +77,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             disabled={isLoading}
             leftIconPath={mdiRefresh}
             size="sm"
-            title={"Refresh"}
+            title={t("Refresh")}
             onClick={refreshAll}
           />
 
@@ -81,7 +87,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             data-testid={"open-media-settings"}
             leftIconPath={mdiCogOutline}
             size="sm"
-            title={"Settings"}
+            title={t("Settings")}
             onClick={openSettings}
           />
         </div>
@@ -114,7 +120,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               typographyType="body-sm"
             >
               {t("All screenshots and videos for {{game}}.", {
-                game: game.name,
+                game: game?.name,
               })}
             </Typography>
 
@@ -133,14 +139,13 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               isError={isError}
               isLoading={isLoading}
               skeletonCount={12}
-              SkeletonTile={() => <MediaListItemSkeleton />}
+              SkeletonTile={MediaListItemSkeleton}
             >
               {items?.map((i) => (
                 <MediaListItem
                   game={game}
                   item={i}
                   key={`${i.sourceId}:${i.name}`}
-                  t={t}
                   onClick={() => setSelected(i)}
                 />
               ))}
@@ -167,10 +172,10 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                       brand="neutral"
                       leftIconPath={mdiOpenInNew}
                       size="sm"
-                      title="Open Folder"
-                      onClick={() => window.api.shell.openUrl(allSources[k].path)}
+                      title={t("Open Folder")}
+                      onClick={() => window.api.shell.openFile(allSources[k].path)}
                     >
-                      Open Folder
+                      {t("Open Folder")}
                     </Button>
                   </div>
 
@@ -180,23 +185,21 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                     customNoResults={
                       <MediaPageNoResults openSettings={openSettings} refresh={refreshAll} />
                     }
-                    entityCount={items?.filter((i) => i.sourceId === k).length ?? 0}
+                    entityCount={bySource[k]?.length ?? 0}
                     errorTitle={error?.message}
                     isError={isError}
                     isLoading={isLoading}
                     skeletonCount={12}
+                    SkeletonTile={MediaListItemSkeleton}
                   >
-                    {items
-                      ?.filter((i) => i.sourceId === k)
-                      .map((i) => (
-                        <MediaListItem
-                          game={game}
-                          item={i}
-                          key={`${i.sourceId}:${i.name}`}
-                          t={t}
-                          onClick={() => setSelected(i)}
-                        />
-                      ))}
+                    {bySource[k]?.map((i) => (
+                      <MediaListItem
+                        game={game}
+                        item={i}
+                        key={`${i.sourceId}:${i.name}`}
+                        onClick={() => setSelected(i)}
+                      />
+                    ))}
                   </Listing>
                 </TabPanel>
               ))}

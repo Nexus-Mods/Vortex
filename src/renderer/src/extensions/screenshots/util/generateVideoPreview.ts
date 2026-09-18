@@ -4,10 +4,17 @@ import path from "path";
 
 import getVortexPath from "@/util/getVortexPath";
 
-export default async function generateVideoPreview(mp4Path: string, id: string) {
+let ffmpegAvailable: boolean | undefined;
+
+export const hasFfmpeg = () =>
+  (ffmpegAvailable ??= spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0);
+
+export default async function generateVideoPreview(
+  mp4Path: string,
+  id: string,
+): Promise<string | undefined> {
   const safeId = id.replace(/[<>:"/\\|?*]+/g, "_");
-  const ok = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0;
-  if (!ok) return undefined;
+  if (!hasFfmpeg()) return undefined;
   const baseDir = path.join(getVortexPath("temp"), "videopreviews");
   await fs.mkdir(baseDir, { recursive: true });
   const outPath = path.join(baseDir, safeId + ".jpg");
@@ -16,7 +23,7 @@ export default async function generateVideoPreview(mp4Path: string, id: string) 
     .then(() => true)
     .catch(() => false);
   if (alreadyGenerated) return outPath;
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<string | undefined>((resolve) => {
     const proc = spawn("ffmpeg", [
       "-y",
       "-hide_banner",
@@ -42,6 +49,6 @@ export default async function generateVideoPreview(mp4Path: string, id: string) 
       window.api.log("warn", `ffmpeg failed: ${code} ${mp4Path}`);
       resolve(undefined);
     });
-    proc.on("error", reject);
+    proc.on("error", () => resolve(undefined));
   });
 }

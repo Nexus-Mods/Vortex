@@ -19,7 +19,7 @@ interface IModTagsIndicatorProps {
 
 export default function ModTagIndicator({ x, y, mod, gameId, mediaId }: IModTagsIndicatorProps) {
   const dispatch = useDispatch();
-  const baseClasses = ["bg-primary", "size-4", "rounded-full", "border-2", "border-white"];
+  const baseClasses = ["size-4", "rounded-full", "border-2", "border-white"];
   if (mod) baseClasses.push("bg-primary");
   else baseClasses.push("bg-info-moderate");
 

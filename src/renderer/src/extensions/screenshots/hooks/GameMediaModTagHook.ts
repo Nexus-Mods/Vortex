@@ -6,8 +6,8 @@ import { getGame, nexusGameId } from "@/util/api";
 
 import { activeGameId } from "../../../util/selectors";
 import * as actions from "../actions/persistent";
+import * as selectors from "../selectors";
 import type { GameMediaModTag } from "../util/mediaTypes";
-import type { IStateWithGameMedia } from "../util/types";
 
 export default function useGameMediaModTag(mediaItemId: string) {
   const [isAddingTag, setIsAddingTag] = useState<boolean>(false);
@@ -25,9 +25,7 @@ export default function useGameMediaModTag(mediaItemId: string) {
       domainName,
     };
   });
-  const tags = useSelector(
-    (state: IStateWithGameMedia) => state.persistent.game_media.modTags?.[gameId]?.[mediaItemId],
-  );
+  const tags = useSelector((state: IState) => selectors.modTags(state, gameId, mediaItemId));
 
   const setTags = useCallback(
     (tags: GameMediaModTag[]) => {

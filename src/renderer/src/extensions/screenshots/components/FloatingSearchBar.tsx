@@ -1,6 +1,8 @@
 import { mdiContentSave, mdiRefresh } from "@mdi/js";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
+import type { IExtensionApi } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
 import { Input } from "@/ui/components/form/input/Input";
 import { Listing } from "@/ui/components/listing/Listing";
@@ -19,6 +21,7 @@ export default function FloatingSearchBar({
   containerRef,
   onClose,
   onSelect,
+  api,
 }: {
   visible: boolean;
   leftPct: number; // 0..1
@@ -27,7 +30,9 @@ export default function FloatingSearchBar({
   initial?: string;
   onClose: () => void;
   onSelect: (result: IModResult, comment: string) => void;
+  api: IExtensionApi;
 }) {
+  const { t } = useTranslation("media_page");
   const [q, setQ] = useState("");
   const [selectedMod, setSelectedMod] = useState<IModResult | null>(null);
   const [comment, setComment] = useState("");
@@ -35,7 +40,7 @@ export default function FloatingSearchBar({
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties | null>(null);
   const [placeAbove, setPlaceAbove] = useState(false);
 
-  const { isLoading, isError, error, results } = useNexusModsSearch(q, {
+  const { isLoading, isError, error, results } = useNexusModsSearch(q, api, {
     tryToUseLogin: true,
     debounceDelayMs: 500,
   });
@@ -121,7 +126,7 @@ export default function FloatingSearchBar({
             autoFocus
             className={`mb-0 w-full border px-2 py-1 ${placeAbove ? "rounded-b-sm border-t-0" : "rounded-t-sm border-b-0"}`}
             disabled={!!selectedMod}
-            placeholder="Search for mods..."
+            placeholder={t("Search for mods...")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
@@ -146,7 +151,7 @@ export default function FloatingSearchBar({
 
             <Input
               autoFocus
-              placeholder="Optional comment"
+              placeholder={t("Optional comment")}
               type="text"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -167,7 +172,7 @@ export default function FloatingSearchBar({
                   setComment("");
                 }}
               >
-                Change mod
+                {t("Change mod")}
               </Button>
 
               <Button
@@ -180,7 +185,7 @@ export default function FloatingSearchBar({
                   if (selectedMod) onSelect(selectedMod, comment);
                 }}
               >
-                Save
+                {t("Save")}
               </Button>
             </div>
           </div>

@@ -1,0 +1,62 @@
+import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+
+import type { IState } from "@/types/api";
+import { activeGameId, currentGameDiscovery, gameById } from "@/util/selectors";
+
+import * as selectors from "../selectors";
+import type { GameMediaSource } from "../util/mediaTypes";
+import sourcesByDiscovery from "../util/sourcesByDiscovery";
+
+export default function useGameMediaSources() {
+  const gameId = useSelector(activeGameId);
+  const game = useSelector((state: IState) => gameById(state, gameId));
+  const discovery = useSelector(currentGameDiscovery);
+  const [defaultSources, setDefaultSources] = useState<Record<string, GameMediaSource>>({});
+
+  const customSources: Record<string, GameMediaSource> | undefined = useSelector((state: IState) =>
+    selectors.customSources(state, gameId),
+  );
+
+  const disabledSources: string[] = useSelector((state: IState) =>
+    selectors.disabledSources(state, gameId),
+  );
+
+  const allSources: Record<string, GameMediaSource> = useMemo(
+    () => ({ ...defaultSources, ...customSources }),
+    [defaultSources, customSources],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    if (!gameId || !discovery) {
+      setDefaultSources({});
+      return;
+    }
+
+    const loadDefault = async () => {
+      try {
+        const res = await sourcesByDiscovery(game, discovery);
+        if (!active) return;
+        setDefaultSources(res ?? {});
+      } catch {
+        if (!active) return;
+        setDefaultSources({});
+      }
+    };
+
+    void loadDefault();
+
+    return () => {
+      active = false;
+    };
+  }, [gameId, discovery, game]);
+
+  return {
+    allSources,
+    defaultSources,
+    customSources,
+    disabledSources,
+  };
+}

@@ -1,8 +1,11 @@
 import fs from "fs/promises";
 import path from "path";
 
-import generateVideoPreview from "./generateVideoPreview";
+import generateVideoPreview, { hasFfmpeg } from "./generateVideoPreview";
 import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
+
+const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tga"]);
+const VIDEO_EXT = new Set([".mp4", ".webm", ".mkv", ".mpd"]);
 
 export default async function collectMedia(
   sources: Record<string, GameMediaSource>,
@@ -15,10 +18,8 @@ export default async function collectMedia(
   );
 
   for (const [sourceId, source] of activeSources) {
-    // console.log("Collecting images from", sourceId, source);
     if (source.discoverFn) {
       const media = await source.discoverFn(source.path);
-      // console.log("Collected media", media);
       res = res.concat(media);
       continue;
     }
@@ -28,7 +29,7 @@ export default async function collectMedia(
       const files = await fs.readdir(source.path, { withFileTypes: true });
       let images = files.filter(
         (f) =>
-          f.isFile() && [".jpg", ".png", ".gif", ".bmp", ".mp4"].includes(path.extname(f.name)),
+          f.isFile() && [...IMAGE_EXT, ...VIDEO_EXT].includes(path.extname(f.name).toLowerCase()),
       );
       if (source.filterFn && typeof source.filterFn === "function")
         images = images.filter((i) => source.filterFn(i.name));
@@ -36,8 +37,9 @@ export default async function collectMedia(
         images.map(async (i) => {
           const imagePath = path.join(source.path, i.name);
           const stats = await fs.stat(imagePath);
+          const ext = path.extname(i.name).toLowerCase();
           let thumbnailPath: string | undefined = undefined;
-          if (path.extname(i.name) === ".mp4") {
+          if (hasFfmpeg() && ext === ".mp4") {
             thumbnailPath = await generateVideoPreview(imagePath, `${sourceId}::${i.name}`);
           }
           return {
@@ -45,7 +47,7 @@ export default async function collectMedia(
             sourceId,
             name: i.name,
             path: imagePath,
-            type: [".mp4", ".mpd"].includes(path.extname(i.name)) ? "video" : "image",
+            type: VIDEO_EXT.has(ext) ? "video" : "image",
             size: stats.size,
             createdAt: stats.birthtime,
             modifiedAt: stats.mtime,
@@ -53,10 +55,9 @@ export default async function collectMedia(
           };
         }),
       );
-      // console.log("Found images", mappedImages, source.name);
       res = res.concat(mappedImages);
     } catch (e) {
-      if ((e as Error & { code?: string })?.code === "ENOENT") continue;
+      if ((e as NodeJS.ErrnoException)?.code === "ENOENT") continue;
       else
         window.api.log(
           "warn",
@@ -66,5 +67,5 @@ export default async function collectMedia(
     }
   }
 
-  return res.sort((a, b) => b.createdAt?.getTime() - a.createdAt?.getTime());
+  return res.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
 }

@@ -1,6 +1,6 @@
 import { mdiCancel, mdiCloudUpload, mdiOpenInNew, mdiTagPlus, mdiTagRemove } from "@mdi/js";
-import type { TFunction } from "i18next";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
@@ -13,10 +13,9 @@ import { bytesToString } from "@/util/util";
 import type { GameMediaItem, GameMediaModTag, GameMediaSource } from "../util/mediaTypes";
 
 interface IMediaViewSingleDetailsProps {
-  t: TFunction;
   entry: GameMediaItem;
   source: GameMediaSource;
-  tags: GameMediaModTag[];
+  tags: readonly GameMediaModTag[];
   isAddingTag: boolean;
   removeTag: (id: string) => void;
   startUpload: () => void;
@@ -24,7 +23,6 @@ interface IMediaViewSingleDetailsProps {
 }
 
 export default function MediaViewSingleDetails({
-  t,
   entry,
   source,
   tags,
@@ -33,6 +31,8 @@ export default function MediaViewSingleDetails({
   toggleAddingTag,
   removeTag,
 }: IMediaViewSingleDetailsProps) {
+  const { t } = useTranslation("media_page");
+
   const toolbarActions: IToolbarAction[] = [
     {
       label: "Upload",
@@ -57,7 +57,7 @@ export default function MediaViewSingleDetails({
         className="mb-2 border-b border-translucent-subdued"
         typographyType="heading-xs"
       >
-        Details
+        {t("Details")}
       </Typography>
 
       <div className="grid grid-cols-[20%_80%] gap-4">
@@ -134,7 +134,7 @@ export default function MediaViewSingleDetails({
           className="my-2 border-b border-translucent-subdued"
           typographyType="heading-xs"
         >
-          Featured Mods
+          {t("Featured Mods")}
         </Typography>
 
         <Typography className="max-h-48 overflow-auto" typographyType="body-sm">

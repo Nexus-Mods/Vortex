@@ -1,6 +1,6 @@
-import { reducerFor } from "@/extensions/health_check/reducers/reducerFor";
 import type { IReducerSpec } from "@/types/api";
 
+import { reducerFor } from "../../../util/reducerFor";
 import * as actions from "../actions/persistent";
 import type { GameMediaSource, GameMediaModTag } from "../util/mediaTypes";
 
@@ -25,7 +25,7 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
       if (enabled && newArray.includes(sourceId)) newArray = newArray.filter((s) => s !== sourceId);
       // To disable a source, add it to the array
       if (!enabled && !newArray.includes(sourceId)) newArray = [sourceId, ...newArray];
-      return { ...state, disabledSources: { [gameId]: newArray } };
+      return { ...state, disabledSources: { ...state.disabledSources, [gameId]: newArray } };
     }),
     on(actions.addGameMediaSource, (state, payload) => {
       const { gameId, sourceId, source } = payload;
@@ -43,7 +43,7 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
     on(actions.deleteGameMediaModTag, (state, payload) => {
       const { gameId, modId, mediaId } = payload;
       const currentTags = state.modTags[gameId]?.[mediaId];
-      if (!currentTags) return;
+      if (!currentTags) return state;
       const newTags = currentTags.filter((t) => t.id !== modId);
       return {
         ...state,

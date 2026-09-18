@@ -20,12 +20,12 @@ export default async function sourcesByDiscovery(
   }
 
   const known = getKnownFolders(gameId, discovery);
-  // console.log("Known folders", { known, gameId });
   if (known !== undefined) Object.assign(res, known);
 
   switch (store) {
     case "steam": {
-      const steamMedia = await getSteamMedia(gamePath, String(game.details?.steamAppId));
+      const steamAppId = game.details?.steamAppId ? String(game.details?.steamAppId) : undefined;
+      const steamMedia = await getSteamMedia(gamePath, steamAppId);
       Object.assign(res, steamMedia);
       break;
     }

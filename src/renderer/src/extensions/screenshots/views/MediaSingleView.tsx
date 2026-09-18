@@ -1,5 +1,9 @@
+import { pathToFileURL } from "url";
+
 import { mdiArrowLeft, mdiClose, mdiOpenInNew } from "@mdi/js";
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useDispatch } from "react-redux";
 
 import type { IExtensionApi } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
@@ -8,6 +12,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 
+import { deleteGameMediaModTag } from "../actions/persistent";
 import FloatingSearchBar from "../components/FloatingSearchBar";
 import MediaViewSingleDetails from "../components/MediaSingleViewDetails";
 import ModTagIndicator from "../components/ModTagIndicator";
@@ -29,7 +34,8 @@ export default function MediaSingleView({
   entry,
   source,
 }: IMediaSingleViewProps) {
-  const t = api.translate;
+  const { t } = useTranslation("media_page");
+  const dispatch = useDispatch();
 
   const {
     containerRef,
@@ -72,6 +78,13 @@ export default function MediaSingleView({
     });
   };
 
+  const removeTag = (modId: string) => {
+    if (!entry) return;
+    dispatch(deleteGameMediaModTag(gameId, entry.id, modId));
+  };
+
+  const mediaSrc = useMemo(() => pathToFileURL(entry.path).toString(), [entry.path]);
+
   return (
     <Page active={active} id="media-details-page" scrollable={false}>
       <PageHeader
@@ -98,14 +111,14 @@ export default function MediaSingleView({
             ref={containerRef}
             onClick={onImageClick}
           >
-            {entry.type === "image" && <img className="w-full" src={entry.path} />}
+            {entry.type === "image" && <img className="w-full" src={mediaSrc} />}
 
             {entry.type === "video" && (
               <video
                 controls
                 className="min-h-130 w-full"
                 ref={playerRef}
-                src={entry.path}
+                src={mediaSrc}
                 onError={() =>
                   api.sendNotification({
                     message: "Video failed to load",
@@ -132,6 +145,7 @@ export default function MediaSingleView({
             {isAddingTag && pendingCoords && (
               <FloatingSearchBar
                 visible
+                api={api}
                 containerRef={containerRef}
                 leftPct={pendingCoords.x}
                 topPct={pendingCoords.y}
@@ -172,10 +186,9 @@ export default function MediaSingleView({
         <MediaViewSingleDetails
           entry={entry}
           isAddingTag={isAddingTag}
-          removeTag={(id: string) => setTags(tags.filter((t) => t.id !== id))}
+          removeTag={removeTag}
           source={source}
           startUpload={() => setUploadModalVisible(true)}
-          t={t}
           tags={tags}
           toggleAddingTag={toggleAddingTag}
         />
@@ -184,12 +197,13 @@ export default function MediaSingleView({
       <Modal
         showCloseButton
         isOpen={uploadModalVisible}
-        title="Upload to Nexus Mods"
+        title={t("Upload to Nexus Mods")}
         onClose={() => setUploadModalVisible(false)}
       >
         <Typography appearance="subdued" className="mb-2">
-          It is not currently possible to upload to Nexus Mods in one click, however, Vortex can
-          open both the folder containing this file and the image upload page.
+          {t(
+            "It is not currently possible to upload to Nexus Mods in one click, however, Vortex can open both the folder containing this file and the image upload page.",
+          )}
         </Typography>
 
         <div className="mt-2 flex flex-wrap gap-2">
@@ -203,7 +217,7 @@ export default function MediaSingleView({
               window.api.shell.openUrl(`https://www.nexusmods.com/${domainName}/images/add`);
             }}
           >
-            Continue
+            {t("Continue")}
           </Button>
 
           <Button
@@ -212,7 +226,7 @@ export default function MediaSingleView({
             leftIconPath={mdiClose}
             onClick={() => setUploadModalVisible(false)}
           >
-            Cancel
+            {t("Cancel")}
           </Button>
         </div>
       </Modal>

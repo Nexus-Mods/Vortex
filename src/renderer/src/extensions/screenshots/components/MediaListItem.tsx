@@ -1,22 +1,23 @@
 import { mdiPlayCircleOutline } from "@mdi/js";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameTileImageURL";
 import type { IGameStored } from "@/types/api";
 import { Icon } from "@/ui/components/icon/Icon";
-import type { TFunction } from "@/util/i18n";
 import relativeTime from "@/util/relativeTime";
 
 import type { GameMediaItem } from "../util/mediaTypes";
 
 interface IMediaListItemProps {
   item: GameMediaItem;
-  game: IGameStored;
+  game: IGameStored | undefined;
   onClick: () => void;
-  t: TFunction;
 }
 
-export default function MediaListItem({ item, onClick, t, game }: IMediaListItemProps) {
+export default function MediaListItem({ item, onClick, game }: IMediaListItemProps) {
+  const { t } = useTranslation("media_page");
+
   const fallbackURL = "assets/images/ad-banner-large.png";
 
   const [src, setSrc] = useState(() => {
@@ -36,7 +37,9 @@ export default function MediaListItem({ item, onClick, t, game }: IMediaListItem
     >
       <img
         className="aspect-video object-cover object-right"
+        decoding="async"
         key={item.id}
+        loading="lazy"
         src={src}
         onError={onError}
       />

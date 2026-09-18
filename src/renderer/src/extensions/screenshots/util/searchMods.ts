@@ -35,13 +35,14 @@ query mods(
       thumbnailBlurredUrl
     }
   }
-}
-Variables`;
+}`;
 
 export default async function searchMods(
   query: string,
   gameDomain: string,
-  loginSession?: { token: string },
+  token: string | undefined,
+  showAdult: boolean,
+  signal: AbortController["signal"],
 ): Promise<IModResult[]> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -49,13 +50,14 @@ export default async function searchMods(
     "Application-Name": "Vortex",
     "Application-Version": getApplication().version,
   };
-  if (loginSession && loginSession.token) headers["Authorization"] = `Bearer ${loginSession.token}`;
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const filter = {
     op: "AND",
     name: { value: query, op: "WILDCARD" },
     gameDomainName: { value: gameDomain, op: "EQUALS" },
     status: { value: "published", op: "EQUALS" },
+    ...(showAdult ? {} : { adult: { value: "false", op: "EQUALS" } }),
   };
 
   const sort = {
@@ -67,6 +69,7 @@ export default async function searchMods(
       method: "POST",
       headers,
       body: JSON.stringify({ query: MODS_QUERY, variables: { filter, sort } }),
+      signal,
     });
     if (!res.ok) {
       if (res.status === 401)
@@ -74,11 +77,11 @@ export default async function searchMods(
       throw new Error(`Mod search failed: ${res.status} ${res.statusText}`);
     }
     const json: IModsQueryResult = (await res.json()) as IModsQueryResult;
-    console.log("Mod search res", json, filter);
     if (json.errors || !json.data) throw new Error("Mod search failed with Graph QL errors");
     return json.data.mods.nodes;
   } catch (e: unknown) {
-    console.log(e);
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    window.api.log("warn", "Failed to search for mods", e instanceof Error ? e.message : String(e));
     throw e;
   }
 }

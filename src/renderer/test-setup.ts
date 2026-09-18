@@ -60,6 +60,9 @@ if (typeof window !== "undefined" && !(window as any).api) {
       getVortexPaths: () => Promise.resolve(testPaths),
     },
     window: { getId: () => Promise.resolve(0) },
+    selectDir: vi.fn().mockResolvedValue(""),
+    sendNotification: vi.fn(),
+    shell: { openUrl: vi.fn(), openFile: vi.fn(), showItemInFolder: vi.fn() },
   };
 }
 
@@ -86,6 +89,14 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
     removeListener: vi.fn(),
     dispatchEvent: vi.fn(),
   });
+}
+
+if (typeof globalThis.ResizeObserver !== "function") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
 }
 
 // Initialize once per (isolated) test file so getVortexPath returns the stub paths above.
