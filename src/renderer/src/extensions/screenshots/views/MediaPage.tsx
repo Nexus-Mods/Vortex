@@ -1,5 +1,5 @@
 import { mdiCogOutline, mdiOpenInNew, mdiRefresh } from "@mdi/js";
-import React, { useMemo, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
@@ -7,6 +7,7 @@ import { setOpenMainPage, setSettingsPage } from "@/actions";
 import { type IExtensionApi } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
 import { Listing } from "@/ui/components/listing/Listing";
+import { Pagination } from "@/ui/components/pagination/Pagination";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
@@ -33,15 +34,24 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
   const dispatch = useDispatch();
   const [selected, setSelected] = useState<GameMediaItem | null>(null);
   const [tab, setTab] = useState<string>("all");
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { isLoading, isError, error, allSources, items, forceCollect, game, disabledSources } =
-    useGameMedia();
-
-  const bySource = useMemo(() => {
-    const acc: Record<string, GameMediaItem[]> = {};
-    for (const item of items ?? []) (acc[item.sourceId] ??= []).push(item);
-    return acc;
-  }, [items]);
+  const {
+    isLoading,
+    isError,
+    error,
+    allSources,
+    items,
+    forceCollect,
+    game,
+    disabledSources,
+    bySource,
+    pageItems,
+    page,
+    setPage,
+    total,
+    pageSize,
+  } = useGameMedia(tab);
 
   const refreshAll = () => void forceCollect();
 
@@ -93,7 +103,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
         </div>
       </PageHeader>
 
-      <PageScroll className="space-y-2 p-6">
+      <PageScroll className="space-y-2 p-6" ref={scrollRef}>
         {/* The actual page content */}
         <TabProvider tab={tab} tabListId="game-media-tabs" onSetSelectedTab={setTab}>
           <TabBar className="mb-2">
@@ -103,12 +113,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               Object.entries(allSources)
                 .filter(([k]) => !disabledSources?.includes(k))
                 .map(([k, s]) => (
-                  <TabButton
-                    count={items?.filter((i) => i.sourceId === k).length ?? 0}
-                    key={k}
-                    name={s.name}
-                    panelId={k}
-                  />
+                  <TabButton count={bySource[k]?.length ?? 0} key={k} name={s.name} panelId={k} />
                 ))}
           </TabBar>
 
@@ -138,10 +143,10 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               errorTitle={error?.message}
               isError={isError}
               isLoading={isLoading}
-              skeletonCount={12}
+              skeletonCount={24}
               SkeletonTile={MediaListItemSkeleton}
             >
-              {items?.map((i) => (
+              {pageItems?.map((i) => (
                 <MediaListItem
                   game={game}
                   item={i}
@@ -189,10 +194,10 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                     errorTitle={error?.message}
                     isError={isError}
                     isLoading={isLoading}
-                    skeletonCount={12}
+                    skeletonCount={24}
                     SkeletonTile={MediaListItemSkeleton}
                   >
-                    {bySource[k]?.map((i) => (
+                    {pageItems?.map((i) => (
                       <MediaListItem
                         game={game}
                         item={i}
@@ -204,6 +209,14 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                 </TabPanel>
               ))}
         </TabProvider>
+
+        <Pagination
+          currentPage={page}
+          recordsPerPage={pageSize}
+          scrollRef={scrollRef}
+          totalRecords={total}
+          onPaginationUpdate={setPage}
+        />
       </PageScroll>
     </Page>
   );

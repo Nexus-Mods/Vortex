@@ -48,6 +48,12 @@ const baseMediaState: ReturnType<typeof useGameMedia> = {
   discovery: {},
   customSources: {},
   defaultSources: {},
+  bySource: {},
+  pageItems: [],
+  page: 1,
+  setPage: vi.fn(),
+  total: 0,
+  pageSize: 24,
 };
 
 vi.mock("../components/MediaListItem", () => ({

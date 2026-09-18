@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector, useStore } from "react-redux";
 
 import type { IState } from "@/types/api";
@@ -11,7 +11,9 @@ import type { GameMediaItem } from "../util/mediaTypes";
 import useGameMediaSources from "./GameMediaSourcesHook";
 import useGameMediaWatcher from "./GameMediaWatcherHook";
 
-export default function useGameMedia() {
+const PAGE_SIZE = 24;
+
+export default function useGameMedia(tab: string) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -43,9 +45,9 @@ export default function useGameMedia() {
     [allSources, items, setItems],
   );
 
-  useGameMediaWatcher(allSources, disabledSources, (id: string) => {
-    void rescanSource(id);
-  });
+  const onSourceChanged = useCallback((id: string) => void rescanSource(id), [rescanSource]);
+
+  useGameMediaWatcher(allSources, disabledSources, onSourceChanged);
 
   useEffect(() => {
     if (!gameId || !discovery) return;
@@ -86,6 +88,30 @@ export default function useGameMedia() {
     }
   };
 
+  // Pagination
+  const bySource = useMemo(() => {
+    const acc: Record<string, GameMediaItem[]> = {};
+    for (const item of items ?? []) (acc[item.sourceId] ??= []).push(item);
+    return acc;
+  }, [items]);
+
+  const [pages, setPages] = useState<Record<string, number>>({});
+  const page = pages[tab] ?? 1;
+
+  const total = tab === "all" ? (items?.length ?? 0) : (bySource[tab]?.length ?? 0);
+
+  const pageItems = useMemo(() => {
+    const source = tab === "all" ? (items ?? []) : (bySource[tab] ?? []);
+    return source.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [items, bySource, tab, page]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (page > maxPage) setPages((p) => ({ ...p, [tab]: maxPage }));
+  }, [items, bySource, tab, page, total]);
+
+  const setPage = useCallback((next: number) => setPages((p) => ({ ...p, [tab]: next })), [tab]);
+
   return {
     isLoading,
     isError,
@@ -98,5 +124,11 @@ export default function useGameMedia() {
     customSources,
     defaultSources,
     disabledSources,
+    bySource,
+    pageItems,
+    page,
+    setPage,
+    total,
+    pageSize: PAGE_SIZE,
   };
 }
