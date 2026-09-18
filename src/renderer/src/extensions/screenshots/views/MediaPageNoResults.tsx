@@ -9,7 +9,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 interface IMediaPageNoResultsProps {
   refresh?: () => void;
   openSettings?: () => void;
-  disabledSources?: string[];
+  disabledSources?: readonly string[];
 }
 
 export default function MediaPageNoResults({
