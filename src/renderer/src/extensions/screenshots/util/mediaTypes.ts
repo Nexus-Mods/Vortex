@@ -1,3 +1,5 @@
+import type { VDFObject } from "simple-vdf";
+
 export interface GameMediaSource {
   name: string;
   path: string;
@@ -19,14 +21,17 @@ export interface GameMediaItem {
   size?: number;
 }
 
-export interface SteamScreenshotsVDF {
-  screenshots: Record<
-    number,
-    Record<number, { type: number; filename: string; thumbnail: string }>
-  >;
+export interface SteamScreenshotsVDF extends VDFObject {
+  screenshots: Record<string, Record<string, SteamScreenshot>>;
 }
 
-export interface SteamLoginUsersVDF {
+export interface SteamScreenshot extends VDFObject {
+  type: string;
+  filename: string;
+  thumbnail: string;
+}
+
+export interface SteamLoginUsersVDF extends VDFObject {
   users: Record<
     string,
     {
