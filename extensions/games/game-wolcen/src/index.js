@@ -17,7 +17,7 @@ function toWordExp(input) {
 }
 
 function findGame() {
-  return util.steam.findByAppId(APPID.toString()).then((game) => game.gamePath);
+  return util.GameStoreHelper.findByAppId(APPID.toString(), "steam").then((game) => game.gamePath);
 }
 
 function prepareForModding(discovery) {

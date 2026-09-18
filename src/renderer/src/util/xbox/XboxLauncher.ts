@@ -1,11 +1,18 @@
 import { spawn } from "child_process";
 import * as path from "path";
 
-import { fs, log, types, util } from "@nexusmods/vortex-api";
+import { getErrorCode } from "@vortex/shared";
+import { ArgumentInvalid } from "@vortex/shared/errors";
 import PromiseBB from "bluebird";
 import * as winapi from "winapi-bindings";
 import { parseStringPromise } from "xml2js";
 
+import type { IExtensionApi } from "@/types/api";
+import { GameEntryNotFound } from "@/types/IGameStore";
+import type { IGameStore } from "@/types/IGameStore";
+
+import { log } from "../../logging";
+import { readFileAsync } from "../fs";
 import {
   IGNORABLE,
   MUTABLE_LOCATION_PATH,
@@ -17,7 +24,7 @@ import {
   STORE_NAME,
   STORE_PRIORITY,
 } from "./common";
-import { GamePathMap, IXboxEntry } from "./types";
+import type { GamePathMap, IXboxEntry } from "./types";
 import { findInstalledGames } from "./util";
 
 /**
@@ -41,7 +48,7 @@ function gameStoreDetection(silent?: boolean): boolean {
         }
       });
     } catch (err) {
-      logFunc("info", "xbox launcher not found", { error: err.code });
+      logFunc("info", "xbox launcher not found", { err });
       isXboxInstalled = false;
     }
   } else {
@@ -54,17 +61,21 @@ function gameStoreDetection(silent?: boolean): boolean {
   return isXboxInstalled;
 }
 
-class XboxLauncher implements types.IGameStore {
+export class XboxLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
   private isXboxInstalled: boolean;
   private mCache: PromiseBB<IXboxEntry[]>;
-  private mApi: types.IExtensionApi;
+  private mApi: IExtensionApi;
 
-  constructor(api?: types.IExtensionApi) {
+  constructor(api: IExtensionApi) {
     this.isXboxInstalled = gameStoreDetection();
     this.mApi = api;
+  }
+
+  public static create(api: IExtensionApi): XboxLauncher | undefined {
+    return process.platform === "win32" ? new XboxLauncher(api) : undefined;
   }
 
   // To successfully launch an Xbox game through the app we need to assemble
@@ -74,9 +85,9 @@ class XboxLauncher implements types.IGameStore {
   //  - PunlisherId
   //  - The game/app "executable"
   // e.g. explorer.exe shell:appsFolder\\SystemEraSoftworks.29415440E1269_ftk5pbg2rayv2!ASTRONEER
-  public launchGame(appInfo: any, api?: types.IExtensionApi): PromiseBB<void> {
+  public launchGame(appInfo: any, api?: IExtensionApi): PromiseBB<void> {
     if (!appInfo) {
-      return PromiseBB.reject(new util.ArgumentInvalid("appInfo is undefined/null"));
+      return PromiseBB.reject(new ArgumentInvalid("appInfo is undefined/null"));
     }
 
     const isCustomExecObject = () => {
@@ -109,7 +120,7 @@ class XboxLauncher implements types.IGameStore {
       const gameEntry = entries.find((entry) => re.test((entry as any).name));
       return !!gameEntry
         ? PromiseBB.resolve(gameEntry)
-        : PromiseBB.reject(new types.GameEntryNotFound(appName, STORE_ID));
+        : PromiseBB.reject(new GameEntryNotFound(appName, STORE_ID));
     });
   }
 
@@ -125,7 +136,7 @@ class XboxLauncher implements types.IGameStore {
       const gameEntry = entries.find(matcher);
       if (gameEntry === undefined) {
         return PromiseBB.reject(
-          new types.GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID),
+          new GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID),
         );
       } else {
         return PromiseBB.resolve(gameEntry);
@@ -168,7 +179,7 @@ class XboxLauncher implements types.IGameStore {
     return PromiseBB.resolve(this.isXboxInstalled);
   }
 
-  public launchGameStore(api: types.IExtensionApi, parameters?: string[]): PromiseBB<void> {
+  public launchGameStore(api: IExtensionApi, parameters?: string[]): PromiseBB<void> {
     const execName = !!parameters ? parameters.join("") : "Microsoft.Xbox.App";
     const launchCommand = `shell:appsFolder\\Microsoft.GamingApp_8wekyb3d8bbwe!${execName}`;
     return this.oneShotLaunch(launchCommand);
@@ -213,7 +224,7 @@ class XboxLauncher implements types.IGameStore {
       // It's perfectly valid for a keypath not to exist. We're
       //  only concerned with keypaths that exist and a different error
       //  is raised.
-      if (err.code !== "ENOENT") {
+      if (getErrorCode(err) !== "ENOENT") {
         log("error", "unable to retrieve key names", keyPath);
       }
     }
@@ -230,8 +241,7 @@ class XboxLauncher implements types.IGameStore {
 
   private getAppManifestData(mutablePath: string) {
     const appManifestFilePath = path.join(mutablePath, "appxmanifest.xml");
-    return fs
-      .readFileAsync(appManifestFilePath, { encoding: "utf8" })
+    return readFileAsync(appManifestFilePath, { encoding: "utf8" })
       .then((data) => parseStringPromise(data))
       .then((parsed) => PromiseBB.resolve(parsed))
       .catch((err) => PromiseBB.resolve(undefined));
@@ -438,16 +448,3 @@ class XboxLauncher implements types.IGameStore {
       });
   }
 }
-
-function main(context: types.IExtensionContext) {
-  const instance: types.IGameStore =
-    process.platform === "win32" ? new XboxLauncher(context.api) : undefined;
-
-  if (instance !== undefined) {
-    context.registerGameStore(instance);
-  }
-
-  return true;
-}
-
-export default main;

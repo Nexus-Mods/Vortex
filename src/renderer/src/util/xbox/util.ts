@@ -1,18 +1,23 @@
-import * as fs from "fs";
-/* eslint-disable */
+import * as fs from "node:fs";
 /*
   Special thanks to the LOOT team for the original C++ implementation used to decipher the .gamingroot file.
 */
 import * as path from "path";
 
-import { log, types, util } from "@nexusmods/vortex-api";
 import walk from "turbowalk";
 import { parseStringPromise } from "xml2js";
 
-import { APP_MANIFEST } from "./common";
-import { GamePathMap } from "./types";
+import type { IExtensionApi } from "@/types/api";
+import { GameEntryNotFound } from "@/types/IGameStore";
+import type { IGameStore } from "@/types/IGameStore";
+import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 
-export async function findInstalledGames(api: types.IExtensionApi): Promise<GamePathMap> {
+import { log } from "../../logging";
+import { getDriveList } from "../api";
+import { APP_MANIFEST } from "./common";
+import type { GamePathMap } from "./types";
+
+export async function findInstalledGames(api: IExtensionApi): Promise<GamePathMap> {
   const gamingRootPaths = await findXboxGamingRootPaths(api);
   const gamePathMap: GamePathMap = {};
 
@@ -30,10 +35,10 @@ export async function findInstalledGames(api: types.IExtensionApi): Promise<Game
   return gamePathMap;
 }
 
-export async function findXboxGamingRootPaths(api: types.IExtensionApi): Promise<string[]> {
-  let drives = api.store.getState().settings.gameMode.searchPaths;
+export async function findXboxGamingRootPaths(api: IExtensionApi): Promise<string[]> {
+  let drives = api.getState().settings.gameMode.searchPaths;
   if (drives.length === 0) {
-    drives = await util.getDriveList(api);
+    drives = await getDriveList(api);
   }
   const gamingRootPaths = [];
   for (const drive of drives) {

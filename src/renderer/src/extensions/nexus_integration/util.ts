@@ -88,6 +88,7 @@ import { endorseCollection, endorseMod } from "./util/endorseMod";
 import { FULL_REVISION_INFO, MOD_FILE_INFO } from "./util/graphQueries";
 import type { ITokenReply } from "./util/oauth";
 import OAuth from "./util/oauth";
+import { refuseLogin, tokenProviderFor } from "./util/oauthSession";
 import { makeFileUID } from "./util/UIDs";
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
@@ -1824,9 +1825,8 @@ export function transformUserInfoFromApi(input: IUserInfo & { preferences: IPref
  * Apply a background JWT refresh to the persisted userInfo without clearing it
  * or hitting the network.
  *
- * nexus-api refreshes the OAuth token on its own (see ensureFreshToken) and
- * invokes onJWTTokenRefresh, which writes the new credentials back into state.
- * That state change must NOT trigger the full login validation cycle
+ * oauthSession refreshes the OAuth token in the background and writes the new
+ * credentials into state. That state change must NOT trigger the full login validation cycle
  * (setUserInfo(undefined) + updateToken): doing so makes the avatar / premium
  * bar flicker and fires redundant requests that can trip Nexus rate limiting.
  *
@@ -1940,32 +1940,22 @@ export function getUserInfo(
     .then(() => true);*/
 }
 
-function onJWTTokenRefresh(api: IExtensionApi, credentials: IOAuthCredentials, nexus: Nexus) {
-  log("info", "onJWTTokenRefresh");
-
-  // sets state oauth credentials
-  api.store.dispatch(
-    setOAuthCredentials(credentials.token, credentials.refreshToken, credentials.fingerprint),
-  );
-
-  // if we've had a token refresh, then we need to update userinfo
-  // EDIT: we don't want this as it doesnt' make sense if the refresh is completed by a userInfo check.
-  // we will leave thie as an 'oauth credentials only' function. updating the state with updated token
-  // and then that will perform updateToken below and make sure both node-neuxs and state are in sync.
-
-  //Promise.resolve(getUserInfo(api, nexus));
-}
-
-// nexus-api retries a 401 through a token refresh of its own and rethrows it only once that
+// nexus-api retries a 401 with a token the session refreshed and rethrows it only once that
 // hasn't helped, so one reaching us is final; 403 is an account we may no longer act for at all.
 const REFUSED_STATUS_CODES = [401, 403];
+
+// A dead refresh token is turned down by the OAuth token endpoint with 400 invalid_grant
+// (RFC 6749 §5.2), and that is the error the request that needed the refresh fails with - not
+// the site's 401 for the expired access token.
+const REFUSED_OAUTH_CODES = ["invalid_grant"];
 
 /**
  * Whether the site turned the credentials down, which is the only answer that means the session
  * is over — every other way a request can fail says nothing about the credentials.
  */
 const isLoginRefused = (err: unknown): boolean =>
-  REFUSED_STATUS_CODES.includes(getErrorStatusCode(err) ?? 0);
+  REFUSED_STATUS_CODES.includes(getErrorStatusCode(err) ?? 0) ||
+  REFUSED_OAUTH_CODES.includes(getErrorCode(err) ?? "");
 
 /**
  * The account the access token describes on its own. All of this is signed into the token, so
@@ -1988,46 +1978,38 @@ export function userInfoFromToken(token: string): IValidateKeyDataV2 | undefined
   };
 }
 
+/**
+ * Hand the OAuth session to nexus-api and validate it against the site. The session lives in
+ * state and is refreshed by oauthSession; nexus-api only asks it for the token to send.
+ * Resolves to whether the account was read from the site.
+ */
 export function updateToken(
   api: IExtensionApi,
   nexus: Nexus,
-  credentials: any,
+  credentials: IOAuthCredentials,
 ): BluebirdPromise<boolean> {
   log("info", "updateToken()");
 
-  // update the nexus-node object with our credentials.
-  // could be from nexus_integration once() or from when the credentials are updated in state
-
-  return BluebirdPromise.resolve(
-    nexus.setOAuthCredentials(
-      {
-        fingerprint: credentials.fingerprint,
-        refreshToken: credentials.refreshToken,
-        token: credentials.token,
-      },
-      {
-        id: OAUTH_CLIENT_ID,
-      },
-      (credentials: IOAuthCredentials) => onJWTTokenRefresh(api, credentials, nexus), // callback for when token is refreshed by nexus-node
-    ),
-  )
-    .then(() => getUserInfo(api, nexus)) // update userinfo as we've set some new nexus credentials, either by launch, login or token refresh
-    .then(() => true)
+  return BluebirdPromise.resolve(nexus.setTokenProvider(tokenProviderFor(api)))
+    .then(() => {
+      if (!isLoggedIn(api.getState())) {
+        // priming the provider refreshed the token, the site refused, and the session is gone
+        return false;
+      }
+      return BluebirdPromise.resolve(nexus.getUserInfo()).then((apiUserInfo) => {
+        api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
+        return true;
+      });
+    })
     .catch((err: unknown) => {
       if (isLoginRefused(err)) {
-        api.showErrorNotification("Authentication failed, please log in again", err, {
-          allowReport: false,
-        });
-        api.store.dispatch(setUserInfo(undefined));
-        api.events.emit("did-login", err);
+        refuseLogin(api, err);
         return false;
       }
 
-      // Anything else - offline, a timeout, a 500 - leaves the session untouched, and
-      // setOAuthCredentials has already kept the credentials by the time the avatar request
-      // that failed here was made, so the last known account is still the best answer we have.
-      // Clearing it left the header with no account *and* no login button, because the
-      // credentials that stay in state still count as logged in.
+      // Anything else - offline, a timeout, a 500 - says nothing about the session, so the last
+      // known account is still the best answer we have. Clearing it left the header with no
+      // account *and* no login button, because the credentials in state still count as logged in.
       log("info", "couldn't validate the login, keeping the known account", {
         message: getErrorMessage(err),
       });

@@ -14,7 +14,7 @@
             inset: 0;
             z-index: -1;
             position: fixed;
-            background-color: var(--color-translucent-dark-800);
+            background-color: var(--color-scrim-800);
         }
 
         .nxm-modal-panel {

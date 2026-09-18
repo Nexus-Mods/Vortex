@@ -7,6 +7,7 @@ import type * as Redux from "redux";
 import { GoGLauncher } from "@/util/GOGLauncher";
 import { OriginLauncher } from "@/util/OriginStore";
 import { UPlayLauncher } from "@/util/UplayStore";
+import { XboxLauncher } from "@/util/xbox/XboxLauncher";
 
 import { setNextProfile } from "../../actions";
 import { addNotification, showDialog } from "../../actions/notifications";
@@ -66,7 +67,6 @@ class GameModeManager {
     api: IExtensionApi,
     extensionGames: IGame[],
     gameStubs: IGameStub[],
-    gameStoreExtensions: IGameStore[],
     onGameModeActivated: (mode: string) => void,
   ) {
     this.mApi = api;
@@ -79,7 +79,7 @@ class GameModeManager {
       GoGLauncher.create(),
       OriginLauncher.create(),
       UPlayLauncher.create(),
-      ...gameStoreExtensions,
+      XboxLauncher.create(api),
     ].filter(Boolean);
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;

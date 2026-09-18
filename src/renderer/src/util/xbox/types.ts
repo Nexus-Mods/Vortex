@@ -1,6 +1,6 @@
-import { types } from "@nexusmods/vortex-api";
+import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 
-export interface IXboxEntry extends types.IGameStoreEntry {
+export interface IXboxEntry extends IGameStoreEntry {
   packageId: string;
   publisherId: string;
   executionName: string;

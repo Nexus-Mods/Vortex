@@ -4,6 +4,7 @@
 
 import type { SerializedVortexError } from "../errors/serialization";
 import type { FileSystem } from "../fs/filesystem";
+import type { QualifiedPathWire } from "../fs/paths";
 import type { SerializedSpan } from "../telemetry/types";
 import type { DownloadCheckpoint, DownloadProgress, DownloadStatus } from "./download";
 import type {
@@ -575,25 +576,25 @@ export interface InvokeChannels {
   }) => Promise<string>;
 
   "fs:copy": (
-    source: string,
-    target: string,
+    source: QualifiedPathWire,
+    target: QualifiedPathWire,
     options: Parameters<FileSystem["copy"]>[2],
   ) => Promise<void>;
-  "fs:createDirectory": (path: string) => Promise<void>;
+  "fs:createDirectory": (path: QualifiedPathWire) => Promise<void>;
   "fs:createLink": (
-    from: string,
-    to: string,
+    from: QualifiedPathWire,
+    to: QualifiedPathWire,
     type: Parameters<FileSystem["createLink"]>[2],
   ) => Promise<void>;
-  "fs:delete": (path: string) => Promise<void>;
-  "fs:deleteRecursive": (path: string) => Promise<void>;
+  "fs:delete": (path: QualifiedPathWire) => Promise<void>;
+  "fs:deleteRecursive": (path: QualifiedPathWire) => Promise<void>;
   "fs:move": (
-    source: string,
-    target: string,
+    source: QualifiedPathWire,
+    target: QualifiedPathWire,
     options: Parameters<FileSystem["move"]>[2],
   ) => Promise<void>;
   "fs:stat": (
-    path: string,
+    path: QualifiedPathWire,
     options: Parameters<FileSystem["stat"]>[1],
   ) => Promise<Awaited<ReturnType<FileSystem["stat"]>>>;
 }

@@ -60,9 +60,9 @@ export const GameTile = ({
         >
           <div
             className={joinClasses([
-              "group/tile absolute inset-0 z-1 flex flex-col justify-between bg-linear-to-t from-translucent-dark-900 via-translucent-dark-500 to-transparent p-3",
-              "hover:via-translucent-dark-700 has-focus-visible:via-translucent-dark-700 data-menu-open:via-translucent-dark-700",
-              "hover:to-translucent-dark-900 has-focus-visible:to-translucent-dark-900 data-menu-open:to-translucent-dark-900",
+              "group/tile absolute inset-0 z-1 flex flex-col justify-between bg-linear-to-t from-scrim-900 via-scrim-500 to-transparent p-3",
+              "hover:via-scrim-700 has-focus-visible:via-scrim-700 data-menu-open:via-scrim-700",
+              "hover:to-scrim-900 has-focus-visible:to-scrim-900 data-menu-open:to-scrim-900",
             ])}
             data-menu-open={open || undefined}
           >
@@ -72,7 +72,9 @@ export const GameTile = ({
                   content={t("Contributed by {{name}}", { replace: { name: contributedBy } })}
                   placement="bottom"
                 >
-                  <Pill className={revealedWhenActive}>{t("Community")}</Pill>
+                  <Pill appearance="scrim" className={revealedWhenActive}>
+                    {t("Community")}
+                  </Pill>
                 </Tooltip>
               )}
 
@@ -116,7 +118,7 @@ export const GameTile = ({
               <Typography typographyType="body-sm">{name}</Typography>
 
               {!!modCount && (
-                <Pill data-testid="game-tile-mod-count" iconPath={nxmModOutline} pillType="success">
+                <Pill brand="success" data-testid="game-tile-mod-count" iconPath={nxmModOutline}>
                   {t("{{ count }} active mod", { count: modCount })}
                 </Pill>
               )}

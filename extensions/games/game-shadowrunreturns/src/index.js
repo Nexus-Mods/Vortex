@@ -2,7 +2,9 @@ const path = require("path");
 const { fs, util } = require("@nexusmods/vortex-api");
 
 function findGame() {
-  return util.steam.findByName("Shadowrun Returns").then((game) => game.gamePath);
+  return util.GameStoreHelper.findByName("Shadowrun Returns", "steam").then(
+    (game) => game.gamePath,
+  );
 }
 
 function modPath() {

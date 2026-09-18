@@ -26,16 +26,19 @@ export type {
 } from "../fs/paths";
 export {
   QualifiedPath,
-  qpath,
   OSPath,
   PathProviderError,
   PathResolverError,
-  RelativePathError,
   relativePath,
 } from "../fs/paths";
+export type { QualifiedPathWire } from "../fs/paths";
+
+export { NativePathResolver } from "../fs/native-resolver";
 
 export { XDG } from "../fs/paths.linux";
 export type { LinuxPathBase, LinuxPathProvider, XDGBase } from "../fs/paths.linux";
 
 export { WindowsPath } from "../fs/paths.windows";
 export type { WindowsPathBase, WindowsPathProvider } from "../fs/paths.windows";
+
+export type { VortexPathBase, IVortexPathProvider } from "../fs/paths.vortex";

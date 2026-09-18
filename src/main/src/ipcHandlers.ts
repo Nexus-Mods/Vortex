@@ -662,30 +662,28 @@ export function init(fs: FileSystem) {
 
   // FS
   betterIpcMain.handle("fs:copy", (_event, source, target, options) =>
-    fs.copy(QualifiedPath.parse(source), QualifiedPath.parse(target), options),
+    fs.copy(QualifiedPath.of(source), QualifiedPath.of(target), options),
   );
 
   betterIpcMain.handle("fs:createDirectory", (_event, dirPath) =>
-    fs.createDirectory(QualifiedPath.parse(dirPath)),
+    fs.createDirectory(QualifiedPath.of(dirPath)),
   );
 
   betterIpcMain.handle("fs:createLink", (_event, from, to, type) =>
-    fs.createLink(QualifiedPath.parse(from), QualifiedPath.parse(to), type),
+    fs.createLink(QualifiedPath.of(from), QualifiedPath.of(to), type),
   );
 
-  betterIpcMain.handle("fs:delete", (_event, inputPath) =>
-    fs.delete(QualifiedPath.parse(inputPath)),
-  );
+  betterIpcMain.handle("fs:delete", (_event, inputPath) => fs.delete(QualifiedPath.of(inputPath)));
 
   betterIpcMain.handle("fs:deleteRecursive", (_event, inputPath) =>
-    fs.deleteRecursive(QualifiedPath.parse(inputPath)),
+    fs.deleteRecursive(QualifiedPath.of(inputPath)),
   );
 
   betterIpcMain.handle("fs:move", (_event, source, target, options) =>
-    fs.move(QualifiedPath.parse(source), QualifiedPath.parse(target), options),
+    fs.move(QualifiedPath.of(source), QualifiedPath.of(target), options),
   );
 
   betterIpcMain.handle("fs:stat", (_event, inputPath, options) =>
-    fs.stat(QualifiedPath.parse(inputPath), options),
+    fs.stat(QualifiedPath.of(inputPath), options),
   );
 }

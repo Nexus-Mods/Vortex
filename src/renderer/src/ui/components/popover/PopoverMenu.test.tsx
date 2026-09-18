@@ -276,12 +276,12 @@ describe("PopoverMenu", () => {
       await userEvent.keyboard("{ArrowDown}");
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
 
-      screen.getByRole("button", { name: "Pin Refresh" }).focus();
+      await userEvent.click(screen.getByRole("button", { name: "Pin Refresh" }));
 
       await userEvent.keyboard("{ArrowDown}");
       expect(screen.getByRole("menuitem", { name: "Logout" })).toHaveFocus();
 
-      screen.getByRole("button", { name: "Pin Logout" }).focus();
+      await userEvent.click(screen.getByRole("button", { name: "Pin Logout" }));
 
       await userEvent.keyboard("{ArrowUp}");
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();

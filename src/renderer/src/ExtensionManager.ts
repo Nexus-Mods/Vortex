@@ -631,7 +631,6 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerArchiveType: undefined,
       registerGame: undefined,
       registerGameStub: undefined,
-      registerGameStore: undefined,
       registerGameInfoProvider: undefined,
       registerAttributeExtractor: undefined,
       registerModType: undefined,
@@ -3080,7 +3079,10 @@ class ExtensionManager {
       updater: () => require("./extensions/updater/index.ts"),
     };
 
-    require("./util/extensionRequire").default(() => this.extensions);
+    require("./util/extensionRequire").default(
+      () => this.extensions,
+      () => this.mExtensionState,
+    );
 
     const loadedExtensions = new Set<string>();
     let dynamicallyLoaded: IRegisteredExtension[] = [];

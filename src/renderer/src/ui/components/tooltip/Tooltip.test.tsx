@@ -1,5 +1,5 @@
 import type { OpenChangeReason } from "@floating-ui/react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, type Mock, vi } from "vitest";
@@ -78,7 +78,7 @@ describe("Tooltip", () => {
 
   it("shows the content on keyboard focus", async () => {
     const { trigger } = renderComponent();
-    trigger.focus();
+    act(() => trigger.focus());
     await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
   });
 

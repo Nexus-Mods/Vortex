@@ -1,3 +1,5 @@
+import { VortexError } from "../errors/base";
+import { parseNativePath } from "./native";
 import type { LinuxPathProvider } from "./paths.linux";
 import type { WindowsPathProvider } from "./paths.windows";
 
@@ -17,6 +19,19 @@ export type Extension = string;
  * @public */
 export type ResolvedPath = string;
 
+/**
+ * Plain-object shape of a {@link QualifiedPath} for transfer across
+ * boundaries that cannot carry class instances (IPC, structured clone).
+ * Rebuild the instance with {@link QualifiedPath.of}.
+ *
+ * @public */
+export type QualifiedPathWire = {
+  scheme: string;
+  data: string;
+  path: string;
+  root: string;
+};
+
 declare const RelativePathBrand: unique symbol;
 
 /**
@@ -27,17 +42,6 @@ declare const RelativePathBrand: unique symbol;
  *
  * @public */
 export type RelativePath = string & { readonly [RelativePathBrand]: true };
-
-/**
- * Thrown by {@link relativePath} when its input cannot be normalized
- * into a valid relative path.
- * @public */
-export class RelativePathError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "RelativePathError";
-  }
-}
 
 /**
  * Constructs a {@link RelativePath} after validation and normalization.
@@ -62,10 +66,16 @@ export function relativePath(raw: string): RelativePath {
   const normalized = raw.replace(/\\/g, "/");
 
   if (normalized.startsWith("/")) {
-    throw new RelativePathError(`RelativePath must not start with '/': "${raw}"`);
+    throw new VortexError(`RelativePath must not start with '/': "${raw}"`, {
+      kind: "fs:invalid-path",
+      path: raw,
+    });
   }
   if (/^[A-Za-z]:/.test(normalized)) {
-    throw new RelativePathError(`RelativePath must not include a drive letter: "${raw}"`);
+    throw new VortexError(`RelativePath must not include a drive letter: "${raw}"`, {
+      kind: "fs:invalid-path",
+      path: raw,
+    });
   }
 
   const trimmed =
@@ -73,7 +83,10 @@ export function relativePath(raw: string): RelativePath {
 
   const segments = trimmed.split("/").filter((s) => s.length > 0);
   if (segments.some((s) => s === "..")) {
-    throw new RelativePathError(`RelativePath must not contain '..' segments: "${raw}"`);
+    throw new VortexError(`RelativePath must not contain '..' segments: "${raw}"`, {
+      kind: "fs:invalid-path",
+      path: raw,
+    });
   }
 
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -87,9 +100,6 @@ export function relativePath(raw: string): RelativePath {
 export type PathResolver = {
   /** Unique scheme to map {@link QualifiedPath} to this instance. Without the `://` at the end. */
   readonly scheme: string;
-
-  /** Parent resolver for chaining. */
-  readonly parent: PathResolver | null;
 
   /** Resolves {@link QualifiedPath} to {@link ResolvedPath}.
    * @throws PathResolverError on failure.
@@ -132,12 +142,14 @@ export interface PathResolverRegistry {
 }
 
 /**
- * Creates {@link QualifiedPath} instances from a base.
+ * Creates {@link QualifiedPath} instances from well-known bases. Providers
+ * are factories for the paths of the scheme they serve; resolving those
+ * paths back to native ones is a {@link PathResolver}'s job.
  *
  * @public */
-export type PathProvider<TBase extends string> = PathResolver & {
+export type PathProvider<TBase extends string> = {
   /**
-   * Creates {@link QualifiedPath} instances from a base.
+   * Creates a {@link QualifiedPath} from a well-known base.
    * @throws PathProviderError on invalid inputs.
    * */
   fromBase(base: TBase): Promise<QualifiedPath>;
@@ -173,14 +185,21 @@ export type OSPathProvider = LinuxPathProvider | WindowsPathProvider;
 
 /**
  * Represents a normalized fully qualified path.
+ *
+ * A QualifiedPath is fully described by its parts ({@link scheme},
+ * {@link data}, {@link path}, {@link root}); {@link value} is derived from
+ * them. Paths only ever enter the system through {@link QualifiedPath.of}
+ * (already structured) or {@link QualifiedPath.fromNative} (raw native
+ * paths).
+ *
  * @public */
 export class QualifiedPath {
-  /** Raw string of the entire path.
+  /** Raw string of the entire path, derived from the parts.
    *
    * @example
    *
    * ```ts @import.meta.vitest
-   * const path = QualifiedPath.parse("foo://bar//baz//file.txt");
+   * const path = QualifiedPath.of({ scheme: "foo", data: "bar//baz", path: "file.txt", root: "" });
    * assert(path.value === "foo://bar//baz//file.txt");
    * ```
    * */
@@ -191,7 +210,7 @@ export class QualifiedPath {
    * @example
    *
    * ```ts @import.meta.vitest
-   * const path = QualifiedPath.parse("foo://bar//baz//file.txt");
+   * const path = QualifiedPath.of({ scheme: "foo", data: "bar//baz", path: "file.txt", root: "" });
    * assert(path.scheme === "foo");
    * ```
    * */
@@ -202,7 +221,7 @@ export class QualifiedPath {
    * @example
    *
    * ```ts @import.meta.vitest
-   * const path = QualifiedPath.parse("foo://bar//baz//file.txt");
+   * const path = QualifiedPath.of({ scheme: "foo", data: "bar//baz", path: "file.txt", root: "" });
    * assert(path.data === "bar//baz");
    * ```
    * */
@@ -213,34 +232,151 @@ export class QualifiedPath {
    * @example
    *
    * ```ts @import.meta.vitest
-   * const path = QualifiedPath.parse("foo://bar//baz//user/file.txt");
+   * const path = QualifiedPath.of({ scheme: "foo", data: "bar//baz", path: "user/file.txt", root: "" });
    * assert(path.path === "user/file.txt");
    * ```
    * */
   readonly path: string;
 
-  private constructor(value: string, scheme: string, data: string, path: string) {
-    this.value = value;
+  /**
+   * The root span of {@link path}, or an empty string when the path has no
+   * root. For `native` paths this is the sanitized root (`C:/`, `/`,
+   * `//server/share/`, `//?/C:/`, ...). Rooted paths keep their trailing
+   * directory separator, so the root always ends with one.
+   *
+   * @example
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.fromNative("C:\\Users\\alice");
+   * assert(path.root === "C:/");
+   * ```
+   * */
+  readonly root: string;
+
+  private constructor(scheme: string, data: string, path: string, root: string) {
     this.scheme = scheme;
     this.data = data;
     this.path = path;
+    this.root = root;
+    this.value = data !== "" ? `${scheme}://${data}//${path}` : `${scheme}://${path}`;
   }
 
-  public static parse(value: string): QualifiedPath {
-    const sep = "://";
-    const sepIndex = value.indexOf(sep);
-    if (sepIndex === -1) {
-      throw new Error(`Invalid QualifiedPath: "${value}"`);
+  /**
+   * Generic constructor from explicit parts. The single entry point for
+   * already-structured paths: wire data crossing an IPC boundary and
+   * schemes with their own semantics.
+   *
+   * @throws {@link VortexError} when the scheme is empty or {@link root}
+   *   is not a canonical prefix of {@link path} (a root must either be
+   *   empty, end at a separator, or be the whole path).
+   *
+   * @example
+   * ```ts @import.meta.vitest
+   * const path = QualifiedPath.of({ scheme: "native", data: "", path: "C:/Users", root: "C:/" });
+   * assert(path.value === "native://C:/Users");
+   * ```
+   *
+   * @public
+   */
+  public static of(fields: QualifiedPathWire): QualifiedPath {
+    if (fields.scheme.length === 0) {
+      throw new VortexError("QualifiedPath scheme must not be empty", {
+        kind: "fs:invalid-path",
+        path: fields.path,
+      });
     }
+    const rootValid =
+      fields.root === "" ||
+      (fields.path.startsWith(fields.root) &&
+        (fields.root === fields.path || fields.root.endsWith("/")));
+    if (!rootValid) {
+      throw new VortexError(
+        `Root "${fields.root}" is not a canonical prefix of the path "${fields.path}"`,
+        { kind: "fs:invalid-path", path: fields.path },
+      );
+    }
+    return new QualifiedPath(fields.scheme, fields.data, fields.path, fields.root);
+  }
 
-    const scheme = value.slice(0, sepIndex);
-    const rest = value.slice(sepIndex + sep.length);
+  /**
+   * The entry point for raw, native paths: sanitizes the input and wraps it
+   * as a {@link QualifiedPath} under the `native` scheme.
+   *
+   * This is the only supported way to bring a path from outside the path
+   * system (the OS, environment variables, user input) into it. The
+   * sanitization happens here, once, and the result is trusted everywhere
+   * else.
+   *
+   * @throws {@link VortexError} when the input is not a rooted path
+   *   (no Unix, DOS, UNC or DOS-device root).
+   *
+   * @example
+   * ```ts @import.meta.vitest
+   * const dos = QualifiedPath.fromNative("C:\\Users\\alice\\file.txt");
+   * assert(dos.value === "native://C:/Users/alice/file.txt");
+   *
+   * const unix = QualifiedPath.fromNative("/home/alice");
+   * assert(unix.value === "native:///home/alice");
+   *
+   * const unc = QualifiedPath.fromNative("\\\\server\\share\\file.txt");
+   * assert(unc.value === "native:////server/share/file.txt");
+   * ```
+   *
+   * @public
+   */
+  public static fromNative(raw: string): QualifiedPath {
+    const { normalizedPath, root } = parseNativePath(raw);
+    if (root.type === "None") {
+      throw new VortexError(`Path is not rooted (no Unix, DOS, UNC or DOS-device root): "${raw}"`, {
+        kind: "fs:invalid-path",
+        path: raw,
+      });
+    }
+    return new QualifiedPath("native", "", normalizedPath, root.span);
+  }
 
-    const dataEnd = rest.lastIndexOf("//");
-    const data = dataEnd === -1 ? "" : rest.slice(0, dataEnd);
+  /**
+   * Compares two {@link QualifiedPath}s case-insensitively.
+   *
+   * Case-sensitivity of real paths depends on the filesystem and its mount
+   * options, which this application neither knows nor cares about, so all
+   * comparisons are case-insensitive. Sanitization already guarantees
+   * canonical separators and trailing slashes, so case-folding the raw
+   * values is the entire normalization.
+   *
+   * @returns a negative number if `a` sorts before `b`, a positive number
+   *   if `a` sorts after `b`, and `0` if they are equal.
+   *
+   * @example
+   * ```ts @import.meta.vitest
+   * const a = QualifiedPath.fromNative("C:/Users");
+   * const b = QualifiedPath.fromNative("c:/users");
+   * assert(QualifiedPath.compare(a, b) === 0);
+   * assert(QualifiedPath.compare(QualifiedPath.fromNative("C:/tmp"), a) < 0);
+   * ```
+   *
+   * @public
+   */
+  public static compare(a: QualifiedPath, b: QualifiedPath): number {
+    const left = a.value.toLowerCase();
+    const right = b.value.toLowerCase();
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
 
-    const path = dataEnd === -1 ? rest : rest.slice(dataEnd + 2);
-    return new QualifiedPath(value, scheme, data, path);
+  /**
+   * Returns whether two {@link QualifiedPath}s are equal, case-insensitively.
+   * See {@link QualifiedPath.compare} for the rationale.
+   *
+   * @example
+   * ```ts @import.meta.vitest
+   * const a = QualifiedPath.fromNative("C:/Users");
+   * const b = QualifiedPath.fromNative("c:/users");
+   * assert(QualifiedPath.equals(a, b));
+   * ```
+   *
+   * @public
+   */
+  public static equals(a: QualifiedPath, b: QualifiedPath): boolean {
+    return QualifiedPath.compare(a, b) === 0;
   }
 
   /**
@@ -249,7 +385,7 @@ export class QualifiedPath {
    * @example
    *
    * ```ts @import.meta.vitest
-   * const path = QualifiedPath.parse("foo://bar.baz.txt");
+   * const path = QualifiedPath.of({ scheme: "foo", data: "", path: "bar.baz.txt", root: "" });
    * assert(path.extension === "txt");
    * ```
    * */
@@ -266,7 +402,7 @@ export class QualifiedPath {
    * @example
    *
    * ```ts @import.meta.vitest
-   * const path = QualifiedPath.parse("foo://bar//baz.txt");
+   * const path = QualifiedPath.of({ scheme: "foo", data: "bar", path: "baz.txt", root: "" });
    * assert(path.basename === "baz.txt");
    * ```
    * */
@@ -276,51 +412,63 @@ export class QualifiedPath {
   }
 
   /**
-   * Returns the slice of every component except the last.
+   * Returns the directory containing the last path component. Paths at or
+   * above their root have no containing directory and return an empty
+   * string.
    *
    * @example
    *
    * ```ts @import.meta.vitest
-   * const path = QualifiedPath.parse("foo://bar//a/b/c.txt");
+   * const path = QualifiedPath.of({ scheme: "foo", data: "bar", path: "a/b/c.txt", root: "" });
    * assert(path.dirname === "a/b");
    * ```
    * */
   get dirname(): string {
+    if (this.path === "" || this.path === this.root) return "";
     const slash = this.path.lastIndexOf("/");
-    return slash === -1 ? "" : this.path.slice(0, slash);
+    return slash < this.root.length ? this.root : this.path.slice(0, slash);
   }
 
   /**
-   * Creates a new path without the last component. Returns the same instance if there is no path.
+   * Creates a new path without the last component. Returns the same
+   * instance if there is no path. The parent of a root is the root itself.
    *
    * @example
    *
    * ```ts @import.meta.vitest
-   * const path = QualifiedPath.parse("foo://bar//a/b/c.txt");
+   * const path = QualifiedPath.of({ scheme: "foo", data: "bar", path: "a/b/c.txt", root: "" });
    * assert(path.parent().value === "foo://bar//a/b");
    *
-   * const topPath = QualifiedPath.parse("foo://");
+   * const topPath = QualifiedPath.of({ scheme: "foo", data: "", path: "", root: "" });
    * assert(topPath.parent().value === topPath.value);
    * ```
    * */
   parent(): QualifiedPath {
     if (this.path === "") return this;
 
-    const slash = this.path.lastIndexOf("/");
-    const parentPath = slash === -1 ? "" : this.path.slice(0, slash);
+    if (this.root === "") {
+      // no root semantics: drop the last path component
+      const slash = this.path.lastIndexOf("/");
+      const parentPath = slash === -1 ? "" : this.path.slice(0, slash);
+      return new QualifiedPath(this.scheme, this.data, parentPath, "");
+    }
 
-    const pathStart = this.value.length - this.path.length;
-    const parentValue = this.value.slice(0, pathStart + (slash === -1 ? 0 : slash));
-    return new QualifiedPath(parentValue, this.scheme, this.data, parentPath);
+    // the parent of a root is the root itself
+    if (this.path === this.root) return this;
+
+    const slash = this.path.lastIndexOf("/");
+    // the last separator is part of the root: the parent is the root
+    const parentPath = slash < this.root.length ? this.root : this.path.slice(0, slash);
+    return new QualifiedPath(this.scheme, this.data, parentPath, this.root);
   }
 
   join(...components: PathComponent[]): QualifiedPath {
     if (components.length === 0) return this;
-    const joinedPath = this.path ? `${this.path}/${components.join("/")}` : components.join("/");
-    const joinedValue = this.path
-      ? `${this.value}/${components.join("/")}`
-      : `${this.value}${components.join("/")}`;
-    return new QualifiedPath(joinedValue, this.scheme, this.data, joinedPath);
+    const tail = components.join("/");
+    // rooted paths end with a separator, so only join when needed
+    const joinedPath =
+      this.path === "" || this.path.endsWith("/") ? `${this.path}${tail}` : `${this.path}/${tail}`;
+    return new QualifiedPath(this.scheme, this.data, joinedPath, this.root);
   }
 
   with(change: { extension?: string; basename?: string; dirname?: string }): QualifiedPath {
@@ -331,7 +479,15 @@ export class QualifiedPath {
     )
       return this;
 
-    const dir = change.dirname ?? this.dirname;
+    const rawDir = change.dirname ?? this.dirname;
+    // Rooted paths: a dirname must include the root, so a bare dirname is
+    // treated as root-relative.
+    const dir =
+      this.root !== "" && !rawDir.startsWith(this.root)
+        ? rawDir === ""
+          ? this.root
+          : `${this.root}${this.root.endsWith("/") ? "" : "/"}${rawDir}`
+        : rawDir;
 
     let filename: string;
     if (change.extension !== undefined) {
@@ -343,17 +499,15 @@ export class QualifiedPath {
       filename = change.basename ?? this.basename;
     }
 
-    const newPath = dir ? `${dir}/${filename}` : filename;
-    const newValue = this.data
-      ? `${this.scheme}://${this.data}//${newPath}`
-      : `${this.scheme}://${newPath}`;
-
-    return new QualifiedPath(newValue, this.scheme, this.data, newPath);
+    const newPath =
+      dir === "" ? filename : dir.endsWith("/") ? `${dir}${filename}` : `${dir}/${filename}`;
+    return new QualifiedPath(this.scheme, this.data, newPath, this.root);
   }
 
   componentsIter(): Iterator<PathComponent, never, never> {
     const path = this.path;
-    let pos = 0;
+    // native paths start with their root span, which is not a component
+    let pos = this.root.length;
 
     const iterator: Iterator<PathComponent, never, never> = {
       next() {
@@ -380,54 +534,16 @@ export class QualifiedPath {
     return Iterator.from(this.componentsIter());
   }
 
+  /**
+   * Returns the plain-object shape of this path for transport across
+   * boundaries that cannot carry class instances (IPC, structured clone).
+   * Reconstruct with {@link QualifiedPath.of}.
+   */
+  toWire(): QualifiedPathWire {
+    return { scheme: this.scheme, data: this.data, path: this.path, root: this.root };
+  }
+
   toJSON(): string {
     return this.value;
   }
-}
-
-/**
- * Tagged template literal for building {@link QualifiedPath} values.
- *
- * If the first interpolation is a {@link QualifiedPath}, it is used as the base
- * and remaining segments are joined onto it. Otherwise the assembled string
- * is parsed as a new {@link QualifiedPath}.
- *
- * @example
- * ```ts @import.meta.vitest
- * const install = QualifiedPath.parse("steam://SteamApps/common/Skyrim");
- * const config = qpath`${install}/engine/config`;
- * assert(config.value === "steam://SteamApps/common/Skyrim/engine/config");
- *
- * const fresh = qpath`linux:///home/user/.config`;
- * assert(fresh.value === "linux:///home/user/.config");
- * ```
- *
- * @public
- */
-export function qpath(
-  strings: TemplateStringsArray,
-  ...values: (QualifiedPath | string | number)[]
-): QualifiedPath {
-  // Fast path: first value is a QualifiedPath, join the rest as path segments
-  if (values.length > 0 && values[0] instanceof QualifiedPath) {
-    const base = values[0];
-    // Build the trailing path from remaining template parts and values
-    let tail = strings[0] ?? ""; // text before the QualifiedPath (should be empty)
-    for (let i = 1; i <= values.length; i++) {
-      const v = i < values.length ? values[i] : undefined;
-      const val = v instanceof QualifiedPath ? v.value : v !== undefined ? String(v) : "";
-      tail += (strings[i] ?? "") + val;
-    }
-    // Split on / and filter empties to get clean path components
-    const components = tail.split("/").filter((s) => s.length > 0);
-    return components.length > 0 ? base.join(...components) : base;
-  }
-
-  // General path: assemble the full string and parse
-  let result = strings[0] ?? "";
-  for (let i = 0; i < values.length; i++) {
-    const v = values[i];
-    result += (v instanceof QualifiedPath ? v.value : String(v)) + (strings[i + 1] ?? "");
-  }
-  return QualifiedPath.parse(result);
 }

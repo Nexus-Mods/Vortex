@@ -27,6 +27,23 @@ export interface IStoreQuery {
 /** Normalized form of one store's IGame.queryArgs entry. */
 export type IQueryArgEntry = string | IStoreQuery | IStoreQuery[];
 
+export interface IGameStoreHelper {
+  isGameInstalled(id: string, storeId?: string): Bluebird<string | undefined>;
+
+  findByName(name: string | string[], storeId?: string): Bluebird<IGameStoreEntry>;
+
+  findByAppId(appId: string | string[], storeId?: string): Bluebird<IGameStoreEntry>;
+
+  launchGameStore(
+    api: IExtensionApi,
+    gameStoreId: string,
+    parameters?: string[],
+    askConsent?: boolean,
+  ): Bluebird<void>;
+
+  identifyStore: (gamePath: string) => Bluebird<string | undefined>;
+}
+
 /**
  * Normalize the polymorphic form `IGame.queryArgs` accepts (string app ID,
  * single query, or array) into a single array of IStoreQuery. Callers that
@@ -40,7 +57,7 @@ export function normalizeStoreQuery(raw: IQueryArgEntry | undefined): IStoreQuer
   return [raw];
 }
 
-class GameStoreHelper {
+class GameStoreHelper implements IGameStoreHelper {
   private mApi: IExtensionApi;
   private mStores: IGameStore[];
   private mStoresDict: { [storeId: string]: IGameStore };
@@ -507,25 +524,5 @@ class GameStoreHelper {
   }
 }
 
-// const instance: GameStoreHelper = new GameStoreHelper();
-
-const instance: GameStoreHelper = new Proxy(
-  {},
-  {
-    get(target, name) {
-      if (target["inst"] === undefined) {
-        target["inst"] = new GameStoreHelper();
-      }
-      return target["inst"][name];
-    },
-    set(target, name, value) {
-      if (target["inst"] === undefined) {
-        target["inst"] = new GameStoreHelper();
-      }
-      target["inst"][name] = value;
-      return true;
-    },
-  },
-) as any;
-
+const instance: GameStoreHelper = new GameStoreHelper();
 export default instance;
