@@ -40,7 +40,7 @@ describe("sourcesByDiscovery", () => {
 
     const discovery = { ...exampleDiscovery };
 
-    const result = await sourcesByDiscovery(game, discovery);
+    const result = await sourcesByDiscovery(game, discovery, {});
 
     expect(result["gameMediaSource"]).toBeDefined();
   });
@@ -50,7 +50,7 @@ describe("sourcesByDiscovery", () => {
 
     const discovery = { ...exampleDiscovery, id: "starfield" };
 
-    const result = await sourcesByDiscovery(game, discovery);
+    const result = await sourcesByDiscovery(game, discovery, {});
 
     expect(result["starfield-mygames"]).toBeDefined();
   });
@@ -60,8 +60,8 @@ describe("sourcesByDiscovery", () => {
     const steamDiscovery = { ...exampleDiscovery, store: "steam" };
     const nonSteamDiscovery = { ...exampleDiscovery, store: "other" };
 
-    const steamResult = await sourcesByDiscovery(game, steamDiscovery);
-    const nonSteamResult = await sourcesByDiscovery(game, nonSteamDiscovery);
+    const steamResult = await sourcesByDiscovery(game, steamDiscovery, {});
+    const nonSteamResult = await sourcesByDiscovery(game, nonSteamDiscovery, {});
 
     expect(getSteamMedia).toHaveBeenCalledOnce();
     expect(steamResult["steam-screenshots-1"]).toBeDefined();
@@ -73,8 +73,8 @@ describe("sourcesByDiscovery", () => {
     const xboxDiscovery = { ...exampleDiscovery, store: "xbox" };
     const nonXboxDiscovery = { ...exampleDiscovery, store: "other" };
 
-    const xboxResult = await sourcesByDiscovery(game, xboxDiscovery);
-    const nonXboxResult = await sourcesByDiscovery(game, nonXboxDiscovery);
+    const xboxResult = await sourcesByDiscovery(game, xboxDiscovery, {});
+    const nonXboxResult = await sourcesByDiscovery(game, nonXboxDiscovery, {});
 
     expect(xboxResult["xbox-default-captures"]).toBeDefined();
     expect(nonXboxResult["xbox-default-captures"]).not.toBeDefined();
@@ -82,7 +82,7 @@ describe("sourcesByDiscovery", () => {
 
   it("empty discovery returns no sources", async () => {
     const game = { ...exampleGame, details: { mediaFolders: {} } };
-    const result = await sourcesByDiscovery(game, {});
+    const result = await sourcesByDiscovery(game, {}, {});
 
     expect(result).toEqual({});
     expect(Object.keys(result).length).toEqual(0);

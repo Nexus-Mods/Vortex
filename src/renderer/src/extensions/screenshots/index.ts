@@ -1,6 +1,7 @@
 /**
  * Screenshot check extension
  * Provides a means to browse screenshots and videos captured while playing
+ * Can be tested with pnpm --filter @vortex/renderer exec vitest run src/extensions/screenshots
  */
 
 import { mdiImageOutline } from "@mdi/js";
@@ -42,6 +43,7 @@ function init(context: IExtensionContext) {
   );
 
   context.once(() => {
+    // Cleans up old preview images
     void prunePreviewCache().catch((err: unknown) => {
       window.api.log("debug", "media preview pruning failed", JSON.stringify(err));
     });

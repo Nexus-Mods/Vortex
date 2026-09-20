@@ -12,6 +12,10 @@ export interface IGameMediaPersistentState {
     [gameId: string]: { [imageId: string]: GameMediaModTag[] };
   };
   disabledSources: Record<string, string[]>;
+  flags: {
+    showVideos?: boolean;
+    [key: string]: boolean;
+  };
 }
 
 const on = reducerFor<IGameMediaPersistentState>();
@@ -93,10 +97,18 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
 
       return { ...state, modTags: nextModTags };
     }),
+    on(actions.setGameMetaFlag, (state, payload) => {
+      const { flag, value } = payload;
+
+      return { ...state, flags: { ...state.flags, [flag]: value } };
+    }),
   ]),
   defaults: {
     sources: {},
     modTags: {},
     disabledSources: {},
+    flags: {
+      showVideos: false,
+    },
   },
 };

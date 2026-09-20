@@ -11,6 +11,7 @@ const VIDEO_EXT = new Set([".mp4", ".webm", ".mkv", ".mpd"]);
 export default async function collectMedia(
   sources: Record<string, GameMediaSource>,
   disabledSources: readonly string[] | undefined,
+  flags: { showVideos?: boolean },
 ): Promise<GameMediaItem[]> {
   let res: GameMediaItem[] = [];
 
@@ -70,6 +71,9 @@ export default async function collectMedia(
         );
     }
   }
+
+  // If we're hiding videos, filter them out
+  if (!flags.showVideos) res = res.filter((i) => i.type !== "video");
 
   return res.sort(sortMedia);
 }

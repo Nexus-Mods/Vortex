@@ -19,6 +19,7 @@ const { dispatch, mockUseDispatch, mockUseSelector, selectorState } = vi.hoisted
         disabledSources: {
           "game-1": [] as string[],
         },
+        flags: { showVideos: false },
       },
     },
     session: {
@@ -78,7 +79,11 @@ describe("SettingsMedia", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     selectorState.persistent.game_media.disabledSources["game-1"] = [];
-    mockedUseGameMediaSources.mockReturnValue({ defaultSources: {}, customSources: {} } as any);
+    mockedUseGameMediaSources.mockReturnValue({
+      defaultSources: {},
+      customSources: {},
+      flags: { showVideos: true },
+    } as any);
   });
 
   it("renders default and custom sources", async () => {
@@ -94,6 +99,7 @@ describe("SettingsMedia", () => {
           custom: true,
         },
       },
+      flags: { showVideos: true },
     } as any);
     renderComponent();
 
@@ -116,6 +122,7 @@ describe("SettingsMedia", () => {
         sourceA: { name: "Source A", path: "/source/A", description: "Example source A" },
       },
       customSources: undefined,
+      flags: { showVideos: true },
     } as any);
 
     renderComponent();
@@ -131,6 +138,7 @@ describe("SettingsMedia", () => {
         sourceB: { name: "Source B", path: "/source/B" },
       },
       customSources: undefined,
+      flags: { showVideos: true },
     } as any);
 
     renderComponent();
@@ -154,6 +162,7 @@ describe("SettingsMedia", () => {
         sourceB: { name: "Source B", path: "/source/B" },
       },
       customSources: undefined,
+      flags: { showVideos: true },
     } as any);
 
     const user = userEvent.setup();
@@ -186,6 +195,7 @@ describe("SettingsMedia", () => {
           custom: true,
         },
       },
+      flags: { showVideos: true },
     } as any);
 
     const user = userEvent.setup();
@@ -221,6 +231,7 @@ describe("SettingsMedia", () => {
           custom: true,
         },
       },
+      flags: { showVideos: true },
     } as any);
 
     const user = userEvent.setup();

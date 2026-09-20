@@ -3,9 +3,9 @@ import { useSelector } from "react-redux";
 
 import { getAccessToken } from "@/extensions/nexus_integration/util/oauthSession";
 import type { IExtensionApi, IState } from "@/types/api";
-import { getGame, nexusGameId } from "@/util/api";
-import { activeGameId } from "@/util/selectors";
 
+import { getGame, nexusGameId } from "../../../util/api";
+import { activeGameId } from "../../../util/selectors";
 import type { IModResult } from "../util/searchMods";
 import searchMods from "../util/searchMods";
 
@@ -60,13 +60,8 @@ export default function useNexusModsSearch(
     void (async () => {
       try {
         const token = tryToUseLogin ? await getAccessToken(api) : undefined;
-        const r = await searchMods(
-          debouncedQuery,
-          domainName,
-          token,
-          adultContentFilter,
-          controller.signal,
-        );
+        const showAdult = tryToUseLogin ? adultContentFilter : false;
+        const r = await searchMods(debouncedQuery, domainName, token, showAdult, controller.signal);
         if (!controller.signal.aborted) setResults(r);
       } catch (e) {
         if (!controller.signal.aborted) {
@@ -79,7 +74,7 @@ export default function useNexusModsSearch(
     })();
 
     return () => controller.abort();
-  }, [debouncedQuery, tryToUseLogin, domainName, api]);
+  }, [debouncedQuery, tryToUseLogin, domainName, api, adultContentFilter]);
 
   return {
     isLoading,

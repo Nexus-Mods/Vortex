@@ -1,6 +1,7 @@
+import fs from "fs";
+
 import { useEffect } from "react";
 
-import { fs } from "@/api";
 import Debouncer from "@/util/Debouncer";
 
 import type { GameMediaSource } from "../util/mediaTypes";

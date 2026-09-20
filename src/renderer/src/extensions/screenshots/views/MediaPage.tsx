@@ -17,6 +17,7 @@ import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
+import { BetaBadge } from "../components/BetaBadge";
 import MediaListItem from "../components/MediaListItem";
 import MediaListItemSkeleton from "../components/MediaListItemSkeleton";
 import useGameMedia from "../hooks/GameMediaHook";
@@ -75,9 +76,23 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
   return (
     <Page active={active} id="media-page" scrollable={false}>
       <PageHeader
+        customTitle={(compact) => (
+          <div className="flex items-center gap-x-1.5">
+            <Typography
+              appearance={compact ? "subdued" : "moderate"}
+              as="h2"
+              className="transition-colors"
+              typographyType="heading-xs"
+            >
+              {t("Media")}
+            </Typography>
+
+            <BetaBadge isSubdued={compact} />
+          </div>
+        )}
         pictogramName="camera"
         subtitle={t("Screenshots and videos from your selected game.")}
-        title={t("Media")}
+        // title={t("Media")}
       >
         <div className="flex shrink-0 items-center gap-x-2">
           <Button

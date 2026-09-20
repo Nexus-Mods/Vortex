@@ -11,7 +11,7 @@ import type { GameMediaItem } from "../util/mediaTypes";
 import useGameMediaSources from "./GameMediaSourcesHook";
 import useGameMediaWatcher from "./GameMediaWatcherHook";
 
-const PAGE_SIZE = 24;
+export const PAGE_SIZE = 24;
 
 export default function useGameMedia(tab: string) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -24,7 +24,8 @@ export default function useGameMedia(tab: string) {
 
   const discovery = useSelector(currentGameDiscovery);
 
-  const { allSources, defaultSources, customSources, disabledSources } = useGameMediaSources();
+  const { allSources, defaultSources, customSources, disabledSources, flags } =
+    useGameMediaSources();
 
   const items = useSelector(selectors.sessionItems);
 
@@ -39,10 +40,10 @@ export default function useGameMedia(tab: string) {
     async (sourceId: string) => {
       const source = allSources[sourceId];
       if (!source) return;
-      const found = await collectMedia({ [sourceId]: source }, []);
+      const found = await collectMedia({ [sourceId]: source }, [], flags);
       setItems([...(items ?? []).filter((i) => i.sourceId !== sourceId), ...found].sort(sortMedia));
     },
-    [allSources, items, setItems],
+    [allSources, items, setItems, flags],
   );
 
   const onSourceChanged = useCallback((id: string) => void rescanSource(id), [rescanSource]);
@@ -58,7 +59,7 @@ export default function useGameMedia(tab: string) {
 
     void (async () => {
       try {
-        const found = await collectMedia(allSources, disabledSources);
+        const found = await collectMedia(allSources, disabledSources, flags);
         if (active) setItems(found);
       } catch (e) {
         if (!active) return;
@@ -72,13 +73,13 @@ export default function useGameMedia(tab: string) {
     return () => {
       active = false;
     };
-  }, [allSources, disabledSources, setItems, discovery, gameId]);
+  }, [allSources, disabledSources, setItems, discovery, gameId, flags]);
 
   const forceCollect = async () => {
     try {
       setIsError(false);
       setIsLoading(true);
-      const res = await collectMedia(allSources, disabledSources);
+      const res = await collectMedia(allSources, disabledSources, flags);
       setItems(res);
     } catch (e) {
       setError(e instanceof Error ? e : new Error(`Unknown error`));

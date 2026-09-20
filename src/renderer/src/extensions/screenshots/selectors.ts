@@ -20,6 +20,7 @@ export const disabledSources = (state: IState, gameId: string) =>
   mediaState(state).disabledSources[gameId] ?? NO_DISABLED;
 export const modTags = (state: IState, gameId: string, mediaId: string) =>
   mediaState(state).modTags[gameId]?.[mediaId] ?? NO_TAGS;
+export const gameMediaFlags = (state: IState) => mediaState(state).flags;
 export const sessionItems = (state: IState) => mediaSessionState(state).items;
 export const orphanedTagIds = (
   state: IState,

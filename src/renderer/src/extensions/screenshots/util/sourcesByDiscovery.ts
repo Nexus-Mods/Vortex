@@ -10,6 +10,7 @@ import type { GameMediaSource } from "../util/mediaTypes";
 export default async function sourcesByDiscovery(
   game: IGameStored,
   discovery: IDiscoveryResult,
+  flags: { showVideos?: boolean },
 ): Promise<Record<string, GameMediaSource>> {
   const { name, id: gameId, details } = game;
   const { store, path: gamePath } = discovery;
@@ -25,7 +26,7 @@ export default async function sourcesByDiscovery(
   switch (store) {
     case "steam": {
       const steamAppId = game.details?.steamAppId ? String(game.details?.steamAppId) : undefined;
-      const steamMedia = await getSteamMedia(gamePath, steamAppId);
+      const steamMedia = await getSteamMedia(gamePath, flags, steamAppId);
       Object.assign(res, steamMedia);
       break;
     }

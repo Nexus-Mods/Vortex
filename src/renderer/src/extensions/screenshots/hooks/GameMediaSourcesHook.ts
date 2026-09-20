@@ -22,6 +22,8 @@ export default function useGameMediaSources() {
     selectors.disabledSources(state, gameId),
   );
 
+  const flags = useSelector(selectors.gameMediaFlags);
+
   const allSources: Record<string, GameMediaSource> = useMemo(
     () => ({ ...defaultSources, ...customSources }),
     [defaultSources, customSources],
@@ -37,7 +39,7 @@ export default function useGameMediaSources() {
 
     const loadDefault = async () => {
       try {
-        const res = await sourcesByDiscovery(game, discovery);
+        const res = await sourcesByDiscovery(game, discovery, flags);
         if (!active) return;
         setDefaultSources(res ?? {});
       } catch {
@@ -58,5 +60,6 @@ export default function useGameMediaSources() {
     defaultSources,
     customSources,
     disabledSources,
+    flags,
   };
 }

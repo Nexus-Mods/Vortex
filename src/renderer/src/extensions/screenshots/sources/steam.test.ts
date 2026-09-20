@@ -151,7 +151,7 @@ describe("clipsFolderBySteamID -> discoverSteamClips", () => {
     expect(result.length).toEqual(1);
     const videoResult = result[0];
     expect(videoResult).toEqual({
-      id: "steam-videos-456-clip_123",
+      id: "steam-videos-456::clip_123",
       name: "clip_123",
       path: path.join(videoDir, "video_1", "session.mpd"),
       sourceId: "steam-videos-456",

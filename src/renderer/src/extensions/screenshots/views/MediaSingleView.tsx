@@ -13,6 +13,7 @@ import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 
 import { deleteGameMediaModTag } from "../actions/persistent";
+import { BetaBadge } from "../components/BetaBadge";
 import FloatingSearchBar from "../components/FloatingSearchBar";
 import MediaViewSingleDetails from "../components/MediaSingleViewDetails";
 import ModTagIndicator from "../components/ModTagIndicator";
@@ -88,9 +89,23 @@ export default function MediaSingleView({
   return (
     <Page active={active} id="media-details-page" scrollable={false}>
       <PageHeader
+        // title={t("Media")}
+        customTitle={(compact) => (
+          <div className="flex items-center gap-x-1.5">
+            <Typography
+              appearance={compact ? "subdued" : "moderate"}
+              as="h2"
+              className="transition-colors"
+              typographyType="heading-xs"
+            >
+              {t("Media")}
+            </Typography>
+
+            <BetaBadge isSubdued={compact} />
+          </div>
+        )}
         pictogramName="camera"
         subtitle={t("Screenshots and videos from your selected game.")}
-        title={t("Media")}
       >
         <Button
           appearance="weak"

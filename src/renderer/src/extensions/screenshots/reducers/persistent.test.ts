@@ -10,6 +10,7 @@ describe("setGameMediaSourceEnabled", () => {
       sources: {},
       modTags: {},
       disabledSources: {},
+      flags: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -27,6 +28,7 @@ describe("setGameMediaSourceEnabled", () => {
       sources: {},
       modTags: {},
       disabledSources: { testGame: ["testSource"] },
+      flags: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -45,6 +47,7 @@ describe("setGameMediaSourceEnabled", () => {
       sources: {},
       modTags: {},
       disabledSources: { testGame: ["testSource"] },
+      flags: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -65,6 +68,7 @@ describe("addGameMediaSource", () => {
       sources: {},
       modTags: {},
       disabledSources: {},
+      flags: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -91,6 +95,7 @@ describe("addGameMediaSource", () => {
       },
       modTags: {},
       disabledSources: {},
+      flags: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -118,6 +123,7 @@ describe("addGameMediaSource", () => {
       },
       modTags: {},
       disabledSources: {},
+      flags: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -151,6 +157,7 @@ describe("deleteGameMediaSource", () => {
       },
       modTags: {},
       disabledSources: {},
+      flags: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -181,6 +188,7 @@ describe("deleteGameMediaSource", () => {
       },
       modTags: {},
       disabledSources: {},
+      flags: {},
     };
 
     const result = persistentReducer.reducers["DELETE_GAME_MEDIA_SOURCE"](input, {
@@ -219,6 +227,7 @@ describe("deleteGameMediaModTag", () => {
         },
       },
       disabledSources: {},
+      flags: {},
     };
 
     const result = persistentReducer.reducers["DELETE_GAME_MEDIA_MOD_TAG"](input, {
@@ -235,6 +244,7 @@ describe("deleteGameMediaModTag", () => {
 describe("setGameMediaModTags", () => {
   it("stores tags for a media item", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: {},
       disabledSources: {},
@@ -263,6 +273,7 @@ describe("setGameMediaModTags", () => {
 
   it("removes an items entry when tags become empty", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: {
         game: {
@@ -294,6 +305,7 @@ describe("setGameMediaModTags", () => {
 
   it("keeps other game IDs unaffected", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: {
         game2: {
@@ -345,6 +357,7 @@ describe("clearGameMediaModTags", () => {
 
   it("removes only the listed media", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: {
         testGame: {
@@ -366,6 +379,7 @@ describe("clearGameMediaModTags", () => {
 
   it("leaves other games untouched", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: {
         testGame: { "sourceA::gone.png": [tag("1")] },
@@ -384,6 +398,7 @@ describe("clearGameMediaModTags", () => {
 
   it("drops the game entry once its last tags are cleared", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: {
         testGame: {
@@ -406,6 +421,7 @@ describe("clearGameMediaModTags", () => {
 
   it("returns the state unchanged when the game has no tags", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: { otherGame: { "sourceB::keep.png": [tag("1")] } },
       disabledSources: {},
@@ -421,6 +437,7 @@ describe("clearGameMediaModTags", () => {
 
   it("ignores media ids that are not present", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: { testGame: { "sourceA::kept.png": [tag("1")] } },
       disabledSources: {},
@@ -436,6 +453,7 @@ describe("clearGameMediaModTags", () => {
 
   it("does not mutate the previous state", () => {
     const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
       sources: {},
       modTags: {
         testGame: {

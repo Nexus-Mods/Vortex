@@ -66,7 +66,7 @@ describe("collectMedia", () => {
     };
     const disabledSources: string[] = ["sourceB"];
 
-    const result = await collectMedia(sources, disabledSources);
+    const result = await collectMedia(sources, disabledSources, { showVideos: false });
     expect(mockedFs.readdir).toHaveBeenCalledWith("A", { withFileTypes: true });
 
     const resultSources = new Set(result.map((r) => r.sourceId));
@@ -88,7 +88,7 @@ describe("collectMedia", () => {
       },
     };
 
-    const res = await collectMedia(sources, []);
+    const res = await collectMedia(sources, [], { showVideos: false });
     expect(res.length).toEqual(0);
   });
 
@@ -111,7 +111,7 @@ describe("collectMedia", () => {
       },
     };
 
-    const result = await collectMedia(sources, []);
+    const result = await collectMedia(sources, [], { showVideos: false });
 
     const invalidResults = result.filter((r) => r.path.endsWith(".txt"));
     expect(invalidResults).toEqual([]);
@@ -141,7 +141,7 @@ describe("collectMedia", () => {
       },
     };
 
-    const result = await collectMedia(sources, []);
+    const result = await collectMedia(sources, [], { showVideos: true });
     expect(filterFn).toHaveBeenCalledTimes(4);
     expect(filterFn).toHaveBeenCalledWith("someFile-thumbnail.png");
     expect(result.map((r) => r.name)).toEqual(["anotherfile.jpg", "video.mp4"]);
@@ -169,7 +169,7 @@ describe("collectMedia", () => {
       },
     };
 
-    const result = await collectMedia(sources, []);
+    const result = await collectMedia(sources, [], { showVideos: false });
     expect(result.length).toBeGreaterThan(0);
     const date0 = result[0].createdAt;
     const date1 = result[1].createdAt;
@@ -195,7 +195,7 @@ describe("collectMedia", () => {
       },
     };
 
-    await collectMedia(sources, []);
+    await collectMedia(sources, [], { showVideos: false });
     expect(discoverFn).toHaveBeenNthCalledWith(1, "A");
   });
 
@@ -228,6 +228,7 @@ describe("collectMedia", () => {
         },
       },
       [],
+      { showVideos: true },
     );
 
     expect(generateVideoPreview).toHaveBeenCalledWith(

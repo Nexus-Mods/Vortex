@@ -1,4 +1,4 @@
-import { mdiDelete, mdiPencil, mdiPlus } from "@mdi/js";
+import { mdiAlertOutline, mdiDelete, mdiPencil, mdiPlus } from "@mdi/js";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { IExtensionApi, IState } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
 import { Switch } from "@/ui/components/form/switch/Switch";
+import { Icon } from "@/ui/components/icon/Icon";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 
@@ -14,6 +15,7 @@ import {
   clearGameMediaModTags,
   deleteGameMediaSource,
   setGameMediaSourceEnabled,
+  setGameMetaFlag,
 } from "../actions/persistent";
 import useGameMediaSources from "../hooks/GameMediaSourcesHook";
 import * as selectors from "../selectors";
@@ -56,7 +58,14 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
     setShowAddModal(true);
   };
 
-  const { defaultSources, customSources } = useGameMediaSources();
+  const onChangeFlag = useCallback(
+    (name: string, value: boolean) => {
+      dispatch(setGameMetaFlag(name, value));
+    },
+    [dispatch],
+  );
+
+  const { defaultSources, customSources, flags } = useGameMediaSources();
 
   const toggleItem = ([id, source]: [string, GameMediaSource]) => (
     <div className="flex w-max items-center gap-3" key={id}>
@@ -162,6 +171,44 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
           </Button>
         </div>
       )}
+
+      <div className="flex flex-col gap-2">
+        <Typography appearance="moderate" typographyType="body-lg">
+          {t("Experimental")}
+        </Typography>
+
+        <div className="flex w-max items-center gap-3">
+          <Switch
+            checked={flags.showVideos}
+            data-testid={`media-source-toggle-vidoes`}
+            onChange={() => onChangeFlag("showVideos", flags.showVideos ? false : true)}
+          />
+
+          <div className="min-w-sm grow">
+            <Typography as="span" typographyType="body-sm">
+              {t("Video Support")}
+            </Typography>
+
+            <Typography appearance="subdued" as="div" typographyType="body-sm">
+              {t("Include MP4s and Steam clips in the media section.")}
+            </Typography>
+
+            <Typography
+              appearance="subdued"
+              className="nxm-alert-warning flex items-start gap-2"
+              typographyType="body-sm"
+            >
+              <Icon className="nxm-alert-icon inline" path={mdiAlertOutline} size="sm" />
+
+              {t(
+                "It is not currently possible to play Steam clips, and videos will have generic thumbnails unless FFmpeg is installed.",
+              )}
+
+              <a href="https://ffmpeg.org/">{t("Get FFmpeg.")}</a>
+            </Typography>
+          </div>
+        </div>
+      </div>
 
       <SettingsMediaAddSourceModal
         api={api}

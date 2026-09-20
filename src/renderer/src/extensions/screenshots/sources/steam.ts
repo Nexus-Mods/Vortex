@@ -16,6 +16,7 @@ const STEAM64_OFFSET = 76561197960265728n;
 
 export async function getSteamMedia(
   gamePath: string,
+  flags: { showVideos?: boolean },
   knownId?: string | number,
 ): Promise<Record<string, GameMediaSource>> {
   const res: Record<string, GameMediaSource> = {};
@@ -35,6 +36,7 @@ export async function getSteamMedia(
       loggedInSteamUsers[userId],
     );
     Object.assign(res, screenshotFolder);
+    if (!flags.showVideos) continue;
     const videosFolder = await clipsFolderBySteamID(
       userDataFolder,
       steamId,
@@ -150,7 +152,7 @@ async function discoverSteamClips(
         ? path.join(clipPath, "video", videoPaths[0], "session.mpd")
         : undefined;
       return {
-        id: `steam-videos-${userId}-${c}`,
+        id: `steam-videos-${userId}::${c}`,
         path: sessionMPD ?? clipPath,
         name: c,
         sourceId: `steam-videos-${userId}`,

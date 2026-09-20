@@ -43,3 +43,8 @@ export const clearGameMediaModTags = createAction(
   "CLEAR_GAME_MEDIA_MOD_TAGS",
   (gameId: string, mediaIds: string[]) => ({ gameId, mediaIds }),
 );
+
+export const setGameMetaFlag = createAction(
+  "SET_GAME_MEDIA_FLAG",
+  (flag: string, value: boolean) => ({ flag, value }),
+);
