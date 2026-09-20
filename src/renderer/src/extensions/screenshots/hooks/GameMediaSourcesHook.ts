@@ -33,6 +33,7 @@ export default function useGameMediaSources() {
     let active = true;
 
     if (!gameId || !discovery) {
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setDefaultSources({});
       return;
     }
@@ -53,7 +54,7 @@ export default function useGameMediaSources() {
     return () => {
       active = false;
     };
-  }, [gameId, discovery, game]);
+  }, [gameId, discovery, game, flags]);
 
   return {
     allSources,
