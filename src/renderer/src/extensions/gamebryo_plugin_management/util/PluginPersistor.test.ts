@@ -540,11 +540,16 @@ describe("PluginPersistor", () => {
   it("tells telemetry about every failure and the user only once", async () => {
     const onError = vi.fn();
     const record = vi.fn();
-    // a plugin directory that cannot be created, so every write fails for a reason that is
-    // ours rather than the user's
-    const blocker = path.join(tmpDir("plugin-blocked-"), "file");
-    nodeFs.writeFileSync(blocker, "");
-    paths.pluginDir = path.join(blocker, "nested");
+    // its own plugin dir, so the persistor from beforeEach cannot write these files too. The
+    // plugin file still reads; only the write fails, because a directory where loadorder.txt
+    // belongs is EISDIR on every platform and writeFiles writes that file first
+    paths.pluginDir = tmpDir("plugin-unwritable-");
+    nodeFs.writeFileSync(
+      path.join(paths.pluginDir, "plugins.txt"),
+      `${VORTEX_HEADER}\r\n*Old.esp\r\n`,
+      { encoding: "latin1" },
+    );
+    nodeFs.mkdirSync(path.join(paths.pluginDir, "loadorder.txt"));
 
     const failing = new PluginPersistor(onError, () => false, record);
     failing.setResetCallback(vi.fn(() => Promise.resolve()));
@@ -559,7 +564,7 @@ describe("PluginPersistor", () => {
     // the first failure goes out through the notification, which records its own span
     expect(onError).toHaveBeenCalledTimes(1);
     const attributes = record.mock.calls[0]?.[2] as Record<string, unknown>;
-    expect(attributes["error.code"]).toEqual(expect.any(String));
+    expect(attributes["error.code"]).toBe("EISDIR");
   });
 });
 
