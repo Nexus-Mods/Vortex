@@ -18,7 +18,7 @@ import {
   pluginPath,
 } from "../util/gameSupport";
 import toPluginId from "../util/toPluginId";
-import { definedAttributes } from "./spanAttributes";
+import { definedAttributes, SpanAttribute } from "./spanAttributes";
 
 export type PluginFormat = "original" | "fallout4";
 
@@ -340,7 +340,7 @@ class PluginPersistor implements IPersistor {
     this.mRecord(
       message,
       detail,
-      definedAttributes({ "error.code": getErrorCode(detail) ?? undefined }),
+      definedAttributes({ [SpanAttribute.ErrorCode]: getErrorCode(detail) ?? undefined }),
     );
   }
 

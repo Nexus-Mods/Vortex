@@ -81,6 +81,7 @@ import { handleSetPluginList } from "./util/onSetPluginList";
 import PluginHistory from "./util/PluginHistory";
 import PluginPersistor from "./util/PluginPersistor";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
+import { AMBIENT_ATTRIBUTES } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 import { makeUpdatePluginList } from "./util/updatePluginList";
 import UserlistPersistor from "./util/UserlistPersistor";
@@ -631,8 +632,9 @@ function stopSync(): Promise<void> {
     watcher.close();
     watcher = undefined;
   }
-  clearErrorContext("plugin_count");
-  clearErrorContext("plugin_format");
+  for (const key of AMBIENT_ATTRIBUTES) {
+    clearErrorContext(key);
+  }
 
   if (pluginPersistor === undefined) {
     log("debug", "stopSync: pluginPersistor is undefined, resolving immediately");

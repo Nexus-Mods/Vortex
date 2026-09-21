@@ -21,6 +21,7 @@ import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { isNativePlugin, pluginFormat, supportsBlueprintPlugins } from "./gameSupport";
 import { selectPluginFiles } from "./isPlugin";
 import type PluginPersistor from "./PluginPersistor";
+import { SpanAttribute } from "./spanAttributes";
 import toPluginId from "./toPluginId";
 
 // keyed by mod id
@@ -159,8 +160,8 @@ async function updatePluginListImpl(
   }
   persistor.setKnownPlugins(fileNameByPluginId, blueprintIds);
   // rides on every error span for the rest of the session.
-  setErrorContext("plugin_count", String(pluginIds.length));
-  setErrorContext("plugin_format", pluginFormat(gameId));
+  setErrorContext(SpanAttribute.PluginCount, String(pluginIds.length));
+  setErrorContext(SpanAttribute.PluginFormat, pluginFormat(gameId));
 }
 
 /** Rescan a game's plugins into session.plugins.pluginList and hand them to the persistor. */

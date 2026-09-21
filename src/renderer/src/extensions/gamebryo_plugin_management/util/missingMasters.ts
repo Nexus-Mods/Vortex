@@ -22,7 +22,7 @@ import type { IPlugins } from "../types/IPlugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { gameDataPath, gameSupported, nativePlugins, requiresLoadedMasters } from "./gameSupport";
 import { pluginLink, showPluginCallbacks } from "./showPlugin";
-import { definedAttributes, type SpanAttributes } from "./spanAttributes";
+import { definedAttributes, SpanAttribute, type SpanAttributes } from "./spanAttributes";
 import toPluginId from "./toPluginId";
 
 /**
@@ -279,27 +279,28 @@ export function makeDescribeMissing(
     const dependent = originOf(entry.plugin);
     const master = originOf(toPluginId(entry.master));
     const attributes: SpanAttributes = {
-      "master.state": entry.state,
-      "master.name": entry.master,
-      "master.mod_id": master.modId,
-      "master.file_id": master.fileId,
-      "master.collection": master.collection && formatCollectionSource(master.collection),
-      "master.mod_enabled": master.modEnabled,
-      "master.same_collection":
+      [SpanAttribute.MasterState]: entry.state,
+      [SpanAttribute.MasterName]: entry.master,
+      [SpanAttribute.MasterModId]: master.modId,
+      [SpanAttribute.MasterFileId]: master.fileId,
+      [SpanAttribute.MasterCollection]:
+        master.collection && formatCollectionSource(master.collection),
+      [SpanAttribute.MasterModEnabled]: master.modEnabled,
+      [SpanAttribute.MasterSameCollection]:
         dependent.collection !== undefined && master.collection !== undefined
           ? sameCollection(dependent.collection, master.collection)
           : undefined,
-      "plugin.name": entry.plugin,
-      "plugin.mod_id": dependent.modId,
-      "plugin.file_id": dependent.fileId,
-      "plugin.collection": dependent.collection && formatCollectionSource(dependent.collection),
-      "collections.enabled": collections.enabled.map(formatCollectionSource).join(","),
-      "collections.count": collections.enabled.length,
+      [SpanAttribute.PluginName]: entry.plugin,
+      [SpanAttribute.PluginModId]: dependent.modId,
+      [SpanAttribute.PluginFileId]: dependent.fileId,
+      [SpanAttribute.PluginCollection]:
+        dependent.collection && formatCollectionSource(dependent.collection),
+      [SpanAttribute.CollectionsEnabled]: collections.enabled.map(formatCollectionSource).join(","),
+      [SpanAttribute.CollectionsCount]: collections.enabled.length,
       // how the run splits: every unavailable master, and the ones the plugin list got wrong.
       // Only the latter are reported, so one span says how many others came with it
-      "missing.count": missing.length,
-      "missing.contradicting": contradicting,
-      "plugins.count": Object.keys(check.pluginList).length,
+      [SpanAttribute.MissingCount]: missing.length,
+      [SpanAttribute.MissingContradicting]: contradicting,
     };
     return definedAttributes(attributes);
   };

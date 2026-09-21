@@ -6,6 +6,8 @@ import type { IExtensionApi } from "../../types/IExtensionContext";
 import { activeProfile } from "../profile_management/selectors";
 import type { IProfile } from "../profile_management/types/IProfile";
 import type { ILOOTSortApiCall } from "./types/ILOOTList";
+import { LootPhase, lootErrorReporter } from "./util/LootErrorReporter";
+import { SpanAttribute } from "./util/spanAttributes";
 
 // all late-bound from the entry module, where the LootInterface and the plugin-list scan live
 export interface ILootSortDeps {
@@ -66,12 +68,25 @@ export function makeLootSortAsync(
     });
     try {
       const sorted = await Promise.race([sortPlugins(deps, profile, pluginFilePaths), timedOut]);
+      if (sorted.length === 0 && pluginFilePaths.length > 0) {
+        // the caller asked for plugins and got none back, which it reports as its own error
+        lootErrorReporter.report(
+          api,
+          new VortexError("LOOT sorted none of the plugins it was given", { kind: "loot:failed" }),
+          LootPhase.Sort,
+          { silent: true, context: { [SpanAttribute.LootSortRequested]: pluginFilePaths.length } },
+        );
+      }
       onSortCallback(null, sorted);
     } catch (err) {
       log("warn", "lootSortAsync failed", {
         gameId: profile.gameId,
         error: getErrorMessageOrDefault(err),
       });
+      if (err instanceof VortexError) {
+        // the caller is told through its own callback, so only telemetry is owed here
+        lootErrorReporter.report(api, err, LootPhase.Sort, { silent: true });
+      }
       onSortCallback(unknownToError(err), []);
     } finally {
       clearTimeout(deadline);
