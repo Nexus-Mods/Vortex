@@ -22,6 +22,16 @@ import { definedAttributes, SpanAttribute } from "./spanAttributes";
 
 export type PluginFormat = "original" | "fallout4";
 
+/** Why Vortex is asking before it writes the plugin files. */
+export const PluginFileConflict = {
+  /** Another tool or the game rewrote the files while Vortex held state for this game. */
+  ForeignChange: "foreign-change",
+  /** The files could not be read, so writing would replace a load order Vortex never saw. */
+  Unreadable: "unreadable",
+} as const;
+
+export type PluginFileConflict = (typeof PluginFileConflict)[keyof typeof PluginFileConflict];
+
 interface IPluginMap {
   [id: string]: IPluginLoadOrderEntry;
 }
@@ -91,7 +101,7 @@ class PluginPersistor implements IPersistor {
   private mFailed: boolean = false;
   private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
   private mControlOrder: () => boolean;
-  private mOnExternalChange: () => PromiseLike<"keep" | "revert">;
+  private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
   private mExternalChoicePending: boolean = false;
   private mRecord: typeof recordErrorSpan;
 
@@ -186,10 +196,12 @@ class PluginPersistor implements IPersistor {
   }
 
   /**
-   * Called when a foreign tool/game rewrote the plugin files while Vortex already holds
-   * state for the game; resolves the user's decision to keep or revert those changes.
+   * Called before Vortex writes over plugin files it cannot account for; resolves the user's
+   * decision to keep what is on disk or revert to the load order Vortex holds.
    */
-  public setExternalChangeCallback(cb: () => PromiseLike<"keep" | "revert">) {
+  public setExternalChangeCallback(
+    cb: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">,
+  ) {
     this.mOnExternalChange = cb;
   }
 
@@ -405,7 +417,7 @@ class PluginPersistor implements IPersistor {
       return Promise.resolve();
     }
     if (this.mExternalChoicePending) {
-      // don't serialize while the user is deciding whether to keep or revert a foreign rewrite
+      // don't serialize while the user is deciding what to do about the files on disk
       return Promise.resolve();
     }
     if (!this.mSerializeScheduled) {
@@ -437,6 +449,9 @@ class PluginPersistor implements IPersistor {
 
   private doSerialize(): Promise<void> {
     if (this.mPluginPath === undefined || this.mDataPath === undefined) {
+      return Promise.resolve();
+    }
+    if (this.mExternalChoicePending) {
       return Promise.resolve();
     }
     if (this.mKnownPlugins === undefined) {
@@ -678,7 +693,7 @@ class PluginPersistor implements IPersistor {
             this.mOnExternalChange !== undefined
           ) {
             // a foreign rewrite while Vortex holds state for this game: the user decides
-            this.promptExternalChange();
+            this.promptExternalChange(PluginFileConflict.ForeignChange);
             return Promise.resolve();
           }
           this.adoptParsed(newPlugins);
@@ -698,9 +713,15 @@ class PluginPersistor implements IPersistor {
           --this.mRetryCounter;
           this.scheduleRefresh(100);
         } else {
-          // giving up...
+          // loaded, so enables still reach the file, but holding no load order for a file
+          // that has one: the user decides before anything writes over it
           this.mLoaded = true;
+          const firstFailure = !this.mFailed;
           this.reportError("failed to read plugin list", unknownToError(err));
+          // one dialog per streak, since a kept file that is still unreadable lands back here
+          if (firstFailure && this.mOnExternalChange !== undefined) {
+            this.promptExternalChange(PluginFileConflict.Unreadable);
+          }
         }
       });
   }
@@ -796,17 +817,18 @@ class PluginPersistor implements IPersistor {
   }
 
   /**
-   * Ask the user whether to keep or revert a foreign rewrite of the plugin files. Runs
-   * detached from the serialize queue (a pending dialog must not block writes); bursts
-   * of change events collapse into the one open prompt. Keep re-parses the file at
-   * decision time; until then Vortex's own state stays authoritative.
+   * Ask the user what to do about plugin files Vortex cannot account for, either because
+   * something else rewrote them or because it could not read them. Runs detached from the
+   * serialize queue (a pending dialog must not block writes); bursts of change events
+   * collapse into the one open prompt. Keep re-parses the file at decision time; until then
+   * nothing is written.
    */
-  private promptExternalChange() {
+  private promptExternalChange(reason: PluginFileConflict) {
     if (this.mExternalChoicePending) {
       return;
     }
     this.mExternalChoicePending = true;
-    Promise.resolve(this.mOnExternalChange())
+    Promise.resolve(this.mOnExternalChange(reason))
       .then((choice) => {
         this.mExternalChoicePending = false;
         if (choice === "keep") {

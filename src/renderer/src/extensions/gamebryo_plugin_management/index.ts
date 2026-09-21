@@ -80,6 +80,7 @@ import { checkMissingMasters } from "./util/missingMasters";
 import { handleModEnabled } from "./util/onModEnabled";
 import { handleModInstalled } from "./util/onModInstalled";
 import { handleSetPluginList } from "./util/onSetPluginList";
+import { makePluginConflictPrompt } from "./util/pluginFileConflict";
 import PluginHistory from "./util/PluginHistory";
 import PluginPersistor from "./util/PluginPersistor";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
@@ -504,20 +505,7 @@ function initPersistor(context: IExtensionContextExt) {
       onError,
       () => context.api.store.getState().settings.plugins.autoSort,
     );
-    pluginPersistor.setExternalChangeCallback(() =>
-      context.api
-        .showDialog(
-          "question",
-          "Plugin list changed outside Vortex",
-          {
-            text:
-              "Another tool or the game changed the plugin list files. " +
-              "Keep those changes or revert to the load order Vortex manages?",
-          },
-          [{ label: "Revert" }, { label: "Keep" }],
-        )
-        .then((result) => (result.action === "Keep" ? "keep" : "revert")),
-    );
+    pluginPersistor.setExternalChangeCallback(makePluginConflictPrompt(context.api));
   }
   if (userlistPersistor === undefined) {
     userlistPersistor = new UserlistPersistor("userlist", onError);
