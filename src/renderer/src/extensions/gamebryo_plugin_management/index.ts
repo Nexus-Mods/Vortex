@@ -625,7 +625,7 @@ async function swapUserlistForProfile(
 
 let watcher: fs.FSWatcher;
 
-function stopSync(): Bluebird<void> {
+function stopSync(): Promise<void> {
   if (watcher !== undefined) {
     watcher.close();
     watcher = undefined;
@@ -633,13 +633,13 @@ function stopSync(): Bluebird<void> {
 
   if (pluginPersistor === undefined) {
     log("debug", "stopSync: pluginPersistor is undefined, resolving immediately");
-    return Bluebird.resolve();
+    return Promise.resolve();
   }
 
   return pluginPersistor.disable();
 }
 
-function startSync(api: IExtensionApi): Bluebird<void> {
+function startSync(api: IExtensionApi): Promise<void> {
   const store = api.store;
 
   // start with a clean slate
@@ -647,7 +647,7 @@ function startSync(api: IExtensionApi): Bluebird<void> {
 
   const gameId = activeGameId(store.getState());
 
-  let prom: Bluebird<void> = Bluebird.resolve();
+  let prom: Promise<void> = Promise.resolve();
 
   if (pluginPersistor !== undefined) {
     prom = pluginPersistor.loadFiles(gameId);
@@ -1476,15 +1476,15 @@ function init(context: IExtensionContextExt) {
             // persist the loadOrder hive before the plugin list refresh: the postprocess
             // enable batch may still be inside the debounced diff pipeline
             const state = context.api.getState<IStateWithGamebryo>();
-            const flushed: Bluebird<void> =
+            const flushed: Promise<void> =
               pluginPersistor !== undefined
                 ? pluginPersistor.syncFromState(gameId, state.loadOrder ?? {}).catch((err) => {
                     log("error", "failed to sync plugin state after collection install", {
-                      error: err.message,
+                      error: getErrorMessageOrDefault(err),
                     });
                   })
-                : Bluebird.resolve();
-            flushed.then(() => onDidDeploy(context.api, profileId));
+                : Promise.resolve();
+            void flushed.then(() => onDidDeploy(context.api, profileId));
           },
         );
 
