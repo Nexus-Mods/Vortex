@@ -8,7 +8,7 @@ import * as winapi from "winapi-bindings";
 
 import type { IExecInfo } from "../types/IExecInfo";
 import type { IExtensionApi } from "../types/IExtensionContext";
-import type { ICustomExecutionInfo, IGameStore } from "../types/IGameStore";
+import type { ICustomExecutionInfo, IGameStore, IGameStoreSnapshot } from "../types/IGameStore";
 import { GameEntryNotFound } from "../types/IGameStore";
 import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import * as fs from "./fs";
@@ -42,7 +42,7 @@ class Steam implements IGameStore {
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
   private mBaseFolder: PromiseBB<string | undefined>;
-  private mCache: PromiseBB<ISteamEntry[]>;
+  #snapshot: IGameStoreSnapshot;
 
   constructor() {
     if (process.platform === "win32") {
@@ -54,13 +54,16 @@ class Steam implements IGameStore {
           "SteamPath",
         );
         this.mBaseFolder = PromiseBB.resolve(steamPath.value as string);
+        this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "steam not found", err);
         this.mBaseFolder = PromiseBB.resolve(undefined);
+        this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
       const linuxPath = findLinuxSteamPath();
       this.mBaseFolder = PromiseBB.resolve(linuxPath);
+      this.#snapshot = { entries: [], isInstalled: linuxPath !== undefined };
     }
   }
 
@@ -167,10 +170,11 @@ class Steam implements IGameStore {
   }
 
   public allGames(): PromiseBB<ISteamEntry[]> {
-    if (!this.mCache) {
-      this.mCache = this.parseManifests();
-    }
-    return this.mCache;
+    return PromiseBB.resolve(this.#snapshot.entries as ISteamEntry[]);
+  }
+
+  public snapshot(): IGameStoreSnapshot {
+    return this.#snapshot;
   }
 
   public getGameStorePath(): PromiseBB<string | undefined> {
@@ -183,9 +187,8 @@ class Steam implements IGameStore {
   }
 
   public reloadGames(): PromiseBB<void> {
-    return new PromiseBB((resolve) => {
-      this.mCache = this.parseManifests();
-      return resolve();
+    return this.parseManifests().then((entries: ISteamEntry[]) => {
+      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
     });
   }
 

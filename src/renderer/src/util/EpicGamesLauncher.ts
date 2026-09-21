@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { log } from "../logging";
 import type { IExtensionApi } from "../types/IExtensionContext";
-import type { IGameStore } from "../types/IGameStore";
+import type { IGameStore, IGameStoreSnapshot } from "../types/IGameStore";
 import { GameEntryNotFound } from "../types/IGameStore";
 import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import * as fs from "./fs";
@@ -31,7 +31,7 @@ export class EpicGamesLauncher implements IGameStore {
   public priority: number = STORE_PRIORITY;
   private mDataPath: PromiseBB<string | undefined>;
   private mLauncherExecPath: string;
-  private mCache: PromiseBB<EpicGamesStoreEntry[]>;
+  #snapshot: IGameStoreSnapshot;
 
   constructor() {
     if (process.platform === "win32") {
@@ -43,13 +43,16 @@ export class EpicGamesLauncher implements IGameStore {
           "AppDataPath",
         );
         this.mDataPath = PromiseBB.resolve(epicDataPath.value as string);
+        this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "Epic games launcher not found", err);
         this.mDataPath = PromiseBB.resolve<string | undefined>(undefined);
+        this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
       // TODO: Is epic launcher even available on non-windows platforms?
       this.mDataPath = PromiseBB.resolve<string | undefined>(undefined);
+      this.#snapshot = { entries: [], isInstalled: false };
     }
   }
 
@@ -121,16 +124,16 @@ export class EpicGamesLauncher implements IGameStore {
   }
 
   public allGames(): PromiseBB<EpicGamesStoreEntry[]> {
-    if (!this.mCache) {
-      this.mCache = this.parseManifests();
-    }
-    return this.mCache;
+    return PromiseBB.resolve(this.#snapshot.entries as EpicGamesStoreEntry[]);
+  }
+
+  public snapshot(): IGameStoreSnapshot {
+    return this.#snapshot;
   }
 
   public reloadGames(): PromiseBB<void> {
-    return new PromiseBB((resolve) => {
-      this.mCache = this.parseManifests();
-      return resolve();
+    return this.parseManifests().then((entries: EpicGamesStoreEntry[]) => {
+      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
     });
   }
 
