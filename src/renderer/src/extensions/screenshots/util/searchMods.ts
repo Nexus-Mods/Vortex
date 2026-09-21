@@ -77,7 +77,7 @@ export default async function searchMods(
       throw new Error(`Mod search failed: ${res.status} ${res.statusText}`);
     }
     const json: IModsQueryResult = (await res.json()) as IModsQueryResult;
-    if (json.errors || !json.data) throw new Error("Mod search failed with Graph QL errors");
+    if (json.errors || !json.data) throw new Error("Mod search failed with GraphQL errors");
     return json.data.mods.nodes;
   } catch (e: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-base-to-string

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect } from "vitest";
 
 import type { GameMediaModTag, GameMediaSource } from "../util/mediaTypes";
@@ -59,6 +60,35 @@ describe("setGameMediaSourceEnabled", () => {
     });
 
     expect(result.disabledSources[gameId].length).toEqual(1);
+  });
+
+  it("does not affect other games with toggling the source for a different one", async () => {
+    const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
+      disabledSources: {
+        "game-1": ["someSource"],
+        testGame: [],
+      },
+    };
+
+    const gameId = "testGame";
+    const sourceId = "testSource";
+
+    const resultA = persistentReducer.reducers["SET_GAME_MEDIA_SOURCE_ENABLED"](input, {
+      gameId,
+      sourceId,
+      enabled: false,
+    });
+
+    expect(resultA.disabledSources).toEqual({ "game-1": ["someSource"], testGame: ["testSource"] });
+
+    const resultB = persistentReducer.reducers["SET_GAME_MEDIA_SOURCE_ENABLED"](resultA, {
+      gameId: "game-1",
+      sourceId: "someSource",
+      enabled: true,
+    });
+
+    expect(resultB.disabledSources).toEqual({ "game-1": [], testGame: ["testSource"] });
   });
 });
 
@@ -470,5 +500,20 @@ describe("clearGameMediaModTags", () => {
     });
 
     expect(input.modTags.testGame["sourceA::gone.png"]).toEqual([tag("1")]);
+  });
+});
+
+describe("setGameMediaFlag", () => {
+  it("correctly sets a flag", () => {
+    const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
+    };
+
+    const result = persistentReducer.reducers["SET_GAME_MEDIA_FLAG"](input, {
+      flag: "showVideos",
+      value: true,
+    });
+
+    expect(result.flags.showVideos).toBe(true);
   });
 });

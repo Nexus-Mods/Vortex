@@ -84,4 +84,26 @@ describe("prunePreviewCache", () => {
     await prunePreviewCache();
     expect(mockedFs.unlink).not.toHaveBeenCalledWith(at("subdir"));
   });
+
+  it("clears out larger and older files when the cache becomes large", async () => {
+    mockedFs.readdir.mockResolvedValue([
+      "one.jpg",
+      "two.jpg",
+      "three.jpg",
+      "four.jpg",
+      "five.jpg",
+    ] as any);
+
+    mockedFs.stat.mockImplementation(
+      async (p: string): Promise<Stats> =>
+        ({
+          isFile: () => p !== at("subdir"),
+          mtimeMs: new Date().getTime(),
+          size: 60000000,
+        }) as any,
+    );
+
+    await prunePreviewCache();
+    expect(mockedFs.unlink).toHaveBeenCalledTimes(2);
+  });
 });

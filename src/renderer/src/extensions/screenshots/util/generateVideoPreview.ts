@@ -1,13 +1,9 @@
+import { spawn } from "child_process";
 import fs from "fs/promises";
-import { spawn, spawnSync } from "node:child_process";
 import path from "path";
 
+import { hasFfmpeg } from "./ffmpeg";
 import { previewDir } from "./previewCache";
-
-let ffmpegAvailable: boolean | undefined;
-
-export const hasFfmpeg = () =>
-  (ffmpegAvailable ??= spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0);
 
 export default async function generateVideoPreview(
   mp4Path: string,

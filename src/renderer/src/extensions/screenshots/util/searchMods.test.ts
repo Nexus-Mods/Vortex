@@ -52,9 +52,44 @@ describe("searchMods", () => {
     expect(headers["Authorization"]).toBe(`Bearer ${token}`);
   });
 
-  it("throws an error for an expired token", () => {});
+  it("throws an error for an expired token", async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 401,
+    } as any);
 
-  it("throws an error when GraphQL errors are returned", () => {});
+    try {
+      await searchMods("skse", gameDomain, token, true, signal as any);
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e.message : undefined;
+      expect(error).toBe("Nexus Mods token has expired, please log out and back in.");
+    }
+  });
 
-  it("passes the AbortSignal through to fetch", () => {});
+  it("throws an error when GraphQL errors are returned", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ errors: [] }),
+    } as any);
+
+    try {
+      await searchMods("skse", gameDomain, token, true, signal as any);
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e.message : undefined;
+      expect(error).toBe("Mod search failed with GraphQL errors");
+    }
+  });
+
+  it("passes the AbortSignal through to fetch", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data: { mods: { nodes: [] } } }),
+      status: 200,
+      statusText: "Success",
+    } as any);
+    await searchMods("skse", gameDomain, token, true, signal as any);
+
+    expect(mockFetch.mock.calls[0][1].signal).toBe(signal);
+  });
 });
