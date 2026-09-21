@@ -85,6 +85,22 @@ function makeCollection(pluginEnabled: Record<string, boolean>): ICollection {
   } as unknown as ICollection;
 }
 
+// A collection whose pluginRules carry userlist entries in the shape generate() actually emits:
+// extractPluginRules copies state.userlist.plugins verbatim, so rules sit under the LOOT keys
+// req/inc/after rather than the requires/incompatible/after action names.
+function makeRuleCollection(plugins: unknown[]): ICollection {
+  return {
+    plugins: [],
+    pluginRules: { plugins, groups: [] },
+  } as unknown as ICollection;
+}
+
+function userlistRuleActions(harness: ReturnType<typeof makeApiHarness>) {
+  return harness.dispatched
+    .filter((action) => action.type === "ADD_USERLIST_RULE")
+    .map((action) => action.payload as { pluginId: string; reference: unknown; type: string });
+}
+
 // Build a harness whose persistent.mods holds the member mods plus, unless withCollectionMod is
 // false, the fully-ruled collection mod. userlist + session.notifications are slices the parser
 // reads that the driver harness doesn't seed by default.
@@ -168,5 +184,103 @@ describe("gamebryo collection parser plugin force-enable", () => {
         .map((a) => a.pluginName)
         .sort(),
     ).toEqual(ALL_PLUGINS);
+  });
+});
+
+/**
+ * The curator's load order reaches the installing user as userlist rules replayed by the parser.
+ * Anything the parser fails to replay is a constraint LOOT never sees, so the installed order can
+ * differ from the one the collection was built against - the "reset the plugin rules and sort
+ * again" workaround curators hand out for this.
+ */
+describe("gamebryo collection parser plugin rules", () => {
+  const collectionMod = () => makeMod({ id: COLLECTION_ID, type: MOD_TYPE, rules: [] });
+
+  it("replays requires and incompatible rules, which the manifest stores as req and inc", async () => {
+    seedReaddir();
+    const harness = makeHarness();
+    const collection = makeRuleCollection([
+      {
+        name: "BijinAIO.esp",
+        req: ["RaceCompatibility.esm"],
+        inc: ["MiriFollower.esp"],
+        after: ["Immersive Sounds.esp"],
+      },
+    ]);
+
+    await parser(harness.api, GAME_ID, collection, collectionMod());
+
+    expect(
+      userlistRuleActions(harness).map((a) => ({ reference: a.reference, type: a.type })),
+    ).toEqual([
+      { reference: "RaceCompatibility.esm", type: "requires" },
+      { reference: "MiriFollower.esp", type: "incompatible" },
+      { reference: "Immersive Sounds.esp", type: "after" },
+    ]);
+  });
+
+  it("replays rules whose reference is the expanded {name, display} form", async () => {
+    seedReaddir();
+    const harness = makeHarness();
+    const reference = { name: "RaceCompatibility.esm", display: "Race Compatibility" };
+    const collection = makeRuleCollection([{ name: "BijinAIO.esp", after: [reference] }]);
+
+    await parser(harness.api, GAME_ID, collection, collectionMod());
+
+    expect(userlistRuleActions(harness)).toEqual([
+      { pluginId: "bijinaio.esp", reference, type: "after" },
+    ]);
+  });
+
+  // Reinstalling or updating a collection replays it over a userlist that already holds the
+  // previous revision's rules, so the dedupe comparison runs for real. An expanded reference
+  // reaching it used to throw out of the reduce, taking every remaining rule with it.
+  it("compares an expanded reference against a userlist that already holds rules", async () => {
+    seedReaddir();
+    const harness = makeHarness();
+    harness.setState((draft) => {
+      (draft as unknown as { userlist: { plugins: unknown[] } }).userlist.plugins = [
+        { name: "BijinAIO.esp", after: ["MiriFollower.esp"] },
+      ];
+    });
+    const reference = { name: "RaceCompatibility.esm", display: "Race Compatibility" };
+    const collection = makeRuleCollection([
+      { name: "BijinAIO.esp", after: [reference] },
+      { name: "Immersive Sounds.esp", after: ["MiriFollower.esp"] },
+    ]);
+
+    await parser(harness.api, GAME_ID, collection, collectionMod());
+
+    expect(userlistRuleActions(harness)).toEqual([
+      { pluginId: "bijinaio.esp", reference, type: "after" },
+      { pluginId: "immersive sounds.esp", reference: "MiriFollower.esp", type: "after" },
+    ]);
+  });
+
+  it("skips a rule the userlist already carries, matching across both reference forms", async () => {
+    seedReaddir();
+    const harness = makeHarness();
+    harness.setState((draft) => {
+      (draft as unknown as { userlist: { plugins: unknown[] } }).userlist.plugins = [
+        {
+          name: "BijinAIO.esp",
+          after: [{ name: "IMMERSIVE SOUNDS.ESP", display: "Immersive Sounds" }],
+          req: ["RACECOMPATIBILITY.ESM"],
+        },
+      ];
+    });
+    const collection = makeRuleCollection([
+      {
+        name: "BijinAIO.esp",
+        after: ["Immersive Sounds.esp"],
+        req: ["RaceCompatibility.esm", "MiriFollower.esp"],
+      },
+    ]);
+
+    await parser(harness.api, GAME_ID, collection, collectionMod());
+
+    expect(userlistRuleActions(harness)).toEqual([
+      { pluginId: "bijinaio.esp", reference: "MiriFollower.esp", type: "requires" },
+    ]);
   });
 });
