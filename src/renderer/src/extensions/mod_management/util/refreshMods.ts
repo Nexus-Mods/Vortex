@@ -29,6 +29,8 @@ function refreshMods(
   const knownModNames: string[] = Object.keys(knownMods).filter((modId) =>
     IGNORABLE_PREFIXES.every((prefix) => !modId.toLowerCase().startsWith(prefix)),
   );
+  const knownModNameSet = new Set(knownModNames);
+  const stripInstalling = (name: string) => name.replace(/.installing$/, "");
   return Promise.resolve(folderIsMissing(installPath))
     .then((missing) => {
       // Never create the folder we are about to treat as the source of truth:
@@ -49,7 +51,17 @@ function refreshMods(
           fs
             .statAsync(path.join(installPath, modName))
             .then((stats) => (stats.isDirectory() ? modName : null))
-            .catch(() => null),
+            .catch((err: unknown) =>
+              // Only a definitive ENOENT proves the entry is gone. Any other failure - a sharing
+              // violation while a scanner holds the folder, handle exhaustion on a staging folder
+              // carrying a thousand mods - leaves us unable to tell, and dropping the name would
+              // report a mod that is still on disk as manually removed, offering to wipe its
+              // record irreversibly. Keep known mods; an unreadable entry we never knew about
+              // stays out so it cannot surface as a phantom addition.
+              getErrorCode(err) !== "ENOENT" && knownModNameSet.has(stripInstalling(modName))
+                ? modName
+                : null,
+            ),
         ),
       ).then((results) => results.filter((name): name is string => name != null)),
     )

@@ -5,10 +5,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // a missing entry means the folder itself doesn't exist.
 const stagingEntries = new Map<string, string[]>();
 const createdDirs: string[] = [];
+// entry name -> error code statAsync should fail that entry with, for the reads
+// that come back neither "here" nor "gone".
+const statErrors = new Map<string, string>();
 
 const enoent = () => Object.assign(new Error("ENOENT"), { code: "ENOENT" });
 
 const stat = (full: string) => {
+  const leaf = full.slice(Math.max(full.lastIndexOf("\\"), full.lastIndexOf("/")) + 1);
+  const failure = statErrors.get(leaf);
+  if (failure !== undefined) {
+    return Promise.reject(Object.assign(new Error(failure), { code: failure }));
+  }
   if (stagingEntries.has(full)) {
     return Promise.resolve({ isDirectory: () => true, ctime: new Date(0) });
   }
@@ -86,6 +94,7 @@ function run(knownMods: Record<string, IMod>, onDisk: string[] | undefined, down
 describe("refreshMods", () => {
   beforeEach(() => {
     stagingEntries.clear();
+    statErrors.clear();
     createdDirs.length = 0;
     quit.mockClear();
   });
@@ -176,5 +185,52 @@ describe("refreshMods", () => {
     });
 
     expect(harness.getState().persistent.mods[GAME]).toEqual({});
+  });
+
+  // The folder-level guards above cover "unavailable" and "reads empty". Per-entry reads fail
+  // on their own too - a scanner holding a directory open, handle exhaustion when a staging
+  // folder carries a thousand mods - and the folder still lists them, so neither guard fires.
+  // An unreadable entry is not a deleted one.
+  it("keeps a record whose staging entry is listed but unreadable", async () => {
+    const mods = {
+      "SkyUI_5_2_SE-12604-5-2SE": makeMod({
+        id: "SkyUI_5_2_SE-12604-5-2SE",
+        installationPath: "SkyUI_5_2_SE-12604-5-2SE",
+      }),
+      "Survivor-1-0-0": makeMod({ id: "Survivor-1-0-0", installationPath: "Survivor-1-0-0" }),
+    };
+    statErrors.set("SkyUI_5_2_SE-12604-5-2SE", "EPERM");
+
+    const harness = await run(mods, ["SkyUI_5_2_SE-12604-5-2SE", "Survivor-1-0-0"]);
+
+    expect(harness.getState().persistent.mods[GAME]).toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
+    expect(harness.dialogCalls).toEqual([]);
+  });
+
+  it("still removes a record whose staging entry is definitively gone", async () => {
+    const mods = {
+      "SkyUI_5_2_SE-12604-5-2SE": makeMod({
+        id: "SkyUI_5_2_SE-12604-5-2SE",
+        installationPath: "SkyUI_5_2_SE-12604-5-2SE",
+      }),
+      "Survivor-1-0-0": makeMod({ id: "Survivor-1-0-0", installationPath: "Survivor-1-0-0" }),
+    };
+    statErrors.set("SkyUI_5_2_SE-12604-5-2SE", "ENOENT");
+
+    const harness = await run(mods, ["SkyUI_5_2_SE-12604-5-2SE", "Survivor-1-0-0"]);
+
+    expect(harness.getState().persistent.mods[GAME]).not.toHaveProperty("SkyUI_5_2_SE-12604-5-2SE");
+  });
+
+  it("does not invent a mod from an unreadable entry it never knew", async () => {
+    statErrors.set("Interloper-1-0-0", "EBUSY");
+
+    const harness = await run(
+      { "Survivor-1-0-0": makeMod({ id: "Survivor-1-0-0", installationPath: "Survivor-1-0-0" }) },
+      ["Survivor-1-0-0", "Interloper-1-0-0"],
+    );
+
+    expect(harness.getState().persistent.mods[GAME]).not.toHaveProperty("Interloper-1-0-0");
+    expect(harness.dialogCalls).toEqual([]);
   });
 });
