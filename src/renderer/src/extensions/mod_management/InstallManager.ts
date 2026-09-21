@@ -2032,7 +2032,14 @@ class InstallManager {
                   } else if (err instanceof InsufficientDiskSpace) {
                     return prom.then(() => {
                       if (installContext !== undefined) {
-                        const mountPoint = err.mountPoint;
+                        // Prefer the volume the error carries, but fall back to
+                        // the staging folder's. Installing a collection member
+                        // passes the error through enough layers that its own
+                        // properties don't always survive, and extraction targets
+                        // the staging volume either way.
+                        const mountPoint =
+                          err.mountPoint ??
+                          path.parse(installPathForGame(api.getState(), installGameId)).root;
                         installContext.reportError(
                           "Not enough disk space",
                           mountPoint

@@ -24,6 +24,11 @@ export interface IAggregatedNotification {
   count: number;
   allowReport?: boolean;
   actions?: INotificationAction[];
+  /**
+   * i18n substitutions for the title/details. Without these a caller's
+   * "{{id}} failed to install" reaches the user with the braces still in it.
+   */
+  replace?: { [key: string]: string };
 }
 
 export interface IPendingNotification {
@@ -33,6 +38,7 @@ export interface IPendingNotification {
   item: string;
   allowReport?: boolean;
   actions?: INotificationAction[];
+  replace?: { [key: string]: string };
 }
 
 /**
@@ -88,7 +94,11 @@ export class NotificationAggregator {
     title: string,
     details: string | Error,
     item: string,
-    options: { allowReport?: boolean; actions?: INotificationAction[] } = {},
+    options: {
+      allowReport?: boolean;
+      actions?: INotificationAction[];
+      replace?: { [key: string]: string };
+    } = {},
   ): void {
     if (!this.mActiveAggregations.has(aggregationId)) {
       setImmediatePolyfill(() => {
@@ -96,6 +106,7 @@ export class NotificationAggregator {
           message: item,
           allowReport: options.allowReport,
           actions: options.actions,
+          replace: options.replace,
         });
       });
       return;
@@ -109,6 +120,7 @@ export class NotificationAggregator {
       item,
       allowReport: options.allowReport,
       actions: options.actions,
+      replace: options.replace,
     });
   }
 
@@ -363,6 +375,7 @@ export class NotificationAggregator {
         count: group.length,
         allowReport: first.allowReport,
         actions: first.actions,
+        replace: first.replace,
       };
     });
   }
@@ -446,6 +459,7 @@ export class NotificationAggregator {
         id: notification.id,
         allowReport: notification.allowReport,
         actions: notification.actions,
+        replace: notification.replace,
       };
 
       // Add count information to the title if multiple items

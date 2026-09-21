@@ -153,4 +153,45 @@ describe("NotificationAggregator", () => {
     expect(mockApi.showErrorNotification).toHaveBeenCalledTimes(1);
     expect(aggregator.isAggregating("test-session")).toBe(false);
   });
+
+  // Aggregation rebuilds the notification from the first of the group, so anything
+  // the caller needs for i18n has to be carried over with it. Dropping it put
+  // literal "{{id}} failed to install" in front of users whenever two collection
+  // members failed together.
+  test("carries the i18n substitutions onto an aggregated notification", async () => {
+    aggregator.startAggregation("test-session", 0);
+
+    for (const mod of ["ModA", "ModB"]) {
+      aggregator.addNotification(
+        "test-session",
+        "error",
+        "{{id}} failed to install",
+        "Install failed",
+        mod,
+        { allowReport: false, replace: { id: "Collision Meshes FNV" } },
+      );
+    }
+    const flushPromise = aggregator.flushAggregation("test-session");
+    await vi.runAllTimersAsync();
+    await flushPromise;
+
+    expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
+      expect.stringContaining("{{id}} failed to install"),
+      expect.anything(),
+      expect.objectContaining({ replace: { id: "Collision Meshes FNV" } }),
+    );
+  });
+
+  test("passes the substitutions straight through when not aggregating", async () => {
+    aggregator.addNotification("test-session", "error", "{{id}} failed", "boom", "ModA", {
+      replace: { id: "ModA" },
+    });
+    await vi.runAllTimersAsync();
+
+    expect(mockApi.showErrorNotification).toHaveBeenCalledWith(
+      "{{id}} failed",
+      "boom",
+      expect.objectContaining({ replace: { id: "ModA" } }),
+    );
+  });
 });
