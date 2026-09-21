@@ -1909,3 +1909,35 @@ ul.collection-mods-page-attrib-tooltip {
         }
     }
 }
+
+// What a collection install needs against what each drive has, shown in the
+// install dialog before the button is pressed rather than as an error after.
+// Deliberately not nested under #collection-install-dialog - that dialog's root
+// carries no such id, so anything nested there never matches.
+.collection-space {
+    margin-top: 1em;
+
+    .collection-space-table {
+        margin: 0.25em 0 0.5em 0;
+        border-collapse: separate;
+        border-spacing: 0;
+
+        th,
+        td {
+            padding: 0.15em 2em 0.15em 0;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        td {
+            font-variant-numeric: tabular-nums;
+        }
+    }
+}
+
+.collection-space-short {
+    .control-label,
+    .collection-space-row-short td {
+        color: var(--brand-danger, #d9534f);
+    }
+}

@@ -26,13 +26,15 @@ import {
 import { markCollectionMemberSkipped } from "../../../util/collectionSkip";
 import Debouncer from "../../../util/Debouncer";
 import { getSafe, setSafe } from "../../../util/storeHelper";
-import { batchDispatch } from "../../../util/util";
+import { batchDispatch, bytesToString } from "../../../util/util";
+import { downloadPathForGame } from "../../download_management/selectors";
 import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
 import { setPendingPluginSort } from "../../mod_management/actions/transactions";
 import { installPathForGame } from "../../mod_management/selectors";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
+import { findDownloadByRef } from "../../mod_management/util/dependencies";
 import { findModByRef } from "../../mod_management/util/findModByRef";
 import renderModName from "../../mod_management/util/modName";
 import { appendModReferenceTagsActions } from "../../mod_management/util/modReferenceTags";
@@ -63,6 +65,7 @@ import {
 import { isGamebryoGame } from "./gameSupport";
 import InfoCache from "./InfoCache";
 import { readCollection } from "./readCollection";
+import { calculateSpaceRequirement } from "./spaceRequirement";
 import { getUnfulfilledNotificationId } from "./util";
 
 export type Step =
@@ -795,6 +798,80 @@ class InstallDriver {
     this.mOnStop?.();
   }
 
+  /**
+   * Refuse to start a collection that clearly can't fit. The sizes come off the
+   * collection's own rules, so this is answerable before anything is fetched -
+   * far better than discovering it a few hundred megabytes in and leaving the
+   * user with a half-installed collection to clean up.
+   *
+   * Returns false when the install must not proceed.
+   */
+  private checkDiskSpace = async (): Promise<boolean> => {
+    const collection = this.mCollection;
+    if (collection === undefined) {
+      return true;
+    }
+    const state = this.mApi.getState();
+    const gameId = this.mGameId;
+    const downloads = state.persistent.downloads.files ?? {};
+    const mods = state.persistent.mods[gameId] ?? {};
+
+    const requirement = calculateSpaceRequirement(
+      collection.rules ?? [],
+      {
+        downloadPath: downloadPathForGame(state, gameId),
+        stagingPath: installPathForGame(state, gameId),
+      },
+      // Resuming a part-installed collection must not ask for space it no longer
+      // needs - but a downloaded archive still has to be unpacked, so only an
+      // installed member is free. Matching goes through the same helpers the
+      // installer itself uses; comparing a download's localPath to a rule's
+      // logicalFileName does not match anything.
+      (rule) => {
+        if (findModByRef(rule.reference, mods) !== undefined) {
+          return "installed";
+        }
+        return findDownloadByRef(rule.reference, downloads) !== undefined
+          ? "downloaded"
+          : "missing";
+      },
+    );
+
+    if (requirement.shortfalls.length === 0) {
+      return true;
+    }
+
+    const lines = requirement.shortfalls.map(
+      (vol) =>
+        `${vol.volume}  needs ${bytesToString(vol.required)}, ` +
+        `${bytesToString(vol.free ?? 0)} free`,
+    );
+    log("warn", "refusing collection install, not enough disk space", {
+      collection: collection.id,
+      downloadBytes: requirement.downloadBytes,
+      shortfalls: requirement.shortfalls,
+    });
+
+    await this.mApi.showDialog(
+      "error",
+      "Not enough disk space",
+      {
+        // Deliberately no separate "needs about X in total": the per-drive figure
+        // already includes the safety margin, so quoting both side by side reads
+        // like a contradiction.
+        text:
+          "There isn't enough free space to install this collection, so it hasn't been " +
+          "started. Free up space on the drive(s) below and install it again.\n\n{{lines}}",
+        parameters: {
+          lines: lines.join("\n"),
+        },
+      },
+      [{ label: "Close" }],
+    );
+
+    return false;
+  };
+
   private startInstall = async () => {
     // suppress plugins-changed event to avoid constantly running expensive callbacks
     // until onStop gets called
@@ -814,6 +891,10 @@ class InstallDriver {
 
   private startImpl = async () => {
     if (this.mCollection?.archiveId === undefined || this.mProfile === undefined) {
+      return false;
+    }
+
+    if (!(await this.checkDiskSpace())) {
       return false;
     }
 

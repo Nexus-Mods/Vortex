@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button, Media } from "react-bootstrap";
+import { Button, ControlLabel, Media } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
@@ -21,10 +21,15 @@ import type { IProfile } from "../../../../extensions/profile_management/types/I
 import type { IState } from "../../../../types/IState";
 import type { TFunction } from "../../../../util/i18n";
 import { getSafe } from "../../../../util/storeHelper";
-import { batchDispatch } from "../../../../util/util";
+import { batchDispatch, bytesToString } from "../../../../util/util";
+import { downloadPathForGame } from "../../../download_management/selectors";
+import { installPathForGame } from "../../../mod_management/selectors";
+import { findDownloadByRef } from "../../../mod_management/util/dependencies";
+import { findModByRef } from "../../../mod_management/util/findModByRef";
 import { DEFAULT_INSTRUCTIONS, NAMESPACE } from "../../constants";
 import { isGamebryoGame } from "../../util/gameSupport";
 import type InstallDriver from "../../util/InstallDriver";
+import { calculateSpaceRequirement, type ISpaceRequirement } from "../../util/spaceRequirement";
 import CollectionThumbnail from "../CollectionTile";
 import YouCuratedTag from "./YouCuratedThisTag";
 
@@ -63,6 +68,8 @@ interface IInstallDialogState {
   confirmProfile: boolean;
   recommendedNewProfile: boolean;
   skipPluginRules: boolean;
+  /** undefined until the volumes have been measured for this collection */
+  space?: ISpaceRequirement;
 }
 
 function nop() {
@@ -156,7 +163,39 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       confirmProfile: false,
       recommendedNewProfile: false,
       skipPluginRules: false,
+      space: undefined,
     });
+  }
+
+  /**
+   * Measure once per collection rather than per render - it stats the volumes.
+   */
+  private refreshSpace() {
+    const { driver } = this.props;
+    const gameId = driver?.profile?.gameId;
+    const collection = driver?.collection;
+    if (gameId === undefined || collection === undefined) {
+      return;
+    }
+    const state: IState = this.context.api.store.getState();
+    const downloads = state.persistent.downloads.files ?? {};
+    const mods = state.persistent.mods[gameId] ?? {};
+
+    this.nextState.space = calculateSpaceRequirement(
+      collection.rules ?? [],
+      {
+        downloadPath: downloadPathForGame(state, gameId),
+        stagingPath: installPathForGame(state, gameId),
+      },
+      (rule) => {
+        if (findModByRef(rule.reference, mods) !== undefined) {
+          return "installed";
+        }
+        return findDownloadByRef(rule.reference, downloads) !== undefined
+          ? "downloaded"
+          : "missing";
+      },
+    );
   }
 
   public componentDidMount() {
@@ -165,6 +204,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
     if (this.props.driver !== undefined) {
       this.mUnsubscribeDriver = this.props.driver.onUpdate(() => this.forceUpdate());
     }
+    this.refreshSpace();
   }
 
   public componentWillUnmount() {
@@ -196,6 +236,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
         this.nextState.confirmProfile = false;
         this.nextState.selectedProfile = undefined;
         this.mLastCollection = driver.collection;
+        this.refreshSpace();
       }
     }
   }
@@ -319,6 +360,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
               </More>
             </Toggle>
           ) : null}
+          {this.renderSpace()}
         </Modal.Body>
 
         <Modal.Footer>
@@ -332,11 +374,65 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
             <>
               <Button onClick={this.cancel}>{t("Later")}</Button>
 
-              <Button onClick={this.next}>{t("Install Now")}</Button>
+              <Button onClick={this.next} disabled={this.isShortOnSpace()}>
+                {t("Install Now")}
+              </Button>
             </>
           )}
         </Modal.Footer>
       </Modal>
+    );
+  }
+
+  private isShortOnSpace(): boolean {
+    return (this.state.space?.shortfalls.length ?? 0) > 0;
+  }
+
+  /**
+   * Show what the install needs against what each drive has, so the answer is
+   * visible before the button is pressed rather than as an error afterwards.
+   * The download folder, the staging folder and the game can be on different
+   * drives, so every volume involved is listed.
+   */
+  private renderSpace(): JSX.Element {
+    const { t } = this.props;
+    const { space } = this.state;
+    if (space === undefined || space.volumes.length === 0) {
+      return null;
+    }
+    const short = this.isShortOnSpace();
+
+    return (
+      <div className={short ? "collection-space collection-space-short" : "collection-space"}>
+        <ControlLabel>
+          {short ? t("Not enough disk space to install this collection") : t("Disk space required")}
+        </ControlLabel>
+        <table className="collection-space-table">
+          <thead>
+            <tr>
+              <th>{t("Drive")}</th>
+              <th>{t("Required")}</th>
+              <th>{t("Free")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {space.volumes.map((vol) => {
+              const volShort = vol.free !== undefined && vol.free < vol.required;
+              return (
+                <tr
+                  key={vol.volume}
+                  className={volShort ? "collection-space-row-short" : undefined}
+                >
+                  <td>{vol.volume}</td>
+                  <td>{bytesToString(vol.required)}</td>
+                  <td>{vol.free === undefined ? t("unknown") : bytesToString(vol.free)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {short ? <p>{t("Free up space on the drive(s) above, then try again.")}</p> : null}
+      </div>
     );
   }
 
