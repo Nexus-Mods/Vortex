@@ -1,61 +1,54 @@
 import path from "path";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import { ProcessCanceled } from "@vortex/shared/errors";
 import type * as exeVersionT from "exe-version";
 
 import type { IGame } from "../../../types/IGame";
 import { statAsync } from "../../../util/fs";
 import lazyRequire from "../../../util/lazyRequire";
 import { log } from "../../../util/log";
+import { truthy } from "../../../util/util";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 
 const exeVersion: typeof exeVersionT = lazyRequire(() => require("exe-version"));
 
-export async function testExtProvider(game: IGame, discovery: IDiscoveryResult): Promise<boolean> {
-  return Promise.resolve(game.getGameVersion !== undefined);
+export type GameVersionResolver = (game: IGame, discovery: IDiscoveryResult) => Promise<string>;
+
+async function getExtGameVersion(game: IGame, discovery: IDiscoveryResult): Promise<string> {
+  return game.getGameVersion(discovery.path, discovery.executable || game.executable());
 }
 
-export async function getExtGameVersion(game: IGame, discovery: IDiscoveryResult): Promise<string> {
-  try {
-    const version: string = await game.getGameVersion(
-      discovery.path,
-      discovery.executable || game.executable(),
-    );
-    if (typeof version !== "string") {
-      return Promise.reject(new Error("getGameVersion functor returned an invalid type"));
-    }
-
-    return version;
-  } catch (err) {
-    return Promise.reject(err);
-  }
-}
-
-export async function testExecProvider(game: IGame, discovery: IDiscoveryResult): Promise<boolean> {
-  const exeName = discovery.executable || game.executable();
-  if (discovery?.path === undefined || exeName === undefined) {
-    // can be caused by a broken extension
-    return Promise.resolve(false);
-  }
-  const exePath = path.join(discovery.path, exeName);
-  try {
-    await statAsync(exePath);
-    const version: string = exeVersion.default(exePath);
-    return version === "0.0.0" ? Promise.resolve(false) : Promise.resolve(true);
-  } catch (err) {
-    log("error", "unable to test executable version fields", err);
-    return Promise.resolve(false);
-  }
-}
-
-export async function getExecGameVersion(
-  game: IGame,
-  discovery: IDiscoveryResult,
-): Promise<string> {
+async function getExecGameVersion(game: IGame, discovery: IDiscoveryResult): Promise<string> {
   const exePath = path.join(discovery.path, discovery.executable || game.executable());
   try {
-    const version: string = exeVersion.default(exePath);
-    return Promise.resolve(version);
+    await statAsync(exePath);
+    return exeVersion.default(exePath);
   } catch (err) {
-    return Promise.resolve("0.0.0");
+    return "0.0.0";
   }
 }
+
+export const resolveGameVersion: GameVersionResolver = async (game, discovery) => {
+  if (discovery?.path === undefined || !truthy(game?.executable?.(discovery.path))) {
+    throw new ProcessCanceled("Game is not discovered");
+  }
+  if (game.getGameVersion !== undefined) {
+    try {
+      const version = await getExtGameVersion(game, discovery);
+      if (typeof version === "string") {
+        return version;
+      }
+      log("warn", "getGameVersion functor returned an invalid type", {
+        extension: game.extensionPath,
+      });
+    } catch (err) {
+      log("warn", "extension getGameVersion call failed", {
+        message: getErrorMessageOrDefault(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        extension: game.extensionPath,
+      });
+    }
+  }
+  return getExecGameVersion(game, discovery);
+};

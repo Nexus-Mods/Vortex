@@ -630,10 +630,10 @@ function registerHarnessGame(gameId: string): void {
   }
 
   const gvReg = local<{
-    gameVersionManager: { getGameVersion: () => Promise<string> } | undefined;
-  }>("gameversion-manager", { gameVersionManager: undefined });
-  if (gvReg.gameVersionManager === undefined) {
-    gvReg.gameVersionManager = { getGameVersion: () => Promise.resolve("1.0.0") };
+    getGameVersion: (() => Promise<string>) | undefined;
+  }>("gameversion-manager", { getGameVersion: undefined });
+  if (gvReg.getGameVersion === undefined) {
+    gvReg.getGameVersion = () => Promise.resolve("1.0.0");
   }
 }
 
@@ -654,10 +654,10 @@ export function resetHarnessRegistries(): void {
   });
   gameReg.extensionGames.length = 0;
 
-  const gvReg = local<{ gameVersionManager: unknown }>("gameversion-manager", {
-    gameVersionManager: undefined,
+  const gvReg = local<{ getGameVersion: unknown }>("gameversion-manager", {
+    getGameVersion: undefined,
   });
-  gvReg.gameVersionManager = undefined;
+  gvReg.getGameVersion = undefined;
 }
 
 /**

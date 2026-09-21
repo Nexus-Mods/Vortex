@@ -4,7 +4,7 @@ import type { IExtensionDownloadInfo } from "../../../types/extensions";
 import type { IGame } from "../../../types/IGame";
 import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
-import type GameVersionManager from "../../gameversion_management/GameVersionManager";
+import type { GameVersionResolver } from "../../gameversion_management/util/getGameVersion";
 import type { IGameStub } from "../GameModeManager";
 import type GameModeManager from "../GameModeManager";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
@@ -39,8 +39,7 @@ const gameExHandler = {
     } else if (key === "modTypes") {
       return getModTypeExtensions().filter((ex) => ex.isSupported(target.id));
     } else if (key === "getInstalledVersion") {
-      return (discovery: IDiscoveryResult) =>
-        gvm.gameVersionManager.getGameVersion(target, discovery);
+      return (discovery: IDiscoveryResult) => gvm.getGameVersion?.(target, discovery);
     } else {
       return target[key];
     }
@@ -67,9 +66,9 @@ const $ = local<{
 
 // ...neither is this
 const gvm = local<{
-  gameVersionManager: GameVersionManager;
+  getGameVersion: GameVersionResolver | undefined;
 }>("gameversion-manager", {
-  gameVersionManager: undefined,
+  getGameVersion: undefined,
 });
 
 // ...or this
