@@ -4,10 +4,10 @@ import type { IExtensionDownloadInfo } from "../../../types/extensions";
 import type { IGame } from "../../../types/IGame";
 import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
-import type { GameVersionResolver } from "../../gameversion_management/util/getGameVersion";
 import type { IGameStub } from "../GameModeManager";
 import type GameModeManager from "../GameModeManager";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import { resolveGameVersion } from "./getGameVersion";
 import { getModTypeExtensions } from "./modTypeExtensions";
 
 // "decorate" IGame objects with added functionality
@@ -39,7 +39,7 @@ const gameExHandler = {
     } else if (key === "modTypes") {
       return getModTypeExtensions().filter((ex) => ex.isSupported(target.id));
     } else if (key === "getInstalledVersion") {
-      return (discovery: IDiscoveryResult) => gvm.getGameVersion?.(target, discovery);
+      return (discovery: IDiscoveryResult) => resolveGameVersion(target, discovery);
     } else {
       return target[key];
     }
@@ -65,13 +65,6 @@ const $ = local<{
 });
 
 // ...neither is this
-const gvm = local<{
-  getGameVersion: GameVersionResolver | undefined;
-}>("gameversion-manager", {
-  getGameVersion: undefined,
-});
-
-// ...or this
 export function getGames(): IGame[] {
   if ($.gameModeManager === undefined) {
     throw new Error("getGames only available in renderer process");

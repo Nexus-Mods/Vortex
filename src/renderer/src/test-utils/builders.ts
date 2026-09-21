@@ -626,20 +626,16 @@ function registerHarnessGame(gameId: string): void {
       id: gameId,
       name: gameId,
       queryModPath: () => "mods",
+      // resolveGameVersion tries game.getGameVersion first; provide it so tests
+      // don't fall through to exe-version probing of a nonexistent binary
+      getGameVersion: () => Promise.resolve("1.0.0"),
     } as unknown as IGame);
-  }
-
-  const gvReg = local<{
-    getGameVersion: (() => Promise<string>) | undefined;
-  }>("gameversion-manager", { getGameVersion: undefined });
-  if (gvReg.getGameVersion === undefined) {
-    gvReg.getGameVersion = () => Promise.resolve("1.0.0");
   }
 }
 
 /**
  * Clear the process-`local` registries registerHarnessGame populates. The registries live on
- * the worker global, so without this a fake game (or version manager) registered by one test
+ * the worker global, so without this a fake game registered by one test
  * would persist and could mask a different test's expectation. Call from afterEach.
  */
 export function resetHarnessRegistries(): void {
@@ -653,11 +649,6 @@ export function resetHarnessRegistries(): void {
     extensionStubs: [],
   });
   gameReg.extensionGames.length = 0;
-
-  const gvReg = local<{ getGameVersion: unknown }>("gameversion-manager", {
-    getGameVersion: undefined,
-  });
-  gvReg.getGameVersion = undefined;
 }
 
 /**

@@ -1,44 +1,44 @@
-import path from "path";
+import { stat } from "node:fs/promises";
+import path from "node:path";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import { ProcessCanceled } from "@vortex/shared/errors";
-import type * as exeVersionT from "exe-version";
+import exeVersion from "exe-version";
+
+import { log } from "@/logging";
 
 import type { IGame } from "../../../types/IGame";
-import { statAsync } from "../../../util/fs";
-import lazyRequire from "../../../util/lazyRequire";
-import { log } from "../../../util/log";
-import { truthy } from "../../../util/util";
-import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-
-const exeVersion: typeof exeVersionT = lazyRequire(() => require("exe-version"));
+import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 
 export type GameVersionResolver = (game: IGame, discovery: IDiscoveryResult) => Promise<string>;
 
-async function getExtGameVersion(game: IGame, discovery: IDiscoveryResult): Promise<string> {
+async function fromExtension(game: IGame, discovery: IDiscoveryResult): Promise<string> {
   return game.getGameVersion(discovery.path, discovery.executable || game.executable());
 }
 
-async function getExecGameVersion(game: IGame, discovery: IDiscoveryResult): Promise<string> {
+async function fromExecutable(game: IGame, discovery: IDiscoveryResult): Promise<string> {
   const exePath = path.join(discovery.path, discovery.executable || game.executable());
+
   try {
-    await statAsync(exePath);
-    return exeVersion.default(exePath);
-  } catch (err) {
+    await stat(exePath);
+    return exeVersion(exePath);
+  } catch {
     return "0.0.0";
   }
 }
 
 export const resolveGameVersion: GameVersionResolver = async (game, discovery) => {
-  if (discovery?.path === undefined || !truthy(game?.executable?.(discovery.path))) {
+  if (discovery?.path === undefined || !game?.executable?.(discovery.path)) {
     throw new ProcessCanceled("Game is not discovered");
   }
+
   if (game.getGameVersion !== undefined) {
     try {
-      const version = await getExtGameVersion(game, discovery);
+      const version = await fromExtension(game, discovery);
       if (typeof version === "string") {
         return version;
       }
+
       log("warn", "getGameVersion functor returned an invalid type", {
         extension: game.extensionPath,
       });
@@ -50,5 +50,6 @@ export const resolveGameVersion: GameVersionResolver = async (game, discovery) =
       });
     }
   }
-  return getExecGameVersion(game, discovery);
+
+  return fromExecutable(game, discovery);
 };
