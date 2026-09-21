@@ -22,10 +22,12 @@ vi.mock("./gameSupport", () => ({
 
 // the persistor watches its plugin directory for foreign rewrites; a real watcher on the temp
 // dirs fires on the tests' own writes and holds the vitest worker open
-vi.mock("node:fs", async (importOriginal) => ({
-  ...(await importOriginal<typeof nodeFs>()),
-  watch: () => ({ close: () => undefined, on: () => undefined }) as unknown as nodeFs.FSWatcher,
-}));
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof nodeFs>();
+  const watch = () =>
+    ({ close: () => undefined, on: () => undefined }) as unknown as nodeFs.FSWatcher;
+  return { ...actual, default: { ...actual, watch }, watch };
+});
 
 import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import PluginPersistor, { withFileRetry } from "./PluginPersistor";
