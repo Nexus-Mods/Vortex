@@ -44,20 +44,20 @@ describe("HelpMenu", () => {
     await openMenu();
 
     expect(screen.getByRole("menuitem", { name: "View logs" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Prepare support bundle" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Create support bundle" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "About" })).toBeInTheDocument();
   });
 
   it("opens the support bundle dialog when its row is chosen", async () => {
     await openMenu();
-    await userEvent.click(screen.getByRole("menuitem", { name: "Prepare support bundle" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Create support bundle" }));
 
     expect(dispatch).toHaveBeenCalledWith(setDialogVisible("support-bundle-dialog"));
   });
 
   it("tracks the support bundle request in Mixpanel", async () => {
     await openMenu();
-    await userEvent.click(screen.getByRole("menuitem", { name: "Prepare support bundle" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Create support bundle" }));
 
     expect(emit).toHaveBeenCalledWith(
       "analytics-track-mixpanel-event",

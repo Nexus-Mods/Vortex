@@ -65,7 +65,7 @@ export const useHelpMenuSections = (): IMenuAction[][] => {
       },
       {
         iconPath: mdiPackageVariantClosed,
-        label: t("Prepare support bundle"),
+        label: t("Create support bundle"),
         onClick: () => {
           api.events.emit(
             "analytics-track-mixpanel-event",

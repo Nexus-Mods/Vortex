@@ -1,6 +1,6 @@
 {
   "dialog": {
-    "title": "Prepare support bundle",
+    "title": "Create support bundle",
     "intro": "Vortex is packaging its log files, the current app state and any recent crash dumps into a single archive. No login details are included.",
     "sendTo": "Send the archive to the Vortex team, with a short description of the problem, in the Vortex forums or on Discord:",
     "links": {
@@ -11,7 +11,7 @@
     "archiveReady": "Your support bundle is ready.",
     "failed": "Vortex could not build the support bundle.",
     "buttons": {
-      "open": "Open",
+      "open": "Show in folder",
       "cancel": "Cancel",
       "close": "Close",
       "tryAgain": "Try again"

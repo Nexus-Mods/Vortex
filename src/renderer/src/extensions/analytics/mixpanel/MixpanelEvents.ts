@@ -288,7 +288,7 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
 export type SupportBundleSource = "help_menu";
 
 /**
- * Sent when the user asks Vortex to prepare a support bundle (Help > Prepare support bundle).
+ * Sent when the user asks Vortex to prepare a support bundle (Help > Create support bundle).
  * Counts the request, not whether the archive was built or sent on.
  */
 export class AppSupportBundleClickedEvent implements MixpanelEvent {
