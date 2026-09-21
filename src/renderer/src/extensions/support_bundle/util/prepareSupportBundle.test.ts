@@ -219,7 +219,8 @@ describe("prepareSupportBundle", () => {
     expect(path.basename(archive)).toMatch(
       /^vortex-support-bundle_.+_Ada-Lovelace_\d{8}-\d{6}\.7z$/,
     );
-    expect(options).toEqual({ mx: "9", ssw: true, raw: ["-m0=LZMA2"] });
+    // -md caps the dictionary so max compression doesn't cost ~450MB of peak memory
+    expect(options).toEqual({ mx: "9", ssw: true, raw: ["-m0=LZMA2", "-md=16m"] });
 
     // the three entries go in separately so they land at the archive root
     const staging = staged!.staging;
