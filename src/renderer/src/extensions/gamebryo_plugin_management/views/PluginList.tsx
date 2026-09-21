@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { ProcessCanceled } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import type { TFunction } from "i18next";
@@ -35,6 +35,7 @@ import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IState } from "../../../types/IState";
 import type { ICustomProps, ITableAttribute } from "../../../types/ITableAttribute";
 import Debouncer from "../../../util/Debouncer";
+import { recordErrorSpan } from "../../../util/errorHandling";
 import getVortexPath from "../../../util/getVortexPath";
 import { getSafe } from "../../../util/storeHelper";
 import { sanitizeCSSId } from "../../../util/util";
@@ -56,6 +57,7 @@ import { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import { IPluginCombined, IPluginLoot, IPluginParsed, IPlugins } from "../types/IPlugins";
 import GroupFilter from "../util/GroupFilter";
 import { mergeLoadOrder } from "../util/mergeLoadOrder";
+import { SpanAttribute } from "../util/spanAttributes";
 import toPluginId from "../util/toPluginId";
 import DependencyIcon from "./DependencyIcon";
 import MasterList from "./MasterList";
@@ -825,9 +827,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           revision: (esp as any).revision,
         };
       } catch (err) {
-        log("info", "failed to parse esp", {
+        // the row shows no details at all, so this is a plugin the user cannot act on
+        log("warn", "failed to parse esp", {
           path: pluginsIn[pluginName].filePath,
           error: getErrorMessageOrDefault(err),
+        });
+        recordErrorSpan("A plugin could not be parsed", unknownToError(err), {
+          [SpanAttribute.PluginName]: pluginName,
+          [SpanAttribute.ErrorCode]: getErrorCode(err) ?? "",
         });
         pluginsParsed[pluginName] = {
           isMaster: false,

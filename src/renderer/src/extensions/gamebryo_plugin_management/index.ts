@@ -4,6 +4,7 @@ import * as path from "path";
 import * as nodeUtil from "util";
 
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+import { VortexError } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import type I18next from "i18next";
 import type * as Redux from "redux";
@@ -72,6 +73,7 @@ import {
   supportsMediumMasters,
 } from "./util/gameSupport";
 import { missingGroupFixes } from "./util/groups";
+import { LootPhase, lootErrorReporter } from "./util/LootErrorReporter";
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from "./util/masterlist";
 import { markdownToBBCode } from "./util/mdtobb";
 import { checkMissingMasters } from "./util/missingMasters";
@@ -81,7 +83,7 @@ import { handleSetPluginList } from "./util/onSetPluginList";
 import PluginHistory from "./util/PluginHistory";
 import PluginPersistor from "./util/PluginPersistor";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
-import { AMBIENT_ATTRIBUTES } from "./util/spanAttributes";
+import { AMBIENT_ATTRIBUTES, SpanAttribute } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 import { makeUpdatePluginList } from "./util/updatePluginList";
 import UserlistPersistor from "./util/UserlistPersistor";
@@ -1363,7 +1365,18 @@ function onDidDeploy(api: IExtensionApi, profileId: string): Bluebird<void> {
               // sort. The timeout is only a last-resort backstop for a stall with no switch.
               api.events.once("profile-will-change", done);
               api.events.once("gamemode-activated", done);
-              timeout = setTimeout(done, PLUGIN_DETAILS_TIMEOUT);
+              timeout = setTimeout(() => {
+                // no switch took the cue, so LOOT simply never answered for this game
+                lootErrorReporter.report(
+                  api,
+                  new VortexError("LOOT did not answer with plugin details", {
+                    kind: "loot:failed",
+                  }),
+                  LootPhase.Metadata,
+                  { silent: true, context: { [SpanAttribute.LootGameMode]: profile.gameId } },
+                );
+                done();
+              }, PLUGIN_DETAILS_TIMEOUT);
               const pluginList = getSafe(api.getState(), ["session", "plugins", "pluginList"], {});
               api.events.emit(
                 "plugin-details",

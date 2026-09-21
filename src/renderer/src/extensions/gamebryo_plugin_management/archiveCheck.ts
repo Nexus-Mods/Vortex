@@ -1,8 +1,11 @@
 import * as path from "path";
 
+import { getErrorCode, unknownToError } from "@vortex/shared";
+
 import { log } from "../../logging";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
+import { recordErrorSpan } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import { getSafe } from "../../util/storeHelper";
 import { discoveryByGame } from "../gamemode_management/selectors";
@@ -11,6 +14,7 @@ import { activeGameId } from "../profile_management/selectors";
 import type { IDataArchive, IGameData, IIncompatibleArchive } from "./types/IArchiveCheck";
 import type { IPluginCombined } from "./types/IPlugins";
 import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
+import { SpanAttribute } from "./util/spanAttributes";
 
 const archiveData: IGameData[] = [
   {
@@ -280,7 +284,13 @@ async function streamArchiveVersion(filePath: string): Promise<any> {
         resolve(version);
       });
 
-      stream.on("error", () => resolve(0));
+      // version 0 reads downstream as an archive for another game, so say that it was unreadable
+      stream.on("error", (err: unknown) => {
+        recordErrorSpan("An archive header could not be read", unknownToError(err), {
+          [SpanAttribute.ErrorCode]: getErrorCode(err) ?? "",
+        });
+        resolve(0);
+      });
     })
       // Destroy the file stream.
       .finally(() => stream.destroy())
