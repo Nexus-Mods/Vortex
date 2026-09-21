@@ -98,10 +98,10 @@ describe("GameMediaSourcesHook", () => {
     activeGameIdMock.mockReturnValueOnce(undefined);
 
     hook.rerender();
-    expect(hook.result.current.defaultSources).toEqual({});
+    await waitFor(() => expect(hook.result.current.defaultSources).toEqual({}));
   });
 
-  it("allSources keeps a stable reference across re-renders when nothing changed", () => {
+  it("allSources keeps a stable reference across re-renders when nothing changed", async () => {
     sourcesByDiscoveryMock.mockResolvedValue({
       sourceA: { name: "Source A", path: "A" },
       sourceB: { name: "Source B", path: "B" },
@@ -109,26 +109,32 @@ describe("GameMediaSourcesHook", () => {
 
     state.persistent.game_media.sources["game-1"] = {
       customSourceA: { name: "Custom Source A", path: "AA" },
-      customSourceB: { name: "Custom Source B", path: "BB" },
-      sourceB: { name: "Custom Source B Override", path: "BBB" },
     };
 
     const hook = render();
+    await waitFor(() => expect(Object.keys(hook.result.current.allSources)).toHaveLength(3));
+
     const allSources = hook.result.current.allSources;
 
     hook.rerender();
     hook.rerender();
 
-    expect(hook.result.current.allSources).toEqual(allSources);
+    expect(hook.result.current.allSources).toBe(allSources);
   });
 
-  it("swallows sourcesByDiscovery failures and falls back to {}", () => {
-    sourcesByDiscoveryMock.mockRejectedValue(() => {
-      throw new Error("Failed!");
-    });
+  it("swallows sourcesByDiscovery failures and falls back to {}", async () => {
+    sourcesByDiscoveryMock.mockResolvedValue({ sourceA: { name: "Source A", path: "A" } });
 
     const hook = render();
+    await waitFor(() =>
+      expect(Object.keys(hook.result.current.defaultSources)).toEqual(["sourceA"]),
+    );
 
-    expect(hook.result.current.defaultSources).toEqual({});
+    sourcesByDiscoveryMock.mockRejectedValue(new Error("Failed!"));
+    currentGameDiscoverMock.mockReturnValue({ path: "D:/other", store: "steam" });
+
+    hook.rerender();
+
+    await waitFor(() => expect(hook.result.current.defaultSources).toEqual({}));
   });
 });
