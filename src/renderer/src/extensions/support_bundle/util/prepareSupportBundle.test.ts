@@ -44,6 +44,8 @@ import {
 interface IStagedBundle {
   staging: string;
   logs: string[];
+  /** Contents of the staged `vortex.log`, when there is one. */
+  vortexLog: string | undefined;
   dumps: string[];
   state: Record<string, any>;
   manifest: Record<string, any>;
@@ -52,14 +54,21 @@ interface IStagedBundle {
 /** The staging tree is deleted the moment the archive is written, so grab it from inside `add`. */
 async function snapshotStaging(entries: string[]): Promise<IStagedBundle> {
   const staging = path.dirname(entries[0]);
+  const logs = (await readdir(path.join(staging, "logs"))).sort();
   return {
     staging,
-    logs: (await readdir(path.join(staging, "logs"))).sort(),
+    logs,
+    vortexLog: logs.includes("vortex.log")
+      ? await readFile(path.join(staging, "logs", "vortex.log"), "utf8")
+      : undefined,
     dumps: (await readdir(path.join(staging, "dumps"))).sort(),
     state: JSON.parse(await readFile(path.join(staging, "state", "state.json"), "utf8")),
     manifest: JSON.parse(await readFile(path.join(staging, "bundle.json"), "utf8")),
   };
 }
+
+const CURRENT_LOG =
+  '2026-09-15T07:19:31.257Z [DEBG] [RENDERER] starting download {"url":"https://cf-files.nexusmods.com/a.7z?expires=1&md5=t0k3n&user_id=2","dest":"C:\\\\Users\\\\bob\\\\Downloads"}\n';
 
 /** Writes a dump with a given age so mtime ordering is deterministic. */
 async function writeDump(relPath: string, ageSeconds: number): Promise<void> {
@@ -81,7 +90,10 @@ async function exists(target: string): Promise<boolean> {
 
 function makeState(loggedIn: boolean = true): IState {
   return {
-    settings: { interface: { language: "en" } },
+    settings: {
+      interface: { language: "en" },
+      mods: { installPath: { skyrimse: "C:\\Users\\bob\\Games\\Vortex Mods" } },
+    },
     persistent: loggedIn ? { nexus: { userInfo: { name: "Ada Lovelace", userId: 42 } } } : {},
     app: { appVersion: "2.2.0" },
     user: { multiUser: false },
@@ -105,7 +117,7 @@ let staged: IStagedBundle | undefined;
 
 beforeEach(async () => {
   paths.root = await mkdtemp(path.join(tmpdir(), "vortex-bundle-"));
-  await writeFile(path.join(paths.root, "vortex.log"), "current log");
+  await writeFile(path.join(paths.root, "vortex.log"), CURRENT_LOG);
   await writeFile(path.join(paths.root, "vortex1.log"), "rotated log");
   await writeFile(path.join(paths.root, "network.log"), "network log");
   await writeFile(path.join(paths.root, "unrelated.log"), "not ours");
@@ -237,6 +249,7 @@ describe("prepareSupportBundle", () => {
       nexusUserId: 42,
       platform: process.platform,
       arch: process.arch,
+      userPathHasNonAscii: false,
       files: ["logs/network.log", "logs/vortex.log", "logs/vortex1.log", "state/state.json"],
     });
     expect(Date.parse(staged!.manifest.createdAt)).not.toBeNaN();
@@ -246,6 +259,19 @@ describe("prepareSupportBundle", () => {
 
     await bundle.cleanup();
     expect(await exists(bundle.archivePath)).toBe(false);
+  });
+
+  it("redacts usernames and signed download links in the logs and the state export", async () => {
+    await prepareSupportBundle(makeStore(makeState()));
+
+    expect(staged!.vortexLog).toBe(
+      '2026-09-15T07:19:31.257Z [DEBG] [RENDERER] starting download {"url":"https://cf-files.nexusmods.com/a.7z?expires=1&md5=REDACTED&user_id=2","dest":"C:\\\\Users\\\\<USER>\\\\Downloads"}\n',
+    );
+    expect(staged!.state.settings.mods.installPath.skyrimse).toBe(
+      "C:\\Users\\<USER>\\Games\\Vortex Mods",
+    );
+    // the placeholder stands in for the name; the rest of the export is untouched
+    expect(staged!.state.persistent.nexus.userInfo.name).toBe("Ada Lovelace");
   });
 
   it("adds only the newest three crash dumps, wherever Crashpad put them", async () => {

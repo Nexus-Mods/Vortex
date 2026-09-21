@@ -11,6 +11,7 @@ import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { userInfo } from "../../../util/selectors";
 import { sanitizeFilename } from "../../../util/util";
+import { hasNonAscii, redactSensitiveText } from "./redact";
 
 export interface IPrepareSupportBundleOptions {
   /** 7-Zip progress, 0 to 100. */
@@ -34,6 +35,11 @@ export interface ISupportBundleManifest {
   platform: string;
   platformVersion: string;
   arch: string;
+  /**
+   * Usernames are redacted from every file, so this carries the one fact about the profile
+   * path that still matters for diagnosis.
+   */
+  userPathHasNonAscii: boolean;
   /** Paths relative to the archive root, e.g. "logs/vortex.log". */
   files: string[];
 }
@@ -43,6 +49,7 @@ export interface IBuildManifestParams {
   vortexVersion: string;
   nexusUsername: string | undefined;
   nexusUserId: number | undefined;
+  userPathHasNonAscii: boolean;
   files: string[];
 }
 
@@ -168,6 +175,7 @@ export function buildManifest(params: IBuildManifestParams): ISupportBundleManif
     platform: process.platform,
     platformVersion: app.platformVersion,
     arch: process.arch,
+    userPathHasNonAscii: params.userPathHasNonAscii,
     files: params.files,
   };
 }
@@ -201,7 +209,10 @@ async function copyLogs(
       throw new UserCanceled();
     }
     try {
-      await fs.copyAsync(path.join(userData, name), path.join(logsDir, name));
+      // Read, redact and write rather than copy: the logs are where usernames and signed
+      // download links show up most. Ten MB of text per file is fine to hold in memory.
+      const text: string = await fs.readFileAsync(path.join(userData, name), "utf8");
+      await fs.writeFileAsync(path.join(logsDir, name), redactSensitiveText(text));
       copied.push(name);
     } catch (err) {
       // ENOENT means winston rotated the file out from under us between readdir and copy.
@@ -357,9 +368,11 @@ export async function prepareSupportBundle(
     // Yield once so the modal's spinner gets a frame before the stringify blocks the renderer.
     await new Promise((resolve) => setTimeout(resolve, 0));
     const scrubbed = scrubState(state);
-    const serialized = serializeState(
-      { getState: () => scrubbed } as unknown as Redux.Store<IState>,
-      [...BACKUP_HIVES, "session"],
+    const serialized = redactSensitiveText(
+      serializeState({ getState: () => scrubbed } as unknown as Redux.Store<IState>, [
+        ...BACKUP_HIVES,
+        "session",
+      ]),
     );
     await fs.writeFileAsync(path.join(stateDir, "state.json"), serialized);
 
@@ -369,6 +382,7 @@ export async function prepareSupportBundle(
       vortexVersion,
       nexusUsername: info?.name,
       nexusUserId: info?.userId,
+      userPathHasNonAscii: hasNonAscii(userData),
       files: [
         ...logNames.map((name) => `logs/${name}`),
         ...dumpNames.map((name) => `dumps/${name}`),
