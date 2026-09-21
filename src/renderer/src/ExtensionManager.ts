@@ -3071,6 +3071,7 @@ class ExtensionManager {
       settings_metaserver: () => require("./extensions/settings_metaserver/index.ts"),
       starter_dashlet: () => require("./extensions/starter_dashlet/index.ts"),
       sticky_mods: () => require("./extensions/sticky_mods/index.ts"),
+      support_bundle: () => require("./extensions/support_bundle/index.ts"),
       symlink_activator: () => require("./extensions/symlink_activator/index.ts"),
       symlink_activator_elevate: () => require("./extensions/symlink_activator_elevate/index.ts"),
       test_runner: () => require("./extensions/test_runner/index.ts"),

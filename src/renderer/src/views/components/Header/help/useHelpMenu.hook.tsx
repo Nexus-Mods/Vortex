@@ -3,6 +3,7 @@ import {
   mdiFileDocumentOutline,
   mdiHelpCircleOutline,
   mdiInformationOutline,
+  mdiPackageVariantClosed,
   mdiPuzzle,
   mdiThumbsUpDownOutline,
 } from "@mdi/js";
@@ -12,6 +13,7 @@ import { useDispatch } from "react-redux";
 
 import { setDialogVisible } from "@/actions";
 import { useExtensionContext } from "@/ExtensionProvider";
+import { AppSupportBundleClickedEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/PopoverMenuItem";
@@ -60,6 +62,17 @@ export const useHelpMenuSections = (): IMenuAction[][] => {
         iconPath: mdiFileDocumentOutline,
         label: t("View logs"),
         onClick: () => dispatch(setDialogVisible("diagnostics-files-dialog")),
+      },
+      {
+        iconPath: mdiPackageVariantClosed,
+        label: t("Prepare support bundle"),
+        onClick: () => {
+          api.events.emit(
+            "analytics-track-mixpanel-event",
+            new AppSupportBundleClickedEvent({ source: "help_menu" }),
+          );
+          dispatch(setDialogVisible("support-bundle-dialog"));
+        },
       },
       ...globalIconActions
         .filter((action) => action.icon in builtInActionIcons)
