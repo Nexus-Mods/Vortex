@@ -7,8 +7,10 @@ name: Publish to WinGet
 # URL, hash and release notes; fields Vortex owns are then overlaid from
 # .github/winget/*.overlay.yaml before submitting.
 #
-# PERSONAL_ACCESS_TOKEN must be a classic PAT whose owner has Write access to
-# the fork; fine-grained and App tokens cannot open PRs on microsoft/winget-pkgs.
+# WINGET_GITHUB_PAT must be a classic PAT (public_repo + workflow scopes) whose
+# owner has Write access to the fork; `workflow` is needed for sync-fork, since
+# upstream commits touch .github/workflows. Fine-grained and App tokens cannot
+# open PRs on microsoft/winget-pkgs.
 
 on:
   release:
@@ -41,7 +43,7 @@ jobs:
     if: ${{ !contains(inputs.tag || github.event.release.tag_name, '-') }}
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_PAT }}
       KOMAC_FORK_OWNER: Nexus-Mods
       KOMAC_CREATED_WITH: Vortex Release Workflow
       KOMAC_CREATED_WITH_URL: https://github.com/${{ github.repository }}/blob/master/.github/workflows/winget-release.yml
