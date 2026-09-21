@@ -2032,11 +2032,16 @@ class InstallManager {
                   } else if (err instanceof InsufficientDiskSpace) {
                     return prom.then(() => {
                       if (installContext !== undefined) {
+                        const mountPoint = err.mountPoint;
                         installContext.reportError(
                           "Not enough disk space",
-                          "There is not enough free space on the drive to install this mod. " +
-                            "Free up space and try again.",
+                          mountPoint
+                            ? "There is not enough free space on {{drive}} to install this mod. " +
+                                "Free up space on that drive and try again."
+                            : "There is not enough free space on the drive to install this mod. " +
+                                "Free up space and try again.",
                           false,
+                          { drive: mountPoint },
                         );
                       }
                       promiseCallback?.(err, null);

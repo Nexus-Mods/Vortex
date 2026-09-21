@@ -363,6 +363,49 @@ interface IPrettifiedFields {
   stack?: string;
 }
 
+/**
+ * The volume a path lives on, for messages that have to say *which* disk is
+ * full: the staging folder, the download folder and the game can each sit on a
+ * different drive, so "the disk is full" on its own doesn't tell the user where
+ * to free space.
+ */
+function volumeOf(filePath: unknown): string | undefined {
+  if (typeof filePath !== "string" || filePath.length === 0) {
+    return undefined;
+  }
+  const root = path.parse(filePath).root;
+  return root.length > 0 ? root : undefined;
+}
+
+function diskFullFields(filePath: unknown): IPrettifiedFields {
+  const drive = volumeOf(filePath);
+  return drive !== undefined
+    ? {
+        message: "The disk {{drive}} is full.",
+        replace: { drive },
+        allowReport: false,
+      }
+    : { message: "The disk is full", allowReport: false };
+}
+
+/**
+ * The fs error code, whether it arrived as a plain node error or inside a
+ * VortexError. Errors crossing the main/renderer boundary are serialized to a
+ * VortexError, which carries the original code in `data` and leaves `code`
+ * undefined - so a disk-full download used to fall through to the generic
+ * `err.code === undefined` branch and be reported as a bug.
+ */
+function fsErrorCode(err: any): string | undefined {
+  if (typeof err?.code === "string") {
+    return err.code;
+  }
+  const data = err?.data;
+  if (typeof data?.originalCode === "string") {
+    return data.originalCode;
+  }
+  return data?.kind === "fs:no-space" ? "ENOSPC" : undefined;
+}
+
 function prettifyNodeErrorMessageInner(
   err: any,
   options?: IErrorOptions,
@@ -401,6 +444,11 @@ function prettifyNodeErrorMessageInner(
         "please review the deployment settings in Settings->Mods",
       allowReport: false,
     };
+  } else if (fsErrorCode(err) === "ENOSPC") {
+    // checked ahead of the `code === undefined` fallthrough: after crossing the
+    // IPC boundary the code lives in err.data, and a full disk is never a bug
+    // worth reporting.
+    return diskFullFields(err.data?.path ?? err.path ?? err.filename ?? fileName);
   } else if (err.code === undefined) {
     return {
       message: err.message,
@@ -445,11 +493,6 @@ function prettifyNodeErrorMessageInner(
         allowReport: false,
       };
     }
-  } else if (err.code === "ENOSPC") {
-    return {
-      message: "The disk is full",
-      allowReport: false,
-    };
   } else if (err.code === "EACCES" || err.port !== undefined) {
     return {
       message: "Network connect was not permitted, please check your firewall settings",

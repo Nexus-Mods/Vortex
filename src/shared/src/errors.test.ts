@@ -8,6 +8,7 @@ import {
   sanitizeFramePath,
 } from "./errors";
 import { CAUSE_SEPARATOR, VortexError } from "./errors/base";
+import { InsufficientDiskSpace } from "./types/errors";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -581,5 +582,20 @@ describe("computeIdentityFingerprint", () => {
     expect(computeIdentityFingerprint("2.7.0", "a", "b")).not.toBe(
       computeIdentityFingerprint("2.7.0", "ab", ""),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// InsufficientDiskSpace
+// ---------------------------------------------------------------------------
+
+describe("InsufficientDiskSpace", () => {
+  // The volume has to survive on the error: the staging folder, the download
+  // folder and the game can each be on a different drive, so the message shown
+  // to the user is only actionable if it names the one that filled up.
+  it("keeps the volume that ran out", () => {
+    const err = new InsufficientDiskSpace("Z:\\");
+
+    expect(err.mountPoint).toBe("Z:\\");
   });
 });

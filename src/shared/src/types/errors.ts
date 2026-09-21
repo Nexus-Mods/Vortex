@@ -97,9 +97,17 @@ export class UnsupportedOperatingSystem extends Error {
 }
 
 export class InsufficientDiskSpace extends Error {
+  /**
+   * The volume that ran out. Kept so the message shown to the user can name it:
+   * the staging folder, the download folder and the game can each live on a
+   * different drive, and "the drive is full" doesn't say which to clear.
+   */
+  public readonly mountPoint: string;
+
   constructor(mountPoint: string) {
     super(`The partition "${mountPoint}" has insufficient space.`);
     this.name = this.constructor.name;
+    this.mountPoint = mountPoint;
   }
 }
 
