@@ -6,6 +6,7 @@ import { dismissNotification } from "../../../actions/notifications";
 import { log } from "../../../logging";
 import type { ThunkStore } from "../../../types/IExtensionContext";
 import { withActivityTracking } from "../../../util/activity";
+import { setErrorContext } from "../../../util/errorHandling";
 import * as fs from "../../../util/fs";
 import { showError } from "../../../util/message";
 import { discoveryByGame } from "../../gamemode_management/selectors";
@@ -17,7 +18,7 @@ import { setPluginList } from "../actions/plugins";
 import { ESPFile } from "../esp/ESPFile";
 import type { IPlugins } from "../types/IPlugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
-import { isNativePlugin, supportsBlueprintPlugins } from "./gameSupport";
+import { isNativePlugin, pluginFormat, supportsBlueprintPlugins } from "./gameSupport";
 import { selectPluginFiles } from "./isPlugin";
 import type PluginPersistor from "./PluginPersistor";
 import toPluginId from "./toPluginId";
@@ -157,6 +158,9 @@ async function updatePluginListImpl(
     }
   }
   persistor.setKnownPlugins(fileNameByPluginId, blueprintIds);
+  // rides on every error span for the rest of the session.
+  setErrorContext("plugin_count", String(pluginIds.length));
+  setErrorContext("plugin_format", pluginFormat(gameId));
 }
 
 /** Rescan a game's plugins into session.plugins.pluginList and hand them to the persistor. */

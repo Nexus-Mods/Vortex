@@ -19,6 +19,7 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
+import { clearErrorContext } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
@@ -630,6 +631,8 @@ function stopSync(): Promise<void> {
     watcher.close();
     watcher = undefined;
   }
+  clearErrorContext("plugin_count");
+  clearErrorContext("plugin_format");
 
   if (pluginPersistor === undefined) {
     log("debug", "stopSync: pluginPersistor is undefined, resolving immediately");

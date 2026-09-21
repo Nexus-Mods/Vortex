@@ -7,6 +7,7 @@ import update from "immutability-helper";
 
 import { log } from "../../../logging";
 import type { IErrorOptions, IPersistor } from "../../../types/IExtensionContext";
+import { recordErrorSpan } from "../../../util/errorHandling";
 import { delayed } from "../../../util/util";
 import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import {
@@ -17,6 +18,7 @@ import {
   pluginPath,
 } from "../util/gameSupport";
 import toPluginId from "../util/toPluginId";
+import { definedAttributes } from "./spanAttributes";
 
 export type PluginFormat = "original" | "fallout4";
 
@@ -91,14 +93,17 @@ class PluginPersistor implements IPersistor {
   private mControlOrder: () => boolean;
   private mOnExternalChange: () => PromiseLike<"keep" | "revert">;
   private mExternalChoicePending: boolean = false;
+  private mRecord: typeof recordErrorSpan;
 
   constructor(
     onError: (message: string, details: Error, options?: IErrorOptions) => void,
     controlLoadOrder: () => boolean,
+    record: typeof recordErrorSpan = recordErrorSpan,
   ) {
     this.mPlugins = {};
     this.mOnError = onError;
     this.mControlOrder = controlLoadOrder;
+    this.mRecord = record;
   }
 
   public disable(): Promise<void> {
@@ -121,8 +126,10 @@ class PluginPersistor implements IPersistor {
               this.stopWatch();
               resolve();
             })
-            .catch((err) => {
-              log("error", "failed to disable plugin persistor", err);
+            .catch((err: unknown) => {
+              log("error", "failed to disable plugin persistor", {
+                error: getErrorMessageOrDefault(err),
+              });
               this.stopWatch();
               resolve();
             });
@@ -221,29 +228,24 @@ class PluginPersistor implements IPersistor {
           };
         });
         this.mPlugins = next;
-        return this.doSerialize().catch((err) => {
-          log("error", "failed to write plugin state after collection install", {
-            error: getErrorMessageOrDefault(err),
-          });
-        });
+        return this.doSerialize();
       } catch (err) {
-        log("error", "failed to sync plugin state after collection install", {
-          error: getErrorMessageOrDefault(err),
-        });
+        // doSerialize reports its own write failures, so reaching here is our own mistake
+        this.recordFailure("failed to merge the plugin state", unknownToError(err));
         return Promise.resolve();
       }
     });
   }
 
+  /** An entry as it is stored, before getItem serializes it for the persistor interface. */
+  public entry(pluginId: string): IPluginLoadOrderEntry {
+    return { ...this.mPlugins[pluginId], loadOrder: this.loadOrder(pluginId) };
+  }
+
   public getItem(key: string[]): Promise<string> {
     if (key.length === 1) {
       // I think right now this branch is always used
-      return Promise.resolve(
-        JSON.stringify({
-          ...this.mPlugins[key[0]],
-          loadOrder: this.loadOrder(key[0]),
-        }),
-      );
+      return Promise.resolve(JSON.stringify(this.entry(key[0])));
     } else if (key.length === 2 && key[1] === "loadOrder") {
       // This case doesn't actually seem to occur
       return Promise.resolve(this.loadOrder(key[0]).toString());
@@ -313,11 +315,33 @@ class PluginPersistor implements IPersistor {
     return Promise.resolve(Object.keys(this.mKnownPlugins || {}).map((key) => [key]));
   }
 
+  /**
+   * Tells the user a plugin file operation failed, once until one succeeds, and tells telemetry
+   * every time. The two are separate decisions: a failure we do not interrupt the user with is
+   * still worth knowing about, and recordErrorSpan drops the ones caused by their environment.
+   */
   private reportError(message: string, detail: Error, options?: IErrorOptions) {
-    if (!this.mFailed) {
-      this.mOnError(message, detail, options);
-      this.mFailed = true;
+    if (this.mFailed) {
+      // the user has already been told, but a failure that keeps happening is still news to us,
+      // unless the caller judged it to be the user's environment rather than our doing
+      if (options?.allowReport !== false) {
+        this.recordFailure(message, detail);
+      }
+      return;
     }
+    this.mFailed = true;
+    // showErrorNotification logs and records the span itself
+    this.mOnError(message, detail, options);
+  }
+
+  /** Forwards a failure of our own to telemetry. */
+  private recordFailure(message: string, detail: Error) {
+    log("error", message, { error: getErrorMessageOrDefault(detail) });
+    this.mRecord(
+      message,
+      detail,
+      definedAttributes({ "error.code": getErrorCode(detail) ?? undefined }),
+    );
   }
 
   private toPluginList(input: string[]) {
@@ -392,7 +416,8 @@ class PluginPersistor implements IPersistor {
         try {
           await this.doSerialize();
         } catch (err) {
-          log("error", "failed to serialize plugin list", err);
+          // a write failure is already reported, so this is our own mistake
+          this.recordFailure("failed to serialize plugin list", unknownToError(err));
         }
       });
     }
@@ -722,13 +747,17 @@ class PluginPersistor implements IPersistor {
             });
         }
       });
-      this.mWatch.on("error", (error) => {
-        log("warn", "failed to watch plugin directory", error.message);
+      // the watched directory going away is the game being moved or uninstalled, not our doing
+      this.mWatch.on("error", (error: unknown) => {
+        log("warn", "failed to watch plugin directory", {
+          pluginPath: this.mPluginPath,
+          error: getErrorMessageOrDefault(error),
+        });
       });
     } catch (err) {
       log("error", "failed to look for plugin changes", {
         pluginPath: this.mPluginPath,
-        err,
+        error: getErrorMessageOrDefault(err),
       });
     }
   }
