@@ -6,7 +6,7 @@ import type { GameMediaItem, GameMediaModTag } from "./util/mediaTypes";
 
 const NO_DISABLED: readonly string[] = [];
 const NO_TAGS: readonly GameMediaModTag[] = [];
-const NO_MEDIA_STATE = { sources: {}, modTags: {}, disabledSources: {} } as const;
+const NO_MEDIA_STATE = { sources: {}, modTags: {}, disabledSources: {}, flags: {} } as const;
 const NO_MEDIA_SESSION = { items: [] } as const;
 
 const mediaState = (state: IState): IGameMediaPersistentState =>

@@ -82,7 +82,7 @@ describe("GameMediaSourcesHook", () => {
     expect(hook.result.current.allSources["sourceB"].name).toBe("Custom Source B Override");
   });
 
-  it("clears defaults when the game changes to one with no discovery", () => {
+  it("clears defaults when the game changes to one with no discovery", async () => {
     sourcesByDiscoveryMock.mockResolvedValue({
       sourceA: { name: "Source A", path: "A" },
       sourceB: { name: "Source B", path: "B" },
@@ -90,7 +90,9 @@ describe("GameMediaSourcesHook", () => {
 
     const hook = render();
 
-    expect(Object.keys(hook.result.current.defaultSources)).toEqual(["sourceA", "sourceB"]);
+    await waitFor(() =>
+      expect(Object.keys(hook.result.current.defaultSources)).toEqual(["sourceA", "sourceB"]),
+    );
 
     currentGameDiscoverMock.mockReturnValueOnce(undefined);
     activeGameIdMock.mockReturnValueOnce(undefined);
@@ -99,7 +101,34 @@ describe("GameMediaSourcesHook", () => {
     expect(hook.result.current.defaultSources).toEqual({});
   });
 
-  it("allSources keeps a stable reference across re-renders when nothing changed", () => {});
+  it("allSources keeps a stable reference across re-renders when nothing changed", () => {
+    sourcesByDiscoveryMock.mockResolvedValue({
+      sourceA: { name: "Source A", path: "A" },
+      sourceB: { name: "Source B", path: "B" },
+    });
 
-  it("swallows sourcesByDiscovery failures and falls back to {}", () => {});
+    state.persistent.game_media.sources["game-1"] = {
+      customSourceA: { name: "Custom Source A", path: "AA" },
+      customSourceB: { name: "Custom Source B", path: "BB" },
+      sourceB: { name: "Custom Source B Override", path: "BBB" },
+    };
+
+    const hook = render();
+    const allSources = hook.result.current.allSources;
+
+    hook.rerender();
+    hook.rerender();
+
+    expect(hook.result.current.allSources).toEqual(allSources);
+  });
+
+  it("swallows sourcesByDiscovery failures and falls back to {}", () => {
+    sourcesByDiscoveryMock.mockRejectedValue(() => {
+      throw new Error("Failed!");
+    });
+
+    const hook = render();
+
+    expect(hook.result.current.defaultSources).toEqual({});
+  });
 });
