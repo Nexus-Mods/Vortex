@@ -94,7 +94,9 @@ function makeState(loggedIn: boolean = true): IState {
       interface: { language: "en" },
       mods: { installPath: { skyrimse: "C:\\Users\\bob\\Games\\Vortex Mods" } },
     },
-    persistent: loggedIn ? { nexus: { userInfo: { name: "Ada Lovelace", userId: 42 } } } : {},
+    persistent: loggedIn
+      ? { nexus: { userInfo: { name: "Ada Lovelace", userId: 42, email: "ada@example.com" } } }
+      : {},
     app: { appVersion: "2.2.0" },
     user: { multiUser: false },
     session: {
@@ -242,6 +244,8 @@ describe("prepareSupportBundle", () => {
     expect(staged!.state.session.nexus.oauthPending).toBeUndefined();
     expect(staged!.state.session.nexus.loginId).toBeUndefined();
     expect(staged!.state.session.nexus.lastUpdate).toEqual({ skyrimse: 1 });
+    // the account email could end up on a public forum post; name and id are already public
+    expect(staged!.state.persistent.nexus.userInfo).toEqual({ name: "Ada Lovelace", userId: 42 });
 
     expect(staged!.manifest).toMatchObject({
       schemaVersion: 1,

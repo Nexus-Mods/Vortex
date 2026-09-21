@@ -54,18 +54,34 @@ export interface IBuildManifestParams {
 }
 
 /**
- * Drops the in-flight OAuth state. A bundle can be minutes old by the time it reaches us and
- * these two are the only bits of `session` that are worth anything to someone who shouldn't
- * have them. Shallow copies only: the state can run to tens of MB and is about to be
- * stringified anyway.
+ * Drops what the state export must not carry once it leaves the machine: the in-flight OAuth
+ * state under `session.nexus`, and the account email under `persistent.nexus.userInfo`, since a
+ * bundle may well end up attached to a public forum post. Shallow copies only: the state can
+ * run to tens of MB and is about to be stringified anyway.
  */
 function scrubState(state: IState): IState {
-  const nexus = (state.session as { nexus?: Record<string, unknown> }).nexus;
-  if (nexus === undefined) {
-    return state;
+  let scrubbed = state;
+
+  const sessionNexus = (state.session as { nexus?: Record<string, unknown> }).nexus;
+  if (sessionNexus !== undefined) {
+    const { oauthPending: _oauthPending, loginId: _loginId, ...rest } = sessionNexus;
+    scrubbed = { ...scrubbed, session: { ...state.session, nexus: rest } as IState["session"] };
   }
-  const { oauthPending: _oauthPending, loginId: _loginId, ...rest } = nexus;
-  return { ...state, session: { ...state.session, nexus: rest } as IState["session"] };
+
+  const persistentNexus = (state.persistent as { nexus?: { userInfo?: Record<string, unknown> } })
+    .nexus;
+  if (persistentNexus?.userInfo !== undefined) {
+    const { email: _email, ...userInfo } = persistentNexus.userInfo;
+    scrubbed = {
+      ...scrubbed,
+      persistent: {
+        ...scrubbed.persistent,
+        nexus: { ...persistentNexus, userInfo },
+      } as IState["persistent"],
+    };
+  }
+
+  return scrubbed;
 }
 
 const LOG_FILE_RE = /^vortex\d?\.log$/;
