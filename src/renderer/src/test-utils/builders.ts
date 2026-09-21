@@ -42,6 +42,7 @@ import { downloadPathForGame } from "../extensions/download_management/selectors
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type {
@@ -611,7 +612,10 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
  * covered by the game-extension vortex-api mocks). vitest isolates these per test file, and
  * registration is idempotent.
  */
+const harnessGames = new Set<string>();
+
 function registerHarnessGame(gameId: string): void {
+  harnessGames.add(gameId);
   const gameReg = local<{
     gameModeManager: unknown;
     extensionGames: IGame[];
@@ -626,8 +630,10 @@ function registerHarnessGame(gameId: string): void {
       id: gameId,
       name: gameId,
       queryModPath: () => "mods",
-      // resolveGameVersion tries game.getGameVersion first; provide it so tests
-      // don't fall through to exe-version probing of a nonexistent binary
+      // resolveGameVersion validates the game (executable) and tries
+      // game.getGameVersion first; provide both so tests don't fall through to
+      // exe-version probing of a nonexistent binary
+      executable: () => `${gameId}.exe`,
       getGameVersion: () => Promise.resolve("1.0.0"),
     } as unknown as IGame);
   }
@@ -666,6 +672,14 @@ export function resetHarnessRegistries(): void {
  */
 export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IApiHarness {
   const state = makeDriverState(overrides);
+  // seed a discovery entry for every registered harness game so the real
+  // resolveGameVersion (getInstalledVersion proxy) passes its validity check
+  for (const gameId of harnessGames) {
+    state.settings.gameMode.discovered[gameId] = {
+      path: `C:/games/${gameId}`,
+      name: gameId,
+    } as IDiscoveryResult;
+  }
   const dispatched: ITrackedAction[] = [];
 
   const apply = (action: ITrackedAction | null | undefined): void => {

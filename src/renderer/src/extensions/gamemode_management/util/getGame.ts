@@ -9,7 +9,6 @@ import type GameModeManager from "../GameModeManager";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import { resolveGameVersion } from "./getGameVersion";
 import { getModTypeExtensions } from "./modTypeExtensions";
-
 // "decorate" IGame objects with added functionality
 const gameExHandler = {
   get: (target: IGame, key: PropertyKey) => {
