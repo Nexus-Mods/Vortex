@@ -213,6 +213,37 @@ describe("PluginPersistor", () => {
       choose("keep");
     });
 
+    const SKYRIM_HEADER = "# This file is used by Skyrim to keep track of your downloaded content.";
+
+    it("stays quiet when a foreign rewrite leaves the plugin list unchanged", async () => {
+      const onExternalChange = vi.fn(() => Promise.resolve("keep" as const));
+      persistor.setExternalChangeCallback(onExternalChange);
+
+      // the game stamps its own header in as it starts; *Old.esp is all Vortex knows about
+      nodeFs.writeFileSync(pluginsFile(), `${SKYRIM_HEADER}\r\n*Old.esp\r\n`, {
+        encoding: "latin1",
+      });
+      await persistor.loadFiles("skyrimse");
+      await settle();
+
+      expect(onExternalChange).not.toHaveBeenCalled();
+    });
+
+    // with nothing known to compare against, an empty file cannot be judged unchanged
+    it("still asks when the file is empty and it has no plugin list to compare", async () => {
+      const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
+      persistor.setExternalChangeCallback(onExternalChange);
+      persistor.setKnownPlugins({});
+      await settleWrites();
+
+      nodeFs.writeFileSync(pluginsFile(), "# Some other tool\r\n", { encoding: "latin1" });
+      await persistor.loadFiles("skyrimse");
+      await settle();
+
+      expect(onExternalChange).toHaveBeenCalledTimes(1);
+      expect(persistor.entry("old.esp").enabled).toBe(true);
+    });
+
     it("adopts the foreign content when the user chooses keep", async () => {
       persistor.setExternalChangeCallback(() => Promise.resolve("keep"));
 
@@ -517,6 +548,42 @@ describe("PluginPersistor", () => {
         `${VORTEX_HEADER}\r\nOld.esp\r\n`,
         { encoding: "latin1" },
       );
+    });
+
+    it("stays quiet when a foreign header leaves both files' lists unchanged", async () => {
+      const p = await makePersistor(true);
+      p.setKnownPlugins({ "old.esp": "Old.esp", "parked.esp": "Parked.esp" });
+      await p.loadFiles("not-a-supported-game");
+      const onExternalChange = vi.fn(() => Promise.resolve("keep" as const));
+      p.setExternalChangeCallback(onExternalChange);
+
+      nodeFs.writeFileSync(
+        path.join(paths.pluginDir, "loadorder.txt"),
+        "# Some other tool\r\nOld.esp\r\nParked.esp\r\n",
+        { encoding: "utf8" },
+      );
+      await p.loadFiles("skyrimse");
+      await settle();
+
+      expect(onExternalChange).not.toHaveBeenCalled();
+    });
+
+    it("asks when a foreign rewrite reorders loadorder.txt", async () => {
+      const p = await makePersistor(true);
+      p.setKnownPlugins({ "old.esp": "Old.esp", "parked.esp": "Parked.esp" });
+      await p.loadFiles("not-a-supported-game");
+      const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
+      p.setExternalChangeCallback(onExternalChange);
+
+      nodeFs.writeFileSync(
+        path.join(paths.pluginDir, "loadorder.txt"),
+        "# Some other tool\r\nParked.esp\r\nOld.esp\r\n",
+        { encoding: "utf8" },
+      );
+      await p.loadFiles("skyrimse");
+      await settle();
+
+      expect(onExternalChange).toHaveBeenCalledTimes(1);
     });
 
     it("reads the order from loadorder.txt and the enabled set from plugins.txt", async () => {
