@@ -133,6 +133,10 @@ runs:
       if: steps.packaged-native-cache.outputs.cache-hit != 'true' # skip when cached
       shell: pwsh
       working-directory: src/main/dist
+      env:
+        # dist is a pnpm deploy artifact: its lockfile carries the workspace catalogs
+        # but the generated workspace file doesn't, so pnpm's pre-run install fails.
+        PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN: "false"
       run: pnpm exec electron-rebuild
 
     - name: Build Installer
