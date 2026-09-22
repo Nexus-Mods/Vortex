@@ -4,6 +4,56 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0-beta.1] - 2026-09-22
+
+_First beta of the 2.8 release._
+
+### Added
+
+- Support bundle in the Help menu, packing the logs, app state and recent crash dumps into a single `.7z` ([#24251](https://github.com/Nexus-Mods/Vortex/pull/24251))
+- `scrim` colour family in the design system, plus a light-theme proof of concept ([#24203](https://github.com/Nexus-Mods/Vortex/pull/24203))
+- `FileSystem` exposed over IPC ([#24166](https://github.com/Nexus-Mods/Vortex/pull/24166))
+- Temporal polyfill ([#24149](https://github.com/Nexus-Mods/Vortex/pull/24149))
+- Spinner while an `Image` loads, then a fade-in ([#24133](https://github.com/Nexus-Mods/Vortex/pull/24133))
+- Download flyout announcing a download beside the spine's download button ([#24131](https://github.com/Nexus-Mods/Vortex/pull/24131))
+- "Reduce motion" setting under Settings → Interface ([#24113](https://github.com/Nexus-Mods/Vortex/pull/24113))
+- "Always use compact headers" setting under Settings → Interface ([#24108](https://github.com/Nexus-Mods/Vortex/pull/24108))
+- BG3 SE Config mod type ([#24080](https://github.com/Nexus-Mods/Vortex/pull/24080))
+
+### Changed
+
+- Centralised game store scanning with snapshots ([#24243](https://github.com/Nexus-Mods/Vortex/pull/24243))
+- Removed the game version provider pattern (`registerGameVersionProvider`) ([#24239](https://github.com/Nexus-Mods/Vortex/pull/24239))
+- Cleaned up the `GameStoreHelper` API surface ([#24229](https://github.com/Nexus-Mods/Vortex/pull/24229))
+- Rebuilt the Games page sections and tiles ([#24217](https://github.com/Nexus-Mods/Vortex/pull/24217))
+- Removed the `IGameStore` API export and `registerGameStore` ([#24214](https://github.com/Nexus-Mods/Vortex/pull/24214))
+- Moved the Xbox game store into the renderer ([#24210](https://github.com/Nexus-Mods/Vortex/pull/24210))
+- `Pill` now takes `brand` and `appearance` props in place of `pillType` ([#24208](https://github.com/Nexus-Mods/Vortex/pull/24208))
+- Replaced the `util.steam` and `util.epicGamesLauncher` APIs with deprecated shims over `GameStoreHelper` ([#24205](https://github.com/Nexus-Mods/Vortex/pull/24205))
+- Reworked native path handling in the FS library ([#24198](https://github.com/Nexus-Mods/Vortex/pull/24198))
+- Deploy and Purge are now pinned to the mods toolbar by default ([#24194](https://github.com/Nexus-Mods/Vortex/pull/24194))
+- Removed `adaptor-api` and the adaptors; FS now lives in `shared` ([#24187](https://github.com/Nexus-Mods/Vortex/pull/24187))
+- Rebuilt the game cards on the Games page ([#24167](https://github.com/Nexus-Mods/Vortex/pull/24167))
+- Removed `AssertSerializable` and simplified the IPC types ([#24161](https://github.com/Nexus-Mods/Vortex/pull/24161))
+- Reworked and consolidated BCP 47 language tag handling ([#24144](https://github.com/Nexus-Mods/Vortex/pull/24144))
+- Moved the GOG, Origin and Uplay game stores into core, removing the bundled extensions ([#24138](https://github.com/Nexus-Mods/Vortex/pull/24138))
+- Upgraded Electron to 44.2.0 ([#24137](https://github.com/Nexus-Mods/Vortex/pull/24137))
+- Cleaned up `EpicGamesLauncher` and exposed the correct game IDs ([#24124](https://github.com/Nexus-Mods/Vortex/pull/24124))
+- Simplified `classifyErrorCode` ([#24122](https://github.com/Nexus-Mods/Vortex/pull/24122))
+- Manage Rules button now takes the info brand while conflicts are unresolved ([#24110](https://github.com/Nexus-Mods/Vortex/pull/24110))
+
+### Fixed
+
+- API rate limits are now handled instead of surfaced to the user ([#24262](https://github.com/Nexus-Mods/Vortex/pull/24262))
+- `lastActiveProfileForGame` skipping memoisation whenever no game was active ([#24228](https://github.com/Nexus-Mods/Vortex/pull/24228))
+- OAuth2 session control: the v3 API now refreshes its token when needed ([#24216](https://github.com/Nexus-Mods/Vortex/pull/24216))
+- Undefined profile in the install manager ([#24211](https://github.com/Nexus-Mods/Vortex/pull/24211))
+- Oblivion failing to activate on case-sensitive Linux filesystems because of the executable's casing ([#24202](https://github.com/Nexus-Mods/Vortex/pull/24202))
+- Incorrect game domain assigned to a mod via MD5 lookup ([#24195](https://github.com/Nexus-Mods/Vortex/pull/24195))
+- Steam discovery crash from an error check that read the message instead of the code ([#24171](https://github.com/Nexus-Mods/Vortex/pull/24171))
+- Notification tray taking focus out of a text field when it opens itself ([#24170](https://github.com/Nexus-Mods/Vortex/pull/24170))
+- Component crash when `FlagService` had not been initialised ([#24162](https://github.com/Nexus-Mods/Vortex/pull/24162))
+
 ## [2.7.0] - 2026-09-21
 
 ### Fixed
@@ -2325,6 +2375,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.8.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0-beta.1
 [2.7.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0
 [2.7.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.2
 [2.7.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.1
