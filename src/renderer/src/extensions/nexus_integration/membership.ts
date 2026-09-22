@@ -9,6 +9,7 @@ import type { IExtensionApi } from "../../types/IExtensionContext";
 import Debouncer from "../../util/Debouncer";
 import { REVALIDATION_FREQUENCY } from "./constants";
 import { isLoggedIn, userInfo } from "./selectors";
+import type { UserInfoRead } from "./util";
 import { getUserInfo } from "./util";
 
 /** Collapses the focus / hover / menu triggers, which all mean "the user might have changed plan". */
@@ -25,16 +26,22 @@ const FAILURE_COOLDOWN = 30 * 1000;
 export const HOVER_REFRESH_FLOOR = REVALIDATION_FREQUENCY;
 
 let lastRead = 0;
-let lastReadFailed = false;
+let lastReadCooldown = REVALIDATION_FREQUENCY;
 let inFlight: Promise<boolean> | undefined;
 
 /**
- * Whether the last read still stands. A read that failed stands for the shorter cooldown, so an
- * unreachable api isn't hammered without `lastRead` having to misreport when it last answered.
+ * How long a read ending in `result` holds off the next one. Only an api that couldn't answer
+ * gets the short retry: a rate limit did answer, and it said stop asking.
  */
-function readIsRecent(
-  within = lastReadFailed ? FAILURE_COOLDOWN : REVALIDATION_FREQUENCY,
-): boolean {
+function cooldownFor(result: UserInfoRead): number {
+  return result === "failed" ? FAILURE_COOLDOWN : REVALIDATION_FREQUENCY;
+}
+
+/**
+ * Whether the last read still stands. A read that failed stands for its own cooldown, so the api
+ * isn't hammered without `lastRead` having to misreport when it last answered.
+ */
+function readIsRecent(within = lastReadCooldown): boolean {
   return Date.now() - lastRead < within;
 }
 
@@ -56,8 +63,8 @@ export function trackMembershipReads(api: IExtensionApi): void {
     }
     last = current;
     lastRead = Date.now();
-    // whatever wrote this had an answer, so the shorter post-failure window no longer applies
-    lastReadFailed = false;
+    // whatever wrote this had an answer, so a post-failure window no longer applies
+    lastReadCooldown = REVALIDATION_FREQUENCY;
   });
 }
 
@@ -66,12 +73,25 @@ export async function refreshMembership(api: IExtensionApi, nexus: Nexus): Promi
   if (inFlight !== undefined) {
     return inFlight;
   }
-  inFlight = Promise.resolve(getUserInfo(api, nexus))
-    .then((updated) => {
-      // a failure counts as an attempt, and stands for the shorter cooldown
+  return adoptMembershipRead(Promise.resolve(getUserInfo(api, nexus)));
+}
+
+/**
+ * Count a read this module didn't make as its own, so callers waiting on freshness share it
+ * instead of asking again. Login reads the account directly, because it needs the raw failure
+ * to tell a refused session from an unreachable one.
+ */
+export function adoptMembershipRead(read: Promise<UserInfoRead>): Promise<boolean> {
+  if (inFlight !== undefined) {
+    return inFlight;
+  }
+  inFlight = read
+    .catch((): UserInfoRead => "failed")
+    .then((result) => {
+      // a failure counts as an attempt, and stands for its own cooldown
       lastRead = Date.now();
-      lastReadFailed = updated !== true;
-      return updated === true;
+      lastReadCooldown = cooldownFor(result);
+      return result === "updated";
     })
     .finally(() => {
       inFlight = undefined;
@@ -123,6 +143,6 @@ export function scheduleMembershipRefresh(api: IExtensionApi, notReadWithin = 0)
 /** Test seam: forget when the membership was last read, and re-arm the debounce. */
 export function resetMembershipFreshness(): void {
   lastRead = 0;
-  lastReadFailed = false;
+  lastReadCooldown = REVALIDATION_FREQUENCY;
   refreshDebouncer.clear();
 }

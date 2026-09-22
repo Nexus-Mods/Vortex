@@ -1,5 +1,5 @@
 import type Nexus from "@nexusmods/nexus-api";
-import { NexusError, ProtocolError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
+import { NexusError, ProtocolError, TimeoutError } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import React from "react";
 
@@ -14,6 +14,7 @@ import { activeGameId, gameById } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
+import { isRateLimited, notifyRateLimited } from "../util";
 import { nexusGameId } from "./convertGameId";
 
 /**
@@ -23,7 +24,7 @@ import { nexusGameId } from "./convertGameId";
  */
 function allowReportTrackingError(err: unknown): boolean {
   return (
-    !(err instanceof RateLimitError) &&
+    !isRateLimited(err) &&
     !(err instanceof TimeoutError) &&
     !(err instanceof ProtocolError) &&
     !(err instanceof NexusError)
@@ -169,6 +170,10 @@ class Tracking {
       })
       .catch((err) => {
         if (err instanceof ProcessCanceled) {
+          return;
+        }
+        if (isRateLimited(err)) {
+          notifyRateLimited(this.mApi);
           return;
         }
         this.mApi.showErrorNotification("Failed to get list of tracked mods", err, {

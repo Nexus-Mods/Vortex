@@ -39,7 +39,7 @@ catalog:
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.3
   "@nexusmods/fomod-installer-native": 0.13.3
-  "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#8719aba0f7830b35d9eab37cceef69958ace4603
+  "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#da9b8eda8a3f381f04d87c7290595066ccbdbc5d
   "@nosferatu500/react-sortable-tree": 4.4.0
   "@nosferatu500/theme-file-explorer": 3.0.21
   "@opentelemetry/api": 1.9.1
@@ -189,7 +189,7 @@ catalog:
   minimist: 1.2.8
   mixpanel-browser: 2.79.0
   modmeta-db: github:Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
-  nexus-api: github:Nexus-Mods/node-nexus-api#8719aba0f7830b35d9eab37cceef69958ace4603
+  nexus-api: github:Nexus-Mods/node-nexus-api#da9b8eda8a3f381f04d87c7290595066ccbdbc5d
   node-7z: github:Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   node-abi: 4.35.0
   normalize-url: 6.1.0

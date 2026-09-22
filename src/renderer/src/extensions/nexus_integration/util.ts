@@ -1078,6 +1078,32 @@ export function graphErrorContext(err: unknown): Record<string, unknown> {
   return ctx;
 }
 
+/**
+ * Whether the site turned a request away because we're over its rate limit.
+ *
+ * nexus-api classifies a 429 as a RateLimitError only on the paths that reach its result
+ * handler; the rest arrive as a plain HTTPError carrying the status, so check both.
+ */
+export function isRateLimited(err: unknown): boolean {
+  return err instanceof RateLimitError || getErrorStatusCode(err) === 429;
+}
+
+/**
+ * Tell the user we've been throttled. Every caller shares one notification id, so a burst of
+ * rejected requests collapses into a single warning rather than one per feature.
+ */
+export function notifyRateLimited(api: IExtensionApi): void {
+  api.sendNotification({
+    id: "nexus-rate-limited",
+    type: "warning",
+    title: "Rate limited",
+    message:
+      "Nexus Mods is asking Vortex to slow down, so some information couldn't be loaded. " +
+      "Vortex will try again on its own.",
+    displayMS: 10000,
+  });
+}
+
 export interface IHandleGraphErrorOptions<T> {
   // Notification title shown to the user when the error isn't skipped.
   title: string;
@@ -1111,6 +1137,11 @@ export function handleGraphError<T>(
   const ctx = graphErrorContext(err);
   if (opts.doNotReport) {
     log("warn", opts.title, { ...ctx, message: getErrorMessage(err) });
+    return opts.fallback;
+  }
+  if (isRateLimited(err)) {
+    log("warn", opts.title, { ...ctx, message: getErrorMessage(err) });
+    notifyRateLimited(api);
     return opts.fallback;
   }
   const code = ctx.graphCode as string | undefined;
@@ -1877,12 +1908,15 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
   return oauthCred !== undefined ? oauthCred.token : undefined;
 }
 
-/** Re-read the account from the api into state. Resolves to whether it was updated. */
+/** How a read of the account ended. A rate limit gets its own case because it sets its own backoff. */
+export type UserInfoRead = "updated" | "failed" | "rate-limited";
+
+/** Re-read the account from the api into state. Resolves to how the read ended. */
 export function getUserInfo(
   api: IExtensionApi,
   nexus: Nexus,
   /*userInfo: IValidateKeyResponse*/
-): BluebirdPromise<boolean> {
+): BluebirdPromise<UserInfoRead> {
   log("info", "updateUserInfo()");
 
   /**
@@ -1896,22 +1930,33 @@ export function getUserInfo(
   if (isLoggedIn(api.getState())) {
     // get userinfo from api
     return BluebirdPromise.resolve(nexus.getUserInfo())
-      .then((apiUserInfo) => {
+      .then((apiUserInfo): UserInfoRead => {
         // update state with new info from endpoint
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
         //log('info', 'getUserInfo() nexus.getUserInfo response', apiUserInfo);
-        return true;
+        return "updated";
       })
-      .catch((err) => {
+      .catch((err): UserInfoRead => {
         //log('error', `getUserInfo() nexus.getUserInfo response ${err.message}`, err);
+        if (err instanceof ProcessCanceled) {
+          // no connection, or the api was switched off; neither is worth a toast for a read
+          // nobody asked for
+          return "failed";
+        }
+        if (isRateLimited(err)) {
+          // the features that needed the data report the limit themselves
+          log("info", "membership re-read put off, rate limited");
+          return "rate-limited";
+        }
         showError(api.store.dispatch, "An error occurred refreshing user info", err, {
           allowReport: false,
         });
-        return false;
+        return "failed";
       });
-  } else {
-    log("warn", "updateUserInfo() not logged in");
   }
+
+  log("warn", "updateUserInfo() not logged in");
+  return BluebirdPromise.resolve<UserInfoRead>("failed");
 
   /*
   return github.fetchConfig('api')
