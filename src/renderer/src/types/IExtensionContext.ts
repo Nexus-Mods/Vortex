@@ -8,11 +8,6 @@ import type { ThunkDispatch } from "redux-thunk";
 
 import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
 import type { ILoadOrderGameInfo } from "../extensions/file_based_loadorder/types/types";
-import type {
-  GameVersionProviderFunc,
-  GameVersionProviderTest,
-  IGameVersionProviderOptions,
-} from "../extensions/gameversion_management/types/IGameVersionProvider";
 import type { IHistoryEvent, IHistoryStack } from "../extensions/history_management/types";
 import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
 import type {
@@ -1489,17 +1484,6 @@ export interface IExtensionContext {
     label: string,
     description: string,
     supported: () => boolean,
-  ) => void;
-
-  /**
-   * register a game version resolution provider.
-   */
-  registerGameVersionProvider?: (
-    id: string,
-    priority: number,
-    supported: GameVersionProviderTest,
-    getVersion: GameVersionProviderFunc,
-    options?: IGameVersionProviderOptions,
   ) => void;
 
   /**

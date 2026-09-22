@@ -4,12 +4,11 @@ import type { IExtensionDownloadInfo } from "../../../types/extensions";
 import type { IGame } from "../../../types/IGame";
 import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
-import type GameVersionManager from "../../gameversion_management/GameVersionManager";
 import type { IGameStub } from "../GameModeManager";
 import type GameModeManager from "../GameModeManager";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
+import { resolveGameVersion } from "./getGameVersion";
 import { getModTypeExtensions } from "./modTypeExtensions";
-
 // "decorate" IGame objects with added functionality
 const gameExHandler = {
   get: (target: IGame, key: PropertyKey) => {
@@ -39,8 +38,7 @@ const gameExHandler = {
     } else if (key === "modTypes") {
       return getModTypeExtensions().filter((ex) => ex.isSupported(target.id));
     } else if (key === "getInstalledVersion") {
-      return (discovery: IDiscoveryResult) =>
-        gvm.gameVersionManager.getGameVersion(target, discovery);
+      return (discovery: IDiscoveryResult) => resolveGameVersion(target, discovery);
     } else {
       return target[key];
     }
@@ -66,13 +64,6 @@ const $ = local<{
 });
 
 // ...neither is this
-const gvm = local<{
-  gameVersionManager: GameVersionManager;
-}>("gameversion-manager", {
-  gameVersionManager: undefined,
-});
-
-// ...or this
 export function getGames(): IGame[] {
   if ($.gameModeManager === undefined) {
     throw new Error("getGames only available in renderer process");
