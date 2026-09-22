@@ -108,13 +108,11 @@ const copy = ordered.slice();
 
 #### **Private properties**
 
-Use m as a prefix for private properties. It is a bit uncommon compared to using \_ or nothing at all, but this is how we always do it, and at the moment, we have no good reason to change it.
+Prefer JavaScript private fields prefixed with `#` over TypeScript privately marked fields using the `private` modifier:
 
-```
-class SplashScreen {
-
-`  `private mWindow: Electron.BrowserWindow = null;
-
+```typescript
+class Foo {
+    #preferred: boolean;
 }
 ```
 

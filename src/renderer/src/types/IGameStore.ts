@@ -64,6 +64,25 @@ export interface ICustomExecutionInfo {
 }
 
 /**
+ * Synchronous view of a game store's most recent scan. Populated by the
+ * store's scan logic; never by a lookup. Before the first scan completes
+ * this is an empty snapshot ("no data").
+ *
+ * Renderer-private: IGameStore is no longer part of the extension API.
+ */
+export interface IGameStoreSnapshot {
+  /**
+   * All recognized/installed game entries found by the last scan.
+   */
+  entries: IGameStoreEntry[];
+
+  /**
+   * Whether the store itself is installed on this system.
+   */
+  isInstalled: boolean;
+}
+
+/**
  * interface for game store extensions
  *
  * @interface IGameStore
@@ -102,6 +121,12 @@ export interface IGameStore {
    *  manage.
    */
   allGames: () => PromiseBB<IGameStoreEntry[]>;
+
+  /**
+   * Synchronous access to the store's most recent scan. Never triggers
+   * a scan; the snapshot is populated by reloadGames.
+   */
+  snapshot: () => IGameStoreSnapshot;
 
   /**
    * Attempt to find a game entry using its game store Id/Ids.
@@ -189,7 +214,7 @@ export interface IGameStore {
    * The game store helper is configured to call this function for all known
    *  game stores when a discovery scan is initiated.
    */
-  reloadGames?: () => PromiseBB<void>;
+  reloadGames: () => PromiseBB<void>;
 
   /**
    * determine if the specified game is managed by/installed through this store.

@@ -920,6 +920,9 @@ function init(context: IExtensionContext): boolean {
       },
     );
     $.gameModeManager.attachToStore(store);
+    // kick the first store scan eagerly; store snapshots are then populated
+    // independently of quick discovery (which triggers its own reload)
+    $.gameModeManager.startInitialScan();
     {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(

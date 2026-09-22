@@ -8,7 +8,7 @@ import { parseStringPromise } from "xml2js";
 
 import type { IExtensionContext } from "@/types/api";
 import { GameEntryNotFound } from "@/types/IGameStore";
-import type { IGameStore } from "@/types/IGameStore";
+import type { IGameStore, IGameStoreSnapshot } from "@/types/IGameStore";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 
 import { log } from "../logging";
@@ -48,7 +48,7 @@ export class OriginLauncher implements IGameStore {
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
   private mClientPath: PromiseBB<string>;
-  private mCache: PromiseBB<IGameStoreEntry[]>;
+  #snapshot: IGameStoreSnapshot;
 
   constructor() {
     if (process.platform === "win32") {
@@ -59,12 +59,15 @@ export class OriginLauncher implements IGameStore {
           "ClientPath",
         );
         this.mClientPath = PromiseBB.resolve(clientPath.value as string);
+        this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "Origin launcher not found", { err });
         this.mClientPath = PromiseBB.resolve(undefined);
+        this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
       this.mClientPath = PromiseBB.resolve(undefined);
+      this.#snapshot = { entries: [], isInstalled: false };
     }
   }
 
@@ -124,16 +127,16 @@ export class OriginLauncher implements IGameStore {
   }
 
   public allGames(): PromiseBB<IGameStoreEntry[]> {
-    if (!this.mCache) {
-      this.mCache = this.parseLocalContent();
-    }
-    return this.mCache;
+    return PromiseBB.resolve(this.#snapshot.entries);
+  }
+
+  public snapshot(): IGameStoreSnapshot {
+    return this.#snapshot;
   }
 
   public reloadGames(): PromiseBB<void> {
-    return new PromiseBB((resolve) => {
-      this.mCache = this.parseLocalContent();
-      return resolve();
+    return this.parseLocalContent().then((entries: IGameStoreEntry[]) => {
+      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
     });
   }
 
