@@ -44,16 +44,12 @@ async function resolveDepVersions(deps, nodeModulesDir) {
 
 // pnpm's pre-run deps check (verifyDepsBeforeRun) would try to install into the
 // deployed copy on any bare `pnpm` call here, and nothing can install there: deploy
-// writes a lockfile with catalogs but a workspace file without them.
+// writes a lockfile with catalogs but a workspace file without them. Only the deployed
+// copy has that file, so this is a no-op when the script is run from src/main.
 async function disableDepsCheck() {
-  const existing = await readFile(WORKSPACE_PATH, "utf8").catch(() => "");
-  if (existing.includes("verifyDepsBeforeRun")) return;
-  const prefix = existing.trimEnd();
-  await writeFile(
-    WORKSPACE_PATH,
-    (prefix ? prefix + "\n" : "") + "verifyDepsBeforeRun: false\n",
-    "utf8",
-  );
+  const existing = await readFile(WORKSPACE_PATH, "utf8").catch(() => null);
+  if (existing === null || existing.includes("verifyDepsBeforeRun")) return;
+  await writeFile(WORKSPACE_PATH, `${existing.trimEnd()}\nverifyDepsBeforeRun: false\n`, "utf8");
 }
 
 async function downloadFile(url, dest) {
