@@ -8,7 +8,6 @@ const MAIN_DIR = resolve(import.meta.dirname);
 const MAIN_PACKAGE_PATH = resolve(MAIN_DIR, "package.json");
 const DIST_DIR = resolve(MAIN_DIR, "build");
 const DIST_PACKAGE_PATH = resolve(DIST_DIR, "package.json");
-const WORKSPACE_PATH = resolve(MAIN_DIR, "pnpm-workspace.yaml");
 // Runtimes bundled into the installer; also declared as winget dependencies by winget-release.yml.
 const RUNTIME_DEPS_FILE = "runtime-dependencies.json";
 
@@ -42,16 +41,6 @@ async function resolveDepVersions(deps, nodeModulesDir) {
   return resolved;
 }
 
-// pnpm's pre-run deps check (verifyDepsBeforeRun) would try to install into the
-// deployed copy on any bare `pnpm` call here, and nothing can install there: deploy
-// writes a lockfile with catalogs but a workspace file without them. Only the deployed
-// copy has that file, so this is a no-op when the script is run from src/main.
-async function disableDepsCheck() {
-  const existing = await readFile(WORKSPACE_PATH, "utf8").catch(() => null);
-  if (existing === null || existing.includes("verifyDepsBeforeRun")) return;
-  await writeFile(WORKSPACE_PATH, `${existing.trimEnd()}\nverifyDepsBeforeRun: false\n`, "utf8");
-}
-
 async function downloadFile(url, dest) {
   await mkdir(resolve(dest, ".."), { recursive: true });
   const response = await fetch(url);
@@ -80,8 +69,6 @@ async function main() {
   mainPkg.devDependencies = await resolveDepVersions(mainPkg.devDependencies, nodeModulesDir);
 
   await writeFile(DIST_PACKAGE_PATH, JSON.stringify(mainPkg, null, 2) + "\n", "utf8");
-
-  await disableDepsCheck();
 
   if (process.platform === "win32") {
     await prepareWin();
