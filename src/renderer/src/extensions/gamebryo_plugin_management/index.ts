@@ -53,7 +53,7 @@ import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
 import { ILOOTList, ILootReference } from "./types/ILOOTList";
 import { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
-import { IPlugin, IPluginCombined } from "./types/IPlugins";
+import { IPluginCombined } from "./types/IPlugins";
 import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import {
   gameDataPath,
@@ -82,6 +82,7 @@ import { handleModInstalled } from "./util/onModInstalled";
 import { handleSetPluginList } from "./util/onSetPluginList";
 import { makePluginConflictPrompt } from "./util/pluginFileConflict";
 import PluginHistory from "./util/PluginHistory";
+import { makeSetPluginLight } from "./util/pluginLight";
 import PluginPersistor from "./util/PluginPersistor";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
 import { AMBIENT_ATTRIBUTES, SpanAttribute } from "./util/spanAttributes";
@@ -1399,27 +1400,9 @@ function sanitizeForIPC(obj: any) {
 }
 
 function init(context: IExtensionContextExt) {
-  const setPluginLight = async (id: string, enable: boolean) => {
-    const state: IStateWithGamebryo = context.api.getState();
-    const profile = activeProfile(state);
-    const plugin: IPlugin = state.session.plugins.pluginList[id];
-    if (plugin === undefined) {
-      return;
-    }
-
-    const esp = await ESPFile.open(plugin.filePath, profile.gameId);
-    await esp.setLightFlag(enable);
-
-    context.api.ext.addToHistory("plugins", {
-      type: "plugin-eslified",
-      gameId: profile.gameId,
-      data: {
-        id,
-        enable,
-      },
-    });
+  const setPluginLight = makeSetPluginLight(context.api, (id) => {
     forceListUpdate[id] = Date.now();
-  };
+  });
 
   const history = new PluginHistory(context.api, makeSetPluginGhost(context.api), setPluginLight);
 
