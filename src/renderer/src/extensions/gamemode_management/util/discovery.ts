@@ -26,6 +26,8 @@ import { truthy } from "../../../util/util";
 import { modPathsForGame } from "../../mod_management/selectors";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IToolStored } from "../types/IToolStored";
+import { getGameStores } from "./getGame";
+import { identifyStore } from "./identifyStore";
 import Progress from "./Progress";
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
@@ -118,7 +120,7 @@ function updateManuallyConfigured(
     discoveredGames[game.id]?.path !== undefined &&
     discoveredGames[game.id]?.store === undefined
   ) {
-    return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
+    return identifyStore(discoveredGames[game.id]?.path, getGameStores())
       .then((store) => {
         if (store !== undefined) {
           log("debug", "updating previously discovered game", {
@@ -205,7 +207,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
   return prom
     .then((resolvedInfo) => {
       if (typeof resolvedInfo === "string") {
-        return GameStoreHelper.identifyStore(resolvedInfo)
+        return identifyStore(resolvedInfo, getGameStores())
           .catch((err) => {
             log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
             return undefined;

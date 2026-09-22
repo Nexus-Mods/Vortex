@@ -27,7 +27,6 @@ import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
-import GameStoreHelper from "../../util/GameStoreHelper";
 import { isContributed } from "../../util/isContributed";
 import local from "../../util/local";
 import { showError } from "../../util/message";
@@ -58,6 +57,7 @@ import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";
 import getDriveList from "./util/getDriveList";
 import { getGame, getGameStore, getGameStores } from "./util/getGame";
+import { identifyStore } from "./util/identifyStore";
 import { getModType, getModTypeExtensions, registerModType } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
 import queryGameInfo from "./util/queryGameInfo";
@@ -230,7 +230,7 @@ function manualGameStoreSelection(
   correctedGamePath: string,
 ): PromiseBB<{ store: string; corrected: string }> {
   const gameStores = getGameStores();
-  return GameStoreHelper.identifyStore(correctedGamePath).then((storeId) => {
+  return identifyStore(correctedGamePath, gameStores).then((storeId) => {
     const detectedStore = gameStores.find((store) => store.id === storeId);
     return api
       .showDialog(

@@ -11,7 +11,6 @@ import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
 import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import { ProcessCanceled, UserCanceled } from "./CustomErrors";
 import * as fs from "./fs";
-import getNormalizeFunc from "./getNormalizeFunc";
 import { log } from "./log";
 import { toBlue } from "./util";
 
@@ -40,8 +39,6 @@ export interface IGameStoreHelper {
     parameters?: string[],
     askConsent?: boolean,
   ): Bluebird<void>;
-
-  identifyStore: (gamePath: string) => Bluebird<string | undefined>;
 }
 
 /**
@@ -311,35 +308,6 @@ class GameStoreHelper implements IGameStoreHelper {
     // Start up the store.
     return startStore();
   }
-
-  public identifyStore = toBlue(async (gamePath: string) => {
-    const normalize = await getNormalizeFunc(gamePath);
-
-    const fallback = async (store: IGameStore, gamePath: string): Promise<boolean> => {
-      try {
-        const gameInfo = (await store.allGames()).find(
-          (game) => normalize(game.gamePath) === normalize(gamePath),
-        );
-
-        return gameInfo !== undefined;
-      } catch (err) {
-        return false;
-      }
-    };
-
-    for (const store of this.getStores()) {
-      if (store.identifyGame !== undefined) {
-        if (await store.identifyGame?.(gamePath, (gamePath) => fallback(store, gamePath))) {
-          return store.id;
-        }
-      } else {
-        if (await fallback(store, gamePath)) {
-          return store.id;
-        }
-      }
-    }
-    return undefined;
-  });
 
   public reloadGames(api?: IExtensionApi): Bluebird<void> {
     if (!!api && !this.mApi) {
