@@ -46,7 +46,6 @@ _First beta of the 2.8 release._
 
 - API rate limits are now handled instead of surfaced to the user ([#24262](https://github.com/Nexus-Mods/Vortex/pull/24262))
 - `lastActiveProfileForGame` skipping memoisation whenever no game was active ([#24228](https://github.com/Nexus-Mods/Vortex/pull/24228))
-- Game discovery crash when the Xbox launcher was created without an `api` ([#24226](https://github.com/Nexus-Mods/Vortex/pull/24226))
 - OAuth2 session control: the v3 API now refreshes its token when needed ([#24216](https://github.com/Nexus-Mods/Vortex/pull/24216))
 - Undefined profile in the install manager ([#24211](https://github.com/Nexus-Mods/Vortex/pull/24211))
 - Oblivion failing to activate on case-sensitive Linux filesystems because of the executable's casing ([#24202](https://github.com/Nexus-Mods/Vortex/pull/24202))
@@ -54,7 +53,6 @@ _First beta of the 2.8 release._
 - Steam discovery crash from an error check that read the message instead of the code ([#24171](https://github.com/Nexus-Mods/Vortex/pull/24171))
 - Notification tray taking focus out of a text field when it opens itself ([#24170](https://github.com/Nexus-Mods/Vortex/pull/24170))
 - Component crash when `FlagService` had not been initialised ([#24162](https://github.com/Nexus-Mods/Vortex/pull/24162))
-- FS `includeStatus` checks and mixed callback/promise handling ([#24158](https://github.com/Nexus-Mods/Vortex/pull/24158))
 
 ## [2.7.0] - 2026-09-21
 
