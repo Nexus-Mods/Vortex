@@ -54,6 +54,35 @@ export const PROXY_DLLS = [
   "version.dll",
 ];
 
+/**
+ * Launchers that must sit beside `DarkSoulsII.exe` because they look for the
+ * game in their own directory and load their payload relative to themselves.
+ *
+ * Unlike the proxy DLLs above, there is no structural signal for these: a
+ * launcher executable is indistinguishable from a standalone modding tool by
+ * archive shape alone. Measured against the 1244-archive corpus, "any .exe at
+ * the archive root" matches 27 archives of which all but a couple are save
+ * editors, unpackers and backup tools that must NOT be forced into `Game/`;
+ * "an .exe at the root plus a DLL in a subfolder" matches a single archive, and
+ * that one is a Qt GUI application whose subfolder DLLs are Qt plugins.
+ *
+ * So this list is deliberately an explicit allow-list keyed on known filenames
+ * rather than a heuristic. Adding a launcher means adding its filename here.
+ *
+ * `ds2sc_launcher.exe` — Dark Souls II SotFS Seamless Co-op. Its own install
+ * instructions say to extract into
+ * `...\Dark Souls II Scholar of the First Sin\Game`, and the binary contains
+ * `SeamlessCoop//ds2sc.dll` plus `Failed to find "DarkSoulsII.exe"`, so it
+ * resolves both its payload and the game relative to itself.
+ */
+export const LAUNCHER_EXECUTABLES = ["ds2sc_launcher.exe"];
+
+/**
+ * Filenames that mark an archive as relative to the game executable's
+ * directory. Whichever one is found anchors the re-rooting.
+ */
+export const GAME_DIR_MARKERS = [...PROXY_DLLS, ...LAUNCHER_EXECUTABLES];
+
 /** The loader `modtype-dinput` owns. Its presence makes us stand down. */
 const DINPUT_DLL = "dinput8.dll";
 
@@ -87,7 +116,7 @@ function setDefaultModType(): types.IInstruction {
 // --- archives anchored on the game executable's directory -------------------
 
 function findGameDirMarker(files: string[]): string | undefined {
-  return dataFilesOf(files).find((filePath) => PROXY_DLLS.includes(basenameLower(filePath)));
+  return dataFilesOf(files).find((filePath) => GAME_DIR_MARKERS.includes(basenameLower(filePath)));
 }
 
 function hasDinput(files: string[]): boolean {
@@ -96,8 +125,9 @@ function hasDinput(files: string[]): boolean {
 
 /**
  * Claims archives built around a proxy-DLL injector (DS2 Lighting Engine and
- * friends). Declines anything carrying `dinput8.dll` so ModEngine archives keep
- * going to `modtype-dinput` byte-for-byte as they do today.
+ * friends) or a known launcher (Seamless Co-op). Declines anything carrying
+ * `dinput8.dll` so ModEngine archives keep going to `modtype-dinput`
+ * byte-for-byte as they do today.
  */
 export function testGameDir(files: string[], gameId: string): Promise<types.ISupportedResult> {
   if (gameId !== DARKSOULS2_GAME_ID || hasDinput(files)) {

@@ -14,6 +14,28 @@ import {
 
 const EXEC_PATH = path.join("Game", "DarksoulsII.exe");
 
+/**
+ * Tools that ship with mods rather than with the game, so they only appear once
+ * the relevant mod is deployed. `relative: true` makes Vortex look for them
+ * under the discovered game directory; `requiredFiles` is what gates them from
+ * showing up before the mod is installed.
+ *
+ * Deliberately not `defaultPrimary`: the Seamless Co-op author is explicit that
+ * you use the launcher when you want co-op and otherwise run the game normally,
+ * so it sits alongside the game rather than taking over the Play button.
+ */
+const TOOLS: types.ITool[] = [
+  {
+    id: "ds2seamlesscoop",
+    name: "Dark Souls II Seamless Co-op",
+    shortName: "Co-op",
+    executable: () => path.join("Game", "ds2sc_launcher.exe"),
+    requiredFiles: [path.join("Game", "ds2sc_launcher.exe")],
+    relative: true,
+    exclusive: true,
+  },
+];
+
 class DarkSouls2 {
   public context: types.IExtensionContext;
   public id: string;
@@ -23,6 +45,7 @@ class DarkSouls2 {
   public environment: { [key: string]: string };
   public details: { [key: string]: unknown };
   public requiredFiles: string[];
+  public supportedTools: types.ITool[];
 
   constructor(context: types.IExtensionContext) {
     this.context = context;
@@ -37,6 +60,7 @@ class DarkSouls2 {
       steamAppId: 236430,
     };
     this.requiredFiles = [EXEC_PATH];
+    this.supportedTools = TOOLS;
   }
 
   public queryPath(): PromiseLike<string> {

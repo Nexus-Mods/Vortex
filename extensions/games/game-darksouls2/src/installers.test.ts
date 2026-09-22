@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 import {
   DARKSOULS2_GAME_ID,
   DARKSOULS2_PRIORITIES,
+  GAME_DIR_MARKERS,
+  LAUNCHER_EXECUTABLES,
   PROXY_DLLS,
   allTextures,
   installGameDir,
@@ -25,6 +27,14 @@ function copies(instructions: types.IInstruction[]): types.IInstruction[] {
 function lastInstruction(instructions: types.IInstruction[]): types.IInstruction | undefined {
   return instructions[instructions.length - 1];
 }
+
+const SEAMLESS_COOP_ARCHIVE = [
+  "ds2sc_launcher.exe",
+  path.join("SeamlessCoop", "crashpad", "crashpad_handler.exe"),
+  path.join("SeamlessCoop", "ds2sc_settings.ini"),
+  path.join("SeamlessCoop", "locale", "english.json"),
+  path.join("SeamlessCoop", "ds2sc.dll"),
+];
 
 describe("priorities", () => {
   it("puts both installers ahead of modtype-dinput and modtype-gedosato (50)", () => {
@@ -147,6 +157,93 @@ describe("installGameDir", () => {
   it("pins the mod to the default modType", async () => {
     const { instructions } = await installGameDir(["dxgi.dll"]);
     expect(lastInstruction(instructions)).toEqual({ type: "setmodtype", value: "" });
+  });
+});
+
+describe("testGameDir - known launchers", () => {
+  it.each(LAUNCHER_EXECUTABLES)("claims an archive containing %s", async (exe) => {
+    const result = await testGameDir([exe], DARKSOULS2_GAME_ID);
+    expect(result.supported).toBe(true);
+    expect(result.requiredFiles).toEqual([exe]);
+  });
+
+  it("claims the real Seamless Co-op archive shape", async () => {
+    const result = await testGameDir(SEAMLESS_COOP_ARCHIVE, DARKSOULS2_GAME_ID);
+    expect(result.supported).toBe(true);
+    expect(result.requiredFiles).toEqual(["ds2sc_launcher.exe"]);
+  });
+
+  it("exposes launchers and proxy DLLs as one marker list", () => {
+    expect(GAME_DIR_MARKERS).toEqual([...PROXY_DLLS, ...LAUNCHER_EXECUTABLES]);
+  });
+
+  // The corpus measurement behind the explicit allow-list: a bare .exe at the
+  // archive root is overwhelmingly a standalone tool (save editors, unpackers,
+  // backup utilities) that must not be forced into Game/.
+  it.each([
+    ["dark_souls_2_save_editor.exe"],
+    ["ds2_inventory_cleaner.exe"],
+    ["witchybnd.exe"],
+    ["ds2-scrambler.exe"],
+  ])("does not claim the standalone tool %s", async (exe) => {
+    const result = await testGameDir([exe, "readme.txt"], DARKSOULS2_GAME_ID);
+    expect(result.supported).toBe(false);
+  });
+
+  it("does not claim a Qt app whose subfolder DLLs are plugins", async () => {
+    const result = await testGameDir(
+      ["ds2bossmaker.exe", path.join("platforms", "qwindows.dll")],
+      DARKSOULS2_GAME_ID,
+    );
+    expect(result.supported).toBe(false);
+  });
+});
+
+describe("installGameDir - Seamless Co-op", () => {
+  it("puts the launcher beside the game exe and keeps its payload tree", async () => {
+    const { instructions } = await installGameDir(SEAMLESS_COOP_ARCHIVE);
+    expect(copies(instructions)).toEqual([
+      { type: "copy", source: "ds2sc_launcher.exe", destination: g("ds2sc_launcher.exe") },
+      {
+        type: "copy",
+        source: path.join("SeamlessCoop", "crashpad", "crashpad_handler.exe"),
+        destination: g("SeamlessCoop", "crashpad", "crashpad_handler.exe"),
+      },
+      {
+        type: "copy",
+        source: path.join("SeamlessCoop", "ds2sc_settings.ini"),
+        destination: g("SeamlessCoop", "ds2sc_settings.ini"),
+      },
+      {
+        type: "copy",
+        source: path.join("SeamlessCoop", "locale", "english.json"),
+        destination: g("SeamlessCoop", "locale", "english.json"),
+      },
+      {
+        type: "copy",
+        source: path.join("SeamlessCoop", "ds2sc.dll"),
+        destination: g("SeamlessCoop", "ds2sc.dll"),
+      },
+    ]);
+  });
+
+  it("strips a wrapper if the author ever adds one", async () => {
+    const { instructions } = await installGameDir([
+      path.join("DS2SC", "ds2sc_launcher.exe"),
+      path.join("DS2SC", "SeamlessCoop", "ds2sc.dll"),
+    ]);
+    expect(copies(instructions)).toEqual([
+      {
+        type: "copy",
+        source: path.join("DS2SC", "ds2sc_launcher.exe"),
+        destination: g("ds2sc_launcher.exe"),
+      },
+      {
+        type: "copy",
+        source: path.join("DS2SC", "SeamlessCoop", "ds2sc.dll"),
+        destination: g("SeamlessCoop", "ds2sc.dll"),
+      },
+    ]);
   });
 });
 
