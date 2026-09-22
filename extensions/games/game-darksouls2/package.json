@@ -1,10 +1,10 @@
 {
   "name": "game-darksouls2",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Support for Dark Souls II",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
