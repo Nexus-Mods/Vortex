@@ -8,6 +8,7 @@ import type { IState } from "@/types/IState";
 import { setUserInfo } from "./actions/persistent";
 import { addFreeUserDLItem } from "./actions/session";
 import {
+  adoptMembershipRead,
   ensureFreshMembership,
   HOVER_REFRESH_FLOOR,
   refreshMembership,
@@ -15,6 +16,7 @@ import {
   scheduleMembershipRefresh,
   trackMembershipReads,
 } from "./membership";
+import type { UserInfoRead } from "./util";
 import { transformUserInfoFromApi } from "./util";
 
 /** The harness is signed in by default; this flips it to a signed-out account. */
@@ -27,6 +29,12 @@ const makeNexus = (getUserInfo = vi.fn().mockResolvedValue(makeApiUserInfo())) =
   nexus: { getUserInfo } as never,
   getUserInfo,
 });
+
+/** A 429 as nexus-api's GET path rejects it: an HTTPError carrying the status. */
+const rateLimited = () =>
+  Object.assign(new Error("HTTP (429) - Request Failed"), {
+    statusCode: 429,
+  });
 
 describe("membership freshness", () => {
   beforeEach(() => {
@@ -128,6 +136,46 @@ describe("membership freshness", () => {
       expect(refresh).not.toHaveBeenCalled();
     });
 
+    // two minutes: past the cooldown an unreachable api gets, inside the ordinary cadence
+    const LATER = 1_000_000 + 2 * 60 * 1000;
+
+    // a rate limit must hold off longer than an ordinary failure, or the retry feeds the limit
+    test("holds off longer after a rate limit than after an ordinary failure", async ({
+      makeApi,
+    }) => {
+      const harness = makeApi();
+      const now = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+      try {
+        const getUserInfo = vi.fn().mockRejectedValue(rateLimited());
+        const nexus = { getUserInfo } as never;
+
+        await ensureFreshMembership(harness.api, nexus);
+        now.mockReturnValue(LATER);
+        await ensureFreshMembership(harness.api, nexus);
+
+        expect(getUserInfo).toHaveBeenCalledTimes(1);
+      } finally {
+        now.mockRestore();
+      }
+    });
+
+    test("tries again at that point after an ordinary failure", async ({ makeApi }) => {
+      const harness = makeApi();
+      const now = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+      try {
+        const getUserInfo = vi.fn().mockRejectedValue(new Error("network down"));
+        const nexus = { getUserInfo } as never;
+
+        await ensureFreshMembership(harness.api, nexus);
+        now.mockReturnValue(LATER);
+        await ensureFreshMembership(harness.api, nexus);
+
+        expect(getUserInfo).toHaveBeenCalledTimes(2);
+      } finally {
+        now.mockRestore();
+      }
+    });
+
     test("stays quiet for a logged-out user, who has no membership to read", async ({
       makeApi,
     }) => {
@@ -138,6 +186,52 @@ describe("membership freshness", () => {
       await ensureFreshMembership(harness.api, nexus);
 
       expect(getUserInfo).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("adoptMembershipRead", () => {
+    // the freshness check and the login read overlap at startup, so they must be one request
+    test("waits on a read made outside this module rather than starting another", async ({
+      makeApi,
+    }) => {
+      const harness = makeApi();
+      const { nexus, getUserInfo } = makeNexus();
+      let finishLogin: (result: UserInfoRead) => void;
+      const login = new Promise<UserInfoRead>((resolve) => {
+        finishLogin = resolve;
+      });
+
+      const adopted = adoptMembershipRead(login);
+      const pending = ensureFreshMembership(harness.api, nexus);
+      finishLogin("updated");
+      await pending;
+
+      await expect(adopted).resolves.toBe(true);
+      expect(getUserInfo).not.toHaveBeenCalled();
+    });
+
+    test("counts as the last read, so the next check is served without asking", async ({
+      makeApi,
+    }) => {
+      const harness = makeApi();
+      const { nexus, getUserInfo } = makeNexus();
+
+      await adoptMembershipRead(Promise.resolve("updated"));
+      await ensureFreshMembership(harness.api, nexus);
+
+      expect(getUserInfo).not.toHaveBeenCalled();
+    });
+
+    test("survives a read that rejects outright", async ({ makeApi }) => {
+      const harness = makeApi();
+      const { nexus, getUserInfo } = makeNexus();
+
+      await expect(adoptMembershipRead(Promise.reject(new Error("no")))).resolves.toBe(false);
+
+      // the failed read holds the next one off briefly, but the module isn't stuck on it
+      resetMembershipFreshness();
+      await ensureFreshMembership(harness.api, nexus);
+      expect(getUserInfo).toHaveBeenCalledTimes(1);
     });
   });
 
