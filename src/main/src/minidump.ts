@@ -49,7 +49,7 @@ const STREAM_CRASHPAD_INFO = 0x43500001;
 const MODULE_ENTRY_SIZE = 108;
 const VS_FIXEDFILEINFO_SIGNATURE = 0xfeef04bd;
 
-// dumps hold only stack memory by default; anything bigger is not one of ours
+// Bound memory use when reading dumps, including unexpectedly large child dumps.
 const MAX_DUMP_SIZE = 64 * 1024 * 1024;
 
 const WINDOWS_EXCEPTION_NAMES: Record<number, string> = {
@@ -89,24 +89,34 @@ interface ILocation {
   rva: number;
 }
 
-export async function summarizeMinidumpFile(
-  filePath: string,
-): Promise<IMinidumpSummary | undefined> {
+export type MinidumpResult =
+  | { summary: IMinidumpSummary; unreadableReason?: never }
+  | {
+      summary?: never;
+      unreadableReason:
+        | "file-too-large"
+        | "read-failed"
+        | "invalid-signature"
+        | "missing-exception"
+        | "malformed-dump";
+    };
+
+export async function summarizeMinidumpFile(filePath: string): Promise<MinidumpResult> {
   try {
     if ((await stat(filePath)).size > MAX_DUMP_SIZE) {
-      return undefined;
+      return { unreadableReason: "file-too-large" };
     }
     return parseMinidump(await readFile(filePath));
   } catch {
-    return undefined;
+    return { unreadableReason: "read-failed" };
   }
 }
 
-export function parseMinidump(buffer: Buffer): IMinidumpSummary | undefined {
+export function parseMinidump(buffer: Buffer): MinidumpResult {
   const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
   try {
     if (view.getUint32(0, true) !== MINIDUMP_SIGNATURE) {
-      return undefined;
+      return { unreadableReason: "invalid-signature" };
     }
 
     const streamCount = view.getUint32(8, true);
@@ -123,7 +133,7 @@ export function parseMinidump(buffer: Buffer): IMinidumpSummary | undefined {
 
     const exception = streams.get(STREAM_EXCEPTION);
     if (exception === undefined) {
-      return undefined;
+      return { unreadableReason: "missing-exception" };
     }
 
     // MINIDUMP_EXCEPTION_STREAM: ThreadId(0), alignment(4), then
@@ -164,10 +174,10 @@ export function parseMinidump(buffer: Buffer): IMinidumpSummary | undefined {
       summary.fatalMessage = fatalMessage;
     }
 
-    return summary;
+    return { summary };
   } catch {
     // truncated or malformed dump
-    return undefined;
+    return { unreadableReason: "malformed-dump" };
   }
 }
 

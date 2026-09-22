@@ -92,7 +92,6 @@ describe("sanitizeSpanAttributes (strict / no consent)", () => {
 
   it("keeps native crash facts extracted from minidumps", () => {
     const attributes = {
-      "crash.native.dumpCount": 1,
       "crash.native.exceptionCode": "0xc0000005",
       "crash.native.exceptionAddress": "0x7ff800008a40",
       "crash.native.module": "nvwgf2umx.dll",
@@ -101,6 +100,12 @@ describe("sanitizeSpanAttributes (strict / no consent)", () => {
       "crash.native.processType": "gpu-process",
     };
     expect(sanitizeSpanAttributes(attributes)).toEqual(attributes);
+  });
+
+  it("keeps bounded unreadable-dump diagnostics without consent", () => {
+    expect(sanitizeSpanAttributes({ "crash.native.unreadableReason": "file-too-large" })).toEqual({
+      "crash.native.unreadableReason": "file-too-large",
+    });
   });
 
   it("buckets count attributes (numbers and numeric strings)", () => {

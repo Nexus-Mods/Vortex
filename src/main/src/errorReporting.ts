@@ -19,6 +19,7 @@ import { log } from "./logging";
 import {
   DUMP_WITHOUT_CRASHING_CODE,
   type IMinidumpSummary,
+  type MinidumpResult,
   summarizeMinidumpFile,
 } from "./minidump";
 import { createVortexResource } from "./telemetry/resources";
@@ -155,10 +156,9 @@ export async function sendPendingCrashReport(): Promise<void> {
 /**
  * Report native crash dumps left behind by previous sessions, then delete
  * them — a dump's existence marks an unreported crash, same protocol as
- * crashinfo.json. Renderer/gpu dumps were already reported live by the
- * *-process-gone handlers, so they are deleted unreported; main-process
- * ("browser") dumps — and dumps too corrupt to attribute — get one
- * crash.report span for the newest one. The dump folder outlives installs,
+ * crashinfo.json. Each dump gets its own crash.report span so child-process
+ * diagnostics survive alongside main-process crashes. The live process-gone
+ * reports contain exit details, not the native crash site. The dump folder outlives installs,
  * so dumps written by another Vortex version are discarded rather than
  * reported as this version's crashes. Dumps are only deleted once the report
  * is sent, so a failed send retries on the next startup.
@@ -171,41 +171,51 @@ export async function sendPendingNativeCrashReport(): Promise<void> {
   const dumps = await claimCrashDumps();
   const installedAt = await modifiedTime(process.execPath);
 
-  const unreported: Array<{ path: string; summary: IMinidumpSummary | undefined }> = [];
+  let processed = 0;
   let stale = 0;
   for (const dump of dumps) {
     // anything beyond the newest few is stale backlog, not worth a report
-    if (unreported.length >= MAX_PROCESSED_DUMPS) {
+    if (processed >= MAX_PROCESSED_DUMPS) {
       await removeQuietly(dump.path);
       continue;
     }
-    const summary = await summarizeMinidumpFile(dump.path);
+    const result = await summarizeMinidumpFile(dump.path);
+    const { summary } = result;
     if (!isFromCurrentBuild(summary?.appVersion, app.getVersion(), dump.mtimeMs, installedAt)) {
       stale += 1;
       await removeQuietly(dump.path);
-    } else if (
-      summary?.exceptionCode === DUMP_WITHOUT_CRASHING_CODE ||
-      (summary?.processType !== undefined && summary.processType !== "browser")
-    ) {
+    } else if (summary?.exceptionCode === DUMP_WITHOUT_CRASHING_CODE) {
       await removeQuietly(dump.path);
     } else {
-      unreported.push({ path: dump.path, summary });
+      processed += 1;
+      await reportNativeDump(dump.path, result);
     }
   }
   if (stale > 0) {
     log("info", "discarded crash dumps left by other Vortex versions", { count: stale });
   }
+}
 
-  if (unreported.length === 0) {
-    return;
+/** Match the process names used by the live process-gone reports. */
+export function dumpReportProcess(summary: IMinidumpSummary | undefined): string {
+  switch (summary?.processType) {
+    case "browser":
+      return "main";
+    case "gpu-process":
+      return "gpu";
+    default:
+      return summary?.processType ?? "unknown";
   }
+}
 
-  // the newest dump we can actually read; unreadable ones only add to the count
-  const primary = unreported.find((dump) => dump.summary !== undefined)?.summary;
-
-  const attributes: Record<string, string | number> = {
-    "crash.native.dumpCount": unreported.length,
-  };
+async function reportNativeDump(dumpPath: string, result: MinidumpResult): Promise<void> {
+  const primary = result.summary;
+  const sourceProcess = dumpReportProcess(primary);
+  const title = `${sourceProcess} crash`;
+  const attributes: Record<string, string | number> = {};
+  if (result.unreadableReason !== undefined) {
+    attributes["crash.native.unreadableReason"] = result.unreadableReason;
+  }
   if (primary !== undefined) {
     attributes["crash.native.exceptionCode"] = primary.exceptionCode;
     attributes["crash.native.exceptionAddress"] = primary.exceptionAddress;
@@ -232,9 +242,11 @@ export async function sendPendingNativeCrashReport(): Promise<void> {
   const error: ReportableError = {
     title:
       primary?.module !== undefined
-        ? `Native crash in ${primary.module}`
-        : "Native crash (unreadable dump)",
-    message: describeNativeCrash(primary, unreported.length),
+        ? `${title} in ${primary.module}`
+        : primary !== undefined
+          ? `${title} (unknown module)`
+          : `${title} (unreadable dump)`,
+    message: describeNativeCrash(primary, sourceProcess),
     code: primary?.exceptionCode ?? "native-crash",
   };
 
@@ -243,25 +255,22 @@ export async function sendPendingNativeCrashReport(): Promise<void> {
       "PreviousSessionCrash",
       error,
       undefined,
-      "main",
+      sourceProcess,
       isTelemetryEnabled(),
       attributes,
     );
     log("info", "reported native crash from previous session", {
-      dumps: unreported.length,
+      processType: primary?.processType,
+      unreadableReason: result.unreadableReason,
       exception: primary?.exceptionCode,
       module: primary?.module,
     });
-    for (const dump of unreported) {
-      await removeQuietly(dump.path);
-    }
+    await removeQuietly(dumpPath);
   } catch (err) {
     log("warn", "failed to report native crash, will retry next startup", {
       error: getErrorMessageOrDefault(err),
     });
-    for (const dump of unreported) {
-      await releaseClaim(dump.path);
-    }
+    await releaseClaim(dumpPath);
   }
 }
 
@@ -324,9 +333,13 @@ async function claimCrashDumps(): Promise<IDumpFile[]> {
   return claimed;
 }
 
-const describeNativeCrash = (summary: IMinidumpSummary | undefined, dumpCount: number): string => {
+const describeNativeCrash = (
+  summary: IMinidumpSummary | undefined,
+  sourceProcess: string,
+): string => {
+  const subject = `${sourceProcess} crash from previous session`;
   if (summary === undefined) {
-    return `Previous session crashed leaving ${dumpCount} unreadable crash dump(s)`;
+    return `${subject}: unreadable crash dump`;
   }
   const what =
     summary.exceptionName !== undefined
@@ -334,7 +347,7 @@ const describeNativeCrash = (summary: IMinidumpSummary | undefined, dumpCount: n
       : summary.exceptionCode;
   const where = summary.module !== undefined ? ` in ${summary.module}+${summary.moduleOffset}` : "";
   const why = summary.fatalMessage !== undefined ? `: ${summary.fatalMessage}` : "";
-  return `Previous session crashed: ${what}${where}${why}`;
+  return `${subject}: ${what}${where}${why}`;
 };
 
 interface IDumpFile {
