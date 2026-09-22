@@ -10,6 +10,7 @@ import type { IDiscoveredTool } from "@/types/IDiscoveredTool";
 import type { IExtensionApi, ThunkStore } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
 import type { IGameStore } from "@/types/IGameStore";
+import type { IGameStoreSnapshot } from "@/types/IGameStore";
 import type { IState } from "@/types/IState";
 import type { ITool } from "@/types/ITool";
 import { GoGLauncher } from "@/util/GOGLauncher";
@@ -249,6 +250,26 @@ class GameModeManager {
 
   public get gameStores(): IGameStore[] {
     return this.mKnownGameStores;
+  }
+
+  /**
+   * the snapshot of a known store, readable synchronously.
+   * undefined if no store with that id is known.
+   */
+  public gameStoreSnapshot(storeId: string): IGameStoreSnapshot | undefined {
+    return this.mKnownGameStores.find((store) => store.id === storeId)?.snapshot();
+  }
+
+  /**
+   * the snapshots of all known stores, keyed by store id. Each entry
+   * delegates to the store's live snapshot, so it reflects the most
+   * recent scan at the time of access.
+   */
+  public get gameStoreSnapshots(): Record<string, IGameStoreSnapshot> {
+    return this.mKnownGameStores.reduce<Record<string, IGameStoreSnapshot>>((prev, store) => {
+      prev[store.id] = store.snapshot();
+      return prev;
+    }, {});
   }
 
   /**
