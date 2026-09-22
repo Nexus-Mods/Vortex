@@ -51,7 +51,7 @@ import { type IGameStub } from "./GameModeManager";
 import { discoveryReducer } from "./reducers/discovery";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
-import { settingsReducer } from "./reducers/settings";
+import { settingsReducer } from "./reducers/settings/settings";
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from "./selectors";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
@@ -920,6 +920,9 @@ function init(context: IExtensionContext): boolean {
       },
     );
     $.gameModeManager.attachToStore(store);
+    // kick the first store scan eagerly; store snapshots are then populated
+    // independently of quick discovery (which triggers its own reload)
+    $.gameModeManager.startInitialScan();
     {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
@@ -963,7 +966,7 @@ function init(context: IExtensionContext): boolean {
 
     // IMPORTANT: internal event but lacking alternatives, extensions may use it (to refresh
     //    tool discovery). Therefore this must not be changed (breaking change) before Vortex 1.6
-    events.on("start-quick-discovery", (cb?: (gameIds: string[]) => void) => {
+    events.on("start-quick-discovery", (cb?: (gameIds: string[], err?: Error) => void) => {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
         Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
@@ -981,7 +984,7 @@ function init(context: IExtensionContext): boolean {
         .catch((err) => {
           err["attachLogOnReport"] = true;
           context.api.showErrorNotification("Discovery failed", err);
-          cb?.(Array.from(discoveredGames));
+          cb?.(Array.from(discoveredGames), err);
         });
     });
     context.api.onAsync("discover-tools", (gameId: string) =>
@@ -1006,6 +1009,12 @@ function init(context: IExtensionContext): boolean {
         context.api.showErrorNotification("Failed to search for games", err);
       }
     });
+    events.on("cancel-game-scan", () => {
+      log("info", "received cancel game scan");
+      $.gameModeManager.stopQuickDiscovery();
+      $.gameModeManager.stopSearchDiscovery();
+    });
+
     events.on("cancel-discovery", () => {
       log("info", "received cancel discovery");
       $.gameModeManager.stopSearchDiscovery();

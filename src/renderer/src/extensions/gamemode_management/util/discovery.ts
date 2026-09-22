@@ -289,10 +289,16 @@ export function quickDiscovery(
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
+  signal?: AbortSignal,
 ): Bluebird<string[]> {
   return Bluebird.all(
     knownGames.map((game) =>
       quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool).then(() => {
+        // Every game is queried in parallel, but each only reaches here once its tool
+        // lookup settles - so aborting still skips the bulk of the remaining work.
+        if (signal?.aborted) {
+          return undefined;
+        }
         if (getSafe(discoveredGames, [game.id, "pathSetManually"], false)) {
           // don't override manually set game location but maybe update some settings
           return updateManuallyConfigured(discoveredGames, game, onDiscoveredGame).then(() =>

@@ -189,6 +189,8 @@ The answer is published as `data-reduce-motion="true"` on `<html>`
   Return primitives or stable refs and map to objects or nodes in the component.
 - Push a hot subscription down into a small leaf component so only it
   re-renders. See `HealthCheckMenuBadge` and `LastUpdated`.
+- For writing reducers, registering them and the deprecated `storeHelper`
+  path helpers, see [state.md](state.md).
 
 ## i18n
 

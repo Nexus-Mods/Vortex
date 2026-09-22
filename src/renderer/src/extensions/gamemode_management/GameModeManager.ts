@@ -4,30 +4,31 @@ import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type * as Redux from "redux";
 
+import { addNotification, showDialog } from "@/actions";
+import type { IExtensionDownloadInfo } from "@/types/extensions";
+import type { IDiscoveredTool } from "@/types/IDiscoveredTool";
+import type { IExtensionApi, ThunkStore } from "@/types/IExtensionContext";
+import type { IGame } from "@/types/IGame";
+import type { IGameStore } from "@/types/IGameStore";
+import type { IGameStoreSnapshot } from "@/types/IGameStore";
+import type { IState } from "@/types/IState";
+import type { ITool } from "@/types/ITool";
 import { GoGLauncher } from "@/util/GOGLauncher";
+import { log } from "@/util/log";
 import { OriginLauncher } from "@/util/OriginStore";
+import { getSafe } from "@/util/storeHelper";
 import { UPlayLauncher } from "@/util/UplayStore";
+import { batchDispatch, truthy } from "@/util/util";
 import { XboxLauncher } from "@/util/xbox/XboxLauncher";
 
 import { setNextProfile } from "../../actions";
-import { addNotification, showDialog } from "../../actions/notifications";
-import type { IExtensionDownloadInfo } from "../../types/extensions";
-import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
-import type { GameEntryNotFound, IGameStore } from "../../types/IGameStore";
-import type { IState } from "../../types/IState";
-import type { ITool } from "../../types/ITool";
 import { getNormalizeFunc } from "../../util/api";
 import { ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import EpicGamesLauncher from "../../util/EpicGamesLauncher";
 import * as fs from "../../util/fs";
-import GameStoreHelper, { normalizeStoreQuery } from "../../util/GameStoreHelper";
-import { log } from "../../util/log";
+import { normalizeStoreQuery } from "../../util/GameStoreHelper";
 import { activeProfile, discoveryByGame } from "../../util/selectors";
 import Steam from "../../util/Steam";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 import { discoveryFinished, discoveryProgress, setPhaseCount } from "./actions/discovery";
 import { clearGameDisabled, setGameDisabled, setKnownGames } from "./actions/session";
@@ -61,6 +62,7 @@ class GameModeManager {
   private mGameStubs: IGameStub[];
   private mKnownGameStores: IGameStore[];
   private mActiveSearch: PromiseBB<void>;
+  private mQuickDiscoveryAbort: AbortController | null;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(
@@ -82,6 +84,7 @@ class GameModeManager {
       XboxLauncher.create(api),
     ].filter(Boolean);
     this.mActiveSearch = null;
+    this.mQuickDiscoveryAbort = null;
     this.mOnGameModeActivated = onGameModeActivated;
   }
 
@@ -250,12 +253,35 @@ class GameModeManager {
   }
 
   /**
+   * the snapshot of a known store, readable synchronously.
+   * undefined if no store with that id is known.
+   */
+  public gameStoreSnapshot(storeId: string): IGameStoreSnapshot | undefined {
+    return this.mKnownGameStores.find((store) => store.id === storeId)?.snapshot();
+  }
+
+  /**
+   * the snapshots of all known stores, keyed by store id. Each entry
+   * delegates to the store's live snapshot, so it reflects the most
+   * recent scan at the time of access.
+   */
+  public get gameStoreSnapshots(): Record<string, IGameStoreSnapshot> {
+    return this.mKnownGameStores.reduce<Record<string, IGameStoreSnapshot>>((prev, store) => {
+      prev[store.id] = store.snapshot();
+      return prev;
+    }, {});
+  }
+
+  /**
    * starts game discovery, only using the search function from the game
    * extension
    *
    * @memberOf GameModeManager
    */
   public startQuickDiscovery(games?: IGame[]) {
+    const abort = new AbortController();
+    this.mQuickDiscoveryAbort = abort;
+
     return this.reloadStoreGames()
       .then(() =>
         quickDiscovery(
@@ -263,11 +289,21 @@ class GameModeManager {
           this.mStore.getState().settings.gameMode.discovered,
           this.onDiscoveredGame,
           this.onDiscoveredTool,
+          abort.signal,
         ),
       )
       .then((result) => {
+        // a stopped scan is a partial one, so don't run the finalisation over it
+        if (abort.signal.aborted) {
+          return [];
+        }
         this.postDiscovery();
         return result;
+      })
+      .finally(() => {
+        if (this.mQuickDiscoveryAbort === abort) {
+          this.mQuickDiscoveryAbort = null;
+        }
       });
   }
 
@@ -294,6 +330,20 @@ class GameModeManager {
 
   public isSearching(): boolean {
     return this.mActiveSearch !== null;
+  }
+
+  /**
+   * stop a running quick discovery. Games already found keep their discovery result;
+   * only the remaining lookups are abandoned.
+   *
+   * @memberOf GameModeManager
+   */
+  public stopQuickDiscovery(): void {
+    if (this.mQuickDiscoveryAbort !== null) {
+      log("info", "stop quick discovery");
+      this.mQuickDiscoveryAbort.abort();
+      this.mQuickDiscoveryAbort = null;
+    }
   }
 
   /**
@@ -432,8 +482,39 @@ class GameModeManager {
     );
   }
 
+  /**
+   * kicks the first store scan right after construction, so store
+   * snapshots are populated independently of quick discovery
+   */
+  public startInitialScan(): PromiseBB<void> {
+    return this.reloadStoreGames().catch((err) => {
+      log("error", "initial store scan failed", err);
+      return PromiseBB.resolve();
+    });
+  }
+
   private reloadStoreGames() {
-    return GameStoreHelper.reloadGames(this.mApi);
+    const stores = this.mKnownGameStores;
+    this.mApi.sendNotification?.({
+      id: "gamestore-reload",
+      type: "activity",
+      message: "Loading game stores...",
+    });
+
+    log("info", "reloading game store games", stores.map((store) => store.id).join(", "));
+    return PromiseBB.each(stores, (store) =>
+      store.reloadGames().catch((err: unknown) => {
+        log("error", "gamestore failed to reload its games", {
+          storeId: store.id,
+          err,
+        });
+
+        return PromiseBB.resolve();
+      }),
+    ).then(() => {
+      this.mApi.dismissNotification?.("gamestore-reload");
+      return PromiseBB.resolve();
+    });
   }
 
   private isValidGame(game: IGameStored): boolean {

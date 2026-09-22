@@ -9,7 +9,7 @@ import { parseStringPromise } from "xml2js";
 
 import type { IExtensionApi } from "@/types/api";
 import { GameEntryNotFound } from "@/types/IGameStore";
-import type { IGameStore } from "@/types/IGameStore";
+import type { IGameStore, IGameStoreSnapshot } from "@/types/IGameStore";
 
 import { log } from "../../logging";
 import { readFileAsync } from "../fs";
@@ -66,11 +66,12 @@ export class XboxLauncher implements IGameStore {
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
   private isXboxInstalled: boolean;
-  private mCache: PromiseBB<IXboxEntry[]>;
+  #snapshot: IGameStoreSnapshot;
   private mApi: IExtensionApi;
 
   constructor(api: IExtensionApi) {
     this.isXboxInstalled = gameStoreDetection();
+    this.#snapshot = { entries: [], isInstalled: this.isXboxInstalled };
     this.mApi = api;
   }
 
@@ -149,10 +150,11 @@ export class XboxLauncher implements IGameStore {
       return PromiseBB.resolve([]);
     }
 
-    if (!this.mCache) {
-      this.mCache = this.getGameEntries();
-    }
-    return this.mCache;
+    return PromiseBB.resolve(this.#snapshot.entries as IXboxEntry[]);
+  }
+
+  public snapshot(): IGameStoreSnapshot {
+    return this.#snapshot;
   }
 
   public reloadGames(): PromiseBB<void> {
@@ -160,9 +162,8 @@ export class XboxLauncher implements IGameStore {
       return PromiseBB.resolve();
     }
 
-    return new PromiseBB(async (resolve) => {
-      this.mCache = this.getGameEntries();
-      return resolve();
+    return this.getGameEntries().then((entries: IXboxEntry[]) => {
+      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
     });
   }
 
