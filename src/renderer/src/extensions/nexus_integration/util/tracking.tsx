@@ -14,7 +14,7 @@ import { activeGameId, gameById } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { isRateLimited, notifyRateLimited } from "../util";
+import { isRateLimited, notifyRateLimited } from "../rateLimit";
 import { nexusGameId } from "./convertGameId";
 
 /**

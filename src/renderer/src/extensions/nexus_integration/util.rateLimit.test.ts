@@ -3,7 +3,8 @@ import { describe, expect } from "vitest";
 
 import { test } from "@/test-utils/harnessTest";
 
-import { handleGraphError, isRateLimited } from "./util";
+import { isRateLimited } from "./rateLimit";
+import { handleGraphError } from "./util";
 
 const TRACKED_MODS_URL = "https://api.nexusmods.com/v1/user/tracked_mods";
 

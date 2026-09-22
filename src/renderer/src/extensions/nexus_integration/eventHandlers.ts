@@ -57,6 +57,7 @@ import { setUserInfo } from "./actions/persistent";
 import { NEXUS_BASE_URL, NEXUS_GAMES_URL } from "./constants";
 import { ensureFreshMembership, refreshMembership } from "./membership";
 import { nxmModUrl } from "./NXMUrl";
+import { isRateLimited, notifyRateLimited } from "./rateLimit";
 import { isLoggedIn, isPremium } from "./selectors";
 import type { IValidateKeyDataV2 } from "./types/IValidateKeyData";
 import {
@@ -66,8 +67,6 @@ import {
   ensureLoggedIn,
   graphErrorContext,
   handleGraphError,
-  isRateLimited,
-  notifyRateLimited,
   processErrorMessage,
   resolveGraphError,
   startDownload,

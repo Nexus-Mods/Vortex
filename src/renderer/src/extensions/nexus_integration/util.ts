@@ -21,7 +21,7 @@ import type {
   IModFileQuery,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-import { GraphError, NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
+import { GraphError, NexusError, TimeoutError } from "@nexusmods/nexus-api";
 import {
   getErrorCode,
   getErrorMessage,
@@ -74,6 +74,7 @@ import { setUserInfo } from "./actions/persistent";
 import { setLoginId, setOauthPending } from "./actions/session";
 import { OAUTH_CLIENT_ID, OAUTH_REDIRECT_URL, OAUTH_URL, getOAuthRedirectUrl } from "./constants";
 import NXMUrl from "./NXMUrl";
+import { isRateLimited, notifyRateLimited } from "./rateLimit";
 import { isLoggedIn, userInfo as userInfoSelector } from "./selectors";
 import { accessTokenSchema } from "./types/IJWTAccessToken";
 import type { IMembership, IValidateKeyDataV2 } from "./types/IValidateKeyData";
@@ -882,13 +883,8 @@ function startDownloadMod(
             message: false,
           },
         });
-      } else if (err instanceof RateLimitError) {
-        api.sendNotification({
-          id: "rate-limit-exceeded",
-          type: "warning",
-          title: "Rate-limit exceeded",
-          message: "You wont be able to use network features until the next full hour.",
-        });
+      } else if (isRateLimited(err)) {
+        notifyRateLimited(api);
       } else if (err instanceof NexusError) {
         const detail = processErrorMessage(err);
         let allowReport = detail.Servermessage === undefined;
@@ -1076,32 +1072,6 @@ export function graphErrorContext(err: unknown): Record<string, unknown> {
   if (err.entries.length > 0) ctx.graphEntries = err.entries;
   if (err.query !== undefined) ctx.graphQuery = err.query;
   return ctx;
-}
-
-/**
- * Whether the site turned a request away because we're over its rate limit.
- *
- * nexus-api classifies a 429 as a RateLimitError only on the paths that reach its result
- * handler; the rest arrive as a plain HTTPError carrying the status, so check both.
- */
-export function isRateLimited(err: unknown): boolean {
-  return err instanceof RateLimitError || getErrorStatusCode(err) === 429;
-}
-
-/**
- * Tell the user we've been throttled. Every caller shares one notification id, so a burst of
- * rejected requests collapses into a single warning rather than one per feature.
- */
-export function notifyRateLimited(api: IExtensionApi): void {
-  api.sendNotification({
-    id: "nexus-rate-limited",
-    type: "warning",
-    title: "Rate limited",
-    message:
-      "Nexus Mods is asking Vortex to slow down, so some information couldn't be loaded. " +
-      "Vortex will try again on its own.",
-    displayMS: 10000,
-  });
 }
 
 export interface IHandleGraphErrorOptions<T> {
