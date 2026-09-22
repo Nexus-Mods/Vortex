@@ -25,7 +25,7 @@ import { getNormalizeFunc } from "../../util/api";
 import { ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import EpicGamesLauncher from "../../util/EpicGamesLauncher";
 import * as fs from "../../util/fs";
-import GameStoreHelper, { normalizeStoreQuery } from "../../util/GameStoreHelper";
+import { normalizeStoreQuery } from "../../util/GameStoreHelper";
 import { activeProfile, discoveryByGame } from "../../util/selectors";
 import Steam from "../../util/Steam";
 import { setPrimaryTool } from "../starter_dashlet/actions";
@@ -461,8 +461,39 @@ class GameModeManager {
     );
   }
 
+  /**
+   * kicks the first store scan right after construction, so store
+   * snapshots are populated independently of quick discovery
+   */
+  public startInitialScan(): PromiseBB<void> {
+    return this.reloadStoreGames().catch((err) => {
+      log("error", "initial store scan failed", err);
+      return PromiseBB.resolve();
+    });
+  }
+
   private reloadStoreGames() {
-    return GameStoreHelper.reloadGames(this.mApi);
+    const stores = this.mKnownGameStores;
+    this.mApi.sendNotification?.({
+      id: "gamestore-reload",
+      type: "activity",
+      message: "Loading game stores...",
+    });
+
+    log("info", "reloading game store games", stores.map((store) => store.id).join(", "));
+    return PromiseBB.each(stores, (store) =>
+      store.reloadGames().catch((err: unknown) => {
+        log("error", "gamestore failed to reload its games", {
+          storeId: store.id,
+          err,
+        });
+
+        return PromiseBB.resolve();
+      }),
+    ).then(() => {
+      this.mApi.dismissNotification?.("gamestore-reload");
+      return PromiseBB.resolve();
+    });
   }
 
   private isValidGame(game: IGameStored): boolean {
