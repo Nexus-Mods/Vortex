@@ -18,6 +18,7 @@ import { makeTempDir } from "../../../test-utils/tempDir";
 import { setPluginEnabled } from "../actions/loadOrder";
 import { setPluginList } from "../actions/plugins";
 import { seams } from "../lootMocks";
+import { GHOST_EXT } from "../statics";
 import {
   checkMissingMasters,
   findMissingMasters,
@@ -34,6 +35,8 @@ vi.mock("./gameSupport", async () => (await import("../lootMocks.js")).gameSuppo
 interface ISetup {
   // plugin files in the game's Data folder, deployed and known to the plugin list
   deployed?: string[];
+  // like deployed, but the file in the Data folder carries the .ghost extension
+  ghosted?: string[];
   // plugins known to the plugin list from a mod's staging folder, not deployed
   staged?: string[];
   // plugin files in the Data folder the plugin list does not know
@@ -49,8 +52,12 @@ interface ISetup {
 
 async function setup(harness: IGamebryoHarness, opts: ISetup) {
   const base = await makeTempDir("vortex-masters-");
-  const dataDir = await seedPluginDir(path.join(base, "data"), [
+  const inData = [
     ...(opts.deployed ?? []),
+    ...(opts.ghosted ?? []).map((name) => name + GHOST_EXT),
+  ];
+  const dataDir = await seedPluginDir(path.join(base, "data"), [
+    ...inData,
     ...(opts.unscanned ?? []),
   ]);
   seams.base = base;
@@ -66,7 +73,7 @@ async function setup(harness: IGamebryoHarness, opts: ISetup) {
   harness.api.store.dispatch(
     setPluginList(
       Object.fromEntries([
-        ...known(opts.deployed ?? [], dataDir, true),
+        ...known(inData, dataDir, true),
         ...known(opts.staged ?? [], path.join(base, "staging"), false),
       ]),
     ),
@@ -128,6 +135,19 @@ describe("findMissingMasters", () => {
   }) => {
     const { check } = await setup(makeGamebryo(), {
       deployed: ["A.esp", "M.esm"],
+      enabled: ["A.esp"],
+      masters: { "A.esp": ["M.esm"] },
+    });
+
+    expect(await check()).toEqual<IMissingMaster[]>([
+      { plugin: "a.esp", master: "M.esm", state: MasterState.NotEnabled },
+    ]);
+  });
+
+  test("reports a ghosted master in the game folder as not enabled", async ({ makeGamebryo }) => {
+    const { check } = await setup(makeGamebryo(), {
+      deployed: ["A.esp"],
+      ghosted: ["M.esm"],
       enabled: ["A.esp"],
       masters: { "A.esp": ["M.esm"] },
     });

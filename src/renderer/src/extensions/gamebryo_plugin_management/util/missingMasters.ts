@@ -96,10 +96,10 @@ function masterLookup(check: IMasterCheck) {
   const natives = new Set(check.natives);
   const onDisk = new Map<string, Promise<boolean>>();
   const isEnabled = (id: string) => check.loadOrder[id]?.enabled === true || natives.has(id);
-  const isOnDisk = (id: string, master: string) => {
+  const isOnDisk = (id: string, filePath: string) => {
     let known = onDisk.get(id);
     if (known === undefined) {
-      known = stat(path.join(check.dataPath, master)).then(
+      known = stat(filePath).then(
         () => true,
         () => false,
       );
@@ -110,7 +110,10 @@ function masterLookup(check: IMasterCheck) {
   const stateOf = async (master: string): Promise<MasterState | undefined> => {
     const id = toPluginId(master);
     const known = check.pluginList[id];
-    if (!(await isOnDisk(id, master))) {
+    // a deployed plugin's list entry names the file as it sits in the game folder, which for a
+    // ghosted (disabled) plugin is the master name with the .ghost extension
+    const filePath = known?.deployed === true ? known.filePath : path.join(check.dataPath, master);
+    if (!(await isOnDisk(id, filePath))) {
       if (known === undefined) {
         return MasterState.NotInstalled;
       }
