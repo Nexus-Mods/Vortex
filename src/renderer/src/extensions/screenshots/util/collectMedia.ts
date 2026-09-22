@@ -1,7 +1,8 @@
 import fs from "fs/promises";
 import path from "path";
 
-import generateVideoPreview, { hasFfmpeg } from "./generateVideoPreview";
+import { hasFfmpeg } from "./ffmpeg";
+import generateVideoPreview from "./generateVideoPreview";
 import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
 import { previewKey } from "./previewCache";
 
