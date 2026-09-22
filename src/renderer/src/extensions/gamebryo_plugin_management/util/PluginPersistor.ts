@@ -1,13 +1,14 @@
+import { watch, type FSWatcher } from "node:fs";
+import { mkdir, readdir, readFile, stat, utimes, writeFile } from "node:fs/promises";
 import * as path from "path";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
-import { UserCanceled } from "@vortex/shared/errors";
-import Bluebird from "bluebird";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import update from "immutability-helper";
 
 import { log } from "../../../logging";
 import type { IErrorOptions, IPersistor } from "../../../types/IExtensionContext";
-import * as fs from "../../../util/fs";
-import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
+import { recordErrorSpan } from "../../../util/errorHandling";
+import { delayed } from "../../../util/util";
 import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import {
   gameDataPath,
@@ -17,14 +18,54 @@ import {
   pluginPath,
 } from "../util/gameSupport";
 import toPluginId from "../util/toPluginId";
+import { definedAttributes, SpanAttribute } from "./spanAttributes";
 
 export type PluginFormat = "original" | "fallout4";
+
+/** Why Vortex is asking before it writes the plugin files. */
+export const PluginFileConflict = {
+  /** Another tool or the game rewrote the files while Vortex held state for this game. */
+  ForeignChange: "foreign-change",
+  /** The files could not be read, so writing would replace a load order Vortex never saw. */
+  Unreadable: "unreadable",
+} as const;
+
+export type PluginFileConflict = (typeof PluginFileConflict)[keyof typeof PluginFileConflict];
 
 interface IPluginMap {
   [id: string]: IPluginLoadOrderEntry;
 }
 
 const retryCount = 3;
+
+/** How long to wait before another attempt. */
+const RETRY_DELAY_MS = 100;
+
+/** How long writes are collected before they go to disk together. */
+const SERIALIZE_DELAY_MS = 200;
+
+/**
+ * Codes that mean another process holds the file, rather than that the operation is wrong. The
+ * same set the elevated file operations retry on (symlink_activator_elevate/remoteCode.ts).
+ */
+const TRANSIENT_CODES = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "UNKNOWN"]);
+
+/**
+ * Runs a file operation, retrying while another process is holding the file. The game, another
+ * mod manager or an antivirus scanner all touch these files, so a first failure says little.
+ */
+export async function withFileRetry<T>(operation: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (err) {
+      if (attempt >= retryCount || !TRANSIENT_CODES.has(getErrorCode(err) ?? "")) {
+        throw err;
+      }
+      await delayed(RETRY_DELAY_MS);
+    }
+  }
+}
 
 /**
  * persistor syncing to and from the gamebryo plugins.txt and loadorder.txt
@@ -38,14 +79,14 @@ class PluginPersistor implements IPersistor {
   private mPluginFormat: PluginFormat;
   private mNativePlugins: string[];
   private mGameId: string;
-  private mResetCallback: () => Bluebird<void>;
+  private mResetCallback: () => PromiseLike<void>;
 
-  private mWatch: fs.FSWatcher;
+  private mWatch: FSWatcher;
   private mRefreshTimer: NodeJS.Timeout;
   private mLastWriteTime: Date = new Date();
   private mSerializing: boolean = false;
   private mSerializeScheduled: boolean = false;
-  private mSerializeQueue: Bluebird<void> = Bluebird.resolve();
+  private mSerializeQueue: Promise<void> = Promise.resolve();
 
   // "dynamic" plugins for which we store a load order (excluding native)
   private mPlugins: IPluginMap;
@@ -60,30 +101,36 @@ class PluginPersistor implements IPersistor {
   private mFailed: boolean = false;
   private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
   private mControlOrder: () => boolean;
-  private mOnExternalChange: () => PromiseLike<"keep" | "revert">;
+  private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
   private mExternalChoicePending: boolean = false;
+  // the entries of each plugin file as this persistor last wrote them
+  private mWritten: { loadorder: string[]; plugins: string[] } | undefined;
+  private mRecord: typeof recordErrorSpan;
 
   constructor(
     onError: (message: string, details: Error, options?: IErrorOptions) => void,
     controlLoadOrder: () => boolean,
+    record: typeof recordErrorSpan = recordErrorSpan,
   ) {
     this.mPlugins = {};
     this.mOnError = onError;
     this.mControlOrder = controlLoadOrder;
+    this.mRecord = record;
   }
 
-  public disable(): Bluebird<void> {
+  public disable(): Promise<void> {
     log("debug", "PluginPersistor.disable called");
     return this.enqueue(
       () =>
-        new Bluebird<void>((resolve) => {
+        new Promise<void>((resolve) => {
           this.mPlugins = {};
           this.mPluginPath = undefined;
           this.mPluginFormat = undefined;
           this.mNativePlugins = undefined;
           this.mLoaded = false;
           this.mExternalChoicePending = false;
-          let prom = Bluebird.resolve();
+          this.mWritten = undefined;
+          let prom = Promise.resolve();
           if (this.mResetCallback) {
             prom = this.reset();
           }
@@ -92,8 +139,10 @@ class PluginPersistor implements IPersistor {
               this.stopWatch();
               resolve();
             })
-            .catch((err) => {
-              log("error", "failed to disable plugin persistor", err);
+            .catch((err: unknown) => {
+              log("error", "failed to disable plugin persistor", {
+                error: getErrorMessageOrDefault(err),
+              });
               this.stopWatch();
               resolve();
             });
@@ -101,10 +150,10 @@ class PluginPersistor implements IPersistor {
     );
   }
 
-  public loadFiles(gameMode: string): Bluebird<void> {
+  public loadFiles(gameMode: string): Promise<void> {
     return this.enqueue(() => {
       if (!gameSupported(gameMode)) {
-        return Bluebird.resolve();
+        return Promise.resolve();
       }
       this.mDataPath = gameDataPath(gameMode);
       this.mPluginPath = pluginPath(gameMode);
@@ -120,8 +169,8 @@ class PluginPersistor implements IPersistor {
           // start watching for external changes
           .then(() => {
             this.startWatch();
-            this.serialize();
-            return Bluebird.resolve();
+            void this.serialize();
+            return Promise.resolve();
           })
       );
     });
@@ -142,18 +191,20 @@ class PluginPersistor implements IPersistor {
     this.mKnownPlugins = knownPlugins;
     this.mBlueprintPluginIds = blueprintPluginIds;
     this.updateNative();
-    this.serialize();
+    void this.serialize();
   }
 
-  public setResetCallback(cb: () => any) {
+  public setResetCallback(cb: () => PromiseLike<void>) {
     this.mResetCallback = cb;
   }
 
   /**
-   * Called when a foreign tool/game rewrote the plugin files while Vortex already holds
-   * state for the game; resolves the user's decision to keep or revert those changes.
+   * Called before Vortex writes over plugin files it cannot account for; resolves the user's
+   * decision to keep what is on disk or revert to the load order Vortex holds.
    */
-  public setExternalChangeCallback(cb: () => PromiseLike<"keep" | "revert">) {
+  public setExternalChangeCallback(
+    cb: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">,
+  ) {
     this.mOnExternalChange = cb;
   }
 
@@ -168,17 +219,17 @@ class PluginPersistor implements IPersistor {
     gameId: string,
     // keyed by plugin id (toPluginId form)
     loadOrder: Record<string, IPluginLoadOrderEntry>,
-  ): Bluebird<void> {
+  ): Promise<void> {
     return this.enqueue(() => {
       try {
         if (!this.mLoaded || this.mPluginPath === undefined || gameId !== this.mGameId) {
-          return Bluebird.resolve();
+          return Promise.resolve();
         }
         const entries = Object.entries(loadOrder ?? {});
         if (entries.length === 0) {
           // an empty hive means a profile/game activation is mid-flight; syncing it
           // would serialize every plugin as disabled
-          return Bluebird.resolve();
+          return Promise.resolve();
         }
         const nativeSet = new Set(this.mNativePlugins ?? []);
         const next: IPluginMap = { ...this.mPlugins };
@@ -192,79 +243,120 @@ class PluginPersistor implements IPersistor {
           };
         });
         this.mPlugins = next;
-        return Bluebird.resolve(this.doSerialize()).catch((err) => {
-          log("error", "failed to write plugin state after collection install", {
-            error: err.message,
-          });
-        });
+        return this.doSerialize();
       } catch (err) {
-        log("error", "failed to sync plugin state after collection install", {
-          error: getErrorMessageOrDefault(err),
-        });
-        return Bluebird.resolve();
+        // doSerialize reports its own write failures, so reaching here is our own mistake
+        this.recordFailure("failed to merge the plugin state", unknownToError(err));
+        return Promise.resolve();
       }
     });
   }
 
-  public getItem(key: string[]): Bluebird<string> {
+  /** An entry as it is stored, before getItem serializes it for the persistor interface. */
+  public entry(pluginId: string): IPluginLoadOrderEntry {
+    return { ...this.mPlugins[pluginId], loadOrder: this.loadOrder(pluginId) };
+  }
+
+  public getItem(key: string[]): Promise<string> {
     if (key.length === 1) {
       // I think right now this branch is always used
-      return Bluebird.resolve(
-        JSON.stringify({
-          ...getSafe(this.mPlugins, key, undefined),
-          loadOrder: this.loadOrder(key[0]),
-        }),
-      );
+      return Promise.resolve(JSON.stringify(this.entry(key[0])));
     } else if (key.length === 2 && key[1] === "loadOrder") {
       // This case doesn't actually seem to occur
-      return Bluebird.resolve(this.loadOrder(key[0]).toString());
+      return Promise.resolve(this.loadOrder(key[0]).toString());
     } else {
-      return Bluebird.resolve(JSON.stringify(getSafe(this.mPlugins, key, undefined)));
+      const field = key[1] as keyof IPluginLoadOrderEntry;
+      return Promise.resolve(JSON.stringify(this.mPlugins[key[0]]?.[field]));
     }
   }
 
-  public setItem(key: string[], value: string): Bluebird<void> {
-    let newValue = JSON.parse(value);
+  public setItem(key: string[], value: string): Promise<void> {
+    // a whole entry for a one-element key, otherwise that entry's single field
+    const newValue = JSON.parse(value) as IPluginLoadOrderEntry & number;
     if (
       key.length > 0 &&
       this.mNativePlugins !== undefined &&
       this.mNativePlugins[key[0]] !== undefined
     ) {
       // ignore native plugins
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
 
+    // loadOrder is stored relative to the installed native plugins. The parsed value is ours
+    // alone, so it is adjusted in place.
     if (key.length === 1) {
       newValue.loadOrder -= this.mInstalledNative.length;
     } else if (key.length === 2 && key[1] === "loadOrder") {
-      newValue -= this.mInstalledNative.length;
+      return this.setField(key, newValue - this.mInstalledNative.length);
     }
-
-    if (newValue !== getSafe(this.mPlugins, key, undefined)) {
-      this.mPlugins = setSafe(this.mPlugins, key, newValue);
-      return this.serialize();
-    } else {
-      return Bluebird.resolve();
+    if (key.length === 2) {
+      return this.setField(key, newValue);
     }
+    this.mPlugins = update(this.mPlugins, { [key[0]]: { $set: newValue } });
+    return this.serialize();
   }
 
-  public removeItem(key: string[]): Bluebird<void> {
-    this.mPlugins = deleteOrNop(this.mPlugins, key);
-    if (this.mPlugins[key[0]] !== undefined && Object.keys(this.mPlugins[key[0]]).length === 0) {
-      delete this.mPlugins[key[0]];
+  /** Stores one field of an entry, which may not exist yet. */
+  private setField(key: string[], value: unknown): Promise<void> {
+    const field = key[1] as keyof IPluginLoadOrderEntry;
+    if (value === this.mPlugins[key[0]]?.[field]) {
+      return Promise.resolve();
+    }
+    this.mPlugins = update(this.mPlugins, {
+      [key[0]]: { $apply: (entry?: IPluginLoadOrderEntry) => ({ ...entry, [field]: value }) },
+    });
+    return this.serialize();
+  }
+
+  public removeItem(key: string[]): Promise<void> {
+    const entry = this.mPlugins[key[0]];
+    if (entry === undefined) {
+      return this.serialize();
+    }
+    if (key.length === 1) {
+      this.mPlugins = update(this.mPlugins, { $unset: [key[0]] });
+    } else {
+      const remaining = update(entry, { $unset: [key[1] as keyof IPluginLoadOrderEntry] });
+      // an entry with no fields left is the entry being gone
+      this.mPlugins =
+        Object.keys(remaining).length === 0
+          ? update(this.mPlugins, { $unset: [key[0]] })
+          : update(this.mPlugins, { [key[0]]: { $set: remaining } });
     }
     return this.serialize();
   }
 
-  public getAllKeys(): Bluebird<string[][]> {
-    return Bluebird.resolve(Object.keys(this.mKnownPlugins || {}).map((key) => [key]));
+  public getAllKeys(): Promise<string[][]> {
+    return Promise.resolve(Object.keys(this.mKnownPlugins || {}).map((key) => [key]));
   }
 
+  /**
+   * Tells the user a plugin file operation failed, once until one succeeds, and tells telemetry
+   * every time. The two are separate decisions: a failure we do not interrupt the user with is
+   * still worth knowing about, and recordErrorSpan drops the ones caused by their environment.
+   */
   private reportError(message: string, detail: Error, options?: IErrorOptions) {
-    if (!this.mFailed) {
-      this.mOnError(message, detail, options);
-      this.mFailed = true;
+    if (this.mFailed) {
+      // the user has already been told, but a failure that keeps happening is still news to us,
+      // unless the caller judged it to be the user's environment rather than our doing
+      if (options?.allowReport !== false) {
+        this.recordFailure(message, detail);
+      }
+      return;
     }
+    this.mFailed = true;
+    // showErrorNotification logs and records the span itself
+    this.mOnError(message, detail, options);
+  }
+
+  /** Forwards a failure of our own to telemetry. */
+  private recordFailure(message: string, detail: Error) {
+    log("error", message, { error: getErrorMessageOrDefault(detail) });
+    this.mRecord(
+      message,
+      detail,
+      definedAttributes({ [SpanAttribute.ErrorCode]: getErrorCode(detail) ?? undefined }),
+    );
   }
 
   private toPluginList(input: string[]) {
@@ -295,58 +387,56 @@ class PluginPersistor implements IPersistor {
     // enabled defaults to true for native plugins because they are always
     // enabled
     const nativePluginSet = new Set(this.mNativePlugins);
-    return input.filter(
-      (name) =>
-        nativePluginSet.has(name.toLowerCase()) ||
-        getSafe(this.mPlugins, [name.toLowerCase(), "enabled"], false),
-    );
+    return input.filter((name) => {
+      if (nativePluginSet.has(name.toLowerCase())) {
+        return true;
+      }
+      // a ghosted plugin still holds its place in the order
+      const enabled = this.mPlugins[name.toLowerCase()]?.enabled;
+      return enabled === true || enabled === "ghost";
+    });
   }
 
   private toPluginListFallout4(input: string[]) {
     // LOOT and previous versions of Vortex don't store native plugins so
     // this has been handled this way for a while
     const nativePluginSet = new Set(this.mNativePlugins);
-    return input
-      .filter((name) => !nativePluginSet.has(name.toLowerCase()))
-      .map((name) =>
-        getSafe<boolean | "ghost">(this.mPlugins, [name.toLowerCase(), "enabled"], false) === true
-          ? "*" + name
-          : name,
-      );
+    return (
+      input
+        .filter((name) => !nativePluginSet.has(name.toLowerCase()))
+        // only a plugin that is actually on gets the active marker; ghosted ones stay bare
+        .map((name) => (this.mPlugins[name.toLowerCase()]?.enabled === true ? "*" + name : name))
+    );
   }
 
-  private enqueue(fn: () => Bluebird<void>): Bluebird<void> {
+  private enqueue(fn: () => Promise<void>): Promise<void> {
     this.mSerializeQueue = this.mSerializeQueue.then(fn);
     return this.mSerializeQueue;
   }
 
-  private serialize(): Bluebird<void> {
+  private serialize(): Promise<void> {
     if (!this.mLoaded) {
       // this happens during initialization, when the persistor is initially created
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
     if (this.mExternalChoicePending) {
-      // don't serialize while the user is deciding whether to keep or revert a foreign rewrite
-      return Bluebird.resolve();
+      // don't serialize while the user is deciding what to do about the files on disk
+      return Promise.resolve();
     }
     if (!this.mSerializeScheduled) {
       this.mSerializeScheduled = true;
       // ensure we don't try to concurrently write the files
-      this.enqueue(
-        () =>
-          new Bluebird<void>((resolve) => {
-            setTimeout(() => {
-              this.doSerialize()
-                .then(() => resolve())
-                .catch((err) => {
-                  log("error", "failed to serialize plugin list", err);
-                  resolve();
-                });
-            }, 200);
-          }),
-      );
+      void this.enqueue(async () => {
+        await delayed(SERIALIZE_DELAY_MS);
+        try {
+          await this.doSerialize();
+        } catch (err) {
+          // a write failure is already reported, so this is our own mistake
+          this.recordFailure("failed to serialize plugin list", unknownToError(err));
+        }
+      });
     }
-    return Bluebird.resolve();
+    return Promise.resolve();
   }
 
   private loadOrder(pluginId: string): number {
@@ -360,12 +450,15 @@ class PluginPersistor implements IPersistor {
     return this.mPlugins[pluginId].loadOrder + this.mInstalledNative.length;
   }
 
-  private doSerialize(): Bluebird<void> {
+  private doSerialize(): Promise<void> {
     if (this.mPluginPath === undefined || this.mDataPath === undefined) {
-      return;
+      return Promise.resolve();
+    }
+    if (this.mExternalChoicePending) {
+      return Promise.resolve();
     }
     if (this.mKnownPlugins === undefined) {
-      return;
+      return Promise.resolve();
     }
     const destPath = this.mPluginPath;
 
@@ -383,65 +476,85 @@ class PluginPersistor implements IPersistor {
       .filter((pluginId) => pluginId !== undefined)
       .map((pluginId) => this.mKnownPlugins[pluginId]);
 
-    const loadOrderFile = path.join(destPath, "loadorder.txt");
     const pluginsFile = path.join(destPath, "plugins.txt");
-    // this ensureDir should not be necessary
-    return fs
-      .ensureDirAsync(destPath)
-      .then(() =>
-        fs.writeFileAsync(
-          loadOrderFile,
-          "# Automatically generated by Vortex\r\n" + sorted.join("\r\n"),
-          { encoding: "utf8" },
-        ),
-      )
-      .then(() => {
-        const filtered: string[] = this.toPluginList(sorted);
-        return fs.writeFileAsync(
-          pluginsFile,
-          "# Automatically generated by Vortex\r\n" + filtered.join("\r\n") + "\r\n",
-          { encoding: "latin1" },
-        );
-      })
-      .then(() => {
-        if (this.mPluginFormat === "original" && this.mControlOrder()) {
-          const offset = 946684800;
-          const oneDay = 24 * 60 * 60;
-          return Bluebird.mapSeries(sorted, (fileName, idx) => {
-            const mtime = offset + oneDay * idx;
-            return fs
-              .utimesAsync(path.join(this.mDataPath, fileName), mtime, mtime)
-              .catch((err) => (err.code === "ENOENT" ? Bluebird.resolve() : Bluebird.reject(err)));
-          }).then(() => undefined);
-        } else {
-          return Bluebird.resolve();
-        }
-      })
-      .then(() => {
+    return this.writeFiles(destPath, sorted)
+      .then((writtenAt) => {
         this.mFailed = false;
-        return fs.statAsync(pluginsFile);
+        this.mLastWriteTime = writtenAt;
       })
-      .then((stats) => {
-        this.mLastWriteTime = stats.mtime;
-        return null;
-      })
-      .catch(UserCanceled, () => null)
-      .catch((err) => {
-        if (err.code !== "EBUSY") {
-          // Disallow error reports for:
-          //  - Permissions related issues
-          //  - Missing plugins.txt file as we're literally creating/writing
-          //    to it at the beginning of this chain; if it's missing that's
-          //    guaranteed to be due to an external application removing it (AV or something else).
-          const missingPluginsFile = err.code === "ENOENT" && err.path === pluginsFile;
-          const allowReport = err.code !== "EPERM" && !missingPluginsFile;
-          this.reportError("failed to write plugin list", err, { allowReport });
-        } // no point reporting an error if the file is locked by another
-        // process (could be the game itself)
+      .catch((err: unknown) => {
+        const code = getErrorCode(err);
+        if (code === "EBUSY") {
+          // the file is held by another process, quite possibly the game itself
+          return;
+        }
+        // Disallow error reports for:
+        //  - Permissions related issues
+        //  - Missing plugins.txt file as we're literally creating/writing
+        //    to it at the beginning of this chain; if it's missing that's
+        //    guaranteed to be due to an external application removing it (AV or something else).
+        const missingPluginsFile =
+          code === "ENOENT" && (err as { path?: string }).path === pluginsFile;
+        const allowReport = code !== "EPERM" && !missingPluginsFile;
+        this.reportError("failed to write plugin list", unknownToError(err), { allowReport });
       })
       .finally(() => {
         this.mSerializing = false;
       });
+  }
+
+  /**
+   * Writes both list files, then stamps the plugins so the game reads them in this order.
+   * Resolves with the time plugins.txt was written.
+   */
+  private async writeFiles(destPath: string, sorted: string[]): Promise<Date> {
+    const loadOrderFile = path.join(destPath, "loadorder.txt");
+    const pluginsFile = path.join(destPath, "plugins.txt");
+    // this mkdir should not be necessary
+    await mkdir(destPath, { recursive: true });
+    await withFileRetry(() =>
+      writeFile(loadOrderFile, "# Automatically generated by Vortex\r\n" + sorted.join("\r\n"), {
+        encoding: "utf8",
+      }),
+    );
+    const filtered: string[] = this.toPluginList(sorted);
+    await withFileRetry(() =>
+      writeFile(
+        pluginsFile,
+        "# Automatically generated by Vortex\r\n" + filtered.join("\r\n") + "\r\n",
+        { encoding: "latin1" },
+      ),
+    );
+    this.mWritten = { loadorder: sorted, plugins: filtered };
+
+    if (this.mPluginFormat === "original" && this.mControlOrder()) {
+      const offset = 946684800;
+      const oneDay = 24 * 60 * 60;
+      for (const [idx, fileName] of sorted.entries()) {
+        const mtime = offset + oneDay * idx;
+        try {
+          await withFileRetry(() => utimes(path.join(this.mDataPath, fileName), mtime, mtime));
+        } catch (err) {
+          // a plugin listed for a file that is no longer deployed
+          if (getErrorCode(err) !== "ENOENT") {
+            throw err;
+          }
+        }
+      }
+    }
+
+    return (await withFileRetry(() => stat(pluginsFile))).mtime;
+  }
+
+  /** Whether a file still holds exactly the entries this persistor last wrote into it. */
+  private holdsOurLastWrite(entries: string[], plugins: boolean): boolean {
+    const ours = this.mWritten?.[plugins ? "plugins" : "loadorder"];
+    return (
+      ours !== undefined &&
+      ours.length > 0 &&
+      entries.length === ours.length &&
+      entries.every((entry, idx) => entry.toLowerCase() === ours[idx].toLowerCase())
+    );
   }
 
   private filterFileData(
@@ -451,7 +564,16 @@ class PluginPersistor implements IPersistor {
   ): string[] {
     const lines = input.split(/\r?\n/);
 
-    if (lines.length === 0 || lines[0].indexOf("generated by Vortex") === -1) {
+    const res = lines.filter((value: string) => {
+      return !value.startsWith("#") && value.length > 0;
+    });
+
+    // the game stamps its own header into plugins.txt as it starts without touching the list,
+    // so a header alone is not a change the user has anything to decide about
+    if (
+      (lines.length === 0 || lines[0].indexOf("generated by Vortex") === -1) &&
+      !this.holdsOurLastWrite(res, plugins)
+    ) {
       const header =
         lines.length === 0 || !lines[0].startsWith("#") ? "<empty>" : lines[0].slice(1).trim();
       if (foreign !== undefined) {
@@ -462,10 +584,6 @@ class PluginPersistor implements IPersistor {
         pluginstxt: plugins,
       });
     }
-
-    const res = lines.filter((value: string) => {
-      return !value.startsWith("#") && value.length > 0;
-    });
 
     return res;
   }
@@ -504,13 +622,37 @@ class PluginPersistor implements IPersistor {
     return loadOrderPos;
   }
 
-  private deserialize(retry: boolean = false, adoptForeign: boolean = false): Bluebird<void> {
+  /**
+   * For the old format where Vortex does not control the order, the game reads it off the file
+   * times, so the plugins are ordered by when they were last written.
+   */
+  private async orderByFileTime(newPlugins: IPluginMap): Promise<void> {
+    if (this.mPluginFormat !== "original" || this.mControlOrder() || this.mGameId === "skyrim") {
+      return;
+    }
+    const deployed = (await withFileRetry(() => readdir(this.mDataPath))).filter(
+      (fileName) => newPlugins[toPluginId(fileName)] !== undefined,
+    );
+    const entries = await Promise.all(
+      deployed.map(async (fileName) => ({
+        fileName,
+        fileTime: (await stat(path.join(this.mDataPath, fileName))).mtimeMs,
+      })),
+    );
+    entries
+      .sort((lhs, rhs) => lhs.fileTime - rhs.fileTime)
+      .forEach((entry, idx) => {
+        newPlugins[toPluginId(entry.fileName)].loadOrder = idx;
+      });
+  }
+
+  private deserialize(retry: boolean = false, adoptForeign: boolean = false): Promise<void> {
     if (this.mPluginPath === undefined) {
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
 
     if (this.mExternalChoicePending && !adoptForeign) {
-      return Bluebird.resolve();
+      return Promise.resolve();
     }
 
     const foreign = { detected: false };
@@ -521,7 +663,7 @@ class PluginPersistor implements IPersistor {
 
     const newPlugins: IPluginMap = {};
 
-    let phaseOne: Bluebird<Buffer>;
+    let phaseOne: Promise<Buffer>;
     // for games with the old format we use the loadorder.txt file as reference for the
     // load order and only use the plugins.txt as "backup".
     // for newer games, since all plugins are listed, we don't really need the loadorder.txt
@@ -533,14 +675,14 @@ class PluginPersistor implements IPersistor {
         pluginsFile,
         loadOrderFile,
       });
-      phaseOne = fs.readFileAsync(loadOrderFile).then((data: Buffer) => {
+      phaseOne = withFileRetry(() => readFile(loadOrderFile)).then((data: Buffer) => {
         const keys: string[] = this.filterFileData(data.toString("utf-8"), false, foreign);
         offset = this.initFromKeyList(newPlugins, keys, false, offset);
-        return fs.readFileAsync(pluginsFile);
+        return withFileRetry(() => readFile(pluginsFile));
       });
     } else {
       // log('debug', 'deserialize', { format: this.mPluginFormat, pluginsFile });
-      phaseOne = fs.readFileAsync(pluginsFile);
+      phaseOne = withFileRetry(() => readFile(pluginsFile));
     }
     return phaseOne
       .then((data: Buffer) => {
@@ -548,79 +690,58 @@ class PluginPersistor implements IPersistor {
           // not even a header? I don't trust this. Read once more in case we caught a write
           // mid-flight, then leave the current state alone: a truncated file is not a
           if (retry) {
+            // still empty on the second read, so nobody was mid-write and the load order the
+            // file held is gone
+            this.recordFailure(
+              "the plugin list on disk is empty",
+              new Error("plugins.txt has no content, not even a header"),
+            );
             // The persistor must still count as loaded, or serialize() drops every write
             this.mLoaded = true;
-            return Bluebird.resolve();
+            return Promise.resolve();
           }
           return this.deserialize(true, adoptForeign);
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
         this.initFromKeyList(newPlugins, keys, true, offset);
 
-        return Bluebird.resolve()
-          .then(() => {
-            if (
-              this.mPluginFormat !== "original" ||
-              this.mControlOrder() ||
-              this.mGameId === "skyrim"
-            ) {
-              return Bluebird.resolve();
-            }
-
-            return fs
-              .readdirAsync(this.mDataPath)
-              .filter((fileName: string) => newPlugins[toPluginId(fileName)] !== undefined)
-              .then((fileNames: string[]) =>
-                Bluebird.map(fileNames, (fileName) =>
-                  fs
-                    .statAsync(path.join(this.mDataPath, fileName))
-                    .then((stat) => ({ fileName, fileTime: stat.mtimeMs })),
-                ),
-              )
-              .then((fileEntries) => fileEntries.sort((lhs, rhs) => lhs.fileTime - rhs.fileTime))
-              .then((sortedEntries) => {
-                sortedEntries.forEach((entry, idx) => {
-                  newPlugins[toPluginId(entry.fileName)].loadOrder = idx;
-                });
-              });
-          })
-          .then(() => {
-            if (
-              foreign.detected &&
-              !adoptForeign &&
-              this.mLoaded &&
-              this.mOnExternalChange !== undefined
-            ) {
-              // a foreign rewrite while Vortex holds state for this game: the user decides
-              this.promptExternalChange();
-              return Bluebird.resolve();
-            }
-            this.adoptParsed(newPlugins);
-            return Bluebird.resolve();
-          });
-      })
-      .catch(UserCanceled, (err) => {
-        this.mLoaded = true;
-        this.reportError("reading plugin list canceled", err, {
-          allowReport: false,
+        return this.orderByFileTime(newPlugins).then(() => {
+          if (
+            foreign.detected &&
+            !adoptForeign &&
+            this.mLoaded &&
+            this.mOnExternalChange !== undefined
+          ) {
+            // a foreign rewrite while Vortex holds state for this game: the user decides
+            this.promptExternalChange(PluginFileConflict.ForeignChange);
+            return Promise.resolve();
+          }
+          this.adoptParsed(newPlugins);
+          return Promise.resolve();
         });
       })
-      .catch((err: any) => {
-        if (err.code === "ENOENT") {
+      .catch((err: unknown) => {
+        if (getErrorCode(err) === "ENOENT") {
           this.mLoaded = true;
           return;
         }
         log("warn", "failed to read plugin file", {
           pluginPath: this.mPluginPath,
-          error: require("util").inspect(err),
+          error: getErrorMessageOrDefault(err),
         });
         if (this.mRetryCounter > 0) {
           --this.mRetryCounter;
           this.scheduleRefresh(100);
         } else {
-          // giving up...
+          // loaded, so enables still reach the file, but holding no load order for a file
+          // that has one: the user decides before anything writes over it
           this.mLoaded = true;
-          this.reportError("failed to read plugin list", err);
+          const firstFailure = !this.mFailed;
+          this.reportError("failed to read plugin list", unknownToError(err));
+          // one dialog per streak, since a kept file that is still unreadable lands back here
+          if (firstFailure && this.mOnExternalChange !== undefined) {
+            this.promptExternalChange(PluginFileConflict.Unreadable);
+          }
         }
       });
   }
@@ -633,8 +754,8 @@ class PluginPersistor implements IPersistor {
       this.mRefreshTimer = null;
       this.deserialize()
         .then(() => null)
-        .catch((err) => {
-          this.mOnError("Failed to synchronise plugin list", err);
+        .catch((err: unknown) => {
+          this.mOnError("Failed to synchronise plugin list", unknownToError(err));
         });
     }, timeout);
   }
@@ -649,35 +770,41 @@ class PluginPersistor implements IPersistor {
     }
 
     try {
-      this.mWatch = fs.watch(this.mPluginPath, {}, (evt, fileName: string) => {
+      this.mWatch = watch(this.mPluginPath, {}, (_evt, fileName) => {
         if (
           !this.mSerializing &&
+          fileName !== null &&
           ["loadorder.txt", "plugins.txt"].includes(fileName) &&
           this.mPluginPath !== undefined
         ) {
-          fs.statAsync(path.join(this.mPluginPath, fileName))
+          withFileRetry(() => stat(path.join(this.mPluginPath, fileName)))
             .then((stats) => {
               if (stats.mtime > this.mLastWriteTime) {
                 this.scheduleRefresh(500);
               }
             })
-            .catch(UserCanceled, () => Bluebird.resolve())
-            .catch((err) =>
-              err.code === "ENOENT"
-                ? Bluebird.resolve()
-                : this.mOnError(`failed to read "${fileName}"`, err, {
-                    allowReport: err.code !== "EPERM",
-                  }),
-            );
+            .catch((err: unknown) => {
+              const code = getErrorCode(err);
+              if (code === "ENOENT") {
+                return;
+              }
+              this.mOnError(`failed to read "${fileName}"`, unknownToError(err), {
+                allowReport: code !== "EPERM",
+              });
+            });
         }
       });
-      this.mWatch.on("error", (error) => {
-        log("warn", "failed to watch plugin directory", error.message);
+      // the watched directory going away is the game being moved or uninstalled, not our doing
+      this.mWatch.on("error", (error: unknown) => {
+        log("warn", "failed to watch plugin directory", {
+          pluginPath: this.mPluginPath,
+          error: getErrorMessageOrDefault(error),
+        });
       });
     } catch (err) {
       log("error", "failed to look for plugin changes", {
         pluginPath: this.mPluginPath,
-        err,
+        error: getErrorMessageOrDefault(err),
       });
     }
   }
@@ -689,13 +816,13 @@ class PluginPersistor implements IPersistor {
     }
   }
 
-  private reset() {
-    return this.mResetCallback()
+  private reset(): Promise<void> {
+    return Promise.resolve(this.mResetCallback())
       .then(() => {
         this.mRetryCounter = retryCount;
       })
-      .catch((err) => {
-        this.reportError("failed to reset load order info", err);
+      .catch((err: unknown) => {
+        this.reportError("failed to reset load order info", unknownToError(err));
       });
   }
 
@@ -710,17 +837,18 @@ class PluginPersistor implements IPersistor {
   }
 
   /**
-   * Ask the user whether to keep or revert a foreign rewrite of the plugin files. Runs
-   * detached from the serialize queue (a pending dialog must not block writes); bursts
-   * of change events collapse into the one open prompt. Keep re-parses the file at
-   * decision time; until then Vortex's own state stays authoritative.
+   * Ask the user what to do about plugin files Vortex cannot account for, either because
+   * something else rewrote them or because it could not read them. Runs detached from the
+   * serialize queue (a pending dialog must not block writes); bursts of change events
+   * collapse into the one open prompt. Keep re-parses the file at decision time; until then
+   * nothing is written.
    */
-  private promptExternalChange() {
+  private promptExternalChange(reason: PluginFileConflict) {
     if (this.mExternalChoicePending) {
       return;
     }
     this.mExternalChoicePending = true;
-    Bluebird.resolve(this.mOnExternalChange())
+    Promise.resolve(this.mOnExternalChange(reason))
       .then((choice) => {
         this.mExternalChoicePending = false;
         if (choice === "keep") {
@@ -728,9 +856,9 @@ class PluginPersistor implements IPersistor {
         }
         // revert: rewrite the files from Vortex's own state
         return this.enqueue(() =>
-          Bluebird.resolve(this.doSerialize()).catch((err) => {
+          this.doSerialize().catch((err) => {
             log("error", "failed to revert external plugin file change", {
-              error: err.message,
+              error: getErrorMessageOrDefault(err),
             });
           }),
         );
@@ -738,7 +866,7 @@ class PluginPersistor implements IPersistor {
       .catch((err) => {
         this.mExternalChoicePending = false;
         log("warn", "failed to resolve external plugin file change", {
-          error: err.message,
+          error: getErrorMessageOrDefault(err),
         });
       });
   }

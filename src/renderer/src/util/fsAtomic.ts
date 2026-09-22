@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { copyFile, rename, unlink } from "node:fs/promises";
 
 import { getErrorCode, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
@@ -90,6 +91,9 @@ function writeFileAtomicImpl(
  * to destination. Since the rename is atomic and the deletion only happens after
  * a successful write this should minimize the risk of error.
  *
+ * Goes through node's fs: a file another process is holding fails back to the caller, which
+ * knows whether that is worth interrupting the user over.
+ *
  * @export
  * @param {string} srcPath
  * @param {string} destPath
@@ -113,15 +117,15 @@ export function copyFileAtomic(srcPath: string, destPath: string): PromiseBB<voi
       },
     );
   })
-    .then(() => fs.copyAsync(srcPath, tmpPath))
+    .then(() => copyFile(srcPath, tmpPath))
     .then(() =>
-      fs.unlinkAsync(destPath).catch((err) => {
+      unlink(destPath).catch((err) => {
         const code = getErrorCode(err);
         if (code === "EPERM") {
           // if the file is currently in use, try a second time
           // 100ms later
           log("debug", "file locked, retrying delete", destPath);
-          return PromiseBB.delay(100).then(() => fs.unlinkAsync(destPath));
+          return PromiseBB.delay(100).then(() => unlink(destPath));
         } else if (code === "ENOENT") {
           // file doesn't exist anyway? no problem
           return PromiseBB.resolve();
@@ -130,7 +134,7 @@ export function copyFileAtomic(srcPath: string, destPath: string): PromiseBB<voi
         }
       }),
     )
-    .then(() => (tmpPath !== undefined ? fs.renameAsync(tmpPath, destPath) : PromiseBB.resolve()))
+    .then(() => (tmpPath !== undefined ? rename(tmpPath, destPath) : PromiseBB.resolve()))
     .catch((unknownErr) => {
       const err = unknownToError(unknownErr);
       log("info", "failed to copy", { srcPath, destPath, err: err.stack });

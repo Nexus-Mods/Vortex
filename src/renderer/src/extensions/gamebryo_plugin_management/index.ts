@@ -4,6 +4,7 @@ import * as path from "path";
 import * as nodeUtil from "util";
 
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+import { VortexError } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import type I18next from "i18next";
 import type * as Redux from "redux";
@@ -19,6 +20,7 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
+import { clearErrorContext } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
@@ -51,7 +53,7 @@ import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
 import { ILOOTList, ILootReference } from "./types/ILOOTList";
 import { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
-import { IPlugin, IPluginCombined } from "./types/IPlugins";
+import { IPluginCombined } from "./types/IPlugins";
 import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import {
   gameDataPath,
@@ -71,15 +73,19 @@ import {
   supportsMediumMasters,
 } from "./util/gameSupport";
 import { missingGroupFixes } from "./util/groups";
+import { LootPhase, lootErrorReporter } from "./util/LootErrorReporter";
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from "./util/masterlist";
 import { markdownToBBCode } from "./util/mdtobb";
 import { checkMissingMasters } from "./util/missingMasters";
 import { handleModEnabled } from "./util/onModEnabled";
 import { handleModInstalled } from "./util/onModInstalled";
 import { handleSetPluginList } from "./util/onSetPluginList";
+import { makePluginConflictPrompt } from "./util/pluginFileConflict";
 import PluginHistory from "./util/PluginHistory";
+import { makeSetPluginLight } from "./util/pluginLight";
 import PluginPersistor from "./util/PluginPersistor";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
+import { AMBIENT_ATTRIBUTES, SpanAttribute } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 import { makeUpdatePluginList } from "./util/updatePluginList";
 import UserlistPersistor from "./util/UserlistPersistor";
@@ -500,20 +506,7 @@ function initPersistor(context: IExtensionContextExt) {
       onError,
       () => context.api.store.getState().settings.plugins.autoSort,
     );
-    pluginPersistor.setExternalChangeCallback(() =>
-      context.api
-        .showDialog(
-          "question",
-          "Plugin list changed outside Vortex",
-          {
-            text:
-              "Another tool or the game changed the plugin list files. " +
-              "Keep those changes or revert to the load order Vortex manages?",
-          },
-          [{ label: "Revert" }, { label: "Keep" }],
-        )
-        .then((result) => (result.action === "Keep" ? "keep" : "revert")),
-    );
+    pluginPersistor.setExternalChangeCallback(makePluginConflictPrompt(context.api));
   }
   if (userlistPersistor === undefined) {
     userlistPersistor = new UserlistPersistor("userlist", onError);
@@ -625,21 +618,24 @@ async function swapUserlistForProfile(
 
 let watcher: fs.FSWatcher;
 
-function stopSync(): Bluebird<void> {
+function stopSync(): Promise<void> {
   if (watcher !== undefined) {
     watcher.close();
     watcher = undefined;
   }
+  for (const key of AMBIENT_ATTRIBUTES) {
+    clearErrorContext(key);
+  }
 
   if (pluginPersistor === undefined) {
     log("debug", "stopSync: pluginPersistor is undefined, resolving immediately");
-    return Bluebird.resolve();
+    return Promise.resolve();
   }
 
   return pluginPersistor.disable();
 }
 
-function startSync(api: IExtensionApi): Bluebird<void> {
+function startSync(api: IExtensionApi): Promise<void> {
   const store = api.store;
 
   // start with a clean slate
@@ -647,7 +643,7 @@ function startSync(api: IExtensionApi): Bluebird<void> {
 
   const gameId = activeGameId(store.getState());
 
-  let prom: Bluebird<void> = Bluebird.resolve();
+  let prom: Promise<void> = Promise.resolve();
 
   if (pluginPersistor !== undefined) {
     prom = pluginPersistor.loadFiles(gameId);
@@ -1358,7 +1354,18 @@ function onDidDeploy(api: IExtensionApi, profileId: string): Bluebird<void> {
               // sort. The timeout is only a last-resort backstop for a stall with no switch.
               api.events.once("profile-will-change", done);
               api.events.once("gamemode-activated", done);
-              timeout = setTimeout(done, PLUGIN_DETAILS_TIMEOUT);
+              timeout = setTimeout(() => {
+                // no switch took the cue, so LOOT simply never answered for this game
+                lootErrorReporter.report(
+                  api,
+                  new VortexError("LOOT did not answer with plugin details", {
+                    kind: "loot:failed",
+                  }),
+                  LootPhase.Metadata,
+                  { silent: true, context: { [SpanAttribute.LootGameMode]: profile.gameId } },
+                );
+                done();
+              }, PLUGIN_DETAILS_TIMEOUT);
               const pluginList = getSafe(api.getState(), ["session", "plugins", "pluginList"], {});
               api.events.emit(
                 "plugin-details",
@@ -1393,27 +1400,9 @@ function sanitizeForIPC(obj: any) {
 }
 
 function init(context: IExtensionContextExt) {
-  const setPluginLight = async (id: string, enable: boolean) => {
-    const state: IStateWithGamebryo = context.api.getState();
-    const profile = activeProfile(state);
-    const plugin: IPlugin = state.session.plugins.pluginList[id];
-    if (plugin === undefined) {
-      return;
-    }
-
-    const esp = await ESPFile.open(plugin.filePath, profile.gameId);
-    await esp.setLightFlag(enable);
-
-    context.api.ext.addToHistory("plugins", {
-      type: "plugin-eslified",
-      gameId: profile.gameId,
-      data: {
-        id,
-        enable,
-      },
-    });
+  const setPluginLight = makeSetPluginLight(context.api, (id) => {
     forceListUpdate[id] = Date.now();
-  };
+  });
 
   const history = new PluginHistory(context.api, makeSetPluginGhost(context.api), setPluginLight);
 
@@ -1476,15 +1465,15 @@ function init(context: IExtensionContextExt) {
             // persist the loadOrder hive before the plugin list refresh: the postprocess
             // enable batch may still be inside the debounced diff pipeline
             const state = context.api.getState<IStateWithGamebryo>();
-            const flushed: Bluebird<void> =
+            const flushed: Promise<void> =
               pluginPersistor !== undefined
                 ? pluginPersistor.syncFromState(gameId, state.loadOrder ?? {}).catch((err) => {
                     log("error", "failed to sync plugin state after collection install", {
-                      error: err.message,
+                      error: getErrorMessageOrDefault(err),
                     });
                   })
-                : Bluebird.resolve();
-            flushed.then(() => onDidDeploy(context.api, profileId));
+                : Promise.resolve();
+            void flushed.then(() => onDidDeploy(context.api, profileId));
           },
         );
 

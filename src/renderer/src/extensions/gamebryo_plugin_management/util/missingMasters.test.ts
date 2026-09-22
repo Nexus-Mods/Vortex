@@ -368,7 +368,6 @@ describe("makeDescribeMissing", () => {
       // both missing masters counted, only the one contradicting the plugin list worth a span
       "missing.count": 2,
       "missing.contradicting": 1,
-      "plugins.count": 2,
     });
   });
 

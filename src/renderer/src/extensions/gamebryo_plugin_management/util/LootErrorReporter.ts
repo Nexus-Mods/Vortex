@@ -5,7 +5,7 @@ import { recordErrorSpan } from "../../../util/errorHandling";
 import { NAMESPACE } from "../statics";
 import type { ILootFailure } from "../types/ILoot";
 import { describeLootError } from "./lootErrors";
-import { definedAttributes, type SpanAttributes } from "./spanAttributes";
+import { definedAttributes, SpanAttribute, type SpanAttributes } from "./spanAttributes";
 
 /** What Vortex was asking of the worker when it failed. */
 export const LootPhase = {
@@ -57,12 +57,18 @@ function spanFacts(err: VortexError): ISpanFacts | undefined {
     case "loot:process-died":
       return {
         cause: err.data.call ?? "",
-        attributes: { "loot.call": err.data.call, "loot.error_code": err.data.code },
+        attributes: {
+          [SpanAttribute.LootCall]: err.data.call,
+          [SpanAttribute.LootErrorCode]: err.data.code,
+        },
       };
     case "loot:invalid-response":
       return {
         cause: err.data.call ?? "",
-        attributes: { "loot.call": err.data.call, "loot.frame_bytes": err.data.frameBytes },
+        attributes: {
+          [SpanAttribute.LootCall]: err.data.call,
+          [SpanAttribute.LootFrameBytes]: err.data.frameBytes,
+        },
       };
     case "loot:api-misuse":
       return { cause: err.data.detail.slice(0, MAX_CAUSE_LENGTH), attributes: {} };
@@ -81,6 +87,8 @@ interface IReportOptions {
   failure?: ILootFailure;
   /** Set where Vortex puts the worker back by itself, which leaves the user nothing to do. */
   recovering?: boolean;
+  /** Set where the caller answers the user itself, so only telemetry is owed. */
+  silent?: boolean;
 }
 
 /**
@@ -104,8 +112,11 @@ export class LootErrorReporter {
     options: IReportOptions = {},
   ): void {
     const recovering = options.recovering === true;
-    this.#recordSpan(err, phase, { ...options.context, "loot.recovering": recovering });
-    if (recovering) {
+    this.#recordSpan(err, phase, {
+      ...options.context,
+      [SpanAttribute.LootRecovering]: recovering,
+    });
+    if (recovering || options.silent === true) {
       return;
     }
     const failure = options.failure ?? describeLootError(api.translate, err);
@@ -150,8 +161,8 @@ export class LootErrorReporter {
       "A LOOT call could not be completed",
       err,
       definedAttributes({
-        "loot.kind": err.data.kind,
-        "loot.phase": phase,
+        [SpanAttribute.LootKind]: err.data.kind,
+        [SpanAttribute.LootPhase]: phase,
         ...facts.attributes,
         ...context,
       }),

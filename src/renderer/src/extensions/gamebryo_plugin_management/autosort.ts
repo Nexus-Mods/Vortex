@@ -38,6 +38,7 @@ import { toLootError } from "./util/lootErrors";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 import { listPaths, MetadataLists } from "./util/metadataLists";
 import { explainMasterNotLoaded } from "./util/missingMasters";
+import { SpanAttribute } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
@@ -797,7 +798,7 @@ class LootInterface {
       }
     } catch (rawErr) {
       lootErrorReporter.report(this.mExtensionApi, toLootError(rawErr), LootPhase.Lists, {
-        context: { "loot.gamemode": gameMode },
+        context: { [SpanAttribute.LootGameMode]: gameMode },
       });
     }
   };
@@ -848,7 +849,7 @@ class LootInterface {
       const err = toLootError(rawErr);
       log("error", "failed to initialize LOOT", { kind: err.data.kind, error: err.message });
       lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Init, {
-        context: { "loot.gamemode": gameMode },
+        context: { [SpanAttribute.LootGameMode]: gameMode },
       });
       return { game: gameMode, loot: undefined };
     }
@@ -863,7 +864,7 @@ class LootInterface {
       lootErrorReporter.succeeded();
     } catch (rawErr) {
       lootErrorReporter.report(this.mExtensionApi, toLootError(rawErr), LootPhase.Lists, {
-        context: { "loot.gamemode": gameMode },
+        context: { [SpanAttribute.LootGameMode]: gameMode },
       });
     }
     // the instance is ready, so a download may load into it from here on
@@ -907,7 +908,10 @@ class LootInterface {
           LootPhase.Worker,
           {
             recovering: restarting,
-            context: { "loot.restarts_left": this.mRestarts, "loot.exit_code": err.exitCode },
+            context: {
+              [SpanAttribute.LootRestartsLeft]: this.mRestarts,
+              [SpanAttribute.LootExitCode]: err.exitCode,
+            },
           },
         );
         if (restarting) {
