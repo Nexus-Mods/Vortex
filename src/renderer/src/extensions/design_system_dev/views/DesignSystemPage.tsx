@@ -44,6 +44,7 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
   const [selectedIconTab, setSelectedIconTab] = useState("icon");
   const [selectedFormTab, setSelectedFormTab] = useState("input");
   const [selectedDropdownTab, setSelectedDropdownTab] = useState("dropdown");
+  const [selectedTileTab, setSelectedTileTab] = useState("game-tile");
 
   return (
     <Page active={active} id="page-design-system-dev" scrollable={false}>
@@ -82,8 +83,7 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
 
             <TabButton name="Table" panelId="table" />
 
-            <TabButton name="Collection Tile" panelId="collection-tile" />
-            <TabButton name="Game Tile" panelId="game-tile" />
+            <TabButton name="Tile" panelId="tile" />
 
             <TabButton name="Toolbar" panelId="toolbar" />
 
@@ -239,12 +239,29 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
               <TableDemo />
             </TabPanel>
 
-            <TabPanel id="collection-tile">
-              <CollectionTileDemo api={api} />
-            </TabPanel>
+            <TabPanel id="tile">
+              <TabProvider
+                tab={selectedTileTab}
+                tabListId="tile-demo-tabs"
+                tabType="secondary"
+                onSetSelectedTab={setSelectedTileTab}
+              >
+                <TabBar>
+                  <TabButton name="Game" panelId="game-tile" />
 
-            <TabPanel id="game-tile">
-              <GameTileDemo />
+                  <TabButton name="Collection" panelId="collection-tile" />
+                </TabBar>
+
+                <div className="mt-6">
+                  <TabPanel id="game-tile">
+                    <GameTileDemo />
+                  </TabPanel>
+
+                  <TabPanel id="collection-tile">
+                    <CollectionTileDemo api={api} />
+                  </TabPanel>
+                </div>
+              </TabProvider>
             </TabPanel>
 
             <TabPanel id="toolbar">

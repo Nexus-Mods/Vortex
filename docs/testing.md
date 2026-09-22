@@ -9,7 +9,9 @@ extension tests.
 package. It **excludes the E2E suite** (`@vortex/e2e`), which needs a packaged
 app and a real game install and runs separately.
 
-Use `pnpm run test -- <path>` to run a single test file or directory.
+To run a single test file or directory, use `pnpm exec vitest run <path>` from
+inside the project directory that owns it (e.g. `src/renderer`). `pnpm run
+test` itself is an nx invocation across all projects and cannot be scoped.
 
 The E2E harness sets two environment variables. `VORTEX_E2E=1` skips installing
 the React and Redux DevTools chrome extensions (`installDevelExtensions` in

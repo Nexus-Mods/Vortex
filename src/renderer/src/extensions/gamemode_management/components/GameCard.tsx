@@ -1,9 +1,12 @@
+import { mdiPlus } from "@mdi/js";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { useMainContext } from "@/contexts";
 import type { IState } from "@/types/IState";
+import type { IButtonBrand } from "@/ui/components/button/Button";
+import { Button } from "@/ui/components/button/Button";
 import { GameTile } from "@/ui/components/game_tile/GameTile";
 import { activeGameId } from "@/util/selectors";
 
@@ -12,85 +15,80 @@ import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
 import { GameDetailsModal } from "./GameDetailsModal";
 
+/**
+ * Which of the Games page's three sections the card sits in. One prop rather than a
+ * flag each, so a card can't claim to be both added and detected.
+ */
+export type IGameSection = "added" | "detected" | "supported";
+
 export interface IGameCardProps {
-  className?: string;
   game: IGameStored;
-  /** Which set of registered actions the game gets: `managed` or `unmanaged`. */
-  type: string;
+  section: IGameSection;
   onRefreshGameInfo?: (gameId: string) => PromiseLike<void>;
 }
 
 /**
- * How many mods the game's last active profile has switched on. A game nothing has been
- * installed for has no count rather than a zero, there being no story in "0 active
- * mods" — same as the classic tile.
- */
-const useActiveModCount = (gameId: string | undefined): number | undefined =>
-  useSelector((state: IState) => {
-    if (gameId === undefined) {
-      return undefined;
-    }
-
-    const profileId = state.settings.profiles.lastActiveProfile?.[gameId];
-    const profile = profileId !== undefined ? state.persistent.profiles[profileId] : undefined;
-
-    if (profile === undefined) {
-      return undefined;
-    }
-
-    const mods = state.persistent.mods[gameId] ?? {};
-    const modState = profile.modState ?? {};
-
-    return Object.keys(modState).filter((id) => modState[id].enabled && mods[id] !== undefined)
-      .length;
-  });
-
-/**
  * A game on the Games page: the tile, plus everything about this particular game that
- * has to come out of the store — its art, what its profile has enabled, the actions
+ * has to come out of the store — its art, which storefront it came from, the actions
  * extensions registered for it, and the details dialog its menu opens.
  */
-export const GameCard = ({ className, game, onRefreshGameInfo, type }: IGameCardProps) => {
+export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) => {
   const { t } = useTranslation();
   const { api } = useMainContext();
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const isActive = useSelector((state: IState) => activeGameId(state) === game.id);
 
   const showDetails = useCallback(() => setDetailsOpen(true), []);
   const closeDetails = useCallback(() => setDetailsOpen(false), []);
 
-  const { menu, primary } = useGameCardActions(game.id, type, showDetails);
+  // Registered actions still know games as managed or unmanaged, the older split of this.
+  const { menu, primary } = useGameCardActions(
+    game.id,
+    section === "added" ? "managed" : "unmanaged",
+    showDetails,
+  );
   const name = game.name.replace(/\t/g, " ");
+  const store = useSelector((state: IState) => state.settings.gameMode.discovered[game.id]?.store);
 
-  // Only a managed game counts its mods: an unmanaged one that kept a profile from
-  // before still has a count, and the design doesn't want it there.
-  const modCount = useActiveModCount(type === "managed" ? game.id : undefined);
+  const actions: Record<
+    IGameSection,
+    { brand: IButtonBrand; iconPath?: string; label: string; reveal: boolean }
+  > = {
+    added: { brand: "neutral", label: t("Open"), reveal: true },
+    detected: { brand: "primary", iconPath: mdiPlus, label: t("Add game"), reveal: false },
+    supported: { brand: "neutral", iconPath: mdiPlus, label: t("Manual add"), reveal: true },
+  };
 
-  const isActive = useSelector((state: IState) => activeGameId(state) === game.id);
+  const action = actions[section];
 
-  // The active game has nothing to activate — that action rules itself out for the game
-  // it would be a no-op on — so its tile leads with the way into the game instead.
-  // Opening a per-game page is what moves the app to that game; the spine follows.
-  const view = { label: t("View"), onClick: () => api.events.emit("show-main-page", "Mods") };
-
-  // The card calls adding a game "Add game", where the registry keeps the "Manage" the
-  // classic surfaces still show.
-  const primaryAction = isActive
-    ? view
-    : primary && {
-        label: type === "unmanaged" ? t("Add game") : primary.label,
-        onClick: primary.onClick,
-      };
+  // Activate is conditioned away for the game already in play, so its tile opens the
+  // game's mods rather than leading with nothing.
+  const openMods = useCallback(() => api.events.emit("show-main-page", "Mods"), [api]);
+  const onPrimary = isActive ? openMods : primary?.onClick;
 
   return (
     <>
       <GameTile
-        className={className}
-        contributedBy={game.contributed}
+        highlighted={section === "detected"}
         imageUrl={gameArtURL(game)}
         menu={{ actions: menu, label: t("Game options") }}
-        modCount={modCount}
         name={name}
-        primaryAction={primaryAction}
+        primaryAction={
+          onPrimary && (
+            <Button
+              appearance="strong"
+              brand={action.brand}
+              className="w-full"
+              leftIconPath={action.iconPath}
+              onClick={onPrimary}
+            >
+              {action.label}
+            </Button>
+          )
+        }
+        revealPrimaryAction={action.reveal}
+        store={store}
+        supportedBy={game.contributed}
       />
 
       {detailsOpen && (

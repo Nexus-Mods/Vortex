@@ -18,6 +18,7 @@ export const Listing = ({
   isError,
   isLoading,
   noResultsClassName = "py-16",
+  noResultsIconClassName,
   noResultsIconPath,
   noResultsChildren,
   noResultsMessage = "Try adjusting your filters or search terms.",
@@ -39,6 +40,7 @@ export const Listing = ({
   isLoading?: boolean;
   noResultsClassName?: string;
   noResultsChildren?: ReactNode;
+  noResultsIconClassName?: string;
   noResultsIconPath?: string;
   noResultsMessage?: string;
   noResultsTitle?: string;
@@ -83,6 +85,7 @@ export const Listing = ({
       {customNoResults ?? (
         <NoResults
           className={noResultsClassName}
+          iconClassName={noResultsIconClassName}
           iconPath={noResultsIconPath ?? mdiMagnifyRemoveOutline}
           message={noResultsMessage}
           title={noResultsTitle}
