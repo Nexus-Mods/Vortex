@@ -156,6 +156,24 @@ describe("gamebryo collection parser plugin force-enable", () => {
     });
   });
 
+  // a manifest authored in drag-and-drop load order mode has no plugins section at all; the
+  // collection ships those plugins to be used, so they all go on
+  it("enables every member plugin when the manifest has no plugins section", async () => {
+    seedReaddir();
+    const harness = makeHarness();
+    const collectionMod = makeMod({ id: COLLECTION_ID, type: MOD_TYPE, rules: collectionRules() });
+    const withoutPlugins = { pluginRules: { plugins: [], groups: [] } } as unknown as ICollection;
+
+    await expect(
+      parser(harness.api, GAME_ID, withoutPlugins, collectionMod),
+    ).resolves.toBeUndefined();
+
+    const byName = Object.fromEntries(
+      pluginEnableActions(harness).map((a) => [a.pluginName, a.enabled]),
+    );
+    expect(byName).toEqual(Object.fromEntries(ALL_PLUGINS.map((name) => [name, true])));
+  });
+
   it("falls back to the passed-in collectionMod when the mod is absent from current state", async () => {
     seedReaddir();
     const harness = makeHarness(false);
