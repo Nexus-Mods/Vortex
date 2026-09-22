@@ -15,8 +15,10 @@ import type { IPlugins } from "./types/IPlugins";
 interface ILootSeams {
   // getVortexPath root for the current test (a per-test temp dir)
   base: string;
-  // the harness game, the one gameSupported answers true for
+  // the harness game, the one knownGame answers true for
   gameId: string;
+  // the profile's plugin-management toggle, which gameSupported honors and knownGame ignores
+  pluginManagement: boolean;
   // the plugin names findInvalidPlugins reports as invalid
   invalid: string[];
   // the harness game's native plugins (lowercase), the first being its main master
@@ -31,6 +33,7 @@ interface ILootSeams {
 export const seams: ILootSeams = {
   base: "",
   gameId: "",
+  pluginManagement: true,
   invalid: [],
   nativePlugins: [],
   requiresLoadedMasters: false,
@@ -55,8 +58,10 @@ export const getVortexPathModule = {
 };
 
 // ./util/gameSupport: consults a module-level api handle set at extension init; pin the answers
+const knownGame = (gameMode: string) => gameMode === seams.gameId;
 export const gameSupportModule = {
-  gameSupported: (gameMode: string) => gameMode === seams.gameId,
+  gameSupported: (gameMode: string) => knownGame(gameMode) && seams.pluginManagement,
+  knownGame,
   pluginPath: (gameMode: string) => path.join(seams.base, "local", gameMode),
   gameDataPath: () => path.join(seams.base, "data"),
   nativePlugins: () => seams.nativePlugins,

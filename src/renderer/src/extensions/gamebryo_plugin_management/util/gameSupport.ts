@@ -408,20 +408,20 @@ export function supportedGames(): string[] {
   return Object.keys(gameSupport);
 }
 
-export function gameSupported(gameMode: string, sort?: boolean): boolean {
-  if (sort) {
-    // We don't want to block the sort mechanism from running even if the
-    //  plugin management is disabled. In this case we just make sure we
-    //  have a value for the game.
-    return gameSupport.has(gameMode);
-  }
+/** Whether the support table has an entry for the game, regardless of the profile's toggle. */
+export function knownGame(gameMode: string): boolean {
+  return gameSupport.has(gameMode);
+}
+
+/** Whether the game's last active profile has Vortex managing its plugins. */
+export function gameSupported(gameMode: string): boolean {
   const state = getApi().getState();
   const defaultVal = ["starfield", "oblivionremastered"].includes(gameMode) ? false : true;
   const profileId = lastActiveProfileForGame(state, gameMode);
   if (!getSafe(state, ["settings", "plugins", "pluginManagementEnabled", profileId], defaultVal)) {
     return false;
   }
-  return gameSupport.has(gameMode);
+  return knownGame(gameMode);
 }
 
 export function isNativePlugin(gameMode: string, pluginName: string): boolean {

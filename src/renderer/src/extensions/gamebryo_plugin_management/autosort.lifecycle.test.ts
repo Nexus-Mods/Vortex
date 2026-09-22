@@ -153,6 +153,18 @@ describe("LootInterface libloot lifecycle", () => {
     expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]);
   });
 
+  // Starfield in drag-and-drop mode sorts its own plugins file through the lootSortAsync API
+  test("sorts the caller's files while plugin management is off for the profile", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface, { pluginManagement: false });
+    await harness.seedPlugins(["A.esp"]);
+
+    await harness.lootInterface.sortFiles([path.join(harness.dataDir, "A.esp")]);
+
+    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]);
+  });
+
   test("does not load the main master again when the instance already holds it", async ({
     makeLoot,
   }) => {

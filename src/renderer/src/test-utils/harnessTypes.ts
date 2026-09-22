@@ -162,6 +162,9 @@ export interface ILootHarnessOpts extends IGamebryoHarnessOpts {
   invalidPlugins?: string[];
   // the game's native plugins as lowercase ids, the first being its main master (default: none)
   nativePlugins?: string[];
+  // the profile's plugin-management toggle as the mocked gameSupported answers it (default: on);
+  // the store's own setting is not consulted in loot suites
+  pluginManagement?: boolean;
 }
 
 export interface ILootHarness extends IGamebryoHarness {
