@@ -61,6 +61,7 @@ import {
   getGameSupport,
   IGameSupport,
   initGameSupport,
+  knownGame,
   minRevision,
   nativePlugins,
   pluginExtensions,
@@ -327,9 +328,7 @@ function register(
   );
 
   context.registerSettings("Workarounds", Settings, undefined, () => {
-    const state = context.api.store.getState();
-    const gameMode = activeGameId(state);
-    return supportedGames().indexOf(gameMode) !== -1;
+    return knownGame(activeGameId(context.api.store.getState()));
   });
 
   context.registerAPI(

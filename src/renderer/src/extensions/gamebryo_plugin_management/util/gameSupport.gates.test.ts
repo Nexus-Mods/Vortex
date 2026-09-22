@@ -3,7 +3,7 @@ import { describe, expect } from "vitest";
 import { test, type IGamebryoFixtures } from "../../../test-utils/gamebryoTest";
 import type { IGamebryoHarness, IGamebryoHarnessOpts } from "../../../test-utils/harnessTypes";
 import { setPluginManagementEnabled } from "../actions/settings";
-import { gameSupported, initGameSupport } from "./gameSupport";
+import { gameSupported, initGameSupport, knownGame } from "./gameSupport";
 
 // gameSupported consults the api handed to initGameSupport, so every harness runs the init first
 async function arrange(
@@ -20,9 +20,9 @@ describe("gameSupported gates", () => {
     const harness = await arrange(makeGamebryo);
 
     expect(gameSupported("skyrimse")).toBe(true);
-    expect(gameSupported("skyrimse", true)).toBe(true);
     harness.api.store.dispatch(setPluginManagementEnabled(harness.profileId, false));
     expect(gameSupported("skyrimse")).toBe(false);
+    expect(knownGame("skyrimse")).toBe(true);
   });
 
   test("defaults plugin management off for starfield until the profile opts in", async ({
@@ -45,18 +45,6 @@ describe("gameSupported gates", () => {
     await arrange(makeGamebryo);
 
     expect(gameSupported("cyberpunk2077")).toBe(false);
-    expect(gameSupported("cyberpunk2077", true)).toBe(false);
-  });
-
-  // the desired contract from LAZ-1047: "populate and sort paths agree on whether plugin
-  // management is active for the profile" - the sort form ignores the toggle, so LOOT sorts a
-  // loadOrder hive the populate paths never hydrate ("No plugins to sort" on default Starfield)
-  test.fails("answers the populate and sort paths the same when plugin management is disabled", async ({
-    makeGamebryo,
-  }) => {
-    const harness = await arrange(makeGamebryo);
-    harness.api.store.dispatch(setPluginManagementEnabled(harness.profileId, false));
-
-    expect(gameSupported("starfield", true)).toBe(gameSupported("starfield"));
+    expect(knownGame("cyberpunk2077")).toBe(false);
   });
 });

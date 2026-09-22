@@ -68,6 +68,18 @@ describe("LootInterface autosort-plugins", () => {
     await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(1));
   });
 
+  test("refuses a state sort while plugin management is off for the profile", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface, { pluginManagement: false });
+    await harness.seedPlugins(["A.esp"]);
+
+    const err = await harness.sort(true);
+
+    expect(err).toMatchObject({ data: { kind: "not-supported" } });
+    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+  });
+
   test("skips sorting when not manual and autoSort is disabled", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     harness.api.store.dispatch(setAutoSortEnabled(false));

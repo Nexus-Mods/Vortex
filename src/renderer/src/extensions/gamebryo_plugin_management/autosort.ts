@@ -31,7 +31,13 @@ import { EdgeType } from "./types/ILoot";
 import type { ICycleEdge, ILootProm, ILootRef, ILootStaticProm } from "./types/ILoot";
 import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
 import { findInvalidPlugins } from "./util/findInvalidPlugins";
-import { gameDataPath, gameSupported, nativePlugins, pluginPath } from "./util/gameSupport";
+import {
+  gameDataPath,
+  gameSupported,
+  knownGame,
+  nativePlugins,
+  pluginPath,
+} from "./util/gameSupport";
 import { missingGroupFixes } from "./util/groups";
 import { lootErrorReporter, LootPhase } from "./util/LootErrorReporter";
 import { toLootError } from "./util/lootErrors";
@@ -278,7 +284,11 @@ class LootInterface {
           }),
         );
       }
-      if (!gameSupported(gameMode, true)) {
+      // a state sort works the loadOrder hive, which nothing hydrates while the profile's plugin
+      // management is off; a file sort brings its own plugins and only needs a game libloot knows
+      const supported =
+        pluginFilePaths === undefined ? gameSupported(gameMode) : knownGame(gameMode);
+      if (!supported) {
         return failed(
           new VortexError("plugin sorting is not supported for this game", {
             kind: "not-supported",
@@ -598,7 +608,7 @@ class LootInterface {
         loot.close();
       }, 5000);
     }
-    if (gameSupported(gameMode, true)) {
+    if (knownGame(gameMode)) {
       // init resolves to an undefined instance on failure, having reported it itself
       this.mInitPromise = this.init(gameMode);
     } else {
@@ -919,7 +929,7 @@ class LootInterface {
           --this.mRestarts;
           // the handle outlives the worker and answers isClosed() with false, so drop it here
           this.mLoot = undefined;
-          if (gameSupported(gameMode, true)) {
+          if (knownGame(gameMode)) {
             this.mInitPromise = this.init(gameMode);
           }
         }
