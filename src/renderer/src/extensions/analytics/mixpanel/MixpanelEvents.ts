@@ -284,6 +284,21 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
   constructor() {}
 }
 
+/** Where the support bundle was asked for. Only the Help menu today. */
+export type SupportBundleSource = "help_menu";
+
+/**
+ * Sent when the user asks Vortex to prepare a support bundle (Help > Create support bundle).
+ * Counts the request, not whether the archive was built or sent on.
+ */
+export class AppSupportBundleClickedEvent implements MixpanelEvent {
+  readonly eventName = "app_support_bundle_clicked";
+  readonly properties: Record<string, unknown>;
+  constructor(props: { source: SupportBundleSource }) {
+    this.properties = { ...props };
+  }
+}
+
 /** Fields on the app_game_manage event. */
 export interface GameManagedProps {
   game_id: number | null;
