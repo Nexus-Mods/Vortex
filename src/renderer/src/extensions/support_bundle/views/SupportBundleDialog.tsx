@@ -20,9 +20,9 @@ export interface ISupportBundleDialogProps {
 /** Where a user can hand the archive to the team. Same forum the feedback extension points at. */
 export const SUPPORT_FORUM_URL =
   "https://forums.nexusmods.com/index.php?/forum/4306-vortex-support";
-/** The #vortex channel in the Nexus Mods server. Same link the game extension READMEs use. */
+/** The #vortex-support channel in the Nexus Mods server. */
 export const SUPPORT_DISCORD_URL =
-  "https://discord.com/channels/215154001799413770/408252140533055499";
+  "https://discord.com/channels/215154001799413770/1481578064478736537";
 
 export const SupportBundleDialog = ({ visible, onHide }: ISupportBundleDialogProps) => {
   const { t } = useTranslation(["support_bundle", "common"]);
