@@ -1,7 +1,3 @@
-import * as path from "path";
-import { pathToFileURL } from "url";
-
-import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { ListGroupItem, Media } from "react-bootstrap";
@@ -16,12 +12,12 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
-import { gameTileImageURL } from "../../../extensions/nexus_integration/util/gameTileImageURL";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import opn from "../../../util/opn";
 import type { IMod } from "../../mod_management/types/IMod";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
+import { gameArtURL } from "../util/gameArtURL";
 import GameInfoPopover from "./GameInfoPopover";
 
 export interface IProps {
@@ -31,8 +27,8 @@ export interface IProps {
   mods?: { [modId: string]: IMod };
   active: boolean;
   type: string;
-  onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
-  onBrowseGameLocation: (gameId: string) => PromiseBB<void>;
+  onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
+  onBrowseGameLocation: (gameId: string) => PromiseLike<void>;
 }
 
 /**
@@ -48,15 +44,7 @@ class GameRow extends ComponentEx<IProps, {}> {
       return null;
     }
 
-    // Prefer the Nexus "tile" art so it matches the website. Fall back to a
-    // local extension logo / imageURL when no Nexus tile can be resolved.
-    let logoPath: string | undefined = gameTileImageURL(game);
-    if (logoPath == null) {
-      logoPath =
-        game.extensionPath !== undefined && game.logo !== undefined
-          ? path.join(game.extensionPath, game.logo)
-          : game.imageURL;
-    }
+    const imgurl = gameArtURL(game);
 
     const location =
       discovery !== undefined && discovery.path !== undefined ? (
@@ -69,18 +57,6 @@ class GameRow extends ComponentEx<IProps, {}> {
     }
     if (discovery === undefined) {
       classes.push("game-list-undiscovered");
-    }
-
-    let imgurl = null;
-    if (logoPath != null) {
-      let protocol = null;
-      try {
-        protocol = new URL(logoPath)?.protocol;
-      } catch {
-        // not a URL, treat as file path
-      }
-      imgurl =
-        protocol != null && protocol.startsWith("http") ? logoPath : pathToFileURL(logoPath).href;
     }
 
     return (

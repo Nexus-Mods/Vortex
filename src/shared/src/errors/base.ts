@@ -60,6 +60,7 @@ export interface VortexErrorKindMap {
   "cycle-error": { cycles: string[][] };
 
   // File System
+  "fs:invalid-path": { path: string };
   "fs:already-exists": FileSystemErrorData;
   "fs:directory-not-empty": FileSystemErrorData;
   "fs:no-permissions": FileSystemErrorData;

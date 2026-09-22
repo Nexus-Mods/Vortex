@@ -235,7 +235,6 @@
     "@hot-updater/bsdiff": "catalog:",
     "@mdi/js": "catalog:",
     "@msgpack/msgpack": "catalog:",
-    "@nexusmods/adaptor-api": "workspace:*",
     "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",

@@ -5,7 +5,31 @@ vi.mock("electron", () => ({ app: { getPath: vi.fn(), getVersion: vi.fn() } }));
 vi.mock("./logging", () => ({ log: vi.fn() }));
 vi.mock("./minidump", () => ({ summarizeMinidumpFile: vi.fn() }));
 
-import { errorToReportableError } from "./errorReporting";
+import {
+  crashFingerprint,
+  dumpReportProcess,
+  errorToReportableError,
+  isFromCurrentBuild,
+} from "./errorReporting";
+
+describe("dumpReportProcess", () => {
+  it.each([
+    ["browser", "main"],
+    ["gpu-process", "gpu"],
+    ["renderer", "renderer"],
+    ["utility", "utility"],
+    ["zygote", "zygote"],
+    [undefined, "unknown"],
+  ])("maps %s to %s", (processType, expected) => {
+    expect(
+      dumpReportProcess({ exceptionCode: "0xc0000005", exceptionAddress: "0x0", processType }),
+    ).toBe(expected);
+  });
+
+  it("does not attribute unreadable dumps to a process", () => {
+    expect(dumpReportProcess(undefined)).toBe("unknown");
+  });
+});
 
 describe("errorToReportableError", () => {
   it("renders a VortexError's payload fields legibly in details", () => {
@@ -28,5 +52,69 @@ describe("errorToReportableError", () => {
 
     expect(report.details).toContain("code: EPERM");
     expect(report.allowReport).toBe(false);
+  });
+});
+
+describe("crashFingerprint", () => {
+  const nativeCrash = (overrides: Record<string, string | number> = {}) =>
+    crashFingerprint(
+      "2.7.0",
+      "PreviousSessionCrash",
+      { message: "Previous session crashed", code: "0xc0000005" },
+      {
+        "crash.sourceProcess": "main",
+        "crash.native.exceptionCode": "0xc0000005",
+        "crash.native.module": "Vortex.exe",
+        "crash.native.moduleOffset": "0x398fe0",
+        "crash.native.exceptionAddress": "0x7ff782a98fe0",
+        ...overrides,
+      },
+    );
+
+  it("is an 8-char hex hash", () => {
+    expect(nativeCrash()).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("groups the same native crash site regardless of address", () => {
+    expect(nativeCrash({ "crash.native.exceptionAddress": "0x1" })).toBe(nativeCrash());
+  });
+
+  it("separates crash sites by module offset", () => {
+    expect(nativeCrash({ "crash.native.moduleOffset": "0x6d3aff9" })).not.toBe(nativeCrash());
+  });
+
+  it("separates gone processes by exit code and process", () => {
+    const gone = (sourceProcess: string, exitCode: number) =>
+      crashFingerprint(
+        "2.7.0",
+        "ChildProcessGone",
+        { message: "process gone", code: "crashed" },
+        { "crash.sourceProcess": sourceProcess, "crash.exitCode": exitCode },
+      );
+
+    expect(gone("utility", -1073741205)).toBe(gone("utility", -1073741205));
+    expect(gone("utility", -1073741205)).not.toBe(gone("utility", 133));
+    expect(gone("utility", 133)).not.toBe(gone("gpu", 133));
+  });
+
+  it("changes with the app version, like stack fingerprints do", () => {
+    const withVersion = (version: string) =>
+      crashFingerprint(version, "EarlyCrash", { message: "boom" }, {});
+    expect(withVersion("2.7.0")).not.toBe(withVersion("2.7.1"));
+  });
+});
+
+describe("isFromCurrentBuild", () => {
+  it("keeps only dumps written by the running version", () => {
+    expect(isFromCurrentBuild("2.6.3", "2.6.3", 0, 100)).toBe(true);
+    expect(isFromCurrentBuild("2.7.0-beta.2", "2.7.0-beta.2", 0, 100)).toBe(true);
+    expect(isFromCurrentBuild("2.7.0-beta.1", "2.7.0-beta.2", 200, 100)).toBe(false);
+    expect(isFromCurrentBuild("2.0.2", "2.6.3", 200, 100)).toBe(false);
+  });
+
+  it("falls back to the install time for unreadable dumps", () => {
+    expect(isFromCurrentBuild(undefined, "2.6.3", 50, 100)).toBe(false);
+    expect(isFromCurrentBuild(undefined, "2.6.3", 150, 100)).toBe(true);
+    expect(isFromCurrentBuild(undefined, "2.6.3", 50, undefined)).toBe(true);
   });
 });

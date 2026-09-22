@@ -72,7 +72,6 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import Debouncer from "./Debouncer";
-import epicGamesLauncher from "./EpicGamesLauncher";
 import {
   getVisibleWindow,
   terminate,
@@ -80,7 +79,10 @@ import {
   withTrackedActivity,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
-import GameStoreHelper, { normalizeStoreQuery } from "./GameStoreHelper";
+import GameStoreHelperInstance, { normalizeStoreQuery } from "./GameStoreHelper";
+import type { IGameStoreHelper } from "./GameStoreHelper";
+
+const GameStoreHelper: IGameStoreHelper = GameStoreHelperInstance;
 
 /**
  * @deprecated Use window.api for IPC communication from renderer to main process.
@@ -93,7 +95,22 @@ function makeRemoteCall(): never {
   );
 }
 
+import SevenZip from "node-7z";
+
 import LazyComponent from "../controls/LazyComponent";
+import {
+  CollectionsDownloadCompletedEvent,
+  CollectionsDownloadClickedEvent,
+  CollectionsDownloadFailedEvent,
+  CollectionsDownloadCancelledEvent,
+  CollectionsInstallationStartedEvent,
+  CollectionsInstallationCompletedEvent,
+  CollectionsInstallationFailedEvent,
+  CollectionsInstallationCancelledEvent,
+  CollectionsDraftedEvent,
+  CollectionsDraftUploadedEvent,
+  CollectionsDraftUpdateUploadedEvent,
+} from "../extensions/analytics/mixpanel/MixpanelEvents";
 import {
   buildCopyInstructions,
   compileStopPatterns,
@@ -111,29 +128,13 @@ import github from "./github";
 import type { TFunction } from "./i18n";
 import { getCurrentLanguage } from "./i18n";
 import lazyRequire from "./lazyRequire";
+import { epicGamesLauncherShim as epicGamesLauncher, steamShim as steam } from "./legacyGameStores";
 import local from "./local";
 import makeReactive from "./makeReactive";
 import onceCB from "./onceCB";
 import opn from "./opn";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";
-import steam from "./Steam";
-export type { ISteamEntry } from "./Steam.ts";
-import SevenZip from "node-7z";
-
-import {
-  CollectionsDownloadCompletedEvent,
-  CollectionsDownloadClickedEvent,
-  CollectionsDownloadFailedEvent,
-  CollectionsDownloadCancelledEvent,
-  CollectionsInstallationStartedEvent,
-  CollectionsInstallationCompletedEvent,
-  CollectionsInstallationFailedEvent,
-  CollectionsInstallationCancelledEvent,
-  CollectionsDraftedEvent,
-  CollectionsDraftUploadedEvent,
-  CollectionsDraftUpdateUploadedEvent,
-} from "../extensions/analytics/mixpanel/MixpanelEvents";
 // CollectionInstallOutcomeProps: props for the exported collection-install event constructors.
 // ModChangeReason: reason vocabulary referenced by IRemoveModOptions.reason / IEnableOptions.reason.
 export type {

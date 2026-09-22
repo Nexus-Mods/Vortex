@@ -79,8 +79,7 @@ function readRegistryKey(hive, key, name) {
 
 function findGame(kotorGame) {
   const { gogId, steamId } = kotorGame;
-  return util.steam
-    .findByAppId(steamId)
+  return util.GameStoreHelper.findByAppId(steamId, "steam")
     .then((game) => game.gamePath)
     .catch(() =>
       readRegistryKey(

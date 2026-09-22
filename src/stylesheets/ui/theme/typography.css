@@ -8,6 +8,7 @@
 );
 @source inline("text-neutral-inverted");
 @source inline("{hover:,}text-translucent-{weak,subdued,moderate,strong}");
+@source inline("{hover:,}text-on-scrim-{weak,subdued,moderate,strong}");
 @source inline("text-translucent-inverted");
 
 @theme {

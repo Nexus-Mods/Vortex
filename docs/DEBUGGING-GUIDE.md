@@ -500,8 +500,15 @@ chrome://inspect
 Production logs are in:
 
 ```
-%appdata%/vortex/vortex0.log
+%appdata%/vortex/vortex.log
 ```
+
+`vortex.log` is the current file. Rotated files are `vortex1.log` to `vortex4.log`, with higher
+numbers being older. Help > Create support bundle packages all of them, the three newest crash
+dumps from `temp/dumps` and a state export into one `.7z` under
+`%appdata%/vortex/temp/support_bundles/`. Usernames in profile paths become `<USER>` and the
+access tokens on signed download links become `REDACTED`; hosts, file names and expiry times are
+kept.
 
 ### C++ Native Modules
 

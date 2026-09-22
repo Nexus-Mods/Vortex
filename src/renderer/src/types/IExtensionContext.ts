@@ -8,11 +8,6 @@ import type { ThunkDispatch } from "redux-thunk";
 
 import type { IDownloadsAPIExtension } from "../extensions/download_management/types/IDownloadsAPIExtension";
 import type { ILoadOrderGameInfo } from "../extensions/file_based_loadorder/types/types";
-import type {
-  GameVersionProviderFunc,
-  GameVersionProviderTest,
-  IGameVersionProviderOptions,
-} from "../extensions/gameversion_management/types/IGameVersionProvider";
 import type { IHistoryEvent, IHistoryStack } from "../extensions/history_management/types";
 import type { IGameLoadOrderEntry } from "../extensions/mod_load_order/types/types";
 import type {
@@ -51,7 +46,6 @@ import type { IActionOptions } from "./IActionDefinition";
 import type { IBannerOptions } from "./IBannerOptions";
 import type { DialogType, IDialogResult } from "./IDialog";
 import type { IGame } from "./IGame";
-import type { IGameStore } from "./IGameStore";
 import type { IHealthCheck, IModHealthCheck } from "./IHealthCheck";
 import type { ILookupOptions, IModLookupResult } from "./IModLookupResult";
 import type { INotification, INotificationAction } from "./INotification";
@@ -1311,13 +1305,6 @@ export interface IExtensionContext {
   registerGameStub: (game: IGame, ext: IExtensionDownloadInfo) => void;
 
   /**
-   * registers support for a game store.
-   *
-   * @param {IGameStore} gameStore
-   */
-  registerGameStore: (gameStore: IGameStore) => void;
-
-  /**
    * registers a provider for general information about a game
    * @param {string} id unique id identifying the provider
    * @param {number} priority if two providers provide the same info (same key) the one with the
@@ -1497,17 +1484,6 @@ export interface IExtensionContext {
     label: string,
     description: string,
     supported: () => boolean,
-  ) => void;
-
-  /**
-   * register a game version resolution provider.
-   */
-  registerGameVersionProvider?: (
-    id: string,
-    priority: number,
-    supported: GameVersionProviderTest,
-    getVersion: GameVersionProviderFunc,
-    options?: IGameVersionProviderOptions,
   ) => void;
 
   /**

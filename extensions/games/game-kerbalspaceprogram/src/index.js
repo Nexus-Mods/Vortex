@@ -5,7 +5,7 @@ const { fs, log, selectors, util } = require("@nexusmods/vortex-api");
 const extension = process.platform == "linux" ? ".x86_64" : "_x64.exe";
 
 function findGame() {
-  return util.steam.findByAppId("220200").then((game) => game.gamePath);
+  return util.GameStoreHelper.findByAppId("220200", "steam").then((game) => game.gamePath);
 }
 
 function main(context) {

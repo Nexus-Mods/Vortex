@@ -23,11 +23,11 @@ const getPill = () => document.querySelector(".nxm-pill");
 
 describe("Pill", () => {
   describe("default (div) variant", () => {
-    it("renders a div with the base and default-type classes", () => {
+    it("renders a div with the base and default brand/appearance classes", () => {
       renderComponent();
       const pill = getPill();
       expect(pill?.tagName).toBe("DIV");
-      expect(pill).toHaveClass("nxm-pill", "nxm-pill-default");
+      expect(pill).toHaveClass("nxm-pill", "nxm-pill-neutral", "nxm-pill-subdued");
     });
 
     it("renders the label text", () => {
@@ -41,21 +41,44 @@ describe("Pill", () => {
     });
   });
 
-  describe("pillType", () => {
+  describe("brand", () => {
     it.each([
-      ["default", "nxm-pill-default"],
+      ["primary", "nxm-pill-primary"],
+      ["info", "nxm-pill-info"],
+      ["neutral", "nxm-pill-neutral"],
+      ["light", "nxm-pill-light"],
       ["success", "nxm-pill-success"],
-    ] as const)("applies the %s modifier class", (pillType, cls) => {
-      renderComponent({ pillType });
+      ["danger", "nxm-pill-danger"],
+      ["warning", "nxm-pill-warning"],
+      ["premium", "nxm-pill-premium"],
+    ] as const)('applies correct class for brand="%s"', (brand, cls) => {
+      renderComponent({ brand });
+      expect(getPill()).toHaveClass(cls);
+    });
+  });
+
+  describe("appearance", () => {
+    it.each([
+      ["subdued", "nxm-pill-subdued"],
+      ["scrim", "nxm-pill-scrim"],
+    ] as const)('applies correct class for appearance="%s"', (appearance, cls) => {
+      renderComponent({ appearance });
       expect(getPill()).toHaveClass(cls);
     });
 
-    it('applies no modifier class for pillType="none"', () => {
-      renderComponent({ pillType: "none" });
+    // `none` still emits its class; it just has no rule behind it, which is what opts
+    // the pill out of the border and label colour.
+    it('leaves the treatment off for appearance="none"', () => {
+      renderComponent({ appearance: "none" });
       const pill = getPill();
       expect(pill).toHaveClass("nxm-pill");
-      expect(pill?.className).not.toMatch(/nxm-pill-(default|success|none)/);
+      expect(pill).not.toHaveClass("nxm-pill-subdued");
     });
+  });
+
+  it("combines brand and appearance classes", () => {
+    renderComponent({ appearance: "subdued", brand: "danger" });
+    expect(getPill()).toHaveClass("nxm-pill", "nxm-pill-danger", "nxm-pill-subdued");
   });
 
   describe("icon", () => {
@@ -95,6 +118,32 @@ describe("Pill", () => {
     it("forwards arbitrary HTML attributes to the div", () => {
       renderComponent({ id: "my-pill" });
       expect(document.querySelector("#my-pill")).toBeInTheDocument();
+    });
+
+    // Anything anchoring to a pill — a Tooltip, a popover — positions itself off this
+    // node, and a plain function component would never have been handed the ref.
+    it("hands a ref to the div it renders", () => {
+      const ref = React.createRef<HTMLDivElement>();
+
+      render(
+        <Pill ref={ref} id="my-pill">
+          Label
+        </Pill>,
+      );
+
+      expect(ref.current).toBe(document.querySelector("#my-pill"));
+    });
+
+    it("hands a ref to the button variant too", () => {
+      const ref = React.createRef<HTMLButtonElement>();
+
+      render(
+        <Pill as="button" ref={ref}>
+          Label
+        </Pill>,
+      );
+
+      expect(ref.current).toBe(screen.getByRole("button", { name: /label/i }));
     });
   });
 });

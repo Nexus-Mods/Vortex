@@ -248,16 +248,17 @@ describe("nxm protocol resolver", () => {
       await expect(resolve(MOD_URL)).rejects.toThrow("You are not logged in to Nexus Mods!");
     });
 
-    test("shows a non-reportable notification when the api rate limit is hit", async ({
+    // shared with every other rate-limited path, so a throttled install raises one warning
+    // rather than one per feature that failed
+    test("warns rather than raising an error when the api rate limit is hit", async ({
       makeNxm,
     }) => {
       const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockRejectedValue(new RateLimitError());
 
       await expect(resolve(MOD_URL)).rejects.toBeInstanceOf(RateLimitError);
-      expect(harness.errorNotifications).toEqual([
-        expect.objectContaining({ title: "Rate limit exceeded", allowReport: false }),
-      ]);
+      expect(harness.errorNotifications).toHaveLength(0);
+      expect(harness.notifications).toEqual([expect.objectContaining({ type: "warning" })]);
     });
   });
 

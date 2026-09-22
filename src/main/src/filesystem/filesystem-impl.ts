@@ -1,5 +1,6 @@
 import { isAbsolute, relative, sep as pathSep } from "node:path";
 
+import { VortexError } from "@vortex/shared";
 import type {
   FileSystem as NodeFileSystem,
   FileSystemBackend as NodeFileSystemBackend,
@@ -9,8 +10,7 @@ import type {
   ResolvedPath,
   StatResult,
   Status,
-} from "@nexusmods/adaptor-api/fs";
-import { VortexError } from "@vortex/shared";
+} from "@vortex/shared/filesystem";
 
 /**
  * Node-backed implementation of {@link NodeFileSystem}. Composes a

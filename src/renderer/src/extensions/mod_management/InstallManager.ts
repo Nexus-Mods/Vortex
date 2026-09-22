@@ -2183,6 +2183,9 @@ class InstallManager {
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
     }
+    if (profile === undefined) {
+      return Promise.reject(new ProcessCanceled(`Invalid profile specified for "${modId}"`));
+    }
 
     this.repairRules(api, mod, gameId);
 
@@ -2234,6 +2237,9 @@ class InstallManager {
 
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
+    }
+    if (profile === undefined) {
+      return Promise.reject(new ProcessCanceled(`Invalid profile specified for "${modId}"`));
     }
 
     this.repairRules(api, mod, gameId);

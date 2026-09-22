@@ -3,7 +3,7 @@ const path = require("path");
 const { fs, log, util } = require("@nexusmods/vortex-api");
 
 function findGame() {
-  return util.steam.findByName("Factorio").then((game) => game.gamePath);
+  return util.GameStoreHelper.findByName("Factorio", "steam").then((game) => game.gamePath);
 }
 
 function modPath() {

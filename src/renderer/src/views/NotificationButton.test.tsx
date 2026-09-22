@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import type * as ReactReduxTypes from "react-redux";
@@ -137,7 +137,9 @@ describe("NotificationButton", () => {
     withNotifications([{ ...activity, progress: 60, updatedTime: Date.now() }]);
     rerender(<NotificationButton hide={false} id="notification-button" />);
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    });
     expect(popover()).not.toBeInTheDocument();
   });
 });

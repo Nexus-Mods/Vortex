@@ -22,7 +22,6 @@ import type {
   IExtensionContext,
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
-import type { IGameStore } from "../../types/IGameStore";
 import type { NotificationDismiss } from "../../types/INotification";
 import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
@@ -52,7 +51,7 @@ import { type IGameStub } from "./GameModeManager";
 import { discoveryReducer } from "./reducers/discovery";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
-import { settingsReducer } from "./reducers/settings";
+import { settingsReducer } from "./reducers/settings/settings";
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from "./selectors";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
@@ -68,8 +67,6 @@ import ModTypeWidget from "./views/ModTypeWidget";
 import PathSelectionDialog from "./views/PathSelection";
 import ProgressFooter from "./views/ProgressFooter";
 import RecentlyManagedDashlet from "./views/RecentlyManagedDashlet";
-
-const gameStoreLaunchers: IGameStore[] = [];
 
 const $ = local<{
   gameModeManager: GameModeManager;
@@ -706,28 +703,6 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute("mods", genModTypeAttribute(context.api));
 
-  context.registerGameStore = ((gameStore: IGameStore) => {
-    if (gameStore === undefined) {
-      context.api.showErrorNotification("Invalid game store extension not loaded", undefined, {
-        allowReport: false,
-        message: "A game store extension failed to initialize",
-      });
-      return;
-    }
-
-    try {
-      if (gameStore.name === undefined) {
-        gameStore.name = gameStore.id;
-      }
-      gameStoreLaunchers.push(gameStore);
-    } catch (err) {
-      context.api.showErrorNotification("Game store launcher extension not loaded", err, {
-        allowReport: false,
-        message: gameStore.id,
-      });
-    }
-  }) as any;
-
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
@@ -939,13 +914,15 @@ function init(context: IExtensionContext): boolean {
       context.api,
       $.extensionGames,
       $.extensionStubs,
-      gameStoreLaunchers,
       (gameMode: string) => {
         log("debug", "gamemode activated", gameMode);
         events.emit("gamemode-activated", gameMode);
       },
     );
     $.gameModeManager.attachToStore(store);
+    // kick the first store scan eagerly; store snapshots are then populated
+    // independently of quick discovery (which triggers its own reload)
+    $.gameModeManager.startInitialScan();
     {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
@@ -989,7 +966,7 @@ function init(context: IExtensionContext): boolean {
 
     // IMPORTANT: internal event but lacking alternatives, extensions may use it (to refresh
     //    tool discovery). Therefore this must not be changed (breaking change) before Vortex 1.6
-    events.on("start-quick-discovery", (cb?: (gameIds: string[]) => void) => {
+    events.on("start-quick-discovery", (cb?: (gameIds: string[], err?: Error) => void) => {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
         Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
@@ -1007,7 +984,7 @@ function init(context: IExtensionContext): boolean {
         .catch((err) => {
           err["attachLogOnReport"] = true;
           context.api.showErrorNotification("Discovery failed", err);
-          cb?.(Array.from(discoveredGames));
+          cb?.(Array.from(discoveredGames), err);
         });
     });
     context.api.onAsync("discover-tools", (gameId: string) =>
@@ -1032,6 +1009,12 @@ function init(context: IExtensionContext): boolean {
         context.api.showErrorNotification("Failed to search for games", err);
       }
     });
+    events.on("cancel-game-scan", () => {
+      log("info", "received cancel game scan");
+      $.gameModeManager.stopQuickDiscovery();
+      $.gameModeManager.stopSearchDiscovery();
+    });
+
     events.on("cancel-discovery", () => {
       log("info", "received cancel discovery");
       $.gameModeManager.stopSearchDiscovery();

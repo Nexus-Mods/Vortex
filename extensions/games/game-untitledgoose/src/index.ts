@@ -24,13 +24,15 @@ function ensureBIXConfig(discovery: types.IDiscoveryResult): Bluebird<void> {
 }
 
 function requiresLauncher() {
-  return util.epicGamesLauncher
-    .isGameInstalled(EPIC_APP_ID)
-    .then((epic) => (epic ? { launcher: "epic", addInfo: EPIC_APP_ID } : undefined));
+  return util.GameStoreHelper.findByAppId(EPIC_APP_ID, "epic")
+    .then(() => ({ launcher: "epic", addInfo: EPIC_APP_ID }))
+    .catch(() => undefined);
 }
 
 function findGame() {
-  return util.epicGamesLauncher.findByAppId(EPIC_APP_ID).then((epicEntry) => epicEntry.gamePath);
+  return util.GameStoreHelper.findByAppId(EPIC_APP_ID, "epic").then(
+    (epicEntry) => epicEntry.gamePath,
+  );
 }
 
 function modPath() {

@@ -16,7 +16,7 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam.findByName("Grim Dawn").then((game) => game.gamePath);
+    return util.GameStoreHelper.findByName("Grim Dawn", "steam").then((game) => game.gamePath);
   }
 }
 

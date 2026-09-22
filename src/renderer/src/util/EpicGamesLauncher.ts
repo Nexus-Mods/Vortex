@@ -5,8 +5,10 @@ import type * as winapiT from "winapi-bindings";
 import { z } from "zod";
 
 import { log } from "../logging";
-import type { IExtensionApi, IGameStore, IGameStoreEntry } from "../types/api";
-import { GameEntryNotFound } from "../types/api";
+import type { IExtensionApi } from "../types/IExtensionContext";
+import type { IGameStore, IGameStoreSnapshot } from "../types/IGameStore";
+import { GameEntryNotFound } from "../types/IGameStore";
+import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import * as fs from "./fs";
 import lazyRequire from "./lazyRequire";
 import opn from "./opn";
@@ -23,13 +25,13 @@ const STORE_PRIORITY = 60;
  *  .item manifest files which are stored inside the launchers Data folder
  *  "(C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests" by default
  */
-class EpicGamesLauncher implements IGameStore {
+export class EpicGamesLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
   private mDataPath: PromiseBB<string | undefined>;
   private mLauncherExecPath: string;
-  private mCache: PromiseBB<EpicGamesStoreEntry[]>;
+  #snapshot: IGameStoreSnapshot;
 
   constructor() {
     if (process.platform === "win32") {
@@ -41,13 +43,16 @@ class EpicGamesLauncher implements IGameStore {
           "AppDataPath",
         );
         this.mDataPath = PromiseBB.resolve(epicDataPath.value as string);
+        this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "Epic games launcher not found", err);
         this.mDataPath = PromiseBB.resolve<string | undefined>(undefined);
+        this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
       // TODO: Is epic launcher even available on non-windows platforms?
       this.mDataPath = PromiseBB.resolve<string | undefined>(undefined);
+      this.#snapshot = { entries: [], isInstalled: false };
     }
   }
 
@@ -119,16 +124,16 @@ class EpicGamesLauncher implements IGameStore {
   }
 
   public allGames(): PromiseBB<EpicGamesStoreEntry[]> {
-    if (!this.mCache) {
-      this.mCache = this.parseManifests();
-    }
-    return this.mCache;
+    return PromiseBB.resolve(this.#snapshot.entries as EpicGamesStoreEntry[]);
+  }
+
+  public snapshot(): IGameStoreSnapshot {
+    return this.#snapshot;
   }
 
   public reloadGames(): PromiseBB<void> {
-    return new PromiseBB((resolve) => {
-      this.mCache = this.parseManifests();
-      return resolve();
+    return this.parseManifests().then((entries: EpicGamesStoreEntry[]) => {
+      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
     });
   }
 

@@ -24,7 +24,7 @@ export type { IExecInfo } from "./IExecInfo";
 export type { IQueryArgEntry, IStoreQuery } from "../util/GameStoreHelper";
 export type { IGameStoreEntry } from "./IGameStoreEntry";
 export { GameEntryNotFound, GameStoreNotFound } from "./IGameStore";
-export type { ICustomExecutionInfo, IGameStore, GameLaunchType } from "./IGameStore.ts";
+export type { ICustomExecutionInfo, GameLaunchType } from "./IGameStore.ts";
 export type { IStarterInfo } from "../util/StarterInfo";
 
 export type { IRegisteredExtension } from "./extensions";

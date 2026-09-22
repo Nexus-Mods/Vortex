@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -81,7 +81,9 @@ describe("DownloadGraph", () => {
     const observer = resizeObserverInstances[0];
     expect(observer.observe).toHaveBeenCalledTimes(1);
 
-    observer.callback([{ contentRect: { width: 512, height: 120 } }] as any, observer as any);
+    act(() =>
+      observer.callback([{ contentRect: { width: 512, height: 120 } }] as any, observer as any),
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId("download-graph-chart")).toHaveAttribute("data-width", "512");

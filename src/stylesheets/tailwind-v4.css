@@ -17,6 +17,7 @@
 
 /* Import design system */
 @import "./ui/theme";
+@import "./ui/themes";
 @import "./ui/elements";
 @import "./ui/form";
 

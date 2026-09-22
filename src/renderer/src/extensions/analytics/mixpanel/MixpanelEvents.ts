@@ -284,6 +284,21 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
   constructor() {}
 }
 
+/** Where the support bundle was asked for. Only the Help menu today. */
+export type SupportBundleSource = "help_menu";
+
+/**
+ * Sent when the user asks Vortex to prepare a support bundle (Help > Create support bundle).
+ * Counts the request, not whether the archive was built or sent on.
+ */
+export class AppSupportBundleClickedEvent implements MixpanelEvent {
+  readonly eventName = "app_support_bundle_clicked";
+  readonly properties: Record<string, unknown>;
+  constructor(props: { source: SupportBundleSource }) {
+    this.properties = { ...props };
+  }
+}
+
 /** Fields on the app_game_manage event. */
 export interface GameManagedProps {
   game_id: number | null;
@@ -873,6 +888,34 @@ export class AppExtensionInstalledEvent implements MixpanelEvent {
   readonly eventName = "app_extension_installed";
   readonly properties: Record<string, unknown>;
   constructor(props: AppExtensionInstalledProps) {
+    this.properties = { ...props };
+  }
+}
+
+/** Fields on the app_deprecated_api_used event. */
+export interface AppDeprecatedApiUsedProps {
+  /** name of the deprecated surface */
+  api_method: string;
+  /** name of the extension calling the deprecated API */
+  extension_name: string;
+  /** extension version */
+  extension_version?: string;
+  /** extension mod ID if it came from Nexus Mods */
+  mod_id?: number;
+  /** extension file ID if it came from Nexus Mods */
+  file_id?: number;
+  /** whether the extension is bundled or not */
+  bundled: boolean;
+}
+
+/**
+ * Sent when an extension touches a deprecated extension-api surface. Emitted once per session per
+ * extension and method, so a hot-looping extension cannot flood the tracker.
+ */
+export class AppDeprecatedApiUsedEvent implements MixpanelEvent {
+  readonly eventName = "app_deprecated_api_used";
+  readonly properties: Record<string, unknown>;
+  constructor(props: AppDeprecatedApiUsedProps) {
     this.properties = { ...props };
   }
 }

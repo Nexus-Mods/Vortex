@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-09-21
+
+### Fixed
+
+- Health Check crashing the renderer on an unhandled exception ([#24209](https://github.com/Nexus-Mods/Vortex/pull/24209))
+- Expired login tokens not handled correctly, leaving the user unable to log back in ([#24197](https://github.com/Nexus-Mods/Vortex/pull/24197))
+- More infinite crash loops from GPU and utility process crashes ([#24153](https://github.com/Nexus-Mods/Vortex/pull/24153))
+- Renderer crash looping indefinitely; Vortex now exits when a loop is detected ([#24151](https://github.com/Nexus-Mods/Vortex/pull/24151))
+
 ## [2.7.0-beta.2] - 2026-09-09
 
 ### Fixed
@@ -2316,6 +2325,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.7.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0
 [2.7.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.2
 [2.7.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.1
 [2.6.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.6.3
