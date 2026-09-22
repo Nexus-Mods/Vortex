@@ -64,7 +64,7 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   "crash.exitCode",
   // Native crash facts extracted from minidumps — codes, module names and
   // offsets only, never memory contents
-  "crash.native.dumpCount",
+  "crash.native.unreadableReason",
   "crash.native.exceptionCode",
   "crash.native.exceptionAddress",
   "crash.native.module",
