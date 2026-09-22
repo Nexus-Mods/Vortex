@@ -29,6 +29,7 @@ const TOOLS: types.ITool[] = [
     id: "ds2seamlesscoop",
     name: "Dark Souls II Seamless Co-op",
     shortName: "Co-op",
+    logo: "seamlesscoop.png",
     executable: () => path.join("Game", "ds2sc_launcher.exe"),
     requiredFiles: [path.join("Game", "ds2sc_launcher.exe")],
     relative: true,
