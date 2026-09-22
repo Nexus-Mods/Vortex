@@ -21,7 +21,7 @@ import type {
   IModFileQuery,
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-import { GraphError, NexusError, RateLimitError, TimeoutError } from "@nexusmods/nexus-api";
+import { GraphError, NexusError, TimeoutError } from "@nexusmods/nexus-api";
 import {
   getErrorCode,
   getErrorMessage,
@@ -74,6 +74,7 @@ import { setUserInfo } from "./actions/persistent";
 import { setLoginId, setOauthPending } from "./actions/session";
 import { OAUTH_CLIENT_ID, OAUTH_REDIRECT_URL, OAUTH_URL, getOAuthRedirectUrl } from "./constants";
 import NXMUrl from "./NXMUrl";
+import { isRateLimited, notifyRateLimited } from "./rateLimit";
 import { isLoggedIn, userInfo as userInfoSelector } from "./selectors";
 import { accessTokenSchema } from "./types/IJWTAccessToken";
 import type { IMembership, IValidateKeyDataV2 } from "./types/IValidateKeyData";
@@ -882,13 +883,8 @@ function startDownloadMod(
             message: false,
           },
         });
-      } else if (err instanceof RateLimitError) {
-        api.sendNotification({
-          id: "rate-limit-exceeded",
-          type: "warning",
-          title: "Rate-limit exceeded",
-          message: "You wont be able to use network features until the next full hour.",
-        });
+      } else if (isRateLimited(err)) {
+        notifyRateLimited(api);
       } else if (err instanceof NexusError) {
         const detail = processErrorMessage(err);
         let allowReport = detail.Servermessage === undefined;
@@ -1111,6 +1107,11 @@ export function handleGraphError<T>(
   const ctx = graphErrorContext(err);
   if (opts.doNotReport) {
     log("warn", opts.title, { ...ctx, message: getErrorMessage(err) });
+    return opts.fallback;
+  }
+  if (isRateLimited(err)) {
+    log("warn", opts.title, { ...ctx, message: getErrorMessage(err) });
+    notifyRateLimited(api);
     return opts.fallback;
   }
   const code = ctx.graphCode as string | undefined;
@@ -1877,12 +1878,15 @@ export function getOAuthTokenFromState(api: IExtensionApi) {
   return oauthCred !== undefined ? oauthCred.token : undefined;
 }
 
-/** Re-read the account from the api into state. Resolves to whether it was updated. */
+/** How a read of the account ended. A rate limit gets its own case because it sets its own backoff. */
+export type UserInfoRead = "updated" | "failed" | "rate-limited";
+
+/** Re-read the account from the api into state. Resolves to how the read ended. */
 export function getUserInfo(
   api: IExtensionApi,
   nexus: Nexus,
   /*userInfo: IValidateKeyResponse*/
-): BluebirdPromise<boolean> {
+): BluebirdPromise<UserInfoRead> {
   log("info", "updateUserInfo()");
 
   /**
@@ -1896,22 +1900,33 @@ export function getUserInfo(
   if (isLoggedIn(api.getState())) {
     // get userinfo from api
     return BluebirdPromise.resolve(nexus.getUserInfo())
-      .then((apiUserInfo) => {
+      .then((apiUserInfo): UserInfoRead => {
         // update state with new info from endpoint
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
         //log('info', 'getUserInfo() nexus.getUserInfo response', apiUserInfo);
-        return true;
+        return "updated";
       })
-      .catch((err) => {
+      .catch((err): UserInfoRead => {
         //log('error', `getUserInfo() nexus.getUserInfo response ${err.message}`, err);
+        if (err instanceof ProcessCanceled) {
+          // no connection, or the api was switched off; neither is worth a toast for a read
+          // nobody asked for
+          return "failed";
+        }
+        if (isRateLimited(err)) {
+          // the features that needed the data report the limit themselves
+          log("info", "membership re-read put off, rate limited");
+          return "rate-limited";
+        }
         showError(api.store.dispatch, "An error occurred refreshing user info", err, {
           allowReport: false,
         });
-        return false;
+        return "failed";
       });
-  } else {
-    log("warn", "updateUserInfo() not logged in");
   }
+
+  log("warn", "updateUserInfo() not logged in");
+  return BluebirdPromise.resolve<UserInfoRead>("failed");
 
   /*
   return github.fetchConfig('api')

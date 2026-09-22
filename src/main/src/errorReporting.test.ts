@@ -5,7 +5,31 @@ vi.mock("electron", () => ({ app: { getPath: vi.fn(), getVersion: vi.fn() } }));
 vi.mock("./logging", () => ({ log: vi.fn() }));
 vi.mock("./minidump", () => ({ summarizeMinidumpFile: vi.fn() }));
 
-import { crashFingerprint, errorToReportableError, isFromCurrentBuild } from "./errorReporting";
+import {
+  crashFingerprint,
+  dumpReportProcess,
+  errorToReportableError,
+  isFromCurrentBuild,
+} from "./errorReporting";
+
+describe("dumpReportProcess", () => {
+  it.each([
+    ["browser", "main"],
+    ["gpu-process", "gpu"],
+    ["renderer", "renderer"],
+    ["utility", "utility"],
+    ["zygote", "zygote"],
+    [undefined, "unknown"],
+  ])("maps %s to %s", (processType, expected) => {
+    expect(
+      dumpReportProcess({ exceptionCode: "0xc0000005", exceptionAddress: "0x0", processType }),
+    ).toBe(expected);
+  });
+
+  it("does not attribute unreadable dumps to a process", () => {
+    expect(dumpReportProcess(undefined)).toBe("unknown");
+  });
+});
 
 describe("errorToReportableError", () => {
   it("renders a VortexError's payload fields legibly in details", () => {
@@ -43,7 +67,6 @@ describe("crashFingerprint", () => {
         "crash.native.module": "Vortex.exe",
         "crash.native.moduleOffset": "0x398fe0",
         "crash.native.exceptionAddress": "0x7ff782a98fe0",
-        "crash.native.dumpCount": 1,
         ...overrides,
       },
     );
@@ -52,10 +75,8 @@ describe("crashFingerprint", () => {
     expect(nativeCrash()).toMatch(/^[0-9a-f]{8}$/);
   });
 
-  it("groups the same native crash site regardless of address and dump count", () => {
-    expect(
-      nativeCrash({ "crash.native.exceptionAddress": "0x1", "crash.native.dumpCount": 3 }),
-    ).toBe(nativeCrash());
+  it("groups the same native crash site regardless of address", () => {
+    expect(nativeCrash({ "crash.native.exceptionAddress": "0x1" })).toBe(nativeCrash());
   });
 
   it("separates crash sites by module offset", () => {

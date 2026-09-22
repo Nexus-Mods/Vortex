@@ -16,7 +16,6 @@ import {} from "./file_based_loadorder";
 import {} from "./file_preview";
 import {} from "./firststeps_dashlet";
 import {} from "./gamemode_management";
-import {} from "./gameversion_management";
 import {} from "./hardlink_activator";
 import {} from "./health_check";
 import {} from "./history_management";

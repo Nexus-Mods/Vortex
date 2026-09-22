@@ -7,7 +7,7 @@ import * as winapi from "winapi-bindings";
 import type { IExtensionApi } from "@/types/api";
 import type { IExecInfo } from "@/types/IExecInfo";
 import { GameEntryNotFound } from "@/types/IGameStore";
-import type { IGameStore } from "@/types/IGameStore";
+import type { IGameStore, IGameStoreSnapshot } from "@/types/IGameStore";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 
 import { log } from "../logging";
@@ -29,7 +29,7 @@ export class GoGLauncher implements IGameStore {
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
   private mClientPath: Bluebird<string> | undefined;
-  private mCache: Bluebird<IGameStoreEntry[]>;
+  #snapshot: IGameStoreSnapshot;
 
   constructor() {
     if (process.platform === "win32") {
@@ -40,15 +40,18 @@ export class GoGLauncher implements IGameStore {
           "client",
         );
         this.mClientPath = Bluebird.resolve(gogPath.value as string);
+        this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "gog not found", { err });
         this.mClientPath = undefined;
+        this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
       log("info", "gog not found", {
         error: "only available on Windows systems",
       });
       this.mClientPath = undefined;
+      this.#snapshot = { entries: [], isInstalled: false };
     }
   }
 
@@ -124,16 +127,16 @@ export class GoGLauncher implements IGameStore {
   }
 
   public allGames(): Bluebird<IGameStoreEntry[]> {
-    if (!this.mCache) {
-      this.mCache = this.getGameEntries();
-    }
-    return this.mCache;
+    return Bluebird.resolve(this.#snapshot.entries);
+  }
+
+  public snapshot(): IGameStoreSnapshot {
+    return this.#snapshot;
   }
 
   public reloadGames(): Bluebird<void> {
-    return new Bluebird((resolve) => {
-      this.mCache = this.getGameEntries();
-      return resolve();
+    return this.getGameEntries().then((entries: IGameStoreEntry[]) => {
+      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
     });
   }
 

@@ -2,6 +2,7 @@ import * as path from "path";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { GameEntryNotFound } from "../types/IGameStore";
 import { Steam } from "./Steam";
 
 // Steam.ts builds its singleton at import time, and on Linux that constructor calls
@@ -10,6 +11,10 @@ import { Steam } from "./Steam";
 // (On Windows the equivalent RegGetValue call sits in a try/catch that swallows the
 // ReferenceError, which is why a plain `let` only fails on CI.)
 const steam = vi.hoisted(() => ({ installed: true, baseFolder: "C:\\Steam" }));
+/** Deferred manifest read, so tests can hold a rescan in flight. */
+const manifestGate = vi.hoisted(() => ({
+  pending: undefined as Promise<Buffer> | undefined,
+}));
 
 const BASE_FOLDER = steam.baseFolder;
 const ALT_LIBRARY = path.join("D:", "SteamLibrary");
@@ -84,7 +89,7 @@ vi.mock("fs/promises", () => ({
 }));
 
 vi.mock("./fs", () => ({
-  readFileAsync: () => Promise.resolve(Buffer.from(MANIFEST)),
+  readFileAsync: () => manifestGate.pending ?? Promise.resolve(Buffer.from(MANIFEST)),
 }));
 
 const fsError = (code: string): NodeJS.ErrnoException =>
@@ -93,23 +98,34 @@ const fsError = (code: string): NodeJS.ErrnoException =>
     path: LIB_FOLDERS_FILE,
   });
 
+/**
+ * Drive the manager-owned scan, then read the data through allGames -
+ * allGames itself no longer triggers a parse.
+ */
+const scanAllGames = async () => {
+  const store = new Steam();
+  await store.reloadGames();
+  return store.allGames();
+};
+
 describe("Steam.allGames", () => {
   beforeEach(() => {
     steam.installed = true;
     libraryFoldersError = undefined;
     libraryFoldersVdf = libraryFolders([]);
+    manifestGate.pending = undefined;
   });
 
   it("finds nothing when Steam isn't installed", async () => {
     steam.installed = false;
 
-    await expect(new Steam().allGames()).resolves.toEqual([]);
+    await expect(scanAllGames()).resolves.toEqual([]);
   });
 
   it.each(["ENOENT", "EPERM"])("falls back to the base folder on %s", async (code) => {
     libraryFoldersError = fsError(code);
 
-    const entries = await new Steam().allGames();
+    const entries = await scanAllGames();
 
     expect(entries.map((entry) => entry.gamePath)).toEqual([gamePathIn(BASE_FOLDER)]);
   });
@@ -117,7 +133,7 @@ describe("Steam.allGames", () => {
   it("propagates errors other than ENOENT/EPERM", async () => {
     libraryFoldersError = fsError("EIO");
 
-    await expect(new Steam().allGames()).rejects.toThrow("EIO");
+    await expect(new Steam().reloadGames()).rejects.toThrow("EIO");
   });
 
   it.each([
@@ -143,7 +159,7 @@ describe("Steam.allGames", () => {
   ])("falls back to the base folder given %s", async (_label, contents) => {
     libraryFoldersVdf = contents;
 
-    const entries = await new Steam().allGames();
+    const entries = await scanAllGames();
 
     expect(entries.map((entry) => entry.gamePath)).toEqual([gamePathIn(BASE_FOLDER)]);
   });
@@ -151,7 +167,7 @@ describe("Steam.allGames", () => {
   it("scans the alternate libraries listed in libraryfolders.vdf", async () => {
     libraryFoldersVdf = libraryFolders([ALT_LIBRARY]);
 
-    const entries = await new Steam().allGames();
+    const entries = await scanAllGames();
 
     expect(entries.map((entry) => entry.gamePath)).toEqual([
       gamePathIn(BASE_FOLDER),
@@ -162,7 +178,7 @@ describe("Steam.allGames", () => {
   it("matches the libraryfolders key case-insensitively", async () => {
     libraryFoldersVdf = libraryFolders([ALT_LIBRARY], { key: "LibraryFolders" });
 
-    const entries = await new Steam().allGames();
+    const entries = await scanAllGames();
 
     expect(entries.map((entry) => entry.gamePath)).toEqual([
       gamePathIn(BASE_FOLDER),
@@ -173,7 +189,7 @@ describe("Steam.allGames", () => {
   it("reads libraries numbered from zero", async () => {
     libraryFoldersVdf = libraryFolders([ALT_LIBRARY, THIRD_LIBRARY], { firstIndex: 0 });
 
-    const entries = await new Steam().allGames();
+    const entries = await scanAllGames();
 
     expect(entries.map((entry) => entry.gamePath)).toEqual([
       gamePathIn(BASE_FOLDER),
@@ -197,7 +213,7 @@ describe("Steam.allGames", () => {
       "}",
     );
 
-    const entries = await new Steam().allGames();
+    const entries = await scanAllGames();
 
     expect(entries.map((entry) => entry.gamePath)).toEqual([
       gamePathIn(BASE_FOLDER),

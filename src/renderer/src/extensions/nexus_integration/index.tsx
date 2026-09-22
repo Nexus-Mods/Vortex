@@ -79,6 +79,7 @@ import {
 } from "./constants";
 import * as eh from "./eventHandlers";
 import {
+  adoptMembershipRead,
   ensureFreshMembership,
   scheduleMembershipRefresh,
   trackMembershipReads,
@@ -91,7 +92,7 @@ import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
 import * as sel from "./selectors";
 import type { INexusAPIExtension } from "./types/INexusAPIExtension";
-import type { IRemoteInfo } from "./util";
+import type { IRemoteInfo, UserInfoRead } from "./util";
 import {
   endorseThing,
   ensureLoggedIn,
@@ -165,6 +166,7 @@ const requestFuncs = new Set([
   "revalidate",
   "setKey",
   "validateKey",
+  "getUserInfo",
   "getTrackedMods",
   "trackMod",
   "untrackMod",
@@ -209,9 +211,15 @@ class Disableable {
   private mDisabled = false;
   private mLastValidation: number = Date.now();
   private mApi: IExtensionApi;
+  private mClient: NexusT | undefined;
 
   constructor(api: IExtensionApi) {
     this.mApi = api;
+  }
+
+  /** The fully wrapped client, so requests this proxy makes itself are gated and logged too. */
+  public setClient(client: NexusT) {
+    this.mClient = client;
   }
 
   public get(obj: NexusT, prop) {
@@ -255,7 +263,7 @@ class Disableable {
           // rest of the session. The membership module owns how often to ask and shares one request
           // between callers, so hand it every call rather than keeping a second clock here. The
           // call being made doesn't need the answer, so don't hold it up for one.
-          void ensureFreshMembership(that.mApi, obj);
+          void ensureFreshMembership(that.mApi, that.mClient ?? obj);
           return obj[prop](...args);
         }
 
@@ -1002,13 +1010,15 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
 
     const gameMode = activeGameId(state);
 
+    const disableable = new Disableable(api);
     nexus = new Proxy(
       new Proxy(
         new Nexus("Vortex", getApplication().version, nexusGameId(getGame(gameMode)), 30000),
-        new Disableable(api),
+        disableable,
       ),
       requestLog,
     );
+    disableable.setClient(nexus);
 
     nexus.setLogger((level: LogLevel, message: string, meta: any) => log(level, message, meta));
 
@@ -1057,7 +1067,14 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
       // check to see if we have oauth credentials in state, if so, then we need to update nexus-node
       if (oauthCred !== undefined) {
         log("info", "OAuth credentials found in state. updating nexus-node credentials");
-        updateToken(api, nexus, oauthCred);
+        // hand the login's account read to the membership module, so the freshness checks further
+        // down this function share it
+        adoptMembershipRead(
+          Promise.resolve(updateToken(api, nexus, oauthCred)).then(
+            (loggedIn): UserInfoRead => (loggedIn ? "updated" : "failed"),
+            (): UserInfoRead => "failed",
+          ),
+        );
       } else {
         //updateKey(api, nexus, apiKey);
       }

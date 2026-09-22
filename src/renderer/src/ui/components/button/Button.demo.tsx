@@ -69,6 +69,34 @@ export const ButtonDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
+          Scrim
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          Neutral only, and outside the matrix above: it paints its own scrim so the button holds
+          over artwork whatever the theme, which is why it is shown on a bright ground.
+        </Typography>
+
+        <div className="flex flex-wrap items-center gap-4 rounded-sm bg-surface-inverted p-3">
+          <Button appearance="scrim" brand="neutral">
+            Scrim
+          </Button>
+
+          <Button
+            appearance="scrim"
+            aria-label="Scrim icon only"
+            brand="neutral"
+            leftIconPath={mdiCog}
+          />
+
+          <Button appearance="scrim" brand="neutral" disabled={true}>
+            Disabled
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
           Sizes
         </Typography>
 

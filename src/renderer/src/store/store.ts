@@ -13,20 +13,40 @@ export { currentStatePath } from "@vortex/shared/state";
 
 export const FULL_BACKUP_PATH = "state_backups_full";
 
+/**
+ * The hives a state backup contains. `confidential` (credentials), `session` and
+ * extension persistors are deliberately left out.
+ */
+export const BACKUP_HIVES = [
+  "settings",
+  "persistent",
+  "app",
+  "user",
+] as const satisfies readonly (keyof IState)[];
+
+/**
+ * Serialise the given hives of the store as pretty-printed JSON. Throws `DataInvalid` if
+ * the state can't be stringified.
+ */
+export function serializeState(
+  store: Redux.Store<IState>,
+  hives: readonly (keyof IState)[],
+): string {
+  const state = _.pick(store.getState(), hives);
+  try {
+    return JSON.stringify(state, undefined, 2);
+  } catch (err) {
+    log("error", "Failed to serialize state", err);
+    throw new DataInvalid("Failed to serialize state");
+  }
+}
+
 export async function createFullStateBackup(
   backupName: string,
   store: Redux.Store<IState>,
 ): Promise<string> {
   const before = Date.now();
-  // not backing up confidential, session or extension persistors
-  const state = _.pick(store.getState(), ["settings", "persistent", "app", "user"]);
-  let serialized: string;
-  try {
-    serialized = JSON.stringify(state, undefined, 2);
-  } catch (err) {
-    log("error", "Failed to create state backup", err);
-    throw new DataInvalid("Failed to create state backup");
-  }
+  const serialized = serializeState(store, BACKUP_HIVES);
 
   const basePath = path.join(getVortexPath("userData"), "temp", FULL_BACKUP_PATH);
 

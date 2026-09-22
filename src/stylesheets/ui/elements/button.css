@@ -311,6 +311,24 @@
                 }
             }
         }
+
+        &.nxm-button-scrim {
+            color: var(--color-on-scrim-strong);
+            border: 1px solid var(--color-stroke-weak);
+            background-color: var(--color-scrim-500);
+
+            &:is(a, :enabled):not(.nxm-button-disabled) {
+                &:hover,
+                &:focus-visible,
+                &[aria-expanded="true"] {
+                    background-color: var(--color-scrim-700);
+                }
+
+                &:active {
+                    background-color: var(--color-scrim-400);
+                }
+            }
+        }
     }
 
     .nxm-button-sm {

@@ -3035,10 +3035,6 @@ class ExtensionManager {
       file_based_loadorder: () => require("./extensions/file_based_loadorder/index.ts"),
       file_preview: () => require("./extensions/file_preview/index.ts"),
       firststeps_dashlet: () => require("./extensions/firststeps_dashlet/index.ts"),
-      // gameversion_management must be listed before gamemode_management so that
-      // GameVersionManager is initialized before gamemode_management's once()
-      // calls setupGameMode -> getInstalledVersion
-      gameversion_management: () => require("./extensions/gameversion_management/index.ts"),
       gamemode_management: () => require("./extensions/gamemode_management/index.ts"),
       hardlink_activator: () => require("./extensions/hardlink_activator/index.ts"),
       health_check: () => require("./extensions/health_check/index.ts"),
@@ -3063,7 +3059,7 @@ class ExtensionManager {
       // nexus_integration) rather than alphabetically. The static map is
       // initialised in insertion order and `once()` callbacks run in that same
       // order, and collections' once() relies on those extensions being set up
-      // first (cf. gameversion_management before gamemode_management).
+      // first.
       collections: () => require("./extensions/collections/index.ts"),
       recovery: () => require("./extensions/recovery/index.ts"),
       screenshots: () => require("./extensions/screenshots/index.ts"),
@@ -3072,6 +3068,7 @@ class ExtensionManager {
       settings_metaserver: () => require("./extensions/settings_metaserver/index.ts"),
       starter_dashlet: () => require("./extensions/starter_dashlet/index.ts"),
       sticky_mods: () => require("./extensions/sticky_mods/index.ts"),
+      support_bundle: () => require("./extensions/support_bundle/index.ts"),
       symlink_activator: () => require("./extensions/symlink_activator/index.ts"),
       symlink_activator_elevate: () => require("./extensions/symlink_activator_elevate/index.ts"),
       test_runner: () => require("./extensions/test_runner/index.ts"),

@@ -177,6 +177,7 @@ export async function init(
         "extension_manager",
         "health_check",
         "media_page",
+        "support_bundle",
       ],
       defaultNS: "common",
 

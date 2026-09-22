@@ -121,7 +121,7 @@ import { mdiDownload } from "@mdi/js";
 ```
 
 **Brands:** `primary`, `info`, `neutral`, `success`, `premium`, `danger`
-**Appearances:** `strong` (solid fill), `moderate` (subtle surface), `subdued` (outline), `weak` (text only)
+**Appearances:** `strong` (solid fill), `moderate` (subtle surface), `subdued` (outline), `weak` (text only), `scrim` (paints its own scrim, for a button over artwork — `neutral` only)
 **Sizes:** `sm` (24px), `md` (28px, default), `lg` (36px)
 
 A button with no `children`/`customContent` but an icon renders icon-only (square). Every brand supports every appearance; `success`/`premium` derive their full ramps to match. `appearance` defaults to `strong` so a bare `<Button>` is a solid primary button.
