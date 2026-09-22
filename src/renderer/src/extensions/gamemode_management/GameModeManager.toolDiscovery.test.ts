@@ -2,6 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../util/log", () => ({ log: vi.fn() }));
 
+// GameModeManager pulls in util/Steam, which constructs its singleton at import time. Off Windows
+// that constructor resolves a Steam install from the home directory via getVortexPath, and there is
+// no initialised ApplicationData to read paths from here -- so the import throws on the Linux CI
+// runner while passing locally on Windows, which takes the registry branch instead.
+vi.mock("../../util/getVortexPath", () => ({
+  default: vi.fn(() => "/tmp"),
+  getVortexQualifiedPath: vi.fn(),
+}));
+
 // the discovery pass itself is the thing under test's *input*: quickDiscoveryTools is what reports
 // a tool it found back through onDiscoveredTool, so the mock plays back the finds a test scripts
 // into `discoveredTools` (populated per test, read when the mock is called).
