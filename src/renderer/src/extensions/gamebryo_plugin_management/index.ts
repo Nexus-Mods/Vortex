@@ -46,7 +46,6 @@ import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
 import { makeLootSortAsync } from "./lootSortAsync";
 import { makePluginSync, type IPluginSync } from "./pluginSync";
 import { REDUCER_BINDINGS } from "./reducers/bindings";
-import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
 import { ILOOTList, ILootReference } from "./types/ILOOTList";
 import { IPluginLoadOrderEntry } from "./types/IPluginLoadOrderEntry";
@@ -69,6 +68,7 @@ import {
   supportsESL,
   supportsMediumMasters,
 } from "./util/gameSupport";
+import { ghost, unghost } from "./util/ghost";
 import { missingGroupFixes } from "./util/groups";
 import { LootPhase, lootErrorReporter } from "./util/LootErrorReporter";
 import { isMasterlistOutdated, masterlistExists, masterlistFilePath } from "./util/masterlist";
@@ -146,13 +146,7 @@ function makeSetPluginGhost(api: IExtensionApi) {
       log("warn", "invalid plugin id", pluginId);
       return;
     }
-    let targetPath = path.join(
-      path.dirname(plugin.filePath),
-      path.basename(plugin.filePath, GHOST_EXT),
-    );
-    if (ghosted) {
-      targetPath += GHOST_EXT;
-    }
+    const targetPath = ghosted ? ghost(plugin.filePath) : unghost(plugin.filePath);
 
     if (path.basename(targetPath) === path.basename(plugin.filePath)) {
       // The targetPath matches the current filePath - do nothing
@@ -193,39 +187,6 @@ function register(
     (activity: string[]) => activity !== undefined && activity.length > 0,
   );
 
-  const isMaster = (filePath: string, flag: boolean, gameMode: string): boolean => {
-    if (path.extname(filePath) === GHOST_EXT) {
-      filePath = path.basename(filePath, GHOST_EXT);
-    }
-    const masterExts = supportsESL(gameMode) ? [".esm", ".esl"] : [".esm"];
-    return flag || masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1;
-  };
-
-  const isMediumMaster = async (
-    filePath: string,
-    flag: boolean,
-    gameMode: string,
-  ): Promise<boolean> => {
-    if (path.extname(filePath) === GHOST_EXT) {
-      filePath = path.basename(filePath, GHOST_EXT);
-    }
-    const masterExts = [".esm"];
-    const file = await ESPFile.open(filePath, gameMode);
-    return (
-      flag || (masterExts.indexOf(path.extname(filePath).toLowerCase()) !== -1 && file.isMedium)
-    );
-  };
-
-  const isLight = (filePath: string, flag: boolean, gameMode: string) => {
-    if (path.extname(filePath) === GHOST_EXT) {
-      filePath = path.basename(filePath, GHOST_EXT);
-    }
-    if (!supportsESL(gameMode)) {
-      return false;
-    }
-    return flag || path.extname(filePath).toLowerCase() === ".esl";
-  };
-
   const openLOOTSite = () => opn("https://loot.github.io/").catch(() => null);
 
   const parseESPFile = async (filePath: string, gameMode: string): Promise<IESPFile> => {
@@ -244,7 +205,7 @@ function register(
   };
 
   const safeBasename = (filePath: string) => {
-    return filePath !== undefined ? path.basename(filePath, GHOST_EXT) : "";
+    return filePath !== undefined ? path.basename(unghost(filePath)) : "";
   };
 
   const loadOrder = (state) => state.loadOrder;
@@ -286,9 +247,6 @@ function register(
       supportsMediumMasters,
       getPluginFlags,
       revisionText,
-      isMaster,
-      isLight,
-      isMediumMaster,
       openLOOTSite,
       parseESPFile,
       forceListUpdate,

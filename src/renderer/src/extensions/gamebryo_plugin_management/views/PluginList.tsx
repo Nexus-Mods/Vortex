@@ -50,13 +50,15 @@ import { setPluginEnabled } from "../actions/loadOrder";
 import { clearNewPluginCounter, setPluginInfo, updatePluginWarnings } from "../actions/plugins";
 import { setAutoSortEnabled } from "../actions/settings";
 import { addGroup, addGroupRule, setGroup } from "../actions/userlist";
-import { GHOST_EXT, NAMESPACE } from "../statics";
+import { NAMESPACE } from "../statics";
 import { IESPFile } from "../types/IESPFile";
 import { ILOOTList, ILOOTPlugin } from "../types/ILOOTList";
 import { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import { IPluginCombined, IPluginLoot, IPluginParsed, IPlugins } from "../types/IPlugins";
+import { isGhosted } from "../util/ghost";
 import GroupFilter from "../util/GroupFilter";
 import { mergeLoadOrder } from "../util/mergeLoadOrder";
+import { pluginFlags } from "../util/pluginFlags";
 import { SpanAttribute } from "../util/spanAttributes";
 import toPluginId from "../util/toPluginId";
 import DependencyIcon from "./DependencyIcon";
@@ -88,9 +90,6 @@ interface IBaseProps {
     supportsMediumMasters: boolean,
     minRevision: number,
   ): string[];
-  isMaster: (filePath: string, flag: boolean, gameMode: string) => boolean;
-  isLight: (filePath: string, flag: boolean, gameMode: string) => boolean;
-  isMediumMaster: (filePath: string, flag: boolean, gameMode: string) => Bluebird<boolean>;
   openLOOTSite: () => Bluebird<any>;
   parseESPFile: (filePath: string, gameMode: string) => Bluebird<IESPFile>;
   safeBasename: (filePath: string) => string;
@@ -402,7 +401,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         // them like natives: no user-visible status / no inline toggle.
         return plugin.isNative || plugin.isBlueprint
           ? undefined
-          : plugin.filePath.toLowerCase().endsWith(GHOST_EXT)
+          : isGhosted(plugin.filePath)
             ? "Ghost"
             : plugin.enabled === true
               ? "Enabled"
@@ -428,7 +427,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
           if (value === undefined) {
             // toggle
-            if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
+            if (isGhosted(plugin.filePath)) {
               this.props.onSetPluginGhost(plugin.id, this.props.gameMode, false, true);
             } else {
               this.props.onSetPluginEnabled(plugin.id, !plugin.enabled);
@@ -437,7 +436,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             if (value === "ghost") {
               this.props.onSetPluginGhost(plugin.id, this.props.gameMode, true, false);
             } else {
-              if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
+              if (isGhosted(plugin.filePath)) {
                 this.props.onSetPluginGhost(
                   plugin.id,
                   this.props.gameMode,
@@ -804,21 +803,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           this.props.gameMode,
         );
         pluginsParsed[pluginName] = {
-          isMaster: this.props.isMaster(
-            pluginsIn[pluginName].filePath,
-            esp.isMaster,
-            this.props.gameMode,
-          ),
-          isLight: this.props.isLight(
-            pluginsIn[pluginName].filePath,
-            esp.isLight,
-            this.props.gameMode,
-          ),
-          isMedium: await this.props.isMediumMaster(
-            pluginsIn[pluginName].filePath,
-            esp.isMedium,
-            this.props.gameMode,
-          ),
+          ...pluginFlags(pluginsIn[pluginName].filePath, esp, this.props.gameMode),
           isBlueprint: esp.isBlueprint,
           parseFailed: false,
           description: esp.description,
@@ -914,7 +899,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       if (plugin === undefined || plugin.isNative || combined?.isBlueprint) {
         return;
       }
-      if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
+      if (isGhosted(plugin.filePath)) {
         this.props.onSetPluginGhost(key, this.props.gameMode, false, true);
       } else if (!getSafe(loadOrder, [key, "enabled"], false)) {
         onSetPluginEnabled(key, true);
@@ -932,7 +917,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         return;
       }
 
-      if (plugin.filePath.toLowerCase().endsWith(GHOST_EXT)) {
+      if (isGhosted(plugin.filePath)) {
         this.props.onSetPluginGhost(key, gameMode, false, false);
       } else if (getSafe<boolean>(loadOrder, [key, "enabled"], false)) {
         onSetPluginEnabled(key, false);
@@ -948,10 +933,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       if (plugins[key]?.isNative || combined?.isBlueprint) {
         return;
       }
-      if (
-        plugins[key]?.filePath !== undefined &&
-        !plugins[key]?.filePath.toLowerCase().endsWith(GHOST_EXT)
-      ) {
+      if (plugins[key]?.filePath !== undefined && !isGhosted(plugins[key].filePath)) {
         onSetPluginGhost(key, gameMode, true, false);
       }
     });

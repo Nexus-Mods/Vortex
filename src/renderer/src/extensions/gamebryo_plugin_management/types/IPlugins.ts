@@ -56,7 +56,8 @@ export interface IPlugins {
 }
 
 /**
- * details retrieved from parsing the plugin's TES4 header record
+ * details retrieved from parsing the plugin's TES4 header record; the master and light flags
+ * also follow the file's extension (see util/pluginFlags)
  *
  * @export
  * @interface IPluginParsed

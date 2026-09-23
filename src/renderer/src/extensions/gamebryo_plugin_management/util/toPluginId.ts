@@ -1,9 +1,9 @@
 import * as path from "path";
 
-import { GHOST_EXT } from "../statics";
+import { unghost } from "./ghost";
 
 function toPluginId(fileName: string) {
-  return path.basename(fileName.toLowerCase(), GHOST_EXT);
+  return path.basename(unghost(fileName)).toLowerCase();
 }
 
 export default toPluginId;
