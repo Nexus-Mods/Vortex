@@ -10,9 +10,12 @@ import {
   LAUNCHER_EXECUTABLES,
   PROXY_DLLS,
   allTextures,
+  SHIPPED_GAME_FILES,
   installGameDir,
+  installReplacement,
   installTextures,
   testGameDir,
+  testReplacement,
   testTextures,
 } from "./installers";
 
@@ -46,10 +49,13 @@ describe("priorities", () => {
     expect(DARKSOULS2_PRIORITIES.gameDir).toBeLessThan(DARKSOULS2_PRIORITIES.textures);
   });
 
-  it("leaves the slots the planned savegame and content installers need", () => {
+  it("leaves the slot the planned content installer needs", () => {
     const taken: number[] = Object.values(DARKSOULS2_PRIORITIES);
-    expect(taken).not.toContain(20);
     expect(taken).not.toContain(30);
+  });
+
+  it("runs replacement before textures", () => {
+    expect(DARKSOULS2_PRIORITIES.replacement).toBeLessThan(DARKSOULS2_PRIORITIES.textures);
   });
 });
 
@@ -247,6 +253,71 @@ describe("installGameDir - Seamless Co-op", () => {
   });
 });
 
+describe("testReplacement", () => {
+  it.each(SHIPPED_GAME_FILES)("claims a bare %s", async (name) => {
+    const result = await testReplacement([name], DARKSOULS2_GAME_ID);
+    expect(result.supported).toBe(true);
+  });
+
+  it("claims it through a mod-name wrapper, alongside a readme", async () => {
+    const result = await testReplacement(
+      [path.join("MyMod", "enc_regulation.bnd.dcx"), path.join("MyMod", "readme.txt")],
+      DARKSOULS2_GAME_ID,
+    );
+    expect(result.supported).toBe(true);
+  });
+
+  // These look identical in an archive but are packed inside GameData*.bdt, so
+  // a loose copy in Game/ is never read. Claiming them would relocate a broken
+  // mod rather than fix it.
+  it.each([["facegen_fg.bnd"], ["c0001.anibnd.dcx"], ["am_1001_f.bnd"]])(
+    "declines the packed file %s",
+    async (name) => {
+      const result = await testReplacement([path.join("MyMod", name)], DARKSOULS2_GAME_ID);
+      expect(result.supported).toBe(false);
+    },
+  );
+
+  it("declines when anything else is in the archive", async () => {
+    const result = await testReplacement(
+      ["enc_regulation.bnd.dcx", path.join("Param", "x.param")],
+      DARKSOULS2_GAME_ID,
+    );
+    expect(result.supported).toBe(false);
+  });
+
+  it("stands aside for ModEngine and for injector archives", async () => {
+    expect(
+      (await testReplacement(["enc_regulation.bnd.dcx", "dinput8.dll"], DARKSOULS2_GAME_ID))
+        .supported,
+    ).toBe(false);
+    expect(
+      (await testReplacement(["enc_regulation.bnd.dcx", "dxgi.dll"], DARKSOULS2_GAME_ID)).supported,
+    ).toBe(false);
+  });
+
+  it("declines another game", async () => {
+    expect((await testReplacement(["enc_regulation.bnd.dcx"], "sekiro")).supported).toBe(false);
+  });
+});
+
+describe("installReplacement", () => {
+  it("strips the wrapper and drops documentation", async () => {
+    const { instructions } = await installReplacement([
+      path.join("MyMod", "enc_regulation.bnd.dcx"),
+      path.join("MyMod", "readme.txt"),
+    ]);
+    expect(copies(instructions)).toEqual([
+      {
+        type: "copy",
+        source: path.join("MyMod", "enc_regulation.bnd.dcx"),
+        destination: g("enc_regulation.bnd.dcx"),
+      },
+    ]);
+    expect(lastInstruction(instructions)).toEqual({ type: "setmodtype", value: "" });
+  });
+});
+
 describe("allTextures", () => {
   it("accepts .dds and .png, and directory entries", () => {
     expect(allTextures(["a.dds", "b.PNG", "sub" + SEP])).toBe(true);
@@ -277,8 +348,8 @@ describe("testTextures", () => {
     expect(result).toEqual({ supported: false, requiredFiles: [] });
   });
 
-  it("declines when any non-texture file is present", async () => {
-    const result = await testTextures(["a.dds", "readme.txt"], DARKSOULS2_GAME_ID, false);
+  it("declines when a non-texture, non-documentation file is present", async () => {
+    const result = await testTextures(["a.dds", "mod.dll"], DARKSOULS2_GAME_ID, false);
     expect(result.supported).toBe(false);
   });
 
@@ -295,6 +366,47 @@ describe("testTextures", () => {
   it("declines another game", async () => {
     const result = await testTextures(["a.dds"], "sekiro", false);
     expect(result.supported).toBe(false);
+  });
+});
+
+describe("testTextures - archives with documentation", () => {
+  it("claims a .dds mod that ships a readme", async () => {
+    const result = await testTextures(
+      [path.join("MyMod", "skin.dds"), path.join("MyMod", "readme.txt")],
+      DARKSOULS2_GAME_ID,
+      false,
+    );
+    expect(result.supported).toBe(true);
+  });
+
+  it("does not claim a png/jpg archive, which is as likely a screenshot pack", async () => {
+    const result = await testTextures(
+      [path.join("MyMod", "preview.png"), path.join("MyMod", "shot.jpg")],
+      DARKSOULS2_GAME_ID,
+      false,
+    );
+    expect(result.supported).toBe(false);
+  });
+
+  it("still claims a png-only archive with no documentation, as before", async () => {
+    const result = await testTextures(["a.png", "b.png"], DARKSOULS2_GAME_ID, false);
+    expect(result.supported).toBe(true);
+  });
+
+  it("declines when a non-texture, non-doc file is present", async () => {
+    const result = await testTextures(
+      ["skin.dds", path.join("Param", "x.param")],
+      DARKSOULS2_GAME_ID,
+      false,
+    );
+    expect(result.supported).toBe(false);
+  });
+
+  it("keeps documentation out of tex_override", async () => {
+    const { instructions } = await installTextures(["skin.dds", "readme.txt", "preview.jpg"]);
+    expect(copies(instructions)).toEqual([
+      { type: "copy", source: "skin.dds", destination: tex("skin.dds") },
+    ]);
   });
 });
 

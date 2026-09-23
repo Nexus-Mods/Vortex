@@ -7,8 +7,10 @@ import {
   DARKSOULS2_GAME_ID,
   DARKSOULS2_PRIORITIES,
   installGameDir,
+  installReplacement,
   installTextures,
   testGameDir,
+  testReplacement,
   testTextures,
 } from "./installers";
 
@@ -121,6 +123,13 @@ function main(context: types.IExtensionContext): boolean {
     DARKSOULS2_PRIORITIES.gameDir,
     testGameDir as unknown as types.TestSupported,
     installGameDir as unknown as types.InstallFunc,
+  );
+
+  context.registerInstaller(
+    "darksouls2-replacement",
+    DARKSOULS2_PRIORITIES.replacement,
+    testReplacement as unknown as types.TestSupported,
+    installReplacement as unknown as types.InstallFunc,
   );
 
   context.registerInstaller(
