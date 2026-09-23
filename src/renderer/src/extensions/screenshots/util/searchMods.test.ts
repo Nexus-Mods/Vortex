@@ -42,7 +42,7 @@ describe("searchMods", () => {
 
     const adultOffBody = JSON.parse(mockFetch.mock.calls[1][1].body);
 
-    expect(adultOffBody.variables.filter.adult.value).toBe("false");
+    expect(adultOffBody.variables.filter.adult.value).toBe(false);
   });
 
   it("sends the user's token in the Authorization header", async () => {

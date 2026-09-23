@@ -57,7 +57,7 @@ export default async function searchMods(
     name: { value: query, op: "WILDCARD" },
     gameDomainName: { value: gameDomain, op: "EQUALS" },
     status: { value: "published", op: "EQUALS" },
-    ...(showAdult ? {} : { adult: { value: "false", op: "EQUALS" } }),
+    ...(showAdult ? {} : { adult: { value: false, op: "EQUALS" } }),
   };
 
   const sort = {
