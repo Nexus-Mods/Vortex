@@ -26,16 +26,18 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
   private static sInstances: Map<Element, (visible: boolean) => void> = new Map();
 
   private static getObserver(container: HTMLElement) {
-    if (!VisibilityProxy.sObservers.has(container || null)) {
+    // no container means the viewport, however it was left unset
+    const root = container || null;
+    if (!VisibilityProxy.sObservers.has(root)) {
       VisibilityProxy.sObservers.set(
-        container || null,
+        root,
         new IntersectionObserver(VisibilityProxy.callback, {
-          root: container,
+          root,
           rootMargin: "360px 0px 360px 0px",
         } as any),
       );
     }
-    return VisibilityProxy.sObservers.get(container);
+    return VisibilityProxy.sObservers.get(root);
   }
 
   private static callback(entries: IntersectionObserverEntry[], observer: IntersectionObserver) {
@@ -76,6 +78,23 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
   private mVisibleTime: number = 0;
 
   public componentDidMount() {
+    this.startObserving();
+  }
+
+  public componentDidUpdate(prevProps: IProps) {
+    // A table's rows first render before it knows what scrolls them; they have to be
+    // observed against the container they end up in, and unobserved from the old one.
+    if (prevProps.container !== this.props.container) {
+      VisibilityProxy.unobserve(prevProps.container, ReactDOM.findDOMNode(this) as HTMLElement);
+      this.startObserving();
+    }
+  }
+
+  public componentWillUnmount() {
+    VisibilityProxy.unobserve(this.props.container, ReactDOM.findDOMNode(this) as HTMLElement);
+  }
+
+  private startObserving() {
     const node = ReactDOM.findDOMNode(this) as HTMLElement;
     VisibilityProxy.observe(this.props.container, node, (visible: boolean) => {
       const now = Date.now();
@@ -92,10 +111,6 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
         this.props.setVisible?.(visible);
       }
     });
-  }
-
-  public componentWillUnmount() {
-    VisibilityProxy.unobserve(this.props.container, ReactDOM.findDOMNode(this) as HTMLElement);
   }
 
   public render(): JSX.Element {

@@ -43,6 +43,7 @@ import {
 import GroupingRow, { EMPTY_ID } from "./table/GroupingRow";
 import HeaderCell from "./table/HeaderCell";
 import { Table, TBody, TD, TH, THead, TR } from "./table/MyTable";
+import { scrollContainerOf } from "./table/scrollContainer";
 import TableDetail from "./table/TableDetail";
 import TableRow from "./table/TableRow";
 import ToolbarIcon from "./ToolbarIcon";
@@ -166,6 +167,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
+  // What the rows scroll in, and so what their visibility is measured against: the
+  // main pane, unless the header sticks to the page and the page scrolls the table.
+  private mScrollContainer: HTMLElement | null;
   private mHeaderRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
   private mLastSelectOnly: number = 0;
@@ -270,6 +274,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   public componentWillUnmount() {
     this.context.api.events.removeAllListeners(this.props.tableId + "-scroll-to");
     window.removeEventListener("resize", this.onResize);
+    this.detachScrollListeners();
     this.mMounted = false;
     this.mColumnReportDebouncer.clear();
   }
@@ -872,7 +877,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       <TableRow
         actions={singleRowActions}
         attributes={attributes}
-        container={this.mScrollRef}
+        container={this.mScrollContainer}
         data={calculatedValues[rowId]}
         domRef={this.setRowRef}
         group={groupId}
@@ -1285,7 +1290,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
   };
 
-  private onScroll = (event) => {
+  // Hides the rows that scrolled out of view once scrolling settles.
+  private onRowsScroll = () => {
     this.mLastScroll = Date.now();
     if (this.mDelayedVisibilityTimer === undefined) {
       this.mDelayedVisibilityTimer = setTimeout(
@@ -1293,6 +1299,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         SuperTable.SCROLL_DEBOUNCE + 100,
       );
     }
+  };
+
+  private onScroll = (event) => {
+    this.onRowsScroll();
     const ele: Element = event.target;
 
     const atTop = ele.scrollTop === 0;
@@ -1326,13 +1336,25 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return;
     }
 
-    // not sure if this is necessary, I guess not
-    ref.removeEventListener("scroll", this.onScroll);
+    this.detachScrollListeners();
 
     // translate the header so that it remains in view during scrolling
     ref.addEventListener("scroll", this.onScroll);
     this.mScrollRef = ref;
+
+    // A sticky-header pane has visible overflow and doesn't clip, so rows observed
+    // against it all count as visible and every one of them renders in full.
+    this.mScrollContainer = this.props.stickyHeader ? scrollContainerOf(ref) : ref;
+    if (this.mScrollContainer !== ref) {
+      this.mScrollContainer?.addEventListener("scroll", this.onRowsScroll);
+    }
   };
+
+  private detachScrollListeners() {
+    this.mScrollRef?.removeEventListener("scroll", this.onScroll);
+    // the page scroll outlives the table, so its listener has to come off explicitly
+    this.mScrollContainer?.removeEventListener("scroll", this.onRowsScroll);
+  }
 
   private mainHeaderRef = (ref) => {
     this.mHeaderRef = ref;
