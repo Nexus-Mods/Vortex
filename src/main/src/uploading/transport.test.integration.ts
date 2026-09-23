@@ -4,11 +4,16 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import { VortexError } from "@vortex/shared";
-import { assert, describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { assert, describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 
 import { defaultRetryStrategy } from "../transfer/retry";
 import { createTestServer, type TestServer } from "./test-server";
 import { uploadFile, type UploadOptions } from "./transport";
+
+// The transport only emits diagnostic messages. Loading the production logger
+// pulls in Electron through IPC, which can race another workspace task while a
+// clean CI runner is installing Electron's binary.
+vi.mock("../logging", () => ({ log: vi.fn() }));
 
 let server: TestServer;
 let tmpDir: string;
