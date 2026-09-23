@@ -29,9 +29,13 @@ vi.mock("./util/discovery", () => ({
 
 vi.mock("../../util/api", () => ({ getNormalizeFunc: () => Promise.resolve((x: string) => x) }));
 
-import { makeApiHarness, makeProfile } from "../../test-utils/builders";
+import {
+  makeApiHarness,
+  makeDiscoveredTool,
+  makeGame,
+  makeProfile,
+} from "../../test-utils/builders";
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
-import type { IGame } from "../../types/IGame";
 import type { IState } from "../../types/IState";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 import GameModeManager from "./GameModeManager";
@@ -41,31 +45,11 @@ const discoveredTools: IDiscoveredTool[] = [];
 const GAME = "skyrimse";
 const OTHER_GAME = "fallout4";
 const SCRIPT_EXTENDER = "skse64";
-
-function makeGame(id = GAME): IGame {
-  return {
-    id,
-    name: id,
-    executable: () => `${id}.exe`,
-    requiredFiles: [],
-    queryModPath: () => "mods",
-    supportedTools: [],
-  } as unknown as IGame;
-}
-
-function makeDiscoveredTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
-  return {
-    id: SCRIPT_EXTENDER,
-    name: "Skyrim Script Extender",
-    path: `C:/games/${GAME}/${SCRIPT_EXTENDER}_loader.exe`,
-    executable: () => `${SCRIPT_EXTENDER}_loader.exe`,
-    requiredFiles: [],
-    defaultPrimary: true,
-    hidden: false,
-    custom: false,
-    ...overrides,
-  } as unknown as IDiscoveredTool;
-}
+// a tool the game extension declares as its default launcher
+const SCRIPT_EXTENDER_TOOL: Partial<IDiscoveredTool> = {
+  id: SCRIPT_EXTENDER,
+  defaultPrimary: true,
+};
 
 interface ISetupOpts {
   // the profile that is active when discovery reports the tool
@@ -97,7 +81,7 @@ function setup(opts: ISetupOpts = {}) {
 
   const manager = new GameModeManager(
     harness.api,
-    [makeGame(), makeGame(OTHER_GAME)],
+    [makeGame({ id: GAME }), makeGame({ id: OTHER_GAME })],
     [],
     () => undefined,
   );
@@ -119,7 +103,7 @@ describe("GameModeManager tool discovery", () => {
   // while activating the game, so the extender showed up under Tools but Quick Launch kept
   // starting the vanilla executable (reverting any .ini tweaks the collection shipped).
   it("selects a declared default primary tool discovered after the game became active", async () => {
-    discoveredTools.push(makeDiscoveredTool());
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup();
 
     await manager.startToolDiscovery(GAME);
@@ -128,7 +112,7 @@ describe("GameModeManager tool discovery", () => {
   });
 
   it("keeps a primary tool the user already chose", async () => {
-    discoveredTools.push(makeDiscoveredTool());
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ primaryTool: "loot" });
 
     await manager.startToolDiscovery(GAME);
@@ -137,7 +121,7 @@ describe("GameModeManager tool discovery", () => {
   });
 
   it("ignores a discovered tool that isn't a declared default", async () => {
-    discoveredTools.push(makeDiscoveredTool({ id: "loot", defaultPrimary: undefined }));
+    discoveredTools.push(makeDiscoveredTool({ id: "loot" }));
     const { harness, manager } = setup();
 
     await manager.startToolDiscovery(GAME);
@@ -146,7 +130,7 @@ describe("GameModeManager tool discovery", () => {
   });
 
   it("doesn't select a default for a game that isn't the active one", async () => {
-    discoveredTools.push(makeDiscoveredTool());
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ activeGameId: OTHER_GAME });
 
     await manager.startToolDiscovery(GAME);
@@ -155,7 +139,7 @@ describe("GameModeManager tool discovery", () => {
   });
 
   it("doesn't overwrite a tool the user customised", async () => {
-    discoveredTools.push(makeDiscoveredTool());
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ existingTool: { custom: true } });
 
     await manager.startToolDiscovery(GAME);

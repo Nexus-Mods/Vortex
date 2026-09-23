@@ -1,22 +1,9 @@
 import { describe, it, expect } from "vitest";
 
-import type { IDiscoveredTool } from "../../../../types/IDiscoveredTool";
+import { makeDiscoveredTool } from "../../../../test-utils/builders";
 import type { ISettingsGameMode } from "../../../../types/IState";
 import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 import { settingsReducer } from "./settings";
-
-function makeTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
-  return {
-    id: "toolId1",
-    name: "Tool",
-    executable: () => "tool.exe",
-    requiredFiles: [],
-    path: "",
-    hidden: false,
-    custom: false,
-    ...overrides,
-  };
-}
 
 function makeGame(overrides: Partial<IDiscoveryResult> = {}): IDiscoveryResult {
   return { ...overrides };
@@ -37,7 +24,7 @@ describe("setToolVisible", () => {
   it("sets the tool visible", () => {
     const input = makeSettings({
       gameId1: makeGame({
-        tools: { toolId1: makeTool({ hidden: false }) },
+        tools: { toolId1: makeDiscoveredTool({ hidden: false }) },
       }),
     });
     const result = settingsReducer.reducers.SET_TOOL_VISIBLE(input, {
@@ -51,7 +38,7 @@ describe("setToolVisible", () => {
   it("adds the new tool and set it visible if the tool doesn't exist", () => {
     const input = makeSettings({
       gameId1: makeGame({
-        tools: { toolId1: makeTool({ hidden: false }) },
+        tools: { toolId1: makeDiscoveredTool({ hidden: false }) },
       }),
     });
     const result = settingsReducer.reducers.SET_TOOL_VISIBLE(input, {
@@ -66,7 +53,7 @@ describe("setToolVisible", () => {
   it("creates a new game and add the new visible tool under if the game doesn't exist", () => {
     const input = makeSettings({
       gameId1: makeGame({
-        tools: { toolId1: makeTool({ hidden: false }) },
+        tools: { toolId1: makeDiscoveredTool({ hidden: false }) },
       }),
     });
     const result = settingsReducer.reducers.SET_TOOL_VISIBLE(input, {
@@ -81,10 +68,10 @@ describe("setToolVisible", () => {
   it("affects only the right game", () => {
     const input = makeSettings({
       gameId1: makeGame({
-        tools: { toolId1: makeTool({ hidden: false }) },
+        tools: { toolId1: makeDiscoveredTool({ hidden: false }) },
       }),
       gameId2: makeGame({
-        tools: { toolId1: makeTool({ hidden: false }) },
+        tools: { toolId1: makeDiscoveredTool({ hidden: false }) },
       }),
     });
     const result = settingsReducer.reducers.SET_TOOL_VISIBLE(input, {
@@ -271,11 +258,11 @@ describe("addDiscoveredTool", () => {
     const input = makeSettings({
       gameId1: makeGame({
         tools: {
-          toolId1: makeTool({ path: "tool1 path", custom: false }),
+          toolId1: makeDiscoveredTool({ path: "tool1 path", custom: false }),
         },
       }),
     });
-    const newTool = makeTool({ path: "tool2 path", custom: true });
+    const newTool = makeDiscoveredTool({ path: "tool2 path", custom: true });
     const result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, {
       gameId: "gameId1",
       toolId: "toolId1",
@@ -286,7 +273,7 @@ describe("addDiscoveredTool", () => {
   });
 
   it("affects only the right game", () => {
-    const oldTool = makeTool({ path: "tool1 path", custom: false });
+    const oldTool = makeDiscoveredTool({ path: "tool1 path", custom: false });
     const input = makeSettings({
       gameId1: makeGame({
         tools: { toolId1: { ...oldTool } },
@@ -295,7 +282,7 @@ describe("addDiscoveredTool", () => {
         tools: { toolId1: { ...oldTool } },
       }),
     });
-    const newTool = makeTool({ path: "tool2 path", custom: true });
+    const newTool = makeDiscoveredTool({ path: "tool2 path", custom: true });
     const result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, {
       gameId: "gameId1",
       toolId: "toolId1",
