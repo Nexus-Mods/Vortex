@@ -39,7 +39,7 @@ const TOOLS: types.ITool[] = [
   },
 ];
 
-class DarkSouls2 {
+class DarkSouls2 implements types.IGame {
   public context: types.IExtensionContext;
   public id: string;
   public name: string;
@@ -66,7 +66,7 @@ class DarkSouls2 {
     this.supportedTools = TOOLS;
   }
 
-  public queryPath(): PromiseLike<string> {
+  public queryPath() {
     return util.GameStoreHelper.findByAppId(["236430", "335300"], "steam").then((game) => {
       if (game.appid === "335300") {
         this.details = {
@@ -116,32 +116,27 @@ function isGedosatoInstalled(api: types.IExtensionApi): boolean {
 }
 
 function main(context: types.IExtensionContext): boolean {
-  context.registerGame(new DarkSouls2(context) as unknown as types.IGame);
+  context.registerGame(new DarkSouls2(context));
 
   context.registerInstaller(
     "darksouls2-gamedir",
     DARKSOULS2_PRIORITIES.gameDir,
-    testGameDir as unknown as types.TestSupported,
-    installGameDir as unknown as types.InstallFunc,
+    testGameDir,
+    installGameDir,
   );
 
   context.registerInstaller(
     "darksouls2-replacement",
     DARKSOULS2_PRIORITIES.replacement,
-    testReplacement as unknown as types.TestSupported,
-    installReplacement as unknown as types.InstallFunc,
+    testReplacement,
+    installReplacement,
   );
 
   context.registerInstaller(
     "darksouls2-textures",
     DARKSOULS2_PRIORITIES.textures,
-    ((files: string[], gameId: string) =>
-      testTextures(
-        files,
-        gameId,
-        isGedosatoInstalled(context.api),
-      )) as unknown as types.TestSupported,
-    installTextures as unknown as types.InstallFunc,
+    (files, gameId) => testTextures(files, gameId, isGedosatoInstalled(context.api)),
+    installTextures,
   );
 
   return true;
