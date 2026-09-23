@@ -1,7 +1,7 @@
 import type PromiseBB from "bluebird";
 
 import type { IModType } from "../extensions/gamemode_management/types/IModType";
-import type { IQueryArgEntry } from "../util/GameStoreHelper";
+import type { IQueryArgEntry } from "../util/storeQuery";
 import type { IDiscoveryResult, IMod } from "./IState";
 import type { ITool } from "./ITool";
 

@@ -79,8 +79,9 @@ import {
   withTrackedActivity,
 } from "./errorHandling";
 import extractExeIcon from "./exeIcon";
-import GameStoreHelperInstance, { normalizeStoreQuery } from "./GameStoreHelper";
+import GameStoreHelperInstance from "./GameStoreHelper";
 import type { IGameStoreHelper } from "./GameStoreHelper";
+import { normalizeStoreQuery } from "./storeQuery";
 
 const GameStoreHelper: IGameStoreHelper = GameStoreHelperInstance;
 

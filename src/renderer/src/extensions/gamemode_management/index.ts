@@ -27,7 +27,7 @@ import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
-import GameStoreHelper from "../../util/GameStoreHelper";
+import GameStoreHelperInstance from "../../util/GameStoreHelper";
 import { isContributed } from "../../util/isContributed";
 import local from "../../util/local";
 import { showError } from "../../util/message";
@@ -58,6 +58,7 @@ import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";
 import getDriveList from "./util/getDriveList";
 import { getGame, getGameStore, getGameStores } from "./util/getGame";
+import { identifyStore } from "./util/identifyStore";
 import { getModType, getModTypeExtensions, registerModType } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
 import queryGameInfo from "./util/queryGameInfo";
@@ -230,7 +231,7 @@ function manualGameStoreSelection(
   correctedGamePath: string,
 ): PromiseBB<{ store: string; corrected: string }> {
   const gameStores = getGameStores();
-  return GameStoreHelper.identifyStore(correctedGamePath).then((storeId) => {
+  return identifyStore(correctedGamePath, gameStores).then((storeId) => {
     const detectedStore = gameStores.find((store) => store.id === storeId);
     return api
       .showDialog(
@@ -910,7 +911,7 @@ function init(context: IExtensionContext): boolean {
 
     context.api.ext["awaitProfileSwitch"] = () => awaitProfileSwitch(context.api);
 
-    $.gameModeManager = new GameModeManagerImpl(
+    const gameModeManager = new GameModeManagerImpl(
       context.api,
       $.extensionGames,
       $.extensionStubs,
@@ -919,6 +920,10 @@ function init(context: IExtensionContext): boolean {
         events.emit("gamemode-activated", gameMode);
       },
     );
+    $.gameModeManager = gameModeManager;
+    // the extension API's GameStoreHelper is a dumb adapter; hand it the
+    // manager's store list once the manager exists
+    GameStoreHelperInstance.attach(() => gameModeManager.gameStores);
     $.gameModeManager.attachToStore(store);
     // kick the first store scan eagerly; store snapshots are then populated
     // independently of quick discovery (which triggers its own reload)

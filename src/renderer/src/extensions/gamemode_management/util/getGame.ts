@@ -4,6 +4,7 @@ import type { IExtensionDownloadInfo } from "../../../types/extensions";
 import type { IGame } from "../../../types/IGame";
 import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
+import { log } from "../../../util/log";
 import type { IGameStub } from "../GameModeManager";
 import type GameModeManager from "../GameModeManager";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
@@ -93,6 +94,16 @@ export function getGameStores(): IGameStore[] {
   }
 
   return $.gameModeManager.gameStores || [];
+}
+
+/** Like getGameStores, but returns an empty list while the manager isn't loaded yet. */
+export function getGameStoresSafe(): IGameStore[] {
+  try {
+    return getGameStores();
+  } catch (err) {
+    log("debug", "stores have yet to load", err);
+    return [];
+  }
 }
 
 export function getGameStore(id: string): IGameStore {
