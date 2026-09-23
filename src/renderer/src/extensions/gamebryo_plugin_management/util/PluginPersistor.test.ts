@@ -415,6 +415,20 @@ describe("PluginPersistor", () => {
     });
   });
 
+  it("drops a write scheduled while it was being disabled", async () => {
+    // disable() waits its turn in the write queue, so a load order write landing in between
+    // still finds the persistor loaded and schedules a write that fires after the paths are gone
+    const pluginsFile = path.join(paths.pluginDir, "plugins.txt");
+    const before = nodeFs.readFileSync(pluginsFile, "latin1");
+
+    const disabled = persistor.disable();
+    await persistor.setItem(["old.esp"], JSON.stringify({ enabled: false, loadOrder: 0 }));
+    await disabled;
+    await settle(250);
+
+    expect(nodeFs.readFileSync(pluginsFile, "latin1")).toBe(before);
+  });
+
   it("syncFromState makes the hive queryable from the persistor and reaches the file", async () => {
     hive["multi.esp"] = { enabled: true, loadOrder: 1 };
 
