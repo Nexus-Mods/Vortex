@@ -112,40 +112,32 @@ export function quickDiscoveryTools(
   }).then(() => null);
 }
 
-function updateManuallyConfigured(
+async function updateManuallyConfigured(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
   onDiscoveredGame: DiscoveredCB,
-): Bluebird<void> {
-  if (
-    discoveredGames[game.id]?.path !== undefined &&
-    discoveredGames[game.id]?.store === undefined
-  ) {
-    return identifyStore(discoveredGames[game.id]?.path, getGameStores())
-      .then((store) => {
-        if (store !== undefined) {
-          log("debug", "updating previously discovered game", {
-            gameId: game.id,
-            store,
-          });
+): Promise<void> {
+  const discoveredGame = discoveredGames[game.id];
+  if (discoveredGame?.path === undefined || discoveredGame?.store !== undefined) return;
 
-          onDiscoveredGame(game.id, {
-            ...discoveredGames[game.id],
-            store,
-          });
-        }
-      })
-      .catch((err) => {
-        log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
-      });
-  } else {
-    log("debug", "leaving alone previously discovered game", {
+  try {
+    // TODO: Bluebird to native
+    const store = await Promise.resolve(
+      identifyStore(discoveredGames[game.id]?.path, getGameStores()),
+    );
+    if (!store) return;
+
+    log("debug", "updating previously discovered game", {
       gameId: game.id,
-      path: discoveredGames[game.id]?.path,
-      store: discoveredGames[game.id]?.store,
+      store,
     });
 
-    return Bluebird.resolve();
+    onDiscoveredGame(game.id, {
+      ...discoveredGames[game.id],
+      store,
+    });
+  } catch (err) {
+    log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
   }
 }
 
@@ -303,7 +295,7 @@ export async function quickDiscovery(
     if (discoveredGames[game.id]?.pathSetManually) {
       // don't override manually set game location but maybe update some settings
       // TODO: Bluebird to native
-      await Promise.resolve(updateManuallyConfigured(discoveredGames, game, onDiscoveredGame));
+      await updateManuallyConfigured(discoveredGames, game, onDiscoveredGame);
       return undefined;
     }
 
