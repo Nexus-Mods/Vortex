@@ -57,7 +57,8 @@ export interface IPluginSync {
  * plugin file appears or vanishes outside a deployment.
  */
 export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPluginSync {
-  const store = api.store as ThunkStore<IStateWithGamebryo>;
+  // read at call time: the entry module creates the sync inside init, where the api is off limits
+  const store = () => api.store as ThunkStore<IStateWithGamebryo>;
   const { plugins, userlist, masterlist } = deps.persistors;
   let watcher: FSWatcher | undefined;
 
@@ -73,8 +74,8 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
       return;
     }
 
-    await deps.updatePluginList(store, profile.modState, profile.gameId);
-    const pluginList = store.getState().session.plugins?.pluginList ?? {};
+    await deps.updatePluginList(store(), profile.modState, profile.gameId);
+    const pluginList = store().getState().session.plugins?.pluginList ?? {};
     await new Promise<void>((resolve) => {
       api.events.emit("plugin-details", profile.gameId, Object.keys(pluginList), resolve);
     });
@@ -116,7 +117,7 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
       )
       .then((exists) => {
         const pluginId = toPluginId(fileName);
-        const state = store.getState();
+        const state = store().getState();
         const known =
           state.loadOrder[pluginId] !== undefined &&
           state.session.plugins?.pluginList?.[pluginId] !== undefined;
@@ -128,14 +129,14 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
 
   const start = async (): Promise<void> => {
     // start with a clean slate
-    store.dispatch(setPluginOrder([], false));
+    store().dispatch(setPluginOrder([], false));
 
-    const gameId = activeGameId(store.getState());
+    const gameId = activeGameId(store().getState());
     await plugins.loadFiles(gameId);
     await userlist.loadFiles(gameId);
     await masterlist.loadFiles(gameId);
 
-    const gameDiscovery = currentGameDiscovery(store.getState());
+    const gameDiscovery = currentGameDiscovery(store().getState());
     if (gameDiscovery === undefined || gameDiscovery.path === undefined) {
       return;
     }
@@ -148,7 +149,7 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
     if (modPath === undefined) {
       // can this even happen?
       log("error", "mod path unknown", {
-        discovery: nodeUtil.inspect(currentGameDiscovery(store.getState())),
+        discovery: nodeUtil.inspect(currentGameDiscovery(store().getState())),
       });
       return;
     }
