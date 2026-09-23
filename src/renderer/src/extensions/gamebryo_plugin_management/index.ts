@@ -1,9 +1,8 @@
 import { access, constants } from "fs";
-import { stat as fsStat } from "fs/promises";
+import { mkdir, stat as fsStat } from "fs/promises";
 import * as path from "path";
-import * as nodeUtil from "util";
 
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import { VortexError } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import type I18next from "i18next";
@@ -20,25 +19,22 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
-import { clearErrorContext } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
 import opn from "../../util/opn";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, delay, setdefault } from "../../util/util";
-import { currentGameDiscovery, discoveryByGame } from "../gamemode_management/selectors";
-import { getGame } from "../gamemode_management/util/getGame";
+import { discoveryByGame } from "../gamemode_management/selectors";
 import { installPathForGame } from "../mod_management/selectors";
 import {
   activeGameId,
-  activeProfile,
   lastActiveProfileForGame,
   profileById,
 } from "../profile_management/selectors";
-import type { IProfile } from "../profile_management/types/IProfile";
+import { profilePath } from "../profile_management/util/manage";
 /* eslint-disable */
-import { setPluginEnabled, setPluginOrder } from "./actions/loadOrder";
+import { setPluginEnabled } from "./actions/loadOrder";
 import { clearNewPluginCounter, setPluginFilePath, setPluginList } from "./actions/plugins";
 import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
@@ -48,6 +44,7 @@ import { startDeployWatcher, type IDeployWatcher } from "./deployWatcher";
 import { ESPFile } from "./esp/ESPFile";
 import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
 import { makeLootSortAsync } from "./lootSortAsync";
+import { makePluginSync, type IPluginSync } from "./pluginSync";
 import { REDUCER_BINDINGS } from "./reducers/bindings";
 import { GHOST_EXT } from "./statics";
 import { IESPFile } from "./types/IESPFile";
@@ -64,7 +61,6 @@ import {
   knownGame,
   minRevision,
   nativePlugins,
-  pluginExtensions,
   pluginPath,
   revisionText,
   syncGameSupport,
@@ -85,9 +81,9 @@ import { makePluginConflictPrompt } from "./util/pluginFileConflict";
 import PluginHistory from "./util/PluginHistory";
 import { makeSetPluginLight } from "./util/pluginLight";
 import PluginPersistor from "./util/PluginPersistor";
+import { copyIgnoringMissing, swapUserlistForProfile, userlistPaths } from "./util/profileUserlist";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
-import { AMBIENT_ATTRIBUTES, SpanAttribute } from "./util/spanAttributes";
-import toPluginId from "./util/toPluginId";
+import { SpanAttribute } from "./util/spanAttributes";
 import { makeUpdatePluginList } from "./util/updatePluginList";
 import UserlistPersistor from "./util/UserlistPersistor";
 import Connector from "./views/Connector";
@@ -136,8 +132,8 @@ let pluginPersistor: PluginPersistor;
 let userlistPersistor: UserlistPersistor;
 let masterlistPersistor: UserlistPersistor;
 let loot: LootInterface;
-let refreshTimer: NodeJS.Timeout;
 let deployWatcher: IDeployWatcher = { isDeploying: () => false };
+let pluginSync: IPluginSync;
 
 const updatePluginList = makeUpdatePluginList(() => pluginPersistor);
 
@@ -301,7 +297,9 @@ function register(
       nativePlugins: gameSupported(activeGameId(context.api.store.getState()))
         ? nativePlugins(activeGameId(context.api.store.getState()))
         : [],
-      onRefreshPlugins: () => updateCurrentProfile(context.api),
+      onRefreshPlugins: () => {
+        void pluginSync.refresh();
+      },
       onSetPluginGhost: makeSetPluginGhost(context.api),
       onSetPluginLight: setPluginLight,
     }),
@@ -397,9 +395,9 @@ function register(
         if (currentState !== enabled) {
           if (enabled) {
             syncGameSupport(profile.gameId, getGameSupport()[profile.gameId]);
-            startSync(context.api);
+            void pluginSync.start();
           } else {
-            stopSync();
+            void pluginSync.stop();
           }
         }
       }
@@ -517,216 +515,6 @@ function initPersistor(context: IExtensionContextExt) {
   context.registerPersistor("loadOrder", pluginPersistor);
   context.registerPersistor("userlist", userlistPersistor);
   context.registerPersistor("masterlist", masterlistPersistor);
-}
-
-/**
- * update the plugin list for the currently active profile
- */
-function updateCurrentProfile(api: IExtensionApi): Bluebird<void> {
-  const gameId = activeGameId(api.getState());
-
-  if (!gameSupported(gameId)) {
-    return Bluebird.resolve();
-  }
-
-  const profile = activeProfile(api.getState());
-  if (profile === undefined) {
-    log("warn", "no profile active");
-    return Bluebird.resolve();
-  }
-
-  return new Bluebird<void>(async (resolve, reject) => {
-    await updatePluginList(api.store, profile.modState, profile.gameId);
-    const pluginList = getSafe(api.getState(), ["session", "plugins", "pluginList"], {});
-    api.events.emit("plugin-details", profile.gameId, Object.keys(pluginList ?? {}), resolve);
-  });
-}
-
-/**
- * swap the userlist.yaml file between profiles when the local_loot_rules
- * feature toggle is enabled. Called after persistors are disabled to prevent
- * stale writes.
- */
-async function swapUserlistForProfile(
-  oldProfile: IProfile | undefined,
-  newProfile: IProfile | undefined,
-): Promise<void> {
-  const oldHasLocal = oldProfile?.features?.local_loot_rules === true;
-  const newHasLocal = newProfile?.features?.local_loot_rules === true;
-
-  if (!oldHasLocal && !newHasLocal) {
-    return;
-  }
-
-  const gameId = oldProfile?.gameId ?? newProfile?.gameId;
-  if (gameId === undefined) {
-    return;
-  }
-
-  const userDataPath = getVortexPath("userData");
-  const activeFile = path.join(userDataPath, gameId, "userlist.yaml");
-  const globalBackup = path.join(userDataPath, gameId, "userlist.yaml.global");
-
-  const getProfileDir = (profile: IProfile) =>
-    path.join(userDataPath, gameId, "profiles", profile.id);
-  const getProfileFile = (profile: IProfile) => path.join(getProfileDir(profile), "userlist.yaml");
-
-  const copyIgnoringMissing = async (src: string, dest: string) => {
-    try {
-      await fs.copyAsync(src, dest, { noSelfCopy: true });
-    } catch (err) {
-      if (getErrorCode(err) !== "ENOENT") {
-        throw err;
-      }
-    }
-  };
-
-  // save old profile's rules to its profile directory
-  if (oldHasLocal && oldProfile?.pendingRemove !== true) {
-    await fs.ensureDirAsync(getProfileDir(oldProfile));
-    await copyIgnoringMissing(activeFile, getProfileFile(oldProfile));
-
-    if (!newHasLocal) {
-      // restore global backup
-      await copyIgnoringMissing(globalBackup, activeFile);
-    }
-  }
-
-  // load new profile's rules from its profile directory
-  if (newHasLocal) {
-    if (!oldHasLocal) {
-      // back up the current global userlist
-      await copyIgnoringMissing(activeFile, globalBackup);
-    }
-
-    try {
-      await fs.statAsync(getProfileFile(newProfile));
-      // profile has a saved copy — restore it
-      await fs.copyAsync(getProfileFile(newProfile), activeFile, { noSelfCopy: true });
-    } catch (err) {
-      if (getErrorCode(err) === "ENOENT") {
-        // first time: seed the profile dir from the current file
-        await fs.ensureDirAsync(getProfileDir(newProfile));
-        await copyIgnoringMissing(activeFile, getProfileFile(newProfile));
-      } else {
-        throw err;
-      }
-    }
-  }
-}
-
-let watcher: fs.FSWatcher;
-
-function stopSync(): Promise<void> {
-  if (watcher !== undefined) {
-    watcher.close();
-    watcher = undefined;
-  }
-  for (const key of AMBIENT_ATTRIBUTES) {
-    clearErrorContext(key);
-  }
-
-  if (pluginPersistor === undefined) {
-    log("debug", "stopSync: pluginPersistor is undefined, resolving immediately");
-    return Promise.resolve();
-  }
-
-  return pluginPersistor.disable();
-}
-
-function startSync(api: IExtensionApi): Promise<void> {
-  const store = api.store;
-
-  // start with a clean slate
-  store.dispatch(setPluginOrder([], false));
-
-  const gameId = activeGameId(store.getState());
-
-  let prom: Promise<void> = Promise.resolve();
-
-  if (pluginPersistor !== undefined) {
-    prom = pluginPersistor.loadFiles(gameId);
-  }
-
-  if (userlistPersistor !== undefined) {
-    prom = prom.then(() => userlistPersistor.loadFiles(gameId));
-  }
-
-  if (masterlistPersistor !== undefined) {
-    prom = prom.then(() => masterlistPersistor.loadFiles(gameId));
-  }
-
-  return prom.then(() => {
-    const gameDiscovery = currentGameDiscovery(store.getState());
-    if (gameDiscovery === undefined || gameDiscovery.path === undefined) {
-      return;
-    }
-
-    const game = getGame(gameId);
-    if (game === undefined) {
-      return;
-    }
-    const modPath = game.getModPaths(gameDiscovery.path)[""];
-    if (modPath === undefined) {
-      // can this even happen?
-      log("error", "mod path unknown", {
-        discovery: nodeUtil.inspect(currentGameDiscovery(store.getState())),
-      });
-      return;
-    }
-    // watch the mod directory. if files change, that may mean our plugin list
-    // changed, so refresh
-    try {
-      watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
-        if (evt !== "rename") {
-          // only react to file creation or delete
-          return;
-        }
-
-        if (deployWatcher.isDeploying()) {
-          // during deployment we expect plugins to be added constantly so don't autosort now,
-          // it has to be triggered upon finishing deployment
-          return;
-        }
-
-        if (pluginExtensions(gameId).indexOf(path.extname(fileName).toLowerCase()) === -1) {
-          // ignore non-plugins
-          return;
-        }
-
-        // ok, meta data of a plugin file changed but that could still just be the filetime
-        // being changed by the persistor. So check if the file was actually created or removed,
-        // compared to our last refresh
-        fs.statAsync(path.join(modPath, fileName))
-          .then(() => true)
-          .catch(() => false)
-          .then((exists) => {
-            const pluginId = toPluginId(fileName);
-            const state = store.getState();
-            const known =
-              state.loadOrder[pluginId] !== undefined &&
-              state.session.plugins.pluginList?.[pluginId] !== undefined;
-            if (exists !== known) {
-              if (refreshTimer !== undefined) {
-                clearTimeout(refreshTimer);
-              }
-
-              refreshTimer = setTimeout(() => {
-                updateCurrentProfile(api);
-                refreshTimer = undefined;
-              }, 500);
-            }
-          });
-      });
-      watcher.on("error", (error) => {
-        log("warn", "failed to watch mod directory", { modPath, error });
-      });
-    } catch (err) {
-      api.showErrorNotification("Failed to watch mod directory", err, {
-        allowReport: getErrorCode(err) !== "ENOENT",
-      });
-    }
-  });
 }
 
 function testPluginsLocked(gameMode: string): Bluebird<ITestResult> {
@@ -1405,8 +1193,19 @@ function init(context: IExtensionContextExt) {
 
   const history = new PluginHistory(context.api, makeSetPluginGhost(context.api), setPluginLight);
 
-  register(context, setPluginLight);
   initPersistor(context);
+  pluginSync = makePluginSync(context.api, {
+    persistors: {
+      plugins: pluginPersistor,
+      userlist: userlistPersistor,
+      masterlist: masterlistPersistor,
+    },
+    // the watcher only exists once the extension is set up
+    isDeploying: () => deployWatcher.isDeploying(),
+    updatePluginList,
+  });
+
+  register(context, setPluginLight);
 
   context.registerHistoryStack("plugins", history);
 
@@ -1507,28 +1306,16 @@ function init(context: IExtensionContextExt) {
           if (profile === undefined || !gameSupported(profile.gameId)) {
             return;
           }
-          const userDataPath = getVortexPath("userData");
-          const activeFile = path.join(userDataPath, profile.gameId, "userlist.yaml");
-          const globalBackup = path.join(userDataPath, profile.gameId, "userlist.yaml.global");
-          const profDir = path.join(userDataPath, profile.gameId, "profiles", profile.id);
-          const profFile = path.join(profDir, "userlist.yaml");
-
-          const copyIgnoringMissing = async (src: string, dest: string) => {
-            try {
-              await fs.copyAsync(src, dest, { noSelfCopy: true });
-            } catch (err) {
-              if (getErrorCode(err) !== "ENOENT") {
-                throw err;
-              }
-            }
-          };
+          const paths = userlistPaths(profile.gameId);
+          const profDir = profilePath(profile);
+          const profFile = paths.profileFile(profile);
 
           if (currFeature && !prevFeature) {
             // toggled ON: back up global and seed profile copy
             (async () => {
-              await copyIgnoringMissing(activeFile, globalBackup);
-              await fs.ensureDirAsync(profDir);
-              await copyIgnoringMissing(activeFile, profFile);
+              await copyIgnoringMissing(paths.active, paths.globalBackup);
+              await mkdir(profDir, { recursive: true });
+              await copyIgnoringMissing(paths.active, profFile);
             })().catch((err) => {
               log(
                 "warn",
@@ -1539,9 +1326,9 @@ function init(context: IExtensionContextExt) {
           } else if (!currFeature && prevFeature) {
             // toggled OFF: save profile state, restore global backup
             (async () => {
-              await fs.ensureDirAsync(profDir);
-              await copyIgnoringMissing(activeFile, profFile);
-              await copyIgnoringMissing(globalBackup, activeFile);
+              await mkdir(profDir, { recursive: true });
+              await copyIgnoringMissing(paths.active, profFile);
+              await copyIgnoringMissing(paths.globalBackup, paths.active);
               if (userlistPersistor !== undefined) {
                 await userlistPersistor.loadFiles(profile.gameId);
               }
@@ -1573,7 +1360,8 @@ function init(context: IExtensionContextExt) {
               // still need to save per-profile userlist before deactivation
               if (oldProfile?.features?.local_loot_rules) {
                 enqueue(() =>
-                  stopSync()
+                  pluginSync
+                    .stop()
                     .then(() =>
                       userlistPersistor !== undefined
                         ? userlistPersistor.disable()
@@ -1599,7 +1387,8 @@ function init(context: IExtensionContextExt) {
               context.api.store.dispatch(setPluginList(undefined));
             }
             enqueue(() => {
-              return stopSync()
+              return pluginSync
+                .stop()
                 .then(() =>
                   userlistPersistor !== undefined
                     ? userlistPersistor.disable()
@@ -1629,7 +1418,7 @@ function init(context: IExtensionContextExt) {
 
           if (newProfile !== undefined && gameSupported(newProfile.gameId)) {
             updatePluginList(store, newProfile.modState, newProfile.gameId)
-              .then(() => startSync(context.api))
+              .then(() => pluginSync.start())
               .catch((err) => {
                 context.api.showErrorNotification("Failed to change profile", err);
               });
