@@ -52,18 +52,19 @@ await copy(
 // headers and the link fails where libloot is absent. The install-time node-gyp
 // build targets napi, so electron loads it without a rebuild. The package layout
 // is preserved so async.js's relative require of build/Release/node-loot resolves,
-// and libloot.dll is placed next to the binding because the Windows loader
-// searches the loaded module's directory.
+// and libloot is placed next to the binding the Windows loader searches the loaded
+// module's directory, the Linux binding's rpath starts at its own.
 try {
   const rendererRequire = createRequire(join(WORKSPACE, "src/renderer/package.json"));
   const lootDir = dirname(rendererRequire.resolve("loot/package.json"));
+  const library = process.platform === "win32" ? "libloot.dll" : "libloot.so.0";
   await copy(join(lootDir, "index.js"), join(ASSETS, "loot/index.js"));
   await copy(join(lootDir, "async.js"), join(ASSETS, "loot/async.js"));
   await copy(
     join(lootDir, "build/Release/node-loot.node"),
     join(ASSETS, "loot/build/Release/node-loot.node"),
   );
-  await copy(join(lootDir, "loot_api/libloot.dll"), join(ASSETS, "loot/build/Release/libloot.dll"));
+  await copy(join(lootDir, "loot_api", library), join(ASSETS, "loot/build/Release", library));
 } catch {
   console.log("skipped node-loot runtime pieces (loot is not installed on this platform)");
 }
