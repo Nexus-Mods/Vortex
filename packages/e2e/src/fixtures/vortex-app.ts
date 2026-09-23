@@ -273,6 +273,10 @@ export const test = base.extend<VortexTestFixtures & VortexOptions, VortexWorker
 
       const instance: WorkerAuthSnapshots = {
         get(user: NexusUser, testInfo: TestInfo): Promise<AuthSnapshot> {
+          testInfo.skip(
+            user.isConfigured === false,
+            "Nexus test account credentials are not configured",
+          );
           const key = user.username;
 
           const cached = snapshots.get(key);

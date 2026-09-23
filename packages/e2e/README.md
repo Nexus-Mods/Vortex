@@ -28,6 +28,9 @@ Contact Platform Engineering if you need access credentials.
 Free-user creds cover login, upgrade, and some smoke tests. Premium-user creds
 are needed for specs that assert premium-only behaviour.
 
+Tests using an account are skipped when its username or password is missing.
+Signed-out tests still run. This also lets fork PRs run without repository secrets.
+
 ## Running Tests
 
 ```bash
