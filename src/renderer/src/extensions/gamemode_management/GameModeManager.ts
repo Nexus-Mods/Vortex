@@ -285,15 +285,12 @@ class GameModeManager {
     try {
       await this.reloadStoreGames();
 
-      // TODO: Bluebird to native
-      const results = await Promise.resolve(
-        quickDiscovery(
-          games ?? this.mKnownGames,
-          this.mStore.getState().settings.gameMode.discovered,
-          this.onDiscoveredGame,
-          this.onDiscoveredTool,
-          abort.signal,
-        ),
+      const results = await quickDiscovery(
+        games ?? this.mKnownGames,
+        this.mStore.getState().settings.gameMode.discovered,
+        this.onDiscoveredGame,
+        this.onDiscoveredTool,
+        abort.signal,
       );
 
       if (abort.signal.aborted) {

@@ -1,10 +1,12 @@
-import * as path from "path";
+import * as path from "node:path";
 
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as fsExtra from "fs-extra";
 import turbowalk from "turbowalk";
 import * as winapi from "winapi-bindings";
+
+import { log } from "@/logging";
 
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -18,7 +20,6 @@ import * as fs from "../../../util/fs";
 import type { Normalize } from "../../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
 import { getSafe } from "../../../util/storeHelper";
 import * as storeLookup from "../../../util/storeLookup";
@@ -287,82 +288,78 @@ function handleDiscoveredGame(
  * @param {DiscoveredCB} onDiscoveredGame
  * @return the list of gameIds that were discovered
  */
-export function quickDiscovery(
+export async function quickDiscovery(
   knownGames: IGame[],
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
   signal?: AbortSignal,
-): Bluebird<string[]> {
-  return Bluebird.all(
-    knownGames.map((game) =>
-      quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool).then(() => {
-        // Every game is queried in parallel, but each only reaches here once its tool
-        // lookup settles - so aborting still skips the bulk of the remaining work.
-        if (signal?.aborted) {
-          return undefined;
-        }
-        if (getSafe(discoveredGames, [game.id, "pathSetManually"], false)) {
-          // don't override manually set game location but maybe update some settings
-          return updateManuallyConfigured(discoveredGames, game, onDiscoveredGame).then(() =>
-            Bluebird.resolve(undefined),
-          );
-        }
-        log("debug", "discovering game", game.id);
-        let prom: Bluebird<string>;
+): Promise<string[]> {
+  const promises = knownGames.map(async (game) => {
+    // TODO: Bluebird to native
+    await Promise.resolve(quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool));
 
-        if (game.queryArgs !== undefined) {
-          prom = queryByArgs(discoveredGames, game).then((result) => {
-            if (result !== undefined) {
-              return handleDiscoveredGame(
-                game,
-                result.gamePath,
-                result.gameStoreId,
-                discoveredGames,
-                onDiscoveredGame,
-                onDiscoveredTool,
-              );
-            } else {
-              return Bluebird.resolve(undefined);
-            }
-          });
-        } else if (game.queryPath !== undefined) {
-          prom = queryByCB(game).then((result) => {
-            if (result === undefined) {
-              return Bluebird.resolve(undefined);
-            }
-            return handleDiscoveredGame(
-              game,
-              result.gamePath,
-              result.gameStoreId,
-              discoveredGames,
-              onDiscoveredGame,
-              onDiscoveredTool,
-            );
-          });
-        } else {
-          prom = Bluebird.resolve(undefined);
-        }
-        return prom.catch((err) => {
-          if (
-            !(err instanceof GameEntryNotFound) &&
-            !(err instanceof ProcessCanceled) &&
-            // probably an extension using registry for discovery but I don't like
-            // ignoring these
-            !(err.name === "WinApiException")
-          ) {
-            log("error", "failed to use game support plugin", {
-              id: game.id,
-              err: err.message,
-              stack: err.stack,
-            });
-          }
-          // don't escalate exception because a single game shouldn't break everything
-          return Bluebird.resolve(undefined);
-        });
-      }),
-    ),
-  ).then((gameNames) => gameNames.filter((name) => name !== undefined));
+    if (signal?.aborted) return undefined;
+    if (discoveredGames[game.id]?.pathSetManually) {
+      // don't override manually set game location but maybe update some settings
+      // TODO: Bluebird to native
+      await Promise.resolve(updateManuallyConfigured(discoveredGames, game, onDiscoveredGame));
+      return undefined;
+    }
+
+    log("debug", "discovering game", game.id);
+
+    try {
+      if (game.queryArgs) {
+        // TODO: Bluebird to native
+        const result = await Promise.resolve(queryByArgs(discoveredGames, game));
+        if (!result) return undefined;
+
+        // TODO: Bluebird to native
+        return await Promise.resolve(
+          handleDiscoveredGame(
+            game,
+            result.gamePath,
+            result.gameStoreId,
+            discoveredGames,
+            onDiscoveredGame,
+            onDiscoveredTool,
+          ),
+        );
+      } else if (game.queryPath !== undefined) {
+        // TODO: Bluebird to native
+        const result = await Promise.resolve(queryByCB(game));
+        if (!result) return undefined;
+
+        // TODO: Bluebird to native
+        return await Promise.resolve(
+          handleDiscoveredGame(
+            game,
+            result.gamePath,
+            result.gameStoreId,
+            discoveredGames,
+            onDiscoveredGame,
+            onDiscoveredTool,
+          ),
+        );
+      } else {
+        return undefined;
+      }
+    } catch (err) {
+      const error = unknownToError(err);
+
+      log("error", "failed to use game support plugin", {
+        id: game.id,
+        err: error.message,
+        stack: error.stack,
+      });
+
+      return undefined;
+    }
+  });
+
+  const gameNames = await Promise.all(promises);
+  return gameNames.filter(Boolean);
 }
 
 /**
