@@ -16,7 +16,7 @@ import {
 } from "../../../util/storeHelper";
 import * as actions from "../actions/mods";
 import type { IMod } from "../types/IMod";
-import { referenceEqual } from "../util/testModReference";
+import { identitiesEqual, referenceEqual, referenceIdentity } from "../util/testModReference";
 
 // A modId is unusable as a staging-folder name if it was clobbered by a bad
 // state write: the installationPath self-heal uses this to tell a recoverable
@@ -126,7 +126,11 @@ export const modsReducer: IReducerSpec = {
         });
         return state;
       }
-      const filteredRef = _.omitBy(rule.reference, _.isUndefined);
+      // What referenceEqual compares on the undefined-stripped references, precomputed and
+      // cached per (immutable) reference. A collection adds thousands of rules one action at a
+      // time and each scans all the rules before it, so comparing with _.omitBy, _.pick and
+      // _.isEqual per rule made adding them quadratic in heavy work: 25s for 2,000 members.
+      const ruleIdentity = referenceIdentity(rule.reference, { omitUndefined: true });
 
       // mutually exclusive types replace each other, so if we add a "before"
       // rule we first remove any existing "after" rule with the same reference
@@ -141,8 +145,13 @@ export const modsReducer: IReducerSpec = {
 
       const idx = getSafe(state, [gameId, modId, "rules"], []).findIndex((iterRule: IRule) => {
         const typeMatch = group.indexOf(rule.type) !== -1;
-        const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
-        return typeMatch && referenceEqual(filteredRef, filteredIter);
+        return (
+          typeMatch &&
+          identitiesEqual(
+            ruleIdentity,
+            referenceIdentity(iterRule.reference, { omitUndefined: true }),
+          )
+        );
       });
 
       if (idx !== -1) {

@@ -132,6 +132,128 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
 }
 
 /**
+ * JSON with object keys sorted, so equal values stringify equally whatever their key order.
+ * A key present with an undefined value is kept, as _.pick and _.isEqual keep it.
+ */
+function stableStringify(value: unknown): string {
+  if (value === undefined) {
+    return "\u0000undefined";
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+  if (value !== null && typeof value === "object") {
+    const entries = Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`);
+    return `{${entries.join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * What referenceEqual compares, computed once per reference: whether it identifies a mod by id
+ * alone, and if not, a key two references share exactly when referenceEqual calls them equal.
+ * Comparing these instead of calling referenceEqual is what lets a lookup over thousands of
+ * collection rules be O(1) rather than an _.pick and _.isEqual per rule.
+ */
+export interface IReferenceIdentity {
+  idOnly: boolean;
+  id: string | undefined;
+  key: string;
+}
+
+// references in state are immutable, so a reference object's identity never changes
+const identityCache = new WeakMap<IModReference, IReferenceIdentity>();
+const definedIdentityCache = new WeakMap<IModReference, IReferenceIdentity>();
+
+/**
+ * The identity referenceEqual compares. With `omitUndefined`, the identity of
+ * `_.omitBy(ref, _.isUndefined)` instead, which is what the mods reducer compares.
+ */
+export function referenceIdentity(
+  ref: IModReference,
+  options: { omitUndefined?: boolean } = {},
+): IReferenceIdentity {
+  const compute = (): IReferenceIdentity => {
+    const compared = options.omitUndefined === true ? _.omitBy(ref, _.isUndefined) : ref;
+    return {
+      idOnly: idOnlyRef(compared),
+      id: compared?.id,
+      key: stableStringify(_.pick(compared, REFERENCE_FIELDS)),
+    };
+  };
+  // referenceEqual accepts a missing reference, which a WeakMap cannot key on
+  if (ref === null || typeof ref !== "object") {
+    return compute();
+  }
+  const cache = options.omitUndefined === true ? definedIdentityCache : identityCache;
+  let identity = cache.get(ref);
+  if (identity === undefined) {
+    identity = compute();
+    cache.set(ref, identity);
+  }
+  return identity;
+}
+
+/** referenceEqual, on identities computed by referenceIdentity. */
+export function identitiesEqual(lhs: IReferenceIdentity, rhs: IReferenceIdentity): boolean {
+  if (lhs.idOnly || rhs.idOnly) {
+    return lhs.id === rhs.id;
+  }
+  return lhs.key === rhs.key;
+}
+
+/**
+ * Finds the first item whose reference equals a given one, exactly as
+ * `items.find((item) => referenceEqual(refOf(item), ref))` would, in O(1) per lookup after an
+ * O(n) build. For matching a collection's thousands of members against its rules.
+ */
+export class ReferenceIndex<T> {
+  #byKey = new Map<string, number>();
+  #idOnlyById = new Map<string, number>();
+  #anyById = new Map<string, number>();
+  #items: T[];
+
+  constructor(items: T[], refOf: (item: T) => IModReference) {
+    this.#items = items;
+    const first = (map: Map<string, number>, key: string, index: number) => {
+      if (!map.has(key)) {
+        map.set(key, index);
+      }
+    };
+    items.forEach((item, index) => {
+      const identity = referenceIdentity(refOf(item));
+      if (identity.id !== undefined) {
+        first(this.#anyById, identity.id, index);
+        if (identity.idOnly) {
+          first(this.#idOnlyById, identity.id, index);
+        }
+      }
+      if (!identity.idOnly) {
+        first(this.#byKey, identity.key, index);
+      }
+    });
+  }
+
+  find(ref: IModReference): T | undefined {
+    const identity = referenceIdentity(ref);
+    let index: number | undefined;
+    if (identity.idOnly) {
+      // an id-only reference equals any item with the same id
+      index = this.#anyById.get(identity.id);
+    } else {
+      // otherwise: an item with the same key, or an id-only item with the same id, whichever
+      // comes first
+      const byKey = this.#byKey.get(identity.key);
+      const byId = identity.id === undefined ? undefined : this.#idOnlyById.get(identity.id);
+      index = byKey === undefined ? byId : byId === undefined ? byKey : Math.min(byKey, byId);
+    }
+    return index === undefined ? undefined : this.#items[index];
+  }
+}
+
+/**
  * Check whether an installed mod matches a requested install spec: the same installer
  * choices, file list, and binary patches. This is deliberately separate from
  * testModReference / findModByRef, which match a mod by IDENTITY only (which mod,
@@ -220,6 +342,28 @@ export function downloadToModRef(download: IDownload): IModReference {
     logicalFileName: download.modInfo?.meta?.logicalFileName ?? download.localPath,
   };
   return ref;
+}
+
+// Compiled glob patterns, by pattern. minimatch(name, pattern) compiles the pattern on every
+// call, and matching a collection's members compares each member's fileExpression against
+// installed mod after installed mod: with 2,000 members that was over a third of a
+// 160-second collection install spent re-parsing the same patterns.
+const MAX_CACHED_PATTERNS = 10_000;
+const globCache = new Map<string, InstanceType<typeof minimatch.Minimatch>>();
+
+/** minimatch(fileName, pattern), with the pattern compiled once. */
+export function globMatch(fileName: string, pattern: string): boolean {
+  let matcher = globCache.get(pattern);
+  if (matcher === undefined) {
+    if (globCache.size >= MAX_CACHED_PATTERNS) {
+      globCache.clear();
+    }
+    // the same object minimatch() builds internally, which also handles the comment and
+    // empty-pattern cases minimatch() shortcuts
+    matcher = new minimatch.Minimatch(pattern);
+    globCache.set(pattern, matcher);
+  }
+  return matcher.match(fileName);
 }
 
 export function sanitizeExpression(fileName: string): string {
@@ -360,7 +504,7 @@ function testRef(
       }
     } else {
       const baseName = sanitizeExpression(mod.fileName);
-      if (baseName !== ref.fileExpression && !minimatch(baseName, ref.fileExpression)) {
+      if (baseName !== ref.fileExpression && !globMatch(baseName, ref.fileExpression)) {
         return false;
       }
     }
@@ -463,7 +607,7 @@ export function testRefByIdentifiers(
     // a glob match against the archive name (without file extension)
     for (const fileName of fileNames) {
       const baseName = sanitizeExpression(fileName);
-      if (baseName === ref.fileExpression || minimatch(baseName, ref.fileExpression)) {
+      if (baseName === ref.fileExpression || globMatch(baseName, ref.fileExpression)) {
         return true;
       }
     }

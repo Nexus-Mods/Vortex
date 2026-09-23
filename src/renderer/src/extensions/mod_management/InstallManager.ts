@@ -210,6 +210,7 @@ import testModReference, {
   isRequiredRule,
   modMatchesInstallSpec,
   referenceEqual,
+  ReferenceIndex,
   ruleInstallSpec,
   testRefByIdentifiers,
 } from "./util/testModReference";
@@ -6786,10 +6787,9 @@ class InstallManager {
     dep: IDependency,
     reference: IModReference,
     recommended: boolean,
+    rulesIndex: ReferenceIndex<IModRule>,
   ): IModRule | undefined {
-    const state: IState = api.store.getState();
-    const rules: IModRule[] = getSafe(state.persistent.mods, [gameId, sourceModId, "rules"], []);
-    const oldRule = rules.find((iter) => referenceEqual(iter.reference, dep.reference));
+    const oldRule = rulesIndex.find(dep.reference);
 
     const type = recommended ? "recommends" : "requires";
 
@@ -6815,10 +6815,32 @@ class InstallManager {
     dependencies: IDependency[],
     recommended: boolean,
   ): Promise<void> {
+    // Each member used to be matched with a linear referenceEqual scan of every rule, re-read
+    // from state: O(members x rules), 7.7s of blocked UI at 2,000 members even when nothing
+    // changed. Index the rules once instead, and re-index only after an update, which moves the
+    // changed rule to the end just as re-reading state would have seen.
+    const indexRules = () =>
+      new ReferenceIndex<IModRule>(
+        getSafe(api.store.getState().persistent.mods, [gameId, sourceModId, "rules"], []),
+        (rule) => rule.reference,
+      );
+    let rulesIndex = indexRules();
     dependencies.forEach((dep) => {
       const updatedRef: IModReference = { ...dep.reference };
       updatedRef.idHint = dep.mod?.id;
-      this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
+      const before = rulesIndex.find(dep.reference);
+      const after = this.updateModRule(
+        api,
+        gameId,
+        sourceModId,
+        dep,
+        updatedRef,
+        recommended,
+        rulesIndex,
+      );
+      if (after !== before) {
+        rulesIndex = indexRules();
+      }
     });
     return Promise.resolve();
   }
