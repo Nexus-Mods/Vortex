@@ -15,7 +15,10 @@ import { previewKey } from "./previewCache";
 
 vi.mock("./generateVideoPreview", () => ({
   default: vi.fn(),
-  hasFfmpeg: vi.fn(() => true),
+}));
+
+vi.mock("./ffmpeg", () => ({
+  hasFfmpeg: vi.fn().mockReturnValue(true),
 }));
 
 vi.mock("fs/promises", () => ({
