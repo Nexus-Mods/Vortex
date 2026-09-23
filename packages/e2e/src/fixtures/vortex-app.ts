@@ -70,28 +70,14 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
   }
 
   return new Promise<Page>((resolve, reject) => {
-    const watchedPages = new Set<Page>();
     const cleanup = () => {
       clearTimeout(timeout);
       vortexApp.off("window", onWindow);
       vortexApp.process().off("exit", onExit);
-      for (const page of watchedPages) page.off("framenavigated", onNavigation);
     };
 
     const onWindow = (page: Page) => {
       if (isMainWindow(page)) {
-        cleanup();
-        resolve(page);
-      } else {
-        // Electron can emit the window while its URL is still about:blank.
-        watchedPages.add(page);
-        page.on("framenavigated", onNavigation);
-      }
-    };
-
-    const onNavigation = () => {
-      const page = [...watchedPages].find(isMainWindow);
-      if (page) {
         cleanup();
         resolve(page);
       }
@@ -116,7 +102,6 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
 
     vortexApp.on("window", onWindow);
     vortexApp.process().on("exit", onExit);
-    for (const page of vortexApp.windows()) onWindow(page);
   });
 }
 
@@ -135,18 +120,13 @@ async function setupMainWindow(app: ElectronApplication, timeoutMs: number): Pro
   // Race against process exit so a crash produces a clear error rather than
   // the generic "Target page, context or browser has been closed".
   await Promise.race([
-    // A fast start can finish loading before Playwright attaches. Either phase
-    // proves the renderer mounted; waiting only for the splash races its removal.
-    mainWindow.waitForSelector("#loading-screen, #content .menu-layer", {
-      state: "attached",
-      timeout: timeoutMs,
-    }),
+    mainWindow.waitForSelector("#loading-screen", { timeout: timeoutMs }),
     new Promise<never>((_, reject) => {
       app.process().once("exit", (code, signal) => {
         reject(
           new Error(
             `Vortex process exited (code=${code ?? "null"} signal=${signal ?? "null"}) ` +
-              `before the renderer mounted.`,
+              `before the LoadingScreen mounted.`,
           ),
         );
       });
