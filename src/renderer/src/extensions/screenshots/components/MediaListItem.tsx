@@ -24,11 +24,10 @@ export default function MediaListItem({ item, onClick, game }: IMediaListItemPro
 
   const [src, setSrc] = useState(() => {
     if (item.type === "image") return pathToFileURL(item.thumbnailPath ?? item.path).toString();
-    else if (item.type === "video")
-      return (
-        pathToFileURL(item.thumbnailPath).toString() ??
-        gameTileImageURL(game)?.replace("tile", "hero")
-      );
+    else if (item.type === "video") {
+      const thumbnail = item.thumbnailPath ? pathToFileURL(item.thumbnailPath) : undefined;
+      return thumbnail ? thumbnail.toString() : gameTileImageURL(game)?.replace("tile", "hero");
+    }
   });
 
   const onError = () => {
