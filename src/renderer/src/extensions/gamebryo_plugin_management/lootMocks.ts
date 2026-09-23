@@ -1,9 +1,6 @@
 /**
  * The vi.mock replacement modules for the LootInterface (autosort) suites, backed by mutable
  * seams that test-utils/gamebryoTest.makeLootHarness arranges per test.
- *
- * TODO LAZ-1037: the decomposition moves the modules mocked here, so the replacement objects and
- * the vi.mock paths in the autosort suites have to follow it.
  */
 import * as path from "node:path";
 

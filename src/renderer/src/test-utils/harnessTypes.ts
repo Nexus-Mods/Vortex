@@ -20,6 +20,7 @@ import type {
   IPluginsLoot,
 } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type { IStateWithGamebryo } from "../extensions/gamebryo_plugin_management/types/IStateWithGamebryo";
+import type PluginPersistor from "../extensions/gamebryo_plugin_management/util/PluginPersistor";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type { IHistoryEvent } from "../extensions/history_management/types";
@@ -153,6 +154,11 @@ export interface IGamebryoHarness extends IGameHarness {
  * untouched (they only add unused closeAsync/isClosedAsync plain functions to the object).
  */
 export type IFakeLoot = { [K in keyof ILootProm]: Mock<ILootProm[K]> };
+
+/** The plugin persistor's file lifecycle as a controllable fake: every call a mock. */
+export type IFakePersistor = {
+  [K in "loadFiles" | "disable" | "setKnownPlugins"]: Mock<PluginPersistor[K]>;
+};
 
 /** What a LootInterface test arranges on top of the gamebryo harness. */
 export interface ILootHarnessOpts extends IGamebryoHarnessOpts {

@@ -17,7 +17,6 @@ import { downloadMasterlistMock, downloadPreludeMock } from "./lootMocks";
 
 // the five seams the autosort suites share; each factory delegates to lootMocks so the
 // replacement behavior is arranged per test through makeLoot
-// TODO LAZ-1037: these module paths follow the decomposition as the mocked modules move
 vi.mock(
   "../../util/webpack-hacks",
   async () => (await import("./lootMocks.js")).webpackHacksModule,

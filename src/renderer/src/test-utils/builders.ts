@@ -52,6 +52,7 @@ import type {
   IPluginCombined,
   IPluginLoot,
 } from "../extensions/gamebryo_plugin_management/types/IPlugins";
+import type PluginPersistor from "../extensions/gamebryo_plugin_management/util/PluginPersistor";
 import toPluginId from "../extensions/gamebryo_plugin_management/util/toPluginId";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
@@ -113,6 +114,7 @@ import type {
   IDriverHarness,
   IDriverHarnessState,
   IFakeLoot,
+  IFakePersistor,
   IFbloHarness,
   IFbloHarnessOpts,
   IGameHarness,
@@ -315,6 +317,16 @@ export function makeFakeLoot(overrides: Partial<IFakeLoot> = {}): IFakeLoot {
     sortPluginsAsync: vi.fn<ILootProm["sortPluginsAsync"]>((pluginNames) =>
       Promise.resolve([...pluginNames]),
     ),
+    ...overrides,
+  };
+}
+
+/** A fake plugin persistor: loads and disables at once, remembers nothing. */
+export function makeFakePersistor(overrides: Partial<IFakePersistor> = {}): IFakePersistor {
+  return {
+    loadFiles: vi.fn<PluginPersistor["loadFiles"]>(() => Promise.resolve()),
+    disable: vi.fn<PluginPersistor["disable"]>(() => Promise.resolve()),
+    setKnownPlugins: vi.fn<PluginPersistor["setKnownPlugins"]>(),
     ...overrides,
   };
 }
