@@ -1,7 +1,7 @@
 import * as path from "path";
 
 import { mdiGamepadSquareOutline } from "@mdi/js";
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { clipboard } from "electron";
 import * as fsExtra from "fs-extra";
@@ -85,6 +85,12 @@ interface IProvider {
   expireMS: number;
   keys: string[];
   query: GameInfoQuery;
+}
+
+declare module "@/types/IExtensionContext" {
+  interface ApiEvents {
+    "discover-game": (gameId: string) => string[];
+  }
 }
 
 const gameInfoProviders: IProvider[] = [];
@@ -927,7 +933,7 @@ function init(context: IExtensionContext): boolean {
     $.gameModeManager.attachToStore(store);
     // kick the first store scan eagerly; store snapshots are then populated
     // independently of quick discovery (which triggers its own reload)
-    $.gameModeManager.startInitialScan();
+    void $.gameModeManager.startInitialScan();
     {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
@@ -952,25 +958,24 @@ function init(context: IExtensionContext): boolean {
       }
     }
 
-    context.api.onAsync<string[]>("discover-game", (gameId: string) => {
+    context.api.onAsync<"discover-game">("discover-game", (gameId) => {
       if (process.env.VORTEX_E2E === "1") {
         log(
           "debug",
           "discover-game suppressed: VORTEX_E2E=1, tests manage game paths explicitly to ensure deterministic behaviour across machines",
           { gameId },
         );
-        return PromiseBB.resolve<string[]>([]);
+        return Promise.resolve<string[]>([]);
       }
+
       const game = getGame(gameId);
       if (game !== undefined) {
         return $.gameModeManager.startQuickDiscovery([game]);
       } else {
-        return PromiseBB.resolve<string[]>([]);
+        return Promise.resolve<string[]>([]);
       }
     });
 
-    // IMPORTANT: internal event but lacking alternatives, extensions may use it (to refresh
-    //    tool discovery). Therefore this must not be changed (breaking change) before Vortex 1.6
     events.on("start-quick-discovery", (cb?: (gameIds: string[], err?: Error) => void) => {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
@@ -987,9 +992,11 @@ function init(context: IExtensionContext): boolean {
           });
         })
         .catch((err) => {
-          err["attachLogOnReport"] = true;
+          const error = unknownToError(err);
+
+          error["attachLogOnReport"] = true;
           context.api.showErrorNotification("Discovery failed", err);
-          cb?.(Array.from(discoveredGames), err);
+          cb?.(Array.from(discoveredGames), error);
         });
     });
     context.api.onAsync("discover-tools", (gameId: string) =>

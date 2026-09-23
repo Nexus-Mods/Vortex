@@ -5,6 +5,7 @@ import * as _ from "lodash";
 import type * as Redux from "redux";
 
 import { addNotification, showDialog } from "@/actions";
+import { log } from "@/logging";
 import type { IExtensionDownloadInfo } from "@/types/extensions";
 import type { IDiscoveredTool } from "@/types/IDiscoveredTool";
 import type { IExtensionApi, ThunkStore } from "@/types/IExtensionContext";
@@ -14,7 +15,6 @@ import type { IGameStoreSnapshot } from "@/types/IGameStore";
 import type { IState } from "@/types/IState";
 import type { ITool } from "@/types/ITool";
 import { GoGLauncher } from "@/util/GOGLauncher";
-import { log } from "@/util/log";
 import { OriginLauncher } from "@/util/OriginStore";
 import { getSafe } from "@/util/storeHelper";
 import { UPlayLauncher } from "@/util/UplayStore";
@@ -278,12 +278,15 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public startQuickDiscovery(games?: IGame[]) {
+  public async startQuickDiscovery(games?: IGame[]): Promise<string[]> {
     const abort = new AbortController();
     this.mQuickDiscoveryAbort = abort;
 
-    return this.reloadStoreGames()
-      .then(() =>
+    try {
+      await this.reloadStoreGames();
+
+      // TODO: Bluebird to native
+      const results = await Promise.resolve(
         quickDiscovery(
           games ?? this.mKnownGames,
           this.mStore.getState().settings.gameMode.discovered,
@@ -291,20 +294,19 @@ class GameModeManager {
           this.onDiscoveredTool,
           abort.signal,
         ),
-      )
-      .then((result) => {
-        // a stopped scan is a partial one, so don't run the finalisation over it
-        if (abort.signal.aborted) {
-          return [];
-        }
-        this.postDiscovery();
-        return result;
-      })
-      .finally(() => {
-        if (this.mQuickDiscoveryAbort === abort) {
-          this.mQuickDiscoveryAbort = null;
-        }
-      });
+      );
+
+      if (abort.signal.aborted) {
+        return [];
+      }
+
+      this.postDiscovery();
+      return results;
+    } finally {
+      if (this.mQuickDiscoveryAbort === abort) {
+        this.mQuickDiscoveryAbort = null;
+      }
+    }
   }
 
   public startToolDiscovery(gameId: string) {
@@ -486,14 +488,15 @@ class GameModeManager {
    * kicks the first store scan right after construction, so store
    * snapshots are populated independently of quick discovery
    */
-  public startInitialScan(): PromiseBB<void> {
-    return this.reloadStoreGames().catch((err) => {
-      log("error", "initial store scan failed", err);
-      return PromiseBB.resolve();
-    });
+  public async startInitialScan(): Promise<void> {
+    try {
+      await this.reloadStoreGames();
+    } catch (err) {
+      log("error", "inital store scan failed", err);
+    }
   }
 
-  private reloadStoreGames() {
+  private async reloadStoreGames(): Promise<void> {
     const stores = this.mKnownGameStores;
     this.mApi.sendNotification?.({
       id: "gamestore-reload",
@@ -501,20 +504,25 @@ class GameModeManager {
       message: "Loading game stores...",
     });
 
-    log("info", "reloading game store games", stores.map((store) => store.id).join(", "));
-    return PromiseBB.each(stores, (store) =>
-      store.reloadGames().catch((err: unknown) => {
-        log("error", "gamestore failed to reload its games", {
-          storeId: store.id,
-          err,
-        });
+    try {
+      log("info", "reloading game store games", stores.map((store) => store.id).join(", "));
 
-        return PromiseBB.resolve();
-      }),
-    ).then(() => {
+      const promsies = stores.map(async (store) => {
+        try {
+          // TODO: Bluebird to native
+          return await Promise.resolve(store.reloadGames());
+        } catch (err) {
+          log("error", "gamestore failed to reload its games", {
+            storeId: store.id,
+            err,
+          });
+        }
+      });
+
+      await Promise.all(promsies);
+    } finally {
       this.mApi.dismissNotification?.("gamestore-reload");
-      return PromiseBB.resolve();
-    });
+    }
   }
 
   private isValidGame(game: IGameStored): boolean {
