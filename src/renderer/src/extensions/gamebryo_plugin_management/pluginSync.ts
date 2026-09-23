@@ -14,7 +14,8 @@ import { getGame } from "../gamemode_management/util/getGame";
 import { activeGameId, activeProfile } from "../profile_management/selectors";
 import { setPluginOrder } from "./actions/loadOrder";
 import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
-import { gameSupported, pluginExtensions } from "./util/gameSupport";
+import { gameSupported } from "./util/gameSupport";
+import { isPluginName } from "./util/isPlugin";
 import { AMBIENT_ATTRIBUTES } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 import type { makeUpdatePluginList } from "./util/updatePluginList";
@@ -103,7 +104,7 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
       return;
     }
 
-    if (pluginExtensions(gameId).indexOf(path.extname(fileName).toLowerCase()) === -1) {
+    if (!isPluginName(fileName, gameId)) {
       // ignore non-plugins
       return;
     }

@@ -46,6 +46,7 @@ import { downloadPathForGame } from "../extensions/download_management/selectors
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
 import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type { IESPFile } from "../extensions/gamebryo_plugin_management/types/IESPFile";
 import type { ICycleEdge, ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
 import type {
   IPlugin,
@@ -292,6 +293,22 @@ export function makePluginLoot(overrides: Partial<IPluginLoot> = {}): IPluginLoo
     incompatibilities: [],
     requirements: [],
     version: "",
+    ...overrides,
+  };
+}
+
+/** A plugin's parsed TES4 header as parseESPFile hands it out: a plain .esp with no masters. */
+export function makeESPFile(overrides: Partial<IESPFile> = {}): IESPFile {
+  return {
+    isMaster: false,
+    isLight: false,
+    isMedium: false,
+    isDummy: false,
+    isBlueprint: false,
+    author: "",
+    description: "",
+    masterList: [],
+    revision: 0,
     ...overrides,
   };
 }

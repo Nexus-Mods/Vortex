@@ -6,9 +6,9 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IHistoryEvent, IHistoryStack, Revertability } from "../../history_management/types";
 import { activeGameId, activeProfile } from "../../profile_management/selectors";
 import { setPluginEnabled } from "../actions/loadOrder";
-import { GHOST_EXT } from "../statics";
 import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
+import { isGhosted, unghost } from "./ghost";
 
 export type EventTypes = "plugin-enabled" | "plugin-disabled" | "plugins-sorted";
 
@@ -123,7 +123,7 @@ class PluginHistory implements IHistoryStack {
             if (plugin === undefined) {
               return false;
             }
-            return path.extname(plugin.filePath).toLowerCase() === GHOST_EXT;
+            return isGhosted(plugin.filePath);
           },
           do: (evt) => {
             const state: IStateWithGamebryo = this.mApi.getState();
@@ -204,8 +204,7 @@ class PluginHistory implements IHistoryStack {
         allIds.forEach((id) => {
           if (prev[id]?.enabled !== undefined && prev[id]?.enabled !== current[id]?.enabled) {
             const plugin = state.session.plugins.pluginList?.[id];
-            const ghost =
-              plugin !== undefined && path.extname(plugin.filePath).toLowerCase() === GHOST_EXT;
+            const ghost = plugin !== undefined && isGhosted(plugin.filePath);
             addToHistory("plugins", {
               type:
                 current[id]?.enabled === true
@@ -217,7 +216,7 @@ class PluginHistory implements IHistoryStack {
               data: {
                 id,
                 oldState: prev[id]?.enabled ?? false,
-                name: path.basename(plugin?.filePath ?? id, GHOST_EXT),
+                name: path.basename(unghost(plugin?.filePath ?? id)),
                 wasGhost: ghost,
                 profileId: profile.id,
                 profileName: profile.name,

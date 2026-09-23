@@ -26,7 +26,7 @@ import { activeGameId, activeProfile } from "../profile_management/selectors";
 /* eslint-disable */
 import { updatePluginOrder } from "./actions/loadOrder";
 import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
-import { GHOST_EXT, NAMESPACE } from "./statics";
+import { NAMESPACE } from "./statics";
 import { EdgeType } from "./types/ILoot";
 import type { ICycleEdge, ILootProm, ILootRef, ILootStaticProm } from "./types/ILoot";
 import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
@@ -38,6 +38,7 @@ import {
   nativePlugins,
   pluginPath,
 } from "./util/gameSupport";
+import { isGhosted } from "./util/ghost";
 import { missingGroupFixes } from "./util/groups";
 import { lootErrorReporter, LootPhase } from "./util/LootErrorReporter";
 import { toLootError } from "./util/lootErrors";
@@ -339,8 +340,8 @@ class LootInterface {
       const isValid = (pluginKey: string) => {
         const isDeployed = pluginList[pluginKey]?.deployed || false;
         const isGhost =
-          pluginList[pluginKey]?.filePath &&
-          path.extname(pluginList[pluginKey]?.filePath) === GHOST_EXT;
+          pluginList[pluginKey]?.filePath !== undefined &&
+          isGhosted(pluginList[pluginKey].filePath);
         const isNative = pluginList[pluginKey]?.isNative || false;
         return (isDeployed && !isGhost) || isNative;
       };
