@@ -23,15 +23,17 @@ export const TEX_OVERRIDE_DIR = "tex_override";
  *   gameDir (15)  — archives anchored on the game executable's directory.
  *                   Must beat `modtype-dinput` (50), which would otherwise
  *                   leave these archives to the core fallback.
+ *   replacement (20) — archives whose whole payload replaces files that ship
+ *                   loose in Game/, so they work with no loader at all.
  *   textures (25) — all-texture archives. Must beat `modtype-gedosato` (50),
  *                   which claims them and then silently never deploys them on a
  *                   machine without GeDoSaTo.
  *
- * 20 and 30 are left free for the savegame and content-routing installers the
- * handover plans next, so those can slot in without renumbering.
+ * 30 is left free for the content-routing installer planned next.
  */
 export const DARKSOULS2_PRIORITIES = {
   gameDir: 15,
+  replacement: 20,
   textures: 25,
 } as const;
 
@@ -88,6 +90,24 @@ const DINPUT_DLL = "dinput8.dll";
 
 const TEXTURE_EXTENSIONS = [".dds", ".png"];
 
+/**
+ * Readmes, screenshots and the like. Never game content, so they neither decide
+ * whether an archive is claimed nor get copied into the game directory.
+ */
+const DOC_EXTENSIONS = [".txt", ".md", ".pdf", ".jpg", ".jpeg", ".bmp", ".rtf", ".webp", ".gif"];
+
+/**
+ * Files that ship loose in `Game/` on a real install, so replacing one works
+ * without any loader. Verified on disk rather than inferred: everything else a
+ * mod might replace lives inside the `GameData*.bdt` archives, where a loose
+ * copy in `Game/` is never read.
+ *
+ * Deliberately an explicit list. `.bnd` model and facegen files look identical
+ * in an archive but are packed, so routing them here would move a broken mod
+ * rather than fix it.
+ */
+export const SHIPPED_GAME_FILES = ["enc_regulation.bnd.dcx"];
+
 const notSupported: types.ISupportedResult = { supported: false, requiredFiles: [] };
 
 function isDirectory(filePath: string): boolean {
@@ -109,6 +129,15 @@ function basenameLower(filePath: string): string {
  * modType's path resolves to undefined and the mod is dropped from the deploy
  * pass with no error and no warning.
  */
+function isDocumentation(filePath: string): boolean {
+  return DOC_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
+}
+
+/** Non-directory entries that are actual mod content rather than documentation. */
+function payloadFilesOf(files: string[]): string[] {
+  return dataFilesOf(files).filter((filePath) => !isDocumentation(filePath));
+}
+
 function setDefaultModType(): types.IInstruction {
   return { type: "setmodtype", value: "" };
 }
@@ -171,6 +200,49 @@ export function installGameDir(files: string[]): Promise<types.IInstallResult> {
   return Promise.resolve({ instructions });
 }
 
+// --- replacements for files that ship loose in Game/ -------------------------
+
+function isShippedGameFile(filePath: string): boolean {
+  return SHIPPED_GAME_FILES.includes(basenameLower(filePath));
+}
+
+/**
+ * Claims archives whose entire payload replaces files that ship loose in
+ * `Game/`, wrapped in a mod-name folder or not. Those replacements work with no
+ * loader, so a wrapper here is a wrapper rather than a ModEngine override
+ * directory: an override directory only does anything once ModEngine is
+ * installed and its ini names that exact folder.
+ */
+export function testReplacement(files: string[], gameId: string): Promise<types.ISupportedResult> {
+  if (gameId !== DARKSOULS2_GAME_ID || hasDinput(files)) {
+    return Promise.resolve(notSupported);
+  }
+  if (findGameDirMarker(files) !== undefined) {
+    return Promise.resolve(notSupported);
+  }
+  const payload = payloadFilesOf(files);
+  if (payload.length === 0 || !payload.every(isShippedGameFile)) {
+    return Promise.resolve(notSupported);
+  }
+  return Promise.resolve({ supported: true, requiredFiles: [] });
+}
+
+/**
+ * Emits `Game/<filename>`, discarding any wrapper and any documentation. The
+ * file has to sit beside the original it replaces, so its position in the
+ * archive carries no information.
+ */
+export function installReplacement(files: string[]): Promise<types.IInstallResult> {
+  const instructions: types.IInstruction[] = payloadFilesOf(files).map((filePath) => ({
+    type: "copy" as const,
+    source: filePath,
+    destination: path.join(GAME_DIR, path.basename(filePath)),
+  }));
+
+  instructions.push(setDefaultModType());
+  return Promise.resolve({ instructions });
+}
+
 // --- textures ---------------------------------------------------------------
 
 /**
@@ -183,6 +255,34 @@ function isTexture(filePath: string): boolean {
 
 export function allTextures(files: string[]): boolean {
   return files.every(isTexture);
+}
+
+/**
+ * An archive of nothing but textures is claimed exactly as before, which keeps
+ * `modtype-gedosato`'s behaviour mirrored for those.
+ *
+ * On top of that, an archive whose only non-documentation content is textures
+ * is claimed too, so a bundled readme no longer stops an obvious texture mod
+ * being routed. That case additionally requires a `.dds`, because an archive of
+ * loose `.png` and `.jpg` is as likely to be a screenshot pack as a mod, and a
+ * `.dds` is unambiguously a Dark Souls II texture.
+ */
+export function claimableAsTextures(files: string[]): boolean {
+  const dataFiles = dataFilesOf(files);
+  if (dataFiles.length === 0) {
+    return false;
+  }
+  if (allTextures(files)) {
+    return true;
+  }
+  const payload = payloadFilesOf(files);
+  const isTextureFile = (filePath: string): boolean =>
+    TEXTURE_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
+  return (
+    payload.length > 0 &&
+    payload.every(isTextureFile) &&
+    payload.some((filePath) => path.extname(filePath).toLowerCase() === ".dds")
+  );
 }
 
 /**
@@ -200,8 +300,7 @@ export function testTextures(
   if (gameId !== DARKSOULS2_GAME_ID || gedosatoInstalled) {
     return Promise.resolve(notSupported);
   }
-  const dataFiles = dataFilesOf(files);
-  if (dataFiles.length === 0 || !allTextures(files)) {
+  if (!claimableAsTextures(files)) {
     return Promise.resolve(notSupported);
   }
   return Promise.resolve({ supported: true, requiredFiles: [] });
@@ -213,7 +312,7 @@ export function testTextures(
  * into" that folder, and nested textures are not read.
  */
 export function installTextures(files: string[]): Promise<types.IInstallResult> {
-  const dataFiles = dataFilesOf(files);
+  const dataFiles = payloadFilesOf(files);
 
   const seen = new Map<string, string>();
   const collisions: string[] = [];
