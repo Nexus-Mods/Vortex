@@ -3,8 +3,8 @@ import * as path from "path";
 import { getErrorCode } from "@vortex/shared";
 
 import * as fs from "../../../util/fs";
-import { GHOST_EXT } from "../statics";
 import { pluginExtensions } from "./gameSupport";
+import { unghost } from "./ghost";
 
 async function isFile(fileName: string): Promise<boolean> {
   try {
@@ -20,18 +20,19 @@ async function isFile(fileName: string): Promise<boolean> {
   }
 }
 
+/** Whether the name carries one of the game's plugin extensions, in any casing. */
+export function isPluginName(fileName: string, gameMode: string): boolean {
+  return pluginExtensions(gameMode).includes(path.extname(fileName).toLowerCase());
+}
+
 /** Whether fileName under filePath is a plugin file of the game; a ghosted name counts too. */
 export async function isPlugin(
   filePath: string,
   fileName: string,
   gameMode: string,
 ): Promise<boolean> {
-  const plainName =
-    path.extname(fileName) === GHOST_EXT ? path.basename(fileName, GHOST_EXT) : fileName;
-  if (
-    plainName === "" ||
-    !pluginExtensions(gameMode).includes(path.extname(path.basename(plainName)).toLowerCase())
-  ) {
+  const plainName = unghost(fileName);
+  if (!isPluginName(plainName, gameMode)) {
     return false;
   }
   return isFile(path.join(filePath, plainName));

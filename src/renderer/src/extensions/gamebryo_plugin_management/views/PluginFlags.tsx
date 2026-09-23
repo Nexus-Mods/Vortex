@@ -32,7 +32,7 @@ export function getPluginFlags(
   if (supportsESL) {
     if (plugin.isLight) {
       result.push("Light");
-    } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith(".esp")) {
+    } else if (plugin.isValidAsLightPlugin && plugin.id.endsWith(".esp")) {
       result.push("Could be light");
     } else {
       result.push("Not light");
@@ -146,7 +146,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
     if (plugin.isLight) {
       const key = `ico-light-${plugin.id}`;
       flags.push(<tooltip.Icon id={key} key={key} name="plugin-light" tooltip={t("Light")} />);
-    } else if (plugin.isValidAsLightPlugin && plugin.filePath.toLowerCase().endsWith(".esp")) {
+    } else if (plugin.isValidAsLightPlugin && plugin.id.endsWith(".esp")) {
       const key = `ico-couldbelight-${plugin.id}`;
       // stroke and hollow props not currently in the api typings atm
       const IconX: any = tooltip.Icon;

@@ -19,8 +19,9 @@ import { activeGameId, activeProfile } from "../../profile_management/selectors"
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setPluginEnabled } from "../actions/loadOrder";
 import { incrementNewPluginCounter } from "../actions/plugins";
-import { GHOST_EXT, NAMESPACE } from "../statics";
-import { gameSupported, pluginExtensions } from "./gameSupport";
+import { NAMESPACE } from "../statics";
+import { gameSupported } from "./gameSupport";
+import { isPluginName } from "./isPlugin";
 
 function notifyMultiplePlugins(
   api: IExtensionApi,
@@ -129,13 +130,7 @@ export async function handleModEnabled(
     return;
   }
 
-  const plugins = files
-    .filter(
-      (fileName) =>
-        pluginExtensions(currentProfile.gameId).indexOf(path.extname(fileName).toLowerCase()) !==
-        -1,
-    )
-    .map((fileName) => path.basename(fileName, GHOST_EXT));
+  const plugins = files.filter((fileName) => isPluginName(fileName, currentProfile.gameId));
 
   if (plugins.length === 0) {
     return;
