@@ -1,4 +1,4 @@
-import { mdiAccountCircle, mdiLogout, mdiRefresh } from "@mdi/js";
+import { mdiAccountCircle, mdiLogout, mdiRefresh, mdiMagnify } from "@mdi/js";
 import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -26,6 +26,7 @@ import {
 } from "../../../../util/selectors";
 import { HelpMenu } from "../help/HelpMenu";
 import { useHelpAction } from "../help/useHelpMenu.hook";
+import { ZoomControls } from "../ZoomControls";
 
 export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   const dispatch = useDispatch();
@@ -58,6 +59,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
             },
           },
         ],
+    [{ iconPath: mdiMagnify, label: t("Zoom"), controls: <ZoomControls inMenu /> }],
     [
       {
         iconPath: mdiRefresh,
@@ -79,7 +81,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   ];
 
   return (
-    <Popover>
+    <Popover className="relative">
       {({ open }) => (
         <>
           <Tooltip content={label} disabled={open} placement="bottom">
@@ -104,7 +106,12 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
             />
           </Tooltip>
 
-          <PopoverPanel className="nxm-popover-panel-dropdown">
+          <PopoverPanel
+            transition
+            anchor={null}
+            portal={false}
+            className="nxm-popover-panel-dropdown absolute top-full right-0 mt-1 w-max transition-opacity data-closed:opacity-0"
+          >
             {({ close }) => <PopoverMenu actions={sections} label={label} onSelect={close} />}
           </PopoverPanel>
         </>

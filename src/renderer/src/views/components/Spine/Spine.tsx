@@ -67,6 +67,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
     <TooltipDelayGroup
       as="div"
       className="box-content flex w-18 shrink-0 flex-col items-center justify-between border-r border-stroke-weak py-3"
+      style={{ zoom: "calc(1 / var(--app-zoom, 1))" }}
     >
       <SpineButton
         iconPath={selection.type === "home" ? mdiHome : mdiHomeOutline}

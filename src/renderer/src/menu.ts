@@ -9,8 +9,10 @@ import type { IMainPageOptions } from "./types/IExtensionContext";
 import { getApplication } from "./util/application";
 import getVortexPath from "./util/getVortexPath";
 import { debugTranslations, getMissingTranslations } from "./util/i18n";
+import { requestZoom } from "./util/initializeZoom";
 import { log } from "./util/log";
 import { getWindowId } from "./util/preloadAccess";
+import { zoomFromState } from "./util/zoom";
 
 // Map to store click handlers by menu item ID
 const menuClickHandlers: Map<string, () => void> = new Map();
@@ -62,6 +64,11 @@ export function initApplicationMenu(extensions: ExtensionManager) {
   });
 
   const changeZoomFactor = (factor: number) => {
+    const store = extensions.getApi().store;
+    if (store?.getState().settings.window.useModernLayout) {
+      requestZoom(store, factor);
+      return;
+    }
     if (factor < 0.5 || factor > 1.5) {
       return;
     }
@@ -80,6 +87,11 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     });
     webFrame.setZoomFactor(factor);
     extensions.getApi().store?.dispatch(setZoomFactor(factor));
+  };
+
+  const currentZoomFactor = () => {
+    const state = extensions.getApi().store?.getState();
+    return state?.settings.window.useModernLayout ? zoomFromState(state) : webFrame.getZoomFactor();
   };
 
   const fileMenu: Electron.MenuItemConstructorOptions[] = [
@@ -191,7 +203,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
           label: "Zoom In",
           accelerator: "CmdOrCtrl+Shift+Plus",
           click() {
-            changeZoomFactor(webFrame.getZoomFactor() + 0.1);
+            changeZoomFactor(currentZoomFactor() + 0.1);
           },
         },
         {
@@ -200,14 +212,14 @@ export function initApplicationMenu(extensions: ExtensionManager) {
           visible: false,
           acceleratorWorksWhenHidden: true,
           click() {
-            changeZoomFactor(webFrame.getZoomFactor() + 0.1);
+            changeZoomFactor(currentZoomFactor() + 0.1);
           },
         },
         {
           label: "Zoom Out",
           accelerator: "CmdOrCtrl+Shift+-",
           click() {
-            changeZoomFactor(webFrame.getZoomFactor() - 0.1);
+            changeZoomFactor(currentZoomFactor() - 0.1);
           },
         },
         {
@@ -216,7 +228,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
           visible: false,
           acceleratorWorksWhenHidden: true,
           click() {
-            changeZoomFactor(webFrame.getZoomFactor() - 0.1);
+            changeZoomFactor(currentZoomFactor() - 0.1);
           },
         },
         {

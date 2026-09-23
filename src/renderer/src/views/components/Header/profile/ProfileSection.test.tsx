@@ -21,6 +21,7 @@ vi.mock("../../../../util/opn", () => ({ default: vi.fn(() => Promise.resolve())
 const store = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
 
 const signedIn = () => ({
+  settings: { window: { zoomFactor: 1 } },
   confidential: { account: { nexus: { APIKey: "an-api-key" } } },
   persistent: {
     nexus: { userInfo: { userId: 42, name: "Ada", profileUrl: "https://example.test/ada.png" } },
@@ -34,6 +35,7 @@ const signedOut = () => ({
 
 /** Credentials in hand but no account details — what an offline start leaves behind. */
 const unvalidated = () => ({
+  settings: { window: { zoomFactor: 1 } },
   confidential: { account: { nexus: { APIKey: "an-api-key" } } },
   persistent: { nexus: {} },
 });
@@ -92,9 +94,28 @@ describe("ProfileSection", () => {
       expect(screen.queryByRole("menuitem", { name: /send feedback/i })).not.toBeInTheDocument();
     });
 
-    it("groups the rows as it did before", async () => {
+    it("separates zoom from the profile link and remaining actions", async () => {
       await openMenu(/ada/i);
-      expect(screen.getAllByRole("separator")).toHaveLength(2);
+      expect(screen.getAllByRole("separator")).toHaveLength(3);
+      expect(screen.getByRole("group", { name: "Zoom" })).toBeInTheDocument();
+      expect(screen.getByTestId("profile-zoom-percent")).toHaveTextContent("100%");
+    });
+
+    it("lets the keyboard reach zoom controls and continue through the menu", async () => {
+      const trigger = await openMenu(/ada/i);
+      await userEvent.keyboard("{ArrowDown}");
+      expect(screen.getByRole("group", { name: "Zoom" })).toHaveFocus();
+      await userEvent.tab();
+      expect(screen.getByRole("button", { name: "common:zoom.out" })).toHaveFocus();
+      await userEvent.keyboard("{Enter}");
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+      await userEvent.tab();
+      expect(screen.getByRole("button", { name: "common:zoom.in" })).toHaveFocus();
+      await userEvent.keyboard("{ArrowDown}");
+      expect(screen.getByRole("menuitem", { name: "Refresh user info" })).toHaveFocus();
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+      expect(trigger).toHaveFocus();
     });
 
     it("opens the help options beside the account menu, leaving it open", async () => {
@@ -175,7 +196,7 @@ describe("ProfileSection", () => {
       expect(
         screen.queryByRole("menuitem", { name: "View profile on web" }),
       ).not.toBeInTheDocument();
-      expect(screen.getAllByRole("separator")).toHaveLength(1);
+      expect(screen.getAllByRole("separator")).toHaveLength(2);
     });
   });
 });

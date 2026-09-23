@@ -4284,6 +4284,7 @@ interface IWindow {
     tabsMinimized: boolean;
     // (undocumented)
     useModernLayout: boolean;
+    zoomFactor?: number;
 }
 
 // @public (undocumented)

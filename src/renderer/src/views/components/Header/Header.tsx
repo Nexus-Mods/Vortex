@@ -19,6 +19,7 @@ import { ProfileSection } from "./profile/ProfileSection";
 import { StagingIndicator } from "./StagingIndicator";
 import { VersionIndicator } from "./VersionIndicator";
 import { WindowControls } from "./WindowControls";
+import { ZoomControl } from "./ZoomControl";
 
 export const Header: FC<React.PropsWithChildren<unknown>> = () => {
   const { menuIsCollapsed, setMenuIsCollapsed } = useWindowContext();
@@ -52,8 +53,9 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
 
   return (
     <div
-      className="flex h-11 items-center justify-between gap-x-6 pl-4.5"
-      style={{ WebkitAppRegion: "drag" }}
+      className="flex h-11 shrink-0 items-center justify-between gap-x-6 pl-4.5"
+      data-testid="window-titlebar"
+      style={{ WebkitAppRegion: "drag", zoom: "calc(1 / var(--app-zoom, 1))" }}
     >
       <div className="flex min-w-0 flex-1 items-center gap-x-1">
         <Tooltip content={menuIsCollapsed ? t("Open menu") : t("Collapse menu")} placement="right">
@@ -87,7 +89,11 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
         <PremiumIndicator />
 
         <div className="flex items-center gap-x-5">
-          <ProfileSection />
+          <div className="flex items-center">
+            <ZoomControl />
+
+            <ProfileSection />
+          </div>
 
           <div className="h-6 w-0.5 rounded-md bg-stroke-weak" />
 
