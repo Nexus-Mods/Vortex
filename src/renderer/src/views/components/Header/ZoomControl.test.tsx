@@ -20,6 +20,36 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("ZoomControl", () => {
+  it("preserves focus outside the popup when shortcuts open and dismiss it", async () => {
+    state.factor = 1.2;
+    render(
+      <>
+        <input data-testid="search" />
+
+        <ZoomControl />
+      </>,
+    );
+    const input = screen.getByTestId("search");
+    input.focus();
+    scroll();
+    expect(input).toHaveFocus();
+    expect(screen.getByTestId("zoom-popover")).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(3000));
+    await act(async () => vi.advanceTimersByTimeAsync(100));
+    expect(input).toHaveFocus();
+    expect(screen.queryByTestId("zoom-popover")).not.toBeInTheDocument();
+  });
+
+  it("returns focus from popup controls on Escape but leaves outside focus alone", () => {
+    state.factor = 1.2;
+    render(<ZoomControl />);
+    scroll();
+    screen.getByRole("button", { name: "common:zoom.in" }).focus();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByTestId("zoom-control")).toHaveFocus();
+    expect(screen.getByTestId("zoom-control")).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("hides the default zoom button until a wheel gesture, then shows it muted", () => {
     render(<ZoomControl />);
     expect(screen.queryByTestId("zoom-control")).not.toBeInTheDocument();

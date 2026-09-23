@@ -1,9 +1,19 @@
 /// <reference lib="dom" />
 
+import type { BrowserWindow } from "electron";
+
 import { test, expect } from "../fixtures/vortex-app";
 
 test.describe("Modern zoom, signed out", () => {
   test.use({ nexusUser: null });
+
+  test.beforeEach(async ({ vortexApp, vortexWindow }) => {
+    // CI starts with a hidden BrowserWindow. Chromium only paints it about once
+    // a second, even with backgroundThrottling disabled. These animation tests
+    // need a rendered window; show it without taking focus from other workers.
+    const window = await vortexApp.browserWindow(vortexWindow);
+    await window.evaluate((window: BrowserWindow) => window.showInactive());
+  });
 
   test("keeps chrome fixed on every frame while scaling up", async ({ vortexWindow }) => {
     await expect(vortexWindow.getByTestId("window-titlebar")).toBeVisible();
@@ -38,6 +48,49 @@ test.describe("Modern zoom, signed out", () => {
       ),
     ).toBeLessThan(2);
     await expect(vortexWindow.getByTestId("zoom-popover")).toContainText("150%");
+  });
+
+  test("keeps shortcut feedback unfocused and shows focus rings for keyboard navigation", async ({
+    vortexWindow,
+  }) => {
+    const trigger = vortexWindow.getByTestId("zoom-control");
+    const popup = vortexWindow.getByTestId("zoom-popover");
+    const login = vortexWindow.getByRole("button", { name: "Log in", exact: true });
+    await expect(login).toBeVisible();
+    await login.focus();
+    await vortexWindow.keyboard.press("Control+=");
+    await expect(popup).toContainText("110%");
+    await expect(login).toBeFocused();
+    await expect(trigger).not.toBeFocused();
+    await expect(popup).toHaveCount(0, { timeout: 4500 });
+    await expect(login).toBeFocused();
+
+    await trigger.click();
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveCSS("outline-style", "none");
+    await vortexWindow.keyboard.press("Escape");
+    await vortexWindow.keyboard.press("Tab");
+    await vortexWindow.keyboard.press("Shift+Tab");
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveCSS("outline-style", "solid");
+    await vortexWindow.keyboard.press("Enter");
+    await expect(popup).toBeVisible();
+    await vortexWindow.keyboard.press("Tab");
+    await expect(popup.getByRole("button", { name: "Zoom out", exact: true })).toBeFocused();
+    await vortexWindow.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    await vortexWindow.getByTestId("window-titlebar").click({ position: { x: 100, y: 10 } });
+    await vortexWindow.keyboard.down("Control");
+    try {
+      await vortexWindow.mouse.wheel(0, -120);
+    } finally {
+      await vortexWindow.keyboard.up("Control");
+    }
+    await expect(popup).toContainText("120%");
+    await expect(trigger).not.toBeFocused();
+    await expect(trigger).toHaveCSS("outline-style", "none");
   });
 
   test("shortcuts, fixed title bar, reset timer, and saved zoom", async ({ vortexWindow }) => {
