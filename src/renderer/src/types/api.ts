@@ -21,7 +21,7 @@ export type { ITool } from "./ITool";
 export type { TFunction } from "../util/i18n";
 export type { IDiscoveredTool } from "./IDiscoveredTool";
 export type { IExecInfo } from "./IExecInfo";
-export type { IQueryArgEntry, IStoreQuery } from "../util/GameStoreHelper";
+export type { IQueryArgEntry, IStoreQuery } from "../util/storeQuery";
 export type { IGameStoreEntry } from "./IGameStoreEntry";
 export { GameEntryNotFound, GameStoreNotFound } from "./IGameStore";
 export type { ICustomExecutionInfo, GameLaunchType } from "./IGameStore.ts";

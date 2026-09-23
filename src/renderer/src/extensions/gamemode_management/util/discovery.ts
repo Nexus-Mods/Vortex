@@ -15,18 +15,18 @@ import type { ITool } from "../../../types/ITool";
 import { ProcessCanceled, SetupError } from "../../../util/CustomErrors";
 import extractExeIcon from "../../../util/exeIcon";
 import * as fs from "../../../util/fs";
-import GameStoreHelper from "../../../util/GameStoreHelper";
 import type { Normalize } from "../../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
 import { getSafe } from "../../../util/storeHelper";
+import * as storeLookup from "../../../util/storeLookup";
 import { truthy } from "../../../util/util";
 import { modPathsForGame } from "../../mod_management/selectors";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IToolStored } from "../types/IToolStored";
-import { getGameStores } from "./getGame";
+import { getGameStores, getGameStoresSafe } from "./getGame";
 import { identifyStore } from "./identifyStore";
 import Progress from "./Progress";
 
@@ -152,7 +152,8 @@ function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
 ): Bluebird<IGameStoreEntry> {
-  return GameStoreHelper.find(game.queryArgs)
+  return storeLookup
+    .find(getGameStoresSafe(), game.queryArgs)
     .then((results) =>
       Bluebird.all<IGameStoreEntry>(
         results.map((res) =>

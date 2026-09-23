@@ -27,6 +27,7 @@ import type { IProfile, IRunningTool, IState } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
+import GameStoreHelperInstance from "../../util/GameStoreHelper";
 import { isContributed } from "../../util/isContributed";
 import local from "../../util/local";
 import { showError } from "../../util/message";
@@ -910,7 +911,7 @@ function init(context: IExtensionContext): boolean {
 
     context.api.ext["awaitProfileSwitch"] = () => awaitProfileSwitch(context.api);
 
-    $.gameModeManager = new GameModeManagerImpl(
+    const gameModeManager = new GameModeManagerImpl(
       context.api,
       $.extensionGames,
       $.extensionStubs,
@@ -919,6 +920,10 @@ function init(context: IExtensionContext): boolean {
         events.emit("gamemode-activated", gameMode);
       },
     );
+    $.gameModeManager = gameModeManager;
+    // the extension API's GameStoreHelper is a dumb adapter; hand it the
+    // manager's store list once the manager exists
+    GameStoreHelperInstance.attach(() => gameModeManager.gameStores);
     $.gameModeManager.attachToStore(store);
     // kick the first store scan eagerly; store snapshots are then populated
     // independently of quick discovery (which triggers its own reload)
