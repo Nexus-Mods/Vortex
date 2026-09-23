@@ -37,8 +37,8 @@ catalog:
   "@mdi/js": 7.4.47
   "@microsoft/api-extractor": 7.58.9
   "@msgpack/msgpack": 2.8.0
-  "@nexusmods/fomod-installer-ipc": 0.13.3
-  "@nexusmods/fomod-installer-native": 0.13.3
+  "@nexusmods/fomod-installer-ipc": 0.13.4
+  "@nexusmods/fomod-installer-native": 0.13.4
   "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#da9b8eda8a3f381f04d87c7290595066ccbdbc5d
   "@nosferatu500/react-sortable-tree": 4.4.0
   "@nosferatu500/theme-file-explorer": 3.0.21

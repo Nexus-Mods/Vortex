@@ -8,10 +8,8 @@ const TEMP_DIR = path.join(__dirname, "temp");
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..", "..");
 const CODE_SIGN_TOOL_DIR = path.join(PROJECT_ROOT, "CodeSignTool");
 
-// These were being incorrectly flagged by esigner as malware
-// We don't need to resign MS redist files
-// Make sure these are lowercase
-const ignoreFileList = ["arctool.exe", "vc_redist.x64.exe", "windowsdesktop-runtime-win-x64.exe"];
+// eSigner flagged this as malware. Make sure entries are lowercase.
+const ignoreFileList = ["arctool.exe"];
 
 // Only PE binaries can carry an Authenticode signature. The packaged tree also
 // carries linux/darwin/android prebuilds of some native modules (leveldown,
@@ -23,6 +21,39 @@ function isPortableExecutable(filePath) {
         const magic = Buffer.alloc(2);
         return fs.readSync(fd, magic, 0, 2, 0) === 2 && magic.toString("latin1") === "MZ";
     } catch (err) {
+        return false;
+    } finally {
+        if (fd !== undefined) {
+            fs.closeSync(fd);
+        }
+    }
+}
+
+// Whether a PE already carries an Authenticode signature, i.e. its certificate
+// table (data directory entry 4) is non-empty. Files signed by their vendor,
+// such as the Microsoft redistributables or the fomod-installer binaries, are
+// left alone rather than paid for again.
+function hasCertificateTable(filePath) {
+    let fd;
+    try {
+        fd = fs.openSync(filePath, "r");
+        const dosHeader = Buffer.alloc(0x40);
+        if (fs.readSync(fd, dosHeader, 0, 0x40, 0) !== 0x40) {
+            return false;
+        }
+        const pe = dosHeader.readUInt32LE(0x3c);
+        // PE signature (4) + COFF header (20) + optional header up to the end
+        // of data directory entry 4 in the PE32+ layout (112 + 5 * 8).
+        const header = Buffer.alloc(24 + 112 + 5 * 8);
+        if (fs.readSync(fd, header, 0, header.length, pe) !== header.length) {
+            return false;
+        }
+        if (header.toString("latin1", 0, 4) !== "PE\0\0") {
+            return false;
+        }
+        const directories = 24 + (header.readUInt16LE(24) === 0x20b ? 112 : 96);
+        return header.readUInt32LE(directories + 4 * 8 + 4) > 0;
+    } catch {
         return false;
     } finally {
         if (fd !== undefined) {
@@ -52,6 +83,11 @@ async function sign(configuration) {
         return;
     }
 
+    if (hasCertificateTable(configuration.path)) {
+        console.log(`Ignoring ${configuration.path} as it is already signed`);
+        return;
+    }
+
     if (ES_USERNAME && ES_PASSWORD && ES_TOTP_SECRET && ES_CREDENTIAL_ID) {
         console.log(`Signing ${configuration.path}`);
 
@@ -62,9 +98,9 @@ async function sign(configuration) {
         // then replacing the original file with the signed file.
 
         // The output directory is derived from the full source path rather than
-        // shared, because basenames are not unique across the packaged tree
-        // (e.g. several copies of AccessControl.dll and watcher.node). A shared
-        // directory would let concurrent signings overwrite each other's output.
+        // shared, because basenames need not be unique across the packaged tree.
+        // A shared directory would let concurrent signings overwrite each
+        // other's output.
         const outDir = path.join(
             TEMP_DIR,
             crypto.createHash("sha1").update(configuration.path).digest("hex").slice(0, 12),
@@ -77,9 +113,17 @@ async function sign(configuration) {
             const signFile = `CodeSignTool sign -input_file_path="${configuration.path}" -output_dir_path="${outDir}" -credential_id="${ES_CREDENTIAL_ID}" -username="${ES_USERNAME}" -password="${ES_PASSWORD}" -totp_secret="${ES_TOTP_SECRET}"`;
             const moveFile = `move /Y "${tempFile}" "${dir}"`;
 
-            childProcess.execSync(`${setDir} && ${signFile} && ${moveFile}`, {
+            childProcess.execSync(`${setDir} && ${signFile}`, {
                 stdio: "inherit",
             });
+
+            // CodeSignTool reports some failures and still exits zero, so check
+            // what it wrote before replacing the original.
+            if (!hasCertificateTable(tempFile)) {
+                throw new Error(`CodeSignTool did not produce a signed ${base}`);
+            }
+
+            childProcess.execSync(moveFile, { stdio: "inherit" });
         } finally {
             fs.rmSync(outDir, { recursive: true, force: true });
         }

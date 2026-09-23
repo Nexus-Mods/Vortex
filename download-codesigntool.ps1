@@ -9,9 +9,10 @@ $ProgressPreference = 'SilentlyContinue' #'Continue
 Write-Host "Sandbox = $Sandbox"
         
 $rootDir = Resolve-Path "."
-# Latest CodeSignTool Windows release (asset name embeds the version, so resolve it dynamically).
-$release = Invoke-RestMethod -Uri "https://api.github.com/repos/SSLcom/CodeSignTool/releases/latest"
-$downloadUrl = ($release.assets | Where-Object { $_.name -like "*-windows.zip" }).browser_download_url
+# Pinned rather than latest: the keytool path below depends on the JDK bundled
+# with this release.
+$version = "v1.3.2"
+$downloadUrl = "https://github.com/SSLcom/CodeSignTool/releases/download/$version/CodeSignTool-$version-windows.zip"
 $downloadedFile = Join-Path $rootDir "CodeSignTool.zip"
 $extractFolder = Join-Path $rootDir "CodeSignTool"
 $configPath = "/conf/code_sign_tool.properties"
@@ -50,6 +51,16 @@ If ($folderCount -eq 1) {
 
     # remove nested folder to keep it clean
     Remove-Item -Path $nestedFolderPath -Force
+}
+
+# The bundled JDK 11.0.2 doesn't trust SSL.com TLS RSA Root CA 2022, which
+# cs.ssl.com has chained to since 2026-09-22, so every sign call fails the TLS
+# handshake. Add the root to that JDK's cacerts.
+$keytool = Join-Path $extractFolder "jdk-11.0.2/bin/keytool.exe"
+$rootCert = Join-Path $PSScriptRoot ".github/certs/SSLcomTLSRSARootCA2022.pem"
+& $keytool -importcert -noprompt -cacerts -storepass changeit -alias sslcom-tls-rsa-root-2022 -file $rootCert
+if ($LASTEXITCODE -ne 0) {
+    throw "Could not add $rootCert to CodeSignTool's JDK"
 }
 
 # Set config to sandbox (only while testing)
