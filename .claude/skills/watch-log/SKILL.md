@@ -16,7 +16,8 @@ the mode(s) and loads only the files needed, keeping context small.
 
 1. **Always read `reference.md`** (the core) first — the universal log facts, the
    dev/prod/rotation log-set resolver, and an index of the on-demand `shared/` chunks
-   (sessions, lifecycle, persistence, multi-file, edge-cases) that modes load as needed.
+   (sessions, lifecycle, persistence, multi-file, edge-cases, gamebryo) that modes load
+   as needed.
 2. **Run the triage gate** (below): if the request is underspecified, interview the
    user before picking anything — do not guess a mode.
 3. **Pick the mode(s)** from `$ARGUMENTS` (plus any triage answers) using the table
@@ -24,7 +25,8 @@ the mode(s) and loads only the files needed, keeping context small.
    "investigate + persistence", or "trace <mod> and correlate <error>").
 4. **For each selected mode, read its file** under `modes/` plus the `shared/` chunks
    named in that mode's Prereq line, and follow it. Read `reference.md` and each chunk
-   at most once, even when running several modes.
+   at most once, even when running several modes. Chunks flagged "any mode" in the
+   index (multi-file, gamebryo) load on their own condition, whatever the mode.
 5. **Running several modes:** if they're independent (the common case), you may run
    them concurrently — e.g. dispatch each mode to its own subagent (pass it
    `reference.md` + the mode file + the resolved log target), then combine the
