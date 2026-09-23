@@ -1,9 +1,9 @@
 import * as path from "node:path";
 
-import { describe, expect, vi } from "vitest";
+import { describe, expect } from "vitest";
 
 import { startActivity, stopActivity } from "../../../actions/session";
-import { makeMod, makePlugin } from "../../../test-utils/builders";
+import { makeFakePersistor, makeMod, makePlugin } from "../../../test-utils/builders";
 import { seedPluginDir, test, type IGamebryoFixtures } from "../../../test-utils/gamebryoTest";
 import { makeTempDir } from "../../../test-utils/tempDir";
 import type { ThunkStore } from "../../../types/IExtensionContext";
@@ -12,7 +12,6 @@ import type { IMod } from "../../mod_management/types/IMod";
 import { setPluginList } from "../actions/plugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { initGameSupport } from "./gameSupport";
-import type PluginPersistor from "./PluginPersistor";
 import { makeUpdatePluginList } from "./updatePluginList";
 
 interface IScenario {
@@ -55,7 +54,7 @@ async function arrange(makeGamebryo: IGamebryoFixtures["makeGamebryo"], spec: IS
   const modList = Object.fromEntries(
     Object.keys(mods).map((modId) => [modId, { enabled: !(spec.disabled ?? []).includes(modId) }]),
   );
-  const persistor = { setKnownPlugins: vi.fn<PluginPersistor["setKnownPlugins"]>() };
+  const persistor = makeFakePersistor();
   const updatePluginList = makeUpdatePluginList(() => persistor);
   // the fake api types its store loosely; the scan reads the gamebryo hives off it
   const store = harness.api.store as ThunkStore<IStateWithGamebryo>;

@@ -11,3 +11,11 @@ export async function flushAsync(): Promise<void> {
     await new Promise((resolve) => setImmediate(resolve));
   }
 }
+
+/**
+ * Wait a wall-clock interval, for a NEGATIVE assertion behind a real timer (a debounce or a
+ * scheduled write) that must have had its chance to fire. Positive waits use vi.waitFor.
+ */
+export function settle(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
