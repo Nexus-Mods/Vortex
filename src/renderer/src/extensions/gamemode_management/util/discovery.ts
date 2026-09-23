@@ -1,3 +1,4 @@
+import { stat } from "node:fs/promises";
 import * as path from "node:path";
 
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
@@ -141,39 +142,33 @@ async function updateManuallyConfigured(
   }
 }
 
-function queryByArgs(
+async function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
-): Bluebird<IGameStoreEntry> {
-  return storeLookup
-    .find(getGameStoresSafe(), game.queryArgs)
-    .then((results) =>
-      Bluebird.all<IGameStoreEntry>(
-        results.map((res) =>
-          fs
-            .statAsync(res.gamePath)
-            .then(() => res)
-            .catch(() => undefined),
-        ),
+): Promise<IGameStoreEntry | undefined> {
+  // TODO: Bluebird to native
+  const results = await Promise.resolve(storeLookup.find(getGameStoresSafe(), game.queryArgs));
+  const filtered = (
+    await Promise.all(
+      results.map((res) =>
+        stat(res.gamePath)
+          .then(() => res)
+          .catch(() => undefined),
       ),
     )
-    .then((results) => results.filter((res) => res !== undefined))
-    .then((results) => {
-      if (results.length === 0) {
-        return Bluebird.resolve(undefined);
-      }
-      const discoveredStore = discoveredGames[game.id]?.store;
-      const prio = (entry: IGameStoreEntry) => {
-        if (discoveredStore !== undefined && entry.gameStoreId === discoveredStore) {
-          return 0;
-        } else {
-          return entry.priority ?? 100;
-        }
-      };
+  ).filter(Boolean);
+  if (filtered.length === 0) return undefined;
 
-      results = results.sort((lhs: IGameStoreEntry, rhs: IGameStoreEntry) => prio(lhs) - prio(rhs));
-      return Bluebird.resolve(results[0]);
-    });
+  const discoveredStore = discoveredGames[game.id]?.store;
+  const prio = (entry: IGameStoreEntry) => {
+    if (discoveredStore !== undefined && entry.gameStoreId === discoveredStore) {
+      return 0;
+    } else {
+      return entry.priority ?? 100;
+    }
+  };
+
+  return results.sort((lhs, rhs) => prio(lhs) - prio(rhs))[0];
 }
 
 function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
@@ -303,8 +298,7 @@ export async function quickDiscovery(
 
     try {
       if (game.queryArgs) {
-        // TODO: Bluebird to native
-        const result = await Promise.resolve(queryByArgs(discoveredGames, game));
+        const result = await queryByArgs(discoveredGames, game);
         if (!result) return undefined;
 
         // TODO: Bluebird to native
