@@ -171,7 +171,7 @@ async function queryByArgs(
   return results.sort((lhs, rhs) => prio(lhs) - prio(rhs))[0];
 }
 
-function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
+async function queryByCB(game: IGame): Promise<Partial<IGameStoreEntry> | undefined> {
   let gamePath: string | Bluebird<string | IGameStoreEntry>;
 
   try {
@@ -184,49 +184,50 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
       game: game.id,
       error: getErrorMessageOrDefault(err),
     });
-    return Bluebird.reject(err);
+
+    return undefined;
   }
-  const prom =
-    typeof gamePath === "string"
-      ? Bluebird.resolve(gamePath)
-      : (gamePath ?? Bluebird.resolve(undefined));
 
-  let store: string;
+  // TODO: Bluebird to native
+  const resolvedInfo: string | IGameStoreEntry | undefined =
+    typeof gamePath === "string" ? gamePath : await Promise.resolve(gamePath);
 
-  return prom
-    .then((resolvedInfo) => {
-      if (typeof resolvedInfo === "string") {
-        return identifyStore(resolvedInfo, getGameStores())
-          .catch((err) => {
-            log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
-            return undefined;
-          })
-          .then((storeDetected: string) => {
-            // storeDetected may be undefined, in that case we use default handling
-            store = storeDetected;
-            return resolvedInfo;
-          });
-      } else if (resolvedInfo === undefined) {
-        return Bluebird.reject(new GameEntryNotFound(game.id, "unknown"));
-      } else {
-        store = resolvedInfo.gameStoreId;
-        return resolvedInfo.gamePath;
-      }
-    })
-    .then((resolvedPath) =>
-      resolvedPath === undefined
-        ? Bluebird.resolve(undefined)
-        : fs
-            .statAsync(resolvedPath)
-            .then(() => ({ gamePath: resolvedPath, gameStoreId: store }))
-            .catch((err) => {
-              if (err.code === "ENOENT") {
-                log("warn", "rejecting game discovery, directory doesn't exist", resolvedPath);
-                return Bluebird.resolve(undefined);
-              }
-              return Bluebird.reject(err);
-            }),
-    );
+  if (resolvedInfo === undefined) {
+    throw new GameEntryNotFound(game.id, "unknown");
+  }
+
+  let resolvedPath: string;
+  let store: string | undefined;
+  if (typeof resolvedInfo === "string") {
+    try {
+      // TODO: Bluebird to native
+      store = await Promise.resolve(identifyStore(resolvedInfo, getGameStores()));
+      resolvedPath = resolvedInfo;
+    } catch (err) {
+      log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
+      // storeDetected may be undefined, in that case we use default handling
+      store = undefined;
+      resolvedPath = resolvedInfo;
+    }
+  } else {
+    store = resolvedInfo.gameStoreId;
+    resolvedPath = resolvedInfo.gamePath;
+  }
+
+  if (!resolvedPath) return undefined;
+
+  try {
+    await stat(resolvedPath);
+  } catch (err) {
+    if (getErrorCode(err) === "ENOENT") {
+      log("warn", "rejecting game discovery, directory doesn't exist", resolvedPath);
+      return undefined;
+    }
+
+    return undefined;
+  }
+
+  return { gamePath: resolvedPath, gameStoreId: store };
 }
 
 function handleDiscoveredGame(
@@ -313,8 +314,7 @@ export async function quickDiscovery(
           ),
         );
       } else if (game.queryPath !== undefined) {
-        // TODO: Bluebird to native
-        const result = await Promise.resolve(queryByCB(game));
+        const result = await queryByCB(game);
         if (!result) return undefined;
 
         // TODO: Bluebird to native
