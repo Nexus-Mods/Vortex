@@ -76,6 +76,14 @@ export type Step =
 
 export type UpdateCB = () => void;
 
+/** Test events whose checks are held off while a collection installs. */
+const SUPPRESSED_TEST_EVENTS = [
+  "plugins-changed",
+  "settings-changed",
+  "mod-activated",
+  "mod-installed",
+];
+
 class InstallDriver {
   private mApi: IExtensionApi;
   private mProfile: IProfile;
@@ -796,18 +804,29 @@ class InstallDriver {
   }
 
   private startInstall = async () => {
-    // suppress plugins-changed event to avoid constantly running expensive callbacks
-    // until onStop gets called
-    this.mApi.ext.withSuppressedTests?.(
-      ["plugins-changed", "settings-changed", "mod-activated", "mod-installed"],
-      () =>
-        new Bluebird((resolve) => {
-          this.mOnStop = () => {
-            resolve(undefined);
-            this.mOnStop = undefined;
-          };
-        }),
-    );
+    // A start while this driver still holds a suppression (a second collection straight after
+    // the first) must not stack another one on top of it.
+    this.mOnStop?.();
+
+    // suppress the expensive checks while the collection installs, until onStop or close
+    // releases them
+    this.mApi.ext
+      .withSuppressedTests?.(
+        SUPPRESSED_TEST_EVENTS,
+        () =>
+          new Bluebird((resolve) => {
+            this.mOnStop = () => {
+              resolve(undefined);
+              this.mOnStop = undefined;
+            };
+          }),
+      )
+      // Suppressed events are dropped, not queued: re-run their checks once released, or a
+      // problem the collection itself brought in (a missing master) goes unreported until
+      // something else happens to change the plugins.
+      ?.then(() => {
+        SUPPRESSED_TEST_EVENTS.forEach((event) => this.mApi.events.emit("trigger-test-run", event));
+      });
 
     return this.startImpl();
   };
@@ -1105,6 +1124,11 @@ class InstallDriver {
     this.mCollection = undefined;
     this.setDependentMods([]);
     this.mInstallDone = true;
+    // The review's close is how a successful install ends, so it has to release the checks
+    // startInstall suppressed, as onStop does for a cancel or pause. Without it every check on
+    // plugins-changed, mod-installed, mod-activated and settings-changed (Missing Masters among
+    // them) stops running for the rest of the session.
+    this.mOnStop?.();
     this.triggerUpdate();
   };
 
