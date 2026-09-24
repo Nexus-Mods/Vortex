@@ -394,8 +394,25 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     return res;
   }
 
+  // A row that hasn't rendered yet (it is still coming into view, e.g. during a fast scroll or
+  // a scrollbar drag) shows its plain text values in the same columns, so rows never look
+  // missing. Only strings and numbers are drawn: no custom renderers, controls or actions,
+  // which are what makes a full row slow to render.
   private renderPlaceholder = (): React.ReactNode => {
-    return <TD>{"\u00A0"}</TD>;
+    const { attributes, data, tableId } = this.props;
+    if (attributes === undefined || attributes.length === 0) {
+      return <TD>{"\u00A0"}</TD>;
+    }
+    return attributes.map((attribute) => {
+      const value = data?.[attribute.id];
+      const text =
+        typeof value === "string" || typeof value === "number" ? String(value) : "\u00A0";
+      return (
+        <TD className={`table-${tableId} cell-${attribute.id} placeholder-cell`} key={attribute.id}>
+          {text}
+        </TD>
+      );
+    });
   };
 
   private renderRow = (): React.ReactNode => {
