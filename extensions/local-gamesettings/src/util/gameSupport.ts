@@ -161,14 +161,7 @@ async function documentsPath(gameMode: string): Promise<string> {
     };
 
     if (protonEntry.usesProton && protonEntry.compatDataPath !== undefined) {
-      return path.join(
-        protonEntry.compatDataPath,
-        "pfx",
-        "drive_c",
-        "users",
-        "steamuser",
-        "Documents",
-      );
+      return path.join(protonEntry.compatDataPath, "pfx", "drive_c", "users", "steamuser", "Documents");
     }
   } catch {
     // Fall back to the native Documents directory.
