@@ -167,8 +167,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
-  // What the rows scroll in, and so what their visibility is measured against: the
-  // main pane, unless the header sticks to the page and the page scrolls the table.
+  // What the rows scroll in: the main pane, unless the header sticks to the page and the
+  // page scrolls the table (null when only the window does). Row visibility is measured
+  // against it, and cell dropdowns open up or down to stay inside it. It is found once,
+  // when the pane mounts, which is before any row renders.
   private mScrollContainer: HTMLElement | null;
   private mHeaderRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
@@ -1290,7 +1292,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
   };
 
-  // Hides the rows that scrolled out of view once scrolling settles.
+  // Runs whenever the rows scroll, whatever scrolls them. While they do, rows that leave
+  // the view stay rendered until scrolling settles, and noShrink columns keep the widest
+  // width they have reached, so they don't narrow as the rows that set it unmount.
   private onRowsScroll = () => {
     this.mLastScroll = Date.now();
     if (this.mDelayedVisibilityTimer === undefined) {
@@ -1299,6 +1303,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         SuperTable.SCROLL_DEBOUNCE + 100,
       );
     }
+    Object.keys(this.mNoShrinkColumns).forEach((colId) => {
+      this.mNoShrinkColumns[colId].updateWidth();
+    });
   };
 
   private onScroll = (event) => {
@@ -1322,9 +1329,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         }
       });
     }
-    Object.keys(this.mNoShrinkColumns).forEach((colId) => {
-      this.mNoShrinkColumns[colId].updateWidth();
-    });
   };
 
   private onResize = () => {
