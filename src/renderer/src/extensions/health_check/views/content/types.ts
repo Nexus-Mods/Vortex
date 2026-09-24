@@ -61,6 +61,16 @@ export interface IBulkInstallItem {
   key: string;
   /** Trigger this item's download/install. */
   install: () => void;
+  /** The mods that require this one, merged across duplicates, noted or not. */
+  requiredFor?: string[];
+  /** Set when the mod's author left a note; install all asks before installing these. */
+  notedRequirement?: INotedRequirement;
+}
+
+export interface INotedRequirement {
+  modId: number;
+  modName: string;
+  note: string;
 }
 
 /**

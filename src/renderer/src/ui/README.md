@@ -118,6 +118,9 @@ import { mdiDownload } from "@mdi/js";
 
 // Loading state
 <Button isLoading>Processing...</Button>
+
+// Disclosure toggle: keeps aria-expanded, without the menu-trigger "open" highlight
+<Button aria-expanded={!collapsed} hasExpandedStyle={false} leftIconPath={mdiChevronUp} />
 ```
 
 **Brands:** `primary`, `info`, `neutral`, `success`, `premium`, `danger`

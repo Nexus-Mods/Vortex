@@ -32,7 +32,9 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { isLoggedIn, shouldShowPremiumAd } from "../../nexus_integration/selectors";
+import { AuthorNotesModal } from "../components/author_notes_modal/AuthorNotesModal";
 import { BetaBadge } from "../components/beta_badge/BetaBadge";
+import { IssueSection } from "../components/issue_section/IssueSection";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import { PremiumModal } from "../components/premium_modal/PremiumModal";
 import { createHealthCheckTracker } from "../hooks/healthCheckTracker";
@@ -45,8 +47,14 @@ import {
   lastHealthCheckRun,
   modRequirementsCheckResult,
 } from "../selectors";
-import { countIssues, type IListedEntry, selectListedEntries } from "../utils/shared/listedEntries";
-import type { HealthCheckTab } from "../utils/shared/tracking";
+import type { HealthCheckId } from "../types";
+import {
+  countIssues,
+  groupByIssueType,
+  type IListedEntry,
+  selectListedEntries,
+} from "../utils/shared/listedEntries";
+import { type HealthCheckTab, type IssueType, issueTypeForCheck } from "../utils/shared/tracking";
 import { healthCheckContent } from "./content/registry";
 import type { IBulkInstallItem } from "./content/types";
 import HealthCheckDetailPage from "./HealthCheckDetailPage";
@@ -80,16 +88,28 @@ const LastUpdated = () => {
   );
 };
 
-/** No-choice install items from every check, de-duplicated across checks by key. */
-const collectInstallAllItems = (state: IState, api: IExtensionApi): IBulkInstallItem[] => {
-  const seen = new Set<string>();
-  const out: IBulkInstallItem[] = [];
+/** No-choice install items from every check, split by issue type and de-duplicated by key. */
+const collectInstallAllItems = (
+  state: IState,
+  api: IExtensionApi,
+): Record<IssueType, IBulkInstallItem[]> => {
+  const out: Record<IssueType, IBulkInstallItem[]> = { warning: [], suggestion: [] };
+  const seen = new Map<string, IBulkInstallItem>();
 
-  for (const content of Object.values(healthCheckContent)) {
+  for (const [checkId, content] of Object.entries(healthCheckContent)) {
+    const bucket = out[issueTypeForCheck(checkId as HealthCheckId)];
+
     for (const item of content?.collectInstallAll?.(state, api) ?? []) {
-      if (!seen.has(item.key)) {
-        seen.add(item.key);
-        out.push(item);
+      const kept = seen.get(item.key);
+
+      if (kept) {
+        // one install for a mod several others require: list them all, keep the first note
+        kept.requiredFor = [...new Set([...(kept.requiredFor ?? []), ...(item.requiredFor ?? [])])];
+        kept.notedRequirement ??= item.notedRequirement;
+      } else {
+        const copy = { ...item };
+        seen.set(item.key, copy);
+        bucket.push(copy);
       }
     }
   }
@@ -132,7 +152,10 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   const hiddenFile = useSelector(hiddenFileRequirements);
   const hiddenMod = useSelector(hiddenModRequirements);
   const showPremiumAd = useSelector(shouldShowPremiumAd);
-  const [showInstallAllPremium, setShowInstallAllPremium] = useState(false);
+  // The section whose install all is waiting on the premium modal.
+  const [premiumInstallType, setPremiumInstallType] = useState<IssueType | undefined>();
+  // The section whose install all is waiting on the author notes review.
+  const [notesInstallType, setNotesInstallType] = useState<IssueType | undefined>();
   const isRefreshing = useSelector(isAnyHealthCheckRunning);
   // Every check that talks to Nexus Mods skips itself while logged out, so an empty
   // list then means "we couldn't run the checks", not "your loadout is healthy".
@@ -258,23 +281,23 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     setSelectedTab(tab);
   };
 
-  const hideAllActive = () => {
-    trackHideAllClicked({ issue_count_hidden: activeItems.length });
-    activeItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
+  const hideAll = (issueType: IssueType, sectionItems: IListedEntry[]) => {
+    trackHideAllClicked({ issue_type: issueType, issue_count_hidden: sectionItems.length });
+    sectionItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
   };
 
-  const unhideAll = () => {
-    trackUnhideAllClicked({ issue_count_unhidden: hiddenItems.length });
-    hiddenItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
+  const unhideAll = (issueType: IssueType, sectionItems: IListedEntry[]) => {
+    trackUnhideAllClicked({ issue_type: issueType, issue_count_unhidden: sectionItems.length });
+    sectionItems.forEach((item) => item.content.toggleHide?.(api, item.entry));
   };
 
   // 1-click install all: premium-gated for free users. Items are de-duplicated first by
   // collectInstallAllItems (by key) and again here at execution time via the seen set,
   // so a file shared across multiple source reports is only queued once.
-  const runInstallAll = () => {
+  const runInstallAll = (items: IBulkInstallItem[]) => {
     const seen = new Set<string>();
 
-    for (const item of installAllItems) {
+    for (const item of items) {
       if (!seen.has(item.key)) {
         seen.add(item.key);
         item.install();
@@ -282,19 +305,81 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     }
   };
 
-  const installAll = () => {
+  const installAll = (issueType: IssueType, issueCount: number) => {
     trackOneClickInstallAllClicked({
-      issue_count: activeCount,
-      mod_count: installAllItems.length,
+      issue_type: issueType,
+      issue_count: issueCount,
+      mod_count: installAllItems[issueType].length,
     });
 
     if (showPremiumAd) {
-      setShowInstallAllPremium(true);
+      setPremiumInstallType(issueType);
       return;
     }
 
-    runInstallAll();
+    reviewThenInstall(issueType);
   };
+
+  // Requirements with an author note are often optional, so they get a review first.
+  const reviewThenInstall = (issueType: IssueType) => {
+    if (installAllItems[issueType].some((item) => item.notedRequirement)) {
+      setNotesInstallType(issueType);
+      return;
+    }
+
+    runInstallAll(installAllItems[issueType]);
+  };
+
+  const renderSections = (tabItems: IListedEntry[], tab: HealthCheckTab) => (
+    <div className="space-y-4">
+      {groupByIssueType(tabItems).map(({ issueType, items: sectionItems }) => {
+        const installCount = installAllItems[issueType].length;
+
+        return (
+          <IssueSection
+            actions={
+              <>
+                {supportsHide && (
+                  <Button
+                    appearance="subdued"
+                    brand="neutral"
+                    leftIconPath={tab === "active" ? mdiEyeOffOutline : mdiEyeOutline}
+                    size="sm"
+                    onClick={() =>
+                      tab === "active"
+                        ? hideAll(issueType, sectionItems)
+                        : unhideAll(issueType, sectionItems)
+                    }
+                  >
+                    {t(tab === "active" ? "common:::hide_all" : "common:::unhide_all")}
+                  </Button>
+                )}
+
+                {tab === "active" && !!installCount && (
+                  <Button
+                    brand="neutral"
+                    leftIconPath={mdiMonitorArrowDownVariant}
+                    rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
+                    size="sm"
+                    onClick={() => installAll(issueType, sectionItems.length)}
+                  >
+                    {t("actions::install_all", { count: installCount })}
+                  </Button>
+                )}
+              </>
+            }
+            count={sectionItems.length}
+            description={t(`listing::section::${issueType}::description`)}
+            key={issueType}
+            testId={`health-check-section-${issueType}`}
+            title={t(`listing::section::${issueType}::title`)}
+          >
+            {sectionItems.map(renderRow)}
+          </IssueSection>
+        );
+      })}
+    </div>
+  );
 
   // Logging in is a prerequisite for the Nexus-backed checks rather than a fix for an
   // issue, so it goes through the same OAuth flow as the header's profile button.
@@ -334,14 +419,11 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     />
   );
 
-  const activeList =
-    activeCount > 0 ? (
-      <div className="space-y-2">{activeItems.map(renderRow)}</div>
-    ) : loggedIn ? (
-      passedState
-    ) : (
-      loggedOutState
-    );
+  const activeList = activeCount
+    ? renderSections(activeItems, "active")
+    : loggedIn
+      ? passedState
+      : loggedOutState;
 
   // The page's own events are cross-check aggregates, so it keeps the unscoped tracker
   // (it can't consume the context it provides). Everything below gets the ambient one;
@@ -385,52 +467,17 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
               tabType="secondary"
               onSetSelectedTab={handleTabChange}
             >
-              <div className="flex items-center justify-between">
-                <TabBar>
-                  <TabButton count={activeCount} name={t("common:::active")} panelId="active" />
+              <TabBar>
+                <TabButton count={activeCount} name={t("common:::active")} panelId="active" />
 
-                  <TabButton count={hiddenCount} name={t("common:::hidden")} panelId="hidden" />
-                </TabBar>
-
-                <div className="flex items-center gap-x-2">
-                  <Button
-                    appearance="subdued"
-                    brand="neutral"
-                    disabled={
-                      (selectedTab === "active" && !activeCount) ||
-                      (selectedTab === "hidden" && !hiddenCount)
-                    }
-                    leftIconPath={selectedTab === "active" ? mdiEyeOffOutline : mdiEyeOutline}
-                    onClick={selectedTab === "active" ? hideAllActive : unhideAll}
-                  >
-                    {selectedTab === "active"
-                      ? `${t("common:::hide_all")}${activeCount ? ` (${activeCount})` : ""}`
-                      : `${t("common:::unhide_all")}${hiddenCount ? ` (${hiddenCount})` : ""}`}
-                  </Button>
-
-                  {selectedTab === "active" && installAllItems.length > 0 && (
-                    <>
-                      <div className="w-px self-stretch bg-stroke-weak" />
-
-                      <Button
-                        brand="neutral"
-                        leftIconPath={mdiMonitorArrowDownVariant}
-                        rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
-                        size="sm"
-                        onClick={installAll}
-                      >
-                        {t("actions::install_all", { count: installAllItems.length })}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+                <TabButton count={hiddenCount} name={t("common:::hidden")} panelId="hidden" />
+              </TabBar>
 
               <TabPanel id="active">{activeList}</TabPanel>
 
               <TabPanel id="hidden">
-                {hiddenCount > 0 ? (
-                  <div className="space-y-2">{hiddenItems.map(renderRow)}</div>
+                {hiddenCount ? (
+                  renderSections(hiddenItems, "hidden")
                 ) : (
                   <NoResults
                     className="py-24"
@@ -451,12 +498,23 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
           <PremiumModal
             api={api}
             downloadScope="all"
-            isOpen={showInstallAllPremium}
-            modCount={installAllItems.length}
+            isOpen={premiumInstallType !== undefined}
+            modCount={premiumInstallType ? installAllItems[premiumInstallType].length : 0}
             trigger="install_all"
-            onClose={() => setShowInstallAllPremium(false)}
-            onDownload={() => setShowInstallAllPremium(false)}
-            onPremiumUnlocked={runInstallAll}
+            onClose={() => setPremiumInstallType(undefined)}
+            onDownload={() => setPremiumInstallType(undefined)}
+            onPremiumUnlocked={() => premiumInstallType && reviewThenInstall(premiumInstallType)}
+          />
+
+          <AuthorNotesModal
+            isOpen={notesInstallType !== undefined}
+            // Falls back while closing, so the list doesn't empty mid-transition.
+            items={installAllItems[notesInstallType ?? "suggestion"]}
+            onClose={() => setNotesInstallType(undefined)}
+            onInstall={(items) => {
+              setNotesInstallType(undefined);
+              runInstallAll(items);
+            }}
           />
         </PageScroll>
       </Page>

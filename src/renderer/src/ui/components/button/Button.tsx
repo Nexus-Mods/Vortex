@@ -21,6 +21,7 @@ export type IButtonColour =
   | { appearance: "scrim"; brand: "neutral" };
 
 export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  hasExpandedStyle?: boolean;
   isLoading?: boolean;
   size?: "sm" | "md";
   children?: string;
@@ -76,6 +77,7 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
       className,
       customContent,
       disabled,
+      hasExpandedStyle = true,
       isExternal,
       isLoading = false,
       leftIcon,
@@ -95,6 +97,7 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
         {
           "nxm-button-disabled": !!disabled || !!ariaDisabled || isLoading,
           "nxm-button-icon-only": !customContent && !children,
+          "nxm-button-no-expanded-style": !hasExpandedStyle,
           // `md` is the base class, so only `sm` modifies it.
           "nxm-button-sm": size === "sm",
         },

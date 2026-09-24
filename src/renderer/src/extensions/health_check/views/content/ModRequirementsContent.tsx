@@ -48,6 +48,10 @@ export const modRequirementsContent: IHealthCheckContent = {
       .filter((mod) => !isModHidden(state, mod) && !mod.externalRequirement)
       .map((mod) => ({
         key: mod.uid || `${mod.gameId}-${mod.modId}`,
+        requiredFor: [mod.requiredBy.modName],
+        notedRequirement: mod.notes?.trim()
+          ? { modId: mod.modId, modName: mod.modName, note: mod.notes.trim() }
+          : undefined,
         install: () => {
           void onDownloadRequirement(api, mod, undefined, {
             issue_id: modEntryId(mod),

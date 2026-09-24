@@ -79,18 +79,39 @@ export const createHealthCheckTracker = (api: IExtensionApi) => {
     trackTabSwitched: (props: { tab: HealthCheckTab; issue_count_in_tab: number }) =>
       track("health_check_tab_switched", props),
 
-    trackHideAllClicked: (props: { issue_count_hidden: number }) =>
+    trackHideAllClicked: (props: { issue_type: IssueType; issue_count_hidden: number }) =>
       track("health_check_hide_all_clicked", props),
 
     // Not in the original spec. Without it a bulk unhide is invisible, so ten issues
     // hidden then restored reads the same as ten left hidden, skewing the hide-rate KPI.
-    trackUnhideAllClicked: (props: { issue_count_unhidden: number }) =>
+    trackUnhideAllClicked: (props: { issue_type: IssueType; issue_count_unhidden: number }) =>
       track("health_check_unhide_all_clicked", props),
 
     trackSettingsOpened: () => track("health_check_settings_opened"),
 
-    trackOneClickInstallAllClicked: (props: { issue_count: number; mod_count: number }) =>
-      track("health_check_one_click_install_all_clicked", props),
+    trackAuthorNotesModalShown: (props: { mod_count: number }) =>
+      track("health_check_author_notes_modal_shown", props),
+
+    trackAuthorNotesModToggled: (props: { mod_id: number; checked: boolean }) =>
+      track("health_check_author_notes_mod_toggled", props),
+
+    // selected_count is the button's N; noted_checked_count is the noted mods left checked.
+    trackAuthorNotesInstallSelectedClicked: (props: {
+      selected_count: number;
+      noted_checked_count: number;
+      mod_count: number;
+    }) => track("health_check_author_notes_install_selected_clicked", props),
+
+    trackAuthorNotesCancelClicked: () => track("health_check_author_notes_cancel_clicked"),
+
+    // The X, Escape and a backdrop click; Cancel is tracked on its own.
+    trackAuthorNotesClosed: () => track("health_check_author_notes_closed"),
+
+    trackOneClickInstallAllClicked: (props: {
+      issue_type: IssueType;
+      issue_count: number;
+      mod_count: number;
+    }) => track("health_check_one_click_install_all_clicked", props),
 
     // Detail view
     trackDetailViewed: (
