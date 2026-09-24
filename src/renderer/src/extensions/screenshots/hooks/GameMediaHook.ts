@@ -40,10 +40,10 @@ export default function useGameMedia(tab: string) {
     async (sourceId: string) => {
       const source = allSources[sourceId];
       if (!source) return;
-      const found = await collectMedia({ [sourceId]: source }, [], flags);
-      setItems([...(items ?? []).filter((i) => i.sourceId !== sourceId), ...found].sort(sortMedia));
+      const media = await collectMedia({ [sourceId]: source }, [], flags);
+      store.dispatch(sessionActions.replaceSourceGameMedia(sourceId, media));
     },
-    [allSources, items, setItems, flags],
+    [allSources, flags, store],
   );
 
   const onSourceChanged = useCallback((id: string) => void rescanSource(id), [rescanSource]);
