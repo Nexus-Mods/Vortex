@@ -5,6 +5,9 @@ import * as ReactDOM from "react-dom";
 
 import { log } from "../util/log";
 
+// how long an element stays rendered after becoming visible, however soon it leaves view
+const VISIBLE_HOLD_MS = 1000;
+
 export interface IProps {
   container: HTMLElement;
   placeholder: () => React.ReactNode;
@@ -74,28 +77,65 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
 
   private mLastVisible: boolean = false;
   private mVisibleTime: number = 0;
+  // `container` is read once, on mount; a later change is ignored. The conflict editor
+  // passes a ref's `current`, null until it re-renders and then an element that doesn't
+  // clip, so moving to the new container would count every entry as visible.
+  #observed: { container: HTMLElement; node: HTMLElement };
+  #inView: boolean = false;
+  #hideTimer: ReturnType<typeof setTimeout> | undefined;
 
   public componentDidMount() {
     const node = ReactDOM.findDOMNode(this) as HTMLElement;
-    VisibilityProxy.observe(this.props.container, node, (visible: boolean) => {
-      const now = Date.now();
-      // workaround: There is the situation where when an element becomes visible it
-      //   changes the layout around it which in turn pushes the element somwhere where it
-      //   _isn't_ visible anymore, triggering an endless loop of the element switching
-      //   between visible and invisible. Hence we don't turn items invisible if it
-      //   became visible less than a second ago. Since the observer is flank triggered
-      //   this may cause items to be rendered even though they don't have to but this
-      //   is a performance optimisation anyway, nothing breaks.
-      if (this.mLastVisible !== visible && (visible || now - this.mVisibleTime > 1000.0)) {
-        this.mLastVisible = visible;
-        this.mVisibleTime = now;
-        this.props.setVisible?.(visible);
-      }
-    });
+    this.#observed = { container: this.props.container, node };
+    VisibilityProxy.observe(this.props.container, node, (visible: boolean) =>
+      this.onIntersection(node, visible),
+    );
   }
 
   public componentWillUnmount() {
-    VisibilityProxy.unobserve(this.props.container, ReactDOM.findDOMNode(this) as HTMLElement);
+    clearTimeout(this.#hideTimer);
+    VisibilityProxy.unobserve(this.#observed.container, this.#observed.node);
+  }
+
+  // workaround: There is the situation where when an element becomes visible it
+  //   changes the layout around it which in turn pushes the element somwhere where it
+  //   _isn't_ visible anymore, triggering an endless loop of the element switching
+  //   between visible and invisible. Hence we don't turn items invisible if it
+  //   became visible less than a second ago. The observer is flank triggered, so it won't
+  //   report the element again: a hide that arrives within that second is deferred until
+  //   the second has passed, then applied if the element is still out of view.
+  private onIntersection(node: HTMLElement, visible: boolean) {
+    this.#inView = visible;
+    if (visible) {
+      clearTimeout(this.#hideTimer);
+      this.#hideTimer = undefined;
+      this.applyVisible(true);
+      return;
+    }
+    if (!this.mLastVisible || this.#hideTimer !== undefined) {
+      return;
+    }
+    const remaining = VISIBLE_HOLD_MS - (Date.now() - this.mVisibleTime);
+    if (remaining < 0) {
+      this.applyVisible(false);
+    } else {
+      this.#hideTimer = setTimeout(() => {
+        this.#hideTimer = undefined;
+        // without a componentClass, content that renders a different element replaces the
+        // observed node. A report on the detached node says nothing about the content.
+        if (!this.#inView && node.isConnected) {
+          this.applyVisible(false);
+        }
+      }, remaining);
+    }
+  }
+
+  private applyVisible(visible: boolean) {
+    if (this.mLastVisible !== visible) {
+      this.mLastVisible = visible;
+      this.mVisibleTime = Date.now();
+      this.props.setVisible?.(visible);
+    }
   }
 
   public render(): JSX.Element {
