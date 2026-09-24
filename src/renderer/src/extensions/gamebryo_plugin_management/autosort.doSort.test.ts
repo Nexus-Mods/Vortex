@@ -65,6 +65,18 @@ describe("LootInterface doSort", () => {
     expect(pendingSort(harness)).toBeUndefined();
   });
 
+  test("keeps the pending plugin-sort marker when sorting a caller's files", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(setPendingPluginSort(harness.profileId, "col-1", 1));
+
+    await harness.lootInterface.sortFiles([path.join(harness.dataDir, "A.esp")]);
+
+    expect(pendingSort(harness)).toEqual({ "col-1": 1 });
+  });
+
   test("reports an empty-list sort as a distinct outcome instead of success", async ({
     makeLoot,
   }) => {

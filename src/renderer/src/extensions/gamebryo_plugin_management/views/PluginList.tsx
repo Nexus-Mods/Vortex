@@ -633,7 +633,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, deployProgress, gameMode, needToDeploy, onRefreshPlugins } = this.props;
+    const { t, deployProgress, gameMode, modActivity, needToDeploy, onRefreshPlugins } = this.props;
     const { pluginsCombined } = this.state;
 
     if (!this.props.gameSupported(gameMode)) {
@@ -642,9 +642,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     const data = () => {
       if (this.mCachedGameMode !== gameMode || deployProgress !== undefined) {
+        // plugin details wait for mod activity to finish, so say what the list is waiting for
+        let waitingFor = t("Loading plugins");
+        if (deployProgress !== undefined) {
+          waitingFor = deployProgress;
+        } else if (modActivity?.includes("deployment")) {
+          waitingFor = t("Waiting for the deployment to finish");
+        } else if (modActivity !== undefined && modActivity.length > 0) {
+          waitingFor = t("Waiting for mod changes to finish");
+        }
         return (
           <div className="plugin-list-loading">
             <Spinner />
+            <p>{waitingFor}</p>
           </div>
         );
       } else if (Object.keys(pluginsCombined).length === 0) {

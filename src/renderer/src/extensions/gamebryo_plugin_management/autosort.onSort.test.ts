@@ -3,10 +3,10 @@ import * as path from "node:path";
 import { describe, expect, vi } from "vitest";
 
 import { startActivity, stopActivity } from "../../actions/session";
-import { flushAsync } from "../../test-utils/async";
+import { flushAsync, settle } from "../../test-utils/async";
 import { makeProfile } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
-import { setPluginOrder } from "./actions/loadOrder";
+import { setPluginEnabled, setPluginOrder } from "./actions/loadOrder";
 import { setAutoSortEnabled } from "./actions/settings";
 import LootInterface from "./autosort";
 
@@ -88,6 +88,48 @@ describe("LootInterface autosort-plugins", () => {
     expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
   });
 
+  test("defers sorting while a profile switch is pending", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.setState((draft) => {
+      draft.settings.profiles.nextProfileId = "next-profile";
+    });
+
+    await harness.sort(true);
+    harness.api.store.dispatch(setPluginEnabled("A.esp", true));
+    await flushAsync();
+
+    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+  });
+
+  test("sorts once the switch completes and the next profile's load order arrives", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.setState((draft) => {
+      draft.settings.profiles.nextProfileId = "next-profile";
+    });
+    await harness.sort(false);
+    harness.api.store.dispatch(setPluginEnabled("A.esp", true));
+
+    harness.setState((draft) => {
+      draft.persistent.profiles["next-profile"] = makeProfile({
+        id: "next-profile",
+        gameId: draft.persistent.profiles[harness.profileId].gameId,
+      });
+      draft.settings.profiles.activeProfileId = "next-profile";
+    });
+    // the next profile's plugin sync starts from an empty load order
+    harness.api.store.dispatch(setPluginOrder([], false));
+    await settle(100);
+    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+
+    harness.api.store.dispatch(setPluginEnabled("A.esp", true));
+
+    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]));
+  });
+
   test("does not claim a successful sort when the autoSort gate skipped sorting", async ({
     makeLoot,
   }) => {
@@ -108,6 +150,7 @@ describe("LootInterface autosort-plugins", () => {
     harness.setState((draft) => {
       draft.persistent.profiles["profile-2"] = makeProfile({ id: "profile-2", gameId: "oblivion" });
       draft.settings.profiles.activeProfileId = "profile-2";
+      draft.settings.profiles.nextProfileId = "profile-2";
     });
 
     const callback = vi.fn<(err: Error | null) => void>();

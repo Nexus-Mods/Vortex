@@ -164,6 +164,16 @@ describe("LootInterface libloot lifecycle", () => {
     expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]);
   });
 
+  test("leaves the load order to the caller when sorting its files", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface, { pluginManagement: false });
+    await harness.seedPlugins(["A.esp"]);
+    const before = harness.getGamebryoState().loadOrder;
+
+    await harness.lootInterface.sortFiles([path.join(harness.dataDir, "A.esp")]);
+
+    expect(harness.getGamebryoState().loadOrder).toEqual(before);
+  });
+
   test("does not load the main master again when the instance already holds it", async ({
     makeLoot,
   }) => {

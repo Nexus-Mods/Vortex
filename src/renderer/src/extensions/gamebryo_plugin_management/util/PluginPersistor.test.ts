@@ -454,6 +454,24 @@ describe("PluginPersistor", () => {
     expect(persistor.entry("parked.esp").loadOrder).toBeGreaterThanOrEqual(0);
   });
 
+  it("writes a plugin that has no load order position after the native plugins", async () => {
+    paths.native = ["skyrim.esm"];
+    const fresh = await makePersistor();
+    fresh.setKnownPlugins({
+      "skyrim.esm": "Skyrim.esm",
+      "old.esp": "Old.esp",
+      "new.esp": "New.esp",
+    });
+
+    await fresh.syncFromState("skyrimse", {
+      "old.esp": { enabled: true, loadOrder: 1 },
+      "new.esp": { enabled: true, loadOrder: -1 },
+    });
+
+    const written = nodeFs.readFileSync(path.join(paths.pluginDir, "loadorder.txt"), "latin1");
+    expect(written.split("\r\n").slice(1)).toEqual(["Skyrim.esm", "Old.esp", "New.esp"]);
+  });
+
   it("syncFromState ignores a sync for a game the persistor is not bound to", async () => {
     hive["multi.esp"] = { enabled: true, loadOrder: 1 };
 

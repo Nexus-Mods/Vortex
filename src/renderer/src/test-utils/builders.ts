@@ -771,7 +771,8 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       mods: { installPath: slices.installPath, activator: {} },
       profiles: {
         activeProfileId: slices.activeProfileId,
-        nextProfileId: undefined,
+        // a started profile has no switch in flight
+        nextProfileId: slices.activeProfileId,
         lastActiveProfile: slices.lastActiveProfile,
       },
     },

@@ -8,12 +8,12 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import * as fs from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
-import { getSafe } from "../../../util/storeHelper";
 import { makeOverlayableDictionary } from "../../../util/util";
 import { discoveryByGame, gameById } from "../../gamemode_management/selectors";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 import { modPathsForGame } from "../../mod_management/selectors";
 import { lastActiveProfileForGame } from "../../profile_management/selectors";
+import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 /* eslint-disable */
 import { PluginFormat } from "../util/PluginPersistor";
 import { patternMatchNativePlugins } from "./patternMatchNativePlugins";
@@ -413,12 +413,20 @@ export function knownGame(gameMode: string): boolean {
   return gameSupport.has(gameMode);
 }
 
+/** Whether Vortex manages the profile's plugins, falling back to the game's default. */
+export function pluginManagementEnabled(
+  state: IStateWithGamebryo,
+  gameMode: string,
+  profileId: string,
+): boolean {
+  const defaultVal = !["starfield", "oblivionremastered"].includes(gameMode);
+  return state.settings.plugins?.pluginManagementEnabled?.[profileId] ?? defaultVal;
+}
+
 /** Whether the game's last active profile has Vortex managing its plugins. */
 export function gameSupported(gameMode: string): boolean {
-  const state = getApi().getState();
-  const defaultVal = ["starfield", "oblivionremastered"].includes(gameMode) ? false : true;
-  const profileId = lastActiveProfileForGame(state, gameMode);
-  if (!getSafe(state, ["settings", "plugins", "pluginManagementEnabled", profileId], defaultVal)) {
+  const state = getApi().getState<IStateWithGamebryo>();
+  if (!pluginManagementEnabled(state, gameMode, lastActiveProfileForGame(state, gameMode))) {
     return false;
   }
   return knownGame(gameMode);
