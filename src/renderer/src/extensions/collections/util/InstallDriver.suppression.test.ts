@@ -160,6 +160,46 @@ describe("InstallDriver check suppression", () => {
     expect(counts.lowest).toBe(0);
   });
 
+  test("resuming an install that ended incomplete does not stack a second hold", async ({
+    makeCollection,
+  }) => {
+    const h = makeCollection(downloadOverride());
+    const { held, reruns, counts } = trackSuppression(h);
+    const revision = makeRevision(1, [{ tag: "a" }], { collectionId: COLLECTION });
+
+    await h.installRevision(revision);
+    await h.driver.continue();
+    expect(h.driver.step).toBe("installing");
+    // the required pass ends with a member still pending: the driver marks the install done but
+    // keeps the collection and stays on "installing", so neither close nor onStop runs
+    h.setState((draft) => {
+      draft.session.collections.activeSession.mods["requires_a"].status = "pending";
+    });
+    h.emit("did-install-dependencies", GAME, revision.collection.id, false);
+    await vi.waitFor(() => expect(h.driver.installDone).toBe(true));
+    expect(h.driver.step).toBe("installing");
+    expect(h.driver.collection).toBeDefined();
+    expect(held["plugins-changed"]).toBe(1);
+
+    // Resume (resume-collection, or the restart after a premium change) is driver.start again
+    await h.installRevision(revision);
+    await settle();
+    expect(held["plugins-changed"]).toBe(1);
+
+    await h.completeActiveInstall();
+    await settle();
+
+    expect(held["plugins-changed"]).toBe(0);
+    expect(counts.lowest).toBe(0);
+    // the completed install's release is the one that re-runs the checks with no hold left
+    expect(reruns.slice(-4)).toEqual([
+      { event: "plugins-changed", delay: 500, heldAtEmit: 0 },
+      { event: "settings-changed", delay: 500, heldAtEmit: 0 },
+      { event: "mod-activated", delay: 5000, heldAtEmit: 0 },
+      { event: "mod-installed", delay: 5000, heldAtEmit: 0 },
+    ]);
+  });
+
   test("installing the optional mods from the review screen keeps the one hold", async ({
     makeCollection,
   }) => {
