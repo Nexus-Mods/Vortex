@@ -72,7 +72,7 @@ function checkGlobalFiles(
   oldProfile: types.IProfile,
   newProfile: types.IProfile,
 ): PromiseBB<ISettingsFile[]> {
-  const fileLists: Array<PromiseBB<ISettingsFile[]>> = [];
+  const fileLists: Array<Promise<ISettingsFile[]>> = [];
 
   if (oldProfile !== undefined && gameSupported(oldProfile.gameId)) {
     fileLists.push(
