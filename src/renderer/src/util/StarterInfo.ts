@@ -10,7 +10,7 @@ import { emitModListSnapshot } from "../extensions/analytics/utils/modListSnapsh
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
-import { getGame } from "../extensions/gamemode_management/util/getGame";
+import { getGame, getGameStoresSafe } from "../extensions/gamemode_management/util/getGame";
 import { log } from "../logging";
 import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type { IExtensionApi } from "../types/IExtensionContext";
@@ -24,11 +24,11 @@ import {
   UserCanceled,
 } from "./CustomErrors";
 import { emitGameLaunched, recordLaunchExit } from "./gameLaunchAnalytics";
-import GameStoreHelper from "./GameStoreHelper";
 import getVortexPath from "./getVortexPath";
 import { isWindowsExecutable } from "./linux/proton";
 import type { Steam, ISteamEntry } from "./Steam";
 import { getSafe } from "./storeHelper";
+import * as storeLookup from "./storeLookup";
 
 async function hideWindow(): Promise<void> {
   await window.api.window.hide(ApplicationData.instance.windowId);
@@ -92,7 +92,7 @@ async function shouldRunWithProton(
   }
 
   try {
-    const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
+    const steamStore = storeLookup.getGameStore(getGameStoresSafe(), "steam") as Steam;
     const games = await steamStore.allGames();
 
     // Find the game entry that matches this executable's location
@@ -269,7 +269,7 @@ class StarterInfo implements IStarterInfo {
         }
       };
 
-      const steamStore = GameStoreHelper.getGameStore("steam") as Steam;
+      const steamStore = storeLookup.getGameStore(getGameStoresSafe(), "steam") as Steam;
       return steamStore.runToolWithProton(
         api,
         info.exePath,
@@ -385,7 +385,7 @@ class StarterInfo implements IStarterInfo {
   ): PromiseBB<void> {
     let gameLauncher;
     try {
-      gameLauncher = GameStoreHelper.getGameStore(launcher);
+      gameLauncher = storeLookup.getGameStore(getGameStoresSafe(), launcher);
     } catch (err) {
       return PromiseBB.reject(err);
     }

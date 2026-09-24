@@ -9,7 +9,9 @@ const GAME_ID = "teamfortress2";
 const INFO_FILE = path.join("tf", "steam.inf");
 
 function findGame() {
-  return util.steam.findByAppId(STEAM_ID.toString()).then((game) => game.gamePath);
+  return util.GameStoreHelper.findByAppId(STEAM_ID.toString(), "steam").then(
+    (game) => game.gamePath,
+  );
 }
 
 let tools = [

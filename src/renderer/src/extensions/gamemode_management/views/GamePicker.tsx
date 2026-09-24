@@ -1,16 +1,12 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import type PromiseBB from "bluebird";
 import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
-import React, { type ComponentClass, useCallback, useMemo, useRef, useState } from "react";
+import React, { type ComponentClass, useMemo, useRef, useState } from "react";
 import type { WithTranslation } from "react-i18next";
 
 import type { IAvailableExtension } from "@/types/extensions";
 import type { IExtensionState } from "@/types/IState";
 import type { IState } from "@/types/IState";
-import { Listing } from "@/ui/components/listing/Listing";
-import { Pagination } from "@/ui/components/pagination/Pagination";
-import { Picker } from "@/ui/components/picker/Picker";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
@@ -26,11 +22,11 @@ import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setShowHiddenGames } from "../actions/session";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
-import { CollapsibleSection } from "../components/CollapsibleSection";
-import { GamesGrid } from "../components/GamesGrid";
-import { GamesList } from "../components/GamesList";
-import { NoGamesFound } from "../components/NoGamesFound";
+import { AddedGames } from "../components/added_games/AddedGames";
+import { DetectedGames } from "../components/detected_games/DetectedGames";
 import { Search } from "../components/search/Search";
+import { Section } from "../components/section/Section";
+import { SupportedGames } from "../components/supported_games/SupportedGames";
 import {
   DEFAULT_PICKER_LAYOUT,
   useDisplayOptionsAction,
@@ -55,8 +51,8 @@ interface IBaseProps {
   active?: boolean;
   pageId?: string;
   secondary?: boolean;
-  onRefreshGameInfo: (gameId: string) => PromiseBB<void>;
-  onBrowseGameLocation: (gameId: string) => PromiseBB<void>;
+  onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
+  onBrowseGameLocation: (gameId: string) => PromiseLike<void>;
   nexusGames: IGameListEntry[];
 }
 
@@ -85,9 +81,6 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 // "PAYDAY 2" vs "Payday 2" or "Resident Evil: Village" vs "Resident Evil Village" are 100 similar
 // "Final Fantasy 7 Remake" vs "Final Fantasy VII Remake" are 91 similar
 const SIMILARITY_RATIO = 90;
-// The unmanaged list can be large, so it's paginated this many games per page.
-const UNMANAGED_PAGE_SIZE = 49;
-
 /**
  * picker/configuration for game modes
  */
@@ -114,11 +107,10 @@ const GamePicker = ({
   onSetShowHidden,
 }: IProps) => {
   const [currentFilterValue, setCurrentFilterValue] = useState("");
-  const [unmanagedPage, setUnmanagedPage] = useState(1);
 
   const nameLookupRef = useRef<{ [name: string]: string }>({});
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const unmanagedSectionRef = useRef<HTMLDivElement>(null);
+  const supportedSectionRef = useRef<HTMLDivElement>(null);
 
   const nexusGameById = useMemo(
     () =>
@@ -272,19 +264,12 @@ const GamePicker = ({
     }
   });
 
-  const unmanagedGameList: IGameStored[] = [...discoveredGameList, ...supportedGameList];
-
   const filteredManaged = managedGameList.filter(applyGameFilter).sort(sortBy(sortManaged));
-  const filteredUnmanaged = unmanagedGameList.filter(applyGameFilter).sort(sortBy(sortUnmanaged));
-
-  // Paginate the (potentially large) unmanaged list. The page is clamped so the
-  // view stays valid when filtering/sorting shrinks the list under the cursor.
-  const unmanagedPageCount = Math.max(1, Math.ceil(filteredUnmanaged.length / UNMANAGED_PAGE_SIZE));
-  const currentUnmanagedPage = Math.min(unmanagedPage, unmanagedPageCount);
-  const pagedUnmanaged = filteredUnmanaged.slice(
-    (currentUnmanagedPage - 1) * UNMANAGED_PAGE_SIZE,
-    currentUnmanagedPage * UNMANAGED_PAGE_SIZE,
-  );
+  // Detection results are a short list with no sort control of their own, so they stay
+  // alphabetical rather than following the catalogue's sort.
+  // Ordering is the detected section's own setting, so it sorts what it's given.
+  const filteredDetected = discoveredGameList.filter(applyGameFilter);
+  const filteredSupported = supportedGameList.filter(applyGameFilter).sort(sortBy(sortUnmanaged));
 
   const displayOptions = useDisplayOptionsAction({
     pickerLayout,
@@ -295,20 +280,31 @@ const GamePicker = ({
       onSetSortManaged("alphabetical");
       onSetSortUnmanaged("popular");
       onSetShowHidden(false);
-      setUnmanagedPage(1);
     },
     onSetPickerLayout,
     onToggleHidden: () => {
       onSetShowHidden(!showHidden);
-      setUnmanagedPage(1);
     },
   });
 
   const toolbarActions: IToolbarAction[] = [displayOptions];
 
+  // A quick scan reports through its callback rather than redux, so it's tracked here;
+  // the deep search reports through session.discovery and is the only one cancellable.
+  const scrollToSupported = () => {
+    const container = scrollAreaRef.current;
+    const section = supportedSectionRef.current;
+
+    if (container && section) {
+      container.scrollTop +=
+        section.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    }
+  };
+
   return (
-    <Page active={active} pageId={pageId} scrollable={false}>
+    <Page isFullWidth active={active} pageId={pageId} scrollable={false}>
       <PageHeader
+        isFullWidth
         pictogramName="game"
         subtitle={t("Manage games to get started.")}
         title={t("Games")}
@@ -319,7 +315,6 @@ const GamePicker = ({
             value={currentFilterValue}
             onChange={(value) => {
               setCurrentFilterValue(value);
-              setUnmanagedPage(1);
             }}
           />
 
@@ -329,138 +324,38 @@ const GamePicker = ({
         </div>
       </PageHeader>
 
-      <PageScroll ref={scrollAreaRef}>
-        <CollapsibleSection
-          actions={
-            <Picker
-              button={{ appearance: "subdued", size: "sm" }}
-              options={[
-                { label: t("Name A-Z"), value: "alphabetical" },
-                { label: t("Recently used"), value: "recentlyused" },
-              ]}
-              value={sortManaged}
-              onChange={onSetSortManaged}
-            />
-          }
-          title={
-            <span className="flex items-center gap-x-2">
-              {t("Managed")}
+      <PageScroll isFullWidth ref={scrollAreaRef}>
+        <DetectedGames
+          count={getTabGameNumber(discoveredGameList, filteredDetected)}
+          filtering={!!currentFilterValue}
+          games={filteredDetected}
+          hasAddedGames={!!managedGameList.length}
+          onBrowseGameLocation={onBrowseGameLocation}
+          onBrowseSupported={scrollToSupported}
+          onRefreshGameInfo={onRefreshGameInfo}
+        />
 
-              <span className="text-neutral-subdued">
-                {getTabGameNumber(managedGameList, filteredManaged)}
-              </span>
-            </span>
-          }
-        >
-          <Listing
-            entityCount={filteredManaged.length}
-            noResultsMessage={
-              currentFilterValue
-                ? t("Try adjusting your search terms.")
-                : t('To start managing a game, go to "Unmanaged" and activate a game there.')
-            }
-            noResultsTitle={
-              currentFilterValue ? t("No games found") : t("You haven't managed any games yet")
-            }
-          >
-            {pickerLayout === "list" ? (
-              <GamesList
-                discoveredGames={discoveredGames}
-                gameMode={gameMode}
-                games={filteredManaged}
-                t={t}
-                type="managed"
-                onBrowseGameLocation={onBrowseGameLocation}
-                onRefreshGameInfo={onRefreshGameInfo}
-              />
-            ) : (
-              <GamesGrid
-                discoveredGames={discoveredGames}
-                gameMode={gameMode}
-                games={filteredManaged}
-                t={t}
-                type="managed"
-                onRefreshGameInfo={onRefreshGameInfo}
-              />
-            )}
-          </Listing>
-        </CollapsibleSection>
+        <AddedGames
+          count={getTabGameNumber(managedGameList, filteredManaged)}
+          filtering={!!currentFilterValue}
+          games={filteredManaged}
+          sortOrder={sortManaged}
+          onBrowseGameLocation={onBrowseGameLocation}
+          onRefreshGameInfo={onRefreshGameInfo}
+          onSortChange={onSetSortManaged}
+        />
 
-        <CollapsibleSection
-          actions={
-            <Picker
-              button={{ appearance: "subdued", size: "sm" }}
-              options={[
-                { label: t("Most Popular"), value: "popular" },
-                { label: t("Name A-Z"), value: "alphabetical" },
-                { label: t("Most Recent"), value: "recent" },
-              ]}
-              value={sortUnmanaged}
-              onChange={(value) => {
-                onSetSortUnmanaged(value);
-                setUnmanagedPage(1);
-              }}
-            />
-          }
-          ref={unmanagedSectionRef}
-          title={
-            <span className="flex items-center gap-x-2">
-              {t("Unmanaged")}
-
-              <span className="text-neutral-subdued">
-                {getTabGameNumber(unmanagedGameList, filteredUnmanaged)}
-              </span>
-            </span>
-          }
-        >
-          <div className="space-y-6">
-            <Listing
-              customNoResults={<NoGamesFound className="py-16" t={t} />}
-              entityCount={filteredUnmanaged.length}
-            >
-              {pickerLayout === "list" ? (
-                <GamesList
-                  discoveredGames={discoveredGames}
-                  gameMode={gameMode}
-                  games={pagedUnmanaged}
-                  t={t}
-                  type="unmanaged"
-                  onBrowseGameLocation={onBrowseGameLocation}
-                  onRefreshGameInfo={onRefreshGameInfo}
-                />
-              ) : (
-                <GamesGrid
-                  discoveredGames={discoveredGames}
-                  gameMode={gameMode}
-                  games={pagedUnmanaged}
-                  t={t}
-                  type="unmanaged"
-                  onRefreshGameInfo={onRefreshGameInfo}
-                />
-              )}
-            </Listing>
-
-            {!!filteredUnmanaged.length && currentUnmanagedPage === unmanagedPageCount && (
-              <NoGamesFound className="py-6" t={t} />
-            )}
-
-            <Pagination
-              currentPage={currentUnmanagedPage}
-              recordsPerPage={UNMANAGED_PAGE_SIZE}
-              totalRecords={filteredUnmanaged.length}
-              onPaginationUpdate={(page) => {
-                setUnmanagedPage(page);
-
-                const container = scrollAreaRef.current;
-                const section = unmanagedSectionRef.current;
-                if (container && section) {
-                  container.scrollTop +=
-                    section.getBoundingClientRect().top - container.getBoundingClientRect().top;
-                }
-              }}
-            />
-          </div>
-        </CollapsibleSection>
+        <SupportedGames
+          count={getTabGameNumber(supportedGameList, filteredSupported)}
+          filterValue={currentFilterValue}
+          games={filteredSupported}
+          ref={supportedSectionRef}
+          sortOrder={sortUnmanaged}
+          onBrowseGameLocation={onBrowseGameLocation}
+          onPageChange={scrollToSupported}
+          onRefreshGameInfo={onRefreshGameInfo}
+          onSortChange={onSetSortUnmanaged}
+        />
       </PageScroll>
     </Page>
   );

@@ -2172,6 +2172,9 @@ class InstallManager {
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
     }
+    if (profile === undefined) {
+      return Promise.reject(new ProcessCanceled(`Invalid profile specified for "${modId}"`));
+    }
 
     this.repairRules(api, mod, gameId);
 
@@ -2223,6 +2226,9 @@ class InstallManager {
 
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
+    }
+    if (profile === undefined) {
+      return Promise.reject(new ProcessCanceled(`Invalid profile specified for "${modId}"`));
     }
 
     this.repairRules(api, mod, gameId);
@@ -6270,15 +6276,18 @@ class InstallManager {
               queuedDownloads.splice(idx, 1);
 
               const errMsg = unknownToError(err).message;
-              const errCode = getErrorCode(err);
+              const parsedErr = parseError(err);
 
-              // Check if this is a network error that might have caused the download to be paused
+              // a failure of the connection itself (which may have paused the download), as
+              // opposed to a refusal by the server
               const isNetworkError =
-                errMsg?.includes("socket hang up") ||
-                errMsg?.includes("ECONNRESET") ||
-                errMsg?.includes("ETIMEDOUT") ||
-                errCode === "ECONNRESET" ||
-                errCode === "ETIMEDOUT";
+                parsedErr.data.kind === "http:generic" ||
+                parsedErr.data.kind === "http:timeout" ||
+                (parsedErr.data.kind === "http:bad-status" && parsedErr.data.statusCode >= 500) ||
+                (parsedErr.data.kind === "os:generic" &&
+                  ["ECONNRESET", "ECONNABORTED", "ETIMEDOUT"].includes(
+                    parsedErr.data.originalCode,
+                  ));
 
               // Check if this is a "File already downloaded" error (for cases where we get a generic error message)
               const isAlreadyDownloaded =

@@ -291,6 +291,30 @@ try {
       reportMetrics: (bucket) => betterIpcRenderer.send("flags:metrics", bucket),
       setContext: (context) => betterIpcRenderer.send("flags:setContext", context),
     },
+
+    fs: {
+      copy(source, target, options) {
+        return betterIpcRenderer.invoke("fs:copy", source.toWire(), target.toWire(), options);
+      },
+      createDirectory(path) {
+        return betterIpcRenderer.invoke("fs:createDirectory", path.toWire());
+      },
+      createLink(from, to, type) {
+        return betterIpcRenderer.invoke("fs:createLink", from.toWire(), to.toWire(), type);
+      },
+      delete(path) {
+        return betterIpcRenderer.invoke("fs:delete", path.toWire());
+      },
+      deleteRecursive(path) {
+        return betterIpcRenderer.invoke("fs:deleteRecursive", path.toWire());
+      },
+      move(source, target, options) {
+        return betterIpcRenderer.invoke("fs:move", source.toWire(), target.toWire(), options);
+      },
+      stat(path, options) {
+        return betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
+      },
+    },
   });
 } catch (err) {
   console.error("failed to run preload code", err);

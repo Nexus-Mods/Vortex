@@ -4,7 +4,6 @@ import * as path from "path";
 import { getErrorMessageOrDefault, parseError } from "@vortex/shared";
 import { ProcessCanceled, UserCanceled, VortexError } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
-import { pl } from "date-fns/locale";
 import getVersion from "exe-version";
 import type i18next from "i18next";
 import type { Message, PluginMetadata } from "loot";

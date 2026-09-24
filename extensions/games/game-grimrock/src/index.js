@@ -4,7 +4,9 @@ const path = require("path");
 const executable = process.platform == "linux" ? "Grimrock.bin.x86" : "grimrock.exe";
 
 function findGame() {
-  return util.steam.findByName("Legend of Grimrock").then((game) => game.gamePath);
+  return util.GameStoreHelper.findByName("Legend of Grimrock", "steam").then(
+    (game) => game.gamePath,
+  );
 }
 
 function modPath() {

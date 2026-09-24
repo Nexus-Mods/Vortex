@@ -57,7 +57,7 @@ describe("Switch", () => {
     expect(track()).toHaveAttribute("data-checked");
     expect(track()).not.toHaveAttribute("data-indeterminate");
 
-    rerender(<Switch aria-label="Setting" indeterminate={true} />);
+    rerender(<Switch aria-label="Setting" checked={false} indeterminate={true} />);
     expect(track()).toHaveAttribute("data-indeterminate");
   });
 

@@ -10,6 +10,7 @@ import Spinner from "../controls/Spinner";
 import type { IState } from "../types/IState";
 import { Button } from "../ui/components/button/Button";
 import { MutexProvider } from "../util/MutexContext";
+import { toggleTheme } from "../util/theme";
 import { ClassicLayout, ModernLayout } from "./layout";
 
 addStyle(ReactButton, "secondary");
@@ -26,13 +27,21 @@ const LayoutSwitcher = () => {
   const dispatch = useDispatch();
   const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
 
+  // Dev only: flips to the light theme, for checking colours resolve the way the Figma
+  // variables document them. See util/theme.ts.
+  const switchTheme = (event: React.MouseEvent) => {
+    event.preventDefault();
+    toggleTheme();
+  };
+
   return (
     <Button
       brand="primary"
       className="fixed right-4 bottom-4 z-toast"
       leftIconPath={useModernLayout ? mdiMonitor : mdiMonitorShimmer}
-      title={useModernLayout ? "Switch to Classic" : "Switch to Modern"}
+      title={`${useModernLayout ? "Switch to Classic" : "Switch to Modern"} (right-click: light theme)`}
       onClick={() => dispatch(setUseModernLayout(!useModernLayout))}
+      onContextMenu={switchTheme}
     />
   );
 };

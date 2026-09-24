@@ -59,6 +59,10 @@
             font-weight: var(--font-weight-normal);
             line-height: var(--text-body-sm--line-height);
             letter-spacing: var(--text-body-sm--letter-spacing);
+
+            transition-property: color;
+            transition-timing-function: var(--default-transition-timing-function);
+            transition-duration: var(--default-transition-duration);
         }
 
         & .nxm-pill-icon {
@@ -68,17 +72,72 @@
         }
     }
 
-    .nxm-pill-default,
-    .nxm-pill-success {
+    .nxm-pill-subdued {
         color: var(--color-translucent-moderate);
         border-color: var(--color-stroke-weak);
 
-        &:enabled:not(.nxm-pill-disabled):before {
-            background-color: var(--color-surface-translucent-low);
+        &:enabled:not(.nxm-pill-disabled) {
+            &:before {
+                background-color: var(--color-surface-translucent-low);
+            }
+
+            &:hover,
+            &:focus-visible,
+            &[aria-expanded="true"] {
+                .nxm-pill-label {
+                    color: var(--color-translucent-strong);
+                }
+            }
         }
+    }
+
+    .nxm-pill-scrim {
+        color: var(--color-on-scrim-moderate);
+        background-color: var(--color-scrim-moderate);
+        border-color: var(--color-stroke-weak);
+
+        &.nxm-pill-light .nxm-pill-icon {
+            color: var(--color-on-scrim-strong);
+        }
+
+        &:enabled:not(.nxm-pill-disabled) {
+            &:hover,
+            &:focus-visible,
+            &[aria-expanded="true"] {
+                border-color: var(--color-stroke-subdued);
+
+                .nxm-pill-label {
+                    color: var(--color-on-scrim-strong);
+                }
+            }
+        }
+    }
+
+    .nxm-pill-light .nxm-pill-icon {
+        color: var(--color-neutral-strong);
+    }
+
+    .nxm-pill-primary .nxm-pill-icon {
+        color: var(--color-primary-strong);
+    }
+
+    .nxm-pill-info .nxm-pill-icon {
+        color: var(--color-info-strong);
     }
 
     .nxm-pill-success .nxm-pill-icon {
         color: var(--color-success-strong);
+    }
+
+    .nxm-pill-danger .nxm-pill-icon {
+        color: var(--color-danger-strong);
+    }
+
+    .nxm-pill-warning .nxm-pill-icon {
+        color: var(--color-warning-moderate);
+    }
+
+    .nxm-pill-premium .nxm-pill-icon {
+        color: var(--color-premium-strong);
     }
 }

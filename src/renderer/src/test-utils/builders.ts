@@ -55,6 +55,7 @@ import type {
 } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type PluginPersistor from "../extensions/gamebryo_plugin_management/util/PluginPersistor";
 import toPluginId from "../extensions/gamebryo_plugin_management/util/toPluginId";
+import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
@@ -78,6 +79,7 @@ import type {
 } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
+import { accountReducer as nexusAccountReducer } from "../extensions/nexus_integration/reducers/account";
 import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus_integration/reducers/persistent";
 import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
@@ -785,7 +787,10 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
  * covered by the game-extension vortex-api mocks). vitest isolates these per test file, and
  * registration is idempotent.
  */
+const harnessGames = new Set<string>();
+
 function registerHarnessGame(gameId: string): void {
+  harnessGames.add(gameId);
   const gameReg = local<{
     gameModeManager: unknown;
     extensionGames: IGame[];
@@ -800,20 +805,18 @@ function registerHarnessGame(gameId: string): void {
       id: gameId,
       name: gameId,
       queryModPath: () => "mods",
+      // resolveGameVersion validates the game (executable) and tries
+      // game.getGameVersion first; provide both so tests don't fall through to
+      // exe-version probing of a nonexistent binary
+      executable: () => `${gameId}.exe`,
+      getGameVersion: () => Promise.resolve("1.0.0"),
     } as unknown as IGame);
-  }
-
-  const gvReg = local<{
-    gameVersionManager: { getGameVersion: () => Promise<string> } | undefined;
-  }>("gameversion-manager", { gameVersionManager: undefined });
-  if (gvReg.gameVersionManager === undefined) {
-    gvReg.gameVersionManager = { getGameVersion: () => Promise.resolve("1.0.0") };
   }
 }
 
 /**
  * Clear the process-`local` registries registerHarnessGame populates. The registries live on
- * the worker global, so without this a fake game (or version manager) registered by one test
+ * the worker global, so without this a fake game registered by one test
  * would persist and could mask a different test's expectation. Call from afterEach.
  */
 export function resetHarnessRegistries(): void {
@@ -827,11 +830,6 @@ export function resetHarnessRegistries(): void {
     extensionStubs: [],
   });
   gameReg.extensionGames.length = 0;
-
-  const gvReg = local<{ gameVersionManager: unknown }>("gameversion-manager", {
-    gameVersionManager: undefined,
-  });
-  gvReg.gameVersionManager = undefined;
 }
 
 /**
@@ -846,6 +844,7 @@ const DEFAULT_BINDINGS: IHarnessReducerBinding[] = [
   { path: ["persistent", "mods"], reducer: modsReducer },
   { path: ["session", "nexus"], reducer: nexusSessionReducer },
   { path: ["persistent", "nexus"], reducer: nexusPersistentReducer },
+  { path: ["confidential", "account", "nexus"], reducer: nexusAccountReducer },
   { path: ["persistent", "downloads"], reducer: downloadStateReducer },
 ];
 
@@ -892,6 +891,17 @@ export function makeApiHarness(
   const rootReducer = (state: IState, action: ITrackedAction): IState =>
     action.type === REPLACE_TYPE ? (action.payload as IState) : derived(state, action);
 
+  const initialState = makeDriverState(overrides);
+  // seed a discovery entry for every registered harness game the seed left undiscovered, so
+  // the real resolveGameVersion (getInstalledVersion proxy) passes its validity check; a game
+  // seeded with its own path keeps it
+  for (const gameId of harnessGames) {
+    initialState.settings.gameMode.discovered[gameId] ??= {
+      path: `C:/games/${gameId}`,
+      name: gameId,
+    } as IDiscoveryResult;
+  }
+
   const dispatched: ITrackedAction[] = [];
   // redux-act batches several actions into one; unwrap so each is recorded individually (the
   // derived reducers unwrap batches themselves)
@@ -911,11 +921,7 @@ export function makeApiHarness(
     }
     return next(tracked);
   };
-  const store = createStore(
-    rootReducer,
-    makeDriverState(overrides),
-    applyMiddleware(thunkMiddleware, recorder),
-  );
+  const store = createStore(rootReducer, initialState, applyMiddleware(thunkMiddleware, recorder));
   // the production state-watching mechanism over the harness store, backing api.onStateChange.
   // setState is a real dispatch, so watchers registered before a setState fire on it. Unlike
   // production's stateChangeHandler wrapper, watcher errors fail loud instead of being logged.

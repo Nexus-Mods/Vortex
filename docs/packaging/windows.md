@@ -73,6 +73,11 @@ CI action additionally:
 - validates the produced artifacts, including the asar dependency check
   described above.
 
+The workflow only creates a draft GitHub release. Undrafting it fires the
+release-driven workflows, including [publish-vortex-api.yml], which rebuilds
+the API declarations at the tag and publishes `@nexusmods/vortex-api` to npm
+(`beta` dist-tag for pre-releases, `latest` for stable).
+
 Do not run `pnpm package` (the signing variant) locally.
 
 ## Testing the auto-updater with local packages
@@ -99,5 +104,6 @@ Authenticode), see [updater-rehearsal.md] and
 [electron-builder documentation]: https://www.electron.build/
 [electron-builder NSIS configuration]: https://www.electron.build/configuration/nsis
 [package.yml]: ../../.github/workflows/package.yml
+[publish-vortex-api.yml]: ../../.github/workflows/publish-vortex-api.yml
 [updater-rehearsal.md]: ../updater-rehearsal.md
 [updater-testing.md]: ../updater-testing.md

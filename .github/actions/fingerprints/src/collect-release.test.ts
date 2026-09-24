@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const ctx = vi.hoisted(() => ({
-  payload: {},
-  repo: { owner: "org", repo: "repo" },
-  ref: "refs/tags/v1.2.0",
-}));
+const ctx = vi.hoisted(() => {
+  const payload: { release?: { tag_name: string; prerelease: boolean } } = {};
+  return { payload, repo: { owner: "org", repo: "repo" }, ref: "refs/tags/v1.2.0" };
+});
 
-vi.mock("@actions/core", () => ({ info: vi.fn() }));
+const inputs = vi.hoisted(() => ({ tag: "", prerelease: "false" }));
+
+vi.mock("@actions/core", () => ({
+  info: vi.fn(),
+  getInput: vi.fn((name: string) => (inputs as Record<string, string>)[name] ?? ""),
+}));
 vi.mock("@actions/github", () => ({ context: ctx, getOctokit: vi.fn() }));
 
 const { collectFromRelease } = await import("./collect-release");
@@ -78,7 +82,9 @@ const makeOctokit = ({
 
 describe("collectFromRelease", () => {
   beforeEach(() => {
-    ctx.ref = "refs/tags/v1.2.0";
+    ctx.payload = { release: { tag_name: "v1.2.0", prerelease: false } };
+    inputs.tag = "";
+    inputs.prerelease = "false";
   });
 
   it("returns empty rows when there is no previous tag", async () => {
@@ -88,9 +94,69 @@ describe("collectFromRelease", () => {
     expect(result.dbMode).toBe("insert");
   });
 
-  it("throws when current tag is not in the tag list", async () => {
-    const octokit = makeOctokit({ tags: [{ name: "v1.0.0" }] });
-    await expect(collectFromRelease(octokit as never)).rejects.toThrow(/not found/);
+  it("throws without a release event payload or tag input", async () => {
+    ctx.payload = {};
+    await expect(collectFromRelease(makeOctokit() as never)).rejects.toThrow(/release/);
+  });
+
+  it("falls back to the tag and prerelease inputs when dispatched", async () => {
+    ctx.payload = {};
+    inputs.tag = "v1.2.0-beta.2";
+    inputs.prerelease = "true";
+    const octokit = makeOctokit({
+      tags: [{ name: "v1.2.0-beta.2" }, { name: "v1.1.1" }, { name: "v1.2.0-beta.1" }],
+      prPages: [[makePR({ body: "Fixes fingerprint a1b2c3d4" })]],
+    });
+    const result = await collectFromRelease(octokit as never);
+    expect(octokit.rest.git.getRef).toHaveBeenCalledWith(
+      expect.objectContaining({ ref: "tags/v1.2.0-beta.1" }),
+    );
+    expect(result.rows[0]).toMatchObject({ release_version: "v1.2.0-beta.2" });
+  });
+
+  it("prefers the release payload over the tag input", async () => {
+    inputs.tag = "v9.9.9";
+    const octokit = makeOctokit({ tags: [{ name: "v1.2.0" }, { name: "v1.1.0" }] });
+    await collectFromRelease(octokit as never);
+    expect(octokit.rest.git.getRef).toHaveBeenCalledWith(
+      expect.objectContaining({ ref: "tags/v1.1.0" }),
+    );
+  });
+
+  it("compares a stable release against the previous stable, skipping betas", async () => {
+    const octokit = makeOctokit({
+      tags: [{ name: "v1.2.0" }, { name: "v1.2.0-beta.1" }, { name: "v1.1.0" }],
+    });
+    await collectFromRelease(octokit as never);
+    expect(octokit.rest.git.getRef).toHaveBeenCalledWith(
+      expect.objectContaining({ ref: "tags/v1.1.0" }),
+    );
+  });
+
+  it("compares a pre-release against the previous pre-release, skipping stables", async () => {
+    ctx.payload = { release: { tag_name: "v1.2.0-beta.2", prerelease: true } };
+    const octokit = makeOctokit({
+      tags: [
+        { name: "v1.2.0-beta.2" },
+        { name: "v1.1.1" },
+        { name: "v1.2.0-beta.1" },
+        { name: "v1.1.0" },
+      ],
+      prPages: [[makePR({ body: "Fixes fingerprint a1b2c3d4" })]],
+    });
+    const result = await collectFromRelease(octokit as never);
+    expect(octokit.rest.git.getRef).toHaveBeenCalledWith(
+      expect.objectContaining({ ref: "tags/v1.2.0-beta.1" }),
+    );
+    expect(result.rows[0]).toMatchObject({ release_version: "v1.2.0-beta.2" });
+  });
+
+  it("returns empty rows for the first pre-release when only stables exist", async () => {
+    ctx.payload = { release: { tag_name: "v1.2.0-beta.1", prerelease: true } };
+    const octokit = makeOctokit({ tags: [{ name: "v1.2.0-beta.1" }, { name: "v1.1.0" }] });
+    const result = await collectFromRelease(octokit as never);
+    expect(result.rows).toEqual([]);
+    expect(octokit.rest.git.getRef).not.toHaveBeenCalled();
   });
 
   it("collects fingerprints from PRs merged after the previous tag", async () => {

@@ -32,16 +32,4 @@
         line-height: var(--text-body-sm--line-height);
         letter-spacing: var(--text-body-sm--letter-spacing);
     }
-
-    .nxm-tooltip-arrow {
-        fill: var(--color-surface-mid);
-
-        path[clip-path] {
-            stroke: var(--color-surface-high);
-        }
-
-        path:not([clip-path]) {
-            stroke: var(--color-surface-mid);
-        }
-    }
 }

@@ -32,7 +32,7 @@ export function createHealthCheckApi(
   const customApi = createCustomCheckApi(registry, api);
   const legacyApi = createLegacyApi(legacyAdapter, registry);
   const resultsApi = createResultsApi(registry);
-  const { trackScanCompleted, trackScanTriggered } = createHealthCheckTracker(api);
+  const { trackScanTriggered } = createHealthCheckTracker(api);
 
   return {
     custom: customApi,
@@ -47,11 +47,10 @@ export function createHealthCheckApi(
       return registry.runAllHealthChecks(api);
     },
     /**
-     * Run the checks registered for a trigger, bracketed by the scan_triggered /
-     * scan_completed analytics events. Every scan funnels through here —
-     * the refresh button, the automatic triggers, and the settings/flag listeners —
-     * so this is the one place the pair can be emitted without double counting.
-     * A run that throws deliberately leaves no scan_completed behind.
+     * Run the checks registered for a trigger, reporting the scan_triggered analytics
+     * event. Every scan funnels through here — the refresh button, the automatic
+     * triggers, and the settings/flag listeners — so this is the one place it can be
+     * emitted without double counting.
      */
     runChecksByTrigger: async (trigger: HealthCheckTrigger) => {
       trackScanTriggered({
@@ -59,19 +58,7 @@ export function createHealthCheckApi(
         previous_issue_count: countActiveIssues(api.getState()).total,
       });
 
-      const startedAt = Date.now();
-      const results = await registry.runChecksByTrigger(trigger, api);
-      const counts = countActiveIssues(api.getState());
-
-      trackScanCompleted({
-        duration_ms: Date.now() - startedAt,
-        total_issues_found: counts.total,
-        warning_count: counts.warning,
-        suggestion_count: counts.suggestion,
-        health_check_passed: counts.total === 0,
-      });
-
-      return results;
+      return registry.runChecksByTrigger(trigger, api);
     },
   };
 }

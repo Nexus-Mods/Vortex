@@ -1,6 +1,6 @@
-import { createWriteStream } from "node:fs";
+import { createWriteStream, existsSync } from "node:fs";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
@@ -8,6 +8,20 @@ const MAIN_DIR = resolve(import.meta.dirname);
 const MAIN_PACKAGE_PATH = resolve(MAIN_DIR, "package.json");
 const DIST_DIR = resolve(MAIN_DIR, "build");
 const DIST_PACKAGE_PATH = resolve(DIST_DIR, "package.json");
+// Runtimes bundled into the installer; also declared as winget dependencies by winget-release.yml.
+const RUNTIME_DEPS_FILE = "runtime-dependencies.json";
+
+// Walks up because MAIN_DIR is the pnpm-deployed copy (src/main/dist), not src/main.
+function findUp(fileName, from) {
+  let dir = from;
+  for (;;) {
+    const candidate = resolve(dir, fileName);
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error(`Could not find ${fileName} above ${from}`);
+    dir = parent;
+  }
+}
 
 async function resolveDepVersions(deps, nodeModulesDir) {
   if (!deps) return deps;
@@ -44,14 +58,10 @@ async function prepareWin() {
   }
 
   const tempDir = resolve(MAIN_DIR, "temp");
-  await downloadFile(
-    "https://aka.ms/vs/17/release/vc_redist.x64.exe",
-    resolve(tempDir, "VC_redist.x64.exe"),
-  );
-  await downloadFile(
-    "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe",
-    resolve(tempDir, "windowsdesktop-runtime-win-x64.exe"),
-  );
+  const runtimeDeps = JSON.parse(await readFile(findUp(RUNTIME_DEPS_FILE, MAIN_DIR), "utf8"));
+  for (const { file, url } of runtimeDeps) {
+    await downloadFile(url, resolve(tempDir, file));
+  }
 }
 
 async function main() {

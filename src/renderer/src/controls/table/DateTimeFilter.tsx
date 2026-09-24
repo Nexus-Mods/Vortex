@@ -2,11 +2,33 @@ import * as React from "react";
 import { InputGroup } from "react-bootstrap";
 import ReactDatePicker from "react-datepicker";
 
-import { getDateFormat, getLocale } from "../../datelocales";
 import type { IFilterProps, ITableFilter } from "../../types/ITableAttribute";
 import { truthy } from "../../util/util";
 import { ComponentEx } from "../ComponentEx";
 import { Button } from "../TooltipControls";
+
+// react-datepicker's dateFormat uses its own token syntax. We derive it from
+// the platform's short date format so the picker reflects the UI locale
+// without the date-fns dependency.
+function reactDatePickerShortDateFormat(tag: string): string {
+  const parts = new Intl.DateTimeFormat(tag, { dateStyle: "short" }).formatToParts(
+    new Date(2020, 11, 31),
+  );
+  return parts
+    .map((p) => {
+      switch (p.type) {
+        case "year":
+          return p.value.length === 4 ? "yyyy" : "yy";
+        case "month":
+          return p.value.length === 2 ? "MM" : "M";
+        case "day":
+          return p.value.length === 2 ? "dd" : "d";
+        default:
+          return p.value;
+      }
+    })
+    .join("");
+}
 
 export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
   private currentComparison: "eq" | "ge" | "le";
@@ -60,8 +82,7 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
         <ReactDatePicker
           selected={truthy(filt.value) ? new Date(filt.value) : null}
           onChange={this.changeFilter}
-          locale={getLocale(locale)}
-          dateFormat={getDateFormat(locale)}
+          dateFormat={reactDatePickerShortDateFormat(locale)}
           isClearable={true}
           className="datetime-picker"
         />

@@ -6,16 +6,20 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
-import { terminate } from "./errorHandling";
+import { isQuitting, terminate, terminateAsync } from "./errorHandling";
 import { reportCrash } from "./errorReporting";
 import { getVortexPath } from "./getVortexPath";
 import { log } from "./logging";
 import Debouncer from "./NodeDebouncer";
 import { openUrl } from "./open";
+import { ReloadBudget } from "./reloadBudget";
 import { isTelemetryEnabled } from "./telemetry/state";
 import { closeAllViews } from "./webview";
 
 const MIN_HEIGHT = 700;
+// a renderer that dies more often than this isn't recovering, it's looping
+const MAX_RENDERER_RELOADS = 3;
+const RENDERER_RELOAD_WINDOW_MS = 60_000;
 const REQUEST_HEADER_FILTER = {
   urls: ["*://enbdev.com/*"],
 };
@@ -76,6 +80,7 @@ class MainWindow {
   private mInspector: boolean;
   private mInitialWindowSettings: IWindow | null = null;
   private mRendererPid: number | undefined;
+  private mReloadBudget = new ReloadBudget(MAX_RENDERER_RELOADS, RENDERER_RELOAD_WINDOW_MS);
 
   /**
    * Create a MainWindow instance.
@@ -177,6 +182,11 @@ class MainWindow {
           reason: details.reason,
         });
 
+        // a renderer lost while quitting isn't worth reviving or reporting
+        if (isQuitting()) {
+          return;
+        }
+
         // hard renderer crashes never reach the JS error handlers, so this
         // is the only place they can be reported
         if (!["clean-exit", "killed"].includes(details.reason)) {
@@ -189,6 +199,7 @@ class MainWindow {
             undefined,
             "renderer",
             isTelemetryEnabled(),
+            { "crash.exitCode": details.exitCode },
           ).catch((err: unknown) => {
             log("warn", "failed to report renderer crash", {
               error: getErrorMessageOrDefault(err),
@@ -197,6 +208,17 @@ class MainWindow {
         }
 
         if (details.reason !== "killed") {
+          if (!this.mReloadBudget.allow()) {
+            terminateAsync(
+              new Error(
+                `The Vortex window crashed ${this.mReloadBudget.count} times in a row ` +
+                  `(${details.reason}, exit code ${details.exitCode}) and can't be restarted.`,
+              ),
+            ).catch(() => {
+              /* best-effort */
+            });
+            return;
+          }
           // workaround for electron issue #19887
           setImmediate(() => {
             if (this.mWindow !== null) {

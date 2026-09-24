@@ -2,14 +2,15 @@ import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { QualifiedPath } from "@nexusmods/adaptor-api/fs";
 import { VortexError } from "@vortex/shared";
+import { QualifiedPath } from "@vortex/shared/filesystem";
+import { NativePathResolver } from "@vortex/shared/filesystem";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { NodeFileSystemBackendImpl } from "./backend";
 import { NodeFileSystemImpl } from "./filesystem-impl";
 import { PathResolverRegistryImpl } from "./path-resolver-registry";
-import { nativeToQP, platformResolver, platformScheme } from "./testing";
+import { nativeToQP } from "./testing";
 
 describe("NodeFileSystemImpl", () => {
   let root: string;
@@ -21,7 +22,7 @@ describe("NodeFileSystemImpl", () => {
     rootQP = nativeToQP(root);
     fs = new NodeFileSystemImpl(
       new NodeFileSystemBackendImpl(),
-      new PathResolverRegistryImpl([platformResolver()]),
+      new PathResolverRegistryImpl([new NativePathResolver()]),
     );
   });
 
@@ -62,7 +63,7 @@ describe("NodeFileSystemImpl", () => {
       if (step.done) break;
       const qp = step.value;
       expect(qp).toBeInstanceOf(QualifiedPath);
-      expect(qp.scheme).toBe(platformScheme());
+      expect(qp.scheme).toBe("native");
       seen.push(qp.basename);
     }
     expect(seen.sort()).toEqual(["a.txt", "b.txt", "c.txt"]);
@@ -112,7 +113,12 @@ describe("NodeFileSystemImpl", () => {
   });
 
   it("rejects paths whose scheme has no registered resolver", async () => {
-    const unknown = QualifiedPath.parse("steam://SteamApps/common/Skyrim");
+    const unknown = QualifiedPath.of({
+      scheme: "steam",
+      data: "",
+      path: "SteamApps/common/Skyrim",
+      root: "",
+    });
     await expect(fs.readFile(unknown)).rejects.toThrow(/No resolver/);
   });
 });

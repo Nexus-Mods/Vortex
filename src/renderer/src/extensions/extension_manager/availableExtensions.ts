@@ -5,7 +5,6 @@ import { log } from "@/logging";
 import type { IAvailableExtension } from "../../types/extensions";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { createVortexNexusV3Client } from "../nexus_integration/nexusV3Client";
-import { languageCodeByEnglishName } from "../settings_interface/languagemap";
 
 /**
  * Boundary to GET /v3/vortex/extensions: everything past this module works
@@ -15,36 +14,6 @@ export type VortexAsset = components["schemas"]["VortexAsset"];
 export type VortexExtension = components["schemas"]["VortexExtension"];
 export type VortexTranslation = components["schemas"]["VortexTranslation"];
 export type VortexData = components["schemas"]["VortexData"];
-
-/**
- * Derive a locale code from a translation's mod name. The endpoint carries no
- * locale field, so match an explicit code like "(pt-BR)" or an English
- * language name like "German".
- */
-export function parseTranslationLocale(name: string): string | undefined {
-  const explicit = /\(([a-z]{2})(?:-([a-z]{2}))?\)/i.exec(name);
-  if (explicit !== null) {
-    const [, language, country] = explicit;
-    return country !== undefined
-      ? `${language.toLowerCase()}-${country.toUpperCase()}`
-      : language.toLowerCase();
-  }
-
-  const words = name
-    .toLowerCase()
-    .split(/[^\p{L}]+/u)
-    .filter((word) => word.length > 0);
-
-  // longest window first so multi-word names win over their parts; 3 covers
-  // the longest languagemap entry ("Old Church Slavonic")
-  for (let size = 3; size >= 1; size--) {
-    for (let start = 0; start + size <= words.length; start++) {
-      const code = languageCodeByEnglishName(words.slice(start, start + size).join(" "));
-      if (code !== undefined) return code;
-    }
-  }
-  return undefined;
-}
 
 /** Parse to a finite number, or undefined; blank strings are not numbers. */
 function finite(value: string | null | undefined): number | undefined {
@@ -88,7 +57,7 @@ export function mapAvailableExtensions(data: VortexData): IAvailableExtension[] 
     ...data.translations.map((translation) =>
       toAvailableExtension(translation, {
         type: "translation",
-        language: translation.locale ?? parseTranslationLocale(translation.name),
+        language: translation.locale ?? undefined,
       }),
     ),
   ];

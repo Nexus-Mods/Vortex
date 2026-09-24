@@ -6,13 +6,15 @@ import type { IExtensionApi, ILookupResult } from "../../../types/IExtensionCont
 import type { IState } from "../../../types/IState";
 import { log } from "../../../util/log";
 import { batchDispatch } from "../../../util/util";
+import { SITE_ID } from "../../gamemode_management/constants";
 import * as selectors from "../../gamemode_management/selectors";
 import metaLookupMatch from "../../mod_management/util/metaLookupMatch";
 import NXMUrl from "../../nexus_integration/NXMUrl";
-import { convertNXMIdReverse } from "../../nexus_integration/util/convertGameId";
+import { convertNXMIdReverse, nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { activeGameId } from "../../profile_management/selectors";
 import { setDownloadModInfo } from "../actions/state";
 import { downloadPathForGame } from "../selectors";
+import getDownloadGames from "./getDownloadGames";
 
 // Queue management for metadata lookups
 interface IMetadataRequest {
@@ -115,7 +117,34 @@ class MetadataLookupQueue {
   }
 }
 
-function queryInfoInternal(api: IExtensionApi, dlId: string, ignoreCache: boolean): Bluebird<void> {
+/**
+ * the nexus domains a download's file can legitimately come from: every game it is filed under
+ * (compatible-download games included) plus "site", where cross-game tools live
+ */
+export function downloadDomains(state: IState, gameIds: string[]): Set<string> {
+  const domains = gameIds.map((id) => nexusGameId(selectors.gameById(state, id), id));
+  return new Set([...domains, SITE_ID]);
+}
+
+/**
+ * drop md5 hits from other games' mod pages. The hash lookup is game-agnostic, so a shared
+ * dependency (BepInEx, a config manager) re-uploaded to nexus for some other game is a
+ * byte-identical match that would otherwise be stamped onto this download as its identity
+ * (#21979). Results without a domain come from non-nexus meta servers and are kept.
+ */
+export function scopeToDomains(results: ILookupResult[], domains: Set<string>): ILookupResult[] {
+  return results.filter(
+    (iter) => iter.value?.domainName === undefined || domains.has(iter.value.domainName),
+  );
+}
+
+// exported for testing - the public entry point is queryInfo, which routes through
+// a 500ms interval queue that a unit test can't drive
+export function queryInfoInternal(
+  api: IExtensionApi,
+  dlId: string,
+  ignoreCache: boolean,
+): Bluebird<void> {
   const state: IState = api.store.getState();
 
   const actions: Action[] = [];
@@ -177,7 +206,9 @@ function queryInfoInternal(api: IExtensionApi, dlId: string, ignoreCache: boolea
 
   return lookupPromise
     .then((modInfo: ILookupResult[]) => {
-      const match = metaLookupMatch(modInfo, dl.localPath, gameMode);
+      const dlGames = getDownloadGames(dl);
+      const domains = downloadDomains(state, dlGames.length > 0 ? dlGames : [gameMode]);
+      const match = metaLookupMatch(scopeToDomains(modInfo, domains), dl.localPath, gameMode);
       if (match !== undefined) {
         const info = match.value;
 

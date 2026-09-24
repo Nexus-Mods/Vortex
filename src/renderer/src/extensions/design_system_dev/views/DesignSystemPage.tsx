@@ -15,6 +15,7 @@ import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
 import { InputDemo } from "@/ui/components/form/input/Input.demo";
 import { SelectDemo } from "@/ui/components/form/select/Select.demo";
 import { SwitchDemo } from "@/ui/components/form/switch/Switch.demo";
+import { GameTileDemo } from "@/ui/components/game_tile/GameTile.demo";
 import { IconDemo } from "@/ui/components/icon/Icon.demo";
 import { ImageDemo } from "@/ui/components/image/Image.demo";
 import { ListingDemo } from "@/ui/components/listing/Listing.demo";
@@ -43,6 +44,7 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
   const [selectedIconTab, setSelectedIconTab] = useState("icon");
   const [selectedFormTab, setSelectedFormTab] = useState("input");
   const [selectedDropdownTab, setSelectedDropdownTab] = useState("dropdown");
+  const [selectedTileTab, setSelectedTileTab] = useState("game-tile");
 
   return (
     <Page active={active} id="page-design-system-dev" scrollable={false}>
@@ -81,7 +83,7 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
 
             <TabButton name="Table" panelId="table" />
 
-            <TabButton name="Collection Tile" panelId="collection-tile" />
+            <TabButton name="Tile" panelId="tile" />
 
             <TabButton name="Toolbar" panelId="toolbar" />
 
@@ -237,8 +239,29 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
               <TableDemo />
             </TabPanel>
 
-            <TabPanel id="collection-tile">
-              <CollectionTileDemo api={api} />
+            <TabPanel id="tile">
+              <TabProvider
+                tab={selectedTileTab}
+                tabListId="tile-demo-tabs"
+                tabType="secondary"
+                onSetSelectedTab={setSelectedTileTab}
+              >
+                <TabBar>
+                  <TabButton name="Game" panelId="game-tile" />
+
+                  <TabButton name="Collection" panelId="collection-tile" />
+                </TabBar>
+
+                <div className="mt-6">
+                  <TabPanel id="game-tile">
+                    <GameTileDemo />
+                  </TabPanel>
+
+                  <TabPanel id="collection-tile">
+                    <CollectionTileDemo api={api} />
+                  </TabPanel>
+                </div>
+              </TabProvider>
             </TabPanel>
 
             <TabPanel id="toolbar">

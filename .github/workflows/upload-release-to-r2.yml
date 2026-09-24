@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   upload:
-    runs-on: platform-cluster
+    runs-on: platform-cluster-public
     steps:
       - name: Install tools
         run: |

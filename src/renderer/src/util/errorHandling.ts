@@ -3,6 +3,7 @@ import { inspect } from "util";
 
 import { type Span, context, ROOT_CONTEXT, SpanStatusCode, trace } from "@opentelemetry/api";
 import { isEnvironmentalError, parseError, unknownToError } from "@vortex/shared";
+import type { CrashType } from "@vortex/shared/errors";
 import { recordErrorOnSpan } from "@vortex/shared/telemetry";
 import type PromiseBB from "bluebird";
 import type { BrowserWindow } from "electron";
@@ -40,7 +41,7 @@ type IErrorContext = Record<string, string>;
 const globalContext: IErrorContext = {};
 
 export function createErrorReport(
-  type: string,
+  type: CrashType,
   error: IError,
   context: IErrorContext,
   state: IState | undefined,
@@ -320,7 +321,11 @@ export function toError(
       title,
       subtitle,
       stack,
-      allowReport: input["allowReport"],
+      // An environmental failure reaching the terminal handler still ends the
+      // session, but there is nothing for us to fix, so don't offer to report
+      // it. Keeps the dialog in step with recordErrorSpan, which drops the
+      // matching error span.
+      allowReport: input["allowReport"] ?? (isEnvironmentalError(input) ? false : undefined),
       details: Object.keys(flatErr)
         .filter((key) => key !== "allowReport")
         .map((key) => `${key}: ${flatErr[key]}`)

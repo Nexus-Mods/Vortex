@@ -1,5 +1,5 @@
 /**
- * The shape of `toolbar_action_clicked` as it reaches the generic Mixpanel funnel. The event
+ * The shape of `app_toolbar_action_clicked` as it reaches the generic Mixpanel funnel. The event
  * carries no game, version or user scope of its own — those are super properties
  * registered elsewhere — so what is asserted here is the whole of what a toolbar
  * contributes.
@@ -49,7 +49,7 @@ describe("useToolbarAnalytics", () => {
   it("reports the action, its toolbar and where it was reached from", () => {
     const event = report({ id: "deploy-mods" }, "bar");
 
-    expect(event.eventName).toBe("toolbar_action_clicked");
+    expect(event.eventName).toBe("app_toolbar_action_clicked");
     expect(event.properties).toEqual({ action: "deploy-mods", surface: "bar", toolbar: "mods" });
   });
 
@@ -72,7 +72,7 @@ describe("useToolbarAnalytics pin tracking", () => {
   it.each([true, false])("reports the state a pin was moved to (pinned=%s)", (pinned) => {
     const event = reportPin({ id: "deploy" }, pinned);
 
-    expect(event.eventName).toBe("toolbar_pin_changed");
+    expect(event.eventName).toBe("app_toolbar_pin_changed");
     expect(event.properties).toEqual({ action: "deploy", pinned, toolbar: "mods" });
   });
 
@@ -89,7 +89,7 @@ describe("useToolbarAnalytics pin tracking", () => {
 
     const event = lastEvent();
 
-    expect(event.eventName).toBe("toolbar_pins_reset");
+    expect(event.eventName).toBe("app_toolbar_pins_reset");
     expect(event.properties).toEqual({ toolbar: "mods" });
   });
 });

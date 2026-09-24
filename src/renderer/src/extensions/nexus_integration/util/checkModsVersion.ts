@@ -9,7 +9,6 @@ import type {
   NexusError,
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import { RateLimitError } from "@nexusmods/nexus-api";
 import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import type * as Redux from "redux";
@@ -23,6 +22,7 @@ import { gameById } from "../../gamemode_management/selectors";
 import { setModAttribute } from "../../mod_management/actions/mods";
 import type { IMod } from "../../mod_management/types/IMod";
 import { setLastUpdateCheck } from "../actions/session";
+import { isRateLimited, notifyRateLimited } from "../rateLimit";
 import { nexusGameId } from "./convertGameId";
 
 export const ONE_MINUTE = 60 * 1000;
@@ -384,13 +384,8 @@ export function retrieveModInfo(
         updateModAttributes(store.dispatch, gameMode, mod, modInfo);
       }
     })
-    .catch(RateLimitError, (err) => {
-      api.sendNotification({
-        id: "rate-limit-exceeded",
-        type: "warning",
-        title: "Rate-limit exceeded",
-        message: "You wont be able to use network features until the next full hour.",
-      });
+    .catch(isRateLimited, () => {
+      notifyRateLimited(api);
     })
     .catch((err: NexusError) => {
       if (err.statusCode === 404) {

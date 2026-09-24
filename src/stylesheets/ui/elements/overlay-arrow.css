@@ -1,0 +1,15 @@
+@layer components {
+    /* Shared by the tooltip's Floating UI arrow and the hand-placed OverlayArrow. */
+    .nxm-overlay-arrow {
+        pointer-events: none;
+        fill: var(--color-surface-mid);
+
+        path[clip-path] {
+            stroke: var(--color-surface-high);
+        }
+
+        path:not([clip-path]) {
+            stroke: var(--color-surface-mid);
+        }
+    }
+}

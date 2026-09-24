@@ -13,24 +13,26 @@ const ext = (props: { name?: string; author?: string; modId?: number }): ILangua
 
 describe("buildLanguageOptions", () => {
   it("produces one option for a bundled language with no extensions", () => {
-    const languages: ILanguage[] = [{ key: "en", language: "English", ext: [] }];
+    const languages: ILanguage[] = [{ key: "en", displayName: "English", ext: [] }];
 
     expect(buildLanguageOptions(languages, t)).toEqual([
       { id: "en::local", key: "en", extName: undefined, label: "English" },
     ]);
   });
 
-  it("includes the country in the label when present", () => {
-    const languages: ILanguage[] = [
-      { key: "en-GB", language: "English", country: "United Kingdom", ext: [] },
-    ];
+  it("uses the precomputed displayName verbatim for region-specific tags", () => {
+    const languages: ILanguage[] = [{ key: "en-GB", displayName: "British English", ext: [] }];
 
-    expect(buildLanguageOptions(languages, t)[0].label).toBe("English (United Kingdom)");
+    expect(buildLanguageOptions(languages, t)[0].label).toBe("British English");
   });
 
   it("uses the single extension and adds an author suffix when it has a modId", () => {
     const languages: ILanguage[] = [
-      { key: "de", language: "German", ext: [ext({ name: "de-ext", author: "Alice", modId: 42 })] },
+      {
+        key: "de",
+        displayName: "German",
+        ext: [ext({ name: "de-ext", author: "Alice", modId: 42 })],
+      },
     ];
 
     expect(buildLanguageOptions(languages, t)).toEqual([
@@ -39,7 +41,9 @@ describe("buildLanguageOptions", () => {
   });
 
   it("omits the author suffix for a single extension without a modId", () => {
-    const languages: ILanguage[] = [{ key: "fr", language: "French", ext: [{ name: "fr-local" }] }];
+    const languages: ILanguage[] = [
+      { key: "fr", displayName: "French", ext: [{ name: "fr-local" }] },
+    ];
 
     const [option] = buildLanguageOptions(languages, t);
     expect(option.label).toBe("French");
@@ -50,7 +54,7 @@ describe("buildLanguageOptions", () => {
     const languages: ILanguage[] = [
       {
         key: "pl",
-        language: "Polish",
+        displayName: "Polish",
         ext: [
           ext({ name: "pl-a", author: "Alice", modId: 1 }),
           ext({ name: "pl-b", author: "Bob", modId: 2 }),
@@ -66,7 +70,7 @@ describe("buildLanguageOptions", () => {
 
   it("falls back to 'unknown author' when an extension with a modId has no author", () => {
     const languages: ILanguage[] = [
-      { key: "es", language: "Spanish", ext: [{ name: "es-ext", modId: 7 }] },
+      { key: "es", displayName: "Spanish", ext: [{ name: "es-ext", modId: 7 }] },
     ];
 
     expect(buildLanguageOptions(languages, t)[0].label).toBe(

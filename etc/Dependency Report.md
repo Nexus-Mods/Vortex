@@ -15,7 +15,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @hot-updater/bsdiff | 0.30.6 |
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
-| @nexusmods/adaptor-api | link:../../packages/adaptor-api |
 | @nexusmods/file-dependency-resolver | link:../../packages/file-dependency-resolver |
 | @nexusmods/fomod-installer-ipc | 0.13.3 |
 | @nexusmods/fomod-installer-native | 0.13.3 |
@@ -47,7 +46,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | cytoscape-cose-bilkent | 4.1.0 |
 | cytoscape-edgehandles | 3.6.0 |
 | d3 | 5.16.0 |
-| date-fns | 2.30.0 |
 | dayjs | 1.11.20 |
 | dequal | 2.0.3 |
 | dnd-core | 9.5.1 |
@@ -124,6 +122,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | source-map-support | 0.5.21 |
 | string-template | 1.0.0 |
 | tailwindcss | 4.3.2 |
+| temporal-polyfill | 1.0.4 |
 | tmp | 0.1.0 |
 | tough-cookie | 6.0.1 |
 | turbowalk | 3.1.1 |

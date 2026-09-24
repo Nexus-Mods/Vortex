@@ -3,7 +3,7 @@ import React from "react";
 import type * as ReactReduxTypes from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
-import type { IActionDefinition } from "@/types/IActionDefinition";
+import type { IActionDefinition, IActionOptions } from "@/types/IActionDefinition";
 
 const { getState, objects } = vi.hoisted(() => ({
   getState: vi.fn(() => ({})),
@@ -196,5 +196,43 @@ describe("useModToolbarActions tracking identity", () => {
     expect(onActionClick).not.toHaveBeenCalled();
     expect(only?.id).toBe("Open Mod Folder");
     expect(only?.extension).toBe("open-directory");
+  });
+});
+describe("useModToolbarActions brands", () => {
+  // Unresolved mod conflicts reach the bar as a brand on Manage Rules, so colour says
+  // there is something waiting without the user hovering for the tooltip.
+  it("takes the brand an action asks for", () => {
+    const branded = plain("Manage Rules", { brand: () => "info" });
+
+    expect(byLabel([branded], "Manage Rules")?.brand).toBe("info");
+  });
+
+  it("leaves an action that asks for nothing the default brand", () => {
+    expect(byLabel([plain("Manage Rules")], "Manage Rules")?.brand).toBeUndefined();
+  });
+
+  // The two are separate props: something to say is not a reason to change colour, and
+  // an action can do either on its own.
+  it("keeps a notice from branding the action", () => {
+    const withNotice = plain("Manage Rules", { notice: () => "2 unresolved conflicts" });
+    const action = byLabel([withNotice], "Manage Rules (2 unresolved conflicts)");
+
+    expect(action?.brand).toBeUndefined();
+  });
+
+  it("keeps a brand from adding to the label", () => {
+    expect(labels([plain("Manage Rules", { brand: () => "info" })])).toContain("Manage Rules");
+  });
+
+  // Read on render, so a resolved conflict has to take the colour with it.
+  it("drops the brand once the action stops asking for it", () => {
+    const brand = vi.fn(() => "info" as ReturnType<NonNullable<IActionOptions["brand"]>>);
+    const branded = plain("Manage Rules", { brand });
+
+    expect(byLabel([branded], "Manage Rules")?.brand).toBe("info");
+
+    brand.mockReturnValue(undefined);
+
+    expect(byLabel([branded], "Manage Rules")?.brand).toBeUndefined();
   });
 });

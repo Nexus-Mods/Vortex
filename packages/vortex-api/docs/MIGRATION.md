@@ -430,3 +430,57 @@ or add the equivalent override for your package manager (pnpm: `peerDependencyRu
 ### Deprecated-but-working APIs (heads-up only)
 
 `ReactDOM.render`, `ReactDOM.findDOMNode`, and the legacy context API (`contextTypes` / `childContextTypes`) continue to work in Vortex's React 18. React logs deprecation warnings for them in development builds. They will be removed by React in a future major version, so migrating away when convenient is recommended - but nothing breaks today.
+
+## Vortex 2.x: `util.steam` and `util.epicGamesLauncher`
+
+`util.steam` and `util.epicGamesLauncher` are deprecated as of **2.8** and removed in **2.10**. Both now delegate to `util.GameStoreHelper`; call it directly instead.
+
+They keep working until 2.10. Each deprecated call logs a warning once per session, and any member not listed below also warns and returns `undefined`.
+
+### What to change
+
+| Deprecated                                     | Replacement                                      |
+| ---------------------------------------------- | ------------------------------------------------ |
+| `util.steam.findByAppId(id)`                   | `util.GameStoreHelper.findByAppId(id, "steam")`  |
+| `util.steam.findByName(name)`                  | `util.GameStoreHelper.findByName(name, "steam")` |
+| `util.steam.id`                                | the literal string `"steam"`                     |
+| `util.epicGamesLauncher.findByAppId(id)`       | `util.GameStoreHelper.findByAppId(id, "epic")`   |
+| `util.epicGamesLauncher.findByName(name)`      | `util.GameStoreHelper.findByName(name, "epic")`  |
+| `util.epicGamesLauncher.isGameInstalled(name)` | no drop-in, see below                            |
+
+Lookup behaviour is identical: same matchers, `^name$`-anchored name matching, same `GameEntryNotFound` rejection when nothing is found.
+
+```diff
+  function findGame() {
+-   return util.steam.findByAppId(STEAM_ID).then(game => game.gamePath);
++   return util.GameStoreHelper.findByAppId(STEAM_ID, "steam").then(game => game.gamePath);
+  }
+```
+
+`epicGamesLauncher.isGameInstalled` has no drop-in replacement. If you're passing an Epic app id (a codename such as `"Ovenbird"`), an app id lookup is all you need:
+
+```js
+function isGameInstalled(appId) {
+    return util.GameStoreHelper.findByAppId(appId, "epic")
+        .then(() => true)
+        .catch(() => false);
+}
+```
+
+The old method also fell back to a name lookup when the app id missed. Vortex's own Epic extensions dropped that fallback when they migrated. Only add it back (`.catch(() => util.GameStoreHelper.findByName(value, "epic")...)`) if you know you're passing a display name rather than an app id.
+
+### Prefer `findByAppId`
+
+`findByName` matches the store's display name, which changes between editions and localisations. App ids don't. If you're currently calling `findByName` and the game has a stable app id, switch to `findByAppId` while you're in there rather than porting the name lookup across.
+
+### Don't guard the new call
+
+`GameStoreHelper` has accepted a store id since 2019, so the replacement works on older Vortex as well. Extensions can't declare a Vortex version requirement and Vortex updates them automatically, so one build has to work for every user. Call the new API unconditionally rather than adding a `util.GameStoreHelper !== undefined` check.
+
+### If you don't update
+
+In 2.10 `util.steam` is `undefined` and the call throws a `TypeError`. These lookups usually sit in `findGame` or `queryPath`, so the game stops being discovered.
+
+### Promise types
+
+`GameStoreHelper` returns Bluebird promises today; a later release moves `IGameStore` to native promises. `.then()`, `.catch()` and `await` are unaffected. Bluebird-only methods on the result (`.tap()`, `.map()`, `.reflect()`, `.return()`) would break, so prefer the standard ones.

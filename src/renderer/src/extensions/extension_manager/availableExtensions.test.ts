@@ -7,11 +7,7 @@ import type {
   VortexExtension,
   VortexTranslation,
 } from "./availableExtensions";
-import {
-  dedupeGameExtensions,
-  mapAvailableExtensions,
-  parseTranslationLocale,
-} from "./availableExtensions";
+import { dedupeGameExtensions, mapAvailableExtensions } from "./availableExtensions";
 
 function makeAsset(overrides: Partial<VortexAsset> = {}): VortexAsset {
   return {
@@ -87,12 +83,12 @@ describe("mapAvailableExtensions", () => {
     expect(mapAvailableExtensions(data)[0].language).toBe("zh-Hans");
   });
 
-  it("falls back to parseTranslationLocale when the API locale is null", () => {
+  it("leaves language undefined when the API locale is null", () => {
     const data = makeData({
-      translations: [makeTranslation({ locale: null, name: "Vortex Translation (pt-BR)" })],
+      translations: [makeTranslation({ locale: null })],
     });
 
-    expect(mapAvailableExtensions(data)[0].language).toBe("pt-BR");
+    expect(mapAvailableExtensions(data)[0].language).toBeUndefined();
   });
 
   it("drops entries whose ids do not parse", () => {
@@ -150,31 +146,5 @@ describe("dedupeGameExtensions", () => {
 
     const result = dedupeGameExtensions([theme, translation, unresolved]);
     expect(result).toEqual([theme, translation, unresolved]);
-  });
-});
-
-describe("parseTranslationLocale", () => {
-  it("prefers an explicit locale code, normalizing its case", () => {
-    expect(parseTranslationLocale("Vortex Translation (pt-BR)")).toBe("pt-BR");
-    expect(parseTranslationLocale("Vortex Translation (DE)")).toBe("de");
-  });
-
-  it("matches an English language name", () => {
-    expect(parseTranslationLocale("Polish Translation for Vortex")).toBe("pl");
-  });
-
-  it("matches any name of a multi-name entry", () => {
-    // languagemap lists es as "Spanish; Castilian"
-    expect(parseTranslationLocale("Spanish Translation")).toBe("es");
-    expect(parseTranslationLocale("Castilian Translation")).toBe("es");
-  });
-
-  it("matches multi-word language names", () => {
-    // languagemap lists gd as "Scottish Gaelic; Gaelic"
-    expect(parseTranslationLocale("Scottish Gaelic Translation")).toBe("gd");
-  });
-
-  it("returns undefined when nothing matches", () => {
-    expect(parseTranslationLocale("Vortex Community Pack")).toBeUndefined();
   });
 });

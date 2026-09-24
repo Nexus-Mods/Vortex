@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { useMenuLayerContext, useWindowContext } from "../../contexts";
 import type { IState } from "../../types/IState";
 import { joinClasses } from "../../ui/utils/joinClasses";
+import { applyReduceMotion, useReduceMotion } from "../../util/reduceMotion";
 import startupSettings from "../../util/startupSettings";
 
 export interface ILayoutContainerProps {
@@ -23,6 +24,14 @@ export const LayoutContainer: FC<React.PropsWithChildren<ILayoutContainerProps>>
   const { menuLayerOpen, setMenuLayerRef } = useMenuLayerContext();
 
   const { customTitlebar, useModernLayout } = useSelector((state: IState) => state.settings.window);
+
+  const reduceMotion = useReduceMotion();
+
+  // Publishes the preference to the stylesheets. Startup applies it once before React
+  // mounts; this keeps it in step afterwards, whether the user or the OS changed it.
+  useEffect(() => {
+    applyReduceMotion(reduceMotion);
+  }, [reduceMotion]);
 
   // Add custom titlebar class on mount
   const initializedRef = useRef(false);

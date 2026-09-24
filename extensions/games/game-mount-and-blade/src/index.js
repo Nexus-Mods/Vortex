@@ -91,7 +91,7 @@ function findGame(mabGame) {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return util.steam.findByName(name).then((game) => game.gamePath);
+    return util.GameStoreHelper.findByName(name, "steam").then((game) => game.gamePath);
   }
 }
 

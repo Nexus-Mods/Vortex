@@ -12,7 +12,7 @@ const GIT_FILES = [".gitignore", ".gitattributes"];
 const ROOT_FOLDER_FILES = ["README.MD", "LICENSE", "CONTRIBUTING.MD"];
 
 function findGame() {
-  return util.steam.findByAppId("294100").then((game) => game.gamePath);
+  return util.GameStoreHelper.findByAppId("294100", "steam").then((game) => game.gamePath);
 }
 
 function requiresLauncher(gamePath) {

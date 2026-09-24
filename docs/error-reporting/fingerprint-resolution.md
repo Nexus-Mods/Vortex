@@ -18,7 +18,7 @@ flowchart TD
     subgraph resolution["Resolution flow"]
         direction TB
         PR_BODY["'Fixes fingerprint X' in a PR body, merged"] --> FIXED[fingerprint-fixed]
-        TAG_PUSH["v* release tag pushed"] --> RELEASED[fingerprint-released]
+        PUBLISHED["GitHub release published (undrafted)"] --> RELEASED[fingerprint-released]
         MANUAL["Manual dispatch by admin"] --> RESOLVE[fingerprint-resolve]
     end
 
@@ -57,18 +57,20 @@ The `^Fixes fingerprints?` regex requires the line to _start_ with the verb (no 
 
 All three live in [.github/workflows](../../.github/workflows/) and invoke the same composite action ([.github/actions/fingerprints](../../.github/actions/fingerprints/)) with a different `mode`.
 
+All three take a `dry-run` input that logs the collected rows and skips the ClickHouse write; the two event-driven ones can also be dispatched by hand, with `dry-run` defaulting to `true` there.
+
 ### `fingerprint-fixed.yml` — `mode: pr`
 
-- Trigger: `pull_request: closed`, scoped to `branches: [master, "v*"]`, gated on `github.event.pull_request.merged == true`.
+- Trigger: `pull_request: closed`, scoped to `branches: [master, "v*", "release/*"]`, gated on `github.event.pull_request.merged == true`. `workflow_dispatch` with a `pr-number` fetches that merged PR instead.
 - Skips auto-cherry-pick PRs by checking `head.ref` does not start with `cherry-pick/` (the prefix [.github/scripts/cherry-pick.sh](../../.github/scripts/cherry-pick.sh) hardcodes for the branches it pushes). The original PR records the fix; the cherry-pick is just propagation.
 - The action reads `github.event.pull_request.body`, extracts every `Fixes fingerprint <hex>` line, and inserts one row per fingerprint with `status: fixed` and `release_version: ""`.
 
 ### `fingerprint-released.yml` — `mode: release`
 
-- Trigger: `push: tags: ["v*"]`.
-- Resolves the previous `v*` tag, paginates closed PRs sorted by `updated_at` desc, and stops when `updated_at < since` (using the invariant `merged_at <= updated_at`).
+- Trigger: `release: published`, which fires when a draft is undrafted as either a stable release or a pre-release. `workflow_dispatch` with a `tag` scans that tag instead; a `-` in the tag marks it a pre-release.
+- Resolves the previous release on the same channel (pre-releases against the previous pre-release, stables against the previous stable, by semver), paginates closed PRs sorted by `updated_at` desc, and stops when `updated_at < since` (using the invariant `merged_at <= updated_at`).
 - For each merged PR with `Fixes fingerprint` lines in its body, inserts a row with `status: released` and `release_version: <current tag>`.
-- `concurrency: fingerprint-released-${{ github.ref }}` so two near-simultaneous tag pushes can't race.
+- `concurrency: fingerprint-released-<tag>` so two runs for the same release can't race.
 
 ### `fingerprint-resolve.yml` — `mode: resolve`
 
@@ -78,6 +80,7 @@ All three live in [.github/workflows](../../.github/workflows/) and invoke the s
     - `remove` — boolean; when `true`, deletes the rows instead of inserting
     - `status` — `fixed`, `released`, or `ignored` (when adding)
     - `release_version` — required when `status=released` and `remove=false`
+    - `dry-run` — log without writing (defaults to `false` here, since the workflow exists to write)
 - Use cases: backfilling fingerprints that pre-date the workflow, correcting a typo, removing a row that was misclassified.
 
 ## The action
@@ -88,8 +91,9 @@ Source layout — [.github/actions/fingerprints/](../../.github/actions/fingerpr
 src/
   index.ts            entry: validates `mode`, dispatches, applies result
   types.ts            Status / Mode const-objects with per-member JSDoc + type guards
-  collect-pr.ts       extracts fingerprints from current PR body
-  collect-release.ts  walks merged PRs since previous v* tag (early-stop pattern)
+  collect-pr.ts       extracts fingerprints from the PR body (event payload or fetched by number)
+  collect-release.ts  walks merged PRs since the previous same-channel release (early-stop pattern)
+  previous-tag.ts     picks that previous release by channel and semver
   collect-input.ts    validates manual workflow_dispatch inputs
   clickhouse.ts       batched JSONEachRow insert + parameterized DELETE
   *.test.ts           vitest unit tests (mocked octokit / @clickhouse/client)

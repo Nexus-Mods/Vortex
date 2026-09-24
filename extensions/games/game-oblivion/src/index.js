@@ -171,8 +171,8 @@ function main(context) {
     supportedTools: tools,
     queryModPath: () => "Data",
     logo: "gameart.jpg",
-    executable: () => "oblivion.exe",
-    requiredFiles: ["oblivion.exe"],
+    executable: () => "Oblivion.exe",
+    requiredFiles: ["Oblivion.exe"],
     environment: {
       SteamAPPId: "22330",
     },

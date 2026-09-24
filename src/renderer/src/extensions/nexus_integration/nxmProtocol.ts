@@ -1,6 +1,6 @@
 import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import { NexusError, RateLimitError } from "@nexusmods/nexus-api";
+import { HTTPError as NexusHTTPError, NexusError } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import { parseError } from "@vortex/shared";
 import type { Action } from "redux";
@@ -26,6 +26,7 @@ import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
 import { NEXUS_BASE_URL } from "./constants";
 import { refreshMembership, scheduleMembershipRefresh } from "./membership";
 import NXMUrl from "./NXMUrl";
+import { isRateLimited, notifyRateLimited } from "./rateLimit";
 import { isPremium, userInfo } from "./selectors";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
 import { findLatestUpdate } from "./util/checkModsVersion";
@@ -526,14 +527,20 @@ export class NxmProtocol {
 
   /** Rethrow an api failure as the error the download pipeline knows how to report. */
   #throwDownloadError(err: unknown): never {
-    if (err instanceof RateLimitError) {
-      this.#api.showErrorNotification("Rate limit exceeded", err, { allowReport: false });
+    if (isRateLimited(err)) {
+      notifyRateLimited(this.#api);
       throw err;
     }
 
     let error = err;
     if (error instanceof NexusError) {
       const http = new HTTPError(error.statusCode, error.message, error.request);
+      http.stack = error.stack;
+      error = http;
+    } else if (error instanceof NexusHTTPError) {
+      const http = new HTTPError(error.statusCode, error.message, error.url);
+      // the api client's message is already "HTTP (code) - message"
+      http.message = error.message;
       http.stack = error.stack;
       error = http;
     }

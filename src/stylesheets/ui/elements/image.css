@@ -1,0 +1,80 @@
+@layer components {
+    .nxm-image {
+        z-index: 0;
+        display: flex;
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-surface-translucent-low);
+
+        &.nxm-image-collection {
+            aspect-ratio: var(--aspect-collection);
+        }
+
+        &.nxm-image-game {
+            aspect-ratio: var(--aspect-game);
+        }
+
+        &.nxm-image-mod {
+            aspect-ratio: var(--aspect-mod);
+        }
+
+        & .nxm-image-media {
+            z-index: 1;
+            position: absolute;
+            border-radius: inherit;
+
+            transition-property: opacity;
+            transition-timing-function: var(--default-transition-timing-function);
+            transition-duration: var(--default-transition-duration);
+
+            &.nxm-image-media-pending {
+                opacity: 0;
+            }
+
+            &.nxm-image-media-cover {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            &.nxm-image-media-contain {
+                max-height: 100%;
+            }
+
+            &.nxm-image-media-blurred {
+                filter: blur(var(--blur-xl));
+            }
+        }
+
+        & .nxm-image-fallback {
+            width: auto;
+            aspect-ratio: 1;
+            max-height: 75%;
+            color: var(--color-neutral-subdued);
+            height: calc(var(--spacing) * 5);
+        }
+
+        & .nxm-image-spinner {
+            width: auto;
+            flex-shrink: 0;
+            aspect-ratio: 1;
+            max-height: 75%;
+            position: relative;
+            color: var(--color-neutral-subdued);
+            height: calc(var(--spacing) * 5);
+            animation: var(--animate-deferred-fade-in), var(--animate-spin);
+        }
+
+        & .nxm-image-frame {
+            inset: 0;
+            z-index: 5;
+            position: absolute;
+            pointer-events: none;
+            border-radius: inherit;
+            border: 1px solid var(--color-stroke-weak);
+        }
+    }
+}

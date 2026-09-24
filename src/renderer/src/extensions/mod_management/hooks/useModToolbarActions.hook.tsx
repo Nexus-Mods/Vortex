@@ -49,10 +49,10 @@ interface IPositionedAction {
  * fixed: pinning an action puts it back where it belongs rather than at the end.
  *
  * The order the bar reads in — Install From File, Open, History, Check for Updates,
- * Categories, Manage Rules — comes from these and from the positions passed to
- * `registerAction` elsewhere, so a change here moves the action in the overflow menu
- * too. Deploy and Purge keep the positions they had as components, being unpinned by
- * default and so seen in that menu.
+ * Categories, Manage Rules, Deploy, Purge — comes from these and from the positions
+ * passed to `registerAction` elsewhere, so a change here moves the action in the
+ * overflow menu too. Deploy and Purge keep the positions they had as components, which
+ * puts them at the end of the row.
  */
 const POSITION = {
   installFromFile: 25,
@@ -199,6 +199,7 @@ const useDeployAction = (t: TFunction): IPositionedAction => {
         id: "deploy",
         label: t("Deploy Mods"),
         iconPath: getIconPath("deploy"),
+        pinned: true,
         testId: "deploy-mods",
         brand: needToDeploy ? "primary" : "neutral",
         onClick: activator !== undefined ? deploy : noMethod,
@@ -324,6 +325,7 @@ const usePurgeAction = (t: TFunction): IPositionedAction => {
         id: "purge",
         label: t("Purge Mods"),
         iconPath: getIconPath("purge"),
+        pinned: true,
         testId: "purge-mods",
         onClick: activator !== undefined ? purge : noMethod,
       },
@@ -555,9 +557,14 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
 const useRegisteredActions = (group: string): IPositionedAction[] => {
   const objects = useExtensionObjects<IActionDefinition>(registerAction, undefined, group, true);
 
-  // Read through the store, so a notice can follow state rather than be fixed at registration.
+  // Read through the store, so a notice and a brand can follow state rather than be
+  // fixed at registration.
   const notices = useSelector(
     () => objects.map((definition) => definition.options?.notice?.()),
+    shallowEqual,
+  );
+  const brands = useSelector(
+    () => objects.map((definition) => definition.options?.brand?.()),
     shallowEqual,
   );
 
@@ -603,6 +610,7 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
         // what IconBar built its DOM ids from.
         id: definition.title,
         label: !notice ? definition.title : `${definition.title} (${notice})`,
+        brand: brands[index],
         iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
         pinned: definition.options?.pinned ?? false,
         disabled: typeof condition === "string",

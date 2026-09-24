@@ -15,17 +15,19 @@ import type { ITool } from "../../../types/ITool";
 import { ProcessCanceled, SetupError } from "../../../util/CustomErrors";
 import extractExeIcon from "../../../util/exeIcon";
 import * as fs from "../../../util/fs";
-import GameStoreHelper from "../../../util/GameStoreHelper";
 import type { Normalize } from "../../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
 import { getSafe } from "../../../util/storeHelper";
+import * as storeLookup from "../../../util/storeLookup";
 import { truthy } from "../../../util/util";
 import { modPathsForGame } from "../../mod_management/selectors";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IToolStored } from "../types/IToolStored";
+import { getGameStores, getGameStoresSafe } from "./getGame";
+import { identifyStore } from "./identifyStore";
 import Progress from "./Progress";
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
@@ -118,7 +120,7 @@ function updateManuallyConfigured(
     discoveredGames[game.id]?.path !== undefined &&
     discoveredGames[game.id]?.store === undefined
   ) {
-    return GameStoreHelper.identifyStore(discoveredGames[game.id]?.path)
+    return identifyStore(discoveredGames[game.id]?.path, getGameStores())
       .then((store) => {
         if (store !== undefined) {
           log("debug", "updating previously discovered game", {
@@ -150,7 +152,8 @@ function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
 ): Bluebird<IGameStoreEntry> {
-  return GameStoreHelper.find(game.queryArgs)
+  return storeLookup
+    .find(getGameStoresSafe(), game.queryArgs)
     .then((results) =>
       Bluebird.all<IGameStoreEntry>(
         results.map((res) =>
@@ -205,7 +208,7 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
   return prom
     .then((resolvedInfo) => {
       if (typeof resolvedInfo === "string") {
-        return GameStoreHelper.identifyStore(resolvedInfo)
+        return identifyStore(resolvedInfo, getGameStores())
           .catch((err) => {
             log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
             return undefined;
@@ -289,10 +292,16 @@ export function quickDiscovery(
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
+  signal?: AbortSignal,
 ): Bluebird<string[]> {
   return Bluebird.all(
     knownGames.map((game) =>
       quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool).then(() => {
+        // Every game is queried in parallel, but each only reaches here once its tool
+        // lookup settles - so aborting still skips the bulk of the remaining work.
+        if (signal?.aborted) {
+          return undefined;
+        }
         if (getSafe(discoveredGames, [game.id, "pathSetManually"], false)) {
           // don't override manually set game location but maybe update some settings
           return updateManuallyConfigured(discoveredGames, game, onDiscoveredGame).then(() =>

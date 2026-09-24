@@ -82,6 +82,102 @@ build/test/format loop.
 - Shared components also expose semantic `nxm-`-prefixed classes
   (`nxm-tab-button`). Keep that pattern for reusable primitives.
 
+### Scrims
+
+A scrim darkens a **backdrop** so whatever sits on top stays readable: game art
+behind a tile's title, the app behind a modal. Use `bg-scrim-*` (or
+`from-`/`via-`/`to-scrim-*` for a gradient) and colour the content on it with
+`text-on-scrim-*`, or `<Typography brand="neutral-on-scrim">`.
+
+A scrim is not the same thing as tinting a surface for state or depth - a row
+hover, an input fill, a pressed state. Those are overlays, and they use the
+`translucent-*` / `translucent-dark-*` ramps.
+
+The distinction matters because the two behave differently when the theme
+changes, and the names are the only thing carrying that:
+
+- **A scrim never flips.** A photograph needs darkening whether the UI is light
+  or dark, and a modal backdrop stays dark in a light theme. `--color-scrim-*`
+  and `--color-on-scrim-*` are built from fixed black and white, and themes
+  leave them alone - see `src/stylesheets/ui/themes/light.css`, which overrides
+  every other family and deliberately omits these two.
+- **An overlay must flip.** A wash that lightens a dark surface has to darken a
+  light one, or it stops reading as a state change at all.
+
+> [!IMPORTANT]
+> Text laid on a scrim must use `on-scrim-*`, not the ordinary text tokens. A
+> theme-relative colour like `text-neutral-strong` flips to dark in a light
+> theme, and the scrim beneath it does not - so the label disappears.
+
+Both ramps live in `src/stylesheets/ui/theme/colours.css`.
+`src/stylesheets/ui/elements/modal.css` and the gradient in
+`src/renderer/src/ui/components/game_tile/GameTile.tsx` are the two worked
+examples.
+
+#### Naming a scrim-aware prop
+
+Components name this after **what they paint, not what they sit on**, so the two
+halves of the idea stay tellable apart:
+
+- A component that _is_ a scrim - it paints the fill - takes
+  `appearance="scrim"`. `Pill` is the worked example, and the name matches the
+  `Appearance=Scrim` variant in Figma.
+- Something laid _on_ a scrim someone else painted draws from the `on-scrim`
+  ramp. `Typography`'s `brand="neutral-on-scrim"` is the worked example.
+
+That the two land on different props is deliberate rather than drift. `Pill`'s
+`appearance` is a whole treatment - fill, border, hover - and has to stay
+orthogonal to `brand`, because a branded icon on a scrim is a real combination.
+`Typography`'s `brand` picks a ramp and `appearance` picks a step within it, so
+for text the scrim really is just another ramp.
+
+Only the achromatic ramp has a scrim counterpart: the design system has
+`Neutral/Scrim`, but no `Success/Scrim`. That is why the Typography brand is
+spelled `neutral-on-scrim` - there is deliberately no way to ask for
+`success-on-scrim`. A branded icon on a scrim still takes its colour from the
+ordinary, theme-relative brand ramp, and will shift with the theme.
+
+## Motion
+
+Users can turn non-essential animation down: **Settings → Interface → Reduce motion**,
+which follows the OS `prefers-reduced-motion` preference until they set it themselves.
+The answer is published as `data-reduce-motion="true"` on `<html>`
+(`util/reduceMotion.ts`); the rules keyed off it live in
+`src/stylesheets/ui/theme/motion.css`.
+
+- **Reduced means instant, not gentler.** Don't swap movement for a fade - a state change
+  lands immediately. Neutralise a transition by starting it from its final state rather
+  than by zeroing the duration:
+  `enterFrom="translate-y-6 opacity-0 reduce-motion:translate-y-0 reduce-motion:opacity-100"`.
+  That leaves nothing to animate while keeping the duration a `Transition` reads to time
+  itself. Drop delays too (`reduce-motion:delay-0`) - there is nothing left to wait for.
+- Prefer `transition-*` **without** an explicit `duration-*`. Those resolve their
+  duration through `--default-transition-duration`, which the attribute overrides, so
+  they flatten for free. A `duration-*` utility sets the duration directly and survives
+  on purpose - a component that names its own duration often depends on it - so opt
+  decorative ones out with the `reduce-motion:` variant:
+  `transition-[width] duration-300 reduce-motion:duration-0`.
+- Custom keyframes live in `src/stylesheets/ui/theme/animations.css`, registered as
+  `--animate-*` theme entries. Take the duration from `--default-transition-duration` for
+  the same reason as above, so the animation flattens without needing its own rule in
+  `motion.css`. A _delay_ is timing rather than motion, so keep it - a loader held back so
+  it never flashes on a short wait should still be held back.
+- **Don't use Tailwind's `motion-reduce:` / `motion-safe:` variants.** They compile to
+  `prefers-reduced-motion` media queries, so they follow the OS and can't see the app's
+  own setting. `reduce-motion:` is the app-aware equivalent.
+- In JavaScript, use `useReduceMotion()` in components and `isReduceMotionActive()`
+  elsewhere - for movement computed in JS rather than declared in CSS: a scroll tween, an
+  autoplay interval, a staged sequence. Clear any "is animating" flag when the preference
+  is on rather than leaving it set; an animation that never runs never fires
+  `animationend`.
+- **Keep essential motion.** Spinners (`animate-spin`), and anything whose movement _is_
+  the information (a countdown ring, a progress bar's width), have to keep working - a
+  static spinner says nothing. Skeleton shimmer (`animate-pulse`) is not essential and is
+  switched off centrally.
+- Only the Tailwind/`nxm-` surface responds so far. The legacy SCSS
+  (`src/stylesheets/vortex/**`, bundled Bootstrap) compiles its durations in and is not
+  covered yet, so the classic toolbar's flashing buttons still flash.
+
 ## State (Redux)
 
 - `useSelector` with a **stable selector reference**: a module-level function,
@@ -93,6 +189,8 @@ build/test/format loop.
   Return primitives or stable refs and map to objects or nodes in the component.
 - Push a hot subscription down into a small leaf component so only it
   re-renders. See `HealthCheckMenuBadge` and `LastUpdated`.
+- For writing reducers, registering them and the deprecated `storeHelper`
+  path helpers, see [state.md](state.md).
 
 ## i18n
 

@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const ctx = vi.hoisted<{ payload: { pull_request?: unknown } }>(() => ({
-  payload: {},
-}));
+const ctx = vi.hoisted<{
+  payload: { pull_request?: unknown };
+  repo: { owner: string; repo: string };
+}>(() => ({ payload: {}, repo: { owner: "me", repo: "repo" } }));
 
 vi.mock("@actions/core", () => ({ info: vi.fn() }));
 vi.mock("@actions/github", () => ({ context: ctx }));
 
-const { collectFromPR } = await import("./collect-pr");
+const { collectFromPR, fetchPullRequest } = await import("./collect-pr");
 
 const setPR = (body: string | null) => {
   ctx.payload = {
@@ -63,6 +64,20 @@ describe("collectFromPR", () => {
     expect(() => collectFromPR()).toThrow(/pull_request payload/);
   });
 
+  it("reads an explicitly passed pull request instead of the payload", () => {
+    ctx.payload = {};
+    const r = collectFromPR({
+      body: "Fixes fingerprint a1b2c3d4",
+      html_url: "https://github.com/me/repo/pull/7",
+      user: { login: "bob" },
+    });
+    expect(r.rows[0]).toMatchObject({
+      fingerprint: "a1b2c3d4",
+      pr_url: "https://github.com/me/repo/pull/7",
+      updated_by: "bob",
+    });
+  });
+
   it("only matches at start of line, not mid-line", () => {
     setPR("See: Fixes fingerprint a1b2c3d4 (inline)");
     expect(collectFromPR().rows).toEqual([]);
@@ -110,5 +125,27 @@ describe("collectFromPR", () => {
   it("captures whitespace-separated fingerprints in plural form", () => {
     setPR("Fixes fingerprints a1b2c3d4 b5c6d7e8");
     expect(collectFromPR().rows.map((r) => r.fingerprint)).toEqual(["a1b2c3d4", "b5c6d7e8"]);
+  });
+});
+
+const octokitWith = (data: Record<string, unknown>) => ({
+  rest: { pulls: { get: vi.fn().mockResolvedValue({ data }) } },
+});
+
+describe("fetchPullRequest", () => {
+  it("fetches the pull request by number in the current repo", async () => {
+    const octokit = octokitWith({ merged_at: "2024-06-01T00:00:00Z", body: "x" });
+    const pr = await fetchPullRequest(octokit as never, 7);
+    expect(octokit.rest.pulls.get).toHaveBeenCalledWith({
+      owner: "me",
+      repo: "repo",
+      pull_number: 7,
+    });
+    expect(pr.body).toBe("x");
+  });
+
+  it("rejects a pull request that is not merged", async () => {
+    const octokit = octokitWith({ merged_at: null });
+    await expect(fetchPullRequest(octokit as never, 7)).rejects.toThrow(/not merged/);
   });
 });

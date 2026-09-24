@@ -1,7 +1,10 @@
 import * as path from "node:path";
 
+import type { QualifiedPath, VortexPathBase } from "@vortex/shared/filesystem";
 import type { VortexPaths } from "@vortex/shared/ipc";
 import { app, type App } from "electron";
+
+import { VortexPathProvider } from "./filesystem/paths.vortex";
 
 // If running as a forked child process, read Electron app info from environment variables
 const electronAppInfoEnv: { [key: string]: string | undefined } =
@@ -84,7 +87,10 @@ function getLocalesPath(): string {
  */
 function getPackagePath(unpacked: boolean): string {
   if (isDevelopment) {
-    return basePath;
+    // basePath is <app>/build, which holds the bundle but no package.json, so it
+    // can't be handed to electron.exe as an app path. The unpacked variant has to
+    // stay on build, that's where LICENSE.md and the bundled binaries live.
+    return unpacked ? basePath : applicationPath;
   }
 
   let res = basePath;
@@ -120,6 +126,10 @@ function localAppData(): string {
 export function setVortexPath(id: ElectronPathId, value: string) {
   cache[id] = value;
   app.setPath(id, value);
+}
+
+export function getVortexQualifiedPath(base: VortexPathBase): Promise<QualifiedPath> {
+  return VortexPathProvider.instance.fromBase(base);
 }
 
 /**

@@ -24,6 +24,7 @@ import {
   MOD_TYPE_LOOSE,
   MOD_TYPE_LSLIB,
   MOD_TYPE_REPLACER,
+  MOD_TYPE_SECONFIG,
 } from "./common";
 import { abortDivineOperations } from "./divineWrapper";
 import * as gitHubDownloader from "./githubDownloader";
@@ -39,6 +40,8 @@ import {
   installEngineInjector,
   installModFixer,
   installReplacer,
+  testSEConfig,
+  installSEConfig,
 } from "./installers";
 import {
   deserialize,
@@ -73,6 +76,7 @@ import {
   convertV6toV7,
   convertToV8,
   fileExists,
+  scriptExtenderPath,
 } from "./util";
 
 const STOP_PATTERNS = ["[^/]*\\.pak$"];
@@ -335,6 +339,7 @@ function main(context: types.IExtensionContext) {
   );
   context.registerInstaller("bg3-replacer", 25, testReplacer as any, installReplacer as any);
   context.registerInstaller("bg3-modfixer", 25, testModFixer as any, installModFixer as any);
+  context.registerInstaller("bg3-se-config", 15, testSEConfig as any, installSEConfig as any);
 
   context.registerModType(
     MOD_TYPE_LSLIB,
@@ -370,6 +375,15 @@ function main(context: types.IExtensionContext) {
     () => getGameDataPath(context.api),
     (instructions) => isReplacer(context.api, instructions) as any,
     { name: "BG3 Replacer" } as any,
+  );
+
+  context.registerModType(
+    MOD_TYPE_SECONFIG,
+    15,
+    (gameId) => gameId === GAME_ID,
+    () => scriptExtenderPath(),
+    () => Bluebird.resolve(false),
+    { name: "BG3 Script Extender Config" } as any,
   );
 
   context.registerLoadOrder({

@@ -1,0 +1,106 @@
+# .github/workflows/publish-vortex-api.yml
+#
+# Publishes @nexusmods/vortex-api to npm when a Vortex release is published on
+# GitHub, i.e. when the draft that package.yml created is undrafted. Publishing
+# from the draft build would push a package for a release that may never go out.
+#
+# Pre-releases publish under the `beta` dist-tag, stable releases under `latest`.
+# A version that is already on npm is skipped, so re-running is safe.
+#
+# Auth is npm trusted publishing (OIDC): no token, but the npm package's trusted
+# publisher must point at this workflow file.
+
+name: Publish vortex-api
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g. 'v2.6.1' or 'v2.7.0-beta.1'). Tags with a '-' are pre-releases."
+        required: true
+        type: string
+      dry-run:
+        description: "Build and pack without publishing."
+        type: boolean
+        default: true
+
+concurrency:
+  group: publish-vortex-api-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for npm trusted publishing and provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      PRERELEASE: ${{ github.event_name == 'release' && github.event.release.prerelease || contains(inputs.tag, '-') }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+      # The API bundle never loads Electron, so skip the native rebuild the app needs.
+      VORTEX_ELECTRON_REBUILD: "skip"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - name: Read Node.js version from package.json
+        id: node-version
+        run: echo "NODE_VERSION=$(jq -r .engines.node package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Fix pnpm node-gyp permissions
+        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
+
+      # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
+      - name: Install fontconfig
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          dist_tag=latest
+          [ "$PRERELEASE" = "true" ] && dist_tag=beta
+          published=$(npm view "@nexusmods/vortex-api@$version" version 2>/dev/null || true)
+          {
+            echo "version=$version"
+            echo "dist-tag=$dist_tag"
+            echo "published=$([ -n "$published" ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+          [ -n "$published" ] && echo "::notice::@nexusmods/vortex-api@$version is already on npm, nothing to publish."
+          exit 0
+
+      - name: Bump version
+        if: steps.version.outputs.published == 'false'
+        run: pnpm -F "@nexusmods/vortex-api" version "${{ steps.version.outputs.version }}" --no-git-tag-version --no-git-checks --allow-same-version
+
+      - name: Install dependencies
+        if: steps.version.outputs.published == 'false'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API declarations
+        if: steps.version.outputs.published == 'false'
+        run: pnpm nx run @nexusmods/vortex-api:build
+
+      - name: Publish @nexusmods/vortex-api
+        if: steps.version.outputs.published == 'false'
+        run: |
+          set -euo pipefail
+          args=(--provenance --access public --no-git-checks --tag "${{ steps.version.outputs.dist-tag }}")
+          [ "$DRY_RUN" = "true" ] && args+=(--dry-run)
+          pnpm -F "@nexusmods/vortex-api" publish "${args[@]}"

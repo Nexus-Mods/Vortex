@@ -1,10 +1,12 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { INotification, NotificationType } from "@/types/INotification";
 
 const mocks = vi.hoisted(() => ({
+  items: [] as INotification[],
   notifications: [] as INotification[],
 }));
 
@@ -21,8 +23,11 @@ vi.mock("@/ExtensionProvider", () => ({
 // redux store; the trigger is what moved, so the panel hooks are stubbed to empty.
 vi.mock("./hooks/useNotificationFiltering.hook", () => ({ useNotificationFiltering: () => [] }));
 vi.mock("./hooks/useNotificationItems.hook", () => ({
-  useNotificationItems: () => ({ items: [], collapsed: {} }),
+  useNotificationItems: () => ({ items: mocks.items, collapsed: {} }),
 }));
+
+// The panel's rows are someone else's tests; the beak is what this file cares about.
+vi.mock("./components/NotificationItem", () => ({ NotificationItem: () => null }));
 vi.mock("./hooks/useNotificationActions.hook", () => ({
   useNotificationActions: () => ({
     dismissAll: vi.fn(),
@@ -42,6 +47,19 @@ const notification = (type: NotificationType): INotification => ({
   message: `a ${type}`,
 });
 
+/**
+ * Somewhere outside the component for focus to already be — the table filter or search
+ * box the user is typing in when a notification lands.
+ */
+const focusElsewhere = (tag: "button" | "input" | "textarea") => {
+  const element = document.createElement(tag);
+  element.dataset.focusStandIn = "true";
+  document.body.append(element);
+  element.focus();
+
+  return element;
+};
+
 const renderComponent = (types: NotificationType[]) => {
   mocks.notifications = types.map(notification);
   const { container } = render(<Notifications />);
@@ -55,7 +73,9 @@ const renderComponent = (types: NotificationType[]) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.items = [];
   mocks.notifications = [];
+  document.querySelectorAll("[data-focus-stand-in]").forEach((node) => node.remove());
 });
 
 // --- Tests ---
@@ -150,6 +170,31 @@ describe("Notifications trigger", () => {
     expect(bell).toHaveAttribute("aria-expanded", "true");
   });
 
+  it.each<"input" | "textarea">(["input", "textarea"])(
+    "opens itself without taking focus from a %s the user is in",
+    (tag) => {
+      // LAZ-1065: the tray coming up on its own used to focus the bell, costing the user
+      // their place mid-sentence.
+      const field = focusElsewhere(tag);
+      const { bell } = renderComponent(["error"]);
+
+      expect(bell).toHaveAttribute("aria-expanded", "true");
+      expect(document.activeElement).toBe(field);
+    },
+  );
+
+  it("takes focus when the user opens it themselves", async () => {
+    // Only the auto-open leaves focus alone; a click on the bell is the user asking for
+    // it, and the panel is reachable from the keyboard afterwards.
+    focusElsewhere("input");
+    const { bell } = renderComponent(["activity"]);
+
+    await userEvent.click(bell);
+
+    expect(bell).toHaveAttribute("aria-expanded", "true");
+    expect(document.activeElement).toBe(bell);
+  });
+
   it("closes itself once the last notification has gone", async () => {
     // Switching game fires a burst of notifications that expire on their own. The tray
     // auto-opens for them, and an open tray with nothing in it is just a lit bell.
@@ -170,5 +215,30 @@ describe("Notifications trigger", () => {
     renderComponent([]);
     // The resting border is transparent — it only paints on hover or while open.
     expect(screen.getByRole("button", { name: "Notifications" })).toHaveClass("border-transparent");
+  });
+});
+
+// LAZ-999: the tray sits directly above the download flyout in the spine, so the two
+// have to read as the same kind of panel — same beak, same distance from their button.
+describe("Notifications beak", () => {
+  it("points back at the bell with the same arrow the download flyout uses", async () => {
+    mocks.items = [notification("info")];
+    renderComponent(["info"]);
+
+    await waitFor(() => {
+      expect(document.querySelector(".nxm-overlay-arrow")).toBeInTheDocument();
+    });
+  });
+
+  it("draws no hand-rolled beak of its own any more", async () => {
+    mocks.items = [notification("info")];
+    const { container } = renderComponent(["info"]);
+
+    await waitFor(() => {
+      expect(document.querySelector(".nxm-overlay-arrow")).toBeInTheDocument();
+    });
+
+    // The old beak was a rotated square, which could never match the tooltip's 12x8.
+    expect(container.querySelector("span.rotate-45")).not.toBeInTheDocument();
   });
 });

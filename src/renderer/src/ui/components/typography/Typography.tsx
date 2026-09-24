@@ -56,6 +56,7 @@ export type ITypographyBrand =
   | "success"
   | "danger"
   | "warning"
+  | "neutral-on-scrim"
   | "none";
 
 /** Colour intensity. */
@@ -67,6 +68,9 @@ export type ITypographyAppearance = "weak" | "subdued" | "moderate" | "strong";
  *
  * - `brand` defaults to `neutral`; only `neutral` and `neutral-translucent` support `inverted`.
  * - `neutral-translucent` uses the shared white-alpha translucent ramp.
+ * - `neutral-on-scrim` is for text laid on a scrim, and draws from the fixed `on-scrim`
+ *   ramp — it stays light whatever the theme, because the scrim beneath it stays dark.
+ *   Named like `neutral-translucent`: achromatic, but from a ramp of its own.
  * - `brand="none"` opts out of colour styling entirely, so `appearance` is
  *   redundant and disallowed (the element inherits its colour).
  */
@@ -137,6 +141,11 @@ export const getTypographyColourClass = (
   // Uses the shared white-alpha translucent ramp.
   if (brand === "neutral-translucent") {
     return `text-translucent-${appearance}`;
+  }
+
+  // The token family is `on-scrim`: the colour to use *on* a scrim, not the scrim itself.
+  if (brand === "neutral-on-scrim") {
+    return `text-on-scrim-${appearance}`;
   }
 
   return `text-${brand}-${appearance}`;

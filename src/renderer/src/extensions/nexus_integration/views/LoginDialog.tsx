@@ -330,11 +330,6 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     this.nextState.apiKeyInput = key.replace(/\s/g, "");
   }
 
-  private handlePaste = () => {
-    this.storeKey(clipboard.readText());
-    this.nextState.context = undefined;
-  };
-
   private renderConfirmDialog() {
     return this.context.api.showDialog(
       "question",

@@ -1,4 +1,4 @@
-import { NexusError, RateLimitError } from "@nexusmods/nexus-api";
+import { HTTPError as NexusHTTPError, NexusError, RateLimitError } from "@nexusmods/nexus-api";
 import PromiseBB from "bluebird";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
@@ -225,6 +225,22 @@ describe("nxm protocol resolver", () => {
       expect((err as HTTPError).statusCode).toBe(500);
     });
 
+    test("turns the api client's own HTTPError into one the downloader can classify", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockRejectedValue(
+        new NexusHTTPError(520, "Request Failed", "", "https://api/download_link"),
+      );
+
+      const err = await resolve(MOD_URL).catch((caught: unknown) => caught);
+
+      expect(err).toBeInstanceOf(HTTPError);
+      expect((err as HTTPError).statusCode).toBe(520);
+      expect((err as HTTPError).message).toBe("HTTP (520) - Request Failed");
+      expect((err as HTTPError).data).toMatchObject({ kind: "http:bad-status", statusCode: 520 });
+    });
+
     test("reports a 401 as a log-in problem rather than a raw http error", async ({ makeNxm }) => {
       const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockRejectedValue(apiError(401, "unauthorized"));
@@ -232,16 +248,17 @@ describe("nxm protocol resolver", () => {
       await expect(resolve(MOD_URL)).rejects.toThrow("You are not logged in to Nexus Mods!");
     });
 
-    test("shows a non-reportable notification when the api rate limit is hit", async ({
+    // shared with every other rate-limited path, so a throttled install raises one warning
+    // rather than one per feature that failed
+    test("warns rather than raising an error when the api rate limit is hit", async ({
       makeNxm,
     }) => {
       const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockRejectedValue(new RateLimitError());
 
       await expect(resolve(MOD_URL)).rejects.toBeInstanceOf(RateLimitError);
-      expect(harness.errorNotifications).toEqual([
-        expect.objectContaining({ title: "Rate limit exceeded", allowReport: false }),
-      ]);
+      expect(harness.errorNotifications).toHaveLength(0);
+      expect(harness.notifications).toEqual([expect.objectContaining({ type: "warning" })]);
     });
   });
 
