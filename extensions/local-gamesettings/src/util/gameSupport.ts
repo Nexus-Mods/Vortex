@@ -1,6 +1,7 @@
 import * as path from "path";
 
 import { selectors, types, util } from "@nexusmods/vortex-api";
+import PromiseBB from "bluebird";
 import * as Redux from "redux";
 
 export interface ISettingsFile {
@@ -140,11 +141,35 @@ export function gameSupported(gameMode: string): boolean {
   return gameSupport.has(gameMode);
 }
 
-export function mygamesPath(gameMode: string): string {
-  return path.join(
-    util.getVortexPath("documents"),
-    "My Games",
-    gameSupport.get(gameMode, "mygamesPath"),
+function documentsPath(gameMode: string): PromiseBB<string> {
+  const hostDocumentsPath = util.getVortexPath("documents");
+
+  if (process.platform !== "linux") {
+    return PromiseBB.resolve(hostDocumentsPath);
+  }
+
+  const discovery = discoveryForGame(gameMode);
+  const steamAppId = util.getGame(gameMode)?.details?.steamAppId;
+  if (discovery?.store !== "steam" || steamAppId == null) {
+    return PromiseBB.resolve(hostDocumentsPath);
+  }
+
+  return util.GameStoreHelper.findByAppId(String(steamAppId), "steam")
+    .then((entry) => {
+      const protonEntry = entry as typeof entry & {
+        usesProton?: boolean;
+        compatDataPath?: string;
+      };
+      return protonEntry.usesProton && protonEntry.compatDataPath !== undefined
+        ? path.join(protonEntry.compatDataPath, "pfx", "drive_c", "users", "steamuser", "Documents")
+        : hostDocumentsPath;
+    })
+    .catch(() => hostDocumentsPath);
+}
+
+export function mygamesPath(gameMode: string): PromiseBB<string> {
+  return documentsPath(gameMode).then((documentsPath) =>
+    path.join(documentsPath, "My Games", gameSupport.get(gameMode, "mygamesPath")),
   );
 }
 
