@@ -3,7 +3,8 @@ import { describe, expect } from "vitest";
 import { test, type IGamebryoFixtures } from "../../../test-utils/gamebryoTest";
 import type { IGamebryoHarness, IGamebryoHarnessOpts } from "../../../test-utils/harnessTypes";
 import { setPluginManagementEnabled } from "../actions/settings";
-import { gameSupported, initGameSupport, knownGame } from "./gameSupport";
+import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
+import { gameSupported, initGameSupport, knownGame, pluginManagementEnabled } from "./gameSupport";
 
 // gameSupported consults the api handed to initGameSupport, so every harness runs the init first
 async function arrange(
@@ -46,5 +47,27 @@ describe("gameSupported gates", () => {
 
     expect(gameSupported("cyberpunk2077")).toBe(false);
     expect(knownGame("cyberpunk2077")).toBe(false);
+  });
+});
+
+describe("pluginManagementEnabled", () => {
+  test("reads the given profile's toggle", async ({ makeGamebryo }) => {
+    const harness = await arrange(makeGamebryo);
+
+    harness.api.store.dispatch(setPluginManagementEnabled(harness.profileId, false));
+
+    expect(pluginManagementEnabled(harness.api.getState(), "skyrimse", harness.profileId)).toBe(
+      false,
+    );
+  });
+
+  test("falls back to the game's default for a profile that never set the toggle", async ({
+    makeGamebryo,
+  }) => {
+    const harness = await arrange(makeGamebryo);
+    const state = harness.api.getState<IStateWithGamebryo>();
+
+    expect(pluginManagementEnabled(state, "skyrimse", harness.profileId)).toBe(true);
+    expect(pluginManagementEnabled(state, "starfield", harness.profileId)).toBe(false);
   });
 });

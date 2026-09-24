@@ -470,9 +470,14 @@ class PluginPersistor implements IPersistor {
     // this includes native plugins, which may be filtered out later, depending on the game
     // Blueprint plugins (Starfield) are excluded entirely: the game manages them
     // itself and strips any that appear in plugins.txt / loadorder.txt on launch.
+    // a plugin without a position goes last
+    const rank = (pluginId: string) => {
+      const pos = this.loadOrder(pluginId);
+      return pos < 0 ? Number.MAX_SAFE_INTEGER : pos;
+    };
     const sorted: string[] = Object.keys(this.mKnownPlugins)
       .filter((pluginId) => !this.mBlueprintPluginIds.has(pluginId))
-      .sort((lhs: string, rhs: string) => this.loadOrder(lhs) - this.loadOrder(rhs))
+      .sort((lhs: string, rhs: string) => rank(lhs) - rank(rhs))
       .filter((pluginId) => pluginId !== undefined)
       .map((pluginId) => this.mKnownPlugins[pluginId]);
 

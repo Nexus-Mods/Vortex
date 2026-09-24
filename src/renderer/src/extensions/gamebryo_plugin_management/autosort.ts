@@ -149,6 +149,12 @@ class LootInterface {
     // on demand, re-sort the plugin list
     api.events.on("autosort-plugins", this.onSort);
     api.onStateChange(["session", "base", "activity"], this.runDeferredSort);
+    api.onStateChange(["loadOrder"], (_previous, loadOrder) => {
+      // a profile's plugin sync starts from an empty load order before its own arrives
+      if (Object.keys(loadOrder ?? {}).length > 0) {
+        this.runDeferredSort();
+      }
+    });
 
     api.events.on(
       "plugin-details",
@@ -220,6 +226,13 @@ class LootInterface {
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
     const outcome = await this.runSort(manual);
     if (outcome.result === "sorted") {
+      const { store } = this.mExtensionApi;
+      const state = store.getState();
+      store.dispatch(updatePluginOrder(outcome.sorted, false, state.settings.plugins.autoEnable));
+      const sortedProfileId = activeProfile(state)?.id;
+      if (sortedProfileId !== undefined) {
+        store.dispatch(clearPendingPluginSort(sortedProfileId));
+      }
       this.mExtensionApi.sendNotification({
         id: "loot-sorted",
         type: "success",
@@ -261,7 +274,10 @@ class LootInterface {
   /** The gates every sort passes before doSort; the API path supplies the files to sort. */
   private async runSort(manual: boolean, pluginFilePaths?: string[]): Promise<SortOutcome> {
     const { store } = this.mExtensionApi;
-    if (this.shouldDeferLootActivities()) {
+    const { activeProfileId, nextProfileId } = store.getState().settings.profiles;
+    // a state sort during a profile switch waits for the next profile's load order
+    const switchPending = pluginFilePaths === undefined && nextProfileId !== activeProfileId;
+    if (this.shouldDeferLootActivities() || switchPending) {
       // only a state sort can run later from the deferred slot: it holds no file list and no
       // caller to answer, so a file sort is refused instead
       if (pluginFilePaths === undefined) {
@@ -447,13 +463,11 @@ class LootInterface {
         );
       const sorted: string[] = await this.mSortPromise;
       this.mRestarts = MAX_RESTARTS;
-      const state = store.getState();
       if (sorted === undefined) {
         // loot return an undefined result? how?
         log("error", "failed to sort plugins, empty loot result");
         return failed(new VortexError("LOOT returned no result", { kind: "loot:failed" }));
       }
-      store.dispatch(updatePluginOrder(sorted, false, state.settings.plugins.autoEnable));
       log("debug", "sorting plugins finished", {
         elapsedMS: Date.now() - timeBefore,
       });
@@ -469,10 +483,6 @@ class LootInterface {
         // the 'already closed' catch above resolves to [] when LOOT closed mid-sort; the marker
         // stays so the sort is retried on the next activation of the profile
         return { result: "interrupted" };
-      }
-      const sortedProfileId = activeProfile(state)?.id;
-      if (sortedProfileId !== undefined) {
-        store.dispatch(clearPendingPluginSort(sortedProfileId));
       }
       lootErrorReporter.succeeded(LootPhase.Sort);
       return { result: "sorted", sorted };

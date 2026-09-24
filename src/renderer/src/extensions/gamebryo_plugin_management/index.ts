@@ -60,6 +60,7 @@ import {
   knownGame,
   minRevision,
   nativePlugins,
+  pluginManagementEnabled,
   pluginPath,
   revisionText,
   syncGameSupport,
@@ -349,7 +350,10 @@ function register(
       if (process.type === "renderer") {
         const { profileId, enabled } = action.payload;
         const profile = profileById(state, profileId);
-        const currentState = getSafe(state, ["pluginManagementEnabled", profileId], false);
+        if (profile === undefined) {
+          return undefined;
+        }
+        const currentState = pluginManagementEnabled(state, profile.gameId, profileId);
         if (currentState !== enabled) {
           if (enabled) {
             syncGameSupport(profile.gameId, getGameSupport()[profile.gameId]);
