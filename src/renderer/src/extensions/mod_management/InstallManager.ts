@@ -6818,10 +6818,14 @@ class InstallManager {
     // Matching each member with a linear referenceEqual scan of every rule is O(members x
     // rules) and blocks the UI on a large collection even when nothing changes. Index the rules
     // once instead, and re-index from state after a member's rule is updated, so later members
-    // see the rules as that update left them, as a fresh scan would.
+    // see the rules as that update left them, as a fresh scan would. A rule persisted as null
+    // is left out: it can match nothing, and reading its reference would throw even when there
+    // is no member to match.
     const indexRules = () =>
       new ReferenceIndex<IModRule>(
-        getSafe(api.store.getState().persistent.mods, [gameId, sourceModId, "rules"], []),
+        (api.store.getState().persistent.mods?.[gameId]?.[sourceModId]?.rules ?? []).filter(
+          (rule) => rule != null,
+        ),
         (rule) => rule.reference,
       );
     let rulesIndex = indexRules();

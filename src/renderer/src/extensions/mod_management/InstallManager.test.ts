@@ -692,6 +692,19 @@ describe("updateRules", () => {
     ]);
   });
 
+  it("skips a rule persisted as null, with or without members to match", async () => {
+    // indexing the rules must not read a null rule's reference; before indexing, nothing read
+    // the rules at all when there were no members
+    const ruleA: IModRule = { type: "requires", reference: { logicalFileName: "a" } };
+    const store = rulesStore([null as unknown as IModRule, ruleA]);
+
+    await store.update([], true);
+    await store.update([member({ logicalFileName: "a" }, "mod-a")], false);
+
+    expect(store.dispatched).toEqual([]);
+    expect(store.rules()).toEqual([null, ruleA]);
+  });
+
   it("reads each rule a fixed number of times, however many members there are", async () => {
     const readsPerRule = async (memberCount: number) => {
       const reads = Array.from({ length: 40 }, () => ({ count: 0 }));
