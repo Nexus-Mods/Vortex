@@ -90,6 +90,7 @@ interface IProvider {
 declare module "@/types/IExtensionContext" {
   interface ApiEvents {
     "discover-game": (gameId: string) => string[];
+    "discover-tools": (gameId: string) => void;
   }
 }
 
@@ -999,9 +1000,11 @@ function init(context: IExtensionContext): boolean {
           cb?.(Array.from(discoveredGames), error);
         });
     });
-    context.api.onAsync("discover-tools", (gameId: string) =>
+
+    context.api.onAsync<"discover-tools">("discover-tools", (gameId) =>
       $.gameModeManager.startToolDiscovery(gameId),
     );
+
     events.on("start-discovery", () => {
       try {
         const state = context.api.getState();

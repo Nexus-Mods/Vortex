@@ -306,25 +306,31 @@ class GameModeManager {
     }
   }
 
-  public startToolDiscovery(gameId: string) {
+  public async startToolDiscovery(gameId: string): Promise<void> {
     const game = this.mKnownGames.find((iter) => iter.id === gameId);
-    if (game !== undefined) {
-      const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
-      const discovery = this.mStore.getState().settings.gameMode.discovered[game.id];
-      return quickDiscoveryTools(gameId, game.supportedTools, this.onDiscoveredTool)
-        .then(() => getNormalizeFunc(discovery.path))
-        .then((normalize) =>
-          discoverRelativeTools(
-            game,
-            discovery.path,
-            discoveredGames,
-            this.onDiscoveredTool,
-            normalize,
-          ),
-        );
-    } else {
-      return PromiseBB.reject(new Error("unknown game id: " + gameId));
+    if (game === undefined) {
+      throw new Error("unknown game id: " + gameId);
     }
+
+    const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
+    const discovery = this.mStore.getState().settings.gameMode.discovered[game.id];
+
+    // TODO: Bluebird to native
+    await Promise.resolve(quickDiscoveryTools(gameId, game.supportedTools, this.onDiscoveredTool));
+
+    // TODO: Bluebird to native
+    const normalize = await Promise.resolve(getNormalizeFunc(discovery.path));
+
+    // TODO: Bluebird to native
+    await Promise.resolve(
+      discoverRelativeTools(
+        game,
+        discovery.path,
+        discoveredGames,
+        this.onDiscoveredTool,
+        normalize,
+      ),
+    );
   }
 
   public isSearching(): boolean {
