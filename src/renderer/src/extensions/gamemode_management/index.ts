@@ -239,8 +239,7 @@ async function manualGameStoreSelection(
 ): Promise<string> {
   const gameStores = getGameStores();
 
-  // TODO: Bluebird to native
-  const storeId = await Promise.resolve(identifyStore(correctedGamePath, gameStores));
+  const storeId = await identifyStore(correctedGamePath, gameStores);
 
   const detectedStore = gameStores.find((store) => store.id === storeId);
 

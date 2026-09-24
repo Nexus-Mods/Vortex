@@ -106,10 +106,7 @@ async function updateManuallyConfigured(
   if (discoveredGame?.path === undefined || discoveredGame?.store !== undefined) return;
 
   try {
-    // TODO: Bluebird to native
-    const store = await Promise.resolve(
-      identifyStore(discoveredGames[game.id]?.path, getGameStores()),
-    );
+    const store = await identifyStore(discoveredGames[game.id]?.path, getGameStores());
     if (!store) return;
 
     log("debug", "updating previously discovered game", {
@@ -185,8 +182,7 @@ async function queryByCB(game: IGame): Promise<Partial<IGameStoreEntry> | undefi
   let store: string | undefined;
   if (typeof resolvedInfo === "string") {
     try {
-      // TODO: Bluebird to native
-      store = await Promise.resolve(identifyStore(resolvedInfo, getGameStores()));
+      store = await identifyStore(resolvedInfo, getGameStores());
       resolvedPath = resolvedInfo;
     } catch (err) {
       log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
