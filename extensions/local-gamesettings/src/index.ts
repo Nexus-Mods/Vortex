@@ -72,35 +72,42 @@ function checkGlobalFiles(
   oldProfile: types.IProfile,
   newProfile: types.IProfile,
 ): PromiseBB<ISettingsFile[]> {
-  let fileList: ISettingsFile[] = [];
+  const fileLists: Array<Promise<ISettingsFile[]>> = [];
 
   if (oldProfile !== undefined && gameSupported(oldProfile.gameId)) {
-    fileList = fileList.concat(
-      gameSettingsFiles(oldProfile.gameId, mygamesPath(oldProfile.gameId)),
+    fileLists.push(
+      mygamesPath(oldProfile.gameId).then((myGames) =>
+        gameSettingsFiles(oldProfile.gameId, myGames),
+      ),
     );
   }
 
   if (newProfile !== undefined && gameSupported(newProfile.gameId)) {
-    fileList = fileList.concat(
-      gameSettingsFiles(newProfile.gameId, mygamesPath(newProfile.gameId)),
+    fileLists.push(
+      mygamesPath(newProfile.gameId).then((myGames) =>
+        gameSettingsFiles(newProfile.gameId, myGames),
+      ),
     );
   }
 
-  fileList = util.unique(fileList, (item) => item.name);
+  return PromiseBB.all(fileLists).then((resolvedFileLists) => {
+    let fileList = ([] as ISettingsFile[]).concat(...resolvedFileLists);
+    fileList = util.unique(fileList, (item) => item.name);
 
-  return PromiseBB.filter(fileList, (file) =>
-    file.optional
-      ? PromiseBB.resolve(false)
-      : fs
-          .statAsync(file.name)
-          .then(() => false)
-          .catch(() => true),
-  ).then((missingFiles: ISettingsFile[]) => {
-    if (missingFiles.length > 0) {
-      return PromiseBB.resolve(missingFiles);
-    } else {
-      return PromiseBB.resolve(null);
-    }
+    return PromiseBB.filter(fileList, (file) =>
+      file.optional
+        ? PromiseBB.resolve(false)
+        : fs
+            .statAsync(file.name)
+            .then(() => false)
+            .catch(() => true),
+    ).then((missingFiles: ISettingsFile[]) => {
+      if (missingFiles.length > 0) {
+        return PromiseBB.resolve(missingFiles);
+      } else {
+        return PromiseBB.resolve(null);
+      }
+    });
   });
 }
 
@@ -117,18 +124,16 @@ function updateLocalGameSettings(
     gameSupported(oldProfile.gameId)
   ) {
     // revert game settings for game that was previously active
-    const myGames = mygamesPath(oldProfile.gameId);
     const gameSettings = gameSettingsFiles(oldProfile.gameId, null);
 
-    copyFiles = copyFiles
-      // re-import global files to profile
-      .then(() =>
-        (oldProfile as any).pendingRemove === true
+    copyFiles = copyFiles.then(() =>
+      mygamesPath(oldProfile.gameId).then((myGames) =>
+        ((oldProfile as any).pendingRemove === true
           ? PromiseBB.resolve()
-          : copyGameSettings(myGames, profilePath(oldProfile), gameSettings, "GloPro"),
-      )
-      // restore backup
-      .then(() => copyGameSettings(backupPath(oldProfile), myGames, gameSettings, "BacGlo"));
+          : copyGameSettings(myGames, profilePath(oldProfile), gameSettings, "GloPro")
+        ).then(() => copyGameSettings(backupPath(oldProfile), myGames, gameSettings, "BacGlo")),
+      ),
+    );
   }
 
   if (
@@ -138,17 +143,18 @@ function updateLocalGameSettings(
     gameSupported(newProfile.gameId)
   ) {
     // install game settings for game&profile that will now be active
-    const myGames = mygamesPath(newProfile.gameId);
     const gameSettings = gameSettingsFiles(newProfile.gameId, null);
 
-    copyFiles = copyFiles
-      // backup global files
-      .then(() => copyGameSettings(myGames, backupPath(newProfile), gameSettings, "GloBac"))
-      // install profile files
-      .then(() => copyGameSettings(profilePath(newProfile), myGames, gameSettings, "ProGlo"));
+    copyFiles = copyFiles.then(() =>
+      mygamesPath(newProfile.gameId).then((myGames) =>
+        copyGameSettings(myGames, backupPath(newProfile), gameSettings, "GloBac").then(() =>
+          copyGameSettings(profilePath(newProfile), myGames, gameSettings, "ProGlo"),
+        ),
+      ),
+    );
   }
 
-  return PromiseBB.resolve(copyFiles);
+  return copyFiles;
 }
 
 function onSwitchGameProfile(
@@ -214,11 +220,10 @@ function onDeselectGameProfile(
       }
     })
     .then(() => {
-      const myGames = mygamesPath(profile.gameId);
       const gameSettings = gameSettingsFiles(profile.gameId, null);
 
-      return copyGameSettings(myGames, profilePath(profile), gameSettings, "GloPro").then(
-        () => true,
+      return mygamesPath(profile.gameId).then((myGames) =>
+        copyGameSettings(myGames, profilePath(profile), gameSettings, "GloPro").then(() => true),
       );
     });
 }
