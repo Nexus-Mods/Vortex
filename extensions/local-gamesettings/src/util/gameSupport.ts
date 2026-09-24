@@ -1,7 +1,6 @@
 import * as path from "path";
 
 import { selectors, types, util } from "@nexusmods/vortex-api";
-import PromiseBB from "bluebird";
 import * as Redux from "redux";
 
 export interface ISettingsFile {
@@ -141,36 +140,46 @@ export function gameSupported(gameMode: string): boolean {
   return gameSupport.has(gameMode);
 }
 
-function documentsPath(gameMode: string): PromiseBB<string> {
+async function documentsPath(gameMode: string): Promise<string> {
   const hostDocumentsPath = util.getVortexPath("documents");
 
   if (process.platform !== "linux") {
-    return PromiseBB.resolve(hostDocumentsPath);
+    return hostDocumentsPath;
   }
 
   const discovery = discoveryForGame(gameMode);
   const steamAppId = util.getGame(gameMode)?.details?.steamAppId;
   if (discovery?.store !== "steam" || steamAppId == null) {
-    return PromiseBB.resolve(hostDocumentsPath);
+    return hostDocumentsPath;
   }
 
-  return util.GameStoreHelper.findByAppId(String(steamAppId), "steam")
-    .then((entry) => {
-      const protonEntry = entry as typeof entry & {
-        usesProton?: boolean;
-        compatDataPath?: string;
-      };
-      return protonEntry.usesProton && protonEntry.compatDataPath !== undefined
-        ? path.join(protonEntry.compatDataPath, "pfx", "drive_c", "users", "steamuser", "Documents")
-        : hostDocumentsPath;
-    })
-    .catch(() => hostDocumentsPath);
+  try {
+    const entry = await util.GameStoreHelper.findByAppId(String(steamAppId), "steam");
+    const protonEntry = entry as typeof entry & {
+      usesProton?: boolean;
+      compatDataPath?: string;
+    };
+
+    if (protonEntry.usesProton && protonEntry.compatDataPath !== undefined) {
+      return path.join(
+        protonEntry.compatDataPath,
+        "pfx",
+        "drive_c",
+        "users",
+        "steamuser",
+        "Documents",
+      );
+    }
+  } catch {
+    // Fall back to the native Documents directory.
+  }
+
+  return hostDocumentsPath;
 }
 
-export function mygamesPath(gameMode: string): PromiseBB<string> {
-  return documentsPath(gameMode).then((documentsPath) =>
-    path.join(documentsPath, "My Games", gameSupport.get(gameMode, "mygamesPath")),
-  );
+export async function mygamesPath(gameMode: string): Promise<string> {
+  const documents = await documentsPath(gameMode);
+  return path.join(documents, "My Games", gameSupport.get(gameMode, "mygamesPath"));
 }
 
 export function gameSettingsFiles(gameMode: string, customPath: string): ISettingsFile[] {
