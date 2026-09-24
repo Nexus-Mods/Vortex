@@ -41,76 +41,60 @@ interface IFileEntry {
   application: ITool;
 }
 
-export function quickDiscoveryTools(
+export async function quickDiscoveryTools(
   gameId: string,
-  tools: ITool[],
+  tools: ITool[] | undefined,
   onDiscoveredTool: DiscoveredToolCB,
-): Bluebird<void> {
-  if (tools === undefined) {
-    return Bluebird.resolve();
-  }
+): Promise<void> {
+  if (!tools) return;
 
-  return Bluebird.map(tools, (tool) => {
-    if (tool.queryPath === undefined) {
-      return Bluebird.resolve();
-    }
+  const promises = tools.map(async (tool) => {
+    if (!tool.queryPath) return;
 
     try {
-      const toolPath = tool.queryPath();
-      if (typeof toolPath === "string") {
-        if (toolPath) {
-          return autoGenIcon(tool, toolPath, gameId).then(() => {
-            onDiscoveredTool(gameId, {
-              ...tool,
-              path: path.join(toolPath, tool.executable(toolPath)),
-              hidden: false,
-              parameters: tool.parameters || [],
-              custom: false,
-            });
-          });
-        } else {
-          log("debug", "tool not found", {
+      // TODO: Bluebird to native
+      const toolPath = await Promise.resolve(tool.queryPath());
+      if (typeof toolPath !== "string") throw new Error("Invalid return type");
+
+      if (toolPath) {
+        try {
+          // TODO: Bluebird to native
+          await Promise.resolve(autoGenIcon(tool, toolPath, gameId));
+        } catch (err) {
+          log("debug", "failed to generate tool icon", {
+            err,
             gameId,
             toolId: tool.id,
             toolName: tool.name,
+            toolPath,
           });
-          return Bluebird.resolve();
         }
+
+        onDiscoveredTool(gameId, {
+          ...tool,
+          path: path.join(toolPath, tool.executable(toolPath)),
+          hidden: false,
+          parameters: tool.parameters || [],
+          custom: false,
+        });
       } else {
-        return (toolPath as Bluebird<string>)
-          .then((resolvedPath) => {
-            if (resolvedPath) {
-              return autoGenIcon(tool, resolvedPath, gameId).then(() => {
-                onDiscoveredTool(gameId, {
-                  ...tool,
-                  path: path.join(resolvedPath, tool.executable(resolvedPath)),
-                  hidden: false,
-                  parameters: tool.parameters || [],
-                  custom: false,
-                });
-              });
-            }
-            return Bluebird.resolve();
-          })
-          .catch((err) => {
-            log("debug", "tool not found", {
-              gameId,
-              toolId: tool.id,
-              toolName: tool.name,
-              error: getErrorMessageOrDefault(err),
-            });
-          });
+        log("debug", "tool not found", {
+          gameId,
+          toolId: tool.id,
+          toolName: tool.name,
+        });
       }
     } catch (err) {
       log("error", "failed to determine tool setup", {
-        error: unknownToError(err),
+        err,
         gameId,
         toolId: tool.id,
         toolName: tool.name,
       });
-      return Bluebird.resolve();
     }
-  }).then(() => null);
+  });
+
+  await Promise.all(promises);
 }
 
 async function updateManuallyConfigured(
@@ -289,13 +273,11 @@ export async function quickDiscovery(
   signal?: AbortSignal,
 ): Promise<string[]> {
   const promises = knownGames.map(async (game) => {
-    // TODO: Bluebird to native
-    await Promise.resolve(quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool));
+    await quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool);
 
     if (signal?.aborted) return undefined;
     if (discoveredGames[game.id]?.pathSetManually) {
       // don't override manually set game location but maybe update some settings
-      // TODO: Bluebird to native
       await updateManuallyConfigured(discoveredGames, game, onDiscoveredGame);
       return undefined;
     }

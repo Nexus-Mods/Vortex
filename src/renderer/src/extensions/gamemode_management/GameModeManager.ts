@@ -315,8 +315,7 @@ class GameModeManager {
     const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
     const discovery = this.mStore.getState().settings.gameMode.discovered[game.id];
 
-    // TODO: Bluebird to native
-    await Promise.resolve(quickDiscoveryTools(gameId, game.supportedTools, this.onDiscoveredTool));
+    await quickDiscoveryTools(gameId, game.supportedTools, this.onDiscoveredTool);
 
     // TODO: Bluebird to native
     const normalize = await Promise.resolve(getNormalizeFunc(discovery.path));
