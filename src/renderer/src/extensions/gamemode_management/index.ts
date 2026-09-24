@@ -278,12 +278,13 @@ function manualGameStoreSelection(
   });
 }
 
-function browseGameLocation(api: IExtensionApi, gameId: string): PromiseBB<void> {
-  const state: IState = api.store.getState();
+async function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
+  const state = api.getState();
 
   if (gameById(state, gameId) === undefined) {
-    return api
-      .showDialog(
+    // TODO: Bluebird to native
+    await Promise.resolve(
+      api.showDialog(
         "question",
         "Game support not installed",
         {
@@ -292,129 +293,134 @@ function browseGameLocation(api: IExtensionApi, gameId: string): PromiseBB<void>
             'Please click "Manage" to install the extension and set it up.',
         },
         [{ label: "Close" }],
-      )
-      .then(() => null);
+      ),
+    );
+
+    return;
   }
 
   const game = getGame(gameId);
-
-  if (game === undefined) {
-    return PromiseBB.resolve();
-  }
+  if (game === undefined) return;
 
   const discovery = state.settings.gameMode.discovered[gameId];
+  const defaultPath = discovery?.path;
 
-  return new PromiseBB<void>((resolve) => {
-    const defaultPath = discovery?.path;
+  // TODO: Bluebird to native
+  const selectedDirectory = await Promise.resolve(
+    api.selectDir(defaultPath !== undefined ? { defaultPath } : {}),
+  );
+  if (!selectedDirectory) return;
 
-    api.selectDir(defaultPath !== undefined ? { defaultPath } : {}).then((result) => {
-      if (result !== undefined) {
-        findGamePath(game, result, 0, searchDepth(game.requiredFiles || []))
-          .then((corrected: string) => {
-            if (process.env.VORTEX_E2E === "1") {
-              log(
-                "debug",
-                "browseGameLocation: skipping store selection (VORTEX_E2E), store detection is irrelevant in test environments",
-                { gameId },
-              );
-              return PromiseBB.resolve({ corrected, store: undefined as string });
-            }
-            return manualGameStoreSelection(api, corrected);
-          })
-          .then(({ corrected, store }) => {
-            let executable = game.executable(corrected);
-            if (executable === game.executable()) {
-              executable = undefined;
-            }
-            // different paths depending on whether the game was previously detected
-            // or not so that we don't overwrite user settings
-            if (defaultPath !== undefined) {
-              api.store.dispatch(setGamePath(game.id, corrected, store, executable));
-            } else {
-              api.store.dispatch(
-                addDiscoveredGame(game.id, {
-                  path: corrected,
-                  tools: {},
-                  hidden: false,
-                  environment: game.environment,
-                  executable,
-                  pathSetManually: true,
-                  store,
-                }),
-              );
-            }
+  try {
+    // TODO: Bluebird to native
+    let correctedGamePath = await Promise.resolve(
+      findGamePath(game, selectedDirectory, 0, searchDepth(game.requiredFiles || [])),
+    );
 
-            // discovery should still point to the old data at this point.
-            const previousStore = discovery?.store;
-            if (previousStore != null && previousStore !== store) {
-              const storeChangedDialog = async () =>
-                api.showDialog(
-                  "info",
-                  "Game Store Changed",
-                  {
-                    text: api.translate(
-                      'The game store has changed from "{{oldStore}}" to "{{newStore}}".\n\n' +
-                        "Some mods, mod loaders, and tools such as UE4SS or Script Extenders " +
-                        "install files into store-specific directories (e.g. win64 for Steam " +
-                        "vs winGDK for Xbox). These may need to be re-installed for the game " +
-                        "to function correctly at the new location.",
-                      { replace: { oldStore: previousStore, newStore: store ?? "unknown" } },
-                    ),
-                  },
-                  [{ label: "Close" }],
-                );
+    let store: string | undefined = undefined;
 
-              api.sendNotification({
-                id: `game-store-changed-${game.id}`,
-                type: "warning",
-                allowSuppress: true,
-                message: api.translate(
-                  "Game store changed - mod loaders and tools " +
-                    "(e.g. UE4SS) may need to be re-installed.",
-                ),
-                actions: [
-                  {
-                    title: "More",
-                    action: (dismiss: NotificationDismiss) => {
-                      void storeChangedDialog()
-                        .then(() => dismiss())
-                        .catch(() => undefined);
-                    },
-                  },
-                ],
-              });
-            }
-            resolve();
-          })
-          .catch((err: unknown) => {
-            log("warn", "browseGameLocation: failed to locate game", { gameId, err: err });
-            api.store.dispatch(
-              showDialog(
-                "error",
-                "Game not found",
-                {
-                  text: api.translate(
-                    "This directory doesn't appear to contain the game.\n" +
-                      "Usually you need to select the top-level game directory, " +
-                      "containing the following files:\n{{ files }}",
-                    { replace: { files: game.requiredFiles.join("\n") } },
-                  ),
-                },
-                [
-                  { label: "Cancel", action: () => resolve() },
-                  {
-                    label: "Try Again",
-                    action: () => browseGameLocation(api, gameId).then(() => resolve()),
-                  },
-                ],
-              ),
-            );
-          });
-      } else {
-        resolve();
-      }
+    if (process.env.VORTEX_E2E === "1") {
+      log(
+        "debug",
+        "browseGameLocation: skipping store selection (VORTEX_E2E), store detection is irrelevant in test environments",
+        { gameId },
+      );
+    } else {
+      // TODO: Bluebird to native
+      const res = await Promise.resolve(manualGameStoreSelection(api, correctedGamePath));
+      correctedGamePath = res.corrected;
+      store = res.store;
+    }
+
+    let executable = game.executable(correctedGamePath);
+    if (executable === game.executable()) {
+      executable = undefined;
+    }
+    // different paths depending on whether the game was previously detected
+    // or not so that we don't overwrite user settings
+    if (defaultPath !== undefined) {
+      api.store.dispatch(setGamePath(game.id, correctedGamePath, store, executable));
+    } else {
+      api.store.dispatch(
+        addDiscoveredGame(game.id, {
+          path: correctedGamePath,
+          tools: {},
+          hidden: false,
+          environment: game.environment,
+          executable,
+          pathSetManually: true,
+          store,
+        }),
+      );
+    }
+
+    const previousStore = discovery?.store;
+    if (previousStore === undefined || previousStore === store) return;
+
+    const storeChangedDialog = () =>
+      api.showDialog(
+        "info",
+        "Game Store Changed",
+        {
+          text: api.translate(
+            'The game store has changed from "{{oldStore}}" to "{{newStore}}".\n\n' +
+              "Some mods, mod loaders, and tools such as UE4SS or Script Extenders " +
+              "install files into store-specific directories (e.g. win64 for Steam " +
+              "vs winGDK for Xbox). These may need to be re-installed for the game " +
+              "to function correctly at the new location.",
+            { replace: { oldStore: previousStore, newStore: store ?? "unknown" } },
+          ),
+        },
+        [{ label: "Close" }],
+      );
+
+    api.sendNotification({
+      id: `game-store-changed-${game.id}`,
+      type: "warning",
+      allowSuppress: true,
+      message: api.translate(
+        "Game store changed - mod loaders and tools " + "(e.g. UE4SS) may need to be re-installed.",
+      ),
+      actions: [
+        {
+          title: "More",
+          action: (dismiss: NotificationDismiss) => {
+            void storeChangedDialog()
+              .then(() => dismiss())
+              .catch(() => undefined);
+          },
+        },
+      ],
     });
-  });
+  } catch (err) {
+    const dialogPromise = new Promise<void>((resolve) => {
+      api.showDialog(
+        "error",
+        "Game not found",
+        {
+          text: api.translate(
+            "This directory doesn't appear to contain the game.\n" +
+              "Usually you need to select the top-level game directory, " +
+              "containing the following files:\n{{ files }}",
+            { replace: { files: game.requiredFiles.join("\n") } },
+          ),
+        },
+        [
+          {
+            label: "Cancel",
+            action: () => resolve(),
+          },
+          {
+            label: "Try Again",
+            action: () => browseGameLocation(api, gameId).then(() => resolve()),
+          },
+        ],
+      );
+    });
+
+    log("warn", "browseGameLocation: failed to locate game", { gameId, err: err });
+    await dialogPromise;
+  }
 }
 
 function installGameExtension(
@@ -1044,7 +1050,7 @@ function init(context: IExtensionContext): boolean {
     events.on("manually-set-game-location", (gameId: string, callback: (err: Error) => void) => {
       browseGameLocation(context.api, gameId)
         .then(() => callback(null))
-        .catch((err) => callback(err));
+        .catch((err) => callback(unknownToError(err)));
     });
 
     const changeGameMode = (
