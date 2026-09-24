@@ -42,6 +42,7 @@ import {
 } from "./table/columnAnalytics";
 import GroupingRow, { EMPTY_ID } from "./table/GroupingRow";
 import HeaderCell from "./table/HeaderCell";
+import { mergeCalculated } from "./table/mergeCalculated";
 import { Table, TBody, TD, TH, THead, TR } from "./table/MyTable";
 import TableDetail from "./table/TableDetail";
 import TableRow from "./table/TableRow";
@@ -1353,18 +1354,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const oldState = this.mLastUpdateState || { data: {} };
     let newValues: ILookupCalculated = this.state.calculatedValues || {};
-    // Copy the cached values once, on the first change, and change rows in that copy. Merging
-    // each changed row with immutability-helper copied the whole cache per row: when a change
-    // touches every row (toggling a plugin renumbers the whole load order) that is quadratic,
-    // 1.5s of frozen UI per toggle with 2,000 plugins. It also keeps new and removed rows from
-    // being written into the cache that is still in the component's state.
-    let ownsValues = false;
-    const ownValues = () => {
-      if (!ownsValues) {
-        newValues = { ...newValues };
-        ownsValues = true;
-      }
-    };
+    // merged once, after every row: merging each row as it finishes copies the whole cache per row
+    const deltas: ILookupCalculated = {};
 
     // recalculate each attribute in each row
     return PromiseBB.map(Object.keys(data), (rowId: string) => {
@@ -1401,20 +1392,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }).then(() => {
         if (Object.keys(delta).length > 0) {
           delta.__id = rowId;
-          ownValues();
-          newValues[rowId] =
-            newValues[rowId] === undefined ? delta : { ...newValues[rowId], ...delta };
+          deltas[rowId] = delta;
         }
       });
     })
-      .then(() =>
-        PromiseBB.map(Object.keys(oldState.data), (rowId) => {
-          if (data[rowId] === undefined) {
-            ownValues();
-            delete newValues[rowId];
-          }
-        }),
-      )
+      .then(() => {
+        const removedIds = Object.keys(oldState.data).filter((rowId) => data[rowId] === undefined);
+        newValues = mergeCalculated(newValues, deltas, removedIds);
+      })
       .then(
         () =>
           // once everything is recalculated, update the cache
