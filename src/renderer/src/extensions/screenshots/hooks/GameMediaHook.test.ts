@@ -255,11 +255,11 @@ describe("GameMediaHook", () => {
       {},
     );
 
-    expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        payload: { media: [item("a", "screenshots"), item("c", "videos")] },
-      }),
-    );
+    expect(dispatch).toHaveBeenCalledWith({
+      error: false,
+      payload: { media: [item("c", "videos")], sourceId: "videos" },
+      type: "REPLACE_SOURCE_GAME_MEDIA",
+    });
 
     hook.unmount();
   });
