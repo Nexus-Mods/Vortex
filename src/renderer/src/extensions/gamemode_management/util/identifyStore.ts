@@ -22,15 +22,19 @@ export function identifyStore(
     );
   };
 
-  return PromiseBB.reduce(
-    stores,
-    (found: string | undefined, store) =>
-      found !== undefined
-        ? PromiseBB.resolve(found)
-        : (
-            store.identifyGame?.(gamePath, (gamePath) => fallback(gamePath, store)) ??
-            fallback(gamePath, store)
-          ).then((matches) => (matches ? store.id : undefined)),
-    undefined,
-  );
+  let result = PromiseBB.resolve<string | undefined>(undefined);
+  for (const store of stores) {
+    result = result.then((found) => {
+      if (found !== undefined) {
+        return found;
+      }
+
+      const probe =
+        store.identifyGame?.(gamePath, (gamePath) => fallback(gamePath, store)) ??
+        fallback(gamePath, store);
+      return probe.then((matches) => (matches ? store.id : undefined));
+    });
+  }
+
+  return result;
 }
