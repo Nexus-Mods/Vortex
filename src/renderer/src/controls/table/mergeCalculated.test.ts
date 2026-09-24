@@ -57,6 +57,47 @@ describe("mergeCalculated", () => {
     expect(prev).toEqual(cache());
   });
 
+  it("returns the previous values when every delta repeats them", () => {
+    const prev = frozen({ ...cache(), c: { __id: "c", name: null } });
+
+    const next = mergeCalculated(
+      prev,
+      { a: { __id: "a", index: 0 }, c: { __id: "c", name: null, missing: undefined } },
+      [],
+    );
+
+    expect(next).toBe(prev);
+  });
+
+  it("keeps the object of a row whose delta repeats its values", () => {
+    const prev = frozen({ ...cache(), c: { __id: "c", name: null } });
+
+    const next = mergeCalculated(
+      prev,
+      { a: { __id: "a", index: 5 }, c: { __id: "c", name: null } },
+      [],
+    );
+
+    expect(next.a).toEqual({ __id: "a", name: "A", index: 5 });
+    expect(next.b).toBe(prev.b);
+    expect(next.c).toBe(prev.c);
+  });
+
+  it.each([
+    [null, 1],
+    [1, null],
+    [null, undefined],
+    [undefined, null],
+  ])("treats %s becoming %s as a change", (before, after) => {
+    const prev = frozen({ ...cache(), c: { __id: "c", name: before } });
+
+    const next = mergeCalculated(prev, { c: { __id: "c", name: after } }, []);
+
+    expect(next.c).not.toBe(prev.c);
+    expect(next.c).toEqual({ __id: "c", name: after });
+    expect(next.a).toBe(prev.a);
+  });
+
   it("keeps a row's values that the delta does not recalculate", () => {
     const prev = frozen(cache());
 

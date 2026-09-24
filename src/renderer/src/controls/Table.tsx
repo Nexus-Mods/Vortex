@@ -1376,7 +1376,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         }
         return PromiseBB.resolve(attribute.calc(data[rowId], t))
           .then((newValue) => {
-            if (!_.isEqual(newValue, getSafe(newValues, [rowId, attribute.id], undefined))) {
+            // not getSafe, which reads a stored null as missing: a column that calculates null
+            // would then count as changed on every pass
+            if (!_.isEqual(newValue, newValues[rowId]?.[attribute.id])) {
               changedColumns.add(attribute.id);
               delta[attribute.id] = newValue;
             }
