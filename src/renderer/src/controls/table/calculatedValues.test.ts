@@ -25,6 +25,8 @@ vi.mock("immutability-helper", async (importOriginal) => {
   return { ...actual, default: counted };
 });
 
+// Counts one copy per call that changes anything. That a call copies only once, however many rows
+// change, is checked in mergeCalculated.test.ts.
 vi.mock("./mergeCalculated", async (importOriginal) => {
   const actual = await importOriginal<typeof MergeCalculated>();
   const counted: typeof actual.mergeCalculated = (prev, deltas, removedIds) => {

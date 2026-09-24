@@ -1,3 +1,5 @@
+import { performance } from "node:perf_hooks";
+
 import { describe, expect, it } from "vitest";
 
 import type { ILookupCalculated } from "../Table";
@@ -13,6 +15,24 @@ function cache(): ILookupCalculated {
 function frozen(values: ILookupCalculated): ILookupCalculated {
   Object.values(values).forEach((row) => Object.freeze(row));
   return Object.freeze(values);
+}
+
+function rows(count: number, offset: number): ILookupCalculated {
+  const result: ILookupCalculated = {};
+  for (let i = 0; i < count; i++) {
+    result[`row${i}`] = { __id: `row${i}`, index: i + offset };
+  }
+  return result;
+}
+
+function fastestMs(merge: () => unknown): number {
+  let fastest = Infinity;
+  for (let run = 0; run < 5; run++) {
+    const start = performance.now();
+    merge();
+    fastest = Math.min(fastest, performance.now() - start);
+  }
+  return fastest;
 }
 
 describe("mergeCalculated", () => {
@@ -96,6 +116,28 @@ describe("mergeCalculated", () => {
     expect(next.c).not.toBe(prev.c);
     expect(next.c).toEqual({ __id: "c", name: after });
     expect(next.a).toBe(prev.a);
+  });
+
+  // A copy of the whole cache per changed row makes an update that changes every row, such as
+  // toggling a plugin, quadratic. Object spread can't be counted: a Proxy on `prev` sees only the
+  // first copy, because every later one is made from the plain object that copy returned. So
+  // this compares times instead. Changing every row should cost a small multiple of changing
+  // one, which also copies the whole cache once; comparing the two leaves out the machine's
+  // speed, and taking the fastest of several runs leaves out collection pauses. The cache has more
+  // rows than V8 keeps as fast properties, so the copies of it cost about as much as the first
+  // copy; a smaller one's copies are much cheaper than the first, which hides most of the extra
+  // work.
+  it("changes every row in linear time, not with a copy of the cache per row", () => {
+    const count = 2000;
+    const prev = frozen(rows(count, 0));
+    const everyRow = rows(count, 1);
+    const oneRow = { row0: everyRow.row0 };
+
+    const everyRowMs = fastestMs(() => mergeCalculated(prev, everyRow, []));
+    const oneRowMs = fastestMs(() => mergeCalculated(prev, oneRow, []));
+
+    expect(mergeCalculated(prev, everyRow, [])).toEqual(everyRow);
+    expect(everyRowMs).toBeLessThan(oneRowMs * 20);
   });
 
   it("keeps a row's values that the delta does not recalculate", () => {
