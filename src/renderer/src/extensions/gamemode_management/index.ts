@@ -233,49 +233,52 @@ function findGamePath(
     );
 }
 
-function manualGameStoreSelection(
+async function manualGameStoreSelection(
   api: IExtensionApi,
   correctedGamePath: string,
-): PromiseBB<{ store: string; corrected: string }> {
+): Promise<string> {
   const gameStores = getGameStores();
-  return identifyStore(correctedGamePath, gameStores).then((storeId) => {
-    const detectedStore = gameStores.find((store) => store.id === storeId);
-    return api
-      .showDialog(
-        "question",
-        "Choose a Game Store",
-        {
-          bbcode: api.translate(
-            'The currently identified game store for your selected game directory is: "{{gameStore}}".[br][/br][br][/br]' +
-              "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
-            { replace: { gameStore: detectedStore?.name || "Unknown" } },
-          ),
-          choices: gameStores
-            .map((store) => ({
-              id: store.id,
-              text: store.name,
-              value: store.id === storeId,
-            }))
-            .concat({
-              id: "other",
-              text: "Other",
-              value: storeId === undefined,
-            }),
-        },
-        [{ label: "Select" }],
-      )
-      .then((res) => {
-        const selected = Object.keys(res.input).find((iter) => res.input[iter]);
-        if (selected === undefined) {
-          return PromiseBB.reject(new UserCanceled());
-        }
-        if (selected === "other") {
-          return { store: storeId, corrected: correctedGamePath };
-        } else {
-          return { store: selected, corrected: correctedGamePath };
-        }
-      });
-  });
+
+  // TODO: Bluebird to native
+  const storeId = await Promise.resolve(identifyStore(correctedGamePath, gameStores));
+
+  const detectedStore = gameStores.find((store) => store.id === storeId);
+
+  // TODO: Bluebird to native
+  const res = await Promise.resolve(
+    api.showDialog(
+      "question",
+      "Choose a Game Store",
+      {
+        bbcode: api.translate(
+          'The currently identified game store for your selected game directory is: "{{gameStore}}".[br][/br][br][/br]' +
+            "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
+          { replace: { gameStore: detectedStore?.name || "Unknown" } },
+        ),
+        choices: gameStores
+          .map((store) => ({
+            id: store.id,
+            text: store.name,
+            value: store.id === storeId,
+          }))
+          .concat({
+            id: "other",
+            text: "Other",
+            value: storeId === undefined,
+          }),
+      },
+      [{ label: "Select" }],
+    ),
+  );
+
+  const selected = Object.keys(res.input).find((iter) => res.input[iter]);
+  if (selected === undefined) throw new UserCanceled();
+
+  if (selected === "other") {
+    return storeId;
+  } else {
+    return selected;
+  }
 }
 
 async function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
@@ -313,7 +316,7 @@ async function browseGameLocation(api: IExtensionApi, gameId: string): Promise<v
 
   try {
     // TODO: Bluebird to native
-    let correctedGamePath = await Promise.resolve(
+    const correctedGamePath = await Promise.resolve(
       findGamePath(game, selectedDirectory, 0, searchDepth(game.requiredFiles || [])),
     );
 
@@ -326,10 +329,7 @@ async function browseGameLocation(api: IExtensionApi, gameId: string): Promise<v
         { gameId },
       );
     } else {
-      // TODO: Bluebird to native
-      const res = await Promise.resolve(manualGameStoreSelection(api, correctedGamePath));
-      correctedGamePath = res.corrected;
-      store = res.store;
+      store = await manualGameStoreSelection(api, correctedGamePath);
     }
 
     let executable = game.executable(correctedGamePath);
