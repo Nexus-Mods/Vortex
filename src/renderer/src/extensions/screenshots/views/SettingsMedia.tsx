@@ -1,7 +1,7 @@
 import { mdiAlertOutline, mdiDelete, mdiPencil, mdiPlus } from "@mdi/js";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 
 import type { IExtensionApi, IState } from "@/types/api";
 import { Button } from "@/ui/components/button/Button";
@@ -37,7 +37,10 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
   const gameId = useSelector(activeGameId);
   const disabledSources = useSelector((state: IState) => selectors.disabledSources(state, gameId));
   const items = useSelector(selectors.sessionItems);
-  const orphans = useSelector((state: IState) => selectors.orphanedTagIds(state, gameId, items));
+  const orphans = useSelector(
+    (state: IState) => selectors.orphanedTagIds(state, gameId, items),
+    shallowEqual,
+  );
 
   const onToggleSource = useCallback(
     (sourceId: string) => {

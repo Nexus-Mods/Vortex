@@ -126,7 +126,7 @@ export default function MediaSingleView({
             ref={containerRef}
             onClick={onImageClick}
           >
-            {entry.type === "image" && <img className="w-full" src={mediaSrc} />}
+            {entry.type === "image" && <img alt={entry.name} className="w-full" src={mediaSrc} />}
 
             {entry.type === "video" && (
               <video

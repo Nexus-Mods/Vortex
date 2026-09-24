@@ -34,15 +34,6 @@ vi.mock("@/util/getVortexPath", () => ({
   default: vi.fn(() => "/tmp/vortex-temp"),
 }));
 
-vi.mock("node:child_process", async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as object),
-    spawn: vi.fn(),
-    spawnSync: vi.fn(),
-  };
-});
-
 describe("collectMedia", () => {
   const mockedFs = vi.mocked(fs);
 

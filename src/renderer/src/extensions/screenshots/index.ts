@@ -45,7 +45,12 @@ function init(context: IExtensionContext) {
   context.once(() => {
     // Cleans up old preview images
     void prunePreviewCache().catch((err: unknown) => {
-      window.api.log("debug", "media preview pruning failed", JSON.stringify(err));
+      window.api.log(
+        "debug",
+        "media preview pruning failed",
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        err instanceof Error ? err.message : String(err),
+      );
     });
   });
 
