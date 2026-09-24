@@ -230,42 +230,46 @@ async function queryByCB(game: IGame): Promise<Partial<IGameStoreEntry> | undefi
   return { gamePath: resolvedPath, gameStoreId: store };
 }
 
-function handleDiscoveredGame(
+async function handleDiscoveredGame(
   game: IGame,
-  resolvedPath: string,
+  resolvedPath: string | undefined,
   store: string,
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
-): Bluebird<string> {
-  if (!truthy(resolvedPath)) {
-    return undefined;
-  }
+): Promise<string | undefined> {
+  if (!resolvedPath) return undefined;
   log("info", "found game", { name: game.name, location: resolvedPath, store });
+
   const exe = game.executable(resolvedPath);
-  const disco: IDiscoveryResult = {
+  const discovery: IDiscoveryResult = {
     path: resolvedPath,
     executable: exe !== game.executable() ? exe : undefined,
     store,
   };
-  onDiscoveredGame(game.id, disco);
-  return getNormalizeFunc(resolvedPath)
-    .then((normalize) =>
+
+  onDiscoveredGame(game.id, discovery);
+
+  try {
+    // TODO: Bluebird to native
+    const normalize = await Promise.resolve(getNormalizeFunc(resolvedPath));
+
+    // TODO: Bluebird to native
+    await Promise.resolve(
       discoverRelativeTools(game, resolvedPath, discoveredGames, onDiscoveredTool, normalize),
-    )
-    .then(() => game.id)
-    .catch((err) => {
-      onDiscoveredGame(game.id, undefined);
-      if (err.message !== undefined) {
-        log("debug", "game not found", {
-          id: game.id,
-          err: err.message.replace(/(?:\r\n|\r|\n)/g, "; "),
-        });
-      } else {
-        log("warn", "game not found - invalid exception", { id: game.id, err });
-      }
-      return undefined;
+    );
+
+    return game.id;
+  } catch (err) {
+    onDiscoveredGame(game.id, undefined);
+
+    log("debug", "game not found", {
+      id: game.id,
+      err,
     });
+
+    return undefined;
+  }
 }
 
 /**
@@ -302,31 +306,25 @@ export async function quickDiscovery(
         const result = await queryByArgs(discoveredGames, game);
         if (!result) return undefined;
 
-        // TODO: Bluebird to native
-        return await Promise.resolve(
-          handleDiscoveredGame(
-            game,
-            result.gamePath,
-            result.gameStoreId,
-            discoveredGames,
-            onDiscoveredGame,
-            onDiscoveredTool,
-          ),
+        return await handleDiscoveredGame(
+          game,
+          result.gamePath,
+          result.gameStoreId,
+          discoveredGames,
+          onDiscoveredGame,
+          onDiscoveredTool,
         );
       } else if (game.queryPath !== undefined) {
         const result = await queryByCB(game);
         if (!result) return undefined;
 
-        // TODO: Bluebird to native
-        return await Promise.resolve(
-          handleDiscoveredGame(
-            game,
-            result.gamePath,
-            result.gameStoreId,
-            discoveredGames,
-            onDiscoveredGame,
-            onDiscoveredTool,
-          ),
+        return await handleDiscoveredGame(
+          game,
+          result.gamePath,
+          result.gameStoreId,
+          discoveredGames,
+          onDiscoveredGame,
+          onDiscoveredTool,
         );
       } else {
         return undefined;
