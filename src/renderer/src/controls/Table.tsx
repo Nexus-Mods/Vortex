@@ -151,6 +151,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   // delay certain actions (like hiding offscreen items) until after scrolling ends.
   // this improves scroll smoothness at the expense of memory
   private static SCROLL_DEBOUNCE = 5000;
+  // how far beyond the visible scroll area a scroll renders rows straight away
+  private static SHOW_IN_VIEW_MARGIN = 120;
 
   // How long the set of columns has to hold still before it's reported. Attributes come
   // from extensions and can be gated on state, so what a table shows in its first frame
@@ -1306,7 +1308,63 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     Object.keys(this.mNoShrinkColumns).forEach((colId) => {
       this.mNoShrinkColumns[colId].updateWidth();
     });
+    this.showRowsInView();
   };
+
+  // Rows normally render when their IntersectionObserver reports them, which lands a frame or
+  // two after the scroll that brought them into view: on a scrollbar drag or a track click the
+  // view moves further than that every frame, so the rows on screen stay placeholders until
+  // scrolling stops. A scroll event arrives before that frame is painted, so render the rows
+  // it brought into view right here, in the same frame. The observers still handle hiding and
+  // everything that isn't a scroll.
+  private showRowsInView() {
+    const pane = this.mScrollRef;
+    if (!truthy(pane)) {
+      return;
+    }
+    const rows = pane.querySelectorAll<HTMLElement>("tr[data-rowid]");
+    if (rows.length === 0) {
+      return;
+    }
+    const view =
+      this.mScrollContainer !== null
+        ? this.mScrollContainer.getBoundingClientRect()
+        : { top: 0, bottom: window.innerHeight };
+    const top = view.top - SuperTable.SHOW_IN_VIEW_MARGIN;
+    const bottom = view.bottom + SuperTable.SHOW_IN_VIEW_MARGIN;
+
+    // rows are in document order, so find the first one reaching into the view by bisection
+    let low = 0;
+    let high = rows.length - 1;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (rows[mid].getBoundingClientRect().bottom < top) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+
+    const { rowVisibility } = this.state;
+    let changed = false;
+    for (let i = low; i < rows.length; ++i) {
+      const rect = rows[i].getBoundingClientRect();
+      if (rect.top > bottom) {
+        break;
+      }
+      const id = rows[i].id;
+      if (rowVisibility[id] !== true && this.mNextVisibility[id] !== true) {
+        this.mNextVisibility[id] = true;
+        this.mDelayedVisibility[id] = true;
+        changed = true;
+      }
+    }
+    if (changed) {
+      ReactDOM.flushSync(() => {
+        this.updateState(setSafe(this.mNextState, ["rowVisibility"], { ...this.mNextVisibility }));
+      });
+    }
+  }
 
   private onScroll = (event) => {
     this.onRowsScroll();

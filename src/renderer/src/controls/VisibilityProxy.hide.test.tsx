@@ -52,14 +52,10 @@ class FakeIntersectionObserver {
   }
 }
 
-/**
- * The proxy watches each target with two observers, one for the view and one for the margin
- * around it. A target entering or leaving both at once is the simple case these tests cover.
- */
 function report(target: Element, isIntersecting: boolean) {
-  const observers = FakeIntersectionObserver.sInstances.filter((obs) => obs.observes(target));
-  expect(observers.length).toBeGreaterThan(0);
-  act(() => observers.forEach((observer) => observer.report(target, isIntersecting)));
+  const observer = FakeIntersectionObserver.sInstances.find((obs) => obs.observes(target));
+  expect(observer).toBeDefined();
+  act(() => observer.report(target, isIntersecting));
 }
 
 /** A proxy whose parent owns `visible`, the way TableRow and ConflictEditor use it. */

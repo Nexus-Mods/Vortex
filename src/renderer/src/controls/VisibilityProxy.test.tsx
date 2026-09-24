@@ -59,9 +59,7 @@ describe("VisibilityProxy", () => {
     const scroller = document.createElement("div");
     const { getByTestId } = render(<Proxy container={scroller} />);
 
-    // twice: one observer for the view, one for the render-ahead margin, both on that root
-    const observe = { op: "observe", root: scroller, target: getByTestId("entry") };
-    expect(calls).toEqual([observe, observe]);
+    expect(calls).toEqual([{ op: "observe", root: scroller, target: getByTestId("entry") }]);
   });
 
   // The conflict editor passes a ref's `current`: null on the first render, where the
@@ -74,8 +72,9 @@ describe("VisibilityProxy", () => {
     rerender(<Proxy container={document.createElement("div")} />);
     unmount();
 
-    const observe = { op: "observe", root: null, target: entry };
-    const unobserve = { op: "unobserve", root: null, target: entry };
-    expect(calls).toEqual([observe, observe, unobserve, unobserve]);
+    expect(calls).toEqual([
+      { op: "observe", root: null, target: entry },
+      { op: "unobserve", root: null, target: entry },
+    ]);
   });
 });
