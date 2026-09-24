@@ -150,13 +150,14 @@ async function queryByArgs(
   const results = await Promise.resolve(storeLookup.find(getGameStoresSafe(), game.queryArgs));
   const filtered = (
     await Promise.all(
-      results.map((res) =>
+      results.map<Promise<IGameStoreEntry | undefined>>((res) =>
         stat(res.gamePath)
           .then(() => res)
           .catch(() => undefined),
       ),
     )
   ).filter(Boolean);
+
   if (filtered.length === 0) return undefined;
 
   const discoveredStore = discoveredGames[game.id]?.store;
@@ -168,7 +169,7 @@ async function queryByArgs(
     }
   };
 
-  return results.sort((lhs, rhs) => prio(lhs) - prio(rhs))[0];
+  return filtered.sort((lhs, rhs) => prio(lhs) - prio(rhs))[0];
 }
 
 async function queryByCB(game: IGame): Promise<Partial<IGameStoreEntry> | undefined> {
