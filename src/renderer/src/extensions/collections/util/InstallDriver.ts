@@ -76,13 +76,16 @@ export type Step =
 
 export type UpdateCB = () => void;
 
-/** Test events whose checks are held off while a collection installs. */
-const SUPPRESSED_TEST_EVENTS = [
-  "plugins-changed",
-  "settings-changed",
-  "mod-activated",
-  "mod-installed",
-];
+/**
+ * Test events whose checks are held off while a collection installs, with the delay the test
+ * runner itself uses for each, so the re-run on release waits as long as a natural one would.
+ */
+const SUPPRESSED_TEST_EVENTS: Record<string, number> = {
+  "plugins-changed": 500,
+  "settings-changed": 500,
+  "mod-activated": 5000,
+  "mod-installed": 5000,
+};
 
 class InstallDriver {
   private mApi: IExtensionApi;
@@ -812,7 +815,7 @@ class InstallDriver {
     // releases them
     this.mApi.ext
       .withSuppressedTests?.(
-        SUPPRESSED_TEST_EVENTS,
+        Object.keys(SUPPRESSED_TEST_EVENTS),
         () =>
           new Bluebird((resolve) => {
             this.mOnStop = () => {
@@ -825,10 +828,23 @@ class InstallDriver {
       // problem the collection itself brought in (a missing master) goes unreported until
       // something else happens to change the plugins.
       ?.then(() => {
-        SUPPRESSED_TEST_EVENTS.forEach((event) => this.mApi.events.emit("trigger-test-run", event));
+        Object.entries(SUPPRESSED_TEST_EVENTS).forEach(([event, delay]) =>
+          this.mApi.events.emit("trigger-test-run", event, delay),
+        );
       });
 
-    return this.startImpl();
+    // An install that never starts (no archive or profile, the game-version prompt cancelled,
+    // or an error) reaches neither onStop nor close, so release the hold here.
+    try {
+      const started = await this.startImpl();
+      if (started === false) {
+        this.mOnStop?.();
+      }
+      return started;
+    } catch (err) {
+      this.mOnStop?.();
+      throw err;
+    }
   };
 
   private startImpl = async () => {
