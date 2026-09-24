@@ -15,7 +15,9 @@ import { modRuleId } from "../../util/collectionInstallSession";
 import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import InstallManager from "./InstallManager";
-import type { IModReference } from "./types/IMod";
+import { modsReducer } from "./reducers/mods";
+import type { IDependency } from "./types/IDependency";
+import type { IModReference, IModRule } from "./types/IMod";
 import { lookupFromDownload } from "./util/dependencies";
 import type { InstallPhaseTracker } from "./util/InstallPhaseTracker";
 
@@ -55,6 +57,13 @@ interface IInstallManagerTestable {
     ruleId?: string,
     sourceModId?: string,
   ): void;
+  updateRules(
+    api: IExtensionApi,
+    gameId: string,
+    sourceModId: string,
+    dependencies: IDependency[],
+    recommended: boolean,
+  ): Promise<void>;
   // per-collection phase-gating state now lives on the tracker; tests drive it directly
   mPhaseTracker: InstallPhaseTracker;
 }
@@ -625,3 +634,94 @@ describe("cleanupPendingInstalls session resync", () => {
     expect(resyncCollectionSessionRules).not.toHaveBeenCalled();
   });
 });
+
+describe("updateRules", () => {
+  /** A store holding one collection's rules, updated by the real mods reducer. */
+  function rulesStore(rules: IModRule[]) {
+    let mods = { game: { coll: { id: "coll", rules } } };
+    const dispatched: string[] = [];
+    const store = {
+      getState: () => ({ persistent: { mods } }) as unknown as IState,
+      dispatch: (action: { type: string; payload: unknown }) => {
+        dispatched.push(action.type);
+        mods = modsReducer.reducers[action.type](mods, action.payload) as typeof mods;
+      },
+    };
+    const api = {
+      getState: store.getState,
+      store,
+      events: { emit: vi.fn(), on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
+      onAsync: vi.fn(),
+      onStateChange: vi.fn(),
+    } as unknown as IExtensionApi;
+    const manager = new InstallManager(api, vi.fn()) as unknown as IInstallManagerTestable;
+    const update = (deps: IDependency[], recommended: boolean) =>
+      manager.updateRules(api, "game", "coll", deps, recommended);
+    return { update, dispatched, rules: () => mods.game.coll.rules };
+  }
+  const member = (reference: IModReference, modId: string) =>
+    ({ reference: { ...reference }, mod: { id: modId } }) as IDependency;
+
+  it("matches a later member against the rules as an earlier member left them", async () => {
+    const refA = { logicalFileName: "a", versionMatch: "1.0.0" };
+    const ruleA: IModRule = { type: "requires", reference: refA };
+    const ruleB: IModRule = { type: "requires", reference: { logicalFileName: "b" } };
+    const store = rulesStore([ruleA, ruleB]);
+
+    // the first flips A to "recommends" and moves it to the end; the second must find that
+    // updated rule, which needs no change, not the "requires" rule it replaced
+    await store.update([member(refA, "mod-1"), member(refA, "mod-2")], true);
+
+    expect(store.dispatched).toEqual(["REMOVE_MOD_RULE", "ADD_MOD_RULE"]);
+    expect(store.rules()).toHaveLength(2);
+    expect(store.rules()[0]).toBe(ruleB);
+    expect(store.rules()[1]).toMatchObject({ type: "recommends", reference: { idHint: "mod-1" } });
+  });
+
+  it("steps over a rule with no reference when matching an id-only member", async () => {
+    // this used to throw a TypeError out of the whole update
+    const malformed = { type: "requires", reference: undefined } as unknown as IModRule;
+    const store = rulesStore([malformed, { type: "requires", reference: { id: "m1" } }]);
+
+    await store.update([member({ id: "m1" }, "m1")], true);
+
+    expect(store.rules()).toEqual([
+      malformed,
+      { type: "recommends", reference: { id: "m1", idHint: "m1" } },
+    ]);
+  });
+
+  it("reads each rule a fixed number of times, however many members there are", async () => {
+    const readsPerRule = async (memberCount: number) => {
+      const reads = Array.from({ length: 40 }, () => ({ count: 0 }));
+      const refs = reads.map((_unused, i) => ({ logicalFileName: `mod-${i}`, versionMatch: "1" }));
+      const store = rulesStore(
+        refs.map((ref, i) => ({ type: "requires", reference: countReads(ref, reads[i]) })),
+      );
+      // members whose rules are already right: nothing is dispatched
+      await store.update(
+        refs.slice(0, memberCount).map((ref, i) => member(ref, `mod-${i}`)),
+        false,
+      );
+      expect(store.dispatched).toEqual([]);
+      return Math.max(...reads.map((read) => read.count));
+    };
+    expect(await readsPerRule(40)).toBe(await readsPerRule(1));
+  });
+});
+
+/** `target`, counting every read of its keys and values into `reads`. */
+function countReads<T extends object>(target: T, reads: { count: number }): T {
+  const counted =
+    <A extends unknown[], R>(trap: (...args: A) => R) =>
+    (...args: A): R => {
+      reads.count++;
+      return trap(...args);
+    };
+  return new Proxy<T>(target, {
+    get: counted(Reflect.get),
+    has: counted(Reflect.has),
+    ownKeys: counted(Reflect.ownKeys),
+    getOwnPropertyDescriptor: counted(Reflect.getOwnPropertyDescriptor),
+  });
+}

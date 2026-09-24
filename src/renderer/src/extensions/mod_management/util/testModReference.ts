@@ -134,6 +134,11 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
 /**
  * JSON with object keys sorted, so equal values stringify equally whatever their key order.
  * A key present with an undefined value is kept, as _.pick and _.isEqual keep it.
+ *
+ * Two values get the same string exactly when _.isEqual calls them equal, for values JSON can
+ * represent, which is what persisted state holds. Outside that the two differ: NaN and Infinity
+ * stringify as null, Dates and boxed primitives as {}, and a sparse array differs from one with
+ * undefined in its holes.
  */
 function stableStringify(value: unknown): string {
   if (value === undefined) {
@@ -156,6 +161,9 @@ function stableStringify(value: unknown): string {
  * alone, and if not, a key two references share exactly when referenceEqual calls them equal.
  * Comparing these instead of calling referenceEqual is what lets a lookup over thousands of
  * collection rules be O(1) rather than an _.pick and _.isEqual per rule.
+ *
+ * One deliberate difference: referenceEqual throws comparing a missing reference with an id-only
+ * one, while these identities just do not match.
  */
 export interface IReferenceIdentity {
   idOnly: boolean;
@@ -163,7 +171,9 @@ export interface IReferenceIdentity {
   key: string;
 }
 
-// references in state are immutable, so a reference object's identity never changes
+// Cached per reference object, which assumes nobody edits a reference in place after it was
+// first compared: state is immutable, and every core site that edits a reference edits a fresh
+// copy. An extension that mutates a reference it has already dispatched would get stale matches.
 const identityCache = new WeakMap<IModReference, IReferenceIdentity>();
 const definedIdentityCache = new WeakMap<IModReference, IReferenceIdentity>();
 
@@ -205,9 +215,10 @@ export function identitiesEqual(lhs: IReferenceIdentity, rhs: IReferenceIdentity
 }
 
 /**
- * Finds the first item whose reference equals a given one, exactly as
- * `items.find((item) => referenceEqual(refOf(item), ref))` would, in O(1) per lookup after an
- * O(n) build. For matching a collection's thousands of members against its rules.
+ * Finds the first item whose reference equals a given one, as
+ * `items.find((item) => referenceEqual(refOf(item), ref))` would (within the limits noted on
+ * stableStringify and IReferenceIdentity), in O(1) per lookup after an O(n) build. For matching
+ * a collection's thousands of members against its rules.
  */
 export class ReferenceIndex<T> {
   #byKey = new Map<string, number>();
@@ -346,8 +357,7 @@ export function downloadToModRef(download: IDownload): IModReference {
 
 // Compiled glob patterns, by pattern. minimatch(name, pattern) compiles the pattern on every
 // call, and matching a collection's members compares each member's fileExpression against
-// installed mod after installed mod: with 2,000 members that was over a third of a
-// 160-second collection install spent re-parsing the same patterns.
+// installed mod after installed mod, re-parsing the same patterns over and over.
 const MAX_CACHED_PATTERNS = 10_000;
 const globCache = new Map<string, InstanceType<typeof minimatch.Minimatch>>();
 

@@ -129,7 +129,7 @@ export const modsReducer: IReducerSpec = {
       // What referenceEqual compares on the undefined-stripped references, precomputed and
       // cached per (immutable) reference. A collection adds thousands of rules one action at a
       // time and each scans all the rules before it, so comparing with _.omitBy, _.pick and
-      // _.isEqual per rule made adding them quadratic in heavy work: 25s for 2,000 members.
+      // _.isEqual per rule made adding them quadratic in heavy work.
       const ruleIdentity = referenceIdentity(rule.reference, { omitUndefined: true });
 
       // mutually exclusive types replace each other, so if we add a "before"
