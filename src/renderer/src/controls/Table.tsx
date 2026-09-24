@@ -1353,6 +1353,18 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const oldState = this.mLastUpdateState || { data: {} };
     let newValues: ILookupCalculated = this.state.calculatedValues || {};
+    // Copy the cached values once, on the first change, and change rows in that copy. Merging
+    // each changed row with immutability-helper copied the whole cache per row: when a change
+    // touches every row (toggling a plugin renumbers the whole load order) that is quadratic,
+    // 1.5s of frozen UI per toggle with 2,000 plugins. It also keeps new and removed rows from
+    // being written into the cache that is still in the component's state.
+    let ownsValues = false;
+    const ownValues = () => {
+      if (!ownsValues) {
+        newValues = { ...newValues };
+        ownsValues = true;
+      }
+    };
 
     // recalculate each attribute in each row
     return PromiseBB.map(Object.keys(data), (rowId: string) => {
@@ -1389,17 +1401,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }).then(() => {
         if (Object.keys(delta).length > 0) {
           delta.__id = rowId;
-          if (newValues[rowId] === undefined) {
-            newValues[rowId] = delta;
-          } else {
-            newValues = update(newValues, { [rowId]: { $merge: delta } });
-          }
+          ownValues();
+          newValues[rowId] =
+            newValues[rowId] === undefined ? delta : { ...newValues[rowId], ...delta };
         }
       });
     })
       .then(() =>
         PromiseBB.map(Object.keys(oldState.data), (rowId) => {
           if (data[rowId] === undefined) {
+            ownValues();
             delete newValues[rowId];
           }
         }),
