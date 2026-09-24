@@ -1,5 +1,5 @@
 import { createWriteStream, existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -49,6 +49,14 @@ async function downloadFile(url, dest) {
 }
 
 async function prepareWin() {
+  // assert that loot runtime assets exist; fail the build if they don't.
+  const lootRelease = resolve(DIST_DIR, "assets", "loot", "build", "Release");
+  for (const file of ["node-loot.node", "libloot.dll"]) {
+    await access(resolve(lootRelease, file)).catch(() => {
+      throw new Error(`missing loot runtime asset: ${resolve(lootRelease, file)}`);
+    });
+  }
+
   const tempDir = resolve(MAIN_DIR, "temp");
   const runtimeDeps = JSON.parse(await readFile(findUp(RUNTIME_DEPS_FILE, MAIN_DIR), "utf8"));
   for (const { file, url } of runtimeDeps) {
@@ -67,6 +75,10 @@ async function main() {
   const nodeModulesDir = resolve(MAIN_DIR, "node_modules");
   mainPkg.dependencies = await resolveDepVersions(mainPkg.dependencies, nodeModulesDir);
   mainPkg.devDependencies = await resolveDepVersions(mainPkg.devDependencies, nodeModulesDir);
+  mainPkg.optionalDependencies = await resolveDepVersions(
+    mainPkg.optionalDependencies,
+    nodeModulesDir,
+  );
 
   await writeFile(DIST_PACKAGE_PATH, JSON.stringify(mainPkg, null, 2) + "\n", "utf8");
 

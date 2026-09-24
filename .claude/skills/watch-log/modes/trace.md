@@ -1,6 +1,8 @@
 # §E — Trace a workflow lifecycle (top-to-bottom)
 
-Prereq: `reference.md` (core) + `shared/lifecycle.md` + `shared/sessions.md`.
+Prereq: `reference.md` (core) + `shared/lifecycle.md` + `shared/sessions.md`
+(+ `shared/gamebryo.md` when tracing a deployment of a gamebryo game: the deploy → sort
+invariants).
 
 Trace one **download / install / collection / deployment** from its first to its last
 log entry. Scope to one session (default latest, per §B / investigate.md); say which.

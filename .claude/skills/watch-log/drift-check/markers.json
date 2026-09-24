@@ -54,5 +54,58 @@
     "Error during scheduled phase deployment",
     "Download not found when trying to resume",
     "could not find collection rule for skipped download"
+  ],
+  "gamebryo.startup": [
+    "init extension",
+    "Registering extension persistor",
+    "synching plugins",
+    "updated loot masterlist",
+    "loaded loot lists",
+    "requesting plugin info",
+    "error setting up renderer",
+    "extension uses api in init function"
+  ],
+  "gamebryo.sort": [
+    "sorting plugins finished",
+    "deferring update plugin details because mod activity",
+    "nothing to sort",
+    "failed to sort plugins, empty loot result",
+    "excluding invalid plugins from sort",
+    "lootSortAsync failed",
+    "lootSortAsync called without a callback"
+  ],
+  "gamebryo.collection": [
+    "draining pending collection plugin sort",
+    "failed to update plugin list for collection install",
+    "failed to sync plugin state after collection install",
+    "warning notification",
+    "error notification",
+    "running checks",
+    "all checks completed"
+  ],
+  "gamebryo.persistor": [
+    "PluginPersistor.disable called",
+    "plugins file was changed by foreign application",
+    "failed to write plugin list",
+    "failed to read plugin list",
+    "failed to read plugin file",
+    "failed to serialize plugin list",
+    "failed to merge the plugin state"
+  ],
+  "gamebryo.loot": [
+    "failed to initialize LOOT",
+    "LOOT process died",
+    "LOOT fork got EBUSY, retrying",
+    "loot failed",
+    "excluding invalid plugins from load",
+    "resetting plugins assigned to missing loot group(s)"
+  ],
+  "gamebryo.files": [
+    "failed to parse esp",
+    "failed to parse esp file",
+    "failed to watch mod directory",
+    "Failed to watch mod directory",
+    "mod path unknown",
+    "no profile active"
   ]
 }

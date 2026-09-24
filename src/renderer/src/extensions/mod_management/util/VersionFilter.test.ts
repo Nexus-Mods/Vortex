@@ -16,14 +16,11 @@ const OTHER_PROFILE_ID = "profile-fallout4";
  * what decides which mod list the counts come from.
  */
 function seed(mods: Record<string, Record<string, IMod>>): IApiHarness {
-  const harness = makeApiHarness({
+  return makeApiHarness({
     profiles: { [PROFILE_ID]: makeProfile({ id: PROFILE_ID, gameId: GAME_ID }) },
     mods,
+    activeProfileId: PROFILE_ID,
   });
-  harness.setState((draft) => {
-    draft.settings.profiles.activeProfileId = PROFILE_ID;
-  });
-  return harness;
 }
 
 /**
@@ -234,10 +231,16 @@ describe("VersionFilter", () => {
           return Reflect.ownKeys(target);
         },
       });
-      const { getState } = seed({ [GAME_ID]: counted });
+      // matches() takes the state as an argument; seeding the proxy through the harness store
+      // would deep-merge (and de-proxy) it
+      const base = seed({}).getState();
+      const state = {
+        ...base,
+        persistent: { ...base.persistent, mods: { [GAME_ID]: counted } },
+      };
 
       const matched = Object.values(mods).filter(
-        (mod) => filter.matches(["multi-version"], mod, getState()) === true,
+        (mod) => filter.matches(["multi-version"], mod, state) === true,
       );
 
       expect(scans).toBe(1);

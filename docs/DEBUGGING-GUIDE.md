@@ -515,7 +515,6 @@ kept.
 **Projects:**
 
 - winapi-bindings
-- bsatk
 - loot
 - gamebryo-savegame
 

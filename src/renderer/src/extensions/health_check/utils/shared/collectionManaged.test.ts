@@ -4,18 +4,23 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { MOD_TYPE } from "@/extensions/collections/constants";
 import type { IModRule } from "@/extensions/mod_management/types/IMod";
-import { makeMod, makeProfile, makeReference, makeRule } from "@/test-utils/builders";
+import {
+  makeInstalledCollection,
+  makeMod,
+  makeProfile,
+  makeProfileMod,
+  makeReference,
+  makeRule,
+} from "@/test-utils/builders";
 
 import { collectionManagedTags, isCollectionManaged } from "./collectionManaged";
 
 const PROFILE = "prof-1";
 
 const collectionMod = (id: string, tags: string[], type: IModRule["type"] = "requires") =>
-  makeMod({
+  makeInstalledCollection({
     id,
-    type: MOD_TYPE,
     rules: tags.map((tag) => makeRule({ type, reference: makeReference({ tag }) })),
   });
 
@@ -23,9 +28,7 @@ const collectionMod = (id: string, tags: string[], type: IModRule["type"] = "req
 const profileWith = (...collectionIds: string[]) =>
   makeProfile({
     id: PROFILE,
-    modState: Object.fromEntries(
-      collectionIds.map((id) => [id, { enabled: true, enabledTime: 0 }]),
-    ),
+    modState: Object.fromEntries(collectionIds.map((id) => [id, makeProfileMod()])),
   });
 
 describe("isCollectionManaged", () => {

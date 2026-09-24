@@ -72,7 +72,8 @@ function extractPluginRules(state: IStateWithLootLists, plugins: string[]): IGam
 }
 
 export interface ICollectionGamebryo {
-  plugins: Array<{ name: string; enabled?: boolean }>;
+  // absent from a manifest authored in drag-and-drop load order mode
+  plugins?: Array<{ name: string; enabled?: boolean }>;
   pluginRules: IGamebryoRules;
 }
 
@@ -208,10 +209,13 @@ export async function parser(
 
   const stagingPath = selectors.installPathForGame(state, gameId);
   const includedPlugins = await getIncludedPlugins(gameId, stagingPath, mods, collectionModIds);
-  const isEnabled = (pluginName: string) =>
-    collection.plugins.find(
-      (plugin) => plugin.name.toLowerCase() === pluginName.toLowerCase() && plugin.enabled,
-    ) !== undefined;
+  // the collection ships and deploys every included plugin, so one goes on unless the curator
+  // listed it as off: a drag-and-drop manifest carries no plugins section at all, and a list
+  // can lag a member update that added a plugin
+  const listed = new Map(
+    (collection.plugins ?? []).map((plugin) => [plugin.name.toLowerCase(), plugin.enabled]),
+  );
+  const isEnabled = (pluginName: string) => listed.get(pluginName.toLowerCase()) !== false;
 
   // set up plugins and their rules
   batchDispatch(

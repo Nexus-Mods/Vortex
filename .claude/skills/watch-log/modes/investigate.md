@@ -1,7 +1,8 @@
 # §B — Investigate mode (session-scoped report)
 
 Prereq: `reference.md` (core) + `shared/sessions.md` + `shared/edge-cases.md`
-(+ `shared/multi-file.md` when handling multiple / foreign files).
+(+ `shared/multi-file.md` when handling multiple / foreign files; + `shared/gamebryo.md`
+when the ask concerns plugins / load order / LOOT).
 
 1. **Find the scoped session.** Default scope is the **latest** session, which lives
    at the **tail of the current `vortex.log`**: scan `vortex.log` backward for the

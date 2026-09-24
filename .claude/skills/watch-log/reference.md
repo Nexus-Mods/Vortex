@@ -66,6 +66,7 @@ This prints numbered files by suffix descending (older first), then `vortex.log`
 | `shared/persistence.md` | persist:diff / slow-write / wedged-write markers                                                      | §C                                |
 | `shared/multi-file.md`  | multiple / foreign-file handling (dedup, no cross-correlate)                                          | any mode given >1 / foreign files |
 | `shared/edge-cases.md`  | operational edge cases (app running, file-not-yet, firehose)                                          | §A, §B                            |
+| `shared/gamebryo.md`    | plugin markers: startup, deploy→sort invariant, collection postprocess, persistor, LOOT, watcher      | any mode, when the ask is plugins |
 
 Each mode file names its required chunks in its own "Prereq" line. Read this core once;
 load each chunk at most once even when running several modes.

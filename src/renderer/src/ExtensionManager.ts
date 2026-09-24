@@ -3061,6 +3061,10 @@ class ExtensionManager {
       // order, and collections' once() relies on those extensions being set up
       // first.
       collections: () => require("./extensions/collections/index.ts"),
+      // the key keeps the pre-fold extension name (hyphens): it is the public requireExtension
+      // contract (out-of-band extensions) and the historical i18n namespace.
+      "gamebryo-plugin-management": () =>
+        require("./extensions/gamebryo_plugin_management/index.ts"),
       recovery: () => require("./extensions/recovery/index.ts"),
       settings_application: () => require("./extensions/settings_application/index.ts"),
       settings_interface: () => require("./extensions/settings_interface/index.ts"),
