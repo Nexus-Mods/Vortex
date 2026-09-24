@@ -54,6 +54,13 @@ _First beta of the 2.8 release._
 - Notification tray taking focus out of a text field when it opens itself ([#24170](https://github.com/Nexus-Mods/Vortex/pull/24170))
 - Component crash when `FlagService` had not been initialised ([#24162](https://github.com/Nexus-Mods/Vortex/pull/24162))
 
+## [2.7.1] - 2026-09-24
+
+### Fixed
+
+- Sticky-header tables such as the Mods page rendering every row instead of only the visible ones ([#24292](https://github.com/Nexus-Mods/Vortex/pull/24292))
+- Dark Souls II mods installing one level above `Game/` and having no effect ([#24290](https://github.com/Nexus-Mods/Vortex/pull/24290))
+
 ## [2.7.0] - 2026-09-21
 
 ### Fixed
@@ -2376,6 +2383,7 @@ _Yanked due to critical issue found with file overrides_
 - Changelog dashlet was incorrectly displaying markdown
 
 [2.8.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0-beta.1
+[2.7.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.1
 [2.7.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0
 [2.7.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.2
 [2.7.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.1
