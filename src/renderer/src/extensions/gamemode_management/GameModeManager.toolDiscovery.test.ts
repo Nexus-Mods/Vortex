@@ -148,4 +148,19 @@ describe("GameModeManager tool discovery", () => {
       harness.dispatched.filter((action) => action.type.includes("ADD_DISCOVERED_TOOL")),
     ).toEqual([]);
   });
+
+  // `custom` protects the tool *record* from being overwritten by discovery; it is not a statement
+  // about which tool should launch. A customised entry is still eligible to become the default
+  // launcher, matching setGameMode, which picks any discovered.tools entry with defaultPrimary and
+  // likewise does not consult `custom`. Pinned because the two paths implement one feature and
+  // must agree: making only this one skip customised tools would leave a game whose extender the
+  // user has customised with no default launcher, while activating the same game would set one.
+  it("still selects a customised tool as the default launcher", async () => {
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
+    const { harness, manager } = setup({ existingTool: { custom: true } });
+
+    await manager.startToolDiscovery(GAME);
+
+    expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+  });
 });
