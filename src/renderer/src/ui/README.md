@@ -118,6 +118,9 @@ import { mdiDownload } from "@mdi/js";
 
 // Loading state
 <Button isLoading>Processing...</Button>
+
+// Disclosure toggle: keeps aria-expanded, without the menu-trigger "open" highlight
+<Button aria-expanded={!collapsed} hasExpandedStyle={false} leftIconPath={mdiChevronUp} />
 ```
 
 **Brands:** `primary`, `info`, `neutral`, `success`, `premium`, `danger`
@@ -574,6 +577,14 @@ Width is CSS, not a prop. `.nxm-tooltip` caps at 320px; pass a utility class to 
 ```
 
 That only moves the design cap. The positioner around the bubble is still clamped to the space left in the window, so a wider cap can't push the tooltip off an edge.
+
+Stacking lives on the positioner, not the bubble, so `className` can't change it. Tooltips sit above modals (`--z-index-tooltip`); one that shows itself rather than answering a hover, like the download flyout, should sit under the modal scrim instead. Pass `positionerClassName`:
+
+```tsx
+<Tooltip persistent positionerClassName="z-(--z-index-flyout)" customContent={<Flyout />}>
+    …
+</Tooltip>
+```
 
 > **The trigger must forward a ref to a DOM node.** `Button` does; `Icon`, `Pill` and bare text do not — wrap those in a `<span className="inline-flex">`.
 

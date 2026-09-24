@@ -19,7 +19,10 @@ export class HealthCheckPage {
   readonly premiumBanner: Locator;
   readonly activeTab: Locator;
   readonly hiddenTab: Locator;
-  readonly installAllButton: Locator;
+  readonly warningsSection: Locator;
+  readonly suggestionsSection: Locator;
+  readonly warningsInstallAllButton: Locator;
+  readonly suggestionsInstallAllButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -39,7 +42,14 @@ export class HealthCheckPage {
     );
     this.activeTab = this.root.getByRole("tab", { name: /Active/ });
     this.hiddenTab = this.root.getByRole("tab", { name: /Hidden/ });
-    this.installAllButton = this.root.getByRole("button", { name: /1-click install all/ });
+    this.warningsSection = this.root.getByTestId("health-check-section-warning");
+    this.suggestionsSection = this.root.getByTestId("health-check-section-suggestion");
+    this.warningsInstallAllButton = this.warningsSection.getByRole("button", {
+      name: /1-click install all/,
+    });
+    this.suggestionsInstallAllButton = this.suggestionsSection.getByRole("button", {
+      name: /1-click install all/,
+    });
   }
 }
 

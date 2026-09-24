@@ -41,13 +41,13 @@ describe("createHealthCheckTracker", () => {
 
   it("emits the bulk hide and unhide pair, so a restore isn't invisible", () => {
     const { tracker, events } = harness();
-    tracker.trackHideAllClicked({ issue_count_hidden: 10 });
-    tracker.trackUnhideAllClicked({ issue_count_unhidden: 10 });
+    tracker.trackHideAllClicked({ issue_type: "warning", issue_count_hidden: 10 });
+    tracker.trackUnhideAllClicked({ issue_type: "warning", issue_count_unhidden: 10 });
     expect(events.map((e) => e.eventName)).toEqual([
       "health_check_hide_all_clicked",
       "health_check_unhide_all_clicked",
     ]);
-    expect(events[1].properties).toEqual({ issue_count_unhidden: 10 });
+    expect(events[1].properties).toEqual({ issue_type: "warning", issue_count_unhidden: 10 });
   });
 
   it("keeps feedback_reasons on not_helpful, and leaves resolution_type off dismissed", () => {

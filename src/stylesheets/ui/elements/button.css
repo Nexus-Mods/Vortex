@@ -79,7 +79,7 @@
         &:is(a, :enabled):not(.nxm-button-disabled) {
             &:hover,
             &:focus-visible,
-            &[aria-expanded="true"] {
+            &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                 background-color: var(--color-surface-translucent-high);
             }
 
@@ -94,7 +94,7 @@
         &:is(a, :enabled):not(.nxm-button-disabled) {
             &:hover,
             &:focus-visible,
-            &[aria-expanded="true"] {
+            &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                 background-color: var(--color-surface-translucent-mid);
             }
 
@@ -115,7 +115,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-primary-strong);
                 }
 
@@ -131,7 +131,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-primary-strong);
                 }
 
@@ -149,7 +149,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-info-strong);
                 }
 
@@ -165,7 +165,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-info-strong);
                 }
 
@@ -183,7 +183,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-success-strong);
                 }
 
@@ -199,7 +199,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-success-strong);
                 }
 
@@ -217,7 +217,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-danger-strong);
                 }
 
@@ -233,7 +233,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-danger-strong);
                 }
 
@@ -252,7 +252,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-premium-subdued);
                 }
 
@@ -268,7 +268,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-premium-strong);
                 }
 
@@ -286,7 +286,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-neutral-subdued);
                 }
 
@@ -306,7 +306,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-translucent-strong);
                 }
             }
@@ -320,7 +320,7 @@
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
-                &[aria-expanded="true"] {
+                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-scrim-700);
                 }
 
