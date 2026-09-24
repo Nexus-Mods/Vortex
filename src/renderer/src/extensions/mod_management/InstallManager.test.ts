@@ -9,6 +9,7 @@ import {
   makeRule,
   makeSession,
 } from "../../test-utils/builders";
+import { countReads } from "../../test-utils/countReads";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IState } from "../../types/IState";
 import { modRuleId } from "../../util/collectionInstallSession";
@@ -709,19 +710,3 @@ describe("updateRules", () => {
     expect(await readsPerRule(40)).toBe(await readsPerRule(1));
   });
 });
-
-/** `target`, counting every read of its keys and values into `reads`. */
-function countReads<T extends object>(target: T, reads: { count: number }): T {
-  const counted =
-    <A extends unknown[], R>(trap: (...args: A) => R) =>
-    (...args: A): R => {
-      reads.count++;
-      return trap(...args);
-    };
-  return new Proxy<T>(target, {
-    get: counted(Reflect.get),
-    has: counted(Reflect.has),
-    ownKeys: counted(Reflect.ownKeys),
-    getOwnPropertyDescriptor: counted(Reflect.getOwnPropertyDescriptor),
-  });
-}

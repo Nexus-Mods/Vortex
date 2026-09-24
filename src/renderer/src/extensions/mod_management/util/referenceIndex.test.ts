@@ -6,19 +6,17 @@
  * handful of examples, and through the ADD_MOD_RULE reducer that uses them.
  */
 import * as _ from "lodash";
-import minimatch from "minimatch";
 import { describe, expect, it } from "vitest";
 
+import { countReads } from "../../../test-utils/countReads";
 import { modsReducer } from "../reducers/mods";
 import type { IModReference, IModRule } from "../types/IMod";
 import {
-  globMatch,
   identitiesEqual,
   idOnlyRef,
   referenceEqual,
   ReferenceIndex,
   referenceIdentity,
-  testRefByIdentifiers,
 } from "./testModReference";
 
 /** A small deterministic generator, so a failure reproduces. */
@@ -155,53 +153,6 @@ describe("referenceIdentity", () => {
   });
 });
 
-describe("globMatch", () => {
-  it("matches exactly as minimatch does", () => {
-    const patterns = [
-      "Foo*",
-      "Foo v1.0.0",
-      "#comment",
-      "",
-      "*.{esp,esm}",
-      "Bundled - [AB]*",
-      "a/**",
-    ];
-    const names = [
-      "Foo",
-      "Foobar",
-      "Foo v1.0.0",
-      "#comment",
-      "",
-      "x.esp",
-      "Bundled - Alpha",
-      "a/b/c",
-    ];
-    for (const pattern of patterns) {
-      for (const name of names) {
-        expect(globMatch(name, pattern)).toBe(minimatch(name, pattern));
-        // and again, from the cache
-        expect(globMatch(name, pattern)).toBe(minimatch(name, pattern));
-      }
-    }
-  });
-});
-
-describe("testRefByIdentifiers", () => {
-  // exported to extensions through util/api, and now matching fileExpression with globMatch
-  it("matches a fileExpression against archive names as a glob, before and after caching", () => {
-    const identifiers = { gameId: "g", fileNames: ["Cool Mod-123-1-0-1700000000.7z"] };
-    const matches = (fileExpression: string) =>
-      testRefByIdentifiers(identifiers, { fileExpression });
-    for (let pass = 0; pass < 2; pass++) {
-      expect(matches("Cool Mod-123-*")).toBe(true);
-      expect(matches("Cool Mod-123-1-0-1700000000")).toBe(true);
-      expect(matches("Cool Mod-12?-1-0-*")).toBe(true);
-      expect(matches("Other Mod-*")).toBe(false);
-      expect(matches("#Cool Mod-123-*")).toBe(false);
-    }
-  });
-});
-
 describe("ReferenceIndex", () => {
   it("finds what a linear referenceEqual scan finds, for every query", () => {
     for (const seed of [1, 2, 3]) {
@@ -275,19 +226,3 @@ describe("ADD_MOD_RULE", () => {
     expect(state.g.m.rules).toHaveLength(53);
   });
 });
-
-/** `target`, counting every read of its keys and values into `reads`. */
-function countReads<T extends object>(target: T, reads: { count: number }): T {
-  const counted =
-    <A extends unknown[], R>(trap: (...args: A) => R) =>
-    (...args: A): R => {
-      reads.count++;
-      return trap(...args);
-    };
-  return new Proxy<T>(target, {
-    get: counted(Reflect.get),
-    has: counted(Reflect.has),
-    ownKeys: counted(Reflect.ownKeys),
-    getOwnPropertyDescriptor: counted(Reflect.getOwnPropertyDescriptor),
-  });
-}

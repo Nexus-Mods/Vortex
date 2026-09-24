@@ -1,5 +1,6 @@
 import { unknownToError } from "@vortex/shared";
 import * as _ from "lodash";
+import minimatch from "minimatch";
 import type { ILookupResult, IReference, IRule } from "modmeta-db";
 import normalizeUrl from "normalize-url";
 import * as semver from "semver";
@@ -20,7 +21,6 @@ import { isFuzzyVersion } from "./isFuzzyVersion";
 import { rulePhase } from "./rulePhase";
 import testModReference, {
   downloadReferenceTags,
-  globMatch,
   isOptionalRule,
   ruleInstallSpec,
   testRefByIdentifiers,
@@ -177,7 +177,7 @@ function lookupFulfills(lookup: ILookupResult, reference: IReference) {
     (fileSize === undefined || fileSize === value.fileSizeBytes) &&
     (logicalFileName === undefined || logicalFileName === value.logicalFileName) &&
     (fileExpression === undefined ||
-      (value.fileName !== undefined && globMatch(value.fileName, fileExpression))) &&
+      (value.fileName !== undefined && minimatch(value.fileName, fileExpression))) &&
     (versionMatch === undefined || semver.satisfies(semver.coerce(value.fileVersion), versionMatch))
   );
 }
