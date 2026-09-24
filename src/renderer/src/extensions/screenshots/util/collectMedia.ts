@@ -5,6 +5,7 @@ import { hasFfmpeg } from "./ffmpeg";
 import generateVideoPreview from "./generateVideoPreview";
 import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
 import { previewKey } from "./previewCache";
+import { sortMedia } from "./sortMedia";
 
 const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tga"]);
 const VIDEO_EXT = new Set([".mp4", ".webm", ".mkv", ".mpd"]);
@@ -78,6 +79,3 @@ export default async function collectMedia(
 
   return res.sort(sortMedia);
 }
-
-export const sortMedia = (a: GameMediaItem, b: GameMediaItem) =>
-  (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0);

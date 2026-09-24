@@ -6,7 +6,7 @@ import type { IState } from "@/types/api";
 import { activeGameId, gameById, currentGameDiscovery } from "../../../util/selectors";
 import * as sessionActions from "../actions/session";
 import * as selectors from "../selectors";
-import collectMedia, { sortMedia } from "../util/collectMedia";
+import collectMedia from "../util/collectMedia";
 import type { GameMediaItem } from "../util/mediaTypes";
 import useGameMediaSources from "./GameMediaSourcesHook";
 import useGameMediaWatcher from "./GameMediaWatcherHook";
@@ -46,7 +46,7 @@ export default function useGameMedia(tab: string) {
     [allSources, flags, store],
   );
 
-  const onSourceChanged = useCallback((id: string) => void rescanSource(id), [rescanSource]);
+  const onSourceChanged = useCallback((id: string) => rescanSource(id), [rescanSource]);
 
   useGameMediaWatcher(allSources, disabledSources, onSourceChanged);
 

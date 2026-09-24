@@ -2,8 +2,8 @@ import type { IReducerSpec } from "@/types/api";
 
 import { reducerFor } from "../../../util/reducerFor";
 import * as actions from "../actions/session";
-import { sortMedia } from "../util/collectMedia";
 import type { GameMediaItem } from "../util/mediaTypes";
+import { sortMedia } from "../util/sortMedia";
 
 export interface IGameMediaSessionState {
   items: GameMediaItem[] | null;

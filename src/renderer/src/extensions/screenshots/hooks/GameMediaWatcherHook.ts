@@ -9,7 +9,7 @@ import type { GameMediaSource } from "../util/mediaTypes";
 export default function useGameMediaWatcher(
   sources: Record<string, GameMediaSource>,
   disabled: readonly string[],
-  onSourceChanged: (sourceId: string) => void,
+  onSourceChanged: (sourceId: string) => Promise<void>,
 ) {
   useEffect(() => {
     const watchers: fs.FSWatcher[] = [];
@@ -17,10 +17,7 @@ export default function useGameMediaWatcher(
 
     for (const [id, source] of Object.entries(sources)) {
       if (disabled.includes(id)) continue;
-      const debouncer = new Debouncer(() => {
-        onSourceChanged(id);
-        return null;
-      }, 1000);
+      const debouncer = new Debouncer(async () => onSourceChanged(id), 1000);
       debouncers.set(id, debouncer);
 
       try {
