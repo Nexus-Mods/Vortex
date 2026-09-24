@@ -1,10 +1,13 @@
-import * as path from "path";
+import { stat } from "node:fs/promises";
+import * as path from "node:path";
 
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as fsExtra from "fs-extra";
 import turbowalk from "turbowalk";
 import * as winapi from "winapi-bindings";
+
+import { log } from "@/logging";
 
 import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -18,7 +21,6 @@ import * as fs from "../../../util/fs";
 import type { Normalize } from "../../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import getVortexPath from "../../../util/getVortexPath";
-import { log } from "../../../util/log";
 import StarterInfo from "../../../util/StarterInfo";
 import { getSafe } from "../../../util/storeHelper";
 import * as storeLookup from "../../../util/storeLookup";
@@ -39,151 +41,119 @@ interface IFileEntry {
   application: ITool;
 }
 
-export function quickDiscoveryTools(
+export async function quickDiscoveryTools(
   gameId: string,
-  tools: ITool[],
+  tools: ITool[] | undefined,
   onDiscoveredTool: DiscoveredToolCB,
-): Bluebird<void> {
-  if (tools === undefined) {
-    return Bluebird.resolve();
-  }
+): Promise<void> {
+  if (!tools) return;
 
-  return Bluebird.map(tools, (tool) => {
-    if (tool.queryPath === undefined) {
-      return Bluebird.resolve();
-    }
+  const promises = tools.map(async (tool) => {
+    if (!tool.queryPath) return;
 
     try {
-      const toolPath = tool.queryPath();
-      if (typeof toolPath === "string") {
-        if (toolPath) {
-          return autoGenIcon(tool, toolPath, gameId).then(() => {
-            onDiscoveredTool(gameId, {
-              ...tool,
-              path: path.join(toolPath, tool.executable(toolPath)),
-              hidden: false,
-              parameters: tool.parameters || [],
-              custom: false,
-            });
-          });
-        } else {
-          log("debug", "tool not found", {
+      // TODO: Bluebird to native
+      const toolPath = await Promise.resolve(tool.queryPath());
+      if (typeof toolPath !== "string") throw new Error("Invalid return type");
+
+      if (toolPath) {
+        try {
+          // TODO: Bluebird to native
+          await Promise.resolve(autoGenIcon(tool, toolPath, gameId));
+        } catch (err) {
+          log("debug", "failed to generate tool icon", {
+            err,
             gameId,
             toolId: tool.id,
             toolName: tool.name,
+            toolPath,
           });
-          return Bluebird.resolve();
         }
+
+        onDiscoveredTool(gameId, {
+          ...tool,
+          path: path.join(toolPath, tool.executable(toolPath)),
+          hidden: false,
+          parameters: tool.parameters || [],
+          custom: false,
+        });
       } else {
-        return (toolPath as Bluebird<string>)
-          .then((resolvedPath) => {
-            if (resolvedPath) {
-              return autoGenIcon(tool, resolvedPath, gameId).then(() => {
-                onDiscoveredTool(gameId, {
-                  ...tool,
-                  path: path.join(resolvedPath, tool.executable(resolvedPath)),
-                  hidden: false,
-                  parameters: tool.parameters || [],
-                  custom: false,
-                });
-              });
-            }
-            return Bluebird.resolve();
-          })
-          .catch((err) => {
-            log("debug", "tool not found", {
-              gameId,
-              toolId: tool.id,
-              toolName: tool.name,
-              error: getErrorMessageOrDefault(err),
-            });
-          });
+        log("debug", "tool not found", {
+          gameId,
+          toolId: tool.id,
+          toolName: tool.name,
+        });
       }
     } catch (err) {
       log("error", "failed to determine tool setup", {
-        error: unknownToError(err),
+        err,
         gameId,
         toolId: tool.id,
         toolName: tool.name,
       });
-      return Bluebird.resolve();
     }
-  }).then(() => null);
+  });
+
+  await Promise.all(promises);
 }
 
-function updateManuallyConfigured(
+async function updateManuallyConfigured(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
   onDiscoveredGame: DiscoveredCB,
-): Bluebird<void> {
-  if (
-    discoveredGames[game.id]?.path !== undefined &&
-    discoveredGames[game.id]?.store === undefined
-  ) {
-    return identifyStore(discoveredGames[game.id]?.path, getGameStores())
-      .then((store) => {
-        if (store !== undefined) {
-          log("debug", "updating previously discovered game", {
-            gameId: game.id,
-            store,
-          });
+): Promise<void> {
+  const discoveredGame = discoveredGames[game.id];
+  if (discoveredGame?.path === undefined || discoveredGame?.store !== undefined) return;
 
-          onDiscoveredGame(game.id, {
-            ...discoveredGames[game.id],
-            store,
-          });
-        }
-      })
-      .catch((err) => {
-        log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
-      });
-  } else {
-    log("debug", "leaving alone previously discovered game", {
+  try {
+    const store = await identifyStore(discoveredGames[game.id]?.path, getGameStores());
+    if (!store) return;
+
+    log("debug", "updating previously discovered game", {
       gameId: game.id,
-      path: discoveredGames[game.id]?.path,
-      store: discoveredGames[game.id]?.store,
+      store,
     });
 
-    return Bluebird.resolve();
+    onDiscoveredGame(game.id, {
+      ...discoveredGames[game.id],
+      store,
+    });
+  } catch (err) {
+    log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
   }
 }
 
-function queryByArgs(
+async function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
-): Bluebird<IGameStoreEntry> {
-  return storeLookup
-    .find(getGameStoresSafe(), game.queryArgs)
-    .then((results) =>
-      Bluebird.all<IGameStoreEntry>(
-        results.map((res) =>
-          fs
-            .statAsync(res.gamePath)
-            .then(() => res)
-            .catch(() => undefined),
-        ),
+): Promise<IGameStoreEntry | undefined> {
+  // TODO: Bluebird to native
+  const results = await Promise.resolve(storeLookup.find(getGameStoresSafe(), game.queryArgs));
+  const filtered = (
+    await Promise.all(
+      results.map<Promise<IGameStoreEntry | undefined>>((res) =>
+        stat(res.gamePath)
+          .then(() => res)
+          .catch(() => undefined),
       ),
     )
-    .then((results) => results.filter((res) => res !== undefined))
-    .then((results) => {
-      if (results.length === 0) {
-        return Bluebird.resolve(undefined);
-      }
-      const discoveredStore = discoveredGames[game.id]?.store;
-      const prio = (entry: IGameStoreEntry) => {
-        if (discoveredStore !== undefined && entry.gameStoreId === discoveredStore) {
-          return 0;
-        } else {
-          return entry.priority ?? 100;
-        }
-      };
+  ).filter(Boolean);
 
-      results = results.sort((lhs: IGameStoreEntry, rhs: IGameStoreEntry) => prio(lhs) - prio(rhs));
-      return Bluebird.resolve(results[0]);
-    });
+  if (filtered.length === 0) return undefined;
+
+  const discoveredStore = discoveredGames[game.id]?.store;
+  const prio = (entry: IGameStoreEntry) => {
+    if (discoveredStore !== undefined && entry.gameStoreId === discoveredStore) {
+      return 0;
+    } else {
+      return entry.priority ?? 100;
+    }
+  };
+
+  return filtered.sort((lhs, rhs) => prio(lhs) - prio(rhs))[0];
 }
 
-function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
+async function queryByCB(game: IGame): Promise<Partial<IGameStoreEntry> | undefined> {
   let gamePath: string | Bluebird<string | IGameStoreEntry>;
 
   try {
@@ -196,87 +166,91 @@ function queryByCB(game: IGame): Bluebird<Partial<IGameStoreEntry>> {
       game: game.id,
       error: getErrorMessageOrDefault(err),
     });
-    return Bluebird.reject(err);
+
+    return undefined;
   }
-  const prom =
-    typeof gamePath === "string"
-      ? Bluebird.resolve(gamePath)
-      : (gamePath ?? Bluebird.resolve(undefined));
 
-  let store: string;
+  // TODO: Bluebird to native
+  const resolvedInfo: string | IGameStoreEntry | undefined =
+    typeof gamePath === "string" ? gamePath : await Promise.resolve(gamePath);
 
-  return prom
-    .then((resolvedInfo) => {
-      if (typeof resolvedInfo === "string") {
-        return identifyStore(resolvedInfo, getGameStores())
-          .catch((err) => {
-            log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
-            return undefined;
-          })
-          .then((storeDetected: string) => {
-            // storeDetected may be undefined, in that case we use default handling
-            store = storeDetected;
-            return resolvedInfo;
-          });
-      } else if (resolvedInfo === undefined) {
-        return Bluebird.reject(new GameEntryNotFound(game.id, "unknown"));
-      } else {
-        store = resolvedInfo.gameStoreId;
-        return resolvedInfo.gamePath;
-      }
-    })
-    .then((resolvedPath) =>
-      resolvedPath === undefined
-        ? Bluebird.resolve(undefined)
-        : fs
-            .statAsync(resolvedPath)
-            .then(() => ({ gamePath: resolvedPath, gameStoreId: store }))
-            .catch((err) => {
-              if (err.code === "ENOENT") {
-                log("warn", "rejecting game discovery, directory doesn't exist", resolvedPath);
-                return Bluebird.resolve(undefined);
-              }
-              return Bluebird.reject(err);
-            }),
-    );
+  if (resolvedInfo === undefined) {
+    throw new GameEntryNotFound(game.id, "unknown");
+  }
+
+  let resolvedPath: string;
+  let store: string | undefined;
+  if (typeof resolvedInfo === "string") {
+    try {
+      store = await identifyStore(resolvedInfo, getGameStores());
+      resolvedPath = resolvedInfo;
+    } catch (err) {
+      log("error", "failed to identify store for game", getErrorMessageOrDefault(err));
+      // storeDetected may be undefined, in that case we use default handling
+      store = undefined;
+      resolvedPath = resolvedInfo;
+    }
+  } else {
+    store = resolvedInfo.gameStoreId;
+    resolvedPath = resolvedInfo.gamePath;
+  }
+
+  if (!resolvedPath) return undefined;
+
+  try {
+    await stat(resolvedPath);
+  } catch (err) {
+    if (getErrorCode(err) === "ENOENT") {
+      log("warn", "rejecting game discovery, directory doesn't exist", resolvedPath);
+      return undefined;
+    }
+
+    return undefined;
+  }
+
+  return { gamePath: resolvedPath, gameStoreId: store };
 }
 
-function handleDiscoveredGame(
+async function handleDiscoveredGame(
   game: IGame,
-  resolvedPath: string,
+  resolvedPath: string | undefined,
   store: string,
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
-): Bluebird<string> {
-  if (!truthy(resolvedPath)) {
-    return undefined;
-  }
+): Promise<string | undefined> {
+  if (!resolvedPath) return undefined;
   log("info", "found game", { name: game.name, location: resolvedPath, store });
+
   const exe = game.executable(resolvedPath);
-  const disco: IDiscoveryResult = {
+  const discovery: IDiscoveryResult = {
     path: resolvedPath,
     executable: exe !== game.executable() ? exe : undefined,
     store,
   };
-  onDiscoveredGame(game.id, disco);
-  return getNormalizeFunc(resolvedPath)
-    .then((normalize) =>
+
+  onDiscoveredGame(game.id, discovery);
+
+  try {
+    // TODO: Bluebird to native
+    const normalize = await Promise.resolve(getNormalizeFunc(resolvedPath));
+
+    // TODO: Bluebird to native
+    await Promise.resolve(
       discoverRelativeTools(game, resolvedPath, discoveredGames, onDiscoveredTool, normalize),
-    )
-    .then(() => game.id)
-    .catch((err) => {
-      onDiscoveredGame(game.id, undefined);
-      if (err.message !== undefined) {
-        log("debug", "game not found", {
-          id: game.id,
-          err: err.message.replace(/(?:\r\n|\r|\n)/g, "; "),
-        });
-      } else {
-        log("warn", "game not found - invalid exception", { id: game.id, err });
-      }
-      return undefined;
+    );
+
+    return game.id;
+  } catch (err) {
+    onDiscoveredGame(game.id, undefined);
+
+    log("debug", "game not found", {
+      id: game.id,
+      err,
     });
+
+    return undefined;
+  }
 }
 
 /**
@@ -287,82 +261,68 @@ function handleDiscoveredGame(
  * @param {DiscoveredCB} onDiscoveredGame
  * @return the list of gameIds that were discovered
  */
-export function quickDiscovery(
+export async function quickDiscovery(
   knownGames: IGame[],
   discoveredGames: { [id: string]: IDiscoveryResult },
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
   signal?: AbortSignal,
-): Bluebird<string[]> {
-  return Bluebird.all(
-    knownGames.map((game) =>
-      quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool).then(() => {
-        // Every game is queried in parallel, but each only reaches here once its tool
-        // lookup settles - so aborting still skips the bulk of the remaining work.
-        if (signal?.aborted) {
-          return undefined;
-        }
-        if (getSafe(discoveredGames, [game.id, "pathSetManually"], false)) {
-          // don't override manually set game location but maybe update some settings
-          return updateManuallyConfigured(discoveredGames, game, onDiscoveredGame).then(() =>
-            Bluebird.resolve(undefined),
-          );
-        }
-        log("debug", "discovering game", game.id);
-        let prom: Bluebird<string>;
+): Promise<string[]> {
+  const promises = knownGames.map(async (game) => {
+    await quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool);
 
-        if (game.queryArgs !== undefined) {
-          prom = queryByArgs(discoveredGames, game).then((result) => {
-            if (result !== undefined) {
-              return handleDiscoveredGame(
-                game,
-                result.gamePath,
-                result.gameStoreId,
-                discoveredGames,
-                onDiscoveredGame,
-                onDiscoveredTool,
-              );
-            } else {
-              return Bluebird.resolve(undefined);
-            }
-          });
-        } else if (game.queryPath !== undefined) {
-          prom = queryByCB(game).then((result) => {
-            if (result === undefined) {
-              return Bluebird.resolve(undefined);
-            }
-            return handleDiscoveredGame(
-              game,
-              result.gamePath,
-              result.gameStoreId,
-              discoveredGames,
-              onDiscoveredGame,
-              onDiscoveredTool,
-            );
-          });
-        } else {
-          prom = Bluebird.resolve(undefined);
-        }
-        return prom.catch((err) => {
-          if (
-            !(err instanceof GameEntryNotFound) &&
-            !(err instanceof ProcessCanceled) &&
-            // probably an extension using registry for discovery but I don't like
-            // ignoring these
-            !(err.name === "WinApiException")
-          ) {
-            log("error", "failed to use game support plugin", {
-              id: game.id,
-              err: err.message,
-              stack: err.stack,
-            });
-          }
-          // don't escalate exception because a single game shouldn't break everything
-          return Bluebird.resolve(undefined);
-        });
-      }),
-    ),
-  ).then((gameNames) => gameNames.filter((name) => name !== undefined));
+    if (signal?.aborted) return undefined;
+    if (discoveredGames[game.id]?.pathSetManually) {
+      // don't override manually set game location but maybe update some settings
+      await updateManuallyConfigured(discoveredGames, game, onDiscoveredGame);
+      return undefined;
+    }
+
+    log("debug", "discovering game", game.id);
+
+    try {
+      if (game.queryArgs) {
+        const result = await queryByArgs(discoveredGames, game);
+        if (!result) return undefined;
+
+        return await handleDiscoveredGame(
+          game,
+          result.gamePath,
+          result.gameStoreId,
+          discoveredGames,
+          onDiscoveredGame,
+          onDiscoveredTool,
+        );
+      } else if (game.queryPath !== undefined) {
+        const result = await queryByCB(game);
+        if (!result) return undefined;
+
+        return await handleDiscoveredGame(
+          game,
+          result.gamePath,
+          result.gameStoreId,
+          discoveredGames,
+          onDiscoveredGame,
+          onDiscoveredTool,
+        );
+      } else {
+        return undefined;
+      }
+    } catch (err) {
+      const error = unknownToError(err);
+
+      log("error", "failed to use game support plugin", {
+        id: game.id,
+        err: error.message,
+        stack: error.stack,
+      });
+
+      return undefined;
+    }
+  });
+
+  const gameNames = await Promise.all(promises);
+  return gameNames.filter(Boolean);
 }
 
 /**
