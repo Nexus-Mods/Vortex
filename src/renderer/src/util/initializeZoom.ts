@@ -90,7 +90,12 @@ function makeWheelHandler(store: Store<IState>, isModern: () => boolean, target:
     if (!isModern() || !event.ctrlKey || event.deltaY === 0) return;
     // Cancel Chromium's own zoom and page scrolling, including at the limits.
     event.preventDefault();
-    const delta = event.deltaMode === 0 ? event.deltaY : Math.sign(event.deltaY) * WHEEL_STEP_DELTA;
+    // Page zoom divides pixel deltas by the frame's factor, so one notch at 150%
+    // reports about 67 px. Scale back to unzoomed px to keep one notch one step.
+    const delta =
+      event.deltaMode === 0
+        ? event.deltaY * webFrame.getZoomFactor()
+        : Math.sign(event.deltaY) * WHEEL_STEP_DELTA;
     const reversed = Math.sign(delta) !== Math.sign(travel);
     if (reversed || event.timeStamp - lastEventAt > WHEEL_GESTURE_GAP_MS) travel = 0;
     lastEventAt = event.timeStamp;
