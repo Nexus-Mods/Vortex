@@ -133,6 +133,35 @@ describe("zoom", () => {
     expect(zoomOf(store)).toBe(normalizeZoom(up - 0.1));
   });
 
+  // Chromium passes deltaY as a float32, so scaled back by the zoom a notch
+  // lands just under 100 px. These are values observed in Electron.
+  it.each([
+    [1.2, -83.33333002],
+    [1.1, -90.90908565],
+    [0.8, -124.99999503],
+    [0.6, -166.66666004],
+  ])("steps once for Chromium's float32 notch at page zoom %s", (zoom, deltaY) => {
+    const store = makeStore(zoom);
+    dispose = initializeZoom(store);
+    pinch(deltaY, 0);
+    expect(zoomOf(store)).toBe(normalizeZoom(zoom + 0.1));
+  });
+
+  it.each([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5])(
+    "steps exactly once per float32 notch in each direction at page zoom %s",
+    (zoom) => {
+      const store = makeStore(zoom);
+      dispose = initializeZoom(store);
+      // Zoom in (negative deltaY) everywhere but the maximum, so no step is clamped.
+      const dir = zoom === 1.5 ? 1 : -1;
+      pinch(Math.fround((dir * 100) / zoom), 0);
+      const next = normalizeZoom(zoom - dir * 0.1);
+      expect(zoomOf(store)).toBe(next);
+      pinch(Math.fround((-dir * 100) / frame.factor), 1000);
+      expect(zoomOf(store)).toBe(zoom);
+    },
+  );
+
   it.each([0.5, 1.2, 1.5])("accumulates small touchpad deltas at page zoom %s", (zoom) => {
     const store = makeStore(zoom);
     dispose = initializeZoom(store);

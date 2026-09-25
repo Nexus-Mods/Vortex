@@ -7,6 +7,12 @@ import { normalizeZoom, zoomFromState, ZOOM_SHORTCUT_EVENT, ZOOM_STEP } from "./
 
 /** Wheel travel per zoom step: one notch of an ordinary mouse wheel. */
 const WHEEL_STEP_DELTA = 100;
+/**
+ * Slack when comparing scaled travel with a notch. Chromium hands deltaY over as
+ * a float32, so 100 / zoom scaled back by the zoom lands just under 100
+ * (-83.33333 x 1.2 = -99.999996) and would otherwise miss the step.
+ */
+const WHEEL_STEP_TOLERANCE = 0.5;
 /** A pause this long ends a wheel or pinch gesture, dropping any partial step. */
 const WHEEL_GESTURE_GAP_MS = 300;
 
@@ -100,7 +106,7 @@ function makeWheelHandler(store: Store<IState>, isModern: () => boolean, target:
     if (reversed || event.timeStamp - lastEventAt > WHEEL_GESTURE_GAP_MS) travel = 0;
     lastEventAt = event.timeStamp;
     travel += delta;
-    if (Math.abs(travel) < WHEEL_STEP_DELTA) return;
+    if (Math.abs(travel) < WHEEL_STEP_DELTA - WHEEL_STEP_TOLERANCE) return;
     travel = 0;
     requestZoom(store, zoomFromState(store.getState()) - Math.sign(delta) * ZOOM_STEP, target);
   };
