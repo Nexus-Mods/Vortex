@@ -430,6 +430,67 @@ describe("dealWithExternalChanges: uninstalled mods", () => {
     expect(showExternalChangesCalls).toHaveLength(1);
   });
 
+  // Games whose mergeMods returns a subfolder deploy each mod below its own
+  // `target`, so the file to verify and delete is modPath/target/relPath.
+  describe("mod deployed into a subfolder", () => {
+    const TARGET = "uninstalled-mod-dir";
+    const runTargeted = (change: IFileChange) => {
+      const { api, activator } = makeApi({ externalChanges: [change], mods: INSTALLED });
+      return dealWithExternalChanges(
+        api,
+        activator,
+        "test-profile",
+        FAKE_STAGING,
+        FAKE_MOD_PATHS,
+        {
+          "": [
+            {
+              relPath: change.filePath,
+              source: change.source,
+              target: TARGET,
+              time: DEPLOYED_TIME,
+            },
+          ],
+        },
+        new Set(),
+      );
+    };
+    const subPath = path.join(FAKE_MOD_PATHS[""], TARGET, "Data/sub.esp");
+    const rootPath = path.join(FAKE_MOD_PATHS[""], "Data/sub.esp");
+    // Only the given path has a matching regular file; everything else is missing.
+    const onlyAt = (existing: string) =>
+      vi
+        .mocked(fs.lstatAsync)
+        .mockImplementation(((filePath: string) =>
+          filePath === existing
+            ? Promise.resolve({ mtime: new Date(DEPLOYED_TIME), isFile: () => true })
+            : Promise.reject(Object.assign(new Error("ENOENT"), { code: "ENOENT" }))) as never);
+
+    afterEach(() => {
+      vi.mocked(fs.lstatAsync).mockImplementation(
+        () => Promise.resolve({ mtime: new Date(0), isFile: () => true }) as never,
+      );
+    });
+
+    it("verifies and deletes the orphan in the subfolder", async () => {
+      onlyAt(subPath);
+      await runTargeted(makeSrcDeleted(REMOVED, "Data/sub.esp"));
+      expect(fs.lstatAsync).toHaveBeenCalledWith(subPath);
+      expect(showExternalChangesCalls).toHaveLength(0);
+      expect(fs.removeAsync).toHaveBeenCalledWith(subPath);
+      expect(fs.removeAsync).not.toHaveBeenCalledWith(rootPath);
+    });
+
+    // An unrelated file at the root path with the same timestamp must not
+    // count as the deployed file, and must not be the one deleted.
+    it("does not verify a same-timestamp file at the root path", async () => {
+      onlyAt(rootPath);
+      await runTargeted(makeSrcDeleted(REMOVED, "Data/sub.esp"));
+      expect(fs.lstatAsync).not.toHaveBeenCalledWith(rootPath);
+      expect(showExternalChangesCalls).toHaveLength(1);
+      expect(fs.removeAsync).not.toHaveBeenCalled();
+    });
+  });
   it("does not ask the user about a mod they uninstalled", async () => {
     await run([makeSrcDeleted(REMOVED, "SKSE/Plugins/example.dll")], new Set());
     expect(showExternalChangesCalls).toHaveLength(0);

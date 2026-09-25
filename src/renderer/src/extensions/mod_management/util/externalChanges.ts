@@ -24,6 +24,24 @@ import { MERGED_PATH } from "../modMerging";
 import type { FileAction, IFileEntry } from "../types/IFileEntry";
 
 /**
+ * Where a manifest entry is deployed, the same way the deployment method
+ * resolves it: games whose mergeMods returns a subfolder deploy each mod into
+ * its own `target` below the mod path.
+ */
+function deployedPath(
+  outputPath: string,
+  entry: Pick<IDeployedFile, "target" | "relPath">,
+): string {
+  return truthy(entry.target)
+    ? path.join(outputPath, entry.target, entry.relPath)
+    : path.join(outputPath, entry.relPath);
+}
+
+function manifestKey(source: string, relPath: string): string {
+  return JSON.stringify([source, relPath]);
+}
+
+/**
  * look at the file actions and act accordingly. Depending on the action this can
  * be a direct file operation or a modification to the previous manifest so that
  * the deployment ext runs the necessary operation
@@ -64,11 +82,20 @@ async function applyFileActions(
   // not doing anything with 'nop'. The regular deployment code is responsible for doing the right
   // thing in this case.
 
+  const targets = new Map(
+    lastDeployment.map((entry) => [manifestKey(entry.source, entry.relPath), entry.target]),
+  );
+  const destination = (entry: IFileEntry) =>
+    deployedPath(outputPath, {
+      target: targets.get(manifestKey(entry.source, entry.filePath)),
+      relPath: entry.filePath,
+    });
+
   // process the actions that the user selected in the dialog
   await Promise.all(
     (actionGroups["drop"] || []).map((entry) =>
       truthy(entry.filePath)
-        ? fs.removeAsync(path.join(outputPath, entry.filePath))
+        ? fs.removeAsync(destination(entry))
         : Promise.reject(new Error("invalid file path")),
     ),
   );
@@ -84,7 +111,7 @@ async function applyFileActions(
   await Promise.all(
     (actionGroups["import"] || []).map((entry) => {
       const source = path.join(sourcePath, entry.source, entry.filePath);
-      const deployed = path.join(outputPath, entry.filePath);
+      const deployed = destination(entry);
       // Very rarely we have a case where the files are links of each other
       // (or at least node reports that) so the copy would fail.
       // Instead of handling the errors (when we can't be sure if it's due to a bug in node.js
@@ -228,7 +255,12 @@ function isOrphanCandidate(change: IFileChange, installedSources?: Set<string>):
  * deployed. srcdeleted is raised whenever anything exists at the destination,
  * so it says nothing about who put the file there. A hardlink shares the
  * staging file's modification time, which the manifest recorded at deployment;
- * a file that was replaced or edited since has a different one. A missing
+ * a file that was replaced or edited since has a different one. The recorded
+ * time is the staging file's mtime, which extraction sets to the file's
+ * timestamp inside the mod archive, so it is not unique to this deployment:
+ * any file carrying the archive's original timestamp for that file, such as a
+ * manual re-extraction of the same archive or a timestamp-preserving copy,
+ * also matches and is deleted without a prompt. A missing
  * manifest entry, a destination that is not a regular file or cannot be read
  * all count as unverified.
  */
@@ -248,18 +280,18 @@ async function verifyOrphans(
     }
     const manifest = new Map(
       (lastDeployment[typeId] ?? []).map((entry) => [
-        JSON.stringify([entry.source, entry.relPath]),
+        manifestKey(entry.source, entry.relPath),
         entry,
       ]),
     );
     await Promise.all(
       candidates.map(async (change) => {
-        const entry = manifest.get(JSON.stringify([change.source, change.filePath]));
+        const entry = manifest.get(manifestKey(change.source, change.filePath));
         if (entry?.time === undefined) {
           return;
         }
         try {
-          const stats = await fs.lstatAsync(path.join(modPaths[typeId], change.filePath));
+          const stats = await fs.lstatAsync(deployedPath(modPaths[typeId], entry));
           // The manifest time comes from a directory walk that may only have
           // whole-second precision, so compare at that granularity.
           if (
