@@ -29,6 +29,15 @@ vi.mock("./util/discovery", () => ({
 
 vi.mock("../../util/api", () => ({ getNormalizeFunc: () => Promise.resolve((x: string) => x) }));
 
+// activating a game checks that its mod directory exists and is writable before discovering tools
+vi.mock("../../util/fs", async () => {
+  const { default: PromiseBB } = await import("bluebird");
+  return {
+    statAsync: vi.fn(() => PromiseBB.resolve({})),
+    ensureDirWritableAsync: vi.fn(() => PromiseBB.resolve()),
+  };
+});
+
 import {
   makeApiHarness,
   makeDiscoveredTool,
@@ -57,7 +66,9 @@ interface ISetupOpts {
   // a primary tool the user (or an earlier discovery) already settled on
   primaryTool?: string;
   // the tool record already in settings.gameMode.discovered, if any
-  existingTool?: { custom?: boolean };
+  existingTool?: { custom?: boolean; hidden?: boolean; defaultPrimary?: boolean };
+  // further tool records already in settings.gameMode.discovered, in key order
+  otherTools?: Record<string, Partial<IDiscoveredTool>>;
 }
 
 function setup(opts: ISetupOpts = {}) {
@@ -69,10 +80,12 @@ function setup(opts: ISetupOpts = {}) {
     draft.settings.profiles.activeProfileId = "profile-1";
     draft.settings.gameMode.discovered[GAME] = {
       path: `C:/games/${GAME}`,
-      tools:
-        opts.existingTool !== undefined
+      tools: {
+        ...opts.otherTools,
+        ...(opts.existingTool !== undefined
           ? { [SCRIPT_EXTENDER]: { id: SCRIPT_EXTENDER, ...opts.existingTool } }
-          : {},
+          : {}),
+      },
     } as never;
     if (opts.primaryTool !== undefined) {
       draft.settings.interface.primaryTool = { [GAME]: opts.primaryTool };
@@ -162,5 +175,48 @@ describe("GameModeManager tool discovery", () => {
     await manager.startToolDiscovery(GAME);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+  });
+  // A tool the user removed from the Tools page is stored with `hidden: true`. The Tools page then
+  // shows no default launcher, but Quick Launch starts whatever primaryTool names, so promoting a
+  // hidden tool would silently launch something the user deleted.
+  it("doesn't select a default primary tool the user removed", async () => {
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
+    const { harness, manager } = setup({ existingTool: { hidden: true } });
+
+    await manager.startToolDiscovery(GAME);
+
+    expect(primaryToolDispatches(harness)).toEqual([]);
+  });
+
+  // Discovery and activation must agree on which default wins when a game declares more than one.
+  it("selects the same default as game activation when several are declared", async () => {
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
+    const { harness, manager } = setup({
+      otherTools: { loader: makeDiscoveredTool({ id: "loader", defaultPrimary: true }) },
+    });
+
+    await manager.startToolDiscovery(GAME);
+
+    expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, "loader")]);
+  });
+});
+
+describe("GameModeManager game activation", () => {
+  it("selects a declared default primary tool", async () => {
+    const { harness, manager } = setup({ existingTool: { defaultPrimary: true } });
+
+    await manager.setGameMode(undefined, GAME, "profile-1");
+
+    expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+  });
+
+  it("doesn't select a default primary tool the user removed", async () => {
+    const { harness, manager } = setup({
+      existingTool: { defaultPrimary: true, hidden: true },
+    });
+
+    await manager.setGameMode(undefined, GAME, "profile-1");
+
+    expect(primaryToolDispatches(harness)).toEqual([]);
   });
 });

@@ -18,7 +18,7 @@ import { log } from "@/util/log";
 import { OriginLauncher } from "@/util/OriginStore";
 import { getSafe } from "@/util/storeHelper";
 import { UPlayLauncher } from "@/util/UplayStore";
-import { batchDispatch, truthy } from "@/util/util";
+import { batchDispatch } from "@/util/util";
 import { XboxLauncher } from "@/util/xbox/XboxLauncher";
 
 import { setNextProfile } from "../../actions";
@@ -48,6 +48,16 @@ import { getGame } from "./util/getGame";
 export interface IGameStub {
   ext: IExtensionDownloadInfo;
   game: IGame;
+}
+
+/**
+ * The tool a game declares as its default launcher, skipping any the user removed from the Tools
+ * page. Game activation and tool discovery both use this so they settle on the same tool.
+ */
+function findDefaultPrimaryTool(tools: { [toolId: string]: IDiscoveredTool } | undefined) {
+  return Object.keys(tools ?? {}).find(
+    (toolId) => tools[toolId].defaultPrimary === true && tools[toolId].hidden !== true,
+  );
 }
 
 /**
@@ -161,14 +171,9 @@ class GameModeManager {
             getSafe(state, ["settings", "interface", "primaryTool", gameId], undefined) ===
             undefined
           ) {
-            const discovery = discoveryByGame(state, gameId);
-            if (truthy(discovery.tools)) {
-              const defaultPrimary = Object.keys(discovery.tools).find(
-                (toolId) => discovery.tools[toolId].defaultPrimary === true,
-              );
-              if (defaultPrimary !== undefined) {
-                this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
-              }
+            const defaultPrimary = findDefaultPrimaryTool(discoveryByGame(state, gameId).tools);
+            if (defaultPrimary !== undefined) {
+              this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
             }
           }
         } else {
@@ -594,16 +599,25 @@ class GameModeManager {
       delete result.executable;
       this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result, false));
     }
-    // Tool discovery also runs after deployment and on an already-active game. Previously the
-    // default was selected only during the narrow game-activation path, so a script extender that
-    // appeared later was shown in Tools but Quick Launch kept starting the vanilla executable.
-    // Select any game's declared default as soon as it becomes available, while preserving every
-    // explicit user choice.
+    // Tool discovery also runs after deployment and on an already-active game, so a declared default
+    // can become available after activation. Select it then, unless the user already chose a primary
+    // tool (including clearing it, which stores null).
+    if (result.defaultPrimary !== true) {
+      return;
+    }
     const state = this.mStore.getState();
-    const active = activeProfile(state);
     const primary = state.settings.interface.primaryTool?.[gameId];
-    if (active?.gameId === gameId && primary === undefined && result.defaultPrimary === true) {
-      this.mStore.dispatch(setPrimaryTool(gameId, result.id));
+    if (activeProfile(state)?.gameId !== gameId || primary !== undefined) {
+      return;
+    }
+    // a customised record isn't overwritten above, but the game still declares this tool a default
+    const tools = discoveryByGame(state, gameId).tools ?? {};
+    const defaultPrimary = findDefaultPrimaryTool({
+      ...tools,
+      [result.id]: { ...(tools[result.id] ?? result), defaultPrimary: true },
+    });
+    if (defaultPrimary !== undefined) {
+      this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
     }
   };
 
