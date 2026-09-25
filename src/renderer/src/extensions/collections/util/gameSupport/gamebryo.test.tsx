@@ -21,7 +21,7 @@ import type * as selectorsModule from "../../../../util/selectors";
 import type { IMod } from "../../../mod_management/types/IMod";
 import { MOD_TYPE } from "../../constants";
 import type { ICollection } from "../../types/ICollection";
-import { parser } from "./gamebryo";
+import { generate, parser } from "./gamebryo";
 
 const { readdirAsyncMock } = vi.hoisted(() => ({ readdirAsyncMock: vi.fn() }));
 
@@ -219,17 +219,26 @@ describe("gamebryo collection parser plugin rules", () => {
     ]);
   });
 
-  it("replays rules whose reference is the expanded {name, display} form", async () => {
+  // The dedupe predicate only runs when the userlist already has rules of that type for the
+  // plugin, so the existing entry is what makes this reach the expanded-reference comparison.
+  it("skips an expanded reference the userlist already carries in expanded form", async () => {
     seedReaddir();
     const harness = makeHarness();
-    const reference = { name: "RaceCompatibility.esm", display: "Race Compatibility" };
-    const collection = makeRuleCollection([{ name: "BijinAIO.esp", after: [reference] }]);
+    harness.setState((draft) => {
+      (draft as unknown as { userlist: { plugins: unknown[] } }).userlist.plugins = [
+        { name: "BijinAIO.esp", after: [{ name: "RaceCompatibility.esm", display: "Race" }] },
+      ];
+    });
+    const collection = makeRuleCollection([
+      {
+        name: "BijinAIO.esp",
+        after: [{ name: "RACECOMPATIBILITY.ESM", display: "Race Compatibility" }],
+      },
+    ]);
 
     await parser(harness.api, GAME_ID, collection, collectionMod());
 
-    expect(userlistRuleActions(harness)).toEqual([
-      { pluginId: "bijinaio.esp", reference, type: "after" },
-    ]);
+    expect(userlistRuleActions(harness)).toEqual([]);
   });
 
   // Reinstalling or updating a collection replays it over a userlist that already holds the
@@ -281,6 +290,67 @@ describe("gamebryo collection parser plugin rules", () => {
 
     expect(userlistRuleActions(harness)).toEqual([
       { pluginId: "bijinaio.esp", reference: "MiriFollower.esp", type: "requires" },
+    ]);
+  });
+});
+
+/**
+ * The export side of the same round trip: generate() copies the curator's userlist into the
+ * manifest, and whatever it filters out the installing user can never receive.
+ */
+describe("gamebryo collection plugin rules round trip", () => {
+  it("exports and replays a plugin whose only rules are requires and incompatible", async () => {
+    seedReaddir();
+    const curator = makeHarness();
+    curator.setState((draft) => {
+      const seed = draft as unknown as {
+        userlist: { plugins: unknown[] };
+        loadOrder: Record<string, unknown>;
+      };
+      seed.loadOrder = {};
+      seed.userlist.plugins = [
+        { name: "BijinAIO.esp", req: ["RaceCompatibility.esm"] },
+        { name: "MiriFollower.esp", inc: ["Immersive Sounds.esp"] },
+        { name: "Immersive Sounds.esp", after: ["RaceCompatibility.esm"] },
+        // not shipped by any member, so it stays out of the manifest
+        { name: "Unrelated.esp", req: ["RaceCompatibility.esm"] },
+      ];
+    });
+    const mods = memberMods();
+
+    const exported = await generate(
+      curator.api.getState(),
+      GAME_ID,
+      "staging",
+      Object.keys(mods),
+      mods,
+    );
+
+    expect(exported.pluginRules.plugins.map((plugin) => plugin.name).sort()).toEqual([
+      "BijinAIO.esp",
+      "Immersive Sounds.esp",
+      "MiriFollower.esp",
+    ]);
+
+    const installer = makeHarness();
+    const collection = {
+      plugins: [],
+      pluginRules: exported.pluginRules,
+    } as unknown as ICollection;
+
+    await parser(
+      installer.api,
+      GAME_ID,
+      collection,
+      makeMod({ id: COLLECTION_ID, type: MOD_TYPE, rules: [] }),
+    );
+
+    expect(
+      userlistRuleActions(installer).sort((lhs, rhs) => lhs.pluginId.localeCompare(rhs.pluginId)),
+    ).toEqual([
+      { pluginId: "bijinaio.esp", reference: "RaceCompatibility.esm", type: "requires" },
+      { pluginId: "immersive sounds.esp", reference: "RaceCompatibility.esm", type: "after" },
+      { pluginId: "mirifollower.esp", reference: "Immersive Sounds.esp", type: "incompatible" },
     ]);
   });
 });

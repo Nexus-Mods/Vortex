@@ -47,6 +47,8 @@ interface IUserlistEntry {
   name: string;
   group?: string;
   after?: Array<string | ILootReference>;
+  req?: Array<string | ILootReference>;
+  inc?: Array<string | ILootReference>;
 }
 
 interface IGamebryoRules {
@@ -59,7 +61,12 @@ function extractPluginRules(state: IStateWithLootLists, plugins: string[]): IGam
   const customisedPlugins = (state.userlist?.plugins ?? []).filter(
     (plug: IUserlistEntry) =>
       installedPlugins.has(plug.name.toLowerCase()) &&
-      (plug.after !== undefined || plug.group !== undefined),
+      // a plugin whose only rules are requires/incompatible still carries curator intent; the
+      // parser replays req/inc, so the export must not filter those entries out
+      (plug.after !== undefined ||
+        plug.group !== undefined ||
+        (plug.req?.length ?? 0) > 0 ||
+        (plug.inc?.length ?? 0) > 0),
   );
 
   // TODO this may be a bit overly simplified.
