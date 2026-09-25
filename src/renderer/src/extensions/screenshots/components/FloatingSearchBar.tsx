@@ -126,7 +126,7 @@ export default function FloatingSearchBar({
             autoFocus
             className={`mb-0 w-full border px-2 py-1 ${placeAbove ? "rounded-b-sm border-t-0" : "rounded-t-sm border-b-0"}`}
             disabled={!!selectedMod}
-            placeholder={t("Search for mods...")}
+            placeholder={t("floating_search::placeholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
@@ -151,7 +151,7 @@ export default function FloatingSearchBar({
 
             <Input
               autoFocus
-              placeholder={t("Optional comment")}
+              placeholder={t("floating_search::comment_placeholder")}
               type="text"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -172,7 +172,7 @@ export default function FloatingSearchBar({
                   setComment("");
                 }}
               >
-                {t("Change mod")}
+                {t("floating_search::change")}
               </Button>
 
               <Button
@@ -185,7 +185,7 @@ export default function FloatingSearchBar({
                   if (selectedMod) onSelect(selectedMod, comment);
                 }}
               >
-                {t("Save")}
+                {t("shared::save")}
               </Button>
             </div>
           </div>

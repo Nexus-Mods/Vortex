@@ -20,6 +20,7 @@ import {
 import useGameMediaSources from "../hooks/GameMediaSourcesHook";
 import * as selectors from "../selectors";
 import type { GameMediaSource } from "../util/mediaTypes";
+import { resolveTString } from "../util/resolveTString";
 import SettingsMediaAddSourceModal from "./SettingsMediaAddSourceModal";
 
 interface ISettingsMediaProps {
@@ -80,11 +81,12 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
       <div className="min-w-sm grow">
         <Typography as="span" typographyType="body-sm">
-          {source.name}
+          {resolveTString(t, source.name)}
         </Typography>
 
         <Typography appearance="subdued" as="div" typographyType="body-sm">
-          {source.description ?? t("Media from {{source}}", { source: source.name })}
+          {resolveTString(t, source.description) ??
+            t("shared::media_from", { source: resolveTString(t, source.name) })}
         </Typography>
       </div>
 
@@ -92,13 +94,13 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
         <ToolbarGroup
           actions={[
             {
-              label: "Edit Source",
+              label: t("settings::edit_source"),
               iconPath: mdiPencil,
               onClick: () => onEditSource(id, source),
               testId: `source-actions-edit-${id}`,
             },
             {
-              label: "Delete Source",
+              label: t("settings::delete_source"),
               iconPath: mdiDelete,
               onClick: () => onDeleteSource(id),
               testId: `source-actions-delete-${id}`,
@@ -117,12 +119,12 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
   return (
     <form className="flex flex-col gap-4">
       <Typography appearance="moderate" typographyType="body-md">
-        {t("Manage the folders scanned when viewing the Media section.")}
+        {t("settings::description")}
       </Typography>
 
       <div className="flex flex-col gap-2">
         <Typography appearance="moderate" typographyType="body-lg">
-          {t("Default Sources")}
+          {t("settings::header_default")}
         </Typography>
 
         {Object.entries(defaultSources)?.map(toggleItem)}
@@ -130,12 +132,12 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
       <div className="flex flex-col gap-2">
         <Typography appearance="moderate" typographyType="body-lg">
-          {t("Custom Sources")}
+          {t("settings::header_custom")}
         </Typography>
 
-        {!customSources && (
+        {(!customSources || Object.keys(customSources).length === 0) && (
           <Typography appearance="subdued" typographyType="body-sm">
-            {t("No custom media sources.")}
+            {t("settings::no_custom")}
           </Typography>
         )}
 
@@ -153,13 +155,13 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
         size="sm"
         onClick={() => setShowAddModal(true)}
       >
-        {t("Add custom source")}
+        {t("settings::add_custom")}
       </Button>
 
       {!!items?.length && disabledSources.length === 0 && orphans.length > 0 && (
         <div className="flex items-center gap-3">
           <Typography appearance="subdued" typographyType="body-sm">
-            {t("{{count}} mod tags refer to media that is no longer in your sources.", {
+            {t("settings::orphaned_tags", {
               count: orphans.length,
             })}
           </Typography>
@@ -170,14 +172,14 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
             size="sm"
             onClick={() => dispatch(clearGameMediaModTags(gameId, orphans))}
           >
-            {t("Remove")}
+            {t("shared::remove")}
           </Button>
         </div>
       )}
 
       <div className="flex flex-col gap-2">
         <Typography appearance="moderate" typographyType="body-lg">
-          {t("Experimental")}
+          {t("settings::header_exp")}
         </Typography>
 
         <div className="flex w-max items-center gap-3">
@@ -189,11 +191,11 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
           <div className="min-w-sm grow">
             <Typography as="span" typographyType="body-sm">
-              {t("Video Support")}
+              {t("settings::exp::video_support")}
             </Typography>
 
             <Typography appearance="subdued" as="div" typographyType="body-sm">
-              {t("Include MP4s and Steam clips in the media section.")}
+              {t("settings::exp::video_support_desc")}
             </Typography>
 
             <Typography
@@ -203,11 +205,9 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
             >
               <Icon className="nxm-alert-icon inline" path={mdiAlertOutline} size="sm" />
 
-              {t(
-                "It is not currently possible to play Steam clips, and videos will have generic thumbnails unless FFmpeg is installed.",
-              )}
+              {t("settings::exp::video_support_warn")}
 
-              <a href="https://ffmpeg.org/">{t("Get FFmpeg.")}</a>
+              <a href="https://ffmpeg.org/">{t("settings::exp::get_ffmpeg")}</a>
             </Typography>
           </div>
         </div>

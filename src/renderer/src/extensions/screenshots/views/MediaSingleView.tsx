@@ -74,7 +74,7 @@ export default function MediaSingleView({
     setIsAddingTag(true);
     api.sendNotification({
       type: "info",
-      message: "Click anywhere on the image to tag a mod.",
+      message: t("single::start_tagging"),
       displayMS: 5000,
     });
   };
@@ -89,7 +89,7 @@ export default function MediaSingleView({
   return (
     <Page active={active} id="media-details-page" scrollable={false}>
       <PageHeader
-        // title={t("Media")}
+        // title={t("shared::title")}
         customTitle={(compact) => (
           <div className="flex items-center gap-x-1.5">
             <Typography
@@ -98,14 +98,14 @@ export default function MediaSingleView({
               className="transition-colors"
               typographyType="heading-xs"
             >
-              {t("Media")}
+              {t("shared::title")}
             </Typography>
 
             <BetaBadge isSubdued={compact} />
           </div>
         )}
         pictogramName="camera"
-        subtitle={t("Screenshots and videos from your selected game.")}
+        subtitle={t("shared::subtitle")}
       >
         <Button
           appearance="weak"
@@ -115,7 +115,7 @@ export default function MediaSingleView({
           type="button"
           onClick={onBack}
         >
-          {t("Back")}
+          {t("common:::back")}
         </Button>
       </PageHeader>
 
@@ -136,7 +136,7 @@ export default function MediaSingleView({
                 src={mediaSrc}
                 onError={() =>
                   api.sendNotification({
-                    message: "Video failed to load",
+                    message: t("single::video_failed"),
                     displayMS: 5000,
                     type: "error",
                   })
@@ -212,13 +212,11 @@ export default function MediaSingleView({
       <Modal
         showCloseButton
         isOpen={uploadModalVisible}
-        title={t("Upload to Nexus Mods")}
+        title={t("single::upload::title")}
         onClose={() => setUploadModalVisible(false)}
       >
         <Typography appearance="subdued" className="mb-2">
-          {t(
-            "It is not currently possible to upload to Nexus Mods in one click, however, Vortex can open both the folder containing this file and the image upload page.",
-          )}
+          {t("single::upload::body")}
         </Typography>
 
         <div className="mt-2 flex flex-wrap gap-2">
@@ -232,7 +230,7 @@ export default function MediaSingleView({
               window.api.shell.openUrl(`https://www.nexusmods.com/${domainName}/images/add`);
             }}
           >
-            {t("Continue")}
+            {t("single::actions::continue")}
           </Button>
 
           <Button
@@ -241,7 +239,7 @@ export default function MediaSingleView({
             leftIconPath={mdiClose}
             onClick={() => setUploadModalVisible(false)}
           >
-            {t("Cancel")}
+            {t("single::actions::cancel")}
           </Button>
         </div>
       </Modal>

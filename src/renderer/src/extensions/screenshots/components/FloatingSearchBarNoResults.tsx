@@ -9,22 +9,22 @@ export default function FloatingSearchBarNoResults({ query }: { query: string })
     return (
       <div className="flex flex-col items-center gap-y-4 py-4">
         <Typography appearance="subdued" typographyType="body-md">
-          {t("Add mods to image")}
+          {t("floating_search::no_query_title")}
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          {t("Select a mod to tag it in this image")}
+          {t("floating_search::no_query_subtitle")}
         </Typography>
       </div>
     );
   return (
     <div className="flex flex-col items-center gap-y-4 py-4">
       <Typography appearance="subdued" typographyType="body-md">
-        {t('No mods found for "{{query}}"', { query })}
+        {t("floating_search::no_results_title", { query })}
       </Typography>
 
       <Typography appearance="subdued" typographyType="body-sm">
-        {t("Please try expanding your search.")}
+        {t("floating_search::no_results_subtitle")}
       </Typography>
     </div>
   );

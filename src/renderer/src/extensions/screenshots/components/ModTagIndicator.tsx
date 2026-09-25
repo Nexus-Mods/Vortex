@@ -1,5 +1,6 @@
 import { mdiTagRemove } from "@mdi/js";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
 import { Button } from "@/ui/components/button/Button";
@@ -18,6 +19,7 @@ interface IModTagsIndicatorProps {
 }
 
 export default function ModTagIndicator({ x, y, mod, gameId, mediaId }: IModTagsIndicatorProps) {
+  const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
   const baseClasses = ["size-4", "rounded-full", "border-2", "border-white"];
   if (mod) baseClasses.push("bg-primary");
@@ -54,7 +56,7 @@ export default function ModTagIndicator({ x, y, mod, gameId, mediaId }: IModTags
         brand="neutral"
         leftIconPath={mdiTagRemove}
         size="sm"
-        title="Remove"
+        title={t("shared::remove")}
         onClick={removeTag}
       />
     </div>

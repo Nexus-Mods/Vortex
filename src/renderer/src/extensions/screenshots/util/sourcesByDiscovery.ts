@@ -3,6 +3,7 @@ import path from "path";
 import type { IDiscoveryResult, IGameStored } from "@/types/api";
 import getVortexPath from "@/util/getVortexPath";
 
+import { TString } from "../../../util/i18n";
 import getKnownFolders from "../sources/knownfolders";
 import { getSteamMedia } from "../sources/steam";
 import type { GameMediaSource } from "../util/mediaTypes";
@@ -33,8 +34,8 @@ export default async function sourcesByDiscovery(
     case "xbox": {
       const capturesFolder = path.join(getVortexPath("home"), "Videos", "Captures");
       res["xbox-default-captures"] = {
-        name: "Xbox Captures",
-        description: `Screenshots captured by the Xbox Game Bar.`,
+        name: new TString("sources::xbox::captures", {}, "media_page"),
+        description: new TString("sources::xbox::captures_desc", {}, "media_page"),
         path: capturesFolder,
         filterFn: (f: string) =>
           f.toLowerCase().includes(name.toLowerCase().replace(":", "_")) ||

@@ -127,7 +127,7 @@ describe("SettingsMedia", () => {
 
     renderComponent();
 
-    expect(await screen.findByText("No custom media sources.")).toBeInTheDocument();
+    expect(await screen.findByText("settings::no_custom")).toBeInTheDocument();
   });
 
   it("reflects disabled sources", () => {
@@ -213,7 +213,7 @@ describe("SettingsMedia", () => {
     const addButton = screen.getByTestId("add-custom-source");
     await user.click(addButton);
 
-    const modalTitle = screen.queryByText("Add Custom Media Source");
+    const modalTitle = screen.queryByText("settings::add_modal::header_add");
 
     expect(modalTitle).toBeInTheDocument();
   });
@@ -239,9 +239,11 @@ describe("SettingsMedia", () => {
     renderComponent();
     await user.click(screen.getByTestId("source-actions-edit-sourceB"));
 
-    expect(screen.getByText("Edit Media Source")).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Source Name/)).toHaveValue("Source B");
-    expect(screen.getByLabelText("Description")).toHaveValue("Example source B (Custom)");
-    expect(screen.getByLabelText(/^Folder Path/)).toHaveValue("/source/B");
+    expect(screen.getByText("settings::add_modal::header_edit")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^settings::add_modal::source_name/)).toHaveValue("Source B");
+    expect(screen.getByLabelText("settings::add_modal::source_desc")).toHaveValue(
+      "Example source B (Custom)",
+    );
+    expect(screen.getByLabelText(/^settings::add_modal::source_path/)).toHaveValue("/source/B");
   });
 });

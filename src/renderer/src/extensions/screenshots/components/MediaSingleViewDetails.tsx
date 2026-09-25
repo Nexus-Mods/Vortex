@@ -11,6 +11,7 @@ import relativeTime from "@/util/relativeTime";
 import { bytesToString } from "@/util/util";
 
 import type { GameMediaItem, GameMediaModTag, GameMediaSource } from "../util/mediaTypes";
+import { resolveTString } from "../util/resolveTString";
 
 interface IMediaViewSingleDetailsProps {
   entry: GameMediaItem;
@@ -35,7 +36,7 @@ export default function MediaViewSingleDetails({
 
   const toolbarActions: IToolbarAction[] = [
     {
-      label: "Upload",
+      label: t("single::actions::upload"),
       iconPath: mdiCloudUpload,
       showLabel: true,
       disabled: false,
@@ -43,7 +44,7 @@ export default function MediaViewSingleDetails({
       onClick: startUpload,
     },
     {
-      label: "Open File",
+      label: t("single::actions::open"),
       iconPath: mdiOpenInNew,
       showLabel: true,
       onClick: () => window.api.shell.showItemInFolder(entry.path),
@@ -57,7 +58,7 @@ export default function MediaViewSingleDetails({
         className="mb-2 border-b border-translucent-subdued"
         typographyType="heading-xs"
       >
-        {t("Details")}
+        {t("single::details")}
       </Typography>
 
       <div className="grid grid-cols-[20%_80%] gap-4">
@@ -82,7 +83,7 @@ export default function MediaViewSingleDetails({
         </Typography>
 
         <Typography appearance="subdued" brand="neutral" typographyType="body-sm">
-          {source?.name ?? entry.sourceId}
+          {resolveTString(t, source?.name) ?? entry.sourceId}
         </Typography>
 
         {!!entry.size && (
@@ -134,17 +135,17 @@ export default function MediaViewSingleDetails({
           className="my-2 border-b border-translucent-subdued"
           typographyType="heading-xs"
         >
-          {t("Featured Mods")}
+          {t("single::featured_mods")}
         </Typography>
 
         <Typography className="max-h-48 overflow-auto" typographyType="body-sm">
-          {(!tags || tags?.length === 0) && <i>None</i>}
+          {(!tags || tags?.length === 0) && <i>{t("single::no_tags")}</i>}
 
           <ul className="mb-2 list-inside list-disc">
-            {tags?.map((t) => (
-              <li className="ml-2 flex items-center justify-between gap-2" key={t.id}>
-                <a className="line-clamp-2" href={t.url} title={t.name}>
-                  {t.name}
+            {tags?.map((tag) => (
+              <li className="ml-2 flex items-center justify-between gap-2" key={tag.id}>
+                <a className="line-clamp-2" href={tag.url} title={tag.name}>
+                  {tag.name}
                 </a>
 
                 <Button
@@ -152,8 +153,8 @@ export default function MediaViewSingleDetails({
                   brand="neutral"
                   leftIconPath={mdiTagRemove}
                   size="sm"
-                  title="Remove"
-                  onClick={() => removeTag(t.id)}
+                  title={t("common:::remove")}
+                  onClick={() => removeTag(tag.id)}
                 />
               </li>
             ))}
@@ -166,7 +167,7 @@ export default function MediaViewSingleDetails({
             size="sm"
             onClick={toggleAddingTag}
           >
-            {isAddingTag ? t("Cancel adding") : t("Add mod")}
+            {isAddingTag ? t("single::actions::cancel") : t("single::actions::add_mod")}
           </Button>
         </Typography>
       </div>

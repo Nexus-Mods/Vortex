@@ -1,5 +1,6 @@
 import { mdiFolderCog } from "@mdi/js";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
 import type { IExtensionApi } from "@/types/api";
@@ -9,6 +10,7 @@ import { Modal } from "@/ui/components/modal/Modal";
 
 import { addGameMediaSource } from "../actions/persistent";
 import type { GameMediaSource } from "../util/mediaTypes";
+import { resolveTString } from "../util/resolveTString";
 
 interface ISettingsMediaAddSourceModalProps {
   gameId: string;
@@ -25,7 +27,7 @@ export default function SettingsMediaAddSourceModal({
   api,
   existingSource,
 }: ISettingsMediaAddSourceModalProps) {
-  const t = api.translate;
+  const { t } = useTranslation(["media_page"]);
   const [sourceName, setSourceName] = useState(() => existingSource?.source?.name ?? "");
   const [sourcePath, setSourcePath] = useState(() => existingSource?.source?.path ?? "");
   const [sourceDescription, setSourceDescription] = useState(
@@ -53,7 +55,7 @@ export default function SettingsMediaAddSourceModal({
     const newSource: GameMediaSource = {
       name: sourceName,
       path: sourcePath,
-      description: sourceDescription.length ? sourceDescription : undefined,
+      description: sourceDescription.toString().length ? sourceDescription : undefined,
       custom: true,
     };
 
@@ -67,26 +69,30 @@ export default function SettingsMediaAddSourceModal({
     <Modal
       isOpen={visible}
       size="sm"
-      title={existingSource ? t("Edit Media Source") : t("Add Custom Media Source")}
+      title={
+        existingSource
+          ? t("settings::add_modal::header_edit")
+          : t("settings::add_modal::header_add")
+      }
       onClose={onCloseWithReset}
     >
       <form className="flex flex-col gap-2">
         <Input
           required
           id="media-source-name"
-          label={t("Source Name")}
-          placeholder={t("e.g. My Screenshots")}
+          label={t("settings::add_modal::source_name")}
+          placeholder={t("settings::add_modal::source_name_placeholder")}
           type="text"
-          value={sourceName}
+          value={resolveTString(t, sourceName)}
           onChange={(e) => setSourceName(e.target.value)}
         />
 
         <Input
           id="media-source-description"
-          label={t("Description")}
-          placeholder={t("e.g. Images saved to my screenshots folder")}
+          label={t("settings::add_modal::source_desc")}
+          placeholder={t("settings::add_modal::source_desc_placeholder")}
           type="text"
-          value={sourceDescription}
+          value={resolveTString(t, sourceDescription)}
           onChange={(e) => setSourceDescription(e.target.value)}
         />
 
@@ -96,7 +102,7 @@ export default function SettingsMediaAddSourceModal({
             required
             fieldClassName="grow"
             id="media-source-path"
-            label={t("Folder Path")}
+            label={t("settings::add_modal::source_path")}
             type="text"
             value={sourcePath}
             onClick={() => void selectDirectory()}
@@ -107,13 +113,17 @@ export default function SettingsMediaAddSourceModal({
             brand="neutral"
             className="shrink-0 self-end"
             leftIconPath={mdiFolderCog}
+            title={t("settings::add_modal::source_path_select")}
             onClick={() => void selectDirectory()}
           />
         </div>
 
         <div>
-          <Button disabled={!sourceName.length || !sourcePath} onClick={saveMediaSource}>
-            {t("Save")}
+          <Button
+            disabled={!resolveTString(t, sourceName).length || !sourcePath}
+            onClick={saveMediaSource}
+          >
+            {t("shared::save")}
           </Button>
         </div>
       </form>

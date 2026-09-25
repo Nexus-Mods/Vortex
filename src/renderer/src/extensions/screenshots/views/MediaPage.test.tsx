@@ -148,7 +148,7 @@ describe("MediaPage", () => {
     renderComponent();
     expect(screen.getByRole("tab", { name: /Screenshots.*1/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Videos.*1/ })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /All.*2/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /listing::all_tab.*2/ })).toBeInTheDocument();
   });
 
   it("does not render tabs for disabled sources", () => {

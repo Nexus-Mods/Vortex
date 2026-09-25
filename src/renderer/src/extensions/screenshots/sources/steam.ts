@@ -3,6 +3,7 @@ import path from "path";
 
 import { parse } from "simple-vdf";
 
+import { TString } from "../../../util/i18n";
 import Steam from "../../../util/Steam";
 import type {
   GameMediaItem,
@@ -88,8 +89,12 @@ export async function screenshotsFolderBySteamID(
       Object.keys(parsed?.screenshots?.[steamGameId]).length
     ) {
       res[`steam-screenshots-${userId}`] = {
-        name: "Steam Screenshots",
-        description: `Screenshots for Steam user ${userName ?? userId}`,
+        name: new TString("sources::steam::screenshots", {}, "media_page"),
+        description: new TString(
+          "sources::steam::screenshots_desc",
+          { user: userName ?? userId },
+          "media_page",
+        ),
         path: path.join(userDataFolder, userId, "760", "remote", steamGameId, "screenshots"),
       };
     }
@@ -118,9 +123,13 @@ export async function clipsFolderBySteamID(
     const gameClips = dirList.filter((d) => d.toLowerCase().startsWith(`clip_${steamGameId}`));
     if (gameClips.length > 0) {
       res[`steam-videos-${userId}`] = {
-        name: "Steam Clips",
+        name: new TString("sources::steam::clips", {}, "media_page"),
         path: videosFolder,
-        description: `Clips for Steam user ${userName ?? userId}`,
+        description: new TString(
+          "sources::steam::clips_desc",
+          { user: userName ?? userId },
+          "media_page",
+        ),
         discoverFn: (mediaPath: string) => discoverSteamClips(mediaPath, steamGameId, userId),
       };
     }

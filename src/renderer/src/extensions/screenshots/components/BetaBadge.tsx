@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-/** Small "Beta" pill shown next to the health check page titles. */
+/** Small "Beta" pill shown next to the page titles. */
 export const BetaBadge = ({ isSubdued = false }: { isSubdued?: boolean }) => {
-  const { t } = useTranslation(["health_check", "common"]);
+  const { t } = useTranslation(["media_page", "common"]);
 
   return (
     <Typography

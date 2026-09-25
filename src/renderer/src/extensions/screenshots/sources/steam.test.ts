@@ -7,7 +7,10 @@ import path from "path";
 
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
+import type { ITString } from "@/util/i18n";
+
 import type { GameMediaItem } from "../util/mediaTypes";
+import { expectTString } from "../util/testHelpers";
 import {
   screenshotsFolderBySteamID,
   clipsFolderBySteamID,
@@ -89,19 +92,27 @@ describe("screenshotsFolderBySteamID", () => {
 
     expect(Object.keys(result).length).toEqual(1);
     expect(result["steam-screenshots-456"]).toBeDefined();
+    expectTString(result["steam-screenshots-456"].name, "sources::steam::screenshots");
   });
 
   it("uses the Steam username if present", async () => {
     mockedFs.access.mockResolvedValue(undefined);
     mockedFs.readFile.mockResolvedValue(fakeSteamScreenshotsVDF);
 
-    const userDataFolder = "";
-    const steamGameId = "123";
-    const userId = "456";
-    const userName = "AUser";
-    const result = await screenshotsFolderBySteamID(userDataFolder, steamGameId, userId, userName);
+    const result = await screenshotsFolderBySteamID("", "123", "456", "AUser");
+    expectTString(result["steam-screenshots-456"].description, "sources::steam::screenshots_desc", {
+      user: "AUser",
+    });
+  });
 
-    expect(result["steam-screenshots-456"].description.endsWith(userName)).toBeTruthy();
+  it("falls back to the Steam user id when no username is known", async () => {
+    mockedFs.access.mockResolvedValue(undefined);
+    mockedFs.readFile.mockResolvedValue(fakeSteamScreenshotsVDF);
+
+    const result = await screenshotsFolderBySteamID("", "123", "456");
+    expect((result["steam-screenshots-456"].description as ITString).options).toMatchObject({
+      user: "456",
+    });
   });
 });
 

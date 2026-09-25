@@ -1,12 +1,14 @@
 import type { VDFObject } from "simple-vdf";
 
+import type { ITString } from "../../../util/i18n";
+
 export interface GameMediaSource {
-  name: string;
+  name: string | ITString;
   path: string;
   custom?: boolean;
   filterFn?: (s: string) => boolean;
   discoverFn?: (mediaPath: string) => Promise<GameMediaItem[]>;
-  description?: string;
+  description?: string | ITString;
 }
 
 export interface GameMediaItem {

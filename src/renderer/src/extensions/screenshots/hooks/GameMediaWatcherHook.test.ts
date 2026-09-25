@@ -13,7 +13,7 @@ const { watcher, mockWatch, mockOnSourceChanged } = vi.hoisted(() => {
   return {
     watcher,
     mockWatch: vi.fn((_path: string, _cb: () => void) => watcher),
-    mockOnSourceChanged: vi.fn((_sourceId: string) => {}),
+    mockOnSourceChanged: vi.fn((_sourceId: string) => Promise.resolve()),
   };
 });
 
@@ -104,7 +104,7 @@ describe("GameMediaWatcherHook", () => {
       sourceA: { name: "Source A", path: "A" },
       sourceB: { name: "Source B", path: "B" },
     };
-    const disabled = [];
+    const disabled: string[] = [];
 
     const hook = render(sources, disabled, mockOnSourceChanged);
     await waitFor(() => expect(mockWatch).toHaveBeenCalledTimes(2));

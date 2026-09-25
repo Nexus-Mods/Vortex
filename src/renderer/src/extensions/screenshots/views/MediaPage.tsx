@@ -22,6 +22,7 @@ import MediaListItem from "../components/MediaListItem";
 import MediaListItemSkeleton from "../components/MediaListItemSkeleton";
 import useGameMedia from "../hooks/GameMediaHook";
 import type { GameMediaItem } from "../util/mediaTypes";
+import { resolveTString } from "../util/resolveTString";
 import MediaPageNoResults from "./MediaPageNoResults";
 import MediaSingleView from "./MediaSingleView";
 
@@ -84,15 +85,15 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               className="transition-colors"
               typographyType="heading-xs"
             >
-              {t("Media")}
+              {t("shared::title")}
             </Typography>
 
             <BetaBadge isSubdued={compact} />
           </div>
         )}
         pictogramName="camera"
-        subtitle={t("Screenshots and videos from your selected game.")}
-        // title={t("Media")}
+        subtitle={t("shared::subtitle")}
+        // title={t("shared::title")}
       >
         <div className="flex shrink-0 items-center gap-x-2">
           <Button
@@ -102,7 +103,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             disabled={isLoading}
             leftIconPath={mdiRefresh}
             size="sm"
-            title={t("Refresh")}
+            title={t("common:::refresh")}
             onClick={refreshAll}
           />
 
@@ -112,7 +113,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             data-testid={"open-media-settings"}
             leftIconPath={mdiCogOutline}
             size="sm"
-            title={t("Settings")}
+            title={t("common:::settings")}
             onClick={openSettings}
           />
         </div>
@@ -122,13 +123,18 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
         {/* The actual page content */}
         <TabProvider tab={tab} tabListId="game-media-tabs" onSetSelectedTab={setTab}>
           <TabBar className="mb-2">
-            <TabButton count={items?.length ?? 0} name="All" panelId="all" />
+            <TabButton count={items?.length ?? 0} name={t("listing::all_tab")} panelId="all" />
 
             {!!allSources &&
               Object.entries(allSources)
                 .filter(([k]) => !disabledSources?.includes(k))
                 .map(([k, s]) => (
-                  <TabButton count={bySource[k]?.length ?? 0} key={k} name={s.name} panelId={k} />
+                  <TabButton
+                    count={bySource[k]?.length ?? 0}
+                    key={k}
+                    name={resolveTString(t, s.name)}
+                    panelId={k}
+                  />
                 ))}
           </TabBar>
 
@@ -139,8 +145,8 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               className="mb-2"
               typographyType="body-sm"
             >
-              {t("All screenshots and videos for {{game}}.", {
-                game: game?.name,
+              {t("listing::all_subtitle", {
+                game: game?.name ?? "Unknown Game",
               })}
             </Typography>
 
@@ -184,7 +190,8 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                       className="mb-2"
                       typographyType="body-sm"
                     >
-                      {allSources[k]?.description ?? `Media from ${allSources[k]?.name}`}
+                      {resolveTString(t, allSources[k]?.description) ??
+                        t("shared::media_from", { source: resolveTString(t, allSources[k]?.name) })}
                     </Typography>
 
                     <Button
@@ -192,10 +199,10 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                       brand="neutral"
                       leftIconPath={mdiOpenInNew}
                       size="sm"
-                      title={t("Open Folder")}
+                      title={t("listing::actions::open_folder")}
                       onClick={() => window.api.shell.openFile(allSources[k].path)}
                     >
-                      {t("Open Folder")}
+                      {t("listing::actions::open_folder")}
                     </Button>
                   </div>
 

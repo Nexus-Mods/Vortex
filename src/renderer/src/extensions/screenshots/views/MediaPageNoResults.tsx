@@ -24,12 +24,12 @@ export default function MediaPageNoResults({
       className="pt-8"
       iconPath={mdiImageRefresh}
       isError={false}
-      message={t("There are no screenshots or videos available based on your filters.")}
-      title={t("No media found")}
+      message={t("listing::no_results::message")}
+      title={t("listing::no_results::title")}
     >
       {!!disabledSources && disabledSources.length > 0 && (
         <Typography appearance="strong" brand="info" typographyType="body-sm">
-          {t("There are {{count}} disabled media sources in your settings.", {
+          {t("listing::no_results::disabled_sources", {
             count: disabledSources.length,
           })}
         </Typography>
@@ -44,7 +44,7 @@ export default function MediaPageNoResults({
             leftIconPath={mdiRefresh}
             onClick={refresh}
           >
-            {t("Scan again")}
+            {t("listing::actions::scan_again")}
           </Button>
         )}
 
@@ -56,7 +56,7 @@ export default function MediaPageNoResults({
             leftIconPath={mdiCog}
             onClick={openSettings}
           >
-            {t("Settings")}
+            {t("common:::settings")}
           </Button>
         )}
       </div>
