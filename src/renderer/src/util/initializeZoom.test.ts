@@ -121,6 +121,30 @@ describe("zoom", () => {
     expect(zoomOf(store)).toBe(1.3);
   });
 
+  // Chromium divides pixel wheel deltas by the page zoom, so one notch
+  // reports 100 / zoom px.
+  it.each([0.5, 1, 1.2, 1.5])("steps once per real notch at page zoom %s", (zoom) => {
+    const store = makeStore(zoom);
+    dispose = initializeZoom(store);
+    pinch(-100 / zoom, 0);
+    const up = zoom === 1.5 ? 1.5 : normalizeZoom(zoom + 0.1);
+    expect(zoomOf(store)).toBe(up);
+    pinch(100 / frame.factor, 1000);
+    expect(zoomOf(store)).toBe(normalizeZoom(up - 0.1));
+  });
+
+  it.each([0.5, 1.2, 1.5])("accumulates small touchpad deltas at page zoom %s", (zoom) => {
+    const store = makeStore(zoom);
+    dispose = initializeZoom(store);
+    // Zoom out from the maximum, in elsewhere, so the step is never clamped away.
+    const direction = zoom === 1.5 ? 1 : -1;
+    const px = (direction * 10) / zoom;
+    for (let i = 0; i < 9; ++i) pinch(px, i);
+    expect(zoomOf(store)).toBe(zoom);
+    pinch(px, 9);
+    expect(zoomOf(store)).toBe(normalizeZoom(zoom - direction * 0.1));
+  });
+
   it("drops a partial step when the gesture reverses or pauses", () => {
     const store = makeStore();
     dispose = initializeZoom(store);
