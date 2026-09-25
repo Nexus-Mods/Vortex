@@ -15,6 +15,7 @@ import { Image } from "@/ui/components/image/Image";
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
 import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
+import type { IMenuControlsRow } from "@/ui/components/popover/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/PopoverMenuItem";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
@@ -47,7 +48,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
 
   const label = userInfo?.name ?? t("Account");
 
-  const sections: IMenuAction[][] = [
+  const sections: (IMenuAction | IMenuControlsRow)[][] = [
     !userInfo
       ? []
       : [
@@ -81,7 +82,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   ];
 
   return (
-    <Popover className="relative">
+    <Popover>
       {({ open }) => (
         <>
           <Tooltip content={label} disabled={open} placement="bottom">
@@ -106,12 +107,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
             />
           </Tooltip>
 
-          <PopoverPanel
-            transition
-            anchor={null}
-            portal={false}
-            className="nxm-popover-panel-dropdown absolute top-full right-0 mt-1 w-max transition-opacity data-closed:opacity-0"
-          >
+          <PopoverPanel className="nxm-popover-panel-dropdown">
             {({ close }) => <PopoverMenu actions={sections} label={label} onSelect={close} />}
           </PopoverPanel>
         </>

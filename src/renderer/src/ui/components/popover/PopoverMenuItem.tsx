@@ -31,7 +31,6 @@ export type IPopoverPanel = (props: { close: () => void; dismiss: () => void }) 
 
 interface IMenuActionBase {
   label: string;
-  controls?: ReactNode;
   iconPath?: string;
   disabled?: boolean;
   isLoading?: boolean;
@@ -45,7 +44,8 @@ interface IMenuActionBase {
 }
 
 /**
- * A menu row either runs an action, opens a panel, or holds inline controls.
+ * One activatable thing in a menu. Activating it either runs `onClick` or opens
+ * `panel`; activation has a single meaning, so the two are mutually exclusive.
  */
 export type IMenuAction = IMenuActionBase &
   XOr<{ onClick?: () => void }, { panel?: IPopoverPanel }>;

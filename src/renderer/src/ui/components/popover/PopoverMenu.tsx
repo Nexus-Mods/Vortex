@@ -1,11 +1,28 @@
-import React, { Fragment, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import React, {
+  Fragment,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
 import { Icon } from "@/ui/components/icon/Icon";
 import { type IMenuAction, PopoverMenuItem } from "@/ui/components/popover/PopoverMenuItem";
 
+/**
+ * A row that is not activated itself but holds controls of its own, labelled as a
+ * group. The controls should take `role="menuitem"`, as a menu's group requires.
+ */
+export interface IMenuControlsRow {
+  label: string;
+  iconPath?: string;
+  controls: ReactNode;
+}
+
 interface IPopoverMenuProps {
-  actions: IMenuAction[][];
+  actions: (IMenuAction | IMenuControlsRow)[][];
   label: string;
   onSelect: () => void;
   onClose?: () => void;
@@ -99,7 +116,7 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
           {sectionIndex > 0 && <DropdownDivider />}
 
           {section.map(({ action, index }) =>
-            action.controls ? (
+            "controls" in action ? (
               <div
                 aria-label={action.label}
                 className="flex items-center gap-2 px-2 py-1"

@@ -32,6 +32,7 @@ import React, {
   useState,
 } from "react";
 
+import { useChromeOverlayRoot } from "@/ui/components/chrome_zoom/ChromeZoomScope";
 import {
   OVERLAY_ARROW_HEIGHT,
   OVERLAY_ARROW_STROKE_WIDTH,
@@ -121,6 +122,7 @@ export const Tooltip = ({
     }
   }
 
+  const chromeOverlayRoot = useChromeOverlayRoot();
   const arrowRef = useRef<SVGSVGElement>(null);
   const referenceRef = useRef<HTMLElement | null>(null);
 
@@ -244,7 +246,10 @@ export const Tooltip = ({
       {cloneElement(trigger, { ...referenceProps, onPointerDown: handlePointerDown })}
 
       {isMounted && (
-        <FloatingPortal id={OVERLAY_HOST_ID}>
+        <FloatingPortal
+          id={chromeOverlayRoot ? undefined : OVERLAY_HOST_ID}
+          root={chromeOverlayRoot ?? undefined}
+        >
           <div
             className={joinClasses("nxm-tooltip-positioner", {
               "nxm-tooltip-positioner-interactive": interactive,

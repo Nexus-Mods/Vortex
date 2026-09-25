@@ -106,11 +106,11 @@ describe("ProfileSection", () => {
       await userEvent.keyboard("{ArrowDown}");
       expect(screen.getByRole("group", { name: "Zoom" })).toHaveFocus();
       await userEvent.tab();
-      expect(screen.getByRole("button", { name: "common:zoom.out" })).toHaveFocus();
+      expect(screen.getByRole("menuitem", { name: "Zoom out" })).toHaveFocus();
       await userEvent.keyboard("{Enter}");
       expect(screen.getByRole("menu")).toBeInTheDocument();
       await userEvent.tab();
-      expect(screen.getByRole("button", { name: "common:zoom.in" })).toHaveFocus();
+      expect(screen.getByRole("menuitem", { name: "Zoom in" })).toHaveFocus();
       await userEvent.keyboard("{ArrowDown}");
       expect(screen.getByRole("menuitem", { name: "Refresh user info" })).toHaveFocus();
       await userEvent.keyboard("{Escape}");

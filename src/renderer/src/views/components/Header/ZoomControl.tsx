@@ -11,7 +11,7 @@ import { zoomFromState, ZOOM_SHORTCUT_EVENT } from "@/util/zoom";
 import { ZoomControls } from "./ZoomControls";
 
 export function ZoomControl() {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const factor = useSelector(zoomFromState);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -19,7 +19,10 @@ export function ZoomControl() {
   const panelId = useId();
   const [open, setOpen] = useState(false);
   const [request, setRequest] = useState(0);
-  const translationOptions = { nsSeparator: ":", keySeparator: "." };
+  // Reading or using the controls holds the popup open; the timer restarts on release.
+  const [focusHeld, setFocusHeld] = useState(false);
+  const [pointerHeld, setPointerHeld] = useState(false);
+  const held = focusHeld || pointerHeld;
   const showBriefly = useCallback(() => {
     setOpen(true);
     setRequest((value) => value + 1);
@@ -37,10 +40,10 @@ export function ZoomControl() {
   }, [showBriefly]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || held) return;
     const timeout = window.setTimeout(close, 3000);
     return () => window.clearTimeout(timeout);
-  }, [open, request, close]);
+  }, [open, request, close, held]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,10 +65,7 @@ export function ZoomControl() {
   }, [open, close]);
 
   const visible = factor !== 1 || open;
-  const label = t("common:zoom.current", {
-    ...translationOptions,
-    percent: Math.round(factor * 100),
-  });
+  const label = t("Zoom: {{percent}}%", { replace: { percent: Math.round(factor * 100) } });
   return (
     <div
       className="relative h-7 w-0 shrink-0 transition-[width] has-data-[zoom-visible=true]:w-9"
@@ -73,12 +73,16 @@ export function ZoomControl() {
       ref={containerRef}
       style={{ WebkitAppRegion: "no-drag" }}
       onBlur={(event) => {
+        if (!panelRef.current?.contains(event.relatedTarget)) setFocusHeld(false);
         // Reset becomes disabled at 100%, which blurs it without a new target.
         // Only a real focus move outside should dismiss the feedback early.
         if (event.relatedTarget !== null && !event.currentTarget.contains(event.relatedTarget)) {
           setOpen(false);
         }
       }}
+      onFocus={(event) => setFocusHeld(!!panelRef.current?.contains(event.target))}
+      onPointerEnter={() => setPointerHeld(true)}
+      onPointerLeave={() => setPointerHeld(false)}
     >
       <div className="absolute top-0 right-2 w-7" data-zoom-visible={visible}>
         <Transition
@@ -95,6 +99,7 @@ export function ZoomControl() {
             appearance="weak"
             aria-controls={open ? panelId : undefined}
             aria-expanded={open}
+            aria-haspopup="dialog"
             aria-label={label}
             brand="neutral"
             className={joinClasses("[&_.nxm-button-icon]:size-5", { "opacity-50": factor === 1 })}
@@ -113,7 +118,7 @@ export function ZoomControl() {
         </Transition>
 
         <Transition
-          aria-label={t("common:zoom.label", translationOptions)}
+          aria-label={t("Zoom level")}
           as="div"
           className="nxm-popover-panel absolute top-full left-1/2 mt-1 flex w-max min-w-0! -translate-x-1/2 items-center gap-1 rounded-lg px-2 py-1.5"
           data-testid="zoom-popover"
@@ -125,7 +130,7 @@ export function ZoomControl() {
           leaveFrom="opacity-100 reduce-motion:opacity-0"
           leaveTo="opacity-0"
           ref={panelRef}
-          role="group"
+          role="dialog"
           show={open}
         >
           <ZoomControls onChange={showBriefly} />

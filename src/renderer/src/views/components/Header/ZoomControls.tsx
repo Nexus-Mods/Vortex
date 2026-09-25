@@ -15,8 +15,9 @@ interface IZoomControlsProps {
 export function ZoomControls({ inMenu = false, onChange }: IZoomControlsProps) {
   const factor = useSelector(zoomFromState);
   const dispatch = useDispatch();
-  const { t } = useTranslation("common");
-  const options = { nsSeparator: ":", keySeparator: "." };
+  const { t } = useTranslation();
+  // Inside a menu the buttons are its items, grouped under the row's label.
+  const role = inMenu ? "menuitem" : undefined;
   const adjust = (value: number) => {
     dispatch(setZoomFactor(normalizeZoom(value)));
     onChange?.();
@@ -34,8 +35,9 @@ export function ZoomControls({ inMenu = false, onChange }: IZoomControlsProps) {
         brand="neutral"
         size="sm"
         leftIconPath={mdiMinus}
-        aria-label={t("common:zoom.out", options)}
+        aria-label={t("Zoom out")}
         disabled={factor <= MIN_ZOOM}
+        role={role}
         onClick={() => adjust(factor - ZOOM_STEP)}
       />
       <Button
@@ -44,8 +46,9 @@ export function ZoomControls({ inMenu = false, onChange }: IZoomControlsProps) {
         brand="neutral"
         size="sm"
         leftIconPath={mdiPlus}
-        aria-label={t("common:zoom.in", options)}
+        aria-label={t("Zoom in")}
         disabled={factor >= MAX_ZOOM}
+        role={role}
         onClick={() => adjust(factor + ZOOM_STEP)}
       />
       <Button
@@ -54,9 +57,10 @@ export function ZoomControls({ inMenu = false, onChange }: IZoomControlsProps) {
         brand="neutral"
         size="sm"
         disabled={factor === 1}
+        role={role}
         onClick={() => adjust(1)}
       >
-        {t("common:zoom.reset", options)}
+        {t("Reset")}
       </Button>
     </>
   );
