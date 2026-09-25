@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
@@ -7,6 +9,7 @@ import type {
   IFileChange,
 } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
+import * as fs from "../../../util/fs";
 import { MERGED_PATH } from "../modMerging";
 
 // Mock fs. applyFileActions inside dealWithExternalChanges calls into it
@@ -16,7 +19,7 @@ vi.mock("../../../util/fs", () => ({
   removeAsync: vi.fn(() => Promise.resolve()),
   moveAsync: vi.fn(() => Promise.resolve()),
   statAsync: vi.fn(() => Promise.resolve({ mtime: new Date(0) })),
-  lstatAsync: vi.fn(() => Promise.resolve({ mtime: new Date(0) })),
+  lstatAsync: vi.fn(() => Promise.resolve({ mtime: new Date(0), isFile: () => true })),
 }));
 
 vi.mock("../../../logging", () => {
@@ -293,8 +296,26 @@ describe("classifyExternalChange", () => {
         isInstallingCollection: false,
         recentChanges: new Set(),
         installedSources: new Set(),
+        verifiedOrphans: new Set([change]),
       }),
     ).toBe("autoResolved");
+  });
+
+  it("surfaces a deleted source of an uninstalled mod whose file is not verified", () => {
+    const change: IFileChange = {
+      filePath: "SKSE/Plugins/example.dll",
+      source: "removed-mod-installation-path",
+      changeType: "srcdeleted",
+    };
+
+    expect(
+      classifyExternalChange(change, {
+        isInstallingCollection: false,
+        recentChanges: new Set(),
+        installedSources: new Set(),
+        verifiedOrphans: new Set(),
+      }),
+    ).toBe("rest");
   });
 
   it("still surfaces a deleted source for a mod Vortex considers installed", () => {
@@ -327,6 +348,23 @@ describe("dealWithExternalChanges: uninstalled mods", () => {
     showExternalChangesCalls.length = 0;
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // The manifest records each file's mtime at deployment. A hardlink shares
+  // the staging file's mtime, so an untouched orphan still matches it; the
+  // fs mock's lstatAsync reports mtime 0, which matches DEPLOYED_TIME.
+  const DEPLOYED_TIME = 0;
+  const manifestFor = (changes: IFileChange[]): { [typeId: string]: IDeployedFile[] } => ({
+    "": changes.map((change) => ({
+      relPath: change.filePath,
+      source: change.source,
+      target: "",
+      time: DEPLOYED_TIME,
+    })),
+  });
+
   const run = (changes: IFileChange[], recentChanges: Set<string> | undefined) => {
     const { api, activator } = makeApi({ externalChanges: changes, mods: INSTALLED });
     return dealWithExternalChanges(
@@ -335,10 +373,62 @@ describe("dealWithExternalChanges: uninstalled mods", () => {
       "test-profile",
       FAKE_STAGING,
       FAKE_MOD_PATHS,
-      FAKE_LAST_DEPLOYMENT,
+      manifestFor(changes),
       recentChanges,
     );
   };
+
+  it("deletes the untouched orphan without asking", async () => {
+    await run([makeSrcDeleted(REMOVED, "Data/orphan.esp")], new Set());
+    expect(showExternalChangesCalls).toHaveLength(0);
+    expect(fs.removeAsync).toHaveBeenCalledWith(path.join(FAKE_MOD_PATHS[""], "Data/orphan.esp"));
+  });
+
+  // The user replaced the deployed file after uninstalling the mod. srcdeleted
+  // is raised whenever anything exists at the destination, so the file must be
+  // verified as Vortex's own before it is deleted without a prompt.
+  it("asks the user when the file was replaced after the mod was uninstalled", async () => {
+    vi.mocked(fs.lstatAsync).mockImplementationOnce(
+      () => Promise.resolve({ mtime: new Date(86_400_000), isFile: () => true }) as never,
+    );
+    await run([makeSrcDeleted(REMOVED, "Data/replaced.ini")], new Set());
+    expect(showExternalChangesCalls).toHaveLength(1);
+    expect(showExternalChangesCalls[0][""]?.[0].filePath).toBe("Data/replaced.ini");
+    expect(fs.removeAsync).not.toHaveBeenCalled();
+  });
+
+  it("asks the user when the file has no manifest entry to compare with", async () => {
+    const { api, activator } = makeApi({
+      externalChanges: [makeSrcDeleted(REMOVED, "Data/unknown.esp")],
+      mods: INSTALLED,
+    });
+    await dealWithExternalChanges(
+      api,
+      activator,
+      "test-profile",
+      FAKE_STAGING,
+      FAKE_MOD_PATHS,
+      { "": [] },
+      new Set(),
+    );
+    expect(showExternalChangesCalls).toHaveLength(1);
+  });
+
+  it("asks the user when the destination cannot be read", async () => {
+    vi.mocked(fs.lstatAsync).mockImplementationOnce(
+      () => Promise.reject(new Error("EACCES")) as never,
+    );
+    await run([makeSrcDeleted(REMOVED, "Data/locked.esp")], new Set());
+    expect(showExternalChangesCalls).toHaveLength(1);
+  });
+
+  it("asks the user when the destination is no longer a regular file", async () => {
+    vi.mocked(fs.lstatAsync).mockImplementationOnce(
+      () => Promise.resolve({ mtime: new Date(0), isFile: () => false }) as never,
+    );
+    await run([makeSrcDeleted(REMOVED, "Data/link.esp")], new Set());
+    expect(showExternalChangesCalls).toHaveLength(1);
+  });
 
   it("does not ask the user about a mod they uninstalled", async () => {
     await run([makeSrcDeleted(REMOVED, "SKSE/Plugins/example.dll")], new Set());
@@ -385,7 +475,7 @@ describe("dealWithExternalChanges: uninstalled mods", () => {
       "test-profile",
       FAKE_STAGING,
       FAKE_MOD_PATHS,
-      FAKE_LAST_DEPLOYMENT,
+      manifestFor([makeSrcDeleted(REMOVED, "Data/only.esp")]),
       new Set(),
     );
 

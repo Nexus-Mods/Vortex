@@ -81,7 +81,7 @@ There are **two view modes** toggled by "Show individual files":
 
 ## Auto-resolution rules
 
-Not all changes reach the dialog. Two categories are resolved silently:
+Not all changes reach the dialog. These categories are resolved silently:
 
 **Merged files** (`__merged` prefix) and **collection installs / autoResolveAll** use `defaultInternalAction`:
 
@@ -89,6 +89,18 @@ Not all changes reach the dialog. Two categories are resolved silently:
 - `valchange` → `nop`
 - `deleted` → `restore` (always re-create the link)
 - `srcdeleted` → `drop`
+
+**Deployed files of uninstalled mods** also use `defaultInternalAction`, so the file is deleted
+(`drop`), but only when all of these hold:
+
+- the change is `srcdeleted`;
+- no mod of the game has that `installationPath` any more;
+- the manifest has an entry for the file, and the file in the game folder is a regular file whose
+  modification time still matches the entry's `time` (compared to the second). A hardlink keeps the
+  staging file's time, so an untouched orphan matches; a file the user replaced or edited does not.
+
+If any check fails, or the file can't be read, the change goes to the dialog as before. This only
+affects hardlink deployment, because `srcdeleted` is raised only when the method can restore.
 
 These defaults prioritize staging as the source of truth — appropriate for automated operations where external edits should not be preserved.
 

@@ -194,6 +194,7 @@ export function classifyExternalChange(
     isInstallingCollection: boolean;
     recentChanges?: Set<string>;
     installedSources?: Set<string>;
+    verifiedOrphans?: Set<IFileChange>;
   },
 ): ExternalChangeBucket {
   if (path.basename(change.source).startsWith(MERGED_PATH)) {
@@ -203,17 +204,80 @@ export function classifyExternalChange(
     return "autoResolved";
   }
   // If Vortex has removed the owning mod from its state, a missing staging
-  // source is the expected result of uninstalling it.  The destination is a
-  // surviving hardlink, not a user edit, so silently drop the stale manifest
-  // entry instead of reporting "changed outside Vortex".
-  if (
-    change.changeType === "srcdeleted" &&
-    context.installedSources !== undefined &&
-    !context.installedSources.has(change.source)
-  ) {
+  // source is the expected result of uninstalling it. Dropping the entry
+  // deletes the deployed file, so only do that silently when the file was
+  // verified as still being the one Vortex deployed (see verifyOrphans).
+  // Anything else, such as a file the user put there after uninstalling, is
+  // left for the user to decide.
+  if (isOrphanCandidate(change, context.installedSources) && context.verifiedOrphans?.has(change)) {
     return "autoResolved";
   }
   return "rest";
+}
+
+function isOrphanCandidate(change: IFileChange, installedSources?: Set<string>): boolean {
+  return (
+    change.changeType === "srcdeleted" &&
+    installedSources !== undefined &&
+    !installedSources.has(change.source)
+  );
+}
+
+/**
+ * Find the orphan candidates whose deployed file is still the one Vortex
+ * deployed. srcdeleted is raised whenever anything exists at the destination,
+ * so it says nothing about who put the file there. A hardlink shares the
+ * staging file's modification time, which the manifest recorded at deployment;
+ * a file that was replaced or edited since has a different one. A missing
+ * manifest entry, a destination that is not a regular file or cannot be read
+ * all count as unverified.
+ */
+async function verifyOrphans(
+  changes: { [typeId: string]: IFileChange[] },
+  modPaths: { [typeId: string]: string },
+  lastDeployment: { [typeId: string]: IDeployedFile[] },
+  installedSources?: Set<string>,
+): Promise<Set<IFileChange>> {
+  const verified = new Set<IFileChange>();
+  for (const typeId of Object.keys(changes)) {
+    const candidates = changes[typeId].filter((change) =>
+      isOrphanCandidate(change, installedSources),
+    );
+    if (candidates.length === 0 || modPaths[typeId] === undefined) {
+      continue;
+    }
+    const manifest = new Map(
+      (lastDeployment[typeId] ?? []).map((entry) => [
+        JSON.stringify([entry.source, entry.relPath]),
+        entry,
+      ]),
+    );
+    await Promise.all(
+      candidates.map(async (change) => {
+        const entry = manifest.get(JSON.stringify([change.source, change.filePath]));
+        if (entry?.time === undefined) {
+          return;
+        }
+        try {
+          const stats = await fs.lstatAsync(path.join(modPaths[typeId], change.filePath));
+          // The manifest time comes from a directory walk that may only have
+          // whole-second precision, so compare at that granularity.
+          if (
+            stats.isFile() &&
+            Math.floor(stats.mtime.getTime() / 1000) === Math.floor(entry.time / 1000)
+          ) {
+            verified.add(change);
+          }
+        } catch (err) {
+          log("debug", "can't verify deployed file of uninstalled mod", {
+            filePath: change.filePath,
+            error: unknownToError(err).message,
+          });
+        }
+      }),
+    );
+  }
+  return verified;
 }
 
 export function changeToEntry(modTypeId: string, change: IFileChange): IFileEntry {
@@ -296,7 +360,7 @@ export function dealWithExternalChanges(
   recentChanges?: Set<string>,
 ) {
   return checkForExternalChanges(api, activator, profileId, stagingPath, modPaths, lastDeployment)
-    .then((changes: { [typeId: string]: IFileChange[] }) => {
+    .then(async (changes: { [typeId: string]: IFileChange[] }) => {
       const automaticActions: IFileEntry[] = [];
       const userChanges: { [typeId: string]: IFileChange[] } = {};
       let count = 0;
@@ -322,7 +386,18 @@ export function dealWithExternalChanges(
                 .map((mod) => mod?.installationPath)
                 .filter(truthy),
             );
-      const context = { isInstallingCollection, recentChanges, installedSources };
+      const verifiedOrphans = await verifyOrphans(
+        changes,
+        modPaths,
+        lastDeployment,
+        installedSources,
+      );
+      const context = {
+        isInstallingCollection,
+        recentChanges,
+        installedSources,
+        verifiedOrphans,
+      };
 
       for (const typeId of Object.keys(changes)) {
         for (const change of changes[typeId]) {
