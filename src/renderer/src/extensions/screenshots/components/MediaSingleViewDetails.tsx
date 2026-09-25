@@ -163,8 +163,14 @@ export default function MediaViewSingleDetails({
           <Button
             appearance="subdued"
             brand="neutral"
+            disabled={entry.type === "video"}
             leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
             size="sm"
+            title={
+              entry.type === "video"
+                ? t("single::video_tag_disabled")
+                : t("single::actions::add_mod")
+            }
             onClick={toggleAddingTag}
           >
             {isAddingTag ? t("single::actions::cancel") : t("single::actions::add_mod")}

@@ -26,17 +26,20 @@
       "continue": "Continue",
       "cancel": "Cancel",
       "add_mod": "Add Mod",
-      "open": "Open File"
+      "open": "Open File",
+      "open_in_steam": "Open in Steam"
     },
     "upload": {
       "title": "Upload to Nexus Mods",
-      "body": "It is not currently possible to upload to Nexus Mods in one click, however, Vortex can open both the folder containing this file and the image upload page."
+      "body": "It is not currently possible to upload to Nexus Mods in one click, however, Vortex can open both the folder containing this file and the upload page."
     },
     "details": "Details",
     "featured_mods": "Featured Mods",
     "no_tags": "No tagged mods.",
     "video_failed": "Video failed to load",
-    "start_tagging": "Click anywhere on the image to tag a mod."
+    "start_tagging": "Click anywhere on the image to tag a mod.",
+    "steam_clip_unplayable": "Steam Clips cannot currently be played in Vortex.",
+    "video_tag_disabled": "Videos can be tagged during upload to Nexus Mods."
   },
   "floating_search": {
     "placeholder": "Search for mods...",

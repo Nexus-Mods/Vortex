@@ -16,6 +16,7 @@ import { deleteGameMediaModTag } from "../actions/persistent";
 import { BetaBadge } from "../components/BetaBadge";
 import FloatingSearchBar from "../components/FloatingSearchBar";
 import MediaViewSingleDetails from "../components/MediaSingleViewDetails";
+import MediaVideoSteamFailed from "../components/MediaVideoSteamFailed";
 import ModTagIndicator from "../components/ModTagIndicator";
 import useGameMediaModTag from "../hooks/GameMediaModTagHook";
 import type { GameMediaItem, GameMediaSource } from "../util/mediaTypes";
@@ -128,7 +129,9 @@ export default function MediaSingleView({
           >
             {entry.type === "image" && <img alt={entry.name} className="w-full" src={mediaSrc} />}
 
-            {entry.type === "video" && (
+            {entry.type === "video" && entry.path.endsWith(".mpd") && <MediaVideoSteamFailed />}
+
+            {entry.type === "video" && !entry.path.endsWith(".mpd") && (
               <video
                 controls
                 className="min-h-130 w-full"
@@ -225,9 +228,10 @@ export default function MediaSingleView({
             brand="primary"
             leftIconPath={mdiOpenInNew}
             onClick={() => {
+              const uploadPath = entry.type === "image" ? "images" : "videos";
               setUploadModalVisible(false);
               window.api.shell.showItemInFolder(entry.path);
-              window.api.shell.openUrl(`https://www.nexusmods.com/${domainName}/images/add`);
+              window.api.shell.openUrl(`https://www.nexusmods.com/${domainName}/${uploadPath}/add`);
             }}
           >
             {t("single::actions::continue")}
