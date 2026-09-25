@@ -2,6 +2,7 @@ import { mdiHome, mdiHomeOutline, mdiPlus } from "@mdi/js";
 import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { CHROME_ZOOM_STYLE } from "@/ui/components/chrome_zoom/ChromeZoomScope";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 
 import {
@@ -67,6 +68,8 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
     <TooltipDelayGroup
       as="div"
       className="box-content flex w-18 shrink-0 flex-col items-center justify-between border-r border-stroke-weak py-3"
+      data-testid="spine"
+      style={CHROME_ZOOM_STYLE}
     >
       <SpineButton
         iconPath={selection.type === "home" ? mdiHome : mdiHomeOutline}
