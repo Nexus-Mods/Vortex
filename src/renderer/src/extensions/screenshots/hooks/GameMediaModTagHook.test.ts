@@ -1,14 +1,12 @@
-/* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
+import type { IGame } from "@/types/IGame";
+
 import type { IGameMediaPersistentState } from "../reducers/persistent";
 import type { IGameMediaSessionState } from "../reducers/session";
-import type { GameMediaModTag } from "../util/mediaTypes";
+import type { GameMediaItem, GameMediaModTag } from "../util/mediaTypes";
 import useGameMediaModTag from "./GameMediaModTagHook";
 
 const { activeGameIdMock, state, store, dispatch, mockUseSelector, mockUseStore } = vi.hoisted(
@@ -19,7 +17,7 @@ const { activeGameIdMock, state, store, dispatch, mockUseSelector, mockUseStore 
       session: { game_media: IGameMediaSessionState };
     } = {
       persistent: { game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {} } },
-      session: { game_media: { items: [] as any[] | null } },
+      session: { game_media: { items: [] as GameMediaItem[] | null } },
     };
 
     return {
@@ -38,7 +36,8 @@ vi.mock("@/util/selectors", () => ({
 }));
 
 vi.mock("@/extensions/nexus_integration/util/convertGameId", () => ({
-  nexusGameId: (game: any) => (game.id === "skyrimse" ? "skyrimspecialedition" : game.id),
+  nexusGameId: (game: IGame | IGameStored) =>
+    game.id === "skyrimse" ? "skyrimspecialedition" : game.id,
 }));
 
 vi.mock("@/extensions/gamemode_management/util/getGame", () => ({
@@ -110,7 +109,7 @@ describe("GameMediaModTagHook", () => {
     expect(tags.map((t) => t.id)).toEqual(["a", "b", "c"]);
   });
 
-  it("returns a consistent empty array to prevent rerenders", async () => {
+  it("returns a consistent empty array to prevent rerenders", () => {
     const hook = render("invalid");
     const empty = hook.result.current.tags;
     expect(empty.length).toBe(0);

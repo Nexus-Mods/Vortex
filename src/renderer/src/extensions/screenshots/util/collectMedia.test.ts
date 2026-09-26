@@ -1,5 +1,4 @@
-import type { Stats } from "fs";
-import fs from "fs/promises";
+import type { Dirent, Stats } from "fs";
 import path from "path";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -8,10 +7,17 @@ import collectMedia from "./collectMedia";
 import generateVideoPreview from "./generateVideoPreview";
 import type { ResolvedGameMediaSource } from "./mediaTypes";
 import { previewKey } from "./previewCache";
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/require-await */
+
+const { mockedFs } = vi.hoisted(() => {
+  return {
+    mockedFs: {
+      stat: vi.fn<(p: string) => Promise<Stats>>(),
+      access: vi.fn(),
+      readdir: vi.fn<(dir: string) => Promise<Dirent<string>[]>>(),
+      mkdir: vi.fn<(file: string) => Promise<string>>(),
+    },
+  };
+});
 
 vi.mock("./generateVideoPreview", () => ({
   default: vi.fn(),
@@ -22,31 +28,23 @@ vi.mock("./ffmpeg", () => ({
 }));
 
 vi.mock("fs/promises", () => ({
-  default: {
-    stat: vi.fn(),
-    readdir: vi.fn(),
-    access: vi.fn(),
-    mkdir: vi.fn(),
-  },
+  default: mockedFs,
 }));
 
 vi.mock("@/util/getVortexPath", () => ({
   default: vi.fn(() => "/tmp/vortex-temp"),
 }));
 
-describe("collectMedia", () => {
-  const mockedFs = vi.mocked(fs);
+const dirent = (name: string, file = true) => ({ name, isFile: () => file }) as unknown as Dirent;
 
+describe("collectMedia", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("only scans sources not specified in disabled sources", async () => {
     mockedFs.stat.mockResolvedValue({} as Stats);
-    mockedFs.readdir.mockResolvedValue([
-      { name: "someFile.png", isFile: () => true },
-      { name: "folder", isFile: () => false },
-    ] as any);
+    mockedFs.readdir.mockResolvedValue([dirent("someFile.png"), dirent("folder", false)]);
 
     const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
@@ -70,10 +68,7 @@ describe("collectMedia", () => {
 
   it("handles missing directories gracefully", async () => {
     mockedFs.stat.mockRejectedValue({ code: "ENOENT" });
-    mockedFs.readdir.mockResolvedValue([
-      { name: "someFile.png", isFile: () => true },
-      { name: "folder", isFile: () => false },
-    ] as any);
+    mockedFs.readdir.mockResolvedValue([dirent("someFile.png"), dirent("folder", false)]);
 
     const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
@@ -89,13 +84,13 @@ describe("collectMedia", () => {
   it("selects only jpg/png/gif/bmp/mp4 files when no discoverFn is provided", async () => {
     mockedFs.stat.mockResolvedValue({} as Stats);
     mockedFs.readdir.mockResolvedValue([
-      { name: "someFile.png", isFile: () => true },
-      { name: "anotherfile.jpg", isFile: () => true },
-      { name: "yetanotherfile.png", isFile: () => true },
-      { name: "video.mp4", isFile: () => true },
-      { name: "invalid.txt", isFile: () => true },
-      { name: "folder", isFile: () => false },
-    ] as any);
+      dirent("someFile.png"),
+      dirent("anotherfile.jpg"),
+      dirent("yetanotherfile.png"),
+      dirent("video.mp4"),
+      dirent("invalid.txt"),
+      dirent("folder", false),
+    ]);
     mockedFs.access.mockResolvedValue(undefined);
 
     const sources: Record<string, ResolvedGameMediaSource> = {
@@ -118,11 +113,11 @@ describe("collectMedia", () => {
       mtime: new Date("2024-01-02"),
     } as Stats);
     mockedFs.readdir.mockResolvedValue([
-      { name: "someFile-thumbnail.png", isFile: () => true },
-      { name: "anotherfile.jpg", isFile: () => true },
-      { name: "yetanotherfile-thumbnail.png", isFile: () => true },
-      { name: "video.mp4", isFile: () => true },
-    ] as any);
+      dirent("someFile-thumbnail.png"),
+      dirent("anotherfile.jpg"),
+      dirent("yetanotherfile-thumbnail.png"),
+      dirent("video.mp4"),
+    ]);
     mockedFs.access.mockResolvedValue(undefined);
 
     const filterFn = vi.fn((s: string) => !s.toLowerCase().includes("thumbnail"));
@@ -146,15 +141,15 @@ describe("collectMedia", () => {
     mockedFs.stat.mockImplementation(async () => {
       const birthtime = new Date();
       birthtime.setDate(statcounter++);
-      return {
+      return Promise.resolve({
         birthtime,
-      } as any;
+      } as unknown as Stats);
     });
     mockedFs.readdir.mockResolvedValue([
-      { name: "someFile.png", isFile: () => true },
-      { name: "anotherfile.jpg", isFile: () => true },
-      { name: "yetanotherfile.png", isFile: () => true },
-    ] as any);
+      dirent("someFile.png"),
+      dirent("anotherfile.jpg"),
+      dirent("yetanotherfile.png"),
+    ]);
 
     const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
@@ -171,15 +166,15 @@ describe("collectMedia", () => {
   });
 
   it("if a source has a discoverFn it should be called", async () => {
-    mockedFs.stat.mockResolvedValue({} as any);
+    mockedFs.stat.mockResolvedValue({} as unknown as Stats);
     mockedFs.readdir.mockResolvedValue([
-      "someFile-thumbail.png",
-      "anotherfile.jpg",
-      "video.mp4",
-      "invalid-thumbnail.png",
-    ] as any);
+      dirent("someFile-thumbail.png"),
+      dirent("anotherfile.jpg"),
+      dirent("video.mp4"),
+      dirent("invalid-thumbnail.png"),
+    ]);
 
-    const discoverFn = vi.fn(async () => []);
+    const discoverFn = vi.fn(async () => Promise.resolve([]));
 
     const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
@@ -203,10 +198,7 @@ describe("collectMedia", () => {
     } as Stats;
 
     mockedFs.stat.mockResolvedValue(videoStats);
-    mockedFs.readdir.mockResolvedValue([
-      { name: "someFile.png", isFile: () => true },
-      { name: "video.mp4", isFile: () => true },
-    ] as any);
+    mockedFs.readdir.mockResolvedValue([dirent("someFile.png"), dirent("video.mp4")]);
 
     const expectedKey = previewKey(
       path.join("/tmp/media", "video.mp4"),

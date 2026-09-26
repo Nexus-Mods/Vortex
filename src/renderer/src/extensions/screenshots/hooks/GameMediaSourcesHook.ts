@@ -33,6 +33,7 @@ export default function useGameMediaSources() {
     let active = true;
 
     if (!gameId || !discovery) {
+      // Clearing the state when the game disappears requires this
       // eslint-disable-next-line @eslint-react/set-state-in-effect
       setDefaultSources({});
       return;

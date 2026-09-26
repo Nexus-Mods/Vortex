@@ -5,6 +5,7 @@
  */
 
 import { mdiImageOutline } from "@mdi/js";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
 import { activeGameId } from "@/util/selectors";
@@ -45,12 +46,7 @@ function init(context: IExtensionContext) {
   context.once(() => {
     // Cleans up old preview images
     void prunePreviewCache().catch((err: unknown) => {
-      window.api.log(
-        "debug",
-        "media preview pruning failed",
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        err instanceof Error ? err.message : String(err),
-      );
+      window.api.log("debug", "media preview pruning failed", getErrorMessageOrDefault(err));
     });
   });
 

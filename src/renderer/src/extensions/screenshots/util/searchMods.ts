@@ -1,3 +1,5 @@
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import { getApplication } from "@/util/application";
 
 interface IModsQueryResult {
@@ -80,8 +82,7 @@ export default async function searchMods(
     if (json.errors || !json.data) throw new Error("Mod search failed with GraphQL errors");
     return json.data.mods.nodes;
   } catch (e: unknown) {
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    window.api.log("warn", "Failed to search for mods", e instanceof Error ? e.message : String(e));
+    window.api.log("warn", "Failed to search for mods", getErrorMessageOrDefault(e));
     throw e;
   }
 }

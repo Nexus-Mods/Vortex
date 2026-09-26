@@ -22,8 +22,7 @@ export async function prunePreviewCache(): Promise<void> {
   const stats = await Promise.all(
     names.map(async (name: string) => {
       const full = path.join(dir, name);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const s: Stats | undefined = await fs.stat(full).catch(() => undefined);
+      const s = (await fs.stat(full).catch(() => undefined)) as Stats | undefined;
       return s?.isFile() ? { full, mtimeMs: s.mtimeMs, size: s.size } : undefined;
     }),
   );

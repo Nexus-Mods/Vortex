@@ -1,8 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import fs from "fs/promises";
+import type { Stats } from "fs";
 import path from "path";
 
 import { expect, it, describe, vi, beforeEach } from "vitest";
@@ -18,13 +14,19 @@ import {
   steam64ToAccountId,
 } from "./steam";
 
+const { mockedFs } = vi.hoisted(() => {
+  return {
+    mockedFs: {
+      stat: vi.fn<(p: string) => Promise<Stats>>(),
+      access: vi.fn(),
+      readdir: vi.fn<(dir: string) => Promise<string[]>>(),
+      readFile: vi.fn<(file: string) => Promise<string>>(),
+    },
+  };
+});
+
 vi.mock("fs/promises", () => ({
-  default: {
-    readFile: vi.fn(),
-    access: vi.fn(),
-    readdir: vi.fn(),
-    stat: vi.fn(),
-  },
+  default: mockedFs,
 }));
 
 vi.mock("../../../util/Steam", () => ({
@@ -75,8 +77,6 @@ describe("accountIdToSteam64/steam64ToAccountId", () => {
 });
 
 describe("screenshotsFolderBySteamID", () => {
-  const mockedFs = vi.mocked(fs);
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -117,11 +117,9 @@ describe("screenshotsFolderBySteamID", () => {
 });
 
 describe("clipsFolderBySteamID", () => {
-  const mockedFs = vi.mocked(fs);
-
   it("adds a source only when matching clips folder exists", async () => {
     mockedFs.access.mockResolvedValue(undefined);
-    mockedFs.readdir.mockResolvedValue(["clip_123"] as any);
+    mockedFs.readdir.mockResolvedValue(["clip_123"]);
 
     const userDataFolder = "";
     const steamGameId = "123";
@@ -137,8 +135,6 @@ describe("clipsFolderBySteamID", () => {
 });
 
 describe("clipsFolderBySteamID -> discoverSteamClips", () => {
-  const mockedFs = vi.mocked(fs);
-
   it("maps Steam clips into the expected GameMediaItem", async () => {
     const clipsDir = path.join("userData", "456", "gamerecordings", "clips");
     const clipDir = path.join(clipsDir, "clip_123");
@@ -147,10 +143,10 @@ describe("clipsFolderBySteamID -> discoverSteamClips", () => {
     mockedFs.stat.mockResolvedValue({
       birthtime: new Date("2011-08-01"),
       mtime: new Date("2011-08-01"),
-    } as any);
+    } as unknown as Stats);
     mockedFs.readdir.mockImplementation(async (p: string) => {
-      if (p === clipsDir) return ["clip_123"] as any;
-      if (p === videoDir) return ["video_1"] as any;
+      if (p === clipsDir) return Promise.resolve(["clip_123"]);
+      if (p === videoDir) return Promise.resolve(["video_1"]);
       else throw new Error(`Unexpected path ${p}`);
     });
     const sources = await clipsFolderBySteamID("userData", "123", "456");

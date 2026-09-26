@@ -1,5 +1,7 @@
 import path from "path";
 
+import { getErrorMessageOrDefault } from "@vortex/shared";
+
 import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
 import getVortexPath from "@/util/getVortexPath";
@@ -49,14 +51,13 @@ export default async function sourcesByDiscovery(
   const resolved = await Promise.all(
     Object.entries(res).map(async ([id, source]) => {
       try {
-        const resovledPath = typeof source.path === "function" ? await source.path() : source.path;
-        return resovledPath ? ([id, { ...source, path: resovledPath }] as const) : undefined;
+        const resolvedPath = typeof source.path === "function" ? await source.path() : source.path;
+        return resolvedPath ? ([id, { ...source, path: resolvedPath }] as const) : undefined;
       } catch (e: unknown) {
         window.api.log(
           "warn",
           "media source path resolution failed",
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
-          JSON.stringify({ id, error: e instanceof Error ? e.message : String(e) }),
+          JSON.stringify({ id, error: getErrorMessageOrDefault(e) }),
         );
         return undefined;
       }

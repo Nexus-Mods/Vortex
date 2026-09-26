@@ -1,26 +1,23 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import searchMods from "./searchMods";
 
 const gameDomain = "skyrim";
 const token = "exampleUserToken";
-const signal = vi.fn();
+const signal = vi.fn() as unknown as AbortController["signal"];
 
 const { mockFetch } = vi.hoisted(() => {
   const mockFetch = vi
-    .fn(async (_url: string, _options: any): Promise<Response> => ({}) as any)
+    .fn(
+      async (_url: string, _options: RequestInit): Promise<Response> =>
+        Promise.resolve({} as Response),
+    )
     .mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: { mods: { nodes: [] } } }),
       status: 200,
       statusText: "Success",
-    } as any);
+    } as unknown as Response);
   return { mockFetch };
 });
 
@@ -32,21 +29,25 @@ describe("searchMods", () => {
   });
 
   it("builds to correct filter based on the passed user preference", async () => {
-    await searchMods("skyui", gameDomain, undefined, true, signal as any);
+    await searchMods("skyui", gameDomain, undefined, true, signal);
 
-    const adultOnBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    const adultOnBody = JSON.parse(mockFetch.mock.calls[0][1].body as string) as {
+      variables: { filter: { adult?: { value: boolean } } };
+    };
 
     expect(adultOnBody.variables.filter.adult).toBeUndefined();
 
-    await searchMods("skyui", gameDomain, undefined, false, signal as any);
+    await searchMods("skyui", gameDomain, undefined, false, signal);
 
-    const adultOffBody = JSON.parse(mockFetch.mock.calls[1][1].body);
+    const adultOffBody = JSON.parse(mockFetch.mock.calls[1][1].body as string) as {
+      variables: { filter: { adult?: { value: boolean } } };
+    };
 
     expect(adultOffBody.variables.filter.adult.value).toBe(false);
   });
 
   it("sends the user's token in the Authorization header", async () => {
-    await searchMods("skyui", gameDomain, token, true, signal as any);
+    await searchMods("skyui", gameDomain, token, true, signal);
     const headers = mockFetch.mock.calls[0][1].headers;
 
     expect(headers["Authorization"]).toBe(`Bearer ${token}`);
@@ -56,10 +57,10 @@ describe("searchMods", () => {
     mockFetch.mockResolvedValue({
       ok: false,
       status: 401,
-    } as any);
+    } as unknown as Response);
 
     try {
-      await searchMods("skse", gameDomain, token, true, signal as any);
+      await searchMods("skse", gameDomain, token, true, signal);
     } catch (e: unknown) {
       const error = e instanceof Error ? e.message : undefined;
       expect(error).toBe("Nexus Mods token has expired, please log out and back in.");
@@ -71,10 +72,10 @@ describe("searchMods", () => {
       ok: true,
       status: 200,
       json: () => Promise.resolve({ errors: [] }),
-    } as any);
+    } as unknown as Response);
 
     try {
-      await searchMods("skse", gameDomain, token, true, signal as any);
+      await searchMods("skse", gameDomain, token, true, signal);
     } catch (e: unknown) {
       const error = e instanceof Error ? e.message : undefined;
       expect(error).toBe("Mod search failed with GraphQL errors");
@@ -87,8 +88,8 @@ describe("searchMods", () => {
       json: () => Promise.resolve({ data: { mods: { nodes: [] } } }),
       status: 200,
       statusText: "Success",
-    } as any);
-    await searchMods("skse", gameDomain, token, true, signal as any);
+    } as unknown as Response);
+    await searchMods("skse", gameDomain, token, true, signal);
 
     expect(mockFetch.mock.calls[0][1].signal).toBe(signal);
   });

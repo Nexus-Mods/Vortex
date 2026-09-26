@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from "vitest";
 
+import type { IState } from "@/types/IState";
+
+import type { IGameMediaPersistentState } from "./reducers/persistent";
 import * as selectors from "./selectors";
 import type { GameMediaItem, GameMediaModTag } from "./util/mediaTypes";
 
@@ -23,13 +22,13 @@ const item = (id: string): GameMediaItem => ({
   type: "image",
 });
 
-const makeState = (overrides: any = {}) =>
+const makeState = (overrides: Partial<IGameMediaPersistentState> = {}) =>
   ({
     persistent: {
       game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {}, ...overrides },
     },
     session: { game_media: { items: [] } },
-  }) as any;
+  }) as unknown as IState;
 
 describe("game media selectors", () => {
   it("disabledSources returns the same reference on repeated calls when the game has no entry", () => {
@@ -70,7 +69,7 @@ describe("game media selectors", () => {
   });
 
   it("orphanedTagIds survive a missing game_media slice", () => {
-    const empty = { persistent: {}, session: {} } as any;
+    const empty = { persistent: {}, session: {} } as unknown as IState;
 
     expect(selectors.orphanedTagIds(empty, "game-1", [item("a")])).toEqual([]);
   });

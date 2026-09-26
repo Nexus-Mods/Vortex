@@ -8,7 +8,7 @@ import { getSteamMedia } from "../sources/steam";
 import sourcesByDiscovery from "./sourcesByDiscovery";
 
 vi.mock("../sources/steam", () => ({
-  getSteamMedia: vi.fn(async () => ({ "steam-screenshots-1": {} })),
+  getSteamMedia: vi.fn(async () => ({ "steam-screenshots-1": { path: "steam" } })),
 }));
 
 const exampleGame: IGameStored = {

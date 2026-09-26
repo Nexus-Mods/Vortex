@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
@@ -17,10 +13,7 @@ const { watcher, mockWatch, mockOnSourceChanged } = vi.hoisted(() => {
   };
 });
 
-vi.mock("fs", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return { ...actual, default: { ...actual.default, watch: mockWatch } };
-});
+vi.mock("fs", () => ({ default: { watch: mockWatch } }));
 
 const render = (sources = {}, disabled: string[] = [], onSourceChanged = mockOnSourceChanged) =>
   renderHook(

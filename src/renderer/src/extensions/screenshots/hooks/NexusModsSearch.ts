@@ -29,9 +29,13 @@ export default function useNexusModsSearch(
   const gameId = useSelector(activeGameId);
   const domainName = useMemo(() => nexusGameId(getGame(gameId)), [gameId]);
 
+  interface INexusModsAccountSlice {
+    userInfo?: { adult?: boolean };
+  }
+
   const adultContentFilter: boolean = useSelector(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    (state: IState) => (state.persistent["nexus"]?.userInfo?.adult as boolean) ?? false,
+    (state: IState) =>
+      (state.persistent["nexus"] as INexusModsAccountSlice)?.userInfo?.adult ?? false,
   );
 
   const { debounceDelayMs, tryToUseLogin } = options;
