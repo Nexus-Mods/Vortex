@@ -3,8 +3,9 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
-import { setOpenMainPage, setSettingsPage } from "@/actions";
-import { type IExtensionApi } from "@/types/api";
+import { setOpenMainPage } from "@/actions/session";
+import { setSettingsPage } from "@/actions/session";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Pagination } from "@/ui/components/pagination/Pagination";

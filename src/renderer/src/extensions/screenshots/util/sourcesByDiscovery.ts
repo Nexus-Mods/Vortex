@@ -1,9 +1,10 @@
 import path from "path";
 
-import type { IDiscoveryResult, IGameStored } from "@/types/api";
+import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
 import getVortexPath from "@/util/getVortexPath";
+import { TString } from "@/util/i18n";
 
-import { TString } from "../../../util/i18n";
 import getKnownFolders from "../sources/knownfolders";
 import { getSteamMedia } from "../sources/steam";
 import type { GameMediaSource } from "../util/mediaTypes";

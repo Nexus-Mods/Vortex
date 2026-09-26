@@ -4,8 +4,8 @@ import { mdiPlayCircleOutline } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
 import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameTileImageURL";
-import type { IGameStored } from "@/types/api";
 import { Icon } from "@/ui/components/icon/Icon";
 import relativeTime from "@/util/relativeTime";
 

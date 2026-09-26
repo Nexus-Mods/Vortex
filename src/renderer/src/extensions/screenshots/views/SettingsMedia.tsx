@@ -3,14 +3,15 @@ import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 
-import type { IExtensionApi, IState } from "@/types/api";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Switch } from "@/ui/components/form/switch/Switch";
 import { Icon } from "@/ui/components/icon/Icon";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
+import { activeGameId } from "@/util/selectors";
 
-import { activeGameId } from "../../../util/selectors";
 import {
   clearGameMediaModTags,
   deleteGameMediaSource,

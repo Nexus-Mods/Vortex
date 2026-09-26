@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
-import type { IState } from "@/types/api";
+import type { IState } from "@/types/IState";
 import { activeGameId, currentGameDiscovery, gameById } from "@/util/selectors";
 
 import * as selectors from "../selectors";

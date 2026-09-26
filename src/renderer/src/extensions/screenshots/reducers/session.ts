@@ -1,6 +1,6 @@
-import type { IReducerSpec } from "@/types/api";
+import type { IReducerSpec } from "@/types/IExtensionContext";
+import { reducerFor } from "@/util/reducerFor";
 
-import { reducerFor } from "../../../util/reducerFor";
 import * as actions from "../actions/session";
 import type { GameMediaItem } from "../util/mediaTypes";
 import { sortMedia } from "../util/sortMedia";

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
-import type { IExtensionApi } from "@/types/api";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import MediaPage from "./MediaPage";
 
@@ -32,7 +32,7 @@ vi.mock("react-redux", async (importOriginal) => {
   };
 });
 
-import { setOpenMainPage, setSettingsPage } from "@/actions";
+import { setOpenMainPage, setSettingsPage } from "@/actions/session";
 
 import useGameMedia from "../hooks/GameMediaHook";
 import type { GameMediaItem } from "../util/mediaTypes";

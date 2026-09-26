@@ -1,6 +1,6 @@
 import path from "path";
 
-import type { IDiscoveryResult } from "@/types/api";
+import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
 import getVortexPath from "@/util/getVortexPath";
 
 import { TString } from "../../../util/i18n";

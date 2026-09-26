@@ -1,10 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { useSelector, useStore } from "react-redux";
 
-import type { IState } from "@/types/api";
-import { getGame, nexusGameId } from "@/util/api";
+import { getGame } from "@/extensions/gamemode_management/util/getGame";
+import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
+import type { IState } from "@/types/IState";
+import { activeGameId } from "@/util/selectors";
 
-import { activeGameId } from "../../../util/selectors";
 import * as actions from "../actions/persistent";
 import * as selectors from "../selectors";
 import type { GameMediaModTag } from "../util/mediaTypes";

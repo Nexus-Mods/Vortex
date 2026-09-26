@@ -51,7 +51,7 @@ vi.mock("react-redux", async (importOriginal) => {
   };
 });
 
-import type { IExtensionApi } from "@/types/api";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 
 vi.mock("../hooks/GameMediaSourcesHook", () => ({
   default: vi.fn(),

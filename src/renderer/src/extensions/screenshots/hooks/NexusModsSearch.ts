@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { getGame } from "@/extensions/gamemode_management/util/getGame";
+import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
 import { getAccessToken } from "@/extensions/nexus_integration/util/oauthSession";
-import type { IExtensionApi, IState } from "@/types/api";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
+import { activeGameId } from "@/util/selectors";
 
-import { getGame, nexusGameId } from "../../../util/api";
-import { activeGameId } from "../../../util/selectors";
 import type { IModResult } from "../util/searchMods";
 import searchMods from "../util/searchMods";
 

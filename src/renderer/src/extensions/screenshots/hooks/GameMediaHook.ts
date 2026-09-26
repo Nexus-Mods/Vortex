@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector, useStore } from "react-redux";
 
-import type { IState } from "@/types/api";
+import type { IState } from "@/types/IState";
+import { activeGameId, gameById, currentGameDiscovery } from "@/util/selectors";
 
-import { activeGameId, gameById, currentGameDiscovery } from "../../../util/selectors";
 import * as sessionActions from "../actions/session";
 import * as selectors from "../selectors";
 import collectMedia from "../util/collectMedia";

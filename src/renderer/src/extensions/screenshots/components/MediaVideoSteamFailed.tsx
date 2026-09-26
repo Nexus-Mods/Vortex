@@ -3,12 +3,11 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
-
-import type { IState } from "../../../types/api";
-import { activeGameId, gameById } from "../../../util/selectors";
+import { activeGameId, gameById } from "@/util/selectors";
 
 export default function MediaVideoSteamFailed() {
   const { t } = useTranslation("media_page");

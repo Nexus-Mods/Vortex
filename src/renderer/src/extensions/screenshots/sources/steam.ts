@@ -3,8 +3,9 @@ import path from "path";
 
 import { parse } from "simple-vdf";
 
-import { TString } from "../../../util/i18n";
-import Steam from "../../../util/Steam";
+import { TString } from "@/util/i18n";
+import Steam from "@/util/Steam";
+
 import type {
   GameMediaItem,
   GameMediaSource,

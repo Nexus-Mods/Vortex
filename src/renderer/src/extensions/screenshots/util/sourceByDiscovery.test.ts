@@ -1,6 +1,7 @@
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
-import type { IDiscoveryResult, IGameStored } from "@/types/api";
+import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
 
 import { getSteamMedia } from "../sources/steam";
 import sourcesByDiscovery from "./sourcesByDiscovery";

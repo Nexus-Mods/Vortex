@@ -1,4 +1,4 @@
-import { getApplication } from "../../../util/application";
+import { getApplication } from "@/util/application";
 
 interface IModsQueryResult {
   data?: {

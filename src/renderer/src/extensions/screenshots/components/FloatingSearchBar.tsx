@@ -2,7 +2,7 @@ import { mdiContentSave, mdiRefresh } from "@mdi/js";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { IExtensionApi } from "@/types/api";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Input } from "@/ui/components/form/input/Input";
 import { Listing } from "@/ui/components/listing/Listing";

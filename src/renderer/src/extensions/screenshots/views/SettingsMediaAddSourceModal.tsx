@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
-import type { IExtensionApi } from "@/types/api";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Input } from "@/ui/components/form/input/Input";
 import { Modal } from "@/ui/components/modal/Modal";

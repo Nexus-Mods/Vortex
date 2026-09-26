@@ -1,4 +1,4 @@
-import type { IState } from "@/types/api";
+import type { IState } from "@/types/IState";
 
 import type { IGameMediaPersistentState } from "./reducers/persistent";
 import type { IGameMediaSessionState } from "./reducers/session";
