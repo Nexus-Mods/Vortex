@@ -20,7 +20,7 @@ import {
 } from "../actions/persistent";
 import useGameMediaSources from "../hooks/GameMediaSourcesHook";
 import * as selectors from "../selectors";
-import type { GameMediaSource } from "../util/mediaTypes";
+import type { ResolvedGameMediaSource } from "../util/mediaTypes";
 import { resolveTString } from "../util/resolveTString";
 import SettingsMediaAddSourceModal from "./SettingsMediaAddSourceModal";
 
@@ -33,7 +33,10 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 }: ISettingsMediaProps) => {
   const { t } = useTranslation(["media_page"]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editSource, setEditSource] = useState<{ id: string; source: GameMediaSource } | null>();
+  const [editSource, setEditSource] = useState<{
+    id: string;
+    source: ResolvedGameMediaSource;
+  } | null>();
 
   const dispatch = useDispatch();
   const gameId = useSelector(activeGameId);
@@ -58,7 +61,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
     [dispatch, gameId],
   );
 
-  const onEditSource = (id: string, source: GameMediaSource) => {
+  const onEditSource = (id: string, source: ResolvedGameMediaSource) => {
     setEditSource({ id, source });
     setShowAddModal(true);
   };
@@ -72,7 +75,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
 
   const { defaultSources, customSources, flags } = useGameMediaSources();
 
-  const toggleItem = ([id, source]: [string, GameMediaSource]) => (
+  const toggleItem = ([id, source]: [string, ResolvedGameMediaSource]) => (
     <div className="flex w-max items-center gap-3" key={id}>
       <Switch
         checked={!disabledSources.includes(id)}

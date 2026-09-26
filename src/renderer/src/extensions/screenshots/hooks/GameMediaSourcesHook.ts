@@ -5,17 +5,17 @@ import type { IState } from "@/types/IState";
 import { activeGameId, currentGameDiscovery, gameById } from "@/util/selectors";
 
 import * as selectors from "../selectors";
-import type { GameMediaSource } from "../util/mediaTypes";
+import type { ResolvedGameMediaSource } from "../util/mediaTypes";
 import sourcesByDiscovery from "../util/sourcesByDiscovery";
 
 export default function useGameMediaSources() {
   const gameId = useSelector(activeGameId);
   const game = useSelector((state: IState) => gameById(state, gameId));
   const discovery = useSelector(currentGameDiscovery);
-  const [defaultSources, setDefaultSources] = useState<Record<string, GameMediaSource>>({});
+  const [defaultSources, setDefaultSources] = useState<Record<string, ResolvedGameMediaSource>>({});
 
-  const customSources: Record<string, GameMediaSource> | undefined = useSelector((state: IState) =>
-    selectors.customSources(state, gameId),
+  const customSources: Record<string, ResolvedGameMediaSource> | undefined = useSelector(
+    (state: IState) => selectors.customSources(state, gameId),
   );
 
   const disabledSources: readonly string[] = useSelector((state: IState) =>
@@ -24,7 +24,7 @@ export default function useGameMediaSources() {
 
   const flags = useSelector(selectors.gameMediaFlags);
 
-  const allSources: Record<string, GameMediaSource> = useMemo(
+  const allSources: Record<string, ResolvedGameMediaSource> = useMemo(
     () => ({ ...defaultSources, ...customSources }),
     [defaultSources, customSources],
   );

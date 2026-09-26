@@ -11,12 +11,13 @@ vi.mock("../hooks/GameMediaHook", () => ({
   default: vi.fn(),
 }));
 
-const { dispatch, mockUseDispatch, state } = vi.hoisted(() => {
+const { dispatch, mockUseDispatch, mockUseSelector, state } = vi.hoisted(() => {
   const dispatch = vi.fn();
 
   return {
     dispatch,
     mockUseDispatch: vi.fn(() => dispatch),
+    mockUseSelector: vi.fn(),
     state: { settings: { interface: { alwaysCompactHeaders: false } } },
   };
 });
@@ -27,8 +28,7 @@ vi.mock("react-redux", async (importOriginal) => {
   return {
     ...(actual as object),
     useDispatch: mockUseDispatch,
-    // eslint-disable-next-line @eslint-react/component-hook-factories
-    useSelector: (selector: (s: unknown) => unknown) => selector(state),
+    useSelector: mockUseSelector,
   };
 });
 
@@ -89,6 +89,7 @@ describe("MediaPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedUseGameMedia.mockReturnValue(baseMediaState);
+    mockUseSelector.mockImplementation((selector: (s: unknown) => unknown) => selector(state));
   });
 
   it("calls forceCollect when refresh button is pressed", async () => {

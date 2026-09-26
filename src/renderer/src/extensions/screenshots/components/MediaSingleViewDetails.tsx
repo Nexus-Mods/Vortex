@@ -10,12 +10,12 @@ import { Typography } from "@/ui/components/typography/Typography";
 import relativeTime from "@/util/relativeTime";
 import { bytesToString } from "@/util/util";
 
-import type { GameMediaItem, GameMediaModTag, GameMediaSource } from "../util/mediaTypes";
+import type { GameMediaItem, GameMediaModTag, ResolvedGameMediaSource } from "../util/mediaTypes";
 import { resolveTString } from "../util/resolveTString";
 
 interface IMediaViewSingleDetailsProps {
   entry: GameMediaItem;
-  source: GameMediaSource;
+  source: ResolvedGameMediaSource;
   tags: readonly GameMediaModTag[];
   isAddingTag: boolean;
   removeTag: (id: string) => void;

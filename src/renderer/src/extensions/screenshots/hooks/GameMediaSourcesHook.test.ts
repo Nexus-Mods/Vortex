@@ -1,26 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import type { GameMediaSource } from "../util/mediaTypes";
 import useGameMediaSources from "./GameMediaSourcesHook";
 
 const {
-  dispatch,
   state,
   discovery,
   game,
   activeGameIdMock,
   sourcesByDiscoveryMock,
   currentGameDiscoverMock,
+  mockUseSelector,
 } = vi.hoisted(() => {
-  const dispatch = vi.fn();
   const state = {
     persistent: { game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {} } },
   };
 
   return {
-    dispatch,
     state,
     discovery: { path: "C:/game", store: "steam" },
     game: { id: "game-1", name: "Test Game", details: { steamAppId: 1 } },
@@ -33,12 +31,13 @@ const {
       ): Record<string, GameMediaSource> => ({}),
     ),
     currentGameDiscoverMock: vi.fn(() => discovery),
+    mockUseSelector: vi.fn(),
   };
 });
 
 vi.mock("react-redux", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useSelector: (selector: (s: unknown) => unknown) => selector(state),
+  useSelector: mockUseSelector,
 }));
 
 vi.mock("../../../util/selectors", () => ({
@@ -59,6 +58,7 @@ describe("GameMediaSourcesHook", () => {
     state.persistent.game_media.sources = {};
     activeGameIdMock.mockReturnValue("game-1");
     currentGameDiscoverMock.mockReturnValue(discovery);
+    mockUseSelector.mockImplementation((selector: (s: unknown) => unknown) => selector(state));
   });
 
   it("merges defaults with custom sources, custom winning on an id clash", async () => {

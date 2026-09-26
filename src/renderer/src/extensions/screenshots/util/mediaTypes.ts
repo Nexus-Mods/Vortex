@@ -4,12 +4,14 @@ import type { ITString } from "@/util/i18n";
 
 export interface GameMediaSource {
   name: string | ITString;
-  path: string;
+  path: string | (() => Promise<string>);
   custom?: boolean;
   filterFn?: (s: string) => boolean;
   discoverFn?: (mediaPath: string) => Promise<GameMediaItem[]>;
   description?: string | ITString;
 }
+
+export type ResolvedGameMediaSource = Omit<GameMediaSource, "path"> & { path: string };
 
 export interface GameMediaItem {
   id: string;

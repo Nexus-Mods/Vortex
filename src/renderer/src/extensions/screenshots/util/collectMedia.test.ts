@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import collectMedia from "./collectMedia";
 import generateVideoPreview from "./generateVideoPreview";
-import type { GameMediaSource } from "./mediaTypes";
+import type { ResolvedGameMediaSource } from "./mediaTypes";
 import { previewKey } from "./previewCache";
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
@@ -48,7 +48,7 @@ describe("collectMedia", () => {
       { name: "folder", isFile: () => false },
     ] as any);
 
-    const sources: Record<string, GameMediaSource> = {
+    const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
         name: "A",
         path: "A",
@@ -75,7 +75,7 @@ describe("collectMedia", () => {
       { name: "folder", isFile: () => false },
     ] as any);
 
-    const sources: Record<string, GameMediaSource> = {
+    const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
         name: "A",
         path: "A",
@@ -98,7 +98,7 @@ describe("collectMedia", () => {
     ] as any);
     mockedFs.access.mockResolvedValue(undefined);
 
-    const sources: Record<string, GameMediaSource> = {
+    const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
         name: "A",
         path: "A",
@@ -127,7 +127,7 @@ describe("collectMedia", () => {
 
     const filterFn = vi.fn((s: string) => !s.toLowerCase().includes("thumbnail"));
 
-    const sources: Record<string, GameMediaSource> = {
+    const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
         name: "A",
         path: "A",
@@ -156,7 +156,7 @@ describe("collectMedia", () => {
       { name: "yetanotherfile.png", isFile: () => true },
     ] as any);
 
-    const sources: Record<string, GameMediaSource> = {
+    const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
         name: "A",
         path: "A",
@@ -181,7 +181,7 @@ describe("collectMedia", () => {
 
     const discoverFn = vi.fn(async () => []);
 
-    const sources: Record<string, GameMediaSource> = {
+    const sources: Record<string, ResolvedGameMediaSource> = {
       sourceA: {
         name: "A",
         path: "A",

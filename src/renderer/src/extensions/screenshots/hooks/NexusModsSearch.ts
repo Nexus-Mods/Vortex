@@ -30,7 +30,8 @@ export default function useNexusModsSearch(
   const domainName = useMemo(() => nexusGameId(getGame(gameId)), [gameId]);
 
   const adultContentFilter: boolean = useSelector(
-    (state: IState) => state.persistent["nexus"]?.userInfo?.adult ?? false,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (state: IState) => (state.persistent["nexus"]?.userInfo?.adult as boolean) ?? false,
   );
 
   const { debounceDelayMs, tryToUseLogin } = options;

@@ -9,6 +9,7 @@ import Steam from "@/util/Steam";
 import type {
   GameMediaItem,
   GameMediaSource,
+  ResolvedGameMediaSource,
   SteamLoginUsersVDF,
   SteamScreenshotsVDF,
 } from "../util/mediaTypes";
@@ -76,10 +77,10 @@ export async function screenshotsFolderBySteamID(
   steamGameId: string,
   userId: string,
   userName?: string,
-): Promise<Record<string, GameMediaSource>> {
+): Promise<Record<string, ResolvedGameMediaSource>> {
   // Images live at userdata\{USER ID}\760\remote\{STEAM APP ID}\screenshots
   // Images have a manifest at userdata\{USER ID}\760\remote\screenshots.vdf
-  const res: Record<string, GameMediaSource> = {};
+  const res: Record<string, ResolvedGameMediaSource> = {};
   const screenshotsVDF = path.join(userDataFolder, userId, "760", "screenshots.vdf");
   try {
     await fs.access(screenshotsVDF);
@@ -111,8 +112,8 @@ export async function clipsFolderBySteamID(
   steamGameId: string,
   userId: string,
   userName?: string,
-): Promise<Record<string, GameMediaSource>> {
-  const res: Record<string, GameMediaSource> = {};
+): Promise<Record<string, ResolvedGameMediaSource>> {
+  const res: Record<string, ResolvedGameMediaSource> = {};
   // Videos live at userdata\{USER ID}\gamerecordings\clips\
   // with a subfolder for each clip, containing a Thumbnail.jpg
   // folder names are clip_{STEAM ID}_{YYYMMDD}_{HHMMSS(UTC Time)}

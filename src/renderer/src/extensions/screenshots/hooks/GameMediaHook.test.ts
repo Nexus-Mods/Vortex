@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
@@ -7,27 +8,30 @@ import useGameMedia, { PAGE_SIZE } from "./GameMediaHook";
 import useGameMediaSources from "./GameMediaSourcesHook";
 import useGameMediaWatcher from "./GameMediaWatcherHook";
 
-const { dispatch, state, store, discovery, game, activeGameIdMock } = vi.hoisted(() => {
-  const dispatch = vi.fn();
-  const state = {
-    persistent: { game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {} } },
-    session: { game_media: { items: [] as GameMediaItem[] | null } },
-  };
+const { dispatch, state, store, discovery, game, activeGameIdMock, mockUseSelector, mockUseStore } =
+  vi.hoisted(() => {
+    const dispatch = vi.fn();
+    const state = {
+      persistent: { game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {} } },
+      session: { game_media: { items: [] as GameMediaItem[] | null } },
+    };
 
-  return {
-    dispatch,
-    state,
-    store: { dispatch, getState: () => state },
-    discovery: { path: "C:/game" },
-    game: { id: "game-1", name: "Test Game" },
-    activeGameIdMock: vi.fn((): string | undefined => "game-1"),
-  };
-});
+    return {
+      dispatch,
+      state,
+      store: { dispatch, getState: () => state },
+      discovery: { path: "C:/game" },
+      game: { id: "game-1", name: "Test Game" },
+      activeGameIdMock: vi.fn((): string | undefined => "game-1"),
+      mockUseSelector: vi.fn(),
+      mockUseStore: vi.fn(),
+    };
+  });
 
 vi.mock("react-redux", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useSelector: (selector: (s: unknown) => unknown) => selector(state),
-  useStore: () => store,
+  useSelector: mockUseSelector,
+  useStore: mockUseStore,
 }));
 
 vi.mock("@/util/selectors", () => ({
@@ -76,6 +80,8 @@ describe("GameMediaHook", () => {
     mockedCollectMedia.mockResolvedValue([]);
     activeGameIdMock.mockReturnValue("game-1");
     seedItems(null);
+    mockUseSelector.mockImplementation((selector: (s: unknown) => unknown) => selector(state));
+    mockUseStore.mockReturnValue(store);
   });
 
   it("scans on mount and stores the result", async () => {
@@ -246,7 +252,7 @@ describe("GameMediaHook", () => {
     mockedCollectMedia.mockResolvedValue([item("c", "videos")]);
 
     await act(async () => {
-      onSourceChanged("videos");
+      await onSourceChanged("videos");
     });
 
     expect(mockedCollectMedia).toHaveBeenCalledWith(

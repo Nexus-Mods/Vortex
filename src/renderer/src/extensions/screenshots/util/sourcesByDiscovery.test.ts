@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { expect, it, describe, vi, beforeEach } from "vitest";
 
 import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
@@ -79,6 +80,25 @@ describe("sourcesByDiscovery", () => {
 
     expect(xboxResult["xbox-default-captures"]).toBeDefined();
     expect(nonXboxResult["xbox-default-captures"]).not.toBeDefined();
+  });
+
+  it("resolves a source with an async function for the path", async () => {
+    const game = {
+      ...exampleGame,
+      details: {
+        mediaFolders: {
+          asyncSource: {
+            name: "Async source",
+            path: () =>
+              new Promise<string>((resolve) => setTimeout(() => resolve("resolvedPath"), 500)),
+          },
+        },
+      },
+    };
+
+    const result = await sourcesByDiscovery(game, exampleDiscovery, {});
+
+    expect(result["asyncSource"].path).toBe("resolvedPath");
   });
 
   it("empty discovery returns no sources", async () => {

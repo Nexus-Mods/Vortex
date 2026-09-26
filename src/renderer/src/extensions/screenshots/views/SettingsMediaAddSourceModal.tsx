@@ -7,9 +7,10 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Input } from "@/ui/components/form/input/Input";
 import { Modal } from "@/ui/components/modal/Modal";
+import type { ITString } from "@/util/i18n";
 
 import { addGameMediaSource } from "../actions/persistent";
-import type { GameMediaSource } from "../util/mediaTypes";
+import type { ResolvedGameMediaSource } from "../util/mediaTypes";
 import { resolveTString } from "../util/resolveTString";
 
 interface ISettingsMediaAddSourceModalProps {
@@ -17,7 +18,7 @@ interface ISettingsMediaAddSourceModalProps {
   visible: boolean;
   onClose: () => void;
   api: IExtensionApi;
-  existingSource?: { id: string; source: GameMediaSource };
+  existingSource?: { id: string; source: ResolvedGameMediaSource };
 }
 
 export default function SettingsMediaAddSourceModal({
@@ -28,9 +29,11 @@ export default function SettingsMediaAddSourceModal({
   existingSource,
 }: ISettingsMediaAddSourceModalProps) {
   const { t } = useTranslation(["media_page"]);
-  const [sourceName, setSourceName] = useState(() => existingSource?.source?.name ?? "");
-  const [sourcePath, setSourcePath] = useState(() => existingSource?.source?.path ?? "");
-  const [sourceDescription, setSourceDescription] = useState(
+  const [sourceName, setSourceName] = useState<string | ITString>(
+    () => existingSource?.source?.name ?? "",
+  );
+  const [sourcePath, setSourcePath] = useState<string>(() => existingSource?.source?.path ?? "");
+  const [sourceDescription, setSourceDescription] = useState<string | ITString>(
     () => existingSource?.source?.description ?? "",
   );
   const dispatch = useDispatch();
@@ -52,7 +55,7 @@ export default function SettingsMediaAddSourceModal({
   };
 
   const saveMediaSource = () => {
-    const newSource: GameMediaSource = {
+    const newSource: ResolvedGameMediaSource = {
       name: sourceName,
       path: sourcePath,
       description: sourceDescription.toString().length ? sourceDescription : undefined,

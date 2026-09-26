@@ -19,12 +19,12 @@ import MediaViewSingleDetails from "../components/MediaSingleViewDetails";
 import MediaVideoSteamFailed from "../components/MediaVideoSteamFailed";
 import ModTagIndicator from "../components/ModTagIndicator";
 import useGameMediaModTag from "../hooks/GameMediaModTagHook";
-import type { GameMediaItem, GameMediaSource } from "../util/mediaTypes";
+import type { GameMediaItem, ResolvedGameMediaSource } from "../util/mediaTypes";
 
 interface IMediaSingleViewProps {
   active?: boolean;
   api: IExtensionApi;
-  source: GameMediaSource;
+  source: ResolvedGameMediaSource;
   entry: GameMediaItem;
   onBack: () => void;
 }

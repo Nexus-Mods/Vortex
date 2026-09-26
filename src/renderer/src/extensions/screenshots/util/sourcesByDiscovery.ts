@@ -7,13 +7,13 @@ import { TString } from "@/util/i18n";
 
 import getKnownFolders from "../sources/knownfolders";
 import { getSteamMedia } from "../sources/steam";
-import type { GameMediaSource } from "../util/mediaTypes";
+import type { GameMediaSource, ResolvedGameMediaSource } from "../util/mediaTypes";
 
 export default async function sourcesByDiscovery(
   game: IGameStored,
   discovery: IDiscoveryResult,
   flags: { showVideos?: boolean },
-): Promise<Record<string, GameMediaSource>> {
+): Promise<Record<string, ResolvedGameMediaSource>> {
   const { name, id: gameId, details } = game;
   const { store, path: gamePath } = discovery;
   const res: Record<string, GameMediaSource> = {};
@@ -46,5 +46,22 @@ export default async function sourcesByDiscovery(
     }
   }
 
-  return res;
+  const resolved = await Promise.all(
+    Object.entries(res).map(async ([id, source]) => {
+      try {
+        const resovledPath = typeof source.path === "function" ? await source.path() : source.path;
+        return resovledPath ? ([id, { ...source, path: resovledPath }] as const) : undefined;
+      } catch (e: unknown) {
+        window.api.log(
+          "warn",
+          "media source path resolution failed",
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          JSON.stringify({ id, error: e instanceof Error ? e.message : String(e) }),
+        );
+        return undefined;
+      }
+    }),
+  );
+
+  return Object.fromEntries(resolved.filter((entry) => entry !== undefined));
 }

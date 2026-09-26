@@ -3,7 +3,7 @@ import path from "path";
 
 import { hasFfmpeg } from "./ffmpeg";
 import generateVideoPreview from "./generateVideoPreview";
-import type { GameMediaItem, GameMediaSource } from "./mediaTypes";
+import type { GameMediaItem, ResolvedGameMediaSource } from "./mediaTypes";
 import { previewKey } from "./previewCache";
 import { sortMedia } from "./sortMedia";
 
@@ -11,7 +11,7 @@ const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".t
 const VIDEO_EXT = new Set([".mp4", ".webm", ".mkv", ".mpd"]);
 
 export default async function collectMedia(
-  sources: Record<string, GameMediaSource>,
+  sources: Record<string, ResolvedGameMediaSource>,
   disabledSources: readonly string[] | undefined,
   flags: { showVideos?: boolean },
 ): Promise<GameMediaItem[]> {

@@ -4,10 +4,10 @@ import { useEffect } from "react";
 
 import Debouncer from "@/util/Debouncer";
 
-import type { GameMediaSource } from "../util/mediaTypes";
+import type { ResolvedGameMediaSource } from "../util/mediaTypes";
 
 export default function useGameMediaWatcher(
-  sources: Record<string, GameMediaSource>,
+  sources: Record<string, ResolvedGameMediaSource>,
   disabled: readonly string[],
   onSourceChanged: (sourceId: string) => Promise<void>,
 ) {

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/require-await */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -9,23 +11,27 @@ import type { IGameMediaSessionState } from "../reducers/session";
 import type { GameMediaModTag } from "../util/mediaTypes";
 import useGameMediaModTag from "./GameMediaModTagHook";
 
-const { activeGameIdMock, state, store, dispatch } = vi.hoisted(() => {
-  const dispatch = vi.fn();
-  const state: {
-    persistent: { game_media: IGameMediaPersistentState };
-    session: { game_media: IGameMediaSessionState };
-  } = {
-    persistent: { game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {} } },
-    session: { game_media: { items: [] as any[] | null } },
-  };
+const { activeGameIdMock, state, store, dispatch, mockUseSelector, mockUseStore } = vi.hoisted(
+  () => {
+    const dispatch = vi.fn();
+    const state: {
+      persistent: { game_media: IGameMediaPersistentState };
+      session: { game_media: IGameMediaSessionState };
+    } = {
+      persistent: { game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {} } },
+      session: { game_media: { items: [] as any[] | null } },
+    };
 
-  return {
-    dispatch,
-    state,
-    store: { dispatch, getState: () => state },
-    activeGameIdMock: vi.fn((): string | undefined => "game-1"),
-  };
-});
+    return {
+      dispatch,
+      state,
+      store: { dispatch, getState: () => state },
+      activeGameIdMock: vi.fn((): string | undefined => "game-1"),
+      mockUseSelector: vi.fn((selector: (s: unknown) => unknown) => selector(state)),
+      mockUseStore: vi.fn(),
+    };
+  },
+);
 
 vi.mock("@/util/selectors", () => ({
   activeGameId: activeGameIdMock,
@@ -41,8 +47,8 @@ vi.mock("@/extensions/gamemode_management/util/getGame", () => ({
 
 vi.mock("react-redux", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useSelector: (selector: (s: unknown) => unknown) => selector(state),
-  useStore: () => store,
+  useSelector: mockUseSelector,
+  useStore: mockUseStore.mockReturnValue(store),
 }));
 
 const fakeContainer = (rect: Partial<DOMRect>) =>
@@ -71,6 +77,8 @@ describe("GameMediaModTagHook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     activeGameIdMock.mockReturnValue("game-1");
+    mockUseSelector.mockImplementation((selector: (s: unknown) => unknown) => selector(state));
+    mockUseStore.mockReturnValue(store);
     state.persistent.game_media.modTags = {};
     seedTags(["a", "b", "c"], "game-1", "item-1");
     seedTags(["d", "e", "f"], "game-2", "item-2");

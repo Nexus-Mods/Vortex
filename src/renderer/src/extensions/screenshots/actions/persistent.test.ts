@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 
-import type { GameMediaModTag, GameMediaSource } from "../util/mediaTypes";
+import type { GameMediaModTag, ResolvedGameMediaSource } from "../util/mediaTypes";
 import * as actions from "./persistent";
 
 describe("addGameMediaSource", () => {
   it("creates the correct action", () => {
-    const source: GameMediaSource = {
+    const source: ResolvedGameMediaSource = {
       name: "Test Source",
       path: "path\\to\\source",
     };

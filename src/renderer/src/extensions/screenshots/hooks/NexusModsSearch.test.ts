@@ -14,6 +14,7 @@ const {
   mockNexusGameId,
   mockSearchMods,
   mockGetAccessToken,
+  mockUseSelector,
   state,
   mockApi,
 } = vi.hoisted(() => {
@@ -53,12 +54,13 @@ const {
     mockActiveGameId: vi.fn<() => string | undefined>(),
     mockGetGame: vi.fn(),
     mockNexusGameId: vi.fn<() => string>(),
+    mockUseSelector: vi.fn((selector: (s: unknown) => unknown) => selector(state)),
   };
 });
 
 vi.mock("react-redux", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useSelector: (selector: (s: unknown) => unknown) => selector(state),
+  useSelector: mockUseSelector,
 }));
 
 vi.mock("../util/searchMods", () => ({
@@ -102,6 +104,7 @@ describe("NexusModsSearch", () => {
     mockNexusGameId.mockReturnValue("skyrim");
     mockSearchMods.mockResolvedValue([]);
     mockGetAccessToken.mockResolvedValue("tokenFromState");
+    mockUseSelector.mockImplementation((selector: (s: unknown) => unknown) => selector(state));
     state.persistent.nexus.userInfo.adult = true;
   });
 

@@ -2,11 +2,11 @@ import type { IReducerSpec } from "@/types/IExtensionContext";
 import { reducerFor } from "@/util/reducerFor";
 
 import * as actions from "../actions/persistent";
-import type { GameMediaSource, GameMediaModTag } from "../util/mediaTypes";
+import type { GameMediaModTag, ResolvedGameMediaSource } from "../util/mediaTypes";
 
 export interface IGameMediaPersistentState {
   sources: {
-    [gameId: string]: Record<string, GameMediaSource> | undefined;
+    [gameId: string]: Record<string, ResolvedGameMediaSource> | undefined;
   };
   modTags: {
     [gameId: string]: { [imageId: string]: GameMediaModTag[] };

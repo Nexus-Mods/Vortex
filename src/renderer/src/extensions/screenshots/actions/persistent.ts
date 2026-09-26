@@ -1,10 +1,14 @@
 import { createAction } from "redux-act";
 
-import type { GameMediaSource, GameMediaModTag } from "../util/mediaTypes";
+import type { GameMediaModTag, ResolvedGameMediaSource } from "../util/mediaTypes";
 
 export const addGameMediaSource = createAction(
   "ADD_GAME_MEDIA_SOURCE",
-  (gameId: string, sourceId: string, source: GameMediaSource) => ({ gameId, sourceId, source }),
+  (gameId: string, sourceId: string, source: ResolvedGameMediaSource) => ({
+    gameId,
+    sourceId,
+    source,
+  }),
 );
 
 export const deleteGameMediaSource = createAction(
