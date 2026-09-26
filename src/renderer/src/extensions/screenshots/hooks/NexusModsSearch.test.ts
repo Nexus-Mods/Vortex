@@ -8,7 +8,15 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { IModResult } from "../util/searchMods";
 import useNexusModsSearch from "./NexusModsSearch";
 
-const { mockSearchMods, mockGetAccessToken, state, mockApi } = vi.hoisted(() => {
+const {
+  mockActiveGameId,
+  mockGetGame,
+  mockNexusGameId,
+  mockSearchMods,
+  mockGetAccessToken,
+  state,
+  mockApi,
+} = vi.hoisted(() => {
   const mockSearchMods = vi
     .fn(
       async (
@@ -37,7 +45,15 @@ const { mockSearchMods, mockGetAccessToken, state, mockApi } = vi.hoisted(() => 
 
   const mockApi = {};
 
-  return { mockSearchMods, mockGetAccessToken, state, mockApi };
+  return {
+    mockSearchMods,
+    mockGetAccessToken,
+    state,
+    mockApi,
+    mockActiveGameId: vi.fn<() => string | undefined>(),
+    mockGetGame: vi.fn(),
+    mockNexusGameId: vi.fn<() => string>(),
+  };
 });
 
 vi.mock("react-redux", async (importOriginal) => ({
@@ -54,15 +70,15 @@ vi.mock("@/extensions/nexus_integration/util/oauthSession", () => ({
 }));
 
 vi.mock("@/util/selectors", () => ({
-  activeGameId: vi.fn((): string | undefined => "skyrim"),
+  activeGameId: mockActiveGameId,
 }));
 
 vi.mock("@/extensions/gamemode_management/util/getGame", () => ({
-  getGame: vi.fn((_gameId: string) => ({ name: "Skyrim" })),
+  getGame: mockGetGame,
 }));
 
 vi.mock("@/extensions/nexus_integration/util/convertGameId", () => ({
-  nexusGameId: vi.fn((_game: any, _fallback?: string) => "skyrim"),
+  nexusGameId: mockNexusGameId,
 }));
 
 const render = (query = "", api: any = {}, options: any = undefined) =>
@@ -81,6 +97,9 @@ const deferred = () => {
 describe("NexusModsSearch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockActiveGameId.mockReturnValue("skyrim");
+    mockGetGame.mockReturnValue({ id: "skyrim", name: "Skyrim" });
+    mockNexusGameId.mockReturnValue("skyrim");
     mockSearchMods.mockResolvedValue([]);
     mockGetAccessToken.mockResolvedValue("tokenFromState");
     state.persistent.nexus.userInfo.adult = true;

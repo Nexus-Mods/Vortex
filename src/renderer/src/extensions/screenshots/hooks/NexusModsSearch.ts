@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
@@ -26,14 +26,8 @@ export default function useNexusModsSearch(
   const [error, setError] = useState<Error | null>(null);
   const [results, setResults] = useState<IModResult[]>([]);
   const [debouncedQuery, setDebouncedQuery] = useState(query);
-  const { domainName } = useSelector((state: IState) => {
-    const gameId = activeGameId(state);
-    const game = getGame(gameId);
-    const domainName = nexusGameId(game);
-    return {
-      domainName,
-    };
-  });
+  const gameId = useSelector(activeGameId);
+  const domainName = useMemo(() => nexusGameId(getGame(gameId)), [gameId]);
 
   const adultContentFilter: boolean = useSelector(
     (state: IState) => state.persistent["nexus"]?.userInfo?.adult ?? false,
