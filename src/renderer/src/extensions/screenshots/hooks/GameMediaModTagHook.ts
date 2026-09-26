@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useSelector, useStore } from "react-redux";
 
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
@@ -17,15 +17,10 @@ export default function useGameMediaModTag(mediaItemId: string) {
   const [pendingCoords, setPendingCoords] = useState<{ x: number; y: number } | null>(null);
   const store = useStore();
 
-  const { gameId, domainName } = useSelector((state: IState) => {
-    const gameId = activeGameId(state);
-    const game = getGame(gameId);
-    const domainName = nexusGameId(game);
-    return {
-      gameId,
-      domainName,
-    };
-  });
+  const gameId = useSelector(activeGameId);
+
+  const domainName = useMemo(() => nexusGameId(getGame(gameId)), [gameId]);
+
   const tags = useSelector((state: IState) => selectors.modTags(state, gameId, mediaItemId));
 
   const setTags = useCallback(
@@ -37,6 +32,7 @@ export default function useGameMediaModTag(mediaItemId: string) {
 
   function getRelativeCoords(clickEvent: React.MouseEvent, container: HTMLElement) {
     const rect = container.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return null;
     const x = (clickEvent.clientX - rect.left) / rect.width;
     const y = (clickEvent.clientY - rect.top) / rect.height;
     return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };

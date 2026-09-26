@@ -7,8 +7,8 @@
 import { mdiImageOutline } from "@mdi/js";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
+import { activeGameId } from "@/util/selectors";
 
-import { activeGameId } from "../../util/selectors";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { prunePreviewCache } from "./util/previewCache";

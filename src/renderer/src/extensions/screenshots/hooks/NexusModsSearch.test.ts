@@ -53,12 +53,15 @@ vi.mock("@/extensions/nexus_integration/util/oauthSession", () => ({
   getAccessToken: mockGetAccessToken,
 }));
 
-vi.mock("../../../util/selectors", () => ({
+vi.mock("@/util/selectors", () => ({
   activeGameId: vi.fn((): string | undefined => "skyrim"),
 }));
 
-vi.mock("../../../util/api", () => ({
+vi.mock("@/extensions/gamemode_management/util/getGame", () => ({
   getGame: vi.fn((_gameId: string) => ({ name: "Skyrim" })),
+}));
+
+vi.mock("@/extensions/nexus_integration/util/convertGameId", () => ({
   nexusGameId: vi.fn((_game: any, _fallback?: string) => "skyrim"),
 }));
 

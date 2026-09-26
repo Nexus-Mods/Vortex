@@ -30,7 +30,7 @@ vi.mock("react-redux", async (importOriginal) => ({
   useStore: () => store,
 }));
 
-vi.mock("../../../util/selectors", () => ({
+vi.mock("@/util/selectors", () => ({
   activeGameId: activeGameIdMock,
   gameById: () => game,
   currentGameDiscovery: () => discovery,
