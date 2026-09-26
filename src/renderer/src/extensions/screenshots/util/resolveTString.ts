@@ -1,4 +1,4 @@
-import type { ITString, TFunction } from "../../../util/i18n";
+import type { ITString, TFunction } from "@/util/i18n";
 
 export const resolveTString = (t: TFunction, input: string | ITString | undefined): string => {
   if (input === undefined) return "";

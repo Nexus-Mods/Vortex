@@ -1,6 +1,6 @@
 import type { VDFObject } from "simple-vdf";
 
-import type { ITString } from "../../../util/i18n";
+import type { ITString } from "@/util/i18n";
 
 export interface GameMediaSource {
   name: string | ITString;

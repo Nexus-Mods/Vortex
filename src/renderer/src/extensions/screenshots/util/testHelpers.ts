@@ -1,6 +1,6 @@
 import { expect } from "vitest";
 
-import type { ITString } from "../../../util/i18n";
+import type { ITString } from "@/util/i18n";
 
 export const expectTString = (
   value: string | ITString | undefined,

@@ -2,8 +2,8 @@ import path from "path";
 
 import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
 import getVortexPath from "@/util/getVortexPath";
+import { TString } from "@/util/i18n";
 
-import { TString } from "../../../util/i18n";
 import type { GameMediaSource } from "../util/mediaTypes";
 
 const knownFolders: Record<
