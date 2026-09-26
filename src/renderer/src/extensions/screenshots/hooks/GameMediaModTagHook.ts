@@ -32,7 +32,7 @@ export default function useGameMediaModTag(mediaItemId: string) {
 
   function getRelativeCoords(clickEvent: React.MouseEvent, container: HTMLElement) {
     const rect = container.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) return null;
+    if (rect.width === 0 || rect.height === 0) return null;
     const x = (clickEvent.clientX - rect.left) / rect.width;
     const y = (clickEvent.clientY - rect.top) / rect.height;
     return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
