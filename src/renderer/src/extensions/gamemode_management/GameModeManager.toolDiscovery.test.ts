@@ -11,17 +11,26 @@ vi.mock("../../util/getVortexPath", () => ({
   getVortexQualifiedPath: vi.fn(),
 }));
 
-// the discovery pass itself is the thing under test's *input*: quickDiscoveryTools is what reports
-// a tool it found back through onDiscoveredTool, so the mock plays back the finds a test scripts
-// into `discoveredTools` (populated per test, read when the mock is called).
+// The discovery pass is the input here. Script extenders are `relative` tools: discoverRelativeTools
+// walks the game folder and, for each required file it sees, verifies the tool's directory and
+// then reports it through onDiscoveredTool. That report is not awaited (onFile fires
+// testApplicationDirValid and moves on), so it can arrive after the returned promise settles. The
+// fake keeps that rule: it resolves first and plays back the finds a test scripts into
+// `discoveredTools` on a later tick, and tests wait for that tick (`discover`).
 vi.mock("./util/discovery", () => ({
-  quickDiscoveryTools: vi.fn(
-    (gameId: string, _tools: unknown, onDiscoveredTool: (id: string, tool: unknown) => void) => {
-      discoveredTools.forEach((tool) => onDiscoveredTool(gameId, { ...tool }));
+  quickDiscoveryTools: vi.fn(() => Promise.resolve()),
+  discoverRelativeTools: vi.fn(
+    (
+      game: { id: string },
+      _gamePath: string,
+      _discoveredGames: unknown,
+      onDiscoveredTool: (id: string, tool: unknown) => void,
+    ) => {
+      const finds = discoveredTools.map((tool) => ({ ...tool }));
+      setTimeout(() => finds.forEach((tool) => onDiscoveredTool(game.id, tool)), 0);
       return Promise.resolve();
     },
   ),
-  discoverRelativeTools: vi.fn(() => Promise.resolve()),
   quickDiscovery: vi.fn(() => Promise.resolve([])),
   searchDiscovery: vi.fn(() => Promise.resolve(0)),
   assertToolDir: vi.fn(() => Promise.resolve(undefined)),
@@ -106,6 +115,12 @@ function primaryToolDispatches(harness: ReturnType<typeof setup>["harness"]) {
   return harness.dispatched.filter((action) => action.type === setPrimaryTool.getType());
 }
 
+// run deploy-time tool discovery, then wait for the reports the fake delivers on a later tick
+async function discover(manager: GameModeManager) {
+  await manager.startToolDiscovery(GAME);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 describe("GameModeManager tool discovery", () => {
   beforeEach(() => {
     discoveredTools.length = 0;
@@ -119,7 +134,7 @@ describe("GameModeManager tool discovery", () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup();
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
   });
@@ -134,7 +149,7 @@ describe("GameModeManager tool discovery", () => {
       draft.settings.interface.primaryTool = { [GAME]: undefined };
     });
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
   });
@@ -143,7 +158,7 @@ describe("GameModeManager tool discovery", () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ primaryTool: "loot" });
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([]);
   });
@@ -153,7 +168,7 @@ describe("GameModeManager tool discovery", () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ primaryTool: null });
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([]);
   });
@@ -162,8 +177,28 @@ describe("GameModeManager tool discovery", () => {
     discoveredTools.push(makeDiscoveredTool({ id: "loot" }));
     const { harness, manager } = setup();
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
+    expect(primaryToolDispatches(harness)).toEqual([]);
+  });
+
+  // Quick discovery runs every known game's queryPath tools, whether or not the game itself was
+  // found, so a tool can be reported for a game with no discovery entry. addDiscoveredTool ignores
+  // it; selecting a default must not throw on the missing entry either. That pass calls
+  // onDiscoveredTool from quickDiscovery, which needs store scanning to drive, so it is called here
+  // directly with what that pass reports.
+  it("ignores a default reported for a game with no discovery entry", () => {
+    const { harness, manager } = setup();
+    harness.setState((draft: IState) => {
+      delete draft.settings.gameMode.discovered[GAME];
+    });
+    const onDiscoveredTool = (
+      manager as unknown as { onDiscoveredTool: (gameId: string, tool: IDiscoveredTool) => void }
+    ).onDiscoveredTool;
+
+    expect(() =>
+      onDiscoveredTool(GAME, makeDiscoveredTool({ ...SCRIPT_EXTENDER_TOOL, path: "skse.exe" })),
+    ).not.toThrow();
     expect(primaryToolDispatches(harness)).toEqual([]);
   });
 
@@ -171,7 +206,7 @@ describe("GameModeManager tool discovery", () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ activeGameId: OTHER_GAME });
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([]);
   });
@@ -180,7 +215,7 @@ describe("GameModeManager tool discovery", () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ existingTool: { custom: true } });
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(
       harness.dispatched.filter((action) => action.type.includes("ADD_DISCOVERED_TOOL")),
@@ -197,7 +232,7 @@ describe("GameModeManager tool discovery", () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ existingTool: { custom: true } });
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
   });
@@ -208,7 +243,7 @@ describe("GameModeManager tool discovery", () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ existingTool: { hidden: true } });
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([]);
   });
@@ -220,7 +255,7 @@ describe("GameModeManager tool discovery", () => {
       otherTools: { loader: makeDiscoveredTool({ id: "loader", defaultPrimary: true }) },
     });
 
-    await manager.startToolDiscovery(GAME);
+    await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, "loader")]);
   });
