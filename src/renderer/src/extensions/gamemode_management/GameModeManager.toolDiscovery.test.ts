@@ -124,6 +124,21 @@ describe("GameModeManager tool discovery", () => {
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
   });
 
+  // The reported sequence: the loader was missing when the game was activated, so the
+  // primary-tool check dispatched setPrimaryTool(game, undefined) and kept the stale tool record.
+  // A collection then deployed the extender. Only a restart used to restore it as the launcher.
+  it("selects the default again after the primary-tool check cleared a missing launcher", async () => {
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
+    const { harness, manager } = setup({ existingTool: { defaultPrimary: true } });
+    harness.setState((draft: IState) => {
+      draft.settings.interface.primaryTool = { [GAME]: undefined };
+    });
+
+    await manager.startToolDiscovery(GAME);
+
+    expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+  });
+
   it("keeps a primary tool the user already chose", async () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ primaryTool: "loot" });
