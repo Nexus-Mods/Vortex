@@ -660,9 +660,15 @@ export class GameModeManager {
       delete result.executable;
       this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result, false));
     }
-    // Tool discovery also runs after deployment and on an already-active game, so a declared default
-    // can become available after activation. Select it then, unless the user already chose a primary
-    // tool (including clearing it, which stores null).
+    this.selectDiscoveredDefaultPrimary(gameId, result);
+  };
+
+  /**
+   * Tool discovery also runs after deployment and on an already-active game, so a declared default
+   * can become available after activation. Select it then, unless the user already chose a primary
+   * tool (including clearing it, which stores null).
+   */
+  private selectDiscoveredDefaultPrimary(gameId: string, result: IDiscoveredTool) {
     if (result.defaultPrimary !== true) {
       return;
     }
@@ -671,8 +677,15 @@ export class GameModeManager {
     if (activeProfile(state)?.gameId !== gameId || primary !== undefined) {
       return;
     }
-    // a customised record isn't overwritten above, but the game still declares this tool a default
-    const tools = discoveryByGame(state, gameId).tools ?? {};
+    // addDiscoveredTool ignores a tool for a game with no discovery entry, so there is nothing to
+    // launch either
+    const discovery = discoveryByGame(state, gameId);
+    if (discovery === undefined) {
+      return;
+    }
+    // a customised record isn't overwritten by discovery, but the game still declares this tool a
+    // default
+    const tools = discovery.tools ?? {};
     const defaultPrimary = findDefaultPrimaryTool({
       ...tools,
       [result.id]: { ...(tools[result.id] ?? result), defaultPrimary: true },
@@ -680,7 +693,7 @@ export class GameModeManager {
     if (defaultPrimary !== undefined) {
       this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
     }
-  };
+  }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
     if (result === undefined) {
