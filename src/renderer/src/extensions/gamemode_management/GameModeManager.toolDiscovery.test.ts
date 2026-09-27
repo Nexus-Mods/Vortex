@@ -64,7 +64,7 @@ interface ISetupOpts {
   // the profile that is active when discovery reports the tool
   activeGameId?: string;
   // a primary tool the user (or an earlier discovery) already settled on
-  primaryTool?: string;
+  primaryTool?: string | null;
   // the tool record already in settings.gameMode.discovered, if any
   existingTool?: { custom?: boolean; hidden?: boolean; defaultPrimary?: boolean };
   // further tool records already in settings.gameMode.discovered, in key order
@@ -142,6 +142,16 @@ describe("GameModeManager tool discovery", () => {
   it("keeps a primary tool the user already chose", async () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
     const { harness, manager } = setup({ primaryTool: "loot" });
+
+    await manager.startToolDiscovery(GAME);
+
+    expect(primaryToolDispatches(harness)).toEqual([]);
+  });
+
+  // The Tools page stores null when the user removes the default launcher; that choice stands.
+  it("keeps a launcher the user cleared", async () => {
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
+    const { harness, manager } = setup({ primaryTool: null });
 
     await manager.startToolDiscovery(GAME);
 
