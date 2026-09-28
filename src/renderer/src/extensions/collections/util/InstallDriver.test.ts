@@ -456,6 +456,96 @@ describe("InstallDriver completion decision", () => {
   });
 });
 
+describe("InstallDriver health-check suppression", () => {
+  test("releases the suppressed health checks once the finished install is closed", async ({
+    makeDriver,
+  }) => {
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [defaultFixture.collection.id]: defaultFixture.collection } },
+      downloads: { [defaultFixture.download.id]: defaultFixture.download },
+      profiles: { [profile.id]: profile },
+    });
+    let released = false;
+    Object.assign(h.api.ext, {
+      withSuppressedTests: (_tests: string[], cb: () => PromiseLike<void>) =>
+        cb().then(() => {
+          released = true;
+        }),
+    });
+    await h.driver.start(profile, defaultFixture.collection);
+    setSessionStatus(h, [memberRule], "installed");
+    h.emit("did-install-dependencies", GAME_ID, defaultFixture.collection.id, false);
+    await vi.waitFor(() => expect(h.driver.step).toBe("review"));
+
+    await h.driver.continue();
+
+    await vi.waitFor(() => expect(released).toBe(true));
+  });
+
+  test("holds one suppression when an unfinished install is started again", async ({
+    makeDriver,
+  }) => {
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [defaultFixture.collection.id]: defaultFixture.collection } },
+      downloads: { [defaultFixture.download.id]: defaultFixture.download },
+      profiles: { [profile.id]: profile },
+    });
+    let held = 0;
+    Object.assign(h.api.ext, {
+      withSuppressedTests: (_tests: string[], cb: () => PromiseLike<void>) => {
+        held += 1;
+        return cb().then(() => {
+          held -= 1;
+        });
+      },
+    });
+    await h.driver.start(profile, defaultFixture.collection);
+    // the member stays pending, so the install can be started again
+    h.emit("did-install-dependencies", GAME_ID, defaultFixture.collection.id, false);
+    await vi.waitFor(() => expect(h.driver.installDone).toBe(true));
+
+    await h.driver.start(profile, defaultFixture.collection);
+
+    await vi.waitFor(() => expect(held).toBe(1));
+  });
+
+  test("releases the suppression when the game-version prompt is cancelled", async ({
+    makeDriver,
+  }) => {
+    // game versions on the download, read without a fetch
+    const download = makeDownload({
+      ...defaultFixture.download,
+      modInfo: {
+        ...defaultFixture.download.modInfo,
+        nexus: {
+          ...defaultFixture.download.modInfo.nexus,
+          revisionInfo: { modFiles: [], gameVersions: [{ reference: "9.9.9" }] },
+        },
+      },
+    });
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [defaultFixture.collection.id]: defaultFixture.collection } },
+      downloads: { [download.id]: download },
+      profiles: { [profile.id]: profile },
+    });
+    let held = 0;
+    Object.assign(h.api.ext, {
+      withSuppressedTests: (_tests: string[], cb: () => PromiseLike<void>) => {
+        held += 1;
+        return cb().then(() => {
+          held -= 1;
+        });
+      },
+    });
+    h.setNextDialog({ action: "Cancel", input: {} });
+
+    await h.driver.start(profile, defaultFixture.collection);
+
+    expect(h.dialogCalls.map((call) => call.title)).toContain("Game version mismatch");
+    await vi.waitFor(() => expect(held).toBe(0));
+  });
+});
+
 describe("InstallDriver installRecommended", () => {
   // "Install optional mods" (dialog) clears the durable skip on the optional members and re-runs the
   // NORMAL collection dependency install (the same install-dependencies event begin() uses) rather

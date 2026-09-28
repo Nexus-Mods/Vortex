@@ -47,6 +47,7 @@ import { log } from "../../util/log";
 import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { setdefault } from "../../util/util";
+import { skipWhileSuppressed, withSuppressedTests } from "./suppressedTests";
 
 interface ICheckEntry {
   id: string;
@@ -182,10 +183,8 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
     });
 }
 
-const suppressedTests: { [testId: string]: number } = {};
-
 function runChecks(api: IExtensionApi, event: string, delay?: number) {
-  if (suppressedTests[event] ?? 0 > 0) {
+  if (skipWhileSuppressed(event, () => runChecks(api, event, delay))) {
     return;
   }
 
@@ -200,19 +199,6 @@ function runChecks(api: IExtensionApi, event: string, delay?: number) {
       log("debug", "all checks completed", { event });
     });
   }, delay || 500);
-}
-
-function withSuppressedTests(tests: string[], cb: () => PromiseBB<void>) {
-  tests.forEach((test) => {
-    setdefault(suppressedTests, test, 0);
-    suppressedTests[test] += 1;
-  });
-
-  return cb().finally(() => {
-    tests.forEach((test) => {
-      suppressedTests[test] -= 1;
-    });
-  });
 }
 
 function init(context: IExtensionContext): boolean {
