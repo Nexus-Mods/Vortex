@@ -218,6 +218,7 @@
     "source-map-support": "catalog:",
     "string-template": "catalog:",
     "tailwindcss": "catalog:",
+    "temporal-polyfill": "catalog:",
     "tmp": "catalog:",
     "turbowalk": "catalog:",
     "universal-analytics": "catalog:",

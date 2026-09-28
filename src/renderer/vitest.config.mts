@@ -14,7 +14,7 @@ export default defineConfig({
     // self-register its hooks (act environment + auto-cleanup). Tests should
     // still import from "vitest" explicitly.
     globals: true,
-    setupFiles: ["./test-setup.ts"],
+    setupFiles: ["./test-setup.mts"],
 
     include: ["src/**/*.test.{ts,tsx,js,jsx}"],
   },
