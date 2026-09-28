@@ -3,7 +3,7 @@ import type { QualifiedPath } from "./paths";
 
 export type NodeBase = {
   readonly id: bigint;
-  readonly name: string;
+  name: string;
   times: StatusTime;
 };
 
@@ -367,7 +367,8 @@ export class InMemoryStore {
   }
 }
 
-const MAX_SYMLINK_DEPTH = 32;
+/** Maximum number of symlinks followed while resolving one path. @public */
+export const MAX_SYMLINK_DEPTH: number = 32;
 
 /** Timestamp every store-created entry receives by default. @public */
 export const DEFAULT_INSTANT: Temporal.Instant =
