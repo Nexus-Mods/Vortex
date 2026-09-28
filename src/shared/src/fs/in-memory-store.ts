@@ -369,9 +369,12 @@ export class InMemoryStore {
 
 const MAX_SYMLINK_DEPTH = 32;
 
-const DEFAULT_INSTANT = Temporal.Instant.from("2020-01-01T00:00:00Z");
+/** Timestamp every store-created entry receives by default. @public */
+export const DEFAULT_INSTANT: Temporal.Instant =
+  Temporal.Instant.fromEpochMilliseconds(997792946000);
 
-const DEFAULT_TIMES: StatusTime = {
+/** StatusTime built from {@link DEFAULT_INSTANT}. @public */
+export const DEFAULT_TIMES: StatusTime = {
   accessTime: DEFAULT_INSTANT,
   modifiedTime: DEFAULT_INSTANT,
   changeTime: DEFAULT_INSTANT,
