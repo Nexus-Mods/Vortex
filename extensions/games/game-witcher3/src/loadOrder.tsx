@@ -113,7 +113,14 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
       const finalEntries = [].concat(entries.locked, entries.regular);
       return Promise.resolve(finalEntries);
     } catch (err) {
-      return;
+      // mods.settings is gone, which a purge does. Returning nothing here
+      // replaces the stored order with an empty one, so fall back to the
+      // order the profile already holds.
+      const persistent = state.persistent as typeof state.persistent & {
+        loadOrder?: Record<string, types.LoadOrder>; // key: profile id
+      };
+      const stored = persistent.loadOrder?.[activeProfile.id];
+      return Array.isArray(stored) ? stored : [];
     }
   }
 

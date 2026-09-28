@@ -2,6 +2,7 @@
 import { selectors, types } from "@nexusmods/vortex-api";
 
 import { GAME_ID } from "./common";
+import { maxPriorityFrom } from "./loadOrderPriority";
 import { getPersistentLoadOrder } from "./migrations";
 
 export type PriorityType = "position-based" | "prefix-based";
@@ -91,18 +92,6 @@ export class PriorityManager {
   };
 
   public getMaxPriority = (props: IProps) => {
-    const { loadOrder, minPriority } = props;
-    return Object.keys(loadOrder).reduce((prev, key) => {
-      const prefixVal = loadOrder[key]?.data?.prefix ?? loadOrder[key]?.prefix;
-      const intVal =
-        prefixVal !== undefined ? parseInt(loadOrder[key].prefix, 10) : loadOrder[key].pos;
-      const posVal = loadOrder[key].pos;
-      if (posVal !== intVal) {
-        prev = intVal > prev ? intVal : prev;
-      } else {
-        prev = posVal > prev ? posVal : prev;
-      }
-      return prev;
-    }, minPriority);
+    return maxPriorityFrom(props.loadOrder, props.minPriority);
   };
 }
