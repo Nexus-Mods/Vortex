@@ -683,7 +683,18 @@ export function init(fs: FileSystem) {
     fs.move(QualifiedPath.of(source), QualifiedPath.of(target), options),
   );
 
-  betterIpcMain.handle("fs:stat", (_event, inputPath, options) =>
-    fs.stat(QualifiedPath.of(inputPath), options),
-  );
+  betterIpcMain.handle("fs:stat", async (_event, inputPath, options) => {
+    const result = await fs.stat(QualifiedPath.of(inputPath), options);
+    if ("modifiedTime" in result) {
+      return {
+        ...result,
+        accessTime: result.accessTime.epochNanoseconds,
+        changeTime: result.changeTime.epochNanoseconds,
+        modifiedTime: result.modifiedTime.epochNanoseconds,
+        creationTime: result.creationTime.epochNanoseconds,
+      };
+    }
+
+    return result;
+  });
 }

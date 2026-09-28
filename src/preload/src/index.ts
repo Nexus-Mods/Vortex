@@ -311,8 +311,20 @@ try {
       move(source, target, options) {
         return betterIpcRenderer.invoke("fs:move", source.toWire(), target.toWire(), options);
       },
-      stat(path, options) {
-        return betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
+      async stat(path, options) {
+        const result = await betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
+
+        if ("modifiedTime" in result) {
+          return {
+            ...result,
+            accessTime: Temporal.Instant.fromEpochNanoseconds(result.accessTime),
+            changeTime: Temporal.Instant.fromEpochNanoseconds(result.changeTime),
+            modifiedTime: Temporal.Instant.fromEpochNanoseconds(result.modifiedTime),
+            creationTime: Temporal.Instant.fromEpochNanoseconds(result.creationTime),
+          };
+        }
+
+        return result;
       },
     },
   });
