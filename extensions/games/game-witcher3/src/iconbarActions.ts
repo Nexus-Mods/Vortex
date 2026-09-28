@@ -3,12 +3,13 @@ import path from "path";
 
 import { actions, selectors, types, util } from "@nexusmods/vortex-api";
 
-import { GAME_ID, I18N_NAMESPACE, LOCKED_PREFIX } from "./common";
+import { GAME_ID, I18N_NAMESPACE } from "./common";
+import IniStructure from "./iniParser";
 import TW3LoadOrder, { importLoadOrder } from "./loadOrder";
 import { makeOnContextImport } from "./mergeBackup";
 import { getPersistentLoadOrder } from "./migrations";
 import { PriorityManager } from "./priorityManager";
-import { forceRefresh } from "./util";
+import { forceRefresh, isLockedEntry } from "./util";
 
 interface IProps {
   context: types.IExtensionContext;
@@ -106,18 +107,18 @@ export const registerActions = (props: IProps) => {
     100,
     "loot-sort",
     {},
-    "Sort by Deploy Order",
+    "Sort Alphabetically",
     () => {
       context.api.showDialog(
         "info",
-        "Sort by Deployment Order",
+        "Sort Alphabetically",
         {
           bbcode: context.api.translate(
-            "This action will set priorities using the deployment rules " +
-              "defined in the mods page. Are you sure you wish to proceed ?[br][/br][br][/br]" +
-              "Please be aware that any externally added mods (added manually or by other tools) will be pushed " +
-              "to the bottom of the list, while all mods that have been installed through Vortex will shift " +
-              "in position to match the deploy order!",
+            "This action will set priorities by sorting mod folder names alphabetically, " +
+              "which is the order the game itself uses when no priority is set. " +
+              "Are you sure you wish to proceed ?[br][/br][br][/br]" +
+              "Merged scripts stay locked at the top. Everything else is reordered, including " +
+              "mods added manually or by other tools.",
             { ns: I18N_NAMESPACE },
           ),
         },
@@ -129,55 +130,40 @@ export const registerActions = (props: IProps) => {
             },
           },
           {
-            label: "Sort by Deploy Order",
-            action: () => {
-              const state = context.api.getState();
-              const gameMods = state.persistent.mods?.[GAME_ID] || {};
-              const profile = selectors.activeProfile(state);
-              const mods = Object.keys(gameMods)
-                .filter((key) => util.getSafe(profile, ["modState", key, "enabled"], false))
-                .map((key) => gameMods[key]);
-              const findIndex = (entry: types.ILoadOrderEntry, modList: types.IMod[]) => {
-                return modList.findIndex((m) => m.id === entry.modId);
-              };
-              return util
-                .sortMods(GAME_ID, mods, context.api)
-                .then((sorted) => {
-                  const loadOrder = getPersistentLoadOrder(context.api);
-                  const filtered = loadOrder.filter(
-                    (entry) => sorted.find((mod) => mod.id === entry.id) !== undefined,
-                  );
-                  const sortedLO = filtered.sort(
-                    (a, b) => findIndex(a, sorted) - findIndex(b, sorted),
-                  );
-                  const locked = loadOrder.filter((entry) => entry.name.includes(LOCKED_PREFIX));
-                  const manuallyAdded = loadOrder.filter(
-                    (key) => !filtered.includes(key) && !locked.includes(key),
-                  );
-                  const newLO = [...locked, ...sortedLO, ...manuallyAdded].reduce(
-                    (accum, entry, idx) => {
-                      accum.push({
-                        ...entry,
-                        data: {
-                          prefix: idx + 1,
-                        },
-                      });
-                      return accum;
-                    },
-                    [],
-                  );
+            label: "Sort Alphabetically",
+            action: async () => {
+              try {
+                const profile = selectors.activeProfile(context.api.getState());
+                const loadOrder = getPersistentLoadOrder(context.api);
+                // Match on the folder name; the display name is the mod's Nexus
+                // title, which doesn't carry the locked prefix.
+                const locked = loadOrder.filter((entry) => isLockedEntry(entry.id));
+                const sortable = loadOrder.filter((entry) => !isLockedEntry(entry.id));
 
-                  context.api.store.dispatch(actions.setLoadOrder(profile.id, newLO as any));
-                })
-                .catch((err) => {
-                  const allowReport = !(err instanceof util.CycleError);
-                  context.api.showErrorNotification("Failed to sort by deployment order", err, {
-                    allowReport,
-                  });
-                })
-                .finally(() => {
-                  forceRefresh(context.api);
-                });
+                // The game falls back to ordering mod folders by name, and authors
+                // name their mods to win or lose overrides on that basis.
+                const sorted = [...sortable].sort((lhs, rhs) =>
+                  lhs.id.toLowerCase().localeCompare(rhs.id.toLowerCase()),
+                );
+
+                const newLO = [...locked, ...sorted].map((entry, idx) => ({
+                  ...entry,
+                  data: {
+                    prefix: idx + 1,
+                  },
+                }));
+
+                context.api.store.dispatch(actions.setLoadOrder(profile.id, newLO as any));
+                // The refresh below makes the page re-read mods.settings, so the
+                // new order has to reach the file first or it's just discarded.
+                await IniStructure.getInstance(context.api, props.getPriorityManager).setINIStruct(
+                  newLO as any,
+                );
+              } catch (err) {
+                context.api.showErrorNotification("Failed to sort alphabetically", err);
+              } finally {
+                forceRefresh(context.api);
+              }
             },
           },
         ],

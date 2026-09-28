@@ -1,11 +1,14 @@
 /** eslint-disable */
 import path from "path";
 
-import { fs, log, types, util } from "@nexusmods/vortex-api";
+import { fs, log, util } from "@nexusmods/vortex-api";
 import { generate } from "shortid";
 import turbowalk, { IEntry } from "turbowalk";
 
-import { LOCKED_PREFIX, W3_TEMP_DATA_DIR } from "../common";
+import { genCollectionLoadOrder, isModInCollection, isValidMod } from "../collectionLoadOrder";
+import { getW3TempDataDir } from "../common";
+
+export { genCollectionLoadOrder, isModInCollection, isValidMod };
 
 export class CollectionGenerateError extends Error {
   constructor(why: string) {
@@ -19,43 +22,6 @@ export class CollectionParseError extends Error {
     super(`Failed to parse game specific data for collection ${collectionName}: ${why}`);
     this.name = "CollectionGenerateError";
   }
-}
-
-export function isValidMod(mod: types.IMod) {
-  return mod !== undefined && mod.type !== "collection";
-}
-
-export function isModInCollection(collectionMod: types.IMod, mod: types.IMod) {
-  if (collectionMod.rules === undefined) {
-    return false;
-  }
-
-  return (
-    collectionMod.rules.find((rule) => util.testModReference(mod, rule.reference)) !== undefined
-  );
-}
-
-export function genCollectionLoadOrder(
-  loadOrder: types.IFBLOLoadOrderEntry[],
-  mods: { [modId: string]: types.IMod },
-  collection?: types.IMod,
-): types.LoadOrder {
-  const sortedMods = loadOrder
-    .filter((entry) => {
-      const isLocked = entry.modId.includes(LOCKED_PREFIX);
-      return (
-        isLocked ||
-        (collection !== undefined
-          ? isValidMod(mods[entry.modId]) && isModInCollection(collection, mods[entry.modId])
-          : isValidMod(mods[entry.modId]))
-      );
-    })
-    .sort((lhs, rhs) => lhs.data.prefix - rhs.data.prefix)
-    .reduce((accum, iter, idx) => {
-      accum.push(iter);
-      return accum;
-    }, []);
-  return sortedMods;
 }
 
 export async function walkDirPath(dirPath: string): Promise<IEntry[]> {
@@ -74,8 +40,8 @@ export async function walkDirPath(dirPath: string): Promise<IEntry[]> {
 export async function prepareFileData(dirPath: string): Promise<Buffer> {
   const sevenZip = new util.SevenZip();
   try {
-    await fs.ensureDirWritableAsync(W3_TEMP_DATA_DIR);
-    const archivePath = path.join(W3_TEMP_DATA_DIR, generate() + ".zip");
+    await fs.ensureDirWritableAsync(getW3TempDataDir());
+    const archivePath = path.join(getW3TempDataDir(), generate() + ".zip");
     const entries: string[] = await fs.readdirAsync(dirPath);
     await sevenZip.add(
       archivePath,
@@ -107,10 +73,10 @@ export async function restoreFileData(fileData: Buffer, destination: string): Pr
   let archivePath;
   let fileEntries: IEntry[] = [];
   try {
-    await fs.ensureDirWritableAsync(W3_TEMP_DATA_DIR);
-    archivePath = path.join(W3_TEMP_DATA_DIR, generate() + ".zip");
+    await fs.ensureDirWritableAsync(getW3TempDataDir());
+    archivePath = path.join(getW3TempDataDir(), generate() + ".zip");
     await fs.writeFileAsync(archivePath, fileData);
-    const targetDirPath = path.join(W3_TEMP_DATA_DIR, path.basename(archivePath, ".zip"));
+    const targetDirPath = path.join(getW3TempDataDir(), path.basename(archivePath, ".zip"));
     await sevenZip.extractFull(archivePath, targetDirPath);
     fileEntries = await walkDirPath(targetDirPath);
     for (const entry of fileEntries) {

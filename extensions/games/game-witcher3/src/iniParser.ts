@@ -5,6 +5,7 @@ import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
 import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath } from "./common";
+import { assignPriorities, ModSettingsEntry } from "./modSettingsPriority";
 import { PriorityManager } from "./priorityManager";
 import { forceRefresh, isLockedEntry, getAllMods, getManuallyAddedMods } from "./util";
 
@@ -38,45 +39,32 @@ export default class IniStructure {
 
   public async setINIStruct(loadOrder: types.LoadOrder) {
     const modMap = await getAllMods(this.mApi);
-    this.mIniStruct = {};
-    const mods = [].concat(modMap.merged, modMap.managed, modMap.manual);
+    const mods: ModSettingsEntry[] = [...modMap.merged, ...modMap.managed, ...modMap.manual];
     const manualLocked = modMap.manual.filter(isLockedEntry);
     const managedLocked = modMap.managed
       .filter((entry) => isLockedEntry(entry.name))
       .map((entry) => entry.name);
-    const totalLocked = [].concat(modMap.merged, manualLocked, managedLocked);
-    this.mIniStruct = mods.reduce((accum, mod, idx) => {
-      let name;
-      let key;
-      if (typeof mod === "object" && !!mod) {
-        name = mod.name;
-        key = mod.id;
-      } else {
-        name = mod;
-        key = mod;
-      }
+    const totalLocked: string[] = [...modMap.merged, ...manualLocked, ...managedLocked];
+    this.mPriorityManager?.resetMaxPriority(totalLocked.length);
 
-      if (name.toLowerCase().startsWith("dlc")) {
-        return accum;
-      }
+    const order = loadOrder ?? [];
+    const enabledByName = new Map(order.map((entry) => [entry.id, entry.enabled]));
+    const assigned = assignPriorities({
+      mods,
+      locked: totalLocked,
+      loadOrderIds: order.map((entry) => entry.id),
+    });
 
-      const idxOfEntry = (loadOrder || []).findIndex((iter) => iter.id === name);
-      const LOEntry = loadOrder.at(idxOfEntry);
-      if (idx === 0) {
-        this.mPriorityManager?.resetMaxPriority(totalLocked.length);
-      }
-      accum[name] = {
+    const struct: Record<string, { Enabled: number; Priority: number; VK: string }> = {};
+    for (const entry of assigned) {
+      struct[entry.name] = {
         // The INI file's enabled attribute expects 1 or 0
-        Enabled: LOEntry !== undefined ? (LOEntry.enabled ? 1 : 0) : 1,
-        Priority: totalLocked.includes(name)
-          ? totalLocked.indexOf(name) + 1
-          : idxOfEntry === -1
-            ? loadOrder.length + 1
-            : idxOfEntry + totalLocked.length,
-        VK: key,
+        Enabled: enabledByName.get(entry.name) === false ? 0 : 1,
+        Priority: entry.priority,
+        VK: entry.key,
       };
-      return accum;
-    }, {});
+    }
+    this.mIniStruct = struct;
     return this.writeToModSettings();
   }
 
