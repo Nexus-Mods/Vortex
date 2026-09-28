@@ -10,15 +10,15 @@ import semver from "semver";
 import { Builder, parseStringPromise } from "xml2js";
 
 import { isMergerToolValidForRoot, mergerDirForRoot } from "./mergerPaths";
+import { latestMergerRelease, mergerDownloadProblem } from "./mergerRelease";
 import { IIncomingGithubHttpHeaders } from "./types";
-import { shouldNotifyMissingScriptMerger } from "./util";
+import { fileExists, shouldNotifyMissingScriptMerger } from "./util";
 
-const RELEASE_CUTOFF = "0.6.5";
 const GITHUB_URL = "https://api.github.com/repos/IDCs/WitcherScriptMerger";
 
 const MERGER_CONFIG_FILE = "WitcherScriptMerger.exe.config";
 
-const { getHash, MD5ComparisonError, SCRIPT_MERGER_ID } = require("./common");
+const { SCRIPT_MERGER_FILES, SCRIPT_MERGER_ID } = require("./common");
 
 function query(baseUrl, request) {
   return new Promise((resolve, reject) => {
@@ -132,71 +132,21 @@ async function getMergerVersion(api: types.IExtensionApi) {
   }
 }
 
-let _HASH_CACHE;
-async function getCache(api: types.IExtensionApi) {
-  if (_HASH_CACHE === undefined) {
-    try {
-      const data = await fs.readFileAsync(path.join(__dirname, "MD5Cache.json"), {
-        encoding: "utf8",
-      });
-      _HASH_CACHE = JSON.parse(data);
-    } catch (err) {
-      // If this ever happens - the user's machine must be screwed.
-      //  Maybe virus ? defective hardware ? did he manually manipulate
-      //  the file ?
-      api.showErrorNotification("Failed to parse MD5Cache", err);
-      return (_HASH_CACHE = []);
-    }
-  }
-
-  return _HASH_CACHE;
-}
+/** A downloaded merger that can't be installed; the user is sent to the manual install. */
+class UnusableMergerDownloadError extends Error {}
 
 async function onDownloadComplete(api, archivePath, mostRecentVersion) {
-  return new Promise(async (resolve, reject) => {
-    let archiveHash;
-    try {
-      archiveHash = await getHash(archivePath);
-    } catch (err) {
-      return Promise.reject(new MD5ComparisonError("Failed to calculate hash", archivePath));
-    }
-    const hashCache = await getCache(api);
-    if (
-      hashCache.find(
-        (entry) =>
-          entry.archiveChecksum.toLowerCase() === archiveHash &&
-          entry.version === mostRecentVersion,
-      ) === undefined
-    ) {
-      // Not a valid hash - something may have happened during the download ?
-      return reject(new MD5ComparisonError("Corrupted archive download", archivePath));
-    }
-
-    return resolve(archivePath);
-  })
-    .then((archivePath) => extractScriptMerger(api, archivePath))
-    .then(async (mergerPath) => {
-      const mergerExec = path.join(mergerPath, "WitcherScriptMerger.exe");
-      let execHash;
-      try {
-        execHash = await getHash(mergerExec);
-      } catch (err) {
-        return Promise.reject(new MD5ComparisonError("Failed to calculate hash", mergerExec));
-      }
-      const hashCache = await getCache(api);
-      if (
-        hashCache.find(
-          (entry) =>
-            entry.execChecksum.toLowerCase() === execHash && entry.version === mostRecentVersion,
-        ) === undefined
-      ) {
-        // Not a valid hash - something may have happened during extraction ?
-        return Promise.reject(new MD5ComparisonError("Corrupted executable", mergerExec));
-      }
-
-      return Promise.resolve(mergerPath);
-    })
-    .then((mergerPath) => setUpMerger(api, mostRecentVersion, mergerPath));
+  let mergerPath;
+  try {
+    mergerPath = await extractScriptMerger(api, archivePath);
+  } catch (err) {
+    log("error", "failed to extract script merger", err);
+    throw new UnusableMergerDownloadError("extraction failed");
+  }
+  if (!(await fileExists(path.join(mergerPath, SCRIPT_MERGER_FILES[0])))) {
+    throw new UnusableMergerDownloadError(`archive has no ${SCRIPT_MERGER_FILES[0]}`);
+  }
+  return setUpMerger(api, mostRecentVersion, mergerPath);
 }
 
 export async function getScriptMergerDir(api, create = false) {
@@ -248,20 +198,17 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
       if (!Array.isArray(releases)) {
         return Promise.reject(new util.DataInvalid("expected array of github releases"));
       }
-      const current = releases
-        .filter((rel) => semver.valid(rel.name) && semver.gte(rel.name, RELEASE_CUTOFF))
-        .sort((lhs, rhs) => semver.compare(rhs.name, lhs.name));
+      const latest = latestMergerRelease(releases);
+      if (latest === undefined) {
+        return Promise.reject(new util.DataInvalid("no installable script merger release"));
+      }
 
-      return Promise.resolve(current);
+      return Promise.resolve(latest);
     })
-    .then(async (currentRelease) => {
-      mostRecentVersion = currentRelease[0].name;
-      const fileName = currentRelease[0].assets[0].name;
-      const downloadLink = currentRelease[0].assets[0].browser_download_url;
-      if (
-        !!currentlyInstalledVersion &&
-        semver.gte(currentlyInstalledVersion, currentRelease[0].name)
-      ) {
+    .then(async (latest) => {
+      const { version, fileName, downloadLink } = latest;
+      mostRecentVersion = version;
+      if (!!currentlyInstalledVersion && semver.gte(currentlyInstalledVersion, version)) {
         return Promise.reject(new util.ProcessCanceled("Already up to date"));
       }
 
@@ -319,6 +266,10 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
                   }
                 })
                 .on("end", () => {
+                  const problem = mergerDownloadProblem(res.statusCode, output.length, latest);
+                  if (problem !== undefined) {
+                    return reject(new UnusableMergerDownloadError(problem));
+                  }
                   api.sendNotification({
                     ...downloadNotif,
                     progress: 100,
@@ -358,12 +309,11 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
                   .catch((err) => {
                     api.dismissNotification(extractNotifId);
                     api.dismissNotification(downloadNotifId);
-                    if (err instanceof MD5ComparisonError || err instanceof util.ProcessCanceled) {
-                      log(
-                        "error",
-                        "Failed to automatically install Script Merger",
-                        err.errorMessage,
-                      );
+                    if (
+                      err instanceof UnusableMergerDownloadError ||
+                      err instanceof util.ProcessCanceled
+                    ) {
+                      log("error", "Failed to automatically install Script Merger", err.message);
                       api.sendNotification({
                         type: "error",
                         message: api.translate("Please install Script Merger manually", {
@@ -407,7 +357,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
     .then((archivePath) => onDownloadComplete(api, archivePath, mostRecentVersion))
     .catch(async (err) => {
       const raiseManualInstallNotif = () => {
-        log("error", "Failed to automatically install Script Merger", err.errorMessage);
+        log("error", "Failed to automatically install Script Merger", err.message);
         if (!shouldNotifyMissingScriptMerger(api)) {
           // Nothing to chase on the remaster - mods there merge themselves.
           return;
@@ -426,7 +376,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
       };
       api.dismissNotification(extractNotifId);
       api.dismissNotification(downloadNotifId);
-      if (err instanceof MD5ComparisonError) {
+      if (err instanceof UnusableMergerDownloadError) {
         raiseManualInstallNotif();
         return Promise.resolve();
       }

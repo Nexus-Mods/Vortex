@@ -1,23 +1,6 @@
-import crypto from "crypto";
 import path from "path";
 
-import { fs, util } from "@nexusmods/vortex-api";
-export class MD5ComparisonError extends Error {
-  private mPath;
-  constructor(message, file) {
-    super(message);
-    this.mPath = file;
-  }
-
-  get affectedFile() {
-    return this.mPath;
-  }
-
-  get errorMessage() {
-    return this.message + ": " + this.mPath;
-  }
-}
-
+import { util } from "@nexusmods/vortex-api";
 export class ResourceInaccessibleError extends Error {
   private mIsReportingAllowed;
   private mFilePath;
@@ -79,31 +62,6 @@ export class MergeDataViolationError extends Error {
   public get CollectionName() {
     return this.mCollectionName;
   }
-}
-
-export function calcHashImpl(filePath) {
-  return new Promise((resolve, reject) => {
-    const hash = crypto.createHash("md5");
-    const stream = fs.createReadStream(filePath);
-    stream.on("readable", () => {
-      const data = stream.read();
-      if (data) {
-        hash.update(data);
-      }
-    });
-    stream.on("end", () => resolve(hash.digest("hex")));
-    stream.on("error", reject);
-  });
-}
-
-export function getHash(filePath, tries = 3) {
-  return calcHashImpl(filePath).catch((err) => {
-    if (["EMFILE", "EBADF"].includes(err["code"]) && tries > 0) {
-      return getHash(filePath, tries - 1);
-    } else {
-      return Promise.reject(err);
-    }
-  });
 }
 
 export function getLoadOrderFilePath() {

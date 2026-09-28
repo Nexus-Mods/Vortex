@@ -14,8 +14,12 @@
   "config": {
     "game": "The Witcher 3"
   },
+  "dependencies": {
+    "semver": "catalog:"
+  },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*",
+    "@types/semver": "catalog:",
     "@vortex/extension-test-mocks": "workspace:*"
   },
   "nx": {
