@@ -1,7 +1,7 @@
 import * as path from "path";
 
 import { mdiGamepadSquareOutline } from "@mdi/js";
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { clipboard } from "electron";
 import * as fsExtra from "fs-extra";
@@ -85,6 +85,13 @@ interface IProvider {
   expireMS: number;
   keys: string[];
   query: GameInfoQuery;
+}
+
+declare module "@/types/IExtensionContext" {
+  interface ApiEvents {
+    "discover-game": (gameId: string) => string[];
+    "discover-tools": (gameId: string) => void;
+  }
 }
 
 const gameInfoProviders: IProvider[] = [];
@@ -226,57 +233,60 @@ function findGamePath(
     );
 }
 
-function manualGameStoreSelection(
+async function manualGameStoreSelection(
   api: IExtensionApi,
   correctedGamePath: string,
-): PromiseBB<{ store: string; corrected: string }> {
+): Promise<string> {
   const gameStores = getGameStores();
-  return identifyStore(correctedGamePath, gameStores).then((storeId) => {
-    const detectedStore = gameStores.find((store) => store.id === storeId);
-    return api
-      .showDialog(
-        "question",
-        "Choose a Game Store",
-        {
-          bbcode: api.translate(
-            'The currently identified game store for your selected game directory is: "{{gameStore}}".[br][/br][br][/br]' +
-              "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
-            { replace: { gameStore: detectedStore?.name || "Unknown" } },
-          ),
-          choices: gameStores
-            .map((store) => ({
-              id: store.id,
-              text: store.name,
-              value: store.id === storeId,
-            }))
-            .concat({
-              id: "other",
-              text: "Other",
-              value: storeId === undefined,
-            }),
-        },
-        [{ label: "Select" }],
-      )
-      .then((res) => {
-        const selected = Object.keys(res.input).find((iter) => res.input[iter]);
-        if (selected === undefined) {
-          return PromiseBB.reject(new UserCanceled());
-        }
-        if (selected === "other") {
-          return { store: storeId, corrected: correctedGamePath };
-        } else {
-          return { store: selected, corrected: correctedGamePath };
-        }
-      });
-  });
+
+  const storeId = await identifyStore(correctedGamePath, gameStores);
+
+  const detectedStore = gameStores.find((store) => store.id === storeId);
+
+  // TODO: Bluebird to native
+  const res = await Promise.resolve(
+    api.showDialog(
+      "question",
+      "Choose a Game Store",
+      {
+        bbcode: api.translate(
+          'The currently identified game store for your selected game directory is: "{{gameStore}}".[br][/br][br][/br]' +
+            "If this is not the correct game store, please choose below. (Games can have game store specific folder structures)[br][/br][br][/br]",
+          { replace: { gameStore: detectedStore?.name || "Unknown" } },
+        ),
+        choices: gameStores
+          .map((store) => ({
+            id: store.id,
+            text: store.name,
+            value: store.id === storeId,
+          }))
+          .concat({
+            id: "other",
+            text: "Other",
+            value: storeId === undefined,
+          }),
+      },
+      [{ label: "Select" }],
+    ),
+  );
+
+  const selected = Object.keys(res.input).find((iter) => res.input[iter]);
+  if (selected === undefined) throw new UserCanceled();
+
+  if (selected === "other") {
+    return storeId;
+  } else {
+    return selected;
+  }
 }
 
-function browseGameLocation(api: IExtensionApi, gameId: string): PromiseBB<void> {
-  const state: IState = api.store.getState();
+async function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
+  const state = api.getState();
 
   if (gameById(state, gameId) === undefined) {
-    return api
-      .showDialog(
+    // TODO: Bluebird to native
+    await Promise.resolve(
+      api.showDialog(
         "question",
         "Game support not installed",
         {
@@ -285,129 +295,131 @@ function browseGameLocation(api: IExtensionApi, gameId: string): PromiseBB<void>
             'Please click "Manage" to install the extension and set it up.',
         },
         [{ label: "Close" }],
-      )
-      .then(() => null);
+      ),
+    );
+
+    return;
   }
 
   const game = getGame(gameId);
-
-  if (game === undefined) {
-    return PromiseBB.resolve();
-  }
+  if (game === undefined) return;
 
   const discovery = state.settings.gameMode.discovered[gameId];
+  const defaultPath = discovery?.path;
 
-  return new PromiseBB<void>((resolve) => {
-    const defaultPath = discovery?.path;
+  // TODO: Bluebird to native
+  const selectedDirectory = await Promise.resolve(
+    api.selectDir(defaultPath !== undefined ? { defaultPath } : {}),
+  );
+  if (!selectedDirectory) return;
 
-    api.selectDir(defaultPath !== undefined ? { defaultPath } : {}).then((result) => {
-      if (result !== undefined) {
-        findGamePath(game, result, 0, searchDepth(game.requiredFiles || []))
-          .then((corrected: string) => {
-            if (process.env.VORTEX_E2E === "1") {
-              log(
-                "debug",
-                "browseGameLocation: skipping store selection (VORTEX_E2E), store detection is irrelevant in test environments",
-                { gameId },
-              );
-              return PromiseBB.resolve({ corrected, store: undefined as string });
-            }
-            return manualGameStoreSelection(api, corrected);
-          })
-          .then(({ corrected, store }) => {
-            let executable = game.executable(corrected);
-            if (executable === game.executable()) {
-              executable = undefined;
-            }
-            // different paths depending on whether the game was previously detected
-            // or not so that we don't overwrite user settings
-            if (defaultPath !== undefined) {
-              api.store.dispatch(setGamePath(game.id, corrected, store, executable));
-            } else {
-              api.store.dispatch(
-                addDiscoveredGame(game.id, {
-                  path: corrected,
-                  tools: {},
-                  hidden: false,
-                  environment: game.environment,
-                  executable,
-                  pathSetManually: true,
-                  store,
-                }),
-              );
-            }
+  try {
+    // TODO: Bluebird to native
+    const correctedGamePath = await Promise.resolve(
+      findGamePath(game, selectedDirectory, 0, searchDepth(game.requiredFiles || [])),
+    );
 
-            // discovery should still point to the old data at this point.
-            const previousStore = discovery?.store;
-            if (previousStore != null && previousStore !== store) {
-              const storeChangedDialog = async () =>
-                api.showDialog(
-                  "info",
-                  "Game Store Changed",
-                  {
-                    text: api.translate(
-                      'The game store has changed from "{{oldStore}}" to "{{newStore}}".\n\n' +
-                        "Some mods, mod loaders, and tools such as UE4SS or Script Extenders " +
-                        "install files into store-specific directories (e.g. win64 for Steam " +
-                        "vs winGDK for Xbox). These may need to be re-installed for the game " +
-                        "to function correctly at the new location.",
-                      { replace: { oldStore: previousStore, newStore: store ?? "unknown" } },
-                    ),
-                  },
-                  [{ label: "Close" }],
-                );
+    let store: string | undefined = undefined;
 
-              api.sendNotification({
-                id: `game-store-changed-${game.id}`,
-                type: "warning",
-                allowSuppress: true,
-                message: api.translate(
-                  "Game store changed - mod loaders and tools " +
-                    "(e.g. UE4SS) may need to be re-installed.",
-                ),
-                actions: [
-                  {
-                    title: "More",
-                    action: (dismiss: NotificationDismiss) => {
-                      void storeChangedDialog()
-                        .then(() => dismiss())
-                        .catch(() => undefined);
-                    },
-                  },
-                ],
-              });
-            }
-            resolve();
-          })
-          .catch((err: unknown) => {
-            log("warn", "browseGameLocation: failed to locate game", { gameId, err: err });
-            api.store.dispatch(
-              showDialog(
-                "error",
-                "Game not found",
-                {
-                  text: api.translate(
-                    "This directory doesn't appear to contain the game.\n" +
-                      "Usually you need to select the top-level game directory, " +
-                      "containing the following files:\n{{ files }}",
-                    { replace: { files: game.requiredFiles.join("\n") } },
-                  ),
-                },
-                [
-                  { label: "Cancel", action: () => resolve() },
-                  {
-                    label: "Try Again",
-                    action: () => browseGameLocation(api, gameId).then(() => resolve()),
-                  },
-                ],
-              ),
-            );
-          });
-      } else {
-        resolve();
-      }
+    if (process.env.VORTEX_E2E === "1") {
+      log(
+        "debug",
+        "browseGameLocation: skipping store selection (VORTEX_E2E), store detection is irrelevant in test environments",
+        { gameId },
+      );
+    } else {
+      store = await manualGameStoreSelection(api, correctedGamePath);
+    }
+
+    let executable = game.executable(correctedGamePath);
+    if (executable === game.executable()) {
+      executable = undefined;
+    }
+    // different paths depending on whether the game was previously detected
+    // or not so that we don't overwrite user settings
+    if (defaultPath !== undefined) {
+      api.store.dispatch(setGamePath(game.id, correctedGamePath, store, executable));
+    } else {
+      api.store.dispatch(
+        addDiscoveredGame(game.id, {
+          path: correctedGamePath,
+          tools: {},
+          hidden: false,
+          environment: game.environment,
+          executable,
+          pathSetManually: true,
+          store,
+        }),
+      );
+    }
+
+    const previousStore = discovery?.store;
+    if (previousStore === undefined || previousStore === store) return;
+
+    const storeChangedDialog = () =>
+      api.showDialog(
+        "info",
+        "Game Store Changed",
+        {
+          text: api.translate(
+            'The game store has changed from "{{oldStore}}" to "{{newStore}}".\n\n' +
+              "Some mods, mod loaders, and tools such as UE4SS or Script Extenders " +
+              "install files into store-specific directories (e.g. win64 for Steam " +
+              "vs winGDK for Xbox). These may need to be re-installed for the game " +
+              "to function correctly at the new location.",
+            { replace: { oldStore: previousStore, newStore: store ?? "unknown" } },
+          ),
+        },
+        [{ label: "Close" }],
+      );
+
+    api.sendNotification({
+      id: `game-store-changed-${game.id}`,
+      type: "warning",
+      allowSuppress: true,
+      message: api.translate(
+        "Game store changed - mod loaders and tools " + "(e.g. UE4SS) may need to be re-installed.",
+      ),
+      actions: [
+        {
+          title: "More",
+          action: (dismiss: NotificationDismiss) => {
+            void storeChangedDialog()
+              .then(() => dismiss())
+              .catch(() => undefined);
+          },
+        },
+      ],
     });
-  });
+  } catch (err) {
+    const dialogPromise = new Promise<void>((resolve) => {
+      api.showDialog(
+        "error",
+        "Game not found",
+        {
+          text: api.translate(
+            "This directory doesn't appear to contain the game.\n" +
+              "Usually you need to select the top-level game directory, " +
+              "containing the following files:\n{{ files }}",
+            { replace: { files: game.requiredFiles.join("\n") } },
+          ),
+        },
+        [
+          {
+            label: "Cancel",
+            action: () => resolve(),
+          },
+          {
+            label: "Try Again",
+            action: () => browseGameLocation(api, gameId).then(() => resolve()),
+          },
+        ],
+      );
+    });
+
+    log("warn", "browseGameLocation: failed to locate game", { gameId, err: err });
+    await dialogPromise;
+  }
 }
 
 function installGameExtension(
@@ -927,7 +939,7 @@ function init(context: IExtensionContext): boolean {
     $.gameModeManager.attachToStore(store);
     // kick the first store scan eagerly; store snapshots are then populated
     // independently of quick discovery (which triggers its own reload)
-    $.gameModeManager.startInitialScan();
+    void $.gameModeManager.startInitialScan();
     {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
@@ -952,25 +964,24 @@ function init(context: IExtensionContext): boolean {
       }
     }
 
-    context.api.onAsync<string[]>("discover-game", (gameId: string) => {
+    context.api.onAsync<"discover-game">("discover-game", (gameId) => {
       if (process.env.VORTEX_E2E === "1") {
         log(
           "debug",
           "discover-game suppressed: VORTEX_E2E=1, tests manage game paths explicitly to ensure deterministic behaviour across machines",
           { gameId },
         );
-        return PromiseBB.resolve<string[]>([]);
+        return Promise.resolve<string[]>([]);
       }
+
       const game = getGame(gameId);
       if (game !== undefined) {
         return $.gameModeManager.startQuickDiscovery([game]);
       } else {
-        return PromiseBB.resolve<string[]>([]);
+        return Promise.resolve<string[]>([]);
       }
     });
 
-    // IMPORTANT: internal event but lacking alternatives, extensions may use it (to refresh
-    //    tool discovery). Therefore this must not be changed (breaking change) before Vortex 1.6
     events.on("start-quick-discovery", (cb?: (gameIds: string[], err?: Error) => void) => {
       const { discovered } = store.getState().settings.gameMode;
       const discoveredGames = new Set(
@@ -987,14 +998,18 @@ function init(context: IExtensionContext): boolean {
           });
         })
         .catch((err) => {
-          err["attachLogOnReport"] = true;
+          const error = unknownToError(err);
+
+          error["attachLogOnReport"] = true;
           context.api.showErrorNotification("Discovery failed", err);
-          cb?.(Array.from(discoveredGames), err);
+          cb?.(Array.from(discoveredGames), error);
         });
     });
-    context.api.onAsync("discover-tools", (gameId: string) =>
+
+    context.api.onAsync<"discover-tools">("discover-tools", (gameId) =>
       $.gameModeManager.startToolDiscovery(gameId),
     );
+
     events.on("start-discovery", () => {
       try {
         const state = context.api.getState();
@@ -1034,7 +1049,7 @@ function init(context: IExtensionContext): boolean {
     events.on("manually-set-game-location", (gameId: string, callback: (err: Error) => void) => {
       browseGameLocation(context.api, gameId)
         .then(() => callback(null))
-        .catch((err) => callback(err));
+        .catch((err) => callback(unknownToError(err)));
     });
 
     const changeGameMode = (

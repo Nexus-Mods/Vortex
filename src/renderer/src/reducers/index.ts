@@ -180,7 +180,7 @@ function hydrateRed(
   return rehydrate(state, payload, pathArray, replace, ele.defaults);
 }
 
-function deriveReducer(
+export function deriveReducer(
   statePath: string,
   ele: any,
   querySanitize: (errors: string[]) => Decision,
@@ -216,7 +216,7 @@ function deriveReducer(
   }
 }
 
-function addToTree(tree: any, statePath: string[], spec: IReducerSpec) {
+export function addToTree(tree: any, statePath: string[], spec: IReducerSpec) {
   if (statePath.length === 0) {
     if (tree.reducers === undefined) {
       tree.reducers = {};

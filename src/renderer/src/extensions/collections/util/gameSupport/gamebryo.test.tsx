@@ -156,6 +156,48 @@ describe("gamebryo collection parser plugin force-enable", () => {
     });
   });
 
+  // the curator's list can lag a member update that added a plugin; the collection ships and
+  // deploys that plugin, so it goes on, while a plugin the curator listed as off stays off
+  it("enables a member plugin the manifest does not list", async () => {
+    seedReaddir();
+    const harness = makeHarness();
+    const collection = makeCollection({
+      "MiriFollower.esp": true,
+      "Immersive Sounds.esp": false,
+      "RaceCompatibility.esm": true,
+    });
+
+    await parser(harness.api, GAME_ID, collection, makeMod({ id: COLLECTION_ID, type: MOD_TYPE }));
+
+    const byName = Object.fromEntries(
+      pluginEnableActions(harness).map((a) => [a.pluginName, a.enabled]),
+    );
+    expect(byName).toEqual({
+      "MiriFollower.esp": true,
+      "Immersive Sounds.esp": false,
+      "BijinAIO.esp": true,
+      "RaceCompatibility.esm": true,
+    });
+  });
+
+  // a manifest authored in drag-and-drop load order mode has no plugins section at all; the
+  // collection ships those plugins to be used, so they all go on
+  it("enables every member plugin when the manifest has no plugins section", async () => {
+    seedReaddir();
+    const harness = makeHarness();
+    const collectionMod = makeMod({ id: COLLECTION_ID, type: MOD_TYPE, rules: collectionRules() });
+    const withoutPlugins = { pluginRules: { plugins: [], groups: [] } } as unknown as ICollection;
+
+    await expect(
+      parser(harness.api, GAME_ID, withoutPlugins, collectionMod),
+    ).resolves.toBeUndefined();
+
+    const byName = Object.fromEntries(
+      pluginEnableActions(harness).map((a) => [a.pluginName, a.enabled]),
+    );
+    expect(byName).toEqual(Object.fromEntries(ALL_PLUGINS.map((name) => [name, true])));
+  });
+
   it("falls back to the passed-in collectionMod when the mod is absent from current state", async () => {
     seedReaddir();
     const harness = makeHarness(false);
