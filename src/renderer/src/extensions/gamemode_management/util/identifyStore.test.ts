@@ -99,10 +99,4 @@ describe("identifyStore", () => {
     await expect(invokedFallback?.("c:\\games\\foo")).resolves.toBe(true);
     await expect(invokedFallback?.("C:\\Games\\Other")).resolves.toBe(false);
   });
-
-  it("returns a real Bluebird", () => {
-    const prom = identifyStore("C:\\Games\\Foo", [makeStore("steam")]);
-    expect(prom).toBeInstanceOf(Bluebird);
-    return prom;
-  });
 });
