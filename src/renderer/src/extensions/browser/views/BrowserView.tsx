@@ -2,7 +2,6 @@ import * as nodeUrl from "url";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import PromiseBB from "bluebird";
-import { clipboard } from "electron";
 import * as _ from "lodash";
 import * as React from "react";
 import { Breadcrumb, Button } from "react-bootstrap";
@@ -288,7 +287,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   private copyUrlToClipboard = () => {
-    clipboard.writeText(this.props.url ?? "");
+    void window.api.clipboard.writeText(this.props.url ?? "");
   };
 
   private renderConfirm() {
