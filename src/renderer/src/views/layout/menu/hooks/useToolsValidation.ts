@@ -3,7 +3,7 @@ import path from "path";
 
 import { useEffect, useMemo, useState } from "react";
 
-import type { IStarterInfo } from "../../../util/StarterInfo";
+import type { IStarterInfo } from "@/util/StarterInfo";
 
 /**
  * Validates tools by checking if their executables exist on disk.

@@ -1,9 +1,10 @@
 import React, { createContext, useCallback, useContext, type FC, type ReactNode } from "react";
 import { useDispatch } from "react-redux";
 
-import { useMainContext } from "../../../contexts";
-import { showError } from "../../../util/message";
-import { type ShowErrorCallback, useTools } from "./useTools";
+import { useMainContext } from "@/contexts";
+import { showError } from "@/util/message";
+
+import { type ShowErrorCallback, useTools } from "../hooks/useTools";
 
 type IToolsContext = ReturnType<typeof useTools>;
 

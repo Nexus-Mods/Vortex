@@ -12,11 +12,11 @@ vi.mock("@/contexts", () => ({
   useWindowContext: () => ({ menuIsCollapsed: context.menuIsCollapsed }),
 }));
 
-vi.mock("../Spine/SpineContext", () => ({
+vi.mock("@/views/components/Spine/SpineContext", () => ({
   useSpineContext: () => ({ selection: { type: "game", gameId: "stardewvalley" } }),
 }));
 
-vi.mock("./ToolsContext", () => ({
+vi.mock("../../context/ToolsContext", () => ({
   useToolsContext: () => ({
     gameId: "stardewvalley",
     gameName: "Stardew Valley",
@@ -31,27 +31,27 @@ vi.mock("./ToolsContext", () => ({
   }),
 }));
 
-vi.mock("./ToolButton", () => ({
+vi.mock("../ToolButton", () => ({
   ToolButton: () => <button data-testid="tool" type="button" />,
 }));
 
 import { settleTransitions } from "@/test-utils/transitions";
 
-import { ToolsSection } from "./ToolsSection";
+import { GameActions } from "./GameActions";
 
-describe("ToolsSection", () => {
+describe("GameActions", () => {
   beforeEach(() => {
     context.menuIsCollapsed = false;
     context.visibleTools = [{ id: "tool-1", exePath: "a.exe" }];
   });
 
   it("lays the row out for the width the menu is at", async () => {
-    const { rerender } = render(<ToolsSection />);
+    const { rerender } = render(<GameActions />);
 
     expect(screen.getByTestId("menu-tools")).toHaveClass("w-full");
 
     context.menuIsCollapsed = true;
-    rerender(<ToolsSection />);
+    rerender(<GameActions />);
 
     expect(screen.getByTestId("menu-tools")).toHaveClass("w-10");
 
@@ -63,11 +63,11 @@ describe("ToolsSection", () => {
   // stopped changing the row would sit still, so this pins the mechanism rather than the
   // animation.
   it("remounts the row when the menu changes width", async () => {
-    const { rerender } = render(<ToolsSection />);
+    const { rerender } = render(<GameActions />);
     const before = screen.getByTestId("menu-tools");
 
     context.menuIsCollapsed = true;
-    rerender(<ToolsSection />);
+    rerender(<GameActions />);
 
     expect(screen.getByTestId("menu-tools")).not.toBe(before);
 
@@ -75,10 +75,10 @@ describe("ToolsSection", () => {
   });
 
   it("keeps the same row when nothing about the width changed", async () => {
-    const { rerender } = render(<ToolsSection />);
+    const { rerender } = render(<GameActions />);
     const before = screen.getByTestId("menu-tools");
 
-    rerender(<ToolsSection />);
+    rerender(<GameActions />);
 
     expect(screen.getByTestId("menu-tools")).toBe(before);
 
@@ -88,7 +88,7 @@ describe("ToolsSection", () => {
   it("leaves the row out when the game has no tools", () => {
     context.visibleTools = [];
 
-    render(<ToolsSection />);
+    render(<GameActions />);
 
     expect(screen.queryByTestId("menu-tools")).toBeNull();
   });

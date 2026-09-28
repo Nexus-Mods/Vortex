@@ -9,8 +9,7 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { IStarterInfo } from "@/util/StarterInfo";
-
-import StarterInfo from "../../../util/StarterInfo";
+import StarterInfo from "@/util/StarterInfo";
 
 interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   starter: IStarterInfo;
