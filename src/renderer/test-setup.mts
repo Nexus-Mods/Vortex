@@ -3,11 +3,17 @@
 import os from "node:os";
 import path from "node:path";
 
+// TODO: remove polyfill with Node.js 26 upgrade. This file is .mts because
+// the renderer is a CommonJS package (module: node16) and the polyfill is
+// ESM-only; .mts keeps it an ES module for both tsc and vitest.
+import { install } from "temporal-polyfill/shim";
+install();
+
 import "@testing-library/jest-dom/vitest";
 import type { VortexPaths } from "@vortex/shared/ipc";
 import { beforeAll, vi } from "vitest";
 
-import { ApplicationData } from "./src/applicationData";
+import { ApplicationData } from "./src/applicationData.js";
 
 // No test initialises i18next, so react-i18next warns once per file and falls back to
 // returning the key. The source strings in this repo are the keys, so that fallback is

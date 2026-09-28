@@ -4728,6 +4728,9 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.2
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.4
       tmp:
         specifier: 'catalog:'
         version: 0.1.0
@@ -4787,6 +4790,9 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.4
       vite-plugin-doctest:
         specifier: 'catalog:'
         version: 2.0.0(typescript@6.0.3)(vite@8.1.3)(vitest@4.1.9)
