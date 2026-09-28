@@ -112,7 +112,8 @@ export function addNotification(
   return async (dispatch) => {
     const noti = { ...notification };
 
-    if (noti.id !== undefined && suppressNotification(noti.id)) {
+    // a notification the user may not suppress ignores a suppression already on record
+    if (noti.id !== undefined && noti.allowSuppress !== false && suppressNotification(noti.id)) {
       return;
     }
 

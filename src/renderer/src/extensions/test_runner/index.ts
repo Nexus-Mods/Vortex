@@ -164,7 +164,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
             replace: result.description.replace,
             actions,
             noDismiss: true,
-            allowSuppress: result.severity !== "error",
+            allowSuppress: result.allowSuppress ?? result.severity !== "error",
             localize: {
               title: result.description.localize,
               message: result.description.localize,

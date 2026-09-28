@@ -1,6 +1,7 @@
 # §A — Live mode (no-timeout watch)
 
-Prereq: `reference.md` (core) + `shared/edge-cases.md`.
+Prereq: `reference.md` (core) + `shared/edge-cases.md` (+ `shared/gamebryo.md` when the
+watch concerns plugins / load order / LOOT).
 
 1. Target the **current** `vortex.log` (live == newest file), per the shared resolver.
 2. Build the filter. Default (all errors + warnings + no-level crash signatures):
