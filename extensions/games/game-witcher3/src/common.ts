@@ -110,8 +110,16 @@ export function getLoadOrderFilePath() {
   return path.join(util.getVortexPath("documents"), "The Witcher 3", LOAD_ORDER_FILENAME);
 }
 
+export function getDx12UserSettingsPath() {
+  return path.join(util.getVortexPath("documents"), "The Witcher 3", DX12_USER_SETTINGS_FILENAME);
+}
+
 export function getPriorityTypeBranch() {
   return ["settings", "witcher3", "prioritytype"];
+}
+
+export function getRemasterNoticeSeenBranch() {
+  return ["settings", "witcher3", "remasterNoticeSeen"];
 }
 
 export function getSuppressModLimitBranch() {
@@ -135,6 +143,7 @@ export const PART_SUFFIX = ".part.txt";
 export const SCRIPT_MERGER_ID = "W3ScriptMerger";
 export const MERGE_INV_MANIFEST = "MergeInventory.xml";
 export const LOAD_ORDER_FILENAME = "mods.settings";
+export const DX12_USER_SETTINGS_FILENAME = "dx12user.settings";
 export const I18N_NAMESPACE = "game-witcher3";
 export const CONFIG_MATRIX_REL_PATH = path.join(
   "bin",
@@ -143,21 +152,14 @@ export const CONFIG_MATRIX_REL_PATH = path.join(
   "user_config_matrix",
   "pc",
 );
-export const CONFIG_MATRIX_FILES = [
-  "audio",
-  "display",
-  "gameplay",
-  "gamma",
-  "graphics",
-  "graphicsdx11",
-  "hdr",
-  "hidden",
-  "hud",
-  "input",
-  "localization",
-];
+// Defined alongside the per-edition lists so the two can't drift apart.
+export { CONFIG_MATRIX_FILES } from "./edition";
 
-export const W3_TEMP_DATA_DIR = path.join(util.getVortexPath("temp"), "W3TempData");
+// Resolved lazily: getVortexPath isn't available at module load in every
+// context this file gets imported from.
+export function getW3TempDataDir() {
+  return path.join(util.getVortexPath("temp"), "W3TempData");
+}
 
 export const UNI_PATCH = "mod0000____CompilationTrigger";
 export const LOCKED_PREFIX = "mod0000_";
