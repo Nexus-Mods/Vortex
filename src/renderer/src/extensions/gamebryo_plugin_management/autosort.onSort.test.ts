@@ -34,7 +34,7 @@ describe("LootInterface autosort-plugins", () => {
 
     await harness.sort(true);
 
-    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
     expect(harness.notifications).toEqual([]);
   });
 
@@ -47,10 +47,10 @@ describe("LootInterface autosort-plugins", () => {
     harness.api.store.dispatch(startActivity("mods", "deployment"));
 
     await harness.sort(false);
-    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
 
     harness.api.store.dispatch(stopActivity("mods", "deployment"));
-    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]));
+    await vi.waitFor(() => expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["A.esp"]));
   });
 
   test("runs a manual sort deferred behind a deployment even with auto-sort disabled", async ({
@@ -64,7 +64,7 @@ describe("LootInterface autosort-plugins", () => {
     await harness.sort(true);
     harness.api.store.dispatch(stopActivity("mods", "deployment"));
 
-    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(1));
   });
 
   test("refuses a state sort while plugin management is off for the profile", async ({
@@ -76,7 +76,7 @@ describe("LootInterface autosort-plugins", () => {
     const err = await harness.sort(true);
 
     expect(err).toMatchObject({ data: { kind: "not-supported" } });
-    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
   });
 
   test("skips sorting when not manual and autoSort is disabled", async ({ makeLoot }) => {
@@ -85,7 +85,7 @@ describe("LootInterface autosort-plugins", () => {
 
     await harness.sort(false);
 
-    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
   });
 
   test("defers sorting while a profile switch is pending", async ({ makeLoot }) => {
@@ -99,7 +99,7 @@ describe("LootInterface autosort-plugins", () => {
     harness.api.store.dispatch(setPluginEnabled("A.esp", true));
     await flushAsync();
 
-    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
   });
 
   test("sorts once the switch completes and the next profile's load order arrives", async ({
@@ -123,11 +123,11 @@ describe("LootInterface autosort-plugins", () => {
     // the next profile's plugin sync starts from an empty load order
     harness.api.store.dispatch(setPluginOrder([], false));
     await settle(100);
-    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
 
     harness.api.store.dispatch(setPluginEnabled("A.esp", true));
 
-    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]));
+    await vi.waitFor(() => expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["A.esp"]));
   });
 
   test("does not claim a successful sort when the autoSort gate skipped sorting", async ({
@@ -179,7 +179,7 @@ describe("LootInterface autosort-plugins", () => {
     const err = await harness.sort(true);
 
     expect(err?.message).toBe("LOOT is uninitialized/closed");
-    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
   });
 
   test("sorts only deployed non-ghost plugins plus natives", async ({ makeLoot }) => {
@@ -194,7 +194,7 @@ describe("LootInterface autosort-plugins", () => {
     const err = await harness.sort(true);
 
     expect(err).toBeNull();
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["One.esp", "Four.esp"]);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["One.esp", "Four.esp"]);
   });
 
   test("hands plugins to loot in current load order, unknown plugins last", async ({
@@ -207,7 +207,7 @@ describe("LootInterface autosort-plugins", () => {
 
     await harness.sort(true);
 
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp", "B.esp", "C.esp"]);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["A.esp", "B.esp", "C.esp"]);
   });
 
   test("drops plugins whose file is missing and passes file basenames", async ({ makeLoot }) => {
@@ -220,7 +220,7 @@ describe("LootInterface autosort-plugins", () => {
 
     await harness.sort(true);
 
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["Real.esp"]);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["Real.esp"]);
   });
 
   test("sorts exactly the given files in their current order and answers libloot's order", async ({
@@ -229,7 +229,7 @@ describe("LootInterface autosort-plugins", () => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp", "B.esp", "C.esp"]);
     harness.api.store.dispatch(setPluginOrder(["C.esp", "B.esp", "A.esp"], true));
-    harness.loot.sortPluginsAsync.mockResolvedValueOnce(["A.esp", "B.esp"]);
+    harness.loot.sortPlugins.mockResolvedValueOnce(["A.esp", "B.esp"]);
 
     const sorted = await harness.lootInterface.sortFiles([
       path.join(harness.dataDir, "A.esp"),
@@ -237,7 +237,7 @@ describe("LootInterface autosort-plugins", () => {
       path.join(harness.dataDir, "B.esp"),
     ]);
 
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["B.esp", "A.esp"]);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["B.esp", "A.esp"]);
     expect(sorted).toEqual(["A.esp", "B.esp"]);
   });
 
@@ -259,13 +259,13 @@ describe("LootInterface autosort-plugins", () => {
     await expect(
       harness.lootInterface.sortFiles([path.join(harness.dataDir, "A.esp")]),
     ).rejects.toMatchObject({ data: { kind: "process-canceled" } });
-    expect(harness.loot.sortPluginsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
   });
 
   test("queues a second sort behind the pending one", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     let release: (sorted: string[]) => void;
-    harness.loot.sortPluginsAsync.mockImplementationOnce(
+    harness.loot.sortPlugins.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           release = resolve;
@@ -273,16 +273,16 @@ describe("LootInterface autosort-plugins", () => {
     );
 
     const first = harness.sort(true);
-    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(1));
     const second = harness.sort(true);
     await flushAsync();
 
     // the second sort waits on the pending sort promise instead of interleaving
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(1);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(1);
 
     release([]);
     expect(await first).toBeNull();
     expect(await second).toBeNull();
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(2);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(2);
   });
 });

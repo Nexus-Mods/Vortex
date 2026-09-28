@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import * as path from "node:path";
 
-import type { ILootProm } from "../types/ILoot";
+import type { LootAsync } from "loot";
 
 /** Where libloot reads one game's metadata from. */
 export interface IListPaths {
@@ -51,13 +51,16 @@ export class MetadataLists {
    * Loads the lists into the instance unless it already holds what is on disk, and answers whether
    * it loaded.
    */
-  public async ensureLoaded(paths: IListPaths, loot: ILootProm): Promise<boolean> {
+  public async ensureLoaded(
+    paths: IListPaths,
+    loot: Pick<LootAsync, "loadLists">,
+  ): Promise<boolean> {
     const times = await listTimes(paths);
     // a missing masterlist is the download path's failure to report
     if (times.masterlist === undefined || this.holds(times)) {
       return false;
     }
-    await loot.loadListsAsync(
+    await loot.loadLists(
       paths.masterlist,
       times.userlist !== undefined ? paths.userlist : "",
       times.prelude !== undefined ? paths.prelude : "",

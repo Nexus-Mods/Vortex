@@ -42,7 +42,7 @@ describe("LootInterface doSort", () => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp", "B.esp"]);
     harness.api.store.dispatch(setAutoEnable(true));
-    harness.loot.sortPluginsAsync.mockResolvedValueOnce(["B.esp", "A.esp"]);
+    harness.loot.sortPlugins.mockResolvedValueOnce(["B.esp", "A.esp"]);
 
     const err = await harness.sort(true);
 
@@ -94,7 +94,7 @@ describe("LootInterface doSort", () => {
   test("reports a failed sort to its caller instead of success", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp"]);
-    harness.loot.sortPluginsAsync.mockRejectedValueOnce(new Error("access violation"));
+    harness.loot.sortPlugins.mockRejectedValueOnce(new Error("access violation"));
 
     const err = await harness.sort(true);
 
@@ -108,7 +108,7 @@ describe("LootInterface doSort", () => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp"]);
     harness.api.store.dispatch(setPendingPluginSort(harness.profileId, "col-1", 1));
-    harness.loot.sortPluginsAsync.mockRejectedValueOnce(new Error("Already closed"));
+    harness.loot.sortPlugins.mockRejectedValueOnce(new Error("Already closed"));
 
     await harness.sort(true);
 
@@ -124,7 +124,7 @@ describe("LootInterface doSort", () => {
 
     await harness.sort(true);
 
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["Good.esp"]);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["Good.esp"]);
     expect(harness.notifications).toContainEqual(
       expect.objectContaining({ id: "loot-skipped-invalid-plugins", type: "warning" }),
     );
@@ -134,7 +134,7 @@ describe("LootInterface doSort", () => {
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);
-    harness.loot.sortPluginsAsync.mockRejectedValueOnce(new Error("access violation"));
+    harness.loot.sortPlugins.mockRejectedValueOnce(new Error("access violation"));
 
     await harness.sort(true);
 
@@ -153,7 +153,7 @@ describe("LootInterface doSort", () => {
       { name: "A.esp", typeOfEdgeToNextVertex: EdgeType.userGroup },
       { name: "B.esp", typeOfEdgeToNextVertex: EdgeType.userLoadAfter },
     ];
-    harness.loot.sortPluginsAsync.mockRejectedValueOnce(
+    harness.loot.sortPlugins.mockRejectedValueOnce(
       Object.assign(new Error('Cyclic interaction detected between "A.esp" and "B.esp"'), {
         cycle,
       }),
@@ -167,7 +167,7 @@ describe("LootInterface doSort", () => {
       );
     });
     // the group edge is explained through the groups path
-    expect(harness.loot.getGroupsPathAsync).toHaveBeenCalled();
+    expect(harness.loot.getGroupsPath).toHaveBeenCalled();
 
     const warning = harness.notifications.find(
       (notification) => notification.id === "loot-cycle-warning",
@@ -182,7 +182,7 @@ describe("LootInterface doSort", () => {
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);
-    harness.loot.sortPluginsAsync.mockRejectedValueOnce(
+    harness.loot.sortPlugins.mockRejectedValueOnce(
       Object.assign(new Error("plugin not loaded"), {
         name: "PluginNotLoaded",
         plugin: "A.esp",
@@ -191,7 +191,7 @@ describe("LootInterface doSort", () => {
 
     await harness.sort(true);
 
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(1);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(1);
     expect(harness.notifications).toContainEqual(
       expect.objectContaining({ id: "loot-failed", type: "warning" }),
     );
@@ -202,7 +202,7 @@ describe("LootInterface doSort", () => {
   }) => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp"]);
-    harness.loot.loadPluginsAsync.mockRejectedValueOnce(
+    harness.loot.loadPlugins.mockRejectedValueOnce(
       Object.assign(new Error('The plugin "M.esm" has not been loaded'), { func: "loadPlugins" }),
     );
 
@@ -222,7 +222,7 @@ describe("LootInterface doSort", () => {
     const harness = await makeLoot(LootInterface);
     await harness.seedPlugins(["A.esp", "M.esm"]);
     await rm(path.join(harness.dataDir, "M.esm"));
-    harness.loot.loadPluginsAsync.mockRejectedValueOnce(
+    harness.loot.loadPlugins.mockRejectedValueOnce(
       Object.assign(new Error('The plugin "M.esm" has not been loaded'), { func: "loadPlugins" }),
     );
 
@@ -244,7 +244,7 @@ describe("LootInterface doSort", () => {
     await harness.seedPlugins(["A.esp"]);
     // a dangling reference to a group neither list knows
     harness.api.store.dispatch(setGroup("A.esp", "gone-group"));
-    harness.loot.sortPluginsAsync
+    harness.loot.sortPlugins
       .mockRejectedValueOnce(new Error('The group "gone-group" does not exist.'))
       .mockResolvedValueOnce(["A.esp"]);
 
@@ -253,7 +253,7 @@ describe("LootInterface doSort", () => {
 
     expect(err).toBeNull();
     expect(harness.dispatched).toContainEqual(setGroup("A.esp", undefined));
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(2);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(2);
     expect(harness.dispatched).toContainEqual(updatePluginOrder(["A.esp"], false, false));
   });
 
@@ -261,13 +261,13 @@ describe("LootInterface doSort", () => {
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);
-    harness.loot.sortPluginsAsync.mockRejectedValueOnce(
+    harness.loot.sortPlugins.mockRejectedValueOnce(
       new Error('The group "gone-group" does not exist.'),
     );
 
     await harness.sort(true);
 
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledTimes(1);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(1);
     expect(harness.notifications).toContainEqual(
       expect.objectContaining({ id: "loot-failed", type: "warning" }),
     );
@@ -284,7 +284,7 @@ describe("LootInterface doSort", () => {
     const sortError = new Error(
       'Failed to evaluate condition "version("SkyrimSE.exe", "1.5.97.0", >=)"',
     );
-    harness.loot.sortPluginsAsync.mockRejectedValueOnce(sortError);
+    harness.loot.sortPlugins.mockRejectedValueOnce(sortError);
 
     await harness.sort(true);
 
@@ -305,7 +305,7 @@ describe("LootInterface doSort", () => {
 
   test("says the loot process stopped rather than repeating its error", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
-    harness.loot.sortPluginsAsync.mockRejectedValueOnce(
+    harness.loot.sortPlugins.mockRejectedValueOnce(
       Object.assign(new Error("connection interrupted"), { name: "RemoteDied" }),
     );
 
@@ -325,19 +325,19 @@ describe("LootInterface doSort", () => {
 
     await harness.sort(true);
     // no userlist on disk yet, so there is nothing to (re-)load
-    expect(harness.loot.loadListsAsync).not.toHaveBeenCalled();
+    expect(harness.loot.loadLists).not.toHaveBeenCalled();
 
     await writeFile(harness.userlistPath, "plugins: []");
     await harness.sort(true);
-    expect(harness.loot.loadListsAsync).toHaveBeenCalledTimes(1);
+    expect(harness.loot.loadLists).toHaveBeenCalledTimes(1);
 
     // unchanged mtime hits the cache
     await harness.sort(true);
-    expect(harness.loot.loadListsAsync).toHaveBeenCalledTimes(1);
+    expect(harness.loot.loadLists).toHaveBeenCalledTimes(1);
 
     const later = new Date(Date.now() + 5000);
     await utimes(harness.userlistPath, later, later);
     await harness.sort(true);
-    expect(harness.loot.loadListsAsync).toHaveBeenCalledTimes(2);
+    expect(harness.loot.loadLists).toHaveBeenCalledTimes(2);
   });
 });

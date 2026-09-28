@@ -26,7 +26,7 @@ import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
-import type { PluginInterface, PluginMetadata } from "loot";
+import type { LootAsync, PluginInterface, PluginMetadata, Vertex } from "loot";
 import { applyMiddleware, createStore, type Middleware } from "redux";
 import { batch } from "redux-act";
 import thunkMiddleware from "redux-thunk";
@@ -47,7 +47,6 @@ import type { IDownload, IModInfo } from "../extensions/download_management/type
 import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type { IESPFile } from "../extensions/gamebryo_plugin_management/types/IESPFile";
-import type { ICycleEdge, ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
 import type {
   IPlugin,
   IPluginCombined,
@@ -261,6 +260,7 @@ export function makeLootPluginInterface(overrides: Partial<PluginInterface> = {}
   return {
     name: "One.esp",
     version: "",
+    headerVersion: null,
     masters: [],
     bashTags: [],
     crc: 0,
@@ -271,6 +271,7 @@ export function makeLootPluginInterface(overrides: Partial<PluginInterface> = {}
     IsValidAsMediumPlugin: false,
     IsUpdatePlugin: false,
     IsValidAsUpdatePlugin: false,
+    IsBlueprintPlugin: false,
     isEmpty: false,
     loadsArchive: false,
     ...overrides,
@@ -318,22 +319,18 @@ export function makeESPFile(overrides: Partial<IESPFile> = {}): IESPFile {
 /** A fake loot instance: open, every call succeeding, sort echoing its input. */
 export function makeFakeLoot(overrides: Partial<IFakeLoot> = {}): IFakeLoot {
   return {
-    clearConditionCacheAsync: vi.fn<ILootProm["clearConditionCacheAsync"]>(() => Promise.resolve()),
-    close: vi.fn<ILootProm["close"]>(),
-    getGroupsPathAsync: vi.fn<ILootProm["getGroupsPathAsync"]>(() =>
-      Promise.resolve<ICycleEdge[]>([]),
-    ),
-    getPluginAsync: vi.fn<ILootProm["getPluginAsync"]>(() => Promise.resolve(undefined)),
-    getPluginMetadataAsync: vi.fn<ILootProm["getPluginMetadataAsync"]>(() =>
-      Promise.resolve(undefined),
-    ),
-    isClosed: vi.fn<ILootProm["isClosed"]>(() => false),
-    loadCurrentLoadOrderStateAsync: vi.fn<ILootProm["loadCurrentLoadOrderStateAsync"]>(() =>
+    clearConditionCache: vi.fn<LootAsync["clearConditionCache"]>(() => Promise.resolve()),
+    close: vi.fn<LootAsync["close"]>(),
+    getGroupsPath: vi.fn<LootAsync["getGroupsPath"]>(() => Promise.resolve<Vertex[]>([])),
+    getPlugin: vi.fn<LootAsync["getPlugin"]>(() => Promise.resolve(undefined)),
+    getPluginMetadata: vi.fn<LootAsync["getPluginMetadata"]>(() => Promise.resolve(undefined)),
+    isClosed: vi.fn<LootAsync["isClosed"]>(() => false),
+    loadCurrentLoadOrderState: vi.fn<LootAsync["loadCurrentLoadOrderState"]>(() =>
       Promise.resolve(),
     ),
-    loadListsAsync: vi.fn<ILootProm["loadListsAsync"]>(() => Promise.resolve()),
-    loadPluginsAsync: vi.fn<ILootProm["loadPluginsAsync"]>(() => Promise.resolve()),
-    sortPluginsAsync: vi.fn<ILootProm["sortPluginsAsync"]>((pluginNames) =>
+    loadLists: vi.fn<LootAsync["loadLists"]>(() => Promise.resolve()),
+    loadPlugins: vi.fn<LootAsync["loadPlugins"]>(() => Promise.resolve()),
+    sortPlugins: vi.fn<LootAsync["sortPlugins"]>((pluginNames) =>
       Promise.resolve([...pluginNames]),
     ),
     ...overrides,
