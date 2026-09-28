@@ -42,3 +42,8 @@ export { WindowsPath } from "../fs/paths.windows";
 export type { WindowsPathBase, WindowsPathProvider } from "../fs/paths.windows";
 
 export type { VortexPathBase, IVortexPathProvider } from "../fs/paths.vortex";
+
+export { InMemoryFS } from "../fs/in-memory";
+export { InMemoryStore } from "../fs/in-memory-store";
+export { Builder as InMemoryFSBuilder } from "../fs/in-memory-builder";
+export { ChaosFS } from "../fs/chaos";
