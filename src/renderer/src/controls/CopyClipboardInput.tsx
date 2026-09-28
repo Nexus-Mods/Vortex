@@ -1,4 +1,3 @@
-import { clipboard } from "electron";
 import * as React from "react";
 import { FormControl, FormGroup, InputGroup } from "react-bootstrap";
 
@@ -14,22 +13,22 @@ function CopyClipboardInput(props: ICopyClipboardInputProps) {
   const [showElement, setShowElement] = React.useState(false);
 
   const handleButtonClick = () => {
-    try {
-      clipboard.writeText(props.inputValue);
+    window.api.clipboard
+      .writeText(props.inputValue)
+      .then(() => {
+        // show confirmation text
+        setShowElement(true);
 
-      // show confirmation text
-      setShowElement(true);
-
-      // hide after 3 seconds
-      setTimeout(() => {
-        setShowElement(false);
-      }, 3000);
-    } catch (err) {
-      // apparently clipboard gets lazy-loaded and that load may fail for some reason
-      api.showErrorNotification("Failed to access clipboard", err, {
-        allowReport: false,
+        // hide after 3 seconds
+        setTimeout(() => {
+          setShowElement(false);
+        }, 3000);
+      })
+      .catch((err) => {
+        api.showErrorNotification("Failed to access clipboard", err, {
+          allowReport: false,
+        });
       });
-    }
   };
 
   return (
