@@ -24,6 +24,8 @@ export interface IHealthCheckEntry<TData = unknown> {
    * events either side of that change won't join.
    */
   issueId?: string;
+  /** UID of the mod that raised the issue, reported as `source_mod_uid`. */
+  sourceModUID?: string;
   /** The check this entry belongs to; selects the content via the registry. */
   checkId: HealthCheckId;
   /** Drives the severity icon/colour in the shared shell. */

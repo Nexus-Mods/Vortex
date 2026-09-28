@@ -75,6 +75,7 @@ export const fileRequirementsContent: IHealthCheckContent = {
         const identity = {
           issue_id: fileIssueId(source.sourceFileUID, categoryOf(requirement)),
           check_id: checkId,
+          source_mod_uid: source.sourceModUID || undefined,
         };
         for (const target of downloadTargets([requirement])) {
           items.push({

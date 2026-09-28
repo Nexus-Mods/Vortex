@@ -79,8 +79,7 @@ describe("createHealthCheckTracker", () => {
     tracker.trackOneClickInstallClicked({
       issue_id: "a-b",
       check_id: "file_requirements",
-      mod_id: 42,
-      mod_name: "SkyUI",
+      mod_uid: "uid-42",
       mod_version: "5.2",
       is_adult_content: false,
     });
@@ -92,8 +91,7 @@ describe("createHealthCheckTracker", () => {
     tracker.trackOneClickInstallClicked({
       issue_id: "a-b",
       check_id: "mod_requirements",
-      mod_id: 42,
-      mod_name: "SkyUI",
+      mod_uid: "uid-42",
       mod_version: "5.2",
       is_adult_content: false,
     });
@@ -124,7 +122,10 @@ describe("createHealthCheckTracker", () => {
 
   it("omits issue_id from install events when the install isn't tied to one issue", () => {
     const { tracker, events } = harness();
-    tracker.trackInstallStarted({ mod_id: 42, mod_name: "SkyUI", mod_version: "5.2" });
+    tracker.trackInstallStarted({
+      mod_uid: "uid-42",
+      mod_version: "5.2",
+    });
     expect(events[0].eventName).toBe("health_check_install_started");
     expect(events[0].properties).not.toHaveProperty("issue_id");
   });
@@ -135,12 +136,12 @@ describe("createHealthCheckTracker", () => {
 
     tracker.trackInstallDownloadedClicked({
       ...issue,
-      mod_id: 42,
+      mod_uid: "uid-42",
       requirement_state: "downloaded_wrong_enabled",
     });
     tracker.trackInstallDownloadedClicked({
       ...issue,
-      mod_id: 42,
+      mod_uid: "uid-42",
       requirement_state: "downloaded",
       option_count: 2,
     });

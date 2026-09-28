@@ -78,6 +78,7 @@ const issueFor = (entry: IHealthCheckEntry): IIssueValue => ({
   identity: {
     issue_id: entry.issueId ?? entry.id,
     check_id: checkNameForCheck(entry.checkId),
+    source_mod_uid: entry.sourceModUID || undefined,
   },
   issueType: issueTypeForCheck(entry.checkId),
   resolutionType: entry.resolutionType,
@@ -96,7 +97,7 @@ export const IssueProvider = ({
   const value = useMemo(
     () => issueFor(entry),
     // eslint-disable-next-line @eslint-react/exhaustive-deps
-    [entry.id, entry.issueId, entry.checkId, entry.resolutionType],
+    [entry.id, entry.issueId, entry.sourceModUID, entry.checkId, entry.resolutionType],
   );
 
   return <IssueContext.Provider value={value}>{children}</IssueContext.Provider>;

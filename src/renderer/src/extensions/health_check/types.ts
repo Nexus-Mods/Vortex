@@ -18,6 +18,8 @@ export type HealthCheckId = "check-nexus-mod-requirements" | "check-file-level-r
  */
 export type RequiringMod = Omit<Pick<IModRequiring, "modId" | "modName">, "modId"> & {
   modId: number;
+  /** Composite mod UID (game + mod id); absent on results from before it was recorded. */
+  modUID?: string;
   modUrl?: string;
 };
 

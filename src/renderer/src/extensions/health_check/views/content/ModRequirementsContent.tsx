@@ -27,6 +27,7 @@ export const modRequirementsContent: IHealthCheckContent = {
   selectEntries: (state) =>
     allModRequirements(state).map((mod) => ({
       id: modEntryId(mod),
+      sourceModUID: mod.requiredBy.modUID,
       checkId: MOD_REQUIREMENTS_CHECK_ID,
       severity: "suggestion",
       resolutionType: "install",
@@ -56,6 +57,7 @@ export const modRequirementsContent: IHealthCheckContent = {
           void onDownloadRequirement(api, mod, undefined, {
             issue_id: modEntryId(mod),
             check_id: checkNameForCheck(MOD_REQUIREMENTS_CHECK_ID),
+            source_mod_uid: mod.requiredBy.modUID || undefined,
           });
         },
       })),
