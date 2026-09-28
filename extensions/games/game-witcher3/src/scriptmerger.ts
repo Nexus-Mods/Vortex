@@ -9,11 +9,12 @@ import _ from "lodash";
 import semver from "semver";
 import { Builder, parseStringPromise } from "xml2js";
 
+import { isMergerToolValidForRoot, mergerDirForRoot } from "./mergerPaths";
 import { IIncomingGithubHttpHeaders } from "./types";
+import { shouldNotifyMissingScriptMerger } from "./util";
 
 const RELEASE_CUTOFF = "0.6.5";
 const GITHUB_URL = "https://api.github.com/repos/IDCs/WitcherScriptMerger";
-const MERGER_RELPATH = "WitcherScriptMerger";
 
 const MERGER_CONFIG_FILE = "WitcherScriptMerger.exe.config";
 
@@ -213,10 +214,15 @@ export async function getScriptMergerDir(api, create = false) {
     if (!currentPath) {
       throw new Error("Script Merger not set up");
     }
+    // Existing on disk isn't enough: a path left over from another install
+    // stats fine and would merge the wrong scripts into the wrong Mods folder.
+    if (!isMergerToolValidForRoot(currentPath, discovery.path)) {
+      throw new util.ProcessCanceled("Script Merger belongs to another install");
+    }
     await fs.statAsync(currentPath);
     return currentPath;
   } catch (err) {
-    const defaultPath = path.join(discovery.path, MERGER_RELPATH);
+    const defaultPath = mergerDirForRoot(discovery.path);
     if (create) {
       await fs.ensureDirWritableAsync(defaultPath);
     }
@@ -402,6 +408,10 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
     .catch(async (err) => {
       const raiseManualInstallNotif = () => {
         log("error", "Failed to automatically install Script Merger", err.errorMessage);
+        if (!shouldNotifyMissingScriptMerger(api)) {
+          // Nothing to chase on the remaster - mods there merge themselves.
+          return;
+        }
         api.sendNotification({
           type: "error",
           message: api.translate("Please install Script Merger manually", { ns: "game-witcher3" }),
@@ -490,6 +500,65 @@ async function setUpMerger(api, mergerVersion, newPath) {
   return Promise.resolve();
 }
 
+/**
+ * Points the script merger at the install that is currently discovered.
+ *
+ * Both editions are managed under one game entry, so the stored tool and the
+ * merger's own config survive a switch between them. The merger compiles against
+ * one edition's vanilla scripts and keeps its merge state in MergeInventory.xml
+ * beside its exe, so each game root gets its own copy rather than sharing one.
+ */
+export async function repairStaleScriptMerger(
+  api: types.IExtensionApi,
+  discovery: types.IDiscoveryResult,
+): Promise<void> {
+  const toolPath = discovery?.tools?.[SCRIPT_MERGER_ID]?.path;
+  if (discovery?.path === undefined || toolPath === undefined) {
+    return;
+  }
+
+  const expectedDir = mergerDirForRoot(discovery.path);
+  if (isMergerToolValidForRoot(toolPath, discovery.path)) {
+    // Right merger, but its config records whichever root it was set up for.
+    await setMergerConfig(discovery.path, path.dirname(toolPath));
+    return;
+  }
+
+  const expectedExe = path.join(expectedDir, "WitcherScriptMerger.exe");
+  const installed = await fs
+    .statAsync(expectedExe)
+    .then(() => true)
+    .catch(() => false);
+
+  log("info", "witcher3 script merger belongs to another install, re-pointing", {
+    from: toolPath,
+    to: expectedDir,
+    installed,
+  });
+
+  // Pointed at the executable only when it is there. Naming a path that is not
+  // leaves the tool looking configured, so it fails on run and the download
+  // treats it as already current.
+  const newToolDetails = {
+    ...discovery.tools[SCRIPT_MERGER_ID],
+    path: installed ? expectedExe : undefined,
+    workingDirectory: installed ? expectedDir : undefined,
+    mergerVersion: installed ? discovery.tools[SCRIPT_MERGER_ID].mergerVersion : undefined,
+  };
+  api.store.dispatch(actions.addDiscoveredTool("witcher3", SCRIPT_MERGER_ID, newToolDetails, true));
+
+  if (installed) {
+    await setMergerConfig(discovery.path, expectedDir);
+  } else {
+    api.sendNotification({
+      id: "w3-merger-repointed",
+      type: "info",
+      message: "Script Merger needs setting up again for this copy of the game.",
+      allowSuppress: false,
+    });
+  }
+}
+
 export async function getMergedModName(scriptMergerPath) {
   const configFilePath = path.join(scriptMergerPath, MERGER_CONFIG_FILE);
   try {
@@ -508,8 +577,11 @@ export async function getMergedModName(scriptMergerPath) {
 }
 
 export async function setMergerConfig(gameRootPath, scriptMergerPath) {
+  // findIndex reports a miss as -1, which is a valid-looking array index right
+  // up until the assignment throws and leaves the config half rewritten.
   const findIndex = (nodes, id) => {
-    return nodes?.findIndex((iter) => iter.$?.key === id) ?? undefined;
+    const idx = nodes?.findIndex((iter) => iter.$?.key === id) ?? -1;
+    return idx >= 0 ? idx : undefined;
   };
 
   const configFilePath = path.join(scriptMergerPath, MERGER_CONFIG_FILE);
