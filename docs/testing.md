@@ -70,6 +70,29 @@ export const util = {};
 export const log = vi.fn();
 ```
 
+## In-memory filesystem
+
+`@vortex/shared/filesystem` exports `InMemoryFS`, a `FileSystem` implementation
+backed by a pure in-memory store instead of the OS, plus an `InMemoryFSBuilder`
+for seeding it and a `ChaosFS` decorator for injected faults. Tests use them to
+drive the same `FileSystem` surface production code uses, with deterministic
+state and no temp directories. Their semantics deliberately mirror the node
+backend (`src/main/src/filesystem/backend.ts`), so a test passing against the
+in-memory implementation says something about production.
+
+In main-process tests, `setFileSystem`/`resetFileSystem` from
+`src/main/src/filesystem/instance.ts` swap the process-wide singleton. In
+renderer tests, `installInMemoryFS` from
+`src/renderer/src/test-utils/fsApi.ts` replaces `window.api.fs`.
+
+### Key files
+
+- `src/shared/src/fs/in-memory.ts` - the `FileSystem` implementation
+- `src/shared/src/fs/in-memory-builder.ts` - seeding
+- `src/shared/src/fs/chaos.ts` - fault injection (transient errors like disk-full or locked files)
+- `src/main/src/filesystem/instance.ts` - main-process singleton and test swap
+- `src/renderer/src/test-utils/fsApi.ts` - `window.api.fs` swap for renderer tests
+
 ## See also
 
 - [frontend.md](frontend.md) - renderer conventions, including what to test
