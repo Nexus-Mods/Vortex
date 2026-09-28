@@ -1,0 +1,100 @@
+{
+  "shared": {
+    "title": "Media",
+    "subtitle": "Screenshots and videos from your selected game.",
+    "save": "Save",
+    "media_from": "Media from {{source}}",
+    "remove": "Remove"
+  },
+  "listing": {
+    "actions": {
+      "open_folder": "Open Folder",
+      "scan_again": "Scan again"
+    },
+    "all_tab": "All",
+    "all_subtitle": "All screenshots and videos for {{game}}.",
+    "no_results": {
+      "title": "No media found",
+      "message": "There are no screenshots or videos available based on your filters.",
+      "disabled_sources": "There is {{count}} disabled media source in your settings.",
+      "disabled_sources_plural": "There are {{count}} disabled media sources in your settings."
+    }
+  },
+  "single": {
+    "actions": {
+      "upload": "Upload",
+      "continue": "Continue",
+      "cancel": "Cancel",
+      "add_mod": "Add Mod",
+      "open": "Open File",
+      "open_in_steam": "Open in Steam"
+    },
+    "upload": {
+      "title": "Upload to Nexus Mods",
+      "body": "It is not currently possible to upload to Nexus Mods in one click, however, Vortex can open both the folder containing this file and the upload page."
+    },
+    "details": "Details",
+    "featured_mods": "Featured Mods",
+    "no_tags": "No tagged mods.",
+    "video_failed": "Video failed to load",
+    "start_tagging": "Click anywhere on the image to tag a mod.",
+    "steam_clip_unplayable": "Steam Clips cannot currently be played in Vortex.",
+    "video_tag_disabled": "Videos can be tagged during upload to Nexus Mods."
+  },
+  "floating_search": {
+    "placeholder": "Search for mods...",
+    "comment_placeholder": "Optional comment",
+    "change": "Change mod",
+    "no_query_title": "Add mods to image",
+    "no_query_subtitle": "Select a mod to tag it in this image",
+    "no_results_title": "No mods found for \"{{query}}\"",
+    "no_results_subtitle": "Please try expanding your search."
+  },
+  "settings": {
+    "description": "Manage the folders scanned when viewing the Media section.",
+    "header_default": "Default Sources",
+    "header_custom": "Custom Sources",
+    "header_exp": "Experimental",
+    "add_custom": "Add Custom Source",
+    "no_custom": "No custom media sources.",
+    "edit_source": "Edit Source",
+    "delete_source": "Delete Source",
+    "exp": {
+      "video_support": "Video Support",
+      "video_support_desc": "Includes MP4s and Steam clips in the media section.",
+      "video_support_warn": "It is not currently possible to play Steam clips, and videos will have generic thumbnails unless FFmpeg is installed.",
+      "get_ffmpeg": "Get FFmpeg."
+    },
+    "add_modal": {
+      "header_add": "Add Custom Media Source",
+      "header_edit": "Edit Media Source",
+      "source_name": "Source Name",
+      "source_name_placeholder": "e.g. My Screenshots",
+      "source_desc": "Description",
+      "source_desc_placeholder": "e.g. Images saved to my screenshots folder",
+      "source_path": "Folder Path",
+      "source_path_select": "Select a folder."
+    },
+    "orphaned_tags": "{{count}} mod tags refer to media that is no longer in your sources.",
+    "orphaned_tags_plural": "{{count}} mod tag refers to media that is no longer in your sources."
+  },
+  "sources": {
+    "photo_mode": "Photo Mode",
+    "photo_mode_description": "Screenshots captured using the in-game Photo Mode.",
+    "screenshots": "Game Screenshots",
+    "screenshots_desc": "Screenshots taken in-game.",
+    "screenshots_desc_prtscr": "Screenshots captured using Print Screen.",
+    "videos": "Game Videos",
+    "videos_desc": "Videos taken in-game.",
+    "steam": {
+      "screenshots": "Steam Screenshots",
+      "screenshots_desc": "Screenshots for Steam user {{user}}",
+      "clips": "Steam Clips",
+      "clips_desc": "Clips for Steam user {{user}}"
+    },
+    "xbox": {
+      "captures": "Xbox Captures",
+      "captures_desc": "Screenshots captured by the Xbox Game Bar."
+    }
+  }
+}
