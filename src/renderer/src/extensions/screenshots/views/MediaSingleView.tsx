@@ -1,6 +1,6 @@
 import { pathToFileURL } from "url";
 
-import { mdiArrowLeft, mdiClose, mdiOpenInNew } from "@mdi/js";
+import { mdiArrowLeft, mdiClose, mdiFolderOpenOutline } from "@mdi/js";
 import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -226,7 +226,7 @@ export default function MediaSingleView({
           <Button
             appearance="strong"
             brand="primary"
-            leftIconPath={mdiOpenInNew}
+            leftIconPath={mdiFolderOpenOutline}
             onClick={() => {
               const uploadPath = entry.type === "image" ? "images" : "videos";
               setUploadModalVisible(false);

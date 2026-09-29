@@ -1,4 +1,4 @@
-import { mdiCogOutline, mdiOpenInNew, mdiRefresh } from "@mdi/js";
+import { mdiCogOutline, mdiFolderOpenOutline, mdiRefresh } from "@mdi/js";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -198,7 +198,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                     <Button
                       appearance="subdued"
                       brand="neutral"
-                      leftIconPath={mdiOpenInNew}
+                      leftIconPath={mdiFolderOpenOutline}
                       size="sm"
                       title={t("listing::actions::open_folder")}
                       onClick={() => window.api.shell.openFile(allSources[k].path)}
