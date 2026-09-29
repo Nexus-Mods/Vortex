@@ -8,6 +8,7 @@ import { generate } from "shortid";
 
 import { prepareFileData, restoreFileData } from "./collections/util";
 import { GAME_ID, INPUT_XML_FILENAME, PART_SUFFIX } from "./common";
+import { detectEdition, W3Edition } from "./edition";
 import { getPersistentLoadOrder } from "./migrations";
 import { getDeployment } from "./util";
 
@@ -17,6 +18,10 @@ const INPUT_SETTINGS_FILENAME = "input.settings";
 const DX_11_USER_SETTINGS_FILENAME = "user.settings";
 const DX_12_USER_SETTINGS_FILENAME = "dx12user.settings";
 const BACKUP_TAG = ".vortex_backup";
+
+// The remaster keeps the master switches for local mods here. Mods must never
+// supply it, and it has to survive regeneration of the settings file.
+const CONTENT_MANAGER_MODS_SECTION = "ContentManager/Mods";
 
 interface ICacheEntry {
   id: string;
@@ -451,6 +456,32 @@ const getInitialDoc = (filePath: string) => {
     });
 };
 
+/**
+ * The generated settings file is rebuilt from a `.vortex_backup` snapshot,
+ * which on an install that was upgraded in place predates the remaster and so
+ * has no mod switches in it. Deploying that copy would turn every deployed mod
+ * off with no error anywhere, so the live values always win - including over
+ * anything a mod tried to supply.
+ */
+async function preserveContentManagerMods(parser, liveFilePath: string, target) {
+  let live;
+  try {
+    live = await parser.read(liveFilePath);
+  } catch (err) {
+    // Leave the generated copy alone rather than writing a file with no mod
+    // switches at all.
+    log("warn", "W3: could not read live mod switches", err.message);
+    return;
+  }
+
+  const section = live.data[CONTENT_MANAGER_MODS_SECTION];
+  if (section !== undefined) {
+    target.data[CONTENT_MANAGER_MODS_SECTION] = { ...section };
+  } else {
+    delete target.data[CONTENT_MANAGER_MODS_SECTION];
+  }
+}
+
 async function writeCacheToFiles(api, profile) {
   const state = api.store.getState();
   const modName = menuMod(profile.name);
@@ -467,7 +498,12 @@ async function writeCacheToFiles(api, profile) {
   if (!fileMap) return;
 
   const parser = new IniParser.default(new IniParser.WinapiFormat());
-  const keys = Object.keys(fileMap);
+  const edition = detectEdition(discovery.path);
+  const keys = Object.keys(fileMap).filter(
+    // The remaster has no DirectX 11 renderer, so user.settings is never
+    // created and asking the user to run the game once can't help them.
+    (key) => !(edition === W3Edition.Remastered && key === DX_11_USER_SETTINGS_FILENAME),
+  );
 
   for (const key of keys) {
     try {
@@ -487,6 +523,9 @@ async function writeCacheToFiles(api, profile) {
             ...modData.data[modKey],
           };
         }
+      }
+      if (key === DX_12_USER_SETTINGS_FILENAME) {
+        await preserveContentManagerMods(parser, path.join(docModPath, key), initialData);
       }
       await parser.write(path.join(destinationFolder, key), initialData);
     } catch (err) {

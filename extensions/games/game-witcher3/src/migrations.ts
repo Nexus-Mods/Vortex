@@ -2,6 +2,7 @@ import { selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import semver from "semver";
 
+import { withPositionPrefix } from "./collectionLoadOrder";
 import { ILoadOrder, ILoadOrderEntry } from "./collections/types";
 import { GAME_ID } from "./common";
 
@@ -80,7 +81,9 @@ export function getPersistentLoadOrder(
     return loadOrder;
   }
   if (typeof loadOrder === "object") {
-    return Object.entries(loadOrder).map(([key, item]) => convertDisplayItem(key, item));
+    return withPositionPrefix(
+      Object.entries(loadOrder).map(([key, item]) => convertDisplayItem(key, item)),
+    );
   }
   return [];
 }
@@ -92,8 +95,5 @@ function convertDisplayItem(key: string, item: ILoadOrderEntry): types.ILoadOrde
     name: key,
     locked: item.locked,
     enabled: true,
-    data: {
-      prefix: item.prefix,
-    },
   };
 }

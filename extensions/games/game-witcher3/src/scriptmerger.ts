@@ -9,15 +9,16 @@ import _ from "lodash";
 import semver from "semver";
 import { Builder, parseStringPromise } from "xml2js";
 
+import { isMergerToolValidForRoot, mergerDirForRoot } from "./mergerPaths";
+import { latestMergerRelease, mergerDownloadProblem } from "./mergerRelease";
 import { IIncomingGithubHttpHeaders } from "./types";
+import { fileExists, shouldNotifyMissingScriptMerger } from "./util";
 
-const RELEASE_CUTOFF = "0.6.5";
 const GITHUB_URL = "https://api.github.com/repos/IDCs/WitcherScriptMerger";
-const MERGER_RELPATH = "WitcherScriptMerger";
 
 const MERGER_CONFIG_FILE = "WitcherScriptMerger.exe.config";
 
-const { getHash, MD5ComparisonError, SCRIPT_MERGER_ID } = require("./common");
+const { SCRIPT_MERGER_FILES, SCRIPT_MERGER_ID } = require("./common");
 
 function query(baseUrl, request) {
   return new Promise((resolve, reject) => {
@@ -131,71 +132,21 @@ async function getMergerVersion(api: types.IExtensionApi) {
   }
 }
 
-let _HASH_CACHE;
-async function getCache(api: types.IExtensionApi) {
-  if (_HASH_CACHE === undefined) {
-    try {
-      const data = await fs.readFileAsync(path.join(__dirname, "MD5Cache.json"), {
-        encoding: "utf8",
-      });
-      _HASH_CACHE = JSON.parse(data);
-    } catch (err) {
-      // If this ever happens - the user's machine must be screwed.
-      //  Maybe virus ? defective hardware ? did he manually manipulate
-      //  the file ?
-      api.showErrorNotification("Failed to parse MD5Cache", err);
-      return (_HASH_CACHE = []);
-    }
-  }
-
-  return _HASH_CACHE;
-}
+/** A downloaded merger that can't be installed; the user is sent to the manual install. */
+class UnusableMergerDownloadError extends Error {}
 
 async function onDownloadComplete(api, archivePath, mostRecentVersion) {
-  return new Promise(async (resolve, reject) => {
-    let archiveHash;
-    try {
-      archiveHash = await getHash(archivePath);
-    } catch (err) {
-      return Promise.reject(new MD5ComparisonError("Failed to calculate hash", archivePath));
-    }
-    const hashCache = await getCache(api);
-    if (
-      hashCache.find(
-        (entry) =>
-          entry.archiveChecksum.toLowerCase() === archiveHash &&
-          entry.version === mostRecentVersion,
-      ) === undefined
-    ) {
-      // Not a valid hash - something may have happened during the download ?
-      return reject(new MD5ComparisonError("Corrupted archive download", archivePath));
-    }
-
-    return resolve(archivePath);
-  })
-    .then((archivePath) => extractScriptMerger(api, archivePath))
-    .then(async (mergerPath) => {
-      const mergerExec = path.join(mergerPath, "WitcherScriptMerger.exe");
-      let execHash;
-      try {
-        execHash = await getHash(mergerExec);
-      } catch (err) {
-        return Promise.reject(new MD5ComparisonError("Failed to calculate hash", mergerExec));
-      }
-      const hashCache = await getCache(api);
-      if (
-        hashCache.find(
-          (entry) =>
-            entry.execChecksum.toLowerCase() === execHash && entry.version === mostRecentVersion,
-        ) === undefined
-      ) {
-        // Not a valid hash - something may have happened during extraction ?
-        return Promise.reject(new MD5ComparisonError("Corrupted executable", mergerExec));
-      }
-
-      return Promise.resolve(mergerPath);
-    })
-    .then((mergerPath) => setUpMerger(api, mostRecentVersion, mergerPath));
+  let mergerPath;
+  try {
+    mergerPath = await extractScriptMerger(api, archivePath);
+  } catch (err) {
+    log("error", "failed to extract script merger", err);
+    throw new UnusableMergerDownloadError("extraction failed");
+  }
+  if (!(await fileExists(path.join(mergerPath, SCRIPT_MERGER_FILES[0])))) {
+    throw new UnusableMergerDownloadError(`archive has no ${SCRIPT_MERGER_FILES[0]}`);
+  }
+  return setUpMerger(api, mostRecentVersion, mergerPath);
 }
 
 export async function getScriptMergerDir(api, create = false) {
@@ -213,10 +164,15 @@ export async function getScriptMergerDir(api, create = false) {
     if (!currentPath) {
       throw new Error("Script Merger not set up");
     }
+    // Existing on disk isn't enough: a path left over from another install
+    // stats fine and would merge the wrong scripts into the wrong Mods folder.
+    if (!isMergerToolValidForRoot(currentPath, discovery.path)) {
+      throw new util.ProcessCanceled("Script Merger belongs to another install");
+    }
     await fs.statAsync(currentPath);
     return currentPath;
   } catch (err) {
-    const defaultPath = path.join(discovery.path, MERGER_RELPATH);
+    const defaultPath = mergerDirForRoot(discovery.path);
     if (create) {
       await fs.ensureDirWritableAsync(defaultPath);
     }
@@ -242,20 +198,17 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
       if (!Array.isArray(releases)) {
         return Promise.reject(new util.DataInvalid("expected array of github releases"));
       }
-      const current = releases
-        .filter((rel) => semver.valid(rel.name) && semver.gte(rel.name, RELEASE_CUTOFF))
-        .sort((lhs, rhs) => semver.compare(rhs.name, lhs.name));
+      const latest = latestMergerRelease(releases);
+      if (latest === undefined) {
+        return Promise.reject(new util.DataInvalid("no installable script merger release"));
+      }
 
-      return Promise.resolve(current);
+      return Promise.resolve(latest);
     })
-    .then(async (currentRelease) => {
-      mostRecentVersion = currentRelease[0].name;
-      const fileName = currentRelease[0].assets[0].name;
-      const downloadLink = currentRelease[0].assets[0].browser_download_url;
-      if (
-        !!currentlyInstalledVersion &&
-        semver.gte(currentlyInstalledVersion, currentRelease[0].name)
-      ) {
+    .then(async (latest) => {
+      const { version, fileName, downloadLink } = latest;
+      mostRecentVersion = version;
+      if (!!currentlyInstalledVersion && semver.gte(currentlyInstalledVersion, version)) {
         return Promise.reject(new util.ProcessCanceled("Already up to date"));
       }
 
@@ -313,6 +266,10 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
                   }
                 })
                 .on("end", () => {
+                  const problem = mergerDownloadProblem(res.statusCode, output.length, latest);
+                  if (problem !== undefined) {
+                    return reject(new UnusableMergerDownloadError(problem));
+                  }
                   api.sendNotification({
                     ...downloadNotif,
                     progress: 100,
@@ -352,12 +309,11 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
                   .catch((err) => {
                     api.dismissNotification(extractNotifId);
                     api.dismissNotification(downloadNotifId);
-                    if (err instanceof MD5ComparisonError || err instanceof util.ProcessCanceled) {
-                      log(
-                        "error",
-                        "Failed to automatically install Script Merger",
-                        err.errorMessage,
-                      );
+                    if (
+                      err instanceof UnusableMergerDownloadError ||
+                      err instanceof util.ProcessCanceled
+                    ) {
+                      log("error", "Failed to automatically install Script Merger", err.message);
                       api.sendNotification({
                         type: "error",
                         message: api.translate("Please install Script Merger manually", {
@@ -401,7 +357,11 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
     .then((archivePath) => onDownloadComplete(api, archivePath, mostRecentVersion))
     .catch(async (err) => {
       const raiseManualInstallNotif = () => {
-        log("error", "Failed to automatically install Script Merger", err.errorMessage);
+        log("error", "Failed to automatically install Script Merger", err.message);
+        if (!shouldNotifyMissingScriptMerger(api)) {
+          // Nothing to chase on the remaster - mods there merge themselves.
+          return;
+        }
         api.sendNotification({
           type: "error",
           message: api.translate("Please install Script Merger manually", { ns: "game-witcher3" }),
@@ -416,7 +376,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
       };
       api.dismissNotification(extractNotifId);
       api.dismissNotification(downloadNotifId);
-      if (err instanceof MD5ComparisonError) {
+      if (err instanceof UnusableMergerDownloadError) {
         raiseManualInstallNotif();
         return Promise.resolve();
       }
@@ -490,6 +450,65 @@ async function setUpMerger(api, mergerVersion, newPath) {
   return Promise.resolve();
 }
 
+/**
+ * Points the script merger at the install that is currently discovered.
+ *
+ * Both editions are managed under one game entry, so the stored tool and the
+ * merger's own config survive a switch between them. The merger compiles against
+ * one edition's vanilla scripts and keeps its merge state in MergeInventory.xml
+ * beside its exe, so each game root gets its own copy rather than sharing one.
+ */
+export async function repairStaleScriptMerger(
+  api: types.IExtensionApi,
+  discovery: types.IDiscoveryResult,
+): Promise<void> {
+  const toolPath = discovery?.tools?.[SCRIPT_MERGER_ID]?.path;
+  if (discovery?.path === undefined || toolPath === undefined) {
+    return;
+  }
+
+  const expectedDir = mergerDirForRoot(discovery.path);
+  if (isMergerToolValidForRoot(toolPath, discovery.path)) {
+    // Right merger, but its config records whichever root it was set up for.
+    await setMergerConfig(discovery.path, path.dirname(toolPath));
+    return;
+  }
+
+  const expectedExe = path.join(expectedDir, "WitcherScriptMerger.exe");
+  const installed = await fs
+    .statAsync(expectedExe)
+    .then(() => true)
+    .catch(() => false);
+
+  log("info", "witcher3 script merger belongs to another install, re-pointing", {
+    from: toolPath,
+    to: expectedDir,
+    installed,
+  });
+
+  // Pointed at the executable only when it is there. Naming a path that is not
+  // leaves the tool looking configured, so it fails on run and the download
+  // treats it as already current.
+  const newToolDetails = {
+    ...discovery.tools[SCRIPT_MERGER_ID],
+    path: installed ? expectedExe : undefined,
+    workingDirectory: installed ? expectedDir : undefined,
+    mergerVersion: installed ? discovery.tools[SCRIPT_MERGER_ID].mergerVersion : undefined,
+  };
+  api.store.dispatch(actions.addDiscoveredTool("witcher3", SCRIPT_MERGER_ID, newToolDetails, true));
+
+  if (installed) {
+    await setMergerConfig(discovery.path, expectedDir);
+  } else {
+    api.sendNotification({
+      id: "w3-merger-repointed",
+      type: "info",
+      message: "Script Merger needs setting up again for this copy of the game.",
+      allowSuppress: false,
+    });
+  }
+}
+
 export async function getMergedModName(scriptMergerPath) {
   const configFilePath = path.join(scriptMergerPath, MERGER_CONFIG_FILE);
   try {
@@ -508,8 +527,11 @@ export async function getMergedModName(scriptMergerPath) {
 }
 
 export async function setMergerConfig(gameRootPath, scriptMergerPath) {
+  // findIndex reports a miss as -1, which is a valid-looking array index right
+  // up until the assignment throws and leaves the config half rewritten.
   const findIndex = (nodes, id) => {
-    return nodes?.findIndex((iter) => iter.$?.key === id) ?? undefined;
+    const idx = nodes?.findIndex((iter) => iter.$?.key === id) ?? -1;
+    return idx >= 0 ? idx : undefined;
   };
 
   const configFilePath = path.join(scriptMergerPath, MERGER_CONFIG_FILE);
