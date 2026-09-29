@@ -2,6 +2,7 @@ import path from "path";
 
 import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
+import * as winapi from "winapi-bindings";
 
 const walk = require("turbowalk").default;
 
@@ -24,17 +25,6 @@ const localeFoldersXbox = {
   de: "Morrowind GOTY German",
 };
 
-const gameStoreIds: any = {
-  steam: [{ id: STEAMAPP_ID, prefer: 0 }],
-  xbox: [{ id: MS_ID }],
-  gog: [{ id: GOG_ID }],
-  registry: [
-    {
-      id: "HKEY_LOCAL_MACHINE:Software\\Wow6432Node\\Bethesda Softworks\\Morrowind:Installed Path",
-    },
-  ],
-};
-
 const tools = [
   {
     id: "tes3edit",
@@ -53,8 +43,24 @@ const tools = [
   },
 ];
 
+async function findRegistryGame(key: string): Promise<types.IGameStoreEntry | undefined> {
+  const instPath = winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "Installed Path");
+  if (instPath.type !== "REG_SZ") return undefined;
+  const gamePath = instPath.value as string;
+  return { appid: key, name: path.basename(gamePath), gamePath, gameStoreId: "registry" };
+}
+
 async function findGame() {
-  const storeGames = await util.GameStoreHelper.find(gameStoreIds).catch(() => []);
+  // Same order as the removed GameStoreHelper.find; the first hit wins.
+  const lookups: PromiseLike<types.IGameStoreEntry>[] = [
+    util.GameStoreHelper.findByAppId(STEAMAPP_ID, "steam"),
+    util.GameStoreHelper.findByAppId(MS_ID, "xbox"),
+    util.GameStoreHelper.findByAppId(GOG_ID, "gog"),
+    findRegistryGame("Software\\Wow6432Node\\Bethesda Softworks\\Morrowind"),
+  ];
+  const storeGames = (
+    await Promise.all(lookups.map((lookup) => Promise.resolve(lookup).catch(() => undefined)))
+  ).filter((game): game is types.IGameStoreEntry => game !== undefined);
 
   if (!storeGames.length) return;
 

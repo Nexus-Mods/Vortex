@@ -1,5 +1,6 @@
 const path = require("path");
 const { log, util } = require("@nexusmods/vortex-api");
+const winapi = require("winapi-bindings");
 
 // List of folders in the various languages on Xbox, for now we default to English but this could be enhanced to select a folder based on the Vortex locale.
 // It's possible that some mods don't work with the non-English variant.
@@ -21,21 +22,26 @@ const STEAMAPP_ID2 = "900883";
 const GOG_ID = "1458058109";
 const MS_ID = "BethesdaSoftworks.TESOblivion-PC";
 
-const gameStoreIds = {
-  steam: [
-    { id: STEAMAPP_ID, prefer: 0 },
-    { id: STEAMAPP_ID2 },
-    { name: "The Elder Scrolls IV: Oblivion" },
-  ],
-  xbox: [{ id: MS_ID }],
-  gog: [{ id: GOG_ID }],
-  registry: [
-    { id: "HKEY_LOCAL_MACHINE:Software\\Wow6432Node\\Bethesda Softworks\\oblivion:Installed Path" },
-  ],
-};
+async function findRegistryGame(key) {
+  const instPath = winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "Installed Path");
+  if (instPath.type !== "REG_SZ") return undefined;
+  const gamePath = instPath.value;
+  return { appid: key, name: path.basename(gamePath), gamePath, gameStoreId: "registry" };
+}
 
 async function findGame() {
-  const storeGames = await util.GameStoreHelper.find(gameStoreIds).catch(() => []);
+  // Same order as the removed GameStoreHelper.find; the first hit wins.
+  const lookups = [
+    util.GameStoreHelper.findByAppId(STEAMAPP_ID, "steam"),
+    util.GameStoreHelper.findByAppId(STEAMAPP_ID2, "steam"),
+    util.GameStoreHelper.findByName("The Elder Scrolls IV: Oblivion", "steam"),
+    util.GameStoreHelper.findByAppId(MS_ID, "xbox"),
+    util.GameStoreHelper.findByAppId(GOG_ID, "gog"),
+    findRegistryGame("Software\\Wow6432Node\\Bethesda Softworks\\oblivion"),
+  ];
+  const storeGames = (
+    await Promise.all(lookups.map((lookup) => lookup.catch(() => undefined)))
+  ).filter((game) => game !== undefined);
 
   if (!storeGames.length) return;
 
