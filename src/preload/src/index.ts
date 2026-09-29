@@ -404,11 +404,12 @@ async function openEnumeration(
         if (reply.entries.length > 0) {
           buffer = reply.entries;
         }
-        // A done reply may still carry the tail of the listing, so the
-        // buffer is filled first and drained before iteration stops.
+        // A done reply may still carry the tail of the listing. Only
+        // `exhausted` stops further pulls; `closed` stays reserved for
+        // explicit return()/throw() so the tail is always drained before
+        // iteration reports done.
         if (reply.done) {
           exhausted = true;
-          closed = true;
         }
       }
 
