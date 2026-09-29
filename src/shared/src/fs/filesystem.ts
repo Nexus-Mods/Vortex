@@ -149,7 +149,7 @@ export interface FileSystem {
     path: QualifiedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream>;
+  ): Promise<ReadableStream<Uint8Array>>;
 
   /**
    * Creates a writable stream.
@@ -160,7 +160,7 @@ export interface FileSystem {
     path: QualifiedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WritableStream>;
+  ): Promise<WritableStream<Uint8Array>>;
 
   /**
    * Creates a stream.
@@ -171,7 +171,7 @@ export interface FileSystem {
     path: QualifiedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream | WritableStream>;
+  ): Promise<ReadableStream<Uint8Array> | WritableStream<Uint8Array>>;
 
   /**
    * Creates a hardlink or symlink at `to` pointing to `from`.
@@ -234,18 +234,18 @@ export interface FileSystemBackend {
     path: ResolvedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream>;
+  ): Promise<ReadableStream<Uint8Array>>;
   createStream(
     path: ResolvedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WritableStream>;
+  ): Promise<WritableStream<Uint8Array>>;
 
   createStream(
     path: ResolvedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream | WritableStream>;
+  ): Promise<ReadableStream<Uint8Array> | WritableStream<Uint8Array>>;
 
   createLink(from: ResolvedPath, to: ResolvedPath, type: "hardlink" | "symlink"): Promise<void>;
 }

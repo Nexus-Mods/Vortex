@@ -229,22 +229,22 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
     path: ResolvedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream>;
+  ): Promise<ReadableStream<Uint8Array>>;
   createStream(
     path: ResolvedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WritableStream>;
+  ): Promise<WritableStream<Uint8Array>>;
   createStream(
     path: ResolvedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream | WritableStream>;
+  ): Promise<ReadableStream<Uint8Array> | WritableStream<Uint8Array>>;
   async createStream(
     path: ResolvedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream | WritableStream> {
+  ): Promise<ReadableStream<Uint8Array> | WritableStream<Uint8Array>> {
     if (mode === "w") {
       await this.createDirectory(dirname(path));
     }
@@ -258,7 +258,8 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
           start: options?.start,
           end: options?.end,
         });
-        return Readable.toWeb(node) as ReadableStream;
+
+        return Readable.toWeb(node) as ReadableStream<Uint8Array>;
       } else if (mode === "w") {
         // 'w': Open file for writing. The file is created (if it does not exist) or truncated (if it exists).
         const fd = await open(path, "w");
@@ -266,7 +267,8 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
           autoClose: true,
           start: options?.start,
         });
-        return Writable.toWeb(node) as WritableStream;
+
+        return Writable.toWeb(node) as WritableStream<Uint8Array>;
       }
     } catch (err) {
       throw parseError(err, { path }, ({ data }) => {
@@ -277,6 +279,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         } else if (data.kind === "fs:not-a-file") {
           return `Cannot create stream for '${path}': not a file`;
         }
+
         return undefined;
       });
     }

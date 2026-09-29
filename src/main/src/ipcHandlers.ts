@@ -783,6 +783,89 @@ export function init(fs: FileSystem) {
   betterIpcMain.handle("fs:enumerate-close", (_event, handle: number) => {
     evictEnumeration(handle);
   });
+
+  // Read streams: the FS API returns web streams, which cannot cross IPC.
+  // Main holds the reader behind a numeric handle and the renderer pulls
+  // batches of bytes through fs:stream-read. Handles evict on exhaustion,
+  // explicit close, or renderer destruction.
+  const readStreams = new Map<
+    number,
+    {
+      reader: ReadableStreamDefaultReader<Uint8Array>;
+      sender: WebContents;
+      onDestroyed: () => void;
+    }
+  >();
+  let nextStreamHandle = 1;
+
+  const evictReadStream = (handle: number) => {
+    const session = readStreams.get(handle);
+    if (session === undefined) return;
+
+    readStreams.delete(handle);
+    session.sender.removeListener("destroyed", session.onDestroyed);
+    // Releases the fd inside the backend stream (autoClose). Ignoring the
+    // rejection: eviction also happens on error/destroyed where cancel is
+    // a tolerated no-op.
+    void session.reader.cancel().catch(() => undefined);
+  };
+
+  betterIpcMain.handle("fs:stream-open", async (event, inputPath, mode, options) => {
+    if (mode !== "r") {
+      throw new VortexError(`Unknown stream mode '${mode}' for '${inputPath.path}'`, {
+        kind: "argument-invalid",
+        argument: "mode",
+      });
+    }
+
+    const stream = await fs.createStream(QualifiedPath.of(inputPath), mode, options);
+    const handle = nextStreamHandle++;
+    const sender = event.sender;
+
+    const onDestroyed = () => evictReadStream(handle);
+    sender.once("destroyed", onDestroyed);
+
+    readStreams.set(handle, { reader: stream.getReader(), sender, onDestroyed });
+    return handle;
+  });
+
+  betterIpcMain.handle("fs:stream-read", async (_event, handle: number, max: number) => {
+    const session = readStreams.get(handle);
+    if (session === undefined) {
+      throw new VortexError(`No stream session for handle ${handle}`, {
+        kind: "argument-invalid",
+        argument: "handle",
+      });
+    }
+
+    const chunks: Uint8Array[] = [];
+    let collected = 0;
+    let done = false;
+    while (collected < max) {
+      const step = await session.reader.read();
+      if (step.done) {
+        done = true;
+        break;
+      }
+
+      collected += step.value.length;
+      chunks.push(step.value);
+    }
+
+    if (done) {
+      // Exhausted: full eviction so the fd is released and the destroyed
+      // listener is detached. A close call from the renderer afterwards is
+      // a tolerated no-op.
+      evictReadStream(handle);
+    }
+
+    // A done reply still carries the tail of the file.
+    return { done, bytes: Buffer.concat(chunks) };
+  });
+
+  betterIpcMain.handle("fs:stream-close", (_event, handle: number) => {
+    evictReadStream(handle);
+  });
 }
 
 function enumerationEntryToWire(

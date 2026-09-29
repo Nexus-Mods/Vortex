@@ -612,7 +612,27 @@ export interface InvokeChannels {
   ) => Promise<number>;
   "fs:enumerate-next": (handle: number, max: number) => Promise<EnumerateReply>;
   "fs:enumerate-close": (handle: number) => Promise<void>;
+
+  /**
+   * Opens a read-stream session on the main process. Returns a handle the
+   * renderer pulls chunks of bytes through with
+   * {@link InvokeChannels["fs:stream-read"]} until done, then releases with
+   * {@link InvokeChannels["fs:stream-close"]}.
+   */
+  "fs:stream-open": (
+    path: QualifiedPathWire,
+    mode: "r" | "w",
+    options?: Parameters<FileSystem["createStream"]>[2],
+  ) => Promise<number>;
+  "fs:stream-read": (handle: number, max: number) => Promise<StreamReadReply>;
+  "fs:stream-close": (handle: number) => Promise<void>;
 }
+
+/** Wire reply of {@link InvokeChannels["fs:stream-read"]}. `bytes` holds the
+ *  chunks read during this call; sizing is chunk-granular, so a reply may
+ *  exceed `max` by up to one underlying chunk. A `done: true` reply may
+ *  still carry the tail of the file when EOF hit mid-batch. */
+export type StreamReadReply = { done: boolean; bytes: Uint8Array };
 
 export type EnumerateEntryWire = QualifiedPathWire | [QualifiedPathWire, TemporalWire<Status>];
 

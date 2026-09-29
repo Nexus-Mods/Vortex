@@ -1,3 +1,4 @@
+import { VortexError } from "@vortex/shared";
 import type { QualifiedPathWire, StatResult, Status, StatusTime } from "@vortex/shared/filesystem";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import type {
@@ -329,6 +330,8 @@ try {
         return statFromWire(result);
       },
 
+      createStream,
+
       enumerateDirectory,
     },
   });
@@ -336,8 +339,82 @@ try {
   console.error("failed to run preload code", err);
 }
 
-/** Fixed pull size: amortizes one invoke across this many entries. */
+/** Fixed pull size for directory enumeration: amortizes one invoke across
+ *  this many entries. */
 const ENUMERATE_BATCH_SIZE = 512;
+
+/** Fixed pull size for read streams. Chunk replies are granular to the
+ *  underlying stream's chunk size, so this only bounds the reply, and a
+ *  reply may exceed it by up to one underlying chunk. */
+const STREAM_READ_CHUNK_SIZE = 4 * 1024 * 1024;
+
+function createStream(
+  path: QualifiedPath,
+  mode: "r",
+  options?: { start?: number; end?: number },
+): Promise<ReadableStream<Uint8Array>>;
+function createStream(
+  path: QualifiedPath,
+  mode: "w",
+  options?: { start?: number },
+): Promise<WritableStream<Uint8Array>>;
+function createStream(
+  path: QualifiedPath,
+  mode: string,
+  options?: { start?: number; end?: number },
+): Promise<ReadableStream<Uint8Array> | WritableStream<Uint8Array>> {
+  if (mode === "r") {
+    return openReadStream(path, options);
+  }
+
+  // Write streams are not wired up yet; main only registers "r".
+  throw new VortexError(`Cannot create stream for '${path.path}': unknown mode '${mode}'`, {
+    kind: "argument-invalid",
+    argument: "mode",
+  });
+}
+
+async function openReadStream(
+  path: QualifiedPath,
+  options?: { start?: number; end?: number },
+): Promise<ReadableStream<Uint8Array>> {
+  const handle = await betterIpcRenderer.invoke("fs:stream-open", path.toWire(), "r", options);
+
+  let exhausted = false;
+  let closed = false;
+
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    // Fire-and-forget: main evicts handles on done, so an unknown handle
+    // here is normal exhaustion, not an error worth surfacing.
+    betterIpcRenderer.invoke("fs:stream-close", handle).catch(() => undefined);
+  };
+
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      if (closed || exhausted) {
+        controller.close();
+        return;
+      }
+
+      const reply = await betterIpcRenderer.invoke(
+        "fs:stream-read",
+        handle,
+        STREAM_READ_CHUNK_SIZE,
+      );
+
+      controller.enqueue(reply.bytes);
+
+      if (reply.done) {
+        exhausted = true;
+      }
+    },
+    cancel() {
+      close();
+    },
+  });
+}
 
 function enumerateDirectory(
   path: QualifiedPath,
