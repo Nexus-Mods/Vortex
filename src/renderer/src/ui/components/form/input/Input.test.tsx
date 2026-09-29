@@ -1,93 +1,43 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React from "react";
+import React, { createRef } from "react";
 import { describe, it, expect, vi } from "vitest";
 
 import { Input } from "./Input";
 
-// --- Helpers ---
-
-const renderComponent = (props: Partial<React.ComponentProps<typeof Input>> = {}) => {
-  const onChange = vi.fn();
-
-  render(<Input id="name" label="Name" onChange={onChange} {...props} />);
-
-  return { onChange };
-};
-
 const getInput = () => screen.getByRole("textbox");
 
-// --- Tests ---
-
 describe("Input", () => {
-  describe("rendering", () => {
-    it("renders a text input with the base class", () => {
-      renderComponent();
-      expect(getInput()).toHaveClass("nxm-input");
-    });
-
-    it("renders its label via FormField", () => {
-      renderComponent();
-      expect(screen.getByText("Name")).toBeInTheDocument();
-    });
-
-    it("reflects a controlled value", () => {
-      renderComponent({ value: "hello" });
-      expect(getInput()).toHaveValue("hello");
-    });
-  });
-
-  describe("interactions", () => {
-    it("calls onChange when the user types", async () => {
-      const { onChange } = renderComponent();
-      await userEvent.type(getInput(), "a");
-      expect(onChange).toHaveBeenCalled();
-    });
-  });
-
-  describe("error state", () => {
-    it("marks the input invalid and shows the message", () => {
-      renderComponent({ errorMessage: "Too short" });
-      const input = getInput();
-      expect(input).toHaveClass("nxm-input-error");
-      expect(input).toHaveAttribute("aria-invalid", "true");
-      expect(input).toHaveAttribute("aria-describedby", "name_error");
-      expect(screen.getByText("Too short")).toBeInTheDocument();
-    });
-  });
-
-  describe("disabled / readOnly", () => {
-    it("disables the input and applies the disabled class", () => {
-      renderComponent({ disabled: true });
-      expect(getInput()).toBeDisabled();
-      expect(getInput()).toHaveClass("nxm-input-disabled");
-    });
-
-    it("applies the disabled class when readOnly", () => {
-      renderComponent({ readOnly: true });
-      expect(getInput()).toHaveClass("nxm-input-disabled");
-      expect(getInput()).toHaveAttribute("readonly");
-    });
-  });
-
-  describe("required", () => {
-    it("shows the required label when required", () => {
-      renderComponent({ required: true });
-      expect(screen.getByText(/\(Required\)/)).toBeInTheDocument();
-    });
-  });
-
-  describe("character counter", () => {
-    it("updates the remaining count as the user types", async () => {
-      renderComponent({ id: "bio", label: "Bio", maxLength: 10 });
-      expect(screen.getByLabelText("remaining character count")).toHaveTextContent("10 / 10");
-      await userEvent.type(getInput(), "abc");
-      expect(screen.getByLabelText("remaining character count")).toHaveTextContent("7 / 10");
-    });
-  });
-
-  it("merges a custom className on the input", () => {
-    renderComponent({ className: "my-class" });
+  it("renders a text input with the base class, merging a custom one", () => {
+    render(<Input aria-label="Name" className="my-class" />);
+    expect(getInput()).toHaveAttribute("type", "text");
     expect(getInput()).toHaveClass("nxm-input", "my-class");
+  });
+
+  it("passes the change event through", async () => {
+    const onChange = vi.fn();
+    render(<Input aria-label="Name" onChange={onChange} />);
+
+    await userEvent.type(getInput(), "a");
+
+    expect(onChange.mock.calls[0][0].target.value).toBe("a");
+  });
+
+  it("reports invalid as aria-invalid and data-invalid", () => {
+    render(<Input invalid aria-label="Name" />);
+    expect(getInput()).toHaveAttribute("aria-invalid", "true");
+    expect(getInput()).toHaveAttribute("data-invalid");
+  });
+
+  it("marks itself disabled for styling", () => {
+    render(<Input disabled aria-label="Name" />);
+    expect(getInput()).toBeDisabled();
+    expect(getInput()).toHaveAttribute("data-disabled");
+  });
+
+  it("forwards its ref to the input", () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<Input aria-label="Name" ref={ref} />);
+    expect(ref.current).toBe(getInput());
   });
 });

@@ -2,7 +2,7 @@ import { mdiClose, mdiMagnify } from "@mdi/js";
 import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Input } from "@/ui/components/form/input/Input";
+import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -35,18 +35,13 @@ export const Search = ({
       }}
     >
       <div className="relative" ref={fieldRef}>
-        <Icon
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-neutral-subdued"
-          path={mdiMagnify}
-          size="sm"
-        />
-
-        <Input
-          className="px-9"
+        <TextField
+          className="pr-9"
           data-testid="search-input"
           fieldClassName="w-full max-w-60"
           hideLabel={true}
           label={label ?? placeholder ?? ""}
+          leftIconPath={mdiMagnify}
           placeholder={placeholder}
           value={value}
           onChange={(evt) => onChange(evt.target.value)}
