@@ -707,7 +707,11 @@ export function init(fs: FileSystem) {
   // Handles evict on exhaustion, explicit close, or renderer destruction.
   const enumerations = new Map<
     number,
-    { iterator: AsyncIterator<QualifiedPath | [QualifiedPath, Status]> }
+    {
+      iterator: AsyncIterator<QualifiedPath | [QualifiedPath, Status]>;
+      sender: WebContents;
+      onDestroyed: () => void;
+    }
   >();
   let nextEnumerationHandle = 1;
 
@@ -715,15 +719,20 @@ export function init(fs: FileSystem) {
     const session = enumerations.get(handle);
     if (session === undefined) return;
     enumerations.delete(handle);
-    // Releases the opendir handle inside the backend iterator.
+    session.sender.removeListener("destroyed", session.onDestroyed);
+    // Releases the opendir handle inside the backend iterator. Detaching
+    // the destroyed listener here is what keeps repeated enumerations from
+    // leaking listeners onto the sender.
     void session.iterator.return?.(undefined);
   };
 
   betterIpcMain.handle("fs:enumerate-open", async (event, inputPath, options) => {
     const iterator = await fs.enumerateDirectory(QualifiedPath.of(inputPath), options);
     const handle = nextEnumerationHandle++;
-    enumerations.set(handle, { iterator });
-    event.sender.once("destroyed", () => evictEnumeration(handle));
+    const sender = event.sender;
+    const onDestroyed = () => evictEnumeration(handle);
+    sender.once("destroyed", onDestroyed);
+    enumerations.set(handle, { iterator, sender, onDestroyed });
     return handle;
   });
 
@@ -748,9 +757,10 @@ export function init(fs: FileSystem) {
     }
 
     if (done) {
-      // Exhausted: release the opendir handle now. A close call from the
-      // renderer afterwards is a tolerated no-op.
-      enumerations.delete(handle);
+      // Exhausted: full eviction so the opendir handle is released and the
+      // destroyed listener is detached. A close call from the renderer
+      // afterwards is a tolerated no-op.
+      evictEnumeration(handle);
     }
 
     // A done reply still carries the tail of the listing.
