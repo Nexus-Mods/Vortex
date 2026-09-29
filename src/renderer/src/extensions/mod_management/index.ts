@@ -116,6 +116,7 @@ import allTypesSupported from "./util/allTypesSupported";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
 import { genSubDirFunc, purgeMods, purgeModsInPath } from "./util/deploy";
+import { reportRecordedFailures, resetDeploymentFailures } from "./util/deploymentFailures";
 import {
   getAllActivators,
   getCurrentActivator,
@@ -839,6 +840,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               );
 
               progress(t("Starting deployment"), 35);
+              resetDeploymentFailures(api, game.id);
               const deployProgress = (name, percent) =>
                 progress(t("Deploying: ") + name, 50 + percent / 2);
 
@@ -876,7 +878,8 @@ function genUpdateModDeployment(installManager: InstallManager) {
 
             await bakeSettings(api, profile, sortedModList);
 
-            api.store.dispatch(setDeploymentNecessary(game.id, false));
+            const failures = reportRecordedFailures(api, game.id);
+            api.store.dispatch(setDeploymentNecessary(game.id, failures.length > 0));
 
             emitModsDeployed(api, {
               gameId,
@@ -1263,6 +1266,7 @@ function onDeploySingleMod(api: IExtensionApi) {
           stagingPath,
           activator,
         );
+        resetDeploymentFailures(api, gameId);
         await activator.prepare(dataPath, false, lastActivation, normalize);
         if (mod !== undefined) {
           if (enable !== false) {
@@ -1286,6 +1290,7 @@ function onDeploySingleMod(api: IExtensionApi) {
           newActivation,
           activator.id,
         );
+        reportRecordedFailures(api, gameId);
       } catch (unknownErr) {
         if (activator.cancel !== undefined) {
           activator.cancel(gameId, dataPath, stagingPath);

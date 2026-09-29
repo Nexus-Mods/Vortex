@@ -59,6 +59,7 @@ import {
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
 import { genSubDirFunc, purgeMods } from "./util/deploy";
+import { reportRecordedFailures, resetDeploymentFailures } from "./util/deploymentFailures";
 import {
   getCurrentActivator,
   getSelectedActivator,
@@ -662,6 +663,8 @@ async function undeploy(
     return prev;
   }, {});
 
+  resetDeploymentFailures(api, gameMode);
+
   try {
     await Promise.all(
       Object.keys(byModTypes).map(async (typeId) => {
@@ -709,6 +712,7 @@ async function undeploy(
         );
       }),
     );
+    reportRecordedFailures(api, gameMode);
   } finally {
     log("debug", "done undeploying single mod", {
       game: gameMode,
