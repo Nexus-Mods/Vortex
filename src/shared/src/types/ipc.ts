@@ -588,6 +588,7 @@ export interface InvokeChannels {
   ) => Promise<void>;
   "fs:delete": (path: QualifiedPathWire) => Promise<void>;
   "fs:deleteRecursive": (path: QualifiedPathWire) => Promise<void>;
+  "fs:writeFile": (path: QualifiedPathWire, contents: Uint8Array) => Promise<void>;
   "fs:move": (
     source: QualifiedPathWire,
     target: QualifiedPathWire,

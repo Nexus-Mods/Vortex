@@ -121,7 +121,7 @@ export interface Api {
   featureFlags: FeatureFlagsApi;
 
   /** Filesystem API */
-  fs: BetterOmit<FileSystem, "createStream" | "readFile" | "writeFile">;
+  fs: BetterOmit<FileSystem, "createStream" | "readFile">;
 }
 
 type BetterOmit<T, K extends keyof T> = { [P in Exclude<keyof T, K>]: T[P] };

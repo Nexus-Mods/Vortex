@@ -692,6 +692,10 @@ export function init(fs: FileSystem) {
     fs.deleteRecursive(QualifiedPath.of(inputPath)),
   );
 
+  betterIpcMain.handle("fs:writeFile", (_event, inputPath, contents) =>
+    fs.writeFile(QualifiedPath.of(inputPath), contents),
+  );
+
   betterIpcMain.handle("fs:move", (_event, source, target, options) =>
     fs.move(QualifiedPath.of(source), QualifiedPath.of(target), options),
   );

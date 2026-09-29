@@ -315,6 +315,9 @@ try {
       deleteRecursive(path) {
         return betterIpcRenderer.invoke("fs:deleteRecursive", path.toWire());
       },
+      writeFile(path, contents) {
+        return betterIpcRenderer.invoke("fs:writeFile", path.toWire(), contents);
+      },
       move(source, target, options) {
         return betterIpcRenderer.invoke("fs:move", source.toWire(), target.toWire(), options);
       },
