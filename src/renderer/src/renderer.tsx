@@ -115,12 +115,13 @@ import * as path from "path";
 import "./util/application.electron";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
+import { QualifiedPath } from "@vortex/shared/filesystem";
 import type { AppInitMetadata } from "@vortex/shared/ipc";
 import Bluebird from "bluebird";
 import { ipcRenderer, webFrame } from "electron";
-import React from "react";
 
 import "./util/monkeyPatching";
+import React from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import * as ReactDOM from "react-dom";
@@ -944,5 +945,41 @@ function renderer(extensions: ExtensionManager | null) {
 
 initGlobals()
   .then(() => init())
+  .then(async (extensions) => {
+    const iterations = 5;
+    const durations: number[] = [];
+
+    for (let iteration = 0; iteration < iterations; iteration++) {
+      const start = performance.now();
+
+      const iterator = await window.api.fs.enumerateDirectory(
+        QualifiedPath.fromNative("/mnt/redline/.pnpm-store/v11"),
+        { includeStatus: true, recursive: true, types: "files" },
+      );
+      const iterable = {
+        [Symbol.asyncIterator]() {
+          return iterator;
+        },
+      };
+
+      let count = 0;
+      for await (const _value of iterable) {
+        count++;
+      }
+
+      const duration = performance.now() - start;
+      durations.push(duration);
+
+      log("info", "[BENCH]: file count", { iteration, duration, count });
+    }
+
+    const sum = durations.reduce((a, b) => a + b);
+    const avg = sum / durations.length;
+    const q50 = durations.toSorted()[durations.length / 2];
+
+    log("info", "[BENCH]: results", { avg, q50, iterations: durations.length });
+
+    return extensions;
+  })
   .then((extensions) => renderer(extensions))
   .catch((err) => log("error", "error setting up renderer", err));
