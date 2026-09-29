@@ -784,55 +784,83 @@ export function init(fs: FileSystem) {
     evictEnumeration(handle);
   });
 
-  // Read streams: the FS API returns web streams, which cannot cross IPC.
-  // Main holds the reader behind a numeric handle and the renderer pulls
-  // batches of bytes through fs:stream-read. Handles evict on exhaustion,
-  // explicit close, or renderer destruction.
-  const readStreams = new Map<
-    number,
-    {
-      reader: ReadableStreamDefaultReader<Uint8Array>;
-      sender: WebContents;
-      onDestroyed: () => void;
-    }
-  >();
+  // Streams: the FS API returns web streams, which cannot cross IPC. Main
+  // holds the stream behind a numeric handle; the renderer pulls batches of
+  // bytes through fs:stream-read or pushes bytes through fs:stream-write.
+  // Handles evict on exhaustion, explicit close, or renderer destruction.
+  type StreamSession =
+    | {
+        kind: "read";
+        reader: ReadableStreamDefaultReader<Uint8Array>;
+        sender: WebContents;
+        onDestroyed: () => void;
+      }
+    | {
+        kind: "write";
+        writer: WritableStreamDefaultWriter<Uint8Array>;
+        sender: WebContents;
+        onDestroyed: () => void;
+      };
+
+  const streams = new Map<number, StreamSession>();
   let nextStreamHandle = 1;
 
-  const evictReadStream = (handle: number) => {
-    const session = readStreams.get(handle);
+  const evictStream = (handle: number) => {
+    const session = streams.get(handle);
     if (session === undefined) return;
 
-    readStreams.delete(handle);
+    streams.delete(handle);
     session.sender.removeListener("destroyed", session.onDestroyed);
-    // Releases the fd inside the backend stream (autoClose). Ignoring the
-    // rejection: eviction also happens on error/destroyed where cancel is
-    // a tolerated no-op.
-    void session.reader.cancel().catch(() => undefined);
+    if (session.kind === "read") {
+      // Releases the fd inside the backend stream (autoClose). Ignoring the
+      // rejection: eviction also happens on error/destroyed where cancel is
+      // a tolerated no-op.
+      void session.reader.cancel().catch(() => undefined);
+    } else {
+      // abort, not close: a renderer that died mid-way must not leave a
+      // file that looks like it completed. Discards buffered bytes, closes
+      // the fd, leaves the file truncated at the last flushed offset.
+      void session.writer.abort().catch(() => undefined);
+    }
   };
 
   betterIpcMain.handle("fs:stream-open", async (event, inputPath, mode, options) => {
-    if (mode !== "r") {
-      throw new VortexError(`Unknown stream mode '${mode}' for '${inputPath.path}'`, {
+    if (mode !== "r" && mode !== "w") {
+      throw new VortexError(`Unknown stream mode '${String(mode)}' for '${inputPath.path}'`, {
         kind: "argument-invalid",
         argument: "mode",
       });
     }
 
-    const stream = await fs.createStream(QualifiedPath.of(inputPath), mode, options);
-    const handle = nextStreamHandle++;
     const sender = event.sender;
+    const handle = nextStreamHandle++;
+    const onDestroyed = () => evictStream(handle);
 
-    const onDestroyed = () => evictReadStream(handle);
-    sender.once("destroyed", onDestroyed);
+    if (mode === "r") {
+      const stream = await fs.createStream(QualifiedPath.of(inputPath), "r", options);
+      sender.once("destroyed", onDestroyed);
+      streams.set(handle, { kind: "read", reader: stream.getReader(), sender, onDestroyed });
+    } else {
+      const stream = await fs.createStream(QualifiedPath.of(inputPath), "w", {
+        start: options?.start,
+      });
+      sender.once("destroyed", onDestroyed);
+      streams.set(handle, { kind: "write", writer: stream.getWriter(), sender, onDestroyed });
+    }
 
-    readStreams.set(handle, { reader: stream.getReader(), sender, onDestroyed });
     return handle;
   });
 
   betterIpcMain.handle("fs:stream-read", async (_event, handle: number, max: number) => {
-    const session = readStreams.get(handle);
+    const session = streams.get(handle);
     if (session === undefined) {
       throw new VortexError(`No stream session for handle ${handle}`, {
+        kind: "argument-invalid",
+        argument: "handle",
+      });
+    }
+    if (session.kind !== "read") {
+      throw new VortexError(`Stream session ${handle} is a write stream`, {
         kind: "argument-invalid",
         argument: "handle",
       });
@@ -856,15 +884,55 @@ export function init(fs: FileSystem) {
       // Exhausted: full eviction so the fd is released and the destroyed
       // listener is detached. A close call from the renderer afterwards is
       // a tolerated no-op.
-      evictReadStream(handle);
+      evictStream(handle);
     }
 
     // A done reply still carries the tail of the file.
     return { done, bytes: Buffer.concat(chunks) };
   });
 
-  betterIpcMain.handle("fs:stream-close", (_event, handle: number) => {
-    evictReadStream(handle);
+  betterIpcMain.handle("fs:stream-write", async (_event, handle: number, bytes: Uint8Array) => {
+    const session = streams.get(handle);
+    if (session === undefined) {
+      throw new VortexError(`No stream session for handle ${handle}`, {
+        kind: "argument-invalid",
+        argument: "handle",
+      });
+    }
+    if (session.kind !== "write") {
+      throw new VortexError(`Stream session ${handle} is a read stream`, {
+        kind: "argument-invalid",
+        argument: "handle",
+      });
+    }
+
+    try {
+      await session.writer.write(bytes);
+    } catch (err) {
+      // A failed write leaves the stream unusable: evict (aborting the
+      // writer) before the rejection travels back to the renderer.
+      evictStream(handle);
+      throw err;
+    }
+  });
+
+  betterIpcMain.handle("fs:stream-close", async (_event, handle: number) => {
+    const session = streams.get(handle);
+    // A close call for an unknown handle is a tolerated no-op: main evicts
+    // on exhaustion and on write errors already.
+    if (session === undefined) return;
+
+    if (session.kind === "write") {
+      // Graceful: flush pending node-buffered bytes, then autoClose ends
+      // the fd. Evicting afterwards abort()s a no-op writer at worst.
+      await session.writer.close().catch(() => undefined);
+      evictStream(handle);
+      return;
+    }
+
+    // Read: cancel is the correct close for a stream that may not be
+    // exhausted.
+    evictStream(handle);
   });
 }
 

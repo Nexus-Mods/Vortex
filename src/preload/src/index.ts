@@ -367,7 +367,10 @@ function createStream(
     return openReadStream(path, options);
   }
 
-  // Write streams are not wired up yet; main only registers "r".
+  if (mode === "w") {
+    return openWriteStream(path, { start: options?.start });
+  }
+
   throw new VortexError(`Cannot create stream for '${path.path}': unknown mode '${mode}'`, {
     kind: "argument-invalid",
     argument: "mode",
@@ -412,6 +415,38 @@ async function openReadStream(
     },
     cancel() {
       close();
+    },
+  });
+}
+
+async function openWriteStream(
+  path: QualifiedPath,
+  options?: { start?: number },
+): Promise<WritableStream<Uint8Array>> {
+  const handle = await betterIpcRenderer.invoke("fs:stream-open", path.toWire(), "w", options);
+
+  let closed = false;
+
+  // One invoke per write chunk (no renderer-side batching): round-trip
+  // overhead is noise for realistic chunk sizes, and per-write rejection
+  // keeps ENOSPC-class errors surfaced at the right await point.
+  return new WritableStream<Uint8Array>({
+    async write(chunk) {
+      await betterIpcRenderer.invoke("fs:stream-write", handle, chunk);
+    },
+    close() {
+      if (closed) return;
+      closed = true;
+      betterIpcRenderer.invoke("fs:stream-close", handle).catch(() => undefined);
+    },
+    abort() {
+      // An errored WritableStream aborts instead of closing. Main evicts on
+      // write failures already, so this is a tolerated no-op there; for a
+      // caller-initiated abort it releases the handle and truncates the
+      // file at the last flushed offset (writer.abort on main).
+      if (closed) return;
+      closed = true;
+      betterIpcRenderer.invoke("fs:stream-close", handle).catch(() => undefined);
     },
   });
 }

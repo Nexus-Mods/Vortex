@@ -614,9 +614,11 @@ export interface InvokeChannels {
   "fs:enumerate-close": (handle: number) => Promise<void>;
 
   /**
-   * Opens a read-stream session on the main process. Returns a handle the
+   * Opens a stream session on the main process. Returns a handle the
    * renderer pulls chunks of bytes through with
-   * {@link InvokeChannels["fs:stream-read"]} until done, then releases with
+   * {@link InvokeChannels["fs:stream-read"]} (`mode "r"`) or pushes bytes
+   * through with {@link InvokeChannels["fs:stream-write"]} (`mode "w"`)
+   * until done, then releases with
    * {@link InvokeChannels["fs:stream-close"]}.
    */
   "fs:stream-open": (
@@ -625,6 +627,7 @@ export interface InvokeChannels {
     options?: Parameters<FileSystem["createStream"]>[2],
   ) => Promise<number>;
   "fs:stream-read": (handle: number, max: number) => Promise<StreamReadReply>;
+  "fs:stream-write": (handle: number, bytes: Uint8Array) => Promise<void>;
   "fs:stream-close": (handle: number) => Promise<void>;
 }
 
