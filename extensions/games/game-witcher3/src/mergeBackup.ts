@@ -1,3 +1,4 @@
+import { readFile, writeFile } from "node:fs/promises";
 import path from "path";
 
 import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
@@ -12,9 +13,10 @@ import {
   getLoadOrderFilePath,
   MERGE_INV_MANIFEST,
   SCRIPT_MERGER_ID,
-  W3_TEMP_DATA_DIR,
+  getW3TempDataDir,
   MergeDataViolationError,
 } from "./common";
+import { detectEdition, W3Edition } from "./edition";
 import { getNamesOfMergedMods } from "./mergeInventoryParsing";
 import { getMergedModName, downloadScriptMerger } from "./scriptmerger";
 import { IDeployedFile, IDeployment } from "./types";
@@ -202,6 +204,33 @@ function backupPath(profile: types.IProfile): string {
   );
 }
 
+// Merged scripts are compiled against a specific vanilla script set and text
+// encoding, so a backup taken on one edition must not be restored onto another.
+const EDITION_MARKER = ".w3edition";
+
+async function writeEditionMarker(profilePath: string, edition: W3Edition): Promise<void> {
+  try {
+    await writeFile(path.join(profilePath, EDITION_MARKER), edition, { encoding: "utf8" });
+  } catch (err) {
+    log("warn", "failed to record edition alongside merged scripts", err);
+  }
+}
+
+export async function isBackupCompatible(
+  profilePath: string,
+  edition: W3Edition,
+): Promise<boolean> {
+  try {
+    const marker = await readFile(path.join(profilePath, EDITION_MARKER), { encoding: "utf8" });
+    return marker.trim() === edition;
+  } catch (err) {
+    // Backups taken before this marker existed have no way to say which
+    // edition they came from, and they're all pre-remaster, so restoring them
+    // has to stay the default.
+    return true;
+  }
+}
+
 async function handleMergedScripts(props: IBaseProps, opType: OpType, dest?: string) {
   const { scriptMergerTool, profile, gamePath } = props;
   if (!scriptMergerTool?.path) {
@@ -229,14 +258,45 @@ async function handleMergedScripts(props: IBaseProps, opType: OpType, dest?: str
         path.basename(loarOrderFilepath),
       );
       await moveFiles(mergedScriptsPath, path.join(profilePath, mergedModName), props);
+      await writeEditionMarker(profilePath, detectEdition(gamePath));
     } else if (opType === "import") {
-      await moveFile(profilePath, mergerToolDir, MERGE_INV_MANIFEST);
+      // Load order is edition independent, so it's always restored.
       await moveFile(
         profilePath,
         path.dirname(loarOrderFilepath),
         path.basename(loarOrderFilepath),
       );
-      await moveFiles(path.join(profilePath, mergedModName), mergedScriptsPath, props);
+      if (await isBackupCompatible(profilePath, detectEdition(gamePath))) {
+        // The inventory describes the merged scripts, so it only comes back
+        // with them.
+        await moveFile(profilePath, mergerToolDir, MERGE_INV_MANIFEST);
+        await moveFiles(path.join(profilePath, mergedModName), mergedScriptsPath, props);
+      } else {
+        props.api.sendNotification({
+          type: "warning",
+          message: "Merged scripts were not restored",
+          // Not suppressible: silently skipping the restore leaves the user
+          // with a merge set that doesn't match their install.
+          allowSuppress: false,
+          actions: [
+            {
+              title: "More",
+              action: () =>
+                props.api.showDialog(
+                  "info",
+                  "Merged scripts not restored",
+                  {
+                    text:
+                      "The merged scripts saved for this profile were created for a different " +
+                      "edition of the game. Restoring them could break script compilation, so " +
+                      "they have been left alone. Run the Script Merger again to rebuild them.",
+                  },
+                  [{ label: "Close" }],
+                ),
+            },
+          ],
+        });
+      }
     }
     return Promise.resolve();
   } catch (err) {
@@ -343,7 +403,7 @@ export async function exportScriptMerges(
 
   const exportMergedData = async () => {
     try {
-      const tempPath = path.join(W3_TEMP_DATA_DIR, generate());
+      const tempPath = path.join(getW3TempDataDir(), generate());
       await fs.ensureDirWritableAsync(tempPath);
       await handleMergedScripts(props, "export", tempPath);
       const data = await prepareFileData(tempPath);
@@ -426,7 +486,7 @@ export async function importScriptMerges(
     return Promise.reject(new util.UserCanceled());
   }
   try {
-    const tempPath = path.join(W3_TEMP_DATA_DIR, generate());
+    const tempPath = path.join(getW3TempDataDir(), generate());
     await fs.ensureDirWritableAsync(tempPath);
     const data = await restoreFileData(fileData, tempPath);
     await handleMergedScripts(props, "import", tempPath);

@@ -42,11 +42,6 @@ export interface ILoadOrderEntry<T = any> {
   // Is this entry enabled ?
   enabled: boolean;
 
-  // The position of the entry is usually sufficient when displaying
-  //  index/priority of most mods but in some cases it is more advantageous
-  //  to use prefixes, particularly when a game loads mods alphabetically.
-  prefix?: string;
-
   // custom data passed along with the load order entry
   data?: T;
 
