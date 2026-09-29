@@ -1,4 +1,5 @@
 import {} from "module";
+import * as fs from "node:fs";
 // tslint:disable-next-line:no-var-requires
 const Module = require("module");
 import * as reduxAct from "redux-act";
@@ -11,6 +12,7 @@ import type { IRegisteredExtension } from "../types/extensions";
 import type { IExtensionState } from "../types/IState";
 import { deprecatedApiGet } from "./deprecatedApiUsage";
 import type { LogLevel } from "./log";
+import { isChildPath } from "./util";
 import { webpackRequireHack } from "./webpack-hacks";
 
 const identity = (input) => input;
@@ -99,6 +101,26 @@ class ExtProxyHandlerReduxAct implements ProxyHandler<typeof reduxAct> {
 const handlerMapAPI: { [extId: string]: typeof api } = {};
 const handlerMapReactAct: { [extId: string]: typeof reduxAct } = {};
 
+const realPathCache = new Map<string, string>();
+
+function realPath(input: string): string {
+  let res = realPathCache.get(input);
+  if (res === undefined) {
+    try {
+      res = fs.realpathSync(input);
+      realPathCache.set(input, res);
+    } catch {
+      return input;
+    }
+  }
+  return res;
+}
+
+// Node resolves symlinks/junctions in module filenames, our extension paths are not resolved
+export function isInside(filename: string, dirPath: string): boolean {
+  return isChildPath(filename, dirPath) || isChildPath(filename, realPath(dirPath));
+}
+
 /**
  * require wrapper to allow extensions to load modules from
  * the context of the main application
@@ -113,7 +135,7 @@ function extensionRequire(
   const extensionPaths = ExtensionManager.getExtensionPaths();
   return function (id) {
     if (id === "vortex-api" || id === "@nexusmods/vortex-api") {
-      const ext = getExtensions().find((iter) => this.filename.startsWith(iter.path));
+      const ext = getExtensions().find((iter) => isInside(this.filename, iter.path));
       if (ext !== undefined) {
         if (handlerMapAPI[ext.name] === undefined) {
           const state = findInstalled(getInstalled(), { path: ext.path })?.extension;
@@ -128,7 +150,7 @@ function extensionRequire(
     } else if (id === "react-select") {
       return reactSelect;
     } else if (id === "redux-act") {
-      const ext = getExtensions().find((iter) => this.filename.startsWith(iter.path));
+      const ext = getExtensions().find((iter) => isInside(this.filename, iter.path));
       if (ext !== undefined) {
         if (handlerMapReactAct[ext.name] === undefined) {
           handlerMapReactAct[ext.name] = new Proxy(reduxAct, new ExtProxyHandlerReduxAct(ext));
@@ -136,7 +158,7 @@ function extensionRequire(
         return handlerMapReactAct[ext.name];
       }
     }
-    if (extensionPaths.find((iter) => this.filename.startsWith(iter.path)) !== undefined) {
+    if (extensionPaths.find((iter) => isInside(this.filename, iter.path)) !== undefined) {
       let res;
       try {
         res = webpackRequireHack(id);
