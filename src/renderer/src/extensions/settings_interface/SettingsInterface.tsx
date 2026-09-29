@@ -53,14 +53,14 @@ export interface IBaseProps {
   changeStartup: (key: string, value: any) => void;
 }
 
-interface IFormProps extends IBaseProps {
+export interface IFormProps extends IBaseProps {
   currentLanguage: string;
   extensions: IAvailableExtension[];
   languages: ILanguage[];
   onReloadLanguages: () => void;
 }
 
-function SettingsInterfaceForm(props: IFormProps) {
+export function SettingsInterfaceForm(props: IFormProps) {
   const { changeStartup, startup } = props;
   const { t } = useTranslation(["common"]);
   const dispatch = useDispatch();
