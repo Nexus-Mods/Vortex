@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import * as path from "path";
 
+import { mdiMinus, mdiPlus } from "@mdi/js";
 import { getErrorCode } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
@@ -8,7 +9,7 @@ import { ControlLabel, FormGroup } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { resetSuppression, setCustomTitlebar, showDialog } from "@/actions";
+import { resetSuppression, setCustomTitlebar, setZoomFactor, showDialog } from "@/actions";
 import { useMainContext } from "@/contexts";
 import type { IAvailableExtension } from "@/types/extensions";
 import type { IState } from "@/types/IState";
@@ -19,6 +20,7 @@ import { relaunch } from "@/util/commandLine";
 import { log } from "@/util/log";
 import { getPreloadApi } from "@/util/preloadAccess";
 import { useReduceMotion } from "@/util/reduceMotion";
+import { MAX_ZOOM, MIN_ZOOM, normalizeZoom, ZOOM_STEP, zoomFromState } from "@/util/zoom";
 
 import { displayBcp47, isValidBcp47 } from "../../bcp47";
 import More from "../../controls/More";
@@ -89,6 +91,8 @@ function SettingsInterfaceForm(props: IFormProps) {
   // Effective rather than stored, so the toggle shows what the OS asked for until the
   // user makes a choice of their own.
   const reduceMotion = useReduceMotion();
+  const zoomFactor = useSelector(zoomFromState);
+  const adjustZoom = (value: number) => dispatch(setZoomFactor(normalizeZoom(value)));
 
   // Captured once on mount, like the class component's constructor did, so a change made
   // during this session can be compared against the value Vortex started with.
@@ -276,7 +280,19 @@ function SettingsInterfaceForm(props: IFormProps) {
               {t('Use relative times (e.g. "3 months ago")')}
             </Toggle>
           </div>
+        </div>
 
+        <div>
+          <Toggle checked={foregroundDL} onToggle={(enabled) => dispatch(setForegroundDL(enabled))}>
+            {t("Bring Vortex to foreground when starting downloads in browser")}
+          </Toggle>
+        </div>
+      </FormGroup>
+
+      <FormGroup className="mt-6" controlId="accessibility">
+        <ControlLabel>{t("Accessibility")}</ControlLabel>
+
+        <div>
           <div>
             <Toggle
               checked={alwaysCompactHeaders}
@@ -302,12 +318,52 @@ function SettingsInterfaceForm(props: IFormProps) {
               </Typography>
             </Toggle>
           </div>
-        </div>
 
-        <div>
-          <Toggle checked={foregroundDL} onToggle={(enabled) => dispatch(setForegroundDL(enabled))}>
-            {t("Bring Vortex to foreground when starting downloads in browser")}
-          </Toggle>
+          <div className="flex flex-col items-start gap-y-2">
+            <div className="flex items-center gap-x-3">
+              <Typography as="span">{t("Zoom")}</Typography>
+
+              <div className="flex items-center gap-x-2">
+                <Typography as="span" className="min-w-10">
+                  {t("{{percent}}%", { replace: { percent: Math.round(zoomFactor * 100) } })}
+                </Typography>
+
+                <Button
+                  appearance="weak"
+                  aria-label={t("Zoom out")}
+                  brand="neutral"
+                  disabled={zoomFactor <= MIN_ZOOM}
+                  leftIconPath={mdiMinus}
+                  size="sm"
+                  onClick={() => adjustZoom(zoomFactor - ZOOM_STEP)}
+                />
+
+                <Button
+                  appearance="weak"
+                  aria-label={t("Zoom in")}
+                  brand="neutral"
+                  disabled={zoomFactor >= MAX_ZOOM}
+                  leftIconPath={mdiPlus}
+                  size="sm"
+                  onClick={() => adjustZoom(zoomFactor + ZOOM_STEP)}
+                />
+
+                <Button
+                  appearance="moderate"
+                  brand="neutral"
+                  disabled={zoomFactor === 1}
+                  size="sm"
+                  onClick={() => adjustZoom(1)}
+                >
+                  {t("Reset")}
+                </Button>
+              </div>
+            </div>
+
+            <Typography appearance="subdued" typographyType="body-sm">
+              {t("Zoom the Vortex window in or out.")}
+            </Typography>
+          </div>
         </div>
       </FormGroup>
 
