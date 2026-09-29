@@ -60,6 +60,11 @@ interface ITooltipBaseProps {
   /** The trigger. Must forward a ref to a DOM node — wrap bare text in a `span`. */
   children: ReactElement;
   className?: string;
+  /**
+   * Closes when the trigger is pressed, so it never covers a menu the trigger opens.
+   * Turn off for a trigger whose press changes what the tooltip describes.
+   */
+  closeOnPress?: boolean;
   /** Hover delays in ms. A single number sets both open and close. */
   delay?: ITooltipDelay;
   /** Renders the trigger untouched, with no tooltip attached. */
@@ -92,6 +97,7 @@ export type ITooltipProps = ITooltipBaseProps &
 export const Tooltip = ({
   children,
   className,
+  closeOnPress = true,
   content,
   customContent,
   delay = { close: 50, open: 250 },
@@ -233,7 +239,7 @@ export const Tooltip = ({
       referenceProps.onPointerDown as ((event: ReactPointerEvent<HTMLElement>) => void) | undefined
     )?.(event);
 
-    if (persistent) {
+    if (persistent || !closeOnPress) {
       return;
     }
 

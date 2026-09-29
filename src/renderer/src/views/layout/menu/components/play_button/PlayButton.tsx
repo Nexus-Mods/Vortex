@@ -19,7 +19,9 @@ interface PlayButtonProps {
   gameName: string | undefined;
   isPrimaryRunning: boolean;
   isCollapsed: boolean;
+  hideLabel?: boolean;
   disabled: boolean;
+  isWaitingForApply?: boolean;
   onClick: () => void;
 }
 
@@ -28,13 +30,18 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
   gameName,
   isPrimaryRunning,
   isCollapsed,
+  hideLabel = false,
   disabled,
+  isWaitingForApply = false,
   onClick,
 }) => {
   const { t } = useTranslation();
 
   const launcherIconSrc = useMemo(() => {
-    if (!primaryStarter) return undefined;
+    if (!primaryStarter) {
+      return undefined;
+    }
+
     try {
       const iconPath = StarterInfo.getIconPath(primaryStarter);
       if (iconPath) {
@@ -43,6 +50,7 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
     } catch {
       // ignore
     }
+
     return undefined;
   }, [primaryStarter]);
 
@@ -55,8 +63,12 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
       ? t("Play {{game}}", { replace: { game: formatGameDisplayName(gameName) } })
       : t("Play");
 
+  const isIconOnly = isCollapsed || hideLabel;
+
   return (
-    <div className="relative w-full">
+    <div
+      className={joinClasses(["relative", !isCollapsed && hideLabel ? "w-12 shrink-0" : "w-full"])}
+    >
       <Tooltip
         customContent={
           <div className="space-y-1 px-4 py-3">
@@ -68,6 +80,12 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
             >
               {playLabel}
             </Typography>
+
+            {isWaitingForApply && (
+              <Typography appearance="subdued" as="p" className="italic" typographyType="body-sm">
+                {t("Waiting for mod changes to apply")}
+              </Typography>
+            )}
 
             {!!primaryStarter && (
               <>
@@ -96,14 +114,15 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
         placement="right"
       >
         <Button
-          aria-label={isCollapsed ? playLabel : undefined}
+          aria-disabled={disabled}
+          aria-label={playLabel}
           brand="neutral"
           className={joinClasses(["w-full transition-all", isCollapsed ? "h-10" : "h-12"])}
           customContent={
             <>
               <Icon className="nxm-button-icon" path={mdiPlay} size="lg" />
 
-              {!isCollapsed && (
+              {!isIconOnly && (
                 <Typography
                   appearance="inverted"
                   as="span"
@@ -115,8 +134,7 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
               )}
             </>
           }
-          disabled={disabled}
-          onClick={onClick}
+          onClick={disabled ? undefined : onClick}
         />
       </Tooltip>
     </div>

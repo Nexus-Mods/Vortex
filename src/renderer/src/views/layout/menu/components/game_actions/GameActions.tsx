@@ -2,10 +2,12 @@ import { Transition } from "@headlessui/react";
 import React from "react";
 
 import { useWindowContext } from "@/contexts";
+import { useDeployMods } from "@/extensions/mod_management/hooks/useDeployMods.hook";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { useSpineContext } from "@/views/components/Spine/SpineContext";
 
 import { useToolsContext } from "../../context/ToolsContext";
+import { ApplyButton } from "../apply_button/ApplyButton";
 import { PlayButton } from "../play_button/PlayButton";
 import { ToolButton } from "../ToolButton";
 
@@ -24,6 +26,10 @@ export const GameActions = () => {
     startTool,
     handlePlay,
   } = useToolsContext();
+  const { needToDeploy, autoDeploy, isDeploying, deployProgress, deployStep, deploy } =
+    useDeployMods();
+  // With auto deploy on, changes deploy on their own, so Apply only shows its progress.
+  const showApply = isDeploying || (needToDeploy && !autoDeploy);
 
   if (gameId === undefined || selection.type !== "game") {
     return null;
@@ -62,14 +68,27 @@ export const GameActions = () => {
         </Transition>
       )}
 
-      <PlayButton
-        disabled={exclusiveRunning || isPrimaryRunning || !primaryStarter}
-        gameName={gameName}
-        isCollapsed={menuIsCollapsed}
-        isPrimaryRunning={isPrimaryRunning}
-        primaryStarter={primaryToolId ? primaryStarter : undefined}
-        onClick={handlePlay}
-      />
+      <div className={joinClasses("flex w-full gap-3", { "flex-wrap": menuIsCollapsed })}>
+        <PlayButton
+          disabled={exclusiveRunning || isPrimaryRunning || isDeploying || !primaryStarter}
+          gameName={gameName}
+          hideLabel={showApply}
+          isCollapsed={menuIsCollapsed}
+          isPrimaryRunning={isPrimaryRunning}
+          isWaitingForApply={isDeploying}
+          primaryStarter={primaryToolId ? primaryStarter : undefined}
+          onClick={handlePlay}
+        />
+
+        {showApply && (
+          <ApplyButton
+            isCollapsed={menuIsCollapsed}
+            progress={deployProgress}
+            step={deployStep}
+            onClick={deploy}
+          />
+        )}
+      </div>
     </div>
   );
 };
