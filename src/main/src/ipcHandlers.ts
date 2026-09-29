@@ -7,8 +7,14 @@ import { appendFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { QualifiedPath, type FileSystem } from "@vortex/shared/filesystem";
-import type { HashAlgorithm, VortexPaths } from "@vortex/shared/ipc";
+import {
+  QualifiedPath,
+  type FileSystem,
+  type StatResult,
+  type Status,
+  type StatusTime,
+} from "@vortex/shared/filesystem";
+import type { HashAlgorithm, TemporalWire, VortexPaths } from "@vortex/shared/ipc";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {
   IpcMainInvokeEvent,
@@ -683,7 +689,37 @@ export function init(fs: FileSystem) {
     fs.move(QualifiedPath.of(source), QualifiedPath.of(target), options),
   );
 
-  betterIpcMain.handle("fs:stat", (_event, inputPath, options) =>
-    fs.stat(QualifiedPath.of(inputPath), options),
-  );
+  betterIpcMain.handle("fs:stat", async (_event, inputPath, options) => {
+    const result = await fs.stat(QualifiedPath.of(inputPath), options);
+    return statToWire(result);
+  });
+}
+
+function statToWire(result: StatResult): TemporalWire<StatResult> {
+  if (!result.exists) return result;
+  return { exists: true, ...statusToWire(result) };
+}
+
+function statusToWire(status: Status): TemporalWire<Status> {
+  if (status.isSymLink) {
+    return {
+      ...status,
+      ...timesToWire(status),
+      symLinkData: timesToWire(status.symLinkData),
+    };
+  }
+
+  return {
+    ...status,
+    ...timesToWire(status),
+  };
+}
+
+function timesToWire(times: StatusTime): TemporalWire<StatusTime> {
+  return {
+    accessTime: times.accessTime.epochNanoseconds,
+    modifiedTime: times.modifiedTime.epochNanoseconds,
+    changeTime: times.changeTime.epochNanoseconds,
+    creationTime: times.creationTime.epochNanoseconds,
+  };
 }

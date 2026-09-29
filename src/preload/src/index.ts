@@ -1,4 +1,5 @@
-import type { AppInitMetadata, Serializable } from "@vortex/shared/ipc";
+import type { StatResult, Status, StatusTime } from "@vortex/shared/filesystem";
+import type { AppInitMetadata, Serializable, TemporalWire } from "@vortex/shared/ipc";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import type { PersistedHive } from "@vortex/shared/state";
 import { contextBridge, ipcRenderer } from "electron";
@@ -311,13 +312,42 @@ try {
       move(source, target, options) {
         return betterIpcRenderer.invoke("fs:move", source.toWire(), target.toWire(), options);
       },
-      stat(path, options) {
-        return betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
+      async stat(path, options) {
+        const result = await betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
+        return statFromWire(result);
       },
     },
   });
 } catch (err) {
   console.error("failed to run preload code", err);
+}
+
+function statFromWire(result: TemporalWire<StatResult>): StatResult {
+  if (!result.exists) return result;
+  return { exists: true, ...statusFromWire(result) };
+}
+
+function statusFromWire(status: TemporalWire<Status>): Status {
+  const times = timesFromWire(status);
+
+  if (status.isSymLink) {
+    return {
+      ...status,
+      ...times,
+      symLinkData: timesFromWire(status.symLinkData),
+    };
+  }
+
+  return { ...status, ...times };
+}
+
+function timesFromWire(times: TemporalWire<StatusTime>): StatusTime {
+  return {
+    accessTime: Temporal.Instant.fromEpochNanoseconds(times.accessTime),
+    modifiedTime: Temporal.Instant.fromEpochNanoseconds(times.modifiedTime),
+    changeTime: Temporal.Instant.fromEpochNanoseconds(times.changeTime),
+    creationTime: Temporal.Instant.fromEpochNanoseconds(times.creationTime),
+  };
 }
 
 function expose<K extends keyof PreloadWindow>(key: K, value: PreloadWindow[K]) {

@@ -596,8 +596,14 @@ export interface InvokeChannels {
   "fs:stat": (
     path: QualifiedPathWire,
     options: Parameters<FileSystem["stat"]>[1],
-  ) => Promise<Awaited<ReturnType<FileSystem["stat"]>>>;
+  ) => Promise<TemporalWire<Awaited<ReturnType<FileSystem["stat"]>>>>;
 }
+
+export type TemporalWire<T> = T extends Temporal.Instant
+  ? bigint
+  : T extends object
+    ? { [K in keyof T]: TemporalWire<T[K]> }
+    : T;
 
 /** Represents all IPC-safe typed arrays */
 export type TypedArray =
