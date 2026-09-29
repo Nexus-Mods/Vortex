@@ -318,6 +318,9 @@ try {
       writeFile(path, contents) {
         return betterIpcRenderer.invoke("fs:writeFile", path.toWire(), contents);
       },
+      async readFile(path) {
+        return betterIpcRenderer.invoke("fs:readFile", path.toWire());
+      },
       move(source, target, options) {
         return betterIpcRenderer.invoke("fs:move", source.toWire(), target.toWire(), options);
       },

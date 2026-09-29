@@ -178,6 +178,21 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       const buffer = await readFile(path);
       return buffer;
     } catch (err) {
+      // NOTE(erri120): explicitly calling this out and redirecting the caller to use stream based API instead
+      // https://github.com/nodejs/node/blob/1f26576a3f13b8cc0d09b443efcfc071c667b35f/lib/internal/errors.js#L1259
+      if (
+        err instanceof RangeError &&
+        "code" in err &&
+        typeof err.code === "string" &&
+        err.code === "ERR_FS_FILE_TOO_LARGE"
+      ) {
+        throw new VortexError(
+          `Failed to read file '${path}': file is too large for a single read, use stream API instead`,
+          { kind: "argument-invalid", argument: path },
+          { cause: err },
+        );
+      }
+
       throw parseError(err, { path }, ({ data }) => {
         if (data.kind === "fs:no-permissions") {
           return `Failed to read file '${path}': insufficient permissions`;

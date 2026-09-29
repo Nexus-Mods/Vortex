@@ -696,6 +696,10 @@ export function init(fs: FileSystem) {
     fs.writeFile(QualifiedPath.of(inputPath), contents),
   );
 
+  betterIpcMain.handle("fs:readFile", (_event, inputPath) =>
+    fs.readFile(QualifiedPath.of(inputPath)),
+  );
+
   betterIpcMain.handle("fs:move", (_event, source, target, options) =>
     fs.move(QualifiedPath.of(source), QualifiedPath.of(target), options),
   );
