@@ -1,7 +1,7 @@
 import { pathToFileURL } from "url";
 
 import { mdiArrowLeft, mdiClose, mdiOpenInApp } from "@mdi/js";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
@@ -27,6 +27,8 @@ interface IMediaSingleViewProps {
   source: ResolvedGameMediaSource;
   entry: GameMediaItem;
   onBack: () => void;
+  next: () => void;
+  prev: () => void;
 }
 
 export default function MediaSingleView({
@@ -35,6 +37,8 @@ export default function MediaSingleView({
   onBack,
   entry,
   source,
+  next,
+  prev,
 }: IMediaSingleViewProps) {
   const { t } = useTranslation("media_page");
   const dispatch = useDispatch();
@@ -55,6 +59,18 @@ export default function MediaSingleView({
   const playerRef = useRef<HTMLVideoElement | null>(null);
 
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") prev();
+      else if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [next, prev]);
 
   // This would be a potential solution to being unable to play videos from Steam.
   // Steam videos are broken into m4s files with a mpd manifest. A library player is needed to stream videos this way.

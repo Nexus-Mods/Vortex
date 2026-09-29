@@ -63,12 +63,24 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
     dispatch(setSettingsPage("Media"));
   };
 
+  const swapImage = (direction: "next" | "prev") => {
+    if (!selected) return;
+    let idx = items.indexOf(selected);
+    if (direction === "next") idx += 1;
+    else idx -= 1;
+    const newItem = items[idx];
+    if (!newItem) return;
+    setSelected(newItem);
+  };
+
   if (selected) {
     return (
       <MediaSingleView
         active={active}
         api={api}
         entry={selected}
+        next={() => swapImage("next")}
+        prev={() => swapImage("prev")}
         source={allSources[selected.sourceId]}
         onBack={() => setSelected(null)}
       />
@@ -143,7 +155,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             <Typography
               appearance="subdued"
               brand="neutral-translucent"
-              className="mb-2"
+              className="mb-2 h-5"
               typographyType="body-sm"
             >
               {t("listing::all_subtitle", {
