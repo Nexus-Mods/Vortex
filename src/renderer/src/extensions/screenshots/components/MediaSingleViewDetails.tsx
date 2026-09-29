@@ -1,4 +1,4 @@
-import { mdiCancel, mdiCloudUpload, mdiOpenInNew, mdiTagPlus, mdiTagRemove } from "@mdi/js";
+import { mdiCancel, mdiCloudUpload, mdiFolderOpenOutline, mdiTagPlus, mdiTagRemove } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -45,7 +45,7 @@ export default function MediaViewSingleDetails({
     },
     {
       label: t("single::actions::open"),
-      iconPath: mdiOpenInNew,
+      iconPath: mdiFolderOpenOutline,
       showLabel: true,
       onClick: () => window.api.shell.showItemInFolder(entry.path),
     },
