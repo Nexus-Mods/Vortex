@@ -3,7 +3,7 @@
 // are never used to create an object. They are only used for type inferrence.
 
 import type { SerializedVortexError } from "../errors/serialization";
-import type { FileSystem } from "../fs/filesystem";
+import type { FileSystem, Status } from "../fs/filesystem";
 import type { QualifiedPathWire } from "../fs/paths";
 import type { SerializedSpan } from "../telemetry/types";
 import type { DownloadCheckpoint, DownloadProgress, DownloadStatus } from "./download";
@@ -597,7 +597,27 @@ export interface InvokeChannels {
     path: QualifiedPathWire,
     options: Parameters<FileSystem["stat"]>[1],
   ) => Promise<TemporalWire<Awaited<ReturnType<FileSystem["stat"]>>>>;
+
+  /**
+   * Opens a directory enumeration session on the main process. Returns a
+   * handle the renderer pulls batches of entries through with
+   * {@link InvokeChannels["fs:enumerate-next"]} until done, then releases
+   * with {@link InvokeChannels["fs:enumerate-close"]}.
+   */
+  "fs:enumerate-open": (
+    path: QualifiedPathWire,
+    options?: Parameters<FileSystem["enumerateDirectory"]>[1],
+  ) => Promise<number>;
+  "fs:enumerate-next": (handle: number, max: number) => Promise<EnumerateReply>;
+  "fs:enumerate-close": (handle: number) => Promise<void>;
 }
+
+export type EnumerateEntryWire = QualifiedPathWire | [QualifiedPathWire, TemporalWire<Status>];
+
+/** Wire reply of {@link InvokeChannels["fs:enumerate-next"]}. Entries are
+ *  always present: a `done: true` reply may still carry the tail of the
+ *  listing when the iterator exhausted mid-batch. */
+export type EnumerateReply = { done: boolean; entries: EnumerateEntryWire[] };
 
 export type TemporalWire<T> = T extends Temporal.Instant
   ? bigint

@@ -1,5 +1,11 @@
-import type { StatResult, Status, StatusTime } from "@vortex/shared/filesystem";
-import type { AppInitMetadata, Serializable, TemporalWire } from "@vortex/shared/ipc";
+import type { QualifiedPathWire, StatResult, Status, StatusTime } from "@vortex/shared/filesystem";
+import { QualifiedPath } from "@vortex/shared/filesystem";
+import type {
+  AppInitMetadata,
+  EnumerateEntryWire,
+  Serializable,
+  TemporalWire,
+} from "@vortex/shared/ipc";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import type { PersistedHive } from "@vortex/shared/state";
 import { contextBridge, ipcRenderer } from "electron";
@@ -316,10 +322,122 @@ try {
         const result = await betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
         return statFromWire(result);
       },
+
+      enumerateDirectory,
     },
   });
 } catch (err) {
   console.error("failed to run preload code", err);
+}
+
+/** Fixed pull size: amortizes one invoke across this many entries. */
+const ENUMERATE_BATCH_SIZE = 512;
+
+function enumerateDirectory(
+  path: QualifiedPath,
+  options?: {
+    includeStatus?: false;
+    types?: "all" | "files" | "directories";
+    recursive?: boolean;
+    include?: string;
+    exclude?: string;
+  },
+): Promise<AsyncIterator<QualifiedPath, undefined>>;
+function enumerateDirectory(
+  path: QualifiedPath,
+  options: {
+    includeStatus: true | "symlink";
+    types?: "all" | "files" | "directories";
+    recursive?: boolean;
+    include?: string;
+    exclude?: string;
+  },
+): Promise<AsyncIterator<[QualifiedPath, Status], undefined>>;
+function enumerateDirectory(
+  path: QualifiedPath,
+  options?: {
+    includeStatus?: boolean | "symlink";
+    types?: "all" | "files" | "directories";
+    recursive?: boolean;
+    include?: string;
+    exclude?: string;
+  },
+): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+  return openEnumeration(path, options);
+}
+
+async function openEnumeration(
+  path: QualifiedPath,
+  options?: {
+    includeStatus?: boolean | "symlink";
+    types?: "all" | "files" | "directories";
+    recursive?: boolean;
+    include?: string;
+    exclude?: string;
+  },
+): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+  const handle = await betterIpcRenderer.invoke("fs:enumerate-open", path.toWire(), options);
+  const withStatus = Boolean(options?.includeStatus);
+
+  let buffer: EnumerateEntryWire[] = [];
+  let exhausted = false;
+  let closed = false;
+
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    // Fire-and-forget: main evicts handles on done, so an unknown handle
+    // here is normal exhaustion, not an error worth surfacing.
+    betterIpcRenderer.invoke("fs:enumerate-close", handle).catch(() => undefined);
+  };
+
+  return {
+    async next() {
+      if (closed) return { done: true, value: undefined };
+
+      while (buffer.length === 0 && !exhausted) {
+        const reply = await betterIpcRenderer.invoke(
+          "fs:enumerate-next",
+          handle,
+          ENUMERATE_BATCH_SIZE,
+        );
+
+        if (reply.entries.length > 0) {
+          buffer = reply.entries;
+        }
+
+        // A done reply may still carry the tail of the listing. Only
+        // `exhausted` stops further pulls; `closed` stays reserved for
+        // explicit return()/throw() so the tail is always drained before
+        // iteration reports done.
+        if (reply.done) {
+          exhausted = true;
+        }
+      }
+
+      if (buffer.length === 0) return { done: true, value: undefined };
+
+      const entry = buffer.shift();
+      if (entry === undefined) return { done: true, value: undefined };
+
+      if (!withStatus) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        return { done: false, value: QualifiedPath.of(entry as unknown as QualifiedPathWire) };
+      }
+
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const [wirePath, wireStatus] = entry as unknown as [QualifiedPathWire, TemporalWire<Status>];
+      return { done: false, value: [QualifiedPath.of(wirePath), statusFromWire(wireStatus)] };
+    },
+    async return() {
+      close();
+      return { done: true as const, value: undefined };
+    },
+    async throw(err) {
+      close();
+      throw err;
+    },
+  };
 }
 
 function statFromWire(result: TemporalWire<StatResult>): StatResult {

@@ -7,6 +7,7 @@ import { appendFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import { VortexError } from "@vortex/shared";
 import {
   QualifiedPath,
   type FileSystem,
@@ -14,7 +15,12 @@ import {
   type Status,
   type StatusTime,
 } from "@vortex/shared/filesystem";
-import type { HashAlgorithm, TemporalWire, VortexPaths } from "@vortex/shared/ipc";
+import type {
+  EnumerateEntryWire,
+  HashAlgorithm,
+  TemporalWire,
+  VortexPaths,
+} from "@vortex/shared/ipc";
 import type { SerializableMenuItem } from "@vortex/shared/preload";
 import type {
   IpcMainInvokeEvent,
@@ -24,6 +30,7 @@ import type {
   Settings,
   TraceConfig,
   TraceCategoriesAndOptions,
+  WebContents,
 } from "electron";
 import {
   app,
@@ -693,6 +700,92 @@ export function init(fs: FileSystem) {
     const result = await fs.stat(QualifiedPath.of(inputPath), options);
     return statToWire(result);
   });
+
+  // Directory enumeration: the FS API returns an async iterator, which
+  // cannot cross IPC. Main holds the iterator behind a numeric handle and
+  // the renderer pulls fixed-size batches through fs:enumerate-next.
+  // Handles evict on exhaustion, explicit close, or renderer destruction.
+  const enumerations = new Map<
+    number,
+    {
+      iterator: AsyncIterator<QualifiedPath | [QualifiedPath, Status]>;
+      sender: WebContents;
+      onDestroyed: () => void;
+    }
+  >();
+  let nextEnumerationHandle = 1;
+
+  const evictEnumeration = (handle: number) => {
+    const session = enumerations.get(handle);
+    if (session === undefined) return;
+
+    enumerations.delete(handle);
+    session.sender.removeListener("destroyed", session.onDestroyed);
+
+    // Releases the opendir handle inside the backend iterator. Detaching
+    // the destroyed listener here is what keeps repeated enumerations from
+    // leaking listeners onto the sender.
+    void session.iterator.return?.(undefined);
+  };
+
+  betterIpcMain.handle("fs:enumerate-open", async (event, inputPath, options) => {
+    const iterator = await fs.enumerateDirectory(QualifiedPath.of(inputPath), options);
+    const handle = nextEnumerationHandle++;
+    const sender = event.sender;
+
+    const onDestroyed = () => evictEnumeration(handle);
+    sender.once("destroyed", onDestroyed);
+
+    enumerations.set(handle, { iterator, sender, onDestroyed });
+    return handle;
+  });
+
+  betterIpcMain.handle("fs:enumerate-next", async (_event, handle: number, max: number) => {
+    const session = enumerations.get(handle);
+    if (session === undefined) {
+      throw new VortexError(`No enumeration session for handle ${handle}`, {
+        kind: "argument-invalid",
+        argument: "handle",
+      });
+    }
+
+    const entries: EnumerateEntryWire[] = [];
+    let done = false;
+    for (let pulled = 0; pulled < max; pulled++) {
+      const step = await session.iterator.next();
+      if (step.done === true) {
+        done = true;
+        break;
+      }
+
+      entries.push(enumerationEntryToWire(step.value));
+    }
+
+    if (done) {
+      // Exhausted: full eviction so the opendir handle is released and the
+      // destroyed listener is detached. A close call from the renderer
+      // afterwards is a tolerated no-op.
+      evictEnumeration(handle);
+    }
+
+    // A done reply still carries the tail of the listing.
+    return { done, entries };
+  });
+
+  betterIpcMain.handle("fs:enumerate-close", (_event, handle: number) => {
+    evictEnumeration(handle);
+  });
+}
+
+function enumerationEntryToWire(
+  value: QualifiedPath | [QualifiedPath, Status],
+): EnumerateEntryWire {
+  if (Array.isArray(value)) {
+    const [qualifiedPath, status] = value;
+    return [qualifiedPath.toWire(), statusToWire(status)];
+  }
+
+  return value.toWire();
 }
 
 function statToWire(result: StatResult): TemporalWire<StatResult> {
