@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0-beta.2] - 2026-09-29
+
+### Added
+
+- Witcher 3 5.0 (Remastered) support on the existing game entry, with health checks for the in-game mod switches and over-long mod folder names ([#24330](https://github.com/Nexus-Mods/Vortex/pull/24330))
+
+### Changed
+
+- Replaced the Electron clipboard API, with `readText`/`writeText` shims for external extensions ([#24318](https://github.com/Nexus-Mods/Vortex/pull/24318))
+- `GameStoreHelper` is now a sync query engine: `identifyStore` is no longer exported and `launchGameStore` no longer takes `askConsent` ([#24312](https://github.com/Nexus-Mods/Vortex/pull/24312))
+
+### Fixed
+
+- Witcher 3 load order and merge state: wrong collection export order, identical priorities after a purge, and the load order page crashing on mod changes ([#24330](https://github.com/Nexus-Mods/Vortex/pull/24330))
+- Crash when a game store lookup ran before the store list had loaded ([#24312](https://github.com/Nexus-Mods/Vortex/pull/24312))
+
 ## [2.8.0-beta.1] - 2026-09-22
 
 _First beta of the 2.8 release._
@@ -53,6 +69,16 @@ _First beta of the 2.8 release._
 - Steam discovery crash from an error check that read the message instead of the code ([#24171](https://github.com/Nexus-Mods/Vortex/pull/24171))
 - Notification tray taking focus out of a text field when it opens itself ([#24170](https://github.com/Nexus-Mods/Vortex/pull/24170))
 - Component crash when `FlagService` had not been initialised ([#24162](https://github.com/Nexus-Mods/Vortex/pull/24162))
+
+## [2.7.2] - 2026-09-29
+
+### Added
+
+- Witcher 3 5.0 (Remastered) support on the existing game entry, with health checks for the in-game mod switches and over-long mod folder names ([#24322](https://github.com/Nexus-Mods/Vortex/pull/24322))
+
+### Fixed
+
+- Witcher 3 load order and merge state: wrong collection export order, identical priorities after a purge, and the load order page crashing on mod changes ([#24322](https://github.com/Nexus-Mods/Vortex/pull/24322))
 
 ## [2.7.1] - 2026-09-24
 
@@ -2382,7 +2408,9 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.8.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0-beta.2
 [2.8.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0-beta.1
+[2.7.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.2
 [2.7.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.1
 [2.7.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0
 [2.7.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.0-beta.2
