@@ -28,6 +28,7 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
   public gameId: string;
   public toggleableEntries?: boolean | undefined;
   public clearStateOnPurge?: boolean | undefined;
+  public uniformRowHeight?: boolean | undefined;
   public usageInstructions?: React.ComponentType<{}>;
   public noCollectionGeneration?: boolean | undefined;
   public customItemRenderer?: React.ComponentType<{
@@ -42,6 +43,7 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
     this.gameId = GAME_ID;
     this.clearStateOnPurge = true;
     this.toggleableEntries = true;
+    this.uniformRowHeight = true;
     this.noCollectionGeneration = true;
     this.usageInstructions = () => <InfoComponent onToggleModsState={props.onToggleModsState} />;
     this.customItemRenderer = (props) => {

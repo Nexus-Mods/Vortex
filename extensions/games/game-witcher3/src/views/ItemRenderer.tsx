@@ -85,7 +85,7 @@ function ViewModIcon(props: IProps): JSX.Element {
   const unmanaged = isExternal(item.loEntry) || item.loEntry.modId === item.loEntry.name;
   return !unmanaged && item.loEntry.modId !== undefined ? (
     <tooltip.IconButton
-      className="witcher3-view-mod-icon"
+      className="witcher3-view-mod-icon btn-embed"
       icon="open-ext"
       tooltip={t("View source Mod")}
       onClick={onClick}
@@ -110,7 +110,7 @@ function DraggableEntry(props: IProps): JSX.Element {
   const dispatch = useDispatch();
   const position = loadOrder.findIndex((entry) => entry.id === item.loEntry.id) + 1;
 
-  let classes = ["load-order-entry"];
+  let classes = ["load-order-entry", "fblo-uniform-row"];
   if (className !== undefined) {
     classes = classes.concat(className.split(" "));
   }
@@ -177,7 +177,9 @@ function DraggableEntry(props: IProps): JSX.Element {
         onApplyIndex={onApplyIndex}
       />
       {renderValidationError(props)}
-      <p className="load-order-name">{key}</p>
+      <p className="load-order-name" title={key}>
+        {key}
+      </p>
       {renderExternalBanner(item.loEntry)}
       <ViewModIcon {...props} />
       {checkBox()}
