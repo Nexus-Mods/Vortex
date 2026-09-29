@@ -962,20 +962,21 @@ initGlobals()
         },
       };
 
-      let count = 0;
+      let numFiles = 0;
       for await (const _value of iterable) {
-        count++;
+        numFiles++;
       }
 
       const duration = performance.now() - start;
       durations.push(duration);
 
-      log("info", "[BENCH]: file count", { iteration, duration, count });
+      const durationPerEntry = duration / numFiles;
+      log("info", "[BENCH]: run", { iteration, duration, numFiles, durationPerEntry });
     }
 
     const sum = durations.reduce((a, b) => a + b);
     const avg = sum / durations.length;
-    const q50 = durations.toSorted()[durations.length / 2];
+    const q50 = durations.toSorted()[Math.floor(durations.length / 2)];
 
     log("info", "[BENCH]: results", { avg, q50, iterations: durations.length });
 
