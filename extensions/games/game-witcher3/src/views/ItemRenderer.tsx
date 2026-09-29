@@ -35,9 +35,8 @@ interface IBaseProps {
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 export function ItemRenderer(props: IBaseProps) {
-  if (props?.item?.loEntry === undefined) {
-    return null;
-  }
+  // Every hook runs before the guard, and the row body is a component rather
+  // than a called function, so this hook count never varies.
   const stateProps = useSelector(mapStateToProps);
   const dispatch = useDispatch();
   const onSetLoadOrder = React.useCallback(
@@ -46,7 +45,11 @@ export function ItemRenderer(props: IBaseProps) {
     },
     [dispatch, stateProps.profile.id, stateProps.loadOrder],
   );
-  return renderDraggable({ ...props, ...stateProps, onSetLoadOrder });
+
+  if (props?.item?.loEntry === undefined) {
+    return null;
+  }
+  return <DraggableEntry {...props} {...stateProps} onSetLoadOrder={onSetLoadOrder} />;
 }
 
 function renderValidationError(props: IProps): JSX.Element {
@@ -64,11 +67,8 @@ function renderValidationError(props: IProps): JSX.Element {
   ) : null;
 }
 
-function renderViewModIcon(props: IProps): JSX.Element {
+function ViewModIcon(props: IProps): JSX.Element {
   const { item, mods } = props;
-  if (isExternal(item.loEntry) || item.loEntry.modId === item.loEntry.name) {
-    return null;
-  }
   const context = React.useContext(MainContext);
   const [t] = useTranslation(I18N_NAMESPACE);
   const onClick = React.useCallback(() => {
@@ -81,9 +81,11 @@ function renderViewModIcon(props: IProps): JSX.Element {
     util.batchDispatch(context.api.store.dispatch, batched);
     context.api.events.emit("show-main-page", "Mods");
   }, [item, mods, context]);
-  return item.loEntry.modId !== undefined ? (
+
+  const unmanaged = isExternal(item.loEntry) || item.loEntry.modId === item.loEntry.name;
+  return !unmanaged && item.loEntry.modId !== undefined ? (
     <tooltip.IconButton
-      className="witcher3-view-mod-icon"
+      className="witcher3-view-mod-icon btn-embed"
       icon="open-ext"
       tooltip={t("View source Mod")}
       onClick={onClick}
@@ -101,14 +103,14 @@ function renderExternalBanner(item: types.ILoadOrderEntry): JSX.Element {
   ) : null;
 }
 
-function renderDraggable(props: IProps): JSX.Element {
+function DraggableEntry(props: IProps): JSX.Element {
   const { loadOrder, className, item, profile } = props;
   const key = !!item?.loEntry?.name ? `${item.loEntry.name}` : `${item.loEntry.id}`;
   const context = React.useContext(MainContext);
   const dispatch = useDispatch();
   const position = loadOrder.findIndex((entry) => entry.id === item.loEntry.id) + 1;
 
-  let classes = ["load-order-entry"];
+  let classes = ["load-order-entry", "fblo-uniform-row"];
   if (className !== undefined) {
     classes = classes.concat(className.split(" "));
   }
@@ -175,9 +177,11 @@ function renderDraggable(props: IProps): JSX.Element {
         onApplyIndex={onApplyIndex}
       />
       {renderValidationError(props)}
-      <p className="load-order-name">{key}</p>
+      <p className="load-order-name" title={key}>
+        {key}
+      </p>
       {renderExternalBanner(item.loEntry)}
-      {renderViewModIcon(props)}
+      <ViewModIcon {...props} />
       {checkBox()}
       {lock()}
     </ListGroupItem>

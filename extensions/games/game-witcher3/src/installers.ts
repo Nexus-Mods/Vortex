@@ -1,10 +1,47 @@
 /* eslint-disable */
+import { readFile } from "node:fs/promises";
 import path from "path";
 
 import { types, util } from "@nexusmods/vortex-api";
 
 import { CONFIG_MATRIX_REL_PATH, GAME_ID, SCRIPT_MERGER_FILES, PART_SUFFIX } from "./common";
+import { MAX_MOD_NAME_LENGTH } from "./edition";
+import { makeModFolderName } from "./modFolders";
+import { isAnnotationScript, isScript, SCRIPT_STYLE_ATTRIBUTE, W3ScriptStyle } from "./scriptStyle";
 import { PrefixType } from "./types";
+
+/** Scripts ship in either encoding, so decode from the byte order mark. */
+const decodeScript = (buffer: Buffer): string =>
+  buffer[0] === 0xff && buffer[1] === 0xfe ? buffer.toString("utf16le") : buffer.toString("utf8");
+
+/**
+ * Records how the mod changes scripts, so later checks read an attribute rather
+ * than the file system. Stops at the first whole-file script.
+ */
+async function scriptStyleAttribute(
+  files: string[],
+  destinationPath: string,
+): Promise<types.IInstruction[]> {
+  const scripts = files.filter(isScript);
+  if (scripts.length === 0 || destinationPath === undefined) {
+    return [{ type: "attribute", key: SCRIPT_STYLE_ATTRIBUTE, value: W3ScriptStyle.None }];
+  }
+
+  let style: W3ScriptStyle = W3ScriptStyle.Annotation;
+  for (const script of scripts) {
+    try {
+      if (!isAnnotationScript(decodeScript(await readFile(path.join(destinationPath, script))))) {
+        style = W3ScriptStyle.Override;
+        break;
+      }
+    } catch {
+      // Unreadable during install; assume the cautious answer.
+      style = W3ScriptStyle.Override;
+      break;
+    }
+  }
+  return [{ type: "attribute", key: SCRIPT_STYLE_ATTRIBUTE, value: style }];
+}
 
 export function scriptMergerTest(files, gameId) {
   const matcher = (file) => SCRIPT_MERGER_FILES.includes(file);
@@ -171,27 +208,30 @@ export function installMenuMod(files: string[], destinationPath: string) {
 
 export function testSupportedContent(files: string[], gameId: string) {
   const supported =
-    gameId === GAME_ID &&
-    files.find((file) => file.toLowerCase().startsWith("content" + path.sep) !== undefined);
+    gameId === GAME_ID && files.some((file) => file.toLowerCase().startsWith("content" + path.sep));
   return Promise.resolve({
     supported,
     requiredFiles: [],
   });
 }
 
-export function installContent(files: string[], destinationPath: string) {
-  return Promise.resolve(
-    files
-      .filter((file) => file.toLowerCase().startsWith("content" + path.sep))
-      .map((file) => {
-        const fileBase = file.split(path.sep).slice(1).join(path.sep);
-        return {
-          type: "copy",
-          source: file,
-          destination: path.join("mod" + destinationPath, fileBase),
-        };
-      }),
+export async function installContent(files: string[], destinationPath: string) {
+  const modName = makeModFolderName(
+    path.basename(destinationPath, ".installing"),
+    MAX_MOD_NAME_LENGTH,
   );
+  const instructions: types.IInstruction[] = files
+    .filter((file) => file.toLowerCase().startsWith("content" + path.sep))
+    .map((file) => {
+      const fileBase = file.split(path.sep).slice(1).join(path.sep);
+      return {
+        type: "copy",
+        source: file,
+        destination: path.join(modName, "content", fileBase),
+      };
+    });
+  instructions.push(...(await scriptStyleAttribute(files, destinationPath)));
+  return { instructions };
 }
 
 export function testSupportedTL(files: string[], gameId: string) {
@@ -316,7 +356,7 @@ export function testSupportedMixed(
   });
 }
 
-export function installMixed(files: string[]) {
+export async function installMixed(files: string[], destinationPath: string) {
   // We can only assume that files with the 'dlc' prefix go inside dlc and files
   //  with the 'mod' prefix go inside mods.
   const modNames: string[] = [];
@@ -369,5 +409,6 @@ export function installMixed(files: string[]) {
         value: "witcher3menumodroot",
       },
     ]);
-  return Promise.resolve({ instructions });
+  instructions.push(...(await scriptStyleAttribute(files, destinationPath)));
+  return { instructions };
 }

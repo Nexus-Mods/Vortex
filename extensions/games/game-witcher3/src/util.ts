@@ -12,8 +12,11 @@ import {
   ACTIVITY_ID_IMPORTING_LOADORDER,
   PART_SUFFIX,
 } from "./common";
+import { detectEdition, determineExecutableFrom, W3Edition } from "./edition";
 import IniStructure from "./iniParser";
 import { getMergedModNames } from "./mergeInventoryParsing";
+import { modFolderNameFromPath } from "./modFolders";
+import { SCRIPT_STYLE_ATTRIBUTE, shouldSuggestScriptMerger } from "./scriptStyle";
 import { IDeployedFile, IDeployment, PrefixType } from "./types";
 
 export async function getDeployment(
@@ -87,7 +90,49 @@ export const isTW3 = (api: types.IExtensionApi) => {
   };
 };
 
-export function notifyMissingScriptMerger(api) {
+/**
+ * The merger has nothing to do until two mods claim the same script, so the
+ * suggestion waits for a second mod shipping whole-file scripts. Reads the style
+ * recorded at install rather than inspecting any mod's contents.
+ */
+export function shouldNotifyMissingScriptMerger(api: types.IExtensionApi): boolean {
+  const state = api.getState();
+  const profile = selectors.activeProfile(state);
+  if (profile?.gameId !== GAME_ID) {
+    return false;
+  }
+  const mods: Record<string, types.IMod> = state.persistent?.mods?.[GAME_ID] ?? {}; // key: mod id
+  const enabledStyles = Object.entries(profile.modState ?? {})
+    .filter(([modId, modState]) => modState?.enabled && mods[modId] !== undefined)
+    .map(([modId]) => mods[modId].attributes?.[SCRIPT_STYLE_ATTRIBUTE]);
+  return shouldSuggestScriptMerger(enabledStyles);
+}
+
+/**
+ * Extra guidance for the remaster, where the merger is still needed but the
+ * things that break are different.
+ */
+function remasteredMergerAdvice(api): string {
+  const discovery = selectors.discoveryByGame(api.getState(), GAME_ID);
+  if (detectEdition(discovery?.path) !== W3Edition.Remastered) {
+    return "";
+  }
+  return (
+    "[br][/br][br][/br]On the Remastered edition the merger is still required: only mods " +
+    "written against the new scope-based overrides merge themselves, and the published " +
+    "catalogue ships whole-file script overrides. Merged output is compiled against this " +
+    "edition's scripts, so merges made for an earlier edition cannot be reused."
+  );
+}
+
+/**
+ * @param force raise the notification even on editions we normally stay quiet
+ *   on, for when the user explicitly asked to run the merger.
+ */
+export function notifyMissingScriptMerger(api, force: boolean = false) {
+  if (!force && !shouldNotifyMissingScriptMerger(api)) {
+    return;
+  }
   const notifId = "missing-script-merger";
   api.sendNotification({
     id: notifId,
@@ -104,12 +149,13 @@ export function notifyMissingScriptMerger(api) {
             "info",
             "Witcher 3 Script Merger",
             {
-              bbcode: api.translate(
-                "Vortex is unable to resolve the Script Merger's location. The tool needs to be downloaded and configured manually. " +
-                  "[url=https://wiki.nexusmods.com/index.php/Tool_Setup:_Witcher_3_Script_Merger]Find out more about how to configure it as a tool for use in Vortex.[/url][br][/br][br][/br]" +
-                  "Note: While script merging works well with the vast majority of mods, there is no guarantee for a satisfying outcome in every single case.",
-                { ns: I18N_NAMESPACE },
-              ),
+              bbcode:
+                api.translate(
+                  "Vortex is unable to resolve the Script Merger's location. The tool needs to be downloaded and configured manually. " +
+                    "[url=https://wiki.nexusmods.com/index.php/Tool_Setup:_Witcher_3_Script_Merger]Find out more about how to configure it as a tool for use in Vortex.[/url][br][/br][br][/br]" +
+                    "Note: While script merging works well with the vast majority of mods, there is no guarantee for a satisfying outcome in every single case.",
+                  { ns: I18N_NAMESPACE },
+                ) + api.translate(remasteredMergerAdvice(api), { ns: I18N_NAMESPACE }),
             },
             [
               {
@@ -158,10 +204,9 @@ export async function findModFolders(installationPath: string, mod: types.IMod):
     path.join(installationPath, mod.installationPath),
     (entries: IEntry[]) => {
       entries.forEach((entry) => {
-        const segments = entry.filePath.split(path.sep);
-        const contentIdx = segments.findIndex((seg) => seg.toLowerCase() === "content");
-        if (![-1, 0].includes(contentIdx)) {
-          validNames.add(segments[contentIdx - 1]);
+        const folderName = modFolderNameFromPath(entry.filePath);
+        if (folderName !== undefined) {
+          validNames.add(folderName);
         }
       });
     },
@@ -302,15 +347,17 @@ export function isLockedEntry(modName: string) {
 }
 
 export function determineExecutable(discoveredPath: string): string {
-  if (discoveredPath !== undefined) {
-    try {
-      fs.statSync(path.join(discoveredPath, "bin", "x64_DX12", "witcher3.exe"));
-      return "bin/x64_DX12/witcher3.exe";
-    } catch (err) {
-      // nop, use fallback
+  return determineExecutableFrom((relPath) => {
+    if (discoveredPath === undefined) {
+      return false;
     }
-  }
-  return "bin/x64/witcher3.exe";
+    try {
+      fs.statSync(path.join(discoveredPath, relPath));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  });
 }
 
 export function forceRefresh(api: types.IExtensionApi) {
