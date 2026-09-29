@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "path";
 
 import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
@@ -14,6 +15,7 @@ import {
   LOCKED_PREFIX,
   SCRIPT_MERGER_ID,
 } from "./common";
+import { detectEdition, invalidateEditionCache } from "./edition";
 import {
   onDidDeploy,
   onDidPurge,
@@ -21,9 +23,9 @@ import {
   onGameModeActivation,
   onModsDisabled,
   onProfileWillChange,
-  onSettingsChange,
   onWillDeploy,
 } from "./eventHandlers";
+import { healthChecks, registerHealthCheckNotifications } from "./healthChecks";
 import { registerActions } from "./iconbarActions";
 import IniStructure from "./iniParser";
 import {
@@ -44,9 +46,13 @@ import TW3LoadOrder from "./loadOrder";
 import { canMergeXML, doMergeXML } from "./mergers";
 import { getPersistentLoadOrder, migrate148 } from "./migrations";
 import { testDLC, testTL } from "./modTypes";
-import { PriorityManager } from "./priorityManager";
 import { W3Reducer } from "./reducers";
-import { downloadScriptMerger, getScriptMergerDir, setMergerConfig } from "./scriptmerger";
+import {
+  downloadScriptMerger,
+  getScriptMergerDir,
+  repairStaleScriptMerger,
+  setMergerConfig,
+} from "./scriptmerger";
 import {
   getDLCPath,
   getAllMods,
@@ -76,7 +82,11 @@ const tools: types.ITool[] = [
   },
   {
     id: GAME_ID + "_DX11",
-    name: "The Witcher 3 (DX11)",
+    // Vortex shows every declared tool whether its files resolve or not, so the
+    // remaster (which has no DirectX 11 binary) gets a permanently unconfigured
+    // tile. Naming it plainly is better than removing the only way 4.x and
+    // Classic users have of forcing DirectX 11.
+    name: "The Witcher 3 (DX11 - Classic/Next-Gen only)",
     logo: "auto",
     relative: true,
     executable: () => "bin/x64/witcher3.exe",
@@ -92,13 +102,25 @@ const tools: types.ITool[] = [
   },
 ];
 
+// The first is what the game actually writes; the misspelling was here for
+// years, so it's kept as a fallback in case anything ever populated it.
+const REGISTRY_KEYS = [
+  "Software\\CD Projekt RED\\The Witcher 3",
+  "Software\\CD Project Red\\The Witcher 3",
+];
+
 function findGame(): Bluebird<string> {
   try {
-    const instPath = winapi.RegGetValue(
-      "HKEY_LOCAL_MACHINE",
-      "Software\\CD Project Red\\The Witcher 3",
-      "InstallFolder",
-    );
+    const instPath = REGISTRY_KEYS.reduce((found, key) => {
+      if (found) {
+        return found;
+      }
+      try {
+        return winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "InstallFolder");
+      } catch (err) {
+        return undefined;
+      }
+    }, undefined);
     if (!instPath) {
       throw new Error("empty registry key");
     }
@@ -113,6 +135,28 @@ function findGame(): Bluebird<string> {
       STEAM_ID_WH,
       EPIC_ID,
     ]).then((game) => game.gamePath);
+  }
+}
+
+/**
+ * An install that updated to the remaster in place still has the DirectX 11
+ * binary recorded as its executable. That path is gone in 5.0, so the Play
+ * button fails with ENOENT until the stored value is re-resolved.
+ */
+function repairStaleExecutable(api: types.IExtensionApi, discovery: types.IDiscoveryResult) {
+  const stored = selectors.gameById(api.getState(), GAME_ID);
+  const current = discovery.executable ?? stored?.executable;
+  if (current === undefined || existsSync(path.join(discovery.path, current))) {
+    return;
+  }
+
+  const resolved = determineExecutable(discovery.path);
+  if (resolved !== current) {
+    log("info", "witcher3 stored executable is missing, re-resolving", {
+      from: current,
+      to: resolved,
+    });
+    api.store.dispatch(actions.setGameParameters(GAME_ID, { executable: resolved }));
   }
 }
 
@@ -135,20 +179,33 @@ function prepareForModding(api: types.IExtensionApi) {
         .ensureDirWritableAsync(dirpath)
         .catch((err) => (err.code === "EEXIST" ? Promise.resolve() : Promise.reject(err)));
 
-    return Promise.all([
-      ensurePath(path.join(discovery.path, "Mods")),
-      ensurePath(path.join(discovery.path, "DLC")),
-      ensurePath(path.dirname(getLoadOrderFilePath())),
-    ]).then(() =>
-      downloadScriptMerger(api).catch((err) =>
-        err instanceof util.UserCanceled ? Promise.resolve() : findScriptMerger(err),
-      ),
+    // Re-probe once per activation so the merge filter, the script merger gate
+    // and the health checks all agree for the rest of this session.
+    invalidateEditionCache(discovery.path);
+    log("info", "witcher3 edition detected", {
+      edition: detectEdition(discovery.path),
+      path: discovery.path,
+    });
+    repairStaleExecutable(api, discovery);
+
+    return (
+      Promise.all([
+        ensurePath(path.join(discovery.path, "Mods")),
+        ensurePath(path.join(discovery.path, "DLC")),
+        ensurePath(path.dirname(getLoadOrderFilePath())),
+      ])
+        // Runs before the download, which resolves the install directory from
+        // the tool this may re-point.
+        .then(() => repairStaleScriptMerger(api, discovery))
+        .then(() =>
+          downloadScriptMerger(api).catch((err) =>
+            err instanceof util.UserCanceled ? Promise.resolve() : findScriptMerger(err),
+          ),
+        )
     );
   };
 }
 
-let priorityManager: PriorityManager;
-const getPriorityManager = () => priorityManager;
 // let modLimitPatcher: ModLimitPatcher;
 
 function main(context: types.IExtensionContext) {
@@ -164,7 +221,11 @@ function main(context: types.IExtensionContext) {
     setup: prepareForModding(context.api) as any,
     supportedTools: tools,
     requiresCleanup: true,
-    requiredFiles: ["bin/x64/witcher3.exe"],
+    // Must exist in every edition. Vortex re-checks these on startup and drops
+    // the discovery when one is missing, so the DirectX 11 binary can't be used
+    // here: the remaster ships without it and would un-discover the game for
+    // anyone who updates in place.
+    requiredFiles: ["content/content0/scripts/game/r4Game.ws"],
     environment: {
       SteamAPPId: "292030",
     },
@@ -243,7 +304,7 @@ function main(context: types.IExtensionContext) {
 
   context.registerMigration((oldVersion) => migrate148(context, oldVersion) as any);
 
-  registerActions({ context, getPriorityManager });
+  registerActions({ context });
 
   context.optional.registerCollectionFeature(
     "witcher3_collection_data",
@@ -292,32 +353,33 @@ function main(context: types.IExtensionContext) {
   const props = {
     onToggleModsState: toggleModsState,
     api: context.api,
-    getPriorityManager,
   };
   context.registerLoadOrder(new TW3LoadOrder(props));
+
+  // Registered unconditionally; each check short-circuits on editions it
+  // doesn't apply to, since registrations can't vary per discovery.
+  for (const check of healthChecks) {
+    context.registerHealthCheck(check);
+  }
   // context.registerTest('tw3-mod-limit-breach', 'gamemode-activated',
   //   () => Bluebird.resolve(testModLimitBreach(context.api, modLimitPatcher)));
   // context.registerTest('tw3-mod-limit-breach', 'mod-activated',
   //   () => Bluebird.resolve(testModLimitBreach(context.api, modLimitPatcher)));
 
   context.once(() => {
-    priorityManager = new PriorityManager(context.api, "prefix-based");
-    IniStructure.getInstance(context.api, getPriorityManager);
+    IniStructure.getInstance(context.api);
     // modLimitPatcher = new ModLimitPatcher(context.api);
 
     context.api.events.on("gamemode-activated", onGameModeActivation(context.api));
     context.api.events.on("profile-will-change", onProfileWillChange(context.api));
-    context.api.events.on("mods-enabled", onModsDisabled(context.api, getPriorityManager));
+    context.api.events.on("mods-enabled", onModsDisabled(context.api));
 
     context.api.onAsync("will-deploy", onWillDeploy(context.api) as any);
     context.api.onAsync("did-deploy", onDidDeploy(context.api) as any);
-    context.api.onAsync("did-purge", onDidPurge(context.api, getPriorityManager) as any);
-    context.api.onAsync("did-remove-mod", onDidRemoveMod(context.api, getPriorityManager) as any);
+    context.api.onAsync("did-purge", onDidPurge(context.api) as any);
+    context.api.onAsync("did-remove-mod", onDidRemoveMod(context.api) as any);
 
-    context.api.onStateChange(
-      ["settings", "witcher3"],
-      onSettingsChange(context.api, getPriorityManager) as any,
-    );
+    registerHealthCheckNotifications(context.api);
   });
   return true;
 }

@@ -1,35 +1,37 @@
 /* eslint-disable */
+import { rename } from "node:fs/promises";
 import path from "path";
 
 import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
 import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath } from "./common";
-import { PriorityManager } from "./priorityManager";
+import { assignPriorities, ModSettingsEntry } from "./modSettingsPriority";
 import { forceRefresh, isLockedEntry, getAllMods, getManuallyAddedMods } from "./util";
 
 export default class IniStructure {
   private static instance: IniStructure = null;
-  public static getInstance(
-    api?: types.IExtensionApi,
-    priorityManager?: () => PriorityManager,
-  ): IniStructure {
+  public static getInstance(api?: types.IExtensionApi): IniStructure {
     if (!IniStructure.instance) {
-      if (api === undefined || priorityManager === undefined) {
+      if (api === undefined) {
         throw new Error("IniStructure is not context aware");
       }
-      IniStructure.instance = new IniStructure(api, priorityManager);
+      IniStructure.instance = new IniStructure(api);
     }
 
     return IniStructure.instance;
   }
   private mIniStruct = {};
   private mApi: types.IExtensionApi;
-  private mPriorityManager: PriorityManager;
-  constructor(api: types.IExtensionApi, priorityManager: () => PriorityManager) {
+  private mRevertedByPurge = false;
+  constructor(api: types.IExtensionApi) {
     this.mIniStruct = {};
     this.mApi = api;
-    this.mPriorityManager = priorityManager();
+  }
+
+  /** mods.settings holds only what a purge left behind, not the profile's load order. */
+  public get revertedByPurge(): boolean {
+    return this.mRevertedByPurge;
   }
 
   public async getIniStructure() {
@@ -38,52 +40,40 @@ export default class IniStructure {
 
   public async setINIStruct(loadOrder: types.LoadOrder) {
     const modMap = await getAllMods(this.mApi);
-    this.mIniStruct = {};
-    const mods = [].concat(modMap.merged, modMap.managed, modMap.manual);
+    const mods: ModSettingsEntry[] = [...modMap.merged, ...modMap.managed, ...modMap.manual];
     const manualLocked = modMap.manual.filter(isLockedEntry);
     const managedLocked = modMap.managed
       .filter((entry) => isLockedEntry(entry.name))
       .map((entry) => entry.name);
-    const totalLocked = [].concat(modMap.merged, manualLocked, managedLocked);
-    this.mIniStruct = mods.reduce((accum, mod, idx) => {
-      let name;
-      let key;
-      if (typeof mod === "object" && !!mod) {
-        name = mod.name;
-        key = mod.id;
-      } else {
-        name = mod;
-        key = mod;
-      }
+    const totalLocked: string[] = [...modMap.merged, ...manualLocked, ...managedLocked];
 
-      if (name.toLowerCase().startsWith("dlc")) {
-        return accum;
-      }
+    const order = loadOrder ?? [];
+    const enabledByName = new Map(order.map((entry) => [entry.id, entry.enabled]));
+    const assigned = assignPriorities({
+      mods,
+      locked: totalLocked,
+      loadOrderIds: order.map((entry) => entry.id),
+    });
 
-      const idxOfEntry = (loadOrder || []).findIndex((iter) => iter.id === name);
-      const LOEntry = loadOrder.at(idxOfEntry);
-      if (idx === 0) {
-        this.mPriorityManager?.resetMaxPriority(totalLocked.length);
-      }
-      accum[name] = {
+    const struct: Record<string, { Enabled: number; Priority: number; VK: string }> = {};
+    for (const entry of assigned) {
+      struct[entry.name] = {
         // The INI file's enabled attribute expects 1 or 0
-        Enabled: LOEntry !== undefined ? (LOEntry.enabled ? 1 : 0) : 1,
-        Priority: totalLocked.includes(name)
-          ? totalLocked.indexOf(name) + 1
-          : idxOfEntry === -1
-            ? loadOrder.length + 1
-            : idxOfEntry + totalLocked.length,
-        VK: key,
+        Enabled: enabledByName.get(entry.name) === false ? 0 : 1,
+        Priority: entry.priority,
+        VK: entry.key,
       };
-      return accum;
-    }, {});
-    return this.writeToModSettings();
+    }
+    this.mIniStruct = struct;
+    await this.writeToModSettings();
+    this.mRevertedByPurge = false;
   }
 
   public async revertLOFile() {
     const state = this.mApi.getState();
     const profile = selectors.activeProfile(state);
     if (!!profile && profile.gameId === GAME_ID) {
+      this.mRevertedByPurge = true;
       const manuallyAdded = await getManuallyAddedMods(this.mApi);
       if (manuallyAdded.length > 0) {
         const newStruct = {};
@@ -178,11 +168,14 @@ export default class IniStructure {
 
   public async writeToModSettings(): Promise<void> {
     const filePath = getLoadOrderFilePath();
+    // Built beside the real file and moved over it, so a concurrent read never
+    // sees it empty or half written.
+    const tempPath = `${filePath}.vortex_tmp`;
     const parser = new IniParser(new WinapiFormat());
     try {
-      await fs.removeAsync(filePath);
-      await fs.writeFileAsync(filePath, "", { encoding: "utf8" });
-      const ini = await this.ensureModSettings();
+      await fs.ensureDirWritableAsync(path.dirname(filePath));
+      await fs.writeFileAsync(tempPath, "", { encoding: "utf8" });
+      const ini = await parser.read(tempPath);
       const struct = Object.keys(this.mIniStruct).sort(
         (a, b) => this.mIniStruct[a].Priority - this.mIniStruct[b].Priority,
       );
@@ -203,7 +196,8 @@ export default class IniStructure {
           VK: this.mIniStruct[key].VK,
         };
       }
-      await parser.write(filePath, ini);
+      await parser.write(tempPath, ini);
+      await rename(tempPath, filePath);
       return Promise.resolve();
     } catch (err) {
       return err.path !== undefined && ["EPERM", "EBUSY"].includes(err.code)
