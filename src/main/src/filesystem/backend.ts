@@ -335,7 +335,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<ResolvedPath, undefined>>;
+  ): Promise<AsyncIterableIterator<ResolvedPath, undefined>>;
   enumerateDirectory(
     path: ResolvedPath,
     options: {
@@ -345,7 +345,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<[ResolvedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<[ResolvedPath, Status], undefined>>;
   enumerateDirectory(
     path: ResolvedPath,
     options?: {
@@ -355,7 +355,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<ResolvedPath | [ResolvedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<ResolvedPath | [ResolvedPath, Status], undefined>>;
   async enumerateDirectory(
     path: ResolvedPath,
     options?: {
@@ -365,7 +365,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<ResolvedPath | [ResolvedPath, Status], undefined>> {
+  ): Promise<AsyncIterableIterator<ResolvedPath | [ResolvedPath, Status], undefined>> {
     const recursive = options?.recursive ?? false;
     const include = options?.include;
     const exclude = options?.exclude;
@@ -375,7 +375,10 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
 
     const dir = await opendir(path, { recursive });
 
-    return {
+    const iterator: AsyncIterableIterator<ResolvedPath | [ResolvedPath, Status], undefined> = {
+      [Symbol.asyncIterator]() {
+        return iterator;
+      },
       next: async () => {
         while (true) {
           const entry = await dir.read();
@@ -408,6 +411,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         return { done: true, value: undefined };
       },
     };
+    return iterator;
   }
 
   async createLink(

@@ -460,7 +460,7 @@ function enumerateDirectory(
     include?: string;
     exclude?: string;
   },
-): Promise<AsyncIterator<QualifiedPath, undefined>>;
+): Promise<AsyncIterableIterator<QualifiedPath, undefined>>;
 function enumerateDirectory(
   path: QualifiedPath,
   options: {
@@ -470,7 +470,7 @@ function enumerateDirectory(
     include?: string;
     exclude?: string;
   },
-): Promise<AsyncIterator<[QualifiedPath, Status], undefined>>;
+): Promise<AsyncIterableIterator<[QualifiedPath, Status], undefined>>;
 function enumerateDirectory(
   path: QualifiedPath,
   options?: {
@@ -480,7 +480,7 @@ function enumerateDirectory(
     include?: string;
     exclude?: string;
   },
-): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
   return openEnumeration(path, options);
 }
 
@@ -493,7 +493,7 @@ async function openEnumeration(
     include?: string;
     exclude?: string;
   },
-): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
   const handle = await betterIpcRenderer.invoke("fs:enumerate-open", path.toWire(), options);
   const withStatus = Boolean(options?.includeStatus);
 
@@ -509,7 +509,10 @@ async function openEnumeration(
     betterIpcRenderer.invoke("fs:enumerate-close", handle).catch(() => undefined);
   };
 
-  return {
+  const iterator: AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined> = {
+    [Symbol.asyncIterator]() {
+      return iterator;
+    },
     async next() {
       if (closed) return { done: true, value: undefined };
 
@@ -556,6 +559,7 @@ async function openEnumeration(
       throw err;
     },
   };
+  return iterator;
 }
 
 function statFromWire(result: TemporalWire<StatResult>): StatResult {

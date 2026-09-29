@@ -197,7 +197,7 @@ export class InMemoryFS implements FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath, undefined>>;
+  ): Promise<AsyncIterableIterator<QualifiedPath, undefined>>;
   enumerateDirectory(
     path: QualifiedPath,
     options: {
@@ -207,7 +207,7 @@ export class InMemoryFS implements FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<[QualifiedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<[QualifiedPath, Status], undefined>>;
   enumerateDirectory(
     path: QualifiedPath,
     options?: {
@@ -217,7 +217,7 @@ export class InMemoryFS implements FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>>;
   async enumerateDirectory(
     path: QualifiedPath,
     options?: {
@@ -227,7 +227,7 @@ export class InMemoryFS implements FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+  ): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
     const resolved = this.#store.lookup(path);
     if (!resolved.ok) return throwFsFailure(resolved.failure);
 

@@ -115,7 +115,7 @@ export class ChaosFS implements FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath, undefined>>;
+  ): Promise<AsyncIterableIterator<QualifiedPath, undefined>>;
   enumerateDirectory(
     path: QualifiedPath,
     options: {
@@ -125,7 +125,7 @@ export class ChaosFS implements FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<[QualifiedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<[QualifiedPath, Status], undefined>>;
   enumerateDirectory(
     path: QualifiedPath,
     options?: {
@@ -135,7 +135,7 @@ export class ChaosFS implements FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>>;
   async enumerateDirectory(
     path: QualifiedPath,
     options?: {
@@ -145,7 +145,7 @@ export class ChaosFS implements FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+  ): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
     const rule = this.#match("enumerateDirectory", undefined, [path]);
     if (rule === undefined) return this.#inner.enumerateDirectory(path, options);
     if (rule.failAfter === undefined) return throwFault(rule, [path]);
