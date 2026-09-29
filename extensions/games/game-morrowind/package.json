@@ -14,7 +14,8 @@
     "game": "Morrowind"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "winapi-bindings": "catalog:"
   },
   "nx": {
     "tags": [
