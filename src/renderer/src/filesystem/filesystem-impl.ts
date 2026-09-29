@@ -1,0 +1,251 @@
+import { isAbsolute, relative, sep as pathSep } from "node:path";
+
+import { VortexError } from "@vortex/shared";
+import type {
+  FileSystem as NodeFileSystem,
+  FileSystemBackend as NodeFileSystemBackend,
+  PathResolverRegistry,
+  Pattern,
+  QualifiedPath,
+  ResolvedPath,
+  StatResult,
+  Status,
+} from "@vortex/shared/filesystem";
+
+/**
+ * Node-backed implementation of {@link NodeFileSystem}. Composes a
+ * {@link NodeFileSystemBackend} with a {@link PathResolverRegistry}:
+ * resolves incoming {@link QualifiedPath} args to native paths via the
+ * registry, delegates every operation to the backend, and re-tags iterator
+ * entries with `QualifiedPath`s rooted at the caller's input.
+ *
+ * This is the host-side counterpart to the adaptor-side polyfill produced
+ * by `createFileSystemClient`. Adaptors see the same {@link NodeFileSystem}
+ * surface the host uses directly.
+ *
+ * @public
+ */
+export class NodeFileSystemImpl implements NodeFileSystem {
+  readonly #backend: NodeFileSystemBackend;
+  readonly #resolvers: PathResolverRegistry;
+
+  constructor(backend: NodeFileSystemBackend, resolvers: PathResolverRegistry) {
+    this.#backend = backend;
+    this.#resolvers = resolvers;
+  }
+
+  async copy(
+    source: QualifiedPath,
+    target: QualifiedPath,
+    options?: { overwrite: boolean },
+  ): Promise<void> {
+    const [s, t] = await Promise.all([
+      this.#resolvers.resolve(source),
+      this.#resolvers.resolve(target),
+    ]);
+    await this.#backend.copy(s, t, options);
+  }
+
+  async move(
+    source: QualifiedPath,
+    target: QualifiedPath,
+    options?: { overwrite: boolean },
+  ): Promise<void> {
+    const [s, t] = await Promise.all([
+      this.#resolvers.resolve(source),
+      this.#resolvers.resolve(target),
+    ]);
+    await this.#backend.move(s, t, options);
+  }
+
+  async readFile(path: QualifiedPath): Promise<Uint8Array> {
+    return this.#backend.readFile(await this.#resolvers.resolve(path));
+  }
+
+  async writeFile(path: QualifiedPath, contents: Uint8Array): Promise<void> {
+    await this.#backend.writeFile(await this.#resolvers.resolve(path), contents);
+  }
+
+  async createDirectory(path: QualifiedPath): Promise<void> {
+    await this.#backend.createDirectory(await this.#resolvers.resolve(path));
+  }
+
+  async delete(path: QualifiedPath): Promise<void> {
+    await this.#backend.delete(await this.#resolvers.resolve(path));
+  }
+
+  async deleteRecursive(path: QualifiedPath): Promise<void> {
+    await this.#backend.deleteRecursive(await this.#resolvers.resolve(path));
+  }
+
+  async stat(path: QualifiedPath, options?: { parseSymLink: boolean }): Promise<StatResult> {
+    return this.#backend.stat(await this.#resolvers.resolve(path), options);
+  }
+
+  enumerateDirectory(
+    path: QualifiedPath,
+    options?: {
+      includeStatus?: false;
+      types?: "all" | "files" | "directories";
+      recursive?: boolean;
+      include?: Pattern;
+      exclude?: Pattern;
+    },
+  ): Promise<AsyncIterator<QualifiedPath, undefined>>;
+  enumerateDirectory(
+    path: QualifiedPath,
+    options: {
+      includeStatus: true | "symlink";
+      types?: "all" | "files" | "directories";
+      recursive?: boolean;
+      include?: Pattern;
+      exclude?: Pattern;
+    },
+  ): Promise<AsyncIterator<[QualifiedPath, Status], undefined>>;
+  enumerateDirectory(
+    path: QualifiedPath,
+    options?: {
+      includeStatus?: boolean | "symlink";
+      types?: "all" | "files" | "directories";
+      recursive?: boolean;
+      include?: Pattern;
+      exclude?: Pattern;
+    },
+  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>>;
+  async enumerateDirectory(
+    path: QualifiedPath,
+    options?: {
+      includeStatus?: boolean | "symlink";
+      types?: "all" | "files" | "directories";
+      recursive?: boolean;
+      include?: Pattern;
+      exclude?: Pattern;
+    },
+  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+    const rootResolved = await this.#resolvers.resolve(path);
+    const iter = await this.#backend.enumerateDirectory(rootResolved, options);
+    const includeStatus = Boolean(options?.includeStatus);
+    return wrapIterator(iter, path, rootResolved, includeStatus);
+  }
+
+  createStream(
+    path: QualifiedPath,
+    mode: "r",
+    options?: { start?: number; end?: number },
+  ): Promise<ReadableStream>;
+  createStream(
+    path: QualifiedPath,
+    mode: "w",
+    options?: { start?: number },
+  ): Promise<WritableStream>;
+  createStream(
+    path: QualifiedPath,
+    mode: string,
+    options?: { start?: number; end?: number },
+  ): Promise<ReadableStream | WritableStream>;
+  async createStream(
+    path: QualifiedPath,
+    mode: string,
+    options?: { start?: number; end?: number },
+  ): Promise<ReadableStream | WritableStream> {
+    return this.#backend.createStream(await this.#resolvers.resolve(path), mode, options);
+  }
+
+  async createLink(
+    from: QualifiedPath,
+    to: QualifiedPath,
+    type: "hardlink" | "symlink",
+  ): Promise<void> {
+    const [f, t] = await Promise.all([this.#resolvers.resolve(from), this.#resolvers.resolve(to)]);
+    await this.#backend.createLink(f, t, type);
+  }
+}
+
+function wrapIterator(
+  inner: AsyncIterator<ResolvedPath | readonly [ResolvedPath, Status], undefined>,
+  rootQP: QualifiedPath,
+  rootResolved: ResolvedPath,
+  includeStatus: boolean,
+): AsyncIterator<QualifiedPath | [QualifiedPath, Status], undefined> {
+  return {
+    async next() {
+      const step = await inner.next();
+      if (step.done === true) return { done: true, value: undefined };
+
+      const value = step.value;
+      if (typeof value === "string") {
+        if (includeStatus)
+          throw new VortexError(
+            "Expected inner iterator to include status but received only paths",
+            { kind: "argument-invalid", argument: "includeStatus" },
+          );
+
+        return {
+          done: false,
+          value: toQualifiedEntry(rootQP, rootResolved, value),
+        };
+      } else {
+        if (!includeStatus)
+          throw new VortexError(
+            "Expected inner iterator to only provide paths but received status as well",
+            { kind: "argument-invalid", argument: "includeStatus" },
+          );
+
+        const [native, status] = value;
+        return {
+          done: false,
+          value: [toQualifiedEntry(rootQP, rootResolved, native), status],
+        };
+      }
+    },
+    async return() {
+      try {
+        await inner.return?.(undefined);
+      } catch {
+        // ignored
+      }
+
+      return { done: true, value: undefined };
+    },
+    async throw(err) {
+      try {
+        await inner.return?.(undefined);
+      } catch {
+        // ignored
+      }
+
+      throw err;
+    },
+  };
+}
+
+/**
+ * Reattaches a native entry path to the caller's root `QualifiedPath`.
+ *
+ * Uses `path.relative` rather than `String.startsWith` so that the prefix
+ * check is separator-aware (handles Windows case-insensitivity and does not
+ * match `/tmp/a` against `/tmp/abc/...`).
+ *
+ * Throws a `VortexError` with kind `argument-invalid` if the entry is not
+ * under the root (e.g. a symlink followed out of the tree). Node's
+ * `opendir({ recursive: true })` does not follow symlinks, so this is a
+ * defensive check rather than an expected case.
+ */
+function toQualifiedEntry(
+  rootQP: QualifiedPath,
+  rootResolved: ResolvedPath,
+  entry: ResolvedPath,
+): QualifiedPath {
+  const rel = relative(rootResolved, entry);
+  if (rel === "") return rootQP;
+  if (rel.startsWith("..") || isAbsolute(rel)) {
+    throw new VortexError(`Directory entry '${entry}' is not under root '${rootResolved}'`, {
+      kind: "argument-invalid",
+      argument: entry,
+    });
+  }
+
+  const components = rel.split(pathSep).filter((c) => c.length > 0);
+  if (components.length === 0) return rootQP;
+  return rootQP.join(...components);
+}
