@@ -957,7 +957,7 @@ async function benchFS(fsType: string, fs: Pick<FileSystem, "enumerateDirectory"
 
     const iterator = await fs.enumerateDirectory(
       QualifiedPath.fromNative("/mnt/redline/.pnpm-store/v11"),
-      { includeStatus: true, recursive: true, types: "files" },
+      { includeStatus: false, recursive: true, types: "files" },
     );
     const iterable = {
       [Symbol.asyncIterator]() {

@@ -29,7 +29,7 @@ Both arms execute identical backend work; only the transport differs. The IPC ar
 {"fsType":"node","avg":3306.079999999888,"q50":3326.2999999998137,"iterations":5}
 ```
 
-The IPC method is **11% slower** compared to directly using the filesystem implementation. The overhead of using IPC is about 12% expressed against the fast baseline instead of the slower run:
+The IPC method is `11%` slower compared to directly using the filesystem implementation. The overhead of using IPC is `12.4%` expressed against the fast baseline instead of the slower run:
 
 ```
 3737.7ms - 3326.3ms = 411.4ms
@@ -52,6 +52,24 @@ Increasing the batch size from `512` to `4096` produces these results:
 
 Raising the batch size reduces pulls from `86013 / 512 ≈ 168` to `86013 / 4096 ≈ 21` while the overhead stays flat: q50 `3737.7ms` vs `3800.3ms`, within run-to-run noise. If roundtrips dominated, the overhead would have collapsed ~8x at the larger batch; it did not. Overhead is invariant to batch size and roundtrip count, and proportional to entry count.
 
-Instead, overhead is payload-proportional: main-side wire conversion, structured clone of the batch, and preload-side rehydration.
+Instead, overhead is payload-proportional: main-side wire conversion, structured clone of the batch, and preload-side rehydration. Besides the Electron IPC structured clone, we can change the payload shape and hydration methods to improve performance, bringing IPC closer to direct access.
 
-Besides the Electron IPC structured clone, we can change the payload shape and hydration methods to improve performance, bringing IPC closer to direct access.
+Simpler types over IPC bring our results much closer. Instead of including `stat` results with `includeStatus: true` we can turn that off to compare when IPC only needs to transport the serialized `QualifiedPath` values:
+
+```json
+{"fsType":"ipc","iteration":0,"duration":2377.199999999255,"numFiles":86013,"durationPerEntry":0.027637682675865916}
+{"fsType":"ipc","iteration":1,"duration":2346.100000000559,"numFiles":86013,"durationPerEntry":0.027276109425325924}
+{"fsType":"ipc","iteration":2,"duration":2356.5999999996275,"numFiles":86013,"durationPerEntry":0.027398183995438218}
+{"fsType":"ipc","iteration":3,"duration":2230.4000000003725,"numFiles":86013,"durationPerEntry":0.02593096392406232}
+{"fsType":"ipc","iteration":4,"duration":2339.7999999998137,"numFiles":86013,"durationPerEntry":0.02720286468324339}
+{"fsType":"ipc","avg":2330.0199999999254,"q50":2346.100000000559,"iterations":5}
+
+{"fsType":"node","iteration":0,"duration":1908.2000000001863,"numFiles":86013,"durationPerEntry":0.022185018543710674}
+{"fsType":"node","iteration":1,"duration":2266.4000000003725,"numFiles":86013,"durationPerEntry":0.026349505307341595}
+{"fsType":"node","iteration":2,"duration":2293.7000000001863,"numFiles":86013,"durationPerEntry":0.026666899189659542}
+{"fsType":"node","iteration":3,"duration":2332.7000000001863,"numFiles":86013,"durationPerEntry":0.027120319021545422}
+{"fsType":"node","iteration":4,"duration":2332.9000000003725,"numFiles":86013,"durationPerEntry":0.02712264425145469}
+{"fsType":"node","avg":2226.7800000002608,"q50":2293.7000000001863,"iterations":5}
+```
+
+This reduces the overhead from `12.4%` to `2.3%` showing that wire shape and rehydration dominate performance. Both of which we control and can optimize.
