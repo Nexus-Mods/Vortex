@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { rename } from "node:fs/promises";
 import path from "path";
 
 import { fs, selectors, types, util } from "@nexusmods/vortex-api";
@@ -22,9 +23,15 @@ export default class IniStructure {
   }
   private mIniStruct = {};
   private mApi: types.IExtensionApi;
+  private mRevertedByPurge = false;
   constructor(api: types.IExtensionApi) {
     this.mIniStruct = {};
     this.mApi = api;
+  }
+
+  /** mods.settings holds only what a purge left behind, not the profile's load order. */
+  public get revertedByPurge(): boolean {
+    return this.mRevertedByPurge;
   }
 
   public async getIniStructure() {
@@ -58,13 +65,15 @@ export default class IniStructure {
       };
     }
     this.mIniStruct = struct;
-    return this.writeToModSettings();
+    await this.writeToModSettings();
+    this.mRevertedByPurge = false;
   }
 
   public async revertLOFile() {
     const state = this.mApi.getState();
     const profile = selectors.activeProfile(state);
     if (!!profile && profile.gameId === GAME_ID) {
+      this.mRevertedByPurge = true;
       const manuallyAdded = await getManuallyAddedMods(this.mApi);
       if (manuallyAdded.length > 0) {
         const newStruct = {};
@@ -159,11 +168,14 @@ export default class IniStructure {
 
   public async writeToModSettings(): Promise<void> {
     const filePath = getLoadOrderFilePath();
+    // Built beside the real file and moved over it, so a concurrent read never
+    // sees it empty or half written.
+    const tempPath = `${filePath}.vortex_tmp`;
     const parser = new IniParser(new WinapiFormat());
     try {
-      await fs.removeAsync(filePath);
-      await fs.writeFileAsync(filePath, "", { encoding: "utf8" });
-      const ini = await this.ensureModSettings();
+      await fs.ensureDirWritableAsync(path.dirname(filePath));
+      await fs.writeFileAsync(tempPath, "", { encoding: "utf8" });
+      const ini = await parser.read(tempPath);
       const struct = Object.keys(this.mIniStruct).sort(
         (a, b) => this.mIniStruct[a].Priority - this.mIniStruct[b].Priority,
       );
@@ -184,7 +196,8 @@ export default class IniStructure {
           VK: this.mIniStruct[key].VK,
         };
       }
-      await parser.write(filePath, ini);
+      await parser.write(tempPath, ini);
+      await rename(tempPath, filePath);
       return Promise.resolve();
     } catch (err) {
       return err.path !== undefined && ["EPERM", "EBUSY"].includes(err.code)

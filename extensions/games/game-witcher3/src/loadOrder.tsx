@@ -1,15 +1,21 @@
 import path from "path";
 
-import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
+import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import React from "react";
 
 import { withPositionPrefix } from "./collectionLoadOrder";
-import { ACTIVITY_ID_IMPORTING_LOADORDER, GAME_ID, LOCKED_PREFIX, UNI_PATCH } from "./common";
+import {
+  ACTIVITY_ID_IMPORTING_LOADORDER,
+  GAME_ID,
+  getLoadOrderFilePath,
+  LOCKED_PREFIX,
+  UNI_PATCH,
+} from "./common";
 import IniStructure from "./iniParser";
 import { getPersistentLoadOrder } from "./migrations";
 import { IItemRendererProps } from "./types";
-import { forceRefresh } from "./util";
+import { fileExists, forceRefresh } from "./util";
 import InfoComponent from "./views/InfoComponent";
 import ItemRenderer from "./views/ItemRenderer";
 
@@ -81,10 +87,15 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
       return `${util.renderModName(mod)} (${entry.name})`;
     };
 
+    const stored = getPersistentLoadOrder(this.mApi);
+    const iniStructure = IniStructure.getInstance(this.mApi);
     try {
-      const unsorted: { [key: string]: any } = await IniStructure.getInstance(
-        this.mApi,
-      ).readStructure();
+      // A purge rewrites or deletes mods.settings, and a missing file reads as
+      // empty rather than failing, so neither may replace the stored order.
+      if (iniStructure.revertedByPurge || !(await fileExists(getLoadOrderFilePath()))) {
+        return stored;
+      }
+      const unsorted: { [key: string]: any } = await iniStructure.readStructure();
       const entries = Object.keys(unsorted)
         .sort((a, b) => unsorted[a].Priority - unsorted[b].Priority)
         .reduce(
@@ -103,14 +114,8 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
         );
       return withPositionPrefix([].concat(entries.locked, entries.regular));
     } catch (err) {
-      // mods.settings is gone, which a purge does. Returning nothing here
-      // replaces the stored order with an empty one, so fall back to the
-      // order the profile already holds.
-      const persistent = state.persistent as typeof state.persistent & {
-        loadOrder?: Record<string, types.LoadOrder>; // key: profile id
-      };
-      const stored = persistent.loadOrder?.[activeProfile.id];
-      return Array.isArray(stored) ? stored : [];
+      log("warn", "failed to read mods.settings, keeping the stored load order", err);
+      return stored;
     }
   }
 
