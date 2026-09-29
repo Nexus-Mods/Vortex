@@ -3,17 +3,16 @@ import path from "path";
 
 import { actions, selectors, types, util } from "@nexusmods/vortex-api";
 
+import { withPositionPrefix } from "./collectionLoadOrder";
 import { GAME_ID, I18N_NAMESPACE } from "./common";
 import IniStructure from "./iniParser";
 import TW3LoadOrder, { importLoadOrder } from "./loadOrder";
 import { makeOnContextImport } from "./mergeBackup";
 import { getPersistentLoadOrder } from "./migrations";
-import { PriorityManager } from "./priorityManager";
 import { forceRefresh, isLockedEntry } from "./util";
 
 interface IProps {
   context: types.IExtensionContext;
-  getPriorityManager: () => PriorityManager;
   // getModLimitPatcher: () => ModLimitPatcher;
 }
 
@@ -146,19 +145,12 @@ export const registerActions = (props: IProps) => {
                   lhs.id.toLowerCase().localeCompare(rhs.id.toLowerCase()),
                 );
 
-                const newLO = [...locked, ...sorted].map((entry, idx) => ({
-                  ...entry,
-                  data: {
-                    prefix: idx + 1,
-                  },
-                }));
+                const newLO = withPositionPrefix([...locked, ...sorted]);
 
                 context.api.store.dispatch(actions.setLoadOrder(profile.id, newLO as any));
                 // The refresh below makes the page re-read mods.settings, so the
                 // new order has to reach the file first or it's just discarded.
-                await IniStructure.getInstance(context.api, props.getPriorityManager).setINIStruct(
-                  newLO as any,
-                );
+                await IniStructure.getInstance(context.api).setINIStruct(newLO);
               } catch (err) {
                 context.api.showErrorNotification("Failed to sort alphabetically", err);
               } finally {

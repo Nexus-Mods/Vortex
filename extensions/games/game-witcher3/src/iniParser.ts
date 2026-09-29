@@ -6,31 +6,25 @@ import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
 import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath } from "./common";
 import { assignPriorities, ModSettingsEntry } from "./modSettingsPriority";
-import { PriorityManager } from "./priorityManager";
 import { forceRefresh, isLockedEntry, getAllMods, getManuallyAddedMods } from "./util";
 
 export default class IniStructure {
   private static instance: IniStructure = null;
-  public static getInstance(
-    api?: types.IExtensionApi,
-    priorityManager?: () => PriorityManager,
-  ): IniStructure {
+  public static getInstance(api?: types.IExtensionApi): IniStructure {
     if (!IniStructure.instance) {
-      if (api === undefined || priorityManager === undefined) {
+      if (api === undefined) {
         throw new Error("IniStructure is not context aware");
       }
-      IniStructure.instance = new IniStructure(api, priorityManager);
+      IniStructure.instance = new IniStructure(api);
     }
 
     return IniStructure.instance;
   }
   private mIniStruct = {};
   private mApi: types.IExtensionApi;
-  private mPriorityManager: PriorityManager;
-  constructor(api: types.IExtensionApi, priorityManager: () => PriorityManager) {
+  constructor(api: types.IExtensionApi) {
     this.mIniStruct = {};
     this.mApi = api;
-    this.mPriorityManager = priorityManager();
   }
 
   public async getIniStructure() {
@@ -45,7 +39,6 @@ export default class IniStructure {
       .filter((entry) => isLockedEntry(entry.name))
       .map((entry) => entry.name);
     const totalLocked: string[] = [...modMap.merged, ...manualLocked, ...managedLocked];
-    this.mPriorityManager?.resetMaxPriority(totalLocked.length);
 
     const order = loadOrder ?? [];
     const enabledByName = new Map(order.map((entry) => [entry.id, entry.enabled]));

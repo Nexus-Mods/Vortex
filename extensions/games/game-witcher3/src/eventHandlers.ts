@@ -1,10 +1,9 @@
 /* eslint-disable */
 import { actions, types, selectors, util } from "@nexusmods/vortex-api";
 
-import { setPriorityType, setRemasterNoticeSeen } from "./actions";
+import { setRemasterNoticeSeen } from "./actions";
 import {
   GAME_ID,
-  getPriorityTypeBranch,
   getRemasterNoticeSeenBranch,
   PART_SUFFIX,
   INPUT_XML_FILENAME,
@@ -16,7 +15,6 @@ import IniStructure from "./iniParser";
 import * as menuMod from "./menumod";
 import { storeToProfile, restoreFromProfile } from "./mergeBackup";
 import { getPersistentLoadOrder } from "./migrations";
-import { PriorityManager } from "./priorityManager";
 import { IRemoveModOptions } from "./types";
 import {
   validateProfile,
@@ -91,8 +89,6 @@ export function onGameModeActivation(api: types.IExtensionApi) {
       const state = api.getState();
       const lastProfId = selectors.lastActiveProfileForGame(state, gameMode);
       const activeProf = selectors.activeProfile(state);
-      const priorityType = util.getSafe(state, getPriorityTypeBranch(), "prefix-based");
-      api.store.dispatch(setPriorityType(priorityType));
       notifyRemasterOnce(api);
       if (lastProfId !== activeProf?.id) {
         try {
@@ -119,45 +115,35 @@ export const onWillDeploy = (api: types.IExtensionApi) => {
   };
 };
 
-const applyToIniStruct = (
-  api: types.IExtensionApi,
-  getPriorityManager: () => PriorityManager,
-  modIds: string[],
-) => {
+const applyToIniStruct = (api: types.IExtensionApi, modIds: string[]) => {
   const currentLO = getPersistentLoadOrder(api);
   const newLO: types.ILoadOrderEntry[] = [
     ...currentLO.filter((entry) => !modIds.includes(entry.modId)),
   ];
-  IniStructure.getInstance(api, getPriorityManager)
+  IniStructure.getInstance(api)
     .setINIStruct(newLO)
     .then(() => forceRefresh(api));
 };
 
-export const onModsDisabled = (
-  api: types.IExtensionApi,
-  priorityManager: () => PriorityManager,
-) => {
+export const onModsDisabled = (api: types.IExtensionApi) => {
   return async (modIds: string[], enabled: boolean, gameId: string) => {
     if (gameId !== GAME_ID || enabled) {
       return;
     }
-    applyToIniStruct(api, priorityManager, modIds);
+    applyToIniStruct(api, modIds);
   };
 };
 
-export const onDidRemoveMod = (
-  api: types.IExtensionApi,
-  priorityManager: () => PriorityManager,
-) => {
+export const onDidRemoveMod = (api: types.IExtensionApi) => {
   return async (gameId: string, modId: string, removeOpts: IRemoveModOptions) => {
     if (GAME_ID !== gameId || removeOpts?.willBeReplaced) {
       return Promise.resolve();
     }
-    applyToIniStruct(api, priorityManager, [modId]);
+    applyToIniStruct(api, [modId]);
   };
 };
 
-export const onDidPurge = (api: types.IExtensionApi, priorityManager: () => PriorityManager) => {
+export const onDidPurge = (api: types.IExtensionApi) => {
   return async (profileId: string, deployment: Deployment) => {
     const state = api.getState();
     const activeProfile = validateProfile(profileId, state);
@@ -165,7 +151,7 @@ export const onDidPurge = (api: types.IExtensionApi, priorityManager: () => Prio
       return Promise.resolve();
     }
 
-    return IniStructure.getInstance(api, priorityManager).revertLOFile();
+    return IniStructure.getInstance(api).revertLOFile();
   };
 };
 
@@ -231,9 +217,6 @@ export const onProfileWillChange = (api: types.IExtensionApi) => {
       return;
     }
 
-    const priorityType = util.getSafe(state, getPriorityTypeBranch(), "prefix-based");
-    api.store.dispatch(setPriorityType(priorityType));
-
     const lastProfId = selectors.lastActiveProfileForGame(state, profile.gameId);
     try {
       await storeToProfile(api, lastProfId).then(() => restoreFromProfile(api, profile.id));
@@ -242,22 +225,6 @@ export const onProfileWillChange = (api: types.IExtensionApi) => {
         api.showErrorNotification("Failed to store profile specific merged items", err);
       }
     }
-  };
-};
-
-export const onSettingsChange = (
-  api: types.IExtensionApi,
-  priorityManager: () => PriorityManager,
-) => {
-  return (prev: string, current: any) => {
-    const state = api.getState();
-    const activeProfile = selectors.activeProfile(state);
-    if (activeProfile?.gameId !== GAME_ID || priorityManager === undefined) {
-      return;
-    }
-
-    const priorityType = util.getSafe(state, getPriorityTypeBranch(), "prefix-based");
-    priorityManager().priorityType = priorityType;
   };
 };
 

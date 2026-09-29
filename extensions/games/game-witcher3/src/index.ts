@@ -23,7 +23,6 @@ import {
   onGameModeActivation,
   onModsDisabled,
   onProfileWillChange,
-  onSettingsChange,
   onWillDeploy,
 } from "./eventHandlers";
 import { healthChecks, registerHealthCheckNotifications } from "./healthChecks";
@@ -47,7 +46,6 @@ import TW3LoadOrder from "./loadOrder";
 import { canMergeXML, doMergeXML } from "./mergers";
 import { getPersistentLoadOrder, migrate148 } from "./migrations";
 import { testDLC, testTL } from "./modTypes";
-import { PriorityManager } from "./priorityManager";
 import { W3Reducer } from "./reducers";
 import {
   downloadScriptMerger,
@@ -208,8 +206,6 @@ function prepareForModding(api: types.IExtensionApi) {
   };
 }
 
-let priorityManager: PriorityManager;
-const getPriorityManager = () => priorityManager;
 // let modLimitPatcher: ModLimitPatcher;
 
 function main(context: types.IExtensionContext) {
@@ -308,7 +304,7 @@ function main(context: types.IExtensionContext) {
 
   context.registerMigration((oldVersion) => migrate148(context, oldVersion) as any);
 
-  registerActions({ context, getPriorityManager });
+  registerActions({ context });
 
   context.optional.registerCollectionFeature(
     "witcher3_collection_data",
@@ -357,7 +353,6 @@ function main(context: types.IExtensionContext) {
   const props = {
     onToggleModsState: toggleModsState,
     api: context.api,
-    getPriorityManager,
   };
   context.registerLoadOrder(new TW3LoadOrder(props));
 
@@ -372,23 +367,17 @@ function main(context: types.IExtensionContext) {
   //   () => Bluebird.resolve(testModLimitBreach(context.api, modLimitPatcher)));
 
   context.once(() => {
-    priorityManager = new PriorityManager(context.api, "prefix-based");
-    IniStructure.getInstance(context.api, getPriorityManager);
+    IniStructure.getInstance(context.api);
     // modLimitPatcher = new ModLimitPatcher(context.api);
 
     context.api.events.on("gamemode-activated", onGameModeActivation(context.api));
     context.api.events.on("profile-will-change", onProfileWillChange(context.api));
-    context.api.events.on("mods-enabled", onModsDisabled(context.api, getPriorityManager));
+    context.api.events.on("mods-enabled", onModsDisabled(context.api));
 
     context.api.onAsync("will-deploy", onWillDeploy(context.api) as any);
     context.api.onAsync("did-deploy", onDidDeploy(context.api) as any);
-    context.api.onAsync("did-purge", onDidPurge(context.api, getPriorityManager) as any);
-    context.api.onAsync("did-remove-mod", onDidRemoveMod(context.api, getPriorityManager) as any);
-
-    context.api.onStateChange(
-      ["settings", "witcher3"],
-      onSettingsChange(context.api, getPriorityManager) as any,
-    );
+    context.api.onAsync("did-purge", onDidPurge(context.api) as any);
+    context.api.onAsync("did-remove-mod", onDidRemoveMod(context.api) as any);
 
     registerHealthCheckNotifications(context.api);
   });

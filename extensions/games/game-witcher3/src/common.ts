@@ -72,10 +72,6 @@ export function getDx12UserSettingsPath() {
   return path.join(util.getVortexPath("documents"), "The Witcher 3", DX12_USER_SETTINGS_FILENAME);
 }
 
-export function getPriorityTypeBranch() {
-  return ["settings", "witcher3", "prioritytype"];
-}
-
 export function getRemasterNoticeSeenBranch() {
   return ["settings", "witcher3", "remasterNoticeSeen"];
 }

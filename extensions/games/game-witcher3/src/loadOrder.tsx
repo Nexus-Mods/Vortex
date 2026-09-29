@@ -4,10 +4,10 @@ import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import React from "react";
 
+import { withPositionPrefix } from "./collectionLoadOrder";
 import { ACTIVITY_ID_IMPORTING_LOADORDER, GAME_ID, LOCKED_PREFIX, UNI_PATCH } from "./common";
 import IniStructure from "./iniParser";
 import { getPersistentLoadOrder } from "./migrations";
-import { PriorityManager } from "./priorityManager";
 import { IItemRendererProps } from "./types";
 import { forceRefresh } from "./util";
 import InfoComponent from "./views/InfoComponent";
@@ -15,7 +15,6 @@ import ItemRenderer from "./views/ItemRenderer";
 
 export interface IBaseProps {
   api: types.IExtensionApi;
-  getPriorityManager: () => PriorityManager;
   onToggleModsState: (enable: boolean) => void;
 }
 
@@ -32,7 +31,6 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
   }>;
 
   private mApi: types.IExtensionApi;
-  private mPriorityManager: PriorityManager;
 
   constructor(props: IBaseProps) {
     this.gameId = GAME_ID;
@@ -44,14 +42,13 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
       return <ItemRenderer className={props.className} item={props.item} />;
     };
     this.mApi = props.api;
-    this.mPriorityManager = props.getPriorityManager();
     this.deserializeLoadOrder = this.deserializeLoadOrder.bind(this);
     this.serializeLoadOrder = this.serializeLoadOrder.bind(this);
     this.validate = this.validate.bind(this);
   }
 
   public async serializeLoadOrder(loadOrder: types.LoadOrder): Promise<void> {
-    return IniStructure.getInstance(this.mApi, () => this.mPriorityManager).setINIStruct(loadOrder);
+    return IniStructure.getInstance(this.mApi).setINIStruct(loadOrder);
   }
 
   private readableNames = { [UNI_PATCH]: "Unification/Community Patch" };
@@ -87,12 +84,11 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
     try {
       const unsorted: { [key: string]: any } = await IniStructure.getInstance(
         this.mApi,
-        () => this.mPriorityManager,
       ).readStructure();
       const entries = Object.keys(unsorted)
         .sort((a, b) => unsorted[a].Priority - unsorted[b].Priority)
         .reduce(
-          (accum, iter, idx) => {
+          (accum, iter) => {
             const entry = unsorted[iter];
             accum[iter.startsWith(LOCKED_PREFIX) ? "locked" : "regular"].push({
               id: iter,
@@ -100,18 +96,12 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
               enabled: entry.Enabled === "1",
               modId: entry?.VK ?? iter,
               locked: iter.startsWith(LOCKED_PREFIX),
-              data: {
-                prefix: iter.startsWith(LOCKED_PREFIX)
-                  ? accum.locked.length
-                  : (entry?.Priority ?? idx + 1),
-              },
             });
             return accum;
           },
           { locked: [], regular: [] },
         );
-      const finalEntries = [].concat(entries.locked, entries.regular);
-      return Promise.resolve(finalEntries);
+      return withPositionPrefix([].concat(entries.locked, entries.regular));
     } catch (err) {
       // mods.settings is gone, which a purge does. Returning nothing here
       // replaces the stored order with an empty one, so fall back to the
