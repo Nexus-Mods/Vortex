@@ -5,7 +5,8 @@ import { fs, types, selectors, util } from "@nexusmods/vortex-api";
 import ini from "ini";
 import { Builder, parseStringPromise } from "xml2js";
 
-import { GAME_ID, CONFIG_MATRIX_REL_PATH, CONFIG_MATRIX_FILES, VORTEX_BACKUP_TAG } from "./common";
+import { GAME_ID, CONFIG_MATRIX_REL_PATH, VORTEX_BACKUP_TAG } from "./common";
+import { getEditionCapabilities } from "./edition";
 import { getPersistentLoadOrder } from "./migrations";
 import { fileExists, getDocumentsPath, isSettingsFile, isXML } from "./util";
 
@@ -111,9 +112,13 @@ export const canMergeXML = (api: types.IExtensionApi) => {
             in: path.join(gameDiscovery.path, CONFIG_MATRIX_REL_PATH, file.relPath),
             out: path.join(CONFIG_MATRIX_REL_PATH, file.relPath),
           })),
+      // Narrowed per edition rather than switched off: the remaster still has
+      // ten of the eleven config matrix files, it just dropped graphicsdx11.
       filter: (filePath) =>
         isXML(filePath) &&
-        CONFIG_MATRIX_FILES.includes(path.basename(filePath, path.extname(filePath))),
+        getEditionCapabilities(gameDiscovery.path).configMatrixFiles.includes(
+          path.basename(filePath, path.extname(filePath)),
+        ),
     };
   };
 };
