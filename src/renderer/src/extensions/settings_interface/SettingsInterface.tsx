@@ -1,10 +1,10 @@
 import { readdir } from "node:fs/promises";
 import * as path from "path";
 
-import { mdiMinus, mdiPlus } from "@mdi/js";
+import { mdiMagnify, mdiMinus, mdiPlus } from "@mdi/js";
 import { getErrorCode } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
-import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useReducer, useRef, useState } from "react";
 import { ControlLabel, FormGroup } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,6 +14,7 @@ import { useMainContext } from "@/contexts";
 import type { IAvailableExtension } from "@/types/extensions";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
+import { Icon } from "@/ui/components/icon/Icon";
 import { Picker } from "@/ui/components/picker/Picker";
 import { Typography } from "@/ui/components/typography/Typography";
 import { relaunch } from "@/util/commandLine";
@@ -93,6 +94,7 @@ export function SettingsInterfaceForm(props: IFormProps) {
   const reduceMotion = useReduceMotion();
   const zoomFactor = useSelector(zoomFromState);
   const adjustZoom = (value: number) => dispatch(setZoomFactor(normalizeZoom(value)));
+  const zoomLabelId = useId();
 
   // Captured once on mount, like the class component's constructor did, so a change made
   // during this session can be compared against the value Vortex started with.
@@ -289,7 +291,7 @@ export function SettingsInterfaceForm(props: IFormProps) {
         </div>
       </FormGroup>
 
-      <FormGroup className="mt-6" controlId="accessibility">
+      <FormGroup className="mt-4" controlId="accessibility">
         <ControlLabel>{t("Accessibility")}</ControlLabel>
 
         <div>
@@ -321,10 +323,20 @@ export function SettingsInterfaceForm(props: IFormProps) {
 
           <div className="flex flex-col items-start gap-y-2">
             <div className="flex items-center gap-x-3">
-              <Typography as="span">{t("Zoom")}</Typography>
+              <div className="flex items-center gap-x-1.5">
+                <Icon className="text-neutral-subdued" path={mdiMagnify} size="sm" />
 
-              <div className="flex items-center gap-x-2">
-                <Typography as="span" className="min-w-10">
+                <Typography as="span" id={zoomLabelId} typographyType="body-sm">
+                  {t("Zoom")}
+                </Typography>
+              </div>
+
+              <div
+                aria-labelledby={zoomLabelId}
+                className="flex items-center gap-x-2 rounded-lg border border-stroke-weak px-2 py-1"
+                role="group"
+              >
+                <Typography as="span" className="min-w-10 text-center" typographyType="body-sm">
                   {t("{{percent}}%", { replace: { percent: Math.round(zoomFactor * 100) } })}
                 </Typography>
 
@@ -347,6 +359,8 @@ export function SettingsInterfaceForm(props: IFormProps) {
                   size="sm"
                   onClick={() => adjustZoom(zoomFactor + ZOOM_STEP)}
                 />
+
+                <div className="mx-1 h-5 w-px bg-stroke-weak" />
 
                 <Button
                   appearance="moderate"
