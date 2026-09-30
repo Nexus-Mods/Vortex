@@ -15,7 +15,12 @@
     "game": "Code Vein"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/bluebird": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "semver": "catalog:",
+    "turbowalk": "catalog:"
   },
   "nx": {
     "tags": [
