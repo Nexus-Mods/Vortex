@@ -15,7 +15,20 @@
     "typecheck": "pnpm exec tsc"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/lodash": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "lodash": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "redux-act": "catalog:",
+    "semver": "catalog:",
+    "turbowalk": "catalog:",
+    "xml2js": "catalog:"
   },
   "nx": {
     "tags": [

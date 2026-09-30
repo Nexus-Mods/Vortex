@@ -1706,6 +1706,45 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
+      '@types/lodash':
+        specifier: 'catalog:'
+        version: 4.17.24
+      '@types/react-bootstrap':
+        specifier: 'catalog:'
+        version: 0.32.37
+      '@types/semver':
+        specifier: 'catalog:'
+        version: 7.7.1
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
+      lodash:
+        specifier: 'catalog:'
+        version: 4.17.23
+      react:
+        specifier: 'catalog:'
+        version: 18.3.1
+      react-bootstrap:
+        specifier: 'catalog:'
+        version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 11.18.6(i18next@21.10.0)(react-dom@18.3.1)(react@18.3.1)
+      react-redux:
+        specifier: 'catalog:'
+        version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
+      redux-act:
+        specifier: 'catalog:'
+        version: 1.8.0
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
+      turbowalk:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+      xml2js:
+        specifier: 'catalog:'
+        version: 0.5.0
 
   extensions/games/game-ahatintime:
     devDependencies:
