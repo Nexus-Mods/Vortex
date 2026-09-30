@@ -2,7 +2,7 @@ import { mdiCancel, mdiPlus } from "@mdi/js";
 import type { TFunction } from "i18next";
 import React, { useCallback } from "react";
 
-import { Input } from "@/ui/components/form/input/Input";
+import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
@@ -52,11 +52,12 @@ export function CategoryAddParent({
     <div className="mb-2 flex flex-col rounded-sm border border-stroke-weak bg-surface-mid p-4">
       <div className="flex">
         <div className="flex grow gap-2">
-          <Input
+          <TextField
             hideLabel
             required
             showRequiredLabel
             className="grow"
+            label={t("Category name")}
             minLength={1}
             placeholder={t("Add category name...")}
             type="text"

@@ -346,29 +346,66 @@ The bar owns a 24px inline gutter and a bottom divider rather than a border and 
 
 ### Form Components
 
+Forms are built from Headless UI's `Field` parts, which link a control to its label and descriptions themselves. There are no ids to wire up.
+
+#### TextField
+
+A text input with its label, hints, error and, given `maxLength`, a character count. `label` is required: `hideLabel` hides it on screen, not from screen readers.
+
 ```tsx
-import { Input } from "../../ui/components/form/input/Input";
-import { Select } from "../../ui/components/form/select/Select";
-import { FormFieldWrap } from "../../ui/components/form/formfield/FormField";
+import { TextField } from "../../ui/components/form/text_field/TextField";
 
-// Input with validation
-<Input id="email" label="Email" type="email" required errorMessage="Invalid email" />
+<TextField label="Email" type="email" required errorMessage="Invalid email" />
 
-// Input with character counter
-<Input id="bio" label="Bio" type="text" maxLength={200} />
+// Character count
+<TextField label="Bio" maxLength={200} hints="Keep it short" />
 
-// Select dropdown
-<Select id="country" label="Country">
-  <option value="">Select...</option>
-  <option value="us">United States</option>
-</Select>
-
-// Multiple fields with spacing
-<FormFieldWrap>
-  <Input id="first" label="First Name" type="text" required />
-  <Input id="last" label="Last Name" type="text" required />
-</FormFieldWrap>
+// No visible label, but still named for screen readers
+<TextField hideLabel label="Filter categories" placeholder="Filter categories..." />
 ```
+
+**Props:** everything `Input` takes except `id` (Headless UI generates the ids that link the parts), plus `label`, `hideLabel`, `hints` (a string or a list), `errorMessage`, `hideErrors` (off screen only; screen readers still get it), `showRequiredLabel` (defaults to `required`), `fieldClassName` and `leftIconPath` (an mdi icon inside the input, before the text). `className` goes on the input and `fieldClassName` on the field around it. `onChange` receives the native change event.
+
+#### Building blocks
+
+`TextField` is these parts put together. Use them directly for a layout it doesn't cover:
+
+```tsx
+import { Description } from "../../ui/components/form/field/Description";
+import { ErrorMessage } from "../../ui/components/form/field/ErrorMessage";
+import { Field } from "../../ui/components/form/field/Field";
+import { Label } from "../../ui/components/form/field/Label";
+import { Input } from "../../ui/components/form/input/Input";
+
+<Field disabled={disabled}>
+    <Label required>Name</Label>
+    <Input required invalid={!!error} />
+    <Description>Shown to other users</Description>
+    {!!error && <ErrorMessage>{error}</ErrorMessage>}
+</Field>;
+```
+
+- `Field` groups a control with its parts. `disabled` cascades to all of them.
+- `Label` names the control. `required` only adds "(Required)", so set `required` on the control as well. If you give the control its own `id`, pass the same value as `htmlFor`, or clicking the label stops focusing the control.
+- `Description` and `ErrorMessage` are both added to the control's `aria-describedby`, in the order they render. `ErrorMessage` is a `Description` styled as an error; pair it with `invalid` on the control.
+- `Input` is the bare control. Outside a `Field` it needs an `aria-label`.
+
+Every part styles itself off the attributes Headless UI sets (`data-disabled`, `data-invalid`, `data-hover`), like `Switch`. The one exception is the input's focus style, which uses `:focus`: Headless UI sets `data-focus` only for keyboard focus, and a text input should show focus however it got it.
+
+#### Select
+
+`Select` hasn't moved onto `Field` yet (LAZ-910), so it still takes its label and hints as props:
+
+```tsx
+import { Select } from "../../ui/components/form/select/Select";
+
+<Select id="country" label="Country">
+    <option value="">Select...</option>
+    <option value="us">United States</option>
+</Select>;
+```
+
+`FormFieldWrap` spaces a stack of fields.
 
 ### Switch
 

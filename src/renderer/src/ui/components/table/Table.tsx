@@ -1,7 +1,7 @@
 import { mdiArrowDown, mdiArrowUp, mdiFormatListGroup, mdiUnfoldMoreHorizontal } from "@mdi/js";
 import React, { useMemo } from "react";
 
-import { Input } from "@/ui/components/form/input/Input";
+import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Pagination } from "@/ui/components/pagination/Pagination";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -66,9 +66,8 @@ const ColumnFilterControl = <T,>({
   }
 
   return (
-    <Input
+    <TextField
       hideLabel={true}
-      id={id}
       label={label}
       placeholder={filter.placeholder ?? "Filter..."}
       value={value}

@@ -14,7 +14,7 @@ import React, { useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 
 import { Button } from "@/ui/components/button/Button";
-import { Input } from "@/ui/components/form/input/Input";
+import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
@@ -193,11 +193,11 @@ export default function CategoryListItem({
 
             {editName && (
               <div className="flex gap-2">
-                <Input
+                <TextField
                   hideLabel
                   className="grow"
                   data-testid="category-rename-input"
-                  id={`rename-category-${categoryId}`}
+                  label="Rename category"
                   minLength={1}
                   placeholder="Rename category"
                   type="text"
@@ -236,10 +236,11 @@ export default function CategoryListItem({
 
       {addNew && (
         <div className="flex gap-2">
-          <Input
+          <TextField
             hideLabel
             className="grow"
             data-testid="category-subcategory-input"
+            label="Add subcategory"
             minLength={1}
             placeholder="Add subcategory"
             type="text"
