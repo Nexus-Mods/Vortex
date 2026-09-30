@@ -332,9 +332,12 @@ function findGameEntry(
   // For obvious reasons, this should only be used for
   //  name searchTypes; using this for id's would potentially
   // cause false positives.
-  const rgxMatcher = Array.isArray(pattern)
-    ? new RegExp(pattern.map(wrapNamePattern).join("|"))
-    : new RegExp(wrapNamePattern(pattern));
+  const rgxMatcher =
+    searchType === "name"
+      ? Array.isArray(pattern)
+        ? new RegExp(pattern.map(wrapNamePattern).join("|"))
+        : new RegExp(wrapNamePattern(pattern))
+      : undefined;
 
   const matcher =
     searchType === "path"
@@ -386,7 +389,9 @@ function findGameEntry(
   for (const store of gameStores) {
     const entries = store.snapshot().entries;
     const entry =
-      searchType === "name" ? entries.find((ent) => rgxMatcher.test(ent.name)) : entries.find(matcher);
+      searchType === "name"
+        ? entries.find((ent) => rgxMatcher?.test(ent.name))
+        : entries.find(matcher);
 
     if (entry !== undefined) {
       return entry;
