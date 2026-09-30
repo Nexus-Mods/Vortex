@@ -3,6 +3,8 @@ import * as path from "path";
 import { selectors, types, util } from "@nexusmods/vortex-api";
 import * as Redux from "redux";
 
+import { resolveDocumentsPath } from "./protonDocuments";
+
 export interface ISettingsFile {
   name: string;
   optional: boolean;
@@ -141,40 +143,12 @@ export function gameSupported(gameMode: string): boolean {
 }
 
 async function documentsPath(gameMode: string): Promise<string> {
-  const hostDocumentsPath = util.getVortexPath("documents");
-
-  if (process.platform !== "linux") {
-    return hostDocumentsPath;
-  }
-
   const discovery = discoveryForGame(gameMode);
-  const steamAppId = util.getGame(gameMode)?.details?.steamAppId;
-  if (discovery?.store !== "steam" || steamAppId == null) {
-    return hostDocumentsPath;
-  }
-
-  try {
-    const entry = await util.GameStoreHelper.findByAppId(String(steamAppId), "steam");
-    const protonEntry = entry as typeof entry & {
-      usesProton?: boolean;
-      compatDataPath?: string;
-    };
-
-    if (protonEntry.usesProton && protonEntry.compatDataPath !== undefined) {
-      return path.join(
-        protonEntry.compatDataPath,
-        "pfx",
-        "drive_c",
-        "users",
-        "steamuser",
-        "Documents",
-      );
-    }
-  } catch {
-    // Fall back to the native Documents directory.
-  }
-
-  return hostDocumentsPath;
+  return resolveDocumentsPath(
+    discovery,
+    util.getVortexPath("documents"),
+    (gamePath, storeId) => util.GameStoreHelper.findByPath(gamePath, storeId),
+  );
 }
 
 export async function mygamesPath(gameMode: string): Promise<string> {
