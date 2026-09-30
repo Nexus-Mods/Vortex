@@ -19,6 +19,8 @@
  * Test-only: nothing in the production tree imports this module.
  */
 import { EventEmitter } from "events";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import * as os from "node:os";
 import * as path from "path";
 
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
@@ -51,8 +53,10 @@ import type {
   IModRequirementExt,
 } from "../extensions/health_check/types";
 import { ModFileCategory } from "../extensions/health_check/types";
+import { setDeploymentNecessary } from "../extensions/mod_management/actions/deployment";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
+import { deploymentReducer } from "../extensions/mod_management/reducers/deployment";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
 import type {
   IChoiceType,
@@ -69,7 +73,10 @@ import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus
 import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
 import { MEMBERSHIP_ROLE, transformUserInfoFromApi } from "../extensions/nexus_integration/util";
+import { setNextProfile } from "../extensions/profile_management/actions/settings";
+import { settingsReducer as profileSettingsReducer } from "../extensions/profile_management/reducers/settings";
 import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
+import { profilePath } from "../extensions/profile_management/util/manage";
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import trackingReducer from "../reducers/collectionInstallTracking";
 import type {
@@ -80,7 +87,11 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
-import type { IExtensionApi } from "../types/IExtensionContext";
+import type {
+  IExtensionApi,
+  IExtensionContext,
+  StateChangeCallback,
+} from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
@@ -88,7 +99,7 @@ import {
   HealthCheckSeverity,
   HealthCheckTrigger,
 } from "../types/IHealthCheck";
-import type { IExtensionState, IState } from "../types/IState";
+import type { IExtensionState, ISettingsProfiles, IState } from "../types/IState";
 import local from "../util/local";
 import type { IStarterInfo } from "../util/StarterInfo";
 import type {
@@ -110,6 +121,8 @@ import type {
   INxmHarness,
   IParkCheckOpts,
   IParkedCheck,
+  IProfileSwitchHarness,
+  IProfileSwitchOpts,
   IRevisionFixture,
   IRevisionMemberSpec,
   ITrackedAction,
@@ -561,6 +574,19 @@ const downloadReducers = downloadStateReducer.reducers as Record<
   string,
   (state: IState["persistent"]["downloads"], payload: unknown) => IState["persistent"]["downloads"]
 >;
+// the real profile settings reducer, applied to state.settings.profiles (next/active/last active)
+const profileSettingsReducers = profileSettingsReducer.reducers as Record<
+  string,
+  (state: ISettingsProfiles, payload: unknown) => ISettingsProfiles
+>;
+// the real deployment reducer, applied to state.persistent.deployment (the per-game pending flag)
+const deploymentReducers = deploymentReducer.reducers as Record<
+  string,
+  (
+    state: IState["persistent"]["deployment"],
+    payload: unknown,
+  ) => IState["persistent"]["deployment"]
+>;
 
 function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   const slices: IDriverHarnessState = {
@@ -582,6 +608,7 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       profiles: slices.profiles,
       collections: { collections: {}, revisions: {} },
       nexus: { ...nexusPersistentReducer.defaults, userInfo: slices.userInfo },
+      deployment: { needToDeploy: {}, deploymentCounter: {} },
     },
     // a download path is inherently a signed-in one, and isLoggedIn dereferences account
     confidential: { account: { nexus: { OAuthCredentials: { token: "test-token" } } } },
@@ -719,6 +746,14 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     if (downloadReducerFn !== undefined) {
       state.persistent.downloads = downloadReducerFn(state.persistent.downloads, action.payload);
     }
+    const profileSettings = profileSettingsReducers[action.type];
+    if (profileSettings !== undefined) {
+      state.settings.profiles = profileSettings(state.settings.profiles, action.payload);
+    }
+    const deployment = deploymentReducers[action.type];
+    if (deployment !== undefined) {
+      state.persistent.deployment = deployment(state.persistent.deployment, action.payload);
+    }
   };
 
   // store subscribers, for code that watches the store directly rather than via onStateChange
@@ -760,7 +795,23 @@ export function makeApiHarness(overrides: Partial<IDriverHarnessState> = {}): IA
     onAsync: (event: string, cb: (...args: unknown[]) => unknown) => {
       events.on(event, cb);
     },
-    onStateChange: () => undefined,
+    // fired like the real store's: whenever the value at the path changes
+    onStateChange: (statePath: string[], cb: StateChangeCallback) => {
+      const readPath = () =>
+        statePath.reduce<unknown>(
+          (node, key) => (node as Record<string, unknown> | undefined)?.[key],
+          state,
+        );
+      let last = readPath();
+      subscribe(() => {
+        const current = readPath();
+        if (current !== last) {
+          const previous = last;
+          last = current;
+          cb(previous, current);
+        }
+      });
+    },
     sendNotification: (notification: { type: string; message: string }) => {
       notifications.push(notification);
     },
@@ -827,6 +878,112 @@ export function makeFbloHarness(
   });
   const updateSet = new UpdateSetCtor(base.api, opts.isFBLO ?? (() => true));
   return { ...base, updateSet, gameId, profileId };
+}
+
+/**
+ * The real profile_management extension over a fake api, for driving profile switches through
+ * state.
+ */
+export async function makeProfileSwitchHarness(
+  init: (context: IExtensionContext) => boolean,
+  opts: IProfileSwitchOpts,
+): Promise<IProfileSwitchHarness> {
+  const gameIds = [...new Set(opts.profiles.map((profile) => profile.gameId))];
+  gameIds.forEach(registerHarnessGame);
+
+  const gameRoot = await mkdtemp(path.join(os.tmpdir(), "vortex-profile-switch-"));
+  const gameSettingsPath = (gameId: string) => path.join(gameRoot, gameId, "settings.ini");
+  const profileDir = (profileId: string) => {
+    const profile = opts.profiles.find((candidate) => candidate.id === profileId);
+    if (profile === undefined) {
+      throw new Error(`unknown profile ${profileId}`);
+    }
+    return profilePath(profile);
+  };
+  const savedSettingsPath = (profileId: string) => path.join(profileDir(profileId), "settings.ini");
+  const writeSettings = async (filePath: string, content: string) => {
+    await mkdir(path.dirname(filePath), { recursive: true });
+    await writeFile(filePath, content);
+  };
+  const readSettings = (filePath: string) =>
+    readFile(filePath, "utf8").catch((): undefined => undefined);
+  for (const [gameId, content] of Object.entries(opts.gameSettings ?? {})) {
+    await writeSettings(gameSettingsPath(gameId), content);
+  }
+  for (const [profileId, content] of Object.entries(opts.savedSettings ?? {})) {
+    await writeSettings(savedSettingsPath(profileId), content);
+  }
+
+  const base = makeApiHarness({
+    profiles: Object.fromEntries(opts.profiles.map((profile) => [profile.id, profile])),
+  });
+  base.setState((draft) => {
+    draft.settings.profiles = {
+      activeProfileId: opts.activeProfileId,
+      nextProfileId: opts.activeProfileId,
+      lastActiveProfile: { ...opts.lastActive },
+    };
+    draft.persistent.deployment.needToDeploy = { ...opts.needToDeploy };
+    draft.session.base = { ...draft.session.base, commandLine: {} };
+  });
+
+  const { store } = base.api;
+  const deployed: string[] = [];
+  base.api.events.on("deploy-mods", (cb: (err: Error | null) => void, profileId: string) => {
+    deployed.push(profileId);
+    const gameId = base.getState().persistent.profiles[profileId]?.gameId;
+    // stands in for the per-profile config a deployment generates (plugins.txt and the like)
+    void writeSettings(gameSettingsPath(gameId), `deployed:${profileId}`).then(() => {
+      store.dispatch(setDeploymentNecessary(gameId, false));
+      cb(null);
+    });
+  });
+
+  const onceCallbacks: Array<() => void> = [];
+  const registered: Record<string, unknown> = {
+    api: base.api,
+    once: (cb: () => void) => onceCallbacks.push(cb),
+  };
+  // every other register* call is irrelevant to switching, so it is a no-op
+  const context = new Proxy(registered, {
+    get: (target, prop: string) => (prop in target ? target[prop] : () => undefined),
+  }) as unknown as IExtensionContext;
+  const logStart = vi.mocked(window.api).log.mock.calls.length;
+  init(context);
+  gameIds.forEach((gameId) => context.registerProfileFile(gameId, gameSettingsPath(gameId)));
+  const nextProfileChange = () =>
+    new Promise<void>((resolve) => {
+      base.api.events.once("profile-did-change", () => resolve());
+    });
+  // startup saves the active profile's files, then announces the profile
+  const started = nextProfileChange();
+  onceCallbacks.forEach((cb) => cb());
+  await started;
+
+  return {
+    ...base,
+    deployed,
+    switchTo: (profileId: string) => {
+      const switched = nextProfileChange();
+      store.dispatch(setNextProfile(profileId));
+      return switched;
+    },
+    gameSettings: (gameId: string) => readSettings(gameSettingsPath(gameId)),
+    savedSettings: (profileId: string) => readSettings(savedSettingsPath(profileId)),
+    // test-setup stubs window.api.log with a vi.fn, so its calls are the renderer's log
+    loggedMessages: () =>
+      vi
+        .mocked(window.api)
+        .log.mock.calls.slice(logStart)
+        .map((call) => String(call[1])),
+    cleanup: async () => {
+      await Promise.all(
+        [gameRoot, ...opts.profiles.map(profilePath)].map((dir) =>
+          rm(dir, { recursive: true, force: true }),
+        ),
+      );
+    },
+  };
 }
 
 /**

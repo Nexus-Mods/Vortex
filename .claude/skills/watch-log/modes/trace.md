@@ -2,14 +2,17 @@
 
 Prereq: `reference.md` (core) + `shared/lifecycle.md` + `shared/sessions.md`.
 
-Trace one **download / install / collection / deployment** from its first to its last
-log entry. Scope to one session (default latest, per §B / investigate.md); say which.
+Trace one **download / install / collection / deployment / profile switch** from its
+first to its last log entry. Scope to one session (default latest, per §B / investigate.md);
+say which.
 
 1. **Identify the entity and its thread key** from `$ARGUMENTS`:
     - a **mod id / archive name** (e.g. `Atomic Lust-31853-2-7b-…`) → install thread,
       key = `modId` / `archivePath`.
     - an **nxm url** or **downloadId** / **collationId** → download thread.
     - a **collection name / id** → collection thread (and its member installs).
+    - a **profile id** or **profile switch** (optionally a game) → profile thread, key =
+      `from` / `to` / `current`.
     - the word **deployment / deploy / purge** (optionally a game) → deploy thread.
       If ambiguous, grep the chosen log for the term and list the candidate entities
       (with their ids) for the user to pick.
@@ -25,7 +28,8 @@ log entry. Scope to one session (default latest, per §B / investigate.md); say 
    install prefer the logged `duration` from `Installation completed successfully`.
 4. **Outcome & gaps:** classify as **completed** (terminal success marker present —
    `finish mod install {outcome:"success"}` / `Installation completed successfully` /
-   `download completed` / final `deployment {…}` / `postprocess collection`),
+   `download completed` / final `deployment {…}` / `postprocess collection` /
+   `switched to profile`),
    **failed** (an `[ERRO]` on the thread, or `outcome` != success), or **incomplete /
    stuck** (a start phase with **no** terminal phase before session end — the last
    phase reached pinpoints where it wedged, same expected-but-missing logic as §D).

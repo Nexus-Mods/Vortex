@@ -1,7 +1,7 @@
 ---
 name: watch-log
-description: Watch or investigate a Vortex log file (rotation- and session-aware). A router over six modes loaded on demand — live tail, session/crash/error investigation, persistence (duckdb/level_pivot) integrity, log-line-to-code correlation, single download/install/collection/deploy trace, and a collection-install audit (also serves as the LAZ-483 regression check). Defaults to the dev log; can target prod or a specific file. When the request is too vague to route, it interviews the user (goal, symptom, timeframe, whose log) before running anything.
-when_to_use: When the user wants to watch/tail/follow a log live, or investigate/report on errors, crashes, warnings, persistence integrity, re-installs, version downgrades, a specific log entry, or a download/install/collection/deployment lifecycle in a Vortex log.
+description: Watch or investigate a Vortex log file (rotation- and session-aware). A router over six modes loaded on demand — live tail, session/crash/error investigation, persistence (duckdb/level_pivot) integrity, log-line-to-code correlation, single download/install/collection/deploy/profile switch trace, and a collection-install audit (also serves as the LAZ-483 regression check). Defaults to the dev log; can target prod or a specific file. When the request is too vague to route, it interviews the user (goal, symptom, timeframe, whose log) before running anything.
+when_to_use: When the user wants to watch/tail/follow a log live, or investigate/report on errors, crashes, warnings, persistence integrity, re-installs, version downgrades, a specific log entry, or a download/install/collection/deployment/profile switch lifecycle in a Vortex log.
 user-invocable: true
 ---
 
