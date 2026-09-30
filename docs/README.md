@@ -20,6 +20,7 @@ Project and coding documentation. To set up and build Vortex, start with
 - [frontend.md](frontend.md) - Renderer conventions: React, types, props, styling, icons, accessibility
 - [state.md](state.md) - Renderer Redux state: the hives, writing and registering a reducer, verifiers, the deprecated `storeHelper` helpers
 - [testing.md](testing.md) - Running tests, component-test selectors, mocking `vortex-api` in extension tests
+- [collection-fixture.md](collection-fixture.md) - A Vortex with a large collection already installed, generated from synthetic data, for deploy and UI performance testing without downloads
 - [design-system/page-migration.md](design-system/page-migration.md) - Converting a legacy `MainPage` to the new `Page` layout
 - [I18N_MIGRATION_GUIDE.md](I18N_MIGRATION_GUIDE.md) - Namespaces, key format, using `t` correctly
 - [I18N_STATUS.md](I18N_STATUS.md) - Migration progress by namespace

@@ -45,6 +45,15 @@ if (process.env.VORTEX_E2E === "1") {
   }
 }
 
+// Fixture isolation (scripts/collection-fixture/launch.ts): Bethesda games keep their ini files
+// under Documents\My Games and deployment rewrites them, so a run against a generated fixture
+// redirects the documents folder rather than touch the tester's real game settings. Unlike
+// LOCALAPPDATA (where plugins.txt lives, read straight from the environment), Windows resolves the
+// documents folder through the shell, so it can only be moved here. Unset in normal use.
+if (process.env.VORTEX_DOCUMENTS_PATH) {
+  app.setPath("documents", process.env.VORTEX_DOCUMENTS_PATH);
+}
+
 import { NativePathResolver } from "@vortex/shared/filesystem";
 
 import Application from "./Application";

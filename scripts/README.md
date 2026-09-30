@@ -53,6 +53,18 @@ Scripts wired into `package.json` can also be called with `pnpm run <name>`.
 
 ---
 
+## Test Fixtures
+
+- `collection-fixture/generate.ts` -- writes a Vortex state backup plus fake game,
+  staging folders and download archives modelling a large installed collection.
+  Run via `pnpm run fixture:collection`.
+
+- `collection-fixture/launch.ts` -- starts the development build against that
+  fixture in its own user-data directory, merging the state on first launch.
+  Run via `pnpm run fixture:collection:launch`. See `docs/collection-fixture.md`.
+
+---
+
 ## TypeScript Editor Support
 
 The `.ts` files in this directory are standalone Node scripts run via

@@ -46,7 +46,10 @@
     "e2e:headed": "pnpm nx run @vortex/e2e:e2e:headed",
     "e2e:debug": "pnpm nx run @vortex/e2e:e2e:debug",
     "e2e:report": "pnpm nx run @vortex/e2e:e2e:report",
-    "generate:query-types": "pnpm tsx scripts/generate-query-types.ts"
+    "generate:query-types": "pnpm tsx scripts/generate-query-types.ts",
+    "fixture:collection": "pnpm tsx scripts/collection-fixture/generate.ts",
+    "fixture:collection:launch": "pnpm tsx scripts/collection-fixture/launch.ts",
+    "fixture:collection:bench": "pnpm --filter @vortex/e2e exec tsx ./src/benchmark/collectionBenchmark.ts"
   },
   "lint-staged": {
     "*": "pnpm exec oxfmt --no-error-on-unmatched-pattern"
