@@ -18,7 +18,8 @@ ui/
 │   │   ├── input/       - Bare text input (Headless UI Input)
 │   │   ├── select/      - Bare native select with its chevron (Headless UI Select)
 │   │   ├── select_field/ - Select with its label, hints and error
-│   │   ├── switch/      - Tri-state toggle switch (off / on / semi-on)
+│   │   ├── switch/      - Bare tri-state switch: off / on / semi-on (Headless UI Checkbox)
+│   │   ├── switch_field/ - Switch with its label beside it and hints under both
 │   │   └── text_field/  - Text input with its label, hints, error and character count
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
@@ -393,7 +394,7 @@ import { SelectField } from "../../ui/components/form/select_field/SelectField";
 
 #### Building blocks
 
-`TextField` and `SelectField` are these parts put together. Use them directly for a layout it doesn't cover:
+`TextField`, `SelectField` and `SwitchField` are these parts put together. Use them directly for a layout it doesn't cover:
 
 ```tsx
 import { Description } from "../../ui/components/form/field/Description";
@@ -426,7 +427,7 @@ Built on Headless UI's **`Checkbox`**, not its `Switch`: ARIA only allows `aria-
 ```tsx
 import { Switch } from "../../ui/components/form/switch/Switch";
 
-// Controlled on/off — onChange receives the new checked value, not an event
+// Controlled on/off, named by aria-label outside a Field. onChange receives the new checked value, not an event
 <Switch checked={enabled} onChange={setEnabled} aria-label="Enable" />
 
 // Semi-on (mixed) — e.g. a "select all" with some children on
@@ -438,7 +439,17 @@ import { Switch } from "../../ui/components/form/switch/Switch";
 />
 ```
 
-**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value`/`form` for form submission, `defaultChecked` for uncontrolled use — plus `className`.
+**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value`/`form` for form submission, `defaultChecked` for uncontrolled use — plus `className`. The ref goes to the switch.
+
+`Switch` is the bare control: outside a `Field` it needs an `aria-label`. For a switch with its label beside it, use `SwitchField`:
+
+```tsx
+import { SwitchField } from "../../ui/components/form/switch_field/SwitchField";
+
+<SwitchField label="Auto-update" hints="Checks when Vortex starts" checked={on} onChange={setOn} />;
+```
+
+`SwitchField` takes everything `Switch` does except `id`, plus `label` (required), `hideLabel`, `hints` and `fieldClassName`. Clicking the label toggles the switch, and `disabled` covers both. There's no `errorMessage`: a switch is never invalid. To lay the parts out differently, such as the label before the switch, compose `Field`, `Label` and `Switch` yourself.
 
 The track and thumb style themselves off the attributes Headless UI sets (`data-checked`, `data-indeterminate`, `data-disabled`, `data-hover`, `data-active`, `data-focus`) rather than any state we derive ourselves. It renders a `<span role="checkbox">`, so pass `name` if the value needs to take part in form submission.
 

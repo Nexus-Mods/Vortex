@@ -13,7 +13,7 @@ import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { CollectionTileDemo } from "@/ui/components/collection_tile/CollectionTile.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
 import { SelectFieldDemo } from "@/ui/components/form/select_field/SelectField.demo";
-import { SwitchDemo } from "@/ui/components/form/switch/Switch.demo";
+import { SwitchFieldDemo } from "@/ui/components/form/switch_field/SwitchField.demo";
 import { TextFieldDemo } from "@/ui/components/form/text_field/TextField.demo";
 import { GameTileDemo } from "@/ui/components/game_tile/GameTile.demo";
 import { IconDemo } from "@/ui/components/icon/Icon.demo";
@@ -138,7 +138,7 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
 
                   <TabButton name="Select field" panelId="select-field" />
 
-                  <TabButton name="Switch" panelId="switch" />
+                  <TabButton name="Switch field" panelId="switch-field" />
                 </TabBar>
 
                 <div className="mt-6">
@@ -150,8 +150,8 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
                     <SelectFieldDemo />
                   </TabPanel>
 
-                  <TabPanel id="switch">
-                    <SwitchDemo />
+                  <TabPanel id="switch-field">
+                    <SwitchFieldDemo />
                   </TabPanel>
                 </div>
               </TabProvider>

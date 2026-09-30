@@ -14,9 +14,6 @@
         letter-spacing: var(--text-body-md--letter-spacing);
         color: var(--color-neutral-strong);
 
-        /* override bootstrap styles */
-        margin: 0;
-
         .nxm-field-label-required {
             color: var(--color-neutral-subdued);
         }
