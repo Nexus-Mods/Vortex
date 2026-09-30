@@ -27,6 +27,8 @@ export interface IGameStoreHelper {
 
   findByAppId(appId: string | string[], storeId?: string): Bluebird<IGameStoreEntry>;
 
+  findByPath(gamePath: string, storeId?: string): Bluebird<IGameStoreEntry>;
+
   launchGameStore(api: IExtensionApi, gameStoreId: string, parameters?: string[]): Bluebird<void>;
 }
 
@@ -62,6 +64,14 @@ export class GameStoreHelper implements IGameStoreHelper {
       return Bluebird.reject(new GameEntryNotFound(String(appId), ""));
     }
     return storeLookup.findByAppId(this.#getStores(), appId, storeId);
+  }
+
+  public findByPath(gamePath: string, storeId?: string): Bluebird<IGameStoreEntry> {
+    if (this.#getStores === undefined) {
+      log("debug", "stores have yet to load");
+      return Bluebird.reject(new GameEntryNotFound(gamePath, ""));
+    }
+    return storeLookup.findByPath(this.#getStores(), gamePath, storeId);
   }
 
   public launchGameStore(
