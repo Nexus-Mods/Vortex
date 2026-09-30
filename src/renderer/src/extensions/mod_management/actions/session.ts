@@ -25,6 +25,28 @@ export const setDeploymentProblem = safeCreateAction(
   (errors: IDeploymentProblem[]) => errors,
 );
 
+/** A file a deployment couldn't place, and the mod it belongs to. */
+export interface IDeploymentFailure {
+  /** name of the mod the file is staged under */
+  source: string;
+  /** path of the file relative to the deployment target */
+  relPath: string;
+  /** absolute path of the file in the game directory, for revealing it */
+  outputPath: string;
+}
+
+/** Replaces the files a deployment couldn't place. */
+export const setDeploymentFailures = safeCreateAction(
+  "SET_DEPLOYMENT_FAILURES",
+  (gameId: string, failures: IDeploymentFailure[]) => ({ gameId, failures }),
+);
+
+/** Appends to what the running deployment already recorded. */
+export const addDeploymentFailures = safeCreateAction(
+  "ADD_DEPLOYMENT_FAILURES",
+  (gameId: string, failures: IDeploymentFailure[]) => ({ gameId, failures }),
+);
+
 /**
  * stores info about files that were changed outside the control of Vortex. The user
  * will be asked how to deal with them
