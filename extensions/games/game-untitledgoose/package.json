@@ -15,7 +15,11 @@
     "game": "Untitled Goose Game"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/bluebird": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "semver": "catalog:"
   },
   "nx": {
     "tags": [

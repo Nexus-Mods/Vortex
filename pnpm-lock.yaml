@@ -410,9 +410,6 @@ catalogs:
     '@types/prop-types':
       specifier: 15.7.15
       version: 15.7.15
-    '@types/react':
-      specifier: ^18.3.31
-      version: 18.3.31
     '@types/react-bootstrap':
       specifier: 0.32.37
       version: 0.32.37
@@ -1978,7 +1975,7 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/vortex-api
       '@types/react':
-        specifier: 'catalog:'
+        specifier: '18'
         version: 18.3.31
       '@types/relaxed-json':
         specifier: 'catalog:'
@@ -2362,6 +2359,18 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
+      '@types/bluebird':
+        specifier: 'catalog:'
+        version: 3.5.20
+      '@types/semver':
+        specifier: 'catalog:'
+        version: 7.7.1
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
 
   extensions/games/game-vtmbloodlines:
     devDependencies:
