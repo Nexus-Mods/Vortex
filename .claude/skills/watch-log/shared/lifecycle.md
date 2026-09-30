@@ -26,4 +26,21 @@ manifest` → `Running pre-deployment events` → `Checking for external changes
   `Starting deployment` → `Sorting mods` → `Running post-deployment events`, then final
   `deployment {added, removed, "source changed", modified}`. Purge:
   `[mod-dependency-manager] starting purge activity` → `finished purge activity in N
-seconds`.
+seconds`. External changes: `found external changes {automated, user}` (`[INFO]`) +
+  `external changes diagnostic {surfaced: [{typeId, filePath, source, changeType}]}`
+  (`[DEBG]`), only when `user > 0`; the dialog blocks, no `Starting deployment` until
+  answered. Bulk `changeType: "srcdeleted"` = staging sources gone.
+- **Profile switch:** `profile change {from, to}` (grep `profile change {`) → `removing
+  info of missing mod from profile {profile, game, modId}` (burst = mod table / profile
+  desync) → `will deploy pending profile "<id>"` (cross-game, incoming profile not its
+  game's last active, game has undeployed changes) → `starting refresh profile export` →
+  `will deploy previously active profile "<id>"` (same-game only) → `will deploy next
+  active profile "<id>"` (not when returning to a game's last active profile) → `switched
+  to profile {gameId, current}` (`switched to no profile` on deactivate). Thread on `from`
+  / `to` / `current`. A skipped deploy logs neither `will` nor `did deploy`; `will` without
+  `did` = the deploy failed and the switch was cancelled: `Failed to set profile`
+  (`[ERRO]`/`[WARN]`). `active profile switch didn't get confirmed?` (`[WARN]`) =
+  confirmation timed out, the switch stands. Cross-game only: `running checks {event:
+"gamemode-activated", count}` → `all checks completed`, and `manual mod changed
+  {stagingFolder, addedMods, removedMods}` (`[WARN]`, staging folders changed behind
+  Vortex; a dialog asks whether to apply).
