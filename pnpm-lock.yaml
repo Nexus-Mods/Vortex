@@ -410,6 +410,9 @@ catalogs:
     '@types/prop-types':
       specifier: 15.7.15
       version: 15.7.15
+    '@types/react':
+      specifier: ^18.3.31
+      version: 18.3.31
     '@types/react-bootstrap':
       specifier: 0.32.37
       version: 0.32.37
@@ -2055,9 +2058,27 @@ importers:
 
   extensions/games/game-morrowind:
     devDependencies:
+      '@nexusmods/nexus-api':
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.31
+      react:
+        specifier: 'catalog:'
+        version: 18.3.1
+      react-bootstrap:
+        specifier: 'catalog:'
+        version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 11.18.6(i18next@21.10.0)(react-dom@18.3.1)(react@18.3.1)
+      react-redux:
+        specifier: 'catalog:'
+        version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1

@@ -8,7 +8,7 @@ const walk = require("turbowalk").default;
 
 import { genCollectionsData, parseCollectionsData } from "./collections";
 import { MORROWIND_ID } from "./constants";
-import { validate, deserializeLoadOrder, serializeLoadOrder } from "./loadorder";
+import { deserializeLoadOrder, serializeLoadOrder } from "./loadorder";
 import { migrate103 } from "./migrations";
 import { IExtendedInterfaceProps } from "./types/types";
 import MorrowindCollectionsDataView from "./views/MorrowindCollectionsDataView";
@@ -176,7 +176,7 @@ function main(context: types.IExtensionContext) {
     gameId: MORROWIND_ID,
     deserializeLoadOrder: () => deserializeLoadOrder(context.api),
     serializeLoadOrder: (loadOrder) => serializeLoadOrder(context.api, loadOrder),
-    validate,
+    validate: () => Promise.resolve<types.IValidationResult>({ invalid: [] }),
     noCollectionGeneration: true,
     toggleableEntries: true,
     usageInstructions:

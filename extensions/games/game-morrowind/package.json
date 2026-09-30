@@ -15,7 +15,13 @@
     "game": "Morrowind"
   },
   "devDependencies": {
+    "@nexusmods/nexus-api": "catalog:",
     "@nexusmods/vortex-api": "workspace:*",
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
     "winapi-bindings": "catalog:"
   },
   "nx": {

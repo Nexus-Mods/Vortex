@@ -4,10 +4,6 @@ const { default: IniParser, WinapiFormat } = require("vortex-parse-ini");
 
 const { MORROWIND_ID } = require("./constants");
 
-async function validate(before, after) {
-  return Promise.resolve();
-}
-
 async function deserializeLoadOrder(api, mods = undefined) {
   const state = api.getState();
   const discovery = selectors.discoveryByGame(state, MORROWIND_ID);
