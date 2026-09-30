@@ -2,7 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 
 /** Labels of the three toggles in the Interface tab's "Automation" section. */
 export const AUTOMATION_LABELS = {
-  deploy: "Deploy Mods when Enabled",
+  deploy: "Apply changes when mods are enabled",
   install: "Install Mods when downloaded",
   enable: "Enable Mods when installed (in current profile)",
 } as const;
