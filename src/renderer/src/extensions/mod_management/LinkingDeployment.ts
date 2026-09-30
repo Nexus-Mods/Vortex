@@ -6,7 +6,6 @@ import * as _ from "lodash";
 import type { IEntry } from "turbowalk";
 import turbowalk from "turbowalk";
 
-import { addNotification } from "../../actions/notifications";
 import { log } from "../../logging";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { DirectoryCleaningMode, IGame } from "../../types/IGame";
@@ -16,6 +15,8 @@ import * as fs from "../../util/fs";
 import type { Normalize } from "../../util/getNormalizeFunc";
 import { activeGameId } from "../../util/selectors";
 import { truthy } from "../../util/util";
+import type { IDeploymentFailure } from "./actions/session";
+import { addDeploymentFailures } from "./actions/session";
 import type {
   IDeployedFile,
   IDeploymentMethod,
@@ -170,8 +171,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
     let sourceChanged: string[];
     let contentChanged: string[];
 
-    let errorCount: number = 0;
-
     this.mDirCache = new Set<string>();
 
     // unlink all files that were removed or changed
@@ -201,51 +200,51 @@ abstract class LinkingActivator implements IDeploymentMethod {
     const directoryCleaning = game.directoryCleaning || "tag";
     const dirTags = directoryCleaning === "tag";
 
+    const failures: IDeploymentFailure[] = [];
+    const recordFailure = (file: IDeployedFile | undefined) => {
+      if (file === undefined) return;
+      failures.push({
+        source: file.source,
+        relPath: file.relPath,
+        outputPath: path.join(dataPath, file.target || "", file.relPath),
+      });
+    };
+
+    const onRemoveError = (file: IDeployedFile | undefined, err: unknown) => {
+      log("warn", "failed to remove deployed file", {
+        link: file?.relPath,
+        error: getErrorMessageOrDefault(err),
+      });
+      recordFailure(file);
+    };
+
     return (
       mapWithConcurrency(
         removed,
         (key) =>
           this.removeDeployedFile(installationPath, dataPath, key, true).catch((err: unknown) => {
+            // these keys are no longer in newDeployment
+            const file = context.previousDeployment[key];
             log("warn", "failed to remove deployed file", {
-              link: context.newDeployment[key].relPath,
+              link: file?.relPath,
               error: getErrorMessageOrDefault(err),
             });
-            ++errorCount;
+            recordFailure(file);
           }),
         50,
       )
         .then(() =>
-          mapWithConcurrency(
-            sourceChanged,
-            (key: string, idx: number) =>
-              this.removeDeployedFile(installationPath, dataPath, key, false).catch(
-                (err: unknown) => {
-                  log("warn", "failed to remove deployed file", {
-                    link: context.newDeployment[key].relPath,
-                    error: getErrorMessageOrDefault(err),
-                  });
-                  ++errorCount;
-                  sourceChanged.splice(idx, 1);
-                },
-              ),
-            50,
+          this.unlinkChanged(sourceChanged, installationPath, dataPath, onRemoveError).then(
+            (keys) => {
+              sourceChanged = keys;
+            },
           ),
         )
         .then(() =>
-          mapWithConcurrency(
-            contentChanged,
-            (key: string, idx: number) =>
-              this.removeDeployedFile(installationPath, dataPath, key, false).catch(
-                (err: unknown) => {
-                  log("warn", "failed to remove deployed file", {
-                    link: context.newDeployment[key].relPath,
-                    error: getErrorMessageOrDefault(err),
-                  });
-                  ++errorCount;
-                  contentChanged.splice(idx, 1);
-                },
-              ),
-            50,
+          this.unlinkChanged(contentChanged, installationPath, dataPath, onRemoveError).then(
+            (keys) => {
+              contentChanged = keys;
+            },
           ),
         )
         // then, (re-)link all files that were added
@@ -263,7 +262,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   if (getErrorCode(err) !== "ENOENT") {
                     // if the source file doesn't exist it must have been deleted
                     // in the mean time. That's not really our problem.
-                    ++errorCount;
+                    recordFailure(context.newDeployment[key]);
                   }
                 })
                 .then(() => progress()),
@@ -283,7 +282,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                     error: getErrorMessageOrDefault(err),
                   });
                   if (getErrorCode(err) !== "ENOENT") {
-                    ++errorCount;
+                    recordFailure(context.newDeployment[key]);
                   }
                 })
                 .then(() => progress()),
@@ -291,23 +290,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
           ),
         )
         .then(() => {
-          if (errorCount > 0) {
-            this.mApi.store.dispatch(
-              addNotification({
-                type: "error",
-                title: this.mApi.translate("Deployment failed"),
-                message: this.mApi.translate(
-                  "{{count}} files were not correctly deployed (see log for details).\n" +
-                    "The most likely reason is that files were locked by external applications " +
-                    "so please ensure no other application has a mod file open, then repeat " +
-                    "deployment.",
-                  { replace: { count: errorCount } },
-                ),
-              }),
-            );
+          if (failures.length > 0) {
+            this.mApi.store.dispatch(addDeploymentFailures(gameId, failures));
           }
 
-          const state: IState = this.mApi.store.getState();
+          const state: IState = this.mApi.getState();
           const { cleanupOnDeploy } = state.settings.mods;
           const gameRequiresCleanup =
             game.requiresCleanup === undefined ? game.mergeMods !== true : game.requiresCleanup;
@@ -700,6 +687,34 @@ abstract class LinkingActivator implements IDeploymentMethod {
     }
 
     return Object.values(changeMap);
+  }
+
+  /**
+   * Unlinks each key through {@link removeDeployedFile}, so every deployment method's own
+   * unlinkFile runs. Keys whose unlink failed are dropped: their link is still in place, so
+   * re-linking them would deploy over it. Returns the keys to re-link.
+   */
+  private async unlinkChanged(
+    keys: string[],
+    installationPath: string,
+    dataPath: string,
+    onError: (file: IDeployedFile | undefined, err: unknown) => void,
+  ): Promise<string[]> {
+    const failed = new Set<string>();
+    await mapWithConcurrency(
+      keys,
+      (key: string) => {
+        const file = this.mContext.newDeployment[key];
+        return this.removeDeployedFile(installationPath, dataPath, key, false).catch(
+          (err: unknown) => {
+            onError(file, err);
+            failed.add(key);
+          },
+        );
+      },
+      50,
+    );
+    return keys.filter((key) => !failed.has(key));
   }
 
   private removeDeployedFile(
