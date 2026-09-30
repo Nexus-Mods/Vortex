@@ -13,7 +13,8 @@ ui/
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
 │   ├── dropdown/        - Dropdown menu (Headless UI Menu)
 │   ├── form/            - Form components
-│   │   ├── checkbox/    - Checkbox input
+│   │   ├── checkbox/    - Bare checkbox, with indeterminate (Headless UI Checkbox)
+│   │   ├── checkbox_field/ - Checkbox with its label beside it, hints and error
 │   │   ├── field/       - Field, Label, Description, ErrorMessage, CharacterCount (Headless UI Field)
 │   │   ├── input/       - Bare text input (Headless UI Input)
 │   │   ├── select/      - Bare native select with its chevron (Headless UI Select)
@@ -392,9 +393,26 @@ import { SelectField } from "../../ui/components/form/select_field/SelectField";
 
 **Props:** everything `Select` takes except `id`, plus `label`, `hideLabel`, `hints`, `errorMessage`, `hideErrors`, `showRequiredLabel` and `fieldClassName`. Options and option groups are passed as children. `onChange` receives the native change event, as before.
 
+#### CheckboxField
+
+A checkbox with its label beside it, and hints and error under both. Clicking the label toggles it.
+
+```tsx
+import { CheckboxField } from "../../ui/components/form/checkbox_field/CheckboxField";
+
+<CheckboxField label="Include logs" checked={include} onChange={setInclude} />
+
+// Rich label, e.g. a title and a note; a long one wraps with the checkbox at the top
+<CheckboxField label={<><strong>{modName}</strong> {note}</>} checked={on} onChange={setOn} />
+```
+
+**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value` for form submission, `defaultChecked` — plus `label` (required, and can be rich content), `hideLabel`, `hints`, `errorMessage` and `fieldClassName`. `onChange` receives the new checked value, not an event. `className` goes on the checkbox.
+
+`Checkbox` is the bare control: a `<span role="checkbox">`, so pass `name` for the value to take part in form submission, and outside a `Field` give it an `aria-label`. `indeterminate` shows a dash and reports `aria-checked="mixed"`; `invalid` marks it with `aria-invalid` and `data-invalid`.
+
 #### Building blocks
 
-`TextField`, `SelectField` and `SwitchField` are these parts put together. Use them directly for a layout it doesn't cover:
+`TextField`, `SelectField`, `CheckboxField` and `SwitchField` are these parts put together. Use them directly for a layout it doesn't cover:
 
 ```tsx
 import { Description } from "../../ui/components/form/field/Description";

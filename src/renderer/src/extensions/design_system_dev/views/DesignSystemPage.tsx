@@ -12,6 +12,7 @@ import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { CollectionTileDemo } from "@/ui/components/collection_tile/CollectionTile.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
+import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
 import { SelectFieldDemo } from "@/ui/components/form/select_field/SelectField.demo";
 import { SwitchFieldDemo } from "@/ui/components/form/switch_field/SwitchField.demo";
 import { TextFieldDemo } from "@/ui/components/form/text_field/TextField.demo";
@@ -138,6 +139,8 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
 
                   <TabButton name="Select field" panelId="select-field" />
 
+                  <TabButton name="Checkbox field" panelId="checkbox-field" />
+
                   <TabButton name="Switch field" panelId="switch-field" />
                 </TabBar>
 
@@ -148,6 +151,10 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
 
                   <TabPanel id="select-field">
                     <SelectFieldDemo />
+                  </TabPanel>
+
+                  <TabPanel id="checkbox-field">
+                    <CheckboxFieldDemo />
                   </TabPanel>
 
                   <TabPanel id="switch-field">

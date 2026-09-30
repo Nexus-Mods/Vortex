@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
-import { Checkbox } from "@/ui/components/form/checkbox/Checkbox";
+import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField";
 import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 
@@ -94,33 +94,33 @@ export const AuthorNotesModal = ({ isOpen, items, onClose, onInstall }: IAuthorN
 
             return (
               <li className="px-4 py-3 first:pt-0 last:pb-0" key={item.key}>
-                <Checkbox
+                <CheckboxField
                   checked={!unchecked.has(item.key)}
-                  className="mb-0"
                   data-testid="health-check-author-note-checkbox"
-                  onChange={(e) => toggle(item, e.target.checked)}
-                >
-                  <Typography
-                    appearance="subdued"
-                    as="span"
-                    className="block"
-                    typographyType="body-sm"
-                  >
-                    <span className="block font-semibold text-neutral-moderate">{modName}</span>
+                  label={
+                    <Typography
+                      appearance="subdued"
+                      as="span"
+                      className="block"
+                      typographyType="body-sm"
+                    >
+                      <span className="block font-semibold text-neutral-moderate">{modName}</span>
 
-                    <span className="block whitespace-pre-line">{note}</span>
+                      <span className="block whitespace-pre-line">{note}</span>
 
-                    <span className="mt-1.5 block">{t("author_notes_modal::required_for")}</span>
+                      <span className="mt-1.5 block">{t("author_notes_modal::required_for")}</span>
 
-                    <span className="block list-disc pl-5" role="list">
-                      {requiredFor.map((requiringMod) => (
-                        <span className="list-item" key={requiringMod} role="listitem">
-                          {requiringMod}
-                        </span>
-                      ))}
-                    </span>
-                  </Typography>
-                </Checkbox>
+                      <span className="block list-disc pl-5" role="list">
+                        {requiredFor.map((requiringMod) => (
+                          <span className="list-item" key={requiringMod} role="listitem">
+                            {requiringMod}
+                          </span>
+                        ))}
+                      </span>
+                    </Typography>
+                  }
+                  onChange={(checked) => toggle(item, checked)}
+                />
               </li>
             );
           })}
