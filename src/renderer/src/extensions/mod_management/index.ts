@@ -726,6 +726,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
     // will contain all mods fully overwritten (this also includes mods that didn't
     // files to begin with)
     let sortedModList: IMod[];
+    let deployStartedAt: number;
 
     const userGate = () => {
       if (!appContext.isProfileChanging && game.deploymentGate !== undefined) {
@@ -781,6 +782,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               notification.message = t("Deploying mods");
               api.sendNotification(notification);
               api.store.dispatch(startActivity("mods", "deployment"));
+              deployStartedAt = Date.now();
               progress(t("Loading deployment manifest"), 0);
 
               // sequential: load activation order matters per mod type
@@ -885,6 +887,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               enabledModCount,
               manual,
               isCollectionPostprocess: deployOptions?.isCollectionPostprocessCall ?? false,
+              durationMs: Date.now() - deployStartedAt,
             });
             void emitModListSnapshot(api, gameId);
           } catch (unknownErr) {
