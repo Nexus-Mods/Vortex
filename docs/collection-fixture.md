@@ -136,6 +136,20 @@ In a VS Code terminal the build can fail with "Failed to process project graph".
 denied" means a Vortex launched against a fixture is still running from `src/main/build`; close
 it first.
 
+Coming from an older checkout, delete the build output of extensions master has since removed
+or moved into the renderer (`gamebryo-plugin-management` and the `gamestore-*` family among
+them). Git leaves their untracked `dist` and `node_modules` behind, the build still bundles
+them, and the old plugin manager then crashes the Plugins and Mods pages with
+"(masterlist.groups || []).map is not a function". A two-copies symptom is "Plugins" appearing
+twice in the menu. This PowerShell lists every extension folder git no longer tracks:
+
+```
+Get-ChildItem extensions, extensions\games -Directory | Where-Object { -not (git ls-files $_.FullName) } | Select-Object -ExpandProperty Name
+```
+
+Delete each listed folder, and the folder of the same name under `src/main/build/bundledPlugins`,
+then rebuild.
+
 The build step is needed because the launcher runs Electron directly against `src/main/build`.
 It does not go through `pnpm run dev`, which owns that directory while it runs, so close a dev
 session first. The development build has its own instance lock, so an installed release of

@@ -19,6 +19,14 @@ function fixtureLine(fixture: Record<string, unknown>): string {
   );
 }
 
+/** ", out of N mods" when the fixture summary has the counts */
+function totalMods(fixture: Record<string, unknown>): string {
+  const { members, library } = fixture;
+  return typeof members === "number" && typeof library === "number"
+    ? `, out of ${(members + library).toLocaleString("en-GB")} mods`
+    : "";
+}
+
 function deployPhases(result: IBenchmarkResult): string[] {
   const full = result.deploys.filter((run) => run.kind === "full");
   const names = [...new Set(full.flatMap((run) => run.log.phases.map((phase) => phase.name)))];
@@ -69,7 +77,7 @@ function scenarioSection(result: IBenchmarkResult): string[] {
     ...rows,
     "",
     `While the ${result.otherPage} page was showing, the hidden Mods page still had ` +
-      `**${result.hiddenModsRows}** table rows in the page.`,
+      `**${result.hiddenModsRows}** rows drawn${totalMods(result.fixture)}.`,
   ];
 }
 

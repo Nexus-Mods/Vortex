@@ -319,7 +319,10 @@ async function pageSwitchScenarios(page: Page): Promise<IPageSwitch> {
     await measure(page, `Open the ${otherPage} page`, () => navButton(page, otherPage).click()),
     await observe(page, `Idle on the ${otherPage} page (5 s)`, IDLE_WINDOW_MS),
   ];
-  const hiddenModsRows = await modsPage(page).locator("tbody tr").count();
+  // rows with their contents drawn, found by the status button each drawn row has. Counting every
+  // <tr> would mislead: the table keeps an empty placeholder row per mod and draws only the rows
+  // near the screen (controls/VisibilityProxy.tsx), so the row count is the mod count either way.
+  const hiddenModsRows = await modsPage(page).locator("tbody tr #btn-mods-enabled").count();
   scenarios.push(
     await measure(page, "Return to the Mods page", () => navButton(page, "Mods").click()),
   );
