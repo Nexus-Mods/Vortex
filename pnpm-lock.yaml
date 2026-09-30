@@ -410,6 +410,9 @@ catalogs:
     '@types/prop-types':
       specifier: 15.7.15
       version: 15.7.15
+    '@types/react':
+      specifier: ^18.3.31
+      version: 18.3.31
     '@types/react-bootstrap':
       specifier: 0.32.37
       version: 0.32.37
@@ -1974,6 +1977,18 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
+      '@types/react':
+        specifier: 'catalog:'
+        version: 18.3.31
+      '@types/relaxed-json':
+        specifier: 'catalog:'
+        version: 1.0.4
+      react:
+        specifier: 'catalog:'
+        version: 18.3.1
+      relaxed-json:
+        specifier: 'catalog:'
+        version: 1.0.3
 
   extensions/games/game-microsoftflightsimulator:
     devDependencies:

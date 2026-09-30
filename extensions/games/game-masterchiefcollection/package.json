@@ -15,7 +15,11 @@
     "game": "Halo: The Master Chief Collection"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/relaxed-json": "catalog:",
+    "react": "catalog:",
+    "relaxed-json": "catalog:"
   },
   "nx": {
     "tags": [
