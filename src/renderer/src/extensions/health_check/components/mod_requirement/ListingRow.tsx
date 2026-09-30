@@ -33,8 +33,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
 
   const handleInstall = () => {
     trackOneClickInstallClicked({
-      mod_id: mod.modId,
-      mod_name: mod.modName,
+      mod_uid: mod.uid,
       mod_version: mod.mainFile?.version ?? "",
       is_adult_content: mod.mainFile?.adultContent ?? false,
     });
@@ -113,7 +112,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         api={api}
         isOpen={showPremiumModal}
         modCount={1}
-        modId={mod.modId}
+        modUID={mod.uid}
         trigger="single_install"
         onClose={() => setShowPremiumModal(false)}
         onDownload={() => {

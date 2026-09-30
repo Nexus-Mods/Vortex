@@ -18,7 +18,6 @@ import {
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import type { IFileRequirementReport } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import { sharedRequirementState } from "@/extensions/health_check/utils/shared/tracking";
-import { decodeUID } from "@/extensions/nexus_integration/util/UIDs";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
@@ -94,8 +93,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
       const candidate = candidates[0];
 
       trackOneClickInstallClicked({
-        mod_id: decodeUID(candidate.modUID)?.id ?? 0,
-        mod_name: candidate.modName,
+        mod_uid: candidate.modUID,
         mod_version: candidate.version,
         is_adult_content: candidate.adultContent,
         requirement_state: requirementState,
@@ -153,7 +151,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               onClick={(e) => {
                 e.stopPropagation();
                 trackEnableThisVersionClicked({
-                  mod_id: decodeUID(switches[0].correct.modUID)?.id ?? 0,
+                  mod_uid: switches[0].correct.modUID,
                   required_version: switches[0].correct.version,
                   current_version: switches[0].wrong.version,
                   requirement_state: "disabled_wrong_enabled",
@@ -213,7 +211,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         downloadScope={candidates.length === 1 ? "single" : "all"}
         isOpen={showPremium}
         modCount={candidates.length}
-        modId={candidates.length === 1 ? (decodeUID(candidates[0].modUID)?.id ?? 0) : undefined}
+        modUID={candidates.length === 1 ? candidates[0].modUID : undefined}
         trigger={candidates.length === 1 ? "single_install" : "batch_install"}
         onClose={() => setShowPremium(false)}
         onDownload={() => {
