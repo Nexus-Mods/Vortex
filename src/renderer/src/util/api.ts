@@ -3,6 +3,7 @@
 // (excluding log, which is exported separately to give
 //  it a more accessible name)
 
+export type { IGameStoreHelper } from "./GameStoreHelper";
 export type { Normalize } from "./getNormalizeFunc.ts";
 export {
   calcDuration,
