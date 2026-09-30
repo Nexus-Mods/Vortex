@@ -49,6 +49,7 @@ export class AppLaunchedEvent implements MixpanelEvent {
     is_legacy_ui?: boolean,
     update_channel?: string,
     zoom_percent?: number,
+    is_hidpi?: boolean,
   ) {
     this.properties = {
       $os: mapPlatformToMixpanel(os), // Override auto-detected OS for accuracy
@@ -60,6 +61,9 @@ export class AppLaunchedEvent implements MixpanelEvent {
       // The zoom level this session is actually running at, not just a change event —
       // answers "what do people settle on" without the noise of every intermediate step.
       zoom_percent,
+      // Whether this session's display is above the app's HiDPI threshold — lets zoom
+      // usage be cross-referenced against display density.
+      is_hidpi,
     };
   }
 }

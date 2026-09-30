@@ -6,6 +6,7 @@ import type { IExtensionContext } from "@/types/IExtensionContext";
 import { toUpdateChannel } from "@/types/IState";
 import { getCPUArch } from "@/util/nativeArch";
 
+import { isHidpiDisplay } from "../../contexts/WindowContext";
 import { activeGameId, activeProfileId } from "../../util/selectors";
 import { nexusGamesProm } from "../nexus_integration/util";
 import { zoomFromState } from "../settings_interface/utils/zoom";
@@ -145,6 +146,7 @@ function init(context: IExtensionContext): boolean {
             // normalised so a stale retired channel never reaches Mixpanel
             toUpdateChannel(context.api.getState().settings.update.channel), // population for the update funnel
             Math.round(zoomFromState(context.api.getState()) * 100), // zoom level this session runs at
+            isHidpiDisplay(), // whether this session's display is above the HiDPI threshold
           ),
         );
 
