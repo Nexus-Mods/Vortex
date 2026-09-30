@@ -65,7 +65,7 @@ export const ApplyButton = ({ isCollapsed, progress, step, onClick }: IApplyButt
   const headline = !isApplying
     ? t("Apply your mod changes to the game")
     : showStep
-      ? t("Applying mod changes:")
+      ? t("Applying mod changes")
       : t("Applying mod changes…");
 
   return (
@@ -73,7 +73,7 @@ export const ApplyButton = ({ isCollapsed, progress, step, onClick }: IApplyButt
       <Tooltip
         closeOnPress={false}
         customContent={
-          <div className="nxm-tooltip-content">
+          <div className="nxm-tooltip-content space-y-0.5">
             <p>{headline}</p>
 
             {showStep && <p className="truncate text-neutral-subdued">{step}</p>}

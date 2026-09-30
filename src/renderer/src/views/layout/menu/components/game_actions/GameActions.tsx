@@ -1,17 +1,20 @@
 import { Transition } from "@headlessui/react";
-import React from "react";
+import React, { useMemo } from "react";
 
-import { useWindowContext } from "@/contexts";
+import { useMainContext, useWindowContext } from "@/contexts";
 import { useDeployMods } from "@/extensions/mod_management/hooks/useDeployMods.hook";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { useSpineContext } from "@/views/components/Spine/SpineContext";
 
 import { useToolsContext } from "../../context/ToolsContext";
+import { createMenuTracker } from "../../menuTracker";
 import { ApplyButton } from "../apply_button/ApplyButton";
 import { PlayButton } from "../play_button/PlayButton";
 import { ToolButton } from "../ToolButton";
 
 export const GameActions = () => {
+  const { api } = useMainContext();
+  const { trackApplyClicked } = useMemo(() => createMenuTracker(api), [api]);
   const { menuIsCollapsed } = useWindowContext();
   const { selection } = useSpineContext();
   const {
@@ -85,7 +88,10 @@ export const GameActions = () => {
             isCollapsed={menuIsCollapsed}
             progress={deployProgress}
             step={deployStep}
-            onClick={deploy}
+            onClick={() => {
+              trackApplyClicked();
+              deploy();
+            }}
           />
         )}
       </div>

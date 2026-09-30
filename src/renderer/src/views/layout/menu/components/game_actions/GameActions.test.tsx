@@ -12,12 +12,14 @@ const context = vi.hoisted(() => ({
   deployProgress: 0,
   deployStep: undefined as string | undefined,
   deploy: vi.fn(),
+  emit: vi.fn(),
   handlePlay: vi.fn(),
   primaryStarter: undefined as unknown,
   visibleTools: [{ id: "tool-1", exePath: "a.exe" }] as unknown[],
 }));
 
 vi.mock("@/contexts", () => ({
+  useMainContext: () => ({ api: { events: { emit: context.emit } } }),
   useWindowContext: () => ({ menuIsCollapsed: context.menuIsCollapsed }),
 }));
 
@@ -67,6 +69,7 @@ describe("GameActions", () => {
     context.isDeploying = false;
     context.deployStep = undefined;
     context.deploy = vi.fn();
+    context.emit = vi.fn();
     context.handlePlay = vi.fn();
     context.primaryStarter = undefined;
     context.visibleTools = [{ id: "tool-1", exePath: "a.exe" }];
@@ -131,6 +134,10 @@ describe("GameActions", () => {
 
     fireEvent.click(screen.getByTestId("menu-apply"));
     expect(context.deploy).toHaveBeenCalledOnce();
+    expect(context.emit).toHaveBeenCalledWith(
+      "analytics-track-mixpanel-event",
+      expect.objectContaining({ eventName: "app_apply_clicked" }),
+    );
 
     await settleTransitions();
   });
@@ -195,6 +202,7 @@ describe("GameActions", () => {
 
     fireEvent.click(apply);
     expect(context.deploy).not.toHaveBeenCalled();
+    expect(context.emit).not.toHaveBeenCalled();
 
     await settleTransitions();
   });
@@ -207,7 +215,7 @@ describe("GameActions", () => {
 
     await userEvent.hover(screen.getByRole("progressbar"));
 
-    expect(await screen.findByText("Applying mod changes:")).toBeInTheDocument();
+    expect(await screen.findByText("Applying mod changes")).toBeInTheDocument();
     expect(screen.getByText("SkyUI")).toBeInTheDocument();
 
     await settleTransitions();
