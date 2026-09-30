@@ -6,7 +6,7 @@ import { ProcessCanceled, UserCanceled, VortexError } from "@vortex/shared/error
 import Bluebird from "bluebird";
 import getVersion from "exe-version";
 import type i18next from "i18next";
-import type { Message, PluginMetadata } from "loot";
+import type { LootAsync, Message, PluginMetadata } from "loot";
 import {} from "redux-thunk";
 
 import { startActivity, stopActivity } from "../../actions/session";
@@ -26,8 +26,8 @@ import { activeGameId, activeProfile } from "../profile_management/selectors";
 import { updatePluginOrder } from "./actions/loadOrder";
 import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
 import { NAMESPACE } from "./statics";
-import { EdgeType } from "./types/ILoot";
-import type { ICycleEdge, ILootProm, ILootRef, ILootStaticProm } from "./types/ILoot";
+import { EdgeType, groupsPath } from "./types/ILoot";
+import type { ICycleEdge, ILootRef } from "./types/ILoot";
 import { IPluginLoot, IPlugins, IPluginsLoot } from "./types/IPlugins";
 import { findInvalidPlugins } from "./util/findInvalidPlugins";
 import {
@@ -61,15 +61,15 @@ const failed = (error: VortexError): SortOutcome => ({ result: "failed", error }
 
 // A CJS module at a runtime path has to come in through the raw node require,
 // the renderer's own import() resolves through the browser loader, which cannot load it.
-let LootProm: ILootStaticProm | undefined;
-function getLootProm(): ILootStaticProm {
-  if (LootProm === undefined) {
+let LootAsyncClass: typeof LootAsync | undefined;
+function getLootAsync(): typeof LootAsync {
+  if (LootAsyncClass === undefined) {
     const lootModule = webpackRequireHack(
       path.join(getVortexPath("assets_unpacked"), "loot", "index.js"),
     ) as typeof import("loot");
-    LootProm = Bluebird.promisifyAll(lootModule.LootAsync) as unknown as ILootStaticProm;
+    LootAsyncClass = lootModule.LootAsync;
   }
-  return LootProm;
+  return LootAsyncClass;
 }
 
 // Single actionable warning for plugins LOOT could not parse (corrupt/invalid) and that were
@@ -117,7 +117,7 @@ class LootInterface {
 
   private mLists = new MetadataLists();
   // with the game it belongs to, so a download finishing after a game switch cannot load into it
-  private mLoot: { game: string; loot: ILootProm } | undefined;
+  private mLoot: { game: string; loot: LootAsync } | undefined;
   private mRestarts: number = MAX_RESTARTS;
   // a sort requested while an activity blocked it, run once the activity ends
   private mDeferredSort: { manual: boolean } | undefined;
@@ -381,12 +381,12 @@ class LootInterface {
    * master headers-only, fully load everything else being sorted. The master is resolved from the
    * Data folder so a Starfield batch is valid even when the caller did not list it.
    */
-  private async loadForSort(gameMode: string, loot: ILootProm, filePaths: string[]): Promise<void> {
-    await loot.loadCurrentLoadOrderStateAsync();
+  private async loadForSort(gameMode: string, loot: LootAsync, filePaths: string[]): Promise<void> {
+    await loot.loadCurrentLoadOrderState();
     // the game's own master file is the first plugin in its hardcoded load order
     const mainMaster = nativePlugins(gameMode)[0];
     const isMainMaster = (filePath: string) => toPluginId(filePath) === mainMaster;
-    if (mainMaster !== undefined && (await loot.getPluginAsync(mainMaster)) === undefined) {
+    if (mainMaster !== undefined && (await loot.getPlugin(mainMaster)) === undefined) {
       const pluginList: IPlugins = this.mExtensionApi.store.getState().session.plugins.pluginList;
       const masterPath =
         filePaths.find(isMainMaster) ??
@@ -398,12 +398,12 @@ class LootInterface {
           () => false,
         )
       ) {
-        await loot.loadPluginsAsync([masterPath], true);
+        await loot.loadPlugins([masterPath], true);
       }
     }
     const others = filePaths.filter((filePath) => !isMainMaster(filePath));
     if (others.length > 0) {
-      await loot.loadPluginsAsync(others, false);
+      await loot.loadPlugins(others, false);
     }
   }
 
@@ -432,7 +432,7 @@ class LootInterface {
   private async doSort(
     filePaths: string[],
     gameMode: string,
-    loot: ILootProm,
+    loot: LootAsync,
     excluded: string[] = [],
   ): Promise<SortOutcome> {
     const { store } = this.mExtensionApi;
@@ -454,7 +454,7 @@ class LootInterface {
       store.dispatch(startActivity("plugins", "sorting"));
       this.mSortPromise = this.ensureLists(gameMode, loot)
         .then(() => this.loadForSort(gameMode, loot, filePaths))
-        .then(() => loot.sortPluginsAsync(pluginNames))
+        .then(() => loot.sortPlugins(pluginNames))
         .catch((err: unknown) =>
           getErrorMessageOrDefault(err).toLowerCase() === "already closed"
             ? Promise.resolve([])
@@ -608,7 +608,7 @@ class LootInterface {
     }
   };
 
-  private startStopLoot(gameMode: string, loot: ILootProm | undefined) {
+  private startStopLoot(gameMode: string, loot: LootAsync | undefined) {
     this.mLoot = undefined;
     if (loot !== undefined) {
       // close the loot instance of the old game, but give it a little time, otherwise it may try to
@@ -659,14 +659,14 @@ class LootInterface {
 
     log("debug", "requesting plugin info", plugins);
     try {
-      await loot.clearConditionCacheAsync();
+      await loot.clearConditionCache();
       if (loot.isClosed()) {
         callback({});
         return;
       }
       // details are read off the metadata lists, so a rule change has to reach libloot first
       await this.ensureLists(game, loot);
-      await loot.loadCurrentLoadOrderStateAsync();
+      await loot.loadCurrentLoadOrderState();
       lootErrorReporter.succeeded(LootPhase.Metadata);
     } catch (rawErr) {
       lootErrorReporter.report(this.mExtensionApi, toLootError(rawErr), LootPhase.Metadata);
@@ -691,7 +691,7 @@ class LootInterface {
       log("warn", "excluding invalid plugins from load", { plugins: [...invalid] });
     }
     try {
-      await loot.loadPluginsAsync(
+      await loot.loadPlugins(
         deployed.filter((id) => !invalid.has(id)).map((name) => toPluginId(name)),
         false,
       );
@@ -734,12 +734,12 @@ class LootInterface {
           return;
         }
         try {
-          const meta: PluginMetadata | undefined = await loot.getPluginMetadataAsync(pluginName);
+          const meta: PluginMetadata | undefined = await loot.getPluginMetadata(pluginName);
           let info;
           try {
             const id = toPluginId(pluginName);
             if (pluginList[id] !== undefined && pluginList[id].deployed) {
-              info = await loot.getPluginAsync(pluginName);
+              info = await loot.getPlugin(pluginName);
             }
           } catch (err) {
             const gameMode = activeGameId(this.mExtensionApi.store.getState());
@@ -760,7 +760,7 @@ class LootInterface {
             "No LOOT metadata could be found for this plugin. This is usually fine, but you may have to assign it a different Group to help LOOT sort it correctly.";
           const lootMessage: Message = {
             type: -1,
-            content: missingMetaMessage,
+            content: [{ text: missingMetaMessage, language: "en" }],
             condition: "always",
           };
           result[pluginName] = {
@@ -810,7 +810,7 @@ class LootInterface {
    * Brings libloot's metadata up to date with the masterlist and userlist on disk, which it holds
    * in memory and never re-reads on its own.
    */
-  private ensureLists = async (gameMode: string, loot: ILootProm) => {
+  private ensureLists = async (gameMode: string, loot: LootAsync) => {
     const paths = listPaths(getVortexPath("userData"), gameMode);
     try {
       if (await this.mLists.ensureLoaded(paths, loot)) {
@@ -852,19 +852,17 @@ class LootInterface {
       });
     }
 
-    let loot: ILootProm;
+    let loot: LootAsync;
 
     try {
-      loot = Bluebird.promisifyAll(
-        await getLootProm().createAsync(
-          this.convertGameId(gameMode, false),
-          this.gamePath,
-          localPath,
-          "en",
-          this.logCB,
-          this.fork,
-        ),
-      ) as unknown as ILootProm;
+      loot = await getLootAsync().create(
+        this.convertGameId(gameMode, false),
+        this.gamePath,
+        localPath,
+        "en",
+        this.logCB,
+        this.fork,
+      );
     } catch (rawErr) {
       const err = toLootError(rawErr);
       log("error", "failed to initialize LOOT", { kind: err.data.kind, error: err.message });
@@ -880,7 +878,7 @@ class LootInterface {
     try {
       // the lists have to be loaded at least once, even when the download failed
       await this.ensureLists(gameMode, loot);
-      await loot.loadCurrentLoadOrderStateAsync();
+      await loot.loadCurrentLoadOrderState();
       lootErrorReporter.succeeded();
     } catch (rawErr) {
       lootErrorReporter.report(this.mExtensionApi, toLootError(rawErr), LootPhase.Lists, {
@@ -994,7 +992,7 @@ class LootInterface {
     edgeGroup: string,
     next: ICycleEdge,
     nextGroup: string,
-    loot: ILootProm,
+    loot: LootAsync,
   ): Promise<string> {
     switch (edge.typeOfEdgeToNextVertex) {
       case EdgeType.master:
@@ -1022,10 +1020,7 @@ class LootInterface {
       case EdgeType.userGroup:
       case EdgeType.masterlistGroup: {
         try {
-          const groupPath: ICycleEdge[] = await loot.getGroupsPathAsync(
-            edgeGroup || "default",
-            nextGroup || "default",
-          );
+          const groupPath = await groupsPath(loot, edgeGroup || "default", nextGroup || "default");
           return t("groups are connected like this: {{path}}", {
             replace: {
               path: groupPath
@@ -1066,7 +1061,7 @@ class LootInterface {
   private async renderCycle(
     t: typeof i18next.t,
     cycle: ICycleEdge[],
-    loot: ILootProm,
+    loot: LootAsync,
   ): Promise<string> {
     const state = this.mExtensionApi.store.getState();
     const lines = await Promise.all(
@@ -1100,7 +1095,7 @@ class LootInterface {
   private async getSolutions(
     t: typeof i18next.t,
     cycle: ICycleEdge[],
-    loot: ILootProm,
+    loot: LootAsync,
   ): Promise<ICheckbox[]> {
     const userTypes = [EdgeType.userLoadAfter, EdgeType.userRequirement];
 
@@ -1149,7 +1144,8 @@ class LootInterface {
             });
           }
           try {
-            const groupPath: ICycleEdge[] = await loot.getGroupsPathAsync(
+            const groupPath = await groupsPath(
+              loot,
               edgeGroup.group || "default",
               nextGroup.group || "default",
             );
@@ -1184,7 +1180,7 @@ class LootInterface {
     return result;
   }
 
-  private async applyFix(key: string, loot: ILootProm) {
+  private async applyFix(key: string, loot: LootAsync) {
     const api = this.mExtensionApi;
 
     const args = key.split(":");
@@ -1200,7 +1196,8 @@ class LootInterface {
       const nextGroup = this.getGroup(state, args[2]);
 
       try {
-        const cyclePath: ICycleEdge[] = await loot.getGroupsPathAsync(
+        const cyclePath = await groupsPath(
+          loot,
           edgeGroup.group || "default",
           nextGroup.group || "default",
         );
@@ -1224,7 +1221,7 @@ class LootInterface {
     }
   }
 
-  private async reportCycle(cycle: ICycleEdge[], loot: ILootProm) {
+  private async reportCycle(cycle: ICycleEdge[], loot: LootAsync) {
     const api = this.mExtensionApi;
     const t = api.translate;
 

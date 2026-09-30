@@ -55,7 +55,7 @@ describe("LootInterface plugin-details", () => {
     const result = await harness.requestDetails(["one.esp"]);
 
     expect(result).toEqual({});
-    expect(harness.loot.clearConditionCacheAsync).not.toHaveBeenCalled();
+    expect(harness.loot.clearConditionCache).not.toHaveBeenCalled();
   });
 
   test("answers with no details when loot is closed", async ({ makeLoot }) => {
@@ -72,7 +72,7 @@ describe("LootInterface plugin-details", () => {
   }) => {
     const harness = await makeLoot(LootInterface);
     harness.api.store.dispatch(setPluginList({ "one.esp": makePlugin() }));
-    harness.loot.loadPluginsAsync.mockRejectedValueOnce(new Error("Already closed"));
+    harness.loot.loadPlugins.mockRejectedValueOnce(new Error("Already closed"));
 
     const result = await harness.requestDetails(["one.esp"]);
 
@@ -101,7 +101,7 @@ describe("LootInterface plugin-details", () => {
 
     const result = await harness.requestDetails(["one.esp", "two.esp", "three.esp"]);
 
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(["one.esp"], false);
+    expect(harness.loot.loadPlugins).toHaveBeenCalledWith(["one.esp"], false);
     expect(
       harness.notifications.filter(
         (notification) => notification.id === "loot-skipped-invalid-plugins",
@@ -115,20 +115,19 @@ describe("LootInterface plugin-details", () => {
     const harness = await makeLoot(LootInterface);
     harness.api.store.dispatch(setPluginList({ "one.esp": makePlugin() }));
     const cleaning: PluginCleaningData = {
-      CRC: 1,
+      crc: 1,
       itmCount: 2,
       deletedReferenceCount: 0,
       deletedNavmeshCount: 0,
       cleaningUtility: "xEdit",
-      info: [],
     };
     const meta = makePluginMetadata({
-      messages: [{ type: 1, content: "watch out", condition: "" }],
+      messages: [{ type: 1, content: [{ text: "watch out", language: "en" }], condition: "" }],
       tags: [{ isAddition: true, name: "Delev", condition: "" }],
       cleanInfo: [cleaning],
       dirtyInfo: [cleaning],
       group: "late loaders",
-      requirements: [{ name: "Req.esp", displayName: "Req" }],
+      requirements: [{ name: "Req.esp", displayName: "Req", condition: "" }],
     });
     const info = makeLootPluginInterface({
       bashTags: [{ isAddition: false, name: "C.Water", condition: "" }],
@@ -136,8 +135,8 @@ describe("LootInterface plugin-details", () => {
       loadsArchive: true,
       version: "1.2.0",
     });
-    harness.loot.getPluginMetadataAsync.mockResolvedValue(meta);
-    harness.loot.getPluginAsync.mockResolvedValue(info);
+    harness.loot.getPluginMetadata.mockResolvedValue(meta);
+    harness.loot.getPlugin.mockResolvedValue(info);
 
     const result = await harness.requestDetails(["one.esp"]);
 
@@ -167,14 +166,15 @@ describe("LootInterface plugin-details", () => {
     expect(messages).toHaveLength(1);
     expect(messages[0].type).toBe(-1);
     expect(messages[0].condition).toBe("always");
-    expect(messages[0].content).toContain("No LOOT metadata could be found");
+    expect(messages[0].content).toHaveLength(1);
+    expect(messages[0].content[0].text).toContain("No LOOT metadata could be found");
   });
 
   test("answers empty details per plugin and aggregates one error when metadata lookups fail", async ({
     makeLoot,
   }) => {
     const harness = await makeLoot(LootInterface);
-    harness.loot.getPluginMetadataAsync.mockRejectedValue(new Error("metadata query failed"));
+    harness.loot.getPluginMetadata.mockRejectedValue(new Error("metadata query failed"));
 
     const result = await harness.requestDetails(["one.esp", "two.esp"]);
 
@@ -189,7 +189,7 @@ describe("LootInterface plugin-details", () => {
 
   test("suppresses the error report when loot closed mid-iteration", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
-    harness.loot.getPluginMetadataAsync.mockImplementation((pluginName) =>
+    harness.loot.getPluginMetadata.mockImplementation((pluginName) =>
       Promise.reject(
         new Error(pluginName === "one.esp" ? "already closed" : "metadata query failed"),
       ),

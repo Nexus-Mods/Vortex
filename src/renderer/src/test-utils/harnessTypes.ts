@@ -5,6 +5,7 @@
  */
 import type NexusT from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
+import type { LootAsync } from "loot";
 import type { Mock } from "vitest";
 
 import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
@@ -13,7 +14,6 @@ import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
 import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
 import type LootInterface from "../extensions/gamebryo_plugin_management/autosort";
-import type { ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
 import type {
   IPlugin,
   IPlugins,
@@ -148,12 +148,23 @@ export interface IGamebryoHarness extends IGameHarness {
   pluginList: () => IPlugins;
 }
 
-/**
- * A controllable stand-in for a promisifyAll'd LootAsync instance: every ILootProm member as a
- * mock. The *Async members are pre-defined, so autosort's Bluebird.promisifyAll wraps leave them
- * untouched (they only add unused closeAsync/isClosedAsync plain functions to the object).
- */
-export type IFakeLoot = { [K in keyof ILootProm]: Mock<ILootProm[K]> };
+/** The LootAsync members autosort drives. */
+type DrivenLoot = Pick<
+  LootAsync,
+  | "clearConditionCache"
+  | "close"
+  | "getGroupsPath"
+  | "getPlugin"
+  | "getPluginMetadata"
+  | "isClosed"
+  | "loadCurrentLoadOrderState"
+  | "loadLists"
+  | "loadPlugins"
+  | "sortPlugins"
+>;
+
+/** A controllable stand-in for a LootAsync instance: every member autosort drives as a mock. */
+export type IFakeLoot = { [K in keyof DrivenLoot]: Mock<DrivenLoot[K]> };
 
 /** The plugin persistor's file lifecycle as a controllable fake: every call a mock. */
 export type IFakePersistor = {

@@ -44,16 +44,14 @@ describe("LootInterface libloot lifecycle", () => {
 
     harness.restartHelpers();
     await vi.waitFor(() => {
-      expect(harness.loot.loadCurrentLoadOrderStateAsync).toHaveBeenCalled();
+      expect(harness.loot.loadCurrentLoadOrderState).toHaveBeenCalled();
     });
 
     // the documented init order: fresh handle, fresh lists, then the load-order state
     expect(createLootMock).toHaveBeenCalledTimes(1);
     expect(createLootMock).toHaveBeenCalledBefore(downloadMasterlistMock);
-    expect(downloadMasterlistMock).toHaveBeenCalledBefore(harness.loot.loadListsAsync);
-    expect(harness.loot.loadListsAsync).toHaveBeenCalledBefore(
-      harness.loot.loadCurrentLoadOrderStateAsync,
-    );
+    expect(downloadMasterlistMock).toHaveBeenCalledBefore(harness.loot.loadLists);
+    expect(harness.loot.loadLists).toHaveBeenCalledBefore(harness.loot.loadCurrentLoadOrderState);
   });
 
   test("closes the replaced loot instance after its grace period", async ({ makeLoot }) => {
@@ -81,12 +79,12 @@ describe("LootInterface libloot lifecycle", () => {
 
     // metadata conditions (active(), version()...) evaluate against the cached load-order state,
     // and the state refresh also invalidates the condition cache
-    expect(harness.loot.loadCurrentLoadOrderStateAsync).toHaveBeenCalledBefore(
-      harness.loot.getPluginMetadataAsync,
+    expect(harness.loot.loadCurrentLoadOrderState).toHaveBeenCalledBefore(
+      harness.loot.getPluginMetadata,
     );
     // GetPlugin only answers for loaded plugins, and the record-level fields
     // (isValidAsLightPlugin, loadsArchive, isEmpty) need a full parse, not headers
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledBefore(harness.loot.getPluginAsync);
+    expect(harness.loot.loadPlugins).toHaveBeenCalledBefore(harness.loot.getPlugin);
   });
 
   // LoadCurrentLoadOrderState "should be called whenever the load order or active state of
@@ -97,9 +95,7 @@ describe("LootInterface libloot lifecycle", () => {
 
     await harness.sort(true);
 
-    expect(harness.loot.loadCurrentLoadOrderStateAsync).toHaveBeenCalledBefore(
-      harness.loot.sortPluginsAsync,
-    );
+    expect(harness.loot.loadCurrentLoadOrderState).toHaveBeenCalledBefore(harness.loot.sortPlugins);
   });
 
   // "All given plugins must have been loaded using LoadPlugins()", with full records: the sort
@@ -110,11 +106,11 @@ describe("LootInterface libloot lifecycle", () => {
 
     await harness.sort(true);
 
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+    expect(harness.loot.loadPlugins).toHaveBeenCalledWith(
       expect.arrayContaining([expect.stringContaining("A.esp")]),
       false,
     );
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledBefore(harness.loot.sortPluginsAsync);
+    expect(harness.loot.loadPlugins).toHaveBeenCalledBefore(harness.loot.sortPlugins);
   });
 
   // LOOT holds the game's main master headers-only and keeps it out of the per-sort full load
@@ -126,11 +122,11 @@ describe("LootInterface libloot lifecycle", () => {
 
     await harness.sort(true);
 
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+    expect(harness.loot.loadPlugins).toHaveBeenCalledWith(
       [expect.stringContaining("Skyrim.esm")],
       true,
     );
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+    expect(harness.loot.loadPlugins).toHaveBeenCalledWith(
       [expect.stringContaining("A.esp")],
       false,
     );
@@ -145,11 +141,11 @@ describe("LootInterface libloot lifecycle", () => {
 
     await harness.lootInterface.sortFiles([path.join(harness.dataDir, "A.esp")]);
 
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+    expect(harness.loot.loadPlugins).toHaveBeenCalledWith(
       [path.join(harness.dataDir, "Skyrim.esm")],
       true,
     );
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["A.esp"]);
   });
 
   // Starfield in drag-and-drop mode sorts its own plugins file through the lootSortAsync API
@@ -161,7 +157,7 @@ describe("LootInterface libloot lifecycle", () => {
 
     await harness.lootInterface.sortFiles([path.join(harness.dataDir, "A.esp")]);
 
-    expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["A.esp"]);
   });
 
   test("leaves the load order to the caller when sorting its files", async ({ makeLoot }) => {
@@ -179,12 +175,12 @@ describe("LootInterface libloot lifecycle", () => {
   }) => {
     const harness = await makeLoot(LootInterface, { nativePlugins: ["skyrim.esm"] });
     await harness.seedPlugins([{ name: "Skyrim.esm", isNative: true }, "A.esp"]);
-    harness.loot.getPluginAsync.mockResolvedValue(makeLootPluginInterface({ name: "Skyrim.esm" }));
+    harness.loot.getPlugin.mockResolvedValue(makeLootPluginInterface({ name: "Skyrim.esm" }));
 
     await harness.sort(true);
 
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledTimes(1);
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+    expect(harness.loot.loadPlugins).toHaveBeenCalledTimes(1);
+    expect(harness.loot.loadPlugins).toHaveBeenCalledWith(
       [expect.stringContaining("A.esp")],
       false,
     );
@@ -202,8 +198,8 @@ describe("LootInterface libloot lifecycle", () => {
     await harness.sort(false);
     harness.api.store.dispatch(stopActivity("mods", "deployment"));
 
-    await vi.waitFor(() => expect(harness.loot.sortPluginsAsync).toHaveBeenCalledWith(["A.esp"]));
-    expect(harness.loot.loadPluginsAsync).toHaveBeenCalledWith(
+    await vi.waitFor(() => expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["A.esp"]));
+    expect(harness.loot.loadPlugins).toHaveBeenCalledWith(
       [expect.stringContaining("A.esp")],
       false,
     );
@@ -216,7 +212,7 @@ describe("LootInterface libloot lifecycle", () => {
 
     await harness.lootInterface.downloadMasterlist("skyrimse");
 
-    expect(harness.loot.loadListsAsync).toHaveBeenCalled();
+    expect(harness.loot.loadLists).toHaveBeenCalled();
   });
 
   // a rule change rewrites the userlist, which the details path answers from
@@ -229,6 +225,6 @@ describe("LootInterface libloot lifecycle", () => {
 
     await harness.requestDetails(["one.esp"]);
 
-    expect(harness.loot.loadListsAsync).toHaveBeenCalledBefore(harness.loot.getPluginMetadataAsync);
+    expect(harness.loot.loadLists).toHaveBeenCalledBefore(harness.loot.getPluginMetadata);
   });
 });

@@ -22,7 +22,7 @@ interface ILootSeams {
   nativePlugins: string[];
   // whether libloot needs the harness game's masters in the same load (Starfield)
   requiresLoadedMasters: boolean;
-  // the loot instance createAsync resolves; makeLootHarness arranges a fresh fake per test
+  // the loot instance create resolves; makeLootHarness arranges a fresh fake per test
   loot: IFakeLoot | undefined;
 }
 
@@ -46,7 +46,7 @@ export const createLootMock = vi.fn<() => Promise<IFakeLoot>>(() =>
 
 // ../../util/webpack-hacks: the raw-require seam autosort loads the loot binding through
 export const webpackHacksModule = {
-  webpackRequireHack: () => ({ LootAsync: { createAsync: createLootMock } }),
+  webpackRequireHack: () => ({ LootAsync: { create: createLootMock } }),
 };
 
 // ../../util/getVortexPath: every vortex path keyed under the per-test temp root
