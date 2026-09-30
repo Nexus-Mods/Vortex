@@ -493,8 +493,9 @@ export async function repairStaleScriptMerger(
     ...discovery.tools[SCRIPT_MERGER_ID],
     path: installed ? expectedExe : undefined,
     workingDirectory: installed ? expectedDir : undefined,
-    mergerVersion: installed ? discovery.tools[SCRIPT_MERGER_ID].mergerVersion : undefined,
+    mergerVersion: installed ? discovery.tools[SCRIPT_MERGER_ID]["mergerVersion"] : undefined,
   };
+
   api.store.dispatch(actions.addDiscoveredTool("witcher3", SCRIPT_MERGER_ID, newToolDetails, true));
 
   if (installed) {

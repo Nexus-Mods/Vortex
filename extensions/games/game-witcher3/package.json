@@ -19,9 +19,27 @@
     "semver": "catalog:"
   },
   "devDependencies": {
+    "@nexusmods/nexus-api": "catalog:",
     "@nexusmods/vortex-api": "workspace:*",
+    "@types/bluebird": "catalog:",
+    "@types/lodash": "catalog:",
+    "@types/react": "catalog:",
     "@types/semver": "catalog:",
-    "@vortex/extension-test-mocks": "workspace:*"
+    "@vortex/extension-test-mocks": "workspace:*",
+    "bluebird": "catalog:",
+    "exe-version": "workspace:*",
+    "ini": "catalog:",
+    "lodash": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "redux-act": "catalog:",
+    "shortid": "catalog:",
+    "turbowalk": "catalog:",
+    "vortex-parse-ini": "catalog:",
+    "winapi-bindings": "catalog:",
+    "xml2js": "catalog:"
   },
   "nx": {
     "tags": [
