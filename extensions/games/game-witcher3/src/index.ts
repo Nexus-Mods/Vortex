@@ -110,32 +110,24 @@ const REGISTRY_KEYS = [
 ];
 
 function findGame(): Bluebird<string> {
-  try {
-    const instPath = REGISTRY_KEYS.reduce((found, key) => {
-      if (found) {
-        return found;
-      }
-      try {
-        return winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "InstallFolder");
-      } catch (err) {
-        return undefined;
-      }
-    }, undefined);
-    if (!instPath) {
-      throw new Error("empty registry key");
+  for (const key of REGISTRY_KEYS) {
+    try {
+      const instPath = winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "InstallFolder");
+      if (instPath && typeof instPath.value === "string") return Bluebird.resolve(instPath.value);
+    } catch {
+      continue;
     }
-    return Bluebird.resolve(instPath.value as string);
-  } catch (err) {
-    return util.GameStoreHelper.findByAppId([
-      GOG_ID_GOTY,
-      GOG_ID,
-      GOG_WH_ID,
-      GOG_WH_GOTY,
-      STEAM_ID,
-      STEAM_ID_WH,
-      EPIC_ID,
-    ]).then((game) => game.gamePath);
   }
+
+  return util.GameStoreHelper.findByAppId([
+    GOG_ID_GOTY,
+    GOG_ID,
+    GOG_WH_ID,
+    GOG_WH_GOTY,
+    STEAM_ID,
+    STEAM_ID_WH,
+    EPIC_ID,
+  ]).then((game) => game.gamePath);
 }
 
 /**

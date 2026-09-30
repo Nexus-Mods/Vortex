@@ -5,7 +5,8 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
-    "test": "pnpm exec vitest run"
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm exec tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

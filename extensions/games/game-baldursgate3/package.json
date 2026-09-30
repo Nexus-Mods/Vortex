@@ -12,11 +12,30 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist && copyfiles -u 1 -f ./tools/* dist/tools",
     "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
-    "test": "vitest run --config vitest.config.ts"
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "pnpm exec tsc"
   },
   "devDependencies": {
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/bluebird": "catalog:",
+    "@types/lodash": "catalog:",
+    "@types/react": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "exe-version": "workspace:*",
+    "lodash": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "redux": "catalog:",
+    "redux-act": "catalog:",
+    "redux-thunk": "catalog:",
+    "semver": "catalog:",
+    "shortid": "catalog:",
+    "turbowalk": "catalog:",
     "vitest": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "xml2js": "catalog:"
   },
   "dependencies": {
     "lru-cache": "catalog:"

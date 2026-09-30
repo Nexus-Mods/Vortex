@@ -4,7 +4,8 @@
   "description": "Support for The Elder Scrolls III: Morrowind",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck": "pnpm exec tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -14,7 +15,13 @@
     "game": "Morrowind"
   },
   "devDependencies": {
+    "@nexusmods/nexus-api": "catalog:",
     "@nexusmods/vortex-api": "workspace:*",
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
     "winapi-bindings": "catalog:"
   },
   "nx": {

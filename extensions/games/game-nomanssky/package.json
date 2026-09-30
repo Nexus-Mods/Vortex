@@ -4,7 +4,8 @@
   "description": "Support for No Man's Sky",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck": "pnpm exec tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -14,7 +15,9 @@
     "game": "No Man's Sky"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/semver": "catalog:",
+    "semver": "catalog:"
   },
   "nx": {
     "tags": [

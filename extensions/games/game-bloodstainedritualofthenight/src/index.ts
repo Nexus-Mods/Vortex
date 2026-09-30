@@ -210,7 +210,7 @@ function main(context: types.IExtensionContext) {
     toBlue(installContent),
   );
 
-  context.registerMigration(toBlue((oldVer) => migrate100(context.api, oldVer)));
+  context.registerMigration((oldVer) => migrate100(context.api, oldVer));
 
   return true;
 }

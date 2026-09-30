@@ -11,10 +11,24 @@
   },
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck": "pnpm exec tsc"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/lodash": "catalog:",
+    "@types/react-bootstrap": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "lodash": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "redux-act": "catalog:",
+    "semver": "catalog:",
+    "turbowalk": "catalog:",
+    "xml2js": "catalog:"
   },
   "nx": {
     "tags": [

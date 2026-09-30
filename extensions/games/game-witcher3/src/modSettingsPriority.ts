@@ -26,10 +26,9 @@ export interface IPriorityResult {
 }
 
 export const nameOf = (mod: ModSettingsEntry): string =>
-  typeof mod === "object" && mod !== null ? mod.name : mod;
+  typeof mod === "string" ? mod : mod?.name;
 
-const keyOf = (mod: ModSettingsEntry): string =>
-  typeof mod === "object" && mod !== null ? mod.id : mod;
+const keyOf = (mod: ModSettingsEntry): string => (typeof mod === "string" ? mod : mod?.id);
 
 /**
  * Locked mods keep the top of the range in their given order, mods the user has

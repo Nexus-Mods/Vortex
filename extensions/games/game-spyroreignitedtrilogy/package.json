@@ -4,7 +4,8 @@
   "description": "Support for Spyro Reignited Trilogy",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck": "pnpm exec tsc"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -14,7 +15,10 @@
     "game": "Spyro Reignited Trilogy"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "bluebird": "catalog:",
+    "semver": "catalog:",
+    "turbowalk": "catalog:"
   },
   "nx": {
     "tags": [

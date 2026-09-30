@@ -97,7 +97,8 @@ export const localModsEnabledCheck: types.IHealthCheck = {
 
     let state: ContentManagerState;
     try {
-      const doc = await newParser().read(getDx12UserSettingsPath());
+      const doc =
+        await newParser().read<Record<string, Record<string, unknown>>>(getDx12UserSettingsPath());
       state = evaluateContentManagerSettings(doc.data);
     } catch {
       return makeResult(
