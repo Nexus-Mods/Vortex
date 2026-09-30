@@ -144,10 +144,8 @@ export function gameSupported(gameMode: string): boolean {
 
 async function documentsPath(gameMode: string): Promise<string> {
   const discovery = discoveryForGame(gameMode);
-  return resolveDocumentsPath(
-    discovery,
-    util.getVortexPath("documents"),
-    (gamePath, storeId) => util.GameStoreHelper.findByPath(gamePath, storeId),
+  return resolveDocumentsPath(discovery, util.getVortexPath("documents"), (gamePath, storeId) =>
+    util.GameStoreHelper.findByPath(gamePath, storeId),
   );
 }
 
