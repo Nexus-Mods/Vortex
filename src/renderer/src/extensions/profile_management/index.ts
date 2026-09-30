@@ -227,7 +227,8 @@ function activateGame(store: ThunkStore<IState>, gameId: string): PromiseBB<void
   }
 }
 
-function deploy(api: IExtensionApi, profileId: string): PromiseBB<void> {
+/** Deploys the profile unless it is its game's last active one with nothing pending. */
+function deploy(api: IExtensionApi, profileId: string | undefined, what: string): PromiseBB<void> {
   const state: IState = api.store.getState();
   if (profileId === undefined || state.persistent.profiles[profileId] === undefined) {
     return PromiseBB.resolve();
@@ -251,6 +252,8 @@ function deploy(api: IExtensionApi, profileId: string): PromiseBB<void> {
     return PromiseBB.resolve();
   }
 
+  log("info", `will deploy ${what}`, profileId);
+
   let lastProgress: number = Date.now();
 
   const watchdog = setInterval(() => {
@@ -266,12 +269,13 @@ function deploy(api: IExtensionApi, profileId: string): PromiseBB<void> {
     }
   }, 1000);
 
-  return new PromiseBB((resolve, reject) => {
+  return new PromiseBB<void>((resolve, reject) => {
     api.events.emit(
       "deploy-mods",
       onceCB((err: Error) => {
         clearInterval(watchdog);
         if (err === null) {
+          log("info", `did deploy ${what}`, profileId);
           resolve();
         } else {
           reject(err);
@@ -420,6 +424,17 @@ function genOnProfileChange(
 
         sanitizeProfile(store, profile);
 
+        // Cross-game: skip the outgoing profile and a last-active incoming one; deploy the
+        // incoming game's pending last-active profile first.
+        const switchesGame = oldProfile !== undefined && oldProfile.gameId !== profile.gameId;
+        const lastActiveId = lastActiveProfileForGame(state, profile.gameId);
+        const pendingId =
+          switchesGame && current !== lastActiveId && needToDeployForGame(state, profile.gameId)
+            ? lastActiveId
+            : undefined;
+        const prevId = switchesGame ? undefined : prev;
+        const nextId = switchesGame && current === lastActiveId ? undefined : current;
+
         return PromiseBB.resolve(
           withTrackedActivity(
             "vortex.profile-management",
@@ -432,22 +447,22 @@ function genOnProfileChange(
             () =>
               queue
                 .then(() => {
+                  if (pendingId === undefined) {
+                    return undefined;
+                  }
+                  return deploy(api, pendingId, "pending profile").then(() =>
+                    refreshProfile(store, profileById(api.getState(), pendingId), "import"),
+                  );
+                })
+                .then(() => {
                   log("debug", "starting refresh profile export");
                   return refreshProfile(store, profile, "export");
                 })
                 // ensure the old profile is synchronised before we switch, otherwise me might
                 // revert some changes
+                .then(() => deploy(api, prevId, "previously active profile"))
+                .then(() => deploy(api, nextId, "next active profile"))
                 .then(() => {
-                  log("info", "will deploy previously active profile", prev);
-                  return deploy(api, prev);
-                })
-                .then(() => {
-                  log("info", "did deploy previously active profile", prev);
-                  log("info", "will deploy next active profile", current);
-                  return deploy(api, current);
-                })
-                .then(() => {
-                  log("info", "did deploy next active profile", current);
                   const prof = profileById(api.store.getState() as IState, current);
                   if (prof === undefined) {
                     return PromiseBB.reject(

@@ -324,6 +324,37 @@ export interface IManagerInternals {
   mDependencyInstalls: Record<string, () => void>;
 }
 
+/** What a profile switch test arranges. */
+export interface IProfileSwitchOpts {
+  // every profile, across all games
+  profiles: IProfile[];
+  // the profile active when the test starts
+  activeProfileId: string;
+  // each game's last active profile, keyed by gameId
+  lastActive: Record<string, string>;
+  // whether a game has undeployed changes, keyed by gameId
+  needToDeploy?: Record<string, boolean>;
+  // the game's live settings file, keyed by gameId
+  gameSettings?: Record<string, string>;
+  // the settings file saved in each profile, keyed by profileId
+  savedSettings?: Record<string, string>;
+}
+
+export interface IProfileSwitchHarness extends IApiHarness {
+  // switch the way the UI does (SET_NEXT_PROFILE) and resolve once the profile is active
+  switchTo: (profileId: string) => Promise<void>;
+  // the profiles deployed since the harness was built, in order
+  deployed: string[];
+  // the game's live settings file, which a deploy of profile X rewrites to "deployed:X"
+  gameSettings: (gameId: string) => Promise<string | undefined>;
+  // the settings file saved in a profile
+  savedSettings: (profileId: string) => Promise<string | undefined>;
+  // messages logged since the harness was built, in order
+  loggedMessages: () => string[];
+  // remove every file the harness wrote; the profileSwitchTest fixture calls this on teardown
+  cleanup: () => Promise<void>;
+}
+
 /** What a health-check registry test arranges. */
 export interface IHealthCheckHarnessOpts {
   // the game the active profile is on (defaults to skyrimse)
