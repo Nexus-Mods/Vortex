@@ -22,6 +22,18 @@
     "title": "Health Check",
     "subtitle": "Review your Loadout for any issues and learn how to resolve them if needed.",
     "last_updated": "Last updated: {{time}}",
+    "section": {
+      "warning": {
+        "title": "Warnings",
+        "description": "Issues that may stop parts of your loadout from working."
+      },
+      "suggestion": {
+        "title": "Suggestions",
+        "description": "Changes that may improve your loadout or add optional extras."
+      },
+      "collapse": "Collapse section",
+      "expand": "Expand section"
+    },
     "item": {
       "title": "Additional mod file may be required for: {{modName}}",
       "description": "Missing mod: {{dependencyModName}}",
@@ -109,6 +121,16 @@
         "cancel": "Skip",
         "confirm": "Send feedback"
       }
+    }
+  },
+  "author_notes_modal": {
+    "title": "Review mod author notes",
+    "description": "Some suggested mods have additional guidance from their authors and may not always be required.",
+    "prompt": "Review the notes below and choose which mods to install.",
+    "required_for": "For mods:",
+    "buttons": {
+      "cancel": "Cancel",
+      "install": "Install selected ({{count}})"
     }
   },
   "settings": {

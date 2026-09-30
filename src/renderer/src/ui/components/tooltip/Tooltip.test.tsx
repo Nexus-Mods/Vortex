@@ -15,6 +15,7 @@ interface IRenderOptions {
   disabled?: boolean;
   interactive?: boolean;
   placement?: ITooltipPlacement;
+  positionerClassName?: string;
 }
 
 // delay={0} throughout: the 300ms default would mean fake timers in every test.
@@ -65,6 +66,15 @@ describe("Tooltip", () => {
     await waitFor(() => {
       expect(screen.getByRole("tooltip")).toHaveTextContent("Deploys every enabled mod");
     });
+  });
+
+  it("puts positionerClassName on the layer that owns the stacking", async () => {
+    const { trigger } = renderComponent({ positionerClassName: "z-(--z-index-flyout)" });
+    await userEvent.hover(trigger);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+    const positioner = screen.getByRole("tooltip").closest(".nxm-tooltip-positioner");
+    expect(positioner).toHaveClass("z-(--z-index-flyout)");
   });
 
   it("hides the content again when the pointer leaves", async () => {

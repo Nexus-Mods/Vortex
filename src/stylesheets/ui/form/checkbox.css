@@ -1,6 +1,7 @@
 @layer components {
     .nxm-checkbox-field {
         display: flex;
+        position: relative;
         column-gap: calc(var(--spacing) * 2);
 
         &:disabled,

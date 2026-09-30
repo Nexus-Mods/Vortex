@@ -290,7 +290,7 @@ test.describe("Health Check - file requirement warnings", () => {
       });
     });
 
-    test("Check the header 1-click install button resolves all requirements on the health check", async ({
+    test("Check the warnings section 1-click install all resolves all requirements", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -298,9 +298,9 @@ test.describe("Health Check - file requirement warnings", () => {
     }) => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
-      await test.step("The header 1-click install all installs the requirements, clearing the warning", async () => {
+      await test.step("The warnings section 1-click install all installs the requirements, clearing the warning", async () => {
         await dismissAllNotifications(vortexWindow);
-        await hc.installAllButton.click();
+        await hc.warningsInstallAllButton.click();
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });

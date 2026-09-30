@@ -123,6 +123,7 @@ export const DownloadButton = () => {
       open={isOpen}
       persistent={isAnnouncing}
       placement="right"
+      positionerClassName="z-flyout"
       onOpenChange={onOpenChange}
     >
       <SpineButton

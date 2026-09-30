@@ -75,6 +75,8 @@ interface ITooltipBaseProps {
   persistent?: boolean;
   /** Preferred side. Flips and slides automatically when it would overflow. */
   placement?: ITooltipPlacement;
+  /** Classes for the positioned layer, which owns the stacking, e.g. a lower z-index. */
+  positionerClassName?: string;
   showArrow?: boolean;
   /** Every open and close, with Floating UI's reason for it. */
   onOpenChange?: (open: boolean, reason?: OpenChangeReason) => void;
@@ -98,6 +100,7 @@ export const Tooltip = ({
   open: controlledOpen,
   persistent = false,
   placement = "top",
+  positionerClassName,
   showArrow = true,
   onOpenChange,
 }: ITooltipProps) => {
@@ -246,7 +249,7 @@ export const Tooltip = ({
       {isMounted && (
         <FloatingPortal id={OVERLAY_HOST_ID}>
           <div
-            className={joinClasses("nxm-tooltip-positioner", {
+            className={joinClasses(["nxm-tooltip-positioner", positionerClassName], {
               "nxm-tooltip-positioner-interactive": interactive,
             })}
             ref={refs.setFloating}

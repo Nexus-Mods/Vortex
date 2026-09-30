@@ -6,8 +6,9 @@
 
     --z-index-dropdown: 1020;
     --z-index-popover: 1030;
-    --z-index-tooltip: 1060;
+    --z-index-flyout: 1040;
     --z-index-modal: 1050;
+    --z-index-tooltip: 1060;
     --z-index-toast: 1090;
 
     --aspect-collection: 4 / 5;
