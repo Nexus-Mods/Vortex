@@ -1,7 +1,7 @@
 // import { runPatcher } from 'harmony-patcher';
 import path from "path";
 
-import { fs } from "@nexusmods/vortex-api";
+import { fs, types } from "@nexusmods/vortex-api";
 import semver from "semver";
 
 import { DATAPATH, ENTRY_POINT, GAME_ID } from "./statics";
@@ -31,21 +31,19 @@ export function migrate010(context, oldVersion) {
 }
 */
 
-export function migrate020(context, oldVersion) {
-  if (semver.gte(oldVersion, "0.2.0")) {
-    return Promise.resolve();
-  }
+export async function migrate020(context: types.IExtensionContext, oldVersion): Promise<void> {
+  if (semver.gte(oldVersion, "0.2.0")) return;
 
   const discoveryPath = getDiscoveryPath(context.api.getState());
   if (discoveryPath === undefined) {
     // Game was not discovered, this is a valid use case.
     //  User might not own the game.
-    return Promise.resolve();
+    return;
   }
+
   const modsPath = path.join(discoveryPath, DATAPATH, "VortexMods");
 
-  return context.api
-    .awaitUI()
-    .then(() => fs.ensureDirWritableAsync(modsPath))
-    .then(() => context.api.emitAndAwait("purge-mods-in-path", GAME_ID, "", modsPath));
+  await Promise.resolve(context.api.awaitUI());
+  await Promise.resolve(fs.ensureDirWritableAsync(modsPath));
+  await context.api.emitAndAwait("purge-mods-in-path", GAME_ID, "", modsPath);
 }
