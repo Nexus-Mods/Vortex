@@ -1,11 +1,10 @@
 import { readdir } from "node:fs/promises";
 import * as path from "path";
 
-import { mdiMagnify, mdiMinus, mdiPlus } from "@mdi/js";
 import { getErrorCode } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import React, { useCallback, useEffect, useId, useReducer, useRef, useState } from "react";
-import { ControlLabel, FormGroup } from "react-bootstrap";
+import { ControlLabel, FormGroup, Radio } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -14,14 +13,12 @@ import { useMainContext } from "@/contexts";
 import type { IAvailableExtension } from "@/types/extensions";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
-import { Icon } from "@/ui/components/icon/Icon";
 import { Picker } from "@/ui/components/picker/Picker";
 import { Typography } from "@/ui/components/typography/Typography";
 import { relaunch } from "@/util/commandLine";
 import { log } from "@/util/log";
 import { getPreloadApi } from "@/util/preloadAccess";
 import { useReduceMotion } from "@/util/reduceMotion";
-import { MAX_ZOOM, MIN_ZOOM, normalizeZoom, ZOOM_STEP, zoomFromState } from "@/util/zoom";
 
 import { displayBcp47, isValidBcp47 } from "../../bcp47";
 import More from "../../controls/More";
@@ -48,6 +45,15 @@ import {
 } from "./actions/interface";
 import { buildLanguageOptions, type ILanguage, type ILanguageOption } from "./languageOptions";
 import getText from "./texts";
+import { MAX_ZOOM, MIN_ZOOM, normalizeZoom, ZOOM_STEP, zoomFromState } from "./utils/zoom";
+
+// The Settings page presents the mechanism's existing 10% steps as a pick-list rather
+// than adding a separate range of its own, so Ctrl+/-/wheel always land on one of these.
+const ZOOM_LEVEL_COUNT = Math.round((MAX_ZOOM - MIN_ZOOM) / ZOOM_STEP) + 1;
+const ZOOM_LEVELS = Array.from(
+  { length: ZOOM_LEVEL_COUNT },
+  (_, index) => Math.round((MIN_ZOOM + index * ZOOM_STEP) * 100) / 100,
+);
 
 export interface IBaseProps {
   startup: IParameters;
@@ -93,8 +99,12 @@ export function SettingsInterfaceForm(props: IFormProps) {
   // user makes a choice of their own.
   const reduceMotion = useReduceMotion();
   const zoomFactor = useSelector(zoomFromState);
-  const adjustZoom = (value: number) => dispatch(setZoomFactor(normalizeZoom(value)));
-  const zoomLabelId = useId();
+  const adjustZoom = (value: number) => {
+    const factor = normalizeZoom(value);
+    dispatch(setZoomFactor(factor));
+    api.events.emit("analytics-track-zoom-changed", Math.round(factor * 100));
+  };
+  const zoomGroupId = useId();
 
   // Captured once on mount, like the class component's constructor did, so a change made
   // during this session can be compared against the value Vortex started with.
@@ -282,6 +292,19 @@ export function SettingsInterfaceForm(props: IFormProps) {
               {t('Use relative times (e.g. "3 months ago")')}
             </Toggle>
           </div>
+
+          <div>
+            <Toggle
+              checked={alwaysCompactHeaders}
+              onToggle={(enabled) => dispatch(setAlwaysCompactHeaders(enabled))}
+            >
+              {t("Always use compact headers")}
+
+              <Typography appearance="subdued" typographyType="body-sm">
+                {t("Keep page headers compact for less motion and more vertical space.")}
+              </Typography>
+            </Toggle>
+          </div>
         </div>
 
         <div>
@@ -297,19 +320,6 @@ export function SettingsInterfaceForm(props: IFormProps) {
         <div>
           <div>
             <Toggle
-              checked={alwaysCompactHeaders}
-              onToggle={(enabled) => dispatch(setAlwaysCompactHeaders(enabled))}
-            >
-              {t("Always use compact headers")}
-
-              <Typography appearance="subdued" typographyType="body-sm">
-                {t("Keep page headers compact for less motion and more vertical space.")}
-              </Typography>
-            </Toggle>
-          </div>
-
-          <div>
-            <Toggle
               checked={reduceMotion}
               onToggle={(enabled) => dispatch(setReduceMotion(enabled))}
             >
@@ -322,60 +332,46 @@ export function SettingsInterfaceForm(props: IFormProps) {
           </div>
 
           <div className="flex flex-col items-start gap-y-2">
-            <div className="flex items-center gap-x-3">
-              <div className="flex items-center gap-x-1.5">
-                <Icon className="text-neutral-subdued" path={mdiMagnify} size="sm" />
+            <Typography as="span" className="font-semibold" typographyType="body-sm">
+              {t("Zoom")}
+            </Typography>
 
-                <Typography as="span" id={zoomLabelId} typographyType="body-sm">
-                  {t("Zoom")}
-                </Typography>
-              </div>
-
-              <div
-                aria-labelledby={zoomLabelId}
-                className="flex items-center gap-x-2 rounded-lg border border-stroke-weak px-2 py-1"
-                role="group"
-              >
-                <Typography as="span" className="min-w-10 text-center" typographyType="body-sm">
-                  {t("{{percent}}%", { replace: { percent: Math.round(zoomFactor * 100) } })}
-                </Typography>
-
-                <Button
-                  appearance="weak"
-                  aria-label={t("Zoom out")}
-                  brand="neutral"
-                  disabled={zoomFactor <= MIN_ZOOM}
-                  leftIconPath={mdiMinus}
-                  size="sm"
-                  onClick={() => adjustZoom(zoomFactor - ZOOM_STEP)}
-                />
-
-                <Button
-                  appearance="weak"
-                  aria-label={t("Zoom in")}
-                  brand="neutral"
-                  disabled={zoomFactor >= MAX_ZOOM}
-                  leftIconPath={mdiPlus}
-                  size="sm"
-                  onClick={() => adjustZoom(zoomFactor + ZOOM_STEP)}
-                />
-
-                <div className="mx-1 h-5 w-px bg-stroke-weak" />
-
-                <Button
-                  appearance="moderate"
-                  brand="neutral"
-                  disabled={zoomFactor === 1}
-                  size="sm"
-                  onClick={() => adjustZoom(1)}
+            <div aria-label={t("Zoom")} className="flex flex-col gap-y-1.5" role="radiogroup">
+              {ZOOM_LEVELS.map((level) => (
+                <Radio
+                  checked={zoomFactor === level}
+                  id={`${zoomGroupId}-${Math.round(level * 100)}`}
+                  key={level}
+                  name={zoomGroupId}
+                  onChange={() => adjustZoom(level)}
                 >
-                  {t("Reset")}
-                </Button>
-              </div>
+                  <Typography
+                    as="span"
+                    className={level === 1 ? "font-semibold" : undefined}
+                    typographyType="body-sm"
+                  >
+                    {t("{{percent}}%", { replace: { percent: Math.round(level * 100) } })}
+                  </Typography>
+
+                  {level === 1 && (
+                    <>
+                      {" "}
+                      <Typography
+                        appearance="subdued"
+                        as="span"
+                        className="ml-1"
+                        typographyType="body-sm"
+                      >
+                        {t("Default")}
+                      </Typography>
+                    </>
+                  )}
+                </Radio>
+              ))}
             </div>
 
             <Typography appearance="subdued" typographyType="body-sm">
-              {t("Zoom the Vortex window in or out.")}
+              {t("Tip: You can also zoom using Ctrl +/− or Ctrl + mouse wheel.")}
             </Typography>
           </div>
         </div>

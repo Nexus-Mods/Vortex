@@ -8,11 +8,16 @@ import { getCPUArch } from "@/util/nativeArch";
 
 import { activeGameId, activeProfileId } from "../../util/selectors";
 import { nexusGamesProm } from "../nexus_integration/util";
+import { zoomFromState } from "../settings_interface/utils/zoom";
 import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
-import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
+import {
+  AppLaunchedEvent,
+  AppUIModeChangedEvent,
+  ZoomFactorChangedEvent,
+} from "./mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
 import { analyticsLog } from "./utils/analyticsLog";
@@ -81,6 +86,12 @@ function init(context: IExtensionContext): boolean {
       AnalyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacy }));
     });
 
+    // Emitted by Settings > Interface > Accessibility and by the keyboard/wheel
+    // shortcuts, whenever the user actually changes the zoom level.
+    context.api.events.on("analytics-track-zoom-changed", (percent: number) => {
+      AnalyticsMixpanel.trackEvent(new ZoomFactorChangedEvent({ percent }));
+    });
+
     // Keep the active-game super properties in sync so every event carries game scope.
     // Fires on game switch (each game has its own active profile) and profile switch;
     // re-registering the same game is idempotent.
@@ -143,6 +154,7 @@ function init(context: IExtensionContext): boolean {
             isLegacyUI(), // UI mode (true when running the legacy/classic UI)
             // normalised so a stale retired channel never reaches Mixpanel
             toUpdateChannel(context.api.getState().settings.update.channel), // population for the update funnel
+            Math.round(zoomFromState(context.api.getState()) * 100), // zoom level this session runs at
           ),
         );
 

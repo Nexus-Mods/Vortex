@@ -5,10 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setZoomFactor } from "./actions/window";
 import type ExtensionManager from "./ExtensionManager";
+import { ZOOM_SHORTCUT_EVENT } from "./extensions/settings_interface/utils/zoom";
 import { initApplicationMenu } from "./menu";
 import { windowReducer } from "./reducers/window";
 import type { IState } from "./types/IState";
-import { ZOOM_SHORTCUT_EVENT } from "./util/zoom";
 
 const frame = vi.hoisted(() => ({ factor: 1 }));
 vi.mock("electron", () => ({

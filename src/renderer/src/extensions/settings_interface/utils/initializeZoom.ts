@@ -1,9 +1,13 @@
 import { webFrame } from "electron";
 import type { Store } from "redux";
 
-import { setZoomFactor } from "../actions/window";
-import type { IState } from "../types/IState";
+import { setZoomFactor } from "@/actions/window";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
+
 import { normalizeZoom, zoomFromState, ZOOM_SHORTCUT_EVENT, ZOOM_STEP } from "./zoom";
+
+type ZoomEvents = IExtensionApi["events"];
 
 /** Wheel travel per zoom step: one notch of an ordinary mouse wheel. */
 const WHEEL_STEP_DELTA = 100;
@@ -19,36 +23,35 @@ const WHEEL_GESTURE_GAP_MS = 300;
 /** Chromium stores zoom as a level, so a factor can come back with rounding error. */
 const differs = (a: number, b: number) => Math.abs(a - b) > 0.001;
 
-export function requestZoom(store: Store<IState>, factor: number, target: Window = window): void {
-  store.dispatch(setZoomFactor(normalizeZoom(factor)));
+export function requestZoom(
+  store: Store<IState>,
+  factor: number,
+  target: Window = window,
+  events?: ZoomEvents,
+): void {
+  const normalized = normalizeZoom(factor);
+  store.dispatch(setZoomFactor(normalized));
   target.dispatchEvent(new Event(ZOOM_SHORTCUT_EVENT));
+  events?.emit("analytics-track-zoom-changed", Math.round(normalized * 100));
 }
 
 /**
  * Applies the saved zoom with Electron's page zoom in both layouts, so pointer
- * coordinates and positioned elements stay in one coordinate space.
- *
- * The modern layout keeps its title bar and spine at 100% by cancelling the page
- * zoom on them (`CHROME_ZOOM_STYLE`), which reads `--app-zoom`. That variable is
- * set from the frame's actual factor in the same task as the change, and again on
- * every resize, so the chrome can never render against a stale factor.
+ * coordinates and positioned elements stay in one coordinate space. Nothing in
+ * the chrome is exempted — the title bar and spine zoom with everything else.
  */
-export function initializeZoom(store: Store<IState>, target: Window = window): () => void {
-  const root = target.document.documentElement;
+export function initializeZoom(
+  store: Store<IState>,
+  target: Window = window,
+  events?: ZoomEvents,
+): () => void {
   const isModern = () => store.getState().settings.window.useModernLayout;
-  // Legacy keeps whatever factor it saved; only the modern controls normalise.
+  // Legacy trusts whatever factor is already stored rather than re-deriving it on
+  // read; a write from the shared hotkey/wheel handlers below normalises either way.
   const desiredZoom = () =>
     isModern()
       ? zoomFromState(store.getState())
       : (store.getState().settings.window.zoomFactor ?? 1);
-
-  const syncChrome = () => {
-    if (isModern()) {
-      root.style.setProperty("--app-zoom", String(webFrame.getZoomFactor()));
-    } else {
-      root.style.removeProperty("--app-zoom");
-    }
-  };
 
   let lastDesired: number | undefined;
   let lastModern: boolean | undefined;
@@ -58,20 +61,18 @@ export function initializeZoom(store: Store<IState>, target: Window = window): (
     lastDesired = factor;
     lastModern = isModern();
     if (differs(webFrame.getZoomFactor(), factor)) webFrame.setZoomFactor(factor);
-    syncChrome();
   };
 
   // Chromium can change the frame's zoom behind the store, such as restoring the
-  // level it keeps per origin. Every zoom change resizes the viewport.
+  // level it keeps per origin.
   const onResize = () => {
     if (differs(webFrame.getZoomFactor(), desiredZoom())) webFrame.setZoomFactor(desiredZoom());
-    syncChrome();
   };
 
   apply();
   const unsubscribe = store.subscribe(apply);
-  const onWheel = makeWheelHandler(store, isModern, target);
-  const onKeyDown = makeKeyHandler(store, isModern, target);
+  const onWheel = makeWheelHandler(store, target, events);
+  const onKeyDown = makeKeyHandler(store, target, events);
   target.addEventListener("resize", onResize);
   target.addEventListener("wheel", onWheel, { passive: false, capture: true });
   target.addEventListener("keydown", onKeyDown);
@@ -80,20 +81,20 @@ export function initializeZoom(store: Store<IState>, target: Window = window): (
     target.removeEventListener("resize", onResize);
     target.removeEventListener("wheel", onWheel, { capture: true });
     target.removeEventListener("keydown", onKeyDown);
-    root.style.removeProperty("--app-zoom");
   };
 }
 
 /**
  * Ctrl+wheel moves one step per notch's worth of travel, whatever the event count.
  * A touchpad pinch or high-resolution wheel sends many small deltas for one
- * gesture, and stepping on each would jump straight to a limit.
+ * gesture, and stepping on each would jump straight to a limit. Works in both
+ * layouts.
  */
-function makeWheelHandler(store: Store<IState>, isModern: () => boolean, target: Window) {
+function makeWheelHandler(store: Store<IState>, target: Window, events?: ZoomEvents) {
   let travel = 0;
   let lastEventAt = -Infinity;
   return (event: WheelEvent) => {
-    if (!isModern() || !event.ctrlKey || event.deltaY === 0) return;
+    if (!event.ctrlKey || event.deltaY === 0) return;
     // Cancel Chromium's own zoom and page scrolling, including at the limits.
     event.preventDefault();
     // Page zoom divides pixel deltas by the frame's factor, so one notch at 150%
@@ -108,13 +109,18 @@ function makeWheelHandler(store: Store<IState>, isModern: () => boolean, target:
     travel += delta;
     if (Math.abs(travel) < WHEEL_STEP_DELTA - WHEEL_STEP_TOLERANCE) return;
     travel = 0;
-    requestZoom(store, zoomFromState(store.getState()) - Math.sign(delta) * ZOOM_STEP, target);
+    requestZoom(
+      store,
+      zoomFromState(store.getState()) - Math.sign(delta) * ZOOM_STEP,
+      target,
+      events,
+    );
   };
 }
 
-function makeKeyHandler(store: Store<IState>, isModern: () => boolean, target: Window) {
+/** Works in both layouts. */
+function makeKeyHandler(store: Store<IState>, target: Window, events?: ZoomEvents) {
   return (event: KeyboardEvent) => {
-    if (!isModern()) return;
     if (!(event.ctrlKey || (process.platform === "darwin" && event.metaKey)) || event.altKey)
       return;
     const direction = event.key === "+" || event.key === "=" ? 1 : event.key === "-" ? -1 : 0;
@@ -124,6 +130,7 @@ function makeKeyHandler(store: Store<IState>, isModern: () => boolean, target: W
       store,
       direction === 0 ? 1 : zoomFromState(store.getState()) + direction * ZOOM_STEP,
       target,
+      events,
     );
   };
 }

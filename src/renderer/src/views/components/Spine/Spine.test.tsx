@@ -2,8 +2,6 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { CHROME_ZOOM } from "@/ui/components/chrome_zoom/ChromeZoomScope";
-
 vi.mock("./SpineContext", () => ({
   useSpineContext: () => ({
     selection: { type: "home" },
@@ -27,8 +25,8 @@ vi.mock("./notifications/Notifications", () => ({ Notifications: () => null }));
 import { Spine } from "./Spine";
 
 describe("Spine", () => {
-  it("cancels the page zoom so the spine stays at 100%", () => {
+  it("does not cancel the page zoom, so the spine scales with the rest of the content", () => {
     render(<Spine />);
-    expect(screen.getByTestId("spine").style.zoom).toBe(CHROME_ZOOM);
+    expect(screen.getByTestId("spine").style.zoom).toBe("");
   });
 });

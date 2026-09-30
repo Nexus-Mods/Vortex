@@ -5,9 +5,10 @@ import { webFrame } from "electron";
 import { createStore, type AnyAction } from "redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setUseModernLayout, setZoomFactor } from "../actions/window";
-import { windowReducer } from "../reducers/window";
-import type { IState } from "../types/IState";
+import { setUseModernLayout, setZoomFactor } from "@/actions/window";
+import { windowReducer } from "@/reducers/window";
+import type { IState } from "@/types/IState";
+
 import { initializeZoom } from "./initializeZoom";
 import { normalizeZoom, ZOOM_SHORTCUT_EVENT } from "./zoom";
 
@@ -55,7 +56,6 @@ function wheel(options: WheelEventInit & { timeStamp?: number }): WheelEvent {
 const pinch = (deltaY: number, timeStamp = 0) =>
   window.dispatchEvent(wheel({ ctrlKey: true, deltaY, cancelable: true, timeStamp }));
 
-const appZoom = () => document.documentElement.style.getPropertyValue("--app-zoom");
 const zoomOf = (store: ReturnType<typeof makeStore>) => store.getState().settings.window.zoomFactor;
 
 let dispose: (() => void) | undefined;
@@ -90,23 +90,22 @@ describe("zoom", () => {
     expect(document.body.style.zoom).toBe("");
   });
 
-  it("publishes the frame's factor for the chrome in the same update", () => {
+  it("applies the frame's factor exactly once per store change", () => {
     const store = makeStore(1.2);
     dispose = initializeZoom(store);
-    expect(appZoom()).toBe("1.2");
+    expect(webFrame.setZoomFactor).toHaveBeenLastCalledWith(1.2);
     store.dispatch(setZoomFactor(0.8));
-    expect(appZoom()).toBe("0.8");
+    expect(webFrame.setZoomFactor).toHaveBeenLastCalledWith(0.8);
     store.dispatch({ type: "UNRELATED" });
     expect(webFrame.setZoomFactor).toHaveBeenCalledTimes(2);
   });
 
-  it("puts the frame back and resyncs the chrome when Chromium changes the zoom behind it", () => {
+  it("puts the frame back when Chromium changes the zoom behind it", () => {
     const store = makeStore(1.2);
     dispose = initializeZoom(store);
     frame.factor = 0.9;
     window.dispatchEvent(new Event("resize"));
     expect(frame.factor).toBe(1.2);
-    expect(appZoom()).toBe("1.2");
   });
 
   it("steps once per notch of wheel travel, however many events carry it", () => {
@@ -222,7 +221,7 @@ describe("zoom", () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
-  it("removes the listeners, subscription and chrome factor on cleanup", () => {
+  it("removes the listeners and subscription on cleanup", () => {
     const store = makeStore();
     dispose = initializeZoom(store);
     dispose();
@@ -230,21 +229,27 @@ describe("zoom", () => {
     expect(zoomOf(store)).toBe(1);
     store.dispatch(setZoomFactor(1.2));
     expect(frame.factor).toBe(1);
-    expect(appZoom()).toBe("");
   });
 
-  it("keeps a legacy saved factor as it is and leaves its shortcuts to the menu", () => {
+  it("keeps a legacy saved factor as it is until a shortcut changes it", () => {
     const store = makeStore(1.234, false);
     dispose = initializeZoom(store);
     expect(frame.factor).toBe(1.234);
-    expect(appZoom()).toBe("");
-    const scroll = wheel({ ctrlKey: true, deltaY: -120, cancelable: true });
+  });
+
+  it("responds to Ctrl+wheel and Ctrl+=/- on the legacy layout too", () => {
+    const store = makeStore(1, false);
+    dispose = initializeZoom(store);
+
     const key = new KeyboardEvent("keydown", { key: "=", ctrlKey: true, cancelable: true });
-    window.dispatchEvent(scroll);
     window.dispatchEvent(key);
-    expect(scroll.defaultPrevented).toBe(false);
-    expect(key.defaultPrevented).toBe(false);
-    expect(zoomOf(store)).toBe(1.234);
+    expect(key.defaultPrevented).toBe(true);
+    expect(zoomOf(store)).toBe(1.1);
+
+    const scroll = wheel({ ctrlKey: true, deltaY: -120, cancelable: true });
+    window.dispatchEvent(scroll);
+    expect(scroll.defaultPrevented).toBe(true);
+    expect(zoomOf(store)).toBe(1.2);
   });
 
   it("supports Ctrl+plus, equals, minus and zero without requiring Shift", () => {
@@ -270,18 +275,16 @@ describe("zoom", () => {
     const store = makeStore(1.2);
     dispose = initializeZoom(store);
     store.dispatch(setUseModernLayout(false));
-    expect(appZoom()).toBe("");
     store.dispatch(setZoomFactor(0.8));
     expect(frame.factor).toBe(0.8);
     store.dispatch(setUseModernLayout(true));
     expect(frame.factor).toBe(0.8);
-    expect(appZoom()).toBe("0.8");
   });
 
   // renderer.tsx cannot be imported in a unit test, so this guards the one call
   // that installs everything above.
   it("is installed by the renderer at startup", () => {
-    const source = readFileSync(path.join(__dirname, "..", "renderer.tsx"), "utf8");
-    expect(source).toMatch(/\binitializeZoom\(store\);/);
+    const source = readFileSync(path.join(__dirname, "..", "..", "..", "renderer.tsx"), "utf8");
+    expect(source).toMatch(/\binitializeZoom\(store, window, extensions\.getApi\(\)\.events\);/);
   });
 });

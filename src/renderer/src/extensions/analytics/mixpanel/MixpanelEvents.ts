@@ -48,6 +48,7 @@ export class AppLaunchedEvent implements MixpanelEvent {
     architecture?: string,
     is_legacy_ui?: boolean,
     update_channel?: string,
+    zoom_percent?: number,
   ) {
     this.properties = {
       $os: mapPlatformToMixpanel(os), // Override auto-detected OS for accuracy
@@ -56,6 +57,9 @@ export class AppLaunchedEvent implements MixpanelEvent {
       is_legacy_ui, // Custom property for which UI the session is running
       // the population denominator for the app_update_* funnel
       update_channel,
+      // The zoom level this session is actually running at, not just a change event —
+      // answers "what do people settle on" without the noise of every intermediate step.
+      zoom_percent,
     };
   }
 }
@@ -271,6 +275,24 @@ export class AppUIModeChangedEvent implements MixpanelEvent {
   readonly eventName = "app_ui_mode_changed";
   readonly properties: Record<string, unknown>;
   constructor(props: UIModeChangedProps) {
+    this.properties = { ...props };
+  }
+}
+
+export interface ZoomFactorChangedProps {
+  /** The level zoomed to, as a whole percentage (e.g. 110), not the raw 1.1 factor. */
+  percent: number;
+}
+
+/**
+ * Sent whenever the user changes the zoom level, whether from Settings > Interface >
+ * Accessibility or a keyboard/wheel shortcut. A simple usage signal for now — not yet
+ * split by which control triggered it.
+ */
+export class ZoomFactorChangedEvent implements MixpanelEvent {
+  readonly eventName = "zoom_factor_changed";
+  readonly properties: Record<string, unknown>;
+  constructor(props: ZoomFactorChangedProps) {
     this.properties = { ...props };
   }
 }

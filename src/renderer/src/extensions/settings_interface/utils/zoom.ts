@@ -1,4 +1,4 @@
-import type { IState } from "../types/IState";
+import type { IState } from "@/types/IState";
 
 export const MIN_ZOOM = 0.5;
 export const MAX_ZOOM = 1.5;

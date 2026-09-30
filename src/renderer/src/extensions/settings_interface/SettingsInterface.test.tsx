@@ -9,7 +9,7 @@ import { setZoomFactor } from "@/actions";
 
 import { setAlwaysCompactHeaders, setReduceMotion } from "./actions/interface";
 
-const { baseState, dispatch, state } = vi.hoisted(() => {
+const { baseState, dispatch, emitEvent, state } = vi.hoisted(() => {
   const baseState = () => ({
     session: { extensions: { available: [] } },
     settings: {
@@ -29,12 +29,29 @@ const { baseState, dispatch, state } = vi.hoisted(() => {
     },
   });
 
-  return { baseState, dispatch: vi.fn(), state: { current: baseState() } };
+  return {
+    baseState,
+    dispatch: vi.fn(),
+    emitEvent: vi.fn(),
+    state: { current: baseState() },
+  };
 });
 
 vi.mock("@/contexts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useMainContext: () => ({ api: { emitAndAwait: vi.fn() } }),
+  useMainContext: () => ({ api: { emitAndAwait: vi.fn(), events: { emit: emitEvent } } }),
+}));
+
+// The global stub (test-setup.ts) returns keys verbatim, so "{{percent}}%" never becomes
+// "70%" — fine for most tests, but this file distinguishes radios by their rendered
+// percentage, so it needs real interpolation instead.
+vi.mock("react-i18next", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useTranslation: () => {
+    const t = (key: string, options?: { replace?: Record<string, string | number> }) =>
+      key.replace(/{{(\w+)}}/g, (_match, name: string) => String(options?.replace?.[name] ?? ""));
+    return Object.assign([t, undefined, true], { t, i18n: undefined, ready: true });
+  },
 }));
 
 // More reads `api` off the legacy ComponentEx context, which this test doesn't set up.
@@ -79,69 +96,54 @@ const toggleHandleFor = (label: string) =>
 beforeEach(() => {
   state.current = baseState();
   dispatch.mockClear();
+  emitEvent.mockClear();
 });
 
 describe("SettingsInterface Accessibility section", () => {
-  it("groups Reduce motion, Always use compact headers, and Zoom under one heading", () => {
+  it("puts Reduce motion and Zoom under Accessibility, and moves compact headers to Customisation", () => {
     renderForm();
 
-    const section = screen.getByText("Accessibility").closest(".form-group")!;
+    const accessibility = screen.getByText("Accessibility").closest(".form-group")!;
+    const customisation = screen.getByText("Customisation").closest(".form-group")!;
 
-    expect(section).toContainElement(screen.getByText("Reduce motion"));
-    expect(section).toContainElement(screen.getByText("Always use compact headers"));
-    expect(section).toContainElement(screen.getByText("Zoom"));
+    expect(accessibility).toContainElement(screen.getByText("Reduce motion"));
+    expect(accessibility).toContainElement(screen.getByText("Zoom"));
+    expect(customisation).toContainElement(screen.getByText("Always use compact headers"));
+    expect(accessibility).not.toContainElement(screen.getByText("Always use compact headers"));
   });
 
-  it("disables only Reset at the default 100% zoom", () => {
+  it("offers every 10% level from 50% to 150%, with 100% marked as the default", () => {
     renderForm();
 
-    expect(screen.getByRole("button", { name: "Zoom out" })).not.toBeDisabled();
-    expect(screen.getByRole("button", { name: "Zoom in" })).not.toBeDisabled();
-    expect(screen.getByRole("button", { name: "Reset" })).toBeDisabled();
+    const radios = screen.getAllByRole("radio");
+    expect(radios).toHaveLength(11);
+
+    const defaultRadio = screen.getByRole("radio", { name: /100%.*Default/ });
+    expect(defaultRadio).toBeChecked();
   });
 
-  it("dispatches a 10% step when Zoom in is clicked", async () => {
+  it("checks the radio matching the current zoom factor, not 100%", () => {
+    state.current.settings.window.zoomFactor = 1.2;
     renderForm();
 
-    await userEvent.click(screen.getByRole("button", { name: "Zoom in" }));
-
-    expect(dispatch).toHaveBeenCalledWith(setZoomFactor(1.1));
+    expect(screen.getByRole("radio", { name: "120%" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /100%.*Default/ })).not.toBeChecked();
   });
 
-  it("dispatches a 10% step when Zoom out is clicked", async () => {
+  it("dispatches the chosen level when a different radio is selected", async () => {
     renderForm();
 
-    await userEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+    await userEvent.click(screen.getByRole("radio", { name: "70%" }));
 
-    expect(dispatch).toHaveBeenCalledWith(setZoomFactor(0.9));
+    expect(dispatch).toHaveBeenCalledWith(setZoomFactor(0.7));
   });
 
-  it("disables Zoom out at the 50% floor", () => {
-    state.current.settings.window.zoomFactor = 0.5;
+  it("tracks the change when a different radio is selected", async () => {
     renderForm();
 
-    expect(screen.getByRole("button", { name: "Zoom out" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Zoom in" })).not.toBeDisabled();
-  });
+    await userEvent.click(screen.getByRole("radio", { name: "70%" }));
 
-  it("disables Zoom in at the 150% ceiling", () => {
-    state.current.settings.window.zoomFactor = 1.5;
-    renderForm();
-
-    expect(screen.getByRole("button", { name: "Zoom in" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Zoom out" })).not.toBeDisabled();
-  });
-
-  it("resets to 100% and is enabled while zoomed", async () => {
-    state.current.settings.window.zoomFactor = 1.3;
-    renderForm();
-
-    const reset = screen.getByRole("button", { name: "Reset" });
-    expect(reset).not.toBeDisabled();
-
-    await userEvent.click(reset);
-
-    expect(dispatch).toHaveBeenCalledWith(setZoomFactor(1));
+    expect(emitEvent).toHaveBeenCalledWith("analytics-track-zoom-changed", 70);
   });
 
   it("reflects the stored Reduce motion value and dispatches on toggle", async () => {

@@ -5,14 +5,14 @@ import { webFrame } from "electron";
 
 import { setZoomFactor } from "./actions/window";
 import type ExtensionManager from "./ExtensionManager";
+import { requestZoom } from "./extensions/settings_interface/utils/initializeZoom";
+import { zoomFromState } from "./extensions/settings_interface/utils/zoom";
 import type { IMainPageOptions } from "./types/IExtensionContext";
 import { getApplication } from "./util/application";
 import getVortexPath from "./util/getVortexPath";
 import { debugTranslations, getMissingTranslations } from "./util/i18n";
-import { requestZoom } from "./util/initializeZoom";
 import { log } from "./util/log";
 import { getWindowId } from "./util/preloadAccess";
-import { zoomFromState } from "./util/zoom";
 
 // Map to store click handlers by menu item ID
 const menuClickHandlers: Map<string, () => void> = new Map();
@@ -66,7 +66,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
   const changeZoomFactor = (factor: number) => {
     const store = extensions.getApi().store;
     if (store?.getState().settings.window.useModernLayout) {
-      requestZoom(store, factor);
+      requestZoom(store, factor, window, extensions.getApi().events);
       return;
     }
     if (factor < 0.5 || factor > 1.5) {

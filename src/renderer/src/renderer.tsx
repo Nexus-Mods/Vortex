@@ -144,6 +144,7 @@ import { ApplicationData } from "./applicationData";
 import { FlagsProvider } from "./contexts/FlagsContext";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
+import { initializeZoom } from "./extensions/settings_interface/utils/initializeZoom";
 import { FlagService } from "./FlagService";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
@@ -166,7 +167,6 @@ import {} from "./util/extensionRequire";
 import { setTFunction } from "./util/fs";
 import GlobalNotifications from "./util/GlobalNotifications";
 import { init as getI18n, changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
-import { initializeZoom } from "./util/initializeZoom";
 import { showError } from "./util/message";
 import migrate from "./util/migrate";
 import { applyReduceMotion, reduceMotionFromState } from "./util/reduceMotion";
@@ -921,7 +921,7 @@ function renderer(extensions: ExtensionManager | null) {
     return;
   }
 
-  initializeZoom(store);
+  initializeZoom(store, window, extensions.getApi().events);
   applyReduceMotion(reduceMotionFromState(store.getState()));
 
   ReactDOM.render(<LoadingScreen extensions={extensions} />, document.getElementById("content"));

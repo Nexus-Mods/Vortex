@@ -1,7 +1,5 @@
 import React, { type FC } from "react";
 
-import { ChromeZoomScope } from "@/ui/components/chrome_zoom/ChromeZoomScope";
-
 import { useSwitchingProfile } from "../../hooks";
 import { ModernContentPane } from "../components/ContentPane";
 import { Header } from "../components/Header/Header";
@@ -20,14 +18,10 @@ export const ModernLayout: FC<React.PropsWithChildren<unknown>> = () => {
   return (
     <SpineProvider>
       <LayoutContainer className="flex h-full bg-surface-base">
-        <ChromeZoomScope>
-          <Spine />
-        </ChromeZoomScope>
+        <Spine />
 
         <div className="flex min-w-0 grow flex-col">
-          <ChromeZoomScope>
-            <Header />
-          </ChromeZoomScope>
+          <Header />
 
           <div className="flex min-h-0 grow">
             {switchingProfile ? (
