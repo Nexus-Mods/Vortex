@@ -15,7 +15,15 @@
     "game": "Kingdom Come: Deliverance"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/bluebird": "catalog:",
+    "@types/react": "catalog:",
+    "bluebird": "catalog:",
+    "lodash": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:"
   },
   "nx": {
     "tags": [
