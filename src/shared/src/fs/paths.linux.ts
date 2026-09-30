@@ -16,7 +16,7 @@ export type XDGBase = (typeof XDG)[keyof typeof XDG];
 export type LinuxPathBase = OSPathBase | XDGBase;
 
 /** @public */
-export interface LinuxPathProvider extends PathProvider<LinuxPathBase> {
+export interface ILinuxPathProvider extends PathProvider<LinuxPathBase> {
   readonly platform: "linux";
 
   /** Returns a path according to the XDG Base Directory Specification */

@@ -2,18 +2,18 @@ import { access } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { win32 as pathWin32 } from "node:path";
 
-import type { WindowsPathBase, WindowsPathProvider } from "@vortex/shared/filesystem";
+import type { WindowsPathBase, IWindowsPathProvider } from "@vortex/shared/filesystem";
 import { PathProviderError, QualifiedPath } from "@vortex/shared/filesystem";
 
 /**
- * Node-backed implementation of {@link WindowsPathProvider}.
+ * Node-backed implementation of {@link IWindowsPathProvider}.
  *
  * A pure factory: wraps well-known Windows locations as `native://`
  * {@link QualifiedPath}s via {@link QualifiedPath.fromNative}. It does not
  * resolve anything - decoding `native://` paths is the
  * {@link NativePathResolver}'s job.
  */
-export class WindowsPathProviderImpl implements WindowsPathProvider {
+export class WindowsPathProvider implements IWindowsPathProvider {
   readonly platform = "windows" as const;
 
   fromBase(base: WindowsPathBase): Promise<QualifiedPath> {

@@ -1,18 +1,18 @@
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path/posix";
 
-import type { LinuxPathProvider, LinuxPathBase, XDGBase } from "@vortex/shared/filesystem";
+import type { ILinuxPathProvider, LinuxPathBase, XDGBase } from "@vortex/shared/filesystem";
 import { QualifiedPath, PathProviderError, XDG } from "@vortex/shared/filesystem";
 
 /**
- * Node-backed implementation of {@link LinuxPathProvider}.
+ * Node-backed implementation of {@link ILinuxPathProvider}.
  *
  * A pure factory: wraps well-known Linux locations (and the XDG Base
  * Directory specification) as `native://` {@link QualifiedPath}s via
  * {@link QualifiedPath.fromNative}. It does not resolve anything - decoding
  * `native://` paths is the {@link NativePathResolver}'s job.
  */
-export class LinuxPathProviderImpl implements LinuxPathProvider {
+export class LinuxPathProvider implements ILinuxPathProvider {
   readonly platform = "linux" as const;
 
   #create(path: string): Promise<QualifiedPath> {

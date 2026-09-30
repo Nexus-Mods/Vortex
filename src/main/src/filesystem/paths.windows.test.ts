@@ -3,10 +3,10 @@ import { homedir, tmpdir } from "node:os";
 import { NativePathResolver, PathProviderError, QualifiedPath } from "@vortex/shared/filesystem";
 import { describe, expect, it } from "vitest";
 
-import { WindowsPathProviderImpl } from "./paths.windows";
+import { WindowsPathProvider } from "./paths.windows";
 
 describe("WindowsPathProviderImpl.fromBase", () => {
-  const provider = new WindowsPathProviderImpl();
+  const provider = new WindowsPathProvider();
   const resolver = new NativePathResolver();
 
   it.runIf(process.platform === "win32")(
@@ -37,7 +37,7 @@ describe("WindowsPathProviderImpl.fromBase", () => {
 
 describe("WindowsPathProviderImpl.enumerateDrives", () => {
   it.runIf(process.platform === "win32")("returns at least one drive on Windows", async () => {
-    const provider = new WindowsPathProviderImpl();
+    const provider = new WindowsPathProvider();
     const resolver = new NativePathResolver();
     const drives = await provider.enumerateDrives();
     expect(drives.length).toBeGreaterThan(0);
@@ -51,7 +51,7 @@ describe("WindowsPathProviderImpl.enumerateDrives", () => {
 
   it("returns an empty list on non-Windows platforms", async () => {
     if (process.platform === "win32") return;
-    const provider = new WindowsPathProviderImpl();
+    const provider = new WindowsPathProvider();
     const drives = await provider.enumerateDrives();
     expect(drives).toEqual([]);
   });
@@ -59,7 +59,7 @@ describe("WindowsPathProviderImpl.enumerateDrives", () => {
 
 describe("QualifiedPath.fromNative for Windows paths", () => {
   it.runIf(process.platform === "win32")("maps home to a rooted native path", async () => {
-    const provider = new WindowsPathProviderImpl();
+    const provider = new WindowsPathProvider();
     const qp = await provider.fromBase("home");
     expect(qp.root).toMatch(/^[A-Za-z]:\/$/);
   });

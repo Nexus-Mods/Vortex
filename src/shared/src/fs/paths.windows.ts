@@ -16,7 +16,7 @@ export const WindowsPath = {
 export type WindowsPathBase = OSPathBase | (typeof WindowsPath)[keyof typeof WindowsPath];
 
 /** @public */
-export interface WindowsPathProvider extends PathProvider<WindowsPathBase> {
+export interface IWindowsPathProvider extends PathProvider<WindowsPathBase> {
   readonly platform: "windows";
 
   /** Returns the drive-letter roots available on the host. */
