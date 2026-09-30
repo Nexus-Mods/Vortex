@@ -9,8 +9,7 @@ export const createMenuTracker = (api: IExtensionApi) => {
   };
 
   return {
-    // The press, not the deploy's outcome. The toolbar's Deploy is app_toolbar_action_clicked,
-    // so the two together show which one people apply from.
+    // The press, not the deploy's outcome.
     trackApplyClicked: () => track("app_apply_clicked"),
   };
 };

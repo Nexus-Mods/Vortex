@@ -29,7 +29,7 @@ import { NoDeployment } from "../util/exceptions";
 import metaLookupMatch from "../util/metaLookupMatch";
 import updateState from "../util/modUpdateState";
 import type { IModWithState } from "../views/CheckModVersionsButton";
-import { useActivator, useDeployMods, useNoMethodWarning } from "./useDeployMods.hook";
+import { useActivator, useNoMethodWarning } from "./useDeployMods.hook";
 
 /**
  * A toolbar action plus where it sits in the row. The mods toolbar is assembled from
@@ -48,16 +48,15 @@ interface IPositionedAction {
  * fixed: pinning an action puts it back where it belongs rather than at the end.
  *
  * The order the bar reads in — Install From File, Open, History, Check for Updates,
- * Categories, Manage Rules, Deploy, Purge — comes from these and from the positions
- * passed to `registerAction` elsewhere, so a change here moves the action in the
- * overflow menu too. Deploy and Purge keep the positions they had as components, which
- * puts them at the end of the row.
+ * Categories, Manage Rules, Purge — comes from these and from the positions passed to
+ * `registerAction` elsewhere, so a change here moves the action in the overflow menu
+ * too. Purge keeps the position it had as a component, which puts it at the end of the
+ * row. There's no Deploy: the menu's Apply button does that.
  */
 const POSITION = {
   installFromFile: 25,
   open: 30,
   checkVersions: 50,
-  deploy: 105,
   purge: 110,
   import: 120,
 };
@@ -106,28 +105,6 @@ const ACTION_MENUS = [OPEN_MENU, IMPORT_MENU];
 const NO_ACTIONS: IPositionedAction[] = [];
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
-
-/** Deploy (Apply changes) — was `ActivationButton`. Disabled and unbranded while applying. */
-const useDeployAction = (t: TFunction): IPositionedAction => {
-  const { needToDeploy, isDeploying, deploy } = useDeployMods();
-
-  return useMemo(
-    () => ({
-      position: POSITION.deploy,
-      action: {
-        id: "deploy",
-        label: isDeploying ? t("Applying mod changes…") : t("Deploy (Apply changes)"),
-        iconPath: getIconPath("deploy"),
-        pinned: true,
-        testId: "deploy-mods",
-        brand: needToDeploy && !isDeploying ? "primary" : "neutral",
-        disabled: isDeploying,
-        onClick: deploy,
-      },
-    }),
-    [deploy, isDeploying, needToDeploy, t],
-  );
-};
 
 /** Purge Mods — was `DeactivationButton`. */
 const usePurgeAction = (t: TFunction): IPositionedAction => {
@@ -611,7 +588,6 @@ export const useModToolbarActions = (
 ): IToolbarAction[] => {
   const installFromFile = useInstallFromFileAction(t);
   const checkVersions = useCheckVersionsAction(t);
-  const deploy = useDeployAction(t);
   const purge = usePurgeAction(t);
   const registered = useRegisteredActions("mod-icons");
 
@@ -631,10 +607,10 @@ export const useModToolbarActions = (
 
   return useMemo(
     () =>
-      [installFromFile, checkVersions, deploy, purge, open, importFrom, ...ownRow]
+      [installFromFile, checkVersions, purge, open, importFrom, ...ownRow]
         .filter((entry): entry is IPositionedAction => entry !== undefined)
         .sort((lhs, rhs) => lhs.position - rhs.position)
         .map((entry) => entry.action),
-    [checkVersions, deploy, importFrom, installFromFile, open, ownRow, purge],
+    [checkVersions, importFrom, installFromFile, open, ownRow, purge],
   );
 };

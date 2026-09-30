@@ -50,8 +50,7 @@ export const useActivator = () => {
 };
 
 /**
- * Deploys the active profile's mods, as the Deploy toolbar action and the menu's Apply
- * button both do. Warns instead when the game has no deployment method set.
+ * Deploys the active profile's mods, as the menu's Apply button does. Warns instead when the game has no deployment method set.
  */
 export const useDeployMods = (): {
   needToDeploy: boolean;
