@@ -786,7 +786,7 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
  */
 const harnessGames = new Set<string>();
 
-function registerHarnessGame(gameId: string): void {
+export function registerHarnessGame(gameId: string): void {
   harnessGames.add(gameId);
   const gameReg = local<{
     gameModeManager: unknown;
