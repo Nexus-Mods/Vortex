@@ -25,7 +25,7 @@ const SEVERITY_WARNING = types.HealthCheckSeverity.Warning;
 // check invocation.
 const STOP_PATTERN_REGEXES = util.compileStopPatterns(XREBIRTH_STOP_PATTERNS);
 
-function isContentXmlMod(mod: types.IMod): boolean {
+function isContentXmlMod(mod: types.IModCheckContext): boolean {
   return mod.files.some((f) => path.basename(f).toLowerCase() === "content.xml");
 }
 
