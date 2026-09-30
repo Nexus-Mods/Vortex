@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { readFile } from "node:fs/promises";
 import path from "path";
 
 import { fs, types, selectors, util } from "@nexusmods/vortex-api";
@@ -9,6 +10,7 @@ import { GAME_ID, CONFIG_MATRIX_REL_PATH, VORTEX_BACKUP_TAG } from "./common";
 import { getEditionCapabilities } from "./edition";
 import { getPersistentLoadOrder } from "./migrations";
 import { fileExists, getDocumentsPath, isSettingsFile, isXML } from "./util";
+import { readMergeBase } from "./xmlMergeBase";
 
 class ModXMLDataInvalid extends util.DataInvalid {
   constructor(message: string, modFilePath: string) {
@@ -144,28 +146,11 @@ async function readXMLInputFile(
     path.basename(modFilePath),
   );
   const backupFilePath = gameInputFilepath + VORTEX_BACKUP_TAG;
-  try {
-    let inputFileData;
-    if (await fileExists(mergedFilePath)) {
-      inputFileData = fs.readFileAsync(mergedFilePath);
-    } else if (await fileExists(backupFilePath)) {
-      inputFileData = fs.readFileAsync(backupFilePath);
-    } else {
-      inputFileData = fs.readFileAsync(gameInputFilepath);
-    }
-    return inputFileData;
-  } catch (err) {
-    const res = await api.showDialog(
-      "error",
-      "Failed to read merged/native xml file",
-      {
-        text: "A native XML file is missing. Please verify your game files through the game store client.",
-      },
-      [{ label: "Close", default: true }],
-      "w3-xml-merge-fail",
-    );
-    return Promise.resolve(null);
-  }
+  return readMergeBase(
+    [mergedFilePath, backupFilePath, gameInputFilepath],
+    fileExists,
+    (filePath) => readFile(filePath),
+  );
 }
 
 //#region experimental settings merge
