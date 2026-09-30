@@ -830,12 +830,15 @@ export interface ModsDeployedProps {
   enabled_mod_count: number;
   manual: boolean;
   is_collection_postprocess: boolean;
+  duration_ms: number;
 }
 
 /**
  * Sent when a deployment to the game directory completes successfully. `deployment_method` is the
  * activator (hardlink, symlink, ...); `manual` marks a user-triggered deploy over an automatic one;
  * `is_collection_postprocess` marks the deploy Vortex runs while finishing a collection install.
+ * `duration_ms` runs from the deployment activity starting to the end of post-deployment, so it
+ * excludes time queued behind other deployments and running installs.
  */
 export class ModsDeployedEvent implements MixpanelEvent {
   readonly eventName = "mods_deployed";
