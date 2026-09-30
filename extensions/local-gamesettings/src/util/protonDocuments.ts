@@ -10,10 +10,7 @@ export interface IProtonStoreEntry {
   compatDataPath?: string;
 }
 
-export type FindByPath = (
-  gamePath: string,
-  storeId?: string,
-) => PromiseLike<IProtonStoreEntry>;
+export type FindByPath = (gamePath: string, storeId?: string) => PromiseLike<IProtonStoreEntry>;
 
 export async function resolveDocumentsPath(
   discovery: IDiscoveryPath,
@@ -28,14 +25,7 @@ export async function resolveDocumentsPath(
   try {
     const entry = await findByPath(discovery.path, "steam");
     if (entry.usesProton && entry.compatDataPath !== undefined) {
-      return path.join(
-        entry.compatDataPath,
-        "pfx",
-        "drive_c",
-        "users",
-        "steamuser",
-        "Documents",
-      );
+      return path.join(entry.compatDataPath, "pfx", "drive_c", "users", "steamuser", "Documents");
     }
   } catch {
     // Fall back to the native Documents directory.
