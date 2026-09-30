@@ -43,6 +43,28 @@ describe("copyGameSettings", () => {
     expect(copyAsync).toHaveBeenNthCalledWith(2, liveSource, destination, { noSelfCopy: true });
   });
 
+  it("falls back to the live ini when backing up global settings without a .base file", async () => {
+    const sourcePath = "/proton/Documents/My Games/Oblivion";
+    const destinationPath = "/backups/oblivion";
+    const baseSource = path.join(sourcePath, "Oblivion.ini.base");
+    const liveSource = path.join(sourcePath, "Oblivion.ini");
+    const destination = path.join(destinationPath, "Oblivion.ini");
+
+    copyAsync
+      .mockImplementationOnce(() => Bluebird.reject({ code: "ENOENT" }))
+      .mockImplementation(() => Bluebird.resolve());
+
+    await copyGameSettings(
+      sourcePath,
+      destinationPath,
+      [{ name: "Oblivion.ini", optional: false }],
+      "GloBac",
+    );
+
+    expect(copyAsync).toHaveBeenNthCalledWith(1, baseSource, destination, { noSelfCopy: true });
+    expect(copyAsync).toHaveBeenNthCalledWith(2, liveSource, destination, { noSelfCopy: true });
+  });
+
   it("uses the .base file when it exists", async () => {
     const sourcePath = "/proton/Documents/My Games/Oblivion";
     const destinationPath = "/profiles/oblivion";
