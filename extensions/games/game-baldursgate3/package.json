@@ -16,8 +16,26 @@
     "typecheck": "pnpm exec tsc"
   },
   "devDependencies": {
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/bluebird": "catalog:",
+    "@types/lodash": "catalog:",
+    "@types/react": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "exe-version": "workspace:*",
+    "lodash": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "redux": "catalog:",
+    "redux-act": "catalog:",
+    "redux-thunk": "catalog:",
+    "semver": "catalog:",
+    "shortid": "catalog:",
+    "turbowalk": "catalog:",
     "vitest": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "xml2js": "catalog:"
   },
   "dependencies": {
     "lru-cache": "catalog:"
