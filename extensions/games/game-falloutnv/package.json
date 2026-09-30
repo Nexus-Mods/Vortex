@@ -15,7 +15,9 @@
     "game": "Fallout: New Vegas"
   },
   "devDependencies": {
+    "@nexusmods/nexus-api": "catalog:",
     "@nexusmods/vortex-api": "workspace:*",
+    "semver": "catalog:",
     "winapi-bindings": "catalog:"
   },
   "nx": {

@@ -1869,9 +1869,15 @@ importers:
 
   extensions/games/game-falloutnv:
     devDependencies:
+      '@nexusmods/nexus-api':
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
