@@ -126,7 +126,7 @@ describe("TextField", () => {
 
   it("wraps the input in a container, with no icon unless given one", () => {
     renderField();
-    expect(getInput().parentElement).toHaveClass("nxm-input-container");
+    expect(getInput().parentElement).toHaveClass("nxm-field-control");
     expect(document.querySelector(".nxm-input-icon")).toBeNull();
   });
 

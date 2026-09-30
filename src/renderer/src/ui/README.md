@@ -14,10 +14,12 @@ ui/
 │   ├── dropdown/        - Dropdown menu (Headless UI Menu)
 │   ├── form/            - Form components
 │   │   ├── checkbox/    - Checkbox input
-│   │   ├── formfield/   - Form field wrapper with labels and validation
-│   │   ├── input/       - Text input with validation
-│   │   ├── select/      - Select dropdown with custom styling
-│   │   └── switch/      - Tri-state toggle switch (off / on / semi-on)
+│   │   ├── field/       - Field, Label, Description, ErrorMessage, CharacterCount (Headless UI Field)
+│   │   ├── input/       - Bare text input (Headless UI Input)
+│   │   ├── select/      - Bare native select with its chevron (Headless UI Select)
+│   │   ├── select_field/ - Select with its label, hints and error
+│   │   ├── switch/      - Tri-state toggle switch (off / on / semi-on)
+│   │   └── text_field/  - Text input with its label, hints, error and character count
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
@@ -369,9 +371,29 @@ import { TextField } from "../../ui/components/form/text_field/TextField";
 
 **Props:** everything `Input` takes except `id` (Headless UI generates the ids that link the parts), plus `label`, `hideLabel`, `hints` (a string or a list), `errorMessage`, `hideErrors` (off screen only; screen readers still get it), `showRequiredLabel` (defaults to `required`), `fieldClassName` and `leftIconPath` (an mdi icon inside the input, before the text). `className` goes on the input and `fieldClassName` on the field around it. `onChange` receives the native change event.
 
+#### SelectField
+
+A native select with its label, hints and error. It takes the same field props as `TextField`, minus the character count and icon:
+
+```tsx
+import { SelectField } from "../../ui/components/form/select_field/SelectField";
+
+<SelectField
+    label="Country"
+    required
+    value={country}
+    onChange={(event) => setCountry(event.target.value)}
+>
+    <option value="">Select...</option>
+    <option value="us">United States</option>
+</SelectField>;
+```
+
+**Props:** everything `Select` takes except `id`, plus `label`, `hideLabel`, `hints`, `errorMessage`, `hideErrors`, `showRequiredLabel` and `fieldClassName`. Options and option groups are passed as children. `onChange` receives the native change event, as before.
+
 #### Building blocks
 
-`TextField` is these parts put together. Use them directly for a layout it doesn't cover:
+`TextField` and `SelectField` are these parts put together. Use them directly for a layout it doesn't cover:
 
 ```tsx
 import { Description } from "../../ui/components/form/field/Description";
@@ -391,24 +413,9 @@ import { Input } from "../../ui/components/form/input/Input";
 - `Field` groups a control with its parts. `disabled` cascades to all of them.
 - `Label` names the control. `required` only adds "(Required)", so set `required` on the control as well. If you give the control its own `id`, pass the same value as `htmlFor`, or clicking the label stops focusing the control.
 - `Description` and `ErrorMessage` are both added to the control's `aria-describedby`, in the order they render. `ErrorMessage` is a `Description` styled as an error; pair it with `invalid` on the control.
-- `Input` is the bare control. Outside a `Field` it needs an `aria-label`.
+- `Input` and `Select` are the bare controls. Outside a `Field` they need an `aria-label`. `Select` draws its own chevron, so it wraps the native select in `nxm-field-control`, the same wrapper `TextField` puts around its input for the icon; its ref and `className` go on the select.
 
-Every part styles itself off the attributes Headless UI sets (`data-disabled`, `data-invalid`, `data-hover`), like `Switch`. The one exception is the input's focus style, which uses `:focus`: Headless UI sets `data-focus` only for keyboard focus, and a text input should show focus however it got it.
-
-#### Select
-
-`Select` hasn't moved onto `Field` yet (LAZ-910), so it still takes its label and hints as props:
-
-```tsx
-import { Select } from "../../ui/components/form/select/Select";
-
-<Select id="country" label="Country">
-    <option value="">Select...</option>
-    <option value="us">United States</option>
-</Select>;
-```
-
-`FormFieldWrap` spaces a stack of fields.
+Every part styles itself off the attributes Headless UI sets (`data-disabled`, `data-invalid`, `data-hover`), like `Switch`. The one exception is the focus style of `Input` and `Select`, which uses `:focus`: Headless UI sets `data-focus` only for keyboard focus, and these should show focus however they got it.
 
 ### Switch
 

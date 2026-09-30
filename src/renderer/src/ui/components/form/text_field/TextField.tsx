@@ -65,7 +65,7 @@ export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
           {label}
         </Label>
 
-        <div className="nxm-input-container">
+        <div className="nxm-field-control">
           {!!leftIconPath && <Icon className="nxm-input-icon" path={leftIconPath} size="sm" />}
 
           <Input
