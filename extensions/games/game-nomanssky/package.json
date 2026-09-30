@@ -15,7 +15,9 @@
     "game": "No Man's Sky"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/semver": "catalog:",
+    "semver": "catalog:"
   },
   "nx": {
     "tags": [
