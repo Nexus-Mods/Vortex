@@ -1782,6 +1782,21 @@ importers:
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
+      '@types/bluebird':
+        specifier: 'catalog:'
+        version: 3.5.20
+      '@types/semver':
+        specifier: 'catalog:'
+        version: 7.7.1
+      bluebird:
+        specifier: 'catalog:'
+        version: 3.7.2
+      semver:
+        specifier: 'catalog:'
+        version: 7.7.4
+      turbowalk:
+        specifier: 'catalog:'
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
 
   extensions/games/game-breakingwheel:
     devDependencies:
