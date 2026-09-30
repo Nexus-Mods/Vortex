@@ -14,9 +14,7 @@ describe("resolveDocumentsPath", () => {
       compatDataPath: "/steam/steamapps/compatdata/22330",
     });
 
-    await expect(
-      resolveDocumentsPath(discovery, hostDocuments, findByPath, "linux"),
-    ).resolves.toBe(
+    await expect(resolveDocumentsPath(discovery, hostDocuments, findByPath, "linux")).resolves.toBe(
       path.join(
         "/steam/steamapps/compatdata/22330",
         "pfx",
@@ -32,9 +30,9 @@ describe("resolveDocumentsPath", () => {
   it("falls back to host Documents outside Linux", async () => {
     const findByPath = vi.fn();
 
-    await expect(
-      resolveDocumentsPath(discovery, hostDocuments, findByPath, "win32"),
-    ).resolves.toBe(hostDocuments);
+    await expect(resolveDocumentsPath(discovery, hostDocuments, findByPath, "win32")).resolves.toBe(
+      hostDocuments,
+    );
     expect(findByPath).not.toHaveBeenCalled();
   });
 
@@ -42,7 +40,12 @@ describe("resolveDocumentsPath", () => {
     const findByPath = vi.fn();
 
     await expect(
-      resolveDocumentsPath({ store: "gog", path: "/games/Oblivion" }, hostDocuments, findByPath, "linux"),
+      resolveDocumentsPath(
+        { store: "gog", path: "/games/Oblivion" },
+        hostDocuments,
+        findByPath,
+        "linux",
+      ),
     ).resolves.toBe(hostDocuments);
     expect(findByPath).not.toHaveBeenCalled();
   });
@@ -50,9 +53,9 @@ describe("resolveDocumentsPath", () => {
   it("falls back when the matching Steam entry does not use Proton", async () => {
     const findByPath = vi.fn().mockResolvedValue({ usesProton: false });
 
-    await expect(
-      resolveDocumentsPath(discovery, hostDocuments, findByPath, "linux"),
-    ).resolves.toBe(hostDocuments);
+    await expect(resolveDocumentsPath(discovery, hostDocuments, findByPath, "linux")).resolves.toBe(
+      hostDocuments,
+    );
   });
 
   it("falls back when the store entry cannot be resolved", async () => {
