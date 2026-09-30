@@ -1,7 +1,8 @@
 /**
  * Tests for the deploy analytics: mods_deployed carries the deployment method, file/enabled-mod
- * counts, and the manual / collection-postprocess flags. game_id resolution is covered by
- * numericGameId.test.ts; here it's unresolved (null) as in the other harness-based analytics tests.
+ * counts, the manual / collection-postprocess flags and the duration. game_id resolution is
+ * covered by numericGameId.test.ts; here it's unresolved (null) as in the other harness-based
+ * analytics tests.
  */
 import { EventEmitter } from "events";
 
@@ -28,6 +29,7 @@ describe("deploy analytics", () => {
       enabledModCount: 7,
       manual: true,
       isCollectionPostprocess: false,
+      durationMs: 1500,
     });
     expect(h.events).toHaveLength(1);
     expect(h.events[0].eventName).toBe("mods_deployed");
@@ -37,6 +39,7 @@ describe("deploy analytics", () => {
       enabled_mod_count: 7,
       manual: true,
       is_collection_postprocess: false,
+      duration_ms: 1500,
     });
   });
 });
