@@ -3,8 +3,8 @@ import * as path from "path";
 
 import { getErrorCode } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
-import React, { useCallback, useEffect, useId, useReducer, useRef, useState } from "react";
-import { ControlLabel, FormGroup, Radio } from "react-bootstrap";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { ControlLabel, FormGroup } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -100,7 +100,6 @@ export function SettingsInterfaceForm(props: IFormProps) {
   const reduceMotion = useReduceMotion();
   const zoomFactor = useSelector(zoomFromState);
   const adjustZoom = (value: number) => dispatch(setZoomFactor(normalizeZoom(value)));
-  const zoomGroupId = useId();
 
   // Captured once on mount, like the class component's constructor did, so a change made
   // during this session can be compared against the value Vortex started with.
@@ -332,39 +331,18 @@ export function SettingsInterfaceForm(props: IFormProps) {
               {t("Zoom")}
             </Typography>
 
-            <div aria-label={t("Zoom")} className="flex flex-col gap-y-1.5" role="radiogroup">
-              {ZOOM_LEVELS.map((level) => (
-                <Radio
-                  checked={zoomFactor === level}
-                  id={`${zoomGroupId}-${Math.round(level * 100)}`}
-                  key={level}
-                  name={zoomGroupId}
-                  onChange={() => adjustZoom(level)}
-                >
-                  <Typography
-                    as="span"
-                    className={level === 1 ? "font-semibold" : undefined}
-                    typographyType="body-sm"
-                  >
-                    {t("{{percent}}%", { replace: { percent: Math.round(level * 100) } })}
-                  </Typography>
-
-                  {level === 1 && (
-                    <>
-                      {" "}
-                      <Typography
-                        appearance="subdued"
-                        as="span"
-                        className="ml-1"
-                        typographyType="body-sm"
-                      >
-                        {t("Default")}
-                      </Typography>
-                    </>
-                  )}
-                </Radio>
-              ))}
-            </div>
+            <Picker<number>
+              options={ZOOM_LEVELS.map((level) => ({
+                label:
+                  level === 1
+                    ? t("{{percent}}% (Default)", { replace: { percent: Math.round(level * 100) } })
+                    : t("{{percent}}%", { replace: { percent: Math.round(level * 100) } }),
+                value: level,
+              }))}
+              placement="left"
+              value={zoomFactor}
+              onChange={adjustZoom}
+            />
 
             <Typography appearance="subdued" typographyType="body-sm">
               {t("Tip: You can also zoom using Ctrl +/− or Ctrl + mouse wheel.")}

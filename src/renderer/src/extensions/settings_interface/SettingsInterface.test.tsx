@@ -106,28 +106,32 @@ describe("SettingsInterface Accessibility section", () => {
     expect(accessibility).not.toContainElement(screen.getByText("Always use compact headers"));
   });
 
-  it("offers every 10% level from 50% to 150%, with 100% marked as the default", () => {
+  it("shows the current zoom level on the dropdown trigger, marking 100% as the default", () => {
     renderForm();
 
-    const radios = screen.getAllByRole("radio");
-    expect(radios).toHaveLength(11);
-
-    const defaultRadio = screen.getByRole("radio", { name: /100%.*Default/ });
-    expect(defaultRadio).toBeChecked();
+    expect(screen.getByRole("button", { name: "100% (Default)" })).toBeInTheDocument();
   });
 
-  it("checks the radio matching the current zoom factor, not 100%", () => {
+  it("shows a non-default zoom factor on the trigger without the Default label", () => {
     state.current.settings.window.zoomFactor = 1.2;
     renderForm();
 
-    expect(screen.getByRole("radio", { name: "120%" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: /100%.*Default/ })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "120%" })).toBeInTheDocument();
   });
 
-  it("dispatches the chosen level when a different radio is selected", async () => {
+  it("offers every 10% level from 50% to 150%", async () => {
     renderForm();
 
-    await userEvent.click(screen.getByRole("radio", { name: "70%" }));
+    await userEvent.click(screen.getByRole("button", { name: "100% (Default)" }));
+
+    expect(screen.getAllByRole("option")).toHaveLength(11);
+  });
+
+  it("dispatches the chosen level when a different option is selected", async () => {
+    renderForm();
+
+    await userEvent.click(screen.getByRole("button", { name: "100% (Default)" }));
+    await userEvent.click(screen.getByRole("option", { name: "70%" }));
 
     expect(dispatch).toHaveBeenCalledWith(setZoomFactor(0.7));
   });
