@@ -38,6 +38,7 @@ describe("GameStoreHelper unattached", () => {
   it("rejects GameEntryNotFound on lookups", async () => {
     await expect(helper.findByAppId("720")).rejects.toThrow(GameEntryNotFound);
     await expect(helper.findByName("Some Game")).rejects.toThrow(GameEntryNotFound);
+    await expect(helper.findByPath("/games/720")).rejects.toThrow(GameEntryNotFound);
   });
 
   it("resolves undefined from isGameInstalled", async () => {
@@ -68,6 +69,9 @@ describe("GameStoreHelper attached", () => {
     const res = await helper.findByAppId("720");
     expect(res.gameStoreId).toBe("steam");
     await expect(helper.isGameInstalled("720")).resolves.toBe("steam");
+
+    const byPath = await helper.findByPath(res.gamePath, "steam");
+    expect(byPath.appid).toBe("720");
   });
 
   it("re-reads the store list on every call, it never caches", async () => {
