@@ -921,7 +921,7 @@ function renderer(extensions: ExtensionManager | null) {
     return;
   }
 
-  initializeZoom(store, window, extensions.getApi().events);
+  initializeZoom(store);
   applyReduceMotion(reduceMotionFromState(store.getState()));
 
   ReactDOM.render(<LoadingScreen extensions={extensions} />, document.getElementById("content"));

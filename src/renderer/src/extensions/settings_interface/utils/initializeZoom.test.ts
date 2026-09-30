@@ -285,6 +285,6 @@ describe("zoom", () => {
   // that installs everything above.
   it("is installed by the renderer at startup", () => {
     const source = readFileSync(path.join(__dirname, "..", "..", "..", "renderer.tsx"), "utf8");
-    expect(source).toMatch(/\binitializeZoom\(store, window, extensions\.getApi\(\)\.events\);/);
+    expect(source).toMatch(/\binitializeZoom\(store\);/);
   });
 });

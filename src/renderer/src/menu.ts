@@ -66,7 +66,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
   const changeZoomFactor = (factor: number) => {
     const store = extensions.getApi().store;
     if (store?.getState().settings.window.useModernLayout) {
-      requestZoom(store, factor, window, extensions.getApi().events);
+      requestZoom(store, factor);
       return;
     }
     if (factor < 0.5 || factor > 1.5) {

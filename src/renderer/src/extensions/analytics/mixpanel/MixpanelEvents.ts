@@ -279,24 +279,6 @@ export class AppUIModeChangedEvent implements MixpanelEvent {
   }
 }
 
-export interface ZoomFactorChangedProps {
-  /** The level zoomed to, as a whole percentage (e.g. 110), not the raw 1.1 factor. */
-  percent: number;
-}
-
-/**
- * Sent whenever the user changes the zoom level, whether from Settings > Interface >
- * Accessibility or a keyboard/wheel shortcut. A simple usage signal for now — not yet
- * split by which control triggered it.
- */
-export class ZoomFactorChangedEvent implements MixpanelEvent {
-  readonly eventName = "zoom_factor_changed";
-  readonly properties: Record<string, unknown>;
-  constructor(props: ZoomFactorChangedProps) {
-    this.properties = { ...props };
-  }
-}
-
 /**
  * Event sent when an upsell prompt is clicked in the application.
  */

@@ -13,11 +13,7 @@ import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
-import {
-  AppLaunchedEvent,
-  AppUIModeChangedEvent,
-  ZoomFactorChangedEvent,
-} from "./mixpanel/MixpanelEvents";
+import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
 import { analyticsLog } from "./utils/analyticsLog";
@@ -84,12 +80,6 @@ function init(context: IExtensionContext): boolean {
     // and would otherwise report itself as a switch the user never made.
     context.api.events.on("analytics-track-ui-mode-changed", (isLegacy: boolean) => {
       AnalyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacy }));
-    });
-
-    // Emitted by Settings > Interface > Accessibility and by the keyboard/wheel
-    // shortcuts, whenever the user actually changes the zoom level.
-    context.api.events.on("analytics-track-zoom-changed", (percent: number) => {
-      AnalyticsMixpanel.trackEvent(new ZoomFactorChangedEvent({ percent }));
     });
 
     // Keep the active-game super properties in sync so every event carries game scope.

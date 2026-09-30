@@ -9,7 +9,7 @@ import { setZoomFactor } from "@/actions";
 
 import { setAlwaysCompactHeaders, setReduceMotion } from "./actions/interface";
 
-const { baseState, dispatch, emitEvent, state } = vi.hoisted(() => {
+const { baseState, dispatch, state } = vi.hoisted(() => {
   const baseState = () => ({
     session: { extensions: { available: [] } },
     settings: {
@@ -29,17 +29,12 @@ const { baseState, dispatch, emitEvent, state } = vi.hoisted(() => {
     },
   });
 
-  return {
-    baseState,
-    dispatch: vi.fn(),
-    emitEvent: vi.fn(),
-    state: { current: baseState() },
-  };
+  return { baseState, dispatch: vi.fn(), state: { current: baseState() } };
 });
 
 vi.mock("@/contexts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useMainContext: () => ({ api: { emitAndAwait: vi.fn(), events: { emit: emitEvent } } }),
+  useMainContext: () => ({ api: { emitAndAwait: vi.fn() } }),
 }));
 
 // The global stub (test-setup.ts) returns keys verbatim, so "{{percent}}%" never becomes
@@ -96,7 +91,6 @@ const toggleHandleFor = (label: string) =>
 beforeEach(() => {
   state.current = baseState();
   dispatch.mockClear();
-  emitEvent.mockClear();
 });
 
 describe("SettingsInterface Accessibility section", () => {
@@ -136,14 +130,6 @@ describe("SettingsInterface Accessibility section", () => {
     await userEvent.click(screen.getByRole("radio", { name: "70%" }));
 
     expect(dispatch).toHaveBeenCalledWith(setZoomFactor(0.7));
-  });
-
-  it("tracks the change when a different radio is selected", async () => {
-    renderForm();
-
-    await userEvent.click(screen.getByRole("radio", { name: "70%" }));
-
-    expect(emitEvent).toHaveBeenCalledWith("analytics-track-zoom-changed", 70);
   });
 
   it("reflects the stored Reduce motion value and dispatches on toggle", async () => {

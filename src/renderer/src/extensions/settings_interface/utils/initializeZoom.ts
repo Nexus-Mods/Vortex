@@ -2,12 +2,9 @@ import { webFrame } from "electron";
 import type { Store } from "redux";
 
 import { setZoomFactor } from "@/actions/window";
-import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 
 import { normalizeZoom, zoomFromState, ZOOM_SHORTCUT_EVENT, ZOOM_STEP } from "./zoom";
-
-type ZoomEvents = IExtensionApi["events"];
 
 /** Wheel travel per zoom step: one notch of an ordinary mouse wheel. */
 const WHEEL_STEP_DELTA = 100;
@@ -23,16 +20,9 @@ const WHEEL_GESTURE_GAP_MS = 300;
 /** Chromium stores zoom as a level, so a factor can come back with rounding error. */
 const differs = (a: number, b: number) => Math.abs(a - b) > 0.001;
 
-export function requestZoom(
-  store: Store<IState>,
-  factor: number,
-  target: Window = window,
-  events?: ZoomEvents,
-): void {
-  const normalized = normalizeZoom(factor);
-  store.dispatch(setZoomFactor(normalized));
+export function requestZoom(store: Store<IState>, factor: number, target: Window = window): void {
+  store.dispatch(setZoomFactor(normalizeZoom(factor)));
   target.dispatchEvent(new Event(ZOOM_SHORTCUT_EVENT));
-  events?.emit("analytics-track-zoom-changed", Math.round(normalized * 100));
 }
 
 /**
@@ -40,11 +30,7 @@ export function requestZoom(
  * coordinates and positioned elements stay in one coordinate space. Nothing in
  * the chrome is exempted — the title bar and spine zoom with everything else.
  */
-export function initializeZoom(
-  store: Store<IState>,
-  target: Window = window,
-  events?: ZoomEvents,
-): () => void {
+export function initializeZoom(store: Store<IState>, target: Window = window): () => void {
   const isModern = () => store.getState().settings.window.useModernLayout;
   // Legacy trusts whatever factor is already stored rather than re-deriving it on
   // read; a write from the shared hotkey/wheel handlers below normalises either way.
@@ -71,8 +57,8 @@ export function initializeZoom(
 
   apply();
   const unsubscribe = store.subscribe(apply);
-  const onWheel = makeWheelHandler(store, target, events);
-  const onKeyDown = makeKeyHandler(store, target, events);
+  const onWheel = makeWheelHandler(store, target);
+  const onKeyDown = makeKeyHandler(store, target);
   target.addEventListener("resize", onResize);
   target.addEventListener("wheel", onWheel, { passive: false, capture: true });
   target.addEventListener("keydown", onKeyDown);
@@ -90,7 +76,7 @@ export function initializeZoom(
  * gesture, and stepping on each would jump straight to a limit. Works in both
  * layouts.
  */
-function makeWheelHandler(store: Store<IState>, target: Window, events?: ZoomEvents) {
+function makeWheelHandler(store: Store<IState>, target: Window) {
   let travel = 0;
   let lastEventAt = -Infinity;
   return (event: WheelEvent) => {
@@ -109,17 +95,12 @@ function makeWheelHandler(store: Store<IState>, target: Window, events?: ZoomEve
     travel += delta;
     if (Math.abs(travel) < WHEEL_STEP_DELTA - WHEEL_STEP_TOLERANCE) return;
     travel = 0;
-    requestZoom(
-      store,
-      zoomFromState(store.getState()) - Math.sign(delta) * ZOOM_STEP,
-      target,
-      events,
-    );
+    requestZoom(store, zoomFromState(store.getState()) - Math.sign(delta) * ZOOM_STEP, target);
   };
 }
 
 /** Works in both layouts. */
-function makeKeyHandler(store: Store<IState>, target: Window, events?: ZoomEvents) {
+function makeKeyHandler(store: Store<IState>, target: Window) {
   return (event: KeyboardEvent) => {
     if (!(event.ctrlKey || (process.platform === "darwin" && event.metaKey)) || event.altKey)
       return;
@@ -130,7 +111,6 @@ function makeKeyHandler(store: Store<IState>, target: Window, events?: ZoomEvent
       store,
       direction === 0 ? 1 : zoomFromState(store.getState()) + direction * ZOOM_STEP,
       target,
-      events,
     );
   };
 }

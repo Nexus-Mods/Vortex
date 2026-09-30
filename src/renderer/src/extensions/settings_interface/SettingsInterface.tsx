@@ -99,11 +99,7 @@ export function SettingsInterfaceForm(props: IFormProps) {
   // user makes a choice of their own.
   const reduceMotion = useReduceMotion();
   const zoomFactor = useSelector(zoomFromState);
-  const adjustZoom = (value: number) => {
-    const factor = normalizeZoom(value);
-    dispatch(setZoomFactor(factor));
-    api.events.emit("analytics-track-zoom-changed", Math.round(factor * 100));
-  };
+  const adjustZoom = (value: number) => dispatch(setZoomFactor(normalizeZoom(value)));
   const zoomGroupId = useId();
 
   // Captured once on mount, like the class component's constructor did, so a change made
