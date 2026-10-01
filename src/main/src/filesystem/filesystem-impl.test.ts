@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { VortexError } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { NativePathResolver } from "@vortex/shared/filesystem";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, assert, beforeEach, describe, expect, it } from "vitest";
 
 import { NodeFileSystemBackendImpl } from "./backend";
 import { NodeFileSystemImpl } from "./filesystem-impl";
@@ -41,8 +41,8 @@ describe("NodeFileSystemImpl", () => {
     const target = rootQP.join("s.txt");
     await fs.writeFile(target, new Uint8Array([9]));
     const present = await fs.stat(target);
-    expect(present.exists).toBe(true);
-    if (present.exists && present.isFile) expect(present.size).toBe(1);
+    assert(present.exists && present.isFile);
+    expect(present.size).toBe(1);
 
     const missing = await fs.stat(rootQP.join("missing"));
     expect(missing.exists).toBe(false);
@@ -53,9 +53,9 @@ describe("NodeFileSystemImpl", () => {
   });
 
   it("enumerates a directory yielding QualifiedPath entries", async () => {
-    for (const name of ["a.txt", "b.txt", "c.txt"]) {
-      await nodeFs.writeFile(join(root, name), name);
-    }
+    const files = ["a.txt", "b.txt", "c.txt"];
+    await Promise.all(files.map((name) => nodeFs.writeFile(join(root, name), name)));
+
     const iter = await fs.enumerateDirectory(rootQP, { types: "files" });
     const seen: string[] = [];
     while (true) {
@@ -66,7 +66,8 @@ describe("NodeFileSystemImpl", () => {
       expect(qp.scheme).toBe("native");
       seen.push(qp.basename);
     }
-    expect(seen.sort()).toEqual(["a.txt", "b.txt", "c.txt"]);
+
+    expect(seen.toSorted()).toEqual(files);
   });
 
   it("yields [QualifiedPath, Status] tuples when includeStatus is set", async () => {
@@ -75,11 +76,16 @@ describe("NodeFileSystemImpl", () => {
       includeStatus: true,
       types: "files",
     });
+
     const step = await iter.next();
+    assert(!step.done);
+
     expect(step.done).toBe(false);
-    const [qp, status] = step.value as [QualifiedPath, { size: number }];
+    const [qp, status] = step.value;
+
     expect(qp).toBeInstanceOf(QualifiedPath);
     expect(qp.basename).toBe("x.txt");
+    assert(status.isFile);
     expect(status.size).toBe(2);
   });
 
