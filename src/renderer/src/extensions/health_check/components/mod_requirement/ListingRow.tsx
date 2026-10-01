@@ -104,7 +104,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             ? t("detail::item::author_note", { note: mod.notes })
             : t("detail::item::may_require_file")
         }
-        title={t("listing::item::title", { modName: mod.requiredBy.modName })}
+        title={t("shared::mod_may_be_required_for", { modName: mod.requiredBy.modName })}
         onOpen={onOpen}
       />
 

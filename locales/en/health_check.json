@@ -7,6 +7,7 @@
     "or": "Or"
   },
   "shared": {
+    "mod_may_be_required_for": "Missing mod may be required for: {{modName}}",
     "requires_files": "Requires {{ count }} additional mod file to be installed to work correctly:",
     "requires_files_plural": "Requires {{ count }} additional mod files to be installed to work correctly:",
     "requires_pick": "Requires {{ count }} additional mod file to be picked to work correctly:",
@@ -35,7 +36,6 @@
       "expand": "Expand section"
     },
     "item": {
-      "title": "Additional mod file may be required for: {{modName}}",
       "description": "Missing mod: {{dependencyModName}}",
       "more_count": "+{{ count }} more",
       "missing_for": "Missing required mod for: {{modName}}",
@@ -79,7 +79,6 @@
       "error": "Was this error helpful?"
     },
     "item": {
-      "title": "Possible missing required mod for: {{modName}}",
       "may_require_file": "May require this additional mod file to be installed to work correctly:",
       "author_note": "Author note: {{note}}",
       "mod_page_source_note": "This requirement was identified from the mod page rather than the file-level requirement system, so it may not be required for your specific configuration. <modLink>View the mod page to get full details</modLink>.",

@@ -154,7 +154,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
             <Icon className={severityStyle.textClassName} path={severityStyle.iconPath} />
 
             <Typography as="div" className="font-semibold">
-              {t("detail::item::title", { modName: mod.requiredBy.modName })}
+              {t("shared::mod_may_be_required_for", { modName: mod.requiredBy.modName })}
             </Typography>
           </div>
 
