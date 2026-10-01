@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import type { IState } from "@/types/IState";
 
-import type { SpineSelection } from "../SpineContext";
+import type { SpineSelection } from "../spine_selection/spineSelection.util";
 
 // The component derives everything from the store via a selector, so useSelector is
 // run against a hand-built state rather than a real store — that keeps the progress

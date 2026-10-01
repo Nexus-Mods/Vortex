@@ -7,18 +7,18 @@ import React, {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
+import { useMainContext, usePagesContext } from "@/contexts";
+import { setNextProfile } from "@/extensions/profile_management/actions/settings";
+import type { IMainPage } from "@/types/IMainPage";
+import type { IState } from "@/types/IState";
 
 import {
   setDownloadGameFilter as setDownloadGameFilterAction,
   setOpenMainPage,
 } from "../../../actions/session";
-import { useMainContext, usePagesContext } from "../../../contexts";
-import { setNextProfile } from "../../../extensions/profile_management/actions/settings";
-import type { IMainPage } from "../../../types/IMainPage";
-import type { IState } from "../../../types/IState";
 import {
   activeGameId as activeGameIdSelector,
   activeProfileId as activeProfileIdSelector,
@@ -26,6 +26,7 @@ import {
   mainPage as mainPageSelector,
   profileById as profileByIdSelector,
 } from "../../../util/selectors";
+import { deriveSpineSelection, type SpineSelection } from "./spine_selection/spineSelection.util";
 
 // gamebryo-plugin-management augments the settings slice with a `plugins`
 // entry. We don't import IStateWithGamebryo from the extension to avoid a
@@ -37,11 +38,6 @@ interface IStateWithPlugins extends IState {
     };
   };
 }
-
-export type SpineSelection =
-  | { type: "home" }
-  | { type: "game"; gameId: string }
-  | { type: "downloads" };
 
 interface ISpineContext {
   selection: SpineSelection;
@@ -83,15 +79,6 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
     (state: IStateWithPlugins) => state.settings.plugins?.pluginManagementEnabled,
   );
 
-  // Tracks the gameId that was active when the user navigated to home.
-  // When non-null and matches activeGameId, we show home pages.
-  // When activeGameId changes externally (e.g., via extension or deep-link),
-  // the mismatch automatically switches back to game view - no effect needed.
-  const [homeForGameId, setHomeForGameId] = useState<string | null>(null);
-
-  // When true, we're in downloads mode (overrides home/game selection)
-  const [isDownloadsMode, setIsDownloadsMode] = useState(false);
-
   // Game filter for downloads mode, stored in session state
   const downloadGameFilter = useSelector(
     (state: IState) => state.session.base?.downloadGameFilter ?? null,
@@ -100,16 +87,6 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
     (gameId: string | null) => dispatch(setDownloadGameFilterAction(gameId)),
     [dispatch],
   );
-
-  const selection: SpineSelection = useMemo(() => {
-    if (isDownloadsMode) {
-      return { type: "downloads" };
-    }
-    if (activeGameId !== undefined && homeForGameId !== activeGameId) {
-      return { type: "game", gameId: activeGameId };
-    }
-    return { type: "home" };
-  }, [isDownloadsMode, homeForGameId, activeGameId]);
 
   const isPageVisible = useCallback((page: IMainPage) => {
     try {
@@ -144,6 +121,23 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
   );
 
   const mainPage = useSelector(mainPageSelector);
+  const pageGroups = useMemo(
+    () => new Map(mainPages.map((page) => [page.id, page.group])),
+    [mainPages],
+  );
+
+  // Kept across renders so the util can hand back the same selection when nothing changed.
+  const lastSelectionRef = useRef<SpineSelection | undefined>(undefined);
+  const selection: SpineSelection = useMemo(() => {
+    lastSelectionRef.current = deriveSpineSelection({
+      mainPage,
+      pageGroups,
+      activeGameId,
+      previous: lastSelectionRef.current,
+    });
+
+    return lastSelectionRef.current;
+  }, [mainPage, pageGroups, activeGameId]);
 
   const defaultHomePage = homePages[0]?.id;
   const defaultGamePage = gamePages[0]?.id;
@@ -168,10 +162,16 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
   // a valid page for the current context (avoid saving e.g. "Games"
   // global page as a game's last page)
   useEffect(() => {
-    if (!mainPage) return;
+    if (!mainPage) {
+      return;
+    }
+
     const isValidForContext = visiblePages.some((p) => p.id === mainPage);
-    if (!isValidForContext) return;
-    const key = selection.type === "game" ? selection.gameId : "home";
+    if (!isValidForContext) {
+      return;
+    }
+
+    const key = selection.type === "game" ? selection.gameId : selection.type;
     lastPageRef.current[key] = mainPage;
   }, [mainPage, selection, visiblePages]);
 
@@ -186,6 +186,7 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
     if (currentPageValid) {
       return;
     }
+
     if (selection.type === "downloads") {
       dispatch(setOpenMainPage("Downloads", false));
     } else if (selection.type === "game" && defaultGamePage !== undefined) {
@@ -195,21 +196,39 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
     }
   }, [selection, visiblePages, defaultGamePage, defaultHomePage, dispatch]);
 
+  // A game picked in the spine that isn't active yet, and the page it last showed,
+  // taken before the switch records the current page as its own. That page opens
+  // once the game is active, after the profile switch or the profile picker.
+  const pendingGameRef = useRef<{ gameId: string; page?: string } | undefined>(undefined);
+
+  useEffect(() => {
+    const pending = pendingGameRef.current;
+    if (activeGameId === undefined || pending?.gameId !== activeGameId) {
+      return;
+    }
+
+    const targetPage = pending.page || defaultGamePage;
+    if (targetPage === undefined) {
+      return;
+    }
+
+    pendingGameRef.current = undefined;
+    dispatch(setOpenMainPage(targetPage, false));
+  }, [activeGameId, defaultGamePage, dispatch]);
+
   const selectHome = useCallback(() => {
     if (defaultHomePage === undefined) return;
-    const targetPage = lastPageRef.current["home"] || defaultHomePage;
-    setIsDownloadsMode(false);
-    setHomeForGameId(activeGameId ?? null);
-    dispatch(setOpenMainPage(targetPage, false));
-  }, [activeGameId, defaultHomePage, dispatch]);
+    pendingGameRef.current = undefined;
+    dispatch(setOpenMainPage(lastPageRef.current["home"] || defaultHomePage, false));
+  }, [defaultHomePage, dispatch]);
 
   const selectDownloads = useCallback(
     (gameId?: string) => {
-      setIsDownloadsMode(true);
+      pendingGameRef.current = undefined;
       setDownloadGameFilter(gameId ?? null);
       dispatch(setOpenMainPage("Downloads", false));
     },
-    [dispatch],
+    [dispatch, setDownloadGameFilter],
   );
 
   const selectGame = useCallback(
@@ -218,42 +237,38 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       const profileExists =
         profileId !== undefined && profileByIdSelector(api.getState(), profileId) !== undefined;
 
-      setIsDownloadsMode(false);
-      setHomeForGameId(null);
-
       if (!profileExists) {
         // No usable last-active profile for this game — ask the
         // profile_management extension to show the profile picker dialog.
-        // Once the user picks a profile the resulting profile-did-change will
-        // update activeGameId, which re-derives `selection` and the existing
-        // useEffect navigates to the correct game page automatically.
+        pendingGameRef.current = { gameId, page: lastPageRef.current[gameId] };
         api?.events.emit("activate-game", gameId);
         return;
       }
 
-      if (defaultGamePage === undefined) return;
-      const targetPage = lastPageRef.current[gameId] || defaultGamePage;
-
       if (profileId !== activeProfileId) {
-        // Profile needs to change - wait for activation before navigating
         dispatch(setNextProfile(profileId));
-        api?.events.once("profile-did-change", () => {
-          dispatch(setOpenMainPage(targetPage, false));
-        });
-      } else {
-        // Profile is already active
+      }
+
+      if (gameId !== activeGameId) {
+        pendingGameRef.current = { gameId, page: lastPageRef.current[gameId] };
+        return;
+      }
+
+      pendingGameRef.current = undefined;
+      const targetPage = lastPageRef.current[gameId] || defaultGamePage;
+      if (targetPage !== undefined) {
         dispatch(setOpenMainPage(targetPage, false));
       }
     },
-    [lastActiveProfile, activeProfileId, dispatch, api, defaultGamePage],
+    [lastActiveProfile, activeProfileId, activeGameId, dispatch, api, defaultGamePage],
   );
 
   const selectGlobalPage = useCallback(
     (pageId: string) => {
-      setHomeForGameId(activeGameId ?? null);
+      pendingGameRef.current = undefined;
       dispatch(setOpenMainPage(pageId, false));
     },
-    [activeGameId, dispatch],
+    [dispatch],
   );
 
   const value = useMemo(
@@ -279,31 +294,15 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
     ],
   );
 
-  // When show-main-page targets a per-game page, switch the Spine to game
-  // context so the page becomes visible
-  useEffect(() => {
-    const handler = (pageId: string) => {
-      if (gamePages.some((p) => p.id === pageId) && activeGameId !== undefined) {
-        setHomeForGameId(null);
-        setIsDownloadsMode(false);
-      }
-    };
-    api.events.on("show-main-page", handler);
-    return () => {
-      api.events.removeListener("show-main-page", handler);
-    };
-  }, [api, gamePages, activeGameId]);
-
   return <SpineContext.Provider value={value}>{children}</SpineContext.Provider>;
 };
 
 export const useSpineContext = () => {
   const context = useContext(SpineContext);
+
   if (context === undefined) {
     throw new Error("useSpineContext must be used within a SpineProvider");
   }
+
   return context;
 };
-
-/** The spine, or undefined outside one, as in the classic layout. */
-export const useOptionalSpineContext = () => useContext(SpineContext);
