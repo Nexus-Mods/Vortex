@@ -152,16 +152,18 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
           </TabBar>
 
           <TabPanel id="all">
-            <Typography
-              appearance="subdued"
-              brand="neutral-translucent"
-              className="mb-2 h-5"
-              typographyType="body-sm"
-            >
-              {t("listing::all_subtitle", {
-                game: game?.name ?? "Unknown Game",
-              })}
-            </Typography>
+            <div className="my-3 ml-1 flex items-center justify-between">
+              <Typography
+                appearance="subdued"
+                brand="neutral-translucent"
+                className="mb-2 h-5"
+                typographyType="body-md"
+              >
+                {t("listing::all_subtitle", {
+                  game: game?.name ?? "Unknown Game",
+                })}
+              </Typography>
+            </div>
 
             <Listing
               appendLoader={true}
@@ -196,12 +198,12 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
               .filter((k) => !disabledSources?.includes(k))
               .map((k) => (
                 <TabPanel id={k} key={`source-tab-${k}`}>
-                  <div className="my-1 flex items-center justify-between">
+                  <div className="my-3 ml-1 flex items-center justify-between">
                     <Typography
                       appearance="subdued"
                       brand="neutral-translucent"
                       className="mb-2"
-                      typographyType="body-sm"
+                      typographyType="body-md"
                     >
                       {resolveTString(t, allSources[k]?.description) ??
                         t("shared::media_from", { source: resolveTString(t, allSources[k]?.name) })}

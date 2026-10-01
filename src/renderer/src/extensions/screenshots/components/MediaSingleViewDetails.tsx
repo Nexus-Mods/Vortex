@@ -1,17 +1,24 @@
-import { mdiCancel, mdiCloudUpload, mdiFolderOpenOutline, mdiTagPlus, mdiTagRemove } from "@mdi/js";
+import {
+  mdiCancel,
+  mdiFolderOpenOutline,
+  mdiImageOutline,
+  mdiTag,
+  mdiTagOutline,
+  mdiTagPlus,
+  mdiUpload,
+} from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
-import { Toolbar } from "@/ui/components/toolbar/Toolbar";
-import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
-import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { Icon } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import relativeTime from "@/util/relativeTime";
 import { bytesToString } from "@/util/util";
 
 import type { GameMediaItem, GameMediaModTag, ResolvedGameMediaSource } from "../util/mediaTypes";
 import { resolveTString } from "../util/resolveTString";
+import ModTagPill from "./ModTagPill";
 
 interface IMediaViewSingleDetailsProps {
   entry: GameMediaItem;
@@ -34,153 +41,130 @@ export default function MediaViewSingleDetails({
 }: IMediaViewSingleDetailsProps) {
   const { t } = useTranslation("media_page");
 
-  const toolbarActions: IToolbarAction[] = [
-    {
-      label: t("single::actions::upload"),
-      iconPath: mdiCloudUpload,
-      showLabel: true,
-      disabled: false,
-      brand: "info",
-      onClick: startUpload,
-    },
-    {
-      label: t("single::actions::open"),
-      iconPath: mdiFolderOpenOutline,
-      showLabel: true,
-      onClick: () => window.api.shell.showItemInFolder(entry.path),
-    },
-  ];
-
   return (
-    <div className="flex max-w-fit flex-col px-1 select-text">
-      <Typography
-        as="h6"
-        className="mb-2 border-b border-translucent-subdued"
-        typographyType="heading-xs"
-      >
-        {t("single::details")}
-      </Typography>
+    <div className="flex min-w-66 flex-col gap-5 select-text">
+      {/* Tagged Mods Section */}
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col">
+          <Typography className="flex items-center gap-1.5 font-semibold" typographyType="body-md">
+            <Icon path={mdiTagOutline} size="sm" />
 
-      <div className="grid grid-cols-[20%_70%] gap-4">
-        <Typography appearance="strong" typographyType="body-sm">
-          Name:
-        </Typography>
+            {t("single::mods_used")}
+          </Typography>
 
-        <Typography appearance="subdued" brand="neutral" typographyType="body-sm">
-          {entry.name}
-        </Typography>
+          <Typography appearance="subdued" className="italic" typographyType="body-sm">
+            {t("single::mods_used_desc")}
+          </Typography>
+        </div>
 
-        <Typography appearance="strong" typographyType="body-sm">
-          Type:
-        </Typography>
+        <Button
+          appearance="moderate"
+          brand="neutral"
+          leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
+          title={
+            entry.type === "video" ? t("single::video_tag_disabled") : t("single::actions::add_mod")
+          }
+          onClick={toggleAddingTag}
+        >
+          {isAddingTag ? t("single::actions::cancel") : t("single::actions::add_mod")}
+        </Button>
 
-        <Typography appearance="subdued" brand="neutral" typographyType="body-sm">
-          {entry.type}
-        </Typography>
-
-        <Typography appearance="strong" typographyType="body-sm">
-          Source:
-        </Typography>
-
-        <Typography appearance="subdued" brand="neutral" typographyType="body-sm">
-          {resolveTString(t, source?.name) ?? entry.sourceId}
-        </Typography>
-
-        {!!entry.size && (
-          <>
-            <Typography appearance="strong" typographyType="body-sm">
-              Size:
-            </Typography>
-
-            <Typography appearance="subdued" brand="neutral" typographyType="body-sm">
-              {bytesToString(entry.size)}
-            </Typography>
-          </>
-        )}
-
-        {!!entry.createdAt && (
-          <>
-            <Typography appearance="strong" typographyType="body-sm">
-              Created:
-            </Typography>
-
+        <div>
+          {(!tags || tags?.length === 0) && (
             <Typography
               appearance="subdued"
-              brand="neutral"
-              title={entry.createdAt.toString()}
+              className="flex items-center gap-1.5 italic"
               typographyType="body-sm"
             >
-              {relativeTime(entry.createdAt, t)}
+              <Icon path={mdiTag} size="sm" />
+
+              {t("single::no_tags")}
             </Typography>
-          </>
-        )}
+          )}
 
-        <Typography appearance="strong" typographyType="body-sm">
-          Path:
-        </Typography>
-
-        <Typography
-          appearance="subdued"
-          brand="neutral"
-          className="wrap-anywhere select-text"
-          typographyType="body-sm"
-        >
-          {entry.path}
-        </Typography>
+          {tags?.length > 0 &&
+            tags?.map((tag) => (
+              <ModTagPill key={tag.id} tag={tag} onRemove={() => removeTag(tag.id)} />
+            ))}
+        </div>
       </div>
 
-      <div className="grow overflow-auto">
-        <Typography
-          as="h6"
-          className="my-2 border-b border-translucent-subdued"
-          typographyType="heading-xs"
-        >
-          {t("single::featured_mods")}
-        </Typography>
+      <div className="border-b border-b-stroke-subdued/70" />
 
-        <Typography className="max-h-48 overflow-auto" typographyType="body-sm">
-          {(!tags || tags?.length === 0) && <i>{t("single::no_tags")}</i>}
+      {/* Detials Section */}
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2">
+          <Typography appearance="subdued" typographyType="body-sm">
+            {t("single::detail::name")}
+          </Typography>
 
-          <ul className="mb-2 list-inside list-disc">
-            {tags?.map((tag) => (
-              <li className="ml-2 flex items-center justify-between gap-2" key={tag.id}>
-                <a className="line-clamp-2" href={tag.url} title={tag.name}>
-                  {tag.name}
-                </a>
+          <Typography appearance="subdued" typographyType="body-sm">
+            {entry.name}
+          </Typography>
+        </div>
 
-                <Button
-                  appearance="subdued"
-                  brand="neutral"
-                  leftIconPath={mdiTagRemove}
-                  size="sm"
-                  title={t("common:::remove")}
-                  onClick={() => removeTag(tag.id)}
-                />
-              </li>
-            ))}
-          </ul>
+        <div className="flex justify-between gap-2">
+          <Typography appearance="subdued" typographyType="body-sm">
+            {t("single::detail::captured")}
+          </Typography>
+
+          <Typography
+            appearance="subdued"
+            title={entry.createdAt?.toString()}
+            typographyType="body-sm"
+          >
+            {entry.createdAt ? relativeTime(entry.createdAt, t) : "N/A"}
+          </Typography>
+        </div>
+
+        <div className="flex justify-between gap-2">
+          <Typography appearance="subdued" typographyType="body-sm">
+            {t("single::detail::size")}
+          </Typography>
+
+          <Typography appearance="subdued" typographyType="body-sm">
+            {entry.size ? bytesToString(entry.size) : "N/A"}
+          </Typography>
+        </div>
+
+        <div className="flex justify-between gap-2">
+          <Typography appearance="subdued" typographyType="body-sm">
+            {t("single::detail::source")}
+          </Typography>
+
+          <Typography appearance="subdued" typographyType="body-sm">
+            {resolveTString(t, source?.name) ?? entry.sourceId}
+          </Typography>
+        </div>
+
+        <div className="flex gap-1">
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            className="grow"
+            leftIconPath={mdiImageOutline}
+            onClick={() => window.api.shell.openFile(entry.path)}
+          >
+            {t("single::actions::open")}
+          </Button>
 
           <Button
             appearance="subdued"
             brand="neutral"
-            disabled={entry.type === "video"}
-            leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
-            size="sm"
-            title={
-              entry.type === "video"
-                ? t("single::video_tag_disabled")
-                : t("single::actions::add_mod")
-            }
-            onClick={toggleAddingTag}
+            className="grow"
+            leftIconPath={mdiFolderOpenOutline}
+            onClick={() => window.api.shell.showItemInFolder(entry.path)}
           >
-            {isAddingTag ? t("single::actions::cancel") : t("single::actions::add_mod")}
+            {t("single::actions::view_in_folder")}
           </Button>
-        </Typography>
+        </div>
       </div>
 
-      <Toolbar>
-        <ToolbarGroup actions={toolbarActions} />
-      </Toolbar>
+      <div className="border-b border-b-stroke-subdued/70" />
+
+      <Button leftIconPath={mdiUpload} onClick={startUpload}>
+        {t("single::upload::title")}
+      </Button>
     </div>
   );
 }

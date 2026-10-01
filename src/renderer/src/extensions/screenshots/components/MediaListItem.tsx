@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
 import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameTileImageURL";
 import { Icon } from "@/ui/components/icon/Icon";
+import { Typography } from "@/ui/components/typography/Typography";
 import relativeTime from "@/util/relativeTime";
 
 import type { GameMediaItem } from "../util/mediaTypes";
@@ -36,35 +37,35 @@ export default function MediaListItem({ item, onClick, game }: IMediaListItemPro
 
   return (
     <button
-      className="border-inside group relative flex size-full items-center justify-center rounded-sm border-2 border-transparent hover:border-white/70"
+      className="border-inside group flex size-full flex-col items-start gap-2"
+      title={item.name}
       type="button"
       onClick={onClick}
     >
-      <img
-        alt={item.name}
-        className="aspect-video object-cover object-right"
-        decoding="async"
-        key={item.id}
-        loading="lazy"
-        src={src}
-        onError={onError}
-      />
+      <div className="relative w-full overflow-hidden rounded-sm after:pointer-events-none after:absolute after:inset-0 after:bg-white after:opacity-0 after:transition-opacity group-hover:after:opacity-20">
+        <img
+          alt={item.name}
+          className="aspect-video w-full object-cover object-right"
+          decoding="async"
+          key={item.id}
+          loading="lazy"
+          src={src}
+          onError={onError}
+        />
 
-      {/* overlay */}
-      <div className="absolute top-0 left-0 size-full opacity-0 group-hover:opacity-100">
-        <div className="flex h-full flex-col items-start justify-between gap-2">
-          {item.createdAt && (
-            <span className="line-clamp-1 shrink rounded-sm bg-surface-high/70 p-0.5">
-              {relativeTime(item.createdAt, t)}
-            </span>
-          )}
+        {item.type === "video" && (
+          <Icon
+            className="pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-1/2 opacity-60 drop-shadow-md"
+            path={mdiPlayCircleOutline}
+            size="2xl"
+          />
+        )}
+      </div>
 
-          {item.type === "video" && (
-            <Icon className="m-auto" path={mdiPlayCircleOutline} size="2xl" />
-          )}
-
-          <span className="line-clamp-1 rounded-sm bg-surface-high p-0.5">{item.name}</span>
-        </div>
+      <div className="flex flex-col items-start gap-0.5">
+        <Typography appearance="subdued" typographyType="body-md">
+          {relativeTime(item.createdAt, t)}
+        </Typography>
       </div>
     </button>
   );

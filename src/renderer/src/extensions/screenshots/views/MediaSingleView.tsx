@@ -20,6 +20,7 @@ import MediaVideoSteamFailed from "../components/MediaVideoSteamFailed";
 import ModTagIndicator from "../components/ModTagIndicator";
 import useGameMediaModTag from "../hooks/GameMediaModTagHook";
 import type { GameMediaItem, ResolvedGameMediaSource } from "../util/mediaTypes";
+import type { IModResult } from "../util/searchMods";
 
 interface IMediaSingleViewProps {
   active?: boolean;
@@ -62,6 +63,7 @@ export default function MediaSingleView({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (isAddingTag) return;
       if (e.key === "ArrowLeft") prev();
       else if (e.key === "ArrowRight") next();
     };
@@ -70,7 +72,7 @@ export default function MediaSingleView({
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [next, prev]);
+  }, [next, prev, isAddingTag]);
 
   // This would be a potential solution to being unable to play videos from Steam.
   // Steam videos are broken into m4s files with a mpd manifest. A library player is needed to stream videos this way.
@@ -102,6 +104,23 @@ export default function MediaSingleView({
   };
 
   const mediaSrc = useMemo(() => pathToFileURL(entry.path).toString(), [entry.path]);
+
+  const onSelectTag = (r: IModResult, comment?: string) => {
+    setTags([
+      ...(tags ?? []),
+      {
+        id: r.uid,
+        name: r.name,
+        x: pendingCoords.x,
+        y: pendingCoords.y,
+        url: `https://nexusmods.com/${domainName}/mods/${r.modId}`,
+        createdAt: new Date().toISOString(),
+        thumbnail: r.adult ? r.thumbnailBlurredUrl : r.thumbnailUrl,
+        comment: comment?.trim() || undefined,
+      },
+    ]);
+    setIsAddingTag(false);
+  };
 
   return (
     <Page active={active} id="media-details-page" scrollable={false}>
@@ -136,7 +155,7 @@ export default function MediaSingleView({
         </Button>
       </PageHeader>
 
-      <div className="mx-auto grid size-full max-w-8xl grid-cols-[80%_20%] gap-2 space-y-6 p-4 px-2">
+      <div className="mx-auto flex grow gap-6 p-6">
         <div>
           <div
             className={`relative w-full ${isAddingTag ? "cursor-crosshair" : ""}`}
@@ -187,22 +206,7 @@ export default function MediaSingleView({
                   setIsAddingTag(false);
                   setPendingCoords(null);
                 }}
-                onSelect={(r, comment) => {
-                  setTags([
-                    ...(tags ?? []),
-                    {
-                      id: r.uid,
-                      name: r.name,
-                      x: pendingCoords.x,
-                      y: pendingCoords.y,
-                      url: `https://nexusmods.com/${domainName}/mods/${r.modId}`,
-                      createdAt: new Date().toISOString(),
-                      thumbnail: r.adult ? r.thumbnailBlurredUrl : r.thumbnailUrl,
-                      comment: comment?.trim() || undefined,
-                    },
-                  ]);
-                  setIsAddingTag(false);
-                }}
+                onSelect={onSelectTag}
               />
             )}
 
