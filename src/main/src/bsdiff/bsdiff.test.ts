@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { applyPatchFile, createPatchFile } from "./patch";
 import { applyPatch, createPatch, loadWasm } from "./wasm";
@@ -154,58 +154,6 @@ describe("bsdiff wasm core - native cross-compatibility", () => {
       expect(md5(result)).toBe(baseline[tc.name]!.newMd5);
     });
   }
-});
-
-// --- Performance comparison ---
-
-describe("bsdiff wasm core - performance", () => {
-  const wasmResults: Record<string, { diffMs: number; patchMs: number; patchSize: number }> = {};
-
-  for (const tc of TEST_CASES) {
-    it(`benchmarks ${tc.name}`, () => {
-      const { oldBuf, newBuf } = makeTestPair(tc);
-
-      const diffStart = performance.now();
-      const patch = createPatch(wasm, oldBuf, newBuf);
-      const diffMs = performance.now() - diffStart;
-
-      const patchStart = performance.now();
-      applyPatch(wasm, oldBuf, patch);
-      const patchMs = performance.now() - patchStart;
-
-      wasmResults[tc.name] = {
-        diffMs: Math.round(diffMs * 100) / 100,
-        patchMs: Math.round(patchMs * 100) / 100,
-        patchSize: patch.length,
-      };
-    });
-  }
-
-  afterAll(() => {
-    const baselinePath = path.join(TEST_DATA_DIR, "native-baseline.json");
-    const hasBaseline = fs.existsSync(baselinePath);
-    const baseline: NativeBaseline | null = hasBaseline
-      ? (JSON.parse(fs.readFileSync(baselinePath, "utf8")) as NativeBaseline)
-      : null;
-
-    console.log("\n=== bsdiff Performance: Native vs WASM ===");
-    console.log(
-      "| Test Case    | Native Diff | WASM Diff | Native Patch | WASM Patch | Patch Size |",
-    );
-    console.log(
-      "|--------------|-------------|-----------|--------------|------------|------------|",
-    );
-    for (const tc of TEST_CASES) {
-      const w = wasmResults[tc.name];
-      if (!w) continue;
-      const n = baseline?.[tc.name];
-      const nDiff = n ? `${n.diffMs}ms` : "n/a";
-      const nPatch = n ? `${n.patchMs}ms` : "n/a";
-      console.log(
-        `| ${tc.name.padEnd(12)} | ${nDiff.padStart(11)} | ${`${w.diffMs}ms`.padStart(9)} | ${nPatch.padStart(12)} | ${`${w.patchMs}ms`.padStart(10)} | ${`${w.patchSize}`.padStart(10)} |`,
-      );
-    }
-  });
 });
 
 describe("bsdiff wasm core - error handling", () => {
