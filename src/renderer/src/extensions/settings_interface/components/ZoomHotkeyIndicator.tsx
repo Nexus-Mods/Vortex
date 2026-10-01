@@ -64,7 +64,7 @@ export function ZoomHotkeyIndicator() {
   return (
     <Transition
       as="div"
-      className="nxm-popover-panel fixed top-12 right-4 z-toast flex w-max min-w-0! items-center gap-x-2 px-2 py-1.5"
+      className="nxm-popover-panel fixed top-12 right-4 z-toast flex w-max min-w-0! items-center gap-x-2 px-2 py-1.5 [-webkit-app-region:no-drag]"
       enter="transition-opacity"
       enterFrom="opacity-0 reduce-motion:opacity-100"
       enterTo="opacity-100"
@@ -74,7 +74,6 @@ export function ZoomHotkeyIndicator() {
       ref={panelRef}
       role="status"
       show={open}
-      style={{ WebkitAppRegion: "no-drag" }}
       onBlur={(event) => {
         if (!panelRef.current?.contains(event.relatedTarget)) setFocusHeld(false);
       }}
