@@ -52,7 +52,7 @@ export default function MediaViewSingleDetails({
   ];
 
   return (
-    <div className="mx-1 flex flex-col select-text">
+    <div className="flex max-w-fit flex-col px-1 select-text">
       <Typography
         as="h6"
         className="mb-2 border-b border-translucent-subdued"
@@ -61,7 +61,7 @@ export default function MediaViewSingleDetails({
         {t("single::details")}
       </Typography>
 
-      <div className="grid grid-cols-[20%_80%] gap-4">
+      <div className="grid grid-cols-[20%_70%] gap-4">
         <Typography appearance="strong" typographyType="body-sm">
           Name:
         </Typography>
@@ -122,7 +122,7 @@ export default function MediaViewSingleDetails({
         <Typography
           appearance="subdued"
           brand="neutral"
-          className="wrap-break-word select-text"
+          className="wrap-anywhere select-text"
           typographyType="body-sm"
         >
           {entry.path}
