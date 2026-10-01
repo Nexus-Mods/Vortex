@@ -1,7 +1,7 @@
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path/posix";
 
-import type { ILinuxPathProvider, LinuxPathBase, XDGBase } from "@vortex/shared/filesystem";
+import type { ILinuxPathProvider, LinuxPathBase } from "@vortex/shared/filesystem";
 import { QualifiedPath, PathProviderError, XDG } from "@vortex/shared/filesystem";
 
 /**
@@ -20,27 +20,13 @@ export class LinuxPathProvider implements ILinuxPathProvider {
   }
 
   fromBase(base: LinuxPathBase): Promise<QualifiedPath> {
+    // https://specifications.freedesktop.org/basedir/latest
+
     if (base === "home") {
       return this.#create(homedir());
     } else if (base === "temp") {
       return this.#create(tmpdir());
-    } else if (
-      base === XDG.cache ||
-      base === XDG.runtime ||
-      base === XDG.data ||
-      base === XDG.config ||
-      base === XDG.state
-    ) {
-      return this.fromXDGBase(base);
-    }
-
-    const exhausted: never = base;
-    return Promise.reject(new PathProviderError(`Unknown base '${exhausted as string}'`));
-  }
-
-  fromXDGBase(base: XDGBase): Promise<QualifiedPath> {
-    // https://specifications.freedesktop.org/basedir/latest
-    if (base === XDG.data) {
+    } else if (base === XDG.data) {
       return this.#getXDGBaseDirectory("XDG_DATA_HOME", ".local/share");
     } else if (base === XDG.cache) {
       return this.#getXDGBaseDirectory("XDG_CACHE_HOME", ".cache");
@@ -55,7 +41,7 @@ export class LinuxPathProvider implements ILinuxPathProvider {
     }
 
     const exhausted: never = base;
-    return Promise.reject(new PathProviderError(`Unknown base '${exhausted as string}'`));
+    return Promise.reject(new PathProviderError(`Unknown base '${String(exhausted)}'`));
   }
 
   #getXDGBaseDirectory(envName: string, relative: string): Promise<QualifiedPath> {

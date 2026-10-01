@@ -31,8 +31,9 @@ export class WindowsPathProvider implements IWindowsPathProvider {
           QualifiedPath.fromNative(pathWin32.join(this.#home(), "Documents", "My Games")),
         );
     }
+
     const exhausted: never = base;
-    return Promise.reject(new PathProviderError(`Unknown base '${exhausted as string}'`));
+    return Promise.reject(new PathProviderError(`Unknown base '${String(exhausted)}'`));
   }
 
   async enumerateDrives(): Promise<QualifiedPath[]> {
