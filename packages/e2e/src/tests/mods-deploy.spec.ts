@@ -4,7 +4,7 @@
  * Checking that with auto-enable and auto-deploy turned off (auto-install
  * left on), a downloaded mod installs into the Mods list but stays Disabled
  * and undeployed. This exercises the manual path — enable the mod, then
- * Deploy it from the Mods list. Runs for both free and premium.
+ * apply it from the menu. Runs for both free and premium.
  *
  */
 import { SDV_MOD_URL } from "../constants";
@@ -89,9 +89,9 @@ test.describe("Mods - Deploy from mods list", () => {
           await expect(modsPage.statusButton).toHaveText(/enabled/i);
         });
 
-        await test.step("Deploy mods from the Mods list", async () => {
+        await test.step("Apply changes from the menu", async () => {
           const modsPage = new ModsPage(vortexWindow);
-          await modsPage.deployButton.click();
+          await new NavBar(vortexWindow).applyButton.click();
           await expect(modsPage.deployedNotification).toBeVisible({
             timeout: Timeouts.NETWORK,
           });

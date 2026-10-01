@@ -74,6 +74,7 @@ interface IConnectedProps {
   relativeTimes: boolean;
   suppressedNotifications: { [id: string]: boolean };
   foregroundDL: boolean;
+  useModernLayout: boolean;
 }
 
 interface IActionProps {
@@ -134,6 +135,7 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const {
       t,
+      useModernLayout,
       alwaysCompactHeaders,
       autoDeployment,
       autoEnable,
@@ -321,10 +323,15 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
 
           <div>
             <Toggle checked={autoDeployment} onToggle={this.toggleAutoDeployment}>
-              {t("Deploy Mods when Enabled")}
+              {useModernLayout
+                ? t("Apply changes when mods are enabled")
+                : t("Deploy Mods when Enabled")}
 
-              <More id="more-deploy-settings" name={t("Deployment")}>
-                {getTextModManagement("deployment", t)}
+              <More
+                id="more-deploy-settings"
+                name={useModernLayout ? t("Applying changes") : t("Deployment")}
+              >
+                {getTextModManagement(useModernLayout ? "autoapply" : "deployment", t)}
               </More>
             </Toggle>
 
@@ -525,6 +532,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     alwaysCompactHeaders: state.settings.interface.alwaysCompactHeaders === true,
     suppressedNotifications: state.settings.notifications.suppress,
     foregroundDL: state.settings.interface.foregroundDL,
+    useModernLayout: state.settings.window.useModernLayout,
   };
 }
 

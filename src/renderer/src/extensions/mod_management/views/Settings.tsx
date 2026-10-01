@@ -123,6 +123,16 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 const nop = () => undefined;
 
+/** The modern layout's descriptions for the built-in methods; others keep their own. */
+const modernActivatorDescriptions: Record<string, string> = {
+  hardlink_activator: "Uses hard links to deploy mod files to the game directory.",
+  symlink_activator: "Uses symlinks to deploy mod files to the game directory.",
+  symlink_activator_elevated:
+    "Uses symlinks to deploy mod files to the game directory. This runs as administrator " +
+    "and asks for your permission every time you apply changes.",
+  move_activator: "Moves mod files into the game directory to deploy them.",
+};
+
 class Settings extends ComponentEx<IProps, IComponentState> {
   private mLastFileUpdate: number = 0;
   constructor(props: IProps) {
@@ -245,10 +255,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         <Panel key="deployment">
           <Panel.Body>
             <ControlLabel>
-              {t("Deployment Method")}
+              {this.props.useModernLayout ? t("Deployment method") : t("Deployment Method")}
 
               <More id="more-deploy" name={t("Deployment")}>
-                {getText("deployment", t)}
+                {getText(this.props.useModernLayout ? "deploymentmethod" : "deployment", t)}
               </More>
             </ControlLabel>
 
@@ -1138,7 +1148,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
         {activatorIdx !== -1 ? (
           <HelpBlock>
-            {t(activators[activatorIdx].description)}
+            {t(
+              (this.props.useModernLayout &&
+                modernActivatorDescriptions[activators[activatorIdx].id]) ||
+                activators[activatorIdx].description,
+            )}
 
             <More id="more-activator-detail" name={activators[activatorIdx].name}>
               {activators[activatorIdx].detailedDescription(t)}
