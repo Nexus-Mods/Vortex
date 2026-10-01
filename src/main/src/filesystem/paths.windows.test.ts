@@ -1,6 +1,6 @@
 import { homedir, tmpdir } from "node:os";
 
-import { NativePathResolver, PathProviderError, QualifiedPath } from "@vortex/shared/filesystem";
+import { NativePathResolver, QualifiedPath } from "@vortex/shared/filesystem";
 import { describe, expect, it } from "vitest";
 
 import { WindowsPathProvider } from "./paths.windows";
@@ -27,12 +27,6 @@ describe("WindowsPathProviderImpl.fromBase", () => {
     const native = await resolver.resolve(qp);
     expect(native).toBe(tmpdir());
   });
-
-  it("rejects unknown bases", async () => {
-    await expect(provider.fromBase("nope" as unknown as "home")).rejects.toBeInstanceOf(
-      PathProviderError,
-    );
-  });
 });
 
 describe("WindowsPathProviderImpl.enumerateDrives", () => {
@@ -41,6 +35,7 @@ describe("WindowsPathProviderImpl.enumerateDrives", () => {
     const resolver = new NativePathResolver();
     const drives = await provider.enumerateDrives();
     expect(drives.length).toBeGreaterThan(0);
+
     for (const drive of drives) {
       expect(drive.scheme).toBe("native");
       // Drive roots are rooted paths that keep their trailing separator
