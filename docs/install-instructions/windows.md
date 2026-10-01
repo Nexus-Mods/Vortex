@@ -30,6 +30,8 @@ Open Visual Studio Installer and select:
 The default workload is not enough by itself. Vortex uses native Node modules,
 so `node-gyp` needs ATL, MFC, and Windows 11 SDK.
 
+You can [follow the instructions for installing from a configuration file](https://learn.microsoft.com/en-us/visualstudio/install/import-export-installation-configurations?view=visualstudio#import-a-configuration-using-the-visual-studio-installer) and use the `.vsconfig` file located in the root of the repository.
+
 ### Git
 
 ```powershell
