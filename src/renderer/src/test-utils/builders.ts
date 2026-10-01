@@ -19,12 +19,8 @@
  * Test-only: nothing in the production tree imports this module.
  */
 import { EventEmitter } from "events";
-<<<<<<< HEAD
-import * as os from "os";
-=======
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import * as os from "node:os";
->>>>>>> 98c113c18 (Merge pull request #24350 from Nexus-Mods/fix/laz-1273)
+import * as os from "os";
 import * as path from "path";
 
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
@@ -69,11 +65,8 @@ import type {
   IModRequirementExt,
 } from "../extensions/health_check/types";
 import { ModFileCategory } from "../extensions/health_check/types";
-<<<<<<< HEAD
 import type { IHistoryEvent } from "../extensions/history_management/types";
-=======
 import { setDeploymentNecessary } from "../extensions/mod_management/actions/deployment";
->>>>>>> 98c113c18 (Merge pull request #24350 from Nexus-Mods/fix/laz-1273)
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import { deploymentReducer } from "../extensions/mod_management/reducers/deployment";
@@ -109,15 +102,7 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtensionReducer } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
-<<<<<<< HEAD
-import type { IExtensionApi, IRunOptions } from "../types/IExtensionContext";
-=======
-import type {
-  IExtensionApi,
-  IExtensionContext,
-  StateChangeCallback,
-} from "../types/IExtensionContext";
->>>>>>> 98c113c18 (Merge pull request #24350 from Nexus-Mods/fix/laz-1273)
+import type { IExtensionApi, IExtensionContext, IRunOptions } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
@@ -125,12 +110,8 @@ import {
   HealthCheckSeverity,
   HealthCheckTrigger,
 } from "../types/IHealthCheck";
-<<<<<<< HEAD
 import type { INotification } from "../types/INotification";
 import type { IExtensionState, IState } from "../types/IState";
-=======
-import type { IExtensionState, ISettingsProfiles, IState } from "../types/IState";
->>>>>>> 98c113c18 (Merge pull request #24350 from Nexus-Mods/fix/laz-1273)
 import local from "../util/local";
 import type { IStarterInfo } from "../util/StarterInfo";
 import type {
@@ -753,40 +734,6 @@ export function makeRevision(
 export type { CollectionModStatus };
 
 const BATCH_TYPE: string = (batch as unknown as { getType: () => string }).getType();
-<<<<<<< HEAD
-=======
-const sessionReducers = trackingReducer.reducers as Record<
-  string,
-  (state: ICollectionInstallState, payload: unknown) => ICollectionInstallState
->;
-// the real mods reducer, applied to state.persistent.mods so the durable writes the driver
-// makes alongside the session (addModRule with `ignored`, setModAttribute install-spec stamps)
-// are observable by read-back, not just recordable as dispatched actions. keyed by gameId.
-type ModsSlice = Record<string, Record<string, IMod>>;
-const modsReducers = modsReducer.reducers as Record<
-  string,
-  (state: ModsSlice, payload: unknown) => ModsSlice
->;
-// the real download reducer, applied to state.persistent.downloads, so writes onto a download's
-// modInfo (the collection-rule tags the install path records) are observable by read-back
-const downloadReducers = downloadStateReducer.reducers as Record<
-  string,
-  (state: IState["persistent"]["downloads"], payload: unknown) => IState["persistent"]["downloads"]
->;
-// the real profile settings reducer, applied to state.settings.profiles (next/active/last active)
-const profileSettingsReducers = profileSettingsReducer.reducers as Record<
-  string,
-  (state: ISettingsProfiles, payload: unknown) => ISettingsProfiles
->;
-// the real deployment reducer, applied to state.persistent.deployment (the per-game pending flag)
-const deploymentReducers = deploymentReducer.reducers as Record<
-  string,
-  (
-    state: IState["persistent"]["deployment"],
-    payload: unknown,
-  ) => IState["persistent"]["deployment"]
->;
->>>>>>> 98c113c18 (Merge pull request #24350 from Nexus-Mods/fix/laz-1273)
 
 function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   const slices: IDriverHarnessState = {
@@ -813,7 +760,6 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
       collections: { collections: {}, revisions: {} },
       deployment: { needToDeploy: {} },
       nexus: { ...nexusPersistentReducer.defaults, userInfo: slices.userInfo },
-      deployment: { needToDeploy: {}, deploymentCounter: {} },
     },
     // a download path is inherently a signed-in one, and isLoggedIn dereferences account
     confidential: { account: { nexus: { OAuthCredentials: { token: "test-token" } } } },
@@ -970,44 +916,6 @@ export function makeApiHarness(
       return;
     }
     dispatched.push(action);
-<<<<<<< HEAD
-=======
-    const sessionReducer = sessionReducers[action.type];
-    if (sessionReducer !== undefined) {
-      state.session.collections = sessionReducer(state.session.collections, action.payload);
-    }
-    const modsReducerFn = modsReducers[action.type];
-    if (modsReducerFn !== undefined) {
-      state.persistent.mods = modsReducerFn(state.persistent.mods, action.payload);
-    }
-    const nexusSession = nexusSessionReducer.reducers[action.type];
-    if (nexusSession !== undefined) {
-      state.session["nexus"] = nexusSession(state.session["nexus"], action.payload);
-    }
-    const nexusPersistent = nexusPersistentReducer.reducers[action.type];
-    if (nexusPersistent !== undefined) {
-      state.persistent["nexus"] = nexusPersistent(state.persistent["nexus"], action.payload);
-    }
-    const nexusAccount = nexusAccountReducer.reducers[action.type];
-    if (nexusAccount !== undefined) {
-      state.confidential.account["nexus"] = nexusAccount(
-        state.confidential.account["nexus"],
-        action.payload,
-      );
-    }
-    const downloadReducerFn = downloadReducers[action.type];
-    if (downloadReducerFn !== undefined) {
-      state.persistent.downloads = downloadReducerFn(state.persistent.downloads, action.payload);
-    }
-    const profileSettings = profileSettingsReducers[action.type];
-    if (profileSettings !== undefined) {
-      state.settings.profiles = profileSettings(state.settings.profiles, action.payload);
-    }
-    const deployment = deploymentReducers[action.type];
-    if (deployment !== undefined) {
-      state.persistent.deployment = deployment(state.persistent.deployment, action.payload);
-    }
->>>>>>> 98c113c18 (Merge pull request #24350 from Nexus-Mods/fix/laz-1273)
   };
   // sits behind the same thunk middleware the production store applies, so only plain actions
   // arrive here; the two harness bookkeeping actions stay out of the record
@@ -1055,30 +963,8 @@ export function makeApiHarness(
     onAsync: (event: string, cb: (...args: unknown[]) => unknown) => {
       events.on(event, cb);
     },
-<<<<<<< HEAD
     onStateChange: (statePath: string[], cb: (previous: unknown, current: unknown) => void) => {
       watcher.on(statePath, ({ prevValue, currentValue }) => cb(prevValue, currentValue));
-=======
-    // fired like the real store's: whenever the value at the path changes
-    onStateChange: (statePath: string[], cb: StateChangeCallback) => {
-      const readPath = () =>
-        statePath.reduce<unknown>(
-          (node, key) => (node as Record<string, unknown> | undefined)?.[key],
-          state,
-        );
-      let last = readPath();
-      subscribe(() => {
-        const current = readPath();
-        if (current !== last) {
-          const previous = last;
-          last = current;
-          cb(previous, current);
-        }
-      });
-    },
-    sendNotification: (notification: { type: string; message: string }) => {
-      notifications.push(notification);
->>>>>>> 98c113c18 (Merge pull request #24350 from Nexus-Mods/fix/laz-1273)
     },
     sendNotification: (notification: INotification) => {
       notifications.push(notification);
@@ -1233,9 +1119,14 @@ export async function makeProfileSwitchHarness(
     await writeSettings(savedSettingsPath(profileId), content);
   }
 
-  const base = makeApiHarness({
-    profiles: Object.fromEntries(opts.profiles.map((profile) => [profile.id, profile])),
-  });
+  const base = makeApiHarness(
+    { profiles: Object.fromEntries(opts.profiles.map((profile) => [profile.id, profile])) },
+    [
+      // the switch is driven through next/active/last-active profile and the per-game pending flag
+      { path: ["settings", "profiles"], reducer: profileSettingsReducer },
+      { path: ["persistent", "deployment"], reducer: deploymentReducer },
+    ],
+  );
   base.setState((draft) => {
     draft.settings.profiles = {
       activeProfileId: opts.activeProfileId,
