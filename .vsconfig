@@ -1,4 +1,5 @@
 {
+  "$schema": "https://www.schemastore.org/vsconfig.json",
   "version": "1.0",
   "components": [
     "Microsoft.VisualStudio.Workload.VCTools",
