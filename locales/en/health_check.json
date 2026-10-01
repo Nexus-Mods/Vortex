@@ -7,7 +7,7 @@
     "or": "Or"
   },
   "shared": {
-    "mod_maybe_required_for": "Missing mod maybe required for: {{modName}}",
+    "mod_may_be_required_for": "Missing mod may be required for: {{modName}}",
     "requires_files": "Requires {{ count }} additional mod file to be installed to work correctly:",
     "requires_files_plural": "Requires {{ count }} additional mod files to be installed to work correctly:",
     "requires_pick": "Requires {{ count }} additional mod file to be picked to work correctly:",
