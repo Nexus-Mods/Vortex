@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setUseModernLayout } from "../actions/window";
 import { MainProvider, MenuLayerProvider, PagesProvider, WindowProvider } from "../contexts";
 import Spinner from "../controls/Spinner";
+import { ZoomHotkeyIndicator } from "../extensions/settings_interface/components/ZoomHotkeyIndicator";
 import type { IState } from "../types/IState";
 import { Button } from "../ui/components/button/Button";
 import { MutexProvider } from "../util/MutexContext";
@@ -62,6 +63,8 @@ export const AppLayout: FC<React.PropsWithChildren<IBaseProps>> = () => {
               <MutexProvider>
                 {useModernLayout ? <ModernLayout /> : <ClassicLayout />}
               </MutexProvider>
+
+              <ZoomHotkeyIndicator />
 
               <LayoutSwitcher />
             </PagesProvider>

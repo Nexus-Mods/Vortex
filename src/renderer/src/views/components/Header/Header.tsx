@@ -52,7 +52,8 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
 
   return (
     <div
-      className="flex h-11 items-center justify-between gap-x-6 pl-4.5"
+      className="flex h-11 shrink-0 items-center justify-between gap-x-6 pl-4.5"
+      data-testid="window-titlebar"
       style={{ WebkitAppRegion: "drag" }}
     >
       <div className="flex min-w-0 flex-1 items-center gap-x-1">

@@ -74,6 +74,8 @@ export interface IDimensions {
 }
 
 export interface IWindow {
+  /** Saved interface scale; 1 is the default (100%). */
+  zoomFactor?: number;
   maximized: boolean;
   position?: IPosition;
   size: IDimensions;

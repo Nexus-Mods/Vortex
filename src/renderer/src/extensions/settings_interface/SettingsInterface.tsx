@@ -3,18 +3,14 @@ import * as path from "path";
 
 import { getErrorCode } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
-import PromiseBB from "bluebird";
-import * as React from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { ControlLabel, FormGroup } from "react-bootstrap";
-import { useSelector } from "react-redux";
-import type * as Redux from "redux";
-import type { ThunkDispatch } from "redux-thunk";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 
-import { showDialog } from "@/actions";
-import { resetSuppression } from "@/actions";
-import { setCustomTitlebar } from "@/actions";
+import { resetSuppression, setCustomTitlebar, setZoomFactor, showDialog } from "@/actions";
+import { useMainContext } from "@/contexts";
 import type { IAvailableExtension } from "@/types/extensions";
-import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "@/types/IDialog";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Picker } from "@/ui/components/picker/Picker";
@@ -23,10 +19,8 @@ import { relaunch } from "@/util/commandLine";
 import { log } from "@/util/log";
 import { getPreloadApi } from "@/util/preloadAccess";
 import { useReduceMotion } from "@/util/reduceMotion";
-import { truthy } from "@/util/util";
 
 import { displayBcp47, isValidBcp47 } from "../../bcp47";
-import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import More from "../../controls/More";
 import Toggle from "../../controls/Toggle";
 import getVortexPath from "../../util/getVortexPath";
@@ -40,7 +34,6 @@ import {
   setStartMinimized,
 } from "./actions/automation";
 import {
-  setAdvancedMode,
   setAlwaysCompactHeaders,
   setDesktopNotifications,
   setForegroundDL,
@@ -52,335 +45,84 @@ import {
 } from "./actions/interface";
 import { buildLanguageOptions, type ILanguage, type ILanguageOption } from "./languageOptions";
 import getText from "./texts";
+import { MAX_ZOOM, MIN_ZOOM, normalizeZoom, ZOOM_STEP, zoomFromState } from "./utils/zoom";
+
+// The Settings page presents the mechanism's existing 10% steps as a pick-list rather
+// than adding a separate range of its own, so Ctrl+/-/wheel always land on one of these.
+const ZOOM_LEVEL_COUNT = Math.round((MAX_ZOOM - MIN_ZOOM) / ZOOM_STEP) + 1;
+const ZOOM_LEVELS = Array.from(
+  { length: ZOOM_LEVEL_COUNT },
+  (_, index) => Math.round((MIN_ZOOM + index * ZOOM_STEP) * 100) / 100,
+);
 
 export interface IBaseProps {
   startup: IParameters;
   changeStartup: (key: string, value: any) => void;
 }
 
-interface IConnectedProps {
-  profilesVisible: boolean;
-  alwaysCompactHeaders: boolean;
-  autoDeployment: boolean;
-  autoInstall: boolean;
-  autoEnable: boolean;
-  autoStart: boolean;
-  startMinimized: boolean;
-  advanced: boolean;
-  customTitlebar: boolean;
-  minimizeToTray: boolean;
-  desktopNotifications: boolean;
-  hideTopLevelCategory: boolean;
-  relativeTimes: boolean;
-  suppressedNotifications: { [id: string]: boolean };
-  foregroundDL: boolean;
+export interface IFormProps extends IBaseProps {
+  currentLanguage: string;
+  extensions: IAvailableExtension[];
+  languages: ILanguage[];
+  onReloadLanguages: () => void;
 }
 
-interface IActionProps {
-  onSetLanguage: (language: string) => void;
-  onSetAlwaysCompactHeaders: (enabled: boolean) => void;
-  onSetReduceMotion: (enabled: boolean) => void;
-  onSetAutoDeployment: (enabled: boolean) => void;
-  onSetAutoInstall: (enabled: boolean) => void;
-  onSetAutoEnable: (enabled: boolean) => void;
-  onSetAutoStart: (start: boolean) => void;
-  onSetStartMinimized: (minimized: boolean) => void;
-  onSetProfilesVisible: (visible: boolean) => void;
-  onSetAdvancedMode: (advanced: boolean) => void;
-  onShowDialog: (
-    type: DialogType,
-    title: string,
-    content: IDialogContent,
-    actions: DialogActions,
-  ) => PromiseBB<IDialogResult>;
-  onSetCustomTitlebar: (enable: boolean) => void;
-  onSetDesktopNotifications: (enabled: boolean) => void;
-  onSetHideTopLevelCategory: (hide: boolean) => void;
-  onSetRelativeTimes: (enabled: boolean) => void;
-  onResetNotificationSuppression: () => void;
-  onSetForegroundDL: (enabled: boolean) => void;
-}
+export function SettingsInterfaceForm(props: IFormProps) {
+  const { changeStartup, startup } = props;
+  const { t } = useTranslation(["common"]);
+  const dispatch = useDispatch();
+  const { api } = useMainContext();
 
-type IProps = IBaseProps &
-  IActionProps &
-  IConnectedProps & {
-    currentLanguage: string;
-    reduceMotion: boolean;
-    extensions: IAvailableExtension[];
-    languages: ILanguage[];
-    onReloadLanguages: () => void;
-  };
+  const profilesVisible = useSelector((state: IState) => state.settings.interface.profilesVisible);
+  const hideTopLevelCategory = useSelector(
+    (state: IState) => state.settings.interface.hideTopLevelCategory,
+  );
+  const desktopNotifications = useSelector(
+    (state: IState) => state.settings.interface.desktopNotifications,
+  );
+  const relativeTimes = useSelector((state: IState) => state.settings.interface.relativeTimes);
+  const alwaysCompactHeaders = useSelector(
+    (state: IState) => state.settings.interface.alwaysCompactHeaders === true,
+  );
+  const foregroundDL = useSelector((state: IState) => state.settings.interface.foregroundDL);
+  const autoDeployment = useSelector((state: IState) => state.settings.automation.deploy);
+  const autoInstall = useSelector((state: IState) => state.settings.automation.install);
+  const autoEnable = useSelector((state: IState) => state.settings.automation.enable);
+  const autoStart = useSelector((state: IState) => state.settings.automation.start);
+  const startMinimized = useSelector((state: IState) => state.settings.automation.minimized);
+  const customTitlebar = useSelector((state: IState) => state.settings.window.customTitlebar);
+  const suppressedNotifications = useSelector(
+    (state: IState) => state.settings.notifications.suppress,
+  );
 
-class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
-  private mInitialTitlebar: boolean;
-  // The flat option model built each render from `languages`; selectLanguage looks the
-  // chosen id up here rather than reading it back off the DOM.
-  private languageOptions: ILanguageOption[] = [];
+  // Effective rather than stored, so the toggle shows what the OS asked for until the
+  // user makes a choice of their own.
+  const reduceMotion = useReduceMotion();
+  const zoomFactor = useSelector(zoomFromState);
+  const adjustZoom = (value: number) => dispatch(setZoomFactor(normalizeZoom(value)));
 
-  constructor(props: IProps) {
-    super(props);
+  // Captured once on mount, like the class component's constructor did, so a change made
+  // during this session can be compared against the value Vortex started with.
+  const initialTitlebarRef = useRef(customTitlebar);
+  const needRestart = customTitlebar !== initialTitlebarRef.current;
 
-    this.mInitialTitlebar = props.customTitlebar;
-  }
+  // `startup` is a makeReactive() proxy: mutating it calls `setState({})` on every attached
+  // subscriber, which is how the class component re-rendered on external changes to it.
+  const [, forceStartupUpdate] = useReducer((x: number) => x + 1, 0);
+  useEffect(() => {
+    const listener = { setState: () => forceStartupUpdate() };
+    (startup as any).attach(listener);
+    return () => (startup as any).detach(listener);
+  }, [startup]);
 
-  public componentDidMount() {
-    (this.props.startup as any).attach(this);
-  }
+  const languageOptions: ILanguageOption[] = buildLanguageOptions(props.languages, t);
+  // Show the current language; a language may appear under more than one option (one
+  // per extension), so pick the first matching entry as the native <select> did.
+  const selectedLanguageId =
+    languageOptions.find((option) => option.key === props.currentLanguage)?.id ?? "";
 
-  public componentWillUnmount() {
-    (this.props.startup as any).detach(this);
-  }
-
-  public render(): JSX.Element {
-    const {
-      t,
-      alwaysCompactHeaders,
-      autoDeployment,
-      autoEnable,
-      autoInstall,
-      autoStart,
-      currentLanguage,
-      customTitlebar,
-      desktopNotifications,
-      foregroundDL,
-      languages,
-      profilesVisible,
-      hideTopLevelCategory,
-      onSetForegroundDL,
-      onSetReduceMotion,
-      reduceMotion,
-      relativeTimes,
-      startup,
-      startMinimized,
-      suppressedNotifications,
-    } = this.props;
-
-    const needRestart = customTitlebar !== this.mInitialTitlebar;
-
-    const startMinimizedToggle = autoStart ? (
-      <Toggle checked={startMinimized} onToggle={this.toggleMinimized}>
-        {t("Start Vortex in the background (Minimized)")}
-      </Toggle>
-    ) : null;
-
-    const restartNotification = needRestart ? (
-      <div className="flex items-center gap-x-4 rounded-lg border border-info-weak bg-info-950 p-3">
-        <Typography brand="neutral-translucent" className="grow">
-          {t("You need to restart Vortex to activate this change")}
-        </Typography>
-
-        <Button brand="neutral" onClick={this.restart}>
-          {t("Restart now")}
-        </Button>
-      </div>
-    ) : null;
-
-    const numSuppressed = Object.values(suppressedNotifications).filter(
-      (val) => val === true,
-    ).length;
-
-    this.languageOptions = buildLanguageOptions(languages, t);
-    // Show the current language; a language may appear under more than one option (one
-    // per extension), so pick the first matching entry as the native <select> did.
-    const selectedLanguageId =
-      this.languageOptions.find((option) => option.key === currentLanguage)?.id ?? "";
-
-    return (
-      <form>
-        <FormGroup controlId="languageSelect">
-          <div className="flex flex-col items-start gap-y-2">
-            <Typography as="span">{t("Language")}</Typography>
-
-            <Picker<string>
-              options={this.languageOptions.map((option) => ({
-                label: option.label,
-                value: option.id,
-              }))}
-              placement="left"
-              value={selectedLanguageId}
-              onChange={this.selectLanguage}
-            />
-
-            <Typography appearance="subdued" typographyType="body-sm">
-              {t("When you select a language for the first time you may have to restart Vortex.")}
-            </Typography>
-          </div>
-        </FormGroup>
-
-        <FormGroup controlId="customization">
-          <ControlLabel>{t("Customisation")}</ControlLabel>
-
-          <div>
-            <div>
-              <Toggle checked={customTitlebar} onToggle={this.toggleCustomTitlebar}>
-                {t("Custom Window Title Bar")}
-              </Toggle>
-            </div>
-
-            <div>
-              <Toggle
-                checked={desktopNotifications !== false}
-                onToggle={this.toggleDesktopNotifications}
-              >
-                {t("Enable Desktop Notifications")}
-              </Toggle>
-            </div>
-
-            <div>
-              <Toggle checked={hideTopLevelCategory} onToggle={this.toggleHideTopLevelCategory}>
-                {t("Hide Top-Level Category")}
-
-                <More id="more-hide-toplevel-category" name={t("Top-Level Categories")}>
-                  {getText("toplevel-categories", t)}
-                </More>
-              </Toggle>
-            </div>
-
-            <div>
-              <Toggle checked={relativeTimes} onToggle={this.toggleRelativeTimes}>
-                {t('Use relative times (e.g. "3 months ago")')}
-              </Toggle>
-            </div>
-
-            <div>
-              <Toggle checked={alwaysCompactHeaders} onToggle={this.toggleAlwaysCompactHeaders}>
-                {t("Always use compact headers")}
-
-                <Typography appearance="subdued" typographyType="body-sm">
-                  {t("Keep page headers compact for less motion and more vertical space.")}
-                </Typography>
-              </Toggle>
-            </div>
-
-            <div>
-              <Toggle checked={reduceMotion} onToggle={onSetReduceMotion}>
-                {t("Reduce motion")}
-
-                <Typography appearance="subdued" typographyType="body-sm">
-                  {t("Minimise non-essential animations and visual effects.")}
-                </Typography>
-              </Toggle>
-            </div>
-          </div>
-
-          <div>
-            <Toggle checked={foregroundDL} onToggle={onSetForegroundDL}>
-              {t("Bring Vortex to foreground when starting downloads in browser")}
-            </Toggle>
-          </div>
-        </FormGroup>
-
-        <FormGroup controlId="advanced">
-          <ControlLabel>{t("Advanced")}</ControlLabel>
-
-          <div>
-            {/*
-            <div>
-              <Toggle
-                checked={advanced}
-                onToggle={this.toggleAdvanced}
-              >
-                {t('Enable Advanced Mode')}
-                <More id='more-advanced-settings' name={t('Advanced')}>
-                  {getText('advanced', t)}
-                </More>
-              </Toggle>
-            </div>
-            */}
-            <div>
-              <Toggle checked={profilesVisible} onToggle={this.toggleProfiles}>
-                {t("Enable Profile Management")}
-
-                <More id="more-profile-settings" name={t("Profiles")} wikiId="profiles">
-                  {getTextProfiles("profiles", t)}
-                </More>
-              </Toggle>
-            </div>
-
-            <div>
-              <Toggle checked={startup.disableGPU !== true} onToggle={this.toggleAcceleration}>
-                {t("Enable GPU Acceleration")}
-              </Toggle>
-
-              {startup.disableGPU === true ? (
-                <div className="rounded-lg border border-warning-weak bg-warning-950 p-3">
-                  <Typography brand="neutral-translucent">
-                    {t(
-                      "Disabling GPU acceleration will make the Vortex UI significantly less " +
-                        "responsive in places.",
-                    )}
-                  </Typography>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </FormGroup>
-
-        <FormGroup controlId="automation">
-          <ControlLabel>{t("Automation")}</ControlLabel>
-
-          <div>
-            <Toggle checked={autoDeployment} onToggle={this.toggleAutoDeployment}>
-              {t("Deploy Mods when Enabled")}
-
-              <More id="more-deploy-settings" name={t("Deployment")}>
-                {getTextModManagement("deployment", t)}
-              </More>
-            </Toggle>
-
-            <Toggle checked={autoInstall} onToggle={this.toggleAutoInstall}>
-              {t("Install Mods when downloaded")}
-            </Toggle>
-
-            <Toggle checked={autoEnable} onToggle={this.toggleAutoEnable}>
-              {t("Enable Mods when installed (in current profile)")}
-            </Toggle>
-
-            <Toggle checked={autoStart} onToggle={this.toggleAutoStart}>
-              {t("Run Vortex when my computer starts")}
-            </Toggle>
-
-            {startMinimizedToggle}
-          </div>
-        </FormGroup>
-
-        <FormGroup controlId="notifications">
-          <ControlLabel>{t("Notifications")}</ControlLabel>
-
-          <div className="flex items-center gap-x-2">
-            <Button brand="neutral" onClick={this.resetSuppression}>
-              {t("Reset suppressed notifications")}
-            </Button>
-
-            <Typography appearance="subdued" typographyType="body-sm">
-              {t("({{count}} notification is being suppressed)", {
-                replace: { count: numSuppressed },
-              })}
-            </Typography>
-          </div>
-        </FormGroup>
-
-        {restartNotification}
-      </form>
-    );
-  }
-
-  private toggleAcceleration = () => {
-    this.props.changeStartup("disableGPU", this.props.startup.disableGPU !== true);
-  };
-
-  private toggleAlwaysCompactHeaders = () => {
-    const { alwaysCompactHeaders, onSetAlwaysCompactHeaders } = this.props;
-    onSetAlwaysCompactHeaders(!alwaysCompactHeaders);
-  };
-
-  private toggleRelativeTimes = () => {
-    this.props.onSetRelativeTimes(!this.props.relativeTimes);
-  };
-
-  private selectLanguage = (id: string) => {
-    const { extensions } = this.props;
-    const option = this.languageOptions.find((iter) => iter.id === id);
+  const selectLanguage = async (id: string) => {
+    const option = languageOptions.find((iter) => iter.id === id);
     if (option === undefined) {
       // no language selected? How did this happen?
       return;
@@ -388,200 +130,314 @@ class SettingsInterfaceImpl extends ComponentEx<IProps, {}> {
     // extName carries what the old <option data-ext> did: when the language is provided
     // by an extension with a modId, selecting it installs that extension on demand and
     // reloads the language list before applying the language.
-    const ext: { modId?: number } = extensions.find((iter) => iter.name === option.extName) || {};
+    const ext: { modId?: number } =
+      props.extensions.find((iter) => iter.name === option.extName) || {};
 
-    const dlProm: PromiseBB<boolean[]> =
-      ext.modId !== undefined
-        ? PromiseBB.resolve<boolean[]>(this.context.api.emitAndAwait("install-extension", ext)).tap(
-            (success) => (success ? this.props.onReloadLanguages() : PromiseBB.resolve()),
-          )
-        : PromiseBB.resolve([true]);
+    const success: boolean[] =
+      ext.modId !== undefined ? await api.emitAndAwait<boolean>("install-extension", ext) : [true];
 
-    dlProm.then((success: boolean[]) => {
-      if (success.indexOf(false) === -1) {
-        this.props.onSetLanguage(option.key);
-      }
-    });
+    if (ext.modId !== undefined && success.indexOf(false) === -1) {
+      props.onReloadLanguages();
+    }
+    if (success.indexOf(false) === -1) {
+      dispatch(setLanguage(option.key));
+    }
   };
 
-  private toggleAutoDeployment = () => {
-    const { autoDeployment, onSetAutoDeployment } = this.props;
-    onSetAutoDeployment(!autoDeployment);
+  const toggleProfiles = () => {
+    if (profilesVisible) {
+      dispatch(
+        showDialog(
+          "question",
+          t("Disabling Profile Management"),
+          {
+            text: t(
+              "Please be aware that toggling this only disables the interface for profiles, " +
+                "meaning profiles don't get deleted and an active profile doesn't " +
+                "get disabled. The last active profile for each game will still be used " +
+                "(i.e. its mod selection and local savegames).",
+            ),
+            options: { translated: true, wrap: true },
+          },
+          [
+            { label: "Cancel" },
+            {
+              label: "Continue",
+              action: () => dispatch(setProfilesVisible(!profilesVisible)),
+            },
+          ],
+        ),
+      );
+    } else {
+      dispatch(setProfilesVisible(!profilesVisible));
+    }
   };
 
-  private toggleAutoInstall = () => {
-    const { autoInstall, onSetAutoInstall } = this.props;
-    onSetAutoInstall(!autoInstall);
-  };
-
-  private toggleAutoEnable = () => {
-    const { autoEnable, onSetAutoEnable } = this.props;
-    onSetAutoEnable(!autoEnable);
-  };
-
-  private toggleAutoStart = () => {
-    const { autoStart, startMinimized, onSetAutoStart, onSetStartMinimized } = this.props;
+  const toggleAutoStart = () => {
     const startOnBoot = !autoStart === true;
-    onSetAutoStart(startOnBoot);
+    dispatch(setAutoStart(startOnBoot));
     if (!startOnBoot) {
       // We only want to allow the user to start Vortex minimized
       //  if auto start is enabled - easier this way and less chances
       //  for users to forget about this setting and start sending
       //  bug reports.
-      onSetStartMinimized(false);
+      dispatch(setStartMinimized(false));
     }
-    const api = getPreloadApi();
-    api.app.setLoginItemSettings({
+    const preloadApi = getPreloadApi();
+    preloadApi.app.setLoginItemSettings({
       openAtLogin: startOnBoot,
       path: process.execPath, // Yes this is currently needed - thanks Electron
       args: startOnBoot ? (startMinimized ? ["--start-minimized"] : []) : [],
     });
   };
 
-  private toggleMinimized = () => {
-    const { autoStart, startMinimized, onSetStartMinimized } = this.props;
+  const toggleMinimized = () => {
     const isMinimized = !startMinimized === true;
-    onSetStartMinimized(isMinimized);
-    const api = getPreloadApi();
-    api.app.setLoginItemSettings({
+    dispatch(setStartMinimized(isMinimized));
+    const preloadApi = getPreloadApi();
+    preloadApi.app.setLoginItemSettings({
       openAtLogin: autoStart,
       path: process.execPath, // Yes this is currently needed - thanks Electron
       args: isMinimized ? ["--start-minimized"] : [],
     });
   };
 
-  private resetSuppression = () => {
-    const { onResetNotificationSuppression } = this.props;
-    onResetNotificationSuppression();
-  };
+  const needRestartNotification = needRestart ? (
+    <div className="flex items-center gap-x-4 rounded-lg border border-info-weak bg-info-950 p-3">
+      <Typography brand="neutral-translucent" className="grow">
+        {t("You need to restart Vortex to activate this change")}
+      </Typography>
 
-  private toggleDesktopNotifications = () => {
-    const { desktopNotifications, onSetDesktopNotifications } = this.props;
-    onSetDesktopNotifications(!desktopNotifications);
-  };
+      <Button brand="neutral" onClick={() => relaunch()}>
+        {t("Restart now")}
+      </Button>
+    </div>
+  ) : null;
 
-  private toggleHideTopLevelCategory = () => {
-    const { hideTopLevelCategory, onSetHideTopLevelCategory } = this.props;
-    onSetHideTopLevelCategory(!hideTopLevelCategory);
-  };
+  const numSuppressed = Object.values(suppressedNotifications).filter((val) => val === true).length;
 
-  private toggleProfiles = () => {
-    const { t, profilesVisible, onSetProfilesVisible, onShowDialog } = this.props;
-    if (profilesVisible) {
-      onShowDialog(
-        "question",
-        t("Disabling Profile Management"),
-        {
-          text: t(
-            "Please be aware that toggling this only disables the interface for profiles, " +
-              "meaning profiles don't get deleted and an active profile doesn't " +
-              "get disabled. The last active profile for each game will still be used " +
-              "(i.e. its mod selection and local savegames).",
-          ),
-          options: { translated: true, wrap: true },
-        },
-        [
-          { label: "Cancel" },
-          {
-            label: "Continue",
-            action: () => onSetProfilesVisible(!profilesVisible),
-          },
-        ],
-      );
-    } else {
-      onSetProfilesVisible(!profilesVisible);
-    }
-  };
+  const startMinimizedToggle = autoStart ? (
+    <Toggle checked={startMinimized} onToggle={toggleMinimized}>
+      {t("Start Vortex in the background (Minimized)")}
+    </Toggle>
+  ) : null;
 
-  private toggleCustomTitlebar = () => {
-    const { customTitlebar, onSetCustomTitlebar } = this.props;
-    onSetCustomTitlebar(!customTitlebar);
-  };
+  return (
+    <form>
+      <FormGroup controlId="languageSelect">
+        <div className="flex flex-col items-start gap-y-2">
+          <Typography as="span">{t("Language")}</Typography>
 
-  private toggleAdvanced = () => {
-    const { advanced, onSetAdvancedMode } = this.props;
-    onSetAdvancedMode(!advanced);
-  };
+          <Picker<string>
+            options={languageOptions.map((option) => ({
+              label: option.label,
+              value: option.id,
+            }))}
+            placement="left"
+            value={selectedLanguageId}
+            onChange={selectLanguage}
+          />
 
-  private restart = () => {
-    relaunch();
-  };
+          <Typography appearance="subdued" typographyType="body-sm">
+            {t("When you select a language for the first time you may have to restart Vortex.")}
+          </Typography>
+        </div>
+      </FormGroup>
+
+      <FormGroup controlId="customization">
+        <ControlLabel>{t("Customisation")}</ControlLabel>
+
+        <div>
+          <div>
+            <Toggle
+              checked={customTitlebar}
+              onToggle={(enabled) => dispatch(setCustomTitlebar(enabled))}
+            >
+              {t("Custom Window Title Bar")}
+            </Toggle>
+          </div>
+
+          <div>
+            <Toggle
+              checked={desktopNotifications !== false}
+              onToggle={(enabled) => dispatch(setDesktopNotifications(enabled))}
+            >
+              {t("Enable Desktop Notifications")}
+            </Toggle>
+          </div>
+
+          <div>
+            <Toggle
+              checked={hideTopLevelCategory}
+              onToggle={(hide) => dispatch(setHideTopLevelCategory(hide))}
+            >
+              {t("Hide Top-Level Category")}
+
+              <More id="more-hide-toplevel-category" name={t("Top-Level Categories")}>
+                {getText("toplevel-categories", t)}
+              </More>
+            </Toggle>
+          </div>
+
+          <div>
+            <Toggle
+              checked={relativeTimes}
+              onToggle={(enabled) => dispatch(setRelativeTimes(enabled))}
+            >
+              {t('Use relative times (e.g. "3 months ago")')}
+            </Toggle>
+          </div>
+
+          <div>
+            <Toggle
+              checked={alwaysCompactHeaders}
+              onToggle={(enabled) => dispatch(setAlwaysCompactHeaders(enabled))}
+            >
+              {t("Always use compact headers")}
+
+              <Typography appearance="subdued" typographyType="body-sm">
+                {t("Keep page headers compact for less motion and more vertical space.")}
+              </Typography>
+            </Toggle>
+          </div>
+        </div>
+
+        <div>
+          <Toggle checked={foregroundDL} onToggle={(enabled) => dispatch(setForegroundDL(enabled))}>
+            {t("Bring Vortex to foreground when starting downloads in browser")}
+          </Toggle>
+        </div>
+      </FormGroup>
+
+      <FormGroup className="mt-4" controlId="accessibility">
+        <ControlLabel>{t("Accessibility")}</ControlLabel>
+
+        <div>
+          <div>
+            <Toggle
+              checked={reduceMotion}
+              onToggle={(enabled) => dispatch(setReduceMotion(enabled))}
+            >
+              {t("Reduce motion")}
+
+              <Typography appearance="subdued" typographyType="body-sm">
+                {t("Minimise non-essential animations and visual effects.")}
+              </Typography>
+            </Toggle>
+          </div>
+
+          <div className="flex flex-col items-start gap-y-2">
+            <Typography as="span" className="font-semibold" typographyType="body-sm">
+              {t("Zoom")}
+            </Typography>
+
+            <Picker<number>
+              options={ZOOM_LEVELS.map((level) => ({
+                label:
+                  level === 1
+                    ? t("{{percent}}% (Default)", { replace: { percent: Math.round(level * 100) } })
+                    : t("{{percent}}%", { replace: { percent: Math.round(level * 100) } }),
+                value: level,
+              }))}
+              placement="left"
+              value={zoomFactor}
+              onChange={adjustZoom}
+            />
+
+            <Typography appearance="subdued" typographyType="body-sm">
+              {t("Tip: You can also zoom using Ctrl +/− or Ctrl + mouse wheel.")}
+            </Typography>
+          </div>
+        </div>
+      </FormGroup>
+
+      <FormGroup controlId="advanced">
+        <ControlLabel>{t("Advanced")}</ControlLabel>
+
+        <div>
+          <div>
+            <Toggle checked={profilesVisible} onToggle={toggleProfiles}>
+              {t("Enable Profile Management")}
+
+              <More id="more-profile-settings" name={t("Profiles")} wikiId="profiles">
+                {getTextProfiles("profiles", t)}
+              </More>
+            </Toggle>
+          </div>
+
+          <div>
+            <Toggle
+              checked={startup.disableGPU !== true}
+              onToggle={() => changeStartup("disableGPU", startup.disableGPU !== true)}
+            >
+              {t("Enable GPU Acceleration")}
+            </Toggle>
+
+            {startup.disableGPU === true ? (
+              <div className="rounded-lg border border-warning-weak bg-warning-950 p-3">
+                <Typography brand="neutral-translucent">
+                  {t(
+                    "Disabling GPU acceleration will make the Vortex UI significantly less " +
+                      "responsive in places.",
+                  )}
+                </Typography>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </FormGroup>
+
+      <FormGroup controlId="automation">
+        <ControlLabel>{t("Automation")}</ControlLabel>
+
+        <div>
+          <Toggle
+            checked={autoDeployment}
+            onToggle={(enabled) => dispatch(setAutoDeployment(enabled))}
+          >
+            {t("Deploy Mods when Enabled")}
+
+            <More id="more-deploy-settings" name={t("Deployment")}>
+              {getTextModManagement("deployment", t)}
+            </More>
+          </Toggle>
+
+          <Toggle checked={autoInstall} onToggle={(enabled) => dispatch(setAutoInstall(enabled))}>
+            {t("Install Mods when downloaded")}
+          </Toggle>
+
+          <Toggle checked={autoEnable} onToggle={(enabled) => dispatch(setAutoEnable(enabled))}>
+            {t("Enable Mods when installed (in current profile)")}
+          </Toggle>
+
+          <Toggle checked={autoStart} onToggle={toggleAutoStart}>
+            {t("Run Vortex when my computer starts")}
+          </Toggle>
+
+          {startMinimizedToggle}
+        </div>
+      </FormGroup>
+
+      <FormGroup controlId="notifications">
+        <ControlLabel>{t("Notifications")}</ControlLabel>
+
+        <div className="flex items-center gap-x-2">
+          <Button brand="neutral" onClick={() => dispatch(resetSuppression(null))}>
+            {t("Reset suppressed notifications")}
+          </Button>
+
+          <Typography appearance="subdued" typographyType="body-sm">
+            {t("({{count}} notification is being suppressed)", {
+              replace: { count: numSuppressed },
+            })}
+          </Typography>
+        </div>
+      </FormGroup>
+
+      {needRestartNotification}
+    </form>
+  );
 }
-
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    profilesVisible: state.settings.interface.profilesVisible,
-    hideTopLevelCategory: state.settings.interface.hideTopLevelCategory,
-    advanced: state.settings.interface.advanced,
-    desktopNotifications: state.settings.interface.desktopNotifications,
-    autoDeployment: state.settings.automation.deploy,
-    autoInstall: state.settings.automation.install,
-    autoEnable: state.settings.automation.enable,
-    autoStart: state.settings.automation.start,
-    startMinimized: state.settings.automation.minimized,
-    customTitlebar: state.settings.window.customTitlebar,
-    minimizeToTray: state.settings.window.minimizeToTray,
-    relativeTimes: state.settings.interface.relativeTimes,
-    alwaysCompactHeaders: state.settings.interface.alwaysCompactHeaders === true,
-    suppressedNotifications: state.settings.notifications.suppress,
-    foregroundDL: state.settings.interface.foregroundDL,
-  };
-}
-
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
-  return {
-    onSetLanguage: (newLanguage: string): void => {
-      dispatch(setLanguage(newLanguage));
-    },
-    onSetAutoDeployment: (enabled: boolean) => {
-      dispatch(setAutoDeployment(enabled));
-    },
-    onSetAutoInstall: (enabled: boolean) => {
-      dispatch(setAutoInstall(enabled));
-    },
-    onSetAutoEnable: (enabled: boolean) => {
-      dispatch(setAutoEnable(enabled));
-    },
-    onSetAutoStart: (start: boolean) => {
-      dispatch(setAutoStart(start));
-    },
-    onSetStartMinimized: (minimized: boolean) => {
-      dispatch(setStartMinimized(minimized));
-    },
-    onSetProfilesVisible: (visible: boolean) => {
-      dispatch(setProfilesVisible(visible));
-    },
-    onSetAdvancedMode: (advanced: boolean) => {
-      dispatch(setAdvancedMode(advanced));
-    },
-    onShowDialog: (type, title, content, actions) =>
-      dispatch(showDialog(type, title, content, actions)),
-    onSetCustomTitlebar: (enable: boolean) => dispatch(setCustomTitlebar(enable)),
-    onSetDesktopNotifications: (enabled: boolean) => {
-      dispatch(setDesktopNotifications(enabled));
-    },
-    onSetHideTopLevelCategory: (skip: boolean) => {
-      dispatch(setHideTopLevelCategory(skip));
-    },
-    onSetRelativeTimes: (enabled: boolean) => {
-      dispatch(setRelativeTimes(enabled));
-    },
-    onSetAlwaysCompactHeaders: (enabled: boolean) => {
-      dispatch(setAlwaysCompactHeaders(enabled));
-    },
-    onSetReduceMotion: (enabled: boolean) => {
-      dispatch(setReduceMotion(enabled));
-    },
-    onResetNotificationSuppression: () => {
-      dispatch(resetSuppression(null));
-    },
-    onSetForegroundDL: (enabled: boolean) => dispatch(setForegroundDL(enabled)),
-  };
-}
-
-const SettingsInterfaceMapped = translate(["common"])(
-  connect(mapStateToProps, mapDispatchToProps)(SettingsInterfaceImpl),
-);
 
 /** List the subdirectories of a base directory; a missing base yields none. */
 async function listSubdirectories(basePath: string): Promise<string[]> {
@@ -638,8 +494,8 @@ async function readLocales(
 }
 
 function SettingsInterface(props: IBaseProps) {
-  const [languages, setLanguages] = React.useState<ILanguage[]>([]);
-  const [iteration, setIteration] = React.useState<number>(0);
+  const [languages, setLanguages] = useState<ILanguage[]>([]);
+  const [iteration, setIteration] = useState<number>(0);
 
   const { lang, exts } = useSelector<IState, { lang: string; exts: IAvailableExtension[] }>(
     (state) => ({
@@ -648,13 +504,9 @@ function SettingsInterface(props: IBaseProps) {
     }),
   );
 
-  const forceReload = React.useCallback(() => setIteration((i) => i + 1), []);
+  const forceReload = useCallback(() => setIteration((i) => i + 1), []);
 
-  // Effective rather than stored, so the toggle shows what the OS asked for until the
-  // user makes a choice of their own.
-  const reduceMotion = useReduceMotion();
-
-  React.useEffect(() => {
+  useEffect(() => {
     (async () => {
       const langs = await readLocales(exts, lang);
       // ensure the selected language is always an option
@@ -670,12 +522,11 @@ function SettingsInterface(props: IBaseProps) {
   }, [lang, exts, iteration]);
 
   return (
-    <SettingsInterfaceMapped
+    <SettingsInterfaceForm
       {...props}
       currentLanguage={lang}
       extensions={exts}
       languages={languages}
-      reduceMotion={reduceMotion}
       onReloadLanguages={forceReload}
     />
   );

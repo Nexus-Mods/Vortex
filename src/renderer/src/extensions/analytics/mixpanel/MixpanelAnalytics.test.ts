@@ -115,6 +115,58 @@ describe("AppLaunchedEvent is_legacy_ui", () => {
   });
 });
 
+describe("AppLaunchedEvent zoom_percent", () => {
+  beforeEach(() => {
+    analyticsMixpanel.stop();
+    vi.clearAllMocks();
+  });
+
+  it("sends the zoom level this session is running at", () => {
+    analyticsMixpanel.start(userInfo, false);
+
+    analyticsMixpanel.trackEvent(
+      new AppLaunchedEvent("win32", "10.0.22000", "x64", false, undefined, 110),
+    );
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_launched",
+      expect.objectContaining({ zoom_percent: 110 }),
+    );
+  });
+
+  it("leaves zoom_percent undefined when the caller omits it", () => {
+    const event = new AppLaunchedEvent("win32", "10.0.22000", "x64");
+
+    expect(event.properties.zoom_percent).toBeUndefined();
+  });
+});
+
+describe("AppLaunchedEvent is_hidpi", () => {
+  beforeEach(() => {
+    analyticsMixpanel.stop();
+    vi.clearAllMocks();
+  });
+
+  it.each([true, false])("sends is_hidpi=%s through to mixpanel", (isHidpi) => {
+    analyticsMixpanel.start(userInfo, false);
+
+    analyticsMixpanel.trackEvent(
+      new AppLaunchedEvent("win32", "10.0.22000", "x64", false, undefined, 100, isHidpi),
+    );
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_launched",
+      expect.objectContaining({ is_hidpi: isHidpi }),
+    );
+  });
+
+  it("leaves is_hidpi undefined when the caller omits it", () => {
+    const event = new AppLaunchedEvent("win32", "10.0.22000", "x64");
+
+    expect(event.properties.is_hidpi).toBeUndefined();
+  });
+});
+
 describe("AppUIModeChangedEvent", () => {
   beforeEach(() => {
     analyticsMixpanel.stop();

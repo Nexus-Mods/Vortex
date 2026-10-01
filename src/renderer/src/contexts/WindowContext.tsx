@@ -17,6 +17,8 @@ import { setTabsMinimized } from "../actions/window";
 import type { IModifiers } from "../types/IModifiers";
 import type { IState } from "../types/IState";
 
+export const isHidpiDisplay = (): boolean => (global.screen?.width ?? 0) > 1920;
+
 export interface IWindowContext {
   isFocused: boolean;
   isHidpi: boolean;
@@ -43,7 +45,7 @@ export const WindowProvider: FC<React.PropsWithChildren<IWindowProviderProps>> =
   const dispatch = useDispatch();
   const tabsMinimized = useSelector((state: IState) => state.settings.window.tabsMinimized);
 
-  const [isHidpi, setIsHidpi] = useState(() => (global.screen?.width ?? 0) > 1920);
+  const [isHidpi, setIsHidpi] = useState(isHidpiDisplay);
   const [isFocused, setIsFocused] = useState(true);
 
   const modifiersRef = useRef<IModifiers>({
@@ -95,7 +97,7 @@ export const WindowProvider: FC<React.PropsWithChildren<IWindowProviderProps>> =
     };
 
     const handleResize = () => {
-      const newIsHidpi = (global.screen?.width ?? 0) > 1920;
+      const newIsHidpi = isHidpiDisplay();
       setIsHidpi((prev) => (prev !== newIsHidpi ? newIsHidpi : prev));
     };
 
