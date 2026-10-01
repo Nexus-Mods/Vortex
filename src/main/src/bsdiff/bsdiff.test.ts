@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { describe, it, expect } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { applyPatchFile, createPatchFile } from "./patch";
 import { applyPatch, createPatch, loadWasm } from "./wasm";
@@ -136,10 +136,14 @@ function hasNativeBaseline(): boolean {
 }
 
 describe.skipIf(!hasNativeBaseline())("bsdiff wasm core - native cross-compatibility", () => {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const baseline = JSON.parse(
-    fs.readFileSync(path.join(TEST_DATA_DIR, "native-baseline.json"), "utf8"),
-  ) as NativeBaseline;
+  let baseline: NativeBaseline;
+
+  beforeAll(() => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    baseline = JSON.parse(
+      fs.readFileSync(path.join(TEST_DATA_DIR, "native-baseline.json"), "utf8"),
+    ) as NativeBaseline;
+  });
 
   for (const tc of TEST_CASES) {
     it(`applies native patch for ${tc.name}`, () => {
