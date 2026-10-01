@@ -6,7 +6,8 @@
     "_assets": "copyfiles -u 1 -f src/stylesheets/savegame_management.scss dist",
     "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "typecheck": "pnpm tsc",
-    "test": "pnpm exec vitest run"
+    "test": "pnpm exec vitest run",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

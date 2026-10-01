@@ -8,7 +8,8 @@
   "scripts": {
     "build": "pnpm tsdown",
     "typecheck": "pnpm tsc -p ./tsconfig.json",
-    "test": "pnpm vitest run"
+    "test": "pnpm vitest run",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "exports": {
     ".": {

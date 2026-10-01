@@ -4,7 +4,8 @@
   "description": "Management for local game settings",
   "scripts": {
     "build": "node build.mjs && pnpm extractInfo",
-    "typecheck": "pnpm tsc"
+    "typecheck": "pnpm tsc",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
