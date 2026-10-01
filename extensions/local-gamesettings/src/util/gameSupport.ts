@@ -3,6 +3,8 @@ import * as path from "path";
 import { selectors, types, util } from "@nexusmods/vortex-api";
 import * as Redux from "redux";
 
+import { resolveDocumentsPath } from "./protonDocuments";
+
 export interface ISettingsFile {
   name: string;
   optional: boolean;
@@ -140,12 +142,16 @@ export function gameSupported(gameMode: string): boolean {
   return gameSupport.has(gameMode);
 }
 
-export function mygamesPath(gameMode: string): string {
-  return path.join(
-    util.getVortexPath("documents"),
-    "My Games",
-    gameSupport.get(gameMode, "mygamesPath"),
+async function documentsPath(gameMode: string): Promise<string> {
+  const discovery = discoveryForGame(gameMode);
+  return resolveDocumentsPath(discovery, util.getVortexPath("documents"), (gamePath, storeId) =>
+    util.GameStoreHelper.findByPath(gamePath, storeId),
   );
+}
+
+export async function mygamesPath(gameMode: string): Promise<string> {
+  const documents = await documentsPath(gameMode);
+  return path.join(documents, "My Games", gameSupport.get(gameMode, "mygamesPath"));
 }
 
 export function gameSettingsFiles(gameMode: string, customPath: string): ISettingsFile[] {

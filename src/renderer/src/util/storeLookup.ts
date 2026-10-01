@@ -15,7 +15,7 @@ import * as fs from "./fs";
 import { defaultPriority, type IQueryArgEntry, normalizeStoreQuery } from "./storeQuery";
 import { toBlue } from "./util";
 
-type SearchType = "name" | "id";
+type SearchType = "name" | "id" | "path";
 
 /**
  * Search for a specific game store. Throws GameStoreNotFound when the
@@ -185,6 +185,19 @@ export function findByAppId(
   return Bluebird.try(() => findGameEntry(stores, "id", appId, storeId));
 }
 
+export function findByPath(
+  stores: IGameStore[],
+  gamePath: string,
+  storeId?: string,
+): Bluebird<IGameStoreEntry> {
+  if (!validInput(gamePath)) {
+    return Bluebird.reject(
+      new GameEntryNotFound("Invalid path input", stores.map((store) => store.id).join(", ")),
+    );
+  }
+  return Bluebird.try(() => findGameEntry(stores, "path", gamePath, storeId));
+}
+
 export function launchGameStore(
   stores: IGameStore[],
   api: IExtensionApi,
@@ -289,8 +302,16 @@ function findGameEntry(
   pattern: string | string[],
   storeId?: string,
 ): IGameStoreEntry {
-  const entryInfo = (entry: IGameStoreEntry): string =>
-    searchType === "id" ? entry.appid : entry.name;
+  const entryInfo = (entry: IGameStoreEntry): string => {
+    switch (searchType) {
+      case "id":
+        return entry.appid;
+      case "path":
+        return entry.gamePath;
+      default:
+        return entry.name;
+    }
+  };
 
   const wrapNamePattern = (gameName: string): string => {
     if (searchType !== "name") {
@@ -311,13 +332,25 @@ function findGameEntry(
   // For obvious reasons, this should only be used for
   //  name searchTypes; using this for id's would potentially
   // cause false positives.
-  const rgxMatcher = Array.isArray(pattern)
-    ? new RegExp(pattern.map(wrapNamePattern).join("|"))
-    : new RegExp(wrapNamePattern(pattern));
+  const rgxMatcher =
+    searchType === "name"
+      ? Array.isArray(pattern)
+        ? new RegExp(pattern.map(wrapNamePattern).join("|"))
+        : new RegExp(wrapNamePattern(pattern))
+      : undefined;
 
-  const matcher = Array.isArray(pattern)
-    ? (entry: IGameStoreEntry) => pattern.indexOf(entryInfo(entry)) !== -1
-    : (entry: IGameStoreEntry) => entryInfo(entry) === pattern;
+  const matcher =
+    searchType === "path"
+      ? (entry: IGameStoreEntry) => {
+          const normalize = (value: string) => {
+            const normalized = path.normalize(value);
+            return process.platform === "win32" ? normalized.toLowerCase() : normalized;
+          };
+          return normalize(entry.gamePath) === normalize(pattern as string);
+        }
+      : Array.isArray(pattern)
+        ? (entry: IGameStoreEntry) => pattern.indexOf(entryInfo(entry)) !== -1
+        : (entry: IGameStoreEntry) => entryInfo(entry) === pattern;
 
   const name = Array.isArray(pattern) ? pattern.join(" - ") : pattern;
 
@@ -356,9 +389,9 @@ function findGameEntry(
   for (const store of gameStores) {
     const entries = store.snapshot().entries;
     const entry =
-      searchType === "id"
-        ? entries.find(matcher)
-        : entries.find((ent) => rgxMatcher.test(ent.name));
+      searchType === "name"
+        ? entries.find((ent) => rgxMatcher?.test(ent.name))
+        : entries.find(matcher);
 
     if (entry !== undefined) {
       return entry;
