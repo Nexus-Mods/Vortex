@@ -1,7 +1,7 @@
-import * as crypto from "crypto";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
+import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 
 import { describe, it, expect } from "vitest";
 
@@ -127,19 +127,16 @@ describe("bsdiff wasm core - file API", () => {
 
 // --- Cross-compatibility with native patches ---
 
-describe("bsdiff wasm core - native cross-compatibility", () => {
-  function hasNativeBaseline(): boolean {
-    return (
-      fs.existsSync(path.join(TEST_DATA_DIR, "native-baseline.json")) &&
-      TEST_CASES.every((tc) => fs.existsSync(path.join(TEST_DATA_DIR, `${tc.name}-native.diff`)))
-    );
-  }
+// run capture-native-baseline.cjs first
+function hasNativeBaseline(): boolean {
+  return (
+    fs.existsSync(path.join(TEST_DATA_DIR, "native-baseline.json")) &&
+    TEST_CASES.every((tc) => fs.existsSync(path.join(TEST_DATA_DIR, `${tc.name}-native.diff`)))
+  );
+}
 
-  if (!hasNativeBaseline()) {
-    it.skip("native baseline not found (run capture-native-baseline.cjs first)", () => {});
-    return;
-  }
-
+describe.skipIf(!hasNativeBaseline())("bsdiff wasm core - native cross-compatibility", () => {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const baseline = JSON.parse(
     fs.readFileSync(path.join(TEST_DATA_DIR, "native-baseline.json"), "utf8"),
   ) as NativeBaseline;
@@ -161,6 +158,6 @@ describe("bsdiff wasm core - error handling", () => {
     // A buffer that is not a valid BSDIFF40 patch: the WASM apply_patch returns
     // a non-OK status, which createPatch/applyPatch surface as a thrown error.
     const garbagePatch = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]);
-    expect(() => applyPatch(wasm, new Uint8Array([1, 2, 3]), garbagePatch)).toThrow();
+    expect(() => applyPatch(wasm, new Uint8Array([1, 2, 3]), garbagePatch)).toThrow(Error);
   });
 });

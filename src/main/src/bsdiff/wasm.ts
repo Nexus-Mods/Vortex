@@ -16,9 +16,11 @@ export interface BsdiffWasmExports {
 
 const BSDIFF_OK = 0;
 
-export function loadWasm(wasmBytes: Uint8Array): BsdiffWasmExports {
-  const wasmModule = new WebAssembly.Module(wasmBytes as unknown as BufferSource);
+export function loadWasm(wasmBytes: BufferSource): BsdiffWasmExports {
+  const wasmModule = new WebAssembly.Module(wasmBytes);
   const instance = new WebAssembly.Instance(wasmModule);
+
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return instance.exports as unknown as BsdiffWasmExports;
 }
 
