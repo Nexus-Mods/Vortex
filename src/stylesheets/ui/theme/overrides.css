@@ -14,6 +14,24 @@
             inset: 0 !important;
         }
 
+        /* Keep a legacy table header's sort and group controls beside its label, not
+           spread across the cell, where the group icon reads as the next column's. */
+        .table-container .xthead .table-header-cell .cell-controls {
+            width: auto !important;
+            justify-content: flex-start !important;
+            gap: calc(var(--spacing) * 1);
+
+            /* Not the empty placeholder a column without sorting renders. */
+            > :not(:empty) {
+                padding-inline: calc(var(--spacing) * 0.5) !important;
+            }
+        }
+
+        /* Space each column's controls off the next column's label. */
+        .table-container .xthead .table-header-cell:not(:last-child) {
+            padding-right: calc(var(--spacing) * 1.5) !important;
+        }
+
         .mainpage-header-container {
             background-color: var(--color-surface-high) !important;
 
