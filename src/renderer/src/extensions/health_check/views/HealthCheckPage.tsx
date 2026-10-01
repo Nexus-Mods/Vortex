@@ -30,6 +30,7 @@ import { useRelativeTime } from "@/util/useRelativeTime";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
+import { useOptionalSpineContext } from "@/views/components/Spine/SpineContext";
 
 import { isLoggedIn, shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { AuthorNotesModal } from "../components/author_notes_modal/AuthorNotesModal";
@@ -121,6 +122,7 @@ const collectInstallAllItems = (
 const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheckPageProps) => {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
+  const spine = useOptionalSpineContext();
   const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
 
@@ -191,14 +193,20 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
       {
         label: t("common:::settings"),
         iconPath: mdiCogOutline,
+        testId: "health-check-settings",
         onClick: () => {
           trackSettingsOpened();
-          dispatch(setOpenMainPage("application_settings", false));
+          // Through the spine, so Home is active while global settings are open.
+          if (spine) {
+            spine.selectGlobalPage("application_settings");
+          } else {
+            dispatch(setOpenMainPage("application_settings", false));
+          }
           dispatch(setSettingsPage("Vortex"));
         },
       },
     ],
-    [dispatch, isRefreshing, onRefresh, t, trackSettingsOpened],
+    [dispatch, isRefreshing, onRefresh, spine, t, trackSettingsOpened],
   );
 
   // page_viewed fires each time the page becomes active (it stays mounted across

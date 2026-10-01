@@ -304,3 +304,6 @@ export const useSpineContext = () => {
   }
   return context;
 };
+
+/** The spine, or undefined outside one, as in the classic layout. */
+export const useOptionalSpineContext = () => useContext(SpineContext);
