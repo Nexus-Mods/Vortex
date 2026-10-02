@@ -5,7 +5,8 @@
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
     "build": "copyfiles -u 1 -f ./src/*.js dist && pnpm run _assets && pnpm extractInfo",
-    "typecheck": "pnpm exec tsc"
+    "typecheck": "pnpm exec tsc",
+    "lint:strict": "pnpm exec node ../../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

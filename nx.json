@@ -56,7 +56,7 @@
       "dependsOn": ["^build"],
       "cache": true,
       "inputs": ["default", "typescript", "eslint", "oxlint"],
-      "outputs": []
+      "outputs": ["{projectRoot}/.lint-results.json"]
     }
   }
 }

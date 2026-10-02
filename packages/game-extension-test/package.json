@@ -7,7 +7,8 @@
     "start": "pnpm tsx src/cli.ts",
     "build": "pnpm tsc",
     "typecheck": "pnpm tsc",
-    "test": "pnpm vitest run"
+    "test": "pnpm vitest run",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "devDependencies": {
     "@nexusmods/nexus-api": "catalog:",
