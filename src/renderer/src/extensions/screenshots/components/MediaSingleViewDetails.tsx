@@ -1,5 +1,6 @@
 import {
   mdiCancel,
+  mdiClose,
   mdiFolderOpenOutline,
   mdiImageOutline,
   mdiTag,
@@ -18,7 +19,7 @@ import { bytesToString } from "@/util/util";
 
 import type { GameMediaItem, GameMediaModTag, ResolvedGameMediaSource } from "../util/mediaTypes";
 import { resolveTString } from "../util/resolveTString";
-import ModTagPill from "./ModTagPill";
+import GameMediaModTagPill from "./GameMediaModTagPill";
 
 interface IMediaViewSingleDetailsProps {
   entry: GameMediaItem;
@@ -84,7 +85,12 @@ export default function MediaViewSingleDetails({
 
           {tags?.length > 0 &&
             tags?.map((tag) => (
-              <ModTagPill key={tag.id} tag={tag} onRemove={() => removeTag(tag.id)} />
+              <GameMediaModTagPill
+                iconPath={mdiClose}
+                key={tag.id}
+                tag={tag}
+                onRemove={() => removeTag(tag.id)}
+              />
             ))}
         </div>
       </div>
