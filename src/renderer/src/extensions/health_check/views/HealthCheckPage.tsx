@@ -191,6 +191,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
       {
         label: t("common:::settings"),
         iconPath: mdiCogOutline,
+        testId: "health-check-settings",
         onClick: () => {
           trackSettingsOpened();
           dispatch(setOpenMainPage("application_settings", false));
