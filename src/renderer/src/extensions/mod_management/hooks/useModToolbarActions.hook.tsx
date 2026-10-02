@@ -4,7 +4,7 @@ import _ from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 
-import { setConfirmPurge, setModAttribute, setSettingsPage } from "@/actions";
+import { setConfirmPurge, setModAttribute } from "@/actions";
 import { useMainContext } from "@/contexts";
 import { registerAction } from "@/controls/ActionControl";
 import { useExtensionObjects } from "@/ExtensionProvider";
@@ -19,18 +19,17 @@ import { fileMD5 } from "@/util/checksum";
 import { TemporaryError, UserCanceled } from "@/util/CustomErrors";
 import * as fs from "@/util/fs";
 import type { TFunction } from "@/util/i18n";
-import onceCB from "@/util/onceCB";
 import * as selectors from "@/util/selectors";
 import { getSafe } from "@/util/storeHelper";
 import { batchDispatch } from "@/util/util";
 import { getIconPath } from "@/views/components/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
-import { getAllActivators } from "../util/deploymentMethods";
 import { NoDeployment } from "../util/exceptions";
 import metaLookupMatch from "../util/metaLookupMatch";
 import updateState from "../util/modUpdateState";
 import type { IModWithState } from "../views/CheckModVersionsButton";
+import { useActivator, useDeployMods, useNoMethodWarning } from "./useDeployMods.hook";
 
 /**
  * A toolbar action plus where it sits in the row. The mods toolbar is assembled from
@@ -108,104 +107,25 @@ const NO_ACTIONS: IPositionedAction[] = [];
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
-/** Tells the user no deployment method is set, and offers to take them there. */
-const useNoMethodWarning = () => {
-  const { api } = useMainContext();
-  const dispatch = useDispatch();
-
-  return useCallback(() => {
-    api.sendNotification({
-      id: "select-deployment-method-first",
-      type: "warning",
-      message: "You have to select a deployment method first",
-      actions: [
-        {
-          title: "Fix",
-          action: (dismiss: () => void) => {
-            api.events.emit("show-main-page", "application_settings");
-            dispatch(setSettingsPage("Mods"));
-            dismiss();
-          },
-        },
-      ],
-    });
-  }, [api, dispatch]);
-};
-
-/** The deployment method the active game is set to use, if it resolves to one. */
-const useActivator = () => {
-  const gameId = useSelector(selectors.activeGameId);
-  const activatorId = useSelector((state: IState) => state.settings.mods.activator?.[gameId]);
-
-  return useMemo(
-    () =>
-      activatorId === undefined
-        ? undefined
-        : getAllActivators().find((activator) => activator.id === activatorId),
-    [activatorId],
-  );
-};
-
-/** Deploy Mods — was `ActivationButton`. */
+/** Deploy (Apply changes) — was `ActivationButton`. Disabled and unbranded while applying. */
 const useDeployAction = (t: TFunction): IPositionedAction => {
-  const { api } = useMainContext();
-  const activator = useActivator();
-  const needToDeploy = useSelector(selectors.needToDeploy);
-  const gameId = useSelector(selectors.activeGameId);
-  const profileId = useSelector((state: IState) =>
-    selectors.lastActiveProfileForGame(state, gameId),
-  );
-  const noMethod = useNoMethodWarning();
-
-  const deploy = useCallback(() => {
-    api.events.emit(
-      "deploy-mods",
-      onceCB((err: Error | null) => {
-        if (err === null) {
-          api.sendNotification({
-            id: "mods-deployed",
-            type: "info",
-            message: "Mods deployed",
-            displayMS: 3000,
-          });
-          return;
-        }
-
-        if (err instanceof UserCanceled) {
-          return;
-        }
-
-        if (err instanceof NoDeployment) {
-          api.showErrorNotification(
-            "You need to select a deployment method in settings",
-            undefined,
-            { allowReport: false },
-          );
-          return;
-        }
-
-        api.showErrorNotification("Failed to activate mods", err);
-      }),
-      profileId,
-      undefined,
-      { manual: true },
-    );
-  }, [api, profileId]);
+  const { needToDeploy, isDeploying, deploy } = useDeployMods();
 
   return useMemo(
     () => ({
       position: POSITION.deploy,
       action: {
         id: "deploy",
-        label: t("Deploy Mods"),
+        label: isDeploying ? t("Applying mod changes…") : t("Deploy (Apply changes)"),
         iconPath: getIconPath("deploy"),
         pinned: true,
         testId: "deploy-mods",
-        brand: needToDeploy ? "primary" : "neutral",
-        onClick: activator !== undefined ? deploy : noMethod,
+        brand: needToDeploy && !isDeploying ? "primary" : "neutral",
+        disabled: isDeploying,
+        onClick: deploy,
       },
     }),
-    [activator, deploy, needToDeploy, noMethod, t],
+    [deploy, isDeploying, needToDeploy, t],
   );
 };
 
