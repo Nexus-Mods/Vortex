@@ -1,11 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React from "react";
+import React, { createRef } from "react";
 import { describe, it, expect, vi } from "vitest";
 
 import { Select } from "./Select";
-
-// --- Helpers ---
 
 const options = (
   <>
@@ -14,72 +12,74 @@ const options = (
   </>
 );
 
-const renderComponent = (props: Partial<React.ComponentProps<typeof Select>> = {}) => {
-  const onChange = vi.fn();
-
-  render(
-    <Select id="fruit" label="Fruit" onChange={onChange} {...props}>
-      {options}
-    </Select>,
-  );
-
-  return { onChange };
-};
-
 const getSelect = () => screen.getByRole("combobox");
 
-// --- Tests ---
-
 describe("Select", () => {
-  describe("rendering", () => {
-    it("renders a select with the given options", () => {
-      renderComponent();
-      expect(getSelect()).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "Apple" })).toBeInTheDocument();
-    });
-
-    it("renders its label via FormField", () => {
-      renderComponent();
-      expect(screen.getByText("Fruit")).toBeInTheDocument();
-    });
-
-    it("renders the dropdown chevron icon", () => {
-      renderComponent();
-      expect(screen.getByRole("presentation")).toBeInTheDocument();
-    });
+  it("renders a native select with the base class, merging a custom one", () => {
+    render(
+      <Select aria-label="Fruit" className="my-class">
+        {options}
+      </Select>,
+    );
+    expect(getSelect().tagName).toBe("SELECT");
+    expect(getSelect()).toHaveClass("nxm-select", "my-class");
+    expect(screen.getByRole("option", { name: "Apple" })).toBeInTheDocument();
   });
 
-  describe("interactions", () => {
-    it("reflects a controlled value", () => {
-      renderComponent({ value: "b" });
-      expect(getSelect()).toHaveValue("b");
-    });
-
-    it("calls onChange when a new option is selected", async () => {
-      const { onChange } = renderComponent();
-      await userEvent.selectOptions(getSelect(), "b");
-      expect(onChange).toHaveBeenCalled();
-    });
+  it("draws its chevron after the select", () => {
+    render(<Select aria-label="Fruit">{options}</Select>);
+    expect(getSelect().nextElementSibling).toHaveClass("nxm-select-icon");
   });
 
-  describe("error state", () => {
-    it("marks the select invalid and shows the message", () => {
-      renderComponent({ errorMessage: "Pick one" });
-      expect(getSelect()).toHaveAttribute("aria-invalid", "true");
-      expect(getSelect()).toHaveAttribute("aria-describedby", "fruit_error");
-      expect(screen.getByText("Pick one")).toBeInTheDocument();
-    });
+  it("passes the change event through", async () => {
+    const onChange = vi.fn();
+    render(
+      <Select aria-label="Fruit" onChange={onChange}>
+        {options}
+      </Select>,
+    );
+
+    await userEvent.selectOptions(getSelect(), "b");
+
+    expect(onChange.mock.calls[0][0].target.value).toBe("b");
   });
 
-  describe("disabled / required", () => {
-    it("disables the select", () => {
-      renderComponent({ disabled: true });
-      expect(getSelect()).toBeDisabled();
-    });
+  it("reflects a controlled value", () => {
+    render(
+      <Select aria-label="Fruit" value="b" onChange={() => undefined}>
+        {options}
+      </Select>,
+    );
+    expect(getSelect()).toHaveValue("b");
+  });
 
-    it("shows the required label when required", () => {
-      renderComponent({ required: true });
-      expect(screen.getByText(/\(Required\)/)).toBeInTheDocument();
-    });
+  it("reports invalid as aria-invalid and data-invalid", () => {
+    render(
+      <Select invalid aria-label="Fruit">
+        {options}
+      </Select>,
+    );
+    expect(getSelect()).toHaveAttribute("aria-invalid", "true");
+    expect(getSelect()).toHaveAttribute("data-invalid");
+  });
+
+  it("marks itself disabled for styling", () => {
+    render(
+      <Select disabled aria-label="Fruit">
+        {options}
+      </Select>,
+    );
+    expect(getSelect()).toBeDisabled();
+    expect(getSelect()).toHaveAttribute("data-disabled");
+  });
+
+  it("forwards its ref to the select", () => {
+    const ref = createRef<HTMLSelectElement>();
+    render(
+      <Select aria-label="Fruit" ref={ref}>
+        {options}
+      </Select>,
+    );
+    expect(ref.current).toBe(getSelect());
   });
 });

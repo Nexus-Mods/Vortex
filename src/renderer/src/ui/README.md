@@ -13,11 +13,15 @@ ui/
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
 │   ├── dropdown/        - Dropdown menu (Headless UI Menu)
 │   ├── form/            - Form components
-│   │   ├── checkbox/    - Checkbox input
-│   │   ├── formfield/   - Form field wrapper with labels and validation
-│   │   ├── input/       - Text input with validation
-│   │   ├── select/      - Select dropdown with custom styling
-│   │   └── switch/      - Tri-state toggle switch (off / on / semi-on)
+│   │   ├── checkbox/    - Bare checkbox, with indeterminate (Headless UI Checkbox)
+│   │   ├── checkbox_field/ - Checkbox with its label beside it, hints and error
+│   │   ├── field/       - Field, Label, Description, ErrorMessage, CharacterCount (Headless UI Field)
+│   │   ├── input/       - Bare text input (Headless UI Input)
+│   │   ├── select/      - Bare native select with its chevron (Headless UI Select)
+│   │   ├── select_field/ - Select with its label, hints and error
+│   │   ├── switch/      - Bare tri-state switch: off / on / semi-on (Headless UI Checkbox)
+│   │   ├── switch_field/ - Switch with its label beside it and hints under both
+│   │   └── text_field/  - Text input with its label, hints, error and character count
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
@@ -369,9 +373,46 @@ import { TextField } from "../../ui/components/form/text_field/TextField";
 
 **Props:** everything `Input` takes except `id` (Headless UI generates the ids that link the parts), plus `label`, `hideLabel`, `hints` (a string or a list), `errorMessage`, `hideErrors` (off screen only; screen readers still get it), `showRequiredLabel` (defaults to `required`), `fieldClassName` and `leftIconPath` (an mdi icon inside the input, before the text). `className` goes on the input and `fieldClassName` on the field around it. `onChange` receives the native change event.
 
+#### SelectField
+
+A native select with its label, hints and error. It takes the same field props as `TextField`, minus the character count and icon:
+
+```tsx
+import { SelectField } from "../../ui/components/form/select_field/SelectField";
+
+<SelectField
+    label="Country"
+    required
+    value={country}
+    onChange={(event) => setCountry(event.target.value)}
+>
+    <option value="">Select...</option>
+    <option value="us">United States</option>
+</SelectField>;
+```
+
+**Props:** everything `Select` takes except `id`, plus `label`, `hideLabel`, `hints`, `errorMessage`, `hideErrors`, `showRequiredLabel` and `fieldClassName`. Options and option groups are passed as children. `onChange` receives the native change event, as before.
+
+#### CheckboxField
+
+A checkbox with its label beside it, and hints and error under both. Clicking the label toggles it.
+
+```tsx
+import { CheckboxField } from "../../ui/components/form/checkbox_field/CheckboxField";
+
+<CheckboxField label="Include logs" checked={include} onChange={setInclude} />
+
+// Rich label, e.g. a title and a note; a long one wraps with the checkbox at the top
+<CheckboxField label={<><strong>{modName}</strong> {note}</>} checked={on} onChange={setOn} />
+```
+
+**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value` for form submission, `defaultChecked` — plus `label` (required, and can be rich content), `hideLabel`, `hints`, `errorMessage` and `fieldClassName`. `onChange` receives the new checked value, not an event. `className` goes on the checkbox.
+
+`Checkbox` is the bare control: a `<span role="checkbox">`, so pass `name` for the value to take part in form submission, and outside a `Field` give it an `aria-label`. `indeterminate` shows a dash and reports `aria-checked="mixed"`; `invalid` marks it with `aria-invalid` and `data-invalid`.
+
 #### Building blocks
 
-`TextField` is these parts put together. Use them directly for a layout it doesn't cover:
+`TextField`, `SelectField`, `CheckboxField` and `SwitchField` are these parts put together. Use them directly for a layout it doesn't cover:
 
 ```tsx
 import { Description } from "../../ui/components/form/field/Description";
@@ -391,24 +432,9 @@ import { Input } from "../../ui/components/form/input/Input";
 - `Field` groups a control with its parts. `disabled` cascades to all of them.
 - `Label` names the control. `required` only adds "(Required)", so set `required` on the control as well. If you give the control its own `id`, pass the same value as `htmlFor`, or clicking the label stops focusing the control.
 - `Description` and `ErrorMessage` are both added to the control's `aria-describedby`, in the order they render. `ErrorMessage` is a `Description` styled as an error; pair it with `invalid` on the control.
-- `Input` is the bare control. Outside a `Field` it needs an `aria-label`.
+- `Input` and `Select` are the bare controls. Outside a `Field` they need an `aria-label`. `Select` draws its own chevron, so it wraps the native select in `nxm-field-control`, the same wrapper `TextField` puts around its input for the icon; its ref and `className` go on the select.
 
-Every part styles itself off the attributes Headless UI sets (`data-disabled`, `data-invalid`, `data-hover`), like `Switch`. The one exception is the input's focus style, which uses `:focus`: Headless UI sets `data-focus` only for keyboard focus, and a text input should show focus however it got it.
-
-#### Select
-
-`Select` hasn't moved onto `Field` yet (LAZ-910), so it still takes its label and hints as props:
-
-```tsx
-import { Select } from "../../ui/components/form/select/Select";
-
-<Select id="country" label="Country">
-    <option value="">Select...</option>
-    <option value="us">United States</option>
-</Select>;
-```
-
-`FormFieldWrap` spaces a stack of fields.
+Every part styles itself off the attributes Headless UI sets (`data-disabled`, `data-invalid`, `data-hover`), like `Switch`. The one exception is the focus style of `Input` and `Select`, which uses `:focus`: Headless UI sets `data-focus` only for keyboard focus, and these should show focus however they got it.
 
 ### Switch
 
@@ -419,7 +445,7 @@ Built on Headless UI's **`Checkbox`**, not its `Switch`: ARIA only allows `aria-
 ```tsx
 import { Switch } from "../../ui/components/form/switch/Switch";
 
-// Controlled on/off — onChange receives the new checked value, not an event
+// Controlled on/off, named by aria-label outside a Field. onChange receives the new checked value, not an event
 <Switch checked={enabled} onChange={setEnabled} aria-label="Enable" />
 
 // Semi-on (mixed) — e.g. a "select all" with some children on
@@ -431,7 +457,17 @@ import { Switch } from "../../ui/components/form/switch/Switch";
 />
 ```
 
-**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value`/`form` for form submission, `defaultChecked` for uncontrolled use — plus `className`.
+**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value`/`form` for form submission, `defaultChecked` for uncontrolled use — plus `className`. The ref goes to the switch.
+
+`Switch` is the bare control: outside a `Field` it needs an `aria-label`. For a switch with its label beside it, use `SwitchField`:
+
+```tsx
+import { SwitchField } from "../../ui/components/form/switch_field/SwitchField";
+
+<SwitchField label="Auto-update" hints="Checks when Vortex starts" checked={on} onChange={setOn} />;
+```
+
+`SwitchField` takes everything `Switch` does except `id`, plus `label` (required), `hideLabel`, `hints` and `fieldClassName`. Clicking the label toggles the switch, and `disabled` covers both. There's no `errorMessage`: a switch is never invalid. To lay the parts out differently, such as the label before the switch, compose `Field`, `Label` and `Switch` yourself.
 
 The track and thumb style themselves off the attributes Headless UI sets (`data-checked`, `data-indeterminate`, `data-disabled`, `data-hover`, `data-active`, `data-focus`) rather than any state we derive ourselves. It renders a `<span role="checkbox">`, so pass `name` if the value needs to take part in form submission.
 

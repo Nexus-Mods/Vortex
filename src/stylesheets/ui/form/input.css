@@ -54,13 +54,6 @@
         }
     }
 
-    .nxm-input-container {
-        position: relative;
-        display: flex;
-        align-items: center;
-        width: 100%;
-    }
-
     .nxm-input-icon {
         position: absolute;
         left: calc(var(--spacing) * 3);

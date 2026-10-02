@@ -15,7 +15,7 @@ import { ToolbarPanelButton } from "./ToolbarPanelButton";
 /** The display options panel, whose "Display as" row holds a nested picker. */
 const displayOptions = () => (
   <PopoverPanelGroup>
-    <PopoverPanelGroupItem label="Display as">
+    <PopoverPanelGroupItem passive label="Display as">
       <Picker<string>
         button={{ leftIconPath: mdiViewGrid, size: "sm" }}
         options={[
@@ -40,8 +40,11 @@ const openPanel = async () => {
 
 const panelRow = () => screen.queryByText("Display as");
 
-/** The picker's own trigger, which sits inside the panel and shows the selection. */
-const picker = () => screen.getByRole("button", { name: /Grid/ });
+/**
+ * The picker's own trigger, which sits inside the panel and shows the selection. Named by the
+ * row's label, then itself: "Display as Grid" in a browser, but jsdom drops the self-reference.
+ */
+const picker = () => screen.getByRole("button", { name: /Display as/ });
 
 // --- Tests ---
 
