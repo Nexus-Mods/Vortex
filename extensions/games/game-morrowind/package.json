@@ -1,6 +1,6 @@
 {
   "name": "game-morrowind",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Support for The Elder Scrolls III: Morrowind",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
