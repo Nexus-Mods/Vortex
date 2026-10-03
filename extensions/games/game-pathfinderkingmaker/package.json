@@ -1,6 +1,6 @@
 {
   "name": "game-pathfinderkingmaker",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Support for Pathfinder: Kingmaker",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
