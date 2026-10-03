@@ -194,6 +194,7 @@ import gatherDependencies, {
 } from "./util/dependencies";
 import filterModInfo from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
+import { toPosixSeparators } from "./util/installerHelpers";
 import { InstallPhaseTracker, type IDeploymentDetails } from "./util/InstallPhaseTracker";
 import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
@@ -4604,7 +4605,7 @@ class InstallManager {
       }
     });
 
-    const finalInstructions = result.instructions
+    let finalInstructions = result.instructions
       .filter((instr) => (instr.source ?? instr.type) != null)
       .map((instr) => {
         const key = (instr.source ?? instr.type).toUpperCase();
@@ -4649,6 +4650,10 @@ class InstallManager {
           finalInstructions.push(instr);
         }
       }
+    }
+
+    if (process.platform !== "win32") {
+      finalInstructions = finalInstructions.map(toPosixSeparators);
     }
 
     const invalidInstructions = this.validateInstructions(finalInstructions);
