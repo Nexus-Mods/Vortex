@@ -131,5 +131,4 @@ module.exports = {
   deserializeLoadOrder,
   serializeLoadOrder,
   readGameFiles,
-  validate,
 };
