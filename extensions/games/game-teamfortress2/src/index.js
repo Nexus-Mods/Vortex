@@ -5,6 +5,7 @@ const path = require("path");
 const MOD_FILE_EXT = ".vpk";
 const STEAM_ID = 440;
 const GAME_ID = "teamfortress2";
+const GAME_EXE = process.platform == "linux" ? "tf.sh" : "tf_win64.exe";
 
 const INFO_FILE = path.join("tf", "steam.inf");
 
@@ -85,8 +86,8 @@ function main(context) {
     queryModPath: () => path.join("tf", "custom"),
     getGameVersion,
     logo: "gameart.jpg",
-    executable: () => "tf_win64.exe",
-    requiredFiles: ["tf_win64.exe", path.join("tf", "gameinfo.txt")],
+    executable: () => GAME_EXE,
+    requiredFiles: [GAME_EXE, path.join("tf", "gameinfo.txt")],
     environment: {
       SteamAPPId: STEAM_ID.toString(),
     },

@@ -1,6 +1,6 @@
 {
   "name": "game-teamfortress2",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Support for Team Fortress 2",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
