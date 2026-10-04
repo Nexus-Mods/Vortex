@@ -3,7 +3,20 @@ const { fs, util } = require("@nexusmods/vortex-api");
 
 const AUDIO_EXT = ".fsb";
 const CONFIG_FILE = "config.blk";
-const GAME_EXE = process.platform == "linux" ? "linux64/aces" : "win64/aces.exe";
+const WINDOWS_EXEC = "win64/aces.exe";
+
+function gameExecutable(discoveryPath) {
+  if (process.platform != "linux") {
+    return WINDOWS_EXEC;
+  }
+  // the Windows build can be installed too, to run through Proton
+  try {
+    fs.statSync(path.join(discoveryPath, WINDOWS_EXEC));
+    return WINDOWS_EXEC;
+  } catch (err) {
+    return "linux64/aces";
+  }
+}
 const SOUND_CONFIG = `sound{
   speakerMode:t="auto"
   fmod_sound_enable:b=yes
@@ -49,8 +62,8 @@ function main(context) {
     queryPath: findGame,
     queryModPath: modPath,
     logo: "gameart.jpg",
-    executable: () => GAME_EXE,
-    requiredFiles: [GAME_EXE],
+    executable: gameExecutable,
+    requiredFiles: ["aces.vromfs.bin"],
     setup: prepareForModding,
     environment: {
       SteamAPPId: "236390",
