@@ -13,6 +13,22 @@ import { readVersionInfo } from "./peVersion";
 
 const describeOnWindows = process.platform === "win32" ? describe : describe.skip;
 
+// a small PE with version info that ships in the repo
+const DIVINE_EXE = path.resolve(
+  import.meta.dirname,
+  "../../../extensions/games/game-baldursgate3/tools/divine.exe",
+);
+
+describe("public API (cross-platform)", () => {
+  it("reads the file version", () => {
+    expect(getFileVersion(DIVINE_EXE)).toBe("1.0.0.0");
+  });
+
+  it("reads the localized product version", () => {
+    expect(getProductVersionLocalized(DIVINE_EXE)).toBe("1.0.0.0");
+  });
+});
+
 describeOnWindows("readVersionInfo", () => {
   it("reads notepad.exe version info", () => {
     const info = readVersionInfo("C:\\Windows\\System32\\notepad.exe");
