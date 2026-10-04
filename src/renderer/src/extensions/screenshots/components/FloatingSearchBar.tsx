@@ -8,8 +8,10 @@ import { Input } from "@/ui/components/form/input/Input";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Typography } from "@/ui/components/typography/Typography";
 
+import useLocalModsSearch from "../hooks/LocalModsSearch";
 import useNexusModsSearch from "../hooks/NexusModsSearch";
 import type { IModResult } from "../util/searchMods";
+import FloatingSearchBarLocalResult from "./FloatingSearchBarLocalResult";
 import FloatingSearchBarNoResults from "./FloatingSearchBarNoResults";
 import FloatingSearchBarResult from "./FloatingSearchBarResult";
 import FloatingSearchBarSkeletonTile from "./FloatingSearchBarSkeletonTile";
@@ -44,6 +46,8 @@ export default function FloatingSearchBar({
     tryToUseLogin: true,
     debounceDelayMs: 500,
   });
+
+  const { results: localResults } = useLocalModsSearch(q);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -198,13 +202,21 @@ export default function FloatingSearchBar({
             <Listing
               className="mt-2 h-24"
               customNoResults={<FloatingSearchBarNoResults query={q} />}
-              entityCount={results.length}
+              entityCount={results.length + localResults.length}
               errorTitle={error?.message}
               isError={isError}
               isLoading={isLoading}
               skeletonCount={5}
               SkeletonTile={FloatingSearchBarSkeletonTile}
             >
+              {localResults.map((r) => (
+                <FloatingSearchBarLocalResult
+                  key={r.id}
+                  mod={r}
+                  onClick={() => setSelectedMod(null)}
+                />
+              ))}
+
               {results.map((r) => (
                 <FloatingSearchBarResult
                   key={String(r.uid)}

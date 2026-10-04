@@ -53,6 +53,9 @@ export interface SteamLoginUsersVDF extends VDFObject {
 export interface GameMediaModTag {
   id: string;
   name: string;
+  modId: number;
+  gameId: number;
+  domainName: string;
   url?: string;
   thumbnail?: string;
   comment?: string;

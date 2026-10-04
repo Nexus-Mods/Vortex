@@ -242,6 +242,9 @@ describe("deleteGameMediaModTag", () => {
             {
               id: "modidentifier1",
               name: "tag name",
+              modId: 1,
+              gameId: 2,
+              domainName: "game",
               x: 1,
               y: 1,
               createdAt: new Date().toString(),
@@ -249,6 +252,9 @@ describe("deleteGameMediaModTag", () => {
             {
               id: "modidentifier2",
               name: "tag name",
+              modId: 1,
+              gameId: 2,
+              domainName: "game",
               x: 1,
               y: 1,
               createdAt: new Date().toString(),
@@ -286,6 +292,9 @@ describe("setGameMediaModTags", () => {
       {
         id: "identifier",
         name: "tag name",
+        modId: 1,
+        gameId: 2,
+        domainName: "game",
         x: 1,
         y: 1,
         createdAt: new Date().toString(),
@@ -311,6 +320,9 @@ describe("setGameMediaModTags", () => {
             {
               id: "identifier",
               name: "tag name",
+              modId: 1,
+              gameId: 2,
+              domainName: "game",
               x: 1,
               y: 1,
               createdAt: new Date().toString(),
@@ -343,6 +355,9 @@ describe("setGameMediaModTags", () => {
             {
               id: "identifier",
               name: "tag name",
+              modId: 1,
+              gameId: 2,
+              domainName: "game",
               x: 1,
               y: 1,
               createdAt: new Date().toString(),
@@ -359,6 +374,9 @@ describe("setGameMediaModTags", () => {
       {
         id: "identifier",
         name: "tag name",
+        modId: 1,
+        gameId: 2,
+        domainName: "game",
         x: 1,
         y: 1,
         createdAt: new Date().toString(),
@@ -380,6 +398,9 @@ describe("clearGameMediaModTags", () => {
   const tag = (id: string): GameMediaModTag => ({
     id,
     name: `Mod ${id}`,
+    modId: 1,
+    gameId: 2,
+    domainName: "game",
     x: 0.5,
     y: 0.5,
     createdAt: "2026-01-01T00:00:00.000Z",

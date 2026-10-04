@@ -61,6 +61,9 @@ const seedTags = (tagIds: string[], gameId: string, itemId: string) => {
   const tags: GameMediaModTag[] = tagIds.map((id) => ({
     id,
     name: "Example",
+    modId: 1,
+    gameId: 2,
+    domainName: "game",
     x: 0,
     y: 0,
     createdAt: new Date().toISOString(),
@@ -122,7 +125,18 @@ describe("GameMediaModTagHook", () => {
   it("dispatches setGameMediaModTags correctly", () => {
     const hook = render();
     const setTags = hook.result.current.setTags;
-    const newTag = [{ id: "zz", name: "zz", x: 0, y: 0, createdAt: new Date().toString() }];
+    const newTag = [
+      {
+        id: "zz",
+        name: "zz",
+        x: 0,
+        y: 0,
+        modId: 1,
+        gameId: 2,
+        domainName: "game",
+        createdAt: new Date().toString(),
+      },
+    ];
     act(() => setTags(newTag));
     expect(dispatch).toHaveBeenCalledWith({
       error: false,

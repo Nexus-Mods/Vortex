@@ -13,6 +13,10 @@ export interface IModResult {
   uid: string;
   adult: boolean;
   name: string;
+  game: {
+    id: number;
+    domainName: string;
+  };
   modId: number;
   thumbnailUrl: string;
   thumbnailBlurredUrl: string;
@@ -35,6 +39,10 @@ query mods(
       name
       thumbnailUrl
       thumbnailBlurredUrl
+      game {
+        id
+        domainName
+      }
     }
   }
 }`;

@@ -111,6 +111,9 @@ export default function MediaSingleView({
       {
         id: r.uid,
         name: r.name,
+        modId: r.modId,
+        gameId: r.game.id,
+        domainName: r.game.domainName,
         x: pendingCoords.x,
         y: pendingCoords.y,
         url: `https://nexusmods.com/${domainName}/mods/${r.modId}`,

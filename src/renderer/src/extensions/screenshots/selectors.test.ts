@@ -9,6 +9,9 @@ import type { GameMediaItem, GameMediaModTag } from "./util/mediaTypes";
 const tag = (id: string): GameMediaModTag => ({
   id,
   name: `Mod ${id}`,
+  domainName: "game",
+  modId: 1,
+  gameId: 1,
   x: 0.5,
   y: 0.5,
   createdAt: "2026-01-01T00:00:00.000Z",
