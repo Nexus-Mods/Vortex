@@ -49,6 +49,7 @@ import { relaunch } from "./cli";
 import { getVortexPath } from "./getVortexPath";
 import { hashFile } from "./hash/host";
 import { betterIpcMain } from "./ipc";
+import { setLinuxAutoStart } from "./linuxAutoStart";
 import { openUrl, openFile, showItemInFolder } from "./open";
 import { extraWebViews } from "./webview";
 
@@ -575,6 +576,16 @@ export function init(fs: FileSystem) {
   betterIpcMain.handle(
     "app:setLoginItemSettings",
     (_event: IpcMainInvokeEvent, settings: Settings) => {
+      if (process.platform === "linux") {
+        // Electron only implements login items on Windows and macOS
+        const command = [
+          process.env.APPIMAGE ?? process.execPath,
+          ...(process.defaultApp ? [app.getAppPath()] : []),
+          ...(settings.args ?? []),
+        ];
+        setLinuxAutoStart(settings.openAtLogin ?? false, command);
+        return;
+      }
       app.setLoginItemSettings(settings);
     },
   );
