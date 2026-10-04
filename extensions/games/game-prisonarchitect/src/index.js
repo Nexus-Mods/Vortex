@@ -5,14 +5,17 @@ const { fs, util } = require("@nexusmods/vortex-api");
 
 const executable = process.platform == "linux" ? "PrisonArchitect" : "Prison Architect64.exe";
 
-const MODS_LOCAL = path.resolve(
-  util.getVortexPath("appData"),
-  "..",
-  "Local",
-  "Introversion",
-  "Prison Architect",
-  "mods",
-);
+const MODS_LOCAL =
+  process.platform == "linux"
+    ? path.join(util.getVortexPath("home"), ".Prison Architect", "mods")
+    : path.resolve(
+        util.getVortexPath("appData"),
+        "..",
+        "Local",
+        "Introversion",
+        "Prison Architect",
+        "mods",
+      );
 
 const GAME_ID = "prisonarchitect";
 const STEAM_ID = 233450;
