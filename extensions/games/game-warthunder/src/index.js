@@ -3,6 +3,7 @@ const { fs, util } = require("@nexusmods/vortex-api");
 
 const AUDIO_EXT = ".fsb";
 const CONFIG_FILE = "config.blk";
+const GAME_EXE = process.platform == "linux" ? "linux64/aces" : "win64/aces.exe";
 const SOUND_CONFIG = `sound{
   speakerMode:t="auto"
   fmod_sound_enable:b=yes
@@ -48,8 +49,8 @@ function main(context) {
     queryPath: findGame,
     queryModPath: modPath,
     logo: "gameart.jpg",
-    executable: () => "win64/aces.exe",
-    requiredFiles: ["win64/aces.exe"],
+    executable: () => GAME_EXE,
+    requiredFiles: [GAME_EXE],
     setup: prepareForModding,
     environment: {
       SteamAPPId: "236390",
