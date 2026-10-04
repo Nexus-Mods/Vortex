@@ -42,12 +42,26 @@ export default function MediaViewSingleDetails({
 }: IMediaViewSingleDetailsProps) {
   const { t } = useTranslation("media_page");
 
+  const details = [
+    { label: t("single::detail::name"), value: entry.name },
+    {
+      label: t("single::detail::captured"),
+      value: entry.createdAt ? relativeTime(entry.createdAt, t) : "N/A",
+      title: entry.createdAt?.toLocaleString(),
+    },
+    { label: t("single::detail::size"), value: entry.size ? bytesToString(entry.size) : "N/A" },
+    {
+      label: t("single::detail::source"),
+      value: resolveTString(t, source?.name) ?? entry.sourceId,
+    },
+  ];
+
   return (
     <div className="flex min-w-66 flex-col gap-5 select-text">
       {/* Tagged Mods Section */}
-      <div className="flex flex-col gap-5">
+      <section className="flex flex-col gap-5">
         <div className="flex flex-col">
-          <Typography className="flex items-center gap-1.5 font-semibold" typographyType="body-md">
+          <Typography as="h3" className="flex items-center gap-1.5" typographyType="body-md">
             <Icon path={mdiTagOutline} size="sm" />
 
             {t("single::mods_used")}
@@ -61,6 +75,7 @@ export default function MediaViewSingleDetails({
         <Button
           appearance="moderate"
           brand="neutral"
+          disabled={entry.type === "video"}
           leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
           title={
             entry.type === "video" ? t("single::video_tag_disabled") : t("single::actions::add_mod")
@@ -70,8 +85,29 @@ export default function MediaViewSingleDetails({
           {isAddingTag ? t("single::actions::cancel") : t("single::actions::add_mod")}
         </Button>
 
+        <Button
+          appearance="moderate"
+          brand="neutral"
+          leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
+          title={
+            entry.type === "video" ? t("single::video_tag_disabled") : t("single::actions::add_mod")
+          }
+          onClick={toggleAddingTag}
+        >
+          {(isAddingTag ? t("single::actions::cancel") : t("single::actions::add_mod")) + " modal"}
+        </Button>
+
         <div>
-          {(!tags || tags?.length === 0) && (
+          {tags?.length ? (
+            tags.map((tag) => (
+              <GameMediaModTagPill
+                iconPath={mdiClose}
+                key={tag.id}
+                tag={tag}
+                onRemove={() => removeTag(tag.id)}
+              />
+            ))
+          ) : (
             <Typography
               appearance="subdued"
               className="flex items-center gap-1.5 italic"
@@ -82,89 +118,53 @@ export default function MediaViewSingleDetails({
               {t("single::no_tags")}
             </Typography>
           )}
-
-          {tags?.length > 0 &&
-            tags?.map((tag) => (
-              <GameMediaModTagPill
-                iconPath={mdiClose}
-                key={tag.id}
-                tag={tag}
-                onRemove={() => removeTag(tag.id)}
-              />
-            ))}
         </div>
-      </div>
+      </section>
 
       <div className="border-b border-b-stroke-subdued/70" />
 
       {/* Detials Section */}
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between gap-2">
-          <Typography appearance="subdued" typographyType="body-sm">
-            {t("single::detail::name")}
-          </Typography>
+      <section>
+        <dl className="flex flex-col gap-2">
+          {details.map(({ label, value, title }) => (
+            <div className="flex justify-between gap-2" key={label}>
+              <dt>
+                <Typography appearance="subdued" typographyType="body-sm">
+                  {label}
+                </Typography>
+              </dt>
 
-          <Typography appearance="subdued" typographyType="body-sm">
-            {entry.name}
-          </Typography>
-        </div>
+              <dd className="text-right">
+                <Typography appearance="subdued" title={title} typographyType="body-sm">
+                  {value}
+                </Typography>
+              </dd>
+            </div>
+          ))}
 
-        <div className="flex justify-between gap-2">
-          <Typography appearance="subdued" typographyType="body-sm">
-            {t("single::detail::captured")}
-          </Typography>
+          <div className="flex gap-1">
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              className="grow"
+              leftIconPath={mdiImageOutline}
+              onClick={() => window.api.shell.openFile(entry.path)}
+            >
+              {t("single::actions::open")}
+            </Button>
 
-          <Typography
-            appearance="subdued"
-            title={entry.createdAt?.toString()}
-            typographyType="body-sm"
-          >
-            {entry.createdAt ? relativeTime(entry.createdAt, t) : "N/A"}
-          </Typography>
-        </div>
-
-        <div className="flex justify-between gap-2">
-          <Typography appearance="subdued" typographyType="body-sm">
-            {t("single::detail::size")}
-          </Typography>
-
-          <Typography appearance="subdued" typographyType="body-sm">
-            {entry.size ? bytesToString(entry.size) : "N/A"}
-          </Typography>
-        </div>
-
-        <div className="flex justify-between gap-2">
-          <Typography appearance="subdued" typographyType="body-sm">
-            {t("single::detail::source")}
-          </Typography>
-
-          <Typography appearance="subdued" typographyType="body-sm">
-            {resolveTString(t, source?.name) ?? entry.sourceId}
-          </Typography>
-        </div>
-
-        <div className="flex gap-1">
-          <Button
-            appearance="subdued"
-            brand="neutral"
-            className="grow"
-            leftIconPath={mdiImageOutline}
-            onClick={() => window.api.shell.openFile(entry.path)}
-          >
-            {t("single::actions::open")}
-          </Button>
-
-          <Button
-            appearance="subdued"
-            brand="neutral"
-            className="grow"
-            leftIconPath={mdiFolderOpenOutline}
-            onClick={() => window.api.shell.showItemInFolder(entry.path)}
-          >
-            {t("single::actions::view_in_folder")}
-          </Button>
-        </div>
-      </div>
+            <Button
+              appearance="subdued"
+              brand="neutral"
+              className="grow"
+              leftIconPath={mdiFolderOpenOutline}
+              onClick={() => window.api.shell.showItemInFolder(entry.path)}
+            >
+              {t("single::actions::view_in_folder")}
+            </Button>
+          </div>
+        </dl>
+      </section>
 
       <div className="border-b border-b-stroke-subdued/70" />
 

@@ -21,6 +21,7 @@ import ModTagIndicator from "../components/ModTagIndicator";
 import useGameMediaModTag from "../hooks/GameMediaModTagHook";
 import type { GameMediaItem, ResolvedGameMediaSource } from "../util/mediaTypes";
 import type { IModResult } from "../util/searchMods";
+import MediaSingleViewAddModTagModal from "./MediaSingleViewAddModTagModal";
 
 interface IMediaSingleViewProps {
   active?: boolean;
@@ -235,6 +236,20 @@ export default function MediaSingleView({
         />
       </div>
 
+      {/* Add mod tag modal (variant) */}
+      <MediaSingleViewAddModTagModal
+        api={api}
+        domainName={domainName}
+        imagePath={entry.path}
+        isOpen={isAddingTag && !!pendingCoords}
+        setTag={onSelectTag}
+        onClose={() => {
+          setIsAddingTag(false);
+          setPendingCoords(null);
+        }}
+      />
+
+      {/* Upload to Nexus Mods Modal */}
       <Modal
         showCloseButton
         isOpen={uploadModalVisible}
