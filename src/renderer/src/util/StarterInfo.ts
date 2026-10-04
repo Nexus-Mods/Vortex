@@ -259,16 +259,6 @@ class StarterInfo implements IStarterInfo {
     // Check if game/tool should run through Proton on Linux
     const protonGameEntry = await shouldRunWithProton(info, api);
     if (protonGameEntry?.usesProton) {
-      // On Linux with Proton, we can't track when the process exits (ProcessMonitor
-      // only works on Windows), so don't set tool as running to avoid stuck spinner
-      const protonSpawned = () => {
-        if (["hide", "hide_recover"].includes(info.onStart)) {
-          hideWindow();
-        } else if (info.onStart === "close") {
-          getApplication().quit();
-        }
-      };
-
       const steamStore = storeLookup.getGameStore(getGameStoresSafe(), "steam") as Steam;
       return steamStore.runToolWithProton(
         api,
@@ -280,7 +270,7 @@ class StarterInfo implements IStarterInfo {
           suggestDeploy: true,
           shell: info.shell,
           detach: info.detach || info.onStart === "close",
-          onSpawned: protonSpawned,
+          onSpawned: spawned,
         },
         protonGameEntry,
       );
