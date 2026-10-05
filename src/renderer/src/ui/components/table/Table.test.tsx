@@ -1,7 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Table } from "./Table";
 import type { ITableColumn } from "./Table.types";
@@ -116,5 +116,63 @@ describe("Table with groups", () => {
     await userEvent.click(toggle);
 
     expect(screen.getAllByRole("row")).toHaveLength(6);
+  });
+});
+
+describe("Table in a scrolling page", () => {
+  const MANY: IRow[] = Array.from({ length: 200 }, (_, index) => ({
+    id: String(index),
+    name: `Row ${index}`,
+    size: index,
+  }));
+
+  const FOCUSABLE: Array<ITableColumn<IRow>> = [
+    { id: "name", header: "Name", cell: (row) => <button type="button">{row.name}</button> },
+  ];
+
+  // jsdom has no layout: give the page's scroller a height, and the rows a place in it.
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+      function (this: HTMLElement) {
+        return this.dataset.testid === "page" ? 400 : 0;
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const renderInPage = () =>
+    render(
+      <div data-testid="page" style={{ overflowY: "auto" }}>
+        <Table columns={FOCUSABLE} getRowId={(row) => row.id} label="Files" rows={MANY} />
+      </div>,
+    );
+
+  const scrollTo = (page: HTMLElement, top: number) => {
+    Object.defineProperty(page, "scrollTop", { configurable: true, value: top });
+    fireEvent.scroll(page);
+  };
+
+  it("renders only the rows in view, counting them all", () => {
+    renderInPage();
+
+    const grid = screen.getByRole("grid");
+    const rows = within(grid).getAllByRole("row").slice(1);
+    expect(rows.length).toBeLessThan(30);
+    expect(rows[0]).toHaveAttribute("aria-rowindex", "2");
+    expect(grid).toHaveAttribute("aria-rowcount", String(MANY.length + 1));
+  });
+
+  it("renders the rows scrolled to, keeping the focused one", () => {
+    renderInPage();
+    act(() => screen.getByRole("button", { name: "Row 0" }).focus());
+
+    scrollTo(screen.getByTestId("page"), 4000);
+
+    expect(screen.getByRole("button", { name: "Row 100" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Row 0" })).toHaveFocus();
+    expect(screen.queryByRole("button", { name: "Row 1" })).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import type { ITableColumn, ITableGroup } from "./Table.types";
 import { TableCell } from "./TableCell";
 
 interface ITableHeaderProps<T, G extends ITableGroup<T>> {
+  /** The table's columns, each giving a header cell its label. */
   columns: Array<ITableColumn<T, G>>;
 }
 

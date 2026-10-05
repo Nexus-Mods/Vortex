@@ -11,6 +11,12 @@ export interface ITableGroup<T> {
   image?: string;
 }
 
+/**
+ * A track that doesn't size to its content: the table only renders the rows in view, so
+ * an `auto` track would change width as it scrolls.
+ */
+export type TableColumnWidth = `${number}px` | `${number}fr` | `minmax(${string})`;
+
 export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   /** Stable, unique identifier for the column. */
   id: string;
@@ -19,8 +25,8 @@ export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   cell: (row: T) => ReactNode;
   /** The column's cell in a group's row. The first column's follows the collapse button. */
   groupCell?: (group: G) => ReactNode;
-  /** A grid track, e.g. `"minmax(0, 1fr)"`, `"auto"` or `"206px"`. Default `"minmax(0, 1fr)"`. */
-  width?: string;
+  /** A grid track, e.g. `"minmax(0, 1fr)"` or `"206px"`. Default `"minmax(0, 1fr)"`. */
+  width?: TableColumnWidth;
   /** Where the header and cells sit in the column. Default `start`. */
   align?: "start" | "end";
 }
