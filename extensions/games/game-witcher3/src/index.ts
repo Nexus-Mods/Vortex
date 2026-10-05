@@ -42,7 +42,7 @@ import {
   testSupportedMixed,
   testDLCMod,
 } from "./installers";
-import TW3LoadOrder from "./loadOrder";
+import TW3LoadOrder, { applyAlphabeticalSort } from "./loadOrder";
 import { canMergeXML, doMergeXML } from "./mergers";
 import { getPersistentLoadOrder, migrate148 } from "./migrations";
 import { testDLC, testTL } from "./modTypes";
@@ -63,6 +63,7 @@ import {
   notifyMissingScriptMerger,
 } from "./util";
 import CollectionsDataView from "./views/CollectionsDataView";
+import Settings from "./views/Settings";
 
 const GOG_ID = "1207664663";
 const GOG_ID_GOTY = "1495134320";
@@ -355,6 +356,7 @@ function main(context: types.IExtensionContext) {
     api: context.api,
   };
   context.registerLoadOrder(new TW3LoadOrder(props));
+  context.registerSettings("Mods", Settings, undefined, isTW3(context.api), 150);
 
   // Registered unconditionally; each check short-circuits on editions it
   // doesn't apply to, since registrations can't vary per discovery.
@@ -378,6 +380,15 @@ function main(context: types.IExtensionContext) {
     context.api.onAsync("did-deploy", onDidDeploy(context.api) as any);
     context.api.onAsync("did-purge", onDidPurge(context.api) as any);
     context.api.onAsync("did-remove-mod", onDidRemoveMod(context.api) as any);
+
+    context.api.onStateChange(
+      ["settings", GAME_ID, "autoSortLoadOrder"],
+      (previous: boolean, current: boolean) => {
+        if (current && !previous) {
+          void applyAlphabeticalSort(context.api);
+        }
+      },
+    );
 
     registerHealthCheckNotifications(context.api);
   });

@@ -1,15 +1,11 @@
 /* eslint-disable */
 import path from "path";
 
-import { actions, selectors, types, util } from "@nexusmods/vortex-api";
+import { selectors, types, util } from "@nexusmods/vortex-api";
 
-import { withPositionPrefix } from "./collectionLoadOrder";
 import { GAME_ID, I18N_NAMESPACE } from "./common";
-import IniStructure from "./iniParser";
-import TW3LoadOrder, { importLoadOrder } from "./loadOrder";
+import { applyAlphabeticalSort, importLoadOrder } from "./loadOrder";
 import { makeOnContextImport } from "./mergeBackup";
-import { getPersistentLoadOrder } from "./migrations";
-import { forceRefresh, isLockedEntry } from "./util";
 
 interface IProps {
   context: types.IExtensionContext;
@@ -130,33 +126,7 @@ export const registerActions = (props: IProps) => {
           },
           {
             label: "Sort Alphabetically",
-            action: async () => {
-              try {
-                const profile = selectors.activeProfile(context.api.getState());
-                const loadOrder = getPersistentLoadOrder(context.api);
-                // Match on the folder name; the display name is the mod's Nexus
-                // title, which doesn't carry the locked prefix.
-                const locked = loadOrder.filter((entry) => isLockedEntry(entry.id));
-                const sortable = loadOrder.filter((entry) => !isLockedEntry(entry.id));
-
-                // The game falls back to ordering mod folders by name, and authors
-                // name their mods to win or lose overrides on that basis.
-                const sorted = [...sortable].sort((lhs, rhs) =>
-                  lhs.id.toLowerCase().localeCompare(rhs.id.toLowerCase()),
-                );
-
-                const newLO = withPositionPrefix([...locked, ...sorted]);
-
-                context.api.store.dispatch(actions.setLoadOrder(profile.id, newLO as any));
-                // The refresh below makes the page re-read mods.settings, so the
-                // new order has to reach the file first or it's just discarded.
-                await IniStructure.getInstance(context.api).setINIStruct(newLO);
-              } catch (err) {
-                context.api.showErrorNotification("Failed to sort alphabetically", err);
-              } finally {
-                forceRefresh(context.api);
-              }
-            },
+            action: () => applyAlphabeticalSort(context.api),
           },
         ],
       );

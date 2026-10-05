@@ -13,6 +13,7 @@ import {
   UNI_PATCH,
 } from "./common";
 import IniStructure from "./iniParser";
+import { sortLoadOrderAlphabetically } from "./loadOrderSort";
 import { getPersistentLoadOrder } from "./migrations";
 import { IItemRendererProps } from "./types";
 import { fileExists, forceRefresh } from "./util";
@@ -205,6 +206,21 @@ export async function importLoadOrder(
     return;
   } finally {
     api.dismissNotification(ACTIVITY_ID_IMPORTING_LOADORDER);
+  }
+}
+
+/** Sorts the active profile's load order alphabetically and writes mods.settings. */
+export async function applyAlphabeticalSort(api: types.IExtensionApi): Promise<void> {
+  try {
+    const profile = selectors.activeProfile(api.getState());
+    const sorted = sortLoadOrderAlphabetically(getPersistentLoadOrder(api));
+    api.store.dispatch(actions.setLoadOrder(profile.id, sorted as any));
+    // forceRefresh re-reads mods.settings.
+    await IniStructure.getInstance(api).setINIStruct(sorted);
+  } catch (err) {
+    api.showErrorNotification("Failed to sort alphabetically", err);
+  } finally {
+    forceRefresh(api);
   }
 }
 

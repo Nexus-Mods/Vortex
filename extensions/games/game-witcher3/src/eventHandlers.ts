@@ -12,9 +12,11 @@ import {
 } from "./common";
 import { detectEdition, W3Edition } from "./edition";
 import IniStructure from "./iniParser";
+import { sortLoadOrderAlphabetically } from "./loadOrderSort";
 import * as menuMod from "./menumod";
 import { storeToProfile, restoreFromProfile } from "./mergeBackup";
 import { getPersistentLoadOrder } from "./migrations";
+import { autoSortLoadOrderEnabled } from "./selectors";
 import { IRemoveModOptions } from "./types";
 import {
   validateProfile,
@@ -175,7 +177,10 @@ export const onDidDeploy = (api: types.IExtensionApi) => {
           "remove the existing merge and re-apply it.",
       );
     }
-    const loadOrder = getPersistentLoadOrder(api);
+    let loadOrder = getPersistentLoadOrder(api);
+    if (autoSortLoadOrderEnabled(state)) {
+      loadOrder = sortLoadOrderAlphabetically(loadOrder);
+    }
     const docFiles = (deployment["witcher3menumodroot"] ?? []).filter(
       (file) =>
         file.relPath.endsWith(PART_SUFFIX) && file.relPath.indexOf(INPUT_XML_FILENAME) === -1,
