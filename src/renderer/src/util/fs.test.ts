@@ -1,3 +1,4 @@
+import PromiseBB from "bluebird";
 import { describe, it, expect, vi } from "vitest";
 
 let mockData: Buffer;
@@ -60,5 +61,24 @@ describe("readFileBOM", () => {
       0x00,
     ]);
     await expect(fs.readFileBOM("", "utf8")).resolves.toBe("foo");
+  });
+});
+
+describe("forcePerm", () => {
+  it.skipIf(process.platform === "win32")("doesn't offer elevation outside Windows", async () => {
+    const showMessageBox = vi.fn().mockResolvedValue({ response: 0 });
+    vi.stubGlobal("window", { api: { dialog: { showMessageBox } } });
+    const denied = Object.assign(new Error("denied"), {
+      code: "EACCES",
+      path: "/nonexistent/vortex-test",
+    });
+    await expect(
+      fs.forcePerm(
+        (input: string) => input,
+        () => PromiseBB.reject(denied),
+      ),
+    ).rejects.toThrow("canceled by user");
+    expect(showMessageBox.mock.calls[0][0].buttons).toEqual(["Cancel", "Retry"]);
+    vi.unstubAllGlobals();
   });
 });
