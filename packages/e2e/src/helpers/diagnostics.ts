@@ -90,7 +90,24 @@ export async function instrumentVortexWindow(
   window: Page,
   prefix: string,
 ): Promise<DiagnosticsTeardown> {
-  const stopTracing = await startTracing(window);
+  // Tracing is diagnostics only, so a failure to start it mustn't fail the test.
+  // If the window or app is really gone the test fails on its first step anyway,
+  // with vortex.log attached; record what state we found to explain it.
+  let stopTracing: StopTracing | undefined;
+  try {
+    stopTracing = await startTracing(window);
+  } catch (e) {
+    const proc = app.process();
+    console.warn(
+      `[diagnostics] could not start tracing the ${prefix} window: ${String(e)}`,
+      JSON.stringify({
+        windowClosed: window.isClosed(),
+        url: window.isClosed() ? undefined : window.url(),
+        exitCode: proc.exitCode,
+        signal: proc.signalCode,
+      }),
+    );
+  }
   return async (testInfo, failed = false) => {
     await stopTracing?.(testInfo, `${prefix}-trace.zip`).catch((e) =>
       console.error("Failed to stop tracing:", e),

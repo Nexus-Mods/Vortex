@@ -35,19 +35,19 @@ export async function manageGame(
 
     await stubOpenDialog(electronApp, fakeGame.gamePath);
 
-    // The unmanaged games list is paginated/windowed, so the target game's row
-    // isn't in the DOM until the list is filtered down to it. Search by name first.
+    // The supported games list is windowed, so the target game's tile isn't in
+    // the DOM until the list is filtered down to it. Search by name first.
     await expect(gamesPage.searchInput).toBeVisible();
     await gamesPage.searchInput.fill(gameName);
 
-    const row = gamesPage.gameRow(gameName);
-    await expect(row).toBeVisible({ timeout: Timeouts.NETWORK });
-    await row.scrollIntoViewIfNeeded();
-    await row.hover();
+    const tile = gamesPage.gameTileInSection(gamesPage.supportedSection, gameName);
+    await expect(tile).toBeVisible({ timeout: Timeouts.NETWORK });
+    await tile.scrollIntoViewIfNeeded();
+    await tile.hover();
 
-    const manageButton = gamesPage.manageButton(gameName);
-    await expect(manageButton).toBeVisible();
-    await manageButton.click();
+    const manualAddButton = gamesPage.manualAddButton(gameName);
+    await expect(manualAddButton).toBeVisible();
+    await manualAddButton.click();
 
     await expect(gamesPage.notDiscoveredDialog).toBeVisible();
     await expect(gamesPage.notDiscoveredDialog).toContainText(

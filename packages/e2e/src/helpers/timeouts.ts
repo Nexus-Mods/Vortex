@@ -4,7 +4,7 @@ const scalingFactor = isCI ? 2 : 1;
 /** Global defaults applied via playwright.config.ts. */
 export const GlobalTimeouts = {
   /** Upper bound on the entire `playwright test` run. */
-  GLOBAL: isCI ? min(45) : min(10),
+  GLOBAL: isCI ? min(45) : min(20),
   /** Default poll budget for web-first assertions (`expect(locator).toBe...`). */
   EXPECT: sec(5),
   /** Default budget for locator actions (`click`, `fill`, `hover`, ...). */
@@ -17,6 +17,11 @@ export const GlobalTimeouts = {
 export const Timeouts = {
   /** For assertions or actions that depend on a network round-trip. */
   NETWORK: sec(30) * scalingFactor,
+  /**
+   * A Mod Manager download through Vortex followed by its install. Free accounts
+   * are throttled, so SMAPI alone takes ~30s locally — past a single round-trip.
+   */
+  MOD_INSTALL: min(2) * scalingFactor,
   /** Bounded wait for a client-rendered modal to appear (or confirm it won't). */
   MODAL: sec(10) * scalingFactor,
   /** Cold-start and worker fixture setup. */
