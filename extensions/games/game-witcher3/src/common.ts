@@ -95,6 +95,9 @@ export const VORTEX_BACKUP_TAG = ".vortex_backup";
 export const PART_SUFFIX = ".part.txt";
 
 export const SCRIPT_MERGER_ID = "W3ScriptMerger";
+/** Where the Vortex-managed merger can be downloaded by hand. */
+export const SCRIPT_MERGER_RELEASES_URL =
+  "https://github.com/IDCs/WitcherScriptMerger/releases/latest";
 export const MERGE_INV_MANIFEST = "MergeInventory.xml";
 export const LOAD_ORDER_FILENAME = "mods.settings";
 export const DX12_USER_SETTINGS_FILENAME = "dx12user.settings";

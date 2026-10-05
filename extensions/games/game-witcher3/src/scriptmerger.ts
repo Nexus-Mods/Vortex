@@ -4,11 +4,10 @@ import path from "path";
 import url from "url";
 
 import { actions, fs, types, log, util } from "@nexusmods/vortex-api";
-import getVersion from "exe-version";
 import _ from "lodash";
-import semver from "semver";
 import { Builder, parseStringPromise } from "xml2js";
 
+import { extractionProblem } from "./mergerInstall";
 import { isMergerToolValidForRoot, mergerDirForRoot } from "./mergerPaths";
 import { latestMergerRelease, mergerDownloadProblem } from "./mergerRelease";
 import { IIncomingGithubHttpHeaders } from "./types";
@@ -18,7 +17,7 @@ const GITHUB_URL = "https://api.github.com/repos/IDCs/WitcherScriptMerger";
 
 const MERGER_CONFIG_FILE = "WitcherScriptMerger.exe.config";
 
-const { SCRIPT_MERGER_FILES, SCRIPT_MERGER_ID } = require("./common");
+const { SCRIPT_MERGER_FILES, SCRIPT_MERGER_ID, SCRIPT_MERGER_RELEASES_URL } = require("./common");
 
 function query(baseUrl, request) {
   return new Promise((resolve, reject) => {
@@ -94,44 +93,6 @@ async function downloadConsent(api: types.IExtensionApi) {
   });
 }
 
-async function getMergerVersion(api: types.IExtensionApi) {
-  const state = api.store.getState();
-  const discovery = util.getSafe(
-    state,
-    ["settings", "gameMode", "discovered", "witcher3"],
-    undefined,
-  );
-  if (discovery?.path === undefined) {
-    return Promise.reject(new util.SetupError("Witcher3 is not discovered"));
-  }
-  const merger = discovery?.tools?.W3ScriptMerger;
-  if (merger === undefined) {
-    return Promise.resolve(undefined);
-  }
-
-  if (!!merger?.path) {
-    return fs
-      .statAsync(merger.path)
-      .then(() => {
-        if (merger?.mergerVersion !== undefined) {
-          return Promise.resolve(merger.mergerVersion);
-        }
-        const execVersion = getVersion(merger.path);
-        if (!!execVersion) {
-          const trimmedVersion = execVersion.split(".").slice(0, 3).join(".");
-          const newToolDetails = { ...merger, mergerVersion: trimmedVersion };
-          api.store.dispatch(
-            actions.addDiscoveredTool("witcher3", SCRIPT_MERGER_ID, newToolDetails, true),
-          );
-          return Promise.resolve(trimmedVersion);
-        }
-      })
-      .catch((err) => Promise.resolve(undefined));
-  } else {
-    return Promise.resolve(undefined);
-  }
-}
-
 /** A downloaded merger that can't be installed; the user is sent to the manual install. */
 class UnusableMergerDownloadError extends Error {}
 
@@ -159,18 +120,18 @@ export async function getScriptMergerDir(api, create = false) {
   if (discovery?.path === undefined) {
     return undefined;
   }
-  const currentPath = discovery.tools?.W3ScriptMerger?.path;
+  const toolPath: string | undefined = discovery.tools?.W3ScriptMerger?.path;
   try {
-    if (!currentPath) {
+    if (!toolPath) {
       throw new Error("Script Merger not set up");
     }
     // Existing on disk isn't enough: a path left over from another install
     // stats fine and would merge the wrong scripts into the wrong Mods folder.
-    if (!isMergerToolValidForRoot(currentPath, discovery.path)) {
+    if (!isMergerToolValidForRoot(toolPath, discovery.path)) {
       throw new util.ProcessCanceled("Script Merger belongs to another install");
     }
-    await fs.statAsync(currentPath);
-    return currentPath;
+    await fs.statAsync(toolPath);
+    return path.dirname(toolPath);
   } catch (err) {
     const defaultPath = mergerDirForRoot(discovery.path);
     if (create) {
@@ -190,8 +151,16 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
   if (discovery?.path === undefined) {
     return Promise.reject(new util.SetupError("Witcher3 is not discovered"));
   }
+  const toolPath: string | undefined = discovery.tools?.[SCRIPT_MERGER_ID]?.path;
+  if (
+    toolPath !== undefined &&
+    isMergerToolValidForRoot(toolPath, discovery.path) &&
+    (await fileExists(toolPath))
+  ) {
+    // A merger is already set up for this install, whichever one the user chose.
+    return;
+  }
   let mostRecentVersion;
-  const currentlyInstalledVersion = await getMergerVersion(api);
   const downloadNotifId = "download-script-merger-notif";
   return query(GITHUB_URL, "releases")
     .then((releases) => {
@@ -208,9 +177,6 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
     .then(async (latest) => {
       const { version, fileName, downloadLink } = latest;
       mostRecentVersion = version;
-      if (!!currentlyInstalledVersion && semver.gte(currentlyInstalledVersion, version)) {
-        return Promise.reject(new util.ProcessCanceled("Already up to date"));
-      }
 
       const downloadNotif: types.INotification = {
         id: downloadNotifId,
@@ -288,70 +254,6 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
         });
       };
 
-      if (
-        !!currentlyInstalledVersion ||
-        (currentlyInstalledVersion === undefined && !!discovery?.tools?.W3ScriptMerger)
-      ) {
-        api.sendNotification({
-          id: "merger-update",
-          type: "warning",
-          noDismiss: true,
-          message: api.translate("Important Script Merger update available", {
-            ns: "game-witcher3",
-          }),
-          actions: [
-            {
-              title: "Download",
-              action: (dismiss) => {
-                dismiss();
-                return download()
-                  .then((archivePath) => onDownloadComplete(api, archivePath, mostRecentVersion))
-                  .catch((err) => {
-                    api.dismissNotification(extractNotifId);
-                    api.dismissNotification(downloadNotifId);
-                    if (
-                      err instanceof UnusableMergerDownloadError ||
-                      err instanceof util.ProcessCanceled
-                    ) {
-                      log("error", "Failed to automatically install Script Merger", err.message);
-                      api.sendNotification({
-                        type: "error",
-                        message: api.translate("Please install Script Merger manually", {
-                          ns: "game-witcher3",
-                        }),
-                        actions: [
-                          {
-                            title: "Install Manually",
-                            action: () =>
-                              util
-                                .opn("https://www.nexusmods.com/witcher3/mods/484")
-                                .catch((err) => null),
-                          },
-                        ],
-                      });
-                      return Promise.resolve();
-                    }
-                    // Currently AFAIK this would only occur if github is down for any reason
-                    //  and we were unable to resolve the re-direction link. Given that the user
-                    //  expects a result from him clicking the download button, we let him know
-                    //  to try again
-                    api.sendNotification({
-                      type: "info",
-                      message: api.translate(
-                        "Update failed due temporary network issue - try again later",
-                        { ns: "game-witcher3" },
-                      ),
-                    });
-                    return Promise.resolve();
-                  });
-              },
-            },
-          ],
-        });
-
-        return Promise.reject(new util.ProcessCanceled("Update"));
-      }
-
       return downloadConsent(api).then(() => download());
     })
     .then((archivePath) => onDownloadComplete(api, archivePath, mostRecentVersion))
@@ -368,8 +270,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
           actions: [
             {
               title: "Install Manually",
-              action: () =>
-                util.opn("https://www.nexusmods.com/witcher3/mods/484").catch((err) => null),
+              action: () => util.opn(SCRIPT_MERGER_RELEASES_URL).catch((err) => null),
             },
           ],
         });
@@ -383,9 +284,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
       if (err instanceof util.UserCanceled) {
         return Promise.resolve();
       } else if (err instanceof util.ProcessCanceled) {
-        if (err.message.startsWith("Already") || err.message.startsWith("Update")) {
-          return Promise.resolve();
-        } else if (err.message.startsWith("Failed to resolve download location")) {
+        if (err.message.startsWith("Failed to resolve download location")) {
           // Currently AFAIK this would only occur if github is down for any reason
           //  and we were unable to resolve the re-direction link. Given that this
           //  will most certainly resolve itself eventually - we log this and keep going.
@@ -415,7 +314,11 @@ async function extractScriptMerger(api, archivePath) {
   }
   const sZip = new util.SevenZip();
   api.sendNotification(extractNotif);
-  await sZip.extractFull(archivePath, destination);
+  const result = await sZip.extractFull(archivePath, destination);
+  const problem = extractionProblem(result);
+  if (problem !== undefined) {
+    throw new Error(problem);
+  }
   api.sendNotification({
     type: "info",
     message: api.translate("W3 Script Merger extracted successfully", { ns: "game-witcher3" }),
