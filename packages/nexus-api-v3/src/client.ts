@@ -184,6 +184,38 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       };
     },
 
+    async resolveDetectedGames(
+      contents: paths["/vortex/detected-games"]["post"]["requestBody"]["content"]["application/json"],
+    ): Promise<components["schemas"]["DetectedGame"][]> {
+      const { data, error, response } = await client.POST("/vortex/detected-games", {
+        body: contents,
+      });
+
+      if (error) throw toV3Error(error, response);
+
+      const { games } = data.data;
+      const res = Array.from<components["schemas"]["DetectedGame"]>({ length: games.length });
+
+      for (let i = 0; i < games.length; i++) {
+        const game = games[i]!;
+
+        res[i] = {
+          extension: game.extension,
+          game_id: game.game_id,
+          game_uid: game.game_uid,
+          image_url: game.image_url,
+          is_favourite: game.is_favourite,
+          store_ids: {
+            epic: Array.from(game.store_ids.epic),
+            gog: Array.from(game.store_ids.gog),
+            steam: Array.from(game.store_ids.steam),
+          },
+        };
+      }
+
+      return res;
+    },
+
     /**
      * Resolve mod-level display details (name, summary, status, thumbnail, adult
      * flag) for a set of composite mod UIDs. Up to 2000 `modIds` per call;
