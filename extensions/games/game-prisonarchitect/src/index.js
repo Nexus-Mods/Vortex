@@ -3,10 +3,10 @@ const path = require("path");
 const winapi = require("winapi-bindings");
 const { fs, util } = require("@nexusmods/vortex-api");
 
-const executable = process.platform == "linux" ? "PrisonArchitect" : "Prison Architect64.exe";
+const executable = process.platform === "linux" ? "PrisonArchitect" : "Prison Architect64.exe";
 
 const MODS_LOCAL =
-  process.platform == "linux"
+  process.platform === "linux"
     ? path.join(util.getVortexPath("home"), ".Prison Architect", "mods")
     : path.resolve(
         util.getVortexPath("appData"),
