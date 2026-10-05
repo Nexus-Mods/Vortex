@@ -442,6 +442,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             </SuperTable>
           }
           mods={this.state.primaryMods}
+          onSetModsEnabled={this.setModsEnabledFromTable}
         />
       );
     }
@@ -1452,6 +1453,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ),
     ).then((updatedModIds: string[]) => this.setModsEnabled(updatedModIds, true));
   };
+
+  // The new table's switches, through the same paths as the legacy table's.
+  private setModsEnabledFromTable = (modIds: string[], enabled: boolean) =>
+    enabled ? this.enableSelected(modIds) : this.disableSelected(modIds);
 
   private disableSelected = (modIds: string[]) => {
     const { mods, modState } = this.props;

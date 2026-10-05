@@ -21,8 +21,17 @@ const collection = (id: string, name: string, memberIds: string[]) =>
     rules: memberIds.map((memberId) => ({ type: "requires", reference: { id: memberId } })),
   });
 
-const renderSwitch = (mods: { [id: string]: IModWithState }) =>
-  render(<ModsTableSwitch legacy={<div data-testid="legacy-table" />} mods={mods} />);
+const renderSwitch = (mods: { [id: string]: IModWithState }) => {
+  const onSetModsEnabled = vi.fn();
+  render(
+    <ModsTableSwitch
+      legacy={<div data-testid="legacy-table" />}
+      mods={mods}
+      onSetModsEnabled={onSetModsEnabled}
+    />,
+  );
+  return onSetModsEnabled;
+};
 
 const showView = (name: string) => userEvent.click(screen.getByRole("button", { name }));
 
@@ -155,5 +164,100 @@ describe("ModsTableSwitch", () => {
       "src",
       "https://avatars.nexusmods.com/42/100",
     );
+  });
+
+  describe("enabling and disabling", () => {
+    // Beta and Gamma are in Xenon; Gamma is in Yttrium too.
+    const sharedMods = () => ({
+      a: mod("a", "Alpha", true),
+      b: mod("b", "Beta", true),
+      c: mod("c", "Gamma", true),
+      x: collection("x", "Xenon", ["b", "c"]),
+      y: collection("y", "Yttrium", ["c"]),
+    });
+
+    const groupSwitch = (name: string) =>
+      within(screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement).getByRole(
+        "checkbox",
+      );
+
+    it("sets one mod from its own switch", async () => {
+      const onSetModsEnabled = renderSwitch({ a: mod("a", "Alpha", true) });
+
+      const [row] = bodyRows(screen.getByRole("grid"));
+      await userEvent.click(within(row).getByRole("checkbox"));
+
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["a"], false);
+    });
+
+    it("disables a group with no shared mods without asking", async () => {
+      const onSetModsEnabled = renderSwitch(sharedMods());
+      await showView("Collections");
+
+      await userEvent.click(groupSwitch("No collection"));
+
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["a"], false);
+    });
+
+    it("asks before disabling mods another collection shares", async () => {
+      renderSwitch(sharedMods());
+      await showView("Collections");
+
+      await userEvent.click(groupSwitch("Xenon"));
+
+      // The test t() doesn't interpolate, so this reads the source string; the names are
+      // sharedMods's to work out, and tested there.
+      expect(
+        within(screen.getByRole("dialog")).getByText("1 mod is shared with: {{collections}}"),
+      ).toBeInTheDocument();
+    });
+
+    it("keeps the shared mods on, if asked to", async () => {
+      const onSetModsEnabled = renderSwitch(sharedMods());
+      await showView("Collections");
+      await userEvent.click(groupSwitch("Xenon"));
+
+      await userEvent.click(screen.getByRole("button", { name: "Keep shared mods enabled" }));
+
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["b"], false);
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("disables them all, shared ones too, if asked to", async () => {
+      const onSetModsEnabled = renderSwitch(sharedMods());
+      await showView("Collections");
+      await userEvent.click(groupSwitch("Xenon"));
+
+      await userEvent.click(screen.getByRole("button", { name: "Disable all mods" }));
+
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["b", "c"], false);
+    });
+
+    it("changes nothing on cancel", async () => {
+      const onSetModsEnabled = renderSwitch(sharedMods());
+      await showView("Collections");
+      await userEvent.click(groupSwitch("Xenon"));
+
+      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(onSetModsEnabled).not.toHaveBeenCalled();
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("enables a part-on group's mods all at once, without asking", async () => {
+      const onSetModsEnabled = renderSwitch({
+        b: mod("b", "Beta", false),
+        c: mod("c", "Gamma", true),
+        x: collection("x", "Xenon", ["b", "c"]),
+        y: collection("y", "Yttrium", ["c"]),
+      });
+      await showView("Collections");
+
+      await userEvent.click(groupSwitch("Xenon"));
+
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["b", "c"], true);
+    });
   });
 });
