@@ -23,7 +23,7 @@ export type IButtonColour =
 export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   hasExpandedStyle?: boolean;
   isLoading?: boolean;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
   children?: string;
   customContent?: ReactNode;
   disabled?: boolean;
@@ -99,6 +99,7 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
           "nxm-button-icon-only": !customContent && !children,
           "nxm-button-no-expanded-style": !hasExpandedStyle,
           // `md` is the base class, so only `sm` modifies it.
+          "nxm-button-xs": size === "xs",
           "nxm-button-sm": size === "sm",
         },
       )}

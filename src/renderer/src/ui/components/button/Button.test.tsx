@@ -93,6 +93,11 @@ describe("Button", () => {
   });
 
   describe("size", () => {
+    it('applies xs class for size="xs"', () => {
+      render(<Button size="xs">Click</Button>);
+      expect(getButton()).toHaveClass("nxm-button-xs");
+    });
+
     it('applies sm class for size="sm"', () => {
       render(<Button size="sm">Click</Button>);
       expect(getButton()).toHaveClass("nxm-button-sm");

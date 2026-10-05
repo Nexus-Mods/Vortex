@@ -331,6 +331,30 @@
         }
     }
 
+    .nxm-button-xs {
+        min-height: calc(var(--spacing) * 5);
+        padding-inline: calc(var(--spacing) * 1.5);
+
+        & .nxm-button-icon {
+            width: calc(var(--spacing) * 3);
+            height: calc(var(--spacing) * 3);
+        }
+
+        &:not(.nxm-button-icon-only) .nxm-button-icon {
+            &:first-child {
+                margin-right: calc(var(--spacing) * 1);
+            }
+
+            &:last-child {
+                margin-left: calc(var(--spacing) * 1);
+            }
+        }
+
+        &.nxm-button-icon-only {
+            width: calc(var(--spacing) * 5);
+        }
+    }
+
     .nxm-button-sm {
         min-height: calc(var(--spacing) * 6);
 

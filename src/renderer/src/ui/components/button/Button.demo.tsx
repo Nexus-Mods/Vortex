@@ -103,6 +103,8 @@ export const ButtonDemo = () => {
         <div className="flex flex-wrap items-center gap-4">
           <Button>Medium (default)</Button>
 
+          <Button size="xs">Extra small</Button>
+
           <Button size="sm">Small</Button>
         </div>
       </div>
