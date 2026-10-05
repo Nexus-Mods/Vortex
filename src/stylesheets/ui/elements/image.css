@@ -9,6 +9,10 @@
         justify-content: center;
         background-color: var(--color-surface-translucent-low);
 
+        &.nxm-image-avatar {
+            aspect-ratio: var(--aspect-avatar);
+        }
+
         &.nxm-image-collection {
             aspect-ratio: var(--aspect-collection);
         }

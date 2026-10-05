@@ -891,7 +891,7 @@ import { Image } from "../../ui/components/image/Image";
 <Image alt="Preview" src={url} imageType="mod" isBlurred />
 ```
 
-**Image types:** `collection` (4:5 portrait), `mod` (16:9 landscape), `other` (sized by container)
+**Image types:** `avatar` (1:1 square), `collection` (4:5 portrait), `game` (2:3 portrait), `mod` (16:9 landscape), `other` (sized by container)
 
 #### AdultAwareImage
 
