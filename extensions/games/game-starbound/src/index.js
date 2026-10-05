@@ -11,7 +11,7 @@ function findGame() {
 
 function gameExecutable(discoveryPath) {
   const defaultLocation =
-    process.platform == "linux" ? "linux/run-client.sh" : "win64/starbound.exe";
+    process.platform === "linux" ? "linux/run-client.sh" : "win64/starbound.exe";
   const xboxLocation = "win/starbound.exe";
   if (
     discoveryPath === undefined ||
