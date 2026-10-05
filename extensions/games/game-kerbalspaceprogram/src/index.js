@@ -6,14 +6,14 @@ const WINDOWS_EXEC = "KSP_x64.exe";
 const LINUX_EXEC = "KSP.x86_64";
 
 function gameExecutable(discoveryPath) {
-  if (process.platform != "linux") {
+  if (process.platform === "win32") {
     return WINDOWS_EXEC;
   }
   // the Windows build can be installed too, to run through Proton
   try {
     fs.statSync(path.join(discoveryPath, WINDOWS_EXEC));
     return WINDOWS_EXEC;
-  } catch (err) {
+  } catch {
     return LINUX_EXEC;
   }
 }
