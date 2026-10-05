@@ -5,13 +5,7 @@ import { fs, log, types, selectors, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
 
-import {
-  GAME_ID,
-  LOCKED_PREFIX,
-  I18N_NAMESPACE,
-  ACTIVITY_ID_IMPORTING_LOADORDER,
-  PART_SUFFIX,
-} from "./common";
+import { GAME_ID, I18N_NAMESPACE, ACTIVITY_ID_IMPORTING_LOADORDER, PART_SUFFIX } from "./common";
 import { detectEdition, determineExecutableFrom, W3Edition } from "./edition";
 import IniStructure from "./iniParser";
 import { getMergedModNames } from "./mergeInventoryParsing";
@@ -80,7 +74,7 @@ export const getTLPath = (api: types.IExtensionApi) => {
 };
 
 export const isTW3 = (api: types.IExtensionApi) => {
-  return (gameId: string) => {
+  return (gameId?: string) => {
     if (gameId !== undefined) {
       return gameId === GAME_ID;
     }
@@ -334,16 +328,6 @@ export async function getManuallyAddedMods(api: types.IExtensionApi) {
     return Promise.resolve(accum);
   }, Promise.resolve([]));
   return Promise.resolve(validCandidates);
-}
-
-export function isLockedEntry(modName: string) {
-  // We're adding this to avoid having the load order page
-  //  from not loading if we encounter an invalid mod name.
-  if (!modName || typeof modName !== "string") {
-    log("debug", "encountered invalid mod instance/name");
-    return false;
-  }
-  return modName.startsWith(LOCKED_PREFIX);
 }
 
 export function determineExecutable(discoveredPath: string): string {
