@@ -36,6 +36,7 @@ import { addDiscoveredGame, addDiscoveredTool, clearDiscoveredGame } from "./act
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IToolStored } from "./types/IToolStored";
+import { requestDetectedGames } from "./util/detectedGames";
 import {
   assertToolDir,
   discoverRelativeTools,
@@ -524,6 +525,9 @@ class GameModeManager {
       await Promise.all(promsies);
     } finally {
       this.mApi.dismissNotification?.("gamestore-reload");
+      void requestDetectedGames(this.mApi).catch((err) =>
+        log("warn", "detected-games: unexpected failure", { err }),
+      );
     }
   }
 
