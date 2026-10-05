@@ -347,13 +347,6 @@ export interface IStateTransactions {
   pendingPluginSort: Record<string, Record<string, number>>;
 }
 
-export interface ISessionGameMode {
-  known: IGameStored[];
-  addDialogVisible: boolean;
-  disabled: { [gameId: string]: string };
-  showHidden: boolean;
-}
-
 export interface IGameInfoEntry {
   key: string;
   provider: string;
@@ -427,7 +420,6 @@ export interface ICollectionsPersistentState {
 export interface ISessionState {
   base: ISession;
   collections: ICollectionInstallState;
-  gameMode: ISessionGameMode;
   discovery: IDiscoveryState;
   notifications: INotificationState;
   browser: IBrowserState;
