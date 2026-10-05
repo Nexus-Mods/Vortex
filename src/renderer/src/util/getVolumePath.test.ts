@@ -16,15 +16,8 @@ vi.mock("winapi-bindings", () => ({
 
 import { getVolumePath } from "./getVolumePath";
 
-const platform = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value });
-}
-
 describe("getVolumePath", () => {
   beforeEach(() => {
-    setPlatform(platform);
     for (const key of Object.keys(devices)) delete devices[key];
     Object.assign(devices, {
       "/": 1,
@@ -35,23 +28,22 @@ describe("getVolumePath", () => {
     });
   });
 
-  it("uses winapi on windows", () => {
-    setPlatform("win32");
+  it.runIf(process.platform === "win32")("uses winapi on windows", () => {
     expect(getVolumePath("C:\\games\\foo")).toBe("volume of C:\\games\\foo");
   });
 
-  it("returns the mount point of the path", () => {
-    setPlatform("linux");
+  it.skipIf(process.platform === "win32")("returns the mount point of the path", () => {
     expect(getVolumePath("/mnt/data/games/foo")).toBe("/mnt/data");
   });
 
-  it("returns the root for paths on the root device", () => {
-    setPlatform("linux");
+  it.skipIf(process.platform === "win32")("returns the root for paths on the root device", () => {
     expect(getVolumePath("/mnt")).toBe("/");
   });
 
-  it("resolves missing paths through their closest existing parent", () => {
-    setPlatform("linux");
-    expect(getVolumePath("/mnt/data/games/foo/mods/bar")).toBe("/mnt/data");
-  });
+  it.skipIf(process.platform === "win32")(
+    "resolves missing paths through their closest existing parent",
+    () => {
+      expect(getVolumePath("/mnt/data/games/foo/mods/bar")).toBe("/mnt/data");
+    },
+  );
 });
