@@ -5,9 +5,9 @@ import path from "path";
 import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 import IniParser, { IniFile, WinapiFormat } from "vortex-parse-ini";
 
-import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath } from "./common";
+import { GAME_ID, ResourceInaccessibleError, getLoadOrderFilePath, isLockedEntry } from "./common";
 import { assignPriorities, ModSettingsEntry } from "./modSettingsPriority";
-import { forceRefresh, isLockedEntry, getAllMods, getManuallyAddedMods } from "./util";
+import { forceRefresh, getAllMods, getManuallyAddedMods } from "./util";
 
 export default class IniStructure {
   private static instance: IniStructure = null;

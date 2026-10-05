@@ -1,10 +1,13 @@
-import { FlexLayout, util } from "@nexusmods/vortex-api";
+import { Toggle, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import * as React from "react";
 import * as BS from "react-bootstrap";
 import { useTranslation } from "react-i18next";
+import { useSelector, useStore } from "react-redux";
 
-import { I18N_NAMESPACE } from "../common";
+import { autoSortLoadOrderChanged } from "../actions";
+import { AUTO_SORT_LABEL, I18N_NAMESPACE } from "../common";
+import { autoSortLoadOrderEnabled } from "../selectors";
 
 interface InfoComponentProps {
   onToggleModsState: (enable: boolean) => void;
@@ -13,6 +16,12 @@ interface InfoComponentProps {
 export default function InfoComponent(props: InfoComponentProps) {
   const { onToggleModsState } = props;
   const t = useTranslation(I18N_NAMESPACE).t;
+  const store = useStore();
+  const autoSort = useSelector(autoSortLoadOrderEnabled);
+  const toggleAutoSort = React.useCallback(
+    (enabled: boolean) => store.dispatch(autoSortLoadOrderChanged(enabled)),
+    [store],
+  );
   const toggleModsState = React.useCallback(
     (enable) => {
       onToggleModsState(enable);
@@ -68,6 +77,9 @@ export default function InfoComponent(props: InfoComponentProps) {
             )}
           </li>
         </ul>
+        <Toggle checked={autoSort} onToggle={toggleAutoSort}>
+          {t(AUTO_SORT_LABEL, { ns: I18N_NAMESPACE })}
+        </Toggle>
         <BS.Button
           onClick={() => toggleModsState(false)}
           style={{ marginBottom: "5px", width: "min-content" }}
