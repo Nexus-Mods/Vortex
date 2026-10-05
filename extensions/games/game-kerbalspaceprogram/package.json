@@ -1,6 +1,6 @@
 {
   "name": "game-kerbalspaceprogram",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Support for Kerbal Space Program",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
