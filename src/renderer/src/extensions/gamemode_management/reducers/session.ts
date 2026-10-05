@@ -1,25 +1,38 @@
-import update from "immutability-helper";
+import { actionsToReducerSpec } from "@/reducers/builder";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/session";
+import type { IGameStored } from "../types/IGameStored";
 
-/**
- * reducer for changes to ephemeral session state
- */
-export const sessionReducer: IReducerSpec = {
-  reducers: {
-    [actions.setKnownGames as any]: (state, payload) => update(state, { known: { $set: payload } }),
-    [actions.setGameDisabled as any]: (state, payload) =>
-      setSafe(state, ["disabled", payload.gameId], payload.disabledBy),
-    [actions.clearGameDisabled as any]: (state, payload) =>
-      update(state, { disabled: { $set: {} } }),
-    [actions.setShowHiddenGames as any]: (state, payload) =>
-      setSafe(state, ["showHidden"], payload),
-  },
-  defaults: {
-    known: [],
-    disabled: {},
-    showHidden: false,
-  },
+type DefaultState = {
+  known: IGameStored[];
+  disabled: Record<string, string>;
+  showHidden: boolean;
 };
+
+const defaultState: DefaultState = {
+  known: [],
+  disabled: {},
+  showHidden: false,
+};
+
+export const sessionReducer = actionsToReducerSpec(defaultState, actions, {
+  setKnownGames: (state, payload) => ({
+    ...state,
+    known: payload,
+  }),
+  setGameDisabled: (state, payload) => ({
+    ...state,
+    disabled: {
+      ...state.disabled,
+      [payload.gameId]: payload.disabledBy,
+    },
+  }),
+  clearGameDisabled: (state) => ({
+    ...state,
+    disabled: {},
+  }),
+  setShowHiddenGames: (state, payload) => ({
+    ...state,
+    showHidden: payload,
+  }),
+});
