@@ -450,12 +450,12 @@ function prettifyNodeErrorMessageInner(
       message: "The disk is full",
       allowReport: false,
     };
-  } else if (err.code === "EACCES" && err.port === undefined && (err.path || err.filename)) {
+  } else if (err.code === "EACCES" && err.port === undefined && err.path) {
     return {
       message:
         'Vortex was denied access to "{{filePath}}".\n' +
         "Please check the permissions of this file or directory.",
-      replace: { filePath: err.path || err.filename },
+      replace: { filePath: err.path },
       allowReport: false,
     };
   } else if (err.code === "EACCES" || err.port !== undefined) {
