@@ -27,7 +27,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
         );
       },
       targetAge: new Date(2008, 10, 1),
-      mygamesPath: "skyrim",
+      mygamesPath: "Skyrim",
       iniName: "Skyrim.ini",
       archiveListKey: "SResourceArchiveList",
       defaultArchives: [
@@ -51,7 +51,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
         );
       },
       targetAge: new Date(2008, 10, 1),
-      mygamesPath: "enderal",
+      mygamesPath: "Enderal",
       iniName: "enderal.ini",
       archiveListKey: "SResourceArchiveList",
       defaultArchives: [

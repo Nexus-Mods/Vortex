@@ -1,6 +1,6 @@
 {
   "name": "local-gamesettings",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Management for local game settings",
   "scripts": {
     "build": "node build.mjs && pnpm extractInfo",
