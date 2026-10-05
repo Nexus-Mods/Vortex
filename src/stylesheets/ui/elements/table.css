@@ -7,6 +7,8 @@
         --nxm-table-gutter: calc(var(--spacing) * 6 - var(--nxm-table-gap));
         --nxm-table-header-height: calc(var(--spacing) * 6);
 
+        position: relative;
+        isolation: isolate;
         display: grid;
         column-gap: var(--nxm-table-gap);
         min-width: 0;
@@ -79,6 +81,17 @@
         height: 100%;
         opacity: 0.15;
         mask-image: linear-gradient(90deg, #000, rgb(0 0 0 / 0.33));
+        pointer-events: none;
+    }
+
+    /* Behind the rows, over the table's own background; the sticky header covers it. */
+    .nxm-table-group-backdrop {
+        position: absolute;
+        top: calc(var(--nxm-table-header-height) + var(--nxm-table-backdrop-top));
+        left: 0;
+        z-index: -1;
+        width: 100%;
+        opacity: 0.05;
         pointer-events: none;
     }
 
