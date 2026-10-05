@@ -42,3 +42,8 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   /** Grouped rows. A row can sit in more than one group. */
   | { groups: G[]; rows?: never }
 );
+
+/** One of the table's rows as it renders them: an item's row, or a group's own row. */
+export type TableItem<T, G> =
+  | { kind: "row"; key: string; row: T; level?: number }
+  | { kind: "group"; key: string; group: G; expanded: boolean };

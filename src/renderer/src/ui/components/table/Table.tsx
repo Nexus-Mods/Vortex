@@ -2,21 +2,19 @@ import React, { type CSSProperties, Fragment, useCallback, useMemo, useState } f
 
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import type { ITableGroup, ITableProps } from "./Table.types";
+import type { ITableGroup, ITableProps, TableItem } from "./Table.types";
+import { TableGroupBackdrop } from "./TableGroupBackdrop";
 import { TableGroupRow } from "./TableGroupRow";
 import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
 import { TableSpacer } from "./TableSpacer";
+import { useTableGroupBackdrops } from "./useTableGroupBackdrops.hook";
 import { useTableVirtualizer } from "./useTableVirtualizer.hook";
 
 // Fixed, so the virtualiser knows every row's height without measuring; table.css reads them.
 const ROW_HEIGHT = 40;
 const GROUP_ROW_HEIGHT = 48;
 const GROUP_ROW_GAP = 4;
-
-type TableItem<T, G> =
-  | { kind: "row"; key: string; row: T; level?: number }
-  | { kind: "group"; key: string; group: G; expanded: boolean };
 
 /**
  * A column-driven table drawn as one CSS grid: the columns' widths make its tracks, and
@@ -86,6 +84,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   );
 
   const virtual = useTableVirtualizer({ count: items.length, getItemKey, getItemSize });
+  const backdrops = useTableGroupBackdrops({ getItemSize, items, rendered: virtual.items });
 
   return (
     <div
@@ -113,6 +112,11 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
       {/* Always rendered, at the top of the rows: where the virtualiser measures from. */}
       <div className="nxm-table-spacer" ref={virtual.startRef} role="presentation" />
+
+      {/* Behind the groups in view, even one whose own row has scrolled away. */}
+      {backdrops.map(({ height, key, src, top }) => (
+        <TableGroupBackdrop height={height} key={`backdrop:${key}`} src={src} top={top} />
+      ))}
 
       {virtual.items.map(({ gap, index }) => {
         const item = items[index];
