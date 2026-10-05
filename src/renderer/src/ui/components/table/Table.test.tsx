@@ -53,6 +53,28 @@ describe("Table", () => {
   });
 });
 
+describe("Table with a toolbar", () => {
+  it("puts it in the head above the header row, which counts it among the rows", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        toolbar={<button type="button">Search</button>}
+      />,
+    );
+
+    const grid = screen.getByRole("grid");
+    const [toolbar, header, first] = within(grid).getAllByRole("row");
+    expect(within(toolbar).getByRole("gridcell")).toHaveAttribute("aria-colspan", "2");
+    expect(within(toolbar).getByRole("button", { name: "Search" })).toBeInTheDocument();
+    expect(header).toHaveAttribute("aria-rowindex", "2");
+    expect(first).toHaveAttribute("aria-rowindex", "3");
+    expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
+  });
+});
+
 describe("Table with groups", () => {
   const GROUPS = [
     { id: "first", label: "First", rows: [ROWS[0], ROWS[1]] },

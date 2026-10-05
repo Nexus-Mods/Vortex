@@ -12,6 +12,7 @@ import { collectionsByMod } from "../../collections/util/collectionsByMod";
 import type { IMod } from "../types/IMod";
 import type { IModWithState } from "../types/IModProps";
 import modName from "../util/modName";
+import { ModsTableToolbar } from "./ModsTableToolbar";
 
 interface IModsTableSwitchProps {
   mods: { [id: string]: IModWithState };
@@ -148,7 +149,8 @@ export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
   }
 
   const tableProps = {
-    className: "my-2",
+    className: "mb-2",
+    toolbar: <ModsTableToolbar />,
     columns,
     getRowId: ({ mod }: IModRow) => mod.id,
     label: t("Mods"),
