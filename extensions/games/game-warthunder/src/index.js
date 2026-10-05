@@ -6,14 +6,14 @@ const CONFIG_FILE = "config.blk";
 const WINDOWS_EXEC = "win64/aces.exe";
 
 function gameExecutable(discoveryPath) {
-  if (process.platform != "linux") {
+  if (process.platform === "win32") {
     return WINDOWS_EXEC;
   }
   // the Windows build can be installed too, to run through Proton
   try {
     fs.statSync(path.join(discoveryPath, WINDOWS_EXEC));
     return WINDOWS_EXEC;
-  } catch (err) {
+  } catch {
     return "linux64/aces";
   }
 }
