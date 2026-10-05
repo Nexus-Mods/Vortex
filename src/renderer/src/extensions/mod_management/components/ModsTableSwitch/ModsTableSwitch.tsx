@@ -6,7 +6,7 @@ import { Switch } from "@/ui/components/form/switch/Switch";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Table } from "@/ui/components/table/Table";
-import type { ITableColumn } from "@/ui/components/table/Table.types";
+import type { ITableColumn, ITableSort } from "@/ui/components/table/Table.types";
 import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
@@ -37,6 +37,8 @@ interface IPendingDisable {
   group: IModGroup;
   shared: ISharedMods;
 }
+
+const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
 
 const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
 
@@ -84,6 +86,7 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
       {
         id: "name",
         header: t("Name"),
+        sort: (a, b) => a.name.localeCompare(b.name),
         cell: ({ mod, name }) => (
           <>
             {/* Where the row's expand button will go; for show until rows have something to expand. */}
@@ -173,6 +176,7 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
     columns,
     getRowId: ({ mod }: IModRow) => mod.id,
     label: t("Mods"),
+    defaultSort: BY_NAME,
   };
 
   return (
