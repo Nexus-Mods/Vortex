@@ -6,3 +6,8 @@ export const setSuppressModLimitPatch = createAction(
 );
 
 export const setRemasterNoticeSeen = createAction("TW3_SET_REMASTER_NOTICE_SEEN", (seen) => seen);
+
+export const autoSortLoadOrderChanged = createAction(
+  "TW3_AUTO_SORT_LOAD_ORDER_CHANGED",
+  (enabled: boolean) => enabled,
+);

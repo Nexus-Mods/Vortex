@@ -1,6 +1,6 @@
 import path from "path";
 
-import { util } from "@nexusmods/vortex-api";
+import { log, util } from "@nexusmods/vortex-api";
 export class ResourceInaccessibleError extends Error {
   private mIsReportingAllowed;
   private mFilePath;
@@ -117,6 +117,15 @@ export function getW3TempDataDir() {
 
 export const UNI_PATCH = "mod0000____CompilationTrigger";
 export const LOCKED_PREFIX = "mod0000_";
+export const AUTO_SORT_LABEL = "Sort load order alphabetically on every deployment";
+
+export function isLockedEntry(modName: string) {
+  if (!modName || typeof modName !== "string") {
+    log("debug", "encountered invalid mod instance/name");
+    return false;
+  }
+  return modName.startsWith(LOCKED_PREFIX);
+}
 
 export const DO_NOT_DISPLAY = ["communitypatch-base"];
 // minimatch is supposed to be case-insensitive, but it's not working for some reason...
