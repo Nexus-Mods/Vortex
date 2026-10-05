@@ -164,3 +164,31 @@ export const groupMods = (
 /** Every mod, collections included, by name: the rows of a view that doesn't group. */
 export const allModRows = (mods: { [id: string]: IModWithState }): IModRow[] =>
   toRows(Object.values(mods));
+
+export interface ISharedMods {
+  /** The group's mods other collections have too. */
+  rows: IModRow[];
+  /** The names of those other collections, by name. */
+  collections: string[];
+}
+
+/**
+ * The group's mods that also belong to a collection other than the group's own, and
+ * those collections: what disabling the group would take from them.
+ */
+export const sharedMods = (
+  group: IModGroup,
+  memberships: { [modId: string]: IMod[] },
+): ISharedMods => {
+  const collections = new Map<string, string>();
+
+  const rows = group.rows.filter(({ mod }) => {
+    const others = (memberships[mod.id] ?? []).filter(
+      (collection) => collection.id !== group.collection?.id,
+    );
+    others.forEach((collection) => collections.set(collection.id, modName(collection)));
+    return others.length > 0;
+  });
+
+  return { rows, collections: Array.from(collections.values()).sort((a, b) => a.localeCompare(b)) };
+};

@@ -1,5 +1,5 @@
 import { mdiAccount, mdiChevronRight } from "@mdi/js";
-import React, { type ReactNode, useMemo, useState } from "react";
+import React, { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Switch } from "@/ui/components/form/switch/Switch";
@@ -9,30 +9,75 @@ import { Table } from "@/ui/components/table/Table";
 import type { ITableColumn } from "@/ui/components/table/Table.types";
 import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
 
+import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
   groupMods,
   type IModGroup,
   type IModRow,
+  type ISharedMods,
   MODS_TABLE_PRESETS,
+  sharedMods,
 } from "../../util/modsTableViews";
+import { DisableSharedModsModal } from "../DisableSharedModsModal/DisableSharedModsModal";
 import { ModsTableToolbar } from "../ModsTableToolbar/ModsTableToolbar";
 
 interface IModsTableSwitchProps {
+  /** The mods the table lists, collections among them. */
   mods: { [id: string]: IModWithState };
   /** The table shown unless the dev tools "New table design" switch is on. */
   legacy: ReactNode;
+  /** Enables or disables mods, installing any that are only downloaded first. */
+  onSetModsEnabled: (modIds: string[], enabled: boolean) => void;
 }
 
+/** A group being disabled, while the user decides about the mods it shares. */
+interface IPendingDisable {
+  group: IModGroup;
+  shared: ISharedMods;
+}
+
+const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
+
 /** The Mods page's table: the legacy one, or the new table while it's being built. */
-export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
+export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSwitchProps) => {
   const { t } = useTranslation(["common"]);
   const newTable = useDevSetting("newTable");
 
   const [view, setView] = useState(MODS_TABLE_PRESETS[0]);
   const groups = useMemo(() => groupMods(mods, view.grouping, t), [mods, view.grouping, t]);
   const rows = useMemo(() => allModRows(mods), [mods]);
+  const memberships = useMemo(() => collectionsByMod(mods), [mods]);
+  const [pendingDisable, setPendingDisable] = useState<IPendingDisable>();
+
+  // Turning a group off asks first when other collections share some of its mods.
+  const setGroupEnabled = useCallback(
+    (group: IModGroup, enabled: boolean) => {
+      const shared = sharedMods(group, memberships);
+
+      if (enabled || shared.rows.length === 0) {
+        onSetModsEnabled(modIds(group.rows), enabled);
+        return;
+      }
+
+      setPendingDisable({ group, shared });
+    },
+    [memberships, onSetModsEnabled],
+  );
+
+  const disablePending = (keepShared: boolean) => {
+    if (pendingDisable === undefined) {
+      return;
+    }
+
+    const keep = new Set(keepShared ? modIds(pendingDisable.shared.rows) : []);
+    onSetModsEnabled(
+      modIds(pendingDisable.group.rows).filter((id) => !keep.has(id)),
+      false,
+    );
+    setPendingDisable(undefined);
+  };
 
   const columns = useMemo<Array<ITableColumn<IModRow, IModGroup>>>(
     () => [
@@ -44,7 +89,7 @@ export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
             {/* Where the row's expand button will go; for show until rows have something to expand. */}
             <span
               aria-hidden={true}
-              className="flex size-5 shrink-0 items-center justify-center text-neutral-moderate"
+              className="flex size-5 shrink-0 items-center justify-center text-translucent-weak"
             >
               <Icon path={mdiChevronRight} size="sm" />
             </span>
@@ -93,24 +138,29 @@ export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
         id: "status",
         header: t("Status"),
         width: "42px",
-        // Read-only for now: no onChange, so it shows the state without changing it.
         cell: ({ mod, name }) => (
-          <Switch aria-label={t("{{name}} enabled", { name })} checked={!!mod.enabled} />
+          <Switch
+            aria-label={t("{{name}} enabled", { name })}
+            checked={!!mod.enabled}
+            onChange={(enabled) => onSetModsEnabled([mod.id], enabled)}
+          />
         ),
-        groupCell: ({ label, rows }) => {
-          const enabled = rows.filter(({ mod }) => mod.enabled).length;
+        // Part on while only some of its mods are, as after keeping the shared ones.
+        groupCell: (group) => {
+          const enabled = group.rows.filter(({ mod }) => mod.enabled).length;
 
           return (
             <Switch
-              aria-label={t("{{name}} enabled", { name: label })}
-              checked={rows.length > 0 && enabled === rows.length}
-              indeterminate={enabled > 0 && enabled < rows.length}
+              aria-label={t("{{name}} enabled", { name: group.label })}
+              checked={group.rows.length > 0 && enabled === group.rows.length}
+              indeterminate={enabled > 0 && enabled < group.rows.length}
+              onChange={(checked) => setGroupEnabled(group, checked)}
             />
           );
         },
       },
     ],
-    [t],
+    [onSetModsEnabled, setGroupEnabled, t],
   );
 
   if (!newTable) {
@@ -125,9 +175,22 @@ export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
     label: t("Mods"),
   };
 
-  return groups === undefined ? (
-    <Table {...tableProps} rows={rows} />
-  ) : (
-    <Table {...tableProps} groups={groups} />
+  return (
+    <>
+      {groups === undefined ? (
+        <Table {...tableProps} rows={rows} />
+      ) : (
+        <Table {...tableProps} groups={groups} />
+      )}
+
+      <DisableSharedModsModal
+        collections={pendingDisable?.shared.collections ?? []}
+        isOpen={pendingDisable !== undefined}
+        sharedCount={pendingDisable?.shared.rows.length ?? 0}
+        onClose={() => setPendingDisable(undefined)}
+        onDisableAll={() => disablePending(false)}
+        onKeepShared={() => disablePending(true)}
+      />
+    </>
   );
 };
