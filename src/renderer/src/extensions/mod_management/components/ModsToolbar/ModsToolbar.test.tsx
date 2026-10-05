@@ -32,7 +32,7 @@ vi.mock("react-redux", async () => ({
   useSelector: (selector: (state: unknown) => unknown) => selector({ settings: { toolbars: {} } }),
 }));
 
-vi.mock("../hooks/useModToolbarActions.hook", () => ({
+vi.mock("../../hooks/useModToolbarActions.hook", () => ({
   useModToolbarActions: () => actions.current,
 }));
 
@@ -74,7 +74,7 @@ describe("ModsToolbar", () => {
 describe("the classic toolbar", () => {
   it("has no tracking of its own", () => {
     const iconBar = fs.readFileSync(
-      path.resolve(__dirname, "../../../controls/IconBar.tsx"),
+      path.resolve(__dirname, "../../../../controls/IconBar.tsx"),
       "utf8",
     );
 

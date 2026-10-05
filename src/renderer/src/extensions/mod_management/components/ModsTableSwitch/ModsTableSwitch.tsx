@@ -1,18 +1,23 @@
-import React, { type ReactNode, useMemo } from "react";
+import { mdiAccount, mdiChevronRight } from "@mdi/js";
+import React, { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Switch } from "@/ui/components/form/switch/Switch";
+import { Icon } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Table } from "@/ui/components/table/Table";
-import type { ITableColumn, ITableGroup } from "@/ui/components/table/Table.types";
+import type { ITableColumn } from "@/ui/components/table/Table.types";
 import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
 
-import { MOD_TYPE as COLLECTION_TYPE } from "../../collections/constants";
-import { collectionsByMod } from "../../collections/util/collectionsByMod";
-import type { IMod } from "../types/IMod";
-import type { IModWithState } from "../types/IModProps";
-import modName from "../util/modName";
-import { ModsTableToolbar } from "./ModsTableToolbar";
+import type { IModWithState } from "../../types/IModProps";
+import {
+  allModRows,
+  groupMods,
+  type IModGroup,
+  type IModRow,
+  MODS_TABLE_PRESETS,
+} from "../../util/modsTableViews";
+import { ModsTableToolbar } from "../ModsTableToolbar/ModsTableToolbar";
 
 interface IModsTableSwitchProps {
   mods: { [id: string]: IModWithState };
@@ -20,66 +25,14 @@ interface IModsTableSwitchProps {
   legacy: ReactNode;
 }
 
-interface IModRow {
-  mod: IModWithState;
-  name: string;
-}
-
-interface IModGroup extends ITableGroup<IModRow> {
-  /** The collection the group is for, or undefined for the mods in none. */
-  collection?: IMod;
-}
-
-const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
-
-/**
- * The mods from no collection, then the mods grouped by the collections they came from.
- * Without a collection there's nothing to group by, so that's undefined.
- */
-const groupByCollection = (
-  mods: { [id: string]: IModWithState },
-  noCollectionLabel: string,
-): IModGroup[] | undefined => {
-  const memberships = collectionsByMod(mods);
-  const rows = Object.values(mods)
-    .filter((mod) => mod.type !== COLLECTION_TYPE)
-    .map((mod) => ({ mod, name: modName(mod) }))
-    .sort(byName);
-
-  const collectionGroups = Object.values(mods)
-    .filter((mod) => mod.type === COLLECTION_TYPE)
-    .map((collection) => ({ collection, name: modName(collection) }))
-    .sort(byName)
-    .map(({ collection, name }) => ({
-      id: collection.id,
-      label: name,
-      collection,
-      image: collection.attributes?.pictureUrl,
-      rows: rows.filter(({ mod }) =>
-        (memberships[mod.id] ?? []).some((member) => member.id === collection.id),
-      ),
-    }));
-
-  if (collectionGroups.length === 0) {
-    return undefined;
-  }
-
-  const ungrouped = rows.filter(({ mod }) => (memberships[mod.id] ?? []).length === 0);
-
-  return [
-    ...(ungrouped.length > 0
-      ? [{ id: "no-collection", label: noCollectionLabel, rows: ungrouped }]
-      : []),
-    ...collectionGroups,
-  ];
-};
-
 /** The Mods page's table: the legacy one, or the new table while it's being built. */
 export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
   const { t } = useTranslation(["common"]);
   const newTable = useDevSetting("newTable");
 
-  const groups = useMemo(() => groupByCollection(mods, t("No collection")), [mods, t]);
+  const [view, setView] = useState(MODS_TABLE_PRESETS[0]);
+  const groups = useMemo(() => groupMods(mods, view.grouping, t), [mods, view.grouping, t]);
+  const rows = useMemo(() => allModRows(mods), [mods]);
 
   const columns = useMemo<Array<ITableColumn<IModRow, IModGroup>>>(
     () => [
@@ -88,8 +41,13 @@ export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
         header: t("Name"),
         cell: ({ mod, name }) => (
           <>
-            {/* Where the row's expand button will go, so names line up under their group's. */}
-            <span className="size-5 shrink-0" />
+            {/* Where the row's expand button will go; for show until rows have something to expand. */}
+            <span
+              aria-hidden={true}
+              className="flex size-5 shrink-0 items-center justify-center text-neutral-moderate"
+            >
+              <Icon path={mdiChevronRight} size="sm" />
+            </span>
 
             <Image
               alt=""
@@ -102,12 +60,23 @@ export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
             <span className="ml-2 truncate">{name}</span>
           </>
         ),
-        groupCell: ({ collection, label, rows }) => (
+        groupCell: ({ avatar, collection, label, rows }) => (
           <>
+            {!!avatar && (
+              <Image
+                alt=""
+                className="ml-3.5 h-6 rounded-full"
+                fallbackIconPath={mdiAccount}
+                fit="cover"
+                imageType="avatar"
+                src={avatar.src}
+              />
+            )}
+
             {!!collection && (
               <Image
                 alt=""
-                className="ml-2 h-8 rounded-xs"
+                className="ml-3 h-8 rounded-xs"
                 fit="cover"
                 imageType="collection"
                 src={collection.attributes?.pictureUrl}
@@ -150,19 +119,14 @@ export const ModsTableSwitch = ({ mods, legacy }: IModsTableSwitchProps) => {
 
   const tableProps = {
     className: "mb-2",
-    toolbar: <ModsTableToolbar />,
+    toolbar: <ModsTableToolbar view={view} onViewChange={setView} />,
     columns,
     getRowId: ({ mod }: IModRow) => mod.id,
     label: t("Mods"),
   };
 
   return groups === undefined ? (
-    <Table
-      {...tableProps}
-      rows={Object.values(mods)
-        .map((mod) => ({ mod, name: modName(mod) }))
-        .sort(byName)}
-    />
+    <Table {...tableProps} rows={rows} />
   ) : (
     <Table {...tableProps} groups={groups} />
   );
