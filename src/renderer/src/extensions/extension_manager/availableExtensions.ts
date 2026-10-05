@@ -16,13 +16,13 @@ export type VortexTranslation = components["schemas"]["VortexTranslation"];
 export type VortexData = components["schemas"]["VortexData"];
 
 /** Parse to a finite number, or undefined; blank strings are not numbers. */
-function finite(value: string | null | undefined): number | undefined {
+export function finite(value: string | null | undefined): number | undefined {
   if (value == null || value.trim().length === 0) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function toAvailableExtension(
+export function toAvailableExtension(
   asset: VortexAsset,
   extras: Pick<IAvailableExtension, "type" | "gameId" | "language">,
 ): IAvailableExtension | undefined {
