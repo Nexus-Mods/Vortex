@@ -179,13 +179,12 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
     defaultSort: BY_NAME,
   };
 
+  // A table takes rows or groups, never both; typed, so neither gains the other as undefined.
+  const data: { groups: IModGroup[] } | { rows: IModRow[] } = groups ? { groups } : { rows };
+
   return (
     <>
-      {groups === undefined ? (
-        <Table {...tableProps} rows={rows} />
-      ) : (
-        <Table {...tableProps} groups={groups} />
-      )}
+      <Table {...tableProps} {...data} />
 
       <DisableSharedModsModal
         collections={pendingDisable?.shared.collections ?? []}
