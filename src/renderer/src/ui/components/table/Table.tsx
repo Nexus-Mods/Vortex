@@ -29,6 +29,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   groups,
   getRowId,
   label,
+  toolbar,
   className,
 }: ITableProps<T, G>) => {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
@@ -84,13 +85,17 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   );
 
   const virtual = useTableVirtualizer({ count: items.length, getItemKey, getItemSize });
+  // The rows in the sticky head, which come before the table's own in aria-rowindex.
+  const headRows = toolbar ? 2 : 1;
+
   const backdrops = useTableGroupBackdrops({ getItemSize, items, rendered: virtual.items });
 
   return (
     <div
       aria-label={label}
-      aria-rowcount={items.length + 1}
+      aria-rowcount={items.length + headRows}
       className={joinClasses(["nxm-table", className])}
+      data-toolbar={toolbar ? "" : undefined}
       ref={virtual.tableRef}
       role={groups === undefined ? "grid" : "treegrid"}
       style={
@@ -108,7 +113,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       onBlur={virtual.onBlur}
       onFocus={virtual.onFocus}
     >
-      <TableHeader columns={columns} />
+      <TableHeader columns={columns} toolbar={toolbar} />
 
       {/* Always rendered, at the top of the rows: where the virtualiser measures from. */}
       <div className="nxm-table-spacer" ref={virtual.startRef} role="presentation" />
@@ -132,10 +137,17 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 expanded={item.expanded}
                 group={item.group}
                 index={index}
+                rowIndex={index + headRows + 1}
                 onToggle={() => toggle(item.group.id)}
               />
             ) : (
-              <TableRow columns={columns} index={index} level={item.level} row={item.row} />
+              <TableRow
+                columns={columns}
+                index={index}
+                level={item.level}
+                row={item.row}
+                rowIndex={index + headRows + 1}
+              />
             )}
           </Fragment>
         );
