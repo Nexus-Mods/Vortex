@@ -538,6 +538,87 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-file-versions/{id}/quarantine":
+    post:
+      tags:
+        - mods
+      summary: Quarantine a mod file version
+      description: |
+        Marks a mod file version as quarantined, so it can no longer be downloaded.
+
+        Restricted to authorised moderation services: only a client_credentials service token
+        carrying the `mod_file:quarantine` scope is accepted. Requests with no token, a user
+        token or an API key receive 401; a service token without the scope receives 403.
+        Idempotent: quarantining an already-quarantined file succeeds and reports
+        `already_quarantined: true`.
+
+        A file manually verified by staff is never overridden (409 is returned instead) —
+        staff re-verification is also the route for reversing a quarantine.
+      operationId: quarantineModFileVersion
+      x-badges:
+        - name: Experimental
+          color: orange
+      security:
+        - ServiceJwtAuth:
+            - mod_file:quarantine
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod file version.
+          schema:
+            type: string
+            pattern: "^[0-9]+$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/QuarantineModFileVersionRequest"
+      responses:
+        "200":
+          description: The file is quarantined.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/QuarantineModFileVersionSuccess"
+        "401":
+          description: No usable service credential - the request carries no token,
+            a user token, an API key or a malformed token.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: The service token does not carry the required scope.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod file version was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "409":
+          description: The file has been manually verified by staff and cannot be
+            quarantined automatically.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
   "/mod-file-versions/{id}/dependencies":
     get:
       tags:
@@ -1872,6 +1953,51 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+  "/vortex/detected-games":
+    post:
+      tags:
+        - vortex
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Resolve the games detected on a Vortex client
+      description: |
+        Takes the store listings a Vortex client found installed and returns the Nexus Mods games
+        they belong to, with the Vortex game extension for each game where one exists.
+
+        Listings that match no game, or a game not on Nexus Mods, are left out. Several listings of
+        one game (for example two Steam app ids, or the same game on Steam and GOG) return one entry.
+      operationId: resolveDetectedGames
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/DetectedGamesRequest"
+      responses:
+        "200":
+          description: The detected games that resolved to a Nexus Mods game.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/DetectedGames"
+        "401":
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable - the request body failed schema validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -1884,6 +2010,14 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: "A signed JWT sent as `Authorization: Bearer <token>`."
+    ServiceJwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "A client_credentials service JWT (no user claim) sent as `Authorization:
+        Bearer <token>`, issued by the users service to a provisioned service account.
+        Carries `scope` rather than user permissions; endpoints declaring this scheme
+        accept only service tokens."
   schemas:
     ProblemDetails:
       type: object
@@ -2303,6 +2437,32 @@ components:
         changelog:
           type: string
           description: The changelog text that was added for this version.
+    QuarantineModFileVersionRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          description: Why the file is being quarantined (recorded in service logs).
+          minLength: 1
+          maxLength: 1000
+    QuarantineModFileVersionSuccess:
+      type: object
+      required:
+        - id
+        - status
+        - already_quarantined
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod file version.
+        status:
+          type: string
+          description: The file's scan status after the call. Always `quarantined`.
+        already_quarantined:
+          type: boolean
+          description: True when the file was already quarantined and nothing changed.
     DownloadRepackedModFileVersionResponse:
       type: object
       required:
@@ -3372,6 +3532,124 @@ components:
         - exact
         - latest
         - prefer
+    DetectedGamesRequest:
+      type: object
+      description: The store listings a Vortex client found installed, by store.
+      required:
+        - instance_id
+        - vortex_version
+        - steam
+        - gog
+        - epic
+      properties:
+        instance_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Anonymous identifier of the Vortex install.
+          example: 9f2c1a7b-4e6d-8f03-1a2b-3c4d5e6f7a8b
+        vortex_version:
+          type: string
+          description: The Vortex client version sending the list.
+          example: 2.7.0
+        steam:
+          type: array
+          description: Steam app ids.
+          items:
+            "$ref": "#/components/schemas/StoreListingId"
+          maxItems: 10000
+          example:
+            - "489830"
+        gog:
+          type: array
+          description: GOG product ids.
+          items:
+            "$ref": "#/components/schemas/StoreListingId"
+          maxItems: 10000
+          example:
+            - "1711230643"
+        epic:
+          type: array
+          description: Epic Games Store listings, each as `<namespace>:<catalogItemId>`.
+          items:
+            "$ref": "#/components/schemas/StoreListingId"
+          maxItems: 10000
+          example:
+            - ada3ab8da0e44e6a8a0b5e1a4e2b4f1c:61d52ce4d09d41e48800c22784d13ae8
+    StoreListingId:
+      type: string
+      minLength: 1
+      maxLength: 128
+      description: A game's id on a store.
+    DetectedGames:
+      type: object
+      required:
+        - games
+      properties:
+        games:
+          type: array
+          description: One entry per Nexus Mods game, in game id order.
+          items:
+            "$ref": "#/components/schemas/DetectedGame"
+    DetectedGame:
+      type: object
+      description: A Nexus Mods game with at least one of its store listings installed.
+      required:
+        - game_uid
+        - game_id
+        - image_url
+        - store_ids
+        - is_favourite
+        - extension
+      properties:
+        game_uid:
+          type: string
+          description: The game's id in the games catalogue.
+          example: igdb-472
+        game_id:
+          type: string
+          description: The Nexus Mods game ID.
+          example: "1704"
+        image_url:
+          type: string
+          nullable: true
+          description: Cover art for the game. Null if unavailable.
+          example: https://images.igdb.com/igdb/image/upload/t_cover_big/co1tnw.jpg
+        store_ids:
+          "$ref": "#/components/schemas/DetectedGameStoreIds"
+        is_favourite:
+          type: boolean
+          description: Whether the caller has the game in their favourite games.
+          example: false
+        extension:
+          nullable: true
+          description: The Vortex game extension for the game, or null when there is none.
+          allOf:
+            - "$ref": "#/components/schemas/VortexAsset"
+    DetectedGameStoreIds:
+      type: object
+      description: The requested listings that matched the game, by store.
+      required:
+        - steam
+        - gog
+        - epic
+      properties:
+        steam:
+          type: array
+          items:
+            type: string
+          example:
+            - "489830"
+        gog:
+          type: array
+          items:
+            type: string
+          example: []
+        epic:
+          type: array
+          items:
+            type: string
+          example: []
     VortexData:
       type: object
       required:
