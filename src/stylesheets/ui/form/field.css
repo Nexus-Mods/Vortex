@@ -14,9 +14,6 @@
         letter-spacing: var(--text-body-md--letter-spacing);
         color: var(--color-neutral-strong);
 
-        /* override bootstrap styles */
-        margin: 0;
-
         .nxm-field-label-required {
             color: var(--color-neutral-subdued);
         }
@@ -36,11 +33,19 @@
         row-gap: calc(var(--spacing) * 1);
     }
 
-    .nxm-field-label:has(~ :is(.nxm-input, .nxm-input-container)) {
+    /* Wraps a control with what's drawn over it, such as an input's icon or a select's chevron. */
+    .nxm-field-control {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .nxm-field-label:has(~ :is(.nxm-input, .nxm-field-control)) {
         margin-bottom: calc(var(--spacing) * 2);
     }
 
-    :is(.nxm-input, .nxm-input-container)
+    :is(.nxm-input, .nxm-field-control)
         ~ :is(.nxm-field-footer, .nxm-field-description, .nxm-field-error-message) {
         margin-top: calc(var(--spacing) * 1);
     }

@@ -1,40 +1,17 @@
 /** Demonstrates TextField, and the Field parts and bare Input it's built from. */
 
 import { mdiMagnify } from "@mdi/js";
-import React, { type ReactNode } from "react";
+import React from "react";
 
 import { Description } from "@/ui/components/form/field/Description";
 import { ErrorMessage } from "@/ui/components/form/field/ErrorMessage";
 import { Field } from "@/ui/components/form/field/Field";
 import { Label } from "@/ui/components/form/field/Label";
+import { FormDemoSection as Section } from "@/ui/components/form/FormDemoSection";
 import { Input } from "@/ui/components/form/input/Input";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { TextField } from "./TextField";
-
-const Section = ({
-  children,
-  description,
-  title,
-}: {
-  children: ReactNode;
-  description: string;
-  title: string;
-}) => (
-  <div className="space-y-4">
-    <div className="space-y-1">
-      <Typography as="h4" typographyType="heading-xs">
-        {title}
-      </Typography>
-
-      <Typography appearance="subdued" typographyType="body-sm">
-        {description}
-      </Typography>
-    </div>
-
-    <div className="grid grid-cols-[repeat(3,15rem)] items-start gap-x-6 gap-y-6">{children}</div>
-  </div>
-);
 
 export const TextFieldDemo = () => (
   <div className="space-y-10">

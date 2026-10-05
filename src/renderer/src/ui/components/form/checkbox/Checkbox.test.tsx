@@ -1,80 +1,70 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React from "react";
+import React, { createRef } from "react";
 import { describe, it, expect, vi } from "vitest";
 
 import { Checkbox } from "./Checkbox";
 
-// --- Helpers ---
-
-const renderComponent = (props: Partial<React.ComponentProps<typeof Checkbox>> = {}) => {
-  const onChange = vi.fn();
-
-  render(<Checkbox onChange={onChange} {...props} />);
-
-  return { onChange };
-};
-
 const getCheckbox = () => screen.getByRole("checkbox");
-const getField = () => document.querySelector(".nxm-checkbox-field");
-
-// --- Tests ---
 
 describe("Checkbox", () => {
-  it("renders an unchecked checkbox by default", () => {
-    renderComponent();
+  it("renders an unchecked checkbox with the base class, merging a custom one", () => {
+    render(<Checkbox aria-label="Accept" className="my-class" />);
     expect(getCheckbox()).not.toBeChecked();
+    expect(getCheckbox()).toHaveClass("nxm-checkbox", "my-class");
   });
 
-  it("reflects the checked prop", () => {
-    renderComponent({ checked: true });
+  it("reflects the checked prop, for styling too", () => {
+    render(<Checkbox checked aria-label="Accept" onChange={() => undefined} />);
     expect(getCheckbox()).toBeChecked();
+    expect(getCheckbox()).toHaveAttribute("data-checked");
   });
 
-  it("renders label children", () => {
-    renderComponent({ children: "Accept terms" });
-    expect(screen.getByText("Accept terms")).toHaveClass("nxm-checkbox-label");
+  it("reports indeterminate as aria-checked mixed", () => {
+    render(<Checkbox indeterminate aria-label="Accept" onChange={() => undefined} />);
+    expect(getCheckbox()).toBePartiallyChecked();
+    expect(getCheckbox()).toHaveAttribute("data-indeterminate");
   });
 
-  describe("state classes", () => {
-    it("adds the checked class when checked", () => {
-      renderComponent({ checked: true });
-      expect(getField()).toHaveClass("nxm-checkbox-checked");
-    });
+  it("hands onChange the new checked value", async () => {
+    const onChange = vi.fn();
+    render(<Checkbox aria-label="Accept" checked={false} onChange={onChange} />);
 
-    it("adds the disabled class and attribute when disabled", () => {
-      renderComponent({ disabled: true });
-      expect(getField()).toHaveClass("nxm-checkbox-disabled");
-      expect(getCheckbox()).toBeDisabled();
-    });
+    await userEvent.click(getCheckbox());
 
-    it("adds the error class when hasError", () => {
-      renderComponent({ hasError: true });
-      expect(getField()).toHaveClass("nxm-checkbox-error");
-    });
+    expect(onChange).toHaveBeenCalledWith(true);
   });
 
-  describe("interactions", () => {
-    it("calls onChange when clicked", async () => {
-      const { onChange } = renderComponent({ checked: false });
-      await userEvent.click(getCheckbox());
-      expect(onChange).toHaveBeenCalledOnce();
-    });
+  it("ignores clicks when disabled", async () => {
+    const onChange = vi.fn();
+    render(<Checkbox disabled aria-label="Accept" onChange={onChange} />);
 
-    it("does not call onChange when disabled", async () => {
-      const { onChange } = renderComponent({ checked: false, disabled: true });
-      await userEvent.click(getCheckbox());
-      expect(onChange).not.toHaveBeenCalled();
-    });
+    await userEvent.click(getCheckbox());
+
+    expect(getCheckbox()).toHaveAttribute("data-disabled");
+    expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("merges a custom className onto the field", () => {
-    renderComponent({ className: "my-class" });
-    expect(getField()).toHaveClass("nxm-checkbox-field", "my-class");
+  it("reports invalid as aria-invalid and data-invalid", () => {
+    render(<Checkbox invalid aria-label="Accept" />);
+    expect(getCheckbox()).toHaveAttribute("aria-invalid", "true");
+    expect(getCheckbox()).toHaveAttribute("data-invalid");
   });
 
-  it("forwards arbitrary input attributes", () => {
-    renderComponent({ name: "terms", value: "yes" });
-    expect(getCheckbox()).toHaveAttribute("name", "terms");
+  it("takes part in form submission when given a name", () => {
+    render(
+      <form>
+        <Checkbox checked aria-label="Accept" name="terms" value="yes" onChange={() => undefined} />
+      </form>,
+    );
+    const hidden = document.querySelector('input[name="terms"]');
+    expect(hidden).toBeChecked();
+    expect(hidden).toHaveAttribute("value", "yes");
+  });
+
+  it("forwards its ref to the checkbox", () => {
+    const ref = createRef<HTMLSpanElement>();
+    render(<Checkbox aria-label="Accept" ref={ref} />);
+    expect(ref.current).toBe(getCheckbox());
   });
 });
