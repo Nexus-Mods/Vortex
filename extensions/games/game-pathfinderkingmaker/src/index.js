@@ -40,7 +40,7 @@ function main(context) {
 
   function readRegistryKey(hive, key, name) {
     if (!IsWin) {
-      return Promise.reject(new util.UnsupportedOperatingSystem());
+      return Promise.reject(new util.ProcessCanceled("registry is only available on Windows"));
     }
 
     try {
