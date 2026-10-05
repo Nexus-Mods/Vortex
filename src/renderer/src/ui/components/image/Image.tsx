@@ -8,16 +8,26 @@ export interface IImageProps extends Omit<
   ImgHTMLAttributes<HTMLImageElement>,
   "className" | "alt"
 > {
+  /** The picture's text alternative, which also names the fallback icon; "" if decorative. */
   alt: string;
+  /** Classes for the frame, which sets the size and corners. */
   className?: string;
+  /** Replaces the broken-image icon; given one, a missing `src` shows it too. */
+  fallbackIconPath?: string;
+  /** Fills the frame, cropping, or fits inside it whole. Default `contain`. */
   fit?: "cover" | "contain";
+  /** Classes for the `img` itself. */
   imageClassName?: string;
-  imageType?: "collection" | "game" | "mod" | "other";
+  /** The aspect ratio the frame keeps; `other` leaves it to the container. Default `other`. */
+  imageType?: "avatar" | "collection" | "game" | "mod" | "other";
+  /** Blurs the picture, for adult content; it also fills the frame. */
   isBlurred?: boolean;
+  /** Shows the spinner, for a picture the caller knows is coming before it has a `src`. */
   isLoading?: boolean;
 }
 
 const imageTypeMap: Record<NonNullable<IImageProps["imageType"]>, string> = {
+  avatar: "nxm-image-avatar",
   collection: "nxm-image-collection",
   game: "nxm-image-game",
   mod: "nxm-image-mod",
@@ -28,6 +38,7 @@ export const Image = ({
   alt,
   children,
   className,
+  fallbackIconPath,
   fit = "contain",
   imageClassName,
   imageType = "other",
@@ -57,10 +68,11 @@ export const Image = ({
 
   // Only the caller knows a source is coming when there is no src; a failed one is settled.
   const showSpinner = !errored && (isLoading === true || (!!src && !loaded));
+  const showFallback = errored || (fallbackIconPath !== undefined && !src && isLoading !== true);
 
   return (
     <div className={joinClasses(["nxm-image", imageTypeMap[imageType], className])}>
-      {!errored ? (
+      {!showFallback ? (
         <img
           {...rest}
           alt={alt}
@@ -87,7 +99,12 @@ export const Image = ({
           }}
         />
       ) : (
-        <Icon className="nxm-image-fallback" path={mdiImageBroken} size="none" title={alt} />
+        <Icon
+          className="nxm-image-fallback"
+          path={fallbackIconPath ?? mdiImageBroken}
+          size="none"
+          title={alt}
+        />
       )}
 
       {showSpinner && (

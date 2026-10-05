@@ -5,7 +5,7 @@ import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
 import type { TFunction } from "@/util/i18n";
 
-import { useModToolbarActions } from "../hooks/useModToolbarActions.hook";
+import { useModToolbarActions } from "../../hooks/useModToolbarActions.hook";
 
 /**
  * The mods page toolbar. See {@link useModToolbarActions} for how the page's own
