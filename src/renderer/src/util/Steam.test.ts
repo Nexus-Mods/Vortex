@@ -1,7 +1,15 @@
 import * as path from "path";
 
+import {
+  ChaosFS,
+  InMemoryFSBuilder,
+  QualifiedPath,
+  type ChaosRule,
+  type FileSystem,
+} from "@vortex/shared/filesystem";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { installInMemoryFS } from "../test-utils/fsApi";
 import { GameEntryNotFound } from "../types/IGameStore";
 import { Steam } from "./Steam";
 
@@ -11,15 +19,10 @@ import { Steam } from "./Steam";
 // (On Windows the equivalent RegGetValue call sits in a try/catch that swallows the
 // ReferenceError, which is why a plain `let` only fails on CI.)
 const steam = vi.hoisted(() => ({ installed: true, baseFolder: "C:\\Steam" }));
-/** Deferred manifest read, so tests can hold a rescan in flight. */
-const manifestGate = vi.hoisted(() => ({
-  pending: undefined as Promise<Buffer> | undefined,
-}));
 
 const BASE_FOLDER = steam.baseFolder;
 const ALT_LIBRARY = path.join("D:", "SteamLibrary");
 const THIRD_LIBRARY = path.join("E:", "Games");
-const LIB_FOLDERS_FILE = path.resolve(BASE_FOLDER, "config", "libraryfolders.vdf");
 
 const MANIFEST = `"AppState"
 {
@@ -58,8 +61,10 @@ const libraryFolders = (
 const gamePathIn = (library: string): string =>
   path.join(library, "steamapps", "common", "TestGame");
 
-let libraryFoldersError: NodeJS.ErrnoException | undefined;
+/** The libraryfolders.vdf contents to seed; tests set this before scanning. */
 let libraryFoldersVdf = "";
+/** Fault rules wrapped around the seeded FS; tests set these before scanning. */
+let chaosRules: ChaosRule[] = [];
 
 vi.mock("winapi-bindings", () => ({
   RegGetValue: () => {
@@ -80,40 +85,53 @@ vi.mock("./linux/proton", () => ({
   buildProtonCommand: () => ({ executable: "", args: [] }),
 }));
 
-vi.mock("fs/promises", () => ({
-  readdir: () => Promise.resolve(["appmanifest_42.acf"]),
-  readFile: () =>
-    libraryFoldersError !== undefined
-      ? Promise.reject(libraryFoldersError)
-      : Promise.resolve(Buffer.from(libraryFoldersVdf)),
-}));
+/**
+ * Seeds an in-memory FS behind window.api.fs: the libraryfolders.vdf plus one
+ * appmanifest per known library, then wraps it in ChaosFS so tests can inject
+ * parseError-classifiable faults.
+ */
+const installTestFS = (): (() => void) => {
+  const { fs, restore } = installInMemoryFS((builder) => {
+    builder.file(QualifiedPath.fromNative(path.join(BASE_FOLDER, "config", "libraryfolders.vdf")), {
+      type: "text",
+      data: libraryFoldersVdf,
+    });
 
-vi.mock("./fs", () => ({
-  readFileAsync: () => manifestGate.pending ?? Promise.resolve(Buffer.from(MANIFEST)),
-}));
-
-const fsError = (code: string): NodeJS.ErrnoException =>
-  Object.assign(new Error(`${code}: no such file or directory, open '${LIB_FOLDERS_FILE}'`), {
-    code,
-    path: LIB_FOLDERS_FILE,
+    for (const library of [BASE_FOLDER, ALT_LIBRARY, THIRD_LIBRARY]) {
+      builder.file(
+        QualifiedPath.fromNative(path.join(library, "steamapps", "appmanifest_42.acf")),
+        {
+          type: "text",
+          data: MANIFEST,
+        },
+      );
+    }
   });
+
+  (window as unknown as { api?: { fs?: FileSystem } }).api!.fs = new ChaosFS(fs, chaosRules);
+  return restore;
+};
 
 /**
  * Drive the manager-owned scan, then read the data through allGames -
  * allGames itself no longer triggers a parse.
  */
 const scanAllGames = async () => {
-  const store = new Steam();
-  await store.reloadGames();
-  return store.allGames();
+  const restore = installTestFS();
+  try {
+    const store = new Steam();
+    await store.reloadGames();
+    return store.allGames();
+  } finally {
+    restore();
+  }
 };
 
 describe("Steam.allGames", () => {
   beforeEach(() => {
     steam.installed = true;
-    libraryFoldersError = undefined;
+    chaosRules = [];
     libraryFoldersVdf = libraryFolders([]);
-    manifestGate.pending = undefined;
   });
 
   it("finds nothing when Steam isn't installed", async () => {
@@ -122,18 +140,42 @@ describe("Steam.allGames", () => {
     await expect(scanAllGames()).resolves.toEqual([]);
   });
 
-  it.each(["ENOENT", "EPERM"])("falls back to the base folder on %s", async (code) => {
-    libraryFoldersError = fsError(code);
+  it.each(["fs:not-found", "fs:no-permissions"] satisfies ChaosRule["fault"]["kind"][])(
+    "falls back to the base folder on %s",
+    async (kind) => {
+      chaosRules = [
+        {
+          fault: { kind },
+          op: "readFile",
+          path: (p) => p.value.includes("libraryfolders.vdf"),
+        },
+      ];
 
-    const entries = await scanAllGames();
+      const entries = await scanAllGames();
 
-    expect(entries.map((entry) => entry.gamePath)).toEqual([gamePathIn(BASE_FOLDER)]);
-  });
+      expect(entries.map((entry) => entry.gamePath)).toEqual([gamePathIn(BASE_FOLDER)]);
+    },
+  );
 
-  it("propagates errors other than ENOENT/EPERM", async () => {
-    libraryFoldersError = fsError("EIO");
+  it("propagates errors other than not-found/no-permissions", async () => {
+    chaosRules = [
+      {
+        fault: {
+          kind: "os:generic",
+          originalCode: "EIO",
+          message: "EIO: i/o error, read 'libraryfolders.vdf'",
+        },
+        op: "readFile",
+        path: (p) => p.value.includes("libraryfolders.vdf"),
+      },
+    ];
 
-    await expect(new Steam().reloadGames()).rejects.toThrow("EIO");
+    const restore = installTestFS();
+    try {
+      await expect(new Steam().reloadGames()).rejects.toThrow("EIO");
+    } finally {
+      restore();
+    }
   });
 
   it.each([

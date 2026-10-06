@@ -28,11 +28,11 @@ const makeStore = (
 ): IGameStore =>
   ({
     id,
-    allGames: () => Bluebird.resolve(entries),
+    allGames: () => Promise.resolve(entries),
     snapshot: () => ({ entries, isInstalled: entries.length > 0 }),
-    getGameStorePath: () => Bluebird.resolve(`C:\\${id}\\launcher.exe`),
-    launchGame: () => Bluebird.resolve(),
-    reloadGames: () => Bluebird.resolve(),
+    getGameStorePath: () => Promise.resolve(`C:\\${id}\\launcher.exe`),
+    launchGame: () => Promise.resolve(),
+    reloadGames: () => Promise.resolve(),
     ...overrides,
   }) as unknown as IGameStore;
 
@@ -144,19 +144,19 @@ describe("storeLookup.launchGameStore", () => {
   beforeEach(() => {
     stores = [
       makeStore("steam", [entry("steam", "720", "Steam Game")], {
-        isGameStoreInstalled: () => Bluebird.resolve(true),
+        isGameStoreInstalled: () => Promise.resolve(true),
       }),
     ];
   });
 
   it("resolves immediately and launches through the store's own launch logic", async () => {
-    const launchGameStore = vi.fn(() => Bluebird.resolve());
+    const launchGameStore = vi.fn(() => Promise.resolve());
     const harness = makeApiHarness();
     const api = harness.api;
     const customStores = [
       makeStore("steam", [], {
         launchGameStore,
-        isGameStoreInstalled: () => Bluebird.resolve(true),
+        isGameStoreInstalled: () => Promise.resolve(true),
       }),
     ];
 
@@ -186,7 +186,7 @@ describe("storeLookup.launchGameStore", () => {
     const runExecutable = vi.fn().mockResolvedValue(undefined);
     api.runExecutable = runExecutable;
     const uninstalledStores = [
-      makeStore("steam", [], { isGameStoreInstalled: () => Bluebird.resolve(false) }),
+      makeStore("steam", [], { isGameStoreInstalled: () => Promise.resolve(false) }),
     ];
 
     await storeLookup.launchGameStore(uninstalledStores, api, "steam");
@@ -217,8 +217,8 @@ describe("storeLookup.launchGameStore", () => {
     const api = harness.api;
     const failingStores = [
       makeStore("steam", [], {
-        launchGameStore: () => Bluebird.reject(new Error("boom")),
-        isGameStoreInstalled: () => Bluebird.resolve(true),
+        launchGameStore: () => Promise.reject(new Error("boom")),
+        isGameStoreInstalled: () => Promise.resolve(true),
       }),
     ];
 
