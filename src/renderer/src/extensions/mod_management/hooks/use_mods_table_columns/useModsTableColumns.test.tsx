@@ -1,10 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
-import { type AnyAction, createStore } from "redux";
 import { describe, expect, it } from "vitest";
 
-import { tableReducer } from "@/reducers/tables";
+import { type IModsTableTestTables, makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import { type IModsTableColumn, useModsTableColumns } from "./useModsTableColumns.hook";
 
@@ -21,20 +20,8 @@ const COLUMNS = [
   column("author", { isToggleable: true, isDefaultVisible: false }),
 ];
 
-type ITables = typeof tableReducer.defaults;
-
-const makeStore = (tables: ITables = {}) =>
-  createStore(
-    (state: { settings: { tables: ITables } } = { settings: { tables } }, action: AnyAction) => {
-      const reduce = tableReducer.reducers[action.type];
-      return reduce
-        ? { settings: { tables: reduce(state.settings.tables, action.payload) } }
-        : state;
-    },
-  );
-
-const renderColumns = (tables?: ITables) => {
-  const store = makeStore(tables);
+const renderColumns = (tables?: IModsTableTestTables) => {
+  const store = makeModsTableStore({ tables });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
@@ -84,6 +71,37 @@ describe("useModsTableColumns", () => {
     expect(store.getState().settings.tables.mods.attributes.author.enabled).toBe(true);
     expect(visibleIds(result.current.visibleColumns)).toEqual(["name", "version", "author"]);
     expect(result.current.canReset).toBe(true);
+  });
+
+  // As the legacy table orders its attributes; the first column stays first.
+  it("orders the toggleable columns by position, after the ones always shown", () => {
+    const store = makeModsTableStore();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const columns = [
+      column("late", { isToggleable: true, position: 110 }),
+      column("name", { position: 200 }),
+      column("unplaced", { isToggleable: true }),
+      column("early", { isToggleable: true, position: 50 }),
+      column("tied", { isToggleable: true, position: 100 }),
+    ];
+
+    const { result } = renderHook(() => useModsTableColumns(columns), { wrapper });
+
+    expect(visibleIds(result.current.visibleColumns)).toEqual([
+      "name",
+      "early",
+      "unplaced",
+      "tied",
+      "late",
+    ]);
+    expect(result.current.toggles.map(({ id }) => id)).toEqual([
+      "early",
+      "unplaced",
+      "tied",
+      "late",
+    ]);
   });
 
   it("resets every column to its default", () => {

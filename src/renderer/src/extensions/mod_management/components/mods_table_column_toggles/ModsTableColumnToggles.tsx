@@ -5,7 +5,7 @@ import { Button } from "@/ui/components/button/Button";
 import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 
-import type { IModsTableColumnToggle } from "../../hooks/useModsTableColumns.hook";
+import type { IModsTableColumnToggle } from "../../hooks/use_mods_table_columns/useModsTableColumns.hook";
 
 interface IModsTableColumnTogglesProps {
   /** The columns the user can show or hide. */

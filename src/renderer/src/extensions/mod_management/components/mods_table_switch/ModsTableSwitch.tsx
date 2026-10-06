@@ -11,7 +11,11 @@ import type { ITableSort } from "@/ui/components/table/Table.types";
 import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
-import { type IModsTableColumn, useModsTableColumns } from "../../hooks/useModsTableColumns.hook";
+import {
+  type IModsTableColumn,
+  useModsTableColumns,
+} from "../../hooks/use_mods_table_columns/useModsTableColumns.hook";
+import { useModsTableDataColumns } from "../../hooks/use_mods_table_data_columns/useModsTableDataColumns.hook";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
@@ -83,6 +87,8 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
     );
     setPendingDisable(undefined);
   };
+
+  const dataColumns = useModsTableDataColumns(memberships);
 
   const columns = useMemo<IModsTableColumn[]>(
     () => [
@@ -165,8 +171,9 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
           );
         },
       },
+      ...dataColumns,
     ],
-    [onSetModsEnabled, setGroupEnabled, t],
+    [dataColumns, onSetModsEnabled, setGroupEnabled, t],
   );
 
   const { visibleColumns, toggles, canReset, setColumnVisible, resetColumns } =
