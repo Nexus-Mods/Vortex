@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import * as path from "path";
 
 import { CycleError } from "@vortex/shared/errors";
@@ -14,8 +15,12 @@ import { setFBLoadOrder } from "./actions/loadOrder";
 import { collectionInterface, generate, parser } from "./collections/loadOrder";
 import { LoadOrderRegistry } from "./gameSupport";
 import { isInUse, onStartUp, registerLoadOrderHandlers, validateLoadOrder } from "./handlers";
+import {
+  importedFromOtherLoadOrder,
+  parseLoadOrderFile,
+  serializeLoadOrderFile,
+} from "./loadOrderFile";
 import { REDUCER_BINDINGS } from "./reducers/bindings";
-import { isPrimaryLoadOrderId } from "./registry";
 import { currentGameMods, loadOrderForProfile } from "./selectors";
 import type { ICollection } from "./types/collections";
 import type { ILoadOrderEntry, ILoadOrderGameInfo, LoadOrder } from "./types/types";
@@ -40,14 +45,7 @@ export default function init(context: IExtensionContext) {
       );
       return;
     }
-    // a primary write carries no id; community extensions read that payload
-    context.api.store.dispatch(
-      setFBLoadOrder(
-        profileId,
-        loadOrder,
-        isPrimaryLoadOrderId(loadOrderId) ? undefined : loadOrderId,
-      ),
-    );
+    context.api.store.dispatch(setFBLoadOrder(profileId, loadOrder, loadOrderId));
   };
   context.registerMainPage("sort-none", "Load order", FileBasedLoadOrderPage, {
     priority: 30,
@@ -102,13 +100,16 @@ export default function init(context: IExtensionContext) {
             return;
           }
           try {
-            const fileData = await fs.readFileAsync(file, { encoding: "utf8" });
-            const loData: LoadOrder = JSON.parse(fileData);
-            if (!Array.isArray(loData)) {
-              throw new Error("invalid load order data");
-            }
+            const loadOrderFile = parseLoadOrderFile(await readFile(file, "utf8"));
             const profileId = activeProfile(api.getState()).id;
-            context.api.store.dispatch(setFBLoadOrder(profileId, loData, loadOrderId));
+            setOrder(profileId, loadOrderFile.entries, loadOrderId);
+            if (importedFromOtherLoadOrder(loadOrderFile, loadOrderId)) {
+              api.sendNotification({
+                type: "warning",
+                message: "File came from another load order",
+                id: "import-load-order-mismatch",
+              });
+            }
             api.sendNotification({
               type: "success",
               message: "Load order imported",
@@ -125,7 +126,7 @@ export default function init(context: IExtensionContext) {
           const state = api.getState();
           const profileId = activeProfile(state).id;
           const loadOrder = loadOrderForProfile(state, profileId, loadOrderId);
-          const data = JSON.stringify(loadOrder, null, 2);
+          const data = serializeLoadOrderFile(loadOrderId, loadOrder);
           const loPath = await api.saveFile({
             defaultPath: "loadorder.json",
             filters: [{ name: "JSON", extensions: ["json"] }],

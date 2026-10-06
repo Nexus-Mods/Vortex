@@ -46,17 +46,13 @@ type Profiles = Record<string, IProfile>;
 export const isInUse = (gameEntry: IRegisteredLoadOrder): boolean =>
   gameEntry.condition?.() !== false;
 
-// A primary load order is dispatched without an id; community extensions read that payload.
-const loadOrderIdForDispatch = (gameEntry: IRegisteredLoadOrder): string | undefined =>
-  gameEntry.isPrimary ? undefined : gameEntry.loadOrderId;
-
 function dispatchLoadOrder(
   api: IExtensionApi,
   profileId: string,
   gameEntry: IRegisteredLoadOrder,
   loadOrder: LoadOrder,
 ): void {
-  api.store.dispatch(setFBLoadOrder(profileId, loadOrder, loadOrderIdForDispatch(gameEntry)));
+  api.store.dispatch(setFBLoadOrder(profileId, loadOrder, gameEntry.loadOrderId));
 }
 
 function reportError(

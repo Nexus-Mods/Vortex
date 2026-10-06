@@ -10,20 +10,12 @@ import type {
   IMod,
   IModReference,
 } from "../../mod_management/types/IMod";
+import { loadOrderEntrySchema } from "./schemas";
 import type { ILoadOrderEntry, LoadOrder } from "./types";
 
 export interface ILoadOrderEntryExt extends ILoadOrderEntry {
   exportable: boolean;
 }
-
-const loadOrderEntrySchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  enabled: z.boolean(),
-  locked: z.union([z.boolean(), z.enum(["true", "false", "always", "never"])]).optional(),
-  modId: z.string().optional(),
-  data: z.unknown().optional(),
-}) satisfies z.ZodType<ILoadOrderEntry>;
 
 // One of a game's named load orders, as a collection carries it.
 export const collectionNamedLoadOrderSchema = z.object({

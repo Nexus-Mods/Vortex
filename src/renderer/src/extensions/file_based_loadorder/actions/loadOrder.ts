@@ -1,5 +1,6 @@
 import { createAction } from "redux-act";
 
+import { isPrimaryLoadOrderId } from "../registry";
 import type { ILoadOrderEntry, LoadOrder } from "../types/types";
 
 export interface ISetFBLoadOrderEntryPayload {
@@ -14,9 +15,9 @@ export interface ISetFBLoadOrderPayload {
   loadOrderId?: string;
 }
 
-// A primary write carries no loadOrderId.
+// A primary write carries no loadOrderId; community extensions read that payload.
 const withLoadOrderId = (loadOrderId: string | undefined) =>
-  loadOrderId === undefined ? {} : { loadOrderId };
+  isPrimaryLoadOrderId(loadOrderId) ? {} : { loadOrderId };
 
 // Replace one entry; without loadOrderId, in the primary load order.
 export const setFBLoadOrderEntry = createAction<ISetFBLoadOrderEntryPayload>(

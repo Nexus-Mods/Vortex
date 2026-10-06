@@ -15,6 +15,8 @@ export type RegistrationRejection =
 
 export const isPrimaryLoadOrderId = (loadOrderId: string | undefined): boolean =>
   loadOrderId === undefined || loadOrderId === DEFAULT_LOAD_ORDER_ID;
+export const resolveLoadOrderId = (loadOrderId: string | undefined): string =>
+  loadOrderId ?? DEFAULT_LOAD_ORDER_ID;
 export function resolveEntry(
   gameEntry: ILoadOrderGameInfo,
   isContributed: boolean,
