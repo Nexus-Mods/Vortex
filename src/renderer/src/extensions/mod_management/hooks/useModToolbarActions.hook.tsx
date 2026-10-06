@@ -25,6 +25,7 @@ import { batchDispatch } from "@/util/util";
 import { getIconPath } from "@/views/components/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
+import { selectModsToUpdate } from "../util/collectionUpdateWarning";
 import { NoDeployment } from "../util/exceptions";
 import metaLookupMatch from "../util/metaLookupMatch";
 import updateState from "../util/modUpdateState";
@@ -371,7 +372,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
   }, [api]);
 
   const updateAll = useCallback(
-    (modIds: string[]) => {
+    async (modIds: string[]) => {
       const mods = readModsWithState();
       const updateAble = modIds.filter((modId) => {
         const mod = mods[modId];
@@ -389,8 +390,9 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         });
       }
 
-      if (updateAble.length > 0) {
-        api.events.emit("mods-update", gameMode, updateAble);
+      const toUpdate = await selectModsToUpdate(api, mods, updateAble);
+      if (toUpdate.length > 0) {
+        api.events.emit("mods-update", gameMode, toUpdate);
       }
     },
     [api, gameMode, readModsWithState],
@@ -433,7 +435,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
                     title: "Update All",
                     action: (dismiss: () => void) => {
                       dismiss();
-                      updateAll(outdated);
+                      void updateAll(outdated);
                     },
                   },
                 ]

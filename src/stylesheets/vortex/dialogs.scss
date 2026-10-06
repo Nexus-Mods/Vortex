@@ -169,6 +169,20 @@
     }
 }
 
+#collection-update-warning-dialog {
+    .dialog-container {
+        min-height: 0;
+
+        > .dialog-content-markdown {
+            flex: initial;
+
+            p {
+                margin-bottom: $half-gutter;
+            }
+        }
+    }
+}
+
 #new-update-changelog-dialog {
     .modal-dialog {
         width: 600px;

@@ -8,6 +8,7 @@ import { activeGameId, activeProfile } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import type { IMod } from "../types/IMod";
+import { selectModsToUpdate } from "../util/collectionUpdateWarning";
 import updateState from "../util/modUpdateState";
 
 export type IModWithState = IMod & IProfileMod;
@@ -71,7 +72,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
                 title: "Update All",
                 action: (dismiss) => {
                   dismiss();
-                  this.updateAll(modIds);
+                  void this.updateAll(modIds);
                 },
               },
             ]
@@ -127,7 +128,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
       });
   };
 
-  private updateAll = (modIds: string[]) => {
+  private updateAll = async (modIds: string[]) => {
     const { gameMode } = this.props;
     const updateAble = modIds.filter((modId) => {
       const mod = this.props.mods[modId];
@@ -144,8 +145,9 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
         message: "Some mods could not be updated automatically.",
       });
     }
-    if (updateAble.length > 0) {
-      this.context.api.events.emit("mods-update", gameMode, updateAble);
+    const toUpdate = await selectModsToUpdate(this.context.api, this.props.mods, updateAble);
+    if (toUpdate.length > 0) {
+      this.context.api.events.emit("mods-update", gameMode, toUpdate);
     }
   };
 }
