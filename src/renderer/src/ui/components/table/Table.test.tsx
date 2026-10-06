@@ -103,6 +103,27 @@ describe("Table with groups", () => {
     expect(groupRows[1].querySelector("canvas")).toBeNull();
   });
 
+  it("tints an open group's rows from its image, below its own row, until it collapses", async () => {
+    const { container } = render(
+      <Table
+        columns={GROUPED_COLUMNS}
+        getRowId={(row) => row.id}
+        groups={[{ ...GROUPS[0], image: "first.png" }, GROUPS[1]]}
+        label="Files"
+      />,
+    );
+
+    const backdrops = () => container.querySelectorAll<HTMLElement>(".nxm-table-group-backdrop");
+    expect(backdrops()).toHaveLength(1);
+    // Under the first group's row, 48px and a 4px gap, over its two 40px rows.
+    expect(backdrops()[0].style.getPropertyValue("--nxm-table-backdrop-top")).toBe("52px");
+    expect(backdrops()[0].style.height).toBe("80px");
+
+    await userEvent.click(screen.getByRole("button", { name: "First" }));
+
+    expect(backdrops()).toHaveLength(0);
+  });
+
   it("collapses a group's rows from its button, and opens them again", async () => {
     renderGrouped();
     const toggle = screen.getByRole("button", { name: "First" });
