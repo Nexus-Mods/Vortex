@@ -5,7 +5,13 @@
     .nxm-table {
         --nxm-table-gap: calc(var(--spacing) * 2);
         --nxm-table-gutter: calc(var(--spacing) * 6 - var(--nxm-table-gap));
+        --nxm-table-head-padding: calc(var(--spacing) * 2);
         --nxm-table-header-height: calc(var(--spacing) * 6);
+        /* The whole sticky head, which the toolbar grows by its own height and a gap. */
+        --nxm-table-head-height: calc(
+            var(--nxm-table-head-padding) * 2 + var(--nxm-table-header-height)
+        );
+        --nxm-table-toolbar-height: calc(var(--spacing) * 7);
 
         position: relative;
         isolation: isolate;
@@ -30,13 +36,46 @@
         }
     }
 
-    /* Sticks to the page's scroller, which the table virtualises against. */
-    .nxm-table-header {
+    /* Sticks to the page's scroller, which the table virtualises against, padding and all, so
+       it's the same size stuck as not. Its rows take the table's columns through it. */
+    .nxm-table-head {
         position: sticky;
         top: 0;
         z-index: 1;
-        height: var(--nxm-table-header-height);
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
+        row-gap: var(--nxm-table-head-padding);
+        height: var(--nxm-table-head-height);
+        padding-block: var(--nxm-table-head-padding);
         background-color: var(--color-surface-low);
+    }
+
+    .nxm-table[data-toolbar] {
+        --nxm-table-head-height: calc(
+            var(--nxm-table-head-padding) * 3 + var(--nxm-table-toolbar-height) +
+                var(--nxm-table-header-height)
+        );
+    }
+
+    /* Inside the gutters, so its first tab lines up with the first column. */
+    .nxm-table-toolbar {
+        display: flex;
+        grid-column: 2 / -2;
+        height: var(--nxm-table-toolbar-height);
+    }
+
+    .nxm-table-toolbar-cell {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: space-between;
+        gap: calc(var(--spacing) * 2);
+        min-width: 0;
+    }
+
+    .nxm-table-header {
+        height: var(--nxm-table-header-height);
         color: var(--color-translucent-subdued);
 
         /* Labels sit a little in from their column, as the design's header buttons do. */
@@ -64,7 +103,7 @@
 
     /* Focus scrolls a control into view clear of the sticky header. Its own margin, not the row's. */
     :is(.nxm-table-row, .nxm-table-group-row) * {
-        scroll-margin-top: var(--nxm-table-header-height);
+        scroll-margin-top: var(--nxm-table-head-height);
     }
 
     /* Stands in for the rows out of view. */
@@ -87,7 +126,7 @@
     /* Behind the rows, over the table's own background; the sticky header covers it. */
     .nxm-table-group-backdrop {
         position: absolute;
-        top: calc(var(--nxm-table-header-height) + var(--nxm-table-backdrop-top));
+        top: calc(var(--nxm-table-head-height) + var(--nxm-table-backdrop-top));
         left: 0;
         z-index: -1;
         width: 100%;

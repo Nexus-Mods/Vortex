@@ -23,6 +23,12 @@ const collection = (id: string, name: string, memberIds: string[]) =>
 const renderSwitch = (mods: { [id: string]: IModWithState }) =>
   render(<ModsTableSwitch legacy={<div data-testid="legacy-table" />} mods={mods} />);
 
+// The table's own rows, not those in its sticky head.
+const bodyRows = (table: HTMLElement) =>
+  within(table)
+    .getAllByRole("row")
+    .filter((row) => row.closest('[role="rowgroup"]') === null);
+
 const cellText = (row: HTMLElement) => within(row).getAllByRole("gridcell")[0].textContent;
 
 describe("ModsTableSwitch", () => {
@@ -41,7 +47,7 @@ describe("ModsTableSwitch", () => {
   it("lists the mods by name, ungrouped, when no collection is installed", () => {
     renderSwitch({ b: mod("b", "Beta", false), a: mod("a", "Alpha", true) });
 
-    const [, first, second] = within(screen.getByRole("grid")).getAllByRole("row");
+    const [first, second] = bodyRows(screen.getByRole("grid"));
     expect(cellText(first)).toContain("Alpha");
     expect(cellText(second)).toContain("Beta");
     expect(within(first).getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
@@ -55,7 +61,7 @@ describe("ModsTableSwitch", () => {
       x: collection("x", "Xenon", ["b", "c"]),
     });
 
-    const rows = within(screen.getByRole("treegrid")).getAllByRole("row").slice(1);
+    const rows = bodyRows(screen.getByRole("treegrid"));
     expect(rows.map(cellText)).toEqual(["No collection1", "Alpha", "Xenon2", "Beta", "Gamma"]);
   });
 
