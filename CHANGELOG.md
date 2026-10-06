@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-10-06
+
+### Added
+
+- Option to sort the Witcher 3 load order alphabetically on deploy ([#24409](https://github.com/Nexus-Mods/Vortex/pull/24409))
+
+### Changed
+
+- Witcher 3 Script Mergers already set up in the game directory are now left alone, whichever variant was installed ([#24411](https://github.com/Nexus-Mods/Vortex/pull/24411))
+
+### Fixed
+
+- Witcher 3 Script Merger download failing ([#24411](https://github.com/Nexus-Mods/Vortex/pull/24411))
+- Deployment running when switching between games ([#24350](https://github.com/Nexus-Mods/Vortex/pull/24350))
+- Mod files deleted from the game directory when a deployment could not unlink them ([#24339](https://github.com/Nexus-Mods/Vortex/pull/24339))
+- Game discovery for the older Bethesda games ([#24337](https://github.com/Nexus-Mods/Vortex/pull/24337))
+
 ## [2.8.0-beta.2] - 2026-09-29
 
 ### Added
@@ -2408,6 +2425,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.8.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0
 [2.8.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0-beta.2
 [2.8.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0-beta.1
 [2.7.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.7.2
