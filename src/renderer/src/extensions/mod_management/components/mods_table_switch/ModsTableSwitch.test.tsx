@@ -1,6 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { Provider } from "react-redux";
+import { type AnyAction, createStore } from "redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ newTable: false }));
@@ -8,6 +10,8 @@ const mocks = vi.hoisted(() => ({ newTable: false }));
 vi.mock("@/views/components/dev_tools/useDevSetting.hook", () => ({
   useDevSetting: () => mocks.newTable,
 }));
+
+import { tableReducer } from "@/reducers/tables";
 
 import type { IModWithState } from "../../types/IModProps";
 import { ModsTableSwitch } from "./ModsTableSwitch";
@@ -21,14 +25,25 @@ const collection = (id: string, name: string, memberIds: string[]) =>
     rules: memberIds.map((memberId) => ({ type: "requires", reference: { id: memberId } })),
   });
 
+type ITablesState = { settings: { tables: typeof tableReducer.defaults } };
+
+// The table's column choices live in settings.tables.
+const makeStore = () =>
+  createStore((state: ITablesState = { settings: { tables: {} } }, action: AnyAction) => {
+    const reduce = tableReducer.reducers[action.type];
+    return reduce ? { settings: { tables: reduce(state.settings.tables, action.payload) } } : state;
+  });
+
 const renderSwitch = (mods: { [id: string]: IModWithState }) => {
   const onSetModsEnabled = vi.fn();
   render(
-    <ModsTableSwitch
-      legacy={<div data-testid="legacy-table" />}
-      mods={mods}
-      onSetModsEnabled={onSetModsEnabled}
-    />,
+    <Provider store={makeStore()}>
+      <ModsTableSwitch
+        legacy={<div data-testid="legacy-table" />}
+        mods={mods}
+        onSetModsEnabled={onSetModsEnabled}
+      />
+    </Provider>,
   );
   return onSetModsEnabled;
 };
