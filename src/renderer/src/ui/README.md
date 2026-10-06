@@ -35,7 +35,7 @@ ui/
 │   ├── pill/            - Compact rounded label for tags and statuses
 │   ├── popover/         - Floating panel of interactive content, or a menu of actions (Headless UI Popover)
 │   ├── premium_badge/   - Premium diamond badge
-│   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
+│   ├── table/           - Column-driven grid table (work in progress, behind a dev switch)
 │   ├── tabs/            - Tabbed interface with context-based state
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
 │   ├── tooltip/         - Rich, collision-aware tooltip (Floating UI)
@@ -721,45 +721,21 @@ import { Pagination } from "../../ui/components/pagination/Pagination";
 
 ### Table
 
-Reusable, column-driven data table. Declare the columns and pass the data; sorting, per-column filtering, column show/hide, grouping, optional pagination and an empty state are handled internally.
-
-**Defaults:** filters and the column toggle auto-enable when a column opts in; pagination is **off** unless `pageSize` is set; headers are always left-aligned.
+Column-driven table drawn as one CSS grid: the column widths make its tracks and every row is a subgrid of them, so cells line up without a `<table>`. It carries the grid roles. Work in progress towards the new table design; on the Mods page it only shows while the dev tools "New table design" switch is on.
 
 ```tsx
 import { Table } from "../../ui/components/table/Table";
-import type { IColumnDef } from "../../ui/components/table/Table.types";
+import type { ITableColumn } from "../../ui/components/table/Table.types";
 
-const columns: Array<IColumnDef<Mod>> = [
-    { id: "name", header: "Name", getValue: (m) => m.name, sortable: true, filter: { type: "text" } },
-    {
-        id: "category",
-        header: "Category",
-        getValue: (m) => m.category,
-        groupable: true,
-        filter: { type: "select", options: [{ label: "UI", value: "UI" }] },
-    },
-    {
-        id: "downloads",
-        header: "Downloads",
-        getValue: (m) => m.downloads,
-        sortable: true,
-        align: "right",
-        cell: (m) => m.downloads.toLocaleString(),
-    },
+const columns: Array<ITableColumn<Mod>> = [
+    { id: "name", header: "Name", cell: (m) => m.name },
+    { id: "status", header: "Status", width: "42px", cell: (m) => <Switch checked={m.enabled} /> },
 ];
 
-// No pageSize → renders every row, no pager
-<Table columns={columns} data={mods} getRowId={(m) => m.id} />
-
-// With pagination
-<Table columns={columns} data={mods} getRowId={(m) => m.id} pageSize={50} />
+<Table columns={columns} getRowId={(m) => m.id} label="Mods" rows={mods} />;
 ```
 
-**`ITableProps` fields:** `columns`, `data`, `getRowId` (required); `pageSize` (set to paginate), `caption`, `enableFilters`, `enableColumnToggle`, `enableColumnResize` (default `true`), `columnWidths` / `onColumnWidthsChange` (restore/persist resized widths), `emptyState`, `className`.
-
-**`IColumnDef` fields:** `id`, `header` (required); `getValue` (value used for sorting/filtering and the default cell), `cell` (custom renderer), `sortable`/`sortFn`, `filter` (`text` or `select`), `align` (body cells — headers are always left), `width`, `resizable` (drag-to-resize, default `true`), `hideable`/`defaultHidden` (column toggle), `groupable`/`groupValue`/`groupLabel`.
-
-**Notes:** grouping is one column at a time — collapsible groups across the full dataset, with the pager hidden while active. Columns use fixed widths, so when their total exceeds the container the table scrolls horizontally. Users can drag a header's right edge to resize a column (never narrower than its configured `width`) via the `useColumnResize` hook, and the column menu offers a "Reset column widths" action. The table itself stays state-store-agnostic: pass `columnWidths` to restore widths and handle `onColumnWidthsChange` (fired on resize-end and reset with the full px map) to persist them. All interactive state lives in the `useTableState` hook.
+**`ITableColumn` fields:** `id`, `header`, `cell` (required); `width` (a grid track, default `minmax(0, 1fr)`), `align` (`start` or `end`).
 
 ### Listing / ListingLoader / NoResults
 
