@@ -1,7 +1,8 @@
-import * as path from "path";
+import * as path from "node:path";
 
-import PromiseBB from "bluebird";
-import type * as winapiT from "winapi-bindings";
+import { parseError } from "@vortex/shared";
+import { QualifiedPath } from "@vortex/shared/filesystem";
+import * as winapi from "winapi-bindings";
 import { z } from "zod";
 
 import { log } from "../logging";
@@ -9,12 +10,8 @@ import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGameStore, IGameStoreSnapshot } from "../types/IGameStore";
 import { GameEntryNotFound } from "../types/IGameStore";
 import type { IGameStoreEntry } from "../types/IGameStoreEntry";
-import * as fs from "./fs";
-import lazyRequire from "./lazyRequire";
 
-const winapi: typeof winapiT = lazyRequire(() => require("winapi-bindings"));
-
-const ITEM_EXT = ".item";
+const ITEM_EXT = "item";
 const STORE_ID = "epic";
 const STORE_NAME = "Epic Games Launcher";
 const STORE_PRIORITY = 60;
@@ -28,8 +25,9 @@ export class EpicGamesLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  private mDataPath: PromiseBB<string | undefined>;
-  private mLauncherExecPath: string;
+
+  #dataPath: string | undefined;
+  #launcherExecPath: string | undefined;
   #snapshot: IGameStoreSnapshot;
 
   constructor() {
@@ -41,40 +39,40 @@ export class EpicGamesLauncher implements IGameStore {
           "SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher",
           "AppDataPath",
         );
-        this.mDataPath = PromiseBB.resolve(epicDataPath.value as string);
+
+        this.#dataPath = epicDataPath.value as string;
         this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "Epic games launcher not found", err);
-        this.mDataPath = PromiseBB.resolve<string | undefined>(undefined);
+        this.#dataPath = undefined;
         this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
-      // TODO: Is epic launcher even available on non-windows platforms?
-      this.mDataPath = PromiseBB.resolve<string | undefined>(undefined);
+      this.#dataPath = undefined;
       this.#snapshot = { entries: [], isInstalled: false };
     }
   }
 
-  public launchGame(appInfo: any, api?: IExtensionApi): PromiseBB<void> {
+  public async launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
     const appId =
       typeof appInfo === "object" && "appId" in appInfo ? appInfo.appId : appInfo.toString();
 
-    return this.getPosixPath(appId).then((posPath) => window.api.shell.openUrl(posPath));
+    const posPath = await this.getPosixPath(appId);
+    window.api.shell.openUrl(posPath);
   }
 
-  public launchGameStore(api: IExtensionApi, parameters?: string[]): PromiseBB<void> {
+  public launchGameStore(api: IExtensionApi, parameters?: string[]): Promise<void> {
     const launchCommand = "com.epicgames.launcher://start";
     window.api.shell.openUrl(launchCommand);
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
 
-  public getPosixPath(name) {
-    const posixPath = `com.epicgames.launcher://apps/${name}?action=launch&silent=true`;
-    return PromiseBB.resolve(posixPath);
+  public getPosixPath(name: string): Promise<string> {
+    return Promise.resolve(`com.epicgames.launcher://apps/${name}?action=launch&silent=true`);
   }
 
-  public queryPath() {
-    return this.mDataPath.then((dataPath) => path.join(dataPath!, this.executable()));
+  public queryPath(): Promise<string> {
+    return Promise.resolve(path.join(this.#dataPath, this.executable()));
   }
 
   /**
@@ -82,27 +80,32 @@ export class EpicGamesLauncher implements IGameStore {
    * Please keep in mind that epic seems to internally give third-party games animal names. Kinky.
    * @param name
    */
-  public isGameInstalled(name: string): PromiseBB<boolean> {
-    return this.findByAppId(name)
-      .catch(() => this.findByName(name))
-      .then(() => PromiseBB.resolve(true))
-      .catch(() => PromiseBB.resolve(false));
+  public async isGameInstalled(name: string): Promise<boolean> {
+    try {
+      await this.findByAppId(name);
+      return true;
+    } catch {
+      try {
+        await this.findByName(name);
+        return true;
+      } catch {
+        return false;
+      }
+    }
   }
 
-  public findByAppId(appId: string | string[]): PromiseBB<IGameStoreEntry> {
+  public async findByAppId(appId: string | string[]): Promise<IGameStoreEntry> {
     const matcher = Array.isArray(appId)
       ? (entry: IGameStoreEntry) => appId.includes(entry.appid)
       : (entry: IGameStoreEntry) => appId === entry.appid;
 
-    return this.allGames()
-      .then((entries) => entries.find(matcher))
-      .then((entry) =>
-        entry === undefined
-          ? PromiseBB.reject(
-              new GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID),
-            )
-          : PromiseBB.resolve(entry),
-      );
+    const entries = await this.allGames();
+    const entry = entries.find(matcher);
+    if (entry === undefined) {
+      throw new GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID);
+    }
+
+    return entry;
   }
 
   /**
@@ -110,119 +113,129 @@ export class EpicGamesLauncher implements IGameStore {
    *  e.g. "Flour" === "Untitled Goose Game" lol
    * @param name
    */
-  public findByName(name: string): PromiseBB<IGameStoreEntry> {
+  public async findByName(name: string): Promise<IGameStoreEntry> {
     const re = new RegExp("^" + name + "$");
-    return this.allGames()
-      .then((entries) => entries.find((entry) => re.test(entry.name)))
-      .then((entry) =>
-        entry === undefined
-          ? PromiseBB.reject(new GameEntryNotFound(name, STORE_ID))
-          : PromiseBB.resolve(entry),
-      );
+    const entries = await this.allGames();
+    const entry = entries.find((entry) => re.test(entry.name));
+    if (entry === undefined) {
+      throw new GameEntryNotFound(name, STORE_ID);
+    }
+    return entry;
   }
 
-  public allGames(): PromiseBB<EpicGamesStoreEntry[]> {
-    return PromiseBB.resolve(this.#snapshot.entries as EpicGamesStoreEntry[]);
+  public allGames(): Promise<EpicGamesStoreEntry[]> {
+    return Promise.resolve(this.#snapshot.entries as EpicGamesStoreEntry[]);
   }
 
   public snapshot(): IGameStoreSnapshot {
     return this.#snapshot;
   }
 
-  public reloadGames(): PromiseBB<void> {
-    return this.parseManifests().then((entries: EpicGamesStoreEntry[]) => {
-      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
-    });
+  public async reloadGames(): Promise<void> {
+    const entries = await this.parseManifests();
+    this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
   }
 
-  public getGameStorePath(): PromiseBB<string | undefined> {
-    const getExecPath = () => {
-      try {
-        const epicLauncher = winapi.RegGetValue(
-          "HKEY_LOCAL_MACHINE",
-          "SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon",
-          "(Default)",
-        );
-        const val = epicLauncher.value;
-        this.mLauncherExecPath = val.toString().split(",")[0];
-        return PromiseBB.resolve(this.mLauncherExecPath);
-      } catch (err) {
-        log("info", "Epic games launcher not found", err);
-        return PromiseBB.resolve(undefined);
-      }
-    };
+  public getGameStorePath(): Promise<string | undefined> {
+    if (this.#launcherExecPath) {
+      return Promise.resolve(this.#launcherExecPath);
+    }
 
-    return this.mLauncherExecPath ? PromiseBB.resolve(this.mLauncherExecPath) : getExecPath();
+    try {
+      const epicLauncher = winapi.RegGetValue(
+        "HKEY_LOCAL_MACHINE",
+        "SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon",
+        "(Default)",
+      );
+
+      const val = epicLauncher.value;
+      this.#launcherExecPath = val.toString().split(",")[0];
+      return Promise.resolve(this.#launcherExecPath);
+    } catch (err) {
+      log("info", "Epic games launcher not found", err);
+      return Promise.resolve(undefined);
+    }
   }
 
   private executable() {
-    // TODO: This probably won't work on *nix
-    //  test and fix.
+    // TODO: This probably won't work on *nix, test and fix.
     return process.platform === "win32" ? "EpicGamesLauncher.exe" : "EpicGamesLauncher";
   }
 
-  private parseManifests(): PromiseBB<EpicGamesStoreEntry[]> {
-    let manifestsLocation: string | undefined;
+  private async parseManifests(): Promise<EpicGamesStoreEntry[]> {
+    try {
+      if (this.#dataPath === undefined) return [];
 
-    return this.mDataPath
-      .then((dataPath) => {
-        if (dataPath === undefined) {
-          return PromiseBB.resolve<string[]>([]);
+      const manifestsLocation = QualifiedPath.fromNative(this.#dataPath).join("Manifests");
+
+      let iterator: AsyncIterableIterator<QualifiedPath, undefined>;
+
+      try {
+        iterator = await window.api.fs.enumerateDirectory(manifestsLocation);
+      } catch (err) {
+        if (parseError(err).data.kind === "fs:not-found") {
+          log("info", "Epic launcher manifests could not be found");
+          return [];
         }
 
-        manifestsLocation = path.join(dataPath, "Manifests");
-        return fs.readdirAsync(manifestsLocation);
-      })
-      .catch({ code: "ENOENT" }, (err) => {
-        log("info", "Epic launcher manifests could not be found", err.code);
-        return PromiseBB.resolve<string[]>([]);
-      })
-      .then((entries) => {
-        const manifests = entries.filter((entry) => entry.endsWith(ITEM_EXT));
-        return PromiseBB.map<string, EpicGamesStoreEntry | undefined>(manifests, (manifest) =>
-          fs
-            .readFileAsync(path.join(manifestsLocation, manifest), {
-              encoding: "utf8",
-            })
-            .then((data: string) => {
-              try {
-                const result = manifestSchema.safeParse(data);
-                if (result.error) return PromiseBB.resolve(undefined);
+        throw err;
+      }
 
-                const parsed = result.data;
+      const games: EpicGamesStoreEntry[] = [];
+      for await (const entry of iterator) {
+        if (entry.extension !== ITEM_EXT) continue;
 
-                // Epic does not seem to clean old manifests. We need
-                //  to stat the executable for each item to ensure that the
-                //  game entry is actually valid.
-                return fs
-                  .statSilentAsync(path.join(parsed.InstallLocation, parsed.LaunchExecutable))
-                  .then(() =>
-                    PromiseBB.resolve<EpicGamesStoreEntry>({
-                      gameStoreId: STORE_ID,
-                      name: parsed.DisplayName,
-                      appid: parsed.AppName,
-                      catalogItemId: parsed.CatalogItemId,
-                      catalogNamespace: parsed.CatalogNamespace,
-                      gamePath: parsed.InstallLocation,
-                    }),
-                  )
-                  .catch(() => PromiseBB.resolve(undefined));
-              } catch (err) {
-                log("error", "Cannot parse Epic Games manifest", err);
-                return PromiseBB.resolve(undefined);
-              }
-            })
-            .catch((err) => {
-              log("error", "Cannot read Epic Games manifest", err);
-              return PromiseBB.resolve(undefined);
-            }),
-        );
-      })
-      .then((games) => games.filter((game) => game !== undefined))
-      .catch((err) => {
-        log("error", "Failed to parse Epic Games manifests", err);
-        return PromiseBB.resolve([]);
-      });
+        let data: string;
+        try {
+          const blob = await window.api.fs.readFile(entry);
+          data = new TextDecoder().decode(blob);
+        } catch (err) {
+          log("error", "Cannot read EGS manifest", { err, entry });
+          continue;
+        }
+
+        try {
+          const result = manifestSchema.safeParse(data);
+          if (result.error) {
+            log("warn", "Failed to parse EGS manifest", { entry, error: result.error });
+            continue;
+          }
+
+          const parsed = result.data;
+
+          // Epic does not seem to clean old manifests. We need
+          //  to stat the executable for each item to ensure that the
+          //  game entry is actually valid.
+          try {
+            const status = await window.api.fs.stat(
+              QualifiedPath.fromNative(parsed.InstallLocation).join(parsed.LaunchExecutable),
+            );
+            if (!status.exists) continue;
+          } catch {
+            continue;
+          }
+
+          const storeEntry: EpicGamesStoreEntry = {
+            gameStoreId: STORE_ID,
+            name: parsed.DisplayName,
+            appid: parsed.AppName,
+            catalogItemId: parsed.CatalogItemId,
+            catalogNamespace: parsed.CatalogNamespace,
+            gamePath: parsed.InstallLocation,
+          };
+
+          games.push(storeEntry);
+        } catch (err) {
+          log("error", "Cannot parse Epic Games manifest", { err, entry });
+          continue;
+        }
+      }
+
+      return games;
+    } catch (err) {
+      log("error", "Failed to parse Epic Games manifests", err);
+      return [];
+    }
   }
 }
 
