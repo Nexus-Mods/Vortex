@@ -11,7 +11,6 @@ import { GameEntryNotFound } from "../types/IGameStore";
 import type { IGameStoreEntry } from "../types/IGameStoreEntry";
 import * as fs from "./fs";
 import lazyRequire from "./lazyRequire";
-import opn from "./opn";
 
 const winapi: typeof winapiT = lazyRequire(() => require("winapi-bindings"));
 
@@ -60,14 +59,13 @@ export class EpicGamesLauncher implements IGameStore {
     const appId =
       typeof appInfo === "object" && "appId" in appInfo ? appInfo.appId : appInfo.toString();
 
-    return this.getPosixPath(appId).then((posPath) =>
-      opn(posPath).catch((err) => PromiseBB.resolve()),
-    );
+    return this.getPosixPath(appId).then((posPath) => window.api.shell.openUrl(posPath));
   }
 
   public launchGameStore(api: IExtensionApi, parameters?: string[]): PromiseBB<void> {
     const launchCommand = "com.epicgames.launcher://start";
-    return opn(launchCommand).catch((err) => PromiseBB.resolve());
+    window.api.shell.openUrl(launchCommand);
+    return PromiseBB.resolve();
   }
 
   public getPosixPath(name) {

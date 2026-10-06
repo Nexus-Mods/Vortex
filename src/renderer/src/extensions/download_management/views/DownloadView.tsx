@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { parseError } from "@vortex/shared";
+import { parseError, unknownToError } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import _ from "lodash";
@@ -706,9 +706,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         return;
       }
 
-      opn(path.join(downloadPathForGame(internalGameId), download.localPath)).catch((err) => {
-        this.props.onShowError("Failed to open archive", err, undefined, false);
-      });
+      window.api.shell.openFile(path.join(downloadPathForGame(internalGameId), download.localPath));
     }
   };
 
