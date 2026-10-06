@@ -25,7 +25,7 @@ export class UPlayLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  #clientPath: string | undefined;
+  #installDir: string | undefined;
   #snapshot: IGameStoreSnapshot;
 
   constructor() {
@@ -37,18 +37,18 @@ export class UPlayLauncher implements IGameStore {
           "SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher",
           "InstallDir",
         );
-        this.#clientPath = path.join(uplayPath.value as string, UPLAY_EXEC);
+        this.#installDir = uplayPath.value as string;
         this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "uplay launcher not found", { err });
-        this.#clientPath = undefined;
+        this.#installDir = undefined;
         this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
       log("info", "uplay launcher not found", {
         error: "only available on Windows systems",
       });
-      this.#clientPath = undefined;
+      this.#installDir = undefined;
       this.#snapshot = { entries: [], isInstalled: false };
     }
   }
@@ -117,12 +117,12 @@ export class UPlayLauncher implements IGameStore {
 
   public getGameStorePath(): Promise<string | undefined> {
     return Promise.resolve(
-      this.#clientPath === undefined ? undefined : path.join(this.#clientPath, UPLAY_EXEC),
+      this.#installDir === undefined ? undefined : path.join(this.#installDir, UPLAY_EXEC),
     );
   }
 
   private getGameEntries(): Promise<IGameStoreEntry[]> {
-    if (this.#clientPath === undefined) {
+    if (this.#installDir === undefined) {
       // Can't find the client? don't continue.
       return Promise.resolve<IGameStoreEntry[]>([]);
     }
