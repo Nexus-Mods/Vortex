@@ -5,7 +5,14 @@ import { fs, log, types, selectors, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import turbowalk, { IEntry, IWalkOptions } from "turbowalk";
 
-import { GAME_ID, I18N_NAMESPACE, ACTIVITY_ID_IMPORTING_LOADORDER, PART_SUFFIX } from "./common";
+import {
+  GAME_ID,
+  LOCKED_PREFIX,
+  I18N_NAMESPACE,
+  ACTIVITY_ID_IMPORTING_LOADORDER,
+  PART_SUFFIX,
+  SCRIPT_MERGER_RELEASES_URL,
+} from "./common";
 import { detectEdition, determineExecutableFrom, W3Edition } from "./edition";
 import IniStructure from "./iniParser";
 import { getMergedModNames } from "./mergeInventoryParsing";
@@ -162,7 +169,7 @@ export function notifyMissingScriptMerger(api, force: boolean = false) {
                 label: "Download Script Merger",
                 action: () =>
                   util
-                    .opn("https://www.nexusmods.com/witcher3/mods/484")
+                    .opn(SCRIPT_MERGER_RELEASES_URL)
                     .catch((err) => null)
                     .then(() => api.dismissNotification("missing-script-merger")),
               },
