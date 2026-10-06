@@ -1,21 +1,19 @@
-import * as fsOG from "fs/promises";
-import * as path from "path";
+import * as path from "node:path";
 
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
-import PromiseBB from "bluebird";
+import { parseError } from "@vortex/shared";
+import { QualifiedPath } from "@vortex/shared/filesystem";
 import { parse, type VDFObject, type VDFValue } from "simple-vdf";
 import * as winapi from "winapi-bindings";
+
+import { log } from "@/logging";
 
 import type { IExecInfo } from "../types/IExecInfo";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { ICustomExecutionInfo, IGameStore, IGameStoreSnapshot } from "../types/IGameStore";
 import { GameEntryNotFound } from "../types/IGameStore";
 import type { IGameStoreEntry } from "../types/IGameStoreEntry";
-import * as fs from "./fs";
 import { getProtonInfo, buildProtonEnvironment, buildProtonCommand } from "./linux/proton";
 import { findLinuxSteamPath } from "./linux/steamPaths";
-import { log } from "./log";
-import opn from "./opn";
 
 /** VDF leaves are plain strings, so only nested blocks can be indexed further. */
 const asBlock = (value: VDFValue | undefined): VDFObject | undefined =>
@@ -41,7 +39,8 @@ class Steam implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  private mBaseFolder: PromiseBB<string | undefined>;
+
+  #baseFolder: string | undefined;
   #snapshot: IGameStoreSnapshot;
 
   constructor() {
@@ -53,16 +52,16 @@ class Steam implements IGameStore {
           "Software\\Valve\\Steam",
           "SteamPath",
         );
-        this.mBaseFolder = PromiseBB.resolve(steamPath.value as string);
+        this.#baseFolder = steamPath.value as string;
         this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "steam not found", err);
-        this.mBaseFolder = PromiseBB.resolve(undefined);
+        this.#baseFolder = undefined;
         this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
       const linuxPath = findLinuxSteamPath();
-      this.mBaseFolder = PromiseBB.resolve(linuxPath);
+      this.#baseFolder = linuxPath;
       this.#snapshot = { entries: [], isInstalled: linuxPath !== undefined };
     }
   }
@@ -70,20 +69,16 @@ class Steam implements IGameStore {
   /**
    * find the first game that matches the specified name pattern
    */
-  public findByName(namePattern: string): PromiseBB<ISteamEntry> {
+  public async findByName(namePattern: string): Promise<ISteamEntry> {
     const re = new RegExp("^" + namePattern + "$");
-    return this.allGames()
-      .then((entries) => entries.find((entry) => re.test(entry.name)))
-      .then((entry) => {
-        if (entry === undefined) {
-          return PromiseBB.reject(new GameEntryNotFound(namePattern, STORE_ID));
-        } else {
-          return PromiseBB.resolve(entry);
-        }
-      });
+    const entries = await this.allGames();
+    const entry = entries.find((entry) => re.test(entry.name));
+    if (entry === undefined) throw new GameEntryNotFound(namePattern, STORE_ID);
+
+    return entry;
   }
 
-  public launchGame(appInfo: any, api?: IExtensionApi): PromiseBB<void> {
+  public async launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
     // We expect appInfo to be one of three things at this point:
     //  - The game extension's details object if provided, in which case
     //      we want to extract the steamAppId entry. (preferred case as this
@@ -91,12 +86,16 @@ class Steam implements IGameStore {
     //  - The steam Id in string form.
     //  - The directory path which contains the game's executable.
     if (this.isCustomExecObject(appInfo) && appInfo.launchType === "gamestore") {
-      return this.getPosixPath(appInfo).then((posix) =>
-        opn(posix).catch((err) => PromiseBB.resolve()),
-      );
+      const posix = await this.getPosixPath(appInfo);
+      window.api.shell.openUrl(posix);
+      return;
     }
+
     const info = appInfo.steamAppId ? appInfo.steamAppId.toString() : appInfo;
-    return this.getExecInfo(info).then((execInfo) =>
+    const execInfo = await this.getExecInfo(info);
+
+    // TODO: Bluebird to native
+    await Promise.resolve(
       api?.runExecutable(execInfo.execPath, execInfo.arguments, {
         cwd: path.dirname(execInfo.execPath),
         suggestDeploy: true,
@@ -105,12 +104,12 @@ class Steam implements IGameStore {
     );
   }
 
-  public getPosixPath(appInfo: any) {
+  public getPosixPath(appInfo: any): Promise<string> {
     const posixCommand = `steam://launch/${appInfo.appId}/${appInfo.parameters.join()}`;
-    return PromiseBB.resolve(posixCommand);
+    return Promise.resolve(posixCommand);
   }
 
-  public getExecInfo(appInfo: any): PromiseBB<IExecInfo> {
+  public async getExecInfo(appInfo: any): Promise<IExecInfo> {
     // Steam uses numeric values to id games internally; if the provided appId
     //  contains path separators, it's a clear indication that the game
     //  extension did not provide a steam id and the starter info object
@@ -125,265 +124,256 @@ class Steam implements IGameStore {
     }
 
     const isDirPath = appId.indexOf(path.sep) !== -1;
-    return this.allGames().then((entries) => {
-      const found = entries.find((entry) =>
-        !isDirPath
-          ? entry.appid === appId
-          : // Checking by gamepath is inefficient but I can't think of a different
-            //  way to ascertain whether the launcher has this game entry with the
-            //  provided information...
-            appId.toLowerCase().indexOf(entry.gamePath.toLowerCase()) !== -1,
-      );
-      if (found === undefined) {
-        return PromiseBB.reject(new GameEntryNotFound(appId, STORE_ID));
-      }
-      return this.mBaseFolder.then((basePath) => {
-        const steamExec = {
-          execPath: path.join(basePath, STEAM_EXEC),
-          arguments: ["-applaunch", appId, ...parameters],
-        };
-        return PromiseBB.resolve(steamExec);
-      });
-    });
+    const entries = await this.allGames();
+    const found = entries.find((entry) =>
+      !isDirPath
+        ? entry.appid === appId
+        : // Checking by gamepath is inefficient but I can't think of a different
+          //  way to ascertain whether the launcher has this game entry with the
+          //  provided information...
+          appId.toLowerCase().indexOf(entry.gamePath.toLowerCase()) !== -1,
+    );
+
+    if (found === undefined) throw new GameEntryNotFound(appId, STORE_ID);
+
+    return {
+      execPath: path.join(this.#baseFolder, STEAM_EXEC),
+      arguments: ["-applaunch", appId, ...parameters],
+    };
   }
 
   /**
    * find the first game with the specified appid or one of the specified appids
    */
-  public findByAppId(appId: string | string[]): PromiseBB<ISteamEntry> {
+  public async findByAppId(appId: string | string[]): Promise<ISteamEntry> {
     // support searching for one app id or one out of a list (when there are multiple
     // variants of a game)
     const matcher = Array.isArray(appId)
       ? (entry) => appId.indexOf(entry.appid) !== -1
       : (entry) => entry.appid === appId;
 
-    return this.allGames().then((entries) => {
-      const entry = entries.find(matcher);
-      if (entry === undefined) {
-        return PromiseBB.reject(
-          new GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID),
-        );
-      } else {
-        return PromiseBB.resolve(entry);
-      }
-    });
+    const entries = await this.allGames();
+    const entry = entries.find(matcher);
+    if (entry === undefined) {
+      throw new GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID);
+    }
+
+    return entry;
   }
 
-  public allGames(): PromiseBB<ISteamEntry[]> {
-    return PromiseBB.resolve(this.#snapshot.entries as ISteamEntry[]);
+  public allGames(): Promise<ISteamEntry[]> {
+    return Promise.resolve(this.#snapshot.entries as ISteamEntry[]);
   }
 
   public snapshot(): IGameStoreSnapshot {
     return this.#snapshot;
   }
 
-  public getGameStorePath(): PromiseBB<string | undefined> {
-    return this.mBaseFolder.then((baseFolder) => {
-      if (baseFolder === undefined) {
-        return PromiseBB.resolve(undefined);
-      }
-      return PromiseBB.resolve(path.join(baseFolder, STEAM_EXEC));
-    });
+  public getGameStorePath(): Promise<string | undefined> {
+    if (this.#baseFolder === undefined) return Promise.resolve(undefined);
+    return Promise.resolve(path.join(this.#baseFolder, STEAM_EXEC));
   }
 
-  public reloadGames(): PromiseBB<void> {
-    return this.parseManifests().then((entries: ISteamEntry[]) => {
-      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
-    });
+  public async reloadGames(): Promise<void> {
+    const entries = await this.parseManifests();
+    this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
   }
 
-  public identifyGame(
+  public async identifyGame(
     gamePath: string,
     fallback: (gamePath: string) => PromiseLike<boolean>,
-  ): PromiseBB<boolean> {
+  ): Promise<boolean> {
     const custom = gamePath.toLowerCase().split(path.sep).includes("steamapps");
 
-    return PromiseBB.resolve(fallback(gamePath)).then((fbResult: boolean) => {
-      if (fbResult !== custom) {
-        log("warn", "(steam) game identification inconclusive", {
-          gamePath,
-          custom,
-          fallback,
-        });
-      }
-      return custom || fbResult;
-    });
+    const fbResult = await fallback(gamePath);
+    if (fbResult !== custom) {
+      log("warn", "(steam) game identification inconclusive", {
+        gamePath,
+        custom,
+        fallback,
+      });
+    }
+
+    return custom || fbResult;
   }
 
   private isCustomExecObject(object: any): object is ICustomExecutionInfo {
-    if (typeof object !== "object") {
-      return false;
-    }
+    if (typeof object !== "object") return false;
     return "appId" in object;
   }
 
-  private resolveSteamPaths(): PromiseBB<string[]> {
+  private async resolveSteamPaths(): Promise<string[]> {
     log("debug", "resolving Steam game paths");
-    return this.mBaseFolder.then((basePath: string) => {
-      if (basePath === undefined) {
-        // Steam not found/installed
-        return PromiseBB.resolve([]);
+    const basePath = this.#baseFolder;
+    if (basePath === undefined) {
+      // Steam not found/installed
+      return [];
+    }
+
+    const steamPaths: string[] = [basePath];
+    let parsedObj: VDFObject;
+
+    try {
+      const blob = await window.api.fs.readFile(
+        QualifiedPath.fromNative(basePath).join("config", "libraryfolders.vdf"),
+      );
+      const data = new TextDecoder().decode(blob);
+
+      try {
+        parsedObj = parse(data);
+      } catch (err) {
+        log("warn", "unable to parse steamfolders.vdf", err);
+        return steamPaths;
       }
+    } catch (err) {
+      // A Steam update has changed the way we resolve the steam library paths
+      //  (we used to get these from config.vdf) the libraryfolders.vdf file
+      //  appears to at times hold a reference to _all_ library folders; other times
+      //  it only holds the path to the alternate steam libraries (the ones that aren't
+      //  part of the base Steam installation folder)
+      log("warn", "failed to read steam library folders file", err);
 
-      const steamPaths: string[] = [basePath];
-      return PromiseBB.resolve(
-        fsOG.readFile(path.resolve(basePath, "config", "libraryfolders.vdf")),
-      )
-        .then((data: Buffer) => {
-          let parsedObj: VDFObject;
-          try {
-            parsedObj = parse(data.toString());
-          } catch (err) {
-            log("warn", "unable to parse steamfolders.vdf", err);
-            return PromiseBB.resolve(steamPaths);
-          }
+      const vortexError = parseError(err);
+      if (vortexError.data.kind === "fs:not-found" || vortexError.data.kind === "fs:no-permissions")
+        return steamPaths;
+      throw err;
+    }
 
-          // older Steam versions spelled this key in mixed case
-          const libKey = Object.keys(parsedObj).find(
-            (key) => key.toLowerCase() === "libraryfolders",
-          );
-          const libObj = asBlock(libKey !== undefined ? parsedObj[libKey] : undefined) ?? {};
+    // older Steam versions spelled this key in mixed case
+    const libKey = Object.keys(parsedObj).find((key) => key.toLowerCase() === "libraryfolders");
+    const libObj = asBlock(libKey !== undefined ? parsedObj[libKey] : undefined) ?? {};
 
-          // libraries are numbered contiguously, from 0 or 1 depending on the Steam version
-          let counter = libObj["0"] !== undefined ? 0 : 1;
-          let lib = asBlock(libObj[`${counter}`]);
-          while (lib !== undefined) {
-            const libPath = lib["path"];
-            if (typeof libPath === "string" && libPath && !steamPaths.includes(libPath)) {
-              steamPaths.push(libPath);
-            }
-            ++counter;
-            lib = asBlock(libObj[`${counter}`]);
-          }
-          log("debug", "found steam install folders", { steamPaths });
-          return PromiseBB.resolve(steamPaths);
-        })
-        .catch((err) => {
-          // A Steam update has changed the way we resolve the steam library paths
-          //  (we used to get these from config.vdf) the libraryfolders.vdf file
-          //  appears to at times hold a reference to _all_ library folders; other times
-          //  it only holds the path to the alternate steam libraries (the ones that aren't
-          //  part of the base Steam installation folder)
-          log("warn", "failed to read steam library folders file", err);
-          const code = getErrorCode(err);
-          return code !== null && ["EPERM", "ENOENT"].includes(code)
-            ? PromiseBB.resolve(steamPaths)
-            : PromiseBB.reject(err);
-        });
-    });
+    // libraries are numbered contiguously, from 0 or 1 depending on the Steam version
+    let counter = libObj["0"] !== undefined ? 0 : 1;
+    let lib = asBlock(libObj[`${counter}`]);
+    while (lib !== undefined) {
+      const libPath = lib["path"];
+      if (typeof libPath === "string" && libPath && !steamPaths.includes(libPath)) {
+        steamPaths.push(libPath);
+      }
+      ++counter;
+      lib = asBlock(libObj[`${counter}`]);
+    }
+
+    log("debug", "found steam install folders", { steamPaths });
+    return steamPaths;
   }
 
-  private parseManifests(): PromiseBB<ISteamEntry[]> {
-    return this.resolveSteamPaths().then((steamPaths: string[]) =>
-      PromiseBB.mapSeries(steamPaths, (steamPath) => {
-        log("debug", "reading steam install folder", { steamPath });
-        const steamAppsPath = path.join(steamPath, "steamapps");
-        return PromiseBB.resolve(fsOG.readdir(steamAppsPath))
-          .then((names) => {
-            const filtered = names.filter(
-              (name) => name.startsWith("appmanifest_") && path.extname(name) === ".acf",
-            );
-            log("debug", "got steam manifests", { manifests: filtered });
-            return PromiseBB.map(filtered, (name: string) =>
-              fs.readFileAsync(path.join(steamAppsPath, name)).then((manifestData) => ({
-                manifestData,
-                name,
-              })),
-            );
-          })
-          .then((appsData) => {
-            return appsData
-              .map((appData) => {
-                const { name, manifestData } = appData;
-                try {
-                  return { obj: parse(manifestData.toString()), name };
-                } catch (err) {
-                  log("warn", "failed to parse steam manifest", {
-                    name,
-                    error: getErrorMessageOrDefault(err),
-                  });
-                  return undefined;
-                }
-              })
-              .map((res) => {
-                if (res === undefined) {
-                  return undefined;
-                }
-                const { obj, name } = res;
-                if (
-                  obj === undefined ||
-                  obj["AppState"] === undefined ||
-                  obj["AppState"]["installdir"] === undefined
-                ) {
-                  log("debug", "invalid appmanifest", name);
-                  return undefined;
-                }
-                try {
-                  const result: ISteamEntry = {
-                    appid: obj["AppState"]["appid"],
-                    gameStoreId: STORE_ID,
-                    name: obj["AppState"]["name"],
-                    gamePath: path.join(steamAppsPath, "common", obj["AppState"]["installdir"]),
-                    lastUser: obj["AppState"]["LastOwner"],
-                    lastUpdated: new Date(obj["AppState"]["LastUpdated"] * 1000),
-                    manifestData: obj,
-                  };
-                  return result;
-                } catch (err) {
-                  log("warn", "failed to parse steam manifest", {
-                    name,
-                    error: getErrorMessageOrDefault(err),
-                  });
-                  return undefined;
-                }
-              })
-              .filter((obj): obj is ISteamEntry => !!obj);
-          })
-          .then((entries: ISteamEntry[]) => {
-            // Add Proton info on Linux
-            if (process.platform === "win32") {
-              return entries;
-            }
-            return this.mBaseFolder.then((basePath) =>
-              PromiseBB.map(entries, async (entry) => {
-                try {
-                  const protonInfo = await getProtonInfo(basePath, steamAppsPath, entry.appid);
-                  entry.usesProton = protonInfo.usesProton;
-                  entry.compatDataPath = protonInfo.compatDataPath;
-                  entry.protonPath = protonInfo.protonPath;
-                } catch (err) {
-                  log("debug", "Could not get Proton info for game", {
-                    appid: entry.appid,
-                    error: getErrorMessageOrDefault(err),
-                  });
-                }
-                return entry;
-              }),
-            );
-          })
-          .catch({ code: "ENOENT" }, (err: any) => {
-            // no biggy, this can happen for example if the steam library is on a removable medium
-            // which is currently removed
-            log("info", "Steam library not found", {
-              error: getErrorMessageOrDefault(err),
-            });
-            return [];
-          })
-          .catch((err) => {
-            log("warn", "Failed to read steam library", {
-              path: steamPath,
-              error: getErrorMessageOrDefault(err),
-            });
-            return [];
+  private async parseManifests(): Promise<ISteamEntry[]> {
+    // A missing base folder means resolveSteamPaths yields nothing anyway,
+    //  but reading the field up front lets us hand a non-undefined path down.
+    const baseFolder = this.#baseFolder;
+    if (baseFolder === undefined) {
+      return [];
+    }
+
+    const steamPaths = await this.resolveSteamPaths();
+
+    const games: ISteamEntry[] = [];
+    for (const steamPath of steamPaths) {
+      log("debug", "reading steam install folder", { steamPath });
+      games.push(...(await this.parseLibrary(steamPath, baseFolder)));
+    }
+
+    log("info", "done reading steam libraries");
+    return games;
+  }
+
+  /**
+   * Parse one Steam library's appmanifest files.
+   *
+   * Errors are isolated per library: a disconnected or unreadable library is
+   * logged and skipped, the remaining libraries keep scanning. (The
+   * "not found" case is expected - Steam libraries can live on removable
+   * media that is currently removed.)
+   */
+  private async parseLibrary(steamPath: string, baseFolder: string): Promise<ISteamEntry[]> {
+    const steamAppsPath = path.join(steamPath, "steamapps");
+
+    try {
+      const entries: ISteamEntry[] = [];
+      const iterator = await window.api.fs.enumerateDirectory(
+        QualifiedPath.fromNative(steamAppsPath),
+      );
+
+      for await (const entry of iterator) {
+        if (!entry.basename.startsWith("appmanifest_") || entry.extension !== "acf") continue;
+
+        const game = await this.parseManifest(entry, steamAppsPath, baseFolder);
+        if (game !== undefined) {
+          entries.push(game);
+        }
+      }
+
+      return entries;
+    } catch (err) {
+      if (parseError(err).data.kind === "fs:not-found") {
+        log("info", "Steam library not found", { err });
+      } else {
+        log("warn", "Failed to read steam library", { path: steamPath, err });
+      }
+      return [];
+    }
+  }
+
+  /**
+   * Turn a single appmanifest_*.acf file into a game entry, enriching it with
+   * Proton info on Linux. Returns undefined when the manifest is malformed;
+   * a manifest that cannot be read propagates, which skips the rest of the
+   * containing library.
+   */
+  private async parseManifest(
+    entry: QualifiedPath,
+    steamAppsPath: string,
+    baseFolder: string,
+  ): Promise<ISteamEntry | undefined> {
+    const blob = await window.api.fs.readFile(entry);
+    const manifestData = new TextDecoder().decode(blob);
+
+    let parsedObj: VDFObject;
+    try {
+      parsedObj = parse(manifestData);
+    } catch (err) {
+      log("warn", "failed to parse steam manifest", { err, entry });
+      return undefined;
+    }
+
+    if (parsedObj["AppState"] === undefined || parsedObj["AppState"]["installdir"] === undefined) {
+      log("debug", "invalid appmanifest", { entry });
+      return undefined;
+    }
+
+    try {
+      const result: ISteamEntry = {
+        appid: parsedObj["AppState"]["appid"],
+        gameStoreId: STORE_ID,
+        name: parsedObj["AppState"]["name"],
+        gamePath: path.join(steamAppsPath, "common", parsedObj["AppState"]["installdir"]),
+        lastUser: parsedObj["AppState"]["LastOwner"],
+        lastUpdated: new Date(parsedObj["AppState"]["LastUpdated"] * 1000),
+        manifestData: parsedObj,
+      };
+
+      if (process.platform === "linux") {
+        try {
+          const protonInfo = await getProtonInfo(baseFolder, steamAppsPath, result.appid);
+          result.usesProton = protonInfo.usesProton;
+          result.compatDataPath = protonInfo.compatDataPath;
+          result.protonPath = protonInfo.protonPath;
+        } catch (err) {
+          log("debug", "Could not get Proton info for game", {
+            appid: result.appid,
+            err,
+            entry,
           });
-      })
-        .then((games) =>
-          games.reduce((prev, current) => (current ? prev.concat(current) : prev), []),
-        )
-        .tap(() => {
-          log("info", "done reading steam libraries");
-        }),
-    );
+        }
+      }
+
+      return result;
+    } catch (err) {
+      log("warn", "failed to parse steam manifest", { entry, err });
+      return undefined;
+    }
   }
 
   /**
@@ -400,7 +390,7 @@ class Steam implements IGameStore {
       return api.runExecutable(exePath, args, options);
     }
 
-    const steamPath = await this.mBaseFolder;
+    const steamPath = this.#baseFolder;
     const { executable, args: protonArgs } = buildProtonCommand(
       gameEntry.protonPath,
       exePath,
