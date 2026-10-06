@@ -16,15 +16,20 @@ export function adoptedLoadOrder(
   return [...primary];
 }
 
-// True when none of a game's load orders is the primary or adopts it while the primary order
-// holds entries.
+// The load order that reads persistent.loadOrder: the game's primary, else its an adopter.
+export function legacyOrderOwner(
+  entries: readonly IRegisteredLoadOrder[],
+): IRegisteredLoadOrder | undefined {
+  return (
+    entries.find((entry) => entry.isPrimary) ??
+    entries.find((entry) => entry.adoptsLegacyOrder === true)
+  );
+}
+
+// True when a game's load orders leave a populated primary order with no owner.
 export function orphansLegacyOrder(
   entries: readonly IRegisteredLoadOrder[],
   primary: LoadOrder | undefined,
 ): boolean {
-  return (
-    hasEntries(primary) &&
-    entries.length > 0 &&
-    !entries.some((entry) => entry.isPrimary || entry.adoptsLegacyOrder === true)
-  );
+  return hasEntries(primary) && entries.length > 0 && legacyOrderOwner(entries) === undefined;
 }

@@ -25,8 +25,10 @@ export function makeFbloHarness(opts: IFbloHarnessOpts = {}): IFbloHarness {
   registerLoadOrderHandlers(base.api, registry);
   return {
     ...base,
-    registerLoadOrder: (overrides = {}) =>
-      registry.addInline(makeLoadOrderGameInfo({ gameId: base.gameId, ...overrides })),
+    registerLoadOrder: (overrides = {}) => {
+      registry.addInline(makeLoadOrderGameInfo({ gameId: base.gameId, ...overrides }));
+      return registry.find(base.gameId, overrides.loadOrderId);
+    },
     loadOrder: (loadOrderId?: string) =>
       loadOrderForProfile(base.getState(), base.profileId, loadOrderId),
   };

@@ -12,7 +12,11 @@ import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEve
 import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
-import type { ILoadOrderGameInfo, LoadOrder } from "../extensions/file_based_loadorder/types/types";
+import type {
+  ILoadOrderGameInfo,
+  IRegisteredLoadOrder,
+  LoadOrder,
+} from "../extensions/file_based_loadorder/types/types";
 import type LootInterface from "../extensions/gamebryo_plugin_management/autosort";
 import type {
   IPlugin,
@@ -134,7 +138,7 @@ export type IFbloHarnessOpts = IGameHarnessOpts;
 
 export interface IFbloHarness extends IGameHarness {
   // register a load order for the harness game, as a game extension's registerLoadOrder does
-  registerLoadOrder: (overrides?: Partial<ILoadOrderGameInfo>) => void;
+  registerLoadOrder: (overrides?: Partial<ILoadOrderGameInfo>) => IRegisteredLoadOrder;
   // the active profile's load order with that id (its primary when omitted), read back from state
   loadOrder: (loadOrderId?: string) => LoadOrder;
 }

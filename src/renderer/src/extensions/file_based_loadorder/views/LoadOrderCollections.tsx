@@ -146,7 +146,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
   };
 
   private openLoadOrderPage = () => {
-    this.context.api.events.emit("show-main-page", "generic-loadorder");
+    this.context.api.events.emit("show-main-page", "file-based-loadorder");
   };
   private renderOpenLOButton = () => {
     const { t } = this.props;

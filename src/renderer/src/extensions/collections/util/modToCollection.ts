@@ -404,7 +404,13 @@ export async function modToCollection(
   const exts: IExtensionFeature[] = findExtensions(state, gameId);
   const extData: any = {};
   for (const ext of exts) {
-    Object.assign(extData, await ext.generate(gameId, includedMods, collection));
+    const generated =
+      ((await ext.generate(gameId, includedMods, collection)) as object | undefined) ?? {};
+    const taken = Object.keys(generated).find((key) => key in extData);
+    if (taken !== undefined) {
+      throw new Error(`collection feature "${ext.id}" would overwrite "${taken}"`);
+    }
+    Object.assign(extData, generated);
   }
 
   const gameSpecific = await generateGameSpecifics(state, gameId, stagingPath, includedMods, mods);

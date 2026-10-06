@@ -176,9 +176,10 @@ export default function init(context: IExtensionContext) {
     (gameId: string, includedMods: string[]) => {
       // keyed by Vortex mod id
       const mods: Record<string, IMod> = currentGameMods(context.api.getState());
-      return generate(context.api, getGameEntry(gameId), includedMods, mods);
+      return generate(context.api, registry.entries(gameId).filter(isInUse), includedMods, mods);
     },
-    (gameId: string, collection: ICollection) => parser(context.api, gameId, collection),
+    (gameId: string, collection: ICollection) =>
+      parser(context.api, registry.entries(gameId), gameId, collection),
     () => Promise.resolve(),
     (t) => t("Load Order"),
     (_state: IState, gameId: string) => {

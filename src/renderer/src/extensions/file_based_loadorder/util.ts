@@ -5,7 +5,7 @@ import type { IMod } from "../mod_management/types/IMod";
 import { findRuleByRef } from "../mod_management/util/testModReference";
 import { lastActiveProfileForGame } from "../profile_management/selectors";
 import { setValidationResult } from "./actions/session";
-import { currentLoadOrderForProfile } from "./selectors";
+import { loadOrderForProfile } from "./selectors";
 import {
   type IRegisteredLoadOrder,
   type IValidationResult,
@@ -35,7 +35,7 @@ export async function genCollectionLoadOrder(
 ): Promise<LoadOrder> {
   const state = api.getState();
   try {
-    const prev = currentLoadOrderForProfile(state, profileId);
+    const prev = loadOrderForProfile(state, profileId, gameEntry.loadOrderId);
     let loadOrder = await gameEntry.deserializeLoadOrder();
     loadOrder = loadOrder.filter((entry) =>
       collection !== undefined
