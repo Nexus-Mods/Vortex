@@ -116,8 +116,29 @@ class LoggerSingleton {
   }
 }
 
+/**
+ * Once the process loses its console (the terminal that started it went away), every console
+ * write fails with EPIPE. Unhandled, that error reaches the uncaught error handler, which logs
+ * it, to the console again: an endless loop that fills the log folder by megabytes per second.
+ * Dropping the console transport breaks the loop; the log file keeps working.
+ */
+export function dropConsoleOnBrokenPipe(
+  logger: winston.LoggerInstance,
+  streams: NodeJS.EventEmitter[] = [process.stdout, process.stderr],
+): void {
+  const onError = (err: NodeJS.ErrnoException) => {
+    if (err.code === "EPIPE" && logger.transports["console"] !== undefined) {
+      logger.remove(winston.transports.Console);
+    }
+  };
+  for (const stream of streams) {
+    stream.on("error", onError);
+  }
+}
+
 export function setupLogging(basePath: string, useConsole: boolean): void {
   const logger = LoggerSingleton.initialize(setupLogger(basePath, useConsole));
+  dropConsoleOnBrokenPipe(logger);
 
   betterIpcMain.on("logging:log", (_, level, message, metadata) => {
     logger.log(level, message, {
