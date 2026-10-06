@@ -180,7 +180,7 @@ catalog:
   limiter: 3.0.0
   lint-staged: 17.0.8
   lodash: 4.17.23
-  loot: github:Nexus-Mods/node-loot#ef39d71524fdd349743d0c5e51c453f5437ee618
+  loot: github:Nexus-Mods/node-loot#880f4b40df12648eb84193563affee089c1e65a7
   lru-cache: 11.2.7
   markdown-ast: 0.2.1
   memoize-one: 5.2.1
@@ -330,7 +330,7 @@ allowBuilds:
   esbuild: true
   font-scanner: true
   leveldown: true
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618: true
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/880f4b40df12648eb84193563affee089c1e65a7: true
   node@runtime:24.17.0: true
   nx: false
   winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1: true

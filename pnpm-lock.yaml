@@ -696,7 +696,7 @@ catalogs:
       specifier: 4.17.23
       version: 4.17.23
     loot:
-      specifier: github:Nexus-Mods/node-loot#ef39d71524fdd349743d0c5e51c453f5437ee618
+      specifier: github:Nexus-Mods/node-loot#880f4b40df12648eb84193563affee089c1e65a7
       version: 7.0.0
     lru-cache:
       specifier: 11.2.7
@@ -5062,7 +5062,7 @@ importers:
     optionalDependencies:
       loot:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/880f4b40df12648eb84193563affee089c1e65a7
 
   src/shared:
     dependencies:
@@ -10548,8 +10548,8 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618:
-    resolution: {gitHosted: true, integrity: sha512-TVAeIsWk9jfOI6W9kRP7DcDMh2sL28WyAHzGLHh7CZLrKZQcvjLPYzv/4az3IThJ5OIR1oNmutf8O4wIv3RLvA==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618}
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/880f4b40df12648eb84193563affee089c1e65a7:
+    resolution: {gitHosted: true, integrity: sha512-fJ7jjU3KDs7XHh3AkR3H2w+LCWcfK5+I6yXQa0rVy/N7yj9u2ok3IF5Ghbs4v7HPY3j/WwQwAIZOVokmxrM1rw==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/880f4b40df12648eb84193563affee089c1e65a7}
     version: 7.0.0
 
   lowercase-keys@3.0.0:
@@ -18691,7 +18691,7 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618:
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/880f4b40df12648eb84193563affee089c1e65a7:
     dependencies:
       autogypi: 0.2.2
       lodash: 4.17.23
