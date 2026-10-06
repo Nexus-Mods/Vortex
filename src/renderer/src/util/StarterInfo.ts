@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { getErrorCode, unknownToError } from "@vortex/shared";
-import PromiseBB from "bluebird";
 
 import { setToolRunning, setToolStopped } from "../actions";
 import { ApplicationData } from "../applicationData";
@@ -127,37 +126,38 @@ class StarterInfo implements IStarterInfo {
     return path.join(getVortexPath("userData"), gameId, "icons", toolId + ".png");
   }
 
-  public static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
+  public static async run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
     const game: IGame = getGame(info.gameId);
+
     // Determine if game requires a specific launcher (Steam, Epic, etc.)
     // On Linux, Steam games run through Proton directly rather than via steam -applaunch
-    const launcherPromise: PromiseBB<{ launcher: string; addInfo?: any }> =
-      game.requiresLauncher !== undefined && info.isGame
-        ? PromiseBB.resolve(game.requiresLauncher(path.dirname(info.exePath), info.store)).catch(
-            (err) => {
-              if (err instanceof UserCanceled) {
-                // warning because it'd be kind of unusual for the user to have to confirm anything
-                // in requiresLauncher
-                log(
-                  "warn",
-                  "failed to determine if launcher is required because user canceled something",
-                );
-              } else {
-                const allowReport = !game.contributed;
-                const errorObj = allowReport
-                  ? err
-                  : {
-                      message: "Report this to the community extension author, not Vortex support!",
-                    };
-                onShowError("Failed to determine if launcher is required", errorObj, allowReport);
-                if (!allowReport) {
-                  log("error", "failed to determine if launcher is required", errorObj.message);
-                }
-              }
-              return PromiseBB.resolve(undefined);
-            },
-          )
-        : PromiseBB.resolve(undefined);
+    let launcherResult: { launcher: string; addInfo?: any } | undefined;
+    if (game.requiresLauncher !== undefined && info.isGame) {
+      try {
+        launcherResult = await game.requiresLauncher(path.dirname(info.exePath), info.store);
+      } catch (err) {
+        if (err instanceof UserCanceled) {
+          // warning because it'd be kind of unusual for the user to have to confirm anything
+          // in requiresLauncher
+          log(
+            "warn",
+            "failed to determine if launcher is required because user canceled something",
+          );
+        } else {
+          const allowReport = !game.contributed;
+          const errorObj = allowReport
+            ? err
+            : {
+                message: "Report this to the community extension author, not Vortex support!",
+              };
+          onShowError("Failed to determine if launcher is required", errorObj, allowReport);
+          if (!allowReport) {
+            log("error", "failed to determine if launcher is required", errorObj);
+          }
+        }
+        launcherResult = undefined;
+      }
+    }
 
     const onSpawned = () => {
       api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
@@ -175,53 +175,60 @@ class StarterInfo implements IStarterInfo {
       }
     };
 
-    return launcherPromise.then((res) => {
-      if (res !== undefined) {
-        const infoObj =
-          res.addInfo === undefined
-            ? game.details
-              ? game.details
-              : path.dirname(info.exePath)
-            : res.addInfo;
-        return StarterInfo.runThroughLauncher(res.launcher, info, api, infoObj)
-          .then(() => {
-            // assuming that runThroughLauncher returns immediately on handing things off
-            // to the launcher
-            const isLinuxSteamLauncher = process.platform !== "win32" && res.launcher === "steam";
-            // Keep existing Linux Steam behavior unless running under Flatpak, where we now
-            // emulate stop events to avoid stale running state.
-            if (!isLinuxSteamLauncher || process.env.IS_FLATPAK === "true") {
-              onSpawned();
-            }
-            if (["hide", "hide_recover"].includes(info.onStart)) {
-              void hideWindow();
-            } else if (info.onStart === "close") {
-              getApplication().quit();
-            }
-          })
-          .catch(UserCanceled, () => null)
-          .catch(GameEntryNotFound, (err) => {
-            const errorMsg = [err.message, err.storeName, err.existingGames].join(" - ");
-            log("error", errorMsg);
-            onShowError("Failed to start game through launcher", err, !game.contributed);
-            return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
-          })
-          .catch(GameStoreNotFound, (err) => {
-            onShowError(
-              "Failed to start game through launcher",
-              `Game store "${err.storeName}" not supported, is the extension disabled?`,
-              false,
-            );
-            return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
-          })
-          .catch((err) => {
-            onShowError("Failed to start game through launcher", err, true);
-            return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
-          });
-      } else {
-        return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+    if (launcherResult === undefined) {
+      await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+      return;
+    }
+
+    const infoObj =
+      launcherResult.addInfo === undefined
+        ? game.details
+          ? game.details
+          : path.dirname(info.exePath)
+        : launcherResult.addInfo;
+
+    try {
+      await StarterInfo.runThroughLauncher(launcherResult.launcher, info, api, infoObj);
+      // assuming that runThroughLauncher returns immediately on handing things off
+      // to the launcher
+      const isLinuxSteamLauncher =
+        process.platform !== "win32" && launcherResult.launcher === "steam";
+      // Keep existing Linux Steam behavior unless running under Flatpak, where we now
+      // emulate stop events to avoid stale running state.
+      if (!isLinuxSteamLauncher || process.env.IS_FLATPAK === "true") {
+        onSpawned();
       }
-    });
+      if (["hide", "hide_recover"].includes(info.onStart)) {
+        void hideWindow();
+      } else if (info.onStart === "close") {
+        getApplication().quit();
+      }
+    } catch (err) {
+      if (err instanceof UserCanceled) {
+        return;
+      }
+
+      if (err instanceof GameEntryNotFound) {
+        const errorMsg = [err.message, err.storeName, err.existingGames].join(" - ");
+        log("error", errorMsg);
+        onShowError("Failed to start game through launcher", err, !game.contributed);
+        await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+        return;
+      }
+
+      if (err instanceof GameStoreNotFound) {
+        onShowError(
+          "Failed to start game through launcher",
+          `Game store "${err.storeName}" not supported, is the extension disabled?`,
+          false,
+        );
+        await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+        return;
+      }
+
+      onShowError("Failed to start game through launcher", err, true);
+      await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+    }
   }
 
   public static getIconPath(info: IStarterInfo): string {
@@ -377,22 +384,18 @@ class StarterInfo implements IStarterInfo {
       });
   }
 
-  private static runThroughLauncher(
+  private static async runThroughLauncher(
     launcher: string,
     info: IStarterInfo,
     api: IExtensionApi,
     addInfo: any,
-  ): PromiseBB<void> {
-    let gameLauncher;
-    try {
-      gameLauncher = storeLookup.getGameStore(getGameStoresSafe(), launcher);
-    } catch (err) {
-      return PromiseBB.reject(err);
+  ): Promise<void> {
+    const gameLauncher = storeLookup.getGameStore(getGameStoresSafe(), launcher);
+    if (gameLauncher === undefined) {
+      throw new Error(`unsupported launcher ${launcher}`);
     }
     const infoObj = addInfo !== undefined ? addInfo : path.dirname(info.exePath);
-    return gameLauncher !== undefined
-      ? gameLauncher.launchGame(infoObj, api)
-      : PromiseBB.reject(new Error(`unsupported launcher ${launcher}`));
+    return gameLauncher.launchGame(infoObj, api);
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {
