@@ -17,6 +17,9 @@ const ROW_HEIGHT = 40;
 const GROUP_ROW_HEIGHT = 48;
 const GROUP_ROW_GAP = 4;
 
+/** A column without a width shares what's left, but never shrinks past this when columns overflow. */
+const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
+
 /**
  * A column-driven table drawn as one CSS grid: the columns' widths make its tracks, and
  * every row is a subgrid of them, so cells line up across rows without a `<table>`.
@@ -108,7 +111,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           gridTemplateColumns: [
             "var(--nxm-table-gutter)",
-            ...columns.map((column) => column.width ?? "minmax(0, 1fr)"),
+            ...columns.map((column) => column.width ?? DEFAULT_COLUMN_WIDTH),
             "var(--nxm-table-gutter)",
           ].join(" "),
         } as CSSProperties

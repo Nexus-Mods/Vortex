@@ -39,7 +39,7 @@ describe("Table", () => {
     renderTable();
 
     expect(screen.getByRole("grid").style.gridTemplateColumns).toBe(
-      "var(--nxm-table-gutter) minmax(0, 1fr) 80px var(--nxm-table-gutter)",
+      "var(--nxm-table-gutter) minmax(280px, 1fr) 80px var(--nxm-table-gutter)",
     );
   });
 

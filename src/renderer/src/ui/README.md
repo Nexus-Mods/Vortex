@@ -735,7 +735,7 @@ const columns: Array<ITableColumn<Mod>> = [
 <Table columns={columns} getRowId={(m) => m.id} label="Mods" rows={mods} />;
 ```
 
-**`ITableColumn` fields:** `id`, `header`, `cell` (required); `width` (a grid track, default `minmax(0, 1fr)`), `align` (`start` or `end`).
+**`ITableColumn` fields:** `id`, `header`, `cell` (required); `width` (a grid track, default `minmax(280px, 1fr)`, so a flexible column keeps a readable width when the columns overflow), `align` (`start` or `end`).
 
 ### Listing / ListingLoader / NoResults
 
