@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
-import { hasExclusiveToolRunning, isExeRunning } from "../../../reducers/session";
-import type { IState } from "../../../types/IState";
+import { hasExclusiveToolRunning, isExeRunning } from "@/reducers/session";
+import type { IState } from "@/types/IState";
 
 export interface UseToolsRunningResult {
   exclusiveRunning: boolean;

@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from "react";
 
+import type { IExtensionApi } from "@/types/api";
 import { log } from "@/util/log";
+import { activeProfile } from "@/util/selectors";
 import type { IStarterInfo } from "@/util/StarterInfo";
+import StarterInfo from "@/util/StarterInfo";
 
-import type { IExtensionApi } from "../../../types/api";
-import { activeProfile } from "../../../util/selectors";
-import StarterInfo from "../../../util/StarterInfo";
 import { useToolsData } from "./useToolsData";
 import { useToolsRunning } from "./useToolsRunning";
 import { useToolsValidation } from "./useToolsValidation";

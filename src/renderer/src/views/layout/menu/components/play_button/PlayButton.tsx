@@ -1,11 +1,9 @@
 import { pathToFileURL } from "url";
 
-import { Transition } from "@headlessui/react";
 import { mdiPlay } from "@mdi/js";
 import React, { type FC, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useWindowContext } from "@/contexts";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
@@ -14,33 +12,36 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { IStarterInfo } from "@/util/StarterInfo";
 import StarterInfo from "@/util/StarterInfo";
-
-import { useSpineContext } from "../Spine/SpineContext";
-import { formatGameDisplayName } from "../Spine/utils";
-import { ToolButton } from "./ToolButton";
-import { useToolsContext } from "./ToolsContext";
+import { formatGameDisplayName } from "@/views/components/Spine/utils";
 
 interface PlayButtonProps {
   primaryStarter: IStarterInfo | undefined;
   gameName: string | undefined;
   isPrimaryRunning: boolean;
   isCollapsed: boolean;
+  hideLabel?: boolean;
   disabled: boolean;
+  isWaitingForApply?: boolean;
   onClick: () => void;
 }
 
-const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
+export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
   primaryStarter,
   gameName,
   isPrimaryRunning,
   isCollapsed,
+  hideLabel = false,
   disabled,
+  isWaitingForApply = false,
   onClick,
 }) => {
   const { t } = useTranslation();
 
   const launcherIconSrc = useMemo(() => {
-    if (!primaryStarter) return undefined;
+    if (!primaryStarter) {
+      return undefined;
+    }
+
     try {
       const iconPath = StarterInfo.getIconPath(primaryStarter);
       if (iconPath) {
@@ -49,6 +50,7 @@ const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
     } catch {
       // ignore
     }
+
     return undefined;
   }, [primaryStarter]);
 
@@ -61,8 +63,12 @@ const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
       ? t("Play {{game}}", { replace: { game: formatGameDisplayName(gameName) } })
       : t("Play");
 
+  const isIconOnly = isCollapsed || hideLabel;
+
   return (
-    <div className="relative w-full">
+    <div
+      className={joinClasses(["relative", !isCollapsed && hideLabel ? "w-12 shrink-0" : "w-full"])}
+    >
       <Tooltip
         customContent={
           <div className="space-y-1 px-4 py-3">
@@ -74,6 +80,12 @@ const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
             >
               {playLabel}
             </Typography>
+
+            {isWaitingForApply && (
+              <Typography appearance="subdued" as="p" className="italic" typographyType="body-sm">
+                {t("Waiting for mod changes to apply")}
+              </Typography>
+            )}
 
             {!!primaryStarter && (
               <>
@@ -102,14 +114,15 @@ const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
         placement="right"
       >
         <Button
-          aria-label={isCollapsed ? playLabel : undefined}
+          aria-disabled={disabled}
+          aria-label={playLabel}
           brand="neutral"
           className={joinClasses(["w-full transition-all", isCollapsed ? "h-10" : "h-12"])}
           customContent={
             <>
               <Icon className="nxm-button-icon" path={mdiPlay} size="lg" />
 
-              {!isCollapsed && (
+              {!isIconOnly && (
                 <Typography
                   appearance="inverted"
                   as="span"
@@ -121,75 +134,9 @@ const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
               )}
             </>
           }
-          disabled={disabled}
-          onClick={onClick}
+          onClick={disabled ? undefined : onClick}
         />
       </Tooltip>
-    </div>
-  );
-};
-
-export const ToolsSection = () => {
-  const { menuIsCollapsed } = useWindowContext();
-  const { selection } = useSpineContext();
-  const {
-    gameId,
-    gameName,
-    visibleTools,
-    primaryStarter,
-    primaryToolId,
-    isPrimaryRunning,
-    exclusiveRunning,
-    isToolRunning,
-    startTool,
-    handlePlay,
-  } = useToolsContext();
-
-  if (gameId === undefined || selection.type !== "game") {
-    return null;
-  }
-
-  return (
-    <div
-      className={joinClasses([
-        "absolute bottom-3 left-3 z-2 flex flex-col items-center gap-y-3 transition-[left,width]",
-        menuIsCollapsed ? "w-10" : "w-49",
-      ])}
-    >
-      {!!visibleTools.length && (
-        <Transition
-          appear
-          show
-          as="div"
-          className={joinClasses([
-            "flex items-center gap-1 border-b border-stroke-weak pb-3",
-            menuIsCollapsed ? "w-10 flex-wrap justify-center" : "w-full flex-wrap-reverse",
-          ])}
-          data-testid="menu-tools"
-          enter="transition-[translate,opacity] delay-150 duration-200 reduce-motion:delay-0"
-          enterFrom="translate-y-6 opacity-0 reduce-motion:translate-y-0 reduce-motion:opacity-100"
-          enterTo="translate-y-0 opacity-100"
-          key={menuIsCollapsed ? "collapsed" : "expanded"}
-        >
-          {visibleTools.map((starter) => (
-            <ToolButton
-              isRunning={isToolRunning(starter.exePath)}
-              key={starter.id}
-              starter={starter}
-              onClick={() => startTool(starter)}
-            />
-          ))}
-        </Transition>
-      )}
-
-      <PlayButton
-        disabled={exclusiveRunning || isPrimaryRunning || !primaryStarter}
-        gameName={gameName}
-        isCollapsed={menuIsCollapsed}
-        isPrimaryRunning={isPrimaryRunning}
-        primaryStarter={primaryToolId ? primaryStarter : undefined}
-        onClick={handlePlay}
-      />
     </div>
   );
 };

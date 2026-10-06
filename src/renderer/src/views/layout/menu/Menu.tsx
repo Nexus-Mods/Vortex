@@ -6,13 +6,13 @@ import { setOpenMainPage } from "@/actions";
 import { usePagesContext, useWindowContext } from "@/contexts";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
+import { getIconPath } from "@/views/components/iconMap";
+import { useSpineContext } from "@/views/components/Spine/SpineContext";
 
-import { getIconPath } from "../iconMap";
-import { useSpineContext } from "../Spine/SpineContext";
-import { DownloadsMenuContent } from "./DownloadsMenuContent";
-import { MenuButton } from "./MenuButton";
-import { ToolsProvider, useToolsContext } from "./ToolsContext";
-import { ToolsSection } from "./ToolsSection";
+import { DownloadsMenuContent } from "./components/DownloadsMenuContent";
+import { GameActions } from "./components/game_actions/GameActions";
+import { MenuButton } from "./components/MenuButton";
+import { ToolsProvider, useToolsContext } from "./context/ToolsContext";
 
 const toolPadding = {
   1: "pb-32",
@@ -92,7 +92,7 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
         <div className="pointer-events-none absolute right-0 bottom-0 size-3 bg-surface-base" />
       </div>
 
-      <ToolsSection />
+      <GameActions />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
     </TooltipDelayGroup>

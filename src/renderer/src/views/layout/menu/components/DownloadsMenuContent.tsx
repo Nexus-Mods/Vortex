@@ -3,15 +3,20 @@ import React, { type FC, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import { useWindowContext } from "../../../contexts";
-import type { IGameStored } from "../../../extensions/gamemode_management/types/IGameStored";
-import type { IState } from "../../../types/IState";
-import { Tooltip } from "../../../ui/components/tooltip/Tooltip";
-import { Typography } from "../../../ui/components/typography/Typography";
-import { joinClasses } from "../../../ui/utils/joinClasses";
-import { discovered as discoveredGamesSelector } from "../../../util/selectors";
-import { useSpineContext } from "../Spine/SpineContext";
-import { formatGameDisplayName, getGameImageUrls, useGameImage } from "../Spine/utils";
+import { useWindowContext } from "@/contexts";
+import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
+import type { IState } from "@/types/IState";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
+import { discovered as discoveredGamesSelector } from "@/util/selectors";
+import { useSpineContext } from "@/views/components/Spine/SpineContext";
+import {
+  formatGameDisplayName,
+  getGameImageUrls,
+  useGameImage,
+} from "@/views/components/Spine/utils";
+
 import { MenuButton } from "./MenuButton";
 
 /** Deterministic hue from a string, for the letter-avatar background. */
