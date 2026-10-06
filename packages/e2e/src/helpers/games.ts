@@ -4,6 +4,7 @@ import { setupFakeGame, GAME_CONFIGS } from "../fixtures/game-setup/fake-game";
 import { test } from "../fixtures/vortex-app";
 import { GamesPage } from "../selectors/games";
 import { NavBar } from "../selectors/navbar";
+import { describeScreen } from "./diagnostics";
 import { stubOpenDialog } from "./dialogs";
 import { Timeouts } from "./timeouts";
 
@@ -56,7 +57,14 @@ export async function manageGame(
     await gamesPage.continueButton.click();
     await expect(gamesPage.notDiscoveredDialog).toBeHidden();
 
-    await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
+    try {
+      await expect(navbar.modsLink).toBeVisible({ timeout: Timeouts.NETWORK });
+    } catch (e) {
+      throw new Error(
+        `${gameName} did not become the active game. On screen: ${await describeScreen(vortexWindow)}`,
+        { cause: e },
+      );
+    }
   });
 
   return fakeGame;
