@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { Provider } from "react-redux";
@@ -71,6 +71,78 @@ describe("ModsTableSwitch", () => {
       "aria-checked",
       "true",
     );
+  });
+
+  // ModList rebuilds the mods only after a debounce, so a switch would lag behind its click.
+  it("shows a mod's enabled state from the profile, ahead of the mods it was given", () => {
+    render(
+      <Provider store={makeModsTableStore({ modState: { a: { enabled: true } } })}>
+        <ModsTableSwitch
+          legacy={<div />}
+          mods={{ a: mod("a", "Alpha", false) }}
+          onSetModsEnabled={vi.fn()}
+        />
+      </Provider>,
+    );
+
+    const [row] = bodyRows(screen.getByRole("grid"));
+    expect(within(row).getByRole("checkbox", { name: "{{name}} enabled" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  });
+
+  describe("while a switch's change is under way", () => {
+    // Settles the change the switch asked for: resolves, or fails, when the test says.
+    const renderPending = (modState?: { [id: string]: { enabled: boolean } }) => {
+      let settle: (ok: boolean) => void = () => {};
+      const onSetModsEnabled = vi.fn(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            settle = (ok) => (ok ? resolve() : reject(new Error("refused")));
+          }),
+      );
+      const store = makeModsTableStore({ modState });
+      render(
+        <Provider store={store}>
+          <ModsTableSwitch
+            legacy={<div />}
+            mods={{ a: mod("a", "Alpha", false) }}
+            onSetModsEnabled={onSetModsEnabled}
+          />
+        </Provider>,
+      );
+      return { settle: (ok: boolean) => act(async () => settle(ok)) };
+    };
+
+    const modSwitch = () =>
+      within(bodyRows(screen.getByRole("grid"))[0]).getByRole("checkbox", {
+        name: "{{name}} enabled",
+      });
+
+    it("shows the change at once, busy, and undoes it if it fails", async () => {
+      const { settle } = renderPending();
+
+      await userEvent.click(modSwitch());
+      expect(modSwitch()).toHaveAttribute("aria-checked", "true");
+      expect(modSwitch()).toHaveAttribute("aria-busy", "true");
+
+      await settle(false);
+      expect(modSwitch()).toHaveAttribute("aria-checked", "false");
+      expect(modSwitch()).not.toHaveAttribute("aria-busy");
+    });
+
+    // The profile is the truth once the change is done, whatever the switch showed meanwhile.
+    it("follows the profile again once the change settles", async () => {
+      const { settle } = renderPending({ a: { enabled: true } });
+
+      await userEvent.click(modSwitch());
+      expect(modSwitch()).toHaveAttribute("aria-checked", "false");
+
+      await settle(true);
+      expect(modSwitch()).toHaveAttribute("aria-checked", "true");
+      expect(modSwitch()).not.toHaveAttribute("aria-busy");
+    });
   });
 
   it("offers the preset views, showing all the mods to begin with", () => {
