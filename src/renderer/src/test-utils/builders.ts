@@ -45,8 +45,13 @@ import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import { stateReducer as downloadStateReducer } from "../extensions/download_management/reducers/state";
 import { downloadPathForGame } from "../extensions/download_management/selectors";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
-import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
-import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import { resolveEntry } from "../extensions/file_based_loadorder/registry";
+import type {
+  ILoadOrderEntry,
+  ILoadOrderGameInfo,
+  IRegisteredLoadOrder,
+  LoadOrder,
+} from "../extensions/file_based_loadorder/types/types";
 import type { IESPFile } from "../extensions/gamebryo_plugin_management/types/IESPFile";
 import type {
   IPlugin,
@@ -128,8 +133,6 @@ import type {
   IDriverHarnessState,
   IFakeLoot,
   IFakePersistor,
-  IFbloHarness,
-  IFbloHarnessOpts,
   IGameHarness,
   IGameHarnessOpts,
   IHealthCheckHarness,
@@ -872,6 +875,8 @@ const DEFAULT_BINDINGS: IHarnessReducerBinding[] = [
 
 // carries the setState escape hatch through the store as a whole-state replacement dispatch
 const REPLACE_TYPE = "__harness_replace_state";
+// a watched value no state can hold, so the first change always reaches the callback
+const UNSEEN_STATE_VALUE = Symbol("unseen state value");
 // the production hydration action: each bound slice becomes the payload's value at its path,
 // merged over the spec's defaults
 const HYDRATE_REPLACE_TYPE = "__hydrate_replace";
@@ -981,7 +986,15 @@ export function makeApiHarness(
       events.on(event, cb);
     },
     onStateChange: (statePath: string[], cb: (previous: unknown, current: unknown) => void) => {
-      watcher.on(statePath, ({ prevValue, currentValue }) => cb(prevValue, currentValue));
+      // a dispatch inside a callback replays the change being handled; skipped, as in production
+      let lastValue: unknown = UNSEEN_STATE_VALUE;
+      watcher.on(statePath, ({ prevValue, currentValue }) => {
+        if (lastValue !== UNSEEN_STATE_VALUE && currentValue === lastValue) {
+          return;
+        }
+        lastValue = currentValue;
+        cb(prevValue, currentValue);
+      });
     },
     sendNotification: (notification: INotification) => {
       notifications.push(notification);
@@ -1032,6 +1045,10 @@ export function makeApiHarness(
     dispatched,
     emit: (event: string, ...args: unknown[]) => {
       events.emit(event, ...args);
+    },
+    emitAndAwait: async (event: string, ...args: unknown[]) => {
+      const listeners = events.listeners(event) as Array<(...listenerArgs: unknown[]) => unknown>;
+      await Promise.all(listeners.map((listener) => listener(...args)));
     },
     getState: () => store.getState(),
     setState: (mutate: (draft: IState) => void) => {
@@ -1086,20 +1103,6 @@ export function makeGameHarness(
   );
   const dataPath = gamePath !== undefined ? getGame(gameId).getModPaths(gamePath)[""] : undefined;
   return { ...base, gameId, profileId, stagingPath, dataPath };
-}
-
-/**
- * A file-based load order harness: a fake api seeded with an active profile and the game's mods,
- * plus an UpdateSet constructed against it. UpdateSet is injected so builders.ts stays free of the
- * renderer view layer, mirroring makeDriverHarness.
- */
-export function makeFbloHarness(
-  UpdateSetCtor: new (api: IExtensionApi, isFBLO: (gameId: string) => boolean) => UpdateSet,
-  opts: IFbloHarnessOpts = {},
-): IFbloHarness {
-  const base = makeGameHarness(opts);
-  const updateSet = new UpdateSetCtor(base.api, opts.isFBLO ?? (() => true));
-  return { ...base, updateSet };
 }
 
 /**
@@ -1596,6 +1599,31 @@ export function makeLoadOrderEntry(overrides: Partial<ILoadOrderEntry> = {}): IL
     enabled: true,
     ...overrides,
   };
+}
+
+/** A load order registration whose functors do nothing; defaults to an id-less order for "skyrim". */
+export function makeLoadOrderGameInfo(
+  overrides: Partial<ILoadOrderGameInfo> = {},
+): ILoadOrderGameInfo {
+  return {
+    gameId: "skyrim",
+    serializeLoadOrder: () => Promise.resolve(),
+    deserializeLoadOrder: () => Promise.resolve([]),
+    validate: () => Promise.resolve(undefined),
+    ...overrides,
+  };
+}
+
+/** A load order of default entries with the given ids, in that order. */
+export function makeLoadOrder(...entryIds: string[]): LoadOrder {
+  return entryIds.map((id) => makeLoadOrderEntry({ id }));
+}
+
+/** A load order registration as the registry stores it, from an official extension. */
+export function makeRegisteredLoadOrder(
+  overrides: Partial<ILoadOrderGameInfo> = {},
+): IRegisteredLoadOrder {
+  return resolveEntry(makeLoadOrderGameInfo(overrides), false);
 }
 
 /**

@@ -9,10 +9,9 @@ import { ComponentEx } from "../../../controls/ComponentEx";
 import type * as types from "../../../types/api";
 import * as util from "../../../util/api";
 import * as selectors from "../../../util/selectors";
-import { findGameEntry } from "../gameSupport";
 import { currentGameMods, currentLoadOrderForProfile } from "../selectors";
 import type { IGameSpecificInterfaceProps } from "../types/collections";
-import type { ILoadOrderEntry, LoadOrder } from "../types/types";
+import type { ILoadOrderEntry, IRegisteredLoadOrder, LoadOrder } from "../types/types";
 import { genCollectionLoadOrder, isModInCollection, isValidMod } from "../util";
 
 const NAMESPACE: string = "generic-load-order-extension";
@@ -29,7 +28,11 @@ interface IConnectedProps {
   profile: types.IProfile;
 }
 
-type IProps = IGameSpecificInterfaceProps & IConnectedProps;
+export interface ILoadOrderCollectionsProps extends IGameSpecificInterfaceProps {
+  getGameEntry: (gameId: string) => IRegisteredLoadOrder | undefined;
+}
+
+type IProps = ILoadOrderCollectionsProps & IConnectedProps;
 
 class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
   public static getDerivedStateFromProps(newProps: IProps, prevState: IBaseState) {
@@ -91,7 +94,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
 
   private async genLoadOrder() {
     try {
-      const gameEntry = findGameEntry(this.props.gameId);
+      const gameEntry = this.props.getGameEntry(this.props.gameId);
       this.nextState.loadOrder = await genCollectionLoadOrder(
         this.context.api,
         gameEntry,
@@ -197,4 +200,4 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
 
 export default withTranslation(["common", NAMESPACE])(
   connect(mapStateToProps, undefined)(LoadOrderCollections) as any,
-) as React.ComponentClass<{}>;
+) as React.ComponentClass<ILoadOrderCollectionsProps>;

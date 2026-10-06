@@ -3,27 +3,22 @@ import * as React from "react";
 import type * as types from "../../../types/api";
 import * as selectors from "../../../util/selectors";
 import { setFBLoadOrder } from "../actions/loadOrder";
-import { findGameEntry } from "../gameSupport";
 import type {
   ICollection,
   ICollectionLoadOrder,
   IGameSpecificInterfaceProps,
 } from "../types/collections";
 import { CollectionGenerateError, CollectionParseError } from "../types/collections";
-import type { ILoadOrderGameInfoExt } from "../types/types";
-import type UpdateSet from "../UpdateSet";
-import { genCollectionLoadOrder, toExtendedLoadOrderEntry } from "../util";
+import type { IRegisteredLoadOrder } from "../types/types";
+import { genCollectionLoadOrder } from "../util";
 import LoadOrderCollections from "../views/LoadOrderCollections";
 
 export async function generate(
   api: types.IExtensionApi,
-  state: types.IState,
-  gameId: string,
-  stagingPath: string,
+  gameEntry: IRegisteredLoadOrder | undefined,
   modIds: string[],
   mods: { [modId: string]: types.IMod },
 ): Promise<ICollectionLoadOrder> {
-  const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
   if (gameEntry === undefined) {
     return;
   }
@@ -51,7 +46,6 @@ export async function parser(
   api: types.IExtensionApi,
   gameId: string,
   collection: ICollection,
-  updateSet: UpdateSet,
 ): Promise<void> {
   const state = api.getState();
 
@@ -60,11 +54,13 @@ export async function parser(
     return Promise.reject(new CollectionParseError(collection, "Invalid profile id"));
   }
 
-  updateSet.init(gameId, (collection.loadOrder ?? []).map(toExtendedLoadOrderEntry(api)));
   api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder));
   return Promise.resolve(undefined);
 }
 
-export function Interface(props: IGameSpecificInterfaceProps): JSX.Element {
-  return React.createElement(LoadOrderCollections, props as any, []);
+// The collection page's load order panel, resolving game entries through the given lookup.
+export function collectionInterface(
+  getGameEntry: (gameId: string) => IRegisteredLoadOrder | undefined,
+): (props: IGameSpecificInterfaceProps) => JSX.Element {
+  return (props) => React.createElement(LoadOrderCollections, { ...props, getGameEntry });
 }

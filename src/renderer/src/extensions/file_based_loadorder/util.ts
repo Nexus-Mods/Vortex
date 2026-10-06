@@ -4,15 +4,13 @@ import type * as types from "../../types/api";
 import { findRuleByRef } from "../mod_management/util/testModReference";
 import { activeGameId, lastActiveProfileForGame } from "../profile_management/selectors";
 import { setValidationResult } from "./actions/session";
-import { findGameEntry } from "./gameSupport";
-import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
+import { currentLoadOrderForProfile } from "./selectors";
 import {
-  type ILoadOrderGameInfoExt,
+  type IRegisteredLoadOrder,
   type IValidationResult,
   type LoadOrder,
   LoadOrderSerializationError,
   LoadOrderValidationError,
-  type ILoadOrderEntryExt,
   type LockedState,
 } from "./types/types";
 
@@ -22,22 +20,13 @@ export function isEntryLocked(locked: LockedState): boolean {
   return locked === true || locked === "true" || locked === "always";
 }
 
-export const toExtendedLoadOrderEntry = (api: types.IExtensionApi) => {
-  return (entry: types.ILoadOrderEntry, index: number) => {
-    const state = api.getState();
-    const mods = currentGameMods(state);
-    const fileId = mods[entry?.modId]?.attributes?.fileId;
-    return { ...entry, index, fileId } as ILoadOrderEntryExt;
-  };
-};
-
 export function isModInCollection(collection: types.IMod, mod: types.IMod) {
   return findRuleByRef(collection.rules, mod) !== undefined;
 }
 
 export async function genCollectionLoadOrder(
   api: types.IExtensionApi,
-  gameEntry: ILoadOrderGameInfoExt,
+  gameEntry: IRegisteredLoadOrder,
   mods: { [modId: string]: types.IMod },
   profileId: string,
   collection?: types.IMod,
@@ -79,10 +68,14 @@ function reportError(
   });
 }
 
-export async function errorHandler(api: types.IExtensionApi, gameId: string, err: Error) {
-  const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
+export async function errorHandler(
+  api: types.IExtensionApi,
+  gameId: string,
+  gameEntry: IRegisteredLoadOrder | undefined,
+  err: Error,
+) {
   const allowReport =
-    !gameEntry.isContributed &&
+    gameEntry?.isContributed !== true &&
     !(err instanceof ProcessCanceled) &&
     !(err instanceof DataInvalid) &&
     !(err instanceof UserCanceled);
