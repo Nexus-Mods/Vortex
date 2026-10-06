@@ -15,6 +15,18 @@ export type IReleaseFBLoadOrderHoldPayload = Pick<
   "profileId" | "loadOrderId"
 >;
 
+export interface IFBLoadOrderTabSelectedPayload {
+  profileId: string;
+  loadOrderId: string;
+}
+
+export interface ISetValidationResultPayload {
+  profileId: string;
+  result: IValidationResult | undefined;
+  // the primary load order when omitted
+  loadOrderId?: string;
+}
+
 // This is a hack to force the load order to update.
 //  It's absolutely mandatory to ensure this is
 //  dispatched sparingly, as it will cause a full re-rendering
@@ -44,7 +56,17 @@ export const releaseFBLoadOrderHold = createAction<IReleaseFBLoadOrderHoldPayloa
   (profileId: string, loadOrderId: string) => ({ profileId, loadOrderId }),
 );
 
-export const setValidationResult = createAction(
+// The user opened a load order's tab.
+export const fbLoadOrderTabSelected = createAction<IFBLoadOrderTabSelectedPayload>(
+  "FB_LOAD_ORDER_TAB_SELECTED",
+  (profileId: string, loadOrderId: string) => ({ profileId, loadOrderId }),
+);
+
+export const setValidationResult = createAction<ISetValidationResultPayload>(
   "SET_FB_VALIDATION_RESULT",
-  (profileId: string, result: IValidationResult) => ({ profileId, result }),
+  (profileId: string, result: IValidationResult | undefined, loadOrderId?: string) => ({
+    profileId,
+    result,
+    loadOrderId,
+  }),
 );

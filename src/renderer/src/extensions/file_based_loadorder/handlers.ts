@@ -133,7 +133,7 @@ export async function validateLoadOrder(
   if (validationResult !== undefined) {
     throw new LoadOrderValidationError(validationResult, loadOrder);
   }
-  api.store.dispatch(setValidationResult(profile.id, undefined));
+  api.store.dispatch(setValidationResult(profile.id, undefined, gameEntry.loadOrderId));
   return undefined;
 }
 

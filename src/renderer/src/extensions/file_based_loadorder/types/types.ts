@@ -19,6 +19,9 @@ export interface IItemRendererProps {
   // Number of locked entries in the load order, precomputed by the page.
   lockedEntriesCount?: number;
 
+  // The load order this entry belongs to; the primary when omitted.
+  loadOrderId?: string;
+
   // Function components cannot be given refs, which means that DnD
   //  will not work when using the Vortex API's DraggableItem without
   //  forwarding the ref to the itemRenderer.

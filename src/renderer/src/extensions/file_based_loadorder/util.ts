@@ -3,7 +3,7 @@ import { DataInvalid, ProcessCanceled, UserCanceled } from "@vortex/shared/error
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import type { IMod } from "../mod_management/types/IMod";
 import { findRuleByRef } from "../mod_management/util/testModReference";
-import { activeGameId, lastActiveProfileForGame } from "../profile_management/selectors";
+import { lastActiveProfileForGame } from "../profile_management/selectors";
 import { setValidationResult } from "./actions/session";
 import { currentLoadOrderForProfile } from "./selectors";
 import {
@@ -84,7 +84,9 @@ export async function errorHandler(
   if (err instanceof LoadOrderValidationError) {
     const invalLOErr = err as LoadOrderValidationError;
     const profileId = lastActiveProfileForGame(api.getState(), gameId);
-    api.store.dispatch(setValidationResult(profileId, invalLOErr.validationResult));
+    api.store.dispatch(
+      setValidationResult(profileId, invalLOErr.validationResult, gameEntry?.loadOrderId),
+    );
     const errorMessage = "Load order failed validation";
     const details = {
       message: errorMessage,

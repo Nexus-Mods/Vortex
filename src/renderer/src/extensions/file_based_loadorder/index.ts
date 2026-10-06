@@ -15,7 +15,8 @@ import { collectionInterface, generate, parser } from "./collections/loadOrder";
 import { LoadOrderRegistry } from "./gameSupport";
 import { isInUse, onStartUp, registerLoadOrderHandlers, validateLoadOrder } from "./handlers";
 import { REDUCER_BINDINGS } from "./reducers/bindings";
-import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
+import { isPrimaryLoadOrderId } from "./registry";
+import { currentGameMods, loadOrderForProfile } from "./selectors";
 import type { ICollection } from "./types/collections";
 import type { ILoadOrderEntry, ILoadOrderGameInfo, LoadOrder } from "./types/types";
 import { errorHandler } from "./util";
@@ -29,7 +30,7 @@ export default function init(context: IExtensionContext) {
     context.registerReducer(statePath, reducer);
   }
 
-  const setOrder = async (profileId: string, loadOrder: LoadOrder, refresh?: boolean) => {
+  const setOrder = (profileId: string, loadOrder: LoadOrder, loadOrderId?: string) => {
     const profile = profileById(context.api.getState(), profileId);
     if (!profile) {
       context.api.showErrorNotification(
@@ -39,7 +40,14 @@ export default function init(context: IExtensionContext) {
       );
       return;
     }
-    context.api.store.dispatch(setFBLoadOrder(profileId, loadOrder));
+    // a primary write carries no id; community extensions read that payload
+    context.api.store.dispatch(
+      setFBLoadOrder(
+        profileId,
+        loadOrder,
+        isPrimaryLoadOrderId(loadOrderId) ? undefined : loadOrderId,
+      ),
+    );
   };
   context.registerMainPage("sort-none", "Load order", FileBasedLoadOrderPage, {
     priority: 30,
@@ -52,11 +60,11 @@ export default function init(context: IExtensionContext) {
     },
     props: () => {
       return {
-        getGameEntry,
-        onSortByDeployOrder: async (profileId: string) => {
+        getGameEntries: (gameId: string) => registry.entries(gameId).filter(isInUse),
+        onSortByDeployOrder: async (profileId: string, loadOrderId?: string) => {
           const state = context.api.getState();
           const profile = profileById(state, profileId);
-          const loadOrder = currentLoadOrderForProfile(state, profileId);
+          const loadOrder = loadOrderForProfile(state, profileId, loadOrderId);
           // keyed by Vortex mod id
           const mods: Record<string, IMod> = currentGameMods(state);
           const filtered: IMod[] = Object.values(mods).filter(
@@ -82,9 +90,9 @@ export default function init(context: IExtensionContext) {
           };
           const loadOrderSorted = [...loadOrder];
           loadOrderSorted.sort((a, b) => findIndex(a) - findIndex(b));
-          context.api.store.dispatch(setFBLoadOrder(profileId, loadOrderSorted));
+          context.api.store.dispatch(setFBLoadOrder(profileId, loadOrderSorted, loadOrderId));
         },
-        onImportList: async () => {
+        onImportList: async (loadOrderId?: string) => {
           const api = context.api;
           const file = await api.selectFile({
             filters: [{ name: "JSON", extensions: ["json"] }],
@@ -100,7 +108,7 @@ export default function init(context: IExtensionContext) {
               throw new Error("invalid load order data");
             }
             const profileId = activeProfile(api.getState()).id;
-            context.api.store.dispatch(setFBLoadOrder(profileId, loData));
+            context.api.store.dispatch(setFBLoadOrder(profileId, loData, loadOrderId));
             api.sendNotification({
               type: "success",
               message: "Load order imported",
@@ -112,11 +120,11 @@ export default function init(context: IExtensionContext) {
             });
           }
         },
-        onExportList: async () => {
+        onExportList: async (loadOrderId?: string) => {
           const api = context.api;
           const state = api.getState();
           const profileId = activeProfile(state).id;
-          const loadOrder = currentLoadOrderForProfile(state, profileId);
+          const loadOrder = loadOrderForProfile(state, profileId, loadOrderId);
           const data = JSON.stringify(loadOrder, null, 2);
           const loPath = await api.saveFile({
             defaultPath: "loadorder.json",
@@ -139,12 +147,13 @@ export default function init(context: IExtensionContext) {
             }
           }
         },
-        validateLoadOrder: (profile: IProfile, loadOrder: LoadOrder) =>
-          validateLoadOrder(context.api, registry, profile, loadOrder),
+        validateLoadOrder: (profile: IProfile, loadOrder: LoadOrder, loadOrderId?: string) =>
+          validateLoadOrder(context.api, registry, profile, loadOrder, loadOrderId),
         onSetOrder: setOrder,
-        onStartUp: (gameId: string) => onStartUp(context.api, registry, gameId),
-        onShowError: (gameId: string, error: Error) =>
-          errorHandler(context.api, gameId, getGameEntry(gameId), error),
+        onStartUp: (gameId: string, loadOrderId?: string) =>
+          onStartUp(context.api, registry, gameId, loadOrderId),
+        onShowError: (gameId: string, error: Error, loadOrderId?: string) =>
+          errorHandler(context.api, gameId, registry.find(gameId, loadOrderId), error),
       };
     },
   });

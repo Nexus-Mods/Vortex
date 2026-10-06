@@ -8,7 +8,7 @@ import { ComponentEx } from "../../../controls/ComponentEx";
 import type { IProfile, IState } from "../../../types/api";
 import * as selectors from "../../../util/selectors";
 import { setFBLoadOrder, setFBLoadOrderEntry } from "../actions/loadOrder";
-import { currentLoadOrderForProfile } from "../selectors";
+import { loadOrderForProfile } from "../selectors";
 import type { IItemRendererProps, ILoadOrderEntry, LoadOrder } from "../types/types";
 import { isEntryLocked } from "../util";
 import { LoadOrderIndexInput } from "./loadOrderIndex";
@@ -19,8 +19,8 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetLoadOrderEntry: (profileId: string, entry: ILoadOrderEntry) => void;
-  onSetLoadOrder: (profileId: string, loadOrder: LoadOrder) => void;
+  onSetLoadOrderEntry: (profileId: string, entry: ILoadOrderEntry, loadOrderId?: string) => void;
+  onSetLoadOrder: (profileId: string, loadOrder: LoadOrder, loadOrderId?: string) => void;
 }
 
 interface IBaseProps {
@@ -123,7 +123,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
       ...item.loEntry,
       enabled: evt.target.checked,
     };
-    onSetLoadOrderEntry(profile.id, entry);
+    onSetLoadOrderEntry(profile.id, entry, item.loadOrderId);
   };
 
   private currentPosition = (): number => {
@@ -145,7 +145,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
 
     const newLO = loadOrder.filter((entry) => entry.id !== item.loEntry.id);
     newLO.splice(idx - 1, 0, entry);
-    onSetLoadOrder(profile.id, newLO);
+    onSetLoadOrder(profile.id, newLO, item.loadOrderId);
   };
 
   private lockedEntriesCount = (): number => {
@@ -160,14 +160,16 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state);
   return {
     profile: profile,
-    loadOrder: currentLoadOrderForProfile(state, profile.id),
+    loadOrder: loadOrderForProfile(state, profile.id, ownProps.item.loadOrderId),
   };
 }
 
 function mapDispatchToProps(dispatch: any): IActionProps {
   return {
-    onSetLoadOrderEntry: (profileId, entry) => dispatch(setFBLoadOrderEntry(profileId, entry)),
-    onSetLoadOrder: (profileId, loadOrder) => dispatch(setFBLoadOrder(profileId, loadOrder)),
+    onSetLoadOrderEntry: (profileId, entry, loadOrderId) =>
+      dispatch(setFBLoadOrderEntry(profileId, entry, loadOrderId)),
+    onSetLoadOrder: (profileId, loadOrder, loadOrderId) =>
+      dispatch(setFBLoadOrder(profileId, loadOrder, loadOrderId)),
   };
 }
 

@@ -50,6 +50,7 @@ import type {
   ILoadOrderEntry,
   ILoadOrderGameInfo,
   IRegisteredLoadOrder,
+  IValidationResult,
   LoadOrder,
 } from "../extensions/file_based_loadorder/types/types";
 import type { IESPFile } from "../extensions/gamebryo_plugin_management/types/IESPFile";
@@ -1624,6 +1625,13 @@ export function makeRegisteredLoadOrder(
   overrides: Partial<ILoadOrderGameInfo> = {},
 ): IRegisteredLoadOrder {
   return resolveEntry(makeLoadOrderGameInfo(overrides), false);
+}
+
+/** A failed load order validation with one invalid entry. */
+export function makeValidationResult(
+  overrides: Partial<IValidationResult> = {},
+): IValidationResult {
+  return { invalid: [{ id: "entry-1.pak", reason: "missing master" }], ...overrides };
 }
 
 /**
