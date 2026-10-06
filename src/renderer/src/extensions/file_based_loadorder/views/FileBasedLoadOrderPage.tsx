@@ -155,9 +155,11 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, Record<string, never>> 
     return (
       <MainPage>
         <MainPage.Header>
+          {/* header actions receive the shown load order's id as their instance id */}
           <IconBar
             className="menubar"
             group="fb-load-order-icons"
+            instanceId={this.activeLoadOrderId()}
             staticElements={this.mStaticButtons}
             t={t}
           />
