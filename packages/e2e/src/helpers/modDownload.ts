@@ -45,7 +45,14 @@ export async function downloadModViaModManager(
         .then(() => true)
         .catch(() => false)
     ) {
-      await modPage.modalDownloadLink.click({ timeout: Timeouts.NETWORK });
+      // For premium the same modal opens on any mod but only reports that the
+      // download is already starting — there's nothing to click.
+      await expect(modPage.modalDownloadLink.or(modPage.modalDownloadStarting)).toBeVisible({
+        timeout: Timeouts.NETWORK,
+      });
+      if (await modPage.modalDownloadLink.isVisible().catch(() => false)) {
+        await modPage.modalDownloadLink.click({ timeout: Timeouts.NETWORK });
+      }
     }
 
     await nexusPage.waitForLoadState("load", { timeout: Timeouts.NETWORK }).catch(() => undefined);

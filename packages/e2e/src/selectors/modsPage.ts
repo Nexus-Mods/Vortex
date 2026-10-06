@@ -39,10 +39,6 @@ export class ModsPage {
     this.deployedNotification = page.getByText(/mods deployed/i).first();
   }
 
-  modRow(name: string | RegExp): Locator {
-    return this.page.getByText(name).first();
-  }
-
   row(name: string | RegExp): Locator {
     return this.page.getByRole("row").filter({ hasText: name }).first();
   }

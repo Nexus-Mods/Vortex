@@ -3,7 +3,7 @@
  *
  * Fixture: SDV mod 46415 declares a single page-level (mod-to-mod) requirement.
  * Installed on its own (that required mod absent) it raises one blue Suggestion
- * ("Additional mod file may be required for: …") — the mod-to-mod counterpart of
+ * ("Missing mod may be required for: …") — the mod-to-mod counterpart of
  * the file-requirement warnings in health-check-file-requirement.spec.ts.
  *
  * LAZ-852 caveat: page-level suggestions are suppressed for mods *set to use file

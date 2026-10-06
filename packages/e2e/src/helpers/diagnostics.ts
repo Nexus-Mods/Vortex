@@ -1,6 +1,12 @@
 import path from "node:path";
 
-import type { BrowserContext, ElectronApplication, Page, TestInfo } from "@playwright/test";
+import type {
+  BrowserContext,
+  ElectronApplication,
+  Locator,
+  Page,
+  TestInfo,
+} from "@playwright/test";
 
 // A BrowserContext supports only one active trace; tracing.start() throws if a
 // trace is already running. Track the contexts we have started so re-instrumenting
@@ -21,6 +27,28 @@ export type DiagnosticsTeardown = (testInfo: TestInfo, failed?: boolean) => Prom
 
 /** Stops + attaches the trace zip started by startTracing. */
 type StopTracing = (testInfo: TestInfo, traceName: string) => Promise<void>;
+
+/**
+ * A short account of what the Vortex window is showing — headings, open dialogs
+ * and notifications — for error messages. CI artifacts are encrypted, but the
+ * error text shows up in the run log and as a PR annotation, so a step that
+ * waits on a page change can say what was on screen instead.
+ */
+export async function describeScreen(page: Page): Promise<string> {
+  const texts = async (locator: Locator) =>
+    (await locator.allInnerTexts().catch(() => []))
+      .map((text) => text.replace(/\s+/g, " ").trim().slice(0, 200))
+      .filter((text) => text.length > 0);
+
+  return JSON.stringify({
+    headings: await texts(page.getByRole("heading")),
+    dialogs: await texts(page.getByRole("dialog")),
+    alerts: await texts(page.getByRole("alert")),
+    notifications: await texts(
+      page.getByRole("button", { name: "Dismiss", exact: true }).locator(".."),
+    ),
+  });
+}
 
 const shouldDiagnose = (testInfo: TestInfo, failed: boolean): boolean =>
   failed || testInfo.status !== testInfo.expectedStatus;
@@ -90,7 +118,24 @@ export async function instrumentVortexWindow(
   window: Page,
   prefix: string,
 ): Promise<DiagnosticsTeardown> {
-  const stopTracing = await startTracing(window);
+  // Tracing is diagnostics only, so a failure to start it mustn't fail the test.
+  // If the window or app is really gone the test fails on its first step anyway,
+  // with vortex.log attached; record what state we found to explain it.
+  let stopTracing: StopTracing | undefined;
+  try {
+    stopTracing = await startTracing(window);
+  } catch (e) {
+    const proc = app.process();
+    console.warn(
+      `[diagnostics] could not start tracing the ${prefix} window: ${String(e)}`,
+      JSON.stringify({
+        windowClosed: window.isClosed(),
+        url: window.isClosed() ? undefined : window.url(),
+        exitCode: proc.exitCode,
+        signal: proc.signalCode,
+      }),
+    );
+  }
   return async (testInfo, failed = false) => {
     await stopTracing?.(testInfo, `${prefix}-trace.zip`).catch((e) =>
       console.error("Failed to stop tracing:", e),

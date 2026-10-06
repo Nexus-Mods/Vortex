@@ -94,7 +94,7 @@ test.describe("Mods - Manual Downloads", () => {
 
         await test.step("Verify SMAPI is installed in Vortex", async () => {
           const modsPage = new ModsPage(vortexWindow);
-          await expect(modsPage.modRow(/SMAPI/i)).toBeVisible({
+          await expect(modsPage.row(/SMAPI/i)).toBeVisible({
             timeout: Timeouts.NETWORK,
           });
         });

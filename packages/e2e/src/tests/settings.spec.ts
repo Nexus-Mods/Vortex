@@ -22,7 +22,7 @@ test.describe("Settings - Interface Tab", () => {
     const settings = new SettingsPage(vortexWindow);
 
     await test.step("Verify English is selected", async () => {
-      await expect(settings.languageSelect).toHaveValue("en");
+      await expect(settings.languagePicker).toHaveText(/^English/);
     });
   });
 
@@ -30,7 +30,7 @@ test.describe("Settings - Interface Tab", () => {
     vortexWindow,
   }) => {
     await test.step("Open the language picker", async () => {
-      await vortexWindow.getByRole("button", { name: "English" }).first().click();
+      await new SettingsPage(vortexWindow).languagePicker.click();
       await expect(vortexWindow.getByRole("listbox")).toBeVisible();
     });
 

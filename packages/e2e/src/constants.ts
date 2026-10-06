@@ -12,7 +12,9 @@ export const SDV_FILE_REQUIREMENT_TARGET_URLS = [
   "https://www.nexusmods.com/stardewvalley/mods/5382",
   "https://www.nexusmods.com/stardewvalley/mods/49098",
 ];
+// Free users are sent to the required file on the mod's Files tab
+// (`?tab=files&file_id=<id>&nmm=1`); the bare mod page is also accepted.
 export const SDV_FILE_REQUIREMENT_TARGET_URL_PATTERN =
-  /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)$/;
+  /nexusmods\.com\/stardewvalley\/mods\/(5382|49098)(\?tab=files&file_id=\d+&nmm=1)?$/;
 export const SDV_OR_FILE_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/47938";
 export const SDV_MOD_REQUIREMENT_MOD_URL = "https://www.nexusmods.com/stardewvalley/mods/5098";
