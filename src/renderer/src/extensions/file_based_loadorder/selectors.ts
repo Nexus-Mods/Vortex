@@ -6,6 +6,11 @@ import { getSafe } from "../../util/storeHelper";
 import type { IModLookupInfo } from "../mod_management/util/testModReference";
 import { activeGameId } from "../profile_management/selectors";
 import { profileById } from "../profile_management/selectors";
+import type { NamedLoadOrders } from "./reducers/multiLoadOrder";
+// the slice type's module also declares session.fblo on IState
+import type { IHeldLoadOrder } from "./reducers/session";
+import { isPrimaryLoadOrderId } from "./registry";
+import type { LoadOrder } from "./types/types";
 
 const allMods = (state: IState) => state.persistent.mods;
 const allLoadOrders = (state: IState) => state?.persistent?.["loadOrder"] || {};
@@ -19,6 +24,44 @@ export const currentLoadOrderForProfile = createSelector(
     return Array.isArray(loadOrders[profileId]) ? loadOrders[profileId] : [];
   },
 );
+
+// Every miss returns this one instance, so consumers comparing by reference see no change.
+const noLoadOrder: LoadOrder = Object.freeze([]) as unknown as LoadOrder;
+
+// A plain lookup; a page reads two ids in turn, which a single-slot memo would thrash on.
+export function loadOrderForProfile(
+  state: IState,
+  profileId: string,
+  loadOrderId?: string,
+): LoadOrder {
+  const persistent = state?.persistent as {
+    loadOrder?: Record<string, unknown>;
+    loadOrders?: NamedLoadOrders;
+  };
+  const loadOrder = isPrimaryLoadOrderId(loadOrderId)
+    ? persistent?.loadOrder?.[profileId]
+    : persistent?.loadOrders?.[profileId]?.[loadOrderId];
+  return Array.isArray(loadOrder) ? (loadOrder as LoadOrder) : noLoadOrder;
+}
+
+// A named load order as stored; undefined when the profile has never had one.
+export function storedNamedLoadOrder(
+  state: IState,
+  profileId: string,
+  loadOrderId: string,
+): LoadOrder | undefined {
+  const persistent = state?.persistent as { loadOrders?: NamedLoadOrders };
+  return persistent?.loadOrders?.[profileId]?.[loadOrderId];
+}
+
+// A load order held while its mods change; undefined when none is held.
+export function loadOrderHeldForDeploy(
+  state: IState,
+  profileId: string,
+  loadOrderId: string,
+): IHeldLoadOrder | undefined {
+  return state?.session?.fblo?.heldForDeploy?.[profileId]?.[loadOrderId];
+}
 
 export const currentGameMods = createSelector(
   allMods,
