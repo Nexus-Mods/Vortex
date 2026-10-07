@@ -131,8 +131,10 @@ export function isLockedEntry(modName: string) {
 }
 
 export const DO_NOT_DISPLAY = ["communitypatch-base"];
-// minimatch is supposed to be case-insensitive, but it's not working for some reason...
-export const DO_NOT_DEPLOY = ["README.TXT", `**/*${PART_SUFFIX.toUpperCase()}`];
+export const DO_NOT_DEPLOY = ["README.TXT"];
+// Settings fragments must reach the deployment manifest: onDidDeploy uses them
+// to generate the merged Documents settings. Only ignore them for conflicts.
+export const IGNORE_CONFLICTS = [...DO_NOT_DEPLOY, `**/*${PART_SUFFIX.toUpperCase()}`];
 export const SCRIPT_MERGER_FILES = ["WitcherScriptMerger.exe"];
 
 export const NON_SORTABLE = ["witcher3menumoddocuments", "collection"];

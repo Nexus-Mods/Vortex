@@ -2543,6 +2543,9 @@ importers:
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
+      '@types/minimatch':
+        specifier: 'catalog:'
+        version: 2.0.29
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -2564,6 +2567,9 @@ importers:
       lodash:
         specifier: 'catalog:'
         version: 4.17.23
+      minimatch:
+        specifier: 'catalog:'
+        version: 3.1.5
       react:
         specifier: 'catalog:'
         version: 18.3.1
