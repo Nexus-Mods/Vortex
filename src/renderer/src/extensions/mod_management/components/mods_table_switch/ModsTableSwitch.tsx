@@ -29,6 +29,7 @@ import {
   sharedMods,
 } from "../../util/modsTableViews";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
+import { ModThumbnail } from "../mod_thumbnail/ModThumbnail";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
 
@@ -134,13 +135,7 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
         sort: (a, b) => a.name.localeCompare(b.name),
         cell: ({ mod, name }) => (
           <>
-            <Image
-              alt=""
-              className="ml-2 h-5 rounded-sm"
-              fit="cover"
-              imageType="mod"
-              src={mod.attributes?.pictureUrl}
-            />
+            <ModThumbnail className="ml-2 h-5 rounded-sm" pictureUrl={mod.attributes?.pictureUrl} />
 
             <span className="ml-2 truncate">{name}</span>
           </>

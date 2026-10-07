@@ -24,6 +24,7 @@
         min-width: 0;
         container-type: inline-size;
         overflow-y: clip;
+        overflow-anchor: none;
     }
 
     .nxm-table-header,
