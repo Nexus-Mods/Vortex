@@ -1,36 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { IMod, IModAttributes, IModRule } from "../types/IMod";
+import { makeInstalledCollection, makeMod, makeRule } from "../../../test-utils/builders";
+import type { IMod, IModRule } from "../types/IMod";
 import { collectionNamesByMod } from "./collectionMembership";
 
 vi.mock("../../../util/log", () => ({
   log: vi.fn(),
 }));
 
-const createMod = (id: string, attributes: IModAttributes, extra: Partial<IMod> = {}): IMod => ({
-  id,
-  state: "installed",
-  type: "",
-  installationPath: `mods/${id}`,
-  attributes,
-  ...extra,
-});
-
-const requiresRule = (fileMD5: string): IModRule => ({
-  type: "requires",
-  reference: { fileMD5 },
-});
+const requiresRule = (fileMD5: string): IModRule => makeRule({ reference: { fileMD5 } });
 
 const createCollection = (id: string, name: string, rules: IModRule[]): IMod =>
-  createMod(id, { customFileName: name }, { type: "collection", rules });
+  makeInstalledCollection({ id, attributes: { customFileName: name }, rules });
 
-const toMap = (...mods: IMod[]) =>
-  mods.reduce<{ [modId: string]: IMod }>((prev, mod) => ({ ...prev, [mod.id]: mod }), {});
+const toMap = (...mods: IMod[]) => Object.fromEntries(mods.map((mod) => [mod.id, mod]));
 
 describe("collectionNamesByMod", () => {
-  const memberA = createMod("member-a", { fileMD5: "md5-a", fileName: "a.7z" });
-  const memberB = createMod("member-b", { fileMD5: "md5-b", fileName: "b.7z" });
-  const standalone = createMod("standalone", { fileMD5: "md5-x", fileName: "x.7z" });
+  const memberA = makeMod({ id: "member-a", attributes: { fileMD5: "md5-a", fileName: "a.7z" } });
+  const memberB = makeMod({ id: "member-b", attributes: { fileMD5: "md5-b", fileName: "b.7z" } });
+  const standalone = makeMod({
+    id: "standalone",
+    attributes: { fileMD5: "md5-x", fileName: "x.7z" },
+  });
 
   it("returns nothing when no collection is installed", () => {
     const mods = toMap(memberA, standalone);
@@ -59,7 +50,7 @@ describe("collectionNamesByMod", () => {
 
   it("counts recommended members as part of the collection", () => {
     const collection = createCollection("col-1", "Optional Pack", [
-      { type: "recommends", reference: { fileMD5: "md5-b" } },
+      makeRule({ type: "recommends", reference: { fileMD5: "md5-b" } }),
     ]);
     const mods = toMap(collection, memberB);
 
@@ -68,7 +59,7 @@ describe("collectionNamesByMod", () => {
 
   it("ignores rules that do not add a mod", () => {
     const collection = createCollection("col-1", "Ordering Only", [
-      { type: "before", reference: { fileMD5: "md5-a" } },
+      makeRule({ type: "before", reference: { fileMD5: "md5-a" } }),
     ]);
     const mods = toMap(collection, memberA);
 
