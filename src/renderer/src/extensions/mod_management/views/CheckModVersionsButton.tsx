@@ -145,7 +145,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
         message: "Some mods could not be updated automatically.",
       });
     }
-    const toUpdate = await selectModsToUpdate(this.context.api, this.props.mods, updateAble);
+    const toUpdate = await selectModsToUpdate(this.props.mods, updateAble);
     if (toUpdate.length > 0) {
       this.context.api.events.emit("mods-update", gameMode, toUpdate);
     }

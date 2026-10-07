@@ -390,7 +390,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         });
       }
 
-      const toUpdate = await selectModsToUpdate(api, mods, updateAble);
+      const toUpdate = await selectModsToUpdate(mods, updateAble);
       if (toUpdate.length > 0) {
         api.events.emit("mods-update", gameMode, toUpdate);
       }

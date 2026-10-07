@@ -133,6 +133,7 @@ import { getModSources, registerModSource } from "./util/modSource";
 import sortMods from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
+import { CollectionUpdateWarning } from "./views/CollectionUpdateWarning";
 import DeactivationButton from "./views/DeactivationButton";
 import type { IDuplicatesMap, IRemoveDuplicateMap } from "./views/DuplicatesDialog";
 import {} from "./views/ExternalChangeDialog";
@@ -2215,6 +2216,8 @@ function init(context: IExtensionContext): boolean {
     75,
   );
   context.registerSettings("Workarounds", Workarounds, undefined, undefined, 1000);
+
+  context.registerDialog("collection-update-warning", CollectionUpdateWarning);
 
   context.registerDialog(
     "external-changes",

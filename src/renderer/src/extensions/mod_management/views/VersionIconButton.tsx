@@ -117,10 +117,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     const { mod, mods } = this.props;
 
     const collectionNames = collectionNamesByMod(mods, [mod.id])[mod.id];
-    if (
-      collectionNames !== undefined &&
-      !(await confirmCollectionModUpdate(api, collectionNames))
-    ) {
+    if (collectionNames !== undefined && !(await confirmCollectionModUpdate(collectionNames))) {
       return;
     }
 
