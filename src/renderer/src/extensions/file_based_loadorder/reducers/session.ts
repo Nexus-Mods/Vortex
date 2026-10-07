@@ -1,7 +1,6 @@
 import { generate } from "shortid";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import * as actions from "../actions/session";
 import type { IValidationResult } from "../types/types";
 
@@ -28,47 +27,34 @@ declare module "@/types/IState" {
   }
 }
 
-export const sessionReducer: IReducerSpec<IFBLOSessionState> = {
-  reducers: {
-    [actions.setFBForceUpdate.getType()]: (state, payload: { profileId: string }) => {
-      const { profileId } = payload;
-      const uId = generate();
-      return setSafe(state, ["refresh", profileId], uId);
-    },
-    [actions.holdFBLoadOrderForDeploy.getType()]: (
-      state,
-      { profileId, loadOrderId, loadOrder, awaitedVortexModIds }: actions.IHoldFBLoadOrderPayload,
-    ) => {
-      const held = state.heldForDeploy ?? {};
-      if (held[profileId]?.[loadOrderId] !== undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        heldForDeploy: {
-          ...held,
-          [profileId]: { ...held[profileId], [loadOrderId]: { loadOrder, awaitedVortexModIds } },
-        },
-      };
-    },
-    [actions.releaseFBLoadOrderHold.getType()]: (
-      state,
-      { profileId, loadOrderId }: actions.IReleaseFBLoadOrderHoldPayload,
-    ) => {
-      const held = state.heldForDeploy ?? {};
-      if (held[profileId]?.[loadOrderId] === undefined) {
-        return state;
-      }
-      const { [loadOrderId]: _released, ...remaining } = held[profileId];
-      return { ...state, heldForDeploy: { ...held, [profileId]: remaining } };
-    },
-    [actions.setValidationResult.getType()]: (
-      state,
-      payload: { profileId: string; result: IValidationResult },
-    ) => {
-      const { profileId, result } = payload;
-      return setSafe(state, ["validationResult", profileId], result);
-    },
+export const sessionReducer = actionsToReducerSpec<IFBLOSessionState, typeof actions>({}, actions, {
+  setFBForceUpdate: (state, { profileId }) => ({
+    ...state,
+    refresh: { ...state.refresh, [profileId]: generate() },
+  }),
+  holdFBLoadOrderForDeploy: (state, { profileId, loadOrderId, loadOrder, awaitedVortexModIds }) => {
+    const held = state.heldForDeploy ?? {};
+    if (held[profileId]?.[loadOrderId] !== undefined) {
+      return state;
+    }
+    return {
+      ...state,
+      heldForDeploy: {
+        ...held,
+        [profileId]: { ...held[profileId], [loadOrderId]: { loadOrder, awaitedVortexModIds } },
+      },
+    };
   },
-  defaults: {},
-};
+  releaseFBLoadOrderHold: (state, { profileId, loadOrderId }) => {
+    const held = state.heldForDeploy ?? {};
+    if (held[profileId]?.[loadOrderId] === undefined) {
+      return state;
+    }
+    const { [loadOrderId]: _released, ...remaining } = held[profileId];
+    return { ...state, heldForDeploy: { ...held, [profileId]: remaining } };
+  },
+  setValidationResult: (state, { profileId, result }) => ({
+    ...state,
+    validationResult: { ...state.validationResult, [profileId]: result },
+  }),
+});

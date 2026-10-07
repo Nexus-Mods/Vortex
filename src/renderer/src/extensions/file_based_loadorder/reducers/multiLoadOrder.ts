@@ -1,4 +1,4 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import * as actions from "../actions/loadOrder";
 import { isPrimaryLoadOrderId } from "../registry";
 import type { LoadOrder } from "../types/types";
@@ -8,12 +8,11 @@ export type NamedLoadOrders = Record<string, Record<string, LoadOrder>>;
 
 // The named load orders of each profile, persistent.loadOrders[profileId][loadOrderId]; the
 // primary stays in persistent.loadOrder.
-export const multiLoadOrderReducer: IReducerSpec<NamedLoadOrders> = {
-  reducers: {
-    [actions.setFBLoadOrderEntry.getType()]: (
-      state,
-      { profileId, loEntry, loadOrderId }: actions.ISetFBLoadOrderEntryPayload,
-    ) => {
+export const multiLoadOrderReducer = actionsToReducerSpec<NamedLoadOrders, typeof actions>(
+  {},
+  actions,
+  {
+    setFBLoadOrderEntry: (state, { profileId, loEntry, loadOrderId }) => {
       const current = state[profileId]?.[loadOrderId];
       if (isPrimaryLoadOrderId(loadOrderId) || current === undefined) {
         return state;
@@ -21,23 +20,19 @@ export const multiLoadOrderReducer: IReducerSpec<NamedLoadOrders> = {
       const replaced = current.map((entry) => (entry.id === loEntry.id ? loEntry : entry));
       return { ...state, [profileId]: { ...state[profileId], [loadOrderId]: replaced } };
     },
-    [actions.setFBLoadOrder.getType()]: (
-      state,
-      { profileId, loadOrder, loadOrderId }: actions.ISetFBLoadOrderPayload,
-    ) => {
+    setFBLoadOrder: (state, { profileId, loadOrder, loadOrderId }) => {
       // payloads arrive from extensions and collections untyped, so the array check is real
       if (isPrimaryLoadOrderId(loadOrderId) || !Array.isArray(loadOrder)) {
         return state;
       }
       return { ...state, [profileId]: { ...state[profileId], [loadOrderId]: loadOrder } };
     },
-    [actions.removeFBLoadOrderProfile.getType()]: (state, { profileId }: { profileId: string }) => {
+    removeFBLoadOrderProfile: (state, { profileId }) => {
       const { [profileId]: _removed, ...remaining } = state;
       return remaining;
     },
   },
-  defaults: {},
-  verifiers: {
+  {
     _: {
       type: "object",
       description: () => "Corrupted load orders will be reset",
@@ -51,4 +46,4 @@ export const multiLoadOrderReducer: IReducerSpec<NamedLoadOrders> = {
       },
     },
   },
-};
+);

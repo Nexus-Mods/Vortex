@@ -1,11 +1,17 @@
 import { unknownToError } from "@vortex/shared";
+import { DataInvalid } from "@vortex/shared/errors";
 
 import { log } from "../../logging";
-import type * as types from "../../types/api";
-import * as util from "../../util/api";
-import * as selectors from "../../util/selectors";
+import type { IExtensionApi } from "../../types/IExtensionContext";
 import { isInstallationActive } from "../collections/util/selectors";
 import { modsForGame } from "../mod_management/selectors";
+import type { IRemoveModOptions } from "../mod_management/types/IRemoveModOptions";
+import {
+  activeProfile,
+  lastActiveProfileForGame,
+  profileById,
+} from "../profile_management/selectors";
+import type { IProfile } from "../profile_management/types/IProfile";
 import { setFBLoadOrder } from "./actions/loadOrder";
 import {
   holdFBLoadOrderForDeploy,
@@ -34,7 +40,7 @@ import { assertValidationResult, errorHandler } from "./util";
 // keyed by profile id
 type PrimaryLoadOrders = Record<string, LoadOrder | undefined>;
 // keyed by profile id
-type Profiles = Record<string, types.IProfile>;
+type Profiles = Record<string, IProfile>;
 
 // A load order the game currently wants managed.
 export const isInUse = (gameEntry: IRegisteredLoadOrder): boolean =>
@@ -45,7 +51,7 @@ const loadOrderIdForDispatch = (gameEntry: IRegisteredLoadOrder): string | undef
   gameEntry.isPrimary ? undefined : gameEntry.loadOrderId;
 
 function dispatchLoadOrder(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   profileId: string,
   gameEntry: IRegisteredLoadOrder,
   loadOrder: LoadOrder,
@@ -54,7 +60,7 @@ function dispatchLoadOrder(
 }
 
 function reportError(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameEntry: IRegisteredLoadOrder,
   err: unknown,
 ): Promise<void> {
@@ -63,7 +69,7 @@ function reportError(
 
 // A populated primary order that no load order reads is logged.
 function logUnclaimedPrimaryOrder(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   profileId: string,
   gameId: string,
@@ -78,7 +84,7 @@ function logUnclaimedPrimaryOrder(
 // The order a load order has for a profile. An adopting load order read for the first time starts
 // from a copy of the primary order.
 function storedLoadOrder(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   profileId: string,
   gameEntry: IRegisteredLoadOrder,
 ): LoadOrder {
@@ -103,20 +109,20 @@ function storedLoadOrder(
 }
 
 export async function validateLoadOrder(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
-  profile: types.IProfile,
+  profile: IProfile,
   loadOrder: LoadOrder,
   loadOrderId?: string,
 ): Promise<IValidationResult> {
   if (profile?.id === undefined) {
     log("error", "failed to validate load order due to undefined profile", loadOrder);
-    throw new util.DataInvalid("invalid profile");
+    throw new DataInvalid("invalid profile");
   }
   const gameEntry = registry.find(profile.gameId, loadOrderId);
   if (gameEntry === undefined) {
     log("error", "invalid game entry", { gameId: profile.gameId, loadOrderId });
-    throw new util.DataInvalid("invalid game entry");
+    throw new DataInvalid("invalid game entry");
   }
   const previousLoadOrder = loadOrderForProfile(api.getState(), profile.id, loadOrderId);
   const validationResult: IValidationResult = await gameEntry.validate(
@@ -133,7 +139,7 @@ export async function validateLoadOrder(
 
 // The held order, restored into a load order the game reported, replaces the hold.
 function restoreHeldLoadOrder(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   profileId: string,
   gameEntry: IRegisteredLoadOrder,
   held: IHeldLoadOrder,
@@ -152,9 +158,9 @@ function restoreHeldLoadOrder(
 // A held order is restored into the first change listing the mods it awaits; other changes while
 // held are the game's interim order, neither written nor validated.
 async function handleLoadOrderChange(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
-  profile: types.IProfile,
+  profile: IProfile,
   gameEntry: IRegisteredLoadOrder,
   previousLoadOrder: LoadOrder,
   nextLoadOrder: LoadOrder,
@@ -184,14 +190,14 @@ async function handleLoadOrderChange(
 
 // The active profile and its game's load orders in use, unless a collection is installing.
 function activeLoadOrders(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
-): { profile: types.IProfile; gameEntries: IRegisteredLoadOrder[] } | undefined {
+): { profile: IProfile; gameEntries: IRegisteredLoadOrder[] } | undefined {
   const state = api.getState();
   if (isInstallationActive(state)) {
     return undefined;
   }
-  const profile = selectors.activeProfile(state);
+  const profile = activeProfile(state);
   if (profile?.gameId === undefined) {
     return undefined;
   }
@@ -200,7 +206,7 @@ function activeLoadOrders(
 
 // Reads every load order of the active profile back from the game, as the game now has it.
 async function readActiveLoadOrdersFromGame(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
 ): Promise<void> {
   const active = activeLoadOrders(api, registry);
@@ -228,7 +234,7 @@ const namedSlot: LoadOrderSlot<NamedLoadOrders> = (loadOrders, profileId, gameEn
 
 // Handles a change to the slice holding the primary load order, or the one holding named orders.
 async function onLoadOrdersChanged<Slice>(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   holdsPrimary: boolean,
   slotOf: LoadOrderSlot<Slice>,
@@ -256,13 +262,13 @@ async function onLoadOrdersChanged<Slice>(
 }
 
 async function onProfilesChanged(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   previous: Profiles,
   current: Profiles,
 ): Promise<void> {
   dropRemovedProfileLoadOrders(api, previous, current);
-  const activeProfileId = selectors.activeProfile(api.getState())?.id;
+  const activeProfileId = activeProfile(api.getState())?.id;
   if (activeProfileId === undefined || current?.[activeProfileId] === undefined) {
     return;
   }
@@ -270,7 +276,7 @@ async function onProfilesChanged(
 }
 
 async function onToolsRunningChanged(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   current: Record<string, unknown>,
 ): Promise<void> {
@@ -285,7 +291,7 @@ async function onToolsRunningChanged(
 // the stored order, a held one once the game lists the mods it awaits; after a purge the game's
 // order, unless it read back nothing.
 async function reconcileProfileLoadOrders(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   profileId: string,
   afterDeploy: boolean,
@@ -294,7 +300,7 @@ async function reconcileProfileLoadOrders(
   if (isInstallationActive(state)) {
     return;
   }
-  const profile = selectors.profileById(state, profileId);
+  const profile = profileById(state, profileId);
   if (profile?.gameId === undefined) {
     // the profile may have been removed while the event was queued
     log("warn", "invalid profile id", profileId);
@@ -330,13 +336,13 @@ async function reconcileProfileLoadOrders(
 // Holds the profile's load orders in use that list an awaited mod, or every one when none is
 // awaited, unless a collection is installing.
 function holdLoadOrders(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   profileId: string | undefined,
   awaitedVortexModIds: string[],
 ): void {
   const state = api.getState();
-  const profile = selectors.profileById(state, profileId);
+  const profile = profileById(state, profileId);
   if (profile?.gameId === undefined || isInstallationActive(state)) {
     return;
   }
@@ -353,14 +359,14 @@ function holdLoadOrders(
 
 // A replacement removes the old mod first; its order waits for the game to list the mod again.
 function onWillRemoveMods(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   gameId: string,
   vortexModIds: string[],
-  removeOptions: types.IRemoveModOptions | undefined,
+  removeOptions: IRemoveModOptions | undefined,
 ): Promise<void> {
   if (removeOptions?.willBeReplaced === true) {
-    const profileId = selectors.lastActiveProfileForGame(api.getState(), gameId);
+    const profileId = lastActiveProfileForGame(api.getState(), gameId);
     holdLoadOrders(api, registry, profileId, vortexModIds);
   }
   return Promise.resolve();
@@ -368,7 +374,7 @@ function onWillRemoveMods(
 
 // A purge takes the mods' entries out of the game; their order waits for the deploy.
 function onWillPurge(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   profileId: string,
 ): Promise<void> {
@@ -379,12 +385,12 @@ function onWillPurge(
 // Every did-deploy listener has settled, including a game extension listing deployed mods in its
 // file from its own handler, so a hold the deployment's read could not end gets one more read.
 async function onModsDidDeploy(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   profileId: string,
 ): Promise<void> {
   const state = api.getState();
-  const profile = selectors.profileById(state, profileId);
+  const profile = profileById(state, profileId);
   if (profile?.gameId === undefined || isInstallationActive(state)) {
     return;
   }
@@ -407,12 +413,12 @@ async function onModsDidDeploy(
 
 // Reads a load order for the page as it mounts, validated against the stored one.
 export async function onStartUp(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   registry: LoadOrderRegistry,
   gameId: string,
   loadOrderId?: string,
 ): Promise<LoadOrder> {
-  const profileId = selectors.lastActiveProfileForGame(api.getState(), gameId);
+  const profileId = lastActiveProfileForGame(api.getState(), gameId);
   const gameEntry = registry.find(gameId, loadOrderId);
   if (gameEntry === undefined || profileId === undefined) {
     log("debug", "invalid game entry or invalid profile", { gameId, loadOrderId, profileId });
@@ -438,10 +444,7 @@ export async function onStartUp(
 
 // Keeps every registered load order in step with the game: reads them back after deployments,
 // purges, profile changes and closed tools, and writes a changed order to the game.
-export function registerLoadOrderHandlers(
-  api: types.IExtensionApi,
-  registry: LoadOrderRegistry,
-): void {
+export function registerLoadOrderHandlers(api: IExtensionApi, registry: LoadOrderRegistry): void {
   api.onStateChange(["session", "base", "toolsRunning"], (_previous, current) => {
     void onToolsRunningChanged(api, registry, current as Record<string, unknown>);
   });
@@ -468,24 +471,20 @@ export function registerLoadOrderHandlers(
   api.onStateChange(["persistent", "profiles"], (previous, current) => {
     void onProfilesChanged(api, registry, previous as Profiles, current as Profiles);
   });
-  api.onAsync(
-    "will-remove-mods",
-    (gameId: string, vortexModIds: string[], removeOptions?: types.IRemoveModOptions) =>
-      onWillRemoveMods(api, registry, gameId, vortexModIds, removeOptions),
+  api.onAsync<"will-remove-mods">("will-remove-mods", (gameId, vortexModIds, removeOptions) =>
+    onWillRemoveMods(api, registry, gameId, vortexModIds, removeOptions),
   );
-  api.onAsync(
-    "will-remove-mod",
-    (gameId: string, vortexModId: string, removeOptions?: types.IRemoveModOptions) =>
-      onWillRemoveMods(api, registry, gameId, [vortexModId], removeOptions),
+  api.onAsync<"will-remove-mod">("will-remove-mod", (gameId, vortexModId, removeOptions) =>
+    onWillRemoveMods(api, registry, gameId, [vortexModId], removeOptions),
   );
-  api.onAsync("will-purge", (profileId: string) => onWillPurge(api, registry, profileId));
-  api.onAsync("did-deploy", (profileId: string) =>
+  api.onAsync<"will-purge">("will-purge", (profileId) => onWillPurge(api, registry, profileId));
+  api.onAsync<"did-deploy">("did-deploy", (profileId) =>
     reconcileProfileLoadOrders(api, registry, profileId, true),
   );
-  api.onAsync("did-purge", (profileId: string) =>
+  api.onAsync<"did-purge">("did-purge", (profileId) =>
     reconcileProfileLoadOrders(api, registry, profileId, false),
   );
-  api.events.on("mods-did-deploy", (profileId: string) => {
+  api.events.on<"mods-did-deploy">("mods-did-deploy", (profileId: string) => {
     void onModsDidDeploy(api, registry, profileId);
   });
 }

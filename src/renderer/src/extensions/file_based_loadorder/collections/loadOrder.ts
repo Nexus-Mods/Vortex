@@ -1,7 +1,8 @@
 import * as React from "react";
 
-import type * as types from "../../../types/api";
-import * as selectors from "../../../util/selectors";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IMod } from "../../mod_management/types/IMod";
+import { lastActiveProfileForGame } from "../../profile_management/selectors";
 import { setFBLoadOrder } from "../actions/loadOrder";
 import type {
   ICollection,
@@ -14,10 +15,11 @@ import { genCollectionLoadOrder } from "../util";
 import LoadOrderCollections from "../views/LoadOrderCollections";
 
 export async function generate(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameEntry: IRegisteredLoadOrder | undefined,
   modIds: string[],
-  mods: { [modId: string]: types.IMod },
+  // keyed by Vortex mod id
+  mods: Record<string, IMod>,
 ): Promise<ICollectionLoadOrder> {
   if (gameEntry === undefined) {
     return;
@@ -25,7 +27,7 @@ export async function generate(
 
   let loadOrder;
   try {
-    const profileId = selectors.lastActiveProfileForGame(api.getState(), gameEntry.gameId);
+    const profileId = lastActiveProfileForGame(api.getState(), gameEntry.gameId);
     if (profileId === undefined) {
       throw new CollectionGenerateError("Invalid profile");
     }
@@ -43,13 +45,13 @@ export async function generate(
 }
 
 export async function parser(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   collection: ICollection,
 ): Promise<void> {
   const state = api.getState();
 
-  const profileId = selectors.lastActiveProfileForGame(state, gameId);
+  const profileId = lastActiveProfileForGame(state, gameId);
   if (profileId === undefined) {
     return Promise.reject(new CollectionParseError(collection, "Invalid profile id"));
   }

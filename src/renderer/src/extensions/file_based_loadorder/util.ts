@@ -1,6 +1,7 @@
 import { DataInvalid, ProcessCanceled, UserCanceled } from "@vortex/shared/errors";
 
-import type * as types from "../../types/api";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IMod } from "../mod_management/types/IMod";
 import { findRuleByRef } from "../mod_management/util/testModReference";
 import { activeGameId, lastActiveProfileForGame } from "../profile_management/selectors";
 import { setValidationResult } from "./actions/session";
@@ -20,16 +21,17 @@ export function isEntryLocked(locked: LockedState): boolean {
   return locked === true || locked === "true" || locked === "always";
 }
 
-export function isModInCollection(collection: types.IMod, mod: types.IMod) {
+export function isModInCollection(collection: IMod, mod: IMod) {
   return findRuleByRef(collection.rules, mod) !== undefined;
 }
 
 export async function genCollectionLoadOrder(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameEntry: IRegisteredLoadOrder,
-  mods: { [modId: string]: types.IMod },
+  // keyed by Vortex mod id
+  mods: Record<string, IMod>,
   profileId: string,
-  collection?: types.IMod,
+  collection?: IMod,
 ): Promise<LoadOrder> {
   const state = api.getState();
   try {
@@ -51,12 +53,12 @@ export async function genCollectionLoadOrder(
   }
 }
 
-export function isValidMod(mod: types.IMod) {
+export function isValidMod(mod: IMod) {
   return mod !== undefined && mod.type !== "collection";
 }
 
 function reportError(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   errorMessage: string,
   errDetails: any,
   allowReport: boolean = true,
@@ -69,7 +71,7 @@ function reportError(
 }
 
 export async function errorHandler(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   gameId: string,
   gameEntry: IRegisteredLoadOrder | undefined,
   err: Error,

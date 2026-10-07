@@ -1,4 +1,4 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import * as actions from "../actions/loadOrder";
 import { isPrimaryLoadOrderId } from "../registry";
 import type { ILoadOrderEntry, LoadOrder } from "../types/types";
@@ -20,12 +20,11 @@ function asLoadOrder(loadOrder: unknown): LoadOrder | undefined {
 }
 
 // The primary load order of each profile, persistent.loadOrder[profileId].
-export const modLoadOrderReducer: IReducerSpec<PrimaryLoadOrders> = {
-  reducers: {
-    [actions.setFBLoadOrderEntry.getType()]: (
-      state,
-      { profileId, loEntry, loadOrderId }: actions.ISetFBLoadOrderEntryPayload,
-    ) => {
+export const modLoadOrderReducer = actionsToReducerSpec<PrimaryLoadOrders, typeof actions>(
+  {},
+  actions,
+  {
+    setFBLoadOrderEntry: (state, { profileId, loEntry, loadOrderId }) => {
       if (!isPrimaryLoadOrderId(loadOrderId)) {
         return state;
       }
@@ -34,20 +33,16 @@ export const modLoadOrderReducer: IReducerSpec<PrimaryLoadOrders> = {
       );
       return { ...state, [profileId]: replaced };
     },
-    [actions.setFBLoadOrder.getType()]: (
-      state,
-      { profileId, loadOrder, loadOrderId }: actions.ISetFBLoadOrderPayload,
-    ) => {
+    setFBLoadOrder: (state, { profileId, loadOrder, loadOrderId }) => {
       const next = asLoadOrder(loadOrder);
       if (!isPrimaryLoadOrderId(loadOrderId) || next === undefined) {
         return state;
       }
       return { ...state, [profileId]: next };
     },
-    [actions.removeFBLoadOrderProfile.getType()]: (state, { profileId }: { profileId: string }) => {
+    removeFBLoadOrderProfile: (state, { profileId }) => {
       const { [profileId]: _removed, ...remaining } = state;
       return remaining;
     },
   },
-  defaults: {},
-};
+);
