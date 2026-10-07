@@ -1,10 +1,11 @@
+import { VortexProfileId } from "@vortex/shared";
 import * as _ from "lodash";
 import type * as Redux from "redux";
-import { generate as shortid } from "shortid";
 
 import * as actions from "../../../actions";
 import { getGame } from "../../../extensions/gamemode_management/util/getGame";
 import type { IMod, IModRule } from "../../../extensions/mod_management/types/IMod";
+import renderModName from "../../../extensions/mod_management/util/modName";
 import { findRuleByRef } from "../../../extensions/mod_management/util/testModReference";
 import type { IProfile } from "../../../extensions/profile_management/types/IProfile";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -15,7 +16,8 @@ import { MOD_TYPE } from "../constants";
 import { importTweaks } from "../initweaks";
 import type { IINITweak } from "../types/IINITweak";
 import { createCollection } from "./createCollection";
-import { makeCollectionId, validateName } from "./transformCollection";
+import { freshCollectionId, profileCollectionTarget } from "./profileLink";
+import { validateName } from "./transformCollection";
 
 async function createTweaksFromProfile(
   api: IExtensionApi,
@@ -118,11 +120,12 @@ export async function createCollectionFromProfile(
   const profile = state.persistent.profiles[profileId];
 
   const isQuickCollection = forceName !== undefined;
-  const id = isQuickCollection
-    ? makeCollectionId(`${profileId}_${shortid()}`)
-    : makeCollectionId(profileId);
-
-  const mod: IMod = state.persistent.mods[profile.gameId]?.[id];
+  const { mod, id } = isQuickCollection
+    ? { mod: undefined, id: freshCollectionId(VortexProfileId(profileId)) }
+    : profileCollectionTarget(
+        state.persistent.mods[profile.gameId] ?? {},
+        VortexProfileId(profileId),
+      );
 
   const isNexusSourced = (m: IMod) => m?.attributes?.source === "nexus";
   const isGeneratedMod = (m: IMod) => m?.attributes?.generated === true;
@@ -185,7 +188,7 @@ export async function createCollectionFromProfile(
       });
     }
   } else {
-    name = mod.attributes?.name;
+    name = renderModName(mod);
     updateCollection(api, profile.gameId, mod, rules);
   }
 

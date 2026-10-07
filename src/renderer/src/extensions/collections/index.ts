@@ -3,7 +3,7 @@ import { pathToFileURL } from "url";
 
 import type * as nexusApi from "@nexusmods/nexus-api";
 import type { IRevision } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError, VortexProfileId } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import memoize from "memoize-one";
@@ -75,6 +75,7 @@ import { createCollection } from "./util/createCollection";
 import { genDefaultsAction } from "./util/defaults";
 import { addExtension } from "./util/extension";
 import InstallDriver from "./util/InstallDriver";
+import { canLinkProfile, findLinkedCollection, linkProfileToCollection } from "./util/profileLink";
 import { readCollection } from "./util/readCollection";
 import { getActiveInstallSession } from "./util/selectors";
 import { makeCollectionId } from "./util/transformCollection";
@@ -100,10 +101,12 @@ function isEditableCollection(state: IState, modIds: string[]): boolean {
 }
 
 function profileCollectionExists(api: IExtensionApi, profileId: string) {
-  const state = api.store.getState();
+  const state: IState = api.store.getState();
   const gameMode = selectors.activeGameId(state);
-  const mods = state.persistent.mods[gameMode];
-  return mods[makeCollectionId(profileId)] !== undefined;
+  return (
+    findLinkedCollection(selectors.modsForGame(state, gameMode), VortexProfileId(profileId)) !==
+    undefined
+  );
 }
 
 function onlyLocalRules(rule: IModRule) {
@@ -985,6 +988,21 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
       );
     },
     (profileIds: string[]) => profileCollectionExists(context.api, profileIds[0]),
+  );
+
+  context.registerAction(
+    "profile-actions",
+    150,
+    "highlight-lab",
+    {},
+    "Link Collection",
+    (profileIds: string[]) => {
+      linkProfileToCollection(context.api, VortexProfileId(profileIds[0])).catch((err: unknown) =>
+        context.api.showErrorNotification("Failed to link collection", unknownToError(err)),
+      );
+    },
+    (profileIds: string[]) =>
+      canLinkProfile(context.api.getState(), VortexProfileId(profileIds[0])),
   );
 
   context.registerAction(
