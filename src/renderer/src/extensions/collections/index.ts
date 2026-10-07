@@ -3,7 +3,7 @@ import { pathToFileURL } from "url";
 
 import type * as nexusApi from "@nexusmods/nexus-api";
 import type { IRevision } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, toVortexProfileId, unknownToError } from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError, VortexProfileId } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import memoize from "memoize-one";
@@ -104,7 +104,7 @@ function profileCollectionExists(api: IExtensionApi, profileId: string) {
   const state: IState = api.store.getState();
   const gameMode = selectors.activeGameId(state);
   return (
-    findLinkedCollection(selectors.modsForGame(state, gameMode), toVortexProfileId(profileId)) !==
+    findLinkedCollection(selectors.modsForGame(state, gameMode), VortexProfileId(profileId)) !==
     undefined
   );
 }
@@ -997,12 +997,12 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
     {},
     "Link Collection",
     (profileIds: string[]) => {
-      linkProfileToCollection(context.api, toVortexProfileId(profileIds[0])).catch((err: unknown) =>
+      linkProfileToCollection(context.api, VortexProfileId(profileIds[0])).catch((err: unknown) =>
         context.api.showErrorNotification("Failed to link collection", unknownToError(err)),
       );
     },
     (profileIds: string[]) =>
-      canLinkProfile(context.api.getState(), toVortexProfileId(profileIds[0])),
+      canLinkProfile(context.api.getState(), VortexProfileId(profileIds[0])),
   );
 
   context.registerAction(

@@ -1,9 +1,4 @@
-import {
-  type VortexProfileId,
-  toVortexProfileId,
-  toVortexModId,
-  type VortexModId,
-} from "@vortex/shared";
+import { VortexModId, VortexProfileId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { makeInstalledCollection, makeMod } from "../../../test-utils/builders";
@@ -11,13 +6,13 @@ import type { IMod } from "../../mod_management/types/IMod";
 import { findLinkedCollection, profileCollectionTarget, profileLinkChanges } from "./profileLink";
 import { makeCollectionId } from "./transformCollection";
 
-const PROFILE_A = toVortexProfileId("profile-a");
-const PROFILE_B = toVortexProfileId("profile-b");
-const CLONE = toVortexModId("clone");
-const OLD = toVortexModId("old");
-const NEW = toVortexModId("new");
-const SHARED = toVortexModId("shared");
-const CONVENTIONAL_A = toVortexModId(makeCollectionId(PROFILE_A));
+const PROFILE_A = VortexProfileId("profile-a");
+const PROFILE_B = VortexProfileId("profile-b");
+const CLONE = VortexModId("clone");
+const OLD = VortexModId("old");
+const NEW = VortexModId("new");
+const SHARED = VortexModId("shared");
+const CONVENTIONAL_A = VortexModId(makeCollectionId(PROFILE_A));
 
 const editable = (id: VortexModId, associatedProfile?: VortexProfileId): IMod =>
   makeInstalledCollection({ id, attributes: { editable: true, associatedProfile } });

@@ -1,73 +1,55 @@
 import { VortexError } from "../errors/base";
 
-declare const idBrand: unique symbol;
+declare const brand: unique symbol;
 
-// A string branded with the kind of id it is; two kinds never mix.
-type Id<Kind extends string> = string & { readonly [idBrand]: Kind };
+type Brand<Base, Tag> = Base & { readonly [brand]: { readonly __base__: Base; readonly tag: Tag } };
+type AnyBrand = Brand<unknown, any>;
+type BaseOf<B extends AnyBrand> = B[typeof brand]["__base__"];
+type Brander<B extends AnyBrand> = (value: BaseOf<B>) => B;
 
-// Vortex never keys a mod or a profile by an empty id.
-function isNonEmptyString(raw: unknown): raw is string {
-  return typeof raw === "string" && raw.length > 0;
+function make<B extends AnyBrand>(validate?: (value: BaseOf<B>) => void): Brander<B> {
+  return (value: BaseOf<B>): B => {
+    validate?.(value);
+
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    return value as unknown as B;
+  };
+}
+
+function validateNonEmptyString(value: string) {
+  if (value.length > 0) return;
+  throw new VortexError("Must be a non-empty string!", {
+    kind: "argument-invalid",
+    argument: "value",
+  });
 }
 
 /**
  * The id Vortex gives an installed mod, the key of `persistent.mods[gameId]`. Not a Nexus Mods mod id, which
- * a mod carries as its `modId` attribute. Values come only from {@link toVortexModId} or {@link isVortexModId}.
+ * a mod carries as its `modId` attribute.
  *
  * @public */
-export type VortexModId = Id<"VortexModId">;
+export type VortexModId = Brand<string, "VortexModId">;
 
 /**
- * The id of a Vortex profile, the key of `persistent.profiles`. Values come only from {@link toVortexProfileId} or
- * {@link isVortexProfileId}.
+ * Brands a string as a {@link VortexModId}.
+ *
+ * @throws {@link VortexError} with kind `argument-invalid` for an empty string.
  *
  * @public */
-export type VortexProfileId = Id<"VortexProfileId">;
+export const VortexModId: Brander<VortexModId> = make<VortexModId>(validateNonEmptyString);
 
 /**
- * True for a value that can be a {@link VortexModId}: a non-empty string.
+ * The id of a Vortex profile, the key of `persistent.profiles`.
  *
  * @public */
-export function isVortexModId(raw: unknown): raw is VortexModId {
-  return isNonEmptyString(raw);
-}
+export type VortexProfileId = Brand<string, "VortexProfileId">;
 
 /**
- * True for a value that can be a {@link VortexProfileId}: a non-empty string.
+ * Brands a string as a {@link VortexProfileId}.
+ *
+ * @throws {@link VortexError} with kind `argument-invalid` for an empty string.
  *
  * @public */
-export function isVortexProfileId(raw: unknown): raw is VortexProfileId {
-  return isNonEmptyString(raw);
-}
-
-/**
- * A value read from state, IPC or a callback as a {@link VortexModId}.
- *
- * @throws {@link VortexError} with kind `argument-invalid` when {@link isVortexModId} rejects the value.
- *
- * @public */
-export function toVortexModId(raw: unknown): VortexModId {
-  if (isVortexModId(raw)) {
-    return raw;
-  }
-  throw new VortexError("A Vortex mod id must be a non-empty string", {
-    kind: "argument-invalid",
-    argument: "toVortexModId",
-  });
-}
-
-/**
- * A value read from state, IPC or a callback as a {@link VortexProfileId}.
- *
- * @throws {@link VortexError} with kind `argument-invalid` when {@link isVortexProfileId} rejects the value.
- *
- * @public */
-export function toVortexProfileId(raw: unknown): VortexProfileId {
-  if (isVortexProfileId(raw)) {
-    return raw;
-  }
-  throw new VortexError("A profile id must be a non-empty string", {
-    kind: "argument-invalid",
-    argument: "toVortexProfileId",
-  });
-}
+export const VortexProfileId: Brander<VortexProfileId> =
+  make<VortexProfileId>(validateNonEmptyString);

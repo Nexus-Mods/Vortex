@@ -1,4 +1,4 @@
-import { type VortexProfileId, toVortexModId, type VortexModId } from "@vortex/shared";
+import { type VortexProfileId, VortexModId } from "@vortex/shared";
 import { generate as shortid } from "shortid";
 
 import * as actions from "../../../actions";
@@ -21,7 +21,7 @@ const isEditableCollectionMod = (mod: IMod | undefined): boolean =>
 
 // A collection id no other collection holds, for a new collection made from the profile.
 export const freshCollectionId = (profileId: VortexProfileId): VortexModId =>
-  toVortexModId(makeCollectionId(`${profileId}_${shortid()}`));
+  VortexModId(makeCollectionId(`${profileId}_${shortid()}`));
 
 function findUserLinkedCollection(
   mods: Record<VortexModId, IMod>,
@@ -41,7 +41,7 @@ export function findLinkedCollection(
   if (linked !== undefined) {
     return linked;
   }
-  const own = mods[toVortexModId(makeCollectionId(profileId))];
+  const own = mods[VortexModId(makeCollectionId(profileId))];
   const linkedElsewhere = own?.attributes?.associatedProfile !== undefined;
   return own?.type === MOD_TYPE && !linkedElsewhere ? own : undefined;
 }
@@ -53,9 +53,9 @@ export function profileCollectionTarget(
 ): { mod: IMod | undefined; id: VortexModId } {
   const mod = findLinkedCollection(mods, profileId);
   if (mod !== undefined) {
-    return { mod, id: toVortexModId(mod.id) };
+    return { mod, id: VortexModId(mod.id) };
   }
-  const conventionalId = toVortexModId(makeCollectionId(profileId));
+  const conventionalId = VortexModId(makeCollectionId(profileId));
   return {
     mod: undefined,
     id: mods[conventionalId] === undefined ? conventionalId : freshCollectionId(profileId),
@@ -71,7 +71,7 @@ export function profileLinkChanges(
   const current = findUserLinkedCollection(mods, profileId);
   const changes: IProfileLinkChange[] = [];
   if (current !== undefined && current.id !== collectionId) {
-    changes.push({ collectionId: toVortexModId(current.id), associatedProfile: undefined });
+    changes.push({ collectionId: VortexModId(current.id), associatedProfile: undefined });
   }
   if (collectionId !== undefined) {
     changes.push({ collectionId, associatedProfile: profileId });
@@ -127,7 +127,7 @@ export async function linkProfileToCollection(
     result.action === "Unlink"
       ? profileLinkChanges(mods, profileId, undefined)
       : result.action === "Link" && chosen !== undefined
-        ? profileLinkChanges(mods, profileId, toVortexModId(chosen))
+        ? profileLinkChanges(mods, profileId, VortexModId(chosen))
         : [];
   batchDispatch(
     api.store,

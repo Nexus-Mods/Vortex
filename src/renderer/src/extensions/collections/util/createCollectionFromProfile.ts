@@ -1,4 +1,4 @@
-import { toVortexProfileId } from "@vortex/shared";
+import { VortexProfileId } from "@vortex/shared";
 import * as _ from "lodash";
 import type * as Redux from "redux";
 
@@ -121,10 +121,10 @@ export async function createCollectionFromProfile(
 
   const isQuickCollection = forceName !== undefined;
   const { mod, id } = isQuickCollection
-    ? { mod: undefined, id: freshCollectionId(toVortexProfileId(profileId)) }
+    ? { mod: undefined, id: freshCollectionId(VortexProfileId(profileId)) }
     : profileCollectionTarget(
         state.persistent.mods[profile.gameId] ?? {},
-        toVortexProfileId(profileId),
+        VortexProfileId(profileId),
       );
 
   const isNexusSourced = (m: IMod) => m?.attributes?.source === "nexus";
