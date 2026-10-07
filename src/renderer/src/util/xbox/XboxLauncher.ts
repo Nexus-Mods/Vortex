@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import * as path from "path";
 
-import { parseError } from "@vortex/shared";
+import { getErrorCode, parseError } from "@vortex/shared";
 import { ArgumentInvalid } from "@vortex/shared/errors";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import * as winapi from "winapi-bindings";
@@ -219,7 +219,7 @@ export class XboxLauncher implements IGameStore {
       // It's perfectly valid for a keypath not to exist. We're
       //  only concerned with keypaths that exist and a different error
       //  is raised.
-      if (parseError(err).data.kind !== "fs:not-found") {
+      if (getErrorCode(err) !== "ENOENT") {
         log("error", "unable to retrieve key names", keyPath);
       }
     }
