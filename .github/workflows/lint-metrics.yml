@@ -19,6 +19,10 @@ jobs:
 
       - uses: ./.github/actions/setup-pnpm
 
+      # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
+      - name: Install fontconfig
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
       - name: Install dependencies
         run: pnpm install
         env:
