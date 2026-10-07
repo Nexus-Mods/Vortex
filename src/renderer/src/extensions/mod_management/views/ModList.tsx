@@ -68,8 +68,8 @@ import { setModEnabled, setModsEnabled } from "../../profile_management/actions/
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
-import { ModsTableSwitch } from "../components/ModsTableSwitch/ModsTableSwitch";
-import { ModsToolbar } from "../components/ModsToolbar/ModsToolbar";
+import { ModsTableSwitch } from "../components/mods_table_switch/ModsTableSwitch";
+import { ModsToolbar } from "../components/mods_toolbar/ModsToolbar";
 import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from "../modAttributes";
 import getText from "../texts";
 import type { IInstallOptions } from "../types/IInstallOptions";

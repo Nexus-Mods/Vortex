@@ -20,8 +20,8 @@ import {
   MODS_TABLE_PRESETS,
   sharedMods,
 } from "../../util/modsTableViews";
-import { DisableSharedModsModal } from "../DisableSharedModsModal/DisableSharedModsModal";
-import { ModsTableToolbar } from "../ModsTableToolbar/ModsTableToolbar";
+import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
+import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
 
 interface IModsTableSwitchProps {
   /** The mods the table lists, collections among them. */
