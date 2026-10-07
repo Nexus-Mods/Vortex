@@ -67,7 +67,10 @@ describe("ModsTableSwitch", () => {
     const [first, second] = bodyRows(screen.getByRole("grid"));
     expect(cellText(first)).toContain("Alpha");
     expect(cellText(second)).toContain("Beta");
-    expect(within(first).getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
+    expect(within(first).getByRole("checkbox", { name: "{{name}} enabled" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
   });
 
   it("offers the preset views, showing all the mods to begin with", () => {
@@ -190,7 +193,7 @@ describe("ModsTableSwitch", () => {
       const onSetModsEnabled = renderSwitch({ a: mod("a", "Alpha", true) });
 
       const [row] = bodyRows(screen.getByRole("grid"));
-      await userEvent.click(within(row).getByRole("checkbox"));
+      await userEvent.click(within(row).getByRole("checkbox", { name: "{{name}} enabled" }));
 
       expect(onSetModsEnabled).toHaveBeenCalledWith(["a"], false);
     });
@@ -272,7 +275,7 @@ describe("ModsTableSwitch", () => {
     it("shows the installation time and collection columns by default", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      expect(headers()).toEqual(["Name", "Status", "Collection", "Installation time"]);
+      expect(headers()).toEqual(["Name", "Collection", "Installation time", "Status"]);
     });
 
     it("adds a column chosen from the display options", async () => {

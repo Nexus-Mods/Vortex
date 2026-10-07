@@ -74,12 +74,13 @@ describe("useModsTableColumns", () => {
   });
 
   // As the legacy table orders its attributes; the first column stays first.
-  it("orders the toggleable columns by position, after the ones always shown", () => {
+  it("orders the toggleable columns by position, between the fixed and the sticky ones", () => {
     const store = makeModsTableStore();
     const wrapper = ({ children }: { children: ReactNode }) => (
       <Provider store={store}>{children}</Provider>
     );
     const columns = [
+      column("status", { sticky: "end" }),
       column("late", { isToggleable: true, position: 110 }),
       column("name", { position: 200 }),
       column("unplaced", { isToggleable: true }),
@@ -95,6 +96,7 @@ describe("useModsTableColumns", () => {
       "unplaced",
       "tied",
       "late",
+      "status",
     ]);
     expect(result.current.toggles.map(({ id }) => id)).toEqual([
       "early",

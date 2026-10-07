@@ -9,6 +9,7 @@ import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
 import { TableSpacer } from "./TableSpacer";
 import { useTableGroupBackdrops } from "./useTableGroupBackdrops.hook";
+import { useTableSelection } from "./useTableSelection.hook";
 import { useTableSort } from "./useTableSort.hook";
 import { useTableVirtualizer } from "./useTableVirtualizer.hook";
 
@@ -36,8 +37,17 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   toolbar,
   defaultSort,
   className,
+  selectable = false,
+  getRowLabel,
 }: ITableProps<T, G>) => {
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
+
+  // Each row once, though a row in two groups shows in both.
+  const rowIds = useMemo(
+    () => [...new Set((rows ?? groups?.flatMap((group) => group.rows) ?? []).map(getRowId))],
+    [getRowId, groups, rows],
+  );
+  const selection = useTableSelection(rowIds);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggle = (groupId: string) =>
@@ -77,6 +87,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
             key: `${group.id}:${getRowId(row)}`,
             row,
             level: 2,
+            tint: group.image,
           }),
         ),
       ];
@@ -110,7 +121,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-height": `${GROUP_ROW_HEIGHT}px`,
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           gridTemplateColumns: [
-            "var(--nxm-table-gutter)",
+            "var(--nxm-table-gutter-start)",
             ...columns.map((column) => column.width ?? DEFAULT_COLUMN_WIDTH),
             "var(--nxm-table-gutter)",
           ].join(" "),
@@ -119,7 +130,13 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       onBlur={virtual.onBlur}
       onFocus={virtual.onFocus}
     >
-      <TableHeader columns={columns} sort={sort} toolbar={toolbar} onSort={toggleSort} />
+      <TableHeader
+        columns={columns}
+        checkbox={selectable ? selection.header : undefined}
+        sort={sort}
+        toolbar={toolbar}
+        onSort={toggleSort}
+      />
 
       {/* Always rendered, at the top of the rows: where the virtualiser measures from. */}
       <div className="nxm-table-spacer" ref={virtual.startRef} role="presentation" />
@@ -153,6 +170,13 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 level={item.level}
                 row={item.row}
                 rowIndex={index + headRows + 1}
+                sortedColumnId={sort?.columnId}
+                checkbox={
+                  selectable
+                    ? selection.row(getRowId(item.row), getRowLabel?.(item.row))
+                    : undefined
+                }
+                tint={item.tint}
               />
             )}
           </Fragment>

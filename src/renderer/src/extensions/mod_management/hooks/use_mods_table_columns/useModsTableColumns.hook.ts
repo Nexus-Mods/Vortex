@@ -33,13 +33,11 @@ const isDefaultVisible = (column: IModsTableColumn) => column.isDefaultVisible ?
 const byPosition = (a: IModsTableColumn, b: IModsTableColumn) =>
   (a.position ?? 100) - (b.position ?? 100);
 
-/**
- * The columns that can't be hidden, as given, then the rest in the legacy table's order.
- * The first stays first, since a group's row puts its collapse button there.
- */
+/** The fixed columns, then the toggleable ones in the legacy table's order, then any sticky one. */
 const ordered = (columns: IModsTableColumn[]) => [
-  ...columns.filter((column) => !column.isToggleable),
+  ...columns.filter((column) => !column.isToggleable && !column.sticky),
   ...columns.filter((column) => column.isToggleable).sort(byPosition),
+  ...columns.filter((column) => column.sticky),
 ];
 
 /** The columns the user has chosen to show, and the toggles to choose them with. */

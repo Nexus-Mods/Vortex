@@ -1,10 +1,9 @@
-import { mdiAccount, mdiChevronRight } from "@mdi/js";
+import { mdiAccount } from "@mdi/js";
 import React, { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
 import { Switch } from "@/ui/components/form/switch/Switch";
-import { Icon } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Table } from "@/ui/components/table/Table";
 import type { ITableSort } from "@/ui/components/table/Table.types";
@@ -98,14 +97,6 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
         sort: (a, b) => a.name.localeCompare(b.name),
         cell: ({ mod, name }) => (
           <>
-            {/* Where the row's expand button will go; for show until rows have something to expand. */}
-            <span
-              aria-hidden={true}
-              className="flex size-5 shrink-0 items-center justify-center text-translucent-weak"
-            >
-              <Icon path={mdiChevronRight} size="sm" />
-            </span>
-
             <Image
               alt=""
               className="ml-2 h-5 rounded-sm"
@@ -150,6 +141,7 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
         id: "status",
         header: t("Status"),
         width: "42px",
+        sticky: "end",
         cell: ({ mod, name }) => (
           <Switch
             aria-label={t("{{name}} enabled", { name })}
@@ -197,6 +189,8 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
     columns: visibleColumns,
     getRowId: ({ mod }: IModRow) => mod.id,
     label: t("Mods"),
+    selectable: true,
+    getRowLabel: ({ name }: IModRow) => name,
     defaultSort: BY_NAME,
   };
 

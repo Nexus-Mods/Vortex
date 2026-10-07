@@ -2,6 +2,7 @@ import React from "react";
 
 import type { ITableColumn, ITableGroup } from "./Table.types";
 import { TableCell } from "./TableCell";
+import { type ITableCheckboxProps, TableCheckbox } from "./TableCheckbox";
 
 interface ITableRowProps<T, G extends ITableGroup<T>> {
   /** The table's columns, each rendering one of the row's cells. */
@@ -14,6 +15,12 @@ interface ITableRowProps<T, G extends ITableGroup<T>> {
   level?: number;
   /** The item the row shows, passed to each column's cell. */
   row: T;
+  /** Its group's picture, for a sticky cell to tint itself with. */
+  tint?: string;
+  /** Its checkbox, at the start of its first cell, when rows can be selected. */
+  checkbox?: ITableCheckboxProps;
+  /** The column the rows are sorted by, whose cell stands out. */
+  sortedColumnId?: string;
 }
 
 /** One item's row: a cell per column, each a subgrid track of the table. */
@@ -23,16 +30,27 @@ export const TableRow = <T, G extends ITableGroup<T>>({
   level,
   row,
   rowIndex,
+  checkbox,
+  sortedColumnId,
+  tint,
 }: ITableRowProps<T, G>) => (
   <div
     aria-level={level}
     aria-rowindex={rowIndex}
+    aria-selected={checkbox?.checked}
     className="nxm-table-row"
     data-index={index}
     role="row"
   >
-    {columns.map((column) => (
-      <TableCell align={column.align} key={column.id}>
+    {columns.map((column, index) => (
+      <TableCell
+        align={column.align}
+        key={column.id}
+        sorted={column.id === sortedColumnId}
+        sticky={column.sticky}
+        tint={column.sticky ? tint : undefined}
+      >
+        {index === 0 && !!checkbox && <TableCheckbox {...checkbox} />}
         {column.cell(row)}
       </TableCell>
     ))}

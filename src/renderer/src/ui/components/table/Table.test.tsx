@@ -39,8 +39,39 @@ describe("Table", () => {
     renderTable();
 
     expect(screen.getByRole("grid").style.gridTemplateColumns).toBe(
-      "var(--nxm-table-gutter) minmax(280px, 1fr) 80px var(--nxm-table-gutter)",
+      "var(--nxm-table-gutter-start) minmax(280px, 1fr) 80px var(--nxm-table-gutter)",
     );
+  });
+
+  it("marks a sticky column's cells, header and rows alike", () => {
+    render(
+      <Table
+        columns={[COLUMNS[0], { ...COLUMNS[1], sticky: "end" }]}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const stuck = document.querySelectorAll('[data-sticky="end"]');
+    expect(stuck).toHaveLength(ROWS.length + 1);
+    expect(stuck[0]).toHaveTextContent("Size");
+  });
+
+  // A sticky column fades what passes under it, so the table's edge needn't.
+  it("fades its right edge only without a sticky column", () => {
+    const { rerender } = renderTable();
+    expect(document.querySelector(".nxm-table-edge")).not.toBeNull();
+
+    rerender(
+      <Table
+        columns={[COLUMNS[0], { ...COLUMNS[1], sticky: "end" }]}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+    expect(document.querySelector(".nxm-table-edge")).toBeNull();
   });
 
   it("renders each cell from its column, in column order", () => {
@@ -68,6 +99,18 @@ describe("Table sorted by a column", () => {
       .getAllByRole("row")
       .slice(1)
       .map((row) => within(row).getAllByRole("gridcell")[0].textContent);
+
+  it("marks the sorted column's cells, and only once a sort is chosen", async () => {
+    render(<Table columns={SORTABLE} getRowId={(row) => row.id} label="Files" rows={ROWS} />);
+
+    const sortedCells = () => document.querySelectorAll(".nxm-table-row [data-sorted]");
+    expect(sortedCells()).toHaveLength(0);
+
+    await userEvent.click(screen.getByRole("button", { name: "Name" }));
+
+    expect(sortedCells()).toHaveLength(ROWS.length);
+    expect([...sortedCells()].map((cell) => cell.textContent)).toEqual(["Alpha", "Beta"]);
+  });
 
   it("makes a sortable header a button, and sorts by it from the default", async () => {
     render(
@@ -110,6 +153,53 @@ describe("Table sorted by a column", () => {
   });
 });
 
+describe("Table with selectable rows", () => {
+  const renderSelectable = () =>
+    render(
+      <Table
+        selectable
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        getRowLabel={(row) => row.name}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+  const headerCheckbox = () => within(screen.getAllByRole("columnheader")[0]).getByRole("checkbox");
+
+  const rowCheckbox = (index: number) =>
+    within(screen.getAllByRole("row")[index + 1]).getByRole("checkbox");
+
+  it("has no checkboxes unless its rows are selectable", () => {
+    renderTable();
+
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+  });
+
+  it("selects a row from its checkbox, leaving the header's part-ticked", async () => {
+    renderSelectable();
+
+    await userEvent.click(rowCheckbox(0));
+
+    expect(screen.getAllByRole("row")[1]).toHaveAttribute("aria-selected", "true");
+    expect(screen.getAllByRole("row")[2]).toHaveAttribute("aria-selected", "false");
+    expect(headerCheckbox()).toHaveAttribute("aria-checked", "mixed");
+  });
+
+  it("selects every row from the header's checkbox, and clears them again", async () => {
+    renderSelectable();
+
+    await userEvent.click(headerCheckbox());
+    expect(rowCheckbox(0)).toHaveAttribute("aria-checked", "true");
+    expect(rowCheckbox(1)).toHaveAttribute("aria-checked", "true");
+
+    await userEvent.click(headerCheckbox());
+    expect(rowCheckbox(0)).toHaveAttribute("aria-checked", "false");
+    expect(headerCheckbox()).toHaveAttribute("aria-checked", "false");
+  });
+});
+
 describe("Table with a toolbar", () => {
   it("puts it in the head above the header row, which counts it among the rows", () => {
     render(
@@ -147,6 +237,25 @@ describe("Table with groups", () => {
     render(
       <Table columns={GROUPED_COLUMNS} getRowId={(row) => row.id} groups={GROUPS} label="Files" />,
     );
+
+  // Its solid background would hide the group's tint, so it draws its own.
+  it("tints a sticky column's cells with their group's picture", () => {
+    render(
+      <Table
+        columns={[GROUPED_COLUMNS[0], { ...GROUPED_COLUMNS[1], sticky: "end" }]}
+        getRowId={(row) => row.id}
+        groups={[{ ...GROUPS[0], image: "first.png" }, GROUPS[1]]}
+        label="Files"
+      />,
+    );
+
+    const tinted = [...document.querySelectorAll('[data-sticky="end"]')].filter((cell) =>
+      cell.querySelector(".nxm-table-cell-tint"),
+    );
+    // The first group's row and its two rows; not the header, nor the second group's.
+    expect(tinted).toHaveLength(3);
+    expect(document.querySelectorAll(".nxm-table-cell-tint")).toHaveLength(3);
+  });
 
   it("is a treegrid of group rows, each above its own rows, a row in two groups in both", () => {
     renderGrouped();

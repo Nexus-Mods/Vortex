@@ -31,6 +31,8 @@ export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   width?: TableColumnWidth;
   /** Where the header and cells sit in the column. Default `start`. */
   align?: "start" | "end";
+  /** `end` keeps the last column at the right of the view while the columns overflow. */
+  sticky?: "end";
   /** Makes the column sortable: compares two rows for A to Z, as `Array.sort` does. */
   sort?: (a: T, b: T) => number;
 }
@@ -56,6 +58,10 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   defaultSort?: ITableSort;
   /** Classes for the table's grid element. */
   className?: string;
+  /** Lets rows be selected, each from a checkbox at its start, every row from the header's. */
+  selectable?: boolean;
+  /** A row's name, for its checkbox. */
+  getRowLabel?: (row: T) => string;
 } & (
   | {
       /** The rows, ungrouped. */
@@ -79,6 +85,8 @@ export type TableItem<T, G> =
       row: T;
       /** 2 under a group, unset in a flat grid. */
       level?: number;
+      /** The picture of the group it's under, which tints it. */
+      tint?: string;
     }
   | {
       kind: "group";
