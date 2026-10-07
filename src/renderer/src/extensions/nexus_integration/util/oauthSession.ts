@@ -102,8 +102,9 @@ function refresh(api: IExtensionApi, current: IOAuthCredentials): Promise<string
 /**
  * The access token to send, or undefined when not logged in through OAuth. Refreshes ahead of
  * expiry; a refresh that fails for a passing reason (offline, 5xx) hands back the current token
- * and lets the request find out. Pass the token a 401 came back for to force a refresh while it
- * is still the current one; a refused refresh then rejects, after signing the user out.
+ * and lets the request find out, and a refused one hands back undefined once the user is signed
+ * out. Pass the token a 401 came back for to force a refresh while it is still the current one;
+ * a refused refresh then rejects, after signing the user out.
  */
 export async function getAccessToken(
   api: IExtensionApi,
@@ -124,10 +125,15 @@ export async function getAccessToken(
   try {
     return await refresh(api, current);
   } catch (err) {
-    log("info", "OAuth refresh failed, sending the current token", {
-      message: getErrorMessage(err),
-    });
-    return current.token;
+    const latest = credentialsFromState(api);
+    log(
+      "info",
+      latest === undefined
+        ? "OAuth refresh refused, sending no token"
+        : "OAuth refresh failed, sending the current token",
+      { message: getErrorMessage(err) },
+    );
+    return latest?.token;
   }
 }
 
