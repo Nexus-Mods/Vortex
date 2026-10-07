@@ -41,7 +41,7 @@ jobs:
           unzip -q awscliv2.zip
 
       - name: Upload to R2
-        run: ./aws/aws s3 cp .lint-staging/ s3://vortex-reports/data/lint/ --recursive --endpoint-url "${{ vars.NEXUS_VORTEX_REPORTS_R2_ENDPOINT }}"
+        run: ./aws/dist/aws s3 cp .lint-staging/ s3://vortex-reports/data/lint/ --recursive --endpoint-url "${{ vars.NEXUS_VORTEX_REPORTS_R2_ENDPOINT }}"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.NEXUS_VORTEX_REPORTS_R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.NEXUS_VORTEX_REPORTS_R2_SECRET_ACCESS_KEY }}
