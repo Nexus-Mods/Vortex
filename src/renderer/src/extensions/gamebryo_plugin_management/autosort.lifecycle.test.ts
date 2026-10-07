@@ -15,9 +15,13 @@ import { startActivity, stopActivity } from "../../actions/session";
 import { flushAsync } from "../../test-utils/async";
 import { makeLootPluginInterface, makePlugin } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
+import type { IFakeLoot, ILootHarness } from "../../test-utils/harnessTypes";
 import { setPluginList } from "./actions/plugins";
 import LootInterface from "./autosort";
 import { createLootMock, downloadMasterlistMock } from "./lootMocks";
+import type { IPluginsLoot } from "./types/IPlugins";
+import { lootErrorReporter, LootPhase } from "./util/LootErrorReporter";
+import { SpanAttribute } from "./util/spanAttributes";
 
 // the five seams the autosort suites share; each factory delegates to lootMocks so the
 // replacement behavior is arranged per test through makeLoot
@@ -52,6 +56,162 @@ describe("LootInterface libloot lifecycle", () => {
     expect(createLootMock).toHaveBeenCalledBefore(downloadMasterlistMock);
     expect(downloadMasterlistMock).toHaveBeenCalledBefore(harness.loot.loadLists);
     expect(harness.loot.loadLists).toHaveBeenCalledBefore(harness.loot.loadCurrentLoadOrderState);
+  });
+
+  // a game switch only starts LOOT once the previous instance settles, by when the active game
+  // may have changed again
+  test("leaves LOOT unstarted for a game switch that is no longer current", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.emit("gamemode-activated", "othergame");
+    harness.setState((draft) => {
+      draft.settings.profiles.activeProfileId = undefined;
+    });
+
+    harness.emit("gamemode-activated", "skyrimse");
+    await harness.lootInterface.wait();
+
+    expect(createLootMock).not.toHaveBeenCalled();
+  });
+
+  test("leaves LOOT unstarted for a game without a discovered path", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.setState((draft) => {
+      delete draft.settings.gameMode.discovered.skyrimse;
+    });
+
+    // only setTimeout is faked: Bluebird schedules on setImmediate, which flushAsync drains
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+
+    harness.restartHelpers();
+    await flushAsync();
+    // closing the replaced instance is scheduled as the restart starts the new one
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(harness.loot.close).toHaveBeenCalledTimes(1);
+    await harness.lootInterface.wait();
+
+    expect(createLootMock).not.toHaveBeenCalled();
+    expect(harness.errorNotifications).toEqual([]);
+  });
+
+  // a details request carries the game that was active when it was made
+  test("answers no plugin details for a game other than the active one", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.api.store.dispatch(setPluginList({ "one.esp": makePlugin() }));
+
+    const details = await new Promise<IPluginsLoot>((resolve) => {
+      harness.emit("plugin-details", "fallout4", ["one.esp"], resolve);
+    });
+
+    expect(details).toEqual({});
+    expect(harness.loot.getPluginMetadata).not.toHaveBeenCalled();
+  });
+
+  // a clean exit or a signal is no error to runExecutable, so whether the worker was closed is
+  // what tells an end from a death
+  describe("when the worker ends", () => {
+    // restarts LOOT on a worker that ends once the returned callback runs
+    function startWorker(
+      harness: ILootHarness,
+      create: () => Promise<IFakeLoot>,
+      exit: { code: number | null; signal: NodeJS.Signals | null },
+    ) {
+      let endWorker: (() => void) | undefined;
+      harness.setRunProcess(
+        (options) =>
+          new Promise<void>((resolve) => {
+            endWorker = () => {
+              options.onExit?.(exit.code, exit.signal);
+              resolve();
+            };
+          }),
+      );
+      createLootMock.mockImplementationOnce((...args) => {
+        const onFork = args[5];
+        onFork?.("async.js", ["loot-ipc"]);
+        return create();
+      });
+      const report = vi.spyOn(lootErrorReporter, "report");
+      onTestFinished(() => {
+        report.mockRestore();
+      });
+      harness.restartHelpers();
+      // the span context of each worker death reported
+      const workerDeaths = () =>
+        report.mock.calls
+          .filter(
+            ([, err, phase]) => phase === LootPhase.Worker && err.data.kind === "loot:process-died",
+          )
+          .map(([, , , options]) => options?.context);
+      return { workerDeaths, endWorker: () => endWorker?.() };
+    }
+
+    const diesOnInit = () =>
+      Promise.reject(
+        Object.assign(new Error("LOOT process died"), { name: "RemoteDied", call: "init" }),
+      );
+
+    test("reports the signal that ended a worker it did not close", async ({ makeLoot }) => {
+      const harness = await makeLoot(LootInterface);
+      const { workerDeaths, endWorker } = startWorker(harness, diesOnInit, {
+        code: null,
+        signal: "SIGKILL",
+      });
+      await vi.waitFor(() => expect(createLootMock).toHaveBeenCalled());
+
+      endWorker();
+
+      await vi.waitFor(() =>
+        expect(workerDeaths()[0]).toMatchObject({ [SpanAttribute.LootExitSignal]: "SIGKILL" }),
+      );
+    });
+
+    test("reports the exit code of a worker it did not close", async ({ makeLoot }) => {
+      const harness = await makeLoot(LootInterface);
+      const { workerDeaths, endWorker } = startWorker(harness, diesOnInit, {
+        code: 0,
+        signal: null,
+      });
+      await vi.waitFor(() => expect(createLootMock).toHaveBeenCalled());
+
+      endWorker();
+
+      await vi.waitFor(() =>
+        expect(workerDeaths()[0]).toMatchObject({ [SpanAttribute.LootExitCode]: 0 }),
+      );
+    });
+
+    test("starts LOOT again after a worker it did not close ends", async ({ makeLoot }) => {
+      const harness = await makeLoot(LootInterface);
+      const { endWorker } = startWorker(harness, diesOnInit, { code: 0, signal: null });
+      await vi.waitFor(() => expect(createLootMock).toHaveBeenCalled());
+
+      endWorker();
+
+      await vi.waitFor(() => expect(createLootMock).toHaveBeenCalledTimes(2));
+    });
+
+    test("does not report a worker it closed", async ({ makeLoot }) => {
+      const harness = await makeLoot(LootInterface);
+      harness.loot.isClosed.mockReturnValue(true);
+      const { workerDeaths, endWorker } = startWorker(
+        harness,
+        () => Promise.resolve(harness.loot),
+        { code: 0, signal: null },
+      );
+      await vi.waitFor(() => expect(createLootMock).toHaveBeenCalled());
+      await harness.lootInterface.wait();
+
+      endWorker();
+      await flushAsync();
+
+      expect(workerDeaths()).toEqual([]);
+      expect(createLootMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   test("closes the replaced loot instance after its grace period", async ({ makeLoot }) => {

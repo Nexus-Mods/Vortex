@@ -282,7 +282,7 @@ catalogs:
       specifier: 0.13.4
       version: 0.13.4
     '@nexusmods/nexus-api':
-      specifier: github:Nexus-Mods/node-nexus-api#da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+      specifier: github:Nexus-Mods/node-nexus-api#c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       version: 1.7.3
     '@nosferatu500/react-sortable-tree':
       specifier: 4.4.0
@@ -696,8 +696,8 @@ catalogs:
       specifier: 4.17.23
       version: 4.17.23
     loot:
-      specifier: github:Nexus-Mods/node-loot#ef39d71524fdd349743d0c5e51c453f5437ee618
-      version: 7.0.0
+      specifier: github:Nexus-Mods/node-loot#44306bda0dd9c54e1e38c8ab217afedffd4510aa
+      version: 7.0.1
     lru-cache:
       specifier: 11.2.7
       version: 11.2.7
@@ -720,7 +720,7 @@ catalogs:
       specifier: github:Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
       version: 0.9.3
     nexus-api:
-      specifier: github:Nexus-Mods/node-nexus-api#da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+      specifier: github:Nexus-Mods/node-nexus-api#c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       version: 1.7.3
     node-7z:
       specifier: github:Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
@@ -1997,7 +1997,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2114,7 +2114,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2385,7 +2385,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2533,7 +2533,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../../packages/vortex-api
@@ -2648,7 +2648,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -3563,7 +3563,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/3298c42e69e3220dc39694bc2f610c077c3e213a
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -3593,7 +3593,7 @@ importers:
         version: 4.17.23
       nexus-api:
         specifier: 'catalog:'
-        version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d'
+        version: '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e'
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -3844,7 +3844,7 @@ importers:
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../vortex-api
@@ -3955,7 +3955,7 @@ importers:
         version: 7.58.9(@types/node@24.12.2)
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@types/react':
         specifier: '18'
         version: 18.3.31
@@ -4027,7 +4027,7 @@ importers:
         version: 0.13.4
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nosferatu500/react-sortable-tree':
         specifier: 'catalog:'
         version: 4.4.0(react-dnd@14.0.5)(react-dom@18.3.1)(react@18.3.1)
@@ -4578,7 +4578,7 @@ importers:
         version: 0.13.4
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+        version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e
       '@nosferatu500/react-sortable-tree':
         specifier: 'catalog:'
         version: 4.4.0(react-dnd@14.0.5)(react-dom@18.3.1)(react@18.3.1)
@@ -5068,7 +5068,7 @@ importers:
     optionalDependencies:
       loot:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa
 
   src/shared:
     dependencies:
@@ -6287,8 +6287,8 @@ packages:
     resolution: {integrity: sha512-XneP+V2eHHXlp1P0HZm7aT3IZmv0u4Igav/iAgLPfZbpO6T0wOaia4joAK531TpqHtz7z2EfQXpiBpBKOwuEeg==}
     engines: {node: '>=22'}
 
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d':
-    resolution: {gitHosted: true, integrity: sha512-xqtQexWCBdJsAov+jwyLHk9ioy58b1mqOfduxKSXGWQy2yerQRj53Mp6Db9XfzYCRPWYM5d/FeJQb78dUN3Sxw==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d}
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e':
+    resolution: {gitHosted: true, integrity: sha512-56YAtfWTzoSxHKUyRI4VaDxLrw9410BSy10TLrkeIHx/lE2yyh0TNN/idegKCPdjgV9xHO2YLsgOI2h3yWr6FQ==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e}
     version: 1.7.3
 
   '@nosferatu500/react-dnd-scrollzone@2.0.10':
@@ -10554,9 +10554,9 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618:
-    resolution: {gitHosted: true, integrity: sha512-TVAeIsWk9jfOI6W9kRP7DcDMh2sL28WyAHzGLHh7CZLrKZQcvjLPYzv/4az3IThJ5OIR1oNmutf8O4wIv3RLvA==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618}
-    version: 7.0.0
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa:
+    resolution: {gitHosted: true, integrity: sha512-Rg/vyTt218kmIg3qAunng5DQVCXPqMjMo2wkHLZ3VHeKpiQEJ5Pn7z1I3B8VHhLvRrLLp8VuUhMpZkZyxZIU1Q==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa}
+    version: 7.0.1
 
   lowercase-keys@3.0.0:
     resolution: {integrity: sha512-ozCC6gdQ+glXOQsveKD0YsDy8DSQFjDTz4zyzEHNV5+JP5D62LmfDZ6o1cycFx9ouG940M5dE8C8CTewdj2YWQ==}
@@ -14428,7 +14428,7 @@ snapshots:
     dependencies:
       node-gyp-build: 4.8.4
 
-  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/da9b8eda8a3f381f04d87c7290595066ccbdbc5d':
+  '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/c5eda4a46cafb5dc8000ed2a7986b22132625e2e':
     dependencies:
       form-data: 4.0.6
       jsonwebtoken: 9.0.3
@@ -18697,7 +18697,7 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618:
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa:
     dependencies:
       autogypi: 0.2.2
       lodash: 4.17.23

@@ -19,7 +19,7 @@ import getVortexPath from "../../util/getVortexPath";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
 import { webpackRequireHack } from "../../util/webpack-hacks";
-import { currentGameDiscovery, discoveryByGame } from "../gamemode_management/selectors";
+import { discoveryByGame } from "../gamemode_management/selectors";
 import { clearPendingPluginSort } from "../mod_management/actions/transactions";
 import { activeGameId, activeProfile } from "../profile_management/selectors";
 /* eslint-disable */
@@ -44,7 +44,7 @@ import { toLootError } from "./util/lootErrors";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 import { listPaths, MetadataLists } from "./util/metadataLists";
 import { explainMasterNotLoaded } from "./util/missingMasters";
-import { SpanAttribute } from "./util/spanAttributes";
+import { SpanAttribute, type SpanAttributes } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
@@ -407,16 +407,6 @@ class LootInterface {
     }
   }
 
-  private get gamePath() {
-    const { store } = this.mExtensionApi;
-    const discovery = currentGameDiscovery(store.getState());
-    if (discovery === undefined) {
-      // no game selected
-      return undefined;
-    }
-    return discovery.path;
-  }
-
   private get dataPath() {
     const { store } = this.mExtensionApi;
     const gameId = activeGameId(store.getState());
@@ -597,15 +587,13 @@ class LootInterface {
     });
 
     const { game, loot }: ILootRef = await oldInitProm;
-    if (gameMode === game) {
-      this.mInitPromise = oldInitProm;
+    // unchanged, or a later switch (or none) replaced this one while the previous instance settled
+    if (gameMode === game || gameMode !== activeGameId(api.getState())) {
       onRes({ game, loot });
-      // no change
       return;
-    } else {
-      this.startStopLoot(gameMode, loot);
-      onRes(await this.mInitPromise);
     }
+    this.startStopLoot(gameMode, loot);
+    onRes(await this.mInitPromise);
   };
 
   private startStopLoot(gameMode: string, loot: LootAsync | undefined) {
@@ -632,7 +620,8 @@ class LootInterface {
       this.onGameModeChanged(api, gameId);
       res = await this.mInitPromise;
     }
-    return res;
+    // a switch only starts LOOT for the active game
+    return res.game === gameId ? res : { game: gameId, loot: undefined };
   }
 
   private pluginDetails = async (
@@ -843,6 +832,12 @@ class LootInterface {
 
   // tslint:disable-next-line:member-ordering
   private init = Bluebird.method(async (gameMode: string) => {
+    // read before any await, so it is the path of the game being started for
+    const gamePath = discoveryByGame(this.mExtensionApi.getState(), gameMode)?.path;
+    if (gamePath === undefined) {
+      log("info", "not starting LOOT for a game that is not discovered", { gameMode });
+      return { game: gameMode, loot: undefined };
+    }
     const localPath = pluginPath(gameMode);
     try {
       await fs.ensureDirAsync(localPath);
@@ -852,16 +847,16 @@ class LootInterface {
       });
     }
 
-    let loot: LootAsync;
+    let loot: LootAsync | undefined;
 
     try {
       loot = await getLootAsync().create(
         this.convertGameId(gameMode, false),
-        this.gamePath,
+        gamePath,
         localPath,
         "en",
         this.logCB,
-        this.fork,
+        (modulePath, args) => this.fork(modulePath, args, () => loot?.isClosed() === true),
       );
     } catch (rawErr) {
       const err = toLootError(rawErr);
@@ -891,7 +886,8 @@ class LootInterface {
     return { game: gameMode, loot };
   });
 
-  private fork = (modulePath: string, args: string[]) => {
+  private fork = (modulePath: string, args: string[], wasClosed: () => boolean) => {
+    let exit: { code: number | null; signal: NodeJS.Signals | null } | undefined;
     const attempt = (retries: number): Bluebird<void> => {
       return (this.mExtensionApi as any)
         .runExecutable(process.execPath, [modulePath].concat(args || []), {
@@ -900,6 +896,9 @@ class LootInterface {
           expectSuccess: true,
           env: {
             ELECTRON_RUN_AS_NODE: "1",
+          },
+          onExit: (code: number | null, signal: NodeJS.Signals | null) => {
+            exit = { code, signal };
           },
         })
         .catch((err: Error) => {
@@ -916,33 +915,41 @@ class LootInterface {
     attempt(5)
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
+      .then(() => {
+        // a clean exit or a signal is no error to runExecutable, yet a worker not closed has died
+        if (exit !== undefined && !wasClosed()) {
+          this.workerDied(new VortexError("LOOT process ended", { kind: "loot:process-died" }), {
+            [SpanAttribute.LootExitCode]: exit.code ?? undefined,
+            [SpanAttribute.LootExitSignal]: exit.signal ?? undefined,
+          });
+        }
+      })
       .catch((err) => {
         log("warn", "LOOT process died", { error: err.message });
-        const restarting = this.mRestarts > 0;
         // the exit code and the worker's last words are all this side ever learns about the crash
-        lootErrorReporter.report(
-          this.mExtensionApi,
+        this.workerDied(
           new VortexError(err.message, { kind: "loot:process-died" }, { cause: err }),
-          LootPhase.Worker,
-          {
-            recovering: restarting,
-            context: {
-              [SpanAttribute.LootRestartsLeft]: this.mRestarts,
-              [SpanAttribute.LootExitCode]: err.exitCode,
-            },
-          },
+          { [SpanAttribute.LootExitCode]: err.exitCode },
         );
-        if (restarting) {
-          const gameMode = activeGameId(this.mExtensionApi.store.getState());
-          --this.mRestarts;
-          // the handle outlives the worker and answers isClosed() with false, so drop it here
-          this.mLoot = undefined;
-          if (knownGame(gameMode)) {
-            this.mInitPromise = this.init(gameMode);
-          }
-        }
       });
   };
+
+  private workerDied(err: VortexError, context: SpanAttributes) {
+    const restarting = this.mRestarts > 0;
+    lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Worker, {
+      recovering: restarting,
+      context: { [SpanAttribute.LootRestartsLeft]: this.mRestarts, ...context },
+    });
+    if (restarting) {
+      const gameMode = activeGameId(this.mExtensionApi.store.getState());
+      --this.mRestarts;
+      // the handle outlives the worker and answers isClosed() with false, so drop it here
+      this.mLoot = undefined;
+      if (knownGame(gameMode)) {
+        this.mInitPromise = this.init(gameMode);
+      }
+    }
+  }
 
   private logCB = (level: number, message: string) => {
     log(this.logLevel(level) as any, message);

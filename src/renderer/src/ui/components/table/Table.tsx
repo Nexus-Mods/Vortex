@@ -9,6 +9,7 @@ import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
 import { TableSpacer } from "./TableSpacer";
 import { useTableGroupBackdrops } from "./useTableGroupBackdrops.hook";
+import { useTableSort } from "./useTableSort.hook";
 import { useTableVirtualizer } from "./useTableVirtualizer.hook";
 
 // Fixed, so the virtualiser knows every row's height without measuring; table.css reads them.
@@ -30,8 +31,10 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowId,
   label,
   toolbar,
+  defaultSort,
   className,
 }: ITableProps<T, G>) => {
+  const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggle = (groupId: string) =>
@@ -46,7 +49,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   // Every row in order, a group's under it while it's open, as the virtualiser counts them.
   const items = useMemo<Array<TableItem<T, G>>>(() => {
     if (groups === undefined) {
-      return rows.map((row) => ({ kind: "row", key: getRowId(row), row }));
+      return sortRows(rows).map((row) => ({ kind: "row", key: getRowId(row), row }));
     }
 
     return groups.flatMap((group): Array<TableItem<T, G>> => {
@@ -65,7 +68,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
       return [
         groupItem,
-        ...group.rows.map(
+        ...sortRows(group.rows).map(
           (row): TableItem<T, G> => ({
             kind: "row",
             key: `${group.id}:${getRowId(row)}`,
@@ -75,7 +78,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         ),
       ];
     });
-  }, [collapsed, getRowId, groups, rows]);
+  }, [collapsed, getRowId, groups, rows, sortRows]);
 
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
   const getItemSize = useCallback(
@@ -113,7 +116,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       onBlur={virtual.onBlur}
       onFocus={virtual.onFocus}
     >
-      <TableHeader columns={columns} toolbar={toolbar} />
+      <TableHeader columns={columns} sort={sort} toolbar={toolbar} onSort={toggleSort} />
 
       {/* Always rendered, at the top of the rows: where the virtualiser measures from. */}
       <div className="nxm-table-spacer" ref={virtual.startRef} role="presentation" />

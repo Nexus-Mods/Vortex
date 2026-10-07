@@ -68,7 +68,8 @@ import { setModEnabled, setModsEnabled } from "../../profile_management/actions/
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
-import { ModsToolbar } from "../components/ModsToolbar";
+import { ModsTableSwitch } from "../components/mods_table_switch/ModsTableSwitch";
+import { ModsToolbar } from "../components/mods_toolbar/ModsToolbar";
 import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from "../modAttributes";
 import getText from "../texts";
 import type { IInstallOptions } from "../types/IInstallOptions";
@@ -88,7 +89,6 @@ import Author from "./Author";
 import CheckModVersionsButton from "./CheckModVersionsButton";
 import Description from "./Description";
 import InstallArchiveButton from "./InstallArchiveButton";
-import { ModsTableSwitch } from "./ModsTableSwitch";
 import VersionChangelogButton from "./VersionChangelogButton";
 import VersionIconButton from "./VersionIconButton";
 
@@ -442,6 +442,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             </SuperTable>
           }
           mods={this.state.primaryMods}
+          onSetModsEnabled={this.setModsEnabledFromTable}
         />
       );
     }
@@ -1452,6 +1453,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ),
     ).then((updatedModIds: string[]) => this.setModsEnabled(updatedModIds, true));
   };
+
+  // The new table's switches, through the same paths as the legacy table's.
+  private setModsEnabledFromTable = (modIds: string[], enabled: boolean) =>
+    enabled ? this.enableSelected(modIds) : this.disableSelected(modIds);
 
   private disableSelected = (modIds: string[]) => {
     const { mods, modState } = this.props;

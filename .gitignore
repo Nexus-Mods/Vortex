@@ -96,6 +96,7 @@ temp/
 
 # oxlint CI results
 .lint-results.json
+.lint-staging/
 
 # Flatpak
 .flatpak-builder/

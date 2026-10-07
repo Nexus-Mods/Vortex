@@ -12,7 +12,11 @@ import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEve
 import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
-import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type {
+  ILoadOrderGameInfo,
+  IRegisteredLoadOrder,
+  LoadOrder,
+} from "../extensions/file_based_loadorder/types/types";
 import type LootInterface from "../extensions/gamebryo_plugin_management/autosort";
 import type {
   IPlugin,
@@ -79,6 +83,8 @@ export interface IApiHarness {
   dispatched: ITrackedAction[];
   // emit a global event (runs any registered on/onAsync listeners synchronously)
   emit: (event: string, ...args: unknown[]) => void;
+  // emit a global event and await what its listeners return, as production emitAndAwait does
+  emitAndAwait: (event: string, ...args: unknown[]) => Promise<void>;
   // read the live fake state
   getState: () => IState;
   // mutate the state mid-test (to model churn between events)
@@ -98,6 +104,8 @@ export interface IApiHarness {
   showHistoryCalls: string[];
   // api.runExecutable calls, recorded in order (the call is captured, nothing is spawned)
   runExecutableCalls: Array<{ executable: string; args: string[]; options: IRunOptions }>;
+  // configure how a process started through api.runExecutable runs (default: ends at once)
+  setRunProcess: (run: (options: IRunOptions) => Promise<void>) => void;
 }
 
 export interface IDriverHarness extends IApiHarness {
@@ -128,14 +136,13 @@ export interface IGameHarness extends IApiHarness {
 }
 
 /** What a file-based load order test arranges. */
-export interface IFbloHarnessOpts extends IGameHarnessOpts {
-  // whether a game uses FBLO, as UpdateSet asks (defaults to always true)
-  isFBLO?: (gameId: string) => boolean;
-}
+export type IFbloHarnessOpts = IGameHarnessOpts;
 
 export interface IFbloHarness extends IGameHarness {
-  // an UpdateSet constructed against the fake api
-  updateSet: UpdateSet;
+  // register a load order for the harness game, as a game extension's registerLoadOrder does
+  registerLoadOrder: (overrides?: Partial<ILoadOrderGameInfo>) => IRegisteredLoadOrder;
+  // the active profile's load order with that id (its primary when omitted), read back from state
+  loadOrder: (loadOrderId?: string) => LoadOrder;
 }
 
 /** What a gamebryo plugin-management test arranges. */

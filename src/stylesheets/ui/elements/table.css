@@ -77,17 +77,24 @@
     .nxm-table-header {
         height: var(--nxm-table-header-height);
         color: var(--color-translucent-subdued);
+    }
 
-        /* Labels sit a little in from their column, as the design's header buttons do. */
-        .nxm-table-cell {
-            padding-inline: calc(var(--spacing) * 0.5);
-        }
+    /* A header that doesn't sort, in from its column as far as a sort button's label, and free
+       to run past a narrow column into the gap beside it rather than truncate. */
+    .nxm-table-header-label {
+        padding-left: calc(var(--spacing) * 2);
+        white-space: nowrap;
     }
 
     /* Heights come from Table.tsx, which the virtualiser counts on. */
     .nxm-table-row {
         height: var(--nxm-table-row-height);
         color: var(--color-neutral-moderate);
+
+        /* The design's #fff at 3%, under the scale's lowest step. */
+        &:hover {
+            background-color: --alpha(var(--color-white) / 3%);
+        }
     }
 
     .nxm-table-group-row {
@@ -156,6 +163,45 @@
         &:focus-visible {
             outline: 2px solid var(--color-focus-subdued);
         }
+    }
+
+    /* A sortable column's header: its label, and an arrow once it's sorted. */
+    .nxm-table-sort-button {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--spacing) * 1);
+        min-width: 0;
+        height: calc(var(--spacing) * 6);
+        padding-inline: calc(var(--spacing) * 2);
+        border-radius: var(--radius-sm);
+        color: var(--color-translucent-moderate);
+        white-space: nowrap;
+        cursor: pointer;
+        transition-property: color, background-color;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &:hover,
+        &:focus-visible {
+            background-color: var(--color-surface-translucent-mid);
+            color: var(--color-translucent-strong);
+        }
+
+        &:active {
+            background-color: var(--color-surface-translucent-low);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-subdued);
+            outline-offset: 2px;
+        }
+    }
+
+    .nxm-table-sort-icon {
+        flex-shrink: 0;
+        width: calc(var(--spacing) * 3);
+        height: calc(var(--spacing) * 3);
+        color: var(--color-translucent-strong);
     }
 
     .nxm-table-cell {

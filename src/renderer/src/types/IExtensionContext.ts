@@ -456,8 +456,8 @@ export interface IRunOptions {
   // is set but in some cases (e.g. when the target process is run elevated) we don't know
   // the pid so this will be undefined.
   onSpawned?: (pid?: number) => void;
-  // called when the process exits, with its exit code (null when terminated by a signal).
-  onExit?: (code: number | null) => void;
+  // called when the process exits, with its exit code, or null and the signal that terminated it.
+  onExit?: (code: number | null, signal: NodeJS.Signals | null) => void;
 }
 
 /**
@@ -941,6 +941,10 @@ export interface IStateVerifier {
   // if set, delete this element or an ancestor element if this one doesn't
   // match the verifier.
   deleteBroken?: boolean | "parent";
+  // if set, a missing value is filled in (by repair or default) without telling the user, for
+  // values persistence can't keep, such as an empty object. A present but invalid value, a
+  // deleteBroken verifier and a repair that drops the value are still reported.
+  silent?: boolean;
   // if set, this function is called to generate the "repaired" value. The
   // optional `context` carries the surrounding record's key/parent so a repair
   // can recover from identity (e.g. a mod recovering installationPath from its

@@ -1,70 +1,111 @@
 import * as React from "react";
+import { z } from "zod";
 
-import type * as types from "../../../types/api";
-import * as selectors from "../../../util/selectors";
+import { log } from "../../../logging";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IMod } from "../../mod_management/types/IMod";
+import { lastActiveProfileForGame } from "../../profile_management/selectors";
 import { setFBLoadOrder } from "../actions/loadOrder";
-import { findGameEntry } from "../gameSupport";
+import { legacyOrderOwner } from "../adoption";
 import type {
   ICollection,
   ICollectionLoadOrder,
+  ICollectionNamedLoadOrder,
   IGameSpecificInterfaceProps,
 } from "../types/collections";
-import { CollectionGenerateError, CollectionParseError } from "../types/collections";
-import type { ILoadOrderGameInfoExt } from "../types/types";
-import type UpdateSet from "../UpdateSet";
-import { genCollectionLoadOrder, toExtendedLoadOrderEntry } from "../util";
+import {
+  CollectionGenerateError,
+  CollectionParseError,
+  collectionNamedLoadOrderSchema,
+} from "../types/collections";
+import type { IRegisteredLoadOrder, LoadOrder } from "../types/types";
+import { genCollectionLoadOrder } from "../util";
 import LoadOrderCollections from "../views/LoadOrderCollections";
 
 export async function generate(
-  api: types.IExtensionApi,
-  state: types.IState,
-  gameId: string,
-  stagingPath: string,
+  api: IExtensionApi,
+  gameEntries: IRegisteredLoadOrder[],
   modIds: string[],
-  mods: { [modId: string]: types.IMod },
+  // keyed by Vortex mod id
+  mods: Record<string, IMod>,
 ): Promise<ICollectionLoadOrder> {
-  const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
-  if (gameEntry === undefined) {
-    return;
+  if (gameEntries.length === 0) {
+    return undefined;
   }
-
-  let loadOrder;
-  try {
-    const profileId = selectors.lastActiveProfileForGame(api.getState(), gameEntry.gameId);
-    if (profileId === undefined) {
-      throw new CollectionGenerateError("Invalid profile");
+  const profileId = lastActiveProfileForGame(api.getState(), gameEntries[0].gameId);
+  if (profileId === undefined) {
+    throw new CollectionGenerateError("Invalid profile");
+  }
+  const includedMods = modIds.reduce((accum, iter) => {
+    if (mods[iter] !== undefined) {
+      accum[iter] = mods[iter];
     }
-    const includedMods = modIds.reduce((accum, iter) => {
-      if (mods[iter] !== undefined) {
-        accum[iter] = mods[iter];
-      }
-      return accum;
-    }, {});
-    loadOrder = await genCollectionLoadOrder(api, gameEntry, includedMods, profileId);
-  } catch (err) {
-    return Promise.reject(err);
+    return accum;
+  }, {});
+  // keyed by load order id
+  const loadOrders: Record<string, LoadOrder> = {};
+  for (const gameEntry of gameEntries) {
+    loadOrders[gameEntry.loadOrderId] = await genCollectionLoadOrder(
+      api,
+      gameEntry,
+      includedMods,
+      profileId,
+    );
   }
-  return Promise.resolve({ loadOrder });
+  const legacyOwner = legacyOrderOwner(gameEntries);
+  const exported: ICollectionLoadOrder = {
+    loadOrder: legacyOwner === undefined ? [] : loadOrders[legacyOwner.loadOrderId],
+  };
+  const named = gameEntries.filter((gameEntry) => !gameEntry.isPrimary);
+  if (named.length > 0) {
+    exported.fbLoadOrders = named.map((gameEntry) => ({
+      id: gameEntry.loadOrderId,
+      entries: loadOrders[gameEntry.loadOrderId],
+    }));
+  }
+  return exported;
 }
 
-export async function parser(
-  api: types.IExtensionApi,
+const namedLoadOrdersSchema = z.array(collectionNamedLoadOrderSchema).optional();
+
+// A collection's named load orders, validated because the manifest arrives untyped.
+function namedLoadOrdersOf(collection: ICollection): ICollectionNamedLoadOrder[] {
+  const parsed = namedLoadOrdersSchema.safeParse(collection.fbLoadOrders);
+  if (!parsed.success) {
+    throw new CollectionParseError(collection, parsed.error.message);
+  }
+  return parsed.data ?? [];
+}
+
+export function parser(
+  api: IExtensionApi,
+  gameEntries: IRegisteredLoadOrder[],
   gameId: string,
   collection: ICollection,
-  updateSet: UpdateSet,
 ): Promise<void> {
-  const state = api.getState();
-
-  const profileId = selectors.lastActiveProfileForGame(state, gameId);
-  if (profileId === undefined) {
-    return Promise.reject(new CollectionParseError(collection, "Invalid profile id"));
-  }
-
-  updateSet.init(gameId, (collection.loadOrder ?? []).map(toExtendedLoadOrderEntry(api)));
-  api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder));
-  return Promise.resolve(undefined);
+  return Promise.resolve().then(() => {
+    const profileId = lastActiveProfileForGame(api.getState(), gameId);
+    if (profileId === undefined) {
+      throw new CollectionParseError(collection, "Invalid profile id");
+    }
+    const named = namedLoadOrdersOf(collection);
+    api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder));
+    for (const { id, entries } of named) {
+      if (!gameEntries.some((gameEntry) => gameEntry.loadOrderId === id)) {
+        log("warn", "collection carries a load order the game does not register", {
+          gameId,
+          loadOrderId: id,
+        });
+        continue;
+      }
+      api.store.dispatch(setFBLoadOrder(profileId, entries, id));
+    }
+  });
 }
 
-export function Interface(props: IGameSpecificInterfaceProps): JSX.Element {
-  return React.createElement(LoadOrderCollections, props as any, []);
+// The collection page's load order panel, resolving game entries through the given lookup.
+export function collectionInterface(
+  getGameEntry: (gameId: string) => IRegisteredLoadOrder | undefined,
+): (props: IGameSpecificInterfaceProps) => JSX.Element {
+  return (props) => React.createElement(LoadOrderCollections, { ...props, getGameEntry });
 }
