@@ -29,6 +29,11 @@ import { normalize } from "./resolver";
 
 export const defaultChunkConcurrency = 4;
 
+// Received data is written in blocks of about this size rather than per network chunk (16-64 KiB).
+// Each write raises a change event in every watcher of the download folder, the renderer's
+// among them, so per-chunk writes flooded it with ~1000 events a second.
+const WRITE_BATCH_BYTES = 1024 * 1024;
+
 /** @internal */
 export type Checkpoint = {
   etag: string | undefined;
@@ -392,6 +397,31 @@ async function downloadStream(
 
   let remaining = options.expectedRemainingBytes;
 
+  // received but not yet written; dropped on abort, which is safe as checkpoints only count
+  // bytesWritten, so a resume refetches it
+  let pending: Buffer[] = [];
+  let pendingBytes = 0;
+  const flush = async () => {
+    if (pendingBytes === 0) return;
+    const block = Buffer.concat(pending, pendingBytes);
+    pending = [];
+    pendingBytes = 0;
+    try {
+      let offset = 0;
+      while (offset < block.length) {
+        const result = await handle.fd.write(block, offset, block.length - offset, writePosition);
+        if (result.bytesWritten === 0) {
+          throw new Error("write made no progress");
+        }
+        offset += result.bytesWritten;
+        writePosition += result.bytesWritten;
+        if (progress) progress.bytesWritten += result.bytesWritten;
+      }
+    } catch (err) {
+      throw parseError(err, { path: handle.path }, () => `Failed to write to ${handle.path}`);
+    }
+  };
+
   try {
     for await (const data of stream) {
       const buffer = data as Buffer;
@@ -411,15 +441,13 @@ async function downloadStream(
         await consumeTokens(options.rateLimiter, buffer.length, options.abortSignal);
       }
 
-      try {
-        const result = await handle.fd.write(buffer, 0, buffer.length, writePosition);
-
-        if (progress) progress.bytesWritten += result.bytesWritten;
-        writePosition += result.bytesWritten;
-      } catch (err) {
-        throw parseError(err, { path: handle.path }, () => `Failed to write to ${handle.path}`);
+      pending.push(buffer);
+      pendingBytes += buffer.length;
+      if (pendingBytes >= WRITE_BATCH_BYTES) {
+        await flush();
       }
     }
+    await flush();
   } catch (err) {
     if (err instanceof VortexError || isCancellation(err)) throw err;
     throw toNetworkError(stream.requestUrl!, err);
