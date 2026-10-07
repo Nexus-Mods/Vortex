@@ -10,6 +10,7 @@ import { genCollectionsData, parseCollectionsData } from "./collections/collecti
 import { IW3CollectionsData } from "./collections/types";
 import {
   DO_NOT_DEPLOY,
+  IGNORE_CONFLICTS,
   GAME_ID,
   getLoadOrderFilePath,
   LOCKED_PREFIX,
@@ -224,7 +225,7 @@ function main(context: types.IExtensionContext) {
     },
     details: {
       steamAppId: 292030,
-      ignoreConflicts: DO_NOT_DEPLOY,
+      ignoreConflicts: IGNORE_CONFLICTS,
       ignoreDeploy: DO_NOT_DEPLOY,
     },
   });
