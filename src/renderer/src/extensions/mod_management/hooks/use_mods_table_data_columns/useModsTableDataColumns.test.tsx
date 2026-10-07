@@ -16,7 +16,7 @@ vi.mock("../../../gamemode_management/util/modTypeExtensions", () => ({
 
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
-import type { IModRow } from "../../util/modsTableViews";
+import type { IModRow } from "../../util/mods_table_views/modsTableViews";
 import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
 import { useModsTableDataColumns } from "./useModsTableDataColumns.hook";
 

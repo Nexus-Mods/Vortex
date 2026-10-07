@@ -362,5 +362,78 @@ describe("ModsTableSwitch", () => {
       expect(headers()).toContain("Author");
       expect(screen.getByRole("gridcell", { name: "Ada" })).toBeInTheDocument();
     });
+
+    describe("group by", () => {
+      const CATEGORISED = {
+        a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Ada" } }),
+        b: mod("b", "Beta", false),
+      };
+
+      const groupBy = async (option: string) => {
+        await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+        await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
+        await userEvent.click(screen.getByRole("option", { name: option }));
+      };
+
+      const pressedViews = () =>
+        within(screen.getByRole("group", { name: "Views" }))
+          .getAllByRole("button")
+          .map((view) => view.getAttribute("aria-pressed"));
+
+      it("offers none, then each column that can group, in the table's order", async () => {
+        renderSwitch(CATEGORISED);
+
+        await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+        await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
+
+        expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+          "None",
+          "Author",
+          "Archive name",
+          "Category",
+          "Mod type",
+          "Source",
+          "Collection",
+          "Status",
+        ]);
+      });
+
+      it("groups by a column's values, no view selected", async () => {
+        renderSwitch(CATEGORISED);
+
+        await groupBy("Status");
+
+        const rows = bodyRows(screen.getByRole("treegrid"));
+        expect(rows.map(cellText)).toEqual(["Disabled1", "Beta", "Enabled1", "Alpha"]);
+        expect(pressedViews()).toEqual(["false", "false", "false"]);
+      });
+
+      it("selects the view a grouping matches", async () => {
+        renderSwitch(CATEGORISED);
+
+        await groupBy("Author");
+
+        expect(pressedViews()).toEqual(["false", "false", "true"]);
+      });
+
+      it("shows what a view groups by", async () => {
+        renderSwitch(CATEGORISED);
+
+        await showView("Collections");
+        await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+
+        expect(screen.getByRole("button", { name: /Group by/ })).toHaveTextContent("Collection");
+      });
+
+      it("ungroups on reset", async () => {
+        renderSwitch(CATEGORISED);
+
+        await groupBy("Status");
+        await userEvent.click(screen.getByText("Reset to default"));
+
+        expect(screen.getByRole("grid")).toBeInTheDocument();
+        expect(pressedViews()).toEqual(["true", "false", "false"]);
+      });
+    });
   });
 });
