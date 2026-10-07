@@ -456,8 +456,8 @@ export interface IRunOptions {
   // is set but in some cases (e.g. when the target process is run elevated) we don't know
   // the pid so this will be undefined.
   onSpawned?: (pid?: number) => void;
-  // called when the process exits, with its exit code (null when terminated by a signal).
-  onExit?: (code: number | null) => void;
+  // called when the process exits, with its exit code, or null and the signal that terminated it.
+  onExit?: (code: number | null, signal: NodeJS.Signals | null) => void;
 }
 
 /**

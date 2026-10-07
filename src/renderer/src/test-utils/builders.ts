@@ -972,6 +972,7 @@ export function makeApiHarness(
   const historyEntries: IApiHarness["historyEntries"] = [];
   const showHistoryCalls: IApiHarness["showHistoryCalls"] = [];
   const runExecutableCalls: IApiHarness["runExecutableCalls"] = [];
+  let runProcess = (_options: IRunOptions): Promise<void> => Promise.resolve();
 
   const api = {
     getState: () => store.getState(),
@@ -1003,7 +1004,7 @@ export function makeApiHarness(
     },
     runExecutable: (executable: string, args: string[], options: IRunOptions) => {
       runExecutableCalls.push({ executable, args, options });
-      return Promise.resolve();
+      return runProcess(options);
     },
     genMd5Hash: () => Promise.resolve({ md5sum: "test-md5", numBytes: 0 }),
     dismissNotification: () => undefined,
@@ -1067,6 +1068,9 @@ export function makeApiHarness(
     historyEntries,
     showHistoryCalls,
     runExecutableCalls,
+    setRunProcess: (run) => {
+      runProcess = run;
+    },
   };
 }
 
