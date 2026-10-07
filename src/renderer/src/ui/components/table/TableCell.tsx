@@ -9,11 +9,13 @@ interface ITableCellProps {
   children?: ReactNode;
   /** `columnheader` in the header row; `gridcell`, the default, everywhere else. */
   role?: "gridcell" | "columnheader";
+  /** A sortable column header's sort: which way, or `none` while another column is sorted. */
+  ariaSort?: "ascending" | "descending" | "none";
 }
 
 /** A cell in its column's track. Its content truncates itself; the cell doesn't clip. */
-export const TableCell = ({ align, children, role = "gridcell" }: ITableCellProps) => (
-  <div className="nxm-table-cell" data-align={align} role={role}>
+export const TableCell = ({ align, ariaSort, children, role = "gridcell" }: ITableCellProps) => (
+  <div aria-sort={ariaSort} className="nxm-table-cell" data-align={align} role={role}>
     {children}
   </div>
 );

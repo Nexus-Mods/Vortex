@@ -53,6 +53,63 @@ describe("Table", () => {
   });
 });
 
+describe("Table sorted by a column", () => {
+  const SORTABLE: Array<ITableColumn<IRow>> = [
+    {
+      ...COLUMNS[0],
+      groupCell: (group) => group.label,
+      sort: (a, b) => a.name.localeCompare(b.name),
+    },
+    COLUMNS[1],
+  ];
+
+  const names = () =>
+    screen
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => within(row).getAllByRole("gridcell")[0].textContent);
+
+  it("makes a sortable header a button, and sorts by it from the default", async () => {
+    render(
+      <Table
+        columns={SORTABLE}
+        defaultSort={{ columnId: "name", direction: "ascending" }}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={[ROWS[1], ROWS[0]]}
+      />,
+    );
+
+    const [nameHeader, sizeHeader] = screen.getAllByRole("columnheader");
+    expect(nameHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(sizeHeader).not.toHaveAttribute("aria-sort");
+    expect(within(sizeHeader).queryByRole("button")).toBeNull();
+    expect(names()).toEqual(["Alpha", "Beta"]);
+
+    await userEvent.click(within(nameHeader).getByRole("button", { name: "Name" }));
+
+    expect(nameHeader).toHaveAttribute("aria-sort", "descending");
+    expect(names()).toEqual(["Beta", "Alpha"]);
+  });
+
+  it("sorts each group's rows, leaving the groups in their order", () => {
+    render(
+      <Table
+        columns={SORTABLE}
+        defaultSort={{ columnId: "name", direction: "descending" }}
+        getRowId={(row) => row.id}
+        groups={[
+          { id: "first", label: "First", rows: [ROWS[0], ROWS[1]] },
+          { id: "second", label: "Second", rows: [ROWS[0]] },
+        ]}
+        label="Files"
+      />,
+    );
+
+    expect(names()).toEqual(["First", "Beta", "Alpha", "Second", "Alpha"]);
+  });
+});
+
 describe("Table with a toolbar", () => {
   it("puts it in the head above the header row, which counts it among the rows", () => {
     render(

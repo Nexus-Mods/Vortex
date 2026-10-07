@@ -31,6 +31,16 @@ export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   width?: TableColumnWidth;
   /** Where the header and cells sit in the column. Default `start`. */
   align?: "start" | "end";
+  /** Makes the column sortable: compares two rows for A to Z, as `Array.sort` does. */
+  sort?: (a: T, b: T) => number;
+}
+
+/** The column the rows are sorted by, and which way. */
+export interface ITableSort {
+  /** The sorted column's `id`. */
+  columnId: string;
+  /** A to Z, or Z to A; the values `aria-sort` takes. */
+  direction: "ascending" | "descending";
 }
 
 export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
@@ -42,6 +52,8 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   label: string;
   /** Controls above the header row, in the sticky head: a page's tabs and actions. */
   toolbar?: ReactNode;
+  /** The sort to start with; unset, the rows keep the order they're given in. */
+  defaultSort?: ITableSort;
   /** Classes for the table's grid element. */
   className?: string;
 } & (
