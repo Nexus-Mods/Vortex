@@ -88,6 +88,11 @@
     .nxm-table-row {
         height: var(--nxm-table-row-height);
         color: var(--color-neutral-moderate);
+
+        /* The design's #fff at 3%, under the scale's lowest step. */
+        &:hover {
+            background-color: --alpha(var(--color-white) / 3%);
+        }
     }
 
     .nxm-table-group-row {
