@@ -12,6 +12,7 @@ export const SpanAttribute = {
   LootCall: "loot.call",
   LootErrorCode: "loot.error_code",
   LootExitCode: "loot.exit_code",
+  LootExitSignal: "loot.exit_signal",
   LootFrameBytes: "loot.frame_bytes",
   LootGameMode: "loot.gamemode",
   LootRecovering: "loot.recovering",
