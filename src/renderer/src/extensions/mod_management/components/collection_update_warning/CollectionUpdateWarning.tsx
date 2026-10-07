@@ -11,7 +11,7 @@ import {
   currentCollectionUpdatePrompt,
   subscribeToCollectionUpdatePrompts,
   type CollectionUpdatePrompt,
-} from "../util/collectionUpdatePrompt";
+} from "../../util/collection_update_prompt/collectionUpdatePrompt";
 
 const secondaryButton = { appearance: "moderate", brand: "neutral" } as const;
 
@@ -20,6 +20,7 @@ const WarningModal = ({ prompt }: { prompt: CollectionUpdatePrompt }) => {
   const [acknowledged, setAcknowledged] = useState(false);
 
   const isBatch = prompt.kind === "batch";
+  const hasNonCollectionMods = isBatch && prompt.hasNonCollectionMods;
   const text = isBatch
     ? {
         title: t("collection_update_warning::batch::title"),
@@ -60,7 +61,7 @@ const WarningModal = ({ prompt }: { prompt: CollectionUpdatePrompt }) => {
             {text.warning}
           </Typography>
 
-          {isBatch && (
+          {hasNonCollectionMods && (
             <Typography typographyType="body-sm">
               <span className="font-semibold">
                 {t("collection_update_warning::batch::recommended")}
@@ -83,7 +84,7 @@ const WarningModal = ({ prompt }: { prompt: CollectionUpdatePrompt }) => {
         </Button>
 
         <Button
-          {...(isBatch ? secondaryButton : undefined)}
+          {...(hasNonCollectionMods ? secondaryButton : undefined)}
           data-testid="collection-update-confirm"
           disabled={!acknowledged}
           onClick={() => answerCollectionUpdate("all")}
@@ -91,10 +92,9 @@ const WarningModal = ({ prompt }: { prompt: CollectionUpdatePrompt }) => {
           {text.confirm}
         </Button>
 
-        {isBatch && (
+        {hasNonCollectionMods && (
           <Button
             data-testid="collection-update-non-collection"
-            disabled={!prompt.hasNonCollectionMods}
             onClick={() => answerCollectionUpdate("non-collection")}
           >
             {t("collection_update_warning::batch::update_non_collection")}

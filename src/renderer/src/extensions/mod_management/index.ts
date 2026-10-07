@@ -70,6 +70,7 @@ import { setDeploymentNecessary } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
 import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
+import { CollectionUpdateWarning } from "./components/collection_update_warning/CollectionUpdateWarning";
 import {
   onAddMod,
   onGameModeActivated,
@@ -133,7 +134,6 @@ import { getModSources, registerModSource } from "./util/modSource";
 import sortMods from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
-import { CollectionUpdateWarning } from "./views/CollectionUpdateWarning";
 import DeactivationButton from "./views/DeactivationButton";
 import type { IDuplicatesMap, IRemoveDuplicateMap } from "./views/DuplicatesDialog";
 import {} from "./views/ExternalChangeDialog";

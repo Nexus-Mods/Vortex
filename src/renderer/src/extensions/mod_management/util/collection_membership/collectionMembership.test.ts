@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { makeInstalledCollection, makeMod, makeRule } from "../../../test-utils/builders";
-import type { IMod, IModRule } from "../types/IMod";
+import { makeInstalledCollection, makeMod, makeRule } from "../../../../test-utils/builders";
+import type { IMod, IModRule } from "../../types/IMod";
 import { collectionNamesByMod } from "./collectionMembership";
 
-vi.mock("../../../util/log", () => ({
+vi.mock("../../../../util/log", () => ({
   log: vi.fn(),
 }));
 

@@ -1,6 +1,6 @@
-import type { IMod } from "../types/IMod";
-import { collectionNamesByMod } from "./collectionMembership";
-import { askCollectionUpdate } from "./collectionUpdatePrompt";
+import type { IMod } from "../../types/IMod";
+import { collectionNamesByMod } from "../collection_membership/collectionMembership";
+import { askCollectionUpdate } from "../collection_update_prompt/collectionUpdatePrompt";
 
 /**
  * Asks the user to confirm updating a mod that belongs to the given collections. Resolves true

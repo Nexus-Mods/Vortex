@@ -9,7 +9,7 @@ import {
   askCollectionUpdate,
   type CollectionUpdateChoice,
   type CollectionUpdatePrompt,
-} from "../util/collectionUpdatePrompt";
+} from "../../util/collection_update_prompt/collectionUpdatePrompt";
 import { CollectionUpdateWarning } from "./CollectionUpdateWarning";
 
 // --- Helpers ---
@@ -127,10 +127,10 @@ describe("CollectionUpdateWarning", () => {
     await settleTransitions();
   });
 
-  it("disables the non-collection option when every mod is in a collection", async () => {
+  it("leaves out the non-collection option when every mod is in a collection", async () => {
     await showPrompt(batch(false));
 
-    expect(screen.getByTestId("collection-update-non-collection")).toBeDisabled();
+    expect(screen.queryByTestId("collection-update-non-collection")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByTestId("collection-update-cancel"));
     await settleTransitions();

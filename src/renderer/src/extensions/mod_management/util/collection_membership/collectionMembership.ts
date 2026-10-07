@@ -1,6 +1,6 @@
-import type { IMod } from "../types/IMod";
-import modName from "./modName";
-import { findRuleByRef, isDependencyRule } from "./testModReference";
+import type { IMod } from "../../types/IMod";
+import modName from "../modName";
+import { findRuleByRef, isDependencyRule } from "../testModReference";
 
 /**
  * Maps each of `modIds` that belongs to at least one installed collection to the names of those

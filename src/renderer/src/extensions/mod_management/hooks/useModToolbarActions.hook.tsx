@@ -25,7 +25,7 @@ import { batchDispatch } from "@/util/util";
 import { getIconPath } from "@/views/components/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
-import { selectModsToUpdate } from "../util/collectionUpdateWarning";
+import { selectModsToUpdate } from "../util/collection_update_warning/collectionUpdateWarning";
 import { NoDeployment } from "../util/exceptions";
 import metaLookupMatch from "../util/metaLookupMatch";
 import updateState from "../util/modUpdateState";

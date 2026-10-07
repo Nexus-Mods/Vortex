@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { makeInstalledCollection, makeMod, makeRule } from "../../../test-utils/builders";
-import { askCollectionUpdate, type CollectionUpdateChoice } from "./collectionUpdatePrompt";
+import { makeInstalledCollection, makeMod, makeRule } from "../../../../test-utils/builders";
+import {
+  askCollectionUpdate,
+  type CollectionUpdateChoice,
+} from "../collection_update_prompt/collectionUpdatePrompt";
 import { confirmCollectionModUpdate, selectModsToUpdate } from "./collectionUpdateWarning";
 
-vi.mock("../../../util/log", () => ({
+vi.mock("../../../../util/log", () => ({
   log: vi.fn(),
 }));
 
-vi.mock("./collectionUpdatePrompt", () => ({
+vi.mock("../collection_update_prompt/collectionUpdatePrompt", () => ({
   askCollectionUpdate: vi.fn(),
 }));
 

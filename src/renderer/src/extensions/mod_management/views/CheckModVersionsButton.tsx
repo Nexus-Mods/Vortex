@@ -8,7 +8,7 @@ import { activeGameId, activeProfile } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import type { IMod } from "../types/IMod";
-import { selectModsToUpdate } from "../util/collectionUpdateWarning";
+import { selectModsToUpdate } from "../util/collection_update_warning/collectionUpdateWarning";
 import updateState from "../util/modUpdateState";
 
 export type IModWithState = IMod & IProfileMod;
