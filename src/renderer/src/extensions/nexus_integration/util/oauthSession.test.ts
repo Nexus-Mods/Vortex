@@ -132,6 +132,16 @@ describe("getAccessToken", () => {
     expect(harness.errorNotifications).toEqual([]);
   });
 
+  test("hands out no token when a refresh ahead of expiry is refused", async ({ makeApi }) => {
+    const harness = makeApi({ userInfo: makeUserInfo({ name: "Ada" }) });
+    logIn(harness, makeToken(10));
+    refreshMock.mockRejectedValueOnce(invalidGrant());
+
+    await expect(getAccessToken(harness.api)).resolves.toBeUndefined();
+
+    expect(storedCredentials(harness)).toBeUndefined();
+  });
+
   test("forces a refresh for a rejected token while it is still the current one", async ({
     makeApi,
   }) => {
