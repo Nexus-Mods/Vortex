@@ -102,7 +102,12 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtensionReducer } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
-import type { IExtensionApi, IExtensionContext, IRunOptions } from "../types/IExtensionContext";
+import type {
+  IExtensionApi,
+  IExtensionContext,
+  IRunOptions,
+  IStateVerifier,
+} from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
@@ -467,6 +472,18 @@ export function makeProfile(overrides: Partial<IProfile> = {}): IProfile {
     name: "Profile",
     modState: {},
     lastActivated: 0,
+    ...overrides,
+  };
+}
+
+// A silent state verifier for a required object, filling it in as an empty one when missing.
+export function makeSilentVerifier(overrides: Partial<IStateVerifier> = {}): IStateVerifier {
+  return {
+    description: () => "value missing",
+    type: "object",
+    required: true,
+    silent: true,
+    repair: () => ({}),
     ...overrides,
   };
 }

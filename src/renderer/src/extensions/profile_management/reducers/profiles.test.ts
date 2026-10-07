@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 
+import { makeApiHarness, makeProfile } from "../../../test-utils/builders";
 import type { IProfile } from "../types/IProfile";
 import { profilesReducer } from "./profiles";
 
@@ -165,5 +166,18 @@ describe("setFeature", () => {
     });
     expect(result.profileId1.features?.featureId1).toBe("new Value");
     expect(result.profileId2.features?.featureId1).toBe("value");
+  });
+});
+
+describe("hydration", () => {
+  it("gives a profile hydrated without mod states an empty set", () => {
+    // an empty modState is never persisted, so a profile with no mod ever enabled loads without one
+    const { modState: _, ...stored } = makeProfile({ id: "profileId1" });
+
+    const harness = makeApiHarness({ profiles: { profileId1: stored as IProfile } }, [
+      { path: ["persistent", "profiles"], reducer: profilesReducer },
+    ]);
+
+    expect(harness.api.getState().persistent.profiles.profileId1.modState).toEqual({});
   });
 });

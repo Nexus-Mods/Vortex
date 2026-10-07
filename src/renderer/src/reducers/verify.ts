@@ -39,11 +39,28 @@ export function verifyElement(verifier: IStateVerifier, value: any) {
 
 export type LogFn = (level: string, message: string, metadata?: any) => void;
 
+// keyed by state key, "_" for every key
+type Verifiers = Record<string, IStateVerifier>;
+
+/**
+ * Applies only the repairs of silent verifiers, which need no consent, so they hold whatever the
+ * user decides about the other problems in the same state.
+ */
+export function applySilentRepairs<T>(
+  statePath: string,
+  verifiers: Verifiers,
+  input: T,
+  defaults: Record<string, unknown> = {},
+  log: LogFn = noop,
+): T {
+  return verify(statePath, verifiers, input, defaults, () => undefined, log, undefined, true) as T;
+}
+
 const noop: LogFn = () => {};
 
 export function verify(
   statePath: string,
-  verifiers: { [key: string]: IStateVerifier } | undefined,
+  verifiers: Verifiers | undefined,
   input: any,
   defaults: { [key: string]: any },
   emitDescription: (description: string) => void,
@@ -53,6 +70,8 @@ export function verify(
   // from the record's own identity - see the installationPath self-heal in
   // mod_management/reducers/mods.ts (GH#23363/#23355).
   containerKey?: string,
+  // only fill in the missing values of silent verifiers, leaving every other finding alone
+  silentOnly: boolean = false,
 ): any {
   if (input === undefined || verifiers === undefined) {
     return input;
@@ -68,9 +87,40 @@ export function verify(
       emitDescription,
       log,
       mapKey,
+      silentOnly,
     );
     if (sane !== res[mapKey]) {
       res = sane === undefined ? deleteKey(res, mapKey) : update(res, { [mapKey]: { $set: sane } });
+    }
+  };
+
+  // a missing value under a silent verifier that deletes nothing; anything else is left alone
+  const fillInSilently = (key: string, realKey: string) => {
+    const verifier = verifiers[key];
+    if (
+      verifier.silent !== true ||
+      verifier.deleteBroken !== undefined ||
+      (input as Record<string, unknown>)[realKey] !== undefined
+    ) {
+      return;
+    }
+    let filled: unknown;
+    try {
+      filled =
+        verifier.repair !== undefined
+          ? verifier.repair(undefined, defaults[realKey], {
+              parentKey: containerKey,
+              parent: input,
+              key: realKey,
+            })
+          : defaults[realKey];
+    } catch {
+      // a repair that drops the value is for the reported checks
+      return;
+    }
+    if (filled !== undefined) {
+      log("debug", "filled in missing state", { statePath, key: realKey });
+      res = update(res as Record<string, unknown>, { [realKey]: { $set: filled } });
     }
   };
 
@@ -79,6 +129,10 @@ export function verify(
       (verifiers[key].required || input.hasOwnProperty(realKey)) &&
       !verifyElement(verifiers[key], input[realKey])
     ) {
+      if (silentOnly) {
+        fillInSilently(key, realKey);
+        return;
+      }
       log("warn", "invalid state", {
         statePath,
         input,
