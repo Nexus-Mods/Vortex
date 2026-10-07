@@ -23,6 +23,8 @@ export interface IModsTableColumn extends ITableColumn<IModRow, IModGroup> {
   position?: number;
   /** The value a row is grouped under when the table groups by it; without one, it can't. */
   groupBy?: (row: IModRow) => string;
+  /** Its name in the Group by options, where that isn't its header. */
+  groupLabel?: string;
 }
 
 /** A toggleable column, as the display options list it. */
@@ -86,12 +88,12 @@ export const useModsTableColumns = (givenColumns: IModsTableColumn[]) => {
     [columns, setColumnVisible],
   );
 
-  // In the table's order, hidden or not, as the legacy table offered them.
+  // In the table's order, hidden or not, as the legacy table offered them, by their group label.
   const groupable = useMemo(
     () =>
-      columns.filter(
-        (column): column is IModsTableGroupingColumn & IModsTableColumn => !!column.groupBy,
-      ),
+      columns
+        .filter((column): column is IModsTableGroupingColumn & IModsTableColumn => !!column.groupBy)
+        .map((column) => ({ ...column, header: column.groupLabel ?? column.header })),
     [columns],
   );
 

@@ -15,6 +15,8 @@ interface IToolbarProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   /** Lets the user choose which actions sit on the bar, stored under this id. */
   pinningId?: string;
+  /** What the pin toggles say a pin puts an action on; default the toolbar. */
+  pinTarget?: IToolbarContext["pinTarget"];
   /**
    * Opts this toolbar into tracking. Omitted, its controls report nothing —
    * see {@link IToolbarContext.tracking}.
@@ -104,13 +106,20 @@ const useRowLayout = (row: HTMLElement | null): Omit<IToolbarContext, "pinningId
  * because a toolbar sized by its content can't tell how much room it actually
  * has. Add a `flex-1` (or `shrink`) class to opt such a toolbar into collapsing.
  */
-export const Toolbar = ({ children, className, pinningId, tracking, ...props }: IToolbarProps) => {
+export const Toolbar = ({
+  children,
+  className,
+  pinningId,
+  pinTarget,
+  tracking,
+  ...props
+}: IToolbarProps) => {
   const [row, setRow] = useState<HTMLDivElement | null>(null);
   const layout = useRowLayout(row);
 
   const context = useMemo<IToolbarContext>(
-    () => ({ ...layout, pinningId: pinningId ?? null, tracking }),
-    [layout, pinningId, tracking],
+    () => ({ ...layout, pinningId: pinningId ?? null, pinTarget, tracking }),
+    [layout, pinningId, pinTarget, tracking],
   );
 
   return (

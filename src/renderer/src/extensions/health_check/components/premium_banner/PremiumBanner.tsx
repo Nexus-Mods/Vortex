@@ -10,7 +10,7 @@ import { PREMIUM_PATH } from "@/extensions/nexus_integration/constants";
 import { useRefreshUserInfoOnFocus } from "@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
+import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import opn from "@/util/opn";

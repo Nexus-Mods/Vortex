@@ -125,6 +125,26 @@ describe("useModsTableColumns", () => {
     expect(result.current.groupable.map(({ id }) => id)).toEqual(["shown", "hidden", "status"]);
   });
 
+  it("names a column in the group options by its group label, where it has one", () => {
+    const store = makeModsTableStore();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const groupBy = () => "";
+    const columns = [
+      column("status", { header: "Actions", groupLabel: "Status", groupBy }),
+      column("author", { header: "Author", groupBy }),
+    ];
+
+    const { result } = renderHook(() => useModsTableColumns(columns), { wrapper });
+
+    expect(result.current.groupable.map(({ header }) => header)).toEqual(["Status", "Author"]);
+    expect(result.current.visibleColumns.map(({ header }) => header)).toEqual([
+      "Actions",
+      "Author",
+    ]);
+  });
+
   it("resets every column to its default", () => {
     const { result } = renderColumns({
       mods: { attributes: { version: { enabled: false }, author: { enabled: true } } },

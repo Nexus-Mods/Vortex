@@ -8,6 +8,9 @@ Components adapted from the web team's "next" project for use in Vortex.
 ui/
 ├── components/
 │   ├── alert/           - Full-width page-level message bar (replaces Bootstrap Alert)
+│   ├── badges/          - Small badges marking what something is
+│   │   ├── nexus_badge/ - The Nexus Mods logo in its own colours
+│   │   └── premium_badge/ - Premium diamond badge
 │   ├── bullet/          - Small rotated-square dot used as an inline marker/separator
 │   ├── button/          - Button system (brand × appearance matrix)
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
@@ -34,7 +37,6 @@ ui/
 │   ├── picker/          - Single-value selector (Headless UI Listbox)
 │   ├── pill/            - Compact rounded label for tags and statuses
 │   ├── popover/         - Floating panel of interactive content, or a menu of actions (Headless UI Popover)
-│   ├── premium_badge/   - Premium diamond badge
 │   ├── table/           - Column-driven grid table (work in progress, behind a dev switch)
 │   ├── tabs/            - Tabbed interface with context-based state
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
@@ -911,7 +913,7 @@ import { AdultAwareImage } from "../../ui/components/image/AdultAwareImage";
 Small diamond badge denoting premium membership.
 
 ```tsx
-import { PremiumBadge } from "../../ui/components/premium_badge/PremiumBadge";
+import { PremiumBadge } from "../../ui/components/badges/premium_badge/PremiumBadge";
 
 <PremiumBadge />;
 ```

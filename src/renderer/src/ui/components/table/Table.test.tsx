@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Table } from "./Table";
 import type { ITableColumn } from "./Table.types";
+import { useTableRowEngaged } from "./TableRow.context";
 
 interface IRow {
   id: string;
@@ -56,6 +57,73 @@ describe("Table", () => {
     const stuck = document.querySelectorAll('[data-sticky="end"]');
     expect(stuck).toHaveLength(ROWS.length + 1);
     expect(stuck[0]).toHaveTextContent("Size");
+  });
+
+  describe("a row's engagement", () => {
+    const Engaged = ({ id }: { id: string }) => (
+      <span data-testid={`engaged-${id}`}>{String(useTableRowEngaged())}</span>
+    );
+
+    const renderEngaged = () =>
+      render(
+        <Table
+          columns={[
+            COLUMNS[0],
+            { id: "engaged", header: "Engaged", cell: (row) => <Engaged id={row.id} /> },
+          ]}
+          getRowId={(row) => row.id}
+          label="Files"
+          rows={ROWS}
+        />,
+      );
+
+    const engagedIn = (id: string) => screen.getByTestId(`engaged-${id}`).textContent;
+    const rowOf = (id: string) => screen.getByTestId(`engaged-${id}`).closest('[role="row"]')!;
+
+    it("tells its cells once it's pointed at, and only that row's", async () => {
+      renderEngaged();
+      expect(engagedIn(ROWS[0].id)).toBe("false");
+
+      await userEvent.hover(rowOf(ROWS[0].id));
+
+      expect(engagedIn(ROWS[0].id)).toBe("true");
+      expect(engagedIn(ROWS[1].id)).toBe("false");
+    });
+
+    it("tells its cells once something in it is focused, and stays so", async () => {
+      renderEngaged();
+
+      fireEvent.focus(rowOf(ROWS[1].id));
+      fireEvent.blur(rowOf(ROWS[1].id));
+
+      expect(engagedIn(ROWS[1].id)).toBe("true");
+    });
+  });
+
+  // The width is CSS's to apply, on hover; the table only says how far.
+  it("passes a sticky column's reveal width to its styles, only when it has one", () => {
+    const { rerender } = render(
+      <Table
+        columns={[COLUMNS[0], { ...COLUMNS[1], sticky: "end", revealWidth: "72px" }]}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const table = screen.getByRole("grid");
+    expect(table).toHaveAttribute("data-sticky-reveal");
+    expect(table.style.getPropertyValue("--nxm-table-sticky-reveal")).toBe("72px");
+
+    rerender(
+      <Table
+        columns={[COLUMNS[0], { ...COLUMNS[1], sticky: "end" }]}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+    expect(screen.getByRole("grid")).not.toHaveAttribute("data-sticky-reveal");
   });
 
   // A sticky column fades what passes under it, so the table's edge needn't.

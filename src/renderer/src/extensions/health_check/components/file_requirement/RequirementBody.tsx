@@ -13,8 +13,8 @@ import {
 import type { IFileRequirement } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
 import { sharedRequirementState } from "@/extensions/health_check/utils/shared/tracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Button } from "@/ui/components/button/Button";
-import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
 import { Divider } from "../divider/Divider";
 import { PremiumModal } from "../premium_modal/PremiumModal";

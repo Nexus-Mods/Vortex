@@ -102,6 +102,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   );
 
   const virtual = useTableVirtualizer({ count: items.length, getItemKey, getItemSize });
+  const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
   // The rows in the sticky head, which come before the table's own in aria-rowindex.
   const headRows = toolbar ? 2 : 1;
 
@@ -112,6 +113,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       aria-label={label}
       aria-rowcount={items.length + headRows}
       className={joinClasses(["nxm-table", className])}
+      data-sticky-reveal={revealWidth ? "" : undefined}
       data-toolbar={toolbar ? "" : undefined}
       ref={virtual.tableRef}
       role={groups === undefined ? "grid" : "treegrid"}
@@ -120,6 +122,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-row-height": `${ROW_HEIGHT}px`,
           "--nxm-table-group-row-height": `${GROUP_ROW_HEIGHT}px`,
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
+          "--nxm-table-sticky-reveal": revealWidth,
           gridTemplateColumns: [
             "var(--nxm-table-gutter-start)",
             ...columns.map((column) => column.width ?? DEFAULT_COLUMN_WIDTH),

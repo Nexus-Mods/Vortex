@@ -1,8 +1,9 @@
-import React from "react";
+import React, { type HTMLAttributes, type ReactNode, useState } from "react";
 
 import type { ITableColumn, ITableGroup } from "./Table.types";
 import { TableCell } from "./TableCell";
 import { type ITableCheckboxProps, TableCheckbox } from "./TableCheckbox";
+import { TableRowEngagedContext } from "./TableRow.context";
 
 interface ITableRowProps<T, G extends ITableGroup<T>> {
   /** The table's columns, each rendering one of the row's cells. */
@@ -23,7 +24,28 @@ interface ITableRowProps<T, G extends ITableGroup<T>> {
   sortedColumnId?: string;
 }
 
-/** One item's row: a cell per column, each a subgrid track of the table. */
+/**
+ * The row's element, which notes once it's pointed at or focused. Its cells come in as
+ * `children`, made by {@link TableRow}, so noting it re-renders only the cells that read it.
+ */
+const EngagingRow = ({
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) => {
+  const [engaged, setEngaged] = useState(false);
+  const engage = () => setEngaged(true);
+
+  return (
+    <div {...props} onFocus={engage} onPointerEnter={engage}>
+      <TableRowEngagedContext.Provider value={engaged}>{children}</TableRowEngagedContext.Provider>
+    </div>
+  );
+};
+
+/**
+ * One item's row: a cell per column, each a subgrid track of the table. Tells its cells once
+ * it's been pointed at or focused, through `useTableRowEngaged`.
+ */
 export const TableRow = <T, G extends ITableGroup<T>>({
   columns,
   index,
@@ -34,7 +56,7 @@ export const TableRow = <T, G extends ITableGroup<T>>({
   sortedColumnId,
   tint,
 }: ITableRowProps<T, G>) => (
-  <div
+  <EngagingRow
     aria-level={level}
     aria-rowindex={rowIndex}
     aria-selected={checkbox?.checked}
@@ -54,5 +76,5 @@ export const TableRow = <T, G extends ITableGroup<T>>({
         {column.cell(row)}
       </TableCell>
     ))}
-  </div>
+  </EngagingRow>
 );

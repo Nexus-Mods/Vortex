@@ -442,6 +442,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             </SuperTable>
           }
           mods={this.state.primaryMods}
+          rowActions={this.modActions}
           onSetModsEnabled={this.setModsEnabledFromTable}
         />
       );

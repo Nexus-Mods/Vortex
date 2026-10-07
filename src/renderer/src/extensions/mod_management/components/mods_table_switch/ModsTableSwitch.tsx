@@ -1,18 +1,34 @@
 import { mdiAccount } from "@mdi/js";
-import React, { type ReactNode, useCallback, useMemo, useState } from "react";
+import React, {
+  memo,
+  type ReactNode,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
 import { Switch } from "@/ui/components/form/switch/Switch";
 import { Image } from "@/ui/components/image/Image";
 import { Table } from "@/ui/components/table/Table";
-import type { ITableSort } from "@/ui/components/table/Table.types";
+import type { ITableSort, TableColumnWidth } from "@/ui/components/table/Table.types";
+import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
+import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import { activeProfile } from "../../../profile_management/selectors";
+import {
+  MOD_ROW_PINNING_ID,
+  useModRowActions,
+} from "../../hooks/use_mod_row_actions/useModRowActions.hook";
 import {
   type IModsTableColumn,
   useModsTableColumns,
@@ -41,6 +57,8 @@ interface IModsTableSwitchProps {
   legacy: ReactNode;
   /** Enables or disables mods, installing any that are only downloaded first; settles once done. */
   onSetModsEnabled: (modIds: string[], enabled: boolean) => void | PromiseLike<unknown>;
+  /** The legacy table's row actions, offered in each row's menu with the extensions' own. */
+  rowActions?: ITableRowAction[];
 }
 
 /** A group being disabled, while the user decides about the mods it shares. */
@@ -56,7 +74,95 @@ const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
 const profileModState = (state: IState) => activeProfile(state)?.modState;
 
 /** The Mods page's table: the legacy one, or the new table while it's being built. */
-export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSwitchProps) => {
+const NO_ROW_ACTIONS: ITableRowAction[] = [];
+
+// The switch and the menu's button; each pinned action adds a 28px button and an 8px gap.
+const ACTIONS_WIDTH = 78;
+const PINNED_ACTION_WIDTH = 36;
+
+const actionsWidth = (pinnedCount: number): TableColumnWidth =>
+  `${ACTIONS_WIDTH + PINNED_ACTION_WIDTH * pinnedCount}px`;
+
+interface IModRowActionsProps {
+  /** The row's actions, the same array until they change. */
+  actions: IToolbarAction[];
+  /** Room for the pins, the switch and the menu, wider than the column is at rest. */
+  width: TableColumnWidth;
+  modId: string;
+  /** The switch's name. */
+  label: string;
+  enabled: boolean;
+  isLoading: boolean;
+  onSetEnabled: (modIds: string[], enabled: boolean) => void;
+}
+
+/**
+ * A row's pinned actions, its switch, then its menu of every action. Against the cell's end,
+ * as a group row's switch is, and as wide as the pins need so none collapse: at rest they
+ * overhang the column, hidden, and the cell widens over them while the row is hovered.
+ *
+ * Only the switch renders until the row is first pointed at or focused, in the place the
+ * toolbar puts it: the pins and the menu are hidden at rest, and a toolbar per row is costly
+ * to mount as rows scroll in. Then the toolbar mounts and stays while the row does, so a menu
+ * opened from it isn't torn down. Memoized, since rows re-render on each frame of a scroll.
+ */
+const ModRowActions = memo(
+  ({ actions, width, modId, label, enabled, isLoading, onSetEnabled }: IModRowActionsProps) => {
+    const engaged = useTableRowEngaged();
+    const restingRef = useRef<HTMLDivElement>(null);
+    // the cell, while the resting switch has focus as the toolbar replaces it
+    const refocusIn = useRef<HTMLElement | null>(null);
+
+    useLayoutEffect(() => {
+      if (engaged && refocusIn.current !== null) {
+        refocusIn.current.querySelector<HTMLElement>(".nxm-switch")?.focus();
+        refocusIn.current = null;
+      }
+    }, [engaged]);
+
+    const toggle = (
+      <Switch
+        aria-label={label}
+        checked={enabled}
+        isLoading={isLoading}
+        onChange={(checked) => onSetEnabled([modId], checked)}
+      />
+    );
+
+    if (!engaged) {
+      return (
+        <div
+          className="absolute inset-y-0 right-0 flex items-center justify-end gap-x-2"
+          ref={restingRef}
+          style={{ width }}
+          onFocus={() => (refocusIn.current = restingRef.current?.parentElement ?? null)}
+        >
+          {toggle}
+
+          <span aria-hidden className="w-7 shrink-0" />
+        </div>
+      );
+    }
+
+    return (
+      <Toolbar
+        className="absolute inset-y-0 right-0 justify-end"
+        pinTarget="row"
+        pinningId={MOD_ROW_PINNING_ID}
+        style={{ width }}
+      >
+        <ToolbarGroup actions={actions} beforeOverflow={toggle} />
+      </Toolbar>
+    );
+  },
+);
+
+export const ModsTableSwitch = ({
+  mods,
+  legacy,
+  onSetModsEnabled,
+  rowActions = NO_ROW_ACTIONS,
+}: IModsTableSwitchProps) => {
   const { t } = useTranslation(["common"]);
   const newTable = useDevSetting("newTable");
 
@@ -127,6 +233,8 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
     [changing, modState],
   );
 
+  const { actionsFor, pinnedCount } = useModRowActions(rowActions);
+
   const columns = useMemo<IModsTableColumn[]>(
     () => [
       {
@@ -171,8 +279,10 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
       },
       {
         id: "status",
-        header: t("Status"),
-        width: "42px",
+        header: t("Actions"),
+        groupLabel: t("Status"),
+        width: actionsWidth(0),
+        revealWidth: pinnedCount > 0 ? `${PINNED_ACTION_WIDTH * pinnedCount}px` : undefined,
         sticky: "end",
         groupBy: ({ mod }) => {
           if (mod.state === "downloaded") {
@@ -184,31 +294,39 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
           return isEnabled(mod) ? t("Enabled") : t("Disabled");
         },
         cell: ({ mod, name }) => (
-          <Switch
-            aria-label={t("{{name}} enabled", { name })}
-            checked={isEnabled(mod)}
+          <ModRowActions
+            actions={actionsFor(mod.id)}
+            width={actionsWidth(pinnedCount)}
+            enabled={isEnabled(mod)}
             isLoading={changing.has(mod.id)}
-            onChange={(enabled) => setEnabled([mod.id], enabled)}
+            label={t("{{name}} enabled", { name })}
+            modId={mod.id}
+            onSetEnabled={setEnabled}
           />
         ),
         // Part on while only some of its mods are, as after keeping the shared ones.
         groupCell: (group) => {
           const enabled = group.rows.filter(({ mod }) => isEnabled(mod)).length;
 
+          // Against the end, past room for a menu, so it lines up with its rows' switches.
           return (
-            <Switch
-              aria-label={t("{{name}} enabled", { name: group.label })}
-              checked={group.rows.length > 0 && enabled === group.rows.length}
-              indeterminate={enabled > 0 && enabled < group.rows.length}
-              isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
-              onChange={(checked) => setGroupEnabled(group, checked)}
-            />
+            <div className="flex w-full items-center justify-end gap-x-2">
+              <Switch
+                aria-label={t("{{name}} enabled", { name: group.label })}
+                checked={group.rows.length > 0 && enabled === group.rows.length}
+                indeterminate={enabled > 0 && enabled < group.rows.length}
+                isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
+                onChange={(checked) => setGroupEnabled(group, checked)}
+              />
+
+              <span aria-hidden className="w-7 shrink-0" />
+            </div>
           );
         },
       },
       ...dataColumns,
     ],
-    [changing, dataColumns, isEnabled, setEnabled, setGroupEnabled, t],
+    [actionsFor, changing, dataColumns, isEnabled, pinnedCount, setEnabled, setGroupEnabled, t],
   );
 
   const { visibleColumns, toggles, groupable, canReset, setColumnVisible, resetColumns } =
