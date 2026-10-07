@@ -9,6 +9,7 @@
     "typecheck": "pnpm exec tsc -p tsconfig.json",
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm exec eslint --concurrency auto .",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs ./oxlintrc.json",
     "api:dts": "pnpm exec rimraf ./lib && pnpm exec tsc -p tsconfig.api.json && pnpm exec node ./api-build.mjs",
     "test": "pnpm exec vitest run"
   },
@@ -79,6 +80,7 @@
     "@opentelemetry/semantic-conventions": "catalog:",
     "@pmmmwh/react-refresh-webpack-plugin": "catalog:",
     "@tailwindcss/cli": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
@@ -218,6 +220,7 @@
     "source-map-support": "catalog:",
     "string-template": "catalog:",
     "tailwindcss": "catalog:",
+    "temporal-polyfill": "catalog:",
     "tmp": "catalog:",
     "turbowalk": "catalog:",
     "universal-analytics": "catalog:",

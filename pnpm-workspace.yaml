@@ -53,6 +53,7 @@ catalog:
   "@pmmmwh/react-refresh-webpack-plugin": 0.6.2
   "@stylistic/eslint-plugin": 5.10.0
   "@tailwindcss/cli": 4.3.2
+  "@tanstack/react-virtual": 3.13.23
   "@testing-library/dom": 10.4.1
   "@testing-library/jest-dom": 6.9.1
   "@testing-library/react": 16.3.0
@@ -83,7 +84,7 @@ catalog:
   "@types/numeral": 2.0.5
   "@types/packery": 1.4.37
   "@types/prop-types": 15.7.15
-  "@types/react": ^18.3.0
+  "@types/react": ^18.3.31
   "@types/react-bootstrap": 0.32.37
   "@types/react-color": 2.17.12
   "@types/react-datepicker": 2.11.1
@@ -179,7 +180,7 @@ catalog:
   limiter: 3.0.0
   lint-staged: 17.0.8
   lodash: 4.17.23
-  loot: github:Nexus-Mods/node-loot#baaec62c05eed717ab401016f5ec06c62b8bf5e6
+  loot: github:Nexus-Mods/node-loot#ef39d71524fdd349743d0c5e51c453f5437ee618
   lru-cache: 11.2.7
   markdown-ast: 0.2.1
   memoize-one: 5.2.1
@@ -329,7 +330,7 @@ allowBuilds:
   esbuild: true
   font-scanner: true
   leveldown: true
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/baaec62c05eed717ab401016f5ec06c62b8bf5e6: true
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/ef39d71524fdd349743d0c5e51c453f5437ee618: true
   node@runtime:24.17.0: true
   nx: false
   winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1: true

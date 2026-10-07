@@ -6,7 +6,8 @@
     "_assets": "copyfiles -u 1 -f ./assets/* dist/assets && copyfiles -u 2 -f ./src/ui/sdvstyle.scss dist/ui",
     "typecheck": "pnpm exec tsc -p tsconfig.json",
     "test": "vitest run --config vitest.config.ts",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "lint:strict": "pnpm exec node ../../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

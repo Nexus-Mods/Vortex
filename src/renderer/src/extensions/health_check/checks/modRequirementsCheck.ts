@@ -435,6 +435,7 @@ export async function checkModRequirements(
 
         const requiredBy: IModRequirementExt["requiredBy"] = {
           modId,
+          modUID: uid,
           modName: getModName(),
           modUrl: requiringModNexusDomain
             ? `https://www.nexusmods.com/${requiringModNexusDomain}/mods/${modId}`

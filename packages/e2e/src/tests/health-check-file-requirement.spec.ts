@@ -35,6 +35,10 @@ test.describe("Health Check - file requirement warnings", () => {
         await expect(warnings.installOneClick()).toHaveAccessibleName(/1-click install \(2\)/);
       });
 
+      await test.step("The premium banner is shown alongside the warning", async () => {
+        await expect(hc.premiumBanner).toBeVisible();
+      });
+
       const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("Detail states the plural file-requirement summary", async () => {
@@ -290,7 +294,7 @@ test.describe("Health Check - file requirement warnings", () => {
       });
     });
 
-    test("Check the header 1-click install button resolves all requirements on the health check", async ({
+    test("Check the warnings section 1-click install all resolves all requirements", async ({
       vortexApp,
       vortexWindow,
       managedGame: _game,
@@ -298,9 +302,9 @@ test.describe("Health Check - file requirement warnings", () => {
     }) => {
       const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
 
-      await test.step("The header 1-click install all installs the requirements, clearing the warning", async () => {
+      await test.step("The warnings section 1-click install all installs the requirements, clearing the warning", async () => {
         await dismissAllNotifications(vortexWindow);
-        await hc.installAllButton.click();
+        await hc.warningsInstallAllButton.click();
         await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
@@ -311,7 +315,7 @@ test.describe("Health Check - file requirement warnings", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const { warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
+      const { hc, warnings } = await openFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
       const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("Trigger the detail's 1-click install all", async () => {
@@ -320,9 +324,13 @@ test.describe("Health Check - file requirement warnings", () => {
         await expect(detail.installAllInGroupButton).toBeHidden({ timeout: Timeouts.LIFECYCLE });
       });
 
-      await test.step("Returning to the list shows the warning cleared", async () => {
-        await detail.backButton.click();
-        await expect(warnings.row()).toHaveCount(0);
+      // A detail page returns to the list on its own once its issue is resolved.
+      await test.step("The resolved detail returns to the list", async () => {
+        await expect(hc.title).toBeVisible({ timeout: Timeouts.LIFECYCLE });
+      });
+
+      await test.step("The list shows the warning cleared", async () => {
+        await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
 
@@ -352,7 +360,11 @@ test.describe("Health Check - file requirement warnings", () => {
       managedGame: _game,
       nexusPage,
     }) => {
-      const { warnings } = await openOrFileRequirementWarning(nexusPage, vortexApp, vortexWindow);
+      const { hc, warnings } = await openOrFileRequirementWarning(
+        nexusPage,
+        vortexApp,
+        vortexWindow,
+      );
       const detail = await openWarningDetail(vortexWindow, warnings);
 
       await test.step("The detail offers a choice of alternatives to pick", async () => {
@@ -365,9 +377,13 @@ test.describe("Health Check - file requirement warnings", () => {
         await expect(detail.pickOneHeader).toBeHidden({ timeout: Timeouts.LIFECYCLE });
       });
 
-      await test.step("Returning to the list shows the OR resolved", async () => {
-        await detail.backButton.click();
-        await expect(warnings.row()).toHaveCount(0);
+      // A detail page returns to the list on its own once its issue is resolved.
+      await test.step("The resolved detail returns to the list", async () => {
+        await expect(hc.title).toBeVisible({ timeout: Timeouts.LIFECYCLE });
+      });
+
+      await test.step("The list shows the OR resolved", async () => {
+        await expect(warnings.row()).toHaveCount(0, { timeout: Timeouts.LIFECYCLE });
       });
     });
   });

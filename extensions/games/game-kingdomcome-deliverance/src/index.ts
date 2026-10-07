@@ -513,7 +513,7 @@ function main(context: types.IExtensionContext) {
         });
     });
 
-    context.api.onAsync("did-deploy", (profileId, deployment) => {
+    context.api.onAsync("did-deploy", (profileId: string) => {
       const state = context.api.getState();
       const profile = selectors.profileById(state, profileId);
       if (profile === undefined || profile.gameId !== GAME_ID) {

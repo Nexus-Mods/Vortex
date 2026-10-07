@@ -1,19 +1,28 @@
 import { types, util } from "@nexusmods/vortex-api";
 
-import { setPriorityType, setSuppressModLimitPatch } from "./actions";
+import {
+  autoSortLoadOrderChanged,
+  setRemasterNoticeSeen,
+  setSuppressModLimitPatch,
+} from "./actions";
 
 // reducer
 export const W3Reducer: types.IReducerSpec = {
   reducers: {
-    [setPriorityType as any]: (state, payload) => {
-      return util.setSafe(state, ["prioritytype"], payload);
-    },
     [setSuppressModLimitPatch as any]: (state, payload) => {
       return util.setSafe(state, ["suppressModLimitPatch"], payload);
     },
+    [setRemasterNoticeSeen as any]: (state, payload) => {
+      return util.setSafe(state, ["remasterNoticeSeen"], payload);
+    },
+    [autoSortLoadOrderChanged as any]: (state, payload) => ({
+      ...state,
+      autoSortLoadOrder: payload,
+    }),
   },
   defaults: {
-    prioritytype: "prefix-based",
     suppressModLimitPatch: false,
+    remasterNoticeSeen: false,
+    autoSortLoadOrder: false,
   },
 };

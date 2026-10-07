@@ -6,7 +6,8 @@
   "author": "Black Tree Gaming Ltd.",
   "scripts": {
     "build": "node build.mjs && pnpm extractInfo",
-    "typecheck": "pnpm tsc"
+    "typecheck": "pnpm tsc",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "devDependencies": {
     "@types/node": "catalog:",

@@ -88,6 +88,7 @@ import Author from "./Author";
 import CheckModVersionsButton from "./CheckModVersionsButton";
 import Description from "./Description";
 import InstallArchiveButton from "./InstallArchiveButton";
+import { ModsTableSwitch } from "./ModsTableSwitch";
 import VersionChangelogButton from "./VersionChangelogButton";
 import VersionIconButton from "./VersionIconButton";
 
@@ -425,18 +426,23 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       );
     } else {
       content = (
-        <SuperTable
-          edgeToEdge
-          stickyHeader
-          actions={this.modActions}
-          data={this.state.primaryMods}
-          detailsTitle={t("Mod Attributes")}
-          footerContainer={this.state.tableFooter}
-          staticElements={this.mAttributes}
-          tableId="mods"
-        >
-          <div id="more-mods-container">{this.renderMoreMods(modSources)}</div>
-        </SuperTable>
+        <ModsTableSwitch
+          legacy={
+            <SuperTable
+              edgeToEdge
+              stickyHeader
+              actions={this.modActions}
+              data={this.state.primaryMods}
+              detailsTitle={t("Mod Attributes")}
+              footerContainer={this.state.tableFooter}
+              staticElements={this.mAttributes}
+              tableId="mods"
+            >
+              <div id="more-mods-container">{this.renderMoreMods(modSources)}</div>
+            </SuperTable>
+          }
+          mods={this.state.primaryMods}
+        />
       );
     }
 

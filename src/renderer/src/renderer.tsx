@@ -117,7 +117,7 @@ import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/
 import type { IParameters } from "@vortex/shared/cli";
 import type { AppInitMetadata } from "@vortex/shared/ipc";
 import Bluebird from "bluebird";
-import { ipcRenderer, webFrame } from "electron";
+import { ipcRenderer } from "electron";
 import React from "react";
 
 import "./util/monkeyPatching";
@@ -144,6 +144,7 @@ import { ApplicationData } from "./applicationData";
 import { FlagsProvider } from "./contexts/FlagsContext";
 import ExtensionManager from "./ExtensionManager";
 import { ExtensionContext } from "./ExtensionProvider";
+import { initializeZoom } from "./extensions/settings_interface/utils/initializeZoom";
 import { FlagService } from "./FlagService";
 import { log } from "./logging";
 import { initApplicationMenu } from "./menu";
@@ -920,7 +921,7 @@ function renderer(extensions: ExtensionManager | null) {
     return;
   }
 
-  webFrame.setZoomFactor(getSafe(store.getState(), ["settings", "window", "zoomFactor"], 1));
+  initializeZoom(store);
   applyReduceMotion(reduceMotionFromState(store.getState()));
 
   ReactDOM.render(<LoadingScreen extensions={extensions} />, document.getElementById("content"));

@@ -3,7 +3,6 @@ import * as path from "path";
 import { mdiGamepadSquareOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
-import { clipboard } from "electron";
 import * as fsExtra from "fs-extra";
 import React from "react";
 import type * as Redux from "redux";
@@ -607,12 +606,20 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
 
   const copyToClipboard = (value: string) => {
     if (value) {
-      clipboard.writeText(value);
-      api.sendNotification({
-        type: "success",
-        message: api.translate("Copied mod type id to clipboard"),
-        displayMS: 2000,
-      });
+      window.api.clipboard
+        .writeText(value)
+        .then(() =>
+          api.sendNotification({
+            type: "success",
+            message: api.translate("Copied mod type id to clipboard"),
+            displayMS: 2000,
+          }),
+        )
+        .catch((err) =>
+          api.showErrorNotification("Failed to access clipboard", err, {
+            allowReport: false,
+          }),
+        );
     }
   };
 

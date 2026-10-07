@@ -1,0 +1,91 @@
+@layer components {
+    .nxm-field {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+    }
+
+    .nxm-field-label {
+        display: flex;
+        column-gap: calc(var(--spacing) * 1);
+
+        font-size: var(--text-body-md);
+        line-height: var(--text-body-md--line-height);
+        letter-spacing: var(--text-body-md--letter-spacing);
+        color: var(--color-neutral-strong);
+
+        .nxm-field-label-required {
+            color: var(--color-neutral-subdued);
+        }
+    }
+
+    .nxm-field-footer {
+        contain: inline-size;
+        display: flex;
+        column-gap: calc(var(--spacing) * 4);
+        justify-content: space-between;
+    }
+
+    .nxm-field-messages {
+        display: flex;
+        flex-grow: 1;
+        flex-direction: column;
+        row-gap: calc(var(--spacing) * 1);
+    }
+
+    /* Wraps a control with what's drawn over it, such as an input's icon or a select's chevron. */
+    .nxm-field-control {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .nxm-field-label:has(~ :is(.nxm-input, .nxm-field-control)) {
+        margin-bottom: calc(var(--spacing) * 2);
+    }
+
+    :is(.nxm-input, .nxm-field-control)
+        ~ :is(.nxm-field-footer, .nxm-field-description, .nxm-field-error-message) {
+        margin-top: calc(var(--spacing) * 1);
+    }
+
+    .nxm-field-description,
+    .nxm-field-error-message {
+        contain: inline-size;
+        font-size: var(--text-body-md);
+        line-height: var(--text-body-md--line-height);
+        letter-spacing: var(--text-body-md--letter-spacing);
+    }
+
+    .nxm-field-description {
+        color: var(--color-neutral-subdued);
+    }
+
+    .nxm-field-error-message {
+        color: var(--color-danger-strong);
+    }
+
+    .nxm-field-character-count {
+        flex-shrink: 0;
+        font-size: var(--text-body-md);
+        line-height: var(--text-body-md--line-height);
+        letter-spacing: var(--text-body-md--letter-spacing);
+        color: var(--color-neutral-moderate);
+
+        &.nxm-field-character-count-warning {
+            color: var(--color-warning-strong);
+        }
+
+        &.nxm-field-character-count-danger {
+            color: var(--color-danger-strong);
+        }
+    }
+
+    .nxm-field-label[data-disabled],
+    .nxm-field-description[data-disabled],
+    .nxm-field-error-message[data-disabled],
+    .nxm-field[data-disabled] .nxm-field-character-count {
+        opacity: 0.4;
+    }
+}

@@ -4,9 +4,6 @@ const { fs, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 function findGame() {
-  if (process.platform !== "win32") {
-    return Promise.reject(new Error("Currently only discovered on windows"));
-  }
   try {
     const instPath = winapi.RegGetValue(
       "HKEY_LOCAL_MACHINE",

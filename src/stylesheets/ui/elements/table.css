@@ -1,242 +1,171 @@
 @layer components {
-    .nxm-table-wrapper {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: calc(var(--spacing) * 4);
-    }
-
-    .nxm-table-scroll {
-        overflow: auto;
-        /*
-           min height to prevent dropdowns being cropped, we can probably remove
-           this when we update headless to v2 and make use of portal
-        */
-        min-height: calc(var(--spacing) * 96);
-    }
-
+    /* One grid for the whole table; every row takes its tracks through subgrid, so the
+       columns line up without measuring anything. The gutters are tracks of their own,
+       either side of the columns: padding on a subgrid comes out of its edge tracks. */
     .nxm-table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;
-        color: var(--color-neutral-strong);
+        --nxm-table-gap: calc(var(--spacing) * 2);
+        --nxm-table-gutter: calc(var(--spacing) * 6 - var(--nxm-table-gap));
+        --nxm-table-head-padding: calc(var(--spacing) * 2);
+        --nxm-table-header-height: calc(var(--spacing) * 6);
+        /* The whole sticky head, which the toolbar grows by its own height and a gap. */
+        --nxm-table-head-height: calc(
+            var(--nxm-table-head-padding) * 2 + var(--nxm-table-header-height)
+        );
+        --nxm-table-toolbar-height: calc(var(--spacing) * 7);
+
+        position: relative;
+        isolation: isolate;
+        display: grid;
+        column-gap: var(--nxm-table-gap);
+        min-width: 0;
+    }
+
+    .nxm-table-header,
+    .nxm-table-row,
+    .nxm-table-group-row {
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
+        align-items: center;
         font-size: var(--text-body-sm);
         line-height: var(--text-body-sm--line-height);
         letter-spacing: var(--text-body-sm--letter-spacing);
 
-        /* Override the global Bootstrap table background-color */
-        background-color: transparent;
+        > :first-child {
+            grid-column-start: 2;
+        }
     }
 
-    /* Header --------------------------------------------------------------- */
-
-    .nxm-table-th {
-        position: relative;
-        white-space: nowrap;
-        vertical-align: middle;
-        color: var(--color-neutral-moderate);
-        font-weight: var(--font-weight-semibold);
-        padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
-    }
-
-    .nxm-table-th-content {
-        display: flex;
-        align-items: center;
-        gap: calc(var(--spacing) * 2);
-    }
-
-    .nxm-table-resize-handle {
+    /* Sticks to the page's scroller, which the table virtualises against, padding and all, so
+       it's the same size stuck as not. Its rows take the table's columns through it. */
+    .nxm-table-head {
+        position: sticky;
         top: 0;
-        height: 100%;
-        user-select: none;
-        touch-action: none;
-        cursor: col-resize;
-        position: absolute;
-        inset-inline-end: 0;
-        width: calc(var(--spacing) * 2);
-
-        /* The grip line, centred within the wider hit area. Hidden until the
-           header cell is hovered. */
-        &::after {
-            top: 25%;
-            width: 1px;
-            height: 50%;
-            content: "";
-            position: absolute;
-            inset-inline-end: 0;
-            background-color: transparent;
-
-            transition-property: background-color;
-            transition-duration: var(--default-transition-duration);
-            transition-timing-function: var(--default-transition-timing-function);
-        }
-
-        .nxm-table-th:hover &::after {
-            background-color: var(--color-translucent-200);
-        }
-
-        &:hover::after {
-            background-color: var(--color-primary-strong);
-        }
+        z-index: 1;
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
+        row-gap: var(--nxm-table-head-padding);
+        height: var(--nxm-table-head-height);
+        padding-block: var(--nxm-table-head-padding);
+        background-color: var(--color-surface-low);
     }
 
-    /* Applied to <body> while a column is being dragged. */
-    .nxm-table-resizing {
-        cursor: col-resize;
-        user-select: none;
+    .nxm-table[data-toolbar] {
+        --nxm-table-head-height: calc(
+            var(--nxm-table-head-padding) * 3 + var(--nxm-table-toolbar-height) +
+                var(--nxm-table-header-height)
+        );
     }
 
-    .nxm-table-sort {
-        color: inherit;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: calc(var(--spacing) * 1);
-
-        transition-property: color;
-        transition-duration: var(--default-transition-duration);
-        transition-timing-function: var(--default-transition-timing-function);
-
-        &:hover,
-        &:focus-visible {
-            color: var(--color-neutral-strong);
-
-            .nxm-table-sort-icon {
-                opacity: 1;
-            }
-        }
-
-        .nxm-table-sort-icon {
-            opacity: 0;
-            flex-shrink: 0;
-            color: var(--color-neutral-subdued);
-
-            &.nxm-table-sort-icon-active {
-                opacity: 1;
-                color: var(--color-neutral-strong);
-            }
-        }
-    }
-
-    .nxm-table-group {
-        opacity: 0;
-        cursor: pointer;
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        margin-inline-start: auto;
-        color: var(--color-neutral-subdued);
-
-        transition-property: opacity, color;
-        transition-duration: var(--default-transition-duration);
-        transition-timing-function: var(--default-transition-timing-function);
-
-        &:hover,
-        &:focus-visible {
-            opacity: 1;
-            color: var(--color-neutral-strong);
-        }
-
-        .nxm-table-th-content:hover & {
-            opacity: 1;
-        }
-
-        &.nxm-table-group-active {
-            opacity: 1;
-            color: var(--color-primary-strong);
-        }
-    }
-
-    /* Filter row ----------------------------------------------------------- */
-
-    .nxm-table-filter-cell {
-        vertical-align: top;
-        font-weight: var(--font-weight-normal);
-        padding: 0 calc(var(--spacing) * 3) calc(var(--spacing) * 2);
-    }
-
-    /* Body ----------------------------------------------------------------- */
-
-    .nxm-table-row {
-        transition-property: background-color;
-        transition-duration: var(--default-transition-duration);
-        transition-timing-function: var(--default-transition-timing-function);
-
-        &:hover {
-            background-color: var(--color-translucent-dark-300);
-        }
-    }
-
-    .nxm-table-td {
-        padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 3);
-        vertical-align: middle;
-    }
-
-    .nxm-table-cell-inner {
+    /* Inside the gutters, so its first tab lines up with the first column. */
+    .nxm-table-toolbar {
         display: flex;
+        grid-column: 2 / -2;
+        height: var(--nxm-table-toolbar-height);
+    }
+
+    .nxm-table-toolbar-cell {
+        display: flex;
+        flex: 1;
         align-items: center;
-        gap: calc(var(--spacing) * 1);
+        justify-content: space-between;
+        gap: calc(var(--spacing) * 2);
         min-width: 0;
     }
 
-    .nxm-table-cell-center .nxm-table-cell-inner {
-        justify-content: center;
+    .nxm-table-header {
+        height: var(--nxm-table-header-height);
+        color: var(--color-translucent-subdued);
+
+        /* Labels sit a little in from their column, as the design's header buttons do. */
+        .nxm-table-cell {
+            padding-inline: calc(var(--spacing) * 0.5);
+        }
     }
 
-    .nxm-table-cell-right .nxm-table-cell-inner {
-        justify-content: flex-end;
+    /* Heights come from Table.tsx, which the virtualiser counts on. */
+    .nxm-table-row {
+        height: var(--nxm-table-row-height);
+        color: var(--color-neutral-moderate);
     }
 
-    .nxm-table-empty {
-        text-align: center;
-        padding: calc(var(--spacing) * 8) calc(var(--spacing) * 3);
+    .nxm-table-group-row {
+        position: relative;
+        isolation: isolate;
+        height: var(--nxm-table-group-row-height);
+        margin-top: var(--nxm-table-group-row-gap);
+        border-top: 1px solid var(--color-stroke-weak);
+        background-color: var(--color-translucent-50);
+        color: var(--color-translucent-strong);
+        font-weight: var(--font-weight-semibold);
     }
 
-    /* Group header rows ---------------------------------------------------- */
+    /* Focus scrolls a control into view clear of the sticky header. Its own margin, not the row's. */
+    :is(.nxm-table-row, .nxm-table-group-row) * {
+        scroll-margin-top: var(--nxm-table-head-height);
+    }
 
-    .nxm-table-group-cell {
-        padding: 0;
-        border-top: 2px solid transparent;
+    /* Stands in for the rows out of view. */
+    .nxm-table-spacer {
+        grid-column: 1 / -1;
+    }
+
+    /* Positioned, so it takes no track; behind the cells, over the row's own background. */
+    .nxm-table-group-wash {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        width: 100%;
+        height: 100%;
+        opacity: 0.15;
+        mask-image: linear-gradient(90deg, #000, rgb(0 0 0 / 0.33));
+        pointer-events: none;
+    }
+
+    /* Behind the rows, over the table's own background; the sticky header covers it. */
+    .nxm-table-group-backdrop {
+        position: absolute;
+        top: calc(var(--nxm-table-head-height) + var(--nxm-table-backdrop-top));
+        left: 0;
+        z-index: -1;
+        width: 100%;
+        opacity: 0.05;
+        pointer-events: none;
     }
 
     .nxm-table-group-toggle {
-        width: 100%;
-        cursor: pointer;
         display: flex;
+        flex-shrink: 0;
         align-items: center;
-        gap: calc(var(--spacing) * 2);
-        padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
+        justify-content: center;
+        width: calc(var(--spacing) * 5);
+        height: calc(var(--spacing) * 5);
+        border-radius: var(--radius-sm);
+        color: var(--color-neutral-moderate);
 
-        text-align: left;
-        font-weight: var(--font-weight-semibold);
-        background-color: var(--color-translucent-50);
+        > svg {
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
+        }
 
         &:hover {
             background-color: var(--color-translucent-100);
         }
 
-        .nxm-table-group-icon {
-            flex-shrink: 0;
-            color: var(--color-neutral-subdued);
-        }
-
-        .nxm-table-group-label {
-            min-width: 0;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            color: var(--color-translucent-strong);
-        }
-
-        .nxm-table-group-count {
-            color: var(--color-neutral-subdued);
-            font-weight: var(--font-weight-semibold);
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-subdued);
         }
     }
 
-    /* Column toggle -------------------------------------------------------- */
+    .nxm-table-cell {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--spacing) * 1);
+        min-width: 0;
 
-    .nxm-table-column-toggle {
-        margin-inline-start: auto;
+        &[data-align="end"] {
+            justify-self: end;
+        }
     }
 }

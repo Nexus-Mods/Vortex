@@ -37,7 +37,7 @@ export const useDisplayOptionsAction = ({
     children: (
       <>
         <PopoverPanelGroup>
-          <PopoverPanelGroupItem label={t("Display as")}>
+          <PopoverPanelGroupItem passive label={t("Display as")}>
             <Picker<PickerLayout>
               button={{
                 leftIconPath: pickerLayout === "list" ? mdiViewList : mdiViewGrid,

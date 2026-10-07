@@ -78,8 +78,7 @@ export async function downloadFileRequirement(
       api,
       {
         ...identity,
-        mod_id: mod.id,
-        mod_name: candidate.modName,
+        mod_uid: candidate.modUID,
         mod_version: candidate.version,
       },
       async () => {
@@ -163,8 +162,7 @@ export async function installDownloadedFile(
       api,
       {
         ...identity,
-        mod_id: decodeUID(file.modUID)?.id ?? 0,
-        mod_name: file.modName,
+        mod_uid: file.modUID,
         mod_version: file.version,
       },
       async () => {

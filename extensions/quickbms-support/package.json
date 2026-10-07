@@ -4,7 +4,8 @@
   "description": "QuickBMS extractor support",
   "scripts": {
     "build": "node build.mjs && node download_dependencies.js && pnpm extractInfo",
-    "typecheck": "pnpm tsc"
+    "typecheck": "pnpm tsc",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

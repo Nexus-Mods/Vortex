@@ -13,6 +13,7 @@
     "auth:capture": "pnpm exec tsx ./src/authCapture.ts",
     "typecheck": "pnpm exec tsc",
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs",
     "lint:verbose": "pnpm exec eslint --concurrency auto .",
     "ci-report": "pnpm exec tsx ./ci-report.ts"
   },

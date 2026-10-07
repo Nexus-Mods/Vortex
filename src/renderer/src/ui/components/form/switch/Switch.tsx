@@ -1,5 +1,5 @@
 import { Checkbox } from "@headlessui/react";
-import React, { type ComponentProps } from "react";
+import React, { type ComponentProps, forwardRef } from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -25,8 +25,12 @@ export type ISwitchProps = Omit<ComponentProps<typeof Checkbox>, "className"> & 
   indeterminate?: boolean;
 };
 
-export const Switch = ({ className, ...props }: ISwitchProps) => (
-  <Checkbox className={joinClasses(["nxm-switch", className])} {...props}>
+/**
+ * The bare switch. Inside a `Field` it's named by the field's `Label`; on its own it needs an
+ * `aria-label`. For a switch with its label and hints, use `SwitchField`.
+ */
+export const Switch = forwardRef<HTMLSpanElement, ISwitchProps>(({ className, ...props }, ref) => (
+  <Checkbox className={joinClasses(["nxm-switch", className])} ref={ref} {...props}>
     <span className="nxm-switch-thumb" />
   </Checkbox>
-);
+));

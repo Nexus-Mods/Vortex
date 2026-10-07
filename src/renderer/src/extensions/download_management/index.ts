@@ -1,3 +1,4 @@
+import { spawn } from "child_process";
 import * as path from "path";
 
 import { mdiDownload } from "@mdi/js";
@@ -743,6 +744,29 @@ function checkPendingTransfer(api: IExtensionApi): PromiseBB<ITestResult> {
 
 let shutdownPending: boolean = false;
 let shutdownInitiated: boolean = false;
+let shutdownTimer: NodeJS.Timeout | undefined;
+
+const SHUTDOWN_DELAY_SEC = 30;
+
+function initiateShutdown() {
+  if (process.platform === "win32") {
+    winapi.InitiateSystemShutdown("Vortex downloads finished", SHUTDOWN_DELAY_SEC, false, false);
+    return;
+  }
+  shutdownTimer = setTimeout(() => {
+    spawn("systemctl", ["poweroff"], { detached: true, stdio: "ignore" })
+      .on("error", (err) => log("error", "failed to shut down", err.message))
+      .unref();
+  }, SHUTDOWN_DELAY_SEC * 1000);
+}
+
+function abortShutdown() {
+  if (process.platform === "win32") {
+    winapi.AbortSystemShutdown();
+  } else {
+    clearTimeout(shutdownTimer);
+  }
+}
 
 /**
  * schedule or abort shutdown as necessary. This gets called constantly as downloads
@@ -752,13 +776,13 @@ let shutdownInitiated: boolean = false;
 function updateShutdown(downloads: { [key: string]: IDownload }) {
   if (shutdownInitiated && (Object.keys(downloads).length > 0 || !shutdownPending)) {
     // cancel shutdown if the conditions for it are no longer met
-    winapi.AbortSystemShutdown();
+    abortShutdown();
     shutdownInitiated = false;
   }
 
   if (!shutdownInitiated && shutdownPending && Object.keys(downloads).length === 0) {
     // schedule shutdown if conditions are met
-    winapi.InitiateSystemShutdown("Vortex downloads finished", 30, false, false);
+    initiateShutdown();
     shutdownInitiated = true;
   }
 }
@@ -1065,7 +1089,7 @@ function init(context: IExtensionContext): boolean {
       activeDownloads: selectors.activeDownloads(context.api.getState()),
       toggleShutdown: () => toggleShutdown(context.api),
     }),
-    () => process.platform === "win32",
+    () => ["win32", "linux"].includes(process.platform),
   );
 
   context.registerTest("verify-downloads-transfers", "gamemode-activated", () =>

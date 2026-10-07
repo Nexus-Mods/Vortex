@@ -1,87 +1,24 @@
-/**
- * Select Component
- * Adapted from web team's "next" project for Vortex
- *
- * Provides a styled select dropdown with custom icon and validation support.
- */
-
+import { Select as HeadlessSelect, type SelectProps } from "@headlessui/react";
 import { mdiMenuDown } from "@mdi/js";
-import React, { type Ref, type SelectHTMLAttributes } from "react";
+import React, { forwardRef } from "react";
 
-import type { IBaseFormFieldProps } from "@/ui/components/form/formfield/FormField";
-import { FormField } from "@/ui/components/form/formfield/FormField";
 import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-export type ISelectProps = SelectHTMLAttributes<HTMLSelectElement> &
-  IBaseFormFieldProps & {
-    ref?: Ref<HTMLSelectElement>;
-  };
-
-export const Select = ({
-  children,
-  className,
-  disabled,
-  errorMessage,
-  hideLabel = false,
-  hints = [],
-  id,
-  label = "",
-  ref,
-  required,
-  showRequiredLabel,
-  ...props
-}: ISelectProps) => {
-  // Make sure hints is always an array
-  hints = !Array.isArray(hints) ? [hints] : hints;
-
-  return (
-    <FormField
-      className={className}
-      disabled={disabled}
-      errorMessage={errorMessage}
-      hideLabel={hideLabel}
-      hints={hints}
-      id={id}
-      label={label}
-      showRequiredLabel={showRequiredLabel ?? required}
-    >
-      <div
-        className={joinClasses(["relative flex flex-col", className], {
-          "opacity-40": disabled,
-        })}
-      >
-        <select
-          {...props}
-          aria-describedby={
-            errorMessage ? `${id}_error` : hints.length > 0 ? `${id}_hints` : undefined
-          }
-          aria-invalid={!!errorMessage || undefined}
-          className={joinClasses([
-            "typography-body-lg relative w-full appearance-none rounded-sm border bg-surface-low py-2 pr-12 pl-4 text-neutral-strong",
-            errorMessage
-              ? "border-danger-strong hover:border-stroke-subdued"
-              : "border-stroke-subdued",
-            "hover:border-stroke-strong",
-            "focus:border-stroke-strong focus:bg-surface-low focus-visible:outline-offset-1",
-          ])}
-          disabled={disabled}
-          id={id}
-          ref={ref}
-          required={required}
-        >
-          {children}
-        </select>
-
-        <Icon
-          className={joinClasses([
-            "pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 transform text-neutral-subdued",
-            "hover:text-white focus:text-white",
-          ])}
-          path={mdiMenuDown}
-          size="lg"
-        />
-      </div>
-    </FormField>
-  );
+export type ISelectProps = Omit<SelectProps<"select">, "className"> & {
+  className?: string;
 };
+
+/**
+ * A bare native select with its chevron. Inside a `Field` it's named by the field's `Label`; on
+ * its own it needs an `aria-label`. For the usual label, hints and error in one, use `SelectField`.
+ */
+export const Select = forwardRef<HTMLSelectElement, ISelectProps>(
+  ({ className, ...props }, ref) => (
+    <div className="nxm-field-control">
+      <HeadlessSelect className={joinClasses(["nxm-select", className])} ref={ref} {...props} />
+
+      <Icon className="nxm-select-icon" path={mdiMenuDown} size="lg" />
+    </div>
+  ),
+);

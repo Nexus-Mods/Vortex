@@ -20,10 +20,19 @@ export class NexusModPage {
   readonly downloadModal: Locator;
   /** The modal's primary main-file "Download" action (an anchor, sometimes a button). */
   readonly modalDownloadLink: Locator;
+  /**
+   * The modal's premium variant: the download has already been handed to the
+   * mod manager, so the modal only says so (with a "Try again" fallback).
+   */
+  readonly modalDownloadStarting: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.manualDownloadLink = page.getByRole("link", { name: /^manual( download)?$/i }).first();
+    // A link for free users, a button (next to the "Vortex" one) for premium.
+    this.manualDownloadLink = page
+      .getByRole("link", { name: /^manual( download)?$/i })
+      .or(page.getByRole("button", { name: /^manual( download)?$/i }))
+      .first();
     this.slowDownloadButton = page.getByRole("button", { name: "Slow download" }).first();
     this.modManagerDownload = page
       .getByRole("button", { name: /mod manager download|^vortex$/i })
@@ -44,5 +53,6 @@ export class NexusModPage {
       .getByRole("link", { name: /^download$/i })
       .or(this.downloadModal.getByRole("button", { name: /^download$/i }))
       .first();
+    this.modalDownloadStarting = this.downloadModal.getByText("Your download is starting");
   }
 }

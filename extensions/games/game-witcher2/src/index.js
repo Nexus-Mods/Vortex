@@ -1,12 +1,9 @@
 const Promise = require("bluebird");
 const path = require("path");
-const { fs } = require("@nexusmods/vortex-api");
+const { fs, util } = require("@nexusmods/vortex-api");
 const winapi = require("winapi-bindings");
 
 function findGame() {
-  if (process.platform !== "win32") {
-    return Promise.reject(new Error("Currently only discovered on windows"));
-  }
   try {
     const instPath = winapi.RegGetValue(
       "HKEY_LOCAL_MACHINE",
@@ -18,7 +15,7 @@ function findGame() {
     }
     return Promise.resolve(instPath.value);
   } catch (err) {
-    return Promise.reject(err);
+    return util.GameStoreHelper.findByAppId("20920", "steam").then((game) => game.gamePath);
   }
 }
 

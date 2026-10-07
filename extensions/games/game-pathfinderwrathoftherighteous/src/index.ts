@@ -1,5 +1,6 @@
-const path = require("path");
-const { fs, types, util } = require("@nexusmods/vortex-api");
+import path from "node:path";
+
+import { fs, types, util } from "@nexusmods/vortex-api";
 
 const GAME_ID = "pathfinderwrathoftherighteous";
 const NAME = "Pathfinder: Wrath\tof the Righteous";
@@ -27,7 +28,7 @@ async function resolveGameVersion(discoveryPath: string) {
   }
 }
 
-function main(context) {
+export default function main(context) {
   context.requireExtension("modtype-umm");
   context.registerGame({
     id: GAME_ID,
@@ -58,7 +59,3 @@ function main(context) {
 
   return true;
 }
-
-module.exports = {
-  default: main,
-};

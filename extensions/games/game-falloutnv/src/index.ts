@@ -5,6 +5,7 @@ import path from "path";
 import { IFileInfo } from "@nexusmods/nexus-api";
 import { actions, fs, log, types, selectors, util } from "@nexusmods/vortex-api";
 import * as semver from "semver";
+import * as winapi from "winapi-bindings";
 
 // List of folders in the various languages on Xbox, for now we default to English but this could be enhanced to select a folder based on the Vortex locale.
 // It's possible that some mods don't work with the non-English variant.
@@ -30,20 +31,27 @@ const PATCH_4GB_EXECUTABLES = ["FNVpatch.exe", "FalloutNVpatch.exe", "Patcher.ex
 let selectedLanguage = undefined;
 let multipleLanguages = false;
 
-const gameStoreIds: { [gameStoreId: string]: types.IStoreQuery[] } = {
-  steam: [{ id: STEAMAPP_ID, prefer: 0 }, { id: STEAMAPP_ID2 }, { name: "Fallout: New Vegas.*" }],
-  xbox: [{ id: MS_ID }],
-  gog: [{ id: GOG_ID }],
-  epic: [{ id: EPIC_ID }],
-  registry: [
-    {
-      id: "HKEY_LOCAL_MACHINE:Software\\Wow6432Node\\Bethesda Softworks\\falloutnv:Installed Path",
-    },
-  ],
-};
+async function findRegistryGame(key: string): Promise<types.IGameStoreEntry | undefined> {
+  const instPath = winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "Installed Path");
+  if (instPath.type !== "REG_SZ") return undefined;
+  const gamePath = instPath.value as string;
+  return { appid: key, name: path.basename(gamePath), gamePath, gameStoreId: "registry" };
+}
 
 async function findGame() {
-  const storeGames = await util.GameStoreHelper.find(gameStoreIds).catch(() => []);
+  // Same order as the removed GameStoreHelper.find; the first hit wins.
+  const lookups: PromiseLike<types.IGameStoreEntry>[] = [
+    util.GameStoreHelper.findByAppId(STEAMAPP_ID, "steam"),
+    util.GameStoreHelper.findByAppId(STEAMAPP_ID2, "steam"),
+    util.GameStoreHelper.findByName("Fallout: New Vegas.*", "steam"),
+    util.GameStoreHelper.findByAppId(MS_ID, "xbox"),
+    util.GameStoreHelper.findByAppId(GOG_ID, "gog"),
+    util.GameStoreHelper.findByAppId(EPIC_ID, "epic"),
+    findRegistryGame("Software\\Wow6432Node\\Bethesda Softworks\\falloutnv"),
+  ];
+  const storeGames = (
+    await Promise.all(lookups.map((lookup) => Promise.resolve(lookup).catch(() => undefined)))
+  ).filter((game): game is types.IGameStoreEntry => game !== undefined);
 
   if (!storeGames.length) return;
 

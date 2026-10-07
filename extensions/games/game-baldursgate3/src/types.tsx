@@ -23,12 +23,6 @@ export interface IProps {
   mods: { [modId: string]: types.IMod };
 }
 
-export type BG3Pak = {
-  fileName: string;
-  mod: types.IMod;
-  info: IPakInfo;
-};
-
 //export type LoadOrder = ILoadOrderEntry[];
 
 /*

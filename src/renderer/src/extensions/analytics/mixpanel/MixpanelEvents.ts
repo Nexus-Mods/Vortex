@@ -48,6 +48,8 @@ export class AppLaunchedEvent implements MixpanelEvent {
     architecture?: string,
     is_legacy_ui?: boolean,
     update_channel?: string,
+    zoom_percent?: number,
+    is_hidpi?: boolean,
   ) {
     this.properties = {
       $os: mapPlatformToMixpanel(os), // Override auto-detected OS for accuracy
@@ -56,6 +58,12 @@ export class AppLaunchedEvent implements MixpanelEvent {
       is_legacy_ui, // Custom property for which UI the session is running
       // the population denominator for the app_update_* funnel
       update_channel,
+      // The zoom level this session is actually running at, not just a change event —
+      // answers "what do people settle on" without the noise of every intermediate step.
+      zoom_percent,
+      // Whether this session's display is above the app's HiDPI threshold — lets zoom
+      // usage be cross-referenced against display density.
+      is_hidpi,
     };
   }
 }
@@ -845,12 +853,15 @@ export interface ModsDeployedProps {
   enabled_mod_count: number;
   manual: boolean;
   is_collection_postprocess: boolean;
+  duration_ms: number;
 }
 
 /**
  * Sent when a deployment to the game directory completes successfully. `deployment_method` is the
  * activator (hardlink, symlink, ...); `manual` marks a user-triggered deploy over an automatic one;
  * `is_collection_postprocess` marks the deploy Vortex runs while finishing a collection install.
+ * `duration_ms` runs from the deployment activity starting to the end of post-deployment, so it
+ * excludes time queued behind other deployments and running installs.
  */
 export class ModsDeployedEvent implements MixpanelEvent {
   readonly eventName = "mods_deployed";

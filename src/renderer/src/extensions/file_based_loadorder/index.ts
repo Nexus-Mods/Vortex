@@ -16,6 +16,7 @@ import { addGameEntry, addGameEntryInline, findGameEntry } from "./gameSupport";
 import { diffLoadOrder } from "./loadOrderDiff";
 import { modLoadOrderReducer } from "./reducers/loadOrder";
 import { sessionReducer } from "./reducers/session";
+import { loadOrderToPersist } from "./resolveLoadOrder";
 import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
 import type { ICollection } from "./types/collections";
 import {
@@ -212,7 +213,10 @@ async function genDeploymentEvent(
   }
 
   try {
-    let deserializedLO: LoadOrder = (await gameEntry.deserializeLoadOrder()) ?? [];
+    let deserializedLO: LoadOrder = loadOrderToPersist(
+      currentLoadOrderForProfile(state, profileId),
+      await gameEntry.deserializeLoadOrder(),
+    );
     if (eventType === "did-deploy") {
       // This is a deploy event - we need to restore the load order
       deserializedLO = updateSet.restore(deserializedLO);

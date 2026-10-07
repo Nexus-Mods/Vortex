@@ -1818,7 +1818,7 @@ interface IExtensionContext {
     // Warning: (ae-forgotten-export) The symbol "MergeTest" needs to be exported by the entry point api.d.ts
     // Warning: (ae-forgotten-export) The symbol "MergeFunc" needs to be exported by the entry point api.d.ts
     registerMerge: (test: MergeTest, merge: MergeFunc, modType: string) => void;
-    registerMigration: (migrate: (oldVersion: string) => default_2<void>) => void;
+    registerMigration: (migrate: (oldVersion: string) => PromiseLike<void>) => void;
     // Warning: (ae-forgotten-export) The symbol "IModSourceOptions" needs to be exported by the entry point api.d.ts
     registerModSource: (id: string, name: string, onBrowse?: () => void, options?: IModSourceOptions) => void;
     // Warning: (ae-forgotten-export) The symbol "IInstruction" needs to be exported by the entry point api.d.ts
@@ -4288,6 +4288,7 @@ interface IWindow {
     tabsMinimized: boolean;
     // (undocumented)
     useModernLayout: boolean;
+    zoomFactor?: number;
 }
 
 // @public (undocumented)

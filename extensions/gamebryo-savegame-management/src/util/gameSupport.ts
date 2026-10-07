@@ -18,7 +18,7 @@ function scriptExtenderFiles(input: string, seext: string): string[] {
 const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
   {
     skyrim: {
-      mygamesPath: "skyrim",
+      mygamesPath: "Skyrim",
       iniName: "Skyrim.ini",
       prefIniName: "SkyrimPrefs.ini",
       saveFiles: (input: string): string[] => {
@@ -26,7 +26,7 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
       },
     },
     enderal: {
-      mygamesPath: "enderal",
+      mygamesPath: "Enderal",
       iniName: "Enderal.ini",
       prefIniName: "EnderalPrefs.ini",
       saveFiles: (input: string): string[] =>

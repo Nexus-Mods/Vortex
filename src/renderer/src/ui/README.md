@@ -13,11 +13,15 @@ ui/
 │   ├── collectiontile/  - Collection card with image, metadata, and actions
 │   ├── dropdown/        - Dropdown menu (Headless UI Menu)
 │   ├── form/            - Form components
-│   │   ├── checkbox/    - Checkbox input
-│   │   ├── formfield/   - Form field wrapper with labels and validation
-│   │   ├── input/       - Text input with validation
-│   │   ├── select/      - Select dropdown with custom styling
-│   │   └── switch/      - Tri-state toggle switch (off / on / semi-on)
+│   │   ├── checkbox/    - Bare checkbox, with indeterminate (Headless UI Checkbox)
+│   │   ├── checkbox_field/ - Checkbox with its label beside it, hints and error
+│   │   ├── field/       - Field, Label, Description, ErrorMessage, CharacterCount (Headless UI Field)
+│   │   ├── input/       - Bare text input (Headless UI Input)
+│   │   ├── select/      - Bare native select with its chevron (Headless UI Select)
+│   │   ├── select_field/ - Select with its label, hints and error
+│   │   ├── switch/      - Bare tri-state switch: off / on / semi-on (Headless UI Checkbox)
+│   │   ├── switch_field/ - Switch with its label beside it and hints under both
+│   │   └── text_field/  - Text input with its label, hints, error and character count
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
@@ -31,7 +35,7 @@ ui/
 │   ├── pill/            - Compact rounded label for tags and statuses
 │   ├── popover/         - Floating panel of interactive content, or a menu of actions (Headless UI Popover)
 │   ├── premium_badge/   - Premium diamond badge
-│   ├── table/           - Data table (sort, filter, group, column toggle, optional pagination)
+│   ├── table/           - Column-driven grid table (work in progress, behind a dev switch)
 │   ├── tabs/            - Tabbed interface with context-based state
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
 │   ├── tooltip/         - Rich, collision-aware tooltip (Floating UI)
@@ -118,6 +122,9 @@ import { mdiDownload } from "@mdi/js";
 
 // Loading state
 <Button isLoading>Processing...</Button>
+
+// Disclosure toggle: keeps aria-expanded, without the menu-trigger "open" highlight
+<Button aria-expanded={!collapsed} hasExpandedStyle={false} leftIconPath={mdiChevronUp} />
 ```
 
 **Brands:** `primary`, `info`, `neutral`, `success`, `premium`, `danger`
@@ -346,29 +353,88 @@ The bar owns a 24px inline gutter and a bottom divider rather than a border and 
 
 ### Form Components
 
+Forms are built from Headless UI's `Field` parts, which link a control to its label and descriptions themselves. There are no ids to wire up.
+
+#### TextField
+
+A text input with its label, hints, error and, given `maxLength`, a character count. `label` is required: `hideLabel` hides it on screen, not from screen readers.
+
 ```tsx
-import { Input } from "../../ui/components/form/input/Input";
-import { Select } from "../../ui/components/form/select/Select";
-import { FormFieldWrap } from "../../ui/components/form/formfield/FormField";
+import { TextField } from "../../ui/components/form/text_field/TextField";
 
-// Input with validation
-<Input id="email" label="Email" type="email" required errorMessage="Invalid email" />
+<TextField label="Email" type="email" required errorMessage="Invalid email" />
 
-// Input with character counter
-<Input id="bio" label="Bio" type="text" maxLength={200} />
+// Character count
+<TextField label="Bio" maxLength={200} hints="Keep it short" />
 
-// Select dropdown
-<Select id="country" label="Country">
-  <option value="">Select...</option>
-  <option value="us">United States</option>
-</Select>
-
-// Multiple fields with spacing
-<FormFieldWrap>
-  <Input id="first" label="First Name" type="text" required />
-  <Input id="last" label="Last Name" type="text" required />
-</FormFieldWrap>
+// No visible label, but still named for screen readers
+<TextField hideLabel label="Filter categories" placeholder="Filter categories..." />
 ```
+
+**Props:** everything `Input` takes except `id` (Headless UI generates the ids that link the parts), plus `label`, `hideLabel`, `hints` (a string or a list), `errorMessage`, `hideErrors` (off screen only; screen readers still get it), `showRequiredLabel` (defaults to `required`), `fieldClassName` and `leftIconPath` (an mdi icon inside the input, before the text). `className` goes on the input and `fieldClassName` on the field around it. `onChange` receives the native change event.
+
+#### SelectField
+
+A native select with its label, hints and error. It takes the same field props as `TextField`, minus the character count and icon:
+
+```tsx
+import { SelectField } from "../../ui/components/form/select_field/SelectField";
+
+<SelectField
+    label="Country"
+    required
+    value={country}
+    onChange={(event) => setCountry(event.target.value)}
+>
+    <option value="">Select...</option>
+    <option value="us">United States</option>
+</SelectField>;
+```
+
+**Props:** everything `Select` takes except `id`, plus `label`, `hideLabel`, `hints`, `errorMessage`, `hideErrors`, `showRequiredLabel` and `fieldClassName`. Options and option groups are passed as children. `onChange` receives the native change event, as before.
+
+#### CheckboxField
+
+A checkbox with its label beside it, and hints and error under both. Clicking the label toggles it.
+
+```tsx
+import { CheckboxField } from "../../ui/components/form/checkbox_field/CheckboxField";
+
+<CheckboxField label="Include logs" checked={include} onChange={setInclude} />
+
+// Rich label, e.g. a title and a note; a long one wraps with the checkbox at the top
+<CheckboxField label={<><strong>{modName}</strong> {note}</>} checked={on} onChange={setOn} />
+```
+
+**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value` for form submission, `defaultChecked` — plus `label` (required, and can be rich content), `hideLabel`, `hints`, `errorMessage` and `fieldClassName`. `onChange` receives the new checked value, not an event. `className` goes on the checkbox.
+
+`Checkbox` is the bare control: a `<span role="checkbox">`, so pass `name` for the value to take part in form submission, and outside a `Field` give it an `aria-label`. `indeterminate` shows a dash and reports `aria-checked="mixed"`; `invalid` marks it with `aria-invalid` and `data-invalid`.
+
+#### Building blocks
+
+`TextField`, `SelectField`, `CheckboxField` and `SwitchField` are these parts put together. Use them directly for a layout it doesn't cover:
+
+```tsx
+import { Description } from "../../ui/components/form/field/Description";
+import { ErrorMessage } from "../../ui/components/form/field/ErrorMessage";
+import { Field } from "../../ui/components/form/field/Field";
+import { Label } from "../../ui/components/form/field/Label";
+import { Input } from "../../ui/components/form/input/Input";
+
+<Field disabled={disabled}>
+    <Label required>Name</Label>
+    <Input required invalid={!!error} />
+    <Description>Shown to other users</Description>
+    {!!error && <ErrorMessage>{error}</ErrorMessage>}
+</Field>;
+```
+
+- `Field` groups a control with its parts. `disabled` cascades to all of them.
+- `Label` names the control. `required` only adds "(Required)", so set `required` on the control as well. If you give the control its own `id`, pass the same value as `htmlFor`, or clicking the label stops focusing the control.
+- `Description` and `ErrorMessage` are both added to the control's `aria-describedby`, in the order they render. `ErrorMessage` is a `Description` styled as an error; pair it with `invalid` on the control.
+- `Input` and `Select` are the bare controls. Outside a `Field` they need an `aria-label`. `Select` draws its own chevron, so it wraps the native select in `nxm-field-control`, the same wrapper `TextField` puts around its input for the icon; its ref and `className` go on the select.
+
+Every part styles itself off the attributes Headless UI sets (`data-disabled`, `data-invalid`, `data-hover`), like `Switch`. The one exception is the focus style of `Input` and `Select`, which uses `:focus`: Headless UI sets `data-focus` only for keyboard focus, and these should show focus however they got it.
 
 ### Switch
 
@@ -379,7 +445,7 @@ Built on Headless UI's **`Checkbox`**, not its `Switch`: ARIA only allows `aria-
 ```tsx
 import { Switch } from "../../ui/components/form/switch/Switch";
 
-// Controlled on/off — onChange receives the new checked value, not an event
+// Controlled on/off, named by aria-label outside a Field. onChange receives the new checked value, not an event
 <Switch checked={enabled} onChange={setEnabled} aria-label="Enable" />
 
 // Semi-on (mixed) — e.g. a "select all" with some children on
@@ -391,7 +457,17 @@ import { Switch } from "../../ui/components/form/switch/Switch";
 />
 ```
 
-**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value`/`form` for form submission, `defaultChecked` for uncontrolled use — plus `className`.
+**Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value`/`form` for form submission, `defaultChecked` for uncontrolled use — plus `className`. The ref goes to the switch.
+
+`Switch` is the bare control: outside a `Field` it needs an `aria-label`. For a switch with its label beside it, use `SwitchField`:
+
+```tsx
+import { SwitchField } from "../../ui/components/form/switch_field/SwitchField";
+
+<SwitchField label="Auto-update" hints="Checks when Vortex starts" checked={on} onChange={setOn} />;
+```
+
+`SwitchField` takes everything `Switch` does except `id`, plus `label` (required), `hideLabel`, `hints` and `fieldClassName`. Clicking the label toggles the switch, and `disabled` covers both. There's no `errorMessage`: a switch is never invalid. To lay the parts out differently, such as the label before the switch, compose `Field`, `Label` and `Switch` yourself.
 
 The track and thumb style themselves off the attributes Headless UI sets (`data-checked`, `data-indeterminate`, `data-disabled`, `data-hover`, `data-active`, `data-focus`) rather than any state we derive ourselves. It renders a `<span role="checkbox">`, so pass `name` if the value needs to take part in form submission.
 
@@ -575,6 +651,14 @@ Width is CSS, not a prop. `.nxm-tooltip` caps at 320px; pass a utility class to 
 
 That only moves the design cap. The positioner around the bubble is still clamped to the space left in the window, so a wider cap can't push the tooltip off an edge.
 
+Stacking lives on the positioner, not the bubble, so `className` can't change it. Tooltips sit above modals (`--z-index-tooltip`); one that shows itself rather than answering a hover, like the download flyout, should sit under the modal scrim instead. Pass `positionerClassName`:
+
+```tsx
+<Tooltip persistent positionerClassName="z-(--z-index-flyout)" customContent={<Flyout />}>
+    …
+</Tooltip>
+```
+
 > **The trigger must forward a ref to a DOM node.** `Button` does; `Icon`, `Pill` and bare text do not — wrap those in a `<span className="inline-flex">`.
 
 `placement` is a preference, not a guarantee: the collision middleware treats it as the starting point and moves the tooltip if it wouldn't fit. Tooltips also open on keyboard focus and dismiss on Escape, and are non-interactive by default so they can never swallow a click aimed at what's underneath.
@@ -637,45 +721,21 @@ import { Pagination } from "../../ui/components/pagination/Pagination";
 
 ### Table
 
-Reusable, column-driven data table. Declare the columns and pass the data; sorting, per-column filtering, column show/hide, grouping, optional pagination and an empty state are handled internally.
-
-**Defaults:** filters and the column toggle auto-enable when a column opts in; pagination is **off** unless `pageSize` is set; headers are always left-aligned.
+Column-driven table drawn as one CSS grid: the column widths make its tracks and every row is a subgrid of them, so cells line up without a `<table>`. It carries the grid roles. Work in progress towards the new table design; on the Mods page it only shows while the dev tools "New table design" switch is on.
 
 ```tsx
 import { Table } from "../../ui/components/table/Table";
-import type { IColumnDef } from "../../ui/components/table/Table.types";
+import type { ITableColumn } from "../../ui/components/table/Table.types";
 
-const columns: Array<IColumnDef<Mod>> = [
-    { id: "name", header: "Name", getValue: (m) => m.name, sortable: true, filter: { type: "text" } },
-    {
-        id: "category",
-        header: "Category",
-        getValue: (m) => m.category,
-        groupable: true,
-        filter: { type: "select", options: [{ label: "UI", value: "UI" }] },
-    },
-    {
-        id: "downloads",
-        header: "Downloads",
-        getValue: (m) => m.downloads,
-        sortable: true,
-        align: "right",
-        cell: (m) => m.downloads.toLocaleString(),
-    },
+const columns: Array<ITableColumn<Mod>> = [
+    { id: "name", header: "Name", cell: (m) => m.name },
+    { id: "status", header: "Status", width: "42px", cell: (m) => <Switch checked={m.enabled} /> },
 ];
 
-// No pageSize → renders every row, no pager
-<Table columns={columns} data={mods} getRowId={(m) => m.id} />
-
-// With pagination
-<Table columns={columns} data={mods} getRowId={(m) => m.id} pageSize={50} />
+<Table columns={columns} getRowId={(m) => m.id} label="Mods" rows={mods} />;
 ```
 
-**`ITableProps` fields:** `columns`, `data`, `getRowId` (required); `pageSize` (set to paginate), `caption`, `enableFilters`, `enableColumnToggle`, `enableColumnResize` (default `true`), `columnWidths` / `onColumnWidthsChange` (restore/persist resized widths), `emptyState`, `className`.
-
-**`IColumnDef` fields:** `id`, `header` (required); `getValue` (value used for sorting/filtering and the default cell), `cell` (custom renderer), `sortable`/`sortFn`, `filter` (`text` or `select`), `align` (body cells — headers are always left), `width`, `resizable` (drag-to-resize, default `true`), `hideable`/`defaultHidden` (column toggle), `groupable`/`groupValue`/`groupLabel`.
-
-**Notes:** grouping is one column at a time — collapsible groups across the full dataset, with the pager hidden while active. Columns use fixed widths, so when their total exceeds the container the table scrolls horizontally. Users can drag a header's right edge to resize a column (never narrower than its configured `width`) via the `useColumnResize` hook, and the column menu offers a "Reset column widths" action. The table itself stays state-store-agnostic: pass `columnWidths` to restore widths and handle `onColumnWidthsChange` (fired on resize-end and reset with the full px map) to persist them. All interactive state lives in the `useTableState` hook.
+**`ITableColumn` fields:** `id`, `header`, `cell` (required); `width` (a grid track, default `minmax(0, 1fr)`), `align` (`start` or `end`).
 
 ### Listing / ListingLoader / NoResults
 
@@ -831,7 +891,7 @@ import { Image } from "../../ui/components/image/Image";
 <Image alt="Preview" src={url} imageType="mod" isBlurred />
 ```
 
-**Image types:** `collection` (4:5 portrait), `mod` (16:9 landscape), `other` (sized by container)
+**Image types:** `avatar` (1:1 square), `collection` (4:5 portrait), `game` (2:3 portrait), `mod` (16:9 landscape), `other` (sized by container)
 
 #### AdultAwareImage
 

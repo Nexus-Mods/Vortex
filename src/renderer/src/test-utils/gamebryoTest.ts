@@ -109,7 +109,7 @@ export async function makeLootHarness(
   const lootInterface = new LootCtor(base.api);
   await lootInterface.wait();
 
-  // drop the init traffic (createAsync, one loadListsAsync, the masterlist download)
+  // drop the init traffic (create, one loadLists, the masterlist download)
   vi.clearAllMocks();
 
   const addPluginFile = (name: string): Promise<string> => writePluginFile(dataDir, name);

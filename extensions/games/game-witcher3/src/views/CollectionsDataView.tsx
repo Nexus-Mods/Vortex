@@ -12,7 +12,6 @@ import * as React from "react";
 import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
-import { IFBLOLoadOrderEntry } from "vortex-api/lib/types/api";
 
 import { IExtendedInterfaceProps, ILoadOrder, ILoadOrderEntry } from "../collections/types";
 import { genCollectionLoadOrder } from "../collections/util";
@@ -148,7 +147,7 @@ class CollectionsDataView extends ComponentEx<IProps, IComponentState> {
     );
   };
 
-  private renderModEntry = (loEntry: IFBLOLoadOrderEntry, index: number) => {
+  private renderModEntry = (loEntry: types.IFBLOLoadOrderEntry, index: number) => {
     const key = loEntry.modId + JSON.stringify(loEntry);
     const name = loEntry.modId
       ? `${util.renderModName(this.props.mods[loEntry.modId]) ?? loEntry.id} (${loEntry.name})`

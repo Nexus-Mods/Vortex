@@ -9,6 +9,7 @@ export default mergeConfig(
     plugins: [doctest()],
     test: {
       environment: "node",
+      setupFiles: "./src/test-setup.ts",
       include: ["src/**/*.test.ts"],
       includeSource: ["src/fs/paths.ts", "src/fs/matcher.ts"],
     },

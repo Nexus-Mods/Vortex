@@ -188,7 +188,9 @@ export async function loginToNexus(
     }
 
     await expect(vortexLoginPage.vortexLoginDialog).toBeHidden();
-    await expect(vortexLoginPage.profileButton).toBeVisible();
+    // The profile button replaces "Log in" only once Vortex has exchanged the
+    // OAuth code with the server, which can lag under parallel load.
+    await expect(vortexLoginPage.profileButton).toBeVisible({ timeout: Timeouts.NETWORK });
     await vortexLoginPage.profileButton.click();
     await expect(vortexLoginPage.loggedInMenuItem).toBeVisible({ timeout: Timeouts.NETWORK });
   });

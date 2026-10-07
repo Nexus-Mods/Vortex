@@ -796,20 +796,30 @@ class InstallDriver {
   }
 
   private startInstall = async () => {
-    // suppress plugins-changed event to avoid constantly running expensive callbacks
-    // until onStop gets called
+    // a restarted install replaces the hold it already has
+    this.mOnStop?.();
+    // hold off the checks while the collection installs
     this.mApi.ext.withSuppressedTests?.(
       ["plugins-changed", "settings-changed", "mod-activated", "mod-installed"],
       () =>
-        new Bluebird((resolve) => {
+        new Promise<void>((resolve) => {
           this.mOnStop = () => {
-            resolve(undefined);
+            resolve();
             this.mOnStop = undefined;
           };
         }),
     );
 
-    return this.startImpl();
+    // release when the install never starts
+    let started: boolean | undefined = false;
+    try {
+      started = await this.startImpl();
+      return started;
+    } finally {
+      if (started === false) {
+        this.mOnStop?.();
+      }
+    }
   };
 
   private startImpl = async () => {
@@ -1105,6 +1115,8 @@ class InstallDriver {
     this.mCollection = undefined;
     this.setDependentMods([]);
     this.mInstallDone = true;
+    // release the checks the install held off
+    this.mOnStop?.();
     this.triggerUpdate();
   };
 

@@ -1460,7 +1460,7 @@ export interface IExtensionContext {
    *                           As soon as the promise returned from this is resolved, the stored
    *                           version number is updated.
    */
-  registerMigration: (migrate: (oldVersion: string) => PromiseBB<void>) => void;
+  registerMigration: (migrate: (oldVersion: string) => PromiseLike<void>) => void;
 
   /**
    * register a file to be stored with the profile. It will always be synchronised with the current

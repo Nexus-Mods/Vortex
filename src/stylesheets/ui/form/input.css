@@ -24,27 +24,48 @@
             font-style: normal;
         }
 
-        &:disabled,
-        &.nxm-input-disabled {
+        &[data-disabled],
+        &[readonly] {
             opacity: 0.4;
             outline: none;
         }
 
-        &.nxm-input-error {
+        &[data-disabled] {
+            cursor: not-allowed;
+        }
+
+        &[data-invalid] {
             border-color: var(--color-danger-strong);
             background-color: var(--color-surface-translucent-mid);
         }
 
-        &:enabled:not(.nxm-button-disabled, .nxm-input-error) {
-            &:hover {
+        &:not([data-disabled], [data-invalid], [readonly]) {
+            &[data-hover] {
                 border-color: var(--color-stroke-moderate);
                 background-color: var(--color-surface-translucent-low);
             }
 
+            /* :focus, not data-focus: Headless UI only sets that for keyboard focus, and a text
+               input should show it however it was focused. */
             &:focus {
                 border-color: var(--color-stroke-strong);
                 background-color: var(--color-surface-translucent-mid);
             }
+        }
+    }
+
+    .nxm-input-icon {
+        position: absolute;
+        left: calc(var(--spacing) * 3);
+        pointer-events: none;
+        color: var(--color-neutral-subdued);
+
+        &:has(~ .nxm-input[data-disabled], ~ .nxm-input[readonly]) {
+            opacity: 0.4;
+        }
+
+        & ~ .nxm-input {
+            padding-left: calc(var(--spacing) * 9);
         }
     }
 }

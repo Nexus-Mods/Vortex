@@ -1,202 +1,221 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Table } from "./Table";
-import type { IColumnDef } from "./Table.types";
+import type { ITableColumn } from "./Table.types";
 
 interface IRow {
   id: string;
   name: string;
-  category: string;
-  version: number;
+  size: number;
 }
 
 const ROWS: IRow[] = [
-  { id: "1", name: "Charlie", category: "UI", version: 3 },
-  { id: "2", name: "Alpha", category: "Audio", version: 1 },
-  { id: "3", name: "Bravo", category: "UI", version: 2 },
+  { id: "a", name: "Alpha", size: 1 },
+  { id: "b", name: "Beta", size: 2 },
 ];
 
-const COLUMNS: Array<IColumnDef<IRow>> = [
-  {
-    id: "name",
-    header: "Name",
-    getValue: (row) => row.name,
-    sortable: true,
-    filter: { type: "text" },
-  },
-  {
-    id: "category",
-    header: "Category",
-    getValue: (row) => row.category,
-    groupable: true,
-    filter: {
-      type: "select",
-      options: [
-        { label: "UI", value: "UI" },
-        { label: "Audio", value: "Audio" },
-      ],
-    },
-  },
-  {
-    id: "version",
-    header: "Version",
-    getValue: (row) => row.version,
-    sortable: true,
-  },
+const COLUMNS: Array<ITableColumn<IRow>> = [
+  { id: "name", header: "Name", cell: (row) => row.name },
+  { id: "size", header: "Size", width: "80px", align: "end", cell: (row) => `${row.size} MB` },
 ];
 
-const renderTable = (props: Partial<React.ComponentProps<typeof Table<IRow>>> = {}) =>
-  render(
-    <Table columns={COLUMNS} data={ROWS} getRowId={(row) => row.id} pageSize={50} {...props} />,
-  );
-
-// Returns the text of the first body cell of each rendered data row, in order.
-const bodyFirstColumn = () =>
-  screen
-    .getAllByRole("row")
-    // Drop the two header rows (header + filter row).
-    .slice(2)
-    .map((row) => within(row).getAllByRole("cell")[0]?.textContent);
+const renderTable = () =>
+  render(<Table columns={COLUMNS} getRowId={(row) => row.id} label="Files" rows={ROWS} />);
 
 describe("Table", () => {
-  it("renders a row per data item plus header and filter rows", () => {
+  it("is a grid named by its label, with a header row and a row per item", () => {
     renderTable();
-    expect(screen.getByRole("table")).toBeInTheDocument();
-    // 1 header row + 1 filter row + 3 data rows.
-    expect(screen.getAllByRole("row")).toHaveLength(5);
-    expect(screen.getByText("Charlie")).toBeInTheDocument();
+
+    const grid = screen.getByRole("grid", { name: "Files" });
+    expect(within(grid).getAllByRole("row")).toHaveLength(ROWS.length + 1);
+    expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 1));
+    expect(within(grid).getAllByRole("columnheader")).toHaveLength(COLUMNS.length);
   });
 
-  it("falls back to getValue when no cell renderer is supplied", () => {
+  it("makes its tracks from the column widths, between the gutters", () => {
     renderTable();
-    expect(screen.getByRole("cell", { name: "Audio" })).toBeInTheDocument();
+
+    expect(screen.getByRole("grid").style.gridTemplateColumns).toBe(
+      "var(--nxm-table-gutter) minmax(0, 1fr) 80px var(--nxm-table-gutter)",
+    );
   });
 
-  it("sorts ascending then descending when a sortable header is clicked", async () => {
+  it("renders each cell from its column, in column order", () => {
     renderTable();
-    const sortButton = screen.getByRole("button", { name: /name/i });
 
-    await userEvent.click(sortButton);
-    expect(bodyFirstColumn()).toEqual(["Alpha", "Bravo", "Charlie"]);
+    const [, firstRow] = screen.getAllByRole("row");
+    const cells = within(firstRow).getAllByRole("gridcell");
+    expect(cells.map((cell) => cell.textContent)).toEqual(["Alpha", "1 MB"]);
+    expect(cells[1]).toHaveAttribute("data-align", "end");
+  });
+});
 
-    await userEvent.click(sortButton);
-    expect(bodyFirstColumn()).toEqual(["Charlie", "Bravo", "Alpha"]);
+describe("Table with a toolbar", () => {
+  it("puts it in the head above the header row, which counts it among the rows", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        toolbar={<button type="button">Search</button>}
+      />,
+    );
+
+    const grid = screen.getByRole("grid");
+    const [toolbar, header, first] = within(grid).getAllByRole("row");
+    expect(within(toolbar).getByRole("gridcell")).toHaveAttribute("aria-colspan", "2");
+    expect(within(toolbar).getByRole("button", { name: "Search" })).toBeInTheDocument();
+    expect(header).toHaveAttribute("aria-rowindex", "2");
+    expect(first).toHaveAttribute("aria-rowindex", "3");
+    expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
+  });
+});
+
+describe("Table with groups", () => {
+  const GROUPS = [
+    { id: "first", label: "First", rows: [ROWS[0], ROWS[1]] },
+    { id: "second", label: "Second", rows: [ROWS[1]] },
+  ];
+
+  const GROUPED_COLUMNS: Array<ITableColumn<IRow>> = [
+    { ...COLUMNS[0], groupCell: (group) => <span data-testid="group-name">{group.label}</span> },
+    COLUMNS[1],
+  ];
+
+  const renderGrouped = () =>
+    render(
+      <Table columns={GROUPED_COLUMNS} getRowId={(row) => row.id} groups={GROUPS} label="Files" />,
+    );
+
+  it("is a treegrid of group rows, each above its own rows, a row in two groups in both", () => {
+    renderGrouped();
+
+    const grid = screen.getByRole("treegrid", { name: "Files" });
+    const rows = within(grid).getAllByRole("row");
+    expect(rows.map((row) => row.getAttribute("aria-level"))).toEqual([
+      null,
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+    ]);
+    expect(screen.getAllByTestId("group-name").map((name) => name.textContent)).toEqual([
+      "First",
+      "Second",
+    ]);
   });
 
-  it("filters rows with a text filter (case-insensitive substring)", async () => {
-    renderTable();
-    await userEvent.type(screen.getByRole("textbox", { name: /filter by name/i }), "al");
-    expect(bodyFirstColumn()).toEqual(["Alpha"]);
+  it("washes a group's row from its image, when it has one", () => {
+    const { container } = render(
+      <Table
+        columns={GROUPED_COLUMNS}
+        getRowId={(row) => row.id}
+        groups={[{ ...GROUPS[0], image: "first.png" }, GROUPS[1]]}
+        label="Files"
+      />,
+    );
+
+    const groupRows = container.querySelectorAll(".nxm-table-group-row");
+    expect(groupRows[0].lastElementChild?.tagName).toBe("CANVAS");
+    expect(groupRows[1].querySelector("canvas")).toBeNull();
   });
 
-  it("filters rows with a select filter", async () => {
-    renderTable();
-    await userEvent.click(screen.getByRole("button", { name: /filter by category/i }));
-    await userEvent.click(screen.getByRole("option", { name: "UI" }));
-    expect(bodyFirstColumn()).toEqual(["Charlie", "Bravo"]);
+  it("tints an open group's rows from its image, below its own row, until it collapses", async () => {
+    const { container } = render(
+      <Table
+        columns={GROUPED_COLUMNS}
+        getRowId={(row) => row.id}
+        groups={[{ ...GROUPS[0], image: "first.png" }, GROUPS[1]]}
+        label="Files"
+      />,
+    );
+
+    const backdrops = () => container.querySelectorAll<HTMLElement>(".nxm-table-group-backdrop");
+    expect(backdrops()).toHaveLength(1);
+    // Under the first group's row, 48px and a 4px gap, over its two 40px rows.
+    expect(backdrops()[0].style.getPropertyValue("--nxm-table-backdrop-top")).toBe("52px");
+    expect(backdrops()[0].style.height).toBe("80px");
+
+    await userEvent.click(screen.getByRole("button", { name: "First" }));
+
+    expect(backdrops()).toHaveLength(0);
   });
 
-  it("paginates and only renders the current page", () => {
-    renderTable({ pageSize: 2 });
-    expect(bodyFirstColumn()).toHaveLength(2);
-    expect(screen.getByRole("navigation", { name: /pagination/i })).toBeInTheDocument();
+  it("collapses a group's rows from its button, and opens them again", async () => {
+    renderGrouped();
+    const toggle = screen.getByRole("button", { name: "First" });
+
+    await userEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getAllByRole("row")).toHaveLength(4);
+    expect(screen.getByRole("treegrid")).toHaveAttribute("aria-rowcount", "4");
+
+    await userEvent.click(toggle);
+
+    expect(screen.getAllByRole("row")).toHaveLength(6);
+  });
+});
+
+describe("Table in a scrolling page", () => {
+  const MANY: IRow[] = Array.from({ length: 200 }, (_, index) => ({
+    id: String(index),
+    name: `Row ${index}`,
+    size: index,
+  }));
+
+  const FOCUSABLE: Array<ITableColumn<IRow>> = [
+    { id: "name", header: "Name", cell: (row) => <button type="button">{row.name}</button> },
+  ];
+
+  // jsdom has no layout: give the page's scroller a height, and the rows a place in it.
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+      function (this: HTMLElement) {
+        return this.dataset.testid === "page" ? 400 : 0;
+      },
+    );
   });
 
-  it("does not paginate when pageSize is omitted", () => {
-    render(<Table columns={COLUMNS} data={ROWS} getRowId={(row) => row.id} />);
-    expect(screen.queryByRole("navigation", { name: /pagination/i })).not.toBeInTheDocument();
-    // Every row renders.
-    expect(bodyFirstColumn()).toEqual(["Charlie", "Alpha", "Bravo"]);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it("hides a column through the column toggle", async () => {
-    renderTable();
-    expect(screen.getByRole("columnheader", { name: "Category" })).toBeInTheDocument();
+  const renderInPage = () =>
+    render(
+      <div data-testid="page" style={{ overflowY: "auto" }}>
+        <Table columns={FOCUSABLE} getRowId={(row) => row.id} label="Files" rows={MANY} />
+      </div>,
+    );
 
-    await userEvent.click(screen.getByRole("button", { name: /manage columns/i }));
-    await userEvent.click(screen.getByRole("option", { name: "Category" }));
+  const scrollTo = (page: HTMLElement, top: number) => {
+    Object.defineProperty(page, "scrollTop", { configurable: true, value: top });
+    fireEvent.scroll(page);
+  };
 
-    expect(screen.queryByRole("columnheader", { name: "Category" })).not.toBeInTheDocument();
+  it("renders only the rows in view, counting them all", () => {
+    renderInPage();
+
+    const grid = screen.getByRole("grid");
+    const rows = within(grid).getAllByRole("row").slice(1);
+    expect(rows.length).toBeLessThan(30);
+    expect(rows[0]).toHaveAttribute("aria-rowindex", "2");
+    expect(grid).toHaveAttribute("aria-rowcount", String(MANY.length + 1));
   });
 
-  it("offers a reset-widths action in the column menu, disabled until a column is resized", async () => {
-    renderTable();
-    await userEvent.click(screen.getByRole("button", { name: /manage columns/i }));
+  it("renders the rows scrolled to, keeping the focused one", () => {
+    renderInPage();
+    act(() => screen.getByRole("button", { name: "Row 0" }).focus());
 
-    // No column has been resized yet, so resetting is a no-op and disabled.
-    expect(screen.getByRole("button", { name: /reset column widths/i })).toBeDisabled();
-  });
+    scrollTo(screen.getByTestId("page"), 4000);
 
-  it("omits the reset-widths action when column resizing is disabled", async () => {
-    renderTable({ enableColumnResize: false });
-    await userEvent.click(screen.getByRole("button", { name: /manage columns/i }));
-
-    expect(screen.queryByRole("button", { name: /reset column widths/i })).not.toBeInTheDocument();
-  });
-
-  it("enables reset for restored widths and reports an empty map when cleared", async () => {
-    const onColumnWidthsChange = vi.fn();
-    renderTable({ columnWidths: { name: 300 }, onColumnWidthsChange });
-    await userEvent.click(screen.getByRole("button", { name: /manage columns/i }));
-
-    // Restored widths count as custom widths, so resetting is available.
-    const reset = screen.getByRole("button", { name: /reset column widths/i });
-    expect(reset).toBeEnabled();
-
-    await userEvent.click(reset);
-
-    // Reset reports the cleared map and dismisses the menu.
-    expect(onColumnWidthsChange).toHaveBeenCalledWith({});
-    expect(screen.queryByRole("button", { name: /reset column widths/i })).not.toBeInTheDocument();
-  });
-
-  it("renders the empty state when no rows match", async () => {
-    renderTable();
-    await userEvent.type(screen.getByRole("textbox", { name: /filter by name/i }), "zzz");
-    expect(screen.getByText("No results found.")).toBeInTheDocument();
-  });
-
-  it("groups rows by a column and hides the pager", async () => {
-    renderTable({ pageSize: 2 });
-    expect(screen.getByRole("navigation", { name: /pagination/i })).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /group by category/i }));
-
-    // Two group headers (UI, Audio), and the pager is gone.
-    expect(screen.getByRole("button", { name: "UI group, 2 rows" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Audio group, 1 row" })).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: /pagination/i })).not.toBeInTheDocument();
-    // All matching rows render despite pageSize 2 (grouping bypasses paging).
-    expect(screen.getByRole("cell", { name: "Charlie" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "Bravo" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "Alpha" })).toBeInTheDocument();
-  });
-
-  it("collapses and expands a group", async () => {
-    renderTable();
-    await userEvent.click(screen.getByRole("button", { name: /group by category/i }));
-    expect(screen.getByRole("cell", { name: "Alpha" })).toBeInTheDocument();
-
-    // Collapse the Audio group -> its only row (Alpha) disappears.
-    await userEvent.click(screen.getByRole("button", { name: "Audio group, 1 row" }));
-    expect(screen.queryByRole("cell", { name: "Alpha" })).not.toBeInTheDocument();
-
-    // Expand again -> row returns.
-    await userEvent.click(screen.getByRole("button", { name: "Audio group, 1 row" }));
-    expect(screen.getByRole("cell", { name: "Alpha" })).toBeInTheDocument();
-  });
-
-  it("toggles grouping off when the active group column is clicked again", async () => {
-    renderTable({ pageSize: 2 });
-    const groupButton = screen.getByRole("button", { name: /group by category/i });
-
-    await userEvent.click(groupButton);
-    expect(screen.queryByRole("navigation", { name: /pagination/i })).not.toBeInTheDocument();
-
-    await userEvent.click(groupButton);
-    expect(screen.getByRole("navigation", { name: /pagination/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Row 100" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Row 0" })).toHaveFocus();
+    expect(screen.queryByRole("button", { name: "Row 1" })).toBeNull();
   });
 });

@@ -76,11 +76,22 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
       vortexApp.process().off("exit", onExit);
     };
 
+    const found = (page: Page) => {
+      cleanup();
+      resolve(page);
+    };
+
+    // A window is usually reported before its first navigation, while its URL
+    // is still empty, so a window that isn't the main one yet may become it.
     const onWindow = (page: Page) => {
       if (isMainWindow(page)) {
-        cleanup();
-        resolve(page);
+        found(page);
+        return;
       }
+      page
+        .waitForURL(/index\.html/, { timeout: Timeouts.LIFECYCLE })
+        .then(() => found(page))
+        .catch(() => undefined);
     };
 
     // If the Electron process crashes/exits before the main window appears,
@@ -102,6 +113,9 @@ async function waitForMainWindow(vortexApp: ElectronApplication): Promise<Page> 
 
     vortexApp.on("window", onWindow);
     vortexApp.process().on("exit", onExit);
+
+    // Windows that were already open but not yet navigated when we checked above.
+    for (const win of vortexApp.windows()) onWindow(win);
   });
 }
 

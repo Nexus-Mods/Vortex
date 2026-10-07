@@ -94,6 +94,9 @@ temp/
 # ESLint
 .eslintcache
 
+# oxlint CI results
+.lint-results.json
+
 # Flatpak
 .flatpak-builder/
 flatpak/.venv-flatpak/

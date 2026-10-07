@@ -16,7 +16,7 @@ export interface IGameSupportEntry {
 const gameSupport = util.makeOverlayableDictionary<string, IGameSupportEntry>(
   {
     skyrim: {
-      mygamesPath: "skyrim",
+      mygamesPath: "Skyrim",
       gameSettingsFiles: ["Skyrim.ini", "SkyrimPrefs.ini"],
     },
     enderal: {

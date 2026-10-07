@@ -20,7 +20,7 @@
       "{projectRoot}/tsconfig*.json",
       "{projectRoot}/build.mjs",
       "{projectRoot}/tsdown.config.ts",
-      "{projectRoot}/src/**/*.{ts,tsx}"
+      "{projectRoot}/src/**/*.{ts,tsx,js,jsx}"
     ],
     "stylesheets": ["{projectRoot}/**/*.{scss,css}"],
     "eslint": ["{projectRoot}/eslint.config.mjs", "{workspaceRoot}/eslint.config.base.mjs"],
@@ -56,7 +56,7 @@
       "dependsOn": ["^build"],
       "cache": true,
       "inputs": ["default", "typescript", "eslint", "oxlint"],
-      "outputs": []
+      "outputs": ["{projectRoot}/.lint-results.json"]
     }
   }
 }

@@ -69,6 +69,7 @@ export const pushReportEntries = (
     entries.push({
       id: fileRowKey(source.sourceFileUID, category, hidden),
       issueId: fileIssueId(source.sourceFileUID, category),
+      sourceModUID: source.sourceModUID,
       checkId: FILE_REQUIREMENTS_CHECK_ID,
       severity: "warning",
       resolutionType: resolutionTypeForCategory(category),

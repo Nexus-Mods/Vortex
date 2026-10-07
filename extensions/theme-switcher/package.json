@@ -6,7 +6,8 @@
     "_assets": "copyfiles themes/**/* dist && copyfiles -f src/theme_switcher.scss dist",
     "_native": "node ../copy-native.mjs -u 4 ./node_modules/font-scanner/build/Release/fontmanager.node",
     "build": "node build.mjs && pnpm run _assets && pnpm run _native && pnpm extractInfo",
-    "typecheck": "pnpm tsc"
+    "typecheck": "pnpm tsc",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

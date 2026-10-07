@@ -14,7 +14,6 @@ import { Timeouts } from "../helpers/timeouts";
 import { freeUser } from "../helpers/users";
 import { GamesPage } from "../selectors/games";
 import { LoginPage } from "../selectors/loginPage";
-import { ModsPage } from "../selectors/modsPage";
 import { NavBar } from "../selectors/navbar";
 
 test.describe("Game Management", () => {
@@ -86,13 +85,13 @@ test.describe("Game Management - Manually set game location", () => {
 
     await test.step("Navigate to the Games page", async () => {
       await navigateToGames(vortexWindow);
-      await expect(gamesPage.unmanagedSection).toBeVisible({ timeout: Timeouts.NETWORK });
+      await expect(gamesPage.supportedSection).toBeVisible({ timeout: Timeouts.NETWORK });
     });
 
-    await test.step("Stardew Valley is listed under Unmanaged", async () => {
+    await test.step("Stardew Valley is listed under All supported games", async () => {
       await gamesPage.searchInput.fill("Stardew Valley");
       await expect(
-        gamesPage.gameRowInSection(gamesPage.unmanagedSection, "Stardew Valley"),
+        gamesPage.gameTileInSection(gamesPage.supportedSection, "Stardew Valley"),
       ).toBeVisible({ timeout: Timeouts.NETWORK });
     });
 
@@ -113,11 +112,11 @@ test.describe("Game Management - Manually set game location", () => {
       await expect(navbar.gamesLink).toBeVisible({ timeout: Timeouts.NETWORK });
     });
 
-    await test.step("Stardew Valley is now listed under Managed", async () => {
+    await test.step("Stardew Valley is now listed under Added games", async () => {
       await navbar.gamesLink.click();
       await gamesPage.searchInput.fill("Stardew Valley");
       await expect(
-        gamesPage.gameRowInSection(gamesPage.managedSection, "Stardew Valley"),
+        gamesPage.gameTileInSection(gamesPage.addedSection, "Stardew Valley"),
       ).toBeVisible({ timeout: Timeouts.NETWORK });
     });
 

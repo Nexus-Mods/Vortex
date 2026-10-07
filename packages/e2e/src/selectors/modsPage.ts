@@ -11,7 +11,7 @@ export type ModStatus = (typeof MOD_STATUS)[keyof typeof MOD_STATUS];
 export class ModsPage {
   readonly page: Page;
   readonly installFromFileButton: Locator;
-  /** Toolbar "Deploy Mods" button (highlighted when a deployment is pending). */
+  /** Toolbar "Deploy (Apply changes)" button (highlighted when a deployment is pending). */
   readonly deployButton: Locator;
   /** Toolbar Quick Launcher "Play" button that starts the managed game. */
   readonly playButton: Locator;
@@ -37,10 +37,6 @@ export class ModsPage {
     this.statusButton = page.locator("#btn-mods-enabled").first();
     this.emptyState = page.getByText(/don't have any installed mods/i);
     this.deployedNotification = page.getByText(/mods deployed/i).first();
-  }
-
-  modRow(name: string | RegExp): Locator {
-    return this.page.getByText(name).first();
   }
 
   row(name: string | RegExp): Locator {
