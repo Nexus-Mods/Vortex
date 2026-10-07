@@ -20,6 +20,7 @@ export const SpanAttribute = {
 
   /** The plugin a signal is about, and the list it sits in. */
   PluginName: "plugin.name",
+  PluginDeployed: "plugin.deployed",
   PluginModId: "plugin.mod_id",
   PluginFileId: "plugin.file_id",
   PluginCollection: "plugin.collection",
@@ -40,6 +41,10 @@ export const SpanAttribute = {
   MissingContradicting: "missing.contradicting",
   CollectionsEnabled: "collections.enabled",
   CollectionsCount: "collections.count",
+
+  /** What Vortex was doing at the time, per activity group. */
+  ActivityMods: "activity.mods",
+  ActivityPlugins: "activity.plugins",
 } as const;
 
 export type SpanAttribute = (typeof SpanAttribute)[keyof typeof SpanAttribute];
