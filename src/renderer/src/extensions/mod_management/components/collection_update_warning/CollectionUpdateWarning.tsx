@@ -45,15 +45,11 @@ const WarningModal = ({ prompt }: { prompt: CollectionUpdatePrompt }) => {
             {text.intro}
           </Typography>
 
-          <ul className="space-y-1">
+          <Typography as="ul" className="space-y-1 font-semibold" typographyType="body-sm">
             {prompt.collectionNames.map((name) => (
-              <li key={name}>
-                <Typography as="span" className="font-semibold" typographyType="body-sm">
-                  {name.trim()}
-                </Typography>
-              </li>
+              <li key={name}>{name.trim()}</li>
             ))}
-          </ul>
+          </Typography>
         </div>
 
         <div className="space-y-2">
