@@ -8,10 +8,13 @@ import { modRuleId, reconstructModStatus } from "../../../util/collectionInstall
 import type { IDownload } from "../../download_management/types/IDownload";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findDownloadByRef } from "../../mod_management/util/dependencies";
-import { findModByRef } from "../../mod_management/util/findModByRef";
 import { renderModReference } from "../../mod_management/util/modName";
-import { isDependencyRule, modReferenceTags } from "../../mod_management/util/testModReference";
+import { isDependencyRule } from "../../mod_management/util/testModReference";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
+import {
+  resolveCollectionMods,
+  type ResolvedMods,
+} from "../util/resolveCollectionMods/resolveCollectionMods";
 
 /**
  * One member mod of a collection as the CollectionPageView table renders it: the
@@ -66,44 +69,17 @@ function rowFromDownload(dlId: string, download: IDownload, rule: IModRule): Ite
 // the display data plus the status derived purely from persistent redux state (used
 // when no install session is tracking this mod); a mod's ModState and a download's
 // state are both redux, mapped here into the collection's status vocabulary
-// O(1) lookup indexes prebuilt once per rebuild (see buildCollectionItemRows), so a rule resolves
-// its installed mod / download without the findModByRef/findDownloadByRef per-rule scan that
-// dominated render time on large collections.
-interface RowIndexes {
-  // installed mod by each reference tag it satisfies, and (backup) by content hash
-  modByTag: Map<string, IMod>;
-  modByMd5: Map<string, IMod>;
-  // download id by each reference tag the archive satisfies
-  downloadIdByTag: Map<string, string>;
-}
-
 function persistentRow(
   rule: IModRule,
-  // keyed by mod id
-  mods: Record<string, IMod>,
+  // the rule's installed mod, if any (see resolveCollectionMods)
+  mod: IMod | undefined,
   // keyed by download id
   downloads: Record<string, IDownload>,
   // keyed by mod id
   modState: Record<string, IProfileMod>,
-  indexes: RowIndexes,
+  // download id by each reference tag the archive satisfies
+  downloadIdByTag: Map<string, string>,
 ): { data: ItemRowData; status: CollectionModStatus } {
-  // Match priority mirrors testModReference's exact-identity markers. A collection member's installed
-  // mod and its download carry the rule's referenceTag (authoritative), and an installed mod is also
-  // keyed by content hash (fileMD5) so a member whose tag drifted, or that was matched by hash rather
-  // than tag, is still recognised - a hash match is the same file, so there are no false positives.
-  const { tag, fileMD5 } = rule.reference;
-
-  let mod = tag !== undefined ? indexes.modByTag.get(tag) : undefined;
-  if (mod === undefined && fileMD5 !== undefined) {
-    mod = indexes.modByMd5.get(fileMD5);
-  }
-  // Neither the tag nor the hash index resolved the mod (e.g. a fuzzy/latest member whose tag
-  // drifted across collections and has no fileMD5). Fall back to findModByRef - the same identity
-  // match reconstructSessionMods uses - so the table agrees with the session rather than showing an
-  // installed member as "pending".
-  if (mod === undefined) {
-    mod = findModByRef(rule.reference, mods);
-  }
   if (mod !== undefined) {
     return {
       data: { ...mod, ...modState[mod.id], collectionRule: rule },
@@ -113,10 +89,9 @@ function persistentRow(
 
   // downloads carry a tag per rule they satisfy, so the tag index resolves the archive for every
   // collection referencing it; only a tagless rule needs the scan.
+  const { tag } = rule.reference;
   const dlId =
-    tag !== undefined
-      ? indexes.downloadIdByTag.get(tag)
-      : findDownloadByRef(rule.reference, downloads);
+    tag !== undefined ? downloadIdByTag.get(tag) : findDownloadByRef(rule.reference, downloads);
   const download = dlId !== undefined ? downloads[dlId] : undefined;
   const data = download !== undefined ? rowFromDownload(dlId, download, rule) : stubRow(rule);
 
@@ -154,6 +129,9 @@ function stubRow(rule: IModRule): ItemRowData {
  * Pass the prior result as `previous` to keep unchanged rows referentially stable: an install
  * dispatch touches one member, so only its row gets a new reference and the table re-renders that
  * one row instead of all of them.
+ *
+ * Pass `resolvedMods` (from resolveCollectionMods, memoized on rules and mods) so a rebuild driven
+ * only by download or session churn skips resolving installed mods; it is computed here otherwise.
  */
 export function buildCollectionItemRows(
   params: {
@@ -166,42 +144,27 @@ export function buildCollectionItemRows(
     modState: Record<string, IProfileMod>;
     // keyed by rule id
     sessionMods: Record<string, ICollectionModInstallInfo>;
+    resolvedMods?: ResolvedMods;
   },
   previous?: Record<string, ICollectionItemRow>,
 ): Record<string, ICollectionItemRow> {
   const { rules, mods, downloads, modState, sessionMods } = params;
+  const resolvedMods = params.resolvedMods ?? resolveCollectionMods(rules, mods);
   // keyed by rule id
   const result: Record<string, ICollectionItemRow> = {};
   let changed = false;
 
-  // Built once so each rule resolves its mod/download in O(1) instead of scanning every mod/download
-  // (those per-rule scans dominated render time on large collections). Installed mods are keyed by
-  // every reference tag they satisfy and by content hash (fileMD5); downloads by every reference
-  // tag. First entry wins on the (rare) duplicate, matching findModByRef's first-match.
-  const indexes: RowIndexes = {
-    modByTag: new Map<string, IMod>(),
-    modByMd5: new Map<string, IMod>(),
-    downloadIdByTag: new Map<string, string>(),
-  };
-  for (const mod of Object.values(mods)) {
-    for (const tag of modReferenceTags(mod)) {
-      if (!indexes.modByTag.has(tag)) {
-        indexes.modByTag.set(tag, mod);
-      }
-    }
-    const md5 = mod.attributes?.fileMD5;
-    if (typeof md5 === "string" && !indexes.modByMd5.has(md5)) {
-      indexes.modByMd5.set(md5, mod);
-    }
-  }
+  // downloads by every reference tag, built once so each rule resolves its archive in O(1); first
+  // entry wins on the (rare) duplicate, matching findDownloadByRef's first-match
+  const downloadIdByTag = new Map<string, string>();
   for (const [dlId, download] of Object.entries(downloads)) {
     const { referenceTag, referenceTags } = download.modInfo ?? {};
-    if (typeof referenceTag === "string" && !indexes.downloadIdByTag.has(referenceTag)) {
-      indexes.downloadIdByTag.set(referenceTag, dlId);
+    if (typeof referenceTag === "string" && !downloadIdByTag.has(referenceTag)) {
+      downloadIdByTag.set(referenceTag, dlId);
     }
     for (const tag of referenceTags ?? []) {
-      if (!indexes.downloadIdByTag.has(tag)) {
-        indexes.downloadIdByTag.set(tag, dlId);
+      if (!downloadIdByTag.has(tag)) {
+        downloadIdByTag.set(tag, dlId);
       }
     }
   }
@@ -210,10 +173,10 @@ export function buildCollectionItemRows(
     const id = modRuleId(rule);
     const { data, status: persistentStatus } = persistentRow(
       rule,
-      mods,
+      resolvedMods.byRule.get(id),
       downloads,
       modState ?? {},
-      indexes,
+      downloadIdByTag,
     );
 
     // The session is the source of truth while it is tracking this mod, except for a terminal

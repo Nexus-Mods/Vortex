@@ -9,12 +9,12 @@ import Spinner from "../../../../controls/Spinner";
 import * as tooltip from "../../../../controls/TooltipControls";
 import { getGame } from "../../../../extensions/gamemode_management/util/getGame";
 import type { IMod } from "../../../../extensions/mod_management/types/IMod";
-import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import renderModName from "../../../../extensions/mod_management/util/modName";
 import { isOptionalRule } from "../../../../extensions/mod_management/util/testModReference";
 import type { ICollectionModInstallInfo } from "../../../../types/collections/ICollectionInstallSession";
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import type { IState } from "../../../../types/IState";
+import { modRuleId } from "../../../../util/collectionInstallSession";
 import {
   getFailedOptionalMods,
   getFailedRequiredMods,
@@ -22,6 +22,7 @@ import {
 } from "../../../../util/collectionInstallSessionSelectors";
 import { NAMESPACE } from "../../constants";
 import type InstallDriver from "../../util/InstallDriver";
+import { makeCollectionModsResolver } from "../../util/resolveCollectionMods/resolveCollectionMods";
 import CollectionThumbnail from "../CollectionTile";
 import YouCuratedTag from "./YouCuratedThisTag";
 
@@ -116,11 +117,14 @@ function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
     driver.profile !== undefined ? state.persistent.mods[driver.profile?.gameId] : emptyObject,
   );
 
+  // kept for the dialog's lifetime so each change of mods only retests the mods that changed
+  const [resolveMods] = React.useState(makeCollectionModsResolver);
   const optionals = React.useMemo(() => {
+    const resolved = resolveMods(collection?.rules, mods);
     return (collection?.rules ?? []).filter(
-      (rule) => isOptionalRule(rule) && findModByRef(rule.reference, mods) === undefined,
+      (rule) => isOptionalRule(rule) && !resolved.byRule.has(modRuleId(rule)),
     );
-  }, [collection?.rules, mods]);
+  }, [collection?.rules, mods, resolveMods]);
 
   const game = driver.profile !== undefined ? getGame(driver.profile.gameId) : undefined;
 
