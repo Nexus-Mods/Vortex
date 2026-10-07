@@ -3,10 +3,14 @@ import * as React from "react";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
-import { DraggableList, EmptyPlaceholder, FlexLayout, Spinner } from "../../../controls/api";
 import { ComponentEx } from "../../../controls/ComponentEx";
-import type * as types from "../../../types/api";
-import { DNDContainer } from "../../../views/api";
+import DraggableList from "../../../controls/DraggableList";
+import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
+import FlexLayout from "../../../controls/FlexLayout";
+import Spinner from "../../../controls/Spinner";
+import type { IState } from "../../../types/IState";
+import { DNDContainer } from "../../../views/DNDContainer";
+import type { IProfile } from "../../profile_management/types/IProfile";
 import { RenderRowsCache } from "../renderRows";
 import {
   loadOrderForProfile,
@@ -16,6 +20,7 @@ import {
 import {
   type IItemRendererProps,
   type IRegisteredLoadOrder,
+  type IValidationResult,
   type LoadOrder,
   LoadOrderValidationError,
 } from "../types/types";
@@ -32,24 +37,20 @@ interface IPanelState {
 
 export interface ILoadOrderPanelProps {
   gameEntry: IRegisteredLoadOrder;
-  profile: types.IProfile;
+  profile: IProfile;
   // Allow dnd operations?
   disabled: boolean;
   onSetOrder: (profileId: string, loadOrder: LoadOrder, loadOrderId?: string) => void;
   onStartUp: (gameMode: string, loadOrderId?: string) => Promise<LoadOrder>;
   onShowError: (gameId: string, error: Error, loadOrderId?: string) => void;
-  validateLoadOrder: (
-    profile: types.IProfile,
-    newLO: LoadOrder,
-    loadOrderId?: string,
-  ) => Promise<void>;
+  validateLoadOrder: (profile: IProfile, newLO: LoadOrder, loadOrderId?: string) => Promise<void>;
 }
 
 interface IConnectedProps {
   loadOrder: LoadOrder;
   // Changes when the page is told to read its load orders again.
   refreshId: string;
-  validationResult: types.IValidationResult;
+  validationResult: IValidationResult;
 }
 
 type IProps = ILoadOrderPanelProps & IConnectedProps;
@@ -214,7 +215,7 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
   };
 }
 
-function mapStateToProps(state: types.IState, ownProps: ILoadOrderPanelProps): IConnectedProps {
+function mapStateToProps(state: IState, ownProps: ILoadOrderPanelProps): IConnectedProps {
   const { profile, gameEntry } = ownProps;
   return {
     loadOrder: loadOrderForProfile(state, profile?.id, gameEntry.loadOrderId),

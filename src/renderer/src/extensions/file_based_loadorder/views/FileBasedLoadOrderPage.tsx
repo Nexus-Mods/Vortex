@@ -4,18 +4,22 @@ import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import type { Dispatch } from "redux";
 
-import * as actions from "../../../actions";
-import { IconBar, ToolbarIcon } from "../../../controls/api";
 import { ComponentEx } from "../../../controls/ComponentEx";
+import IconBar from "../../../controls/IconBar";
 import ToolbarDropdown from "../../../controls/ToolbarDropdown";
-import type * as types from "../../../types/api";
+import ToolbarIcon from "../../../controls/ToolbarIcon";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IState } from "../../../types/IState";
 import { TabBar } from "../../../ui/components/tabs/TabBar";
 import { TabButton } from "../../../ui/components/tabs/TabButton";
 import { TabPanel } from "../../../ui/components/tabs/TabPanel";
 import { TabProvider } from "../../../ui/components/tabs/Tabs.context";
-import * as util from "../../../util/api";
-import * as selectors from "../../../util/selectors";
-import { MainPage } from "../../../views/api";
+import { toPromise } from "../../../util/util";
+import MainPage from "../../../views/MainPage";
+import { setDeploymentNecessary } from "../../mod_management/actions/deployment";
+import { needToDeploy } from "../../mod_management/selectors";
+import { activeGameId, activeProfile } from "../../profile_management/selectors";
+import type { IProfile } from "../../profile_management/types/IProfile";
 import { fbLoadOrderTabSelected, setFBForceUpdate } from "../actions/session";
 import { activeLoadOrderIdForProfile } from "../selectors";
 import type { IRegisteredLoadOrder } from "../types/types";
@@ -34,7 +38,7 @@ export interface IBaseProps extends Pick<
 
 interface IConnectedProps {
   // The profile we're managing this load order for.
-  profile: types.IProfile;
+  profile: IProfile;
 
   // Does the user need to deploy ?
   needToDeploy: boolean;
@@ -56,7 +60,7 @@ type IProps = IActionProps & IBaseProps & IConnectedProps;
 
 // The load order page: one panel per load order the game registers, as tabs when there are several.
 class FileBasedLoadOrderPage extends ComponentEx<IProps, Record<string, never>> {
-  private mStaticButtons: types.IActionDefinition[];
+  private mStaticButtons: IActionDefinition[];
 
   constructor(props: IProps) {
     super(props);
@@ -72,8 +76,8 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, Record<string, never>> 
             text: "Deploy Mods",
             className: this.props.needToDeploy ? "toolbar-flash-button" : undefined,
             onClick: async () => {
-              await util.toPromise((cb) => this.context.api.events.emit("deploy-mods", cb));
-              const gameId = selectors.activeGameId(this.context.api.getState());
+              await toPromise((cb) => this.context.api.events.emit("deploy-mods", cb));
+              const gameId = activeGameId(this.context.api.getState());
               this.props.onSetDeploymentNecessary(gameId, false);
             },
           };
@@ -89,8 +93,8 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, Record<string, never>> 
             text: "Purge Mods",
             className: "load-order-purge-list",
             onClick: async () => {
-              await util.toPromise((cb) => this.context.api.events.emit("purge-mods", false, cb));
-              const gameId = selectors.activeGameId(this.context.api.getState());
+              await toPromise((cb) => this.context.api.events.emit("purge-mods", false, cb));
+              const gameId = activeGameId(this.context.api.getState());
               this.props.onSetDeploymentNecessary(gameId, true);
             },
           };
@@ -238,11 +242,11 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, Record<string, never>> 
   }
 }
 
-function mapStateToProps(state: types.IState): IConnectedProps {
-  const profile = selectors.activeProfile(state) || undefined;
+function mapStateToProps(state: IState): IConnectedProps {
+  const profile = activeProfile(state) || undefined;
   return {
     profile,
-    needToDeploy: selectors.needToDeploy(state),
+    needToDeploy: needToDeploy(state),
     activeLoadOrderId: activeLoadOrderIdForProfile(state, profile?.id),
     disabled: shouldSuppressUpdate(state),
   };
@@ -251,7 +255,7 @@ function mapStateToProps(state: types.IState): IConnectedProps {
 function mapDispatchToProps(dispatch: Dispatch): IActionProps {
   return {
     onSetDeploymentNecessary: (gameId: string, necessary: boolean) => {
-      dispatch(actions.setDeploymentNecessary(gameId, necessary));
+      dispatch(setDeploymentNecessary(gameId, necessary));
     },
     onForceRefresh: (profileId: string) => {
       dispatch(setFBForceUpdate(profileId));
@@ -262,11 +266,11 @@ function mapDispatchToProps(dispatch: Dispatch): IActionProps {
   };
 }
 
-function shouldSuppressUpdate(state: types.IState) {
+function shouldSuppressUpdate(state: IState) {
   const suppressOnActivities = ["deployment", "purging", "installing_dependencies"];
   const isActivityRunning = (activity: string) =>
-    util.getSafe(state, ["session", "base", "activity", "mods"], []).includes(activity) || // purge/deploy
-    util.getSafe(state, ["session", "base", "activity", activity], []).length > 0; // installing_dependencies
+    (state.session?.base?.activity?.mods ?? []).includes(activity) || // purge/deploy
+    (state.session?.base?.activity?.[activity] ?? []).length > 0; // installing_dependencies
   return suppressOnActivities.some((activity) => isActivityRunning(activity));
 }
 

@@ -3,10 +3,12 @@ import { Checkbox, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
-import { Icon, tooltip } from "../../../controls/api";
 import { ComponentEx } from "../../../controls/ComponentEx";
-import type { IProfile, IState } from "../../../types/api";
-import * as selectors from "../../../util/selectors";
+import Icon from "../../../controls/Icon";
+import * as tooltip from "../../../controls/TooltipControls";
+import type { IState } from "../../../types/IState";
+import { activeProfile } from "../../profile_management/selectors";
+import type { IProfile } from "../../profile_management/types/IProfile";
 import { setFBLoadOrder, setFBLoadOrderEntry } from "../actions/loadOrder";
 import { loadOrderForProfile } from "../selectors";
 import type { IItemRendererProps, ILoadOrderEntry, LoadOrder } from "../types/types";
@@ -157,7 +159,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
 }
 
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state);
+  const profile = activeProfile(state);
   return {
     profile: profile,
     loadOrder: loadOrderForProfile(state, profile.id, ownProps.item.loadOrderId),
