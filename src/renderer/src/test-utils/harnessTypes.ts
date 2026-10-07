@@ -104,6 +104,8 @@ export interface IApiHarness {
   showHistoryCalls: string[];
   // api.runExecutable calls, recorded in order (the call is captured, nothing is spawned)
   runExecutableCalls: Array<{ executable: string; args: string[]; options: IRunOptions }>;
+  // configure how a process started through api.runExecutable runs (default: ends at once)
+  setRunProcess: (run: (options: IRunOptions) => Promise<void>) => void;
 }
 
 export interface IDriverHarness extends IApiHarness {

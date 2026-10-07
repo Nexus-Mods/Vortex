@@ -2417,7 +2417,7 @@ class ExtensionManager {
                     reject(err);
                   })
                   .on("close", (code, signal) => {
-                    options.onExit?.(code);
+                    options.onExit?.(code, signal);
                     const game = activeGameId(this.mApi.store.getState());
                     if (code === null) {
                       log("warn", "child process terminated by signal", {

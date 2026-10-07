@@ -4,6 +4,7 @@
  */
 import * as path from "node:path";
 
+import type { LootAsync } from "loot";
 import { vi } from "vitest";
 
 import type { IFakeLoot } from "../../test-utils/harnessTypes";
@@ -38,7 +39,9 @@ export const seams: ILootSeams = {
 };
 
 /** Resolves the current fake loot; reject once to drive the init-failure path. */
-export const createLootMock = vi.fn<() => Promise<IFakeLoot>>(() =>
+export const createLootMock = vi.fn<
+  (...args: Parameters<typeof LootAsync.create>) => Promise<IFakeLoot>
+>(() =>
   seams.loot === undefined
     ? Promise.reject(new Error("no fake loot arranged - build the harness through makeLoot"))
     : Promise.resolve(seams.loot),

@@ -44,7 +44,7 @@ import { toLootError } from "./util/lootErrors";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 import { listPaths, MetadataLists } from "./util/metadataLists";
 import { explainMasterNotLoaded } from "./util/missingMasters";
-import { SpanAttribute } from "./util/spanAttributes";
+import { SpanAttribute, type SpanAttributes } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
@@ -847,7 +847,7 @@ class LootInterface {
       });
     }
 
-    let loot: LootAsync;
+    let loot: LootAsync | undefined;
 
     try {
       loot = await getLootAsync().create(
@@ -856,7 +856,7 @@ class LootInterface {
         localPath,
         "en",
         this.logCB,
-        this.fork,
+        (modulePath, args) => this.fork(modulePath, args, () => loot?.isClosed() === true),
       );
     } catch (rawErr) {
       const err = toLootError(rawErr);
@@ -886,7 +886,8 @@ class LootInterface {
     return { game: gameMode, loot };
   });
 
-  private fork = (modulePath: string, args: string[]) => {
+  private fork = (modulePath: string, args: string[], wasClosed: () => boolean) => {
+    let exit: { code: number | null; signal: NodeJS.Signals | null } | undefined;
     const attempt = (retries: number): Bluebird<void> => {
       return (this.mExtensionApi as any)
         .runExecutable(process.execPath, [modulePath].concat(args || []), {
@@ -895,6 +896,9 @@ class LootInterface {
           expectSuccess: true,
           env: {
             ELECTRON_RUN_AS_NODE: "1",
+          },
+          onExit: (code: number | null, signal: NodeJS.Signals | null) => {
+            exit = { code, signal };
           },
         })
         .catch((err: Error) => {
@@ -911,33 +915,41 @@ class LootInterface {
     attempt(5)
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
+      .then(() => {
+        // a clean exit or a signal is no error to runExecutable, yet a worker not closed has died
+        if (exit !== undefined && !wasClosed()) {
+          this.workerDied(new VortexError("LOOT process ended", { kind: "loot:process-died" }), {
+            [SpanAttribute.LootExitCode]: exit.code ?? undefined,
+            [SpanAttribute.LootExitSignal]: exit.signal ?? undefined,
+          });
+        }
+      })
       .catch((err) => {
         log("warn", "LOOT process died", { error: err.message });
-        const restarting = this.mRestarts > 0;
         // the exit code and the worker's last words are all this side ever learns about the crash
-        lootErrorReporter.report(
-          this.mExtensionApi,
+        this.workerDied(
           new VortexError(err.message, { kind: "loot:process-died" }, { cause: err }),
-          LootPhase.Worker,
-          {
-            recovering: restarting,
-            context: {
-              [SpanAttribute.LootRestartsLeft]: this.mRestarts,
-              [SpanAttribute.LootExitCode]: err.exitCode,
-            },
-          },
+          { [SpanAttribute.LootExitCode]: err.exitCode },
         );
-        if (restarting) {
-          const gameMode = activeGameId(this.mExtensionApi.store.getState());
-          --this.mRestarts;
-          // the handle outlives the worker and answers isClosed() with false, so drop it here
-          this.mLoot = undefined;
-          if (knownGame(gameMode)) {
-            this.mInitPromise = this.init(gameMode);
-          }
-        }
       });
   };
+
+  private workerDied(err: VortexError, context: SpanAttributes) {
+    const restarting = this.mRestarts > 0;
+    lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Worker, {
+      recovering: restarting,
+      context: { [SpanAttribute.LootRestartsLeft]: this.mRestarts, ...context },
+    });
+    if (restarting) {
+      const gameMode = activeGameId(this.mExtensionApi.store.getState());
+      --this.mRestarts;
+      // the handle outlives the worker and answers isClosed() with false, so drop it here
+      this.mLoot = undefined;
+      if (knownGame(gameMode)) {
+        this.mInitPromise = this.init(gameMode);
+      }
+    }
+  }
 
   private logCB = (level: number, message: string) => {
     log(this.logLevel(level) as any, message);
