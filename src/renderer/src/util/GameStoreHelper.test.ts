@@ -1,4 +1,3 @@
-import Bluebird from "bluebird";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { makeApiHarness } from "../test-utils/builders";
@@ -22,9 +21,9 @@ const makeStore = (
   ({
     id,
     snapshot: () => ({ entries, isInstalled: entries.length > 0 }),
-    getGameStorePath: () => Bluebird.resolve(`C:\\${id}\\launcher.exe`),
-    launchGame: () => Bluebird.resolve(),
-    reloadGames: () => Bluebird.resolve(),
+    getGameStorePath: () => Promise.resolve(`C:\\${id}\\launcher.exe`),
+    launchGame: () => Promise.resolve(),
+    reloadGames: () => Promise.resolve(),
     ...overrides,
   }) as unknown as IGameStore;
 

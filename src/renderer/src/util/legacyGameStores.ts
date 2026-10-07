@@ -1,3 +1,5 @@
+import type Bluebird from "bluebird";
+
 import { registerDeprecatedApi, wrapDeprecatedSurface } from "./deprecatedApiUsage";
 import type { EpicGamesLauncher } from "./EpicGamesLauncher";
 import GameStoreHelper from "./GameStoreHelper";
@@ -19,10 +21,9 @@ const steamShim: SteamShim = {
   findByName: (name: string) => GameStoreHelper.findByName(name, "steam"),
 };
 
-type EpicGamesLauncherShim = Pick<
-  EpicGamesLauncher,
-  "findByAppId" | "findByName" | "isGameInstalled"
->;
+type EpicGamesLauncherShim = Pick<typeof GameStoreHelper, "findByAppId" | "findByName"> & {
+  isGameInstalled: (name: string) => Bluebird<boolean>;
+};
 
 /** Deprecated shim, use GameStoreHelper instead.
  *

@@ -511,8 +511,7 @@ class GameModeManager {
 
       const promsies = stores.map(async (store) => {
         try {
-          // TODO: Bluebird to native
-          return await Promise.resolve(store.reloadGames());
+          return await store.reloadGames();
         } catch (err) {
           log("error", "gamestore failed to reload its games", {
             storeId: store.id,

@@ -13,7 +13,6 @@ import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 import { ProcessCanceled } from "./CustomErrors";
 import * as fs from "./fs";
 import { defaultPriority, type IQueryArgEntry, normalizeStoreQuery } from "./storeQuery";
-import { toBlue } from "./util";
 
 type SearchType = "name" | "id";
 
@@ -50,37 +49,39 @@ export function isGameInstalled(
     .catch(() => undefined);
 }
 
-export function isGameStoreInstalled(stores: IGameStore[], storeId: string): Bluebird<boolean> {
+export async function isGameStoreInstalled(
+  stores: IGameStore[],
+  storeId: string,
+): Promise<boolean> {
   try {
     const gameStore = getGameStore(stores, storeId);
-    return gameStore?.isGameStoreInstalled
-      ? gameStore.isGameStoreInstalled()
-      : (gameStore
-          ?.getGameStorePath()
-          .then((execPath) =>
-            execPath === undefined
-              ? Bluebird.reject(new Error(`failed to determine path for ${storeId}`))
-              : fs.statAsync(execPath),
-          )
-          .then(() => Bluebird.resolve(true))
-          .catch((err) => {
-            log("debug", "gamestore is not installed", err);
-            return Bluebird.resolve(false);
-          }) ?? Bluebird.resolve(false));
-  } catch {
-    return Bluebird.resolve(false);
+    if (gameStore?.isGameStoreInstalled) {
+      return await gameStore.isGameStoreInstalled();
+    }
+
+    const execPath = await gameStore?.getGameStorePath();
+    if (execPath === undefined) {
+      throw new Error(`failed to determine path for ${storeId}`);
+    }
+
+    // TODO: Bluebird to native
+    await Promise.resolve(fs.statAsync(execPath));
+    return true;
+  } catch (err) {
+    log("debug", "gamestore is not installed", err);
+    return false;
   }
 }
 
-export function registryLookup(lookup: string): Bluebird<IGameStoreEntry> {
+export async function registryLookup(lookup: string): Promise<IGameStoreEntry> {
   if (lookup === undefined) {
-    return Bluebird.reject(new Error("invalid store query, provide an id!"));
+    throw new Error("invalid store query, provide an id!");
   }
 
   const chunked = lookup.split(":", 3);
 
   if (chunked.length !== 3) {
-    return Bluebird.reject(new Error("invalid query, should be hive:path:key"));
+    throw new Error("invalid query, should be hive:path:key");
   }
 
   if (
@@ -92,9 +93,7 @@ export function registryLookup(lookup: string): Bluebird<IGameStoreEntry> {
       "HKEY_USERS",
     ].includes(chunked[0])
   ) {
-    return Bluebird.reject(
-      new Error("invalid query, hive should be something like HKEY_LOCAL_MACHINE"),
-    );
+    throw new Error("invalid query, hive should be something like HKEY_LOCAL_MACHINE");
   }
 
   try {
@@ -110,54 +109,55 @@ export function registryLookup(lookup: string): Bluebird<IGameStoreEntry> {
       name: path.basename(instPath.value as string),
       priority: defaultPriority,
     };
-    return Bluebird.resolve(result);
+    return result;
   } catch {
-    return Bluebird.reject(new GameEntryNotFound(lookup, "registry"));
+    throw new GameEntryNotFound(lookup, "registry");
   }
 }
 
-export const find = toBlue(
-  async (stores: IGameStore[], query: { [storeId: string]: IQueryArgEntry }) => {
-    const results: IGameStoreEntry[] = [];
-    const storesDict = stores.reduce<{ [storeId: string]: IGameStore }>((prev, store) => {
-      prev[store.id] = store;
-      return prev;
-    }, {});
-    for (const storeId of Object.keys(query)) {
-      const storeQueries = normalizeStoreQuery(query[storeId]);
-      let prioOffset = 0;
-      for (const storeQuery of storeQueries) {
-        let result: IGameStoreEntry | undefined = undefined;
-        try {
-          if (storeId === "registry") {
-            result = await registryLookup(storeQuery.id);
-          } else if (storeQuery.id !== undefined) {
-            result = await findGameEntry(stores, "id", storeQuery.id, storeId);
-          } else if (storeQuery.name !== undefined) {
-            result = await findGameEntry(stores, "name", storeQuery.name, storeId);
-          } else {
-            throw new Error("invalid store query, set either id or name");
-          }
-        } catch (err) {
-          if (!(err instanceof GameEntryNotFound)) {
-            log("error", "Failed to look up game", {
-              storeId,
-              appid: storeQuery.id,
-              name: storeQuery.name,
-            });
-          }
+export async function find(
+  stores: IGameStore[],
+  query: { [storeId: string]: IQueryArgEntry },
+): Promise<IGameStoreEntry[]> {
+  const results: IGameStoreEntry[] = [];
+  const storesDict = stores.reduce<{ [storeId: string]: IGameStore }>((prev, store) => {
+    prev[store.id] = store;
+    return prev;
+  }, {});
+  for (const storeId of Object.keys(query)) {
+    const storeQueries = normalizeStoreQuery(query[storeId]);
+    let prioOffset = 0;
+    for (const storeQuery of storeQueries) {
+      let result: IGameStoreEntry | undefined = undefined;
+      try {
+        if (storeId === "registry") {
+          result = await registryLookup(storeQuery.id);
+        } else if (storeQuery.id !== undefined) {
+          result = await findGameEntry(stores, "id", storeQuery.id, storeId);
+        } else if (storeQuery.name !== undefined) {
+          result = await findGameEntry(stores, "name", storeQuery.name, storeId);
+        } else {
+          throw new Error("invalid store query, set either id or name");
         }
-        if (result) {
-          result.priority =
-            storeQuery.prefer ?? storesDict[result.gameStoreId]?.priority ?? defaultPriority;
-          result.priority += prioOffset++ / 1000;
-          results.push(result);
+      } catch (err) {
+        if (!(err instanceof GameEntryNotFound)) {
+          log("error", "Failed to look up game", {
+            storeId,
+            appid: storeQuery.id,
+            name: storeQuery.name,
+          });
         }
       }
+      if (result) {
+        result.priority =
+          storeQuery.prefer ?? storesDict[result.gameStoreId]?.priority ?? defaultPriority;
+        result.priority += prioOffset++ / 1000;
+        results.push(result);
+      }
     }
-    return results;
-  },
-);
+  }
+  return results;
+}
 
 export function findByName(
   stores: IGameStore[],
@@ -218,8 +218,7 @@ async function launchStoreAsync(
 ): Promise<void> {
   const t = api.translate;
 
-  // TODO: Bluebird to native
-  const isInstalled = await Promise.resolve(isGameStoreInstalled(stores, gameStoreId));
+  const isInstalled = await isGameStoreInstalled(stores, gameStoreId);
 
   if (!isInstalled) {
     api.showErrorNotification?.(
@@ -234,26 +233,23 @@ async function launchStoreAsync(
   }
 
   if (gameStore.launchGameStore) {
-    const bluebird = gameStore.launchGameStore(api, parameters).catch((err) => {
+    await gameStore.launchGameStore(api, parameters).catch((err) => {
       api.showErrorNotification?.("Failed to launch game store", err);
-      return Bluebird.resolve();
+      return Promise.resolve();
     });
-
-    // TODO: Bluebird to native
-    await Promise.resolve(bluebird);
     return;
   }
 
   try {
-    const launcherPath = await Promise.resolve(gameStore.getGameStorePath());
+    const launcherPath = await gameStore.getGameStorePath();
     if (!!launcherPath && !isStoreRunning(launcherPath)) {
-      const bluebird = api.runExecutable(launcherPath, parameters || [], {
-        detach: true,
-        suggestDeploy: false,
-      });
-
       // TODO: Bluebird to native
-      await Promise.resolve(bluebird);
+      await Promise.resolve(
+        api.runExecutable(launcherPath, parameters || [], {
+          detach: true,
+          suggestDeploy: false,
+        }),
+      );
     }
   } catch (err) {
     api.showErrorNotification?.("Failed to launch game store", err);

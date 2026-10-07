@@ -1,7 +1,5 @@
 import path from "node:path";
 
-import PromiseBB from "bluebird";
-
 import { log } from "../logging";
 
 function isWindowsPath(target: string): boolean {
@@ -22,18 +20,19 @@ function isUrlTarget(target: string): boolean {
 }
 
 /** @deprecated use preload api window.api.shell openUrl or openFile */
-function open(target: string, _wait?: boolean): PromiseBB<void> {
+function open(target: string, _wait?: boolean): Promise<void> {
   if (!target) {
     log("warn", "No target provided to open function");
-    return PromiseBB.resolve();
+    return Promise.resolve();
   }
+
   if (isUrlTarget(target)) {
     window.api.shell.openUrl(target);
   } else {
     window.api.shell.openFile(target);
   }
 
-  return PromiseBB.resolve();
+  return Promise.resolve();
 }
 
 /** @deprecated */
