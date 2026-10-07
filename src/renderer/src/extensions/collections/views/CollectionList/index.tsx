@@ -15,7 +15,6 @@ import * as tooltip from "../../../../controls/TooltipControls";
 import type { IDownload } from "../../../../extensions/download_management/types/IDownload";
 import type { IGameStored } from "../../../../extensions/gamemode_management/types/IGameStored";
 import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
-import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import renderModName from "../../../../extensions/mod_management/util/modName";
 import {
   isOptionalRule,
@@ -25,6 +24,7 @@ import type { IProfile } from "../../../../extensions/profile_management/types/I
 import { log } from "../../../../logging";
 import type { INotification } from "../../../../types/INotification";
 import type { IState } from "../../../../types/IState";
+import { modRuleId } from "../../../../util/collectionInstallSession";
 import { ProcessCanceled, UserCanceled } from "../../../../util/CustomErrors";
 import Debouncer from "../../../../util/Debouncer";
 import * as selectors from "../../../../util/selectors";
@@ -37,6 +37,7 @@ import { MOD_TYPE, NAMESPACE } from "../../constants";
 import type { IExtensionFeature } from "../../util/extension";
 import { findExtensions } from "../../util/extension";
 import type InstallDriver from "../../util/InstallDriver";
+import { makeCollectionModsResolver } from "../../util/resolveCollectionMods/resolveCollectionMods";
 import { uploadCollection } from "../../util/uploadCollection";
 import { hasEditPermissions } from "../../util/util";
 import CollectionEdit from "../CollectionPageEdit";
@@ -90,6 +91,8 @@ const emptyArr = [];
 
 class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, IComponentState> {
   private mMatchRefDebouncer: Debouncer;
+  // so each debounced re-match only retests the mods that changed
+  private mResolveMods = makeCollectionModsResolver();
   constructor(props: ICollectionsMainPageProps) {
     super(props);
     this.initState({
@@ -398,10 +401,11 @@ class CollectionsMainPage extends ComponentEx<ICollectionsMainPageProps, ICompon
     const { mods, profile } = props;
     const collections = Object.values(mods).filter((mod) => mod.type === MOD_TYPE);
     return collections.reduce((prev, collection) => {
+      const resolved = this.mResolveMods(collection.rules, mods);
       prev[collection.id] = (collection.rules || [])
         .filter((rule) => rule.type === "requires" && !rule["ignored"])
         .map((rule) => {
-          const mod = findModByRef(rule.reference, mods);
+          const mod = resolved.byRule.get(modRuleId(rule));
           if (mod !== undefined && !profile.modState?.[mod.id]?.enabled) {
             return null;
           }
