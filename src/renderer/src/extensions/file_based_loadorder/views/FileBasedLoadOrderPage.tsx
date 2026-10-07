@@ -1,76 +1,50 @@
-import { unknownToError } from "@vortex/shared";
-/* eslint-disable */
-import * as _ from "lodash";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
+import type { Dispatch } from "redux";
 
-import * as actions from "../../../actions";
-import {
-  DraggableList,
-  EmptyPlaceholder,
-  FlexLayout,
-  IconBar,
-  Spinner,
-  ToolbarIcon,
-} from "../../../controls/api";
 import { ComponentEx } from "../../../controls/ComponentEx";
+import IconBar from "../../../controls/IconBar";
 import ToolbarDropdown from "../../../controls/ToolbarDropdown";
-import * as types from "../../../types/api";
-import * as util from "../../../util/api";
-import * as selectors from "../../../util/selectors";
-import { DNDContainer, MainPage } from "../../../views/api";
-import { setFBForceUpdate } from "../actions/session";
-import { RenderRowsCache } from "../renderRows";
-import { currentLoadOrderForProfile } from "../selectors";
-import {
-  type IItemRendererProps,
-  type ILoadOrderGameInfo,
-  type LoadOrder,
-  LoadOrderValidationError,
-} from "../types/types";
-import { isEntryLocked } from "../util";
-import FilterBox from "./FilterBox";
-import InfoPanel from "./InfoPanel";
-import ItemRenderer from "./ItemRenderer";
+import ToolbarIcon from "../../../controls/ToolbarIcon";
+import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IState } from "../../../types/IState";
+import { TabBar } from "../../../ui/components/tabs/TabBar";
+import { TabButton } from "../../../ui/components/tabs/TabButton";
+import { TabPanel } from "../../../ui/components/tabs/TabPanel";
+import { TabProvider } from "../../../ui/components/tabs/Tabs.context";
+import { toPromise } from "../../../util/util";
+import MainPage from "../../../views/MainPage";
+import { setDeploymentNecessary } from "../../mod_management/actions/deployment";
+import { needToDeploy } from "../../mod_management/selectors";
+import { activeGameId, activeProfile } from "../../profile_management/selectors";
+import type { IProfile } from "../../profile_management/types/IProfile";
+import { fbLoadOrderTabSelected, setFBForceUpdate } from "../actions/session";
+import { activeLoadOrderIdForProfile } from "../selectors";
+import type { IRegisteredLoadOrder } from "../types/types";
+import LoadOrderPanel, { type ILoadOrderPanelProps } from "./LoadOrderPanel";
+import { resolveActiveLoadOrderId } from "./tabs";
 
-const PanelX: any = Panel;
-
-interface IBaseState {
-  loading: boolean;
-  updating: boolean;
-  validationError: LoadOrderValidationError;
-  currentRefreshId: string;
-  filterText: string;
-}
-
-export interface IBaseProps {
-  getGameEntry: (gameId: string) => ILoadOrderGameInfo;
-  onImportList: () => void;
-  onExportList: () => void;
-  onSetOrder: (profileId: string, loadOrder: LoadOrder, refresh?: boolean) => void;
-  onSortByDeployOrder: (profileId: string) => void;
-  onStartUp: (gameMode: string) => Promise<LoadOrder>;
-  onShowError: (gameId: string, error: Error) => void;
-  validateLoadOrder: (profile: types.IProfile, newLO: LoadOrder) => Promise<void>;
+export interface IBaseProps extends Pick<
+  ILoadOrderPanelProps,
+  "onSetOrder" | "onStartUp" | "onShowError" | "validateLoadOrder"
+> {
+  getGameEntries: (gameId: string) => IRegisteredLoadOrder[];
+  onImportList: (loadOrderId?: string) => void;
+  onExportList: (loadOrderId?: string) => void;
+  onSortByDeployOrder: (profileId: string, loadOrderId?: string) => void;
 }
 
 interface IConnectedProps {
-  // The current loadorder
-  loadOrder: LoadOrder;
-
   // The profile we're managing this load order for.
-  profile: types.IProfile;
+  profile: IProfile;
 
   // Does the user need to deploy ?
   needToDeploy: boolean;
 
-  // The refresh id for the current profile
-  //  (used to force a refresh of the list)
-  refreshId: string;
-
-  validationResult: types.IValidationResult;
+  // The load order whose tab the profile has open.
+  activeLoadOrderId: string | undefined;
 
   // Allow dnd operations?
   disabled: boolean;
@@ -79,28 +53,17 @@ interface IConnectedProps {
 interface IActionProps {
   onSetDeploymentNecessary: (gameId: string, necessary: boolean) => void;
   onForceRefresh: (profileId: string) => void;
+  onSelectTab: (profileId: string, loadOrderId: string) => void;
 }
 
 type IProps = IActionProps & IBaseProps & IConnectedProps;
-type IComponentState = IBaseState;
 
-class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
-  private mStaticButtons: types.IActionDefinition[];
-
-  // Memoizes the per-row props so an unrelated re-render keeps the same row
-  //  object identities, preserving the rows' React.memo and avoiding a layout
-  //  measure in DraggableList.
-  private mRenderRows = new RenderRowsCache();
+// The load order page: one panel per load order the game registers, as tabs when there are several.
+class FileBasedLoadOrderPage extends ComponentEx<IProps, Record<string, never>> {
+  private mStaticButtons: IActionDefinition[];
 
   constructor(props: IProps) {
     super(props);
-    this.initState({
-      loading: true,
-      updating: false,
-      validationError: undefined,
-      currentRefreshId: "",
-      filterText: "",
-    });
 
     this.mStaticButtons = [
       {
@@ -113,8 +76,8 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             text: "Deploy Mods",
             className: this.props.needToDeploy ? "toolbar-flash-button" : undefined,
             onClick: async () => {
-              await util.toPromise((cb) => this.context.api.events.emit("deploy-mods", cb));
-              const gameId = selectors.activeGameId(this.context.api.getState());
+              await toPromise((cb) => this.context.api.events.emit("deploy-mods", cb));
+              const gameId = activeGameId(this.context.api.getState());
               this.props.onSetDeploymentNecessary(gameId, false);
             },
           };
@@ -130,8 +93,8 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             text: "Purge Mods",
             className: "load-order-purge-list",
             onClick: async () => {
-              await util.toPromise((cb) => this.context.api.events.emit("purge-mods", false, cb));
-              const gameId = selectors.activeGameId(this.context.api.getState());
+              await toPromise((cb) => this.context.api.events.emit("purge-mods", false, cb));
+              const gameId = activeGameId(this.context.api.getState());
               this.props.onSetDeploymentNecessary(gameId, true);
             },
           };
@@ -143,10 +106,10 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
           return {
             id: "btn-refresh-list",
             key: "btn-refresh-list",
-            icon: this.state.updating ? "spinner" : "refresh",
+            icon: "refresh",
             text: "Refresh List",
             className: "load-order-refresh-list",
-            onClick: this.onRefreshList,
+            onClick: () => this.props.onForceRefresh(this.props.profile.id),
           };
         },
       },
@@ -160,15 +123,15 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             instanceId: [],
             icons: [
               {
-                icon: this.state.updating || this.props.disabled ? "spinner" : "import",
+                icon: this.props.disabled ? "spinner" : "import",
                 title: "Load Order Import",
-                action: this.props.onImportList,
+                action: () => this.props.onImportList(this.activeLoadOrderId()),
                 default: true,
               },
               {
-                icon: this.state.updating || this.props.disabled ? "spinner" : "import",
+                icon: this.props.disabled ? "spinner" : "import",
                 title: "Load Order Export",
-                action: this.props.onExportList,
+                action: () => this.props.onExportList(this.activeLoadOrderId()),
               },
             ],
           };
@@ -180,243 +143,137 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
           return {
             id: "btn-sort-by-deploy-order",
             key: "btn-sort-by-deploy-order",
-            icon: this.state.updating ? "spinner" : "loot-sort",
+            icon: "loot-sort",
             text: "Sort by Deploy Order",
             className: "load-order-sort-deploy-order",
             onClick: () =>
-              this.state.updating ? null : this.props.onSortByDeployOrder(this.props.profile.id),
+              this.props.onSortByDeployOrder(this.props.profile.id, this.activeLoadOrderId()),
           };
         },
       },
     ];
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    // Zuckerberg isn't going to like this...
-    if (!!newProps.refreshId && this.state.currentRefreshId !== newProps.refreshId) {
-      this.nextState.currentRefreshId = newProps.refreshId;
-      this.onRefreshList();
-      return;
-    }
-
-    if (this.state.validationError !== undefined && newProps.validationResult === undefined) {
-      this.nextState.validationError = undefined;
-      return;
-    }
-
-    if (
-      this.state.validationError?.validationResult?.invalid !== newProps.validationResult?.invalid
-    ) {
-      this.nextState.validationError = new LoadOrderValidationError(
-        newProps.validationResult,
-        newProps.loadOrder,
-      );
-    }
-  }
-
-  public componentDidMount() {
-    const { onSetOrder, onStartUp, profile } = this.props;
-    onStartUp(profile?.gameId)
-      .then((lo) => {
-        if (lo !== undefined) {
-          onSetOrder(profile.id, lo);
-        }
-      })
-      .catch((err) => {
-        // The deserialized loadorder failed validation; although invalid
-        //  we still want to give the user the ability to modify the LO
-        //  to a valid state through the UI rather than force him to do
-        //  so manually, which is why we're updating the loadorder state.
-        //  Fortunately the lo will fail validation when serialized unless
-        //  a valid LO is provided.
-        this.nextState.validationError = err as LoadOrderValidationError;
-        onSetOrder(profile.id, (err as LoadOrderValidationError).loadOrder);
-      })
-      .finally(() => (this.nextState.loading = false));
-  }
-
-  public componentWillUnmount() {
-    this.resetState();
-  }
-
   public render(): JSX.Element {
-    const { t, loadOrder, getGameEntry, profile } = this.props;
-    const { validationError } = this.state;
-    const gameEntry = getGameEntry(profile?.gameId);
-    const chosenItemRenderer = gameEntry?.customItemRenderer ?? ItemRenderer;
-    const enabled =
-      gameEntry !== undefined
-        ? this.mRenderRows.build(
-            loadOrder,
-            validationError?.validationResult?.invalid,
-            gameEntry.toggleableEntries || false,
-            this.state.filterText,
-          )
-        : [];
-
-    const infoPanel = () => (
-      <InfoPanel validationError={validationError} info={gameEntry?.usageInstructions} />
-    );
-
-    const draggableList = () =>
-      this.nextState.loading ? (
-        this.renderWait()
-      ) : enabled.length > 0 ? (
-        <DraggableList
-          disabled={this.props.disabled || this.state.loading || this.state.filterText !== ""}
-          itemTypeId="file-based-lo-draggable-entry"
-          id="mod-loadorder-draggable-list"
-          items={enabled}
-          itemRenderer={chosenItemRenderer}
-          apply={this.onApply}
-          idFunc={this.getItemId}
-          isLocked={this.isLocked}
-          virtualized={
-            gameEntry?.customItemRenderer === undefined || gameEntry?.uniformRowHeight === true
-          }
-        />
-      ) : (
-        <EmptyPlaceholder
-          icon="folder-download"
-          fill={true}
-          text={t("You don't have any orderable entries")}
-          subtext={t("Please make sure to deploy")}
-        />
-      );
-    const listClasses = this.props.disabled
-      ? ["file-based-load-order-list", "disabled"]
-      : ["file-based-load-order-list"];
+    const { t } = this.props;
     return (
       <MainPage>
         <MainPage.Header>
+          {/* header actions receive the shown load order's id as their instance id */}
           <IconBar
-            group="fb-load-order-icons"
-            staticElements={this.mStaticButtons}
             className="menubar"
+            group="fb-load-order-icons"
+            instanceId={this.activeLoadOrderId()}
+            staticElements={this.mStaticButtons}
             t={t}
           />
         </MainPage.Header>
+
         <MainPage.Body>
           <Panel>
-            <PanelX.Body>
-              <FilterBox currentFilterValue={this.state.filterText} setFilter={this.onFilter} />
-              <DNDContainer style={{ height: "95%" }}>
-                <FlexLayout type="row" className="file-based-load-order-container">
-                  <FlexLayout.Flex className={listClasses.join(" ")}>
-                    {draggableList()}
-                  </FlexLayout.Flex>
-                  <FlexLayout.Flex>{infoPanel()}</FlexLayout.Flex>
-                </FlexLayout>
-              </DNDContainer>
-            </PanelX.Body>
+            <Panel.Body>{this.renderLoadOrders()}</Panel.Body>
           </Panel>
         </MainPage.Body>
       </MainPage>
     );
   }
 
-  private resetState() {
-    this.nextState.loading = true;
-    this.nextState.validationError = undefined;
+  private gameEntries(): IRegisteredLoadOrder[] {
+    const { getGameEntries, profile } = this.props;
+    return profile?.gameId !== undefined ? getGameEntries(profile.gameId) : [];
   }
 
-  private onFilter = (filterText: string) => (this.nextState.filterText = filterText);
+  private activeLoadOrderId(): string | undefined {
+    return resolveActiveLoadOrderId(this.gameEntries(), this.props.activeLoadOrderId);
+  }
 
-  private renderWait() {
+  private renderLoadOrders(): JSX.Element {
+    const { t, profile } = this.props;
+    const entries = this.gameEntries();
+    if (entries.length === 0) {
+      return null;
+    }
+    if (entries.length === 1) {
+      return this.renderPanel(entries[0]);
+    }
+    const tabName = (entry: IRegisteredLoadOrder) =>
+      t(entry.displayName ?? (entry.isPrimary ? "Load order" : entry.loadOrderId));
     return (
-      <div className="fblo-spinner-container">
-        <Spinner className="file-based-load-order-spinner" />
+      <div className="fblo-load-order-tabs">
+        <TabProvider
+          tab={resolveActiveLoadOrderId(entries, this.props.activeLoadOrderId)}
+          tabListId="fblo-load-orders"
+          onSetSelectedTab={(loadOrderId) => this.props.onSelectTab(profile.id, loadOrderId)}
+        >
+          <TabBar>
+            {entries.map((entry) => (
+              <TabButton
+                key={entry.loadOrderId}
+                name={tabName(entry)}
+                panelId={entry.loadOrderId}
+              />
+            ))}
+          </TabBar>
+
+          {entries.map((entry) => (
+            <TabPanel id={entry.loadOrderId} key={entry.loadOrderId}>
+              {this.renderPanel(entry)}
+            </TabPanel>
+          ))}
+        </TabProvider>
       </div>
     );
   }
 
-  private getItemId = (item: IItemRendererProps): string => item.loEntry.id;
-
-  private isLocked = (item: IItemRendererProps): boolean => {
-    return item?.loEntry?.locked !== undefined && isEntryLocked(item.loEntry.locked);
-  };
-
-  private onApply = (ordered: IItemRendererProps[]) => {
-    const { t } = this.props;
-    if (this.state.filterText !== "") {
-      this.context.api.sendNotification({
-        type: "warning",
-        message: t("Must clear filter to apply changes"),
-        allowSuppress: true,
-        id: "fblo-filter-not-cleared",
-      });
-      return;
-    }
-    const { onSetOrder, onShowError, loadOrder, profile, validateLoadOrder } = this.props;
-    const newLO = ordered.map((item) => item.loEntry);
-    validateLoadOrder(profile, newLO)
-      .then(() => (this.nextState.validationError = undefined))
-      .catch((err) => {
-        if (err instanceof LoadOrderValidationError) {
-          this.nextState.validationError = err;
-        } else {
-          onShowError(profile.gameId, unknownToError(err));
-        }
-      })
-      // Regardless of whether the lo is valid or not, we still want it
-      //  displayed to the user to give them a chance to fix it from inside
-      //  Vortex (if possible)
-      .finally(() => onSetOrder(profile.id, newLO));
-  };
-
-  private onRefreshList = () => {
-    const { onStartUp, onSetOrder, profile } = this.props;
-    this.nextState.updating = true;
-    onStartUp(profile?.gameId)
-      .then((lo) => {
-        this.nextState.validationError = undefined;
-        onSetOrder(profile.id, lo, true);
-      })
-      .catch((err) => {
-        if (err instanceof LoadOrderValidationError) {
-          this.nextState.validationError = err as LoadOrderValidationError;
-          onSetOrder(profile.id, err.loadOrder, true);
-        }
-      })
-      .finally(() => (this.nextState.updating = false));
-  };
+  private renderPanel(gameEntry: IRegisteredLoadOrder): JSX.Element {
+    const { profile, disabled, onSetOrder, onStartUp, onShowError, validateLoadOrder } = this.props;
+    return (
+      <LoadOrderPanel
+        disabled={disabled}
+        gameEntry={gameEntry}
+        key={gameEntry.loadOrderId}
+        profile={profile}
+        validateLoadOrder={validateLoadOrder}
+        onSetOrder={onSetOrder}
+        onShowError={onShowError}
+        onStartUp={onStartUp}
+      />
+    );
+  }
 }
 
-function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state) || undefined;
-  let loadOrder = profile?.id ? currentLoadOrderForProfile(state, profile.id) : [];
+function mapStateToProps(state: IState): IConnectedProps {
+  const profile = activeProfile(state) || undefined;
   return {
-    loadOrder,
     profile,
-    needToDeploy: selectors.needToDeploy(state),
-    refreshId: util.getSafe(state, ["session", "fblo", "refresh", profile?.id], ""),
-    validationResult: util.getSafe(
-      state,
-      ["session", "fblo", "validationResult", profile?.id],
-      undefined,
-    ),
+    needToDeploy: needToDeploy(state),
+    activeLoadOrderId: activeLoadOrderIdForProfile(state, profile?.id),
     disabled: shouldSuppressUpdate(state),
   };
 }
 
-function mapDispatchToProps(dispatch: any): IActionProps {
+function mapDispatchToProps(dispatch: Dispatch): IActionProps {
   return {
-    onSetDeploymentNecessary: (gameId: string, necessary: boolean) =>
-      dispatch(actions.setDeploymentNecessary(gameId, necessary)),
+    onSetDeploymentNecessary: (gameId: string, necessary: boolean) => {
+      dispatch(setDeploymentNecessary(gameId, necessary));
+    },
     onForceRefresh: (profileId: string) => {
       dispatch(setFBForceUpdate(profileId));
+    },
+    onSelectTab: (profileId: string, loadOrderId: string) => {
+      dispatch(fbLoadOrderTabSelected(profileId, loadOrderId));
     },
   };
 }
 
-function shouldSuppressUpdate(state: types.IState) {
+function shouldSuppressUpdate(state: IState) {
   const suppressOnActivities = ["deployment", "purging", "installing_dependencies"];
   const isActivityRunning = (activity: string) =>
-    util.getSafe(state, ["session", "base", "activity", "mods"], []).includes(activity) || // purge/deploy
-    util.getSafe(state, ["session", "base", "activity", activity], []).length > 0; // installing_dependencies
+    (state.session?.base?.activity?.mods ?? []).includes(activity) || // purge/deploy
+    (state.session?.base?.activity?.[activity] ?? []).length > 0; // installing_dependencies
   return suppressOnActivities.some((activity) => isActivityRunning(activity));
 }
 
 export default withTranslation(["common"])(
-  connect(mapStateToProps, mapDispatchToProps)(FileBasedLoadOrderPage) as any,
-) as React.ComponentClass<{}>;
+  connect(mapStateToProps, mapDispatchToProps)(FileBasedLoadOrderPage) as React.ComponentType,
+) as unknown as React.ComponentClass<IBaseProps>;
