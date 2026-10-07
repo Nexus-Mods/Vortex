@@ -1,4 +1,4 @@
-import type { IItemRendererProps, LoadOrder } from "./types/types";
+import { DEFAULT_LOAD_ORDER_ID, type IItemRendererProps, type LoadOrder } from "./types/types";
 import { isEntryLocked } from "./util";
 
 type InvalidEntries = IItemRendererProps["invalidEntries"];
@@ -11,6 +11,8 @@ type InvalidEntries = IItemRendererProps["invalidEntries"];
  * Row position is 1-based over the full order, computed before filtering.
  */
 export class RenderRowsCache {
+  // the load order the rows belong to
+  readonly #loadOrderId: string;
   #rows:
     | {
         loadOrder: LoadOrder;
@@ -22,6 +24,10 @@ export class RenderRowsCache {
   #filtered:
     | { rows: IItemRendererProps[]; filterText: string; result: IItemRendererProps[] }
     | undefined;
+
+  constructor(loadOrderId: string = DEFAULT_LOAD_ORDER_ID) {
+    this.#loadOrderId = loadOrderId;
+  }
 
   public build(
     loadOrder: LoadOrder,
@@ -47,6 +53,7 @@ export class RenderRowsCache {
           invalidEntries: invalid,
           position: idx + 1,
           lockedEntriesCount,
+          loadOrderId: this.#loadOrderId,
         }),
       );
       this.#rows = { loadOrder, invalid, toggleable, result: rows };

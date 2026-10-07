@@ -19,7 +19,7 @@ import getVortexPath from "../../util/getVortexPath";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
 import { webpackRequireHack } from "../../util/webpack-hacks";
-import { currentGameDiscovery, discoveryByGame } from "../gamemode_management/selectors";
+import { discoveryByGame } from "../gamemode_management/selectors";
 import { clearPendingPluginSort } from "../mod_management/actions/transactions";
 import { activeGameId, activeProfile } from "../profile_management/selectors";
 /* eslint-disable */
@@ -407,16 +407,6 @@ class LootInterface {
     }
   }
 
-  private get gamePath() {
-    const { store } = this.mExtensionApi;
-    const discovery = currentGameDiscovery(store.getState());
-    if (discovery === undefined) {
-      // no game selected
-      return undefined;
-    }
-    return discovery.path;
-  }
-
   private get dataPath() {
     const { store } = this.mExtensionApi;
     const gameId = activeGameId(store.getState());
@@ -597,15 +587,13 @@ class LootInterface {
     });
 
     const { game, loot }: ILootRef = await oldInitProm;
-    if (gameMode === game) {
-      this.mInitPromise = oldInitProm;
+    // unchanged, or a later switch (or none) replaced this one while the previous instance settled
+    if (gameMode === game || gameMode !== activeGameId(api.getState())) {
       onRes({ game, loot });
-      // no change
       return;
-    } else {
-      this.startStopLoot(gameMode, loot);
-      onRes(await this.mInitPromise);
     }
+    this.startStopLoot(gameMode, loot);
+    onRes(await this.mInitPromise);
   };
 
   private startStopLoot(gameMode: string, loot: LootAsync | undefined) {
@@ -632,7 +620,8 @@ class LootInterface {
       this.onGameModeChanged(api, gameId);
       res = await this.mInitPromise;
     }
-    return res;
+    // a switch only starts LOOT for the active game
+    return res.game === gameId ? res : { game: gameId, loot: undefined };
   }
 
   private pluginDetails = async (
@@ -843,6 +832,12 @@ class LootInterface {
 
   // tslint:disable-next-line:member-ordering
   private init = Bluebird.method(async (gameMode: string) => {
+    // read before any await, so it is the path of the game being started for
+    const gamePath = discoveryByGame(this.mExtensionApi.getState(), gameMode)?.path;
+    if (gamePath === undefined) {
+      log("info", "not starting LOOT for a game that is not discovered", { gameMode });
+      return { game: gameMode, loot: undefined };
+    }
     const localPath = pluginPath(gameMode);
     try {
       await fs.ensureDirAsync(localPath);
@@ -857,7 +852,7 @@ class LootInterface {
     try {
       loot = await getLootAsync().create(
         this.convertGameId(gameMode, false),
-        this.gamePath,
+        gamePath,
         localPath,
         "en",
         this.logCB,

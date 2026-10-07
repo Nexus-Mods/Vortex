@@ -127,8 +127,7 @@ async function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
 ): Promise<IGameStoreEntry | undefined> {
-  // TODO: Bluebird to native
-  const results = await Promise.resolve(storeLookup.find(getGameStoresSafe(), game.queryArgs));
+  const results = await storeLookup.find(getGameStoresSafe(), game.queryArgs);
   const filtered = (
     await Promise.all(
       results.map<Promise<IGameStoreEntry | undefined>>((res) =>

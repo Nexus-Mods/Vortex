@@ -19,6 +19,13 @@ const imageTypes: {
   ratio: string;
 }[] = [
   {
+    imageType: "avatar",
+    ratio: "1 / 1 (square)",
+    className: "w-24",
+    correctSrc: "https://picsum.photos/seed/avatar/200/200",
+    incorrectSrc: "https://picsum.photos/seed/avatar/400/200",
+  },
+  {
     imageType: "collection",
     ratio: "4 / 5 (portrait)",
     className: "w-40",

@@ -249,6 +249,7 @@
     "@opentelemetry/sdk-trace-base": "catalog:",
     "@opentelemetry/semantic-conventions": "catalog:",
     "@tailwindcss/cli": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
     "@vortex/nexus-api-v3": "workspace:*",

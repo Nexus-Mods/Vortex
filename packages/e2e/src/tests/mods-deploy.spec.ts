@@ -71,8 +71,9 @@ test.describe("Mods - Deploy from mods list", () => {
         await test.step("Open mod page", async () => {
           const navbar = new NavBar(vortexWindow);
           await navbar.modsLink.click();
+          // The list stays empty until the download above has also installed.
           await expect(new ModsPage(vortexWindow).emptyState).toBeHidden({
-            timeout: Timeouts.NETWORK,
+            timeout: Timeouts.MOD_INSTALL,
           });
         });
 

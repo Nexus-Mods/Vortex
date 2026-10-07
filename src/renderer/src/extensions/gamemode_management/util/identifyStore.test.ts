@@ -1,4 +1,3 @@
-import Bluebird from "bluebird";
 import { describe, expect, it, vi } from "vitest";
 
 import type { IGameStore } from "@/types/IGameStore";
@@ -12,22 +11,22 @@ vi.mock("@/util/getNormalizeFunc", () => ({
 
 const makeStore = (id: string, opts: Partial<IGameStore> = {}): IGameStore => ({
   id,
-  allGames: () => Bluebird.resolve([]),
+  allGames: () => Promise.resolve([]),
   snapshot: () => ({ entries: [], isInstalled: true }),
-  getGameStorePath: () => Bluebird.resolve(undefined),
-  launchGame: () => Bluebird.resolve(),
-  reloadGames: () => Bluebird.resolve(),
-  findByAppId: () => Bluebird.resolve(undefined),
-  findByName: () => Bluebird.resolve(undefined),
+  getGameStorePath: () => Promise.resolve(undefined),
+  launchGame: () => Promise.resolve(),
+  reloadGames: () => Promise.resolve(),
+  findByAppId: () => Promise.resolve(undefined),
+  findByName: () => Promise.resolve(undefined),
   ...opts,
 });
 
 describe("identifyStore", () => {
   it("returns the id of the first store in order that matches, not the first resolved", async () => {
-    const later = vi.fn(() => Bluebird.resolve(true));
+    const later = vi.fn(() => Promise.resolve(true));
     const stores = [
-      makeStore("steam", { identifyGame: () => Bluebird.resolve(false) }),
-      makeStore("gog", { identifyGame: () => Bluebird.resolve(true) }),
+      makeStore("steam", { identifyGame: () => Promise.resolve(false) }),
+      makeStore("gog", { identifyGame: () => Promise.resolve(true) }),
       makeStore("epic", { identifyGame: later }),
     ];
 
@@ -38,8 +37,8 @@ describe("identifyStore", () => {
 
   it("resolves undefined when no store matches", async () => {
     const stores = [
-      makeStore("steam", { identifyGame: () => Bluebird.resolve(false) }),
-      makeStore("gog", { identifyGame: () => Bluebird.resolve(false) }),
+      makeStore("steam", { identifyGame: () => Promise.resolve(false) }),
+      makeStore("gog", { identifyGame: () => Promise.resolve(false) }),
     ];
 
     await expect(identifyStore("C:\\Games\\Foo", stores)).resolves.toBeUndefined();
@@ -49,7 +48,7 @@ describe("identifyStore", () => {
     const stores = [
       makeStore("steam", {
         allGames: () =>
-          Bluebird.resolve([
+          Promise.resolve([
             {
               appid: "123",
               gamePath: "C:\\Games\\Foo",
@@ -60,7 +59,7 @@ describe("identifyStore", () => {
       }),
       makeStore("epic", {
         allGames: () =>
-          Bluebird.resolve([
+          Promise.resolve([
             {
               appid: "456",
               gamePath: "C:\\Games\\Bar",
@@ -80,7 +79,7 @@ describe("identifyStore", () => {
     const stores = [
       makeStore("steam", {
         allGames: () =>
-          Bluebird.resolve([
+          Promise.resolve([
             {
               appid: "123",
               gamePath: "C:\\Games\\Foo",
@@ -90,7 +89,7 @@ describe("identifyStore", () => {
           ]),
         identifyGame: (_gamePath, fallback) => {
           invokedFallback = fallback;
-          return Bluebird.resolve(true);
+          return Promise.resolve(true);
         },
       }),
     ];

@@ -46,4 +46,4 @@ export type { VortexPathBase, IVortexPathProvider } from "../fs/paths.vortex";
 export { InMemoryFS } from "../fs/in-memory";
 export { InMemoryStore } from "../fs/in-memory-store";
 export { Builder as InMemoryFSBuilder } from "../fs/in-memory-builder";
-export { ChaosFS } from "../fs/chaos";
+export { ChaosFS, type ChaosRule } from "../fs/chaos";

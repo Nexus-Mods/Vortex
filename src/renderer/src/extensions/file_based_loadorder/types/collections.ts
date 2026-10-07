@@ -1,4 +1,5 @@
 import type { ICollectionInfo, IRevision, SourceType, UpdatePolicy } from "@nexusmods/nexus-api";
+import { z } from "zod";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
@@ -9,14 +10,26 @@ import type {
   IMod,
   IModReference,
 } from "../../mod_management/types/IMod";
+import { loadOrderEntrySchema } from "./schemas";
 import type { ILoadOrderEntry, LoadOrder } from "./types";
 
 export interface ILoadOrderEntryExt extends ILoadOrderEntry {
   exportable: boolean;
 }
 
+// One of a game's named load orders, as a collection carries it.
+export const collectionNamedLoadOrderSchema = z.object({
+  id: z.string(),
+  entries: z.array(loadOrderEntrySchema),
+});
+
+export type ICollectionNamedLoadOrder = z.infer<typeof collectionNamedLoadOrderSchema>;
+
 export interface ICollectionLoadOrder {
+  // the primary load order, or the adopter's for a game without a primary
   loadOrder: LoadOrder;
+  // the named load orders; absent for a game with one load order
+  fbLoadOrders?: ICollectionNamedLoadOrder[];
 }
 
 export interface ICollectionSourceInfo {

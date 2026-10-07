@@ -4,12 +4,19 @@ import { withTranslation } from "react-i18next";
 import bbcode from "../../../controls/bbcode";
 import { ComponentEx } from "../../../controls/ComponentEx";
 import FlexLayout from "../../../controls/FlexLayout";
-import type { LoadOrderValidationError } from "../types/types";
+import { ConflictWinner, type LoadOrderValidationError } from "../types/types";
 
 interface IProps {
   info: string | React.ComponentType<React.PropsWithChildren<{}>>;
   validationError: LoadOrderValidationError;
+  conflictWinner?: ConflictWinner;
 }
+
+// What the game does when two entries change the same thing.
+const CONFLICT_COPY: Record<ConflictWinner, string> = {
+  [ConflictWinner.First]: "Entries higher in the list win conflicts.",
+  [ConflictWinner.Last]: "Entries lower in the list win conflicts.",
+};
 
 class InfoPanel extends ComponentEx<IProps, {}> {
   private mDefaultInfo: string;
@@ -19,7 +26,7 @@ class InfoPanel extends ComponentEx<IProps, {}> {
       "Drag and drop your load order entries around to modify the order in which the game loads your mods.";
   }
   public render() {
-    const { t, info } = this.props;
+    const { t, info, conflictWinner } = this.props;
 
     const Info = info;
     const panel =
@@ -36,6 +43,7 @@ class InfoPanel extends ComponentEx<IProps, {}> {
         <FlexLayout type="column">
           <FlexLayout.Flex>
             <h2>{t("Changing your load order")}</h2>
+            {conflictWinner !== undefined ? <p>{t(CONFLICT_COPY[conflictWinner])}</p> : null}
             {panel}
           </FlexLayout.Flex>
           <FlexLayout.Flex>{this.renderErrorBox()}</FlexLayout.Flex>
@@ -71,7 +79,4 @@ class InfoPanel extends ComponentEx<IProps, {}> {
   }
 }
 
-export default withTranslation(["common"])(InfoPanel as any) as React.ComponentClass<{
-  validationError: LoadOrderValidationError;
-  info: string | React.ComponentType<React.PropsWithChildren<{}>>;
-}>;
+export default withTranslation(["common"])(InfoPanel as any) as React.ComponentClass<IProps>;

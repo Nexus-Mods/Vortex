@@ -29,7 +29,7 @@ export async function installStardewTestMods(
 
   await test.step("The target mod is installed and enabled", async () => {
     await expectModStatus(vortexWindow, TARGET_MOD_NAME, MOD_STATUS.enabled, {
-      timeout: Timeouts.NETWORK,
+      timeout: Timeouts.MOD_INSTALL,
     });
   });
 }
@@ -46,7 +46,9 @@ export async function expectModListed(vortexWindow: Page, modName: string | RegE
   const navbar = new NavBar(vortexWindow);
   await navbar.modsLink.click();
   const modsPage = new ModsPage(vortexWindow);
-  await expect(modsPage.row(modName)).toBeVisible({ timeout: Timeouts.NETWORK });
+  // Callers reach this straight after starting a download, so the row only
+  // appears once the download and install have both finished.
+  await expect(modsPage.row(modName)).toBeVisible({ timeout: Timeouts.MOD_INSTALL });
 }
 
 export async function expectModStatus(

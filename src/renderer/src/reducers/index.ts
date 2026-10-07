@@ -16,13 +16,14 @@ import type { IExtensionReducer } from "../types/extensions";
 import type { IReducerSpec, IStateVerifier } from "../types/IExtensionContext";
 import type { IState } from "../types/IState";
 import { UserCanceled } from "../util/CustomErrors";
-import { verify } from "./verify";
+import { applySilentRepairs, verify } from "./verify";
 export { verify, verifyElement } from "./verify";
 import deepMerge from "../util/deepMerge";
 import * as fs from "../util/fs";
 import getVortexPath from "../util/getVortexPath";
 import { deleteOrNop, getSafe, rehydrate, setSafe } from "../util/storeHelper";
 import { appReducer } from "./app";
+import { devToolsReducer } from "./devTools";
 import { downloadsReducer } from "./downloads";
 import { loReducer } from "./loadOrder";
 import { notificationsReducer } from "./notifications";
@@ -130,14 +131,21 @@ function hydrateRed(
   const pathArray = statePath.split(".").slice(1);
 
   if (ele.verifiers !== undefined) {
-    const input = getSafe(payload, pathArray, undefined);
+    const spec = ele as Required<IReducerSpec>;
+    // the backup holds what was stored, before any repair
+    const storedPayload = payload as Record<string, unknown>;
+    const stored: unknown = getSafe(payload, pathArray, undefined);
+    const input = applySilentRepairs(statePath, spec.verifiers, stored, spec.defaults, log);
+    if (input !== stored) {
+      payload = setSafe(storedPayload, pathArray, input);
+    }
     const errors: string[] = [];
     let moreCount = 0;
     const sanitized = verify(
       statePath,
-      ele.verifiers,
+      spec.verifiers,
       input,
-      ele.defaults,
+      spec.defaults,
       (error: string) => {
         if (errors.length < 10) {
           errors.push(error);
@@ -160,9 +168,9 @@ function hydrateRed(
           const oldBackup = fs.readFileSync(path.join(backupPath, `backup_${backupTime}.json`), {
             encoding: "utf-8",
           });
-          backupData = { ...JSON.parse(oldBackup), ...payload };
+          backupData = { ...(JSON.parse(oldBackup) as Record<string, unknown>), ...storedPayload };
         } else {
-          backupData = payload;
+          backupData = storedPayload;
           backupTime = Date.now();
         }
         fs.ensureDirSync(backupPath);
@@ -254,6 +262,7 @@ export function buildReducerTree(extensionReducers: IExtensionReducer[]): Reduce
     },
     session: {
       base: sessionReducer,
+      devTools: devToolsReducer,
       notifications: notificationsReducer,
     },
     settings: {
@@ -320,10 +329,16 @@ export async function sanitizeHydrationState(
   const specs = collectVerifierSpecs(tree);
   const allErrors: string[] = [];
   const sanitizedPaths: Array<{ pathArray: string[]; sanitized: unknown }> = [];
+  // silent repairs hold whatever the user decides about the reported problems
+  let silentlyRepaired = hydratedState;
 
   for (const { statePath, verifiers, defaults } of specs) {
     const pathArray = statePath.split(".").slice(1);
-    const input: unknown = getSafe(hydratedState, pathArray, undefined);
+    const stored: unknown = getSafe(hydratedState, pathArray, undefined);
+    const input = applySilentRepairs(statePath, verifiers, stored, defaults, log);
+    if (input !== stored) {
+      silentlyRepaired = setSafe(silentlyRepaired, pathArray, input);
+    }
     const errors: string[] = [];
     let moreCount = 0;
     const sanitized: unknown = verify(
@@ -350,7 +365,7 @@ export async function sanitizeHydrationState(
   }
 
   if (allErrors.length === 0) {
-    return hydratedState;
+    return silentlyRepaired;
   }
 
   const decision = await queryDecision(allErrors);
@@ -365,7 +380,7 @@ export async function sanitizeHydrationState(
       JSON.stringify(hydratedState, undefined, 2),
     );
 
-    let result = hydratedState;
+    let result = silentlyRepaired;
     for (const { pathArray, sanitized } of sanitizedPaths) {
       result = setSafe(result, pathArray, sanitized);
     }
@@ -375,8 +390,8 @@ export async function sanitizeHydrationState(
     throw new UserCanceled();
   }
 
-  // Decision.IGNORE — return original state unchanged
-  return hydratedState;
+  // Decision.IGNORE - keep the reported problems as they are
+  return silentlyRepaired;
 }
 
 function reducers(extensionReducers: IExtensionReducer[], onError: (err: Error) => void) {

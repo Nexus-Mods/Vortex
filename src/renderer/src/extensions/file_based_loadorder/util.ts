@@ -1,18 +1,17 @@
 import { DataInvalid, ProcessCanceled, UserCanceled } from "@vortex/shared/errors";
 
-import type * as types from "../../types/api";
+import type { IExtensionApi } from "../../types/IExtensionContext";
+import type { IMod } from "../mod_management/types/IMod";
 import { findRuleByRef } from "../mod_management/util/testModReference";
-import { activeGameId, lastActiveProfileForGame } from "../profile_management/selectors";
+import { lastActiveProfileForGame } from "../profile_management/selectors";
 import { setValidationResult } from "./actions/session";
-import { findGameEntry } from "./gameSupport";
-import { currentGameMods, currentLoadOrderForProfile } from "./selectors";
+import { loadOrderForProfile } from "./selectors";
 import {
-  type ILoadOrderGameInfoExt,
+  type IRegisteredLoadOrder,
   type IValidationResult,
   type LoadOrder,
   LoadOrderSerializationError,
   LoadOrderValidationError,
-  type ILoadOrderEntryExt,
   type LockedState,
 } from "./types/types";
 
@@ -22,29 +21,21 @@ export function isEntryLocked(locked: LockedState): boolean {
   return locked === true || locked === "true" || locked === "always";
 }
 
-export const toExtendedLoadOrderEntry = (api: types.IExtensionApi) => {
-  return (entry: types.ILoadOrderEntry, index: number) => {
-    const state = api.getState();
-    const mods = currentGameMods(state);
-    const fileId = mods[entry?.modId]?.attributes?.fileId;
-    return { ...entry, index, fileId } as ILoadOrderEntryExt;
-  };
-};
-
-export function isModInCollection(collection: types.IMod, mod: types.IMod) {
+export function isModInCollection(collection: IMod, mod: IMod) {
   return findRuleByRef(collection.rules, mod) !== undefined;
 }
 
 export async function genCollectionLoadOrder(
-  api: types.IExtensionApi,
-  gameEntry: ILoadOrderGameInfoExt,
-  mods: { [modId: string]: types.IMod },
+  api: IExtensionApi,
+  gameEntry: IRegisteredLoadOrder,
+  // keyed by Vortex mod id
+  mods: Record<string, IMod>,
   profileId: string,
-  collection?: types.IMod,
+  collection?: IMod,
 ): Promise<LoadOrder> {
   const state = api.getState();
   try {
-    const prev = currentLoadOrderForProfile(state, profileId);
+    const prev = loadOrderForProfile(state, profileId, gameEntry.loadOrderId);
     let loadOrder = await gameEntry.deserializeLoadOrder();
     loadOrder = loadOrder.filter((entry) =>
       collection !== undefined
@@ -62,12 +53,12 @@ export async function genCollectionLoadOrder(
   }
 }
 
-export function isValidMod(mod: types.IMod) {
+export function isValidMod(mod: IMod) {
   return mod !== undefined && mod.type !== "collection";
 }
 
 function reportError(
-  api: types.IExtensionApi,
+  api: IExtensionApi,
   errorMessage: string,
   errDetails: any,
   allowReport: boolean = true,
@@ -79,17 +70,23 @@ function reportError(
   });
 }
 
-export async function errorHandler(api: types.IExtensionApi, gameId: string, err: Error) {
-  const gameEntry: ILoadOrderGameInfoExt = findGameEntry(gameId);
+export async function errorHandler(
+  api: IExtensionApi,
+  gameId: string,
+  gameEntry: IRegisteredLoadOrder | undefined,
+  err: Error,
+) {
   const allowReport =
-    !gameEntry.isContributed &&
+    gameEntry?.isContributed !== true &&
     !(err instanceof ProcessCanceled) &&
     !(err instanceof DataInvalid) &&
     !(err instanceof UserCanceled);
   if (err instanceof LoadOrderValidationError) {
     const invalLOErr = err as LoadOrderValidationError;
     const profileId = lastActiveProfileForGame(api.getState(), gameId);
-    api.store.dispatch(setValidationResult(profileId, invalLOErr.validationResult));
+    api.store.dispatch(
+      setValidationResult(profileId, invalLOErr.validationResult, gameEntry?.loadOrderId),
+    );
     const errorMessage = "Load order failed validation";
     const details = {
       message: errorMessage,

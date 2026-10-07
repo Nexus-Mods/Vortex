@@ -45,26 +45,9 @@ function applyTheme(api: types.IExtensionApi, theme: string, initial: boolean) {
 function editStyle(api: types.IExtensionApi, themeName: string): Bluebird<void> {
   const stylePath = path.join(ops.themePath(themeName), "style.scss");
   return fs.ensureFileAsync(stylePath).then(() =>
-    util
-      .opn(stylePath)
-      .catch(util.MissingInterpreter, (err) => {
-        api.showDialog(
-          "error",
-          "No handler found",
-          {
-            text:
-              "You don't have an editor associated with scss files. " +
-              "You can fix this by opening the following file from your file explorer, " +
-              "pick your favorite text editor and when prompted, choose to always open " +
-              "that file type with that editor.",
-            message: err.url,
-          },
-          [{ label: "Close" }],
-        );
-      })
-      .catch((err) => {
-        log("error", "failed to open", err);
-      }),
+    util.opn(stylePath).catch((err) => {
+      log("error", "failed to open", err);
+    }),
   );
 }
 

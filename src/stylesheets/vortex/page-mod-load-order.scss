@@ -15,6 +15,18 @@
         gap: 8px;
     }
 
+    // the open tab's panel fills the body below the tab bar
+    .fblo-load-order-tabs {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        [role="tabpanel"] {
+            flex: 1 1 0;
+            min-height: 0;
+        }
+    }
+
     .file-based-load-order-list {
         .list-group {
             display: flex;

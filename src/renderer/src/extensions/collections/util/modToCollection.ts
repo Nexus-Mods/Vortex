@@ -8,9 +8,10 @@ import turbowalk from "turbowalk";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
 import * as fs from "../../../util/fs";
-import * as selectors from "../../../util/selectors";
 import { sanitizeFilename } from "../../../util/util";
 import { resolveCategoryName } from "../../category_management/util/retrieveCategoryPath";
+import { downloadPathForGame } from "../../download_management/selectors";
+import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import type {
   IChoiceType,
@@ -29,6 +30,7 @@ import {
   isOptionalRule,
 } from "../../mod_management/util/testModReference";
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { activeGameId } from "../../profile_management/selectors";
 import { BUNDLED_PATH, MOD_TYPE, PATCHES_PATH } from "../constants";
 import type {
   ICollection,
@@ -83,7 +85,7 @@ async function rulesToCollectionMods(
 
   const state = api.getState();
   const downloads = state.persistent.downloads.files;
-  const downloadPath = selectors.downloadPathForGame(state, game.id);
+  const downloadPath = downloadPathForGame(state, game.id);
 
   const fileOverridesIds = new Set(
     Object.keys(collectionInfo.fileOverrides ?? {}).filter(
@@ -378,7 +380,7 @@ export async function modToCollection(
 ): Promise<ICollection> {
   const state = api.getState();
 
-  if (selectors.activeGameId(state) !== gameId) {
+  if (activeGameId(state) !== gameId) {
     // this would be a bug
     return Promise.reject(new Error("Can only export collection for the active profile"));
   }
@@ -404,13 +406,19 @@ export async function modToCollection(
   const exts: IExtensionFeature[] = findExtensions(state, gameId);
   const extData: any = {};
   for (const ext of exts) {
-    Object.assign(extData, await ext.generate(gameId, includedMods, collection));
+    const generated =
+      ((await ext.generate(gameId, includedMods, collection)) as object | undefined) ?? {};
+    const taken = Object.keys(generated).find((key) => key in extData);
+    if (taken !== undefined) {
+      throw new Error(`collection feature "${ext.id}" would overwrite "${taken}"`);
+    }
+    Object.assign(extData, generated);
   }
 
   const gameSpecific = await generateGameSpecifics(state, gameId, stagingPath, includedMods, mods);
 
   const game = getGame(gameId);
-  const discovery = selectors.discoveryByGame(state, gameId);
+  const discovery = discoveryByGame(state, gameId);
 
   const gameVersions = game !== undefined ? [await game.getInstalledVersion(discovery)] : [];
 

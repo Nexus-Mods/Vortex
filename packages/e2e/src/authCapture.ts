@@ -35,7 +35,15 @@ async function captureFor(label: string, user: NexusUser): Promise<void> {
   fs.mkdirSync(AUTH_DIR, { recursive: true });
   const file = authStatePath(user);
 
-  const browser = await chromium.launch({ headless: false });
+  // Cloudflare Turnstile on the sign-in page rejects Playwright's bundled
+  // Chromium ("Verification failed") because it advertises automation. Use the
+  // installed Chrome and drop the automation markers; a human still solves it.
+  const browser = await chromium.launch({
+    headless: false,
+    channel: "chrome",
+    ignoreDefaultArgs: ["--enable-automation"],
+    args: ["--disable-blink-features=AutomationControlled"],
+  });
   const context = await browser.newContext();
   const page = await context.newPage();
 

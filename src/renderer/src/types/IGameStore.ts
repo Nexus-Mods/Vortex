@@ -1,5 +1,3 @@
-import type PromiseBB from "bluebird";
-
 import type { IExecInfo } from "./IExecInfo";
 import type { IExtensionApi } from "./IExtensionContext";
 import type { IGameStoreEntry } from "./IGameStoreEntry";
@@ -120,7 +118,7 @@ export interface IGameStore {
    *  resource intensive operation for each game the user attempts to
    *  manage.
    */
-  allGames: () => PromiseBB<IGameStoreEntry[]>;
+  allGames: () => Promise<IGameStoreEntry[]>;
 
   /**
    * Synchronous access to the store's most recent scan. Never triggers
@@ -133,14 +131,14 @@ export interface IGameStore {
    *
    * @param appId of the game entry. This is obviously game store specific.
    */
-  findByAppId: (appId: string | string[]) => PromiseBB<IGameStoreEntry>;
+  findByAppId: (appId: string | string[]) => Promise<IGameStoreEntry>;
 
   /**
    * Attempt to find a game store entry using the game's name.
    *
    * @param appName the game name which the game store uses to identify this game.
    */
-  findByName: (appName: string) => PromiseBB<IGameStoreEntry>;
+  findByName: (appName: string) => Promise<IGameStoreEntry>;
 
   /**
    * Returns the full path to the launcher's executable.
@@ -150,14 +148,14 @@ export interface IGameStore {
    *  "isGameStoreInstalled" function so that the game store helper
    *  is able to confirm that the gamestore is installed on the user's PC
    */
-  getGameStorePath: () => PromiseBB<string | undefined>;
+  getGameStorePath: () => Promise<string | undefined>;
 
   /**
    * Launches the game using this game launcher.
    * @param appId whatever the game store uses to identify a game.
    * @param api gives access to API functions if needed.
    */
-  launchGame: (appId: any, api?: IExtensionApi) => PromiseBB<void>;
+  launchGame: (appId: any, api?: IExtensionApi) => Promise<void>;
 
   /**
    * Determine whether the game has been installed by this game store launcher.
@@ -165,7 +163,7 @@ export interface IGameStore {
    *
    * @param name of the game we're looking for.
    */
-  isGameInstalled?: (name: string) => PromiseBB<boolean>;
+  isGameInstalled?: (name: string) => Promise<boolean>;
 
   /**
    * In most cases the game store helper is fully capable of determining
@@ -175,7 +173,7 @@ export interface IGameStore {
    *  executable path MUST provide this function so that the game store helper
    *  can confirm that the store is installed correctly!
    */
-  isGameStoreInstalled?: () => PromiseBB<boolean>;
+  isGameStoreInstalled?: () => Promise<boolean>;
 
   /**
    * Some launchers may support Posix paths when attempting to launch a
@@ -188,7 +186,7 @@ export interface IGameStore {
    *
    * @param name of the game we want the posix path for.
    */
-  getPosixPath?: (name: string) => PromiseBB<string>;
+  getPosixPath?: (name: string) => Promise<string>;
 
   /**
    * Game store may support command line arguments when launching the game.
@@ -197,14 +195,14 @@ export interface IGameStore {
    *
    * @param appId - Whatever the game store uses to identify a game.
    */
-  getExecInfo?: (appId: any) => PromiseBB<IExecInfo>;
+  getExecInfo?: (appId: any) => Promise<IExecInfo>;
 
   /**
    * Generally the game store helper should be able to launch games directly.
    *  This functor allows game stores to define their own custom start up logic
    *  if needed. e.g. gamestore-xbox
    */
-  launchGameStore?: (api: IExtensionApi, parameters?: string[]) => PromiseBB<void>;
+  launchGameStore?: (api: IExtensionApi, parameters?: string[]) => Promise<void>;
 
   /**
    * Allows game stores to provide functionality to reload/refresh their
@@ -214,7 +212,7 @@ export interface IGameStore {
    * The game store helper is configured to call this function for all known
    *  game stores when a discovery scan is initiated.
    */
-  reloadGames: () => PromiseBB<void>;
+  reloadGames: () => Promise<void>;
 
   /**
    * determine if the specified game is managed by/installed through this store.
@@ -228,5 +226,5 @@ export interface IGameStore {
   identifyGame?: (
     gamePath: string,
     fallback: (gamePath: string) => PromiseLike<boolean>,
-  ) => PromiseBB<boolean>;
+  ) => Promise<boolean>;
 }

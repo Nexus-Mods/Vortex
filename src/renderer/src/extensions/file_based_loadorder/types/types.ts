@@ -19,24 +19,13 @@ export interface IItemRendererProps {
   // Number of locked entries in the load order, precomputed by the page.
   lockedEntriesCount?: number;
 
+  // The load order this entry belongs to; the primary when omitted.
+  loadOrderId?: string;
+
   // Function components cannot be given refs, which means that DnD
   //  will not work when using the Vortex API's DraggableItem without
   //  forwarding the ref to the itemRenderer.
   setRef?: (ref: any) => void;
-}
-
-// Used by the update set to restore the order of the load order entries after
-//  a mod update/re-install.
-export interface ILoadOrderEntryExt extends ILoadOrderEntry {
-  // The known index of this entry.
-  index: number;
-
-  // The fileId of the mod to which this LO entry belongs.
-  //  There's currently no reliable way to determine the version of the mod
-  //  due to BE data - the fileId is the only unique identifier we can use
-  //  to detect a version change. (this is optional as some load order entries
-  //  may be managed externally and not have a fileId)
-  fileId?: number | undefined;
 }
 
 export interface ILoadOrderEntry<T = any> {
@@ -85,9 +74,49 @@ export interface IValidationResult {
   invalid: IInvalidResult[];
 }
 
+// The id of a game's primary load order, the one registered without a loadOrderId.
+export const DEFAULT_LOAD_ORDER_ID = "default";
+
+// Which end of a load order wins when two entries change the same thing.
+export const ConflictWinner = {
+  First: "first",
+  Last: "last",
+} as const;
+export type ConflictWinner = (typeof ConflictWinner)[keyof typeof ConflictWinner];
+
 export interface ILoadOrderGameInfo {
   // The domain gameId for this entry.
   gameId: string;
+
+  /**
+   * Identifies this load order when a game registers more than one. Omit it for a game's
+   *  primary load order. Letters, digits, "_" and "-" only.
+   */
+  loadOrderId?: string;
+
+  /**
+   * Name shown on this load order's tab when the game has more than one load order.
+   */
+  displayName?: string;
+
+  /**
+   * Position of this load order's tab among the game's named load orders, lowest first.
+   *  The primary load order always comes first; ties keep registration order.
+   */
+  priority?: number;
+
+  /**
+   * Set on the named load order that continues the game's primary order. The first time it is
+   *  read for a profile with no order of its own, it starts from a copy of that order. At most
+   *  one per game, and only on a named load order.
+   */
+  adoptsLegacyOrder?: boolean;
+
+  /**
+   * Which end of this load order wins a conflict, shown to the user next to the list.
+   *  Describes the game's behaviour only; the order is never reversed on its behalf.
+   */
+  conflictWinner?: ConflictWinner;
 
   /**
    * Defaults to true unless specified otherwise.
@@ -223,10 +252,12 @@ export interface ILoadOrderGameInfo {
   condition?: () => boolean;
 }
 
-export interface ILoadOrderGameInfoExt extends ILoadOrderGameInfo {
-  // The things I do to reduce complexity for extension developers...
-  //  (and to block users from sending us reports which we can do nothing about)
+// A registered load order: the extension's ILoadOrderGameInfo plus what the registry resolves.
+export interface IRegisteredLoadOrder extends ILoadOrderGameInfo {
+  // Whether a community extension registered it; their errors are not reported to us.
   isContributed: boolean;
+  loadOrderId: string;
+  isPrimary: boolean;
 }
 
 export class LoadOrderValidationError extends Error {

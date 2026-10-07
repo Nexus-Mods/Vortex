@@ -18,6 +18,7 @@ import { test } from "../../test-utils/gamebryoTest";
 import { setPluginList } from "./actions/plugins";
 import LootInterface from "./autosort";
 import { createLootMock, downloadMasterlistMock } from "./lootMocks";
+import type { IPluginsLoot } from "./types/IPlugins";
 
 // the five seams the autosort suites share; each factory delegates to lootMocks so the
 // replacement behavior is arranged per test through makeLoot
@@ -52,6 +53,59 @@ describe("LootInterface libloot lifecycle", () => {
     expect(createLootMock).toHaveBeenCalledBefore(downloadMasterlistMock);
     expect(downloadMasterlistMock).toHaveBeenCalledBefore(harness.loot.loadLists);
     expect(harness.loot.loadLists).toHaveBeenCalledBefore(harness.loot.loadCurrentLoadOrderState);
+  });
+
+  // a game switch only starts LOOT once the previous instance settles, by when the active game
+  // may have changed again
+  test("leaves LOOT unstarted for a game switch that is no longer current", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.emit("gamemode-activated", "othergame");
+    harness.setState((draft) => {
+      draft.settings.profiles.activeProfileId = undefined;
+    });
+
+    harness.emit("gamemode-activated", "skyrimse");
+    await harness.lootInterface.wait();
+
+    expect(createLootMock).not.toHaveBeenCalled();
+  });
+
+  test("leaves LOOT unstarted for a game without a discovered path", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.setState((draft) => {
+      delete draft.settings.gameMode.discovered.skyrimse;
+    });
+
+    // only setTimeout is faked: Bluebird schedules on setImmediate, which flushAsync drains
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+
+    harness.restartHelpers();
+    await flushAsync();
+    // closing the replaced instance is scheduled as the restart starts the new one
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(harness.loot.close).toHaveBeenCalledTimes(1);
+    await harness.lootInterface.wait();
+
+    expect(createLootMock).not.toHaveBeenCalled();
+    expect(harness.errorNotifications).toEqual([]);
+  });
+
+  // a details request carries the game that was active when it was made
+  test("answers no plugin details for a game other than the active one", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.api.store.dispatch(setPluginList({ "one.esp": makePlugin() }));
+
+    const details = await new Promise<IPluginsLoot>((resolve) => {
+      harness.emit("plugin-details", "fallout4", ["one.esp"], resolve);
+    });
+
+    expect(details).toEqual({});
+    expect(harness.loot.getPluginMetadata).not.toHaveBeenCalled();
   });
 
   test("closes the replaced loot instance after its grace period", async ({ makeLoot }) => {
