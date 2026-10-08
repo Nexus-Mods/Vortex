@@ -344,6 +344,38 @@ describe("PluginPersistor", () => {
       expect(persistor.entry("old.esp").enabled).toBe(true);
     });
 
+    it("does not report an empty plugins.txt when only the game's own plugins are known", async () => {
+      paths.native = ["skyrim.esm"];
+      paths.pluginDir = tmpDir("plugin-vanilla-");
+      nodeFs.writeFileSync(path.join(paths.pluginDir, "plugins.txt"), "", { encoding: "latin1" });
+      const record = vi.fn();
+      const vanilla = new PluginPersistor(vi.fn(), () => false, record);
+      persistors.push(vanilla);
+      vanilla.setResetCallback(vi.fn(() => Promise.resolve()));
+      vanilla.setKnownPlugins({ "skyrim.esm": "Skyrim.esm" });
+
+      await vanilla.loadFiles("skyrimse");
+      await settle(SETTLE_MS);
+
+      expect(record).not.toHaveBeenCalled();
+    });
+
+    it("reports an empty plugins.txt when mod plugins are known", async () => {
+      paths.native = ["skyrim.esm"];
+      paths.pluginDir = tmpDir("plugin-emptied-");
+      nodeFs.writeFileSync(path.join(paths.pluginDir, "plugins.txt"), "", { encoding: "latin1" });
+      const record = vi.fn();
+      const modded = new PluginPersistor(vi.fn(), () => false, record);
+      persistors.push(modded);
+      modded.setResetCallback(vi.fn(() => Promise.resolve()));
+      modded.setKnownPlugins({ "skyrim.esm": "Skyrim.esm", "old.esp": "Old.esp" });
+
+      await modded.loadFiles("skyrimse");
+      await settle(SETTLE_MS);
+
+      expect(record.mock.calls[0]?.[0]).toBe("the plugin list on disk is empty");
+    });
+
     it("does not offer the keep/revert choice for an empty plugins.txt", async () => {
       const onExternalChange = vi.fn(() => Promise.resolve("keep" as const));
       persistor.setExternalChangeCallback(onExternalChange);
