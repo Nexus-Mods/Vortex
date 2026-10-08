@@ -307,15 +307,23 @@ export class AppSupportBundleClickedEvent implements MixpanelEvent {
   }
 }
 
+/** Whether Vortex found the game itself or the user picked its folder. */
+export type GameDiscoveryMethod = "automatic" | "manual";
+
 /** Fields on the app_game_manage event. */
 export interface GameManagedProps {
   game_id: number | null;
   extension_version: string;
+  // Store id from discovery (steam, gog, epic, xbox...), null when Vortex couldn't tell.
+  game_store: string | null;
+  discovery_method: GameDiscoveryMethod;
 }
 
 /**
  * Sent the first time a game is managed, when its first profile is created.
- * `extension_version` is the version of the game's support extension.
+ * `extension_version` is the version of the game's support extension, `game_store` the store the
+ * game was installed from, and `discovery_method` whether its folder was found automatically or
+ * set by hand.
  */
 export class AppGameManagedEvent implements MixpanelEvent {
   readonly eventName = "app_game_manage";
