@@ -1,3 +1,23 @@
 {
-  "_comment": "Mod management operations and UI strings - to be populated during migration"
+  "_comment": "Mod management operations and UI strings - to be populated during migration",
+  "collection_update_warning": {
+    "cancel": "Cancel",
+    "single": {
+      "title": "Update this mod?",
+      "intro": "This mod is part of the following collections:",
+      "warning": "It uses a version selected by the collection curator. Updating it may cause the collection to stop working as intended.",
+      "acknowledge": "I understand that updating this mod may break my collection.",
+      "update_anyway": "Update anyway"
+    },
+    "batch": {
+      "title": "Some mods are part of a collection",
+      "intro": "Some of the mods you're updating are part of the following collections:",
+      "warning": "Updating them may cause these collections to stop working as intended.",
+      "recommended": "Recommended:",
+      "recommended_action": "Update only mods that aren't part of a collection.",
+      "acknowledge": "I understand that updating collection mods may break my collection.",
+      "update_all": "Update all",
+      "update_non_collection": "Update non-collection mods"
+    }
+  }
 }
