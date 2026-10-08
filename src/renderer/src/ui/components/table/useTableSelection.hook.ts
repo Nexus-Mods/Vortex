@@ -3,9 +3,13 @@ import { useTranslation } from "react-i18next";
 
 import type { ITableCheckboxProps } from "./TableCheckbox";
 
+type Selection = ReadonlySet<string>;
+
 /** A row as it's shown: its key among the table's rows, and the id it's selected by. */
 export interface ITableSelectionRow {
+  /** Unique among the table's rows; a row in two groups has a key for each. */
   key: string;
+  /** The row's id, which the selection holds. */
   id: string;
 }
 
@@ -23,26 +27,44 @@ export interface ITableRowClick {
  *
  * `rows` is every row as it's shown, in order, so a range runs down the screen: a row in
  * two groups is there twice, and a range runs from the place it was clicked in.
+ *
+ * Kept here unless `controlled` is given, with `onChange` to take each change.
  */
-export const useTableSelection = (rowIds: string[], rows: ITableSelectionRow[]) => {
+export const useTableSelection = (
+  rowIds: string[],
+  rows: ITableSelectionRow[],
+  controlled?: Selection,
+  onChange?: (selected: Selection) => void,
+) => {
   const { t } = useTranslation();
-  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const [own, setOwn] = useState<Selection>(() => new Set());
+  const selected = controlled ?? own;
+
+  const setSelected = useCallback(
+    (next: Selection) => {
+      setOwn(next);
+      onChange?.(next);
+    },
+    [onChange],
+  );
+
   // the key of the row a range runs from: the last one clicked, or ticked, on its own
   const anchorRef = useRef<string>(undefined);
 
   const count = useMemo(() => rowIds.filter((id) => selected.has(id)).length, [rowIds, selected]);
 
-  const toggleRow = useCallback((id: string, checked: boolean) => {
-    setSelected((previous) => {
-      const next = new Set(previous);
+  const toggleRow = useCallback(
+    (id: string, checked: boolean) => {
+      const next = new Set(selected);
       if (checked) {
         next.add(id);
       } else {
         next.delete(id);
       }
-      return next;
-    });
-  }, []);
+      setSelected(next);
+    },
+    [selected, setSelected],
+  );
 
   const header: ITableCheckboxProps = {
     label: t("Select all"),
@@ -72,32 +94,26 @@ export const useTableSelection = (rowIds: string[], rows: ITableSelectionRow[]) 
         const to = rows.findIndex(({ key }) => key === row.key);
         const span = rows.slice(Math.min(from, to), Math.max(from, to) + 1).map(({ id }) => id);
 
-        setSelected((previous) => new Set(toggle ? [...previous, ...span] : span));
+        setSelected(new Set(toggle ? [...selected, ...span] : span));
         return;
       }
 
       anchorRef.current = row.key;
 
       if (toggle) {
-        setSelected((previous) => {
-          const next = new Set(previous);
-          if (!next.delete(row.id)) {
-            next.add(row.id);
-          }
-          return next;
-        });
+        toggleRow(row.id, !selected.has(row.id));
         return;
       }
 
       setSelected(new Set([row.id]));
     },
-    [rows],
+    [rows, selected, setSelected, toggleRow],
   );
 
   const clear = useCallback(() => {
     anchorRef.current = undefined;
     setSelected(new Set());
-  }, []);
+  }, [setSelected]);
 
   return { header, checkbox, click, clear };
 };

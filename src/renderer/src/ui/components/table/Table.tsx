@@ -35,10 +35,13 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowId,
   label,
   toolbar,
+  footer,
   defaultSort,
   className,
   selectable = false,
   getRowLabel,
+  selectedIds,
+  onSelectedIdsChange,
 }: ITableProps<T, G>) => {
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
 
@@ -100,7 +103,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       ),
     [getRowId, items],
   );
-  const selection = useTableSelection(rowIds, shownRows);
+  const selection = useTableSelection(rowIds, shownRows, selectedIds, onSelectedIdsChange);
 
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
   const getItemSize = useCallback(
@@ -119,7 +122,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   return (
     <div
       aria-label={label}
-      aria-rowcount={items.length + headRows}
+      aria-rowcount={items.length + headRows + (footer ? 1 : 0)}
       className={joinClasses(["nxm-table", className])}
       data-sticky-reveal={revealWidth ? "" : undefined}
       data-toolbar={toolbar ? "" : undefined}
@@ -214,6 +217,14 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       })}
 
       <TableSpacer height={virtual.endGap} />
+
+      {!!footer && (
+        <div aria-rowindex={items.length + headRows + 1} className="nxm-table-footer" role="row">
+          <div aria-colspan={columns.length} className="nxm-table-footer-cell" role="gridcell">
+            {footer}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

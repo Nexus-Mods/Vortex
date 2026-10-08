@@ -414,6 +414,28 @@ describe("Table with selectable rows", () => {
       expect(selected()).toEqual([]);
     });
 
+    it("leaves the selection to the page that controls it", async () => {
+      const onSelectedIdsChange = vi.fn();
+      render(
+        <Table
+          selectable
+          columns={WITH_CONTROL}
+          getRowId={(row) => row.id}
+          label="Files"
+          rows={FIVE}
+          selectedIds={new Set(["beta"])}
+          onSelectedIdsChange={onSelectedIdsChange}
+        />,
+      );
+      expect(selected()).toEqual(["Beta"]);
+
+      await clickWith("Delta", "Control");
+
+      expect(onSelectedIdsChange).toHaveBeenCalledWith(new Set(["beta", "delta"]));
+      // Not until the page passes it back.
+      expect(selected()).toEqual(["Beta"]);
+    });
+
     it("keeps the selection through a click on the header", async () => {
       renderFive();
 
@@ -443,6 +465,26 @@ describe("Table with a toolbar", () => {
     expect(within(toolbar).getByRole("button", { name: "Search" })).toBeInTheDocument();
     expect(header).toHaveAttribute("aria-rowindex", "2");
     expect(first).toHaveAttribute("aria-rowindex", "3");
+    expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
+  });
+});
+
+describe("Table with a footer", () => {
+  it("puts it after the rows, as the last of them", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        footer={<button type="button">Deselect all</button>}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const grid = screen.getByRole("grid");
+    const footer = within(grid).getAllByRole("row").at(-1) as HTMLElement;
+    expect(within(footer).getByRole("button", { name: "Deselect all" })).toBeInTheDocument();
+    expect(footer).toHaveAttribute("aria-rowindex", String(ROWS.length + 2));
     expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
   });
 });

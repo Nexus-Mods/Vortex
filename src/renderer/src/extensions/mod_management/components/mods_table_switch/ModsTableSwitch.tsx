@@ -18,6 +18,7 @@ import { Switch } from "@/ui/components/form/switch/Switch";
 import { Image } from "@/ui/components/image/Image";
 import { Table } from "@/ui/components/table/Table";
 import type { ITableSort, TableColumnWidth } from "@/ui/components/table/Table.types";
+import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/TableSelectionBar";
 import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
@@ -27,8 +28,10 @@ import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import { activeProfile } from "../../../profile_management/selectors";
 import {
   MOD_ROW_PINNING_ID,
+  MOD_SELECTION_PINNING_ID,
   useModRowActions,
-} from "../../hooks/use_mod_row_actions/useModRowActions.hook";
+  useModSelectionActions,
+} from "../../hooks/use_mod_actions/useModActions.hook";
 import {
   type IModsTableColumn,
   useModsTableColumns,
@@ -98,6 +101,8 @@ interface IModRowActionsProps {
   isLoading: boolean;
   /** Enables or disables the mods, from the switch. */
   onSetEnabled: (modIds: string[], enabled: boolean) => void;
+  /** Shows the switch alone while several rows are selected, so no action reads as for them all. */
+  switchOnly: boolean;
 }
 
 /**
@@ -109,9 +114,20 @@ interface IModRowActionsProps {
  * toolbar puts it: the pins and the menu are hidden at rest, and a toolbar per row is costly
  * to mount as rows scroll in. Then the toolbar mounts and stays while the row does, so a menu
  * opened from it isn't torn down. Memoized, since rows re-render on each frame of a scroll.
+ *
+ * While several rows are selected, only the switch shows, in the same place, as at rest.
  */
 const ModRowActions = memo(
-  ({ actions, width, modId, label, enabled, isLoading, onSetEnabled }: IModRowActionsProps) => {
+  ({
+    actions,
+    width,
+    modId,
+    label,
+    enabled,
+    isLoading,
+    onSetEnabled,
+    switchOnly,
+  }: IModRowActionsProps) => {
     const engaged = useTableRowEngaged();
     const restingRef = useRef<HTMLDivElement>(null);
     // the cell, while the resting switch has focus as the toolbar replaces it
@@ -133,13 +149,17 @@ const ModRowActions = memo(
       />
     );
 
-    if (!engaged) {
+    if (!engaged || switchOnly) {
       return (
         <div
           className="absolute inset-y-0 right-0 flex items-center justify-end gap-x-2"
           ref={restingRef}
           style={{ width }}
-          onFocus={() => (refocusIn.current = restingRef.current?.parentElement ?? null)}
+          onFocus={() => {
+            if (!engaged) {
+              refocusIn.current = restingRef.current?.parentElement ?? null;
+            }
+          }}
         >
           {toggle}
 
@@ -239,6 +259,19 @@ export const ModsTableSwitch = ({
 
   const { actionsFor, pinnedCount } = useModRowActions(rowActions);
 
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  // Those still listed, as a removed mod can't be acted on.
+  const selectedIds = useMemo(
+    () => [...selected].filter((id) => mods[id] !== undefined),
+    [mods, selected],
+  );
+  const selectionActions = useModSelectionActions(rowActions, selectedIds);
+  const selectedEnabled = selectedIds.filter((id) => isEnabled(mods[id])).length;
+
+  // A row's actions are for its own mod, which would read as for every selected one.
+  const multiSelected = selectedIds.length > 1;
+  const shownPins = multiSelected ? 0 : pinnedCount;
+
   const columns = useMemo<IModsTableColumn[]>(
     () => [
       {
@@ -286,7 +319,7 @@ export const ModsTableSwitch = ({
         header: t("Actions"),
         groupLabel: t("Status"),
         width: actionsWidth(0),
-        revealWidth: pinnedCount > 0 ? `${PINNED_ACTION_WIDTH * pinnedCount}px` : undefined,
+        revealWidth: shownPins ? `${PINNED_ACTION_WIDTH * shownPins}px` : undefined,
         sticky: "end",
         groupBy: ({ mod }) => {
           if (mod.state === "downloaded") {
@@ -304,7 +337,8 @@ export const ModsTableSwitch = ({
             isLoading={changing.has(mod.id)}
             label={t("{{name}} enabled", { name })}
             modId={mod.id}
-            width={actionsWidth(pinnedCount)}
+            switchOnly={multiSelected}
+            width={actionsWidth(shownPins)}
             onSetEnabled={setEnabled}
           />
         ),
@@ -330,7 +364,17 @@ export const ModsTableSwitch = ({
       },
       ...dataColumns,
     ],
-    [actionsFor, changing, dataColumns, isEnabled, pinnedCount, setEnabled, setGroupEnabled, t],
+    [
+      actionsFor,
+      changing,
+      dataColumns,
+      isEnabled,
+      multiSelected,
+      setEnabled,
+      setGroupEnabled,
+      shownPins,
+      t,
+    ],
   );
 
   const { visibleColumns, toggles, groupable, canReset, setColumnVisible, resetColumns } =
@@ -362,6 +406,26 @@ export const ModsTableSwitch = ({
     return <>{legacy}</>;
   }
 
+  const footer = multiSelected ? (
+    <TableSelectionBar count={selectedIds.length} onClear={() => setSelected(new Set())}>
+      <Toolbar className="min-w-0 flex-1 justify-end" pinningId={MOD_SELECTION_PINNING_ID}>
+        {/* Always on the bar, ahead of the menu: the one action that can't be unpinned. */}
+        <ToolbarGroup
+          actions={selectionActions}
+          beforeOverflow={
+            <Switch
+              aria-label={t("Selected mods enabled")}
+              checked={selectedEnabled === selectedIds.length}
+              indeterminate={selectedEnabled > 0 && selectedEnabled < selectedIds.length}
+              isLoading={selectedIds.some((id) => changing.has(id))}
+              onChange={(checked) => setEnabled(selectedIds, checked)}
+            />
+          }
+        />
+      </Toolbar>
+    </TableSelectionBar>
+  ) : undefined;
+
   const tableProps = {
     className: "mb-2 flex-1",
     toolbar: (
@@ -376,7 +440,10 @@ export const ModsTableSwitch = ({
     label: t("Mods"),
     selectable: true,
     getRowLabel: ({ name }: IModRow) => name,
+    selectedIds: selected,
+    onSelectedIdsChange: setSelected,
     defaultSort: BY_NAME,
+    footer,
   };
 
   // A table takes rows or groups, never both; typed, so neither gains the other as undefined.

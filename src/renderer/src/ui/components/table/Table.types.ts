@@ -56,6 +56,8 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   label: string;
   /** Controls above the header row, in the sticky head: a page's tabs and actions. */
   toolbar?: ReactNode;
+  /** Along the bottom of the view, below the rows: a bar for the selected rows. */
+  footer?: ReactNode;
   /** The sort to start with; unset, the rows keep the order they're given in. */
   defaultSort?: ITableSort;
   /** Classes for the table's grid element. */
@@ -64,6 +66,10 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   selectable?: boolean;
   /** A row's name, for its checkbox. */
   getRowLabel?: (row: T) => string;
+  /** The selected rows' ids, for a page that acts on them; unset, the table keeps its own. */
+  selectedIds?: ReadonlySet<string>;
+  /** Takes the selection the user changes it to, with `selectedIds`. */
+  onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
 } & (
   | {
       /** The rows, ungrouped. */

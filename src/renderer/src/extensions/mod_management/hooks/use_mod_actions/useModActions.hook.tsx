@@ -27,17 +27,32 @@ import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hoo
 /** Where the rows' pins are stored, shared so an action pinned on one row shows on every row. */
 export const MOD_ROW_PINNING_ID = "mods-table-row";
 
+/** Where the selected mods' bar keeps its pins, apart from the rows'. */
+export const MOD_SELECTION_PINNING_ID = "mods-table-selection";
+
 /** The group extensions register a mod row's actions into, as the legacy table read them. */
 const ROW_ACTIONS_GROUP = "mods-action-icons";
 
+/** The group extensions register actions on several mods into, as the legacy table's footer read them. */
+const SELECTION_ACTIONS_GROUP = "mods-multirow-actions";
+
+/** On the selected mods' bar until the user unpins them. */
+const SELECTION_PINS = new Set(["Check for Update", "Reinstall", "Remove"]);
+
+/** The legacy table's, which the selected mods' bar has a switch for instead. */
+const SWITCH_TITLES = new Set(["Enable", "Disable"]);
+
 const NO_PINS: { [actionId: string]: boolean } = {};
+const NO_TITLES = new Set<string>();
 
 const byPosition = (a: IActionDefinition, b: IActionDefinition) =>
   (a.position ?? 100) - (b.position ?? 100);
 
 /** How the row menu shows an action, matched by its registered title. */
 interface IRowMenuItem {
+  /** The title it was registered with, which matches it. */
   title: string;
+  /** What the menu calls it, untranslated. */
   label: string;
   /** Unset keeps the icon it registered with. */
   iconPath?: string;
@@ -64,7 +79,6 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
   {
     section: "dependencies",
     items: [
-      // The Mods toolbar's Manage Rules icon: the design's, Material's `rule`, has no MDI path.
       {
         title: "Manage File Conflicts",
         label: "Manage file conflicts",
@@ -108,26 +122,50 @@ const MENU_ITEMS = new Map(
 const menuOrder = (definition: IActionDefinition) =>
   MENU_ITEMS.get(definition.title)?.order ?? Number.MAX_SAFE_INTEGER;
 
+/** Where one set of a mod's actions comes from, and where its pins are kept. */
+interface IModActionsSource {
+  /** Which of the legacy table's actions it offers. */
+  offers: (action: ITableRowAction) => boolean;
+  /** The group extensions register its actions into. */
+  group: string;
+  /** Where its pins are kept. */
+  pinningId: string;
+  /** Pinned until the user says otherwise. */
+  defaultPins: Set<string>;
+  /** Titles left out, for something offered another way. */
+  leftOut: Set<string>;
+}
+
+const ROW_SOURCE: IModActionsSource = {
+  offers: (action) => action.singleRowAction ?? true,
+  group: ROW_ACTIONS_GROUP,
+  pinningId: MOD_ROW_PINNING_ID,
+  defaultPins: NO_TITLES,
+  leftOut: NO_TITLES,
+};
+
+const SELECTION_SOURCE: IModActionsSource = {
+  offers: (action) => action.multiRowAction ?? true,
+  group: SELECTION_ACTIONS_GROUP,
+  pinningId: MOD_SELECTION_PINNING_ID,
+  defaultPins: SELECTION_PINS,
+  leftOut: SWITCH_TITLES,
+};
+
 /**
- * The actions a Mods table row offers: the legacy table's own row actions and every
- * extension's in `mods-action-icons`, laid out as {@link ROW_MENU} has them. One that rules
- * itself out for a mod is left out, unless it's pinned: then it stays, disabled, so every row
- * has the same buttons in the same places. A component can't become an action, so those stay
- * in the legacy table, as on the toolbar; Check for Update has an action of its own here.
- *
- * A mod's actions are worked out once and kept until the store changes, as their conditions
- * read it: some scan every mod, and rows re-render on each frame of a scroll.
+ * The actions a source offers, laid out as {@link ROW_MENU} has them, with whether each is
+ * pinned and a way to make them into toolbar actions for some mods.
  */
-export const useModRowActions = (rowActions: ITableRowAction[]) => {
+const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource) => {
   const { t } = useTranslation(["common"]);
   const registered = useExtensionObjects<IActionDefinition>(
     registerAction,
     undefined,
-    ROW_ACTIONS_GROUP,
+    source.group,
     true,
   );
   const pins = useSelector(
-    (state: IState) => state.settings.toolbars?.[MOD_ROW_PINNING_ID]?.pinned ?? NO_PINS,
+    (state: IState) => state.settings.toolbars?.[source.pinningId]?.pinned ?? NO_PINS,
   );
   const store = useStore<IState>();
   const checkForUpdate = useCheckModUpdate();
@@ -146,38 +184,33 @@ export const useModRowActions = (rowActions: ITableRowAction[]) => {
       },
     };
 
-    return [
-      checkForUpdateAction,
-      ...rowActions.filter((action) => action.singleRowAction ?? true),
-      ...registered,
-    ]
+    return [checkForUpdateAction, ...rowActions.filter(source.offers), ...registered]
       .filter(
         (definition) =>
           definition.title !== undefined &&
           definition.component === undefined &&
-          !definition.options?.isClassicOnly,
+          !definition.options?.isClassicOnly &&
+          !source.leftOut.has(definition.title),
       )
       .sort(byPosition)
       .sort((a, b) => menuOrder(a) - menuOrder(b))
       .filter((definition) => !seen.has(definition.title) && !!seen.add(definition.title));
-  }, [checkForUpdate, registered, rowActions, store]);
+  }, [checkForUpdate, registered, rowActions, source, store]);
 
-  const pinnedCount = definitions.filter((definition) => pins[definition.title] === true).length;
+  const isPinned = useCallback(
+    (title: string) => pins[title] ?? source.defaultPins.has(title),
+    [pins, source],
+  );
 
-  // keyed by mod id; a fresh one whenever what the actions are built from changes
-  const cache = useMemo(() => new Map<string, IToolbarAction[]>(), [definitions, pins, t]);
-  useEffect(() => store.subscribe(() => cache.clear()), [cache, store]);
+  const pinnedCount = definitions.filter((definition) => isPinned(definition.title)).length;
 
-  const actionsFor = useCallback(
-    (modId: string): IToolbarAction[] => {
-      const cached = cache.get(modId);
-      if (cached !== undefined) {
-        return cached;
-      }
-
-      const instanceIds = [modId];
-
-      const actions = definitions.reduce<IToolbarAction[]>((list, definition) => {
+  /**
+   * The actions for some mods. One that rules itself out for them is left out, unless it's
+   * pinned: then it stays, disabled, so its button keeps its place.
+   */
+  const build = useCallback(
+    (instanceIds: string[]): IToolbarAction[] =>
+      definitions.reduce<IToolbarAction[]>((list, definition) => {
         let condition: boolean | string;
         try {
           condition = definition.condition?.(instanceIds) ?? true;
@@ -185,7 +218,7 @@ export const useModRowActions = (rowActions: ITableRowAction[]) => {
           condition = getErrorMessageOrDefault(err);
         }
 
-        if (condition === false && pins[definition.title] !== true) {
+        if (condition === false && !isPinned(definition.title)) {
           return list;
         }
 
@@ -198,19 +231,59 @@ export const useModRowActions = (rowActions: ITableRowAction[]) => {
           iconPath: menuItem?.iconPath ?? getIconPath(definition.icon, mdiPuzzleOutline),
           icon: menuItem?.icon,
           section: menuItem?.section ?? OTHER_SECTION,
+          pinned: source.defaultPins.has(definition.title),
           disabled: condition !== true,
           extension: definition.options?.namespace,
           onClick: () => definition.action?.(instanceIds),
         });
 
         return list;
-      }, []);
+      }, []),
+    [definitions, isPinned, source, t],
+  );
 
+  return { build, pinnedCount, store };
+};
+
+/**
+ * The actions a Mods table row offers: the legacy table's own row actions and every
+ * extension's in `mods-action-icons`. A component can't become an action, so those stay
+ * in the legacy table, as on the toolbar; Check for Update has an action of its own here.
+ *
+ * A mod's actions are worked out once and kept until the store changes, as their conditions
+ * read it: some scan every mod, and rows re-render on each frame of a scroll.
+ */
+export const useModRowActions = (rowActions: ITableRowAction[]) => {
+  const { build, pinnedCount, store } = useModActions(rowActions, ROW_SOURCE);
+
+  // keyed by mod id; a fresh one whenever what the actions are built from changes
+  const cache = useMemo(() => new Map<string, IToolbarAction[]>(), [build]);
+  useEffect(() => store.subscribe(() => cache.clear()), [cache, store]);
+
+  const actionsFor = useCallback(
+    (modId: string): IToolbarAction[] => {
+      const cached = cache.get(modId);
+      if (cached !== undefined) {
+        return cached;
+      }
+
+      const actions = build([modId]);
       cache.set(modId, actions);
       return actions;
     },
-    [cache, definitions, pins, t],
+    [build, cache],
   );
 
   return { actionsFor, pinnedCount };
+};
+
+/**
+ * The actions on the selected mods' bar: the legacy table's own for several rows and every
+ * extension's in `mods-multirow-actions`, but Enable and Disable, which the bar's switch
+ * does. Check for updates, Reinstall and Remove are pinned until the user unpins them.
+ */
+export const useModSelectionActions = (rowActions: ITableRowAction[], modIds: string[]) => {
+  const { build } = useModActions(rowActions, SELECTION_SOURCE);
+
+  return useMemo(() => build(modIds), [build, modIds]);
 };
