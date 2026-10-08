@@ -1,4 +1,4 @@
-import { mdiAccount } from "@mdi/js";
+import { mdiAccount, mdiMagnify } from "@mdi/js";
 import React, {
   memo,
   type ReactNode,
@@ -16,6 +16,7 @@ import type { IState } from "@/types/IState";
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
 import { Switch } from "@/ui/components/form/switch/Switch";
 import { Image } from "@/ui/components/image/Image";
+import { NoResults } from "@/ui/components/no_results/NoResults";
 import { Table } from "@/ui/components/table/Table";
 import type { ITableSort, TableColumnWidth } from "@/ui/components/table/Table.types";
 import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/TableSelectionBar";
@@ -75,6 +76,21 @@ const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
 const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
 
 const profileModState = (state: IState) => activeProfile(state)?.modState;
+
+/**
+ * Whether a row shows the text searched for, ignoring case, in any of the columns' cells;
+ * undefined while there's nothing to search for.
+ */
+const searchFilter = (columns: IModsTableColumn[], search: string) => {
+  const query = search.trim().toLocaleLowerCase();
+
+  if (query === "") {
+    return undefined;
+  }
+
+  return (row: IModRow) =>
+    columns.some((column) => column.searchText?.(row).toLocaleLowerCase().includes(query));
+};
 
 /** The Mods page's table: the legacy one, or the new table while it's being built. */
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
@@ -192,6 +208,7 @@ export const ModsTableSwitch = ({
 
   const [grouping, setGrouping] = useState<ModsTableGrouping>("none");
   const rows = useMemo(() => allModRows(mods), [mods]);
+  const [search, setSearch] = useState("");
   const memberships = useMemo(() => collectionsByMod(mods), [mods]);
   const [pendingDisable, setPendingDisable] = useState<IPendingDisable>();
 
@@ -278,6 +295,7 @@ export const ModsTableSwitch = ({
         id: "name",
         header: t("Name"),
         sort: (a, b) => a.name.localeCompare(b.name),
+        searchText: ({ name }) => name,
         cell: ({ mod, name }) => (
           <>
             <ModThumbnail className="ml-2 h-5 rounded-sm" pictureUrl={mod.attributes?.pictureUrl} />
@@ -387,6 +405,40 @@ export const ModsTableSwitch = ({
     [mods, grouping, t, groupColumn],
   );
 
+  // The columns shown, so a search finds only what's on screen.
+  const searchColumns = useMemo(
+    () => visibleColumns.filter((column) => column.searchText !== undefined),
+    [visibleColumns],
+  );
+  const matches = useMemo(() => searchFilter(searchColumns, search), [search, searchColumns]);
+  const shownRows = useMemo(() => (matches ? rows.filter(matches) : rows), [matches, rows]);
+  // A group with none left is dropped, as its row would stand for nothing.
+  const shownGroups = useMemo(
+    () =>
+      matches && groups
+        ? groups
+            .map((group) => ({ ...group, rows: group.rows.filter(matches) }))
+            .filter((group) => group.rows.length > 0)
+        : groups,
+    [groups, matches],
+  );
+
+  // A selected mod the search hides is deselected, so nothing acts on a mod out of sight.
+  const changeSearch = (next: string) => {
+    setSearch(next);
+
+    const nextMatches = searchFilter(searchColumns, next);
+    if (nextMatches !== undefined) {
+      setSelected(
+        new Set(
+          rows
+            .filter((row) => selected.has(row.mod.id) && nextMatches(row))
+            .map(({ mod }) => mod.id),
+        ),
+      );
+    }
+  };
+
   const displayOptions = useDisplayOptionsAction({
     canReset: canReset || grouping !== "none",
     children: (
@@ -432,7 +484,9 @@ export const ModsTableSwitch = ({
       <ModsTableToolbar
         displayOptions={displayOptions}
         grouping={grouping}
+        search={search}
         onGroupingChange={setGrouping}
+        onSearchChange={changeSearch}
       />
     ),
     columns: visibleColumns,
@@ -444,10 +498,15 @@ export const ModsTableSwitch = ({
     onSelectedIdsChange: setSelected,
     defaultSort: BY_NAME,
     footer,
+    empty: matches ? (
+      <NoResults iconPath={mdiMagnify} title={t("No mods match your search")} />
+    ) : undefined,
   };
 
   // A table takes rows or groups, never both; typed, so neither gains the other as undefined.
-  const data: { groups: IModGroup[] } | { rows: IModRow[] } = groups ? { groups } : { rows };
+  const data: { groups: IModGroup[] } | { rows: IModRow[] } = shownGroups
+    ? { groups: shownGroups }
+    : { rows: shownRows };
 
   return (
     <>

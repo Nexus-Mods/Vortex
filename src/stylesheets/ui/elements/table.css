@@ -507,6 +507,19 @@
         }
     }
 
+    /* In place of the rows, across every column, its cell the width in view like the
+       toolbar's, so what it says stays centred however far the columns scroll. */
+    .nxm-table-empty {
+        grid-column: 1 / -1;
+    }
+
+    .nxm-table-empty-cell {
+        position: sticky;
+        left: 0;
+        width: 100cqi;
+        padding-block: calc(var(--spacing) * 12);
+    }
+
     /* Across every column, as the head is, so its cell has the room to stick sideways. Stuck
        to the scroller's foot both ways: pulled up while the rows run past it, and pushed down,
        by a top that resolves against the scroller, while they stop short of it in a table

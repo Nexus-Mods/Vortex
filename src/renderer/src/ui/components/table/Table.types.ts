@@ -58,6 +58,8 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   toolbar?: ReactNode;
   /** Along the bottom of the view, below the rows: a bar for the selected rows. */
   footer?: ReactNode;
+  /** In place of the rows while there are none: what a search that matched nothing says. */
+  empty?: ReactNode;
   /** The sort to start with; unset, the rows keep the order they're given in. */
   defaultSort?: ITableSort;
   /** Classes for the table's grid element. */

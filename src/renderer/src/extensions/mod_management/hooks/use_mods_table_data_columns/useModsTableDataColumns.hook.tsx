@@ -26,7 +26,7 @@ const categoryId = (category: string | number | undefined) =>
 const timeOf = (value: string | number | Date | undefined) =>
   value === undefined ? undefined : new Date(value).getTime() || undefined;
 
-/** A toggleable column showing a line of text, sorted and grouped by it. */
+/** A toggleable column showing a line of text, sorted, grouped and searched by it. */
 const textColumn = (
   id: string,
   header: string,
@@ -40,6 +40,7 @@ const textColumn = (
   isDefaultVisible: false,
   sort: (a, b) => text(a).localeCompare(text(b)),
   groupBy: text,
+  searchText: text,
   cell: (row) => <span className="truncate">{text(row)}</span>,
 });
 
@@ -56,30 +57,31 @@ export const useModsTableDataColumns = (memberships: {
   const categories = useSelector(gameCategories);
 
   return useMemo(() => {
-    /** A toggleable column showing a time relative to now, newest last. */
+    /** A toggleable column showing a time relative to now, newest last; searched as shown. */
     const timeColumn = (
       id: string,
       header: string,
       time: (row: IModRow) => number | undefined,
       missing: string,
-    ): IModsTableColumn => ({
-      id,
-      header,
-      width: "140px",
-      isToggleable: true,
-      isDefaultVisible: false,
-      sort: (a, b) => (time(a) ?? 0) - (time(b) ?? 0),
-      cell: (row) => {
+    ): IModsTableColumn => {
+      const text = (row: IModRow) => {
         const value = time(row);
-        return (
-          <span className="truncate">
-            {value === undefined
-              ? missing
-              : userFriendlyTime(new Date(value), t, getCurrentLanguage())}
-          </span>
-        );
-      },
-    });
+        return value === undefined
+          ? missing
+          : userFriendlyTime(new Date(value), t, getCurrentLanguage());
+      };
+
+      return {
+        id,
+        header,
+        width: "140px",
+        isToggleable: true,
+        isDefaultVisible: false,
+        sort: (a, b) => (time(a) ?? 0) - (time(b) ?? 0),
+        searchText: text,
+        cell: (row) => <span className="truncate">{text(row)}</span>,
+      };
+    };
 
     return [
       // Version (`version`, 40): its update and changelog buttons, and the other versions

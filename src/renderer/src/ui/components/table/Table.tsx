@@ -36,6 +36,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   label,
   toolbar,
   footer,
+  empty,
   defaultSort,
   className,
   selectable = false,
@@ -116,13 +117,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
   // The rows in the sticky head, which come before the table's own in aria-rowindex.
   const headRows = toolbar ? 2 : 1;
+  const showsEmpty = items.length === 0 && !!empty;
+  // The rows after the head: the items, or what stands in for them.
+  const bodyRows = showsEmpty ? 1 : items.length;
 
   const backdrops = useTableGroupBackdrops({ getItemSize, items, rendered: virtual.items });
 
   return (
     <div
       aria-label={label}
-      aria-rowcount={items.length + headRows + (footer ? 1 : 0)}
+      aria-rowcount={bodyRows + headRows + (footer ? 1 : 0)}
       className={joinClasses(["nxm-table", className])}
       data-sticky-reveal={revealWidth ? "" : undefined}
       data-toolbar={toolbar ? "" : undefined}
@@ -218,8 +222,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
       <TableSpacer height={virtual.endGap} />
 
+      {showsEmpty && (
+        <div aria-rowindex={headRows + 1} className="nxm-table-empty" role="row">
+          <div aria-colspan={columns.length} className="nxm-table-empty-cell" role="gridcell">
+            {empty}
+          </div>
+        </div>
+      )}
+
       {!!footer && (
-        <div aria-rowindex={items.length + headRows + 1} className="nxm-table-footer" role="row">
+        <div aria-rowindex={bodyRows + headRows + 1} className="nxm-table-footer" role="row">
           <div aria-colspan={columns.length} className="nxm-table-footer-cell" role="gridcell">
             {footer}
           </div>
