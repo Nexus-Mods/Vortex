@@ -44,9 +44,7 @@ describe("ModUpdate", () => {
     render(<ModUpdate mod={mod({ newestVersion: "1.1", newestFileId: 101 })} />);
 
     // the test `t` leaves the version uninterpolated
-    await userEvent.click(
-      screen.getByRole("button", { name: "Mod can be updated (Current version: {{newVersion}})" }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Update to {{version}}" }));
 
     expect(api.events.emit).toHaveBeenCalledWith("mod-update", "stardewvalley", 12, 101, "nexus");
   });
@@ -54,11 +52,7 @@ describe("ModUpdate", () => {
   it("opens the mod's page to pick the file when the newest can't be told", async () => {
     render(<ModUpdate mod={mod({ newestVersion: "1.1", newestFileId: "unknown" })} />);
 
-    await userEvent.click(
-      screen.getByRole("button", {
-        name: "Mod can be updated (but you will have to pick the file yourself)",
-      }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Choose update file" }));
 
     expect(api.events.emit).toHaveBeenCalledWith("open-mod-page", "stardewvalley", 12, "nexus");
   });
@@ -76,6 +70,8 @@ describe("ModUpdate", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "View changelog" }));
 
+    expect(screen.getByText("Changelog")).toBeInTheDocument();
+    expect(screen.getByText("Newest Version")).toBeInTheDocument();
     expect(screen.getByText("things").tagName).toBe("B");
   });
 
@@ -92,9 +88,10 @@ describe("ModUpdate", () => {
   it("warns that a mod with no source can't be checked", () => {
     render(<ModUpdate mod={mod({ source: undefined })} />);
 
-    expect(
-      screen.getByRole("img", { name: /This mod has no source assigned/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Mod source unknown" })).toHaveAttribute(
+      "aria-description",
+      "Vortex doesn't know where this mod came from, so it can't check for updates.",
+    );
   });
 
   it("warns without a button, as there's nothing to do", () => {
@@ -106,8 +103,6 @@ describe("ModUpdate", () => {
   it("warns that a Nexus Mods mod without its file id can't be identified", () => {
     render(<ModUpdate mod={mod({ fileId: undefined })} />);
 
-    expect(
-      screen.getByRole("img", { name: /This mod is missing identification information/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Mod not identified" })).toBeInTheDocument();
   });
 });

@@ -22,9 +22,17 @@ describe("Markdown", () => {
     );
   });
 
-  it("takes classes to change its size or colour", () => {
+  it("takes classes to change its colour", () => {
     const { container } = render(<Markdown className="text-neutral-subdued" markdown="Hi" />);
 
     expect(container.firstElementChild).toHaveClass("nxm-prose", "text-neutral-subdued");
+  });
+
+  it("comes in the body text's size, or smaller", () => {
+    const { container, rerender } = render(<Markdown markdown="Hi" />);
+    expect(container.firstElementChild).not.toHaveClass("nxm-prose-sm");
+
+    rerender(<Markdown markdown="Hi" size="sm" />);
+    expect(container.firstElementChild).toHaveClass("nxm-prose", "nxm-prose-sm");
   });
 });

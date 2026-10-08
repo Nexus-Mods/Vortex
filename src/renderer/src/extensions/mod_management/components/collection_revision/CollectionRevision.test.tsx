@@ -44,11 +44,11 @@ describe("CollectionRevision", () => {
 
   it("fixes the revision's width while buttons follow it, and not otherwise", () => {
     const { rerender } = render(<CollectionRevision collection={COLLECTION} />);
-    expect(screen.getByText("10")).not.toHaveClass("w-10");
+    expect(screen.getByText("10")).not.toHaveClass("w-8");
 
     revision.current = { ...revision.current, newest: 11, hasUpdate: true };
     rerender(<CollectionRevision collection={COLLECTION} />);
-    expect(screen.getByText("10")).toHaveClass("w-10", "truncate");
+    expect(screen.getByText("10")).toHaveClass("w-8", "truncate");
   });
 
   it("updates to a newer revision from its button", async () => {

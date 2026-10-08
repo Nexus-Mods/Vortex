@@ -46,8 +46,8 @@ export const CollectionRevision = ({ collection }: ICollectionRevisionProps) => 
           )}
 
           {changelog !== undefined && (
-            <ChangelogButton title={t("Revision {{revision}}", { revision: newest })}>
-              <Markdown markdown={changelog} />
+            <ChangelogButton>
+              <Markdown markdown={changelog} size="sm" />
             </ChangelogButton>
           )}
         </div>

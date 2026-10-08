@@ -3,6 +3,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { useMainContext } from "@/contexts";
+import { Button } from "@/ui/components/button/Button";
 import { Html } from "@/ui/components/html/Html";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Markdown } from "@/ui/components/markdown/Markdown";
@@ -24,6 +25,15 @@ interface IChangelog {
   format: "html" | "text";
   content: string;
 }
+
+/** A tooltip's bold title over what it means, as the design words these: 240px wide. */
+const TitledTooltip = ({ title, body }: { title: string; body: string }) => (
+  <div className="nxm-tooltip-content max-w-60">
+    <p className="font-semibold">{title}</p>
+
+    <p>{body}</p>
+  </div>
+);
 
 /**
  * What there is to say about updating a mod: its update state, and the newest version's
@@ -61,23 +71,25 @@ export const ModUpdate = ({ mod }: IModUpdateProps) => {
   const { attributes = {} } = mod;
 
   if (!isIdValid(mod)) {
-    const warning =
+    const [title, body] =
       attributes.source === undefined
-        ? t(
-            "This mod has no source assigned. The source tells Vortex where the mod " +
-              "came from and, if applicable, where to check for updates. " +
-              'You can set the source to "Other" to disable this warning.',
-          )
-        : t(
-            "This mod is missing identification information. Without this some " +
-              "features like checking for updates or adding this mod to collections " +
-              "will not work.",
-          );
+        ? [
+            t("Mod source unknown"),
+            t("Vortex doesn't know where this mod came from, so it can't check for updates."),
+          ]
+        : [
+            t("Mod not identified"),
+            t(
+              "Vortex can't identify this mod, so some features, including checking for " +
+                "updates and adding it to Collections, won't work.",
+            ),
+          ];
 
     return (
-      <Tooltip content={warning}>
+      <Tooltip customContent={<TitledTooltip body={body} title={title} />}>
         <span
-          aria-label={warning}
+          aria-description={body}
+          aria-label={title}
           className="flex size-6 shrink-0 items-center justify-center text-translucent-moderate"
           role="img"
           tabIndex={0}
@@ -101,9 +113,7 @@ export const ModUpdate = ({ mod }: IModUpdateProps) => {
         <ToolbarButton
           appearance="moderate"
           brand="info"
-          label={t("Mod can be updated (Current version: {{newVersion}})", {
-            newVersion: attributes.newestVersion ?? "?",
-          })}
+          label={t("Update to {{version}}", { version: attributes.newestVersion ?? "?" })}
           leftIconPath={mdiTrayArrowDown}
           size="sm"
           onClick={() =>
@@ -119,24 +129,35 @@ export const ModUpdate = ({ mod }: IModUpdateProps) => {
       )}
 
       {state === "update-site" && (
-        <ToolbarButton
-          appearance="moderate"
-          brand="info"
-          label={t("Mod can be updated (but you will have to pick the file yourself)")}
-          leftIconPath={mdiFileQuestionOutline}
-          size="sm"
-          onClick={() =>
-            api.events.emit("open-mod-page", gameId(), attributes.modId, attributes.source)
+        <Tooltip
+          customContent={
+            <TitledTooltip
+              body={t("Vortex can't determine the correct update automatically.")}
+              title={t("Choose update file")}
+            />
           }
-        />
+          placement="bottom"
+        >
+          <Button
+            appearance="moderate"
+            aria-description={t("Vortex can't determine the correct update automatically.")}
+            aria-label={t("Choose update file")}
+            brand="info"
+            leftIconPath={mdiFileQuestionOutline}
+            size="sm"
+            onClick={() =>
+              api.events.emit("open-mod-page", gameId(), attributes.modId, attributes.source)
+            }
+          />
+        </Tooltip>
       )}
 
       {!!changelog?.content && (
-        <ChangelogButton title={attributes.newestVersion ?? t("Newest version")}>
+        <ChangelogButton>
           {changelog.format === "html" ? (
-            <Html html={changelog.content} />
+            <Html html={changelog.content} size="sm" />
           ) : (
-            <Markdown markdown={changelog.content} />
+            <Markdown markdown={changelog.content} size="sm" />
           )}
         </ChangelogButton>
       )}

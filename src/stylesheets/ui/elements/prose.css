@@ -111,4 +111,12 @@
             max-width: 100%;
         }
     }
+
+    /* Small prose, as in a popover. Where a size's headings should stand apart by size too,
+       that's set here, per size. */
+    .nxm-prose-sm {
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+    }
 }

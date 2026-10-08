@@ -6,7 +6,9 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 interface IMarkdownProps {
   /** The markdown to render, such as a changelog. */
   markdown: string;
-  /** Classes for its wrapper, e.g. to change its size or colour from the body text's. */
+  /** Its type size: the body text's, or smaller, as in a popover. Default `md`. */
+  size?: "sm" | "md";
+  /** Classes for its wrapper, e.g. to change its colour from the body text's. */
   className?: string;
 }
 
@@ -15,8 +17,8 @@ interface IMarkdownProps {
  * styles: its own type, so it needs no `Typography` around it. Its links open in the
  * browser, as the window sends any navigation there.
  */
-export const Markdown = ({ markdown, className }: IMarkdownProps) => (
-  <div className={joinClasses(["nxm-prose", className])}>
+export const Markdown = ({ markdown, size = "md", className }: IMarkdownProps) => (
+  <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
     <ReactMarkdown>{markdown}</ReactMarkdown>
   </div>
 );
