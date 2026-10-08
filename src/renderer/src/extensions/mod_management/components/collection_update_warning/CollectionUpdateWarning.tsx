@@ -25,14 +25,16 @@ const WarningModal = ({ prompt }: { prompt: CollectionUpdatePrompt }) => {
     ? {
         title: t("collection_update_warning::batch::title"),
         intro: t("collection_update_warning::batch::intro"),
-        warning: t("collection_update_warning::batch::warning"),
+        curatorVersion: t("collection_update_warning::batch::curator_version"),
+        caution: t("collection_update_warning::batch::caution"),
         acknowledge: t("collection_update_warning::batch::acknowledge"),
         confirm: t("collection_update_warning::batch::update_all"),
       }
     : {
         title: t("collection_update_warning::single::title"),
         intro: t("collection_update_warning::single::intro"),
-        warning: t("collection_update_warning::single::warning"),
+        curatorVersion: t("collection_update_warning::single::curator_version"),
+        caution: t("collection_update_warning::single::caution"),
         acknowledge: t("collection_update_warning::single::acknowledge"),
         confirm: t("collection_update_warning::single::update_anyway"),
       };
@@ -54,17 +56,12 @@ const WarningModal = ({ prompt }: { prompt: CollectionUpdatePrompt }) => {
 
         <div className="space-y-2">
           <Typography appearance="subdued" typographyType="body-sm">
-            {text.warning}
+            {text.curatorVersion}
           </Typography>
 
-          {hasNonCollectionMods && (
-            <Typography typographyType="body-sm">
-              <span className="font-semibold">
-                {t("collection_update_warning::batch::recommended")}
-              </span>{" "}
-              {t("collection_update_warning::batch::recommended_action")}
-            </Typography>
-          )}
+          <Typography appearance="subdued" typographyType="body-sm">
+            {text.caution}
+          </Typography>
         </div>
 
         <CheckboxField checked={acknowledged} label={text.acknowledge} onChange={setAcknowledged} />
