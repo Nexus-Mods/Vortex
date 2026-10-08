@@ -63,6 +63,7 @@ import {
   isRemovableItem,
 } from "../../installSession/itemRows";
 import type InstallDriver from "../../util/InstallDriver";
+import { makeCollectionModsResolver } from "../../util/resolveCollectionMods/resolveCollectionMods";
 import CollectionInstructions from "./CollectionInstructions";
 import CollectionItemStatus from "./CollectionItemStatus";
 import CollectionOverview from "./CollectionOverview";
@@ -1040,18 +1041,26 @@ function makeMapStateToProps(): (state: IState, ownProps: ICollectionPageProps) 
   // that only advances bytes rebuilds to a reference-equal map and connect skips the render.
   // Download state transitions (paused/failed/finished) flow through because they change row content.
   let lastRows: Record<string, ICollectionItemRow> = {};
+  const getRules = (_state: IState, ownProps: ICollectionPageProps) => ownProps.collection?.rules;
+  const getMods = (state: IState, ownProps: ICollectionPageProps) =>
+    state.persistent.mods[ownProps.profile?.gameId] ?? EMPTY_MODS;
+  // memoized on rules and mods alone, and threaded back in so each rebuild only retests the mods
+  // that changed: resolving a not-yet-installed member scans every installed mod, far too slow on
+  // a large collection to repeat on each progress tick or each mod an install writes
+  const resolveMods = makeCollectionModsResolver();
+  const getResolvedMods = createSelector(getRules, getMods, resolveMods);
   const getItemRows = createSelector(
-    (_state: IState, ownProps: ICollectionPageProps) => ownProps.collection?.rules,
-    (state: IState, ownProps: ICollectionPageProps) =>
-      state.persistent.mods[ownProps.profile?.gameId] ?? EMPTY_MODS,
+    getRules,
+    getMods,
     (state: IState) => state.persistent.downloads.files,
     (_state: IState, ownProps: ICollectionPageProps) =>
       ownProps.profile?.modState ?? EMPTY_MOD_STATE,
     (state: IState, ownProps: ICollectionPageProps) =>
       sessionModsForCollection(state, ownProps.collection?.id),
-    (rules, mods, downloads, modState, sessionMods) => {
+    getResolvedMods,
+    (rules, mods, downloads, modState, sessionMods, resolvedMods) => {
       lastRows = buildCollectionItemRows(
-        { rules: rules ?? [], mods, downloads, modState, sessionMods },
+        { rules: rules ?? [], mods, downloads, modState, sessionMods, resolvedMods },
         lastRows,
       );
       return lastRows;

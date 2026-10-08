@@ -77,6 +77,7 @@ import { addExtension } from "./util/extension";
 import InstallDriver from "./util/InstallDriver";
 import { canLinkProfile, findLinkedCollection, linkProfileToCollection } from "./util/profileLink";
 import { readCollection } from "./util/readCollection";
+import { makeCollectionModsResolver } from "./util/resolveCollectionMods/resolveCollectionMods";
 import { getActiveInstallSession } from "./util/selectors";
 import { makeCollectionId } from "./util/transformCollection";
 import { bbProm, getUnfulfilledNotificationId } from "./util/util";
@@ -840,7 +841,12 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
   const emptyArray = [];
   const emptyObj = {};
 
-  const collectionsMapFunc = memoize(collectionsByMod, collectionListEqual);
+  // kept for the session so each change of mods only retests the mods that changed
+  const resolveCollectionMembers = makeCollectionModsResolver();
+  const collectionsMapFunc = memoize(
+    (mods: { [modId: string]: IMod }) => collectionsByMod(mods, resolveCollectionMembers),
+    collectionListEqual,
+  );
 
   const collectionsMap = () =>
     collectionsMapFunc(
