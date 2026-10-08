@@ -1,3 +1,4 @@
+import { rm, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
 import { describe, expect } from "vitest";
@@ -168,6 +169,24 @@ describe("updatePluginList", () => {
     await scan();
 
     expect(Object.keys(harness.pluginList())).toEqual(["two.esp"]);
+  });
+
+  test("keeps the previous plugin list when the game folder cannot be read", async ({
+    makeGamebryo,
+  }) => {
+    const { harness, dataPath, persistor, scan } = await arrange(makeGamebryo, {
+      staged: { modX: ["One.esp"] },
+      deployed: ["Skyrim.esm"],
+    });
+    await scan();
+    const previous = harness.pluginList();
+    await rm(dataPath, { recursive: true });
+    await writeFile(dataPath, "");
+
+    await scan();
+
+    expect(harness.pluginList()).toEqual(previous);
+    expect(persistor.setKnownPlugins).toHaveBeenCalledTimes(1);
   });
 
   test("wraps the scan in the update-plugin-list activity", async ({ makeGamebryo }) => {
