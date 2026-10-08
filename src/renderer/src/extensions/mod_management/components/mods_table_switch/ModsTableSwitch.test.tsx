@@ -355,10 +355,10 @@ describe("ModsTableSwitch", () => {
   describe("display options", () => {
     const headers = () => screen.getAllByRole("columnheader").map((header) => header.textContent);
 
-    it("shows the installation time and collection columns by default", () => {
+    it("shows the version, collection and installation time columns by default", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      expect(headers()).toEqual(["Name", "Collection", "Installation time", "Actions"]);
+      expect(headers()).toEqual(["Name", "Version", "Collection", "Installation time", "Actions"]);
     });
 
     it("adds a column chosen from the display options", async () => {
@@ -716,6 +716,30 @@ describe("ModsTableSwitch", () => {
         (row) => row.getAttribute("aria-selected") === "true",
       );
       expect(selected.map(cellText)).toEqual(["Alpha"]);
+    });
+  });
+
+  describe("version", () => {
+    it("switches a mod to another of its versions from its row", async () => {
+      const onSelectVersion = vi.fn();
+      const current = mod("a", "Alpha", true, { attributes: { name: "Alpha", version: "2.0" } });
+      const older = mod("a1", "Alpha", false, { attributes: { name: "Alpha", version: "1.0" } });
+      render(
+        <Provider store={makeModsTableStore()}>
+          <ModsTableSwitch
+            alternatives={{ a: [current, older] }}
+            legacy={<div />}
+            mods={{ a: current }}
+            onSelectVersion={onSelectVersion}
+            onSetModsEnabled={vi.fn()}
+          />
+        </Provider>,
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
+      await userEvent.click(screen.getByRole("option", { name: "1.0 (default)" }));
+
+      expect(onSelectVersion).toHaveBeenCalledWith("a", "a1");
     });
   });
 });
