@@ -695,12 +695,14 @@ class PluginPersistor implements IPersistor {
           // not even a header? I don't trust this. Read once more in case we caught a write
           // mid-flight, then leave the current state alone: a truncated file is not a
           if (retry) {
-            // still empty on the second read, so nobody was mid-write and the load order the
-            // file held is gone
-            this.recordFailure(
-              "the plugin list on disk is empty",
-              new Error("plugins.txt has no content, not even a header"),
-            );
+            // still empty on the second read, so nobody was mid-write; a game with only its own
+            // plugins leaves the file empty, so it only held a load order if mods add plugins
+            if (Object.keys(this.mKnownPlugins).length > this.mInstalledNative.length) {
+              this.recordFailure(
+                "the plugin list on disk is empty",
+                new Error("plugins.txt has no content, not even a header"),
+              );
+            }
             // The persistor must still count as loaded, or serialize() drops every write
             this.mLoaded = true;
             return Promise.resolve();
