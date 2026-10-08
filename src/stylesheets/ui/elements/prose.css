@@ -1,0 +1,114 @@
+@layer components {
+    /* Formatted text we don't write ourselves, such as changelogs and descriptions, as
+       markdown renders it: body text, subdued. Its headings are no bigger than its text, set
+       apart by weight and brightness, so a heading can't outshout the page around it. A
+       utility class changes its size or colour; its elements' rules are kept low, in :where. */
+    .nxm-prose {
+        /* A link's hover, a step lighter than the text; change it with the text's colour. */
+        --nxm-prose-link-hover: var(--color-neutral-moderate);
+
+        color: var(--color-neutral-subdued);
+        font-size: var(--text-body-md);
+        line-height: var(--text-body-md--line-height);
+        letter-spacing: var(--text-body-md--letter-spacing);
+        overflow-wrap: anywhere;
+
+        & :where(h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote, table, hr) {
+            margin: 0;
+        }
+
+        & > :where(* + *) {
+            margin-top: calc(var(--spacing) * 2);
+        }
+
+        & :where(h1, h2, h3, h4, h5, h6) {
+            color: var(--color-neutral-moderate);
+            font-size: inherit;
+            line-height: inherit;
+            font-weight: var(--font-weight-semibold);
+        }
+
+        & > :where(h1, h2, h3, h4, h5, h6) + * {
+            margin-top: calc(var(--spacing) * 1);
+        }
+
+        & :where(strong, b) {
+            color: var(--color-neutral-moderate);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        /* As a primary Link is: underlined, in the text's own colour, lighter on hover. Its
+           pointer cursor is in overrides.css, past the legacy rule that takes it away. */
+        & :where(a) {
+            color: inherit;
+            text-decoration-line: underline;
+            transition-property: color;
+            transition-duration: var(--default-transition-duration);
+            transition-timing-function: var(--default-transition-timing-function);
+
+            &:hover {
+                color: var(--nxm-prose-link-hover);
+            }
+        }
+
+        & :where(ul, ol) {
+            padding-left: calc(var(--spacing) * 5);
+        }
+
+        & :where(ul) {
+            list-style-type: disc;
+        }
+
+        & :where(ol) {
+            list-style-type: decimal;
+        }
+
+        & :where(li + li) {
+            margin-top: calc(var(--spacing) * 1);
+        }
+
+        & :where(code) {
+            padding-inline: calc(var(--spacing) * 1);
+            border-radius: var(--radius-xs);
+            background-color: var(--color-surface-translucent-mid);
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+        }
+
+        & :where(pre) {
+            overflow-x: auto;
+            padding: calc(var(--spacing) * 2);
+            border-radius: var(--radius-sm);
+            background-color: var(--color-surface-translucent-low);
+
+            & code {
+                padding: 0;
+                background-color: transparent;
+            }
+        }
+
+        & :where(blockquote) {
+            padding-left: calc(var(--spacing) * 3);
+            border-left: 2px solid var(--color-stroke-weak);
+        }
+
+        & :where(hr) {
+            border: 0;
+            border-top: 1px solid var(--color-stroke-weak);
+        }
+
+        & :where(table) {
+            border-collapse: collapse;
+        }
+
+        & :where(th, td) {
+            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            border: 1px solid var(--color-stroke-weak);
+            text-align: left;
+        }
+
+        & :where(img) {
+            max-width: 100%;
+        }
+    }
+}
