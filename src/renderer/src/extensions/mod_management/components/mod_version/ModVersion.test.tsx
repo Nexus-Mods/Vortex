@@ -35,10 +35,10 @@ describe("ModVersion", () => {
 
   it("fixes the version's width and truncates it while buttons follow it, so theirs line up", () => {
     const { rerender } = render(<ModVersion mod={mod("plain", "1.0.0")} onSelect={vi.fn()} />);
-    expect(screen.getByText("1.0.0")).not.toHaveClass("w-10");
+    expect(screen.getByText("1.0.0")).not.toHaveClass("w-8");
 
     rerender(<ModVersion mod={mod("has-update", "1.0.0-beta.2")} onSelect={vi.fn()} />);
-    expect(screen.getByText("1.0.0-beta.2")).toHaveClass("w-10", "truncate");
+    expect(screen.getByText("1.0.0-beta.2")).toHaveClass("w-8", "truncate");
   });
 
   it("shows a collection's revision", () => {

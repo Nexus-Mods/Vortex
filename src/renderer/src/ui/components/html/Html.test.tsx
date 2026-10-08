@@ -18,6 +18,12 @@ describe("Html", () => {
     );
   });
 
+  it("comes smaller, as in a popover", () => {
+    const { container } = render(<Html html="<p>Hi</p>" size="sm" />);
+
+    expect(container.firstElementChild).toHaveClass("nxm-prose", "nxm-prose-sm");
+  });
+
   it("leaves out scripts and images' sources", () => {
     const { container } = render(
       <Html

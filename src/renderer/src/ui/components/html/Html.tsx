@@ -19,7 +19,9 @@ const FILTERS = [new NoRemoteFilter()];
 interface IHtmlProps {
   /** The HTML to render, such as a mod's changelog from Nexus Mods. */
   html: string;
-  /** Classes for its wrapper, e.g. to change its size or colour from the body text's. */
+  /** Its type size: the body text's, or smaller, as in a popover. Default `md`. */
+  size?: "sm" | "md";
+  /** Classes for its wrapper, e.g. to change its colour from the body text's. */
   className?: string;
 }
 
@@ -28,8 +30,8 @@ interface IHtmlProps {
  * app's prose styles, as `Markdown` renders markdown. Its links open in the browser, as the
  * window sends any navigation there; its images don't load.
  */
-export const Html = ({ html, className }: IHtmlProps) => (
-  <div className={joinClasses(["nxm-prose", className])}>
+export const Html = ({ html, size = "md", className }: IHtmlProps) => (
+  <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
     <Interweave content={html} filters={FILTERS} />
   </div>
 );
