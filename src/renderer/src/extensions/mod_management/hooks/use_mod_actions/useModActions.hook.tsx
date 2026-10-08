@@ -1,11 +1,15 @@
 import {
-  mdiBackupRestore,
   mdiBug,
+  mdiCallMerge,
   mdiDeleteOutline,
+  mdiFileAlertOutline,
   mdiFolderOpenOutline,
-  mdiPlus,
+  mdiMonitorArrowDown,
+  mdiPaw,
+  mdiPawOutline,
   mdiPuzzleOutline,
   mdiRefresh,
+  mdiRotateRight,
 } from "@mdi/js";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import React, { type ReactNode, useCallback, useEffect, useMemo } from "react";
@@ -19,6 +23,7 @@ import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { NexusBadge } from "@/ui/components/badges/nexus_badge/NexusBadge";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
+import { nxmCollectionOutline, nxmResetTv } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 import { getIconPath } from "@/views/components/iconMap";
 
@@ -37,7 +42,7 @@ const ROW_ACTIONS_GROUP = "mods-action-icons";
 const SELECTION_ACTIONS_GROUP = "mods-multirow-actions";
 
 /** On the selected mods' bar until the user unpins them. */
-const SELECTION_PINS = new Set(["Check for Update", "Reinstall", "Remove"]);
+const SELECTION_PINS = new Set(["Add to Collection...", "Check for Update", "Reinstall", "Remove"]);
 
 /** The legacy table's, which the selected mods' bar has a switch for instead. */
 const SWITCH_TITLES = new Set(["Enable", "Disable"]);
@@ -68,9 +73,10 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
   {
     section: "manage",
     items: [
-      { title: "Install", label: "Install" },
+      { title: "Add to Collection...", label: "Add to Collection", iconPath: nxmCollectionOutline },
+      { title: "Install", label: "Install", iconPath: mdiMonitorArrowDown },
       { title: "Unpack (as-is)", label: "Unpack (as-is)" },
-      { title: "Reinstall", label: "Reinstall", iconPath: mdiBackupRestore },
+      { title: "Reinstall", label: "Reinstall", iconPath: nxmResetTv },
       { title: "Check for Update", label: "Check for updates", iconPath: mdiRefresh },
       { title: "Remove related", label: "Remove related", iconPath: mdiDeleteOutline },
       { title: "Remove", label: "Remove", iconPath: mdiDeleteOutline },
@@ -84,7 +90,11 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
         label: "Manage file conflicts",
         iconPath: getIconPath("rules"),
       },
-      { title: "Install Recommendations", label: "Install recommendations", iconPath: mdiPlus },
+      {
+        title: "Install Recommendations",
+        label: "Install recommendations",
+        iconPath: mdiMonitorArrowDown,
+      },
     ],
   },
   {
@@ -99,10 +109,20 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       { title: "Open on Nexus Mods", label: "Open on Nexus Mods", icon: <NexusBadge /> },
     ],
   },
+  // Several mods' only: these are offered for a selection, not a row.
+  {
+    section: "organise",
+    items: [
+      { title: "Combine", label: "Combine", iconPath: mdiCallMerge },
+      { title: "Track", label: "Track", iconPath: mdiPawOutline },
+      { title: "Untrack", label: "Untrack", iconPath: mdiPaw },
+    ],
+  },
   {
     section: "maintenance",
     items: [
-      { title: "Refresh Content", label: "Refresh content", iconPath: mdiRefresh },
+      { title: "Refresh Content", label: "Refresh content", iconPath: mdiRotateRight },
+      { title: "Fix missing IDs", label: "Fix missing IDs", iconPath: mdiFileAlertOutline },
       { title: "Create Report", label: "Generate mod report", iconPath: mdiBug },
     ],
   },
@@ -280,7 +300,8 @@ export const useModRowActions = (rowActions: ITableRowAction[]) => {
 /**
  * The actions on the selected mods' bar: the legacy table's own for several rows and every
  * extension's in `mods-multirow-actions`, but Enable and Disable, which the bar's switch
- * does. Check for updates, Reinstall and Remove are pinned until the user unpins them.
+ * does. Add to Collection, Check for updates, Reinstall and Remove are pinned until the user
+ * unpins them.
  */
 export const useModSelectionActions = (rowActions: ITableRowAction[], modIds: string[]) => {
   const { build } = useModActions(rowActions, SELECTION_SOURCE);

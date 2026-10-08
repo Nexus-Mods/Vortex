@@ -194,23 +194,50 @@ describe("useModSelectionActions", () => {
     );
 
     expect(labels(result.current)).toEqual([
+      "Add to Collection",
       "Check for updates",
       "Remove",
       "Combine",
-      "Add to Collection...",
     ]);
   });
 
-  it("pins Check for updates, Reinstall and Remove until the user says otherwise", () => {
+  it("pins Add to Collection, Check for updates, Reinstall and Remove until the user says otherwise", () => {
     const { result } = renderSelectionActions(
       [{ title: "Remove" }, { title: "Reinstall" }, { title: "Combine" }],
       ["a"],
+      [{ title: "Add to Collection..." }, { title: "Track" }],
     );
 
     expect(result.current.filter(({ pinned }) => pinned).map(({ label }) => label)).toEqual([
+      "Add to Collection",
       "Reinstall",
       "Check for updates",
       "Remove",
+    ]);
+  });
+
+  it("puts Combine, Track and Untrack in a section of their own, before Refresh content", () => {
+    const { result } = renderSelectionActions(
+      [{ title: "Combine", multiRowAction: true, singleRowAction: false }],
+      ["a"],
+      [
+        { title: "Fix missing IDs" },
+        { title: "Refresh Content" },
+        { title: "Untrack" },
+        { title: "Track" },
+      ],
+    );
+
+    expect(
+      result.current
+        .filter(({ label }) => label !== "Check for updates")
+        .map(({ label, section }) => `${section}: ${label}`),
+    ).toEqual([
+      "organise: Combine",
+      "organise: Track",
+      "organise: Untrack",
+      "maintenance: Refresh content",
+      "maintenance: Fix missing IDs",
     ]);
   });
 
