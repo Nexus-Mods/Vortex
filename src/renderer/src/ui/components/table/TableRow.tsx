@@ -1,9 +1,10 @@
-import React, { type HTMLAttributes, type ReactNode, useState } from "react";
+import React, { type HTMLAttributes, type MouseEvent, type ReactNode, useState } from "react";
 
 import type { ITableColumn, ITableGroup } from "./Table.types";
 import { TableCell } from "./TableCell";
 import { type ITableCheckboxProps, TableCheckbox } from "./TableCheckbox";
 import { TableRowEngagedContext } from "./TableRow.context";
+import type { ITableRowClick } from "./useTableSelection.hook";
 
 interface ITableRowProps<T, G extends ITableGroup<T>> {
   /** The table's columns, each rendering one of the row's cells. */
@@ -22,7 +23,21 @@ interface ITableRowProps<T, G extends ITableGroup<T>> {
   checkbox?: ITableCheckboxProps;
   /** The column the rows are sorted by, whose cell stands out. */
   sortedColumnId?: string;
+  /** A click on the row, not on a control in it, with the keys held. */
+  onClick?: (click: ITableRowClick) => void;
 }
+
+// What a click lands on to use a control in the row, rather than to select the row.
+const CONTROL = 'a, button, input, select, textarea, [role="button"], [role="checkbox"]';
+
+/**
+ * Whether a click is on the row itself. One in a panel a control opened reaches the row too,
+ * through React, though the panel is portalled out of it.
+ */
+const isRowClick = (event: MouseEvent<HTMLDivElement>) => {
+  const target = event.target as Element;
+  return event.currentTarget.contains(target) && target.closest(CONTROL) === null;
+};
 
 /**
  * The row's element, which notes once it's pointed at or focused. Its cells come in as
@@ -55,6 +70,7 @@ export const TableRow = <T, G extends ITableGroup<T>>({
   checkbox,
   sortedColumnId,
   tint,
+  onClick,
 }: ITableRowProps<T, G>) => (
   <EngagingRow
     aria-level={level}
@@ -63,6 +79,17 @@ export const TableRow = <T, G extends ITableGroup<T>>({
     className="nxm-table-row"
     data-index={index}
     role="row"
+    onClick={(event) => {
+      if (onClick !== undefined && isRowClick(event)) {
+        onClick({ toggle: event.ctrlKey || event.metaKey, range: event.shiftKey });
+      }
+    }}
+    // Shift and Ctrl would otherwise select the text between this click and the last.
+    onMouseDown={(event) => {
+      if (onClick !== undefined && (event.shiftKey || event.ctrlKey) && isRowClick(event)) {
+        event.preventDefault();
+      }
+    }}
   >
     {columns.map((column, index) => (
       <TableCell

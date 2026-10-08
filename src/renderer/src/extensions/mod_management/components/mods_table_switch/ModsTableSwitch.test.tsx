@@ -533,4 +533,113 @@ describe("ModsTableSwitch", () => {
       expect(controls).toEqual(["Remove", "{{name}} enabled", "More actions"]);
     });
   });
+
+  describe("selected mods", () => {
+    const bar = () => screen.queryByRole("region", { name: "{{count}} selected" });
+
+    const selectWithCtrl = async (...names: string[]) => {
+      const user = userEvent.setup();
+      await user.click(screen.getByText(names[0]));
+      await user.keyboard("{Control>}");
+      for (const name of names.slice(1)) {
+        await user.click(screen.getByText(name));
+      }
+      await user.keyboard("{/Control}");
+    };
+
+    const barSwitch = () => within(bar()!).getByRole("checkbox", { name: "Selected mods enabled" });
+
+    it("shows the bar while several mods are selected, and hides it once they're deselected", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+
+      await userEvent.click(screen.getByText("Alpha"));
+      expect(bar()).toBeNull();
+
+      await selectWithCtrl("Alpha", "Beta");
+      expect(bar()).toBeInTheDocument();
+
+      await userEvent.click(within(bar()!).getByRole("button", { name: "Deselect all" }));
+      expect(bar()).toBeNull();
+      expect(bodyRows(screen.getByRole("grid"))[0]).toHaveAttribute("aria-selected", "false");
+    });
+
+    it("pins Check for updates, Reinstall and Remove to the bar, the rest in its menu", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Enable", singleRowAction: false },
+        { title: "Remove", action: vi.fn() },
+        { title: "Reinstall", action: vi.fn() },
+        { title: "Combine", action: vi.fn(), multiRowAction: true, singleRowAction: false },
+        { title: "Remove related", action: vi.fn(), multiRowAction: false },
+      ]);
+
+      await selectWithCtrl("Alpha", "Beta");
+      const toolbar = within(bar()!).getByRole("toolbar");
+
+      // Kept, disabled, for mods that aren't installed, so its button keeps its place.
+      expect(within(toolbar).getByRole("button", { name: "Check for updates" })).toBeDisabled();
+      expect(within(toolbar).getByRole("button", { name: "Reinstall" })).toBeInTheDocument();
+      expect(within(toolbar).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+      expect(within(toolbar).queryByRole("button", { name: "Combine" })).toBeNull();
+
+      await userEvent.click(within(toolbar).getByRole("button", { name: "More actions" }));
+      // Enable is the switch's to do, and Remove related is for one mod.
+      expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+        "Reinstall",
+        "Check for updates",
+        "Remove",
+        "Combine",
+      ]);
+    });
+
+    it("runs a bar action against every selected mod", async () => {
+      const remove = vi.fn();
+      renderSwitch(
+        { a: mod("a", "Alpha", true), b: mod("b", "Beta", true), c: mod("c", "Gamma", true) },
+        [{ title: "Remove", action: remove }],
+      );
+
+      await selectWithCtrl("Alpha", "Gamma");
+      await userEvent.click(within(bar()!).getByRole("button", { name: "Remove" }));
+
+      expect(remove).toHaveBeenCalledWith(["a", "c"]);
+    });
+
+    it("shows the bar's switch part on for a mix, and disables them all from it", async () => {
+      const onSetModsEnabled = renderSwitch({
+        a: mod("a", "Alpha", true),
+        b: mod("b", "Beta", false),
+      });
+
+      await selectWithCtrl("Alpha", "Beta");
+      expect(barSwitch()).toHaveAttribute("aria-checked", "mixed");
+
+      await userEvent.click(barSwitch());
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["a", "b"], true);
+    });
+
+    it("shows only the rows' switches while several mods are selected", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: vi.fn() },
+      ]);
+      const rowOf = (name: string) =>
+        bodyRows(screen.getByRole("grid")).find((row) => within(row).queryByText(name))!;
+
+      await hoverRow(rowOf("Alpha"));
+      await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
+      await userEvent.click(
+        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+      );
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(screen.getByText("Alpha"));
+      expect(within(rowOf("Alpha")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+
+      await selectWithCtrl("Alpha", "Beta");
+      expect(within(rowOf("Alpha")).queryByRole("button", { name: "Remove" })).toBeNull();
+      expect(within(rowOf("Alpha")).queryByRole("button", { name: "More actions" })).toBeNull();
+      expect(
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+      ).toBeInTheDocument();
+    });
+  });
 });

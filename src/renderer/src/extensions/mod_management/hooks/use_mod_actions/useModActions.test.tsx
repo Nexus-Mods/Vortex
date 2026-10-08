@@ -8,16 +8,23 @@ import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 
-const { registered } = vi.hoisted(() => ({ registered: { current: [] as IActionDefinition[] } }));
+const { registered } = vi.hoisted(() => ({
+  registered: { current: {} as { [group: string]: IActionDefinition[] } },
+}));
 
-// What extensions registered for rows; any other group gets nothing.
+// What extensions registered, by group.
 vi.mock("@/ExtensionProvider", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useExtensionObjects: (_register: unknown, _static: unknown, group: string) =>
-    group === "mods-action-icons" ? registered.current : [],
+    registered.current[group] ?? [],
 }));
 
-import { MOD_ROW_PINNING_ID, useModRowActions } from "./useModRowActions.hook";
+import {
+  MOD_ROW_PINNING_ID,
+  MOD_SELECTION_PINNING_ID,
+  useModRowActions,
+  useModSelectionActions,
+} from "./useModActions.hook";
 
 const Dummy = () => null;
 
@@ -26,7 +33,7 @@ const renderRowActions = (
   extensions: IActionDefinition[] = [],
   mods: { [modId: string]: object } = {},
 ) => {
-  registered.current = extensions;
+  registered.current = { "mods-action-icons": extensions };
   const store = makeModsTableStore({ mods });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
@@ -155,5 +162,117 @@ describe("useModRowActions", () => {
 
     expect(result.current.actionsFor("a")).not.toBe(first);
     expect(condition).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("useModSelectionActions", () => {
+  const renderSelectionActions = (
+    rowActions: ITableRowAction[],
+    modIds: string[],
+    extensions: IActionDefinition[] = [],
+  ) => {
+    registered.current = { "mods-multirow-actions": extensions };
+    const store = makeModsTableStore({ mods: { a: { id: "a" } } });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const { result } = renderHook(() => useModSelectionActions(rowActions, modIds), { wrapper });
+    return { result, store };
+  };
+
+  it("offers the actions for several mods, but Enable and Disable, which the switch does", () => {
+    const { result } = renderSelectionActions(
+      [
+        { title: "Enable", singleRowAction: false },
+        { title: "Disable", singleRowAction: false },
+        { title: "Remove related", multiRowAction: false },
+        { title: "Combine", multiRowAction: true, singleRowAction: false },
+        { title: "Remove" },
+      ],
+      ["a"],
+      [{ title: "Add to Collection..." }],
+    );
+
+    expect(labels(result.current)).toEqual([
+      "Add to Collection",
+      "Check for updates",
+      "Remove",
+      "Combine",
+    ]);
+  });
+
+  it("pins Add to Collection, Check for updates, Reinstall and Remove until the user says otherwise", () => {
+    const { result } = renderSelectionActions(
+      [{ title: "Remove" }, { title: "Reinstall" }, { title: "Combine" }],
+      ["a"],
+      [{ title: "Add to Collection..." }, { title: "Track" }],
+    );
+
+    expect(result.current.filter(({ pinned }) => pinned).map(({ label }) => label)).toEqual([
+      "Add to Collection",
+      "Reinstall",
+      "Check for updates",
+      "Remove",
+    ]);
+  });
+
+  it("puts Combine, Track and Untrack in a section of their own, before Refresh content", () => {
+    const { result } = renderSelectionActions(
+      [{ title: "Combine", multiRowAction: true, singleRowAction: false }],
+      ["a"],
+      [
+        { title: "Fix missing IDs" },
+        { title: "Refresh Content" },
+        { title: "Untrack" },
+        { title: "Track" },
+      ],
+    );
+
+    expect(
+      result.current
+        .filter(({ label }) => label !== "Check for updates")
+        .map(({ label, section }) => `${section}: ${label}`),
+    ).toEqual([
+      "organise: Combine",
+      "organise: Track",
+      "organise: Untrack",
+      "maintenance: Refresh content",
+      "maintenance: Fix missing IDs",
+    ]);
+  });
+
+  it("keeps a default pin that rules itself out, disabled, unless the user unpinned it", () => {
+    const { result, store } = renderSelectionActions(
+      [{ title: "Reinstall", condition: () => false }],
+      ["b"],
+    );
+
+    expect(labels(result.current)).toEqual([
+      "Reinstall (disabled)",
+      "Check for updates (disabled)",
+    ]);
+
+    act(() => {
+      store.dispatch(
+        setActionPinned({
+          toolbarId: MOD_SELECTION_PINNING_ID,
+          actionId: "Reinstall",
+          pinned: false,
+        }),
+      );
+    });
+
+    expect(labels(result.current)).toEqual(["Check for updates (disabled)"]);
+  });
+
+  it("checks and runs an action against every selected mod", () => {
+    const condition = vi.fn(() => true);
+    const action = vi.fn();
+    const { result } = renderSelectionActions([{ title: "Remove", condition, action }], ["a", "b"]);
+
+    result.current.find(({ label }) => label === "Remove")?.onClick?.();
+
+    expect(condition).toHaveBeenCalledWith(["a", "b"]);
+    expect(action).toHaveBeenCalledWith(["a", "b"]);
   });
 });

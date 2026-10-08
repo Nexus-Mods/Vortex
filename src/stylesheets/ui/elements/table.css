@@ -5,7 +5,7 @@
     .nxm-table {
         --nxm-table-gap: calc(var(--spacing) * 2);
         --nxm-table-gutter: calc(var(--spacing) * 6 - var(--nxm-table-gap));
-        --nxm-table-gutter-start: calc(var(--spacing) * 3 - var(--nxm-table-gap));
+        --nxm-table-gutter-start: calc(var(--spacing) * 4 - var(--nxm-table-gap));
         --nxm-table-head-padding: calc(var(--spacing) * 2);
         --nxm-table-header-height: calc(var(--spacing) * 6);
         --nxm-table-head-height: calc(
@@ -19,10 +19,12 @@
             var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid) + var(--nxm-table-gap)
         );
         --nxm-table-row-tint: transparent;
+        --nxm-table-footer-height: calc(var(--spacing) * 10 + 1px);
 
         position: relative;
         isolation: isolate;
         display: grid;
+        align-content: start;
         column-gap: var(--nxm-table-gap);
         min-width: 0;
         container-type: inline-size;
@@ -150,7 +152,7 @@
     }
 
     /* Heights come from Table.tsx, which the virtualiser counts on. The sorted column's cells
-       stand out from the rest. */
+       stand out from the rest. A selected row stays lit while it's hovered. */
     .nxm-table-row {
         height: var(--nxm-table-row-height);
         background-color: var(--nxm-table-row-tint);
@@ -162,6 +164,10 @@
 
         &:hover {
             --nxm-table-row-tint: --alpha(var(--color-white) / 3%);
+        }
+
+        &[aria-selected="true"] {
+            --nxm-table-row-tint: var(--color-translucent-100);
         }
     }
 
@@ -499,5 +505,41 @@
                     no-repeat,
                 var(--nxm-table-sticky-bg);
         }
+    }
+
+    /* Across every column, as the head is, so its cell has the room to stick sideways. Stuck
+       to the scroller's foot both ways: pulled up while the rows run past it, and pushed down,
+       by a top that resolves against the scroller, while they stop short of it in a table
+       that fills the page. Over the sticky cells. */
+    .nxm-table-footer {
+        position: sticky;
+        top: calc(100% - var(--nxm-table-footer-height));
+        bottom: 0;
+        z-index: 3;
+        grid-column: 1 / -1;
+        height: var(--nxm-table-footer-height);
+    }
+
+    /* The width in view, stuck to its left edge like the toolbar, so it stays put while the
+       columns scroll sideways under it. */
+    .nxm-table-footer-cell {
+        position: sticky;
+        left: 0;
+        width: 100cqi;
+        height: 100%;
+    }
+
+    /* Its close icon over the rows' checkboxes, and its end lined up with their menus. */
+    .nxm-table-selection-bar {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--spacing) * 2);
+        height: 100%;
+        padding-right: calc(var(--spacing) * 6);
+        padding-left: calc(var(--spacing) * 2.5);
+        border-top: 1px solid var(--color-surface-high);
+        border-bottom-right-radius: var(--radius-lg);
+        border-bottom-left-radius: var(--radius-lg);
+        background-color: var(--color-surface-mid);
     }
 }

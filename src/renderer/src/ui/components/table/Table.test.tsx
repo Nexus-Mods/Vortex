@@ -266,6 +266,185 @@ describe("Table with selectable rows", () => {
     expect(rowCheckbox(0)).toHaveAttribute("aria-checked", "false");
     expect(headerCheckbox()).toHaveAttribute("aria-checked", "false");
   });
+
+  describe("by clicking rows", () => {
+    const FIVE: IRow[] = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon"].map((name, index) => ({
+      id: name.toLowerCase(),
+      name,
+      size: index,
+    }));
+
+    const onOpen = vi.fn();
+
+    const WITH_CONTROL: Array<ITableColumn<IRow>> = [
+      COLUMNS[0],
+      {
+        id: "open",
+        header: "Open",
+        width: "80px",
+        cell: (row) => (
+          <button type="button" onClick={onOpen}>
+            Open {row.name}
+          </button>
+        ),
+      },
+    ];
+
+    const renderFive = () =>
+      render(
+        <Table
+          selectable
+          columns={WITH_CONTROL}
+          getRowId={(row) => row.id}
+          getRowLabel={(row) => row.name}
+          label="Files"
+          rows={FIVE}
+        />,
+      );
+
+    const cell = (name: string) => screen.getByText(name);
+
+    const selected = () =>
+      screen
+        .getAllByRole("row")
+        .filter((row) => row.getAttribute("aria-selected") === "true")
+        .map((row) => within(row).getAllByRole("gridcell")[0].textContent);
+
+    const clickWith = async (name: string, keys: string) => {
+      const user = userEvent.setup();
+      await user.keyboard(`{${keys}>}`);
+      await user.click(cell(name));
+      await user.keyboard(`{/${keys}}`);
+    };
+
+    it("selects only the row clicked", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await userEvent.click(cell("Beta"));
+
+      expect(selected()).toEqual(["Beta"]);
+      expect(rowCheckbox(1)).toHaveAttribute("aria-checked", "true");
+    });
+
+    it("adds and removes a row with Ctrl held, leaving the rest", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await clickWith("Beta", "Control");
+      expect(selected()).toEqual(["Alpha", "Beta"]);
+
+      await clickWith("Alpha", "Control");
+      expect(selected()).toEqual(["Beta"]);
+    });
+
+    it("does the same with Cmd held", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await clickWith("Gamma", "Meta");
+
+      expect(selected()).toEqual(["Alpha", "Gamma"]);
+    });
+
+    it("selects the rows from the last clicked with Shift held, either way", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Beta"));
+      await clickWith("Delta", "Shift");
+      expect(selected()).toEqual(["Beta", "Gamma", "Delta"]);
+
+      // From the same row, so the range shrinks rather than grows.
+      await clickWith("Alpha", "Shift");
+      expect(selected()).toEqual(["Alpha", "Beta"]);
+    });
+
+    it("adds a range to the selection with Ctrl and Shift held", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await clickWith("Delta", "Control");
+
+      const user = userEvent.setup();
+      await user.keyboard("{Control>}{Shift>}");
+      await user.click(cell("Epsilon"));
+      await user.keyboard("{/Shift}{/Control}");
+
+      expect(selected()).toEqual(["Alpha", "Delta", "Epsilon"]);
+    });
+
+    it("runs a range from a row ticked by its checkbox", async () => {
+      renderFive();
+
+      await userEvent.click(rowCheckbox(1));
+      await clickWith("Delta", "Shift");
+
+      expect(selected()).toEqual(["Beta", "Gamma", "Delta"]);
+    });
+
+    it("adds rows from their checkboxes without clearing the others", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await userEvent.click(rowCheckbox(2));
+      await userEvent.click(rowCheckbox(4));
+      expect(selected()).toEqual(["Alpha", "Gamma", "Epsilon"]);
+
+      await userEvent.click(rowCheckbox(2));
+      expect(selected()).toEqual(["Alpha", "Epsilon"]);
+    });
+
+    it("leaves the selection alone when a control in a row is used", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await userEvent.click(screen.getByRole("button", { name: "Open Beta" }));
+
+      expect(onOpen).toHaveBeenCalled();
+      expect(selected()).toEqual(["Alpha"]);
+    });
+
+    it("clears the selection from a click on the table's empty space", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await clickWith("Gamma", "Control");
+      await userEvent.click(screen.getByRole("grid"));
+
+      expect(selected()).toEqual([]);
+    });
+
+    it("leaves the selection to the page that controls it", async () => {
+      const onSelectedIdsChange = vi.fn();
+      render(
+        <Table
+          selectable
+          columns={WITH_CONTROL}
+          getRowId={(row) => row.id}
+          label="Files"
+          rows={FIVE}
+          selectedIds={new Set(["beta"])}
+          onSelectedIdsChange={onSelectedIdsChange}
+        />,
+      );
+      expect(selected()).toEqual(["Beta"]);
+
+      await clickWith("Delta", "Control");
+
+      expect(onSelectedIdsChange).toHaveBeenCalledWith(new Set(["beta", "delta"]));
+      // Not until the page passes it back.
+      expect(selected()).toEqual(["Beta"]);
+    });
+
+    it("keeps the selection through a click on the header", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await userEvent.click(screen.getByText("Name"));
+
+      expect(selected()).toEqual(["Alpha"]);
+    });
+  });
 });
 
 describe("Table with a toolbar", () => {
@@ -286,6 +465,26 @@ describe("Table with a toolbar", () => {
     expect(within(toolbar).getByRole("button", { name: "Search" })).toBeInTheDocument();
     expect(header).toHaveAttribute("aria-rowindex", "2");
     expect(first).toHaveAttribute("aria-rowindex", "3");
+    expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
+  });
+});
+
+describe("Table with a footer", () => {
+  it("puts it after the rows, as the last of them", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        footer={<button type="button">Deselect all</button>}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const grid = screen.getByRole("grid");
+    const footer = within(grid).getAllByRole("row").at(-1) as HTMLElement;
+    expect(within(footer).getByRole("button", { name: "Deselect all" })).toBeInTheDocument();
+    expect(footer).toHaveAttribute("aria-rowindex", String(ROWS.length + 2));
     expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
   });
 });

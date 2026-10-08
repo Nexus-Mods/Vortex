@@ -35,10 +35,13 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowId,
   label,
   toolbar,
+  footer,
   defaultSort,
   className,
   selectable = false,
   getRowLabel,
+  selectedIds,
+  onSelectedIdsChange,
 }: ITableProps<T, G>) => {
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
 
@@ -47,7 +50,6 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     () => [...new Set((rows ?? groups?.flatMap((group) => group.rows) ?? []).map(getRowId))],
     [getRowId, groups, rows],
   );
-  const selection = useTableSelection(rowIds);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggle = (groupId: string) =>
@@ -94,6 +96,15 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     });
   }, [collapsed, getRowId, groups, rows, sortRows]);
 
+  const shownRows = useMemo(
+    () =>
+      items.flatMap((item) =>
+        item.kind === "row" ? [{ key: item.key, id: getRowId(item.row) }] : [],
+      ),
+    [getRowId, items],
+  );
+  const selection = useTableSelection(rowIds, shownRows, selectedIds, onSelectedIdsChange);
+
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
   const getItemSize = useCallback(
     (index: number) =>
@@ -111,7 +122,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   return (
     <div
       aria-label={label}
-      aria-rowcount={items.length + headRows}
+      aria-rowcount={items.length + headRows + (footer ? 1 : 0)}
       className={joinClasses(["nxm-table", className])}
       data-sticky-reveal={revealWidth ? "" : undefined}
       data-toolbar={toolbar ? "" : undefined}
@@ -131,6 +142,17 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         } as CSSProperties
       }
       onBlur={virtual.onBlur}
+      onClick={(event) => {
+        // Between and below the rows, but not the head; a portalled panel isn't in the table.
+        const target = event.target as Element;
+        if (
+          selectable &&
+          event.currentTarget.contains(target) &&
+          target.closest('[role="row"], [role="rowgroup"]') === null
+        ) {
+          selection.clear();
+        }
+      }}
       onFocus={virtual.onFocus}
     >
       <TableHeader
@@ -176,10 +198,18 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 sortedColumnId={sort?.columnId}
                 checkbox={
                   selectable
-                    ? selection.row(getRowId(item.row), getRowLabel?.(item.row))
+                    ? selection.checkbox(
+                        { key: item.key, id: getRowId(item.row) },
+                        getRowLabel?.(item.row),
+                      )
                     : undefined
                 }
                 tint={item.tint}
+                onClick={
+                  selectable
+                    ? (click) => selection.click({ key: item.key, id: getRowId(item.row) }, click)
+                    : undefined
+                }
               />
             )}
           </Fragment>
@@ -187,6 +217,14 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       })}
 
       <TableSpacer height={virtual.endGap} />
+
+      {!!footer && (
+        <div aria-rowindex={items.length + headRows + 1} className="nxm-table-footer" role="row">
+          <div aria-colspan={columns.length} className="nxm-table-footer-cell" role="gridcell">
+            {footer}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
