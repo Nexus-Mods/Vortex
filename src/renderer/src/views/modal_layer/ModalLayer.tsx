@@ -10,11 +10,23 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { closeDialog, closeDialogs } from "../../actions/notifications";
 import type { ICheckbox, IDialog } from "../../types/IDialog";
 import type { IState } from "../../types/IState";
-import { canRenderWithModal } from "../can_render_with_modal/canRenderWithModal";
-import { rememberedDialogIds } from "../remembered_dialog_ids/rememberedDialogIds";
+import { canRenderWithModal } from "./canRenderWithModal";
 
 // Dialogs are answered one at a time, oldest first, the same as the legacy renderer.
 const allDialogs = (state: IState): IDialog[] => state.session.notifications.dialogs;
+
+// The legacy renderer's rule, kept so both behave the same: a ticked "remember" also answers the
+// queued dialogs with the same title or the same actions.
+const rememberedDialogIds = (dialogs: IDialog[], current: IDialog): string[] => {
+  const currentActions = JSON.stringify(current.actions);
+
+  return dialogs
+    .filter(
+      (dialog) =>
+        dialog.title === current.title || JSON.stringify(dialog.actions) === currentActions,
+    )
+    .map((dialog) => dialog.id);
+};
 
 // Escape and backdrop clicks don't answer a legacy dialog, so there is nothing for them to do
 // here either: closing without an action would leave the caller's promise pending forever.

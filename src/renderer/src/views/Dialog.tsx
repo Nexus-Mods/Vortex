@@ -34,7 +34,7 @@ import type { IState } from "../types/IState";
 import type { TFunction } from "../util/i18n";
 import { MutexWrapper } from "../util/MutexContext";
 import { getPreloadApi, getWindowId } from "../util/preloadAccess";
-import { canRenderWithModal } from "./can_render_with_modal/canRenderWithModal";
+import { canRenderWithModal } from "./modal_layer/canRenderWithModal";
 
 // TODO: Port to DialogResult.input
 type DialogInputData = Record<string, boolean | string | undefined>;

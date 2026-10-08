@@ -181,6 +181,20 @@ describe("ModalLayer", () => {
       await settleTransitions();
     });
 
+    it("also answers queued dialogs with the same actions, whatever their title", async () => {
+      renderLayer([withCheckboxes("one", "First"), withCheckboxes("two", "Second")]);
+
+      await userEvent.click(screen.getByTestId("dialog-checkbox-remember"));
+      await userEvent.click(screen.getByTestId("dialog-action-Cancel"));
+
+      expect(closeDialogs).toHaveBeenCalledWith(["one", "two"], "Cancel", {
+        remember: true,
+        locked: true,
+      });
+
+      await settleTransitions();
+    });
+
     it("leaves a dialog with a rich-text checkbox to the legacy renderer", () => {
       renderLayer([
         dialogWith("one", {
