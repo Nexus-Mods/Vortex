@@ -1,0 +1,290 @@
+import { readFileSync } from "node:fs";
+import * as path from "node:path";
+
+import { webFrame } from "electron";
+import { createStore, type AnyAction } from "redux";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { setUseModernLayout, setZoomFactor } from "@/actions/window";
+import { windowReducer } from "@/reducers/window";
+import type { IState } from "@/types/IState";
+
+import { initializeZoom } from "./initializeZoom";
+import { normalizeZoom, ZOOM_SHORTCUT_EVENT } from "./zoom";
+
+/** Models the frame: the factor set is the factor read back, as in Electron. */
+const frame = vi.hoisted(() => ({ factor: 1 }));
+vi.mock("electron", () => ({
+  webFrame: {
+    getZoomFactor: vi.fn(() => frame.factor),
+    setZoomFactor: vi.fn((factor: number) => {
+      frame.factor = factor;
+    }),
+  },
+}));
+
+function makeStore(factor = 1, useModernLayout = true) {
+  const initial = {
+    settings: { window: { ...windowReducer.defaults, zoomFactor: factor, useModernLayout } },
+  } as unknown as IState;
+  return createStore(
+    (state: IState = initial, action: AnyAction): IState => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        window: [setZoomFactor.getType(), setUseModernLayout.getType()].includes(action.type)
+          ? (windowReducer.reducers[action.type](
+              state.settings.window as typeof windowReducer.defaults,
+              action.payload,
+            ) as typeof state.settings.window)
+          : state.settings.window,
+      },
+    }),
+  );
+}
+
+// happy-dom's WheelEvent currently extends UIEvent and omits modifier keys.
+function wheel(options: WheelEventInit & { timeStamp?: number }): WheelEvent {
+  const event = new WheelEvent("wheel", options);
+  Object.defineProperty(event, "ctrlKey", { value: options.ctrlKey ?? false });
+  Object.defineProperty(event, "deltaY", { value: options.deltaY ?? 0 });
+  Object.defineProperty(event, "deltaMode", { value: options.deltaMode ?? 0 });
+  Object.defineProperty(event, "timeStamp", { value: options.timeStamp ?? 0 });
+  return event;
+}
+
+const pinch = (deltaY: number, timeStamp = 0) =>
+  window.dispatchEvent(wheel({ ctrlKey: true, deltaY, cancelable: true, timeStamp }));
+
+const zoomOf = (store: ReturnType<typeof makeStore>) => store.getState().settings.window.zoomFactor;
+
+let dispose: (() => void) | undefined;
+beforeEach(() => {
+  frame.factor = 1;
+});
+afterEach(() => {
+  dispose?.();
+  dispose = undefined;
+  vi.clearAllMocks();
+});
+
+describe("zoom", () => {
+  it.each([
+    [0, 0.5],
+    [2, 1.5],
+    [NaN, 1],
+    [Infinity, 1],
+    [1.2000000002, 1.2],
+  ])("normalizes %s to %s", (value, expected) => expect(normalizeZoom(value)).toBe(expected));
+
+  // CSS zoom on the page leaves event coordinates unzoomed while scaling
+  // positions set inside it, so every pointer-placed menu would open away
+  // from the cursor. Page zoom keeps them in one space.
+  it("zooms the modern layout with the frame's page zoom, never CSS zoom on the page", () => {
+    const store = makeStore(1.2);
+    dispose = initializeZoom(store);
+    expect(webFrame.setZoomFactor).toHaveBeenLastCalledWith(1.2);
+    store.dispatch(setZoomFactor(0.8));
+    expect(webFrame.setZoomFactor).toHaveBeenLastCalledWith(0.8);
+    expect(document.documentElement.style.zoom).toBe("");
+    expect(document.body.style.zoom).toBe("");
+  });
+
+  it("applies the frame's factor exactly once per store change", () => {
+    const store = makeStore(1.2);
+    dispose = initializeZoom(store);
+    expect(webFrame.setZoomFactor).toHaveBeenLastCalledWith(1.2);
+    store.dispatch(setZoomFactor(0.8));
+    expect(webFrame.setZoomFactor).toHaveBeenLastCalledWith(0.8);
+    store.dispatch({ type: "UNRELATED" });
+    expect(webFrame.setZoomFactor).toHaveBeenCalledTimes(2);
+  });
+
+  it("puts the frame back when Chromium changes the zoom behind it", () => {
+    const store = makeStore(1.2);
+    dispose = initializeZoom(store);
+    frame.factor = 0.9;
+    window.dispatchEvent(new Event("resize"));
+    expect(frame.factor).toBe(1.2);
+  });
+
+  it("steps once per notch of wheel travel, however many events carry it", () => {
+    const store = makeStore();
+    dispose = initializeZoom(store);
+    for (let i = 0; i < 5; ++i) pinch(-4);
+    expect(zoomOf(store)).toBe(1);
+    for (let i = 0; i < 20; ++i) pinch(-4);
+    expect(zoomOf(store)).toBe(1.1);
+    pinch(-120);
+    pinch(-120);
+    expect(zoomOf(store)).toBe(1.3);
+  });
+
+  // Chromium divides pixel wheel deltas by the page zoom, so one notch
+  // reports 100 / zoom px.
+  it.each([0.5, 1, 1.2, 1.5])("steps once per real notch at page zoom %s", (zoom) => {
+    const store = makeStore(zoom);
+    dispose = initializeZoom(store);
+    pinch(-100 / zoom, 0);
+    const up = zoom === 1.5 ? 1.5 : normalizeZoom(zoom + 0.1);
+    expect(zoomOf(store)).toBe(up);
+    pinch(100 / frame.factor, 1000);
+    expect(zoomOf(store)).toBe(normalizeZoom(up - 0.1));
+  });
+
+  // Chromium passes deltaY as a float32, so scaled back by the zoom a notch
+  // lands just under 100 px. These are values observed in Electron.
+  it.each([
+    [1.2, -83.33333002],
+    [1.1, -90.90908565],
+    [0.8, -124.99999503],
+    [0.6, -166.66666004],
+  ])("steps once for Chromium's float32 notch at page zoom %s", (zoom, deltaY) => {
+    const store = makeStore(zoom);
+    dispose = initializeZoom(store);
+    pinch(deltaY, 0);
+    expect(zoomOf(store)).toBe(normalizeZoom(zoom + 0.1));
+  });
+
+  it.each([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5])(
+    "steps exactly once per float32 notch in each direction at page zoom %s",
+    (zoom) => {
+      const store = makeStore(zoom);
+      dispose = initializeZoom(store);
+      // Zoom in (negative deltaY) everywhere but the maximum, so no step is clamped.
+      const dir = zoom === 1.5 ? 1 : -1;
+      pinch(Math.fround((dir * 100) / zoom), 0);
+      const next = normalizeZoom(zoom - dir * 0.1);
+      expect(zoomOf(store)).toBe(next);
+      pinch(Math.fround((-dir * 100) / frame.factor), 1000);
+      expect(zoomOf(store)).toBe(zoom);
+    },
+  );
+
+  it.each([0.5, 1.2, 1.5])("accumulates small touchpad deltas at page zoom %s", (zoom) => {
+    const store = makeStore(zoom);
+    dispose = initializeZoom(store);
+    // Zoom out from the maximum, in elsewhere, so the step is never clamped away.
+    const direction = zoom === 1.5 ? 1 : -1;
+    const px = (direction * 10) / zoom;
+    for (let i = 0; i < 9; ++i) pinch(px, i);
+    expect(zoomOf(store)).toBe(zoom);
+    pinch(px, 9);
+    expect(zoomOf(store)).toBe(normalizeZoom(zoom - direction * 0.1));
+  });
+
+  it("drops a partial step when the gesture reverses or pauses", () => {
+    const store = makeStore();
+    dispose = initializeZoom(store);
+    pinch(-60, 0);
+    pinch(50, 10);
+    pinch(40, 20);
+    expect(zoomOf(store)).toBe(1);
+    pinch(60, 30);
+    expect(zoomOf(store)).toBe(0.9);
+    pinch(-60, 40);
+    pinch(-60, 1000);
+    expect(zoomOf(store)).toBe(0.9);
+  });
+
+  it("treats a line- or page-mode wheel event as a whole notch", () => {
+    const store = makeStore();
+    dispose = initializeZoom(store);
+    window.dispatchEvent(wheel({ ctrlKey: true, deltaY: -3, deltaMode: 1 }));
+    expect(zoomOf(store)).toBe(1.1);
+  });
+
+  it("blocks native zoom at the limits and leaves ordinary scrolling alone", () => {
+    const store = makeStore();
+    dispose = initializeZoom(store);
+    const scroll = wheel({ deltaY: -120, cancelable: true });
+    window.dispatchEvent(scroll);
+    expect(scroll.defaultPrevented).toBe(false);
+    for (let i = 0; i < 10; ++i) {
+      const zoom = wheel({ ctrlKey: true, deltaY: -120, cancelable: true });
+      window.dispatchEvent(zoom);
+      expect(zoom.defaultPrevented).toBe(true);
+    }
+    expect(zoomOf(store)).toBe(1.5);
+    pinch(120);
+    expect(zoomOf(store)).toBe(1.4);
+  });
+
+  it("announces each shortcut step so the zoom feedback can show", () => {
+    const store = makeStore();
+    dispose = initializeZoom(store);
+    const listener = vi.fn();
+    window.addEventListener(ZOOM_SHORTCUT_EVENT, listener);
+    pinch(-120);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "0", ctrlKey: true }));
+    window.removeEventListener(ZOOM_SHORTCUT_EVENT, listener);
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it("removes the listeners and subscription on cleanup", () => {
+    const store = makeStore();
+    dispose = initializeZoom(store);
+    dispose();
+    pinch(-120);
+    expect(zoomOf(store)).toBe(1);
+    store.dispatch(setZoomFactor(1.2));
+    expect(frame.factor).toBe(1);
+  });
+
+  it("keeps a legacy saved factor as it is until a shortcut changes it", () => {
+    const store = makeStore(1.234, false);
+    dispose = initializeZoom(store);
+    expect(frame.factor).toBe(1.234);
+  });
+
+  it("responds to Ctrl+wheel and Ctrl+=/- on the legacy layout too", () => {
+    const store = makeStore(1, false);
+    dispose = initializeZoom(store);
+
+    const key = new KeyboardEvent("keydown", { key: "=", ctrlKey: true, cancelable: true });
+    window.dispatchEvent(key);
+    expect(key.defaultPrevented).toBe(true);
+    expect(zoomOf(store)).toBe(1.1);
+
+    const scroll = wheel({ ctrlKey: true, deltaY: -120, cancelable: true });
+    window.dispatchEvent(scroll);
+    expect(scroll.defaultPrevented).toBe(true);
+    expect(zoomOf(store)).toBe(1.2);
+  });
+
+  it("supports Ctrl+plus, equals, minus and zero without requiring Shift", () => {
+    const store = makeStore();
+    dispose = initializeZoom(store);
+    for (const [key, expected] of [
+      ["=", 1.1],
+      ["+", 1.2],
+      ["-", 1.1],
+      ["0", 1],
+    ] as const) {
+      const event = new KeyboardEvent("keydown", { key, ctrlKey: true, cancelable: true });
+      window.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      expect(zoomOf(store)).toBe(expected);
+    }
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "-" }));
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "+", ctrlKey: true, altKey: true }));
+    expect(zoomOf(store)).toBe(1);
+  });
+
+  it("follows a switch between layouts", () => {
+    const store = makeStore(1.2);
+    dispose = initializeZoom(store);
+    store.dispatch(setUseModernLayout(false));
+    store.dispatch(setZoomFactor(0.8));
+    expect(frame.factor).toBe(0.8);
+    store.dispatch(setUseModernLayout(true));
+    expect(frame.factor).toBe(0.8);
+  });
+
+  // renderer.tsx cannot be imported in a unit test, so this guards the one call
+  // that installs everything above.
+  it("is installed by the renderer at startup", () => {
+    const source = readFileSync(path.join(__dirname, "..", "..", "..", "renderer.tsx"), "utf8");
+    expect(source).toMatch(/\binitializeZoom\(store\);/);
+  });
+});

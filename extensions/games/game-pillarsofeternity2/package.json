@@ -4,7 +4,9 @@
   "description": "Support for Pillars of Eternity 2: Deadfire",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/gameart.png src/stylesheet.scss dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck": "pnpm exec tsc",
+    "lint:strict": "pnpm exec node ../../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

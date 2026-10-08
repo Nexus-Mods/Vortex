@@ -61,6 +61,7 @@ import {
 } from "./errorReporting";
 import { NodeFileSystemBackendImpl } from "./filesystem/backend";
 import { NodeFileSystemImpl } from "./filesystem/filesystem-impl";
+import { initFileSystem } from "./filesystem/instance";
 import { PathResolverRegistryImpl } from "./filesystem/path-resolver-registry";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
@@ -315,6 +316,7 @@ async function main(): Promise<void> {
     new NodeFileSystemBackendImpl(),
     new PathResolverRegistryImpl([new NativePathResolver()]),
   );
+  initFileSystem(fs);
 
   initIpcHandlers(fs);
   initDownloadIpc(downloadManager);

@@ -72,15 +72,13 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
       issue_type: issueType,
       resolution_type: resolutionType,
       required_mod_count: 1,
-      source_mod_name: mod.requiredBy.modName,
     });
     // eslint-disable-next-line @eslint-react/exhaustive-deps
   }, []);
 
   const handleInstall = () => {
     trackOneClickInstallClicked({
-      mod_id: mod.modId,
-      mod_name: mod.modName,
+      mod_uid: mod.uid,
       mod_version: modVersion,
       is_adult_content: mod.mainFile?.adultContent ?? false,
     });
@@ -92,8 +90,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
   // clicking through to the mod page is informational — track them as distinct events.
   const handleModPage = () => {
     const modPageProps = {
-      mod_id: mod.modId,
-      mod_name: mod.modName,
+      mod_uid: mod.uid,
       mod_version: modVersion,
     };
 
@@ -108,7 +105,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
 
   const openRequiringModPage = useCallback(() => {
     trackSuggestionSourceLinkClicked({
-      mod_id: mod.requiredBy.modId,
+      mod_uid: mod.requiredBy.modUID,
     });
 
     if (mod.requiredBy.modUrl) {
@@ -157,7 +154,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
             <Icon className={severityStyle.textClassName} path={severityStyle.iconPath} />
 
             <Typography as="div" className="font-semibold">
-              {t("detail::item::title", { modName: mod.requiredBy.modName })}
+              {t("shared::mod_may_be_required_for", { modName: mod.requiredBy.modName })}
             </Typography>
           </div>
 
@@ -289,7 +286,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         api={api}
         isOpen={showPremiumModal}
         modCount={1}
-        modId={mod.modId}
+        modUID={mod.uid}
         trigger="single_install"
         onClose={() => setShowPremiumModal(false)}
         onDownload={() => {

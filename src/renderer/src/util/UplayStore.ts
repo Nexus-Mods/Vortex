@@ -1,15 +1,13 @@
 import * as path from "node:path";
 
-import { getErrorCode } from "@vortex/shared";
-import Bluebird from "bluebird";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import * as winapi from "winapi-bindings";
 
+import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/api";
-import { GameEntryNotFound } from "@/types/IGameStore";
 import type { IGameStore, IGameStoreSnapshot } from "@/types/IGameStore";
+import { GameEntryNotFound } from "@/types/IGameStore";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
-
-import { log } from "../logging";
 
 const STORE_ID = "uplay";
 const STORE_NAME = "Uplay";
@@ -27,7 +25,7 @@ export class UPlayLauncher implements IGameStore {
   public id: string = STORE_ID;
   public name: string = STORE_NAME;
   public priority: number = STORE_PRIORITY;
-  private mClientPath: Bluebird<string>;
+  #installDir: string | undefined;
   #snapshot: IGameStoreSnapshot;
 
   constructor() {
@@ -39,18 +37,18 @@ export class UPlayLauncher implements IGameStore {
           "SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher",
           "InstallDir",
         );
-        this.mClientPath = Bluebird.resolve(path.join(uplayPath.value as string, UPLAY_EXEC));
+        this.#installDir = uplayPath.value as string;
         this.#snapshot = { entries: [], isInstalled: true };
       } catch (err) {
         log("info", "uplay launcher not found", { err });
-        this.mClientPath = undefined;
+        this.#installDir = undefined;
         this.#snapshot = { entries: [], isInstalled: false };
       }
     } else {
       log("info", "uplay launcher not found", {
         error: "only available on Windows systems",
       });
-      this.mClientPath = undefined;
+      this.#installDir = undefined;
       this.#snapshot = { entries: [], isInstalled: false };
     }
   }
@@ -64,8 +62,9 @@ export class UPlayLauncher implements IGameStore {
   //  different from the ids uplay is using to launch the game..
   //  for example - Assassin's Creed Black Flag is stored as '273' in registry
   //  but the posix path used to launch the game uses '619'
-  public launchGame(appInfo: any, api?: IExtensionApi): Bluebird<void> {
-    return this.getPosixPath(appInfo).then((posPath) => window.api.shell.openUrl(posPath));
+  public async launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
+    const posPath = await this.getPosixPath(appInfo);
+    window.api.shell.openUrl(posPath);
   }
 
   // To note: UPlay can launch multiple executables for a game.
@@ -76,90 +75,86 @@ export class UPlayLauncher implements IGameStore {
   //  '0' seems to be the default value reason why we simply hard code it; we may
   //  need to change this in the future to allow game extensions to choose the executable
   //  they want to launch.
-  public getPosixPath(appId) {
-    const posixPath = `uplay://launch/${appId}/0`;
-    return Bluebird.resolve(posixPath);
+  public getPosixPath(appId: string): Promise<string> {
+    return Promise.resolve(`uplay://launch/${appId}/0`);
   }
 
-  public allGames(): Bluebird<IGameStoreEntry[]> {
-    return Bluebird.resolve(this.#snapshot.entries);
+  public allGames(): Promise<IGameStoreEntry[]> {
+    return Promise.resolve(this.#snapshot.entries);
   }
 
   public snapshot(): IGameStoreSnapshot {
     return this.#snapshot;
   }
 
-  public reloadGames(): Bluebird<void> {
-    return this.getGameEntries().then((entries: IGameStoreEntry[]) => {
-      this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
-    });
+  public async reloadGames(): Promise<void> {
+    const entries = await this.getGameEntries();
+    this.#snapshot = { entries, isInstalled: this.#snapshot.isInstalled };
   }
 
-  public findByName(appName: string): Bluebird<IGameStoreEntry> {
+  public async findByName(appName: string): Promise<IGameStoreEntry> {
     const re = new RegExp("^" + appName + "$");
-    return this.allGames()
-      .then((entries) => entries.find((entry) => re.test(entry.name)))
-      .then((entry) =>
-        entry === undefined
-          ? Bluebird.reject(new GameEntryNotFound(appName, STORE_ID))
-          : Bluebird.resolve(entry),
-      );
+    const entries = await this.allGames();
+    const entry = entries.find((entry) => re.test(entry.name));
+    if (entry === undefined) {
+      throw new GameEntryNotFound(appName, STORE_ID);
+    }
+    return entry;
   }
 
-  public findByAppId(appId: string | string[]): Bluebird<IGameStoreEntry> {
+  public async findByAppId(appId: string | string[]): Promise<IGameStoreEntry> {
     const matcher = Array.isArray(appId)
       ? (entry: IGameStoreEntry) => appId.includes(entry.appid)
       : (entry: IGameStoreEntry) => appId === entry.appid;
 
-    return this.allGames().then((entries) => {
-      const gameEntry = entries.find(matcher);
-      if (gameEntry === undefined) {
-        return Bluebird.reject(
-          new GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID),
-        );
-      } else {
-        return Bluebird.resolve(gameEntry);
+    const entries = await this.allGames();
+    const gameEntry = entries.find(matcher);
+    if (gameEntry === undefined) {
+      throw new GameEntryNotFound(Array.isArray(appId) ? appId.join(", ") : appId, STORE_ID);
+    }
+    return gameEntry;
+  }
+
+  public getGameStorePath(): Promise<string | undefined> {
+    return Promise.resolve(
+      this.#installDir === undefined ? undefined : path.join(this.#installDir, UPLAY_EXEC),
+    );
+  }
+
+  private getGameEntries(): Promise<IGameStoreEntry[]> {
+    if (this.#installDir === undefined) {
+      // Can't find the client? don't continue.
+      return Promise.resolve<IGameStoreEntry[]>([]);
+    }
+
+    return new Promise<IGameStoreEntry[]>((resolve, reject) => {
+      try {
+        winapi.WithRegOpen("HKEY_LOCAL_MACHINE", REG_UPLAY_INSTALLS, (hkey) => {
+          const keys = winapi.RegEnumKeys(hkey);
+          const gameEntries: IGameStoreEntry[] = keys.map((key) => {
+            try {
+              const gameEntry: IGameStoreEntry = {
+                appid: key.key,
+                gamePath: winapi.RegGetValue(hkey, key.key, "InstallDir").value as string,
+                // Unfortunately the name of this game is stored elsewhere.
+                name: winapi.RegGetValue(
+                  "HKEY_LOCAL_MACHINE",
+                  REG_UPLAY_NAME_LOCATION + key.key,
+                  "DisplayName",
+                ).value as string,
+                gameStoreId: STORE_ID,
+              };
+              return gameEntry;
+            } catch (err) {
+              log("info", "gamestore-uplay: registry query failed", { key: key.key, err });
+              return undefined;
+            }
+          });
+          return resolve(gameEntries.filter((entry) => !!entry));
+        });
+      } catch (err) {
+        return getErrorCode(err) === "ENOENT" ? resolve([]) : reject(unknownToError(err));
       }
     });
-  }
-
-  public getGameStorePath(): Bluebird<string> {
-    return !!this.mClientPath
-      ? this.mClientPath.then((basePath) => path.join(basePath, "Uplay.exe"))
-      : Bluebird.resolve(undefined);
-  }
-
-  private getGameEntries(): Bluebird<IGameStoreEntry[]> {
-    return this.mClientPath === undefined // Can't find the client? don't continue.
-      ? Bluebird.resolve<IGameStoreEntry[]>([])
-      : new Bluebird<IGameStoreEntry[]>((resolve, reject) => {
-          try {
-            winapi.WithRegOpen("HKEY_LOCAL_MACHINE", REG_UPLAY_INSTALLS, (hkey) => {
-              const keys = winapi.RegEnumKeys(hkey);
-              const gameEntries: IGameStoreEntry[] = keys.map((key) => {
-                try {
-                  const gameEntry: IGameStoreEntry = {
-                    appid: key.key,
-                    gamePath: winapi.RegGetValue(hkey, key.key, "InstallDir").value as string,
-                    // Unfortunately the name of this game is stored elsewhere.
-                    name: winapi.RegGetValue(
-                      "HKEY_LOCAL_MACHINE",
-                      REG_UPLAY_NAME_LOCATION + key.key,
-                      "DisplayName",
-                    ).value as string,
-                    gameStoreId: STORE_ID,
-                  };
-                  return gameEntry;
-                } catch (err) {
-                  log("info", "gamestore-uplay: registry query failed", key.key);
-                  return undefined;
-                }
-              });
-              return resolve(gameEntries.filter((entry) => !!entry));
-            });
-          } catch (err) {
-            return getErrorCode(err) === "ENOENT" ? resolve([]) : reject(err);
-          }
-        });
   }
 }

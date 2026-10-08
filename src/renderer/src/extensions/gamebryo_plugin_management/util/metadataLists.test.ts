@@ -34,7 +34,7 @@ describe("MetadataLists", () => {
     const lists = new MetadataLists();
 
     expect(await lists.ensureLoaded(paths, loot)).toBe(true);
-    expect(loot.loadListsAsync).toHaveBeenCalledWith(paths.masterlist, "", "");
+    expect(loot.loadLists).toHaveBeenCalledWith(paths.masterlist, "", "");
   });
 
   it("loads again after a fresh masterlist replaces the one it holds", async () => {
@@ -47,7 +47,7 @@ describe("MetadataLists", () => {
     await utimes(paths.masterlist, new Date(), new Date(Date.now() + 1000));
     await lists.ensureLoaded(paths, loot);
 
-    expect(loot.loadListsAsync).toHaveBeenCalledTimes(2);
+    expect(loot.loadLists).toHaveBeenCalledTimes(2);
   });
 
   it("loads again after a rule change rewrites the userlist", async () => {
@@ -58,7 +58,7 @@ describe("MetadataLists", () => {
     await write(paths.userlist, "plugins:\n  - name: One.esp\n    group: early\n");
     await lists.ensureLoaded(paths, loot);
 
-    expect(loot.loadListsAsync).toHaveBeenLastCalledWith(paths.masterlist, paths.userlist, "");
+    expect(loot.loadLists).toHaveBeenLastCalledWith(paths.masterlist, paths.userlist, "");
   });
 
   it("passes the prelude once it is on disk", async () => {
@@ -68,7 +68,7 @@ describe("MetadataLists", () => {
     await write(paths.prelude, "common:\n");
     await lists.ensureLoaded(paths, loot);
 
-    expect(loot.loadListsAsync).toHaveBeenCalledWith(paths.masterlist, "", paths.prelude);
+    expect(loot.loadLists).toHaveBeenCalledWith(paths.masterlist, "", paths.prelude);
   });
 
   it("leaves the loaded lists alone while the files are unchanged", async () => {
@@ -78,7 +78,7 @@ describe("MetadataLists", () => {
     await lists.ensureLoaded(paths, loot);
 
     expect(await lists.ensureLoaded(paths, loot)).toBe(false);
-    expect(loot.loadListsAsync).toHaveBeenCalledTimes(1);
+    expect(loot.loadLists).toHaveBeenCalledTimes(1);
   });
 
   // a rewrite can land inside the same file-time tick, so callers that know they changed a list
@@ -91,7 +91,7 @@ describe("MetadataLists", () => {
     lists.invalidate();
     await lists.ensureLoaded(paths, loot);
 
-    expect(loot.loadListsAsync).toHaveBeenCalledTimes(2);
+    expect(loot.loadLists).toHaveBeenCalledTimes(2);
   });
 
   it("loads nothing while the game has no masterlist", async () => {
@@ -101,6 +101,6 @@ describe("MetadataLists", () => {
     await rm(paths.masterlist);
     await lists.ensureLoaded(paths, loot);
 
-    expect(loot.loadListsAsync).not.toHaveBeenCalled();
+    expect(loot.loadLists).not.toHaveBeenCalled();
   });
 });

@@ -27,6 +27,7 @@ export const modRequirementsContent: IHealthCheckContent = {
   selectEntries: (state) =>
     allModRequirements(state).map((mod) => ({
       id: modEntryId(mod),
+      sourceModUID: mod.requiredBy.modUID,
       checkId: MOD_REQUIREMENTS_CHECK_ID,
       severity: "suggestion",
       resolutionType: "install",
@@ -48,10 +49,15 @@ export const modRequirementsContent: IHealthCheckContent = {
       .filter((mod) => !isModHidden(state, mod) && !mod.externalRequirement)
       .map((mod) => ({
         key: mod.uid || `${mod.gameId}-${mod.modId}`,
+        requiredFor: [mod.requiredBy.modName],
+        notedRequirement: mod.notes?.trim()
+          ? { modUID: mod.uid, modName: mod.modName, note: mod.notes.trim() }
+          : undefined,
         install: () => {
           void onDownloadRequirement(api, mod, undefined, {
             issue_id: modEntryId(mod),
             check_id: checkNameForCheck(MOD_REQUIREMENTS_CHECK_ID),
+            source_mod_uid: mod.requiredBy.modUID || undefined,
           });
         },
       })),

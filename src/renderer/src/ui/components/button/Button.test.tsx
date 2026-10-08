@@ -104,6 +104,24 @@ describe("Button", () => {
     });
   });
 
+  describe("expanded style", () => {
+    it("paints the expanded state by default", () => {
+      render(<Button aria-expanded>Click</Button>);
+      expect(getButton()).not.toHaveClass("nxm-button-no-expanded-style");
+    });
+
+    it("opts out with hasExpandedStyle={false}, keeping aria-expanded", () => {
+      render(
+        <Button aria-expanded hasExpandedStyle={false}>
+          Click
+        </Button>,
+      );
+      expect(getButton()).toHaveClass("nxm-button-no-expanded-style");
+      expect(getButton()).toHaveAttribute("aria-expanded", "true");
+      expect(getButton()).not.toHaveAttribute("hasExpandedStyle");
+    });
+  });
+
   describe("disabled state", () => {
     it("sets disabled attribute when disabled=true", () => {
       render(<Button disabled={true}>Click</Button>);

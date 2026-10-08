@@ -1,126 +1,91 @@
 import type { ReactNode } from "react";
 
-export type ISortDirection = "asc" | "desc";
-
-export interface ISortState {
-  columnId: string;
-  direction: ISortDirection;
+/** A collapsible run of rows under a row of its own. */
+export interface ITableGroup<T> {
+  /** Stable, unique identifier for the group. */
+  id: string;
+  /** The group's name, which also names its collapse button. */
+  label: string;
+  /** The rows under it, shown while it's open. */
+  rows: T[];
+  /** A picture whose colour tints the group's row and the rows under it. */
+  image?: string;
 }
 
-/** A primitive value a column can sort and filter on. */
-export type ICellValue = string | number | boolean | null | undefined;
+/**
+ * A track that doesn't size to its content: the table only renders the rows in view, so
+ * an `auto` track would change width as it scrolls.
+ */
+export type TableColumnWidth = `${number}px` | `${number}fr` | `minmax(${string})`;
 
-export type IColumnFilter<T> =
-  | {
-      type: "text";
-      placeholder?: string;
-      /**
-       * Custom match. Defaults to a case-insensitive substring match against
-       * `String(getValue(row))`.
-       */
-      predicate?: (row: T, query: string) => boolean;
-    }
-  | {
-      type: "select";
-      placeholder?: string;
-      options: Array<{ label: string; value: string }>;
-      /**
-       * Custom match. Defaults to `String(getValue(row)) === value`.
-       */
-      predicate?: (row: T, value: string) => boolean;
-    };
-
-export interface IColumnDef<T> {
+export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   /** Stable, unique identifier for the column. */
   id: string;
-  /** Header label, also used as the accessible name for the column. */
+  /** Header label, also the column's accessible name. */
   header: string;
-  /**
-   * Extracts the primitive value used for default sorting, filtering and cell
-   * rendering. Omit when the column is purely presentational (e.g. an actions
-   * column) and provide `cell` instead.
-   */
-  getValue?: (row: T) => ICellValue;
-  /** Custom cell renderer. Falls back to `String(getValue(row))`. */
-  cell?: (row: T) => ReactNode;
-  /** Enables click-to-sort on the header. */
-  sortable?: boolean;
-  /** Custom comparator. Defaults to comparing `getValue` ascending. */
-  sortFn?: (a: T, b: T) => number;
-  /** Renders a filter control in the filter row beneath the header. */
-  filter?: IColumnFilter<T>;
-  /** Horizontal alignment for the body cells. Headers are always left. Default `left`. */
-  align?: "left" | "center" | "right";
-  /** Explicit column width as a CSS value (e.g. `"120px"`, `"20%"`). */
-  width?: string;
-  /** Whether the user may drag the column edge to resize it. Default `true`. */
-  resizable?: boolean;
-  /** Whether the user may hide the column via the column toggle. Default `true`. */
-  hideable?: boolean;
-  /** Whether the column starts hidden. Default `false`. */
-  defaultHidden?: boolean;
-  /** Shows a group-by toggle on the header so rows can be grouped by this column. */
-  groupable?: boolean;
-  /**
-   * Group key for a row when grouping by this column. Rows sharing a key form a
-   * group. Defaults to `String(getValue(row) ?? "")`; an empty key is the
-   * "Unspecified" group.
-   */
-  groupValue?: (row: T) => string;
-  /** Display label for a group key. Defaults to the key (or "Unspecified" when empty). */
-  groupLabel?: (key: string) => string;
+  /** The column's cell in an item's row. */
+  cell: (row: T) => ReactNode;
+  /** The column's cell in a group's row. The first column's follows the collapse button. */
+  groupCell?: (group: G) => ReactNode;
+  /** A grid track, e.g. `"minmax(0, 1fr)"` or `"206px"`. Default `"minmax(0, 1fr)"`. */
+  width?: TableColumnWidth;
+  /** Where the header and cells sit in the column. Default `start`. */
+  align?: "start" | "end";
+  /** Makes the column sortable: compares two rows for A to Z, as `Array.sort` does. */
+  sort?: (a: T, b: T) => number;
 }
 
-export interface ITableGroup<T> {
-  /** Group key (the raw `groupValue`; empty string for the "Unspecified" bucket). */
-  key: string;
-  /** Display label for the group header. */
-  label: string;
-  /** Rows belonging to this group, in sorted order. */
-  rows: T[];
+/** The column the rows are sorted by, and which way. */
+export interface ITableSort {
+  /** The sorted column's `id`. */
+  columnId: string;
+  /** A to Z, or Z to A; the values `aria-sort` takes. */
+  direction: "ascending" | "descending";
 }
 
-export interface ITableProps<T> {
-  /** Column definitions, in display order. */
-  columns: Array<IColumnDef<T>>;
-  /** Full dataset. The table handles filtering, sorting and pagination. */
-  data: T[];
-  /** Returns a stable key for a row. */
+export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
+  /** The columns, in order, each making a track of the table's grid. */
+  columns: Array<ITableColumn<T, G>>;
+  /** A row's stable, unique id, which keys it across renders. */
   getRowId: (row: T) => string;
-  /**
-   * Rows rendered per page. When set, the table paginates and shows a pager;
-   * when omitted, pagination is disabled and all rows render.
-   */
-  pageSize?: number;
-  /** Accessible caption describing the table. */
-  caption?: string;
+  /** The table's accessible name. */
+  label: string;
+  /** Controls above the header row, in the sticky head: a page's tabs and actions. */
+  toolbar?: ReactNode;
+  /** The sort to start with; unset, the rows keep the order they're given in. */
+  defaultSort?: ITableSort;
+  /** Classes for the table's grid element. */
   className?: string;
-  /**
-   * Renders the per-column filter row. Defaults to `true` when at least one
-   * column defines a `filter`.
-   */
-  enableFilters?: boolean;
-  /**
-   * Renders the column toggle (gear) control. Defaults to `true` when at
-   * least one column is hideable.
-   */
-  enableColumnToggle?: boolean;
-  /**
-   * Allows users to resize columns by dragging the header edge. Defaults to
-   * `true`. Individual columns can opt out with `resizable: false`.
-   */
-  enableColumnResize?: boolean;
-  /**
-   * Initial user-set column widths in pixels, keyed by column id (e.g. values
-   * restored from persistence). Applied on top of each column's `width`.
-   */
-  columnWidths?: Record<string, number>;
-  /**
-   * Called with the complete column-width map (whole px, keyed by column id)
-   * whenever the user finishes resizing a column or resets the widths. An empty
-   * map means "no custom widths". Wire this to persistence to remember widths.
-   */
-  onColumnWidthsChange?: (widths: Record<string, number>) => void;
-  /** Node rendered when there are no rows to display. */
-  emptyState?: ReactNode;
-}
+} & (
+  | {
+      /** The rows, ungrouped. */
+      rows: T[];
+      groups?: never;
+    }
+  | {
+      /** Grouped rows. A row can sit in more than one group. */
+      groups: G[];
+      rows?: never;
+    }
+);
+
+/** One of the table's rows as it renders them: an item's row, or a group's own row. */
+export type TableItem<T, G> =
+  | {
+      kind: "row";
+      /** Unique among the table's rows; a row in two groups has a key for each. */
+      key: string;
+      /** The item the row shows. */
+      row: T;
+      /** 2 under a group, unset in a flat grid. */
+      level?: number;
+    }
+  | {
+      kind: "group";
+      /** Unique among the table's rows. */
+      key: string;
+      /** The group the row heads. */
+      group: G;
+      /** Whether the group's rows are showing. */
+      expanded: boolean;
+    };

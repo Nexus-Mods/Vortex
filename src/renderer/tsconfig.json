@@ -3,7 +3,7 @@
   "extends": "../../tsconfig.base.json",
   "include": [
     "src/**/*",
-    "./test-setup.ts",
+    "./test-setup.mts",
     "../../typings.custom/*.d.ts",
     "src/typings.custom/*.d.ts"
   ],

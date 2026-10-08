@@ -1,0 +1,48 @@
+name: Lint Metrics
+
+on:
+  schedule:
+    - cron: "38 7 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+
+permissions:
+  contents: read
+
+jobs:
+  lint-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-pnpm
+
+      # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
+      - name: Install fontconfig
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
+      - name: Install dependencies
+        run: pnpm install
+        env:
+          VORTEX_ELECTRON_REBUILD: "skip"
+
+      - name: Run strict lint
+        run: pnpm exec nx run-many -t lint:strict
+        continue-on-error: true
+
+      - name: Collect results
+        run: pnpm exec node scripts/collect-lint-results.mjs
+
+      - name: Download AWS CLI
+        run: |
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+          unzip -q awscliv2.zip
+
+      - name: Upload to R2
+        run: ./aws/dist/aws s3 cp .lint-staging/ s3://vortex-reports/data/lint/ --recursive --endpoint-url "${{ vars.NEXUS_VORTEX_REPORTS_R2_ENDPOINT }}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.NEXUS_VORTEX_REPORTS_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.NEXUS_VORTEX_REPORTS_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto

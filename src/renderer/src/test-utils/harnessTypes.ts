@@ -5,15 +5,19 @@
  */
 import type NexusT from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
+import type { LootAsync } from "loot";
 import type { Mock } from "vitest";
 
 import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import type { ICollectionMod } from "../extensions/collections/types/ICollection";
 import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import type { IDownload } from "../extensions/download_management/types/IDownload";
-import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import type {
+  ILoadOrderGameInfo,
+  IRegisteredLoadOrder,
+  LoadOrder,
+} from "../extensions/file_based_loadorder/types/types";
 import type LootInterface from "../extensions/gamebryo_plugin_management/autosort";
-import type { ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
 import type {
   IPlugin,
   IPlugins,
@@ -79,6 +83,8 @@ export interface IApiHarness {
   dispatched: ITrackedAction[];
   // emit a global event (runs any registered on/onAsync listeners synchronously)
   emit: (event: string, ...args: unknown[]) => void;
+  // emit a global event and await what its listeners return, as production emitAndAwait does
+  emitAndAwait: (event: string, ...args: unknown[]) => Promise<void>;
   // read the live fake state
   getState: () => IState;
   // mutate the state mid-test (to model churn between events)
@@ -98,6 +104,8 @@ export interface IApiHarness {
   showHistoryCalls: string[];
   // api.runExecutable calls, recorded in order (the call is captured, nothing is spawned)
   runExecutableCalls: Array<{ executable: string; args: string[]; options: IRunOptions }>;
+  // configure how a process started through api.runExecutable runs (default: ends at once)
+  setRunProcess: (run: (options: IRunOptions) => Promise<void>) => void;
 }
 
 export interface IDriverHarness extends IApiHarness {
@@ -128,14 +136,13 @@ export interface IGameHarness extends IApiHarness {
 }
 
 /** What a file-based load order test arranges. */
-export interface IFbloHarnessOpts extends IGameHarnessOpts {
-  // whether a game uses FBLO, as UpdateSet asks (defaults to always true)
-  isFBLO?: (gameId: string) => boolean;
-}
+export type IFbloHarnessOpts = IGameHarnessOpts;
 
 export interface IFbloHarness extends IGameHarness {
-  // an UpdateSet constructed against the fake api
-  updateSet: UpdateSet;
+  // register a load order for the harness game, as a game extension's registerLoadOrder does
+  registerLoadOrder: (overrides?: Partial<ILoadOrderGameInfo>) => IRegisteredLoadOrder;
+  // the active profile's load order with that id (its primary when omitted), read back from state
+  loadOrder: (loadOrderId?: string) => LoadOrder;
 }
 
 /** What a gamebryo plugin-management test arranges. */
@@ -148,12 +155,23 @@ export interface IGamebryoHarness extends IGameHarness {
   pluginList: () => IPlugins;
 }
 
-/**
- * A controllable stand-in for a promisifyAll'd LootAsync instance: every ILootProm member as a
- * mock. The *Async members are pre-defined, so autosort's Bluebird.promisifyAll wraps leave them
- * untouched (they only add unused closeAsync/isClosedAsync plain functions to the object).
- */
-export type IFakeLoot = { [K in keyof ILootProm]: Mock<ILootProm[K]> };
+/** The LootAsync members autosort drives. */
+type DrivenLoot = Pick<
+  LootAsync,
+  | "clearConditionCache"
+  | "close"
+  | "getGroupsPath"
+  | "getPlugin"
+  | "getPluginMetadata"
+  | "isClosed"
+  | "loadCurrentLoadOrderState"
+  | "loadLists"
+  | "loadPlugins"
+  | "sortPlugins"
+>;
+
+/** A controllable stand-in for a LootAsync instance: every member autosort drives as a mock. */
+export type IFakeLoot = { [K in keyof DrivenLoot]: Mock<DrivenLoot[K]> };
 
 /** The plugin persistor's file lifecycle as a controllable fake: every call a mock. */
 export type IFakePersistor = {
@@ -311,6 +329,37 @@ export interface IManagerInternals {
   mPendingInstalls: Map<string, unknown>;
   // the per-collection cancel callback the completion poll checks, keyed by collection mod id
   mDependencyInstalls: Record<string, () => void>;
+}
+
+/** What a profile switch test arranges. */
+export interface IProfileSwitchOpts {
+  // every profile, across all games
+  profiles: IProfile[];
+  // the profile active when the test starts
+  activeProfileId: string;
+  // each game's last active profile, keyed by gameId
+  lastActive: Record<string, string>;
+  // whether a game has undeployed changes, keyed by gameId
+  needToDeploy?: Record<string, boolean>;
+  // the game's live settings file, keyed by gameId
+  gameSettings?: Record<string, string>;
+  // the settings file saved in each profile, keyed by profileId
+  savedSettings?: Record<string, string>;
+}
+
+export interface IProfileSwitchHarness extends IApiHarness {
+  // switch the way the UI does (SET_NEXT_PROFILE) and resolve once the profile is active
+  switchTo: (profileId: string) => Promise<void>;
+  // the profiles deployed since the harness was built, in order
+  deployed: string[];
+  // the game's live settings file, which a deploy of profile X rewrites to "deployed:X"
+  gameSettings: (gameId: string) => Promise<string | undefined>;
+  // the settings file saved in a profile
+  savedSettings: (profileId: string) => Promise<string | undefined>;
+  // messages logged since the harness was built, in order
+  loggedMessages: () => string[];
+  // remove every file the harness wrote; the profileSwitchTest fixture calls this on teardown
+  cleanup: () => Promise<void>;
 }
 
 /** What a health-check registry test arranges. */

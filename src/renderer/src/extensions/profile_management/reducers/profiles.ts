@@ -76,6 +76,15 @@ export const profilesReducer: IReducerSpec = {
           required: true,
           repair: () => "<Invalid>",
         },
+        // an empty mod state isn't persisted, so a profile with no mod ever enabled loads without one
+        modState: {
+          type: "object",
+          description: () => "Profile has no mod states",
+          noNull: true,
+          required: true,
+          silent: true,
+          repair: () => ({}),
+        },
       },
     },
   },

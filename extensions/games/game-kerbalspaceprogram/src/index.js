@@ -2,7 +2,21 @@ const Promise = require("bluebird");
 const path = require("path");
 const { fs, log, selectors, util } = require("@nexusmods/vortex-api");
 
-const extension = process.platform == "linux" ? ".x86_64" : "_x64.exe";
+const WINDOWS_EXEC = "KSP_x64.exe";
+const LINUX_EXEC = "KSP.x86_64";
+
+function gameExecutable(discoveryPath) {
+  if (process.platform === "win32") {
+    return WINDOWS_EXEC;
+  }
+  // the Windows build can be installed too, to run through Proton
+  try {
+    fs.statSync(path.join(discoveryPath, WINDOWS_EXEC));
+    return WINDOWS_EXEC;
+  } catch {
+    return LINUX_EXEC;
+  }
+}
 
 function findGame() {
   return util.GameStoreHelper.findByAppId("220200", "steam").then((game) => game.gamePath);
@@ -16,8 +30,8 @@ function main(context) {
     queryPath: findGame,
     queryModPath: () => "GameData",
     logo: "gameart.jpg",
-    executable: () => "KSP" + extension,
-    requiredFiles: ["KSP" + extension],
+    executable: gameExecutable,
+    requiredFiles: [path.join("GameData", "Squad")],
     environment: {
       SteamAPPId: "220200",
     },

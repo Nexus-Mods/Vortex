@@ -1,4 +1,12 @@
-import type { AppInitMetadata, Serializable } from "@vortex/shared/ipc";
+import { VortexError } from "@vortex/shared";
+import type { QualifiedPathWire, StatResult, Status, StatusTime } from "@vortex/shared/filesystem";
+import { QualifiedPath } from "@vortex/shared/filesystem";
+import type {
+  AppInitMetadata,
+  EnumerateEntryWire,
+  Serializable,
+  TemporalWire,
+} from "@vortex/shared/ipc";
 import type { PreloadWindow } from "@vortex/shared/preload";
 import type { PersistedHive } from "@vortex/shared/state";
 import { contextBridge, ipcRenderer } from "electron";
@@ -308,16 +316,278 @@ try {
       deleteRecursive(path) {
         return betterIpcRenderer.invoke("fs:deleteRecursive", path.toWire());
       },
+      writeFile(path, contents) {
+        return betterIpcRenderer.invoke("fs:writeFile", path.toWire(), contents);
+      },
+      async readFile(path) {
+        return betterIpcRenderer.invoke("fs:readFile", path.toWire());
+      },
       move(source, target, options) {
         return betterIpcRenderer.invoke("fs:move", source.toWire(), target.toWire(), options);
       },
-      stat(path, options) {
-        return betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
+      async stat(path, options) {
+        const result = await betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
+        return statFromWire(result);
       },
+
+      createStream,
+
+      enumerateDirectory,
     },
   });
 } catch (err) {
   console.error("failed to run preload code", err);
+}
+
+/** Fixed pull size for directory enumeration: amortizes one invoke across
+ *  this many entries. */
+const ENUMERATE_BATCH_SIZE = 512;
+
+/** Fixed pull size for read streams. Chunk replies are granular to the
+ *  underlying stream's chunk size, so this only bounds the reply, and a
+ *  reply may exceed it by up to one underlying chunk. */
+const STREAM_READ_CHUNK_SIZE = 4 * 1024 * 1024;
+
+function createStream(
+  path: QualifiedPath,
+  mode: "r",
+  options?: { start?: number; end?: number },
+): Promise<ReadableStream<Uint8Array>>;
+function createStream(
+  path: QualifiedPath,
+  mode: "w",
+  options?: { start?: number },
+): Promise<WritableStream<Uint8Array>>;
+function createStream(
+  path: QualifiedPath,
+  mode: string,
+  options?: { start?: number; end?: number },
+): Promise<ReadableStream<Uint8Array> | WritableStream<Uint8Array>> {
+  if (mode === "r") {
+    return openReadStream(path, options);
+  }
+
+  if (mode === "w") {
+    return openWriteStream(path, { start: options?.start });
+  }
+
+  throw new VortexError(`Cannot create stream for '${path.path}': unknown mode '${mode}'`, {
+    kind: "argument-invalid",
+    argument: "mode",
+  });
+}
+
+async function openReadStream(
+  path: QualifiedPath,
+  options?: { start?: number; end?: number },
+): Promise<ReadableStream<Uint8Array>> {
+  const handle = await betterIpcRenderer.invoke("fs:stream-open", path.toWire(), "r", options);
+
+  let exhausted = false;
+  let closed = false;
+
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    // Fire-and-forget: main evicts handles on done, so an unknown handle
+    // here is normal exhaustion, not an error worth surfacing.
+    betterIpcRenderer.invoke("fs:stream-close", handle).catch(() => undefined);
+  };
+
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      if (closed || exhausted) {
+        controller.close();
+        return;
+      }
+
+      const reply = await betterIpcRenderer.invoke(
+        "fs:stream-read",
+        handle,
+        STREAM_READ_CHUNK_SIZE,
+      );
+
+      controller.enqueue(reply.bytes);
+
+      if (reply.done) {
+        exhausted = true;
+      }
+    },
+    cancel() {
+      close();
+    },
+  });
+}
+
+async function openWriteStream(
+  path: QualifiedPath,
+  options?: { start?: number },
+): Promise<WritableStream<Uint8Array>> {
+  const handle = await betterIpcRenderer.invoke("fs:stream-open", path.toWire(), "w", options);
+
+  let closed = false;
+
+  // One invoke per write chunk (no renderer-side batching): round-trip
+  // overhead is noise for realistic chunk sizes, and per-write rejection
+  // keeps ENOSPC-class errors surfaced at the right await point.
+  return new WritableStream<Uint8Array>({
+    async write(chunk) {
+      await betterIpcRenderer.invoke("fs:stream-write", handle, chunk);
+    },
+    close() {
+      if (closed) return;
+      closed = true;
+      betterIpcRenderer.invoke("fs:stream-close", handle).catch(() => undefined);
+    },
+    abort() {
+      // An errored WritableStream aborts instead of closing. Main evicts on
+      // write failures already, so this is a tolerated no-op there; for a
+      // caller-initiated abort it releases the handle and truncates the
+      // file at the last flushed offset (writer.abort on main).
+      if (closed) return;
+      closed = true;
+      betterIpcRenderer.invoke("fs:stream-close", handle).catch(() => undefined);
+    },
+  });
+}
+
+function enumerateDirectory(
+  path: QualifiedPath,
+  options?: {
+    includeStatus?: false;
+    types?: "all" | "files" | "directories";
+    recursive?: boolean;
+    include?: string;
+    exclude?: string;
+  },
+): Promise<AsyncIterableIterator<QualifiedPath, undefined>>;
+function enumerateDirectory(
+  path: QualifiedPath,
+  options: {
+    includeStatus: true | "symlink";
+    types?: "all" | "files" | "directories";
+    recursive?: boolean;
+    include?: string;
+    exclude?: string;
+  },
+): Promise<AsyncIterableIterator<[QualifiedPath, Status], undefined>>;
+function enumerateDirectory(
+  path: QualifiedPath,
+  options?: {
+    includeStatus?: boolean | "symlink";
+    types?: "all" | "files" | "directories";
+    recursive?: boolean;
+    include?: string;
+    exclude?: string;
+  },
+): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+  return openEnumeration(path, options);
+}
+
+async function openEnumeration(
+  path: QualifiedPath,
+  options?: {
+    includeStatus?: boolean | "symlink";
+    types?: "all" | "files" | "directories";
+    recursive?: boolean;
+    include?: string;
+    exclude?: string;
+  },
+): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
+  const handle = await betterIpcRenderer.invoke("fs:enumerate-open", path.toWire(), options);
+  const withStatus = Boolean(options?.includeStatus);
+
+  let buffer: EnumerateEntryWire[] = [];
+  let exhausted = false;
+  let closed = false;
+
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    // Fire-and-forget: main evicts handles on done, so an unknown handle
+    // here is normal exhaustion, not an error worth surfacing.
+    betterIpcRenderer.invoke("fs:enumerate-close", handle).catch(() => undefined);
+  };
+
+  const iterator: AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined> = {
+    [Symbol.asyncIterator]() {
+      return iterator;
+    },
+    async next() {
+      if (closed) return { done: true, value: undefined };
+
+      while (buffer.length === 0 && !exhausted) {
+        const reply = await betterIpcRenderer.invoke(
+          "fs:enumerate-next",
+          handle,
+          ENUMERATE_BATCH_SIZE,
+        );
+
+        if (reply.entries.length > 0) {
+          buffer = reply.entries;
+        }
+
+        // A done reply may still carry the tail of the listing. Only
+        // `exhausted` stops further pulls; `closed` stays reserved for
+        // explicit return()/throw() so the tail is always drained before
+        // iteration reports done.
+        if (reply.done) {
+          exhausted = true;
+        }
+      }
+
+      if (buffer.length === 0) return { done: true, value: undefined };
+
+      const entry = buffer.shift();
+      if (entry === undefined) return { done: true, value: undefined };
+
+      if (!withStatus) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        return { done: false, value: QualifiedPath.of(entry as unknown as QualifiedPathWire) };
+      }
+
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const [wirePath, wireStatus] = entry as unknown as [QualifiedPathWire, TemporalWire<Status>];
+      return { done: false, value: [QualifiedPath.of(wirePath), statusFromWire(wireStatus)] };
+    },
+    async return() {
+      close();
+      return { done: true as const, value: undefined };
+    },
+    async throw(err) {
+      close();
+      throw err;
+    },
+  };
+  return iterator;
+}
+
+function statFromWire(result: TemporalWire<StatResult>): StatResult {
+  if (!result.exists) return result;
+  return { exists: true, ...statusFromWire(result) };
+}
+
+function statusFromWire(status: TemporalWire<Status>): Status {
+  const times = timesFromWire(status);
+
+  if (status.isSymLink) {
+    return {
+      ...status,
+      ...times,
+      symLinkData: timesFromWire(status.symLinkData),
+    };
+  }
+
+  return { ...status, ...times };
+}
+
+function timesFromWire(times: TemporalWire<StatusTime>): StatusTime {
+  return {
+    accessTime: Temporal.Instant.fromEpochNanoseconds(times.accessTime),
+    modifiedTime: Temporal.Instant.fromEpochNanoseconds(times.modifiedTime),
+    changeTime: Temporal.Instant.fromEpochNanoseconds(times.changeTime),
+    creationTime: Temporal.Instant.fromEpochNanoseconds(times.creationTime),
+  };
 }
 
 function expose<K extends keyof PreloadWindow>(key: K, value: PreloadWindow[K]) {

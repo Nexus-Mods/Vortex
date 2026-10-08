@@ -1,23 +1,6 @@
-import crypto from "crypto";
 import path from "path";
 
-import { fs, util } from "@nexusmods/vortex-api";
-export class MD5ComparisonError extends Error {
-  private mPath;
-  constructor(message, file) {
-    super(message);
-    this.mPath = file;
-  }
-
-  get affectedFile() {
-    return this.mPath;
-  }
-
-  get errorMessage() {
-    return this.message + ": " + this.mPath;
-  }
-}
-
+import { log, util } from "@nexusmods/vortex-api";
 export class ResourceInaccessibleError extends Error {
   private mIsReportingAllowed;
   private mFilePath;
@@ -81,37 +64,16 @@ export class MergeDataViolationError extends Error {
   }
 }
 
-export function calcHashImpl(filePath) {
-  return new Promise((resolve, reject) => {
-    const hash = crypto.createHash("md5");
-    const stream = fs.createReadStream(filePath);
-    stream.on("readable", () => {
-      const data = stream.read();
-      if (data) {
-        hash.update(data);
-      }
-    });
-    stream.on("end", () => resolve(hash.digest("hex")));
-    stream.on("error", reject);
-  });
-}
-
-export function getHash(filePath, tries = 3) {
-  return calcHashImpl(filePath).catch((err) => {
-    if (["EMFILE", "EBADF"].includes(err["code"]) && tries > 0) {
-      return getHash(filePath, tries - 1);
-    } else {
-      return Promise.reject(err);
-    }
-  });
-}
-
 export function getLoadOrderFilePath() {
   return path.join(util.getVortexPath("documents"), "The Witcher 3", LOAD_ORDER_FILENAME);
 }
 
-export function getPriorityTypeBranch() {
-  return ["settings", "witcher3", "prioritytype"];
+export function getDx12UserSettingsPath() {
+  return path.join(util.getVortexPath("documents"), "The Witcher 3", DX12_USER_SETTINGS_FILENAME);
+}
+
+export function getRemasterNoticeSeenBranch() {
+  return ["settings", "witcher3", "remasterNoticeSeen"];
 }
 
 export function getSuppressModLimitBranch() {
@@ -133,8 +95,12 @@ export const VORTEX_BACKUP_TAG = ".vortex_backup";
 export const PART_SUFFIX = ".part.txt";
 
 export const SCRIPT_MERGER_ID = "W3ScriptMerger";
+/** Where the Vortex-managed merger can be downloaded by hand. */
+export const SCRIPT_MERGER_RELEASES_URL =
+  "https://github.com/IDCs/WitcherScriptMerger/releases/latest";
 export const MERGE_INV_MANIFEST = "MergeInventory.xml";
 export const LOAD_ORDER_FILENAME = "mods.settings";
+export const DX12_USER_SETTINGS_FILENAME = "dx12user.settings";
 export const I18N_NAMESPACE = "game-witcher3";
 export const CONFIG_MATRIX_REL_PATH = path.join(
   "bin",
@@ -143,28 +109,32 @@ export const CONFIG_MATRIX_REL_PATH = path.join(
   "user_config_matrix",
   "pc",
 );
-export const CONFIG_MATRIX_FILES = [
-  "audio",
-  "display",
-  "gameplay",
-  "gamma",
-  "graphics",
-  "graphicsdx11",
-  "hdr",
-  "hidden",
-  "hud",
-  "input",
-  "localization",
-];
+// Defined alongside the per-edition lists so the two can't drift apart.
+export { CONFIG_MATRIX_FILES } from "./edition";
 
-export const W3_TEMP_DATA_DIR = path.join(util.getVortexPath("temp"), "W3TempData");
+// Resolved lazily: getVortexPath isn't available at module load in every
+// context this file gets imported from.
+export function getW3TempDataDir() {
+  return path.join(util.getVortexPath("temp"), "W3TempData");
+}
 
 export const UNI_PATCH = "mod0000____CompilationTrigger";
 export const LOCKED_PREFIX = "mod0000_";
+export const AUTO_SORT_LABEL = "Sort load order alphabetically on every deployment";
+
+export function isLockedEntry(modName: string) {
+  if (!modName || typeof modName !== "string") {
+    log("debug", "encountered invalid mod instance/name");
+    return false;
+  }
+  return modName.startsWith(LOCKED_PREFIX);
+}
 
 export const DO_NOT_DISPLAY = ["communitypatch-base"];
-// minimatch is supposed to be case-insensitive, but it's not working for some reason...
-export const DO_NOT_DEPLOY = ["README.TXT", `**/*${PART_SUFFIX.toUpperCase()}`];
+export const DO_NOT_DEPLOY = ["README.TXT"];
+// Settings fragments must reach the deployment manifest: onDidDeploy uses them
+// to generate the merged Documents settings. Only ignore them for conflicts.
+export const IGNORE_CONFLICTS = [...DO_NOT_DEPLOY, `**/*${PART_SUFFIX.toUpperCase()}`];
 export const SCRIPT_MERGER_FILES = ["WitcherScriptMerger.exe"];
 
 export const NON_SORTABLE = ["witcher3menumoddocuments", "collection"];

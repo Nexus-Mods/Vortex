@@ -1,7 +1,7 @@
 import React, { useState, type FormEvent } from "react";
 
 import { Button } from "@/ui/components/button/Button";
-import { Input } from "@/ui/components/form/input/Input";
+import { TextField } from "@/ui/components/form/text_field/TextField";
 
 import type { IPaginationProps } from "./Pagination";
 
@@ -35,13 +35,12 @@ export const JumpToPage = ({
     <form className="nxm-pagination-page" onSubmit={handleSubmit}>
       <div className="nxm-pagination-page-label">Page</div>
 
-      <Input
-        aria-label="Jump to page"
+      <TextField
         className="nxm-pagination-page-input"
         errorMessage={!isValid ? `Enter a page between 1 and ${totalPages}` : undefined}
-        fieldClassName="w-auto!"
         hideErrors={true}
         hideLabel={true}
+        label="Jump to page"
         max={totalPages}
         min={1}
         pattern="[0-9]*"

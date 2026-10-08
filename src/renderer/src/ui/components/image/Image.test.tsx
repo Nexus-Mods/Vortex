@@ -1,3 +1,4 @@
+import { mdiAccount } from "@mdi/js";
 import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, it, expect, vi } from "vitest";
@@ -133,6 +134,24 @@ describe("Image", () => {
       expect(screen.getByRole("img", { name: "A mod" }).tagName).toBe("svg");
     });
 
+    it("shows the caller's icon instead, when given one", () => {
+      renderComponent({ fallbackIconPath: mdiAccount, src: "bad.png" });
+      fireEvent.error(getImg() as Element);
+      expect(document.querySelector("svg path")).toHaveAttribute("d", mdiAccount);
+    });
+
+    it("shows the caller's icon when there's no src at all", () => {
+      renderComponent({ fallbackIconPath: mdiAccount, src: undefined });
+      expect(getImg()).toBeNull();
+      expect(screen.getByRole("img", { name: "A mod" }).tagName).toBe("svg");
+    });
+
+    it("keeps an empty frame for no src when there's no icon to show", () => {
+      renderComponent({ src: undefined });
+      expect(getImg()).toBeInTheDocument();
+      expect(document.querySelector("svg path")).toBeNull();
+    });
+
     it("calls a caller-provided onError handler", () => {
       const { onError } = renderComponent({ src: "bad.png" });
       fireEvent.error(getImg() as Element);
@@ -149,6 +168,11 @@ describe("Image", () => {
     it('fills the frame for fit="cover"', () => {
       renderComponent({ fit: "cover" });
       expect(getImg()).toHaveClass("nxm-image-media-cover");
+    });
+
+    it('applies the aspect class for imageType="avatar"', () => {
+      renderComponent({ imageType: "avatar" });
+      expect(getContainer()).toHaveClass("nxm-image-avatar");
     });
 
     it('applies the aspect class for imageType="collection"', () => {

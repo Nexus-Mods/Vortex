@@ -150,6 +150,25 @@ describe("HealthCheckTracking context", () => {
     ]);
   });
 
+  it("carries source_mod_uid when the entry names its source mod, and omits it otherwise", () => {
+    const { api, events } = harness();
+
+    render(
+      <HealthCheckTrackingProvider api={api}>
+        <IssueProvider entry={{ ...fileEntry, sourceModUID: "uid-42" }}>
+          <Unhider />
+        </IssueProvider>
+
+        <IssueProvider entry={{ ...modEntry, sourceModUID: "" }}>
+          <Unhider />
+        </IssueProvider>
+      </HealthCheckTrackingProvider>,
+    );
+
+    expect(events[0].properties.source_mod_uid).toBe("uid-42");
+    expect(events[1].properties).not.toHaveProperty("source_mod_uid");
+  });
+
   it("omits the identity for a premium surface rendered page-wide", () => {
     const { api, events } = harness();
 

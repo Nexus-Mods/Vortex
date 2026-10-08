@@ -1,7 +1,7 @@
 import { mdiMagnify } from "@mdi/js";
 import * as React from "react";
 
-import { Input } from "@/ui/components/form/input/Input";
+import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Icon as MdiIcon } from "@/ui/components/icon/Icon";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
@@ -53,10 +53,10 @@ export default function CategoryList() {
       <div className="my-2 flex items-center gap-2">
         <MdiIcon className="nxm-neutral" path={mdiMagnify} />
 
-        <Input
+        <TextField
           hideLabel
           className="h-full grow"
-          id="size-sm-search-categories"
+          label="Filter categories"
           placeholder="Filter categories..."
           type="text"
           value={searchString}

@@ -55,7 +55,8 @@ export const issueTypeForCheck = (checkId: HealthCheckId): IssueType => ISSUE_TY
 /**
  * Which issue an event belongs to, and which check surfaced it — the join key that ties
  * a user's events together across the funnel. Carried by every issue-scoped event; the
- * tracking context applies it, so call sites never restate it.
+ * tracking context applies it, so call sites never restate it. `source_mod_uid` is the
+ * requiring mod's UID, which Mixpanel maps to a mod name (LAZ-1104); unset if unresolved.
  *
  * Deliberately insensitive to the report's contents: `issue_id` is
  * `${sourceFileUID}:${category}`, so it stays put as requirements come and go underneath,
@@ -66,6 +67,7 @@ export const issueTypeForCheck = (checkId: HealthCheckId): IssueType => ISSUE_TY
 export type IssueAnalyticsIdentity = {
   issue_id: string;
   check_id: CheckName;
+  source_mod_uid?: string;
 };
 
 /**

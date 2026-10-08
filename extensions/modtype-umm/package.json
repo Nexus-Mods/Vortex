@@ -4,7 +4,8 @@
   "description": "Unity Mod Manager modtype to support Unity games which rely on UMM to install mods",
   "scripts": {
     "build": "pnpm generate-validation -t ./tsconfig.json && node build.mjs && pnpm extractInfo",
-    "typecheck": "pnpm generate-validation -t ./tsconfig.json && pnpm tsc"
+    "typecheck": "pnpm generate-validation -t ./tsconfig.json && pnpm tsc",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

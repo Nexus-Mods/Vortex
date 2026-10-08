@@ -16,9 +16,6 @@
         transition-duration: var(--default-transition-duration);
         transition-timing-function: var(--default-transition-timing-function);
 
-        /* override bootstrap styles */
-        margin: 0;
-
         &[data-checked],
         &[data-indeterminate] {
             border-color: transparent;
@@ -120,6 +117,21 @@
 
             &[data-indeterminate] .nxm-switch-thumb {
                 border-color: var(--color-surface-low);
+            }
+        }
+    }
+
+    /* The switch and its label share a row; hints run full width under it. */
+    .nxm-switch-field {
+        .nxm-field-control {
+            column-gap: calc(var(--spacing) * 3);
+        }
+
+        .nxm-field-label {
+            cursor: pointer;
+
+            &[data-disabled] {
+                cursor: not-allowed;
             }
         }
     }

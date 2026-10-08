@@ -75,6 +75,19 @@ export default defineConfig([
       // Vortex custom rules
       "vortex/no-bluebird-promise-alias": "error",
       "vortex/no-bluebird-resolve-promiselike": "warn", // TODO: change to error
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "electron",
+              importNames: ["clipboard"],
+              message:
+                "Electron's clipboard module is unavailable in the renderer. Use window.api.clipboard instead.",
+            },
+          ],
+        },
+      ],
       "vortex/no-restricted-imports-warnings": [
         "warn",
         {

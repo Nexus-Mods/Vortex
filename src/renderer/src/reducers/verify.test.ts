@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 
+import { makeSilentVerifier } from "../test-utils/builders";
 import type { IStateVerifier } from "../types/IExtensionContext";
 import { VerifierDrop, VerifierDropParent } from "../types/IExtensionContext";
-import { verify, verifyElement } from "./verify";
+import { applySilentRepairs, verify, verifyElement } from "./verify";
 
 const desc = (msg: string) => () => msg;
 const emitSpy = () => vi.fn<(d: string) => void>();
@@ -374,6 +375,20 @@ describe("verify", () => {
     );
   });
 
+  it("reports a silent verifier's finding when its repair drops the record", () => {
+    const verifiers: Record<string, IStateVerifier> = {
+      list: makeSilentVerifier({
+        repair: () => {
+          throw new VerifierDropParent();
+        },
+      }),
+    };
+    const emit = emitSpy();
+
+    expect(verify("test", verifiers, { other: "val" }, {}, emit)).toBeUndefined();
+    expect(emit).toHaveBeenCalledWith("value missing");
+  });
+
   it("replaces missing required field with default", () => {
     const input = { other: "val" };
     const verifiers: Record<string, IStateVerifier> = {
@@ -395,5 +410,58 @@ describe("verify", () => {
 
     expect(result).toEqual({ count: 0, keep: "ok" });
     expect(input).toEqual({ count: "bad", keep: "ok" });
+  });
+});
+
+describe("applySilentRepairs", () => {
+  it("fills in a silent verifier's missing value", () => {
+    const verifiers: Record<string, IStateVerifier> = { list: makeSilentVerifier() };
+
+    expect(applySilentRepairs("test", verifiers, { other: "val" })).toEqual({
+      other: "val",
+      list: {},
+    });
+  });
+
+  it("leaves a silent verifier's present but invalid value to the reported checks", () => {
+    const input = { list: "corrupt" };
+
+    expect(applySilentRepairs("test", { list: makeSilentVerifier() }, input)).toBe(input);
+  });
+
+  it("leaves a silent verifier that deletes broken values to the reported checks", () => {
+    const input = { other: "val" };
+    const verifiers: Record<string, IStateVerifier> = {
+      list: makeSilentVerifier({ repair: undefined, deleteBroken: "parent" }),
+    };
+
+    expect(applySilentRepairs("test", verifiers, input)).toBe(input);
+  });
+
+  it("leaves a value a silent repair would drop to the reported checks", () => {
+    const input = { other: "val" };
+    const verifiers: Record<string, IStateVerifier> = {
+      list: makeSilentVerifier({
+        repair: () => {
+          throw new VerifierDropParent();
+        },
+      }),
+    };
+
+    expect(applySilentRepairs("test", verifiers, input)).toBe(input);
+  });
+
+  it("leaves a record that fails its own checks to the reported checks", () => {
+    const input = { a: {} };
+    const verifiers: Record<string, IStateVerifier> = {
+      _: {
+        description: desc("invalid record"),
+        type: "object",
+        noEmpty: true,
+        elements: { list: makeSilentVerifier() },
+      },
+    };
+
+    expect(applySilentRepairs("test", verifiers, input)).toBe(input);
   });
 });

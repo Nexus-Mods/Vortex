@@ -4,15 +4,18 @@ import { Button, ListGroup, ListGroupItem } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
 import { connect } from "react-redux";
 
-import { EmptyPlaceholder, FlexLayout, Icon } from "../../../controls/api";
 import { ComponentEx } from "../../../controls/ComponentEx";
-import type * as types from "../../../types/api";
-import * as util from "../../../util/api";
-import * as selectors from "../../../util/selectors";
-import { findGameEntry } from "../gameSupport";
+import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
+import FlexLayout from "../../../controls/FlexLayout";
+import Icon from "../../../controls/Icon";
+import type { IState } from "../../../types/IState";
+import type { IMod } from "../../mod_management/types/IMod";
+import renderModName from "../../mod_management/util/modName";
+import { activeGameId, activeProfile } from "../../profile_management/selectors";
+import type { IProfile } from "../../profile_management/types/IProfile";
 import { currentGameMods, currentLoadOrderForProfile } from "../selectors";
 import type { IGameSpecificInterfaceProps } from "../types/collections";
-import type { ILoadOrderEntry, LoadOrder } from "../types/types";
+import type { ILoadOrderEntry, IRegisteredLoadOrder, LoadOrder } from "../types/types";
 import { genCollectionLoadOrder, isModInCollection, isValidMod } from "../util";
 
 const NAMESPACE: string = "generic-load-order-extension";
@@ -24,12 +27,17 @@ interface IBaseState {
 
 interface IConnectedProps {
   gameId: string;
-  mods: { [modId: string]: types.IMod };
+  // keyed by Vortex mod id
+  mods: Record<string, IMod>;
   loadOrder: LoadOrder;
-  profile: types.IProfile;
+  profile: IProfile;
 }
 
-type IProps = IGameSpecificInterfaceProps & IConnectedProps;
+export interface ILoadOrderCollectionsProps extends IGameSpecificInterfaceProps {
+  getGameEntry: (gameId: string) => IRegisteredLoadOrder | undefined;
+}
+
+type IProps = ILoadOrderCollectionsProps & IConnectedProps;
 
 class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
   public static getDerivedStateFromProps(newProps: IProps, prevState: IBaseState) {
@@ -91,7 +99,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
 
   private async genLoadOrder() {
     try {
-      const gameEntry = findGameEntry(this.props.gameId);
+      const gameEntry = this.props.getGameEntry(this.props.gameId);
       this.nextState.loadOrder = await genCollectionLoadOrder(
         this.context.api,
         gameEntry,
@@ -138,7 +146,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
   };
 
   private openLoadOrderPage = () => {
-    this.context.api.events.emit("show-main-page", "generic-loadorder");
+    this.context.api.events.emit("show-main-page", "file-based-loadorder");
   };
   private renderOpenLOButton = () => {
     const { t } = this.props;
@@ -171,7 +179,7 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
     const key = loEntry.id + JSON.stringify(loEntry);
     const name =
       loEntry.name || loEntry.modId !== undefined
-        ? util.renderModName(this.props.mods[loEntry.modId])
+        ? renderModName(this.props.mods[loEntry.modId])
         : loEntry.id;
     const classes = ["load-order-entry", "collection-tab"];
     return (
@@ -185,10 +193,10 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
   };
 }
 
-function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
-  const profile = selectors.activeProfile(state);
+function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
+  const profile = activeProfile(state);
   return {
-    gameId: selectors.activeGameId(state),
+    gameId: activeGameId(state),
     loadOrder: currentLoadOrderForProfile(state, profile.id),
     mods: currentGameMods(state),
     profile,
@@ -197,4 +205,4 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
 
 export default withTranslation(["common", NAMESPACE])(
   connect(mapStateToProps, undefined)(LoadOrderCollections) as any,
-) as React.ComponentClass<{}>;
+) as React.ComponentClass<ILoadOrderCollectionsProps>;

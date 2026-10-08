@@ -19,6 +19,7 @@
  * Test-only: nothing in the production tree imports this module.
  */
 import { EventEmitter } from "events";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import * as os from "os";
 import * as path from "path";
 
@@ -26,7 +27,7 @@ import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
-import type { PluginInterface, PluginMetadata } from "loot";
+import type { LootAsync, PluginInterface, PluginMetadata, Vertex } from "loot";
 import { applyMiddleware, createStore, type Middleware } from "redux";
 import { batch } from "redux-act";
 import thunkMiddleware from "redux-thunk";
@@ -44,10 +45,15 @@ import type InstallDriver from "../extensions/collections/util/InstallDriver";
 import { stateReducer as downloadStateReducer } from "../extensions/download_management/reducers/state";
 import { downloadPathForGame } from "../extensions/download_management/selectors";
 import type { IDownload, IModInfo } from "../extensions/download_management/types/IDownload";
-import type { ILoadOrderEntry } from "../extensions/file_based_loadorder/types/types";
-import type UpdateSet from "../extensions/file_based_loadorder/UpdateSet";
+import { resolveEntry } from "../extensions/file_based_loadorder/registry";
+import type {
+  ILoadOrderEntry,
+  ILoadOrderGameInfo,
+  IRegisteredLoadOrder,
+  IValidationResult,
+  LoadOrder,
+} from "../extensions/file_based_loadorder/types/types";
 import type { IESPFile } from "../extensions/gamebryo_plugin_management/types/IESPFile";
-import type { ICycleEdge, ILootProm } from "../extensions/gamebryo_plugin_management/types/ILoot";
 import type {
   IPlugin,
   IPluginCombined,
@@ -66,8 +72,10 @@ import type {
 } from "../extensions/health_check/types";
 import { ModFileCategory } from "../extensions/health_check/types";
 import type { IHistoryEvent } from "../extensions/history_management/types";
+import { setDeploymentNecessary } from "../extensions/mod_management/actions/deployment";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
+import { deploymentReducer } from "../extensions/mod_management/reducers/deployment";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
 import type {
   IChoiceType,
@@ -84,7 +92,10 @@ import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus
 import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
 import { MEMBERSHIP_ROLE, transformUserInfoFromApi } from "../extensions/nexus_integration/util";
+import { setNextProfile } from "../extensions/profile_management/actions/settings";
+import { settingsReducer as profileSettingsReducer } from "../extensions/profile_management/reducers/settings";
 import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
+import { profilePath } from "../extensions/profile_management/util/manage";
 import type { IPCDownloadAdapter } from "../IPCDownloadAdapter";
 import trackingReducer from "../reducers/collectionInstallTracking";
 import { addToTree, Decision, deriveReducer } from "../reducers/index";
@@ -97,7 +108,12 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtensionReducer } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
-import type { IExtensionApi, IRunOptions } from "../types/IExtensionContext";
+import type {
+  IExtensionApi,
+  IExtensionContext,
+  IRunOptions,
+  IStateVerifier,
+} from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
@@ -118,8 +134,6 @@ import type {
   IDriverHarnessState,
   IFakeLoot,
   IFakePersistor,
-  IFbloHarness,
-  IFbloHarnessOpts,
   IGameHarness,
   IGameHarnessOpts,
   IHealthCheckHarness,
@@ -132,6 +146,8 @@ import type {
   INxmHarness,
   IParkCheckOpts,
   IParkedCheck,
+  IProfileSwitchHarness,
+  IProfileSwitchOpts,
   IRevisionFixture,
   IRevisionMemberSpec,
   ITrackedAction,
@@ -261,6 +277,7 @@ export function makeLootPluginInterface(overrides: Partial<PluginInterface> = {}
   return {
     name: "One.esp",
     version: "",
+    headerVersion: null,
     masters: [],
     bashTags: [],
     crc: 0,
@@ -271,6 +288,7 @@ export function makeLootPluginInterface(overrides: Partial<PluginInterface> = {}
     IsValidAsMediumPlugin: false,
     IsUpdatePlugin: false,
     IsValidAsUpdatePlugin: false,
+    IsBlueprintPlugin: false,
     isEmpty: false,
     loadsArchive: false,
     ...overrides,
@@ -318,22 +336,18 @@ export function makeESPFile(overrides: Partial<IESPFile> = {}): IESPFile {
 /** A fake loot instance: open, every call succeeding, sort echoing its input. */
 export function makeFakeLoot(overrides: Partial<IFakeLoot> = {}): IFakeLoot {
   return {
-    clearConditionCacheAsync: vi.fn<ILootProm["clearConditionCacheAsync"]>(() => Promise.resolve()),
-    close: vi.fn<ILootProm["close"]>(),
-    getGroupsPathAsync: vi.fn<ILootProm["getGroupsPathAsync"]>(() =>
-      Promise.resolve<ICycleEdge[]>([]),
-    ),
-    getPluginAsync: vi.fn<ILootProm["getPluginAsync"]>(() => Promise.resolve(undefined)),
-    getPluginMetadataAsync: vi.fn<ILootProm["getPluginMetadataAsync"]>(() =>
-      Promise.resolve(undefined),
-    ),
-    isClosed: vi.fn<ILootProm["isClosed"]>(() => false),
-    loadCurrentLoadOrderStateAsync: vi.fn<ILootProm["loadCurrentLoadOrderStateAsync"]>(() =>
+    clearConditionCache: vi.fn<LootAsync["clearConditionCache"]>(() => Promise.resolve()),
+    close: vi.fn<LootAsync["close"]>(),
+    getGroupsPath: vi.fn<LootAsync["getGroupsPath"]>(() => Promise.resolve<Vertex[]>([])),
+    getPlugin: vi.fn<LootAsync["getPlugin"]>(() => Promise.resolve(undefined)),
+    getPluginMetadata: vi.fn<LootAsync["getPluginMetadata"]>(() => Promise.resolve(undefined)),
+    isClosed: vi.fn<LootAsync["isClosed"]>(() => false),
+    loadCurrentLoadOrderState: vi.fn<LootAsync["loadCurrentLoadOrderState"]>(() =>
       Promise.resolve(),
     ),
-    loadListsAsync: vi.fn<ILootProm["loadListsAsync"]>(() => Promise.resolve()),
-    loadPluginsAsync: vi.fn<ILootProm["loadPluginsAsync"]>(() => Promise.resolve()),
-    sortPluginsAsync: vi.fn<ILootProm["sortPluginsAsync"]>((pluginNames) =>
+    loadLists: vi.fn<LootAsync["loadLists"]>(() => Promise.resolve()),
+    loadPlugins: vi.fn<LootAsync["loadPlugins"]>(() => Promise.resolve()),
+    sortPlugins: vi.fn<LootAsync["sortPlugins"]>((pluginNames) =>
       Promise.resolve([...pluginNames]),
     ),
     ...overrides,
@@ -462,6 +476,18 @@ export function makeProfile(overrides: Partial<IProfile> = {}): IProfile {
     name: "Profile",
     modState: {},
     lastActivated: 0,
+    ...overrides,
+  };
+}
+
+// A silent state verifier for a required object, filling it in as an empty one when missing.
+export function makeSilentVerifier(overrides: Partial<IStateVerifier> = {}): IStateVerifier {
+  return {
+    description: () => "value missing",
+    type: "object",
+    required: true,
+    silent: true,
+    repair: () => ({}),
     ...overrides,
   };
 }
@@ -789,7 +815,7 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
  */
 const harnessGames = new Set<string>();
 
-function registerHarnessGame(gameId: string): void {
+export function registerHarnessGame(gameId: string): void {
   harnessGames.add(gameId);
   const gameReg = local<{
     gameModeManager: unknown;
@@ -850,6 +876,8 @@ const DEFAULT_BINDINGS: IHarnessReducerBinding[] = [
 
 // carries the setState escape hatch through the store as a whole-state replacement dispatch
 const REPLACE_TYPE = "__harness_replace_state";
+// a watched value no state can hold, so the first change always reaches the callback
+const UNSEEN_STATE_VALUE = Symbol("unseen state value");
 // the production hydration action: each bound slice becomes the payload's value at its path,
 // merged over the spec's defaults
 const HYDRATE_REPLACE_TYPE = "__hydrate_replace";
@@ -944,6 +972,7 @@ export function makeApiHarness(
   const historyEntries: IApiHarness["historyEntries"] = [];
   const showHistoryCalls: IApiHarness["showHistoryCalls"] = [];
   const runExecutableCalls: IApiHarness["runExecutableCalls"] = [];
+  let runProcess = (_options: IRunOptions): Promise<void> => Promise.resolve();
 
   const api = {
     getState: () => store.getState(),
@@ -959,7 +988,15 @@ export function makeApiHarness(
       events.on(event, cb);
     },
     onStateChange: (statePath: string[], cb: (previous: unknown, current: unknown) => void) => {
-      watcher.on(statePath, ({ prevValue, currentValue }) => cb(prevValue, currentValue));
+      // a dispatch inside a callback replays the change being handled; skipped, as in production
+      let lastValue: unknown = UNSEEN_STATE_VALUE;
+      watcher.on(statePath, ({ prevValue, currentValue }) => {
+        if (lastValue !== UNSEEN_STATE_VALUE && currentValue === lastValue) {
+          return;
+        }
+        lastValue = currentValue;
+        cb(prevValue, currentValue);
+      });
     },
     sendNotification: (notification: INotification) => {
       notifications.push(notification);
@@ -967,7 +1004,7 @@ export function makeApiHarness(
     },
     runExecutable: (executable: string, args: string[], options: IRunOptions) => {
       runExecutableCalls.push({ executable, args, options });
-      return Promise.resolve();
+      return runProcess(options);
     },
     genMd5Hash: () => Promise.resolve({ md5sum: "test-md5", numBytes: 0 }),
     dismissNotification: () => undefined,
@@ -1011,6 +1048,10 @@ export function makeApiHarness(
     emit: (event: string, ...args: unknown[]) => {
       events.emit(event, ...args);
     },
+    emitAndAwait: async (event: string, ...args: unknown[]) => {
+      const listeners = events.listeners(event) as Array<(...listenerArgs: unknown[]) => unknown>;
+      await Promise.all(listeners.map((listener) => listener(...args)));
+    },
     getState: () => store.getState(),
     setState: (mutate: (draft: IState) => void) => {
       // copy-on-write
@@ -1027,6 +1068,9 @@ export function makeApiHarness(
     historyEntries,
     showHistoryCalls,
     runExecutableCalls,
+    setRunProcess: (run) => {
+      runProcess = run;
+    },
   };
 }
 
@@ -1067,17 +1111,114 @@ export function makeGameHarness(
 }
 
 /**
- * A file-based load order harness: a fake api seeded with an active profile and the game's mods,
- * plus an UpdateSet constructed against it. UpdateSet is injected so builders.ts stays free of the
- * renderer view layer, mirroring makeDriverHarness.
+ * The real profile_management extension over a fake api, for driving profile switches through
+ * state.
  */
-export function makeFbloHarness(
-  UpdateSetCtor: new (api: IExtensionApi, isFBLO: (gameId: string) => boolean) => UpdateSet,
-  opts: IFbloHarnessOpts = {},
-): IFbloHarness {
-  const base = makeGameHarness(opts);
-  const updateSet = new UpdateSetCtor(base.api, opts.isFBLO ?? (() => true));
-  return { ...base, updateSet };
+export async function makeProfileSwitchHarness(
+  init: (context: IExtensionContext) => boolean,
+  opts: IProfileSwitchOpts,
+): Promise<IProfileSwitchHarness> {
+  const gameIds = [...new Set(opts.profiles.map((profile) => profile.gameId))];
+  gameIds.forEach(registerHarnessGame);
+
+  const gameRoot = await mkdtemp(path.join(os.tmpdir(), "vortex-profile-switch-"));
+  const gameSettingsPath = (gameId: string) => path.join(gameRoot, gameId, "settings.ini");
+  const profileDir = (profileId: string) => {
+    const profile = opts.profiles.find((candidate) => candidate.id === profileId);
+    if (profile === undefined) {
+      throw new Error(`unknown profile ${profileId}`);
+    }
+    return profilePath(profile);
+  };
+  const savedSettingsPath = (profileId: string) => path.join(profileDir(profileId), "settings.ini");
+  const writeSettings = async (filePath: string, content: string) => {
+    await mkdir(path.dirname(filePath), { recursive: true });
+    await writeFile(filePath, content);
+  };
+  const readSettings = (filePath: string) =>
+    readFile(filePath, "utf8").catch((): undefined => undefined);
+  for (const [gameId, content] of Object.entries(opts.gameSettings ?? {})) {
+    await writeSettings(gameSettingsPath(gameId), content);
+  }
+  for (const [profileId, content] of Object.entries(opts.savedSettings ?? {})) {
+    await writeSettings(savedSettingsPath(profileId), content);
+  }
+
+  const base = makeApiHarness(
+    { profiles: Object.fromEntries(opts.profiles.map((profile) => [profile.id, profile])) },
+    [
+      // the switch is driven through next/active/last-active profile and the per-game pending flag
+      { path: ["settings", "profiles"], reducer: profileSettingsReducer },
+      { path: ["persistent", "deployment"], reducer: deploymentReducer },
+    ],
+  );
+  base.setState((draft) => {
+    draft.settings.profiles = {
+      activeProfileId: opts.activeProfileId,
+      nextProfileId: opts.activeProfileId,
+      lastActiveProfile: { ...opts.lastActive },
+    };
+    draft.persistent.deployment.needToDeploy = { ...opts.needToDeploy };
+    draft.session.base = { ...draft.session.base, commandLine: {} };
+  });
+
+  const { store } = base.api;
+  const deployed: string[] = [];
+  base.api.events.on("deploy-mods", (cb: (err: Error | null) => void, profileId: string) => {
+    deployed.push(profileId);
+    const gameId = base.getState().persistent.profiles[profileId]?.gameId;
+    // stands in for the per-profile config a deployment generates (plugins.txt and the like)
+    void writeSettings(gameSettingsPath(gameId), `deployed:${profileId}`).then(() => {
+      store.dispatch(setDeploymentNecessary(gameId, false));
+      cb(null);
+    });
+  });
+
+  const onceCallbacks: Array<() => void> = [];
+  const registered: Record<string, unknown> = {
+    api: base.api,
+    once: (cb: () => void) => onceCallbacks.push(cb),
+  };
+  // every other register* call is irrelevant to switching, so it is a no-op
+  const context = new Proxy(registered, {
+    get: (target, prop: string) => (prop in target ? target[prop] : () => undefined),
+  }) as unknown as IExtensionContext;
+  const logStart = vi.mocked(window.api).log.mock.calls.length;
+  init(context);
+  gameIds.forEach((gameId) => context.registerProfileFile(gameId, gameSettingsPath(gameId)));
+  const nextProfileChange = () =>
+    new Promise<void>((resolve) => {
+      base.api.events.once("profile-did-change", () => resolve());
+    });
+  // startup saves the active profile's files, then announces the profile
+  const started = nextProfileChange();
+  onceCallbacks.forEach((cb) => cb());
+  await started;
+
+  return {
+    ...base,
+    deployed,
+    switchTo: (profileId: string) => {
+      const switched = nextProfileChange();
+      store.dispatch(setNextProfile(profileId));
+      return switched;
+    },
+    gameSettings: (gameId: string) => readSettings(gameSettingsPath(gameId)),
+    savedSettings: (profileId: string) => readSettings(savedSettingsPath(profileId)),
+    // test-setup stubs window.api.log with a vi.fn, so its calls are the renderer's log
+    loggedMessages: () =>
+      vi
+        .mocked(window.api)
+        .log.mock.calls.slice(logStart)
+        .map((call) => String(call[1])),
+    cleanup: async () => {
+      await Promise.all(
+        [gameRoot, ...opts.profiles.map(profilePath)].map((dir) =>
+          rm(dir, { recursive: true, force: true }),
+        ),
+      );
+    },
+  };
 }
 
 /**
@@ -1463,6 +1604,38 @@ export function makeLoadOrderEntry(overrides: Partial<ILoadOrderEntry> = {}): IL
     enabled: true,
     ...overrides,
   };
+}
+
+/** A load order registration whose functors do nothing; defaults to an id-less order for "skyrim". */
+export function makeLoadOrderGameInfo(
+  overrides: Partial<ILoadOrderGameInfo> = {},
+): ILoadOrderGameInfo {
+  return {
+    gameId: "skyrim",
+    serializeLoadOrder: () => Promise.resolve(),
+    deserializeLoadOrder: () => Promise.resolve([]),
+    validate: () => Promise.resolve(undefined),
+    ...overrides,
+  };
+}
+
+/** A load order of default entries with the given ids, in that order. */
+export function makeLoadOrder(...entryIds: string[]): LoadOrder {
+  return entryIds.map((id) => makeLoadOrderEntry({ id }));
+}
+
+/** A load order registration as the registry stores it, from an official extension. */
+export function makeRegisteredLoadOrder(
+  overrides: Partial<ILoadOrderGameInfo> = {},
+): IRegisteredLoadOrder {
+  return resolveEntry(makeLoadOrderGameInfo(overrides), false);
+}
+
+/** A failed load order validation with one invalid entry. */
+export function makeValidationResult(
+  overrides: Partial<IValidationResult> = {},
+): IValidationResult {
+  return { invalid: [{ id: "entry-1.pak", reason: "missing master" }], ...overrides };
 }
 
 /**

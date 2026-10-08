@@ -1848,8 +1848,8 @@ class ExtensionManager {
     log("info", "all extensions initialized");
   }
 
-  private migrateExtensions() {
-    type MigrationFunc = (oldVersion: string) => PromiseBB<void>;
+  private migrateExtensions(): void {
+    type MigrationFunc = (oldVersion: string) => PromiseLike<void>;
 
     const migrations: { [ext: string]: MigrationFunc[] } = {};
 
@@ -1883,7 +1883,8 @@ class ExtensionManager {
             if (migrations[ext.name] === undefined) {
               this.mApi.store.dispatch(setExtensionVersion(existingExtensionKey, newVersion));
             } else {
-              PromiseBB.mapSeries(migrations[ext.name], (mig) => mig(oldVersion))
+              const promises = migrations[ext.name].map((mig) => Promise.resolve(mig(oldVersion)));
+              Promise.all(promises)
                 .then(() => {
                   log("info", "set extension version", {
                     name: ext.name,
@@ -1897,8 +1898,7 @@ class ExtensionManager {
                   this.mApi.showErrorNotification("Extension failed to migrate", error, {
                     allowReport: ext.info.author === COMPANY_ID,
                   });
-                })
-                .then(() => null);
+                });
             }
           }
         } catch (err) {
@@ -2417,7 +2417,7 @@ class ExtensionManager {
                     reject(err);
                   })
                   .on("close", (code, signal) => {
-                    options.onExit?.(code);
+                    options.onExit?.(code, signal);
                     const game = activeGameId(this.mApi.store.getState());
                     if (code === null) {
                       log("warn", "child process terminated by signal", {

@@ -4,7 +4,10 @@
   "description": "Support for The Witcher 3",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm exec tsc",
+    "lint:strict": "pnpm exec node ../../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -13,8 +16,33 @@
   "config": {
     "game": "The Witcher 3"
   },
+  "dependencies": {
+    "semver": "catalog:"
+  },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/nexus-api": "catalog:",
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/bluebird": "catalog:",
+    "@types/lodash": "catalog:",
+    "@types/minimatch": "catalog:",
+    "@types/react": "catalog:",
+    "@types/semver": "catalog:",
+    "@vortex/extension-test-mocks": "workspace:*",
+    "bluebird": "catalog:",
+    "exe-version": "workspace:*",
+    "ini": "catalog:",
+    "lodash": "catalog:",
+    "minimatch": "catalog:",
+    "react": "catalog:",
+    "react-bootstrap": "catalog:",
+    "react-i18next": "catalog:",
+    "react-redux": "catalog:",
+    "redux-act": "catalog:",
+    "shortid": "catalog:",
+    "turbowalk": "catalog:",
+    "vortex-parse-ini": "catalog:",
+    "winapi-bindings": "catalog:",
+    "xml2js": "catalog:"
   },
   "nx": {
     "tags": [

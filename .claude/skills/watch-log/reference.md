@@ -62,7 +62,7 @@ This prints numbered files by suffix descending (older first), then `vortex.log`
 | chunk                   | holds                                                                                                 | loaded by                         |
 | ----------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------- |
 | `shared/sessions.md`    | session boundary markers, 4-state termination, instanceId, scoping, release-currency (stale-log) gate | §B, §E, §F                        |
-| `shared/lifecycle.md`   | download / install / collection / deploy markers + thread keys                                        | §E, §F                            |
+| `shared/lifecycle.md`   | download / install / collection / deploy / profile switch markers + thread keys                       | §E, §F                            |
 | `shared/persistence.md` | persist:diff / slow-write / wedged-write markers                                                      | §C                                |
 | `shared/multi-file.md`  | multiple / foreign-file handling (dedup, no cross-correlate)                                          | any mode given >1 / foreign files |
 | `shared/edge-cases.md`  | operational edge cases (app running, file-not-yet, firehose)                                          | §A, §B                            |

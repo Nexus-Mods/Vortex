@@ -167,7 +167,7 @@ export const PopoverDemo = () => {
 
             <PopoverPanel className="nxm-popover-panel-controls">
               <PopoverPanelGroup>
-                <PopoverPanelGroupItem label="Display as">
+                <PopoverPanelGroupItem passive label="Display as">
                   <Picker
                     button={{
                       leftIconPath: layout === "list" ? mdiViewList : mdiViewGrid,
@@ -182,11 +182,7 @@ export const PopoverDemo = () => {
 
               <PopoverPanelGroup>
                 <PopoverPanelGroupItem label="Show hidden items">
-                  <Switch
-                    aria-label="Show hidden items"
-                    checked={showHidden}
-                    onChange={setShowHidden}
-                  />
+                  <Switch checked={showHidden} onChange={setShowHidden} />
                 </PopoverPanelGroupItem>
               </PopoverPanelGroup>
 

@@ -39,7 +39,7 @@ catalog:
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.4
   "@nexusmods/fomod-installer-native": 0.13.4
-  "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+  "@nexusmods/nexus-api": github:Nexus-Mods/node-nexus-api#c5eda4a46cafb5dc8000ed2a7986b22132625e2e
   "@nosferatu500/react-sortable-tree": 4.4.0
   "@nosferatu500/theme-file-explorer": 3.0.21
   "@opentelemetry/api": 1.9.1
@@ -53,6 +53,7 @@ catalog:
   "@pmmmwh/react-refresh-webpack-plugin": 0.6.2
   "@stylistic/eslint-plugin": 5.10.0
   "@tailwindcss/cli": 4.3.2
+  "@tanstack/react-virtual": 3.13.23
   "@testing-library/dom": 10.4.1
   "@testing-library/jest-dom": 6.9.1
   "@testing-library/react": 16.3.0
@@ -83,7 +84,7 @@ catalog:
   "@types/numeral": 2.0.5
   "@types/packery": 1.4.37
   "@types/prop-types": 15.7.15
-  "@types/react": ^18.3.0
+  "@types/react": ^18.3.31
   "@types/react-bootstrap": 0.32.37
   "@types/react-color": 2.17.12
   "@types/react-datepicker": 2.11.1
@@ -179,7 +180,7 @@ catalog:
   limiter: 3.0.0
   lint-staged: 17.0.8
   lodash: 4.17.23
-  loot: github:Nexus-Mods/node-loot#baaec62c05eed717ab401016f5ec06c62b8bf5e6
+  loot: github:Nexus-Mods/node-loot#44306bda0dd9c54e1e38c8ab217afedffd4510aa
   lru-cache: 11.2.7
   markdown-ast: 0.2.1
   memoize-one: 5.2.1
@@ -187,7 +188,7 @@ catalog:
   minimist: 1.2.8
   mixpanel-browser: 2.79.0
   modmeta-db: github:Nexus-Mods/modmeta-db#daa8935b6e38e255ec192c908adfce35d47c0336
-  nexus-api: github:Nexus-Mods/node-nexus-api#da9b8eda8a3f381f04d87c7290595066ccbdbc5d
+  nexus-api: github:Nexus-Mods/node-nexus-api#c5eda4a46cafb5dc8000ed2a7986b22132625e2e
   node-7z: github:Nexus-Mods/node-7z#b75def8d0d7d81a03f4526c52b8ada9a34a06479
   node-abi: 4.35.0
   normalize-url: 6.1.0
@@ -329,7 +330,7 @@ allowBuilds:
   esbuild: true
   font-scanner: true
   leveldown: true
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/baaec62c05eed717ab401016f5ec06c62b8bf5e6: true
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa: true
   node@runtime:24.17.0: true
   nx: false
   winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1: true

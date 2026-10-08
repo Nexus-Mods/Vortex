@@ -11,7 +11,8 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "devDependencies": {
     "@types/node": "catalog:",

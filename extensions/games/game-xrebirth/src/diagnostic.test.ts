@@ -1,3 +1,4 @@
+import { types } from "@nexusmods/vortex-api";
 import { describe, test, expect } from "vitest";
 
 import { healthChecks } from "./diagnostic";
@@ -30,99 +31,101 @@ const ctx = {
   attributes: {},
 };
 
+const fakeApi: Parameters<types.IModHealthCheck["checkMod"]>["0"] = {} as any;
+
 describe("modHasFilesCheck", () => {
   test("warns when installer produced no files", async () => {
-    const result = await modHasFilesCheck!.checkMod(
-      {},
-      { ...ctx, files: mod({ files: [] }).files },
-    );
+    const result = await modHasFilesCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: mod({ files: [] }).files,
+    });
     expect(result.status).toBe("warning");
     expect(result.message).toMatch(/no files/i);
   });
 
   test("passes when there is at least one file", async () => {
-    const result = await modHasFilesCheck!.checkMod({}, { ...ctx, files: ["a/b.xml"] });
+    const result = await modHasFilesCheck!.checkMod(fakeApi, { ...ctx, files: ["a/b.xml"] });
     expect(result.status).toBe("passed");
   });
 });
 
 describe("contentXmlCustomFileNameCheck", () => {
   test("not applicable when not a content.xml mod", async () => {
-    const result = await customFileNameCheck!.checkMod(
-      {},
-      { ...ctx, files: ["readme.txt"], attributes: {} },
-    );
+    const result = await customFileNameCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: ["readme.txt"],
+      attributes: {},
+    });
     expect(result.status).toBe("passed");
     expect(result.message).toMatch(/not applicable/i);
   });
 
   test("warns when content.xml mod is missing customFileName", async () => {
-    const result = await customFileNameCheck!.checkMod(
-      {},
-      { ...ctx, files: ["mod/content.xml"], attributes: {} },
-    );
+    const result = await customFileNameCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: ["mod/content.xml"],
+      attributes: {},
+    });
     expect(result.status).toBe("warning");
     expect(result.message).toMatch(/missing customFileName/i);
   });
 
   test("passes when content.xml mod has customFileName", async () => {
-    const result = await customFileNameCheck!.checkMod(
-      {},
-      {
-        ...ctx,
-        files: ["mod/content.xml"],
-        attributes: { customFileName: "Awesome Mod" },
-      },
-    );
+    const result = await customFileNameCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: ["mod/content.xml"],
+      attributes: { customFileName: "Awesome Mod" },
+    });
     expect(result.status).toBe("passed");
   });
 
   test("detects content.xml at any depth, case-insensitive", async () => {
-    const result = await customFileNameCheck!.checkMod(
-      {},
-      { ...ctx, files: ["deep/path/Content.XML"], attributes: {} },
-    );
+    const result = await customFileNameCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: ["deep/path/Content.XML"],
+      attributes: {},
+    });
     expect(result.status).toBe("warning");
   });
 });
 
 describe("modShapeRecognisedCheck", () => {
   test("recognised as content.xml mod", async () => {
-    const result = await modShapeCheck!.checkMod(
-      {},
-      { ...ctx, files: ["a/content.xml"], attributes: {} },
-    );
+    const result = await modShapeCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: ["a/content.xml"],
+      attributes: {},
+    });
     expect(result.status).toBe("passed");
     expect(result.message).toMatch(/content\.xml/);
   });
 
   test("recognised by tagged modType", async () => {
-    const result = await modShapeCheck!.checkMod(
-      {},
-      {
-        ...ctx,
-        files: ["tool.exe"],
-        attributes: { modType: XREBIRTH_MOD_TYPES.utility },
-      },
-    );
+    const result = await modShapeCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: ["tool.exe"],
+      attributes: { modType: XREBIRTH_MOD_TYPES.utility },
+    });
     expect(result.status).toBe("passed");
     expect(result.message).toContain(XREBIRTH_MOD_TYPES.utility);
   });
 
   test("recognised by stopPattern match", async () => {
-    const result = await modShapeCheck!.checkMod(
-      {},
-      { ...ctx, files: ["data.cat"], attributes: {} },
-    );
+    const result = await modShapeCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: ["data.cat"],
+      attributes: {},
+    });
     expect(result.status).toBe("passed");
     expect(result.message).toMatch(/stopPatterns/);
   });
 
   test("warns when nothing recognised", async () => {
-    const result = await modShapeCheck!.checkMod(
-      {},
-      { ...ctx, files: ["random.bin"], attributes: {} },
-    );
+    const result = await modShapeCheck!.checkMod(fakeApi, {
+      ...ctx,
+      files: ["random.bin"],
+      attributes: {},
+    });
     expect(result.status).toBe("warning");
   });
 });

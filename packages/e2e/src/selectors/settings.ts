@@ -10,7 +10,7 @@ export const AUTOMATION_LABELS = {
 export class SettingsPage {
   readonly page: Page;
   readonly languageLabel: Locator;
-  readonly languageSelect: Locator;
+  readonly languagePicker: Locator;
   readonly checkboxes: Locator;
   readonly darkThemeLabel: Locator;
 
@@ -25,7 +25,13 @@ export class SettingsPage {
   constructor(page: Page) {
     this.page = page;
     this.languageLabel = page.getByText("Language").first();
-    this.languageSelect = page.getByRole("combobox", { name: "Language" });
+    // The picker isn't labelled by its heading; it's the button in the same
+    // block as the exact "Language" text. It shows the current language.
+    this.languagePicker = page
+      .getByText("Language", { exact: true })
+      .locator("..")
+      .getByRole("button")
+      .first();
     this.checkboxes = page.getByRole("checkbox");
     this.darkThemeLabel = page.getByText("Dark theme").first();
 

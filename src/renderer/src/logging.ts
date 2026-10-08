@@ -5,6 +5,10 @@ function replacer(_key: string, value: unknown): unknown {
     return { message: value.message, name: value.name, stack: value.stack };
   }
 
+  if (typeof value === "bigint") {
+    return value.toString();
+  }
+
   return value;
 }
 

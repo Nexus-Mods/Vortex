@@ -1,42 +1,40 @@
-import React, { type ReactNode } from "react";
+import React from "react";
 
-import { Typography } from "@/ui/components/typography/Typography";
-import { joinClasses } from "@/ui/utils/joinClasses";
+import type { ITableColumn, ITableGroup } from "./Table.types";
+import { TableCell } from "./TableCell";
 
-import type { IColumnDef } from "./Table.types";
-
-interface ITableRowProps<T> {
-  columns: Array<IColumnDef<T>>;
+interface ITableRowProps<T, G extends ITableGroup<T>> {
+  /** The table's columns, each rendering one of the row's cells. */
+  columns: Array<ITableColumn<T, G>>;
+  /** Its place among the table's rows, under the head. */
+  index: number;
+  /** Its place among every row, the head's included, counting from 1. */
+  rowIndex: number;
+  /** The row's depth in a treegrid: 2 under a group. Unset in a flat grid. */
+  level?: number;
+  /** The item the row shows, passed to each column's cell. */
   row: T;
 }
 
-export const TableRow = <T,>({ columns, row }: ITableRowProps<T>) => (
-  <tr className="nxm-table-row">
+/** One item's row: a cell per column, each a subgrid track of the table. */
+export const TableRow = <T, G extends ITableGroup<T>>({
+  columns,
+  index,
+  level,
+  row,
+  rowIndex,
+}: ITableRowProps<T, G>) => (
+  <div
+    aria-level={level}
+    aria-rowindex={rowIndex}
+    className="nxm-table-row"
+    data-index={index}
+    role="row"
+  >
     {columns.map((column) => (
-      <td
-        className={joinClasses("nxm-table-td", {
-          "nxm-table-cell-center": column.align === "center",
-          "nxm-table-cell-right": column.align === "right",
-        })}
-        key={column.id}
-      >
-        <div className="nxm-table-cell-inner">
-          {column.cell ? column.cell(row) : String(column.getValue?.(row) ?? "")}
-        </div>
-      </td>
+      <TableCell align={column.align} key={column.id}>
+        {column.cell(row)}
+      </TableCell>
     ))}
-  </tr>
-);
-
-interface ITableEmptyRowProps {
-  colSpan: number;
-  emptyState?: ReactNode;
-}
-
-export const TableEmptyRow = ({ colSpan, emptyState }: ITableEmptyRowProps) => (
-  <tr>
-    <td className="nxm-table-empty" colSpan={colSpan}>
-      {emptyState ?? <Typography appearance="subdued">No results found.</Typography>}
-    </td>
-  </tr>
+  </div>
 );

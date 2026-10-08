@@ -19,7 +19,10 @@ export class HealthCheckPage {
   readonly premiumBanner: Locator;
   readonly activeTab: Locator;
   readonly hiddenTab: Locator;
-  readonly installAllButton: Locator;
+  readonly warningsSection: Locator;
+  readonly suggestionsSection: Locator;
+  readonly warningsInstallAllButton: Locator;
+  readonly suggestionsInstallAllButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -39,7 +42,14 @@ export class HealthCheckPage {
     );
     this.activeTab = this.root.getByRole("tab", { name: /Active/ });
     this.hiddenTab = this.root.getByRole("tab", { name: /Hidden/ });
-    this.installAllButton = this.root.getByRole("button", { name: /1-click install all/ });
+    this.warningsSection = this.root.getByTestId("health-check-section-warning");
+    this.suggestionsSection = this.root.getByTestId("health-check-section-suggestion");
+    this.warningsInstallAllButton = this.warningsSection.getByRole("button", {
+      name: /1-click install all/,
+    });
+    this.suggestionsInstallAllButton = this.suggestionsSection.getByRole("button", {
+      name: /1-click install all/,
+    });
   }
 }
 
@@ -120,7 +130,8 @@ export class HealthCheckDetail {
     this.requiresPickLine = this.root.getByText(
       /Requires \d+ additional mod files? to be picked to work correctly/,
     );
-    this.orDivider = this.root.getByText("Or", { exact: true });
+    // One divider sits between each pair of alternatives, so there can be several.
+    this.orDivider = this.root.getByText("Or", { exact: true }).first();
     this.feedbackPrompt = this.root.getByText("Was this warning helpful?");
     this.feedbackThanks = this.root.getByText("Thanks for your feedback");
     this.notHelpfulButton = this.root.getByRole("button", { name: "Not helpful", exact: true });
@@ -191,6 +202,9 @@ export class HealthCheckFeedbackModal {
   }
 }
 
+/** `shared::mod_may_be_required_for`, the one title the list and detail both use. */
+const SUGGESTION_TITLE = /Missing mod may be required for:/;
+
 export class HealthCheckSuggestions {
   readonly page: Page;
   readonly root: Locator;
@@ -201,16 +215,14 @@ export class HealthCheckSuggestions {
   }
 
   row(requiringModName?: string | RegExp): Locator {
-    const rows = this.root
-      .locator('[role="button"]')
-      .filter({ hasText: /Additional mod files? may be required for:/ });
+    const rows = this.root.locator('[role="button"]').filter({ hasText: SUGGESTION_TITLE });
     return (
       requiringModName === undefined ? rows : rows.filter({ hasText: requiringModName })
     ).first();
   }
 
   title(requiringModName?: string | RegExp): Locator {
-    return this.row(requiringModName).getByText(/Additional mod files? may be required for:/);
+    return this.row(requiringModName).getByText(SUGGESTION_TITLE);
   }
 
   missingMod(requiringModName?: string | RegExp): Locator {

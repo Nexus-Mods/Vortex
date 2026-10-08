@@ -1,5 +1,5 @@
 import type { OpenChangeReason } from "@floating-ui/react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, type Mock, vi } from "vitest";
@@ -10,11 +10,13 @@ import { TooltipDelayGroup } from "./TooltipDelayGroup";
 // --- Helpers ---
 
 interface IRenderOptions {
+  closeOnPress?: boolean;
   content?: string;
   customContent?: React.ReactNode;
   disabled?: boolean;
   interactive?: boolean;
   placement?: ITooltipPlacement;
+  positionerClassName?: string;
 }
 
 // delay={0} throughout: the 300ms default would mean fake timers in every test.
@@ -54,6 +56,27 @@ describe("Tooltip", () => {
     expect(trigger).toBeInTheDocument();
   });
 
+  it("closes when its trigger is pressed", async () => {
+    const { trigger } = renderComponent();
+    await userEvent.hover(trigger);
+    await screen.findByRole("tooltip");
+
+    // A press only: a full click also focuses, and jsdom counts that as keyboard focus.
+    fireEvent.pointerDown(trigger);
+
+    await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+  });
+
+  it("stays open through a press with closeOnPress off", async () => {
+    const { trigger } = renderComponent({ closeOnPress: false });
+    await userEvent.hover(trigger);
+    await screen.findByRole("tooltip");
+
+    fireEvent.pointerDown(trigger);
+
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  });
+
   it("does not show the content until hovered", () => {
     renderComponent();
     expect(screen.queryByText("Deploys every enabled mod")).not.toBeInTheDocument();
@@ -65,6 +88,15 @@ describe("Tooltip", () => {
     await waitFor(() => {
       expect(screen.getByRole("tooltip")).toHaveTextContent("Deploys every enabled mod");
     });
+  });
+
+  it("puts positionerClassName on the layer that owns the stacking", async () => {
+    const { trigger } = renderComponent({ positionerClassName: "z-(--z-index-flyout)" });
+    await userEvent.hover(trigger);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toBeInTheDocument());
+
+    const positioner = screen.getByRole("tooltip").closest(".nxm-tooltip-positioner");
+    expect(positioner).toHaveClass("z-(--z-index-flyout)");
   });
 
   it("hides the content again when the pointer leaves", async () => {

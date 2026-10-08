@@ -12,8 +12,7 @@ import type { OptionalIssueAnalyticsIdentity } from "./tracking";
  * optional throughout, so the actions stay usable without analytics context.
  */
 export type IInstallIdentity = OptionalIssueAnalyticsIdentity & {
-  mod_id: number;
-  mod_name: string;
+  mod_uid: string;
   mod_version: string;
 };
 
@@ -52,7 +51,8 @@ export const trackedInstall = async (
       trackInstallFailed({
         issue_id: identity.issue_id,
         check_id: identity.check_id,
-        mod_id: identity.mod_id,
+        source_mod_uid: identity.source_mod_uid,
+        mod_uid: identity.mod_uid,
         error_reason: classifyErrorCode(err),
       });
 

@@ -44,6 +44,7 @@ export type {
   ILoadOrderEntry as IFBLOLoadOrderEntry,
   ILoadOrderGameInfo,
   ILoadOrderGameInfo as IFBLOGameInfo,
+  ConflictWinner as FBLOConflictWinner,
   IValidationResult,
   IValidationResult as IFBLOValidationResult,
   IInvalidResult as IFBLOInvalidResult,

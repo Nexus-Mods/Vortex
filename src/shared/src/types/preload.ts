@@ -121,10 +121,8 @@ export interface Api {
   featureFlags: FeatureFlagsApi;
 
   /** Filesystem API */
-  fs: BetterOmit<FileSystem, "enumerateDirectory" | "createStream" | "readFile" | "writeFile">;
+  fs: FileSystem;
 }
-
-type BetterOmit<T, K extends keyof T> = { [P in Exclude<keyof T, K>]: T[P] };
 
 export interface Example {
   /** pong */

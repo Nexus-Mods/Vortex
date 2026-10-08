@@ -20,11 +20,11 @@ export const gameSupportXboxPass = {
 const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
   {
     skyrim: {
-      mygamesPath: "skyrim",
+      mygamesPath: "Skyrim",
       iniName: "Skyrim.ini",
     },
     enderal: {
-      mygamesPath: "enderal",
+      mygamesPath: "Enderal",
       iniName: "Enderal.ini",
     },
     skyrimse: {

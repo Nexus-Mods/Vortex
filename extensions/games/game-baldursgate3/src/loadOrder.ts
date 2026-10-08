@@ -1,17 +1,14 @@
 import path from "path";
 
-/* eslint-disable */
 import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as semver from "semver";
-import { LockedState } from "vortex-api/lib/extensions/file_based_loadorder/types/types";
-import { IOpenOptions, ISaveOptions } from "vortex-api/lib/types/IExtensionContext";
 import { Builder, parseStringPromise, RenderOptions } from "xml2js";
 
 import PakInfoCache, { ICacheEntry } from "./cache";
 import { GAME_ID, LO_FILE_NAME, NOTIF_IMPORT_ACTIVITY } from "./common";
 import { DivineAborted, DivineExecMissing, DivinePakInvalid } from "./divineCore";
-import { BG3Pak, IModNode, IModSettings, IProps, IRootNode } from "./types";
+import { IModNode, IModSettings, IProps, IRootNode } from "./types";
 import {
   fileExists,
   findNode,
@@ -144,7 +141,7 @@ export async function deserialize(context: types.IExtensionContext): Promise<typ
 
     // get any pak files that aren't in the filteredLoadOrder
     const loEntryIds = new Set(filteredLoadOrder.map((entry) => entry.id));
-    const addedMods: BG3Pak[] = paks.filter((pak) => !loEntryIds.has(pak.fileName));
+    const addedMods = paks.filter((pak) => !loEntryIds.has(pak.fileName));
 
     logDebug("deserialize addedMods=", addedMods);
 
@@ -162,7 +159,7 @@ export async function deserialize(context: types.IExtensionContext): Promise<typ
         enabled: true, // not using load order for enabling/disabling
         name: pak.info?.name || path.basename(pak.fileName, ".pak"),
         data: pak.info,
-        locked: pak.info.isListed as LockedState,
+        locked: pak.info.isListed,
       });
     });
 
@@ -180,7 +177,7 @@ export async function deserialize(context: types.IExtensionContext): Promise<typ
 
 export async function importFromBG3MM(context: types.IExtensionContext): Promise<void> {
   const api = context.api;
-  const options: IOpenOptions = {
+  const options: types.IOpenOptions = {
     title: api.translate("Please choose a BG3MM .json load order file to import from"),
     filters: [{ name: "BG3MM Load Order", extensions: ["json"] }],
   };
@@ -224,7 +221,7 @@ export async function importModSettingsFile(api: types.IExtensionApi): Promise<b
   const state = api.getState();
   const profileId = selectors.activeProfile(state)?.id;
 
-  const options: IOpenOptions = {
+  const options: types.IOpenOptions = {
     title: api.translate("Please choose a BG3 .lsx file to import from"),
     filters: [{ name: "BG3 Load Order", extensions: ["lsx"] }],
   };
@@ -406,7 +403,7 @@ export async function processLsxFile(api: types.IExtensionApi, lsxPath: string) 
           enabled: true,
           name: pak.info?.name || path.basename(pak.fileName, ".pak"),
           data: pak.info,
-          locked: pak.info.isListed as LockedState,
+          locked: pak.info.isListed,
         });
       }
 
@@ -423,7 +420,7 @@ export async function processLsxFile(api: types.IExtensionApi, lsxPath: string) 
         enabled: true,
         name: pak.info?.name || path.basename(pak.fileName, ".pak"),
         data: pak.info,
-        locked: pak.info.isListed as LockedState,
+        locked: pak.info.isListed,
       });
     });
 
@@ -608,14 +605,14 @@ export async function exportToFile(api: types.IExtensionApi): Promise<boolean | 
   // to the previous hack job of selectFile but actually writes
 
   if (api.saveFile !== undefined) {
-    const options: ISaveOptions = {
+    const options: types.ISaveOptions = {
       title: api.translate("Please choose a BG3 .lsx file to export to"),
       filters: [{ name: "BG3 Load Order", extensions: ["lsx"] }],
     };
 
     selectedPath = await api.saveFile(options);
   } else {
-    const options: IOpenOptions = {
+    const options: types.IOpenOptions = {
       title: api.translate("Please choose a BG3 .lsx file to export to"),
       filters: [{ name: "BG3 Load Order", extensions: ["lsx"] }],
       create: true,

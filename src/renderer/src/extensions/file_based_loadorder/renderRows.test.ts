@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { makeLoadOrderEntry } from "../../test-utils/builders";
 import { RenderRowsCache } from "./renderRows";
+import { DEFAULT_LOAD_ORDER_ID } from "./types/types";
 
 const order = (...ids: string[]) => ids.map((id) => makeLoadOrderEntry({ id }));
 
@@ -57,6 +58,16 @@ describe("RenderRowsCache", () => {
     ];
     const rows = cache.build(lo, undefined, false, "");
     expect(rows.every((r) => r.lockedEntriesCount === 2)).toBe(true);
+  });
+
+  it("tags every row with the load order it was built for", () => {
+    const rows = new RenderRowsCache("archive").build(order("a", "b"), undefined, false, "");
+    expect(rows.map((r) => r.loadOrderId)).toEqual(["archive", "archive"]);
+  });
+
+  it("tags rows with the primary load order by default", () => {
+    const rows = new RenderRowsCache().build(order("a"), undefined, false, "");
+    expect(rows[0].loadOrderId).toBe(DEFAULT_LOAD_ORDER_ID);
   });
 
   it("passes the toggleable flag through as displayCheckboxes", () => {

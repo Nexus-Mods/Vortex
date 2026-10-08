@@ -1,11 +1,11 @@
-import { mdiFolderCog } from "@mdi/js";
+import { mdiFolderCogOutline } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
-import { Input } from "@/ui/components/form/input/Input";
+import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Modal } from "@/ui/components/modal/Modal";
 import type { ITString } from "@/util/i18n";
 
@@ -80,9 +80,9 @@ export default function SettingsMediaAddSourceModal({
       onClose={onCloseWithReset}
     >
       <form className="flex flex-col gap-2">
-        <Input
+        <TextField
           required
-          id="media-source-name"
+          data-testid="media-source-name"
           label={t("settings::add_modal::source_name")}
           placeholder={t("settings::add_modal::source_name_placeholder")}
           type="text"
@@ -90,8 +90,8 @@ export default function SettingsMediaAddSourceModal({
           onChange={(e) => setSourceName(e.target.value)}
         />
 
-        <Input
-          id="media-source-description"
+        <TextField
+          data-testid="media-source-description"
           label={t("settings::add_modal::source_desc")}
           placeholder={t("settings::add_modal::source_desc_placeholder")}
           type="text"
@@ -100,11 +100,11 @@ export default function SettingsMediaAddSourceModal({
         />
 
         <div className="flex items-end">
-          <Input
+          <TextField
             readOnly
             required
-            fieldClassName="grow"
-            id="media-source-path"
+            data-testid="media-source-path"
+            fieldClassName="grow border-r-0"
             label={t("settings::add_modal::source_path")}
             type="text"
             value={sourcePath}
@@ -114,8 +114,8 @@ export default function SettingsMediaAddSourceModal({
           <Button
             appearance="subdued"
             brand="neutral"
-            className="shrink-0 self-end"
-            leftIconPath={mdiFolderCog}
+            className="shrink-0 self-end border-l-0"
+            leftIconPath={mdiFolderCogOutline}
             title={t("settings::add_modal::source_path_select")}
             onClick={() => void selectDirectory()}
           />

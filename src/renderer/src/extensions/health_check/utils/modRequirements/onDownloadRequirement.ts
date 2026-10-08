@@ -79,8 +79,7 @@ export async function onDownloadRequirement(
       api,
       {
         ...identity,
-        mod_id: modId,
-        mod_name: mod.modName,
+        mod_uid: mod.uid,
         mod_version: targetFile.version,
       },
       async () => {

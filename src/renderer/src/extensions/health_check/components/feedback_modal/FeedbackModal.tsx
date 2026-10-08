@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "../../../../ui/components/button/Button";
-import { Checkbox } from "../../../../ui/components/form/checkbox/Checkbox";
+import { CheckboxField } from "../../../../ui/components/form/checkbox_field/CheckboxField";
 import { Modal } from "../../../../ui/components/modal/Modal";
 import { Typography } from "../../../../ui/components/typography/Typography";
 
@@ -33,18 +33,16 @@ export const FeedbackModal = ({
 
       <div className="mt-4 space-y-2">
         {FEEDBACK_OPTIONS.map((key) => (
-          <Checkbox
+          <CheckboxField
             checked={checkedOptions.includes(key)}
             key={key}
-            onChange={(e) => {
-              const isChecked = e.target.checked;
+            label={t(`detail::feedback_modal::options::${key}`)}
+            onChange={(isChecked) =>
               setCheckedOptions((prev) =>
                 isChecked ? [...prev, key] : prev.filter((o) => o !== key),
-              );
-            }}
-          >
-            {t(`detail::feedback_modal::options::${key}`)}
-          </Checkbox>
+              )
+            }
+          />
         ))}
       </div>
 

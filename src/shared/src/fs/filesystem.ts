@@ -100,7 +100,7 @@ export interface FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath, undefined>>;
+  ): Promise<AsyncIterableIterator<QualifiedPath, undefined>>;
 
   /**
    * Returns an async iterator to enumerate the directory.
@@ -119,7 +119,7 @@ export interface FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<[QualifiedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<[QualifiedPath, Status], undefined>>;
 
   /**
    * Returns an async iterator to enumerate the directory.
@@ -138,7 +138,7 @@ export interface FileSystem {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<QualifiedPath | [QualifiedPath, Status]>>;
+  ): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status]>>;
 
   /**
    * Creates a readable stream.
@@ -149,7 +149,7 @@ export interface FileSystem {
     path: QualifiedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream>;
+  ): Promise<ReadableStream<Uint8Array>>;
 
   /**
    * Creates a writable stream.
@@ -160,7 +160,7 @@ export interface FileSystem {
     path: QualifiedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WritableStream>;
+  ): Promise<WritableStream<Uint8Array>>;
 
   /**
    * Creates a stream.
@@ -171,7 +171,7 @@ export interface FileSystem {
     path: QualifiedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream | WritableStream>;
+  ): Promise<ReadableStream<Uint8Array> | WritableStream<Uint8Array>>;
 
   /**
    * Creates a hardlink or symlink at `to` pointing to `from`.
@@ -206,7 +206,7 @@ export interface FileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<ResolvedPath, undefined>>;
+  ): Promise<AsyncIterableIterator<ResolvedPath, undefined>>;
 
   enumerateDirectory(
     path: ResolvedPath,
@@ -217,7 +217,7 @@ export interface FileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<[ResolvedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<[ResolvedPath, Status], undefined>>;
 
   enumerateDirectory(
     path: ResolvedPath,
@@ -228,24 +228,24 @@ export interface FileSystemBackend {
       include?: Pattern;
       exclude?: Pattern;
     },
-  ): Promise<AsyncIterator<ResolvedPath | [ResolvedPath, Status], undefined>>;
+  ): Promise<AsyncIterableIterator<ResolvedPath | [ResolvedPath, Status], undefined>>;
 
   createStream(
     path: ResolvedPath,
     mode: "r",
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream>;
+  ): Promise<ReadableStream<Uint8Array>>;
   createStream(
     path: ResolvedPath,
     mode: "w",
     options?: { start?: number },
-  ): Promise<WritableStream>;
+  ): Promise<WritableStream<Uint8Array>>;
 
   createStream(
     path: ResolvedPath,
     mode: string,
     options?: { start?: number; end?: number },
-  ): Promise<ReadableStream | WritableStream>;
+  ): Promise<ReadableStream<Uint8Array> | WritableStream<Uint8Array>>;
 
   createLink(from: ResolvedPath, to: ResolvedPath, type: "hardlink" | "symlink"): Promise<void>;
 }

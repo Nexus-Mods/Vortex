@@ -4,7 +4,9 @@
   "description": "Support for Untitled Goose Game",
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",
-    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo"
+    "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
+    "typecheck": "pnpm exec tsc",
+    "lint:strict": "pnpm exec node ../../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -14,7 +16,11 @@
     "game": "Untitled Goose Game"
   },
   "devDependencies": {
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@types/bluebird": "catalog:",
+    "@types/semver": "catalog:",
+    "bluebird": "catalog:",
+    "semver": "catalog:"
   },
   "nx": {
     "tags": [

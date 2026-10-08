@@ -1,6 +1,7 @@
 const Promise = require("bluebird");
 const path = require("path");
 const { fs, util, log } = require("@nexusmods/vortex-api");
+const winapi = require("winapi-bindings");
 const STEAMAPP_ID = "22300";
 const STEAMAPP_ID2 = "22370";
 const GOG_ID = "1454315831";
@@ -8,16 +9,6 @@ const EPIC_ID = "adeae8bbfc94427db57c7dfecce3f1d4";
 const MS_ID = "BethesdaSoftworks.Fallout3";
 
 const GAME_ID = "fallout3";
-
-const gameStoreIds = {
-  steam: [{ id: STEAMAPP_ID, prefer: 0 }, { id: STEAMAPP_ID2 }, { name: "Fallout 3.*" }],
-  xbox: [{ id: MS_ID }],
-  gog: [{ id: GOG_ID }],
-  epic: [{ id: EPIC_ID }],
-  registry: [
-    { id: "HKEY_LOCAL_MACHINE:Software\\Wow6432Node\\Bethesda Softworks\\Fallout3:Installed Path" },
-  ],
-};
 
 const tools = [
   {
@@ -68,8 +59,27 @@ const localeFoldersXbox = {
   es: "Fallout 3 GOTY Spanish",
 };
 
+async function findRegistryGame(key) {
+  const instPath = winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "Installed Path");
+  if (instPath.type !== "REG_SZ") return undefined;
+  const gamePath = instPath.value;
+  return { appid: key, name: path.basename(gamePath), gamePath, gameStoreId: "registry" };
+}
+
 async function findGame() {
-  const storeGames = await util.GameStoreHelper.find(gameStoreIds).catch(() => []);
+  // Same order as the removed GameStoreHelper.find; the first hit wins.
+  const lookups = [
+    util.GameStoreHelper.findByAppId(STEAMAPP_ID, "steam"),
+    util.GameStoreHelper.findByAppId(STEAMAPP_ID2, "steam"),
+    util.GameStoreHelper.findByName("Fallout 3.*", "steam"),
+    util.GameStoreHelper.findByAppId(MS_ID, "xbox"),
+    util.GameStoreHelper.findByAppId(GOG_ID, "gog"),
+    util.GameStoreHelper.findByAppId(EPIC_ID, "epic"),
+    findRegistryGame("Software\\Wow6432Node\\Bethesda Softworks\\Fallout3"),
+  ];
+  const storeGames = (
+    await Promise.all(lookups.map((lookup) => lookup.catch(() => undefined)))
+  ).filter((game) => game !== undefined);
 
   if (!storeGames.length) return;
 

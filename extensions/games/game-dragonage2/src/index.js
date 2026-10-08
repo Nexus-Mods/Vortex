@@ -16,9 +16,6 @@ function regget(key, val) {
 }
 
 function findGame() {
-  if (process.platform !== "win32") {
-    return Promise.reject(new Error("Currently only discovered on windows"));
-  }
   // Dragon Age 2 seems to store the installation directory information
   //  in different registry paths (possibly tied to game edition or localisation),
   //  namely within HKLM...\Dragon Age 2\Install Dir; OR HKLM...\Dragon Age II\Install Dir;

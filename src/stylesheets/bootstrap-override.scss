@@ -124,6 +124,11 @@
         margin-bottom: 0px;
     }
 
+    // Headless UI labels (form fields, popover rows) space themselves.
+    label[data-headlessui-state] {
+        margin: 0;
+    }
+
     .has-error {
         .help-block,
         .control-label,

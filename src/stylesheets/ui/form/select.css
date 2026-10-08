@@ -1,0 +1,51 @@
+@layer components {
+    .nxm-select {
+        width: 100%;
+        appearance: none;
+        border-radius: var(--radius-sm);
+        padding-block: calc(var(--spacing) * 2);
+        padding-left: calc(var(--spacing) * 4);
+        /* room for the chevron */
+        padding-right: calc(var(--spacing) * 12);
+
+        font-size: var(--text-body-lg);
+        line-height: var(--text-body-lg--line-height);
+        letter-spacing: var(--text-body-lg--letter-spacing);
+
+        color: var(--color-neutral-strong);
+        border: solid 1px var(--color-stroke-subdued);
+        background-color: var(--color-surface-low);
+
+        transition-property: color, background-color, border-color, outline-color, opacity;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &[data-disabled] {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        &[data-invalid] {
+            border-color: var(--color-danger-strong);
+        }
+
+        &:not([data-disabled], [data-invalid]) {
+            &[data-hover],
+            /* :focus, not data-focus, so a click shows it as well as the keyboard. */
+            &:focus {
+                border-color: var(--color-stroke-strong);
+            }
+        }
+    }
+
+    .nxm-select-icon {
+        position: absolute;
+        right: calc(var(--spacing) * 4);
+        pointer-events: none;
+        color: var(--color-neutral-subdued);
+
+        .nxm-select[data-disabled] + & {
+            opacity: 0.4;
+        }
+    }
+}

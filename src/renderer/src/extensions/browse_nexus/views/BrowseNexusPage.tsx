@@ -18,7 +18,7 @@ import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { CollectionTile } from "@/ui/components/collection_tile/CollectionTile";
 import { CollectionTileSkeleton } from "@/ui/components/collection_tile/CollectionTile.skeleton";
-import { Input } from "@/ui/components/form/input/Input";
+import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Listing } from "@/ui/components/listing/Listing";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 import { Pagination } from "@/ui/components/pagination/Pagination";
@@ -105,7 +105,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedTab, setSelectedTab] = useState<string>("collections");
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  const [searchValidationError, setSearchValidationError] = React.useState<string>("");
+  const [searchValidationError, setSearchValidationError] = useState<string>("");
   const itemsPerPage = 20;
 
   const handleSearch = () => {
@@ -266,13 +266,13 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           <TabPanel id="collections">
             <div className="space-y-3 p-6">
               <form
-                className="flex items-center gap-x-2"
+                className="flex items-start gap-x-2"
                 onSubmit={(e) => {
                   e.preventDefault();
                   handleSearch();
                 }}
               >
-                <Input
+                <TextField
                   errorMessage={searchValidationError || undefined}
                   fieldClassName="max-w-60"
                   hideLabel={true}

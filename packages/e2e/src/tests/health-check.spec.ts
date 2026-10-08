@@ -103,16 +103,21 @@ test.describe("Health Check - screen behaviour and settings", () => {
       });
     });
 
-    test("Check the premium banner is shown", async ({ vortexWindow, managedGame: _game }) => {
+    // The banner only sells 1-click installs when there is something to install;
+    // it's shown alongside a warning in health-check-file-requirement.spec.ts.
+    test("Check the premium banner is hidden when there are no issues", async ({
+      vortexWindow,
+      managedGame: _game,
+    }) => {
       const hc = new HealthCheckPage(vortexWindow);
 
       await test.step("Open the Health Check page", async () => {
         await navigateToHealthCheck(vortexWindow);
-        await expect(hc.title).toBeVisible();
+        await expect(hc.emptyStateTitle).toBeVisible({ timeout: Timeouts.NETWORK });
       });
 
-      await test.step("Premium banner is shown", async () => {
-        await expect(hc.premiumBanner).toBeVisible();
+      await test.step("Premium banner is not shown", async () => {
+        await expect(hc.premiumBanner).toHaveCount(0);
       });
     });
 

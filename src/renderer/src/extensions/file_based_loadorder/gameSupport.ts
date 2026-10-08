@@ -1,71 +1,69 @@
-import path from "path";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
-import * as fs from "../../util/fs";
+import { log } from "../../logging";
 import { isContributed } from "../../util/isContributed";
-import { log } from "../../util/log";
-import type { ILoadOrderGameInfo, ILoadOrderGameInfoExt } from "./types/types";
+import { entriesForGame, findEntry, registrationRejection, resolveEntry } from "./registry";
+import type { ILoadOrderGameInfo, IRegisteredLoadOrder } from "./types/types";
 
-const gameSupport: ILoadOrderGameInfoExt[] = [];
-export function addGameEntry(gameEntry: ILoadOrderGameInfo, extPath: string) {
-  if (gameEntry === undefined) {
-    log("error", "unable to add load order page - invalid game entry");
-    return;
+// The load orders game extensions registered.
+export class LoadOrderRegistry {
+  readonly #registered: IRegisteredLoadOrder[] = [];
+
+  // Registers a load order for an extension installed at extensionPath.
+  public add(gameEntry: ILoadOrderGameInfo, extensionPath: string): void {
+    // The LO page registration can be done as an "addon" through
+    //  another extension - which means we could have an officially supported
+    //  game extension but an unofficial load order registration so checking if
+    //  game.contributed === undefined is not sufficient - we need to read the
+    //  info.json file of the extension that registers the LO page.
+    this.#register(gameEntry, () => {
+      try {
+        const extensionInfo = JSON.parse(
+          readFileSync(path.join(extensionPath, "info.json"), { encoding: "utf8" }),
+        ) as { author?: string };
+        return isContributed(extensionInfo.author);
+      } catch (err) {
+        log("error", "Failed to parse extension information", err);
+        return undefined;
+      }
+    });
   }
 
-  const isDuplicate: boolean =
-    gameSupport.find((game) => game.gameId === gameEntry.gameId) !== undefined;
-
-  if (isDuplicate) {
-    log("debug", "attempted to add duplicate gameEntry to load order extension", gameEntry.gameId);
-    return;
+  // Registers a load order without reading info.json, for the addLoadOrderPage api.
+  public addInline(gameEntry: ILoadOrderGameInfo, isContributedEntry: boolean = false): void {
+    this.#register(gameEntry, () => isContributedEntry);
   }
 
-  // The LO page registration can be done as an "addon" through
-  //  another extension - which means we could have an officially supported
-  //  game extension but an unofficial load order registration so checking if
-  //  game.contributed === undefined is not sufficient - we need to read the
-  //  info.json file of the extension that registers the LO page.
-  let gameExtInfo;
-  try {
-    gameExtInfo = JSON.parse(
-      fs.readFileSync(path.join(extPath, "info.json"), { encoding: "utf8" }),
-    );
-  } catch (err) {
-    log("error", "Failed to parse extension information", err);
-    return;
+  public entries(gameId: string): IRegisteredLoadOrder[] {
+    return entriesForGame(this.#registered, gameId);
   }
 
-  gameSupport.push({
-    ...gameEntry,
-    isContributed: isContributed(gameExtInfo.author),
-  });
-}
-
-/**
- * Registers a load order entry without reading info.json from disk.
- * Used by the adaptor bridge where there is no extension directory
- * to inspect but the registration is always first-party.
- */
-export function addGameEntryInline(
-  gameEntry: ILoadOrderGameInfo,
-  isContributed: boolean = false,
-): void {
-  if (gameEntry === undefined) {
-    log("error", "unable to add load order page - invalid game entry");
-    return;
+  // Without a load order id, the game's first listed load order: its primary when it has one.
+  public find(gameId: string, loadOrderId?: string): IRegisteredLoadOrder | undefined {
+    return findEntry(this.#registered, gameId, loadOrderId);
   }
 
-  const isDuplicate: boolean =
-    gameSupport.find((game) => game.gameId === gameEntry.gameId) !== undefined;
+  #register(gameEntry: ILoadOrderGameInfo, contributed: () => boolean | undefined): void {
+    if (gameEntry === undefined) {
+      log("error", "unable to add load order page - invalid game entry");
+      return;
+    }
 
-  if (isDuplicate) {
-    log("debug", "attempted to add duplicate gameEntry to load order extension", gameEntry.gameId);
-    return;
+    const rejection = registrationRejection(this.#registered, gameEntry);
+    if (rejection !== undefined) {
+      log("error", "load order registration rejected", {
+        gameId: gameEntry.gameId,
+        loadOrderId: gameEntry.loadOrderId,
+        reason: rejection,
+      });
+      return;
+    }
+
+    const isContributedEntry = contributed();
+    if (isContributedEntry === undefined) {
+      return;
+    }
+    this.#registered.push(resolveEntry(gameEntry, isContributedEntry));
   }
-
-  gameSupport.push({ ...gameEntry, isContributed });
-}
-
-export function findGameEntry(gameId: string): ILoadOrderGameInfoExt {
-  return gameSupport.find((game) => game.gameId === gameId);
 }

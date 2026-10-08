@@ -26,6 +26,10 @@
             }
         }
 
+        :where(:not(:focus-visible, [data-focus])) {
+            outline-color: transparent;
+        }
+
         a,
         button,
         input,

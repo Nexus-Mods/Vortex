@@ -29,6 +29,7 @@ Project and coding documentation. To set up and build Vortex, start with
 
 - [mod-management/collections.md](mod-management/collections.md) - Collections and phased installation; phase invariants
 - [mod-management/EXTERNAL-CHANGES.md](mod-management/EXTERNAL-CHANGES.md) - The External Changes dialog: change types, actions, auto-resolution
+- [analytics.md](analytics.md) - Mixpanel super properties, ID-to-name lookup tables, and how to add tracking to an extension
 - [updater.md](updater.md) - How updates are detected, downloaded and applied; install types, the state machine, channels and the analytics funnel
 - [updater-testing.md](updater-testing.md) - Exercising the update cycle offline with the mock feed
 - [updater-rehearsal.md](updater-rehearsal.md) - Signed end-to-end rehearsal against a real GitHub repo

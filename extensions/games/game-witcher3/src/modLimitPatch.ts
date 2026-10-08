@@ -6,6 +6,7 @@ import _ from "lodash";
 
 import { setSuppressModLimitPatch } from "./actions";
 import { GAME_ID, I18N_NAMESPACE } from "./common";
+import { detectEdition, W3Edition } from "./edition";
 
 /**
  * Theoretically the mod limit patcher is no longer needed (CDPR raised the file handle limit)
@@ -35,6 +36,11 @@ export class ModLimitPatcher {
     const discovery = state.settings.gameMode.discovered[GAME_ID];
     if (!discovery?.path) {
       throw new util.ProcessCanceled("Game is not discovered");
+    }
+    if (detectEdition(discovery.path) === W3Edition.Remastered) {
+      // The byte offsets below are specific to the 4.x executable, and the
+      // binary this patches doesn't exist in the remaster at all.
+      throw new util.ProcessCanceled("Mod limit patch does not apply to this edition");
     }
     await this.queryPatch();
     const stagingPath = selectors.installPathForGame(state, GAME_ID);

@@ -60,6 +60,11 @@ interface ITooltipBaseProps {
   /** The trigger. Must forward a ref to a DOM node — wrap bare text in a `span`. */
   children: ReactElement;
   className?: string;
+  /**
+   * Closes when the trigger is pressed, so it never covers a menu the trigger opens.
+   * Turn off for a trigger whose press changes what the tooltip describes.
+   */
+  closeOnPress?: boolean;
   /** Hover delays in ms. A single number sets both open and close. */
   delay?: ITooltipDelay;
   /** Renders the trigger untouched, with no tooltip attached. */
@@ -75,6 +80,8 @@ interface ITooltipBaseProps {
   persistent?: boolean;
   /** Preferred side. Flips and slides automatically when it would overflow. */
   placement?: ITooltipPlacement;
+  /** Classes for the positioned layer, which owns the stacking, e.g. a lower z-index. */
+  positionerClassName?: string;
   showArrow?: boolean;
   /** Every open and close, with Floating UI's reason for it. */
   onOpenChange?: (open: boolean, reason?: OpenChangeReason) => void;
@@ -90,6 +97,7 @@ export type ITooltipProps = ITooltipBaseProps &
 export const Tooltip = ({
   children,
   className,
+  closeOnPress = true,
   content,
   customContent,
   delay = { close: 50, open: 250 },
@@ -98,6 +106,7 @@ export const Tooltip = ({
   open: controlledOpen,
   persistent = false,
   placement = "top",
+  positionerClassName,
   showArrow = true,
   onOpenChange,
 }: ITooltipProps) => {
@@ -230,7 +239,7 @@ export const Tooltip = ({
       referenceProps.onPointerDown as ((event: ReactPointerEvent<HTMLElement>) => void) | undefined
     )?.(event);
 
-    if (persistent) {
+    if (persistent || !closeOnPress) {
       return;
     }
 
@@ -246,7 +255,7 @@ export const Tooltip = ({
       {isMounted && (
         <FloatingPortal id={OVERLAY_HOST_ID}>
           <div
-            className={joinClasses("nxm-tooltip-positioner", {
+            className={joinClasses(["nxm-tooltip-positioner", positionerClassName], {
               "nxm-tooltip-positioner-interactive": interactive,
             })}
             ref={refs.setFloating}

@@ -14,7 +14,6 @@ import {
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import type { IInstalledFile } from "@/extensions/health_check/utils/fileRequirements/installedFiles";
 import type { IFileRequirementCandidate } from "@/extensions/health_check/utils/fileRequirements/mapRequirementsReport";
-import { decodeUID } from "@/extensions/nexus_integration/util/UIDs";
 import { Button } from "@/ui/components/button/Button";
 import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
@@ -107,7 +106,7 @@ export const CandidateCard = ({
         api={ctx.api}
         isOpen={showPremium}
         modCount={1}
-        modId={decodeUID(candidate.modUID)?.id ?? 0}
+        modUID={candidate.modUID}
         trigger="single_install"
         onClose={() => setShowPremium(false)}
         onDownload={() => {

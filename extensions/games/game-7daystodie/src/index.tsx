@@ -380,9 +380,9 @@ function main(context: types.IExtensionContext) {
     { name: "Root Directory Mod", mergeMods: true, deploymentEssential: false },
   );
 
-  context.registerMigration(toBlue((old) => migrate020(context.api, old)));
-  context.registerMigration(toBlue((old) => migrate100(context, old)));
-  context.registerMigration(toBlue((old) => migrate1011(context, old)));
+  context.registerMigration((old) => migrate020(context.api, old));
+  context.registerMigration((old) => migrate100(context, old));
+  context.registerMigration((old) => migrate1011(context, old));
 
   return true;
 }

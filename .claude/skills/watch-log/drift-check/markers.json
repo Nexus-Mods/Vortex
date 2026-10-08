@@ -26,7 +26,26 @@
     "did install dependencies",
     "postprocess collection"
   ],
-  "lifecycle.deploy": ["deployment progress", "starting purge activity"],
+  "lifecycle.deploy": [
+    "deployment progress",
+    "starting purge activity",
+    "found external changes",
+    "external changes diagnostic"
+  ],
+  "lifecycle.profile": [
+    "profile change",
+    "removing info of missing mod from profile",
+    "will deploy",
+    "did deploy",
+    "starting refresh profile export",
+    "switched to profile",
+    "switched to no profile",
+    "Failed to set profile",
+    "active profile switch didn't get confirmed?",
+    "running checks",
+    "all checks completed",
+    "manual mod changed"
+  ],
   "persistence": [
     "Received persist:diff",
     "level_pivot slow Write",
