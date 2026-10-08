@@ -26,6 +26,12 @@
             }
         }
 
+        /* desktop.scss gives every link the default cursor, as a native app would, and
+           unlayered it beats any layered rule; a link in prose is a link to the web. */
+        .nxm-prose a {
+            cursor: pointer !important;
+        }
+
         /* The legacy brand colour, where a region's two scrollbars meet. */
         ::-webkit-scrollbar-corner {
             background-color: transparent !important;

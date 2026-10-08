@@ -48,8 +48,10 @@ import {
   type ModsTableGrouping,
   sharedMods,
 } from "../../util/mods_table_views/modsTableViews";
+import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
 import { ModThumbnail } from "../mod_thumbnail/ModThumbnail";
+import { ModVersion, modVersionText } from "../mod_version/ModVersion";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
 import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
@@ -63,6 +65,12 @@ interface IModsTableSwitchProps {
   onSetModsEnabled: (modIds: string[], enabled: boolean) => void | PromiseLike<unknown>;
   /** The legacy table's row actions, offered in each row's menu with the extensions' own. */
   rowActions?: ITableRowAction[];
+  /** Each listed mod's installed versions and variants, itself included, by its id. */
+  alternatives?: { [modId: string]: IModWithState[] };
+  /** Switches from a mod to another of its versions or variants, by id. */
+  onSelectVersion?: (modId: string, alternativeId: string) => void;
+  /** Removes one of a mod's versions or variants, by id, asking first. */
+  onRemoveVersion?: (alternativeId: string) => void;
 }
 
 /** A group being disabled, while the user decides about the mods it shares. */
@@ -94,6 +102,8 @@ const searchFilter = (columns: IModsTableColumn[], search: string) => {
 
 /** The Mods page's table: the legacy one, or the new table while it's being built. */
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
+const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
+const nop = () => undefined;
 
 // The switch and the menu's button; each pinned action adds a 28px button and an 8px gap.
 const ACTIONS_WIDTH = 78;
@@ -202,6 +212,9 @@ export const ModsTableSwitch = ({
   legacy,
   onSetModsEnabled,
   rowActions = NO_ROW_ACTIONS,
+  alternatives = NO_ALTERNATIVES,
+  onSelectVersion = nop,
+  onRemoveVersion,
 }: IModsTableSwitchProps) => {
   const { t } = useTranslation(["common"]);
   const newTable = useDevSetting("newTable");
@@ -380,14 +393,37 @@ export const ModsTableSwitch = ({
           );
         },
       },
+      // The legacy table's, sharing its choice to show it and its place.
+      {
+        id: "version",
+        header: t("Version"),
+        width: "160px",
+        isToggleable: true,
+        position: 40,
+        searchText: ({ mod }) => modVersionText(mod, alternatives[mod.id], t),
+        cell: ({ mod }) => (
+          <ModVersion
+            alternatives={alternatives[mod.id]}
+            mod={mod}
+            onRemove={onRemoveVersion}
+            onSelect={onSelectVersion}
+          />
+        ),
+        // A collection's group shows its revision, as the collection's own row does.
+        groupCell: ({ collection }) =>
+          collection === undefined ? null : <CollectionRevision collection={collection} />,
+      },
       ...dataColumns,
     ],
     [
       actionsFor,
+      alternatives,
       changing,
       dataColumns,
       isEnabled,
       multiSelected,
+      onRemoveVersion,
+      onSelectVersion,
       setEnabled,
       setGroupEnabled,
       shownPins,

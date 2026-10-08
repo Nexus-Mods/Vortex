@@ -72,7 +72,10 @@
         }
     }
 
-    .nxm-dropdown-item-chevron-hidden {
+    /* Held in place but not shown, so the rows' controls line up: a chevron where another row
+       opens a submenu, a check where another row is the one chosen. */
+    .nxm-dropdown-item-chevron-hidden,
+    .nxm-dropdown-item-check-hidden {
         visibility: hidden;
     }
 
@@ -144,7 +147,7 @@
         }
 
         &.nxm-dropdown-item-info .nxm-dropdown-item-icon:first-child {
-            color: var(--color-info-moderate);
+            color: var(--color-info-strong);
         }
 
         &.nxm-dropdown-item-success .nxm-dropdown-item-icon:first-child {

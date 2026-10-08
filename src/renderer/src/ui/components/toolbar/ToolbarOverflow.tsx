@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
 import { Popover } from "@/ui/components/popover/Popover";
+import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
-import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
