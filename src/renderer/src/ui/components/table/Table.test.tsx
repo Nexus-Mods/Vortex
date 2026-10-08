@@ -489,6 +489,39 @@ describe("Table with a footer", () => {
   });
 });
 
+describe("Table with nothing to show", () => {
+  it("shows what it's given in place of the rows", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        empty={<p>No files match</p>}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={[]}
+      />,
+    );
+
+    const grid = screen.getByRole("grid");
+    const [, empty] = within(grid).getAllByRole("row");
+    expect(within(empty).getByText("No files match")).toBeInTheDocument();
+    expect(grid).toHaveAttribute("aria-rowcount", "2");
+  });
+
+  it("leaves it out while there are rows", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        empty={<p>No files match</p>}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    expect(screen.queryByText("No files match")).toBeNull();
+  });
+});
+
 describe("Table with groups", () => {
   const GROUPS = [
     { id: "first", label: "First", rows: [ROWS[0], ROWS[1]] },

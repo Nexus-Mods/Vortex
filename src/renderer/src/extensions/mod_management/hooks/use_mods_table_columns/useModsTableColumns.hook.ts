@@ -25,6 +25,8 @@ export interface IModsTableColumn extends ITableColumn<IModRow, IModGroup> {
   groupBy?: (row: IModRow) => string;
   /** Its name in the Group by options, where that isn't its header. */
   groupLabel?: string;
+  /** The text its cell shows, which a search matches; without one, a search passes it by. */
+  searchText?: (row: IModRow) => string;
 }
 
 /** A toggleable column, as the display options list it. */

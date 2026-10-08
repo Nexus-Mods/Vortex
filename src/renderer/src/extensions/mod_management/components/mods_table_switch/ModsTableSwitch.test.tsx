@@ -642,4 +642,80 @@ describe("ModsTableSwitch", () => {
       ).toBeInTheDocument();
     });
   });
+
+  describe("search", () => {
+    const searchFor = async (text: string) => {
+      await userEvent.click(screen.getByRole("button", { name: "Search" }));
+      await userEvent.keyboard(text);
+    };
+
+    const names = () => bodyRows(screen.getByRole("grid")).map(cellText);
+
+    it("lists only the mods whose cells show the text, whatever its case", async () => {
+      renderSwitch({
+        a: mod("a", "Alpha", true),
+        b: mod("b", "Beta", true),
+        c: mod("c", "Alphabet", true),
+      });
+
+      await searchFor("ALPHA");
+
+      expect(names()).toEqual(["Alpha", "Alphabet"]);
+    });
+
+    it("searches the columns shown, not the hidden ones", async () => {
+      renderSwitch({
+        a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Gervig" } }),
+        b: mod("b", "Beta", true),
+        pack: collection("pack", "Starter Pack", ["b"]),
+      });
+
+      // Collection shows by default, and the collection's own row its name; Author doesn't show.
+      await searchFor("starter");
+      expect(names()).toEqual(["Beta", "Starter Pack"]);
+
+      await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
+      await userEvent.keyboard("gervig");
+      expect(screen.getByText("No mods match your search")).toBeInTheDocument();
+    });
+
+    it("drops a group none of whose mods match", async () => {
+      renderSwitch({
+        a: mod("a", "Alpha", true),
+        b: mod("b", "Beta", true),
+        pack: collection("pack", "Starter Pack", ["b"]),
+      });
+
+      await showView("Collections");
+      await searchFor("alpha");
+
+      const treegrid = screen.getByRole("treegrid");
+      expect(within(treegrid).queryByRole("button", { name: "Starter Pack" })).toBeNull();
+      expect(
+        bodyRows(treegrid)
+          .filter((row) => row.getAttribute("aria-level") === "2")
+          .map(cellText),
+      ).toEqual(["Alpha"]);
+    });
+
+    it("deselects a selected mod the search hides", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+
+      const user = userEvent.setup();
+      await user.click(screen.getByText("Alpha"));
+      await user.keyboard("{Control>}");
+      await user.click(screen.getByText("Beta"));
+      await user.keyboard("{/Control}");
+      expect(screen.getByRole("region", { name: "{{count}} selected" })).toBeInTheDocument();
+
+      await searchFor("alpha");
+      await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
+
+      expect(screen.queryByRole("region", { name: "{{count}} selected" })).toBeNull();
+      const selected = bodyRows(screen.getByRole("grid")).filter(
+        (row) => row.getAttribute("aria-selected") === "true",
+      );
+      expect(selected.map(cellText)).toEqual(["Alpha"]);
+    });
+  });
 });
