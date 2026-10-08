@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -55,13 +55,80 @@ describe("ModVersion", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: "1.1.15 (My multiplayer profile)" }));
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+    const options = screen.getAllByRole("menuitemradio");
+    expect(options.map((option) => option.textContent)).toEqual([
       "1.1.15 (My multiplayer profile)",
       "1.1.14 (default)",
     ]);
+    // The one in use checked.
+    expect(options.map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false"]);
 
-    await userEvent.click(screen.getByRole("option", { name: "1.1.14 (default)" }));
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "1.1.14 (default)" }));
     expect(onSelect).toHaveBeenCalledWith("a", "b");
+  });
+
+  describe("removing a version", () => {
+    const renderRemovable = () => {
+      const onSelect = vi.fn();
+      const onRemove = vi.fn();
+      const current = mod("a", "2.0");
+      render(
+        <ModVersion
+          alternatives={[current, mod("b", "1.0")]}
+          mod={current}
+          onRemove={onRemove}
+          onSelect={onSelect}
+        />,
+      );
+      return { onSelect, onRemove };
+    };
+
+    const openPicker = () => userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
+
+    const removeIn = (name: string) =>
+      within(
+        screen.getByRole("menuitemradio", { name: new RegExp(name.replace(/[()]/g, "\\$&")) }),
+      ).getByRole("button", { name: "Remove version" });
+
+    it("removes one from its row's button, without switching to it, and closes", async () => {
+      const { onSelect, onRemove } = renderRemovable();
+
+      await openPicker();
+      await userEvent.click(removeIn("1.0 (default)"));
+
+      expect(onRemove).toHaveBeenCalledWith("b");
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(screen.queryByRole("menu")).toBeNull();
+    });
+
+    it("removes the one in use too", async () => {
+      const { onRemove } = renderRemovable();
+
+      await openPicker();
+      await userEvent.click(removeIn("2.0 (default)"));
+
+      expect(onRemove).toHaveBeenCalledWith("a");
+    });
+
+    it("reaches the remove button from the keyboard, on the row the keyboard is on", async () => {
+      const { onRemove } = renderRemovable();
+
+      await openPicker();
+      await userEvent.keyboard("{ArrowDown}{Tab}{Enter}");
+
+      expect(onRemove).toHaveBeenCalledWith("b");
+    });
+
+    it("offers none to remove when it can't", async () => {
+      const current = mod("a", "2.0");
+      render(
+        <ModVersion alternatives={[current, mod("b", "1.0")]} mod={current} onSelect={vi.fn()} />,
+      );
+
+      await openPicker();
+
+      expect(screen.queryByRole("button", { name: "Remove version" })).toBeNull();
+    });
   });
 
   it("calls a variant with an empty name the default", () => {

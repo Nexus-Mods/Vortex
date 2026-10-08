@@ -737,9 +737,36 @@ describe("ModsTableSwitch", () => {
       );
 
       await userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
-      await userEvent.click(screen.getByRole("option", { name: "1.0 (default)" }));
+      await userEvent.click(screen.getByRole("menuitemradio", { name: /^1\.0 \(default\)/ }));
 
       expect(onSelectVersion).toHaveBeenCalledWith("a", "a1");
+    });
+
+    it("removes one of a mod's versions from its row, as ModList does", async () => {
+      const onRemoveVersion = vi.fn();
+      const current = mod("a", "Alpha", true, { attributes: { name: "Alpha", version: "2.0" } });
+      const older = mod("a1", "Alpha", false, { attributes: { name: "Alpha", version: "1.0" } });
+      render(
+        <Provider store={makeModsTableStore()}>
+          <ModsTableSwitch
+            alternatives={{ a: [current, older] }}
+            legacy={<div />}
+            mods={{ a: current }}
+            onRemoveVersion={onRemoveVersion}
+            onSetModsEnabled={vi.fn()}
+          />
+        </Provider>,
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
+      await userEvent.click(
+        within(screen.getByRole("menuitemradio", { name: /^1\.0 \(default\)/ })).getByRole(
+          "button",
+          { name: "Remove version" },
+        ),
+      );
+
+      expect(onRemoveVersion).toHaveBeenCalledWith("a1");
     });
   });
 });

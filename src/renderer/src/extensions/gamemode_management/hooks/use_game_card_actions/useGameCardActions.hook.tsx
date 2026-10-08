@@ -7,8 +7,8 @@ import { registerAction } from "@/controls/ActionControl";
 import { useExtensionObjects } from "@/ExtensionProvider";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
-import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
-import type { IMenuAction } from "@/ui/components/popover/PopoverMenuItem";
+import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { getIconPath } from "@/views/components/iconMap";
 
 import { setGameHidden } from "../../actions/settings";

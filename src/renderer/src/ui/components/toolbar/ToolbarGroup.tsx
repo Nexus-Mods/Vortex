@@ -1,6 +1,9 @@
 import React, { type HTMLAttributes, type ReactNode } from "react";
 
-import type { IMenuAction, IPopoverPanel } from "@/ui/components/popover/PopoverMenuItem";
+import type {
+  IMenuAction,
+  IPopoverPanel,
+} from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
 

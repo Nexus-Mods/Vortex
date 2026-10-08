@@ -11,7 +11,7 @@ import { useExtensionObjects } from "@/ExtensionProvider";
 import { log } from "@/logging";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
-import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
+import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { trackedActions } from "@/ui/components/toolbar/ToolbarGroup";
