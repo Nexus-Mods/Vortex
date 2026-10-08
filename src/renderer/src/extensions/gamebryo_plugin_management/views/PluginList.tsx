@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import { ProcessCanceled } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import type { TFunction } from "i18next";
@@ -58,8 +58,8 @@ import { IPluginCombined, IPluginLoot, IPluginParsed, IPlugins } from "../types/
 import { isGhosted } from "../util/ghost";
 import GroupFilter from "../util/GroupFilter";
 import { mergeLoadOrder } from "../util/mergeLoadOrder";
+import { parseFailureAttributes } from "../util/parseFailure";
 import { pluginFlags } from "../util/pluginFlags";
-import { SpanAttribute } from "../util/spanAttributes";
 import toPluginId from "../util/toPluginId";
 import DependencyIcon from "./DependencyIcon";
 import MasterList from "./MasterList";
@@ -827,10 +827,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           path: pluginsIn[pluginName].filePath,
           error: getErrorMessageOrDefault(err),
         });
-        recordErrorSpan("A plugin could not be parsed", unknownToError(err), {
-          [SpanAttribute.PluginName]: pluginName,
-          [SpanAttribute.ErrorCode]: getErrorCode(err) ?? "",
-        });
+        recordErrorSpan(
+          "A plugin could not be parsed",
+          unknownToError(err),
+          parseFailureAttributes(
+            pluginName,
+            pluginsIn[pluginName],
+            err,
+            this.context.api.getState(),
+          ),
+        );
         pluginsParsed[pluginName] = {
           isMaster: false,
           isLight: false,

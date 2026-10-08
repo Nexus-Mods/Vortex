@@ -1,4 +1,4 @@
-import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
+import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -148,6 +148,13 @@ describe("sanitizeResourceAttributes", () => {
       "telemetry.sdk.name": "opentelemetry",
     });
   });
+
+  it("keeps the install's instance id only with consent", () => {
+    const attributes = { "service.state.id": "inst-1" };
+
+    expect(sanitizeResourceAttributes(attributes, false)).toEqual(attributes);
+    expect(sanitizeResourceAttributes(attributes)).toEqual({});
+  });
 });
 
 const fakeSpan = (overrides: Partial<ReadableSpan> = {}): ReadableSpan =>
@@ -246,6 +253,27 @@ describe("SanitizingSpanExporter", () => {
     expect(forwarded?.[0]?.attributes).toEqual({
       "mod.baseName": "secret.pak",
       "mod.numericModId": "42",
+    });
+  });
+
+  it("adds the resource attributes known when the span is exported", () => {
+    const inner = {
+      export: vi.fn<SpanExporter["export"]>(),
+      shutdown: vi.fn<SpanExporter["shutdown"]>(),
+      forceFlush: vi.fn<() => Promise<void>>(),
+    };
+    const exporter = new SanitizingSpanExporter(
+      inner,
+      () => true,
+      () => ({ "service.state.id": "inst-1" }),
+    );
+
+    exporter.export([fakeSpan()], vi.fn());
+
+    const forwarded = inner.export.mock.calls[0]?.[0];
+    expect(forwarded?.[0]?.resource.attributes).toEqual({
+      "service.name": "vortex",
+      "service.state.id": "inst-1",
     });
   });
 });

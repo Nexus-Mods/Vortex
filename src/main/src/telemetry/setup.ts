@@ -7,7 +7,12 @@ import { SanitizingSpanExporter } from "@vortex/shared/telemetry";
 import { log } from "../logging";
 import { createVortexResource } from "./resources";
 import { RingBufferSpanProcessor, type RingBufferOptions } from "./RingBufferSpanProcessor";
-import { isTelemetryEnabled, isUnconsentedReportingEnabled, setProcessor } from "./state";
+import {
+  isTelemetryEnabled,
+  isUnconsentedReportingEnabled,
+  lateResourceAttributes,
+  setProcessor,
+} from "./state";
 
 export const COLLECTOR_URL =
   process.env.VORTEX_COLLECTOR_URL ?? "https://vortex-collector.nexusmods.com";
@@ -27,6 +32,7 @@ export const createMainTelemetryProvider = (options?: RingBufferOptions): void =
       headers: OTLP_HEADERS,
     }),
     isTelemetryEnabled,
+    lateResourceAttributes,
   );
 
   const processor = new RingBufferSpanProcessor({
