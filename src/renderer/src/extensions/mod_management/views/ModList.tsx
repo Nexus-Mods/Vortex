@@ -442,7 +442,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             </SuperTable>
           }
           mods={this.state.primaryMods}
+          alternatives={this.state.groupedMods}
           rowActions={this.modActions}
+          onSelectVersion={this.selectVersionFromTable}
           onSetModsEnabled={this.setModsEnabledFromTable}
         />
       );
@@ -1346,6 +1348,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       altId: event.currentTarget.getAttribute("data-altid"),
     });
   };
+
+  private selectVersionFromTable = (modId: string, altId: string) =>
+    this.selectVersion({ modId, altId });
 
   private selectVersion = (evtKey) => {
     const { gameMode, profileId } = this.props;
