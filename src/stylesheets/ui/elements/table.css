@@ -15,6 +15,9 @@
         --nxm-table-leading-width: calc(var(--spacing) * 5);
         --nxm-table-sticky-fade: calc(var(--spacing) * 2);
         --nxm-table-sticky-solid: calc(var(--spacing) * 3);
+        --nxm-table-sticky-clearance: calc(
+            var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid) + var(--nxm-table-gap)
+        );
         --nxm-table-row-tint: transparent;
 
         position: relative;
@@ -270,6 +273,52 @@
         opacity: 1;
     }
 
+    /* A row's toolbar shows while the row is hovered or focused from the keyboard, and while
+       its menu is open, at once, as the cell widens for it. Hidden, its buttons let clicks
+       through to the cells they overhang. */
+    .nxm-table-row :is([data-toolbar-control], [data-toolbar-overflow]) {
+        opacity: 0;
+        pointer-events: none;
+        /* A button's own, but for opacity, which would lag behind the cell. */
+        transition-property: color, background-color, border-color, outline-color, fill, stroke;
+    }
+
+    .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+        :is([data-toolbar-control], [data-toolbar-overflow]) {
+        opacity: 1;
+        pointer-events: auto;
+
+        /* A disabled one keeps the faded look its button has outside a row. */
+        &:is(:disabled, .nxm-button-disabled, :has(:disabled)) {
+            opacity: 0.4;
+        }
+    }
+
+    /* A row that widens switches its edge with the widening, either way, rather than fading. */
+    .nxm-table[data-sticky-reveal] .nxm-table-row .nxm-table-cell[data-sticky="end"]::before {
+        transition: none;
+    }
+
+    /* The sticky cell widens over the cells before it once what its row shows has mounted, so
+       the two appear together, and blends into them without the shadow the column casts. */
+    .nxm-table[data-sticky-reveal]
+        .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+        .nxm-table-cell[data-sticky="end"]:has([data-toolbar-control]) {
+        margin-left: calc(-1 * var(--nxm-table-sticky-reveal));
+
+        &::before {
+            opacity: 1;
+            background: var(--nxm-table-sticky-bg);
+            mask-image: linear-gradient(to right, transparent, #000);
+        }
+
+        .nxm-table-cell-tint {
+            left: 0;
+            width: calc(100% + var(--nxm-table-gutter) + var(--nxm-table-gap));
+            mask-image: none;
+        }
+    }
+
     /* A sortable column's header: its label, in line with the column's content, and an arrow
        once it's sorted. Its fill reaches into the gap before the column, or past the checkbox. */
     .nxm-table-sort-button {
@@ -416,6 +465,39 @@
                     var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid)
             );
             mask-image: linear-gradient(to right, transparent, #000 var(--nxm-table-sticky-fade));
+        }
+
+        /* A row's pins sit clear of the shadow the column casts, on every row, so they don't
+           move as a row is left. */
+        .nxm-table[data-sticky-reveal]
+            .nxm-table-row
+            .nxm-toolbar-group
+            > [data-toolbar-control]:has(+ :not([data-toolbar-control])) {
+            margin-right: var(--nxm-table-sticky-clearance);
+        }
+
+        /* A widened row keeps the shadow at the column's edge, under its pins, so it runs on
+           unbroken down the column. */
+        .nxm-table[data-sticky-reveal]
+            .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+            .nxm-table-cell[data-sticky="end"]:has([data-toolbar-control]) {
+            margin-left: calc(
+                -1 * (var(--nxm-table-sticky-reveal) + var(--nxm-table-sticky-clearance))
+            );
+            background:
+                linear-gradient(
+                        to right,
+                        transparent,
+                        var(--color-scrim-300) var(--nxm-table-sticky-fade),
+                        transparent var(--nxm-table-sticky-fade)
+                    )
+                    calc(
+                        var(--nxm-table-sticky-reveal) + var(--nxm-table-sticky-clearance) -
+                            var(--nxm-table-sticky-fade) - var(--nxm-table-sticky-solid)
+                    )
+                    0 / calc(var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid)) 100%
+                    no-repeat,
+                var(--nxm-table-sticky-bg);
         }
     }
 }

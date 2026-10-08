@@ -18,8 +18,8 @@ import {
 } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import type { IFileRequirementReport } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import { sharedRequirementState } from "@/extensions/health_check/utils/shared/tracking";
+import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Button } from "@/ui/components/button/Button";
-import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
 import { shouldShowPremiumAd } from "../../../nexus_integration/selectors";
 import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";

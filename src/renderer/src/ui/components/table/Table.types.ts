@@ -33,6 +33,8 @@ export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   align?: "start" | "end";
   /** `end` keeps the last column at the right of the view while the columns overflow. */
   sticky?: "end";
+  /** For a sticky column, how far its cell widens over the cells before it while its row is hovered. */
+  revealWidth?: `${number}px`;
   /** Makes the column sortable: compares two rows for A to Z, as `Array.sort` does. */
   sort?: (a: T, b: T) => number;
 }

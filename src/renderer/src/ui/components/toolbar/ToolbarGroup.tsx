@@ -1,4 +1,4 @@
-import React, { type HTMLAttributes } from "react";
+import React, { type HTMLAttributes, type ReactNode } from "react";
 
 import type { IMenuAction, IPopoverPanel } from "@/ui/components/popover/PopoverMenuItem";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
@@ -34,6 +34,8 @@ export type IToolbarAction = IMenuAction & {
    * that doesn't offer pinning, which shows every action it was given.
    */
   pinned?: boolean;
+  /** Its section of the overflow menu: a rule divides each run of actions from the next. */
+  section?: string;
   /**
    * The extension that registered this action, for a toolbar counting where its
    * buttons come from. Absent for an action the page owns.
@@ -44,6 +46,8 @@ export type IToolbarAction = IMenuAction & {
 type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   actions: IToolbarAction[];
   maxVisible?: number;
+  /** Shown after the actions and before the overflow menu, always, so it takes its room first. */
+  beforeOverflow?: ReactNode;
 };
 
 /**
@@ -56,7 +60,8 @@ const widthSignature = (actions: IToolbarAction[]): string =>
   [
     actions.length,
     ...actions.map(
-      (action) => `${action.iconPath ? "i" : ""}${action.showLabel ? action.label : ""}`,
+      (action) =>
+        `${action.iconPath || action.icon !== undefined ? "i" : ""}${action.showLabel ? action.label : ""}`,
     ),
   ].join(":");
 
@@ -71,7 +76,7 @@ const controlProps = (action: IToolbarAction) => ({
   disabled: action.disabled,
   isLoading: action.isLoading,
   label: action.label,
-  leftIconPath: action.iconPath,
+  ...(action.icon !== undefined ? { leftIcon: action.icon } : { leftIconPath: action.iconPath }),
   showLabel: action.showLabel,
 });
 
@@ -176,6 +181,7 @@ type IGroupBodyProps = IToolbarGroupProps & {
 const ToolbarGroupBody = ({
   actions,
   barActions,
+  beforeOverflow,
   className,
   maxVisible,
   pinning,
@@ -220,6 +226,8 @@ const ToolbarGroupBody = ({
           onClick={panelClickReporter(action, tracking?.onActionClick)}
         />
       ))}
+
+      {beforeOverflow}
 
       {/* Kept mounted through the measuring pass so its width is measured too. */}
       {(isMeasuring || pinningEnabled || !!hiddenActions.length) && (

@@ -10,6 +10,7 @@ vi.mock("@/views/components/dev_tools/useDevSetting.hook", () => ({
   useDevSetting: () => mocks.newTable,
 }));
 
+import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import type { IModWithState } from "../../types/IModProps";
@@ -24,13 +25,14 @@ const collection = (id: string, name: string, memberIds: string[]) =>
     rules: memberIds.map((memberId) => ({ type: "requires", reference: { id: memberId } })),
   });
 
-const renderSwitch = (mods: { [id: string]: IModWithState }) => {
+const renderSwitch = (mods: { [id: string]: IModWithState }, rowActions?: ITableRowAction[]) => {
   const onSetModsEnabled = vi.fn();
   render(
     <Provider store={makeModsTableStore()}>
       <ModsTableSwitch
         legacy={<div data-testid="legacy-table" />}
         mods={mods}
+        rowActions={rowActions}
         onSetModsEnabled={onSetModsEnabled}
       />
     </Provider>,
@@ -39,6 +41,9 @@ const renderSwitch = (mods: { [id: string]: IModWithState }) => {
 };
 
 const showView = (name: string) => userEvent.click(screen.getByRole("button", { name }));
+
+// A row's actions mount once it's pointed at, as a person would before using them.
+const hoverRow = (row: HTMLElement) => userEvent.hover(row);
 
 // The table's own rows, not those in its sticky head.
 const bodyRows = (table: HTMLElement) =>
@@ -120,10 +125,15 @@ describe("ModsTableSwitch", () => {
         name: "{{name}} enabled",
       });
 
+    const clickSwitch = async () => {
+      await hoverRow(bodyRows(screen.getByRole("grid"))[0]);
+      await userEvent.click(modSwitch());
+    };
+
     it("shows the change at once, busy, and undoes it if it fails", async () => {
       const { settle } = renderPending();
 
-      await userEvent.click(modSwitch());
+      await clickSwitch();
       expect(modSwitch()).toHaveAttribute("aria-checked", "true");
       expect(modSwitch()).toHaveAttribute("aria-busy", "true");
 
@@ -136,7 +146,7 @@ describe("ModsTableSwitch", () => {
     it("follows the profile again once the change settles", async () => {
       const { settle } = renderPending({ a: { enabled: true } });
 
-      await userEvent.click(modSwitch());
+      await clickSwitch();
       expect(modSwitch()).toHaveAttribute("aria-checked", "false");
 
       await settle(true);
@@ -265,6 +275,7 @@ describe("ModsTableSwitch", () => {
       const onSetModsEnabled = renderSwitch({ a: mod("a", "Alpha", true) });
 
       const [row] = bodyRows(screen.getByRole("grid"));
+      await hoverRow(row);
       await userEvent.click(within(row).getByRole("checkbox", { name: "{{name}} enabled" }));
 
       expect(onSetModsEnabled).toHaveBeenCalledWith(["a"], false);
@@ -347,7 +358,7 @@ describe("ModsTableSwitch", () => {
     it("shows the installation time and collection columns by default", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      expect(headers()).toEqual(["Name", "Collection", "Installation time", "Status"]);
+      expect(headers()).toEqual(["Name", "Collection", "Installation time", "Actions"]);
     });
 
     it("adds a column chosen from the display options", async () => {
@@ -434,6 +445,92 @@ describe("ModsTableSwitch", () => {
         expect(screen.getByRole("grid")).toBeInTheDocument();
         expect(pressedViews()).toEqual(["true", "false", "false"]);
       });
+    });
+  });
+  describe("row actions", () => {
+    const rowOf = (name: string) =>
+      screen.getAllByRole("row").find((row) => within(row).queryByText(name) !== null)!;
+
+    const openMenu = async (name: string) => {
+      await hoverRow(rowOf(name));
+      await userEvent.click(within(rowOf(name)).getByRole("button", { name: "More actions" }));
+    };
+
+    it("mounts a row's actions only once it's pointed at", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      expect(within(rowOf("Alpha")).queryByRole("button", { name: "More actions" })).toBeNull();
+      expect(
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+      ).toBeInTheDocument();
+
+      await hoverRow(rowOf("Alpha"));
+
+      expect(
+        within(rowOf("Alpha")).getByRole("button", { name: "More actions" }),
+      ).toBeInTheDocument();
+    });
+
+    it("keeps focus on the switch as focusing it mounts the row's actions", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      act(() => {
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }).focus();
+      });
+
+      expect(
+        within(rowOf("Alpha")).getByRole("button", { name: "More actions" }),
+      ).toBeInTheDocument();
+      expect(document.activeElement).toBe(
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+      );
+    });
+
+    it("opens a row's menu of its actions, run against that mod", async () => {
+      const remove = vi.fn();
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: remove },
+      ]);
+
+      await openMenu("Beta");
+      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+      expect(remove).toHaveBeenCalledWith(["b"]);
+    });
+
+    it("puts an action pinned from one row's menu on every row", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: vi.fn() },
+      ]);
+
+      await openMenu("Alpha");
+      // reached through its menu row, as the test `t` leaves every pin's label alike
+      await userEvent.click(
+        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+      );
+      await userEvent.keyboard("{Escape}");
+
+      expect(within(rowOf("Alpha")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+
+      await hoverRow(rowOf("Beta"));
+      expect(within(rowOf("Beta")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+    });
+
+    it("shows a pinned action before the switch, and the menu after it", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      await openMenu("Alpha");
+      await userEvent.click(
+        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+      );
+      await userEvent.keyboard("{Escape}");
+
+      const actionsCell = within(rowOf("Alpha")).getAllByRole("gridcell").at(-1) as HTMLElement;
+      const controls = Array.from(
+        actionsCell.querySelectorAll<HTMLElement>('button, [role="checkbox"]'),
+      ).map((control) => control.getAttribute("aria-label"));
+      // the switch by its untranslated label, which `t` leaves uninterpolated here
+      expect(controls).toEqual(["Remove", "{{name}} enabled", "More actions"]);
     });
   });
 });
