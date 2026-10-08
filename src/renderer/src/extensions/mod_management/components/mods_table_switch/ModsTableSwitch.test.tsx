@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ newTable: false }));
@@ -8,6 +9,8 @@ const mocks = vi.hoisted(() => ({ newTable: false }));
 vi.mock("@/views/components/dev_tools/useDevSetting.hook", () => ({
   useDevSetting: () => mocks.newTable,
 }));
+
+import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import type { IModWithState } from "../../types/IModProps";
 import { ModsTableSwitch } from "./ModsTableSwitch";
@@ -24,11 +27,13 @@ const collection = (id: string, name: string, memberIds: string[]) =>
 const renderSwitch = (mods: { [id: string]: IModWithState }) => {
   const onSetModsEnabled = vi.fn();
   render(
-    <ModsTableSwitch
-      legacy={<div data-testid="legacy-table" />}
-      mods={mods}
-      onSetModsEnabled={onSetModsEnabled}
-    />,
+    <Provider store={makeModsTableStore()}>
+      <ModsTableSwitch
+        legacy={<div data-testid="legacy-table" />}
+        mods={mods}
+        onSetModsEnabled={onSetModsEnabled}
+      />
+    </Provider>,
   );
   return onSetModsEnabled;
 };
@@ -258,6 +263,29 @@ describe("ModsTableSwitch", () => {
 
       expect(screen.queryByRole("dialog")).toBeNull();
       expect(onSetModsEnabled).toHaveBeenCalledWith(["b", "c"], true);
+    });
+  });
+
+  describe("display options", () => {
+    const headers = () => screen.getAllByRole("columnheader").map((header) => header.textContent);
+
+    it("shows the installation time and collection columns by default", () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      expect(headers()).toEqual(["Name", "Status", "Collection", "Installation time"]);
+    });
+
+    it("adds a column chosen from the display options", async () => {
+      renderSwitch({
+        a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Ada" } }),
+      });
+
+      await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+      const toggles = screen.getByRole("group", { name: "Toggle columns" });
+      await userEvent.click(within(toggles).getByRole("button", { name: "Author" }));
+
+      expect(headers()).toContain("Author");
+      expect(screen.getByRole("gridcell", { name: "Ada" })).toBeInTheDocument();
     });
   });
 });

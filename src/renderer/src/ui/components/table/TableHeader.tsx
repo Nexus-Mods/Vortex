@@ -29,6 +29,8 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
   onSort,
 }: ITableHeaderProps<T, G>) => (
   <div className="nxm-table-head" role="rowgroup">
+    <div aria-hidden={true} className="nxm-table-edge" />
+
     {!!toolbar && (
       <div aria-rowindex={1} className="nxm-table-toolbar" role="row">
         <div aria-colspan={columns.length} className="nxm-table-toolbar-cell" role="gridcell">

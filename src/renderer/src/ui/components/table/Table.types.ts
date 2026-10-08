@@ -27,7 +27,7 @@ export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   cell: (row: T) => ReactNode;
   /** The column's cell in a group's row. The first column's follows the collapse button. */
   groupCell?: (group: G) => ReactNode;
-  /** A grid track, e.g. `"minmax(0, 1fr)"` or `"206px"`. Default `"minmax(0, 1fr)"`. */
+  /** A grid track, e.g. `"minmax(120px, 1fr)"` or `"206px"`. Default `"minmax(280px, 1fr)"`. */
   width?: TableColumnWidth;
   /** Where the header and cells sit in the column. Default `start`. */
   align?: "start" | "end";
