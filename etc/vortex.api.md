@@ -3349,7 +3349,7 @@ interface IRunOptions {
     // (undocumented)
     expectSuccess?: boolean;
     // (undocumented)
-    onExit?: (code: number | null) => void;
+    onExit?: (code: number | null, signal: NodeJS.Signals | null) => void;
     // (undocumented)
     onSpawned?: (pid?: number) => void;
     // (undocumented)
