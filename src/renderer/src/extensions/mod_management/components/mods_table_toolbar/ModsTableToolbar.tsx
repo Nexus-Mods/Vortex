@@ -1,4 +1,4 @@
-import { mdiFilterVariant, mdiMagnify, mdiPlus, mdiTune } from "@mdi/js";
+import { mdiFilterVariant, mdiMagnify, mdiPlus } from "@mdi/js";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +13,8 @@ import { type IModsTableView, MODS_TABLE_PRESETS } from "../../util/modsTableVie
 interface IModsTableToolbarProps {
   /** The view the table shows. */
   view: IModsTableView;
+  /** The display options' toolbar action, opening its panel. */
+  displayOptions: IToolbarAction;
   /** Shows another view. */
   onViewChange: (view: IModsTableView) => void;
 }
@@ -20,18 +22,22 @@ interface IModsTableToolbarProps {
 /**
  * The new Mods table's views and actions, in its sticky head. Views aren't tabs, with no
  * panels of their own, so they're toggle buttons, so a user's own views can carry their
- * own controls later. Adding a view and the actions do nothing yet.
+ * own controls later. Adding a view, filtering and searching do nothing yet.
  */
-export const ModsTableToolbar = ({ view, onViewChange }: IModsTableToolbarProps) => {
+export const ModsTableToolbar = ({
+  view,
+  displayOptions,
+  onViewChange,
+}: IModsTableToolbarProps) => {
   const { t } = useTranslation(["common"]);
 
   const actions = useMemo<IToolbarAction[]>(
     () => [
       { iconPath: mdiFilterVariant, label: t("Filter") },
-      { iconPath: mdiTune, label: t("View options") },
+      displayOptions,
       { iconPath: mdiMagnify, label: t("Search") },
     ],
-    [t],
+    [displayOptions, t],
   );
 
   return (

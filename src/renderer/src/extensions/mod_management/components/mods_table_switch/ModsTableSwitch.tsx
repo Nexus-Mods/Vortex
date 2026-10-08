@@ -2,14 +2,20 @@ import { mdiAccount, mdiChevronRight } from "@mdi/js";
 import React, { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
 import { Switch } from "@/ui/components/form/switch/Switch";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Table } from "@/ui/components/table/Table";
-import type { ITableColumn, ITableSort } from "@/ui/components/table/Table.types";
+import type { ITableSort } from "@/ui/components/table/Table.types";
 import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
+import {
+  type IModsTableColumn,
+  useModsTableColumns,
+} from "../../hooks/use_mods_table_columns/useModsTableColumns.hook";
+import { useModsTableDataColumns } from "../../hooks/use_mods_table_data_columns/useModsTableDataColumns.hook";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
@@ -21,6 +27,7 @@ import {
   sharedMods,
 } from "../../util/modsTableViews";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
+import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
 
 interface IModsTableSwitchProps {
@@ -81,7 +88,9 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
     setPendingDisable(undefined);
   };
 
-  const columns = useMemo<Array<ITableColumn<IModRow, IModGroup>>>(
+  const dataColumns = useModsTableDataColumns(memberships);
+
+  const columns = useMemo<IModsTableColumn[]>(
     () => [
       {
         id: "name",
@@ -162,9 +171,19 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
           );
         },
       },
+      ...dataColumns,
     ],
-    [onSetModsEnabled, setGroupEnabled, t],
+    [dataColumns, onSetModsEnabled, setGroupEnabled, t],
   );
+
+  const { visibleColumns, toggles, canReset, setColumnVisible, resetColumns } =
+    useModsTableColumns(columns);
+
+  const displayOptions = useDisplayOptionsAction({
+    canReset,
+    children: <ModsTableColumnToggles toggles={toggles} onToggle={setColumnVisible} />,
+    onReset: resetColumns,
+  });
 
   if (!newTable) {
     return <>{legacy}</>;
@@ -172,8 +191,10 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
 
   const tableProps = {
     className: "mb-2",
-    toolbar: <ModsTableToolbar view={view} onViewChange={setView} />,
-    columns,
+    toolbar: (
+      <ModsTableToolbar displayOptions={displayOptions} view={view} onViewChange={setView} />
+    ),
+    columns: visibleColumns,
     getRowId: ({ mod }: IModRow) => mod.id,
     label: t("Mods"),
     defaultSort: BY_NAME,

@@ -25,7 +25,8 @@ export type IPageScrollProps = HTMLAttributes<HTMLDivElement> & {
  * shadow; any `onScroll` you pass still runs.
  *
  * A size container, so content that sticks to the region — a table's details
- * pane, say — can stand as tall as it rather than as tall as what it scrolls.
+ * pane, say — can stand as tall as it rather than as tall as what it scrolls. And a
+ * scroll-state one, so content can ask whether the region scrolls further.
  *
  * Focusable, so the region can be scrolled with the keyboard without first
  * tabbing to a focusable child. No focus ring for now — the browser default
@@ -48,7 +49,7 @@ export const PageScroll = forwardRef<HTMLDivElement, IPageScrollProps>(
 
     return (
       <div
-        className="@container-[size] min-h-0 flex-1 overflow-auto outline-none"
+        className="[container-type:size_scroll-state] min-h-0 flex-1 overflow-auto outline-none"
         ref={ref}
         tabIndex={0}
         onScroll={handleScroll}
