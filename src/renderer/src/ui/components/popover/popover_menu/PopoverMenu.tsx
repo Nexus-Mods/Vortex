@@ -1,7 +1,8 @@
 import React, { Fragment, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
-import { type IMenuAction, PopoverMenuItem } from "@/ui/components/popover/PopoverMenuItem";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
+import { PopoverMenuItem } from "@/ui/components/popover/popover_menu/PopoverMenuItem";
 
 interface IPopoverMenuProps {
   actions: IMenuAction[][];

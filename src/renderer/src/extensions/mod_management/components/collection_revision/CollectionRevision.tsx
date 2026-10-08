@@ -26,12 +26,9 @@ export const CollectionRevision = ({ collection }: ICollectionRevisionProps) => 
 
   return (
     <div className="flex min-w-0 items-center gap-x-2">
-      <VersionText
-        fixed={hasUpdate || changelog !== undefined}
-        version={revision ? String(revision) : "-"}
-      />
+      <VersionText fixed={hasUpdate || !!changelog} version={revision ? String(revision) : "-"} />
 
-      {(hasUpdate || changelog !== undefined) && (
+      {(hasUpdate || !!changelog) && (
         <div className="flex shrink-0 items-center gap-x-1">
           {hasUpdate && (
             <ToolbarButton
@@ -45,7 +42,7 @@ export const CollectionRevision = ({ collection }: ICollectionRevisionProps) => 
             />
           )}
 
-          {changelog !== undefined && (
+          {!!changelog && (
             <ChangelogButton>
               <Markdown markdown={changelog} size="sm" />
             </ChangelogButton>

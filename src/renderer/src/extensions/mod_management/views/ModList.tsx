@@ -444,6 +444,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           mods={this.state.primaryMods}
           alternatives={this.state.groupedMods}
           rowActions={this.modActions}
+          onRemoveVersion={this.removeSelectedMod}
           onSelectVersion={this.selectVersionFromTable}
           onSetModsEnabled={this.setModsEnabledFromTable}
         />

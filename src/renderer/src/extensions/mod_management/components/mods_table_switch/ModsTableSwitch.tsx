@@ -68,6 +68,8 @@ interface IModsTableSwitchProps {
   alternatives?: { [modId: string]: IModWithState[] };
   /** Switches from a mod to another of its versions or variants, by id. */
   onSelectVersion?: (modId: string, alternativeId: string) => void;
+  /** Removes one of a mod's versions or variants, by id, asking first. */
+  onRemoveVersion?: (alternativeId: string) => void;
 }
 
 /** A group being disabled, while the user decides about the mods it shares. */
@@ -213,6 +215,7 @@ export const ModsTableSwitch = ({
   rowActions = NO_ROW_ACTIONS,
   alternatives = NO_ALTERNATIVES,
   onSelectVersion = nop,
+  onRemoveVersion,
 }: IModsTableSwitchProps) => {
   const { t } = useTranslation(["common"]);
   const newTable = useSelector(betaTable);
@@ -400,7 +403,12 @@ export const ModsTableSwitch = ({
         position: 40,
         searchText: ({ mod }) => modVersionText(mod, alternatives[mod.id], t),
         cell: ({ mod }) => (
-          <ModVersion alternatives={alternatives[mod.id]} mod={mod} onSelect={onSelectVersion} />
+          <ModVersion
+            alternatives={alternatives[mod.id]}
+            mod={mod}
+            onRemove={onRemoveVersion}
+            onSelect={onSelectVersion}
+          />
         ),
         // A collection's group shows its revision, as the collection's own row does.
         groupCell: ({ collection }) =>
@@ -415,6 +423,7 @@ export const ModsTableSwitch = ({
       dataColumns,
       isEnabled,
       multiSelected,
+      onRemoveVersion,
       onSelectVersion,
       setEnabled,
       setGroupEnabled,

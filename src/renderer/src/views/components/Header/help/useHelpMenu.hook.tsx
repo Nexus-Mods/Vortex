@@ -15,8 +15,8 @@ import { setDialogVisible } from "@/actions";
 import { useExtensionContext } from "@/ExtensionProvider";
 import { AppSupportBundleClickedEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IActionDefinition } from "@/types/IActionDefinition";
-import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
-import type { IMenuAction } from "@/ui/components/popover/PopoverMenuItem";
+import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 
 import { useGlobalIconActions } from "./useGlobalIconActions";
 
