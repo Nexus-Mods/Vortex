@@ -1,3 +1,5 @@
+import * as nodeFs from "node:fs";
+
 import { expect } from "vitest";
 
 import { test } from "../../test-utils/deploymentTest";
@@ -48,4 +50,17 @@ test("keeps every file whose unlink succeeded in the re-link list", async ({ mak
   );
 
   expect(relink).toEqual(keys.filter((key) => !failing.includes(key)));
+});
+
+test("removes the folders a deployment emptied before the deployment completes", async ({
+  makeDeployment,
+}) => {
+  const h = makeDeployment({ files: { "SKSE/Plugins/po3_Tweaks.ini": "[General]" } });
+  await h.deploy();
+
+  // a full deployment with the mod disabled: nothing is activated
+  await h.method.prepare(h.gameDir, true, h.manifest(), h.normalize);
+  await h.method.finalize("skyrimse", h.gameDir, h.stagingDir);
+
+  expect(nodeFs.existsSync(h.inGame("SKSE"))).toBe(false);
 });
