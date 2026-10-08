@@ -34,6 +34,7 @@ import type { IState } from "../types/IState";
 import type { TFunction } from "../util/i18n";
 import { MutexWrapper } from "../util/MutexContext";
 import { getPreloadApi, getWindowId } from "../util/preloadAccess";
+import { canRenderWithModal } from "./can_render_with_modal/canRenderWithModal";
 
 // TODO: Port to DialogResult.input
 type DialogInputData = Record<string, boolean | string | undefined>;
@@ -763,7 +764,8 @@ export const Dialog: React.FC<React.PropsWithChildren<unknown>> = () => {
   // Render
   const dialog = dialogs.length > 0 ? dialogs[0] : undefined;
 
-  if (dialog === undefined || dialogState === undefined) {
+  // Dialogs the new Modal can show are rendered by ModalLayer.
+  if (dialog === undefined || dialogState === undefined || canRenderWithModal(dialog)) {
     return null;
   }
 
