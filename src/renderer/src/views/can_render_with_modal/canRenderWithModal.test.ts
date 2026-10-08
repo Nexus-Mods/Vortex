@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { IDialog, IDialogContent } from "../../types/IDialog";
+import type { ICheckbox, IDialog, IDialogContent } from "../../types/IDialog";
 import { canRenderWithModal } from "./canRenderWithModal";
 
 const dialogWith = (
@@ -38,13 +38,28 @@ describe("canRenderWithModal", () => {
     ["md", { text: "t", md: "# h" }],
     ["htmlText", { text: "t", htmlText: "<b>b</b>" }],
     ["htmlFile", { text: "t", htmlFile: "f.html" }],
-    ["checkboxes", { text: "t", checkboxes: [{ id: "remember", value: false }] }],
     ["choices", { text: "t", choices: [{ id: "a", value: true }] }],
     ["input", { text: "t", input: [{ id: "name" }] }],
     ["links", { text: "t", links: [{ label: "More" }] }],
     ["condition", { text: "t", condition: () => [] }],
   ])("rejects a dialog with %s", (_name, content) => {
     expect(canRenderWithModal(dialogWith(content))).toBe(false);
+  });
+
+  it("accepts plain checkboxes", () => {
+    expect(
+      canRenderWithModal(
+        dialogWith({ text: "t", checkboxes: [{ id: "remember", value: false, text: "Remember" }] }),
+      ),
+    ).toBe(true);
+  });
+
+  it.each<[string, ICheckbox]>([
+    ["no text", { id: "a", value: false }],
+    ["bbcode", { id: "a", value: false, text: "t", bbcode: "[b]b[/b]" }],
+    ["a sub-line", { id: "a", value: false, text: "t", subText: "more" }],
+  ])("rejects a checkbox with %s", (_name, checkbox) => {
+    expect(canRenderWithModal(dialogWith({ text: "t", checkboxes: [checkbox] }))).toBe(false);
   });
 
   it.each([1, 2, 3])("accepts %i actions", (count) => {

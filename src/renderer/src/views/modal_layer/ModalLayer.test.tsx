@@ -2,11 +2,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { Provider } from "react-redux";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { settleTransitions } from "@/test-utils/transitions";
 
-import { closeDialog } from "../../actions/notifications";
+import { closeDialog, closeDialogs } from "../../actions/notifications";
 import type { IDialog, IDialogContent } from "../../types/IDialog";
 import type { IState } from "../../types/IState";
 import { ModalLayer } from "./ModalLayer";
@@ -15,6 +15,12 @@ vi.mock("../../actions/notifications", () => ({
   closeDialog: vi.fn((id: string, action?: string, input?: unknown) => ({
     type: "CLOSE_DIALOG",
     id,
+    action,
+    input,
+  })),
+  closeDialogs: vi.fn((ids: string[], action?: string, input?: unknown) => ({
+    type: "CLOSE_DIALOGS",
+    ids,
     action,
     input,
   })),
@@ -47,6 +53,10 @@ const renderLayer = (dialogs: IDialog[]) => {
 };
 
 describe("ModalLayer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("renders nothing without dialogs", () => {
     renderLayer([]);
 
@@ -108,5 +118,78 @@ describe("ModalLayer", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     await settleTransitions();
+  });
+  describe("checkboxes", () => {
+    const withCheckboxes = (id: string, title = `Title ${id}`): IDialog => ({
+      ...dialogWith(id, {
+        text: "Hello",
+        checkboxes: [
+          { id: "remember", value: false, text: "Remember my choice" },
+          { id: "locked", value: true, text: "Locked", disabled: true },
+        ],
+      }),
+      title,
+    });
+
+    it("renders each checkbox with its starting value", async () => {
+      renderLayer([withCheckboxes("one")]);
+
+      expect(screen.getByTestId("dialog-checkbox-remember")).not.toBeChecked();
+      expect(screen.getByTestId("dialog-checkbox-locked")).toBeChecked();
+      expect(screen.getByTestId("dialog-checkbox-locked")).toHaveAttribute("aria-disabled", "true");
+
+      await settleTransitions();
+    });
+
+    it("answers with the ticked values keyed by checkbox id", async () => {
+      renderLayer([withCheckboxes("one")]);
+
+      await userEvent.click(screen.getByTestId("dialog-checkbox-remember"));
+      await userEvent.click(screen.getByTestId("dialog-action-Delete"));
+
+      expect(closeDialog).toHaveBeenCalledWith("one", "Delete", { remember: true, locked: true });
+
+      await settleTransitions();
+    });
+
+    it("answers a dialog without a ticked remember on its own", async () => {
+      renderLayer([withCheckboxes("one"), withCheckboxes("two")]);
+
+      await userEvent.click(screen.getByTestId("dialog-action-Cancel"));
+
+      expect(closeDialog).toHaveBeenCalledWith("one", "Cancel", { remember: false, locked: true });
+      expect(closeDialogs).not.toHaveBeenCalled();
+
+      await settleTransitions();
+    });
+
+    it("answers the queued dialogs it matches when remember is ticked", async () => {
+      renderLayer([
+        withCheckboxes("one", "Same"),
+        withCheckboxes("two", "Same"),
+        { ...withCheckboxes("three", "Other"), actions: ["Yes", "No"] },
+      ]);
+
+      await userEvent.click(screen.getByTestId("dialog-checkbox-remember"));
+      await userEvent.click(screen.getByTestId("dialog-action-Delete"));
+
+      expect(closeDialogs).toHaveBeenCalledWith(["one", "two"], "Delete", {
+        remember: true,
+        locked: true,
+      });
+
+      await settleTransitions();
+    });
+
+    it("leaves a dialog with a rich-text checkbox to the legacy renderer", () => {
+      renderLayer([
+        dialogWith("one", {
+          text: "t",
+          checkboxes: [{ id: "a", value: false, bbcode: "[b]b[/b]" }],
+        }),
+      ]);
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 });
