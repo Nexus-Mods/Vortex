@@ -50,7 +50,7 @@ import {
   finalizeMainWrite,
 } from "./store/mainPersistence";
 import SubPersistor from "./store/SubPersistor";
-import { isTelemetryEnabled, setTelemetryEnabled } from "./telemetry/state";
+import { isTelemetryEnabled, setTelemetryEnabled, setTelemetryInstanceId } from "./telemetry/state";
 import TrayIcon from "./TrayIcon";
 import { UnleashClient } from "./unleash/client";
 import { synchronizeFeatureFlags } from "./unleash/ipc";
@@ -1097,6 +1097,7 @@ class Application {
         log("debug", "startup instance", { instanceId });
         this.mAppMetadata.instanceId = instanceId;
       }
+      setTelemetryInstanceId(this.mAppMetadata.instanceId);
 
       // 8. Read initial analytics opt-in state for telemetry gating.
       // Subsequent changes are picked up via persist:diff listener in ipcHandler.

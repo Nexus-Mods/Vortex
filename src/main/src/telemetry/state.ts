@@ -1,3 +1,4 @@
+import type { Attributes } from "@opentelemetry/api";
 import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
 
 /** Process-level singleton reference to the span processor. */
@@ -36,3 +37,16 @@ export const setUnconsentedReportingEnabled = (enabled: boolean): void => {
 export const isUnconsentedReportingEnabled = (): boolean => {
   return unconsentedReportingEnabled;
 };
+
+// the install's persisted instance id
+const ATTR_SERVICE_STATE_ID = "service.state.id";
+
+/** Read from persistence after the provider started, so it can't be in the initial resource. */
+let telemetryInstanceId: string | undefined;
+
+export const setTelemetryInstanceId = (instanceId: string): void => {
+  telemetryInstanceId = instanceId;
+};
+
+export const lateResourceAttributes = (): Attributes =>
+  telemetryInstanceId === undefined ? {} : { [ATTR_SERVICE_STATE_ID]: telemetryInstanceId };

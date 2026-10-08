@@ -25,9 +25,9 @@ import { sanitizeFramePath } from "../errors";
  * Both modes always run string values through {@link sanitizeFramePath} (strips
  * install prefixes, redacts the OS username) and tokenise well-known folders
  * (C:\Program Files → programfiles:/). Username/path redaction is baseline GDPR
- * minimisation and is never gated on consent. The resource is always reduced to
- * its allow-list (process metadata only — never hostnames or usernames),
- * regardless of consent.
+ * minimisation and is never gated on consent. The resource is reduced to its
+ * allow-list (process metadata only — never hostnames or usernames); consent
+ * adds {@link CONSENTED_RESOURCE_ATTRIBUTES}.
  */
 
 /** Resource attributes permitted to leave the process. Everything the
@@ -47,6 +47,9 @@ export const RESOURCE_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   "telemetry.sdk.version",
   "telemetry.sdk.language",
 ]);
+
+/** Resource attributes that leave the process only with analytics consent. */
+export const CONSENTED_RESOURCE_ATTRIBUTES: ReadonlySet<string> = new Set(["service.state.id"]);
 
 /** Span attributes permitted to leave the process verbatim (after string
  *  sanitisation). Keys not listed here — and not in {@link BUCKETED_ATTRIBUTES}
@@ -172,11 +175,14 @@ export const sanitizeSpanAttributes = (attributes: Attributes, strict = true): A
 };
 
 /** Apply the resource allow-list: drop unknown keys, sanitise text. */
-export const sanitizeResourceAttributes = (attributes: Attributes): Attributes => {
+export const sanitizeResourceAttributes = (attributes: Attributes, strict = true): Attributes => {
   const out: Attributes = {};
   for (const [key, value] of Object.entries(attributes)) {
     if (value === undefined) continue;
-    if (RESOURCE_ATTRIBUTE_ALLOWLIST.has(key)) {
+    if (
+      RESOURCE_ATTRIBUTE_ALLOWLIST.has(key) ||
+      (!strict && CONSENTED_RESOURCE_ATTRIBUTES.has(key))
+    ) {
       out[key] = sanitizeValue(value);
     }
   }
@@ -211,7 +217,11 @@ const sanitizeEvents = (events: readonly TimedEvent[], strict: boolean): TimedEv
  * `strict` (default) enforces the no-consent allow-list; pass `false` once
  * consent is established to keep the richer payload (string redaction stays on).
  */
-export const sanitizeSpan = (span: ReadableSpan, strict = true): ReadableSpan => {
+export const sanitizeSpan = (
+  span: ReadableSpan,
+  strict = true,
+  extraResourceAttributes: Attributes = {},
+): ReadableSpan => {
   const ctx = span.spanContext();
   return {
     name: span.name,
@@ -232,7 +242,12 @@ export const sanitizeSpan = (span: ReadableSpan, strict = true): ReadableSpan =>
     events: sanitizeEvents(span.events, strict),
     duration: span.duration,
     ended: span.ended,
-    resource: resourceFromAttributes(sanitizeResourceAttributes(span.resource.attributes)),
+    resource: resourceFromAttributes(
+      sanitizeResourceAttributes(
+        { ...span.resource.attributes, ...extraResourceAttributes },
+        strict,
+      ),
+    ),
     instrumentationScope: span.instrumentationScope,
     droppedAttributesCount: span.droppedAttributesCount,
     droppedEventsCount: span.droppedEventsCount,
@@ -254,16 +269,24 @@ export const sanitizeSpan = (span: ReadableSpan, strict = true): ReadableSpan =>
 export class SanitizingSpanExporter implements SpanExporter {
   readonly #inner: SpanExporter;
   readonly #isConsented: () => boolean;
+  readonly #lateResourceAttributes: () => Attributes;
 
-  constructor(inner: SpanExporter, isConsented: () => boolean = () => false) {
+  /** `lateResourceAttributes` are resource attributes known only after the provider started. */
+  constructor(
+    inner: SpanExporter,
+    isConsented: () => boolean = () => false,
+    lateResourceAttributes: () => Attributes = () => ({}),
+  ) {
     this.#inner = inner;
     this.#isConsented = isConsented;
+    this.#lateResourceAttributes = lateResourceAttributes;
   }
 
   export(spans: ReadableSpan[], resultCallback: Parameters<SpanExporter["export"]>[1]): void {
     const strict = !this.#isConsented();
+    const lateResourceAttributes = this.#lateResourceAttributes();
     this.#inner.export(
-      spans.map((span) => sanitizeSpan(span, strict)),
+      spans.map((span) => sanitizeSpan(span, strict, lateResourceAttributes)),
       resultCallback,
     );
   }
