@@ -19,15 +19,17 @@ export const makeModsTableStore = ({
   tables = {},
   downloads = {},
   categories = {},
+  modState,
 }: {
   tables?: IModsTableTestTables;
   downloads?: { [id: string]: Partial<IDownload> };
   categories?: ICategoryDictionary;
+  modState?: { [modId: string]: { enabled: boolean } };
 } = {}) => {
   const initial = {
     settings: { tables, profiles: { activeProfileId: "profile" } },
     persistent: {
-      profiles: { profile: { gameId: MODS_TABLE_TEST_GAME } },
+      profiles: { profile: { gameId: MODS_TABLE_TEST_GAME, modState } },
       downloads: { files: downloads },
       categories: { [MODS_TABLE_TEST_GAME]: categories },
     },
