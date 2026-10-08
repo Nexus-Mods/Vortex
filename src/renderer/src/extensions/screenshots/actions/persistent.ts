@@ -52,3 +52,13 @@ export const setGameMetaFlag = createAction(
   "SET_GAME_MEDIA_FLAG",
   (flag: string, value: boolean) => ({ flag, value }),
 );
+
+export const setMediaItemUploaded = createAction(
+  "SET_GAME_MEDIA_UPLOADED",
+  (gameId: string, mediaId: string, uploaded: boolean, url?: string) => ({
+    gameId,
+    mediaId,
+    uploaded,
+    url,
+  }),
+);

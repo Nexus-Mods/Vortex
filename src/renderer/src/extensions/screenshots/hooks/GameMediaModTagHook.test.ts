@@ -16,7 +16,9 @@ const { activeGameIdMock, state, store, dispatch, mockUseSelector, mockUseStore 
       persistent: { game_media: IGameMediaPersistentState };
       session: { game_media: IGameMediaSessionState };
     } = {
-      persistent: { game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {} } },
+      persistent: {
+        game_media: { sources: {}, modTags: {}, disabledSources: {}, flags: {}, uploadedItems: {} },
+      },
       session: { game_media: { items: [] as GameMediaItem[] | null } },
     };
 

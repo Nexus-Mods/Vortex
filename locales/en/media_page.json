@@ -28,7 +28,8 @@
       "add_mod": "Add mod tag",
       "open": "Open image",
       "open_in_steam": "Open in Steam",
-      "view_in_folder": "View in folder"
+      "view_in_folder": "View in folder",
+      "view_web": "View on Nexus Mods"
     },
     "upload": {
       "title": "Upload to Nexus Mods",
@@ -38,7 +39,8 @@
       "name": "File name",
       "captured": "Captured",
       "size": "Size",
-      "source": "Source"
+      "source": "Source",
+      "uploaded": "Uploaded"
     },
     "mods_used": "Mods used",
     "mods_used_desc": "Tag the mods visible in this screenshot.",

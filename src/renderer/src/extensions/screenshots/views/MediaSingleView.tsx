@@ -199,7 +199,7 @@ export default function MediaSingleView({
             ))}
 
             {/* Floating search at cursor when a pending coord is set */}
-            {isAddingTag && pendingCoords && (
+            {/* {isAddingTag && pendingCoords && (
               <FloatingSearchBar
                 visible
                 api={api}
@@ -212,7 +212,7 @@ export default function MediaSingleView({
                 }}
                 onSelect={onSelectTag}
               />
-            )}
+            )} */}
 
             {isAddingTag && pendingCoords && (
               <ModTagIndicator
@@ -227,6 +227,7 @@ export default function MediaSingleView({
 
         <MediaViewSingleDetails
           entry={entry}
+          gameId={gameId}
           isAddingTag={isAddingTag}
           removeTag={removeTag}
           source={source}

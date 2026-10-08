@@ -27,8 +27,8 @@ export default function MediaSingleViewAddTagModal({
   return (
     <Modal showCloseButton isOpen={isOpen} title={"TRANSLATION REQUIRED"} onClose={onClose}>
       <div className="flex flex-col gap-8" onClick={(e) => e.stopPropagation()}>
-        <div>
-          <img className="w-80" src={imagePath} />
+        <div className="w-full">
+          <img className="m-auto w-80" src={imagePath} />
         </div>
 
         <section>
@@ -38,7 +38,7 @@ export default function MediaSingleViewAddTagModal({
         <div className="flex gap-2">
           <Button>Save</Button>
 
-          <Button appearance="subdued" brand="neutral">
+          <Button appearance="subdued" brand="neutral" onClick={onClose}>
             Cancel
           </Button>
         </div>

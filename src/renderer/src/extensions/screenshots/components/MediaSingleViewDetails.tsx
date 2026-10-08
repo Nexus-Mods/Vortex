@@ -7,16 +7,20 @@ import {
   mdiTagOutline,
   mdiTagPlus,
   mdiUpload,
+  mdiWeb,
 } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
+import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import relativeTime from "@/util/relativeTime";
 import { bytesToString } from "@/util/util";
 
+import { getUploadedGameMediaInfo } from "../selectors";
 import type { GameMediaItem, GameMediaModTag, ResolvedGameMediaSource } from "../util/mediaTypes";
 import { resolveTString } from "../util/resolveTString";
 import GameMediaModTagPill from "./GameMediaModTagPill";
@@ -25,6 +29,7 @@ interface IMediaViewSingleDetailsProps {
   entry: GameMediaItem;
   source: ResolvedGameMediaSource;
   tags: readonly GameMediaModTag[];
+  gameId: string;
   isAddingTag: boolean;
   removeTag: (id: string) => void;
   startUpload: () => void;
@@ -35,12 +40,17 @@ export default function MediaViewSingleDetails({
   entry,
   source,
   tags,
+  gameId,
   isAddingTag,
   startUpload,
   toggleAddingTag,
   removeTag,
 }: IMediaViewSingleDetailsProps) {
   const { t } = useTranslation("media_page");
+
+  const uploadInfo = useSelector((state: IState) =>
+    getUploadedGameMediaInfo(state, gameId, entry.id),
+  );
 
   const details = [
     { label: t("single::detail::name"), value: entry.name },
@@ -85,18 +95,6 @@ export default function MediaViewSingleDetails({
           {isAddingTag ? t("single::actions::cancel") : t("single::actions::add_mod")}
         </Button>
 
-        <Button
-          appearance="moderate"
-          brand="neutral"
-          leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
-          title={
-            entry.type === "video" ? t("single::video_tag_disabled") : t("single::actions::add_mod")
-          }
-          onClick={toggleAddingTag}
-        >
-          {(isAddingTag ? t("single::actions::cancel") : t("single::actions::add_mod")) + " modal"}
-        </Button>
-
         <div>
           {tags?.length ? (
             tags.map((tag) => (
@@ -126,6 +124,22 @@ export default function MediaViewSingleDetails({
       {/* Detials Section */}
       <section>
         <dl className="flex flex-col gap-2">
+          {uploadInfo && (
+            <div className="flex justify-between gap-2">
+              <dt>
+                <Typography brand="primary" typographyType="body-sm">
+                  {t("single::detail::uploaded")}
+                </Typography>
+              </dt>
+
+              <dd className="text-right">
+                <Typography brand="primary" typographyType="body-sm">
+                  {relativeTime(uploadInfo.date, t)}
+                </Typography>
+              </dd>
+            </div>
+          )}
+
           {details.map(({ label, value, title }) => (
             <div className="flex justify-between gap-2" key={label}>
               <dt>
@@ -168,9 +182,15 @@ export default function MediaViewSingleDetails({
 
       <div className="border-b border-b-stroke-subdued/70" />
 
-      <Button leftIconPath={mdiUpload} onClick={startUpload}>
-        {t("single::upload::title")}
-      </Button>
+      {uploadInfo ? (
+        <Button leftIconPath={mdiWeb} onClick={() => window.api.shell.openUrl(uploadInfo.url)}>
+          {t("single::actions::view_web")}
+        </Button>
+      ) : (
+        <Button leftIconPath={mdiUpload} onClick={startUpload}>
+          {t("single::upload::title")}
+        </Button>
+      )}
     </div>
   );
 }

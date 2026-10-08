@@ -16,6 +16,9 @@ export interface IGameMediaPersistentState {
     showVideos?: boolean;
     [key: string]: boolean;
   };
+  uploadedItems: {
+    [gameId: string]: Record<string, { date: Date; url: string }>;
+  };
 }
 
 const on = reducerFor<IGameMediaPersistentState>();
@@ -102,6 +105,23 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
 
       return { ...state, flags: { ...state.flags, [flag]: value } };
     }),
+    on(actions.setMediaItemUploaded, (state, payload) => {
+      const { gameId, mediaId, uploaded, url } = payload;
+      if (uploaded && url)
+        return {
+          ...state,
+          uploadedItems: {
+            ...state.uploadedItems,
+            [gameId]: { ...state.uploadedItems[gameId], [mediaId]: { date: new Date(), url } },
+          },
+        };
+      else if (!uploaded) {
+        const uploadedItems = { ...state.uploadedItems[gameId] };
+        delete uploadedItems[mediaId];
+
+        return { ...state, uploadedItems: { ...state.uploadedItems, [gameId]: uploadedItems } };
+      }
+    }),
   ]),
   defaults: {
     sources: {},
@@ -110,5 +130,6 @@ export const persistentReducer: IReducerSpec<IGameMediaPersistentState> = {
     flags: {
       showVideos: false,
     },
+    uploadedItems: {},
   },
 };

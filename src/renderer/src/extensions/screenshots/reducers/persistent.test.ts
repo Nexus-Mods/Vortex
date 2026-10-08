@@ -12,6 +12,7 @@ describe("setGameMediaSourceEnabled", () => {
       modTags: {},
       disabledSources: {},
       flags: {},
+      uploadedItems: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -30,6 +31,7 @@ describe("setGameMediaSourceEnabled", () => {
       modTags: {},
       disabledSources: { testGame: ["testSource"] },
       flags: {},
+      uploadedItems: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -49,6 +51,7 @@ describe("setGameMediaSourceEnabled", () => {
       modTags: {},
       disabledSources: { testGame: ["testSource"] },
       flags: {},
+      uploadedItems: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -99,6 +102,7 @@ describe("addGameMediaSource", () => {
       modTags: {},
       disabledSources: {},
       flags: {},
+      uploadedItems: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -126,6 +130,7 @@ describe("addGameMediaSource", () => {
       modTags: {},
       disabledSources: {},
       flags: {},
+      uploadedItems: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -154,6 +159,7 @@ describe("addGameMediaSource", () => {
       modTags: {},
       disabledSources: {},
       flags: {},
+      uploadedItems: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -188,6 +194,7 @@ describe("deleteGameMediaSource", () => {
       modTags: {},
       disabledSources: {},
       flags: {},
+      uploadedItems: {},
     };
     const gameId = "testGame";
     const sourceId = "testSource";
@@ -219,6 +226,7 @@ describe("deleteGameMediaSource", () => {
       modTags: {},
       disabledSources: {},
       flags: {},
+      uploadedItems: {},
     };
 
     const result = persistentReducer.reducers["DELETE_GAME_MEDIA_SOURCE"](input, {
@@ -264,6 +272,7 @@ describe("deleteGameMediaModTag", () => {
       },
       disabledSources: {},
       flags: {},
+      uploadedItems: {},
     };
 
     const result = persistentReducer.reducers["DELETE_GAME_MEDIA_MOD_TAG"](input, {
