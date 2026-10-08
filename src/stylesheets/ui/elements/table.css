@@ -23,6 +23,8 @@
         position: relative;
         isolation: isolate;
         display: grid;
+        /* Stretched to fill a page, the space goes below the rows, not between them. */
+        align-content: start;
         column-gap: var(--nxm-table-gap);
         min-width: 0;
         container-type: inline-size;
@@ -150,7 +152,7 @@
     }
 
     /* Heights come from Table.tsx, which the virtualiser counts on. The sorted column's cells
-       stand out from the rest. */
+       stand out from the rest. A selected row stays lit while it's hovered. */
     .nxm-table-row {
         height: var(--nxm-table-row-height);
         background-color: var(--nxm-table-row-tint);
@@ -162,6 +164,10 @@
 
         &:hover {
             --nxm-table-row-tint: --alpha(var(--color-white) / 3%);
+        }
+
+        &[aria-selected="true"] {
+            --nxm-table-row-tint: var(--color-translucent-100);
         }
     }
 

@@ -88,11 +88,15 @@ interface IModRowActionsProps {
   actions: IToolbarAction[];
   /** Room for the pins, the switch and the menu, wider than the column is at rest. */
   width: TableColumnWidth;
+  /** The mod the row is for, which the switch enables or disables. */
   modId: string;
   /** The switch's name. */
   label: string;
+  /** Whether the switch is on, showing a change at once while it lands. */
   enabled: boolean;
+  /** Whether a change is under way, which busies the switch. */
   isLoading: boolean;
+  /** Enables or disables the mods, from the switch. */
   onSetEnabled: (modIds: string[], enabled: boolean) => void;
 }
 
@@ -147,8 +151,8 @@ const ModRowActions = memo(
     return (
       <Toolbar
         className="absolute inset-y-0 right-0 justify-end"
-        pinTarget="row"
         pinningId={MOD_ROW_PINNING_ID}
+        pinTarget="row"
         style={{ width }}
       >
         <ToolbarGroup actions={actions} beforeOverflow={toggle} />
@@ -296,11 +300,11 @@ export const ModsTableSwitch = ({
         cell: ({ mod, name }) => (
           <ModRowActions
             actions={actionsFor(mod.id)}
-            width={actionsWidth(pinnedCount)}
             enabled={isEnabled(mod)}
             isLoading={changing.has(mod.id)}
             label={t("{{name}} enabled", { name })}
             modId={mod.id}
+            width={actionsWidth(pinnedCount)}
             onSetEnabled={setEnabled}
           />
         ),
@@ -359,7 +363,7 @@ export const ModsTableSwitch = ({
   }
 
   const tableProps = {
-    className: "mb-2",
+    className: "mb-2 flex-1",
     toolbar: (
       <ModsTableToolbar
         displayOptions={displayOptions}

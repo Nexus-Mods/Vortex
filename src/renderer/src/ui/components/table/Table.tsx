@@ -47,7 +47,6 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     () => [...new Set((rows ?? groups?.flatMap((group) => group.rows) ?? []).map(getRowId))],
     [getRowId, groups, rows],
   );
-  const selection = useTableSelection(rowIds);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggle = (groupId: string) =>
@@ -94,6 +93,15 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     });
   }, [collapsed, getRowId, groups, rows, sortRows]);
 
+  const shownRows = useMemo(
+    () =>
+      items.flatMap((item) =>
+        item.kind === "row" ? [{ key: item.key, id: getRowId(item.row) }] : [],
+      ),
+    [getRowId, items],
+  );
+  const selection = useTableSelection(rowIds, shownRows);
+
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
   const getItemSize = useCallback(
     (index: number) =>
@@ -131,6 +139,17 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         } as CSSProperties
       }
       onBlur={virtual.onBlur}
+      onClick={(event) => {
+        // Between and below the rows, but not the head; a portalled panel isn't in the table.
+        const target = event.target as Element;
+        if (
+          selectable &&
+          event.currentTarget.contains(target) &&
+          target.closest('[role="row"], [role="rowgroup"]') === null
+        ) {
+          selection.clear();
+        }
+      }}
       onFocus={virtual.onFocus}
     >
       <TableHeader
@@ -176,10 +195,18 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 sortedColumnId={sort?.columnId}
                 checkbox={
                   selectable
-                    ? selection.row(getRowId(item.row), getRowLabel?.(item.row))
+                    ? selection.checkbox(
+                        { key: item.key, id: getRowId(item.row) },
+                        getRowLabel?.(item.row),
+                      )
                     : undefined
                 }
                 tint={item.tint}
+                onClick={
+                  selectable
+                    ? (click) => selection.click({ key: item.key, id: getRowId(item.row) }, click)
+                    : undefined
+                }
               />
             )}
           </Fragment>
