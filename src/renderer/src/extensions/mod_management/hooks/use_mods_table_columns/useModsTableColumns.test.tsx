@@ -106,6 +106,25 @@ describe("useModsTableColumns", () => {
     ]);
   });
 
+  it("offers the columns that can group, hidden or not, in the table's order", () => {
+    const store = makeModsTableStore();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const groupBy = () => "";
+    const columns = [
+      column("name"),
+      column("status", { sticky: "end", groupBy }),
+      column("hidden", { isToggleable: true, isDefaultVisible: false, position: 60, groupBy }),
+      column("shown", { isToggleable: true, position: 50, groupBy }),
+      column("ungroupable", { isToggleable: true, position: 40 }),
+    ];
+
+    const { result } = renderHook(() => useModsTableColumns(columns), { wrapper });
+
+    expect(result.current.groupable.map(({ id }) => id)).toEqual(["shown", "hidden", "status"]);
+  });
+
   it("resets every column to its default", () => {
     const { result } = renderColumns({
       mods: { attributes: { version: { enabled: false }, author: { enabled: true } } },

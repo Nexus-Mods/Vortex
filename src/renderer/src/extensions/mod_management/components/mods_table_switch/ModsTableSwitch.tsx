@@ -25,12 +25,13 @@ import {
   type IModGroup,
   type IModRow,
   type ISharedMods,
-  MODS_TABLE_PRESETS,
+  type ModsTableGrouping,
   sharedMods,
-} from "../../util/modsTableViews";
+} from "../../util/mods_table_views/modsTableViews";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
 import { ModThumbnail } from "../mod_thumbnail/ModThumbnail";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
+import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
 
 interface IModsTableSwitchProps {
@@ -59,8 +60,7 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
   const { t } = useTranslation(["common"]);
   const newTable = useDevSetting("newTable");
 
-  const [view, setView] = useState(MODS_TABLE_PRESETS[0]);
-  const groups = useMemo(() => groupMods(mods, view.grouping, t), [mods, view.grouping, t]);
+  const [grouping, setGrouping] = useState<ModsTableGrouping>("none");
   const rows = useMemo(() => allModRows(mods), [mods]);
   const memberships = useMemo(() => collectionsByMod(mods), [mods]);
   const [pendingDisable, setPendingDisable] = useState<IPendingDisable>();
@@ -174,6 +174,15 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
         header: t("Status"),
         width: "42px",
         sticky: "end",
+        groupBy: ({ mod }) => {
+          if (mod.state === "downloaded") {
+            return mod.attributes?.wasInstalled ? t("Uninstalled") : t("Never installed");
+          }
+          if (mod.state === "installing") {
+            return t("Installing");
+          }
+          return isEnabled(mod) ? t("Enabled") : t("Disabled");
+        },
         cell: ({ mod, name }) => (
           <Switch
             aria-label={t("{{name}} enabled", { name })}
@@ -202,13 +211,29 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
     [changing, dataColumns, isEnabled, setEnabled, setGroupEnabled, t],
   );
 
-  const { visibleColumns, toggles, canReset, setColumnVisible, resetColumns } =
+  const { visibleColumns, toggles, groupable, canReset, setColumnVisible, resetColumns } =
     useModsTableColumns(columns);
 
+  // Regroups when the grouped-by column changes, not whenever any column does, as Status does on each switch.
+  const groupColumn = groupable.find((column) => column.id === grouping);
+  const groups = useMemo(
+    () => groupMods(mods, grouping, t, groupColumn),
+    [mods, grouping, t, groupColumn],
+  );
+
   const displayOptions = useDisplayOptionsAction({
-    canReset,
-    children: <ModsTableColumnToggles toggles={toggles} onToggle={setColumnVisible} />,
-    onReset: resetColumns,
+    canReset: canReset || grouping !== "none",
+    children: (
+      <>
+        <ModsTableGroupBy columns={groupable} grouping={grouping} onChange={setGrouping} />
+
+        <ModsTableColumnToggles toggles={toggles} onToggle={setColumnVisible} />
+      </>
+    ),
+    onReset: () => {
+      resetColumns();
+      setGrouping("none");
+    },
   });
 
   if (!newTable) {
@@ -218,7 +243,11 @@ export const ModsTableSwitch = ({ mods, legacy, onSetModsEnabled }: IModsTableSw
   const tableProps = {
     className: "mb-2",
     toolbar: (
-      <ModsTableToolbar displayOptions={displayOptions} view={view} onViewChange={setView} />
+      <ModsTableToolbar
+        displayOptions={displayOptions}
+        grouping={grouping}
+        onGroupingChange={setGrouping}
+      />
     ),
     columns: visibleColumns,
     getRowId: ({ mod }: IModRow) => mod.id,

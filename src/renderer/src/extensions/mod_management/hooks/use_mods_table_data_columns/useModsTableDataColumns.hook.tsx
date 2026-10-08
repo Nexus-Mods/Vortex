@@ -11,8 +11,8 @@ import { activeGameId } from "@/util/selectors";
 import { getModType } from "../../../gamemode_management/util/modTypeExtensions";
 import type { IMod } from "../../types/IMod";
 import modName from "../../util/modName";
+import type { IModRow } from "../../util/mods_table_views/modsTableViews";
 import { getModSources } from "../../util/modSource";
-import type { IModRow } from "../../util/modsTableViews";
 import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
 
 const downloadFiles = (state: IState) => state.persistent.downloads.files;
@@ -26,7 +26,7 @@ const categoryId = (category: string | number | undefined) =>
 const timeOf = (value: string | number | Date | undefined) =>
   value === undefined ? undefined : new Date(value).getTime() || undefined;
 
-/** A toggleable column showing a line of text, sorted by it. */
+/** A toggleable column showing a line of text, sorted and grouped by it. */
 const textColumn = (
   id: string,
   header: string,
@@ -39,6 +39,7 @@ const textColumn = (
   isToggleable: true,
   isDefaultVisible: false,
   sort: (a, b) => text(a).localeCompare(text(b)),
+  groupBy: text,
   cell: (row) => <span className="truncate">{text(row)}</span>,
 });
 
