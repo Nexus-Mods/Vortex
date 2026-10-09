@@ -46,6 +46,7 @@ export default function ModFileSelector({ moduid, onSelect, api }: IModFileSelec
     <div className="mb-2 flex w-full gap-2">
       <SelectField
         showRequiredLabel
+        className="text-sm"
         disabled={isLoading}
         errorMessage={isError ? error?.message : undefined}
         fieldClassName="grow"
@@ -61,9 +62,11 @@ export default function ModFileSelector({ moduid, onSelect, api }: IModFileSelec
       </SelectField>
 
       <SelectField
-        showRequiredLabel
+        required
+        className="text-sm"
         disabled={isLoading}
         label="Version"
+        showRequiredLabel={false}
         value={selectedVersion?.id}
         onChange={(e) => selectVersion(e.target.value)}
       >

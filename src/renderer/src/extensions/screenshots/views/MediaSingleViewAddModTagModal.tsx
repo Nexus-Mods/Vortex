@@ -3,9 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
-import { SelectField } from "@/ui/components/form/select_field/SelectField";
 import { Modal } from "@/ui/components/modal/Modal";
-import { Typography } from "@/ui/components/typography/Typography";
 
 import type { IModOption } from "../components/ModCombobox";
 import ModCombobox from "../components/ModCombobox";
@@ -17,8 +15,7 @@ interface IMediaSingleViewAddTagModalProps {
   imagePath: string;
   isOpen: boolean;
   onClose: () => void;
-  setTag: (mod: IModResult, comment?: string) => void;
-  onSave: () => void;
+  onSave: (mod: IModResult, comment?: string) => void;
   api: IExtensionApi;
   domainName: string;
   pendingCoords: { x: number; y: number };
@@ -37,7 +34,13 @@ export default function MediaSingleViewAddTagModal({
   const [selectedMod, setSelectedMod] = useState<IModOption>();
 
   return (
-    <Modal showCloseButton isOpen={isOpen} title={t("add_mod_tag::title")} onClose={onClose}>
+    <Modal
+      showCloseButton
+      isOpen={isOpen}
+      size="sm"
+      title={t("add_mod_tag::title")}
+      onClose={onClose}
+    >
       <div className="flex flex-col gap-6">
         <div className="w-full">
           <img className="m-auto w-80" src={imagePath} />

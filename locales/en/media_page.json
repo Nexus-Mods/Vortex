@@ -54,7 +54,8 @@
   "add_mod_tag": {
     "title": "Tag a mod",
     "group_installed": "Installed",
-    "group_nexus": "Nexus Mods"
+    "group_nexus": "Nexus Mods",
+    "label": "Search for a mod"
   },
   "floating_search": {
     "placeholder": "Search for mods...",

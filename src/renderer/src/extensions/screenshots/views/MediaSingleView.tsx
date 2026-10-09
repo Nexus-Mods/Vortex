@@ -244,11 +244,11 @@ export default function MediaSingleView({
         imagePath={entry.path}
         isOpen={isAddingTag && !!pendingCoords}
         pendingCoords={pendingCoords}
-        setTag={onSelectTag}
         onClose={() => {
           setIsAddingTag(false);
           setPendingCoords(null);
         }}
+        onSave={onSelectTag}
       />
 
       {/* Upload to Nexus Mods Modal */}
