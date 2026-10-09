@@ -31,5 +31,8 @@ export const orphanedTagIds = (
   const live = new Set(liveItems.map((i) => i.id));
   return Object.keys(mediaState(state).modTags[gameId] ?? {}).filter((id) => !live.has(id));
 };
-export const getUploadedGameMediaInfo = (state: IState, gameId: string, mediaId: string) =>
-  mediaState(state).uploadedItems[gameId]?.[mediaId];
+export const getUploadedGameMediaInfo = (
+  state: IState,
+  gameId: string,
+  mediaId: string,
+): { date: Date; url: string } | undefined => mediaState(state).uploadedItems[gameId]?.[mediaId];

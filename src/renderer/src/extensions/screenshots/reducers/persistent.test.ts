@@ -547,3 +547,50 @@ describe("setGameMediaFlag", () => {
     expect(result.flags.showVideos).toBe(true);
   });
 });
+
+describe("setMediaItemUploaded", () => {
+  it("correctly adds a new record for an upload", () => {
+    const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
+    };
+
+    const result = persistentReducer.reducers["SET_GAME_MEDIA_UPLOADED"](input, {
+      gameId: "game1",
+      mediaId: "media1",
+      uploaded: true,
+      url: "https://nexusmods.com/game1/images/1",
+    });
+
+    expect(result.uploadedItems["game1"]).toEqual({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      media1: { date: expect.anything(), url: "https://nexusmods.com/game1/images/1" },
+    });
+  });
+
+  it("correctly removes an uploaded image from the state", () => {
+    const input: IGameMediaPersistentState = {
+      ...persistentReducer.defaults,
+      uploadedItems: {
+        game1: {
+          media1: {
+            date: new Date(),
+            url: "https://nexusmods.com/game1/images/1",
+          },
+          media2: {
+            date: new Date(),
+            url: "https://nexusmods.com/game1/images/2",
+          },
+        },
+      },
+    };
+
+    const result = persistentReducer.reducers["SET_GAME_MEDIA_UPLOADED"](input, {
+      gameId: "game1",
+      mediaId: "media2",
+      uploaded: false,
+    });
+
+    expect(result.uploadedItems["game1"]?.["media1"]).toBeDefined();
+    expect(result.uploadedItems["game1"]?.["media2"]).not.toBeDefined();
+  });
+});

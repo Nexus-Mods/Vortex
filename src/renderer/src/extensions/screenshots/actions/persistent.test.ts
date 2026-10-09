@@ -75,3 +75,19 @@ describe("setGameMediaSourceEnabled", () => {
     });
   });
 });
+
+describe("setMediaItemUploaded", () => {
+  it("creates the correct action", () => {
+    const gameId = "test";
+    const mediaId = "testMedia";
+    const uploaded = true;
+    const url = "https://nexusmods.com/test/images/1";
+
+    const action = actions.setMediaItemUploaded(gameId, mediaId, uploaded, url);
+    expect(action).toEqual({
+      error: false,
+      type: "SET_GAME_MEDIA_UPLOADED",
+      payload: { gameId, mediaId, uploaded, url },
+    });
+  });
+});
