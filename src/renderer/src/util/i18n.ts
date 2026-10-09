@@ -176,6 +176,7 @@ export async function init(
         "gamemode_management",
         "extension_manager",
         "health_check",
+        "media_page",
         // the folded gamebryo plugin management extension keeps its historical namespace:
         // community translation packs ship these strings under this name
         "gamebryo-plugin-management",

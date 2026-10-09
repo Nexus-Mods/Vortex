@@ -3066,6 +3066,7 @@ class ExtensionManager {
       "gamebryo-plugin-management": () =>
         require("./extensions/gamebryo_plugin_management/index.ts"),
       recovery: () => require("./extensions/recovery/index.ts"),
+      screenshots: () => require("./extensions/screenshots/index.ts"),
       settings_application: () => require("./extensions/settings_application/index.ts"),
       settings_interface: () => require("./extensions/settings_interface/index.ts"),
       settings_metaserver: () => require("./extensions/settings_metaserver/index.ts"),
