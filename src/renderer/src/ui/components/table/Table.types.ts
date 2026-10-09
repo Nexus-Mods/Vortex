@@ -27,10 +27,14 @@ export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   cell: (row: T) => ReactNode;
   /** The column's cell in a group's row. The first column's follows the collapse button. */
   groupCell?: (group: G) => ReactNode;
-  /** A grid track, e.g. `"minmax(0, 1fr)"` or `"206px"`. Default `"minmax(0, 1fr)"`. */
+  /** A grid track, e.g. `"minmax(120px, 1fr)"` or `"206px"`. Default `"minmax(280px, 1fr)"`. */
   width?: TableColumnWidth;
   /** Where the header and cells sit in the column. Default `start`. */
   align?: "start" | "end";
+  /** `end` keeps the last column at the right of the view while the columns overflow. */
+  sticky?: "end";
+  /** For a sticky column, how far its cell widens over the cells before it while its row is hovered. */
+  revealWidth?: `${number}px`;
   /** Makes the column sortable: compares two rows for A to Z, as `Array.sort` does. */
   sort?: (a: T, b: T) => number;
 }
@@ -52,10 +56,22 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   label: string;
   /** Controls above the header row, in the sticky head: a page's tabs and actions. */
   toolbar?: ReactNode;
+  /** Along the bottom of the view, below the rows: a bar for the selected rows. */
+  footer?: ReactNode;
+  /** In place of the rows while there are none: what a search that matched nothing says. */
+  empty?: ReactNode;
   /** The sort to start with; unset, the rows keep the order they're given in. */
   defaultSort?: ITableSort;
   /** Classes for the table's grid element. */
   className?: string;
+  /** Lets rows be selected, each from a checkbox at its start, every row from the header's. */
+  selectable?: boolean;
+  /** A row's name, for its checkbox. */
+  getRowLabel?: (row: T) => string;
+  /** The selected rows' ids, for a page that acts on them; unset, the table keeps its own. */
+  selectedIds?: ReadonlySet<string>;
+  /** Takes the selection the user changes it to, with `selectedIds`. */
+  onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
 } & (
   | {
       /** The rows, ungrouped. */
@@ -79,6 +95,8 @@ export type TableItem<T, G> =
       row: T;
       /** 2 under a group, unset in a flat grid. */
       level?: number;
+      /** The picture of the group it's under, which tints it. */
+      tint?: string;
     }
   | {
       kind: "group";

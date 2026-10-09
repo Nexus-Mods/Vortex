@@ -70,6 +70,7 @@ import { setDeploymentNecessary } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
 import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
+import { CollectionUpdateWarning } from "./components/collection_update_warning/CollectionUpdateWarning";
 import {
   onAddMod,
   onGameModeActivated,
@@ -2227,6 +2228,8 @@ function init(context: IExtensionContext): boolean {
     75,
   );
   context.registerSettings("Workarounds", Workarounds, undefined, undefined, 1000);
+
+  context.registerDialog("collection-update-warning", CollectionUpdateWarning);
 
   context.registerDialog(
     "external-changes",

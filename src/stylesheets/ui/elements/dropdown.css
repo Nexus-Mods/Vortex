@@ -98,6 +98,19 @@
             cursor: not-allowed;
         }
 
+        /* Disabled but for its pin, which can still be pinned or unpinned. */
+        &[aria-disabled="true"] {
+            cursor: not-allowed;
+
+            > :not(.nxm-dropdown-item-pin) {
+                opacity: 0.4;
+            }
+
+            .nxm-dropdown-item-pin {
+                cursor: pointer;
+            }
+        }
+
         &.nxm-dropdown-item-focus,
         &.nxm-dropdown-item-hoverable:enabled:hover {
             color: var(--color-neutral-strong);

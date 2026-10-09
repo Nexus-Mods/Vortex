@@ -5,19 +5,31 @@
     .nxm-table {
         --nxm-table-gap: calc(var(--spacing) * 2);
         --nxm-table-gutter: calc(var(--spacing) * 6 - var(--nxm-table-gap));
+        --nxm-table-gutter-start: calc(var(--spacing) * 4 - var(--nxm-table-gap));
         --nxm-table-head-padding: calc(var(--spacing) * 2);
         --nxm-table-header-height: calc(var(--spacing) * 6);
-        /* The whole sticky head, which the toolbar grows by its own height and a gap. */
         --nxm-table-head-height: calc(
             var(--nxm-table-head-padding) * 2 + var(--nxm-table-header-height)
         );
         --nxm-table-toolbar-height: calc(var(--spacing) * 7);
+        --nxm-table-leading-width: calc(var(--spacing) * 5);
+        --nxm-table-sticky-fade: calc(var(--spacing) * 2);
+        --nxm-table-sticky-solid: calc(var(--spacing) * 3);
+        --nxm-table-sticky-clearance: calc(
+            var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid) + var(--nxm-table-gap)
+        );
+        --nxm-table-row-tint: transparent;
+        --nxm-table-footer-height: calc(var(--spacing) * 10 + 1px);
 
         position: relative;
         isolation: isolate;
         display: grid;
+        align-content: start;
         column-gap: var(--nxm-table-gap);
         min-width: 0;
+        container-type: inline-size;
+        overflow-y: clip;
+        overflow-anchor: none;
     }
 
     .nxm-table-header,
@@ -41,7 +53,7 @@
     .nxm-table-head {
         position: sticky;
         top: 0;
-        z-index: 1;
+        z-index: 3;
         display: grid;
         grid-column: 1 / -1;
         grid-template-columns: subgrid;
@@ -58,11 +70,65 @@
         );
     }
 
-    /* Inside the gutters, so its first tab lines up with the first column. */
+    /* The width in view, stuck to its left edge, so it stays put while the columns scroll
+       sideways under it. Padded by the gutter and gap, so its first tab lines up with the
+       first column. */
     .nxm-table-toolbar {
+        position: sticky;
+        left: 0;
         display: flex;
-        grid-column: 2 / -2;
+        grid-row: 1;
+        grid-column: 1 / -1;
+        justify-self: start;
+        width: 100cqi;
         height: var(--nxm-table-toolbar-height);
+        padding-right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap));
+        padding-left: calc(var(--nxm-table-gutter-start) + var(--nxm-table-gap));
+    }
+
+    /* Placed, so the edge can share the first row without pushing the head's rows down. */
+    .nxm-table-header {
+        grid-row: 1;
+    }
+
+    .nxm-table[data-toolbar] .nxm-table-header {
+        grid-row: 2;
+    }
+
+    /* The width in view, stuck to its left edge like the toolbar, so its fade stays on the
+       right of what's in view, over the right gutter, while there are columns to scroll to.
+       Down to the scroller's foot, the table clipping it. */
+    .nxm-table-edge {
+        position: sticky;
+        left: 0;
+        grid-row: 1;
+        grid-column: 1 / -1;
+        place-self: start;
+        z-index: 2;
+        width: 100cqi;
+        height: 0;
+        pointer-events: none;
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: calc(var(--nxm-table-gutter) + var(--nxm-table-gap));
+            height: 100cqb;
+            background-image: linear-gradient(to right, transparent, var(--color-surface-low));
+            opacity: 0;
+            transition-property: opacity;
+            transition-timing-function: var(--default-transition-timing-function);
+            transition-duration: var(--default-transition-duration);
+        }
+    }
+
+    /* Only while the page's scroller has further to go right. */
+    @container scroll-state(scrollable: right) {
+        .nxm-table-edge::after {
+            opacity: 1;
+        }
     }
 
     .nxm-table-toolbar-cell {
@@ -79,21 +145,29 @@
         color: var(--color-translucent-subdued);
     }
 
-    /* A header that doesn't sort, in from its column as far as a sort button's label, and free
-       to run past a narrow column into the gap beside it rather than truncate. */
+    /* A header that doesn't sort, in line with its column's content, and free to run past a
+       narrow column into the gap beside it rather than truncate. */
     .nxm-table-header-label {
-        padding-left: calc(var(--spacing) * 2);
         white-space: nowrap;
     }
 
-    /* Heights come from Table.tsx, which the virtualiser counts on. */
+    /* Heights come from Table.tsx, which the virtualiser counts on. The sorted column's cells
+       stand out from the rest. A selected row stays lit while it's hovered. */
     .nxm-table-row {
         height: var(--nxm-table-row-height);
-        color: var(--color-neutral-moderate);
+        background-color: var(--nxm-table-row-tint);
+        color: var(--color-neutral-subdued);
 
-        /* The design's #fff at 3%, under the scale's lowest step. */
+        .nxm-table-cell[data-sorted] {
+            color: var(--color-neutral-moderate);
+        }
+
         &:hover {
-            background-color: --alpha(var(--color-white) / 3%);
+            --nxm-table-row-tint: --alpha(var(--color-white) / 3%);
+        }
+
+        &[aria-selected="true"] {
+            --nxm-table-row-tint: var(--color-translucent-100);
         }
     }
 
@@ -103,7 +177,8 @@
         height: var(--nxm-table-group-row-height);
         margin-top: var(--nxm-table-group-row-gap);
         border-top: 1px solid var(--color-stroke-weak);
-        background-color: var(--color-translucent-50);
+        --nxm-table-row-tint: var(--color-translucent-50);
+        background-color: var(--nxm-table-row-tint);
         color: var(--color-translucent-strong);
         font-weight: var(--font-weight-semibold);
     }
@@ -130,9 +205,11 @@
         pointer-events: none;
     }
 
-    /* Behind the rows, over the table's own background; the sticky header covers it. */
+    /* Behind the rows, over the table's own background; the sticky header covers it. Across
+       every column, which can run wider than the table's box, as its containing block. */
     .nxm-table-group-backdrop {
         position: absolute;
+        grid-column: 1 / -1;
         top: calc(var(--nxm-table-head-height) + var(--nxm-table-backdrop-top));
         left: 0;
         z-index: -1;
@@ -146,8 +223,9 @@
         flex-shrink: 0;
         align-items: center;
         justify-content: center;
-        width: calc(var(--spacing) * 5);
-        height: calc(var(--spacing) * 5);
+        width: var(--nxm-table-leading-width);
+        height: var(--nxm-table-leading-width);
+        margin-right: calc(var(--spacing) * -1);
         border-radius: var(--radius-sm);
         color: var(--color-neutral-moderate);
 
@@ -165,13 +243,97 @@
         }
     }
 
-    /* A sortable column's header: its label, and an arrow once it's sorted. */
+    /* A checkbox in the first column's leading box, with the design's 24px hit area. A row's
+       shows while the row is hovered, focused from the keyboard, or selected. */
+    .nxm-table-checkbox {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        width: var(--nxm-table-leading-width);
+        height: var(--nxm-table-leading-width);
+        margin-right: calc(var(--spacing) * -1);
+
+        .nxm-checkbox::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: calc(var(--spacing) * 6);
+            height: calc(var(--spacing) * 6);
+            translate: -50% -50%;
+        }
+    }
+
+    .nxm-table-header .nxm-table-checkbox {
+        margin-right: calc(var(--spacing) * -0.5);
+    }
+
+    .nxm-table-row .nxm-table-checkbox {
+        opacity: 0;
+        transition-property: opacity;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+    }
+
+    .nxm-table-row:is(:hover, :has(:focus-visible), [aria-selected="true"]) .nxm-table-checkbox {
+        opacity: 1;
+    }
+
+    /* A row's toolbar shows while the row is hovered or focused from the keyboard, and while
+       its menu is open, at once, as the cell widens for it. Hidden, its buttons let clicks
+       through to the cells they overhang. */
+    .nxm-table-row :is([data-toolbar-control], [data-toolbar-overflow]) {
+        opacity: 0;
+        pointer-events: none;
+        /* A button's own, but for opacity, which would lag behind the cell. */
+        transition-property: color, background-color, border-color, outline-color, fill, stroke;
+    }
+
+    .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+        :is([data-toolbar-control], [data-toolbar-overflow]) {
+        opacity: 1;
+        pointer-events: auto;
+
+        /* A disabled one keeps the faded look its button has outside a row. */
+        &:is(:disabled, .nxm-button-disabled, :has(:disabled)) {
+            opacity: 0.4;
+        }
+    }
+
+    /* A row that widens switches its edge with the widening, either way, rather than fading. */
+    .nxm-table[data-sticky-reveal] .nxm-table-row .nxm-table-cell[data-sticky="end"]::before {
+        transition: none;
+    }
+
+    /* The sticky cell widens over the cells before it once what its row shows has mounted, so
+       the two appear together, and blends into them without the shadow the column casts. */
+    .nxm-table[data-sticky-reveal]
+        .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+        .nxm-table-cell[data-sticky="end"]:has([data-toolbar-control]) {
+        margin-left: calc(-1 * var(--nxm-table-sticky-reveal));
+
+        &::before {
+            opacity: 1;
+            background: var(--nxm-table-sticky-bg);
+            mask-image: linear-gradient(to right, transparent, #000);
+        }
+
+        .nxm-table-cell-tint {
+            left: 0;
+            width: calc(100% + var(--nxm-table-gutter) + var(--nxm-table-gap));
+            mask-image: none;
+        }
+    }
+
+    /* A sortable column's header: its label, in line with the column's content, and an arrow
+       once it's sorted. Its fill reaches into the gap before the column, or past the checkbox. */
     .nxm-table-sort-button {
         display: flex;
         align-items: center;
         gap: calc(var(--spacing) * 1);
         min-width: 0;
         height: calc(var(--spacing) * 6);
+        margin-left: calc(var(--spacing) * -2);
         padding-inline: calc(var(--spacing) * 2);
         border-radius: var(--radius-sm);
         color: var(--color-translucent-moderate);
@@ -195,6 +357,10 @@
             outline: 2px solid var(--color-focus-subdued);
             outline-offset: 2px;
         }
+
+        .nxm-table-checkbox + & {
+            margin-left: 0;
+        }
     }
 
     .nxm-table-sort-icon {
@@ -213,5 +379,180 @@
         &[data-align="end"] {
             justify-self: end;
         }
+    }
+
+    /* Pinned at the right of what's in view, solid in its row's tint so the columns pass
+       under it, covering the gutter to its right and fading them out to its left. */
+    .nxm-table-cell[data-sticky="end"] {
+        position: sticky;
+        right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap));
+        z-index: 2;
+        align-self: stretch;
+        --nxm-table-sticky-bg:
+            linear-gradient(var(--nxm-table-row-tint), var(--nxm-table-row-tint)),
+            linear-gradient(var(--color-surface-low), var(--color-surface-low));
+        background: var(--nxm-table-sticky-bg);
+
+        &::before,
+        &::after {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            z-index: -2;
+            width: calc(var(--nxm-table-gutter) + var(--nxm-table-gap));
+            background: inherit;
+            pointer-events: none;
+        }
+
+        &::before {
+            right: 100%;
+            width: calc(var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid));
+            background:
+                linear-gradient(
+                    to right,
+                    transparent,
+                    var(--color-scrim-300) var(--nxm-table-sticky-fade),
+                    transparent var(--nxm-table-sticky-fade)
+                ),
+                var(--nxm-table-sticky-bg);
+            mask-image: linear-gradient(to right, transparent, #000 var(--nxm-table-sticky-fade));
+            opacity: 0;
+            transition-property: opacity;
+            transition-timing-function: var(--default-transition-timing-function);
+            transition-duration: var(--default-transition-duration);
+        }
+
+        &::after {
+            left: 100%;
+        }
+    }
+
+    /* The fade runs on through the head's padding and the gap above a group, unbroken. */
+    .nxm-table-header .nxm-table-cell[data-sticky="end"]::before {
+        bottom: calc(-1 * var(--nxm-table-head-padding));
+    }
+
+    .nxm-table-group-row .nxm-table-cell[data-sticky="end"]::before {
+        top: calc(-1 * (var(--nxm-table-group-row-gap) + 1px));
+        background-repeat: no-repeat;
+        background-position:
+            0 0,
+            0 100%,
+            0 100%;
+        background-size:
+            100% 100%,
+            100% calc(100% - var(--nxm-table-group-row-gap) - 1px),
+            100% calc(100% - var(--nxm-table-group-row-gap) - 1px);
+    }
+
+    /* A group's tint over a sticky cell's solid background and the gutter it covers, at the
+       opacity the group's backdrop and wash have there. */
+    .nxm-table-cell-tint {
+        position: absolute;
+        inset-block: 0;
+        left: 0;
+        z-index: -1;
+        width: calc(100% + var(--nxm-table-gutter) + var(--nxm-table-gap));
+        height: 100%;
+        opacity: 0.05;
+        pointer-events: none;
+    }
+
+    /* The fade, and the tint under it, only while the page's scroller has further to go right. */
+    @container scroll-state(scrollable: right) {
+        .nxm-table-cell[data-sticky="end"]::before {
+            opacity: 1;
+        }
+
+        .nxm-table-cell-tint {
+            left: calc(-1 * (var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid)));
+            width: calc(
+                100% + var(--nxm-table-gutter) + var(--nxm-table-gap) +
+                    var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid)
+            );
+            mask-image: linear-gradient(to right, transparent, #000 var(--nxm-table-sticky-fade));
+        }
+
+        /* A row's pins sit clear of the shadow the column casts, on every row, so they don't
+           move as a row is left. */
+        .nxm-table[data-sticky-reveal]
+            .nxm-table-row
+            .nxm-toolbar-group
+            > [data-toolbar-control]:has(+ :not([data-toolbar-control])) {
+            margin-right: var(--nxm-table-sticky-clearance);
+        }
+
+        /* A widened row keeps the shadow at the column's edge, under its pins, so it runs on
+           unbroken down the column. */
+        .nxm-table[data-sticky-reveal]
+            .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+            .nxm-table-cell[data-sticky="end"]:has([data-toolbar-control]) {
+            margin-left: calc(
+                -1 * (var(--nxm-table-sticky-reveal) + var(--nxm-table-sticky-clearance))
+            );
+            background:
+                linear-gradient(
+                        to right,
+                        transparent,
+                        var(--color-scrim-300) var(--nxm-table-sticky-fade),
+                        transparent var(--nxm-table-sticky-fade)
+                    )
+                    calc(
+                        var(--nxm-table-sticky-reveal) + var(--nxm-table-sticky-clearance) -
+                            var(--nxm-table-sticky-fade) - var(--nxm-table-sticky-solid)
+                    )
+                    0 / calc(var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid)) 100%
+                    no-repeat,
+                var(--nxm-table-sticky-bg);
+        }
+    }
+
+    /* In place of the rows, across every column, its cell the width in view like the
+       toolbar's, so what it says stays centred however far the columns scroll. */
+    .nxm-table-empty {
+        grid-column: 1 / -1;
+    }
+
+    .nxm-table-empty-cell {
+        position: sticky;
+        left: 0;
+        width: 100cqi;
+        padding-block: calc(var(--spacing) * 12);
+    }
+
+    /* Across every column, as the head is, so its cell has the room to stick sideways. Stuck
+       to the scroller's foot both ways: pulled up while the rows run past it, and pushed down,
+       by a top that resolves against the scroller, while they stop short of it in a table
+       that fills the page. Over the sticky cells. */
+    .nxm-table-footer {
+        position: sticky;
+        top: calc(100% - var(--nxm-table-footer-height));
+        bottom: 0;
+        z-index: 3;
+        grid-column: 1 / -1;
+        height: var(--nxm-table-footer-height);
+    }
+
+    /* The width in view, stuck to its left edge like the toolbar, so it stays put while the
+       columns scroll sideways under it. */
+    .nxm-table-footer-cell {
+        position: sticky;
+        left: 0;
+        width: 100cqi;
+        height: 100%;
+    }
+
+    /* Its close icon over the rows' checkboxes, and its end lined up with their menus. */
+    .nxm-table-selection-bar {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--spacing) * 2);
+        height: 100%;
+        padding-right: calc(var(--spacing) * 6);
+        padding-left: calc(var(--spacing) * 2.5);
+        border-top: 1px solid var(--color-surface-high);
+        border-bottom-right-radius: var(--radius-lg);
+        border-bottom-left-radius: var(--radius-lg);
+        background-color: var(--color-surface-mid);
     }
 }

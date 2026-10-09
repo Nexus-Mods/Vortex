@@ -30,15 +30,27 @@ import type { XOr } from "@/ui/utils/types";
 export type IPopoverPanel = (props: { close: () => void; dismiss: () => void }) => ReactNode;
 
 interface IMenuActionBase {
+  /** The row's text, and its accessible name. */
   label: string;
+  /** The icon before the label, as an SVG path. */
   iconPath?: string;
+  /** Drawn in place of `iconPath`, for an icon a single path can't draw, such as a logo. */
+  icon?: ReactNode;
+  /** Turns the action off; a row with a pin stays reachable so it can still be pinned. */
   disabled?: boolean;
+  /** Turns the action off while something it started is under way, as `disabled` does. */
   isLoading?: boolean;
+  /** What the panel is, for `aria-haspopup`: a "menu" opens as a submenu, a "dialog" by default. */
   panelRole?: "dialog" | "menu";
+  /** Colours the row for a brand, such as a premium action. */
   brand?: IButtonBrand;
+  /** A pin toggle at the row's end, for pinning the action outside the menu. */
   pin?: {
+    /** Whether the action is pinned now, which picks the pin or unpin icon. */
     pinned: boolean;
+    /** The toggle's accessible name. */
     label: string;
+    /** Pins or unpins the action. */
     onToggle: () => void;
   };
 }
@@ -51,10 +63,17 @@ export type IMenuAction = IMenuActionBase &
   XOr<{ onClick?: () => void }, { panel?: IPopoverPanel }>;
 
 interface IPopoverMenuItemProps {
+  /** What the row shows, and runs or opens. */
   action: IMenuAction;
+  /** Whether the row is the one the menu has focused, which it highlights. */
   hasFocus: boolean;
+  /** Keeps a chevron's room on a row without one, so its pin lines up with a submenu row's. */
+  reservesChevron: boolean;
+  /** The row's place in the tab order: the menu keeps its tab stop on the first row. */
   tabIndex: number;
+  /** Tells the menu the row has taken focus. */
   onTakeFocus: () => void;
+  /** Dismisses the menu once the row's action has run. */
   onSelect: () => void;
 }
 
@@ -71,27 +90,35 @@ const PopoverMenuItemContent = ({
   action,
   hasPanel = false,
   hasFocus,
+  reservesChevron,
 }: {
   action: IMenuAction;
   hasPanel?: boolean;
   hasFocus: boolean;
+  reservesChevron: boolean;
 }) => (
   <>
-    {!!action.iconPath && (
-      <Icon className="nxm-dropdown-item-icon" path={action.iconPath} size="none" />
+    {action.icon !== undefined ? (
+      <span className="nxm-dropdown-item-icon flex items-center justify-center">{action.icon}</span>
+    ) : (
+      !!action.iconPath && (
+        <Icon className="nxm-dropdown-item-icon" path={action.iconPath} size="none" />
+      )
     )}
 
     <span className="nxm-dropdown-item-label">{action.label}</span>
 
     {!!action.pin && <PopoverMenuItemPin hasFocus={hasFocus} pin={action.pin} />}
 
-    <Icon
-      className={joinClasses("nxm-dropdown-item-icon", {
-        "nxm-dropdown-item-chevron-hidden": !hasPanel,
-      })}
-      path={mdiChevronRight}
-      size="none"
-    />
+    {(hasPanel || reservesChevron) && (
+      <Icon
+        className={joinClasses("nxm-dropdown-item-icon", {
+          "nxm-dropdown-item-chevron-hidden": !hasPanel,
+        })}
+        path={mdiChevronRight}
+        size="none"
+      />
+    )}
   </>
 );
 
@@ -147,9 +174,10 @@ const PopoverMenuItemPin = ({
  */
 const PopoverMenuPanelItem = forwardRef<
   HTMLButtonElement,
-  IPopoverMenuItemProps & { disabled: boolean; panel: IPopoverPanel }
+  Omit<IPopoverMenuItemProps, "reservesChevron"> & { disabled: boolean; panel: IPopoverPanel }
 >(({ action, disabled, hasFocus, panel, tabIndex, onTakeFocus, onSelect }, ref) => {
   const isSubmenu = action.panelRole === "menu";
+  const keepsPin = disabled && !!action.pin;
   const hoverToggleRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -185,7 +213,8 @@ const PopoverMenuPanelItem = forwardRef<
             className={joinClasses(["nxm-dropdown-item", dropdownItemBrandClass(action.brand)], {
               "nxm-dropdown-item-focus": hasFocus || open,
             })}
-            disabled={disabled}
+            aria-disabled={keepsPin || undefined}
+            disabled={disabled && !keepsPin}
             ref={(element: HTMLButtonElement | null) => {
               buttonRef.current = element;
 
@@ -199,7 +228,7 @@ const PopoverMenuPanelItem = forwardRef<
             tabIndex={tabIndex}
             onClick={(event) => {
               // A real click would close what hover opened; hover's own must still pass.
-              if (isOpen() && !hoverToggleRef.current) {
+              if (keepsPin || (isOpen() && !hoverToggleRef.current)) {
                 event.preventDefault();
               }
             }}
@@ -229,7 +258,7 @@ const PopoverMenuPanelItem = forwardRef<
             }}
             onMouseLeave={closeAfterHover}
           >
-            <PopoverMenuItemContent hasPanel action={action} hasFocus={hasFocus} />
+            <PopoverMenuItemContent hasPanel reservesChevron action={action} hasFocus={hasFocus} />
           </HeadlessPopoverButton>
 
           <PopoverPanel
@@ -265,8 +294,10 @@ PopoverMenuPanelItem.displayName = "PopoverMenuPanelItem";
  * one with a panel opens it alongside instead.
  */
 export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemProps>(
-  ({ action, hasFocus, tabIndex, onTakeFocus, onSelect }, ref) => {
+  ({ action, hasFocus, reservesChevron, tabIndex, onTakeFocus, onSelect }, ref) => {
     const disabled = !!action.disabled || !!action.isLoading;
+    // A disabled row with a pin stays reachable, so it can still be pinned: only its action is off.
+    const keepsPin = disabled && !!action.pin;
 
     if (action.panel) {
       return (
@@ -288,19 +319,27 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
         className={joinClasses(["nxm-dropdown-item", dropdownItemBrandClass(action.brand)], {
           "nxm-dropdown-item-focus": hasFocus,
         })}
-        disabled={disabled}
+        aria-disabled={keepsPin || undefined}
+        disabled={disabled && !keepsPin}
         ref={ref}
         role="menuitem"
         tabIndex={tabIndex}
         type="button"
         onClick={() => {
+          if (keepsPin) {
+            return;
+          }
           action.onClick?.();
           onSelect();
         }}
         onFocus={onTakeFocus}
         onMouseEnter={(event) => takeFocus(event.currentTarget)}
       >
-        <PopoverMenuItemContent action={action} hasFocus={hasFocus} />
+        <PopoverMenuItemContent
+          action={action}
+          hasFocus={hasFocus}
+          reservesChevron={reservesChevron}
+        />
       </button>
     );
   },

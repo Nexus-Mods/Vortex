@@ -1,6 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ newTable: false }));
@@ -8,6 +9,9 @@ const mocks = vi.hoisted(() => ({ newTable: false }));
 vi.mock("@/views/components/dev_tools/useDevSetting.hook", () => ({
   useDevSetting: () => mocks.newTable,
 }));
+
+import type { ITableRowAction } from "@/controls/Table";
+import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import type { IModWithState } from "../../types/IModProps";
 import { ModsTableSwitch } from "./ModsTableSwitch";
@@ -21,19 +25,25 @@ const collection = (id: string, name: string, memberIds: string[]) =>
     rules: memberIds.map((memberId) => ({ type: "requires", reference: { id: memberId } })),
   });
 
-const renderSwitch = (mods: { [id: string]: IModWithState }) => {
+const renderSwitch = (mods: { [id: string]: IModWithState }, rowActions?: ITableRowAction[]) => {
   const onSetModsEnabled = vi.fn();
   render(
-    <ModsTableSwitch
-      legacy={<div data-testid="legacy-table" />}
-      mods={mods}
-      onSetModsEnabled={onSetModsEnabled}
-    />,
+    <Provider store={makeModsTableStore()}>
+      <ModsTableSwitch
+        legacy={<div data-testid="legacy-table" />}
+        mods={mods}
+        rowActions={rowActions}
+        onSetModsEnabled={onSetModsEnabled}
+      />
+    </Provider>,
   );
   return onSetModsEnabled;
 };
 
 const showView = (name: string) => userEvent.click(screen.getByRole("button", { name }));
+
+// A row's actions mount once it's pointed at, as a person would before using them.
+const hoverRow = (row: HTMLElement) => userEvent.hover(row);
 
 // The table's own rows, not those in its sticky head.
 const bodyRows = (table: HTMLElement) =>
@@ -62,7 +72,87 @@ describe("ModsTableSwitch", () => {
     const [first, second] = bodyRows(screen.getByRole("grid"));
     expect(cellText(first)).toContain("Alpha");
     expect(cellText(second)).toContain("Beta");
-    expect(within(first).getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
+    expect(within(first).getByRole("checkbox", { name: "{{name}} enabled" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  });
+
+  // ModList rebuilds the mods only after a debounce, so a switch would lag behind its click.
+  it("shows a mod's enabled state from the profile, ahead of the mods it was given", () => {
+    render(
+      <Provider store={makeModsTableStore({ modState: { a: { enabled: true } } })}>
+        <ModsTableSwitch
+          legacy={<div />}
+          mods={{ a: mod("a", "Alpha", false) }}
+          onSetModsEnabled={vi.fn()}
+        />
+      </Provider>,
+    );
+
+    const [row] = bodyRows(screen.getByRole("grid"));
+    expect(within(row).getByRole("checkbox", { name: "{{name}} enabled" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  });
+
+  describe("while a switch's change is under way", () => {
+    // Settles the change the switch asked for: resolves, or fails, when the test says.
+    const renderPending = (modState?: { [id: string]: { enabled: boolean } }) => {
+      let settle: (ok: boolean) => void = () => {};
+      const onSetModsEnabled = vi.fn(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            settle = (ok) => (ok ? resolve() : reject(new Error("refused")));
+          }),
+      );
+      const store = makeModsTableStore({ modState });
+      render(
+        <Provider store={store}>
+          <ModsTableSwitch
+            legacy={<div />}
+            mods={{ a: mod("a", "Alpha", false) }}
+            onSetModsEnabled={onSetModsEnabled}
+          />
+        </Provider>,
+      );
+      return { settle: (ok: boolean) => act(async () => settle(ok)) };
+    };
+
+    const modSwitch = () =>
+      within(bodyRows(screen.getByRole("grid"))[0]).getByRole("checkbox", {
+        name: "{{name}} enabled",
+      });
+
+    const clickSwitch = async () => {
+      await hoverRow(bodyRows(screen.getByRole("grid"))[0]);
+      await userEvent.click(modSwitch());
+    };
+
+    it("shows the change at once, busy, and undoes it if it fails", async () => {
+      const { settle } = renderPending();
+
+      await clickSwitch();
+      expect(modSwitch()).toHaveAttribute("aria-checked", "true");
+      expect(modSwitch()).toHaveAttribute("aria-busy", "true");
+
+      await settle(false);
+      expect(modSwitch()).toHaveAttribute("aria-checked", "false");
+      expect(modSwitch()).not.toHaveAttribute("aria-busy");
+    });
+
+    // The profile is the truth once the change is done, whatever the switch showed meanwhile.
+    it("follows the profile again once the change settles", async () => {
+      const { settle } = renderPending({ a: { enabled: true } });
+
+      await clickSwitch();
+      expect(modSwitch()).toHaveAttribute("aria-checked", "false");
+
+      await settle(true);
+      expect(modSwitch()).toHaveAttribute("aria-checked", "true");
+      expect(modSwitch()).not.toHaveAttribute("aria-busy");
+    });
   });
 
   it("offers the preset views, showing all the mods to begin with", () => {
@@ -185,7 +275,8 @@ describe("ModsTableSwitch", () => {
       const onSetModsEnabled = renderSwitch({ a: mod("a", "Alpha", true) });
 
       const [row] = bodyRows(screen.getByRole("grid"));
-      await userEvent.click(within(row).getByRole("checkbox"));
+      await hoverRow(row);
+      await userEvent.click(within(row).getByRole("checkbox", { name: "{{name}} enabled" }));
 
       expect(onSetModsEnabled).toHaveBeenCalledWith(["a"], false);
     });
@@ -258,6 +349,373 @@ describe("ModsTableSwitch", () => {
 
       expect(screen.queryByRole("dialog")).toBeNull();
       expect(onSetModsEnabled).toHaveBeenCalledWith(["b", "c"], true);
+    });
+  });
+
+  describe("display options", () => {
+    const headers = () => screen.getAllByRole("columnheader").map((header) => header.textContent);
+
+    it("shows the installation time and collection columns by default", () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      expect(headers()).toEqual(["Name", "Collection", "Installation time", "Actions"]);
+    });
+
+    it("adds a column chosen from the display options", async () => {
+      renderSwitch({
+        a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Ada" } }),
+      });
+
+      await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+      const toggles = screen.getByRole("group", { name: "Toggle columns" });
+      await userEvent.click(within(toggles).getByRole("button", { name: "Author" }));
+
+      expect(headers()).toContain("Author");
+      expect(screen.getByRole("gridcell", { name: "Ada" })).toBeInTheDocument();
+    });
+
+    describe("group by", () => {
+      const CATEGORISED = {
+        a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Ada" } }),
+        b: mod("b", "Beta", false),
+      };
+
+      const groupBy = async (option: string) => {
+        await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+        await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
+        await userEvent.click(screen.getByRole("option", { name: option }));
+      };
+
+      const pressedViews = () =>
+        within(screen.getByRole("group", { name: "Views" }))
+          .getAllByRole("button")
+          .map((view) => view.getAttribute("aria-pressed"));
+
+      it("offers none, then each column that can group, in the table's order", async () => {
+        renderSwitch(CATEGORISED);
+
+        await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+        await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
+
+        expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+          "None",
+          "Author",
+          "Archive name",
+          "Category",
+          "Mod type",
+          "Source",
+          "Collection",
+          "Status",
+        ]);
+      });
+
+      it("groups by a column's values, no view selected", async () => {
+        renderSwitch(CATEGORISED);
+
+        await groupBy("Status");
+
+        const rows = bodyRows(screen.getByRole("treegrid"));
+        expect(rows.map(cellText)).toEqual(["Disabled1", "Beta", "Enabled1", "Alpha"]);
+        expect(pressedViews()).toEqual(["false", "false", "false"]);
+      });
+
+      it("selects the view a grouping matches", async () => {
+        renderSwitch(CATEGORISED);
+
+        await groupBy("Author");
+
+        expect(pressedViews()).toEqual(["false", "false", "true"]);
+      });
+
+      it("shows what a view groups by", async () => {
+        renderSwitch(CATEGORISED);
+
+        await showView("Collections");
+        await userEvent.click(screen.getByRole("button", { name: "Display options" }));
+
+        expect(screen.getByRole("button", { name: /Group by/ })).toHaveTextContent("Collection");
+      });
+
+      it("ungroups on reset", async () => {
+        renderSwitch(CATEGORISED);
+
+        await groupBy("Status");
+        await userEvent.click(screen.getByText("Reset to default"));
+
+        expect(screen.getByRole("grid")).toBeInTheDocument();
+        expect(pressedViews()).toEqual(["true", "false", "false"]);
+      });
+    });
+  });
+  describe("row actions", () => {
+    const rowOf = (name: string) =>
+      screen.getAllByRole("row").find((row) => within(row).queryByText(name) !== null)!;
+
+    const openMenu = async (name: string) => {
+      await hoverRow(rowOf(name));
+      await userEvent.click(within(rowOf(name)).getByRole("button", { name: "More actions" }));
+    };
+
+    it("mounts a row's actions only once it's pointed at", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      expect(within(rowOf("Alpha")).queryByRole("button", { name: "More actions" })).toBeNull();
+      expect(
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+      ).toBeInTheDocument();
+
+      await hoverRow(rowOf("Alpha"));
+
+      expect(
+        within(rowOf("Alpha")).getByRole("button", { name: "More actions" }),
+      ).toBeInTheDocument();
+    });
+
+    it("keeps focus on the switch as focusing it mounts the row's actions", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      act(() => {
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }).focus();
+      });
+
+      expect(
+        within(rowOf("Alpha")).getByRole("button", { name: "More actions" }),
+      ).toBeInTheDocument();
+      expect(document.activeElement).toBe(
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+      );
+    });
+
+    it("opens a row's menu of its actions, run against that mod", async () => {
+      const remove = vi.fn();
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: remove },
+      ]);
+
+      await openMenu("Beta");
+      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+      expect(remove).toHaveBeenCalledWith(["b"]);
+    });
+
+    it("puts an action pinned from one row's menu on every row", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: vi.fn() },
+      ]);
+
+      await openMenu("Alpha");
+      // reached through its menu row, as the test `t` leaves every pin's label alike
+      await userEvent.click(
+        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+      );
+      await userEvent.keyboard("{Escape}");
+
+      expect(within(rowOf("Alpha")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+
+      await hoverRow(rowOf("Beta"));
+      expect(within(rowOf("Beta")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+    });
+
+    it("shows a pinned action before the switch, and the menu after it", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      await openMenu("Alpha");
+      await userEvent.click(
+        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+      );
+      await userEvent.keyboard("{Escape}");
+
+      const actionsCell = within(rowOf("Alpha")).getAllByRole("gridcell").at(-1) as HTMLElement;
+      const controls = Array.from(
+        actionsCell.querySelectorAll<HTMLElement>('button, [role="checkbox"]'),
+      ).map((control) => control.getAttribute("aria-label"));
+      // the switch by its untranslated label, which `t` leaves uninterpolated here
+      expect(controls).toEqual(["Remove", "{{name}} enabled", "More actions"]);
+    });
+  });
+
+  describe("selected mods", () => {
+    const bar = () => screen.queryByRole("region", { name: "{{count}} selected" });
+
+    const selectWithCtrl = async (...names: string[]) => {
+      const user = userEvent.setup();
+      await user.click(screen.getByText(names[0]));
+      await user.keyboard("{Control>}");
+      for (const name of names.slice(1)) {
+        await user.click(screen.getByText(name));
+      }
+      await user.keyboard("{/Control}");
+    };
+
+    const barSwitch = () => within(bar()!).getByRole("checkbox", { name: "Selected mods enabled" });
+
+    it("shows the bar while several mods are selected, and hides it once they're deselected", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+
+      await userEvent.click(screen.getByText("Alpha"));
+      expect(bar()).toBeNull();
+
+      await selectWithCtrl("Alpha", "Beta");
+      expect(bar()).toBeInTheDocument();
+
+      await userEvent.click(within(bar()!).getByRole("button", { name: "Deselect all" }));
+      expect(bar()).toBeNull();
+      expect(bodyRows(screen.getByRole("grid"))[0]).toHaveAttribute("aria-selected", "false");
+    });
+
+    it("pins Check for updates, Reinstall and Remove to the bar, the rest in its menu", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Enable", singleRowAction: false },
+        { title: "Remove", action: vi.fn() },
+        { title: "Reinstall", action: vi.fn() },
+        { title: "Combine", action: vi.fn(), multiRowAction: true, singleRowAction: false },
+        { title: "Remove related", action: vi.fn(), multiRowAction: false },
+      ]);
+
+      await selectWithCtrl("Alpha", "Beta");
+      const toolbar = within(bar()!).getByRole("toolbar");
+
+      // Kept, disabled, for mods that aren't installed, so its button keeps its place.
+      expect(within(toolbar).getByRole("button", { name: "Check for updates" })).toBeDisabled();
+      expect(within(toolbar).getByRole("button", { name: "Reinstall" })).toBeInTheDocument();
+      expect(within(toolbar).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+      expect(within(toolbar).queryByRole("button", { name: "Combine" })).toBeNull();
+
+      await userEvent.click(within(toolbar).getByRole("button", { name: "More actions" }));
+      // Enable is the switch's to do, and Remove related is for one mod.
+      expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+        "Reinstall",
+        "Check for updates",
+        "Remove",
+        "Combine",
+      ]);
+    });
+
+    it("runs a bar action against every selected mod", async () => {
+      const remove = vi.fn();
+      renderSwitch(
+        { a: mod("a", "Alpha", true), b: mod("b", "Beta", true), c: mod("c", "Gamma", true) },
+        [{ title: "Remove", action: remove }],
+      );
+
+      await selectWithCtrl("Alpha", "Gamma");
+      await userEvent.click(within(bar()!).getByRole("button", { name: "Remove" }));
+
+      expect(remove).toHaveBeenCalledWith(["a", "c"]);
+    });
+
+    it("shows the bar's switch part on for a mix, and disables them all from it", async () => {
+      const onSetModsEnabled = renderSwitch({
+        a: mod("a", "Alpha", true),
+        b: mod("b", "Beta", false),
+      });
+
+      await selectWithCtrl("Alpha", "Beta");
+      expect(barSwitch()).toHaveAttribute("aria-checked", "mixed");
+
+      await userEvent.click(barSwitch());
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["a", "b"], true);
+    });
+
+    it("shows only the rows' switches while several mods are selected", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: vi.fn() },
+      ]);
+      const rowOf = (name: string) =>
+        bodyRows(screen.getByRole("grid")).find((row) => within(row).queryByText(name))!;
+
+      await hoverRow(rowOf("Alpha"));
+      await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
+      await userEvent.click(
+        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+      );
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(screen.getByText("Alpha"));
+      expect(within(rowOf("Alpha")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+
+      await selectWithCtrl("Alpha", "Beta");
+      expect(within(rowOf("Alpha")).queryByRole("button", { name: "Remove" })).toBeNull();
+      expect(within(rowOf("Alpha")).queryByRole("button", { name: "More actions" })).toBeNull();
+      expect(
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("search", () => {
+    const searchFor = async (text: string) => {
+      await userEvent.click(screen.getByRole("button", { name: "Search" }));
+      await userEvent.keyboard(text);
+    };
+
+    const names = () => bodyRows(screen.getByRole("grid")).map(cellText);
+
+    it("lists only the mods whose cells show the text, whatever its case", async () => {
+      renderSwitch({
+        a: mod("a", "Alpha", true),
+        b: mod("b", "Beta", true),
+        c: mod("c", "Alphabet", true),
+      });
+
+      await searchFor("ALPHA");
+
+      expect(names()).toEqual(["Alpha", "Alphabet"]);
+    });
+
+    it("searches the columns shown, not the hidden ones", async () => {
+      renderSwitch({
+        a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Gervig" } }),
+        b: mod("b", "Beta", true),
+        pack: collection("pack", "Starter Pack", ["b"]),
+      });
+
+      // Collection shows by default, and the collection's own row its name; Author doesn't show.
+      await searchFor("starter");
+      expect(names()).toEqual(["Beta", "Starter Pack"]);
+
+      await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
+      await userEvent.keyboard("gervig");
+      expect(screen.getByText("No mods match your search")).toBeInTheDocument();
+    });
+
+    it("drops a group none of whose mods match", async () => {
+      renderSwitch({
+        a: mod("a", "Alpha", true),
+        b: mod("b", "Beta", true),
+        pack: collection("pack", "Starter Pack", ["b"]),
+      });
+
+      await showView("Collections");
+      await searchFor("alpha");
+
+      const treegrid = screen.getByRole("treegrid");
+      expect(within(treegrid).queryByRole("button", { name: "Starter Pack" })).toBeNull();
+      expect(
+        bodyRows(treegrid)
+          .filter((row) => row.getAttribute("aria-level") === "2")
+          .map(cellText),
+      ).toEqual(["Alpha"]);
+    });
+
+    it("deselects a selected mod the search hides", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+
+      const user = userEvent.setup();
+      await user.click(screen.getByText("Alpha"));
+      await user.keyboard("{Control>}");
+      await user.click(screen.getByText("Beta"));
+      await user.keyboard("{/Control}");
+      expect(screen.getByRole("region", { name: "{{count}} selected" })).toBeInTheDocument();
+
+      await searchFor("alpha");
+      await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
+
+      expect(screen.queryByRole("region", { name: "{{count}} selected" })).toBeNull();
+      const selected = bodyRows(screen.getByRole("grid")).filter(
+        (row) => row.getAttribute("aria-selected") === "true",
+      );
+      expect(selected.map(cellText)).toEqual(["Alpha"]);
     });
   });
 });

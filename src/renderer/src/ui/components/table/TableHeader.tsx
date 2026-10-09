@@ -5,6 +5,7 @@ import { Icon } from "@/ui/components/icon/Icon";
 
 import type { ITableColumn, ITableGroup, ITableSort } from "./Table.types";
 import { TableCell } from "./TableCell";
+import { type ITableCheckboxProps, TableCheckbox } from "./TableCheckbox";
 
 interface ITableHeaderProps<T, G extends ITableGroup<T>> {
   /** The table's columns, each giving a header cell its label. */
@@ -13,6 +14,8 @@ interface ITableHeaderProps<T, G extends ITableGroup<T>> {
   toolbar?: ReactNode;
   /** The column the rows are sorted by, and which way, if any. */
   sort?: ITableSort;
+  /** The checkbox for every row, at the start of the first header, when rows can be selected. */
+  checkbox?: ITableCheckboxProps;
   /** Sorts by a column, from its header's button; again reverses it. */
   onSort: (columnId: string) => void;
 }
@@ -25,10 +28,16 @@ interface ITableHeaderProps<T, G extends ITableGroup<T>> {
 export const TableHeader = <T, G extends ITableGroup<T>>({
   columns,
   toolbar,
+  checkbox,
   sort,
   onSort,
 }: ITableHeaderProps<T, G>) => (
   <div className="nxm-table-head" role="rowgroup">
+    {/* A sticky column fades what scrolls under it instead. */}
+    {!columns.some((column) => column.sticky) && (
+      <div aria-hidden={true} className="nxm-table-edge" />
+    )}
+
     {!!toolbar && (
       <div aria-rowindex={1} className="nxm-table-toolbar" role="row">
         <div aria-colspan={columns.length} className="nxm-table-toolbar-cell" role="gridcell">
@@ -38,7 +47,7 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
     )}
 
     <div aria-rowindex={toolbar ? 2 : 1} className="nxm-table-header" role="row">
-      {columns.map((column) => {
+      {columns.map((column, index) => {
         const direction = sort?.columnId === column.id ? sort.direction : undefined;
 
         return (
@@ -47,7 +56,10 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
             ariaSort={column.sort === undefined ? undefined : (direction ?? "none")}
             key={column.id}
             role="columnheader"
+            sticky={column.sticky}
           >
+            {index === 0 && !!checkbox && <TableCheckbox {...checkbox} />}
+
             {column.sort === undefined ? (
               <span className="nxm-table-header-label">{column.header}</span>
             ) : (

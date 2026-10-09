@@ -9,6 +9,7 @@ import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
 import { TableSpacer } from "./TableSpacer";
 import { useTableGroupBackdrops } from "./useTableGroupBackdrops.hook";
+import { useTableSelection } from "./useTableSelection.hook";
 import { useTableSort } from "./useTableSort.hook";
 import { useTableVirtualizer } from "./useTableVirtualizer.hook";
 
@@ -16,6 +17,9 @@ import { useTableVirtualizer } from "./useTableVirtualizer.hook";
 const ROW_HEIGHT = 40;
 const GROUP_ROW_HEIGHT = 48;
 const GROUP_ROW_GAP = 4;
+
+/** A column without a width shares what's left, but never shrinks past this when columns overflow. */
+const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
 
 /**
  * A column-driven table drawn as one CSS grid: the columns' widths make its tracks, and
@@ -31,10 +35,22 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowId,
   label,
   toolbar,
+  footer,
+  empty,
   defaultSort,
   className,
+  selectable = false,
+  getRowLabel,
+  selectedIds,
+  onSelectedIdsChange,
 }: ITableProps<T, G>) => {
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
+
+  // Each row once, though a row in two groups shows in both.
+  const rowIds = useMemo(
+    () => [...new Set((rows ?? groups?.flatMap((group) => group.rows) ?? []).map(getRowId))],
+    [getRowId, groups, rows],
+  );
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggle = (groupId: string) =>
@@ -74,11 +90,21 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
             key: `${group.id}:${getRowId(row)}`,
             row,
             level: 2,
+            tint: group.image,
           }),
         ),
       ];
     });
   }, [collapsed, getRowId, groups, rows, sortRows]);
+
+  const shownRows = useMemo(
+    () =>
+      items.flatMap((item) =>
+        item.kind === "row" ? [{ key: item.key, id: getRowId(item.row) }] : [],
+      ),
+    [getRowId, items],
+  );
+  const selection = useTableSelection(rowIds, shownRows, selectedIds, onSelectedIdsChange);
 
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
   const getItemSize = useCallback(
@@ -88,16 +114,21 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   );
 
   const virtual = useTableVirtualizer({ count: items.length, getItemKey, getItemSize });
+  const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
   // The rows in the sticky head, which come before the table's own in aria-rowindex.
   const headRows = toolbar ? 2 : 1;
+  const showsEmpty = items.length === 0 && !!empty;
+  // The rows after the head: the items, or what stands in for them.
+  const bodyRows = showsEmpty ? 1 : items.length;
 
   const backdrops = useTableGroupBackdrops({ getItemSize, items, rendered: virtual.items });
 
   return (
     <div
       aria-label={label}
-      aria-rowcount={items.length + headRows}
+      aria-rowcount={bodyRows + headRows + (footer ? 1 : 0)}
       className={joinClasses(["nxm-table", className])}
+      data-sticky-reveal={revealWidth ? "" : undefined}
       data-toolbar={toolbar ? "" : undefined}
       ref={virtual.tableRef}
       role={groups === undefined ? "grid" : "treegrid"}
@@ -106,17 +137,35 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-row-height": `${ROW_HEIGHT}px`,
           "--nxm-table-group-row-height": `${GROUP_ROW_HEIGHT}px`,
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
+          "--nxm-table-sticky-reveal": revealWidth,
           gridTemplateColumns: [
-            "var(--nxm-table-gutter)",
-            ...columns.map((column) => column.width ?? "minmax(0, 1fr)"),
+            "var(--nxm-table-gutter-start)",
+            ...columns.map((column) => column.width ?? DEFAULT_COLUMN_WIDTH),
             "var(--nxm-table-gutter)",
           ].join(" "),
         } as CSSProperties
       }
       onBlur={virtual.onBlur}
+      onClick={(event) => {
+        // Between and below the rows, but not the head; a portalled panel isn't in the table.
+        const target = event.target as Element;
+        if (
+          selectable &&
+          event.currentTarget.contains(target) &&
+          target.closest('[role="row"], [role="rowgroup"]') === null
+        ) {
+          selection.clear();
+        }
+      }}
       onFocus={virtual.onFocus}
     >
-      <TableHeader columns={columns} sort={sort} toolbar={toolbar} onSort={toggleSort} />
+      <TableHeader
+        columns={columns}
+        checkbox={selectable ? selection.header : undefined}
+        sort={sort}
+        toolbar={toolbar}
+        onSort={toggleSort}
+      />
 
       {/* Always rendered, at the top of the rows: where the virtualiser measures from. */}
       <div className="nxm-table-spacer" ref={virtual.startRef} role="presentation" />
@@ -150,6 +199,21 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 level={item.level}
                 row={item.row}
                 rowIndex={index + headRows + 1}
+                sortedColumnId={sort?.columnId}
+                checkbox={
+                  selectable
+                    ? selection.checkbox(
+                        { key: item.key, id: getRowId(item.row) },
+                        getRowLabel?.(item.row),
+                      )
+                    : undefined
+                }
+                tint={item.tint}
+                onClick={
+                  selectable
+                    ? (click) => selection.click({ key: item.key, id: getRowId(item.row) }, click)
+                    : undefined
+                }
               />
             )}
           </Fragment>
@@ -157,6 +221,22 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       })}
 
       <TableSpacer height={virtual.endGap} />
+
+      {showsEmpty && (
+        <div aria-rowindex={headRows + 1} className="nxm-table-empty" role="row">
+          <div aria-colspan={columns.length} className="nxm-table-empty-cell" role="gridcell">
+            {empty}
+          </div>
+        </div>
+      )}
+
+      {!!footer && (
+        <div aria-rowindex={bodyRows + headRows + 1} className="nxm-table-footer" role="row">
+          <div aria-colspan={columns.length} className="nxm-table-footer-cell" role="gridcell">
+            {footer}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

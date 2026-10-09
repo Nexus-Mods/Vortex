@@ -82,6 +82,8 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
   // list, so arrowing runs through the whole menu rather than stopping at a rule,
   // and one group's refs can't overwrite another's.
   let nextIndex = 0;
+  // Without a submenu there's no chevron to line up with, so the pins sit against the end.
+  const reservesChevron = actions.some((section) => section.some((action) => !!action.panel));
   const sections = actions
     .filter((section) => section.length > 0)
     .map((section) => section.map((action) => ({ action, index: nextIndex++ })));
@@ -105,6 +107,7 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
               ref={(element) => {
                 rowsRef.current[index] = element;
               }}
+              reservesChevron={reservesChevron}
               tabIndex={index === 0 ? 0 : -1}
               onTakeFocus={() => setFocusedRow(index)}
               onSelect={onSelect}

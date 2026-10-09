@@ -16,4 +16,23 @@
             flex-shrink: 0;
         }
     }
+
+    /* The button, and the field it shows to its left, over what's beside it rather than
+       pushing it aside, on the head's background. */
+    .nxm-toolbar-search {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .nxm-toolbar-search-field {
+        position: absolute;
+        top: 0;
+        right: calc(100% + var(--spacing) * 1);
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        width: calc(var(--spacing) * 60);
+        border-radius: var(--radius-sm);
+        background-color: var(--color-surface-low);
+    }
 }
