@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
@@ -10,7 +10,7 @@ import useLocalModsSearch from "../hooks/LocalModsSearch";
 import useNexusModsSearch from "../hooks/NexusModsSearch";
 import { ComboboxGroup, ComboboxInput, ComboboxOption, ComboboxOptions } from "./combobox/Combobox";
 import { ComboboxField } from "./combobox/ComboboxField";
-import FloatingSearchBarSkeletonTile from "./FloatingSearchBarSkeletonTile";
+import ModComboboxSkeletonTile from "./ModComboboxSkeletonTile";
 
 /** Normalised across both sources so callers never branch on provenance. */
 export interface IModOption {
@@ -85,7 +85,7 @@ export default function ModCombobox({
       <ComboboxInput
         autoFocus
         displayValue={(m: IModOption | null) => m?.name ?? ""}
-        placeholder={t("floating_search::placeholder")}
+        placeholder={t("add_mod_tag::placeholder")}
         onChange={(e) => setQuery(e.target.value)}
       />
 
@@ -104,7 +104,7 @@ export default function ModCombobox({
           </ComboboxGroup>
         )}
 
-        {isLoading && <FloatingSearchBarSkeletonTile />}
+        {isLoading && <ModComboboxSkeletonTile />}
 
         {nexus.length > 0 && (
           <ComboboxGroup label={t("add_mod_tag::group_nexus")}>
@@ -122,7 +122,7 @@ export default function ModCombobox({
 
         {!isLoading && installed.length === 0 && nexus.length === 0 && query !== "" && (
           <Typography appearance="subdued" className="px-3 py-2 italic" typographyType="body-sm">
-            {t("floating_search::no_results_title", { query })}
+            {t("add_mod_tag::no_results_title", { query })}
           </Typography>
         )}
       </ComboboxOptions>

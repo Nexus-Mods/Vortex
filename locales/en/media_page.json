@@ -29,11 +29,16 @@
       "open": "Open image",
       "open_in_steam": "Open in Steam",
       "view_in_folder": "View in folder",
-      "view_web": "View on Nexus Mods"
+      "view_web": "View on Nexus Mods",
+      "copy_bbcode": "Copy as BBCode"
     },
     "upload": {
       "title": "Upload to Nexus Mods",
-      "body": "It is not currently possible to upload to Nexus Mods in one click, however, Vortex can open both the folder containing this file and the upload page."
+      "body": "It is not currently possible to upload to Nexus Mods in one click, however, Vortex can open both the folder containing this file and the upload page.",
+      "copy_success": "Copied to clipboard.",
+      "copy_failed": "Failed to copy to clipboard.",
+      "tag_count": "This image has {{count}} tagged mod.",
+      "tag_count_plural": "This image has {{count}} tagged mods."
     },
     "detail": {
       "name": "File name",
@@ -55,16 +60,9 @@
     "title": "Tag a mod",
     "group_installed": "Installed",
     "group_nexus": "Nexus Mods",
-    "label": "Search for a mod"
-  },
-  "floating_search": {
+    "label": "Search for a mod",
     "placeholder": "Search for mods...",
-    "comment_placeholder": "Optional comment",
-    "change": "Change mod",
-    "no_query_title": "Add mods to image",
-    "no_query_subtitle": "Select a mod to tag it in this image",
-    "no_results_title": "No mods found for \"{{query}}\"",
-    "no_results_subtitle": "Please try expanding your search."
+    "no_results_title": "No mods found for \"{{query}}\""
   },
   "settings": {
     "description": "Manage the folders scanned when viewing the Media section.",

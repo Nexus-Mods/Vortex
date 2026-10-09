@@ -44,7 +44,7 @@ describe("setGameMediaModTags", () => {
         id: "testtag",
         name: "Some mod",
         modId: 1,
-        gameId: 2,
+        fileId: 2,
         domainName: "game",
         x: 1,
         y: 1,

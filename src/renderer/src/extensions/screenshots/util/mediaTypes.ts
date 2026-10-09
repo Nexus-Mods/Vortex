@@ -54,7 +54,7 @@ export interface GameMediaModTag {
   id: string;
   name: string;
   modId: number;
-  gameId: number;
+  fileId: number;
   domainName: string;
   url?: string;
   thumbnail?: string;

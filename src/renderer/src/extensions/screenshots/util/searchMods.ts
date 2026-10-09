@@ -26,11 +26,12 @@ const MODS_QUERY = `
 query mods(
   $filter: ModsFilter,
   $sort: [ModsSort!]
+  $count: Int
 ) {
   mods(
     filter: $filter,
     sort: $sort,
-    count: 10
+    count: $count
   ) {
     nodes {
       uid
@@ -52,6 +53,7 @@ export default async function searchMods(
   gameDomain: string,
   token: string | undefined,
   showAdult: boolean,
+  count: number = 5,
   signal: AbortController["signal"],
 ): Promise<IModResult[]> {
   const headers: Record<string, string> = {
@@ -78,7 +80,7 @@ export default async function searchMods(
     const res = await fetch("https://api.nexusmods.com/v2/graphql", {
       method: "POST",
       headers,
-      body: JSON.stringify({ query: MODS_QUERY, variables: { filter, sort } }),
+      body: JSON.stringify({ query: MODS_QUERY, variables: { filter, sort, count } }),
       signal,
     });
     if (!res.ok) {

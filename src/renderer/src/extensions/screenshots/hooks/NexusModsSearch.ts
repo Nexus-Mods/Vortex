@@ -14,6 +14,7 @@ import searchMods from "../util/searchMods";
 interface INexusModsSearchOptions {
   debounceDelayMs: number;
   tryToUseLogin?: boolean;
+  resultCount?: number;
 }
 
 export default function useNexusModsSearch(
@@ -38,7 +39,7 @@ export default function useNexusModsSearch(
       (state.persistent["nexus"] as INexusModsAccountSlice)?.userInfo?.adult ?? false,
   );
 
-  const { debounceDelayMs, tryToUseLogin } = options;
+  const { debounceDelayMs, tryToUseLogin, resultCount } = options;
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -62,7 +63,14 @@ export default function useNexusModsSearch(
       try {
         const token = tryToUseLogin ? await getAccessToken(api) : undefined;
         const showAdult = tryToUseLogin ? adultContentFilter : false;
-        const r = await searchMods(debouncedQuery, domainName, token, showAdult, controller.signal);
+        const r = await searchMods(
+          debouncedQuery,
+          domainName,
+          token,
+          showAdult,
+          resultCount,
+          controller.signal,
+        );
         if (!controller.signal.aborted) setResults(r);
       } catch (e) {
         if (!controller.signal.aborted) {
@@ -75,7 +83,7 @@ export default function useNexusModsSearch(
     })();
 
     return () => controller.abort();
-  }, [debouncedQuery, tryToUseLogin, domainName, api, adultContentFilter]);
+  }, [debouncedQuery, tryToUseLogin, domainName, api, adultContentFilter, resultCount]);
 
   return {
     isLoading,

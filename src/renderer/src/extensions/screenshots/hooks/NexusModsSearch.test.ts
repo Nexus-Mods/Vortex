@@ -25,6 +25,7 @@ const {
         _gameDomain: string,
         _token: string | undefined,
         _showAdult: boolean,
+        _count: number = 5,
         _signal: AbortController["signal"],
       ): Promise<IModResult[]> => [],
     )
@@ -150,6 +151,7 @@ describe("NexusModsSearch", () => {
       "skyrim",
       "tokenFromState",
       true,
+      undefined,
       expect.anything(),
     );
 
@@ -162,6 +164,7 @@ describe("NexusModsSearch", () => {
       "skyrim",
       undefined,
       false,
+      undefined,
       expect.anything(),
     );
   });
@@ -189,7 +192,7 @@ describe("NexusModsSearch", () => {
     const hook = render("skyui", mockApi, { debouceDelayMs: 0 });
     await waitFor(() => expect(mockSearchMods).toHaveBeenCalledOnce());
 
-    const signal = mockSearchMods.mock.lastCall[4];
+    const signal = mockSearchMods.mock.lastCall[5];
     expect(signal.aborted).toBe(false);
 
     hook.unmount();
@@ -209,6 +212,7 @@ describe("NexusModsSearch", () => {
       "skyrim",
       "tokenFromState",
       true,
+      undefined,
       expect.anything(),
     );
     state.persistent.nexus.userInfo.adult = false;
@@ -226,6 +230,7 @@ describe("NexusModsSearch", () => {
       "skyrim",
       "tokenFromState",
       false,
+      undefined,
       expect.anything(),
     );
   });

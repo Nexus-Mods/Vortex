@@ -1,13 +1,12 @@
 import { pathToFileURL } from "url";
 
-import { mdiArrowLeft, mdiClose, mdiOpenInApp } from "@mdi/js";
+import { mdiArrowLeft } from "@mdi/js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
-import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
@@ -17,11 +16,12 @@ import { BetaBadge } from "../components/BetaBadge";
 // import FloatingSearchBar from "../components/FloatingSearchBar";
 import MediaViewSingleDetails from "../components/MediaSingleViewDetails";
 import MediaVideoSteamFailed from "../components/MediaVideoSteamFailed";
+import type { IModOption } from "../components/ModCombobox";
 import ModTagIndicator from "../components/ModTagIndicator";
 import useGameMediaModTag from "../hooks/GameMediaModTagHook";
 import type { GameMediaItem, ResolvedGameMediaSource } from "../util/mediaTypes";
-import type { IModResult } from "../util/searchMods";
 import MediaSingleViewAddModTagModal from "./MediaSingleViewAddModTagModal";
+import MediaSingleViewUploadModal from "./MediaSingleViewUploadModal";
 
 interface IMediaSingleViewProps {
   active?: boolean;
@@ -106,20 +106,20 @@ export default function MediaSingleView({
 
   const mediaSrc = useMemo(() => pathToFileURL(entry.path).toString(), [entry.path]);
 
-  const onSelectTag = (r: IModResult, comment?: string) => {
+  const onSelectTag = (r: IModOption, comment?: string) => {
     setTags([
       ...(tags ?? []),
       {
         id: r.uid,
         name: r.name,
         modId: r.modId,
-        gameId: r.game.id,
-        domainName: r.game.domainName,
+        fileId: r.fileId,
+        domainName: r.gameDomain,
         x: pendingCoords.x,
         y: pendingCoords.y,
-        url: `https://nexusmods.com/${domainName}/mods/${r.modId}`,
+        url: `https://nexusmods.com/${r.gameDomain}/mods/${r.modId}`,
         createdAt: new Date().toISOString(),
-        thumbnail: r.adult ? r.thumbnailBlurredUrl : r.thumbnailUrl,
+        thumbnail: r.thumbnail,
         comment: comment?.trim() || undefined,
       },
     ]);
@@ -237,7 +237,7 @@ export default function MediaSingleView({
         />
       </div>
 
-      {/* Add mod tag modal (variant) */}
+      {/* Add mod tag modal */}
       <MediaSingleViewAddModTagModal
         api={api}
         domainName={domainName}
@@ -252,41 +252,14 @@ export default function MediaSingleView({
       />
 
       {/* Upload to Nexus Mods Modal */}
-      <Modal
-        showCloseButton
+      <MediaSingleViewUploadModal
+        api={api}
+        domainName={domainName}
+        entry={entry}
         isOpen={uploadModalVisible}
-        title={t("single::upload::title")}
+        tags={tags}
         onClose={() => setUploadModalVisible(false)}
-      >
-        <Typography appearance="subdued" className="mb-2">
-          {t("single::upload::body")}
-        </Typography>
-
-        <div className="mt-2 flex flex-wrap gap-2">
-          <Button
-            appearance="strong"
-            brand="primary"
-            leftIconPath={mdiOpenInApp}
-            onClick={() => {
-              const uploadPath = entry.type === "image" ? "images" : "videos";
-              setUploadModalVisible(false);
-              window.api.shell.showItemInFolder(entry.path);
-              window.api.shell.openUrl(`https://www.nexusmods.com/${domainName}/${uploadPath}/add`);
-            }}
-          >
-            {t("single::actions::continue")}
-          </Button>
-
-          <Button
-            appearance="subdued"
-            brand="neutral"
-            leftIconPath={mdiClose}
-            onClick={() => setUploadModalVisible(false)}
-          >
-            {t("single::actions::cancel")}
-          </Button>
-        </div>
-      </Modal>
+      />
     </Page>
   );
 }

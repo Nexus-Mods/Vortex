@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { SelectField } from "@/ui/components/form/select_field/SelectField";
@@ -23,7 +23,7 @@ export default function ModFileSelector({ moduid, onSelect, api }: IModFileSelec
     selectedVersion,
     setSelectedFile,
     setSelectedVersion,
-  } = useNexusModsVersions(moduid, api);
+  } = useNexusModsVersions(moduid, api, onSelect);
 
   const fileVersions = useMemo(
     () => versions?.filter((v) => !!selectedFile && v.file.id === selectedFile?.id),
@@ -38,7 +38,6 @@ export default function ModFileSelector({ moduid, onSelect, api }: IModFileSelec
 
   const selectFile = (f: string) => {
     const file: IModFile = files.find((fi) => fi.id === f);
-    console.log("Setting file", f, files);
     setSelectedFile(file);
   };
 
@@ -65,6 +64,7 @@ export default function ModFileSelector({ moduid, onSelect, api }: IModFileSelec
         required
         className="text-sm"
         disabled={isLoading}
+        fieldClassName="shrink-0"
         label="Version"
         showRequiredLabel={false}
         value={selectedVersion?.id}

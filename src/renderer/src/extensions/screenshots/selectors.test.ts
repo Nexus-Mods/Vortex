@@ -11,7 +11,7 @@ const tag = (id: string): GameMediaModTag => ({
   name: `Mod ${id}`,
   domainName: "game",
   modId: 1,
-  gameId: 1,
+  fileId: 1,
   x: 0.5,
   y: 0.5,
   createdAt: "2026-01-01T00:00:00.000Z",

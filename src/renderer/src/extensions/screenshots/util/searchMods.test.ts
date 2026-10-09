@@ -29,7 +29,7 @@ describe("searchMods", () => {
   });
 
   it("builds to correct filter based on the passed user preference", async () => {
-    await searchMods("skyui", gameDomain, undefined, true, signal);
+    await searchMods("skyui", gameDomain, undefined, true, 5, signal);
 
     const adultOnBody = JSON.parse(mockFetch.mock.calls[0][1].body as string) as {
       variables: { filter: { adult?: { value: boolean } } };
@@ -37,7 +37,7 @@ describe("searchMods", () => {
 
     expect(adultOnBody.variables.filter.adult).toBeUndefined();
 
-    await searchMods("skyui", gameDomain, undefined, false, signal);
+    await searchMods("skyui", gameDomain, undefined, false, 5, signal);
 
     const adultOffBody = JSON.parse(mockFetch.mock.calls[1][1].body as string) as {
       variables: { filter: { adult?: { value: boolean } } };
@@ -47,7 +47,7 @@ describe("searchMods", () => {
   });
 
   it("sends the user's token in the Authorization header", async () => {
-    await searchMods("skyui", gameDomain, token, true, signal);
+    await searchMods("skyui", gameDomain, token, true, 5, signal);
     const headers = mockFetch.mock.calls[0][1].headers;
 
     expect(headers["Authorization"]).toBe(`Bearer ${token}`);
@@ -60,7 +60,7 @@ describe("searchMods", () => {
     } as unknown as Response);
 
     try {
-      await searchMods("skse", gameDomain, token, true, signal);
+      await searchMods("skse", gameDomain, token, true, 5, signal);
     } catch (e: unknown) {
       const error = e instanceof Error ? e.message : undefined;
       expect(error).toBe("Nexus Mods token has expired, please log out and back in.");
@@ -75,7 +75,7 @@ describe("searchMods", () => {
     } as unknown as Response);
 
     try {
-      await searchMods("skse", gameDomain, token, true, signal);
+      await searchMods("skse", gameDomain, token, true, 5, signal);
     } catch (e: unknown) {
       const error = e instanceof Error ? e.message : undefined;
       expect(error).toBe("Mod search failed with GraphQL errors");
@@ -89,7 +89,7 @@ describe("searchMods", () => {
       status: 200,
       statusText: "Success",
     } as unknown as Response);
-    await searchMods("skse", gameDomain, token, true, signal);
+    await searchMods("skse", gameDomain, token, true, 5, signal);
 
     expect(mockFetch.mock.calls[0][1].signal).toBe(signal);
   });
