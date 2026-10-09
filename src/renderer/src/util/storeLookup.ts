@@ -3,6 +3,7 @@ import * as path from "path";
 import Bluebird from "bluebird";
 import * as winapi from "winapi-bindings";
 
+import { defaultProcessProvider } from "@/extensions/gamemode_management/util/processProvider";
 import { log } from "@/logging";
 import { makeExeId } from "@/reducers/session";
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -242,7 +243,7 @@ async function launchStoreAsync(
 
   try {
     const launcherPath = await gameStore.getGameStorePath();
-    if (!!launcherPath && !isStoreRunning(launcherPath)) {
+    if (!!launcherPath && !(await isStoreRunning(launcherPath))) {
       // TODO: Bluebird to native
       await Promise.resolve(
         api.runExecutable(launcherPath, parameters || [], {
@@ -256,12 +257,12 @@ async function launchStoreAsync(
   }
 }
 
-function isStoreRunning(storeExecPath: string) {
-  const runningProcesses = winapi.GetProcessList();
+async function isStoreRunning(storeExecPath: string): Promise<boolean> {
   const exeId = makeExeId(storeExecPath);
-  return (
-    runningProcesses.find((runningProc) => exeId === runningProc.exeFile.toLowerCase()) !==
-    undefined
+  const processes = await defaultProcessProvider.list();
+  // launchers started through a script (steam.sh) run under the shell's name
+  return processes.some(
+    (proc) => proc.name.toLowerCase() === exeId || proc.cmd?.includes(storeExecPath),
   );
 }
 
