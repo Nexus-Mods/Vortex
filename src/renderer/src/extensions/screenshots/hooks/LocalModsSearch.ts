@@ -24,6 +24,7 @@ export default function useLocalModsSearch(query: string) {
     const q = debouncedQuery.toLowerCase();
     return Object.values(mods)
       .filter((mod) => {
+        if (mod.type === "collection") return false;
         const { name, modName, fileName, logicalFileName, customFileName } = mod.attributes;
         return [name, modName, fileName, logicalFileName, customFileName].some((v) =>
           v?.toLowerCase().includes(q),

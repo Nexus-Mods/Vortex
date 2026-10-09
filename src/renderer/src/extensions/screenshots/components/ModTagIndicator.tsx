@@ -11,8 +11,8 @@ import { deleteGameMediaModTag } from "../actions/persistent";
 import type { GameMediaModTag } from "../util/mediaTypes";
 
 interface IModTagsIndicatorProps {
-  gameId: string;
-  mediaId: string;
+  gameId?: string;
+  mediaId?: string;
   x: number;
   y: number;
   mod?: GameMediaModTag;

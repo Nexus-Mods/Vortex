@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { getGame } from "@/extensions/gamemode_management/util/getGame";
+import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Typography } from "@/ui/components/typography/Typography";
 
@@ -19,7 +21,11 @@ import FloatingSearchBarSkeletonTile from "./FloatingSearchBarSkeletonTile";
 export interface IModOption {
   key: string;
   name: string;
+  modId: number;
+  gameDomain: string;
+  fileId?: number;
   thumbnail?: string;
+  uid?: string;
   url?: string;
   source: "installed" | "nexus";
 }
@@ -45,13 +51,20 @@ export default function ModCombobox({ api, domainName, value, onChange }: IModCo
     key: `installed:${mod.id}`,
     name: mod.attributes?.modName ?? mod.attributes?.name ?? mod.id,
     source: "installed",
+    thumbnail: mod.attributes.pictureUrl,
+    modId: mod.attributes?.modId,
+    gameDomain: nexusGameId(getGame(mod.attributes?.downloadGame)) ?? domainName,
+    fileId: mod.attributes.fileId,
   }));
 
   const nexus: IModOption[] = nexusResults.map((r) => ({
     key: `nexus:${r.uid}`,
+    uid: r.uid,
     name: r.name,
     thumbnail: r.adult ? r.thumbnailBlurredUrl : r.thumbnailUrl,
     url: `https://nexusmods.com/${domainName}/mods/${r.modId}`,
+    gameDomain: domainName,
+    modId: r.modId,
     source: "nexus",
   }));
 
@@ -66,9 +79,13 @@ export default function ModCombobox({ api, domainName, value, onChange }: IModCo
 
       <ComboboxOptions>
         {installed.length > 0 && (
-          <ComboboxGroup label={t("floating_search::group_installed")}>
+          <ComboboxGroup label={t("add_mod_tag::group_installed")}>
             {installed.map((option) => (
               <ComboboxOption key={option.key} value={option}>
+                {!!option.thumbnail && (
+                  <img alt="" className="aspect-mod h-6 rounded-xs" src={option.thumbnail} />
+                )}
+
                 <span className="nxm-dropdown-item-label">{option.name}</span>
               </ComboboxOption>
             ))}
@@ -78,7 +95,7 @@ export default function ModCombobox({ api, domainName, value, onChange }: IModCo
         {isLoading && <FloatingSearchBarSkeletonTile />}
 
         {nexus.length > 0 && (
-          <ComboboxGroup label={t("floating_search::group_nexus")}>
+          <ComboboxGroup label={t("add_mod_tag::group_nexus")}>
             {nexus.map((option) => (
               <ComboboxOption key={option.key} value={option}>
                 {!!option.thumbnail && (

@@ -14,7 +14,7 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 
 import { deleteGameMediaModTag } from "../actions/persistent";
 import { BetaBadge } from "../components/BetaBadge";
-import FloatingSearchBar from "../components/FloatingSearchBar";
+// import FloatingSearchBar from "../components/FloatingSearchBar";
 import MediaViewSingleDetails from "../components/MediaSingleViewDetails";
 import MediaVideoSteamFailed from "../components/MediaVideoSteamFailed";
 import ModTagIndicator from "../components/ModTagIndicator";
@@ -243,6 +243,7 @@ export default function MediaSingleView({
         domainName={domainName}
         imagePath={entry.path}
         isOpen={isAddingTag && !!pendingCoords}
+        pendingCoords={pendingCoords}
         setTag={onSelectTag}
         onClose={() => {
           setIsAddingTag(false);

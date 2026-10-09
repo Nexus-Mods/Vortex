@@ -51,6 +51,11 @@
     "steam_clip_unplayable": "Steam Clips cannot currently be played in Vortex.",
     "video_tag_disabled": "Videos can be tagged during upload to Nexus Mods."
   },
+  "add_mod_tag": {
+    "title": "Tag a mod",
+    "group_installed": "Installed",
+    "group_nexus": "Nexus Mods"
+  },
   "floating_search": {
     "placeholder": "Search for mods...",
     "comment_placeholder": "Optional comment",
