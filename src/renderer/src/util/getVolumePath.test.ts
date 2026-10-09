@@ -4,11 +4,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const devices: Record<string, number> = {};
 
-vi.mock("fs", async (importOriginal) => ({
-  ...(await importOriginal<typeof nodeFs>()),
-  existsSync: (filePath: string) => devices[filePath] !== undefined,
-  statSync: (filePath: string) => ({ dev: devices[filePath] }),
-}));
+vi.mock("fs", async (importOriginal) => {
+  const mocked = {
+    ...(await importOriginal<typeof nodeFs>()),
+    existsSync: (filePath: string) => devices[filePath] !== undefined,
+    statSync: (filePath: string) => ({ dev: devices[filePath] }),
+  };
+  return { ...mocked, default: mocked };
+});
 
 vi.mock("winapi-bindings", () => ({
   GetVolumePathName: (input: string) => `volume of ${input}`,
