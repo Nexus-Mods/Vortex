@@ -56,7 +56,9 @@ import {
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
 import type { IState } from "../../types/IState";
 import { setPrimaryTool } from "../starter_dashlet/actions";
+import starterReducer from "../starter_dashlet/reducers";
 import GameModeManager from "./GameModeManager";
+import { settingsReducer } from "./reducers/settings/settings";
 
 const discoveredTools: IDiscoveredTool[] = [];
 
@@ -82,9 +84,13 @@ interface ISetupOpts {
 
 function setup(opts: ISetupOpts = {}) {
   const activeGameId = opts.activeGameId ?? GAME;
-  const harness = makeApiHarness({
-    profiles: { "profile-1": makeProfile({ id: "profile-1", gameId: activeGameId }) },
-  });
+  const harness = makeApiHarness(
+    { profiles: { "profile-1": makeProfile({ id: "profile-1", gameId: activeGameId }) } },
+    [
+      { path: ["settings", "gameMode"], reducer: settingsReducer },
+      { path: ["settings", "interface"], reducer: starterReducer },
+    ],
+  );
   harness.setState((draft: IState) => {
     draft.settings.profiles.activeProfileId = "profile-1";
     draft.settings.gameMode.discovered[GAME] = {
@@ -121,11 +127,16 @@ async function discover(manager: GameModeManager) {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-describe("GameModeManager tool discovery", () => {
-  beforeEach(() => {
-    discoveredTools.length = 0;
-  });
+beforeEach(() => {
+  discoveredTools.length = 0;
+});
 
+async function activate(manager: GameModeManager) {
+  await manager.setGameMode(undefined, GAME, "profile-1");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+describe("GameModeManager tool discovery", () => {
   // Regression for #19543: discovery also runs after a deployment, on an already-active game --
   // the path a collection installing a script extender takes. The default used to be selected only
   // while activating the game, so the extender showed up under Tools but Quick Launch kept
@@ -137,6 +148,7 @@ describe("GameModeManager tool discovery", () => {
     await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+    expect(harness.api.getState().settings.interface.primaryTool?.[GAME]).toBe(SCRIPT_EXTENDER);
   });
 
   // The reported sequence: the loader was missing when the game was activated, so the
@@ -152,6 +164,7 @@ describe("GameModeManager tool discovery", () => {
     await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+    expect(harness.api.getState().settings.interface.primaryTool?.[GAME]).toBe(SCRIPT_EXTENDER);
   });
 
   it("keeps a primary tool the user already chose", async () => {
@@ -171,6 +184,45 @@ describe("GameModeManager tool discovery", () => {
     await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([]);
+  });
+
+  it("keeps a choice cleared before the late discovery report", async () => {
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
+    const { harness, manager } = setup();
+    await manager.startToolDiscovery(GAME);
+    harness.api.store.dispatch(setPrimaryTool(GAME, null));
+    const before = primaryToolDispatches(harness).length;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(primaryToolDispatches(harness)).toHaveLength(before);
+    expect(harness.api.getState().settings.interface.primaryTool?.[GAME]).toBeNull();
+    expect(
+      harness.api.getState().settings.gameMode.discovered[GAME].tools[SCRIPT_EXTENDER],
+    ).toBeDefined();
+  });
+
+  it("does not select a launcher when the profile changes before the late report", async () => {
+    discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
+    const { harness, manager } = setup();
+    await manager.startToolDiscovery(GAME);
+    harness.setState((draft) => {
+      draft.persistent.profiles["profile-1"].gameId = OTHER_GAME;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(primaryToolDispatches(harness)).toEqual([]);
+    expect(
+      harness.api.getState().settings.gameMode.discovered[GAME].tools[SCRIPT_EXTENDER],
+    ).toBeDefined();
+  });
+
+  it("does not select the same default twice when discovery reports it twice", async () => {
+    discoveredTools.push(
+      makeDiscoveredTool(SCRIPT_EXTENDER_TOOL),
+      makeDiscoveredTool(SCRIPT_EXTENDER_TOOL),
+    );
+    const { harness, manager } = setup();
+    await discover(manager);
+    expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+    expect(harness.api.getState().settings.interface.primaryTool?.[GAME]).toBe(SCRIPT_EXTENDER);
   });
 
   it("ignores a discovered tool that isn't a declared default", async () => {
@@ -235,6 +287,7 @@ describe("GameModeManager tool discovery", () => {
     await discover(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+    expect(harness.api.getState().settings.interface.primaryTool?.[GAME]).toBe(SCRIPT_EXTENDER);
   });
   // A tool the user removed from the Tools page is stored with `hidden: true`. The Tools page then
   // shows no default launcher, but Quick Launch starts whatever primaryTool names, so promoting a
@@ -262,12 +315,42 @@ describe("GameModeManager tool discovery", () => {
 });
 
 describe("GameModeManager game activation", () => {
+  it("keeps an explicitly cleared launcher during activation", async () => {
+    const { harness, manager } = setup({
+      primaryTool: null,
+      existingTool: { defaultPrimary: true },
+    });
+    await activate(manager);
+    expect(primaryToolDispatches(harness)).toEqual([]);
+    expect(harness.api.getState().settings.interface.primaryTool?.[GAME]).toBeNull();
+  });
+
+  it("keeps a named launcher during activation", async () => {
+    const { harness, manager } = setup({
+      primaryTool: "loot",
+      existingTool: { defaultPrimary: true },
+    });
+    await activate(manager);
+    expect(primaryToolDispatches(harness)).toEqual([]);
+    expect(harness.api.getState().settings.interface.primaryTool?.[GAME]).toBe("loot");
+  });
+
+  it("does not change the launcher after the active profile changes", async () => {
+    const { harness, manager } = setup({ existingTool: { defaultPrimary: true } });
+    harness.setState((draft) => {
+      draft.settings.profiles.activeProfileId = undefined;
+    });
+    await activate(manager);
+    expect(primaryToolDispatches(harness)).toEqual([]);
+  });
+
   it("selects a declared default primary tool", async () => {
     const { harness, manager } = setup({ existingTool: { defaultPrimary: true } });
 
-    await manager.setGameMode(undefined, GAME, "profile-1");
+    await activate(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([setPrimaryTool(GAME, SCRIPT_EXTENDER)]);
+    expect(harness.api.getState().settings.interface.primaryTool?.[GAME]).toBe(SCRIPT_EXTENDER);
   });
 
   it("doesn't select a default primary tool the user removed", async () => {
@@ -275,7 +358,7 @@ describe("GameModeManager game activation", () => {
       existingTool: { defaultPrimary: true, hidden: true },
     });
 
-    await manager.setGameMode(undefined, GAME, "profile-1");
+    await activate(manager);
 
     expect(primaryToolDispatches(harness)).toEqual([]);
   });

@@ -213,10 +213,7 @@ export class GameModeManager {
           log("info", "changed game mode", { oldMode, newMode });
           this.mOnGameModeActivated(newMode);
           const { gameId } = currentProfile;
-          if (
-            getSafe(state, ["settings", "interface", "primaryTool", gameId], undefined) ===
-            undefined
-          ) {
+          if (state.settings.interface.primaryTool?.[gameId] === undefined) {
             const defaultPrimary = findDefaultPrimaryTool(discoveryByGame(state, gameId).tools);
             if (defaultPrimary !== undefined) {
               this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
