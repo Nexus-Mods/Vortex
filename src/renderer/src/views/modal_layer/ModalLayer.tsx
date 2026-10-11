@@ -12,7 +12,8 @@ import type { ICheckbox, IDialog } from "../../types/IDialog";
 import type { IState } from "../../types/IState";
 import { canRenderWithModal } from "./canRenderWithModal";
 
-// Dialogs are answered one at a time, oldest first, the same as the legacy renderer.
+// One dialog at a time, and the reducer puts a new one at the front, so the newest is shown first.
+// The legacy renderer does the same.
 const allDialogs = (state: IState): IDialog[] => state.session.notifications.dialogs;
 
 // The legacy renderer's rule, kept so both behave the same: a ticked "remember" also answers the
