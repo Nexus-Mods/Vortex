@@ -10,6 +10,7 @@ import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 
+import { useToolbarContext } from "./Toolbar.context";
 import type { IToolbarAction } from "./ToolbarGroup";
 import { TOOLBAR_OVERFLOW_ATTRIBUTE } from "./useToolbarOverflow.hook";
 
@@ -33,9 +34,35 @@ interface IToolbarOverflowProps {
  * back, which is the confirmation — and the link then removes itself, there being
  * nothing left to reset.
  */
+/** Each run of actions in the same `section`, in order, for the menu to divide. */
+const sections = <T extends IToolbarAction>(rows: T[]): T[][] =>
+  rows.reduce<T[][]>((runs, row) => {
+    const run = runs.at(-1);
+    if (run !== undefined && run[0].section === row.section) {
+      run.push(row);
+    } else {
+      runs.push([row]);
+    }
+    return runs;
+  }, []);
+
 export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => {
   const { t } = useTranslation();
+  const { pinTarget = "toolbar" } = useToolbarContext();
   const label = t("More actions");
+
+  // Each said in full, so a translation can word each its own way.
+  const pinLabel = (name: string, pinned: boolean) => {
+    const replace = { replace: { name } };
+    if (pinTarget === "row") {
+      return pinned
+        ? t("Unpin {{name}} from the row", replace)
+        : t("Pin {{name}} to the row", replace);
+    }
+    return pinned
+      ? t("Unpin {{name}} from the toolbar", replace)
+      : t("Pin {{name}} to the toolbar", replace);
+  };
 
   // An action with no id cannot be decided about, so it gets no toggle rather than
   // one that does nothing — see `useToolbarPinning`.
@@ -50,9 +77,7 @@ export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => 
       ...action,
       pin: {
         pinned,
-        label: pinned
-          ? t("Unpin {{name}} from the toolbar", { replace: { name: action.label } })
-          : t("Pin {{name}} to the toolbar", { replace: { name: action.label } }),
+        label: pinLabel(action.label, pinned),
         onToggle: () => pinning.togglePin(action),
       },
     };
@@ -73,7 +98,7 @@ export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => 
       <PopoverPanel className="nxm-popover-panel-dropdown">
         {({ close }) => (
           <>
-            <PopoverMenu actions={[rows]} label={label} onSelect={close} />
+            <PopoverMenu actions={sections(rows)} label={label} onSelect={close} />
 
             {!!pinning?.canReset && (
               <>

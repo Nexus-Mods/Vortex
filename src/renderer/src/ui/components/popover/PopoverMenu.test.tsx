@@ -76,6 +76,15 @@ describe("PopoverMenu", () => {
       expect(screen.getByRole("menu")).toHaveAccessibleName("Account");
     });
 
+    it("draws an action's icon element in place of a path", async () => {
+      await openMenu([
+        [{ label: "Open on Nexus Mods", icon: <svg data-testid="logo" />, onClick: () => {} }],
+      ]);
+
+      const item = screen.getByRole("menuitem", { name: "Open on Nexus Mods" });
+      expect(item.querySelector(".nxm-dropdown-item-icon [data-testid='logo']")).not.toBeNull();
+    });
+
     it("separates groups with a rule", async () => {
       await openMenu([[plainAction("View profile")], [plainAction("Logout")]]);
       expect(screen.getAllByRole("separator")).toHaveLength(1);
@@ -93,6 +102,31 @@ describe("PopoverMenu", () => {
     it("disables a disabled action", async () => {
       await openMenu([[{ ...plainAction("Logout"), disabled: true }]]);
       expect(screen.getByRole("menuitem", { name: "Logout" })).toBeDisabled();
+    });
+
+    it("still lets a disabled action be pinned, though it won't run", async () => {
+      const onClick = vi.fn();
+      const onToggle = vi.fn();
+      await openMenu([
+        [
+          {
+            ...plainAction("Refresh", onClick),
+            disabled: true,
+            pin: { pinned: false, label: "Pin Refresh", onToggle },
+          },
+        ],
+      ]);
+
+      const row = screen.getByRole("menuitem", { name: /Refresh/ });
+      expect(row).not.toBeDisabled();
+      expect(row).toHaveAttribute("aria-disabled", "true");
+
+      await userEvent.click(screen.getByLabelText("Pin Refresh"));
+      expect(onToggle).toHaveBeenCalled();
+
+      await userEvent.click(row);
+      expect(onClick).not.toHaveBeenCalled();
+      expect(screen.getByRole("menu")).toBeInTheDocument();
     });
 
     it("brands a row that asks for it", async () => {
@@ -345,14 +379,21 @@ describe("PopoverMenu", () => {
       expect(row).toHaveAccessibleName("Help");
     });
 
-    // A row that opens nothing keeps the space a chevron would take, so the pins of
-    // every row line up, and withholds the mark itself.
+    // Beside a submenu, a row that opens nothing keeps the space a chevron would take,
+    // so the pins of every row line up, and withholds the mark itself.
     it("hides the chevron on a row that just runs an action", async () => {
-      await openMenu([[plainAction("Logout")]]);
-      const row = screen.getByRole("menuitem", { name: "Logout" });
+      await openParent();
+      const row = screen.getByRole("menuitem", { name: "Refresh" });
 
       expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).toBeInTheDocument();
       expect(row.querySelector(".nxm-dropdown-item-chevron-hidden")).toBeInTheDocument();
+    });
+
+    it("leaves the chevron's space out of a menu with no submenu", async () => {
+      await openMenu([[plainAction("Logout")]]);
+      const row = screen.getByRole("menuitem", { name: "Logout" });
+
+      expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).not.toBeInTheDocument();
     });
 
     it("opens the submenu from its row", async () => {

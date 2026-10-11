@@ -292,6 +292,51 @@ describe("ToolbarGroup", () => {
     });
   });
 
+  it("draws an action's icon element on its button, in place of a path", () => {
+    render(
+      <ToolbarGroup
+        actions={[{ label: "Open on Nexus Mods", icon: <svg data-testid="logo" /> }]}
+      />,
+    );
+
+    expect(
+      within(screen.getByRole("button", { name: "Open on Nexus Mods" })).getByTestId("logo"),
+    ).toBeInTheDocument();
+  });
+
+  describe("content before the overflow menu", () => {
+    const slot = <button type="button">Slot</button>;
+
+    it("sits after the actions and before the overflow menu", () => {
+      stubLayout(1000);
+      render(
+        <Toolbar>
+          <ToolbarGroup actions={makeActions(2)} beforeOverflow={slot} maxVisible={2} />
+        </Toolbar>,
+      );
+
+      const group = document.querySelector(".nxm-toolbar-group") as HTMLElement;
+      const names = within(group)
+        .getAllByRole("button")
+        .map((button) => button.getAttribute("aria-label") ?? button.textContent);
+      expect(names.slice(0, 3)).toEqual(["Action 1", "Action 2", "Slot"]);
+    });
+
+    it("always shows, taking its room before the actions", () => {
+      stubLayout(100);
+      render(
+        <Toolbar>
+          <ToolbarGroup actions={makeActions(4)} beforeOverflow={slot} />
+        </Toolbar>,
+      );
+
+      // 100px holds three 28px controls: the slot, the kebab, and one action.
+      expect(actionButtons().filter((button) => button.textContent !== "Slot")).toHaveLength(1);
+      expect(screen.getByRole("button", { name: "Slot" })).toBeInTheDocument();
+      expect(getKebab()).toBeInTheDocument();
+    });
+  });
+
   describe("panel actions", () => {
     const panelAction: IToolbarAction = {
       label: "Display options",
@@ -587,18 +632,24 @@ describe("ToolbarGroup", () => {
       decisions = {},
       width = 1000,
       tracking,
+      pinTarget,
     }: {
       actions: IToolbarAction[];
       decisions?: { [actionId: string]: boolean };
       width?: number;
       tracking?: Partial<IToolbarAnalytics>;
+      pinTarget?: "toolbar" | "row";
     }) => {
       stubLayout(width);
       const store = makeStore({ mods: { pinned: decisions } });
 
       render(
         <Provider store={store as never}>
-          <Toolbar pinningId="mods" tracking={tracking && { ...silentTracking(), ...tracking }}>
+          <Toolbar
+            pinTarget={pinTarget}
+            pinningId="mods"
+            tracking={tracking && { ...silentTracking(), ...tracking }}
+          >
             <ToolbarGroup actions={actions} />
           </Toolbar>
         </Provider>,
@@ -647,6 +698,52 @@ describe("ToolbarGroup", () => {
     const queryResetLink = () => screen.queryByRole("button", { name: "Reset pins to default" });
 
     const resetLink = () => screen.getByRole("button", { name: "Reset pins to default" });
+
+    it("divides its menu between each run of actions in a section", async () => {
+      const [first, second, third, fourth] = pinnable([
+        ["Reinstall", false],
+        ["Remove", false],
+        ["Open archive", false],
+        ["Generate report", false],
+      ]);
+      renderToolbar({
+        actions: [
+          { ...first, section: "manage" },
+          { ...second, section: "manage" },
+          { ...third, section: "open" },
+          { ...fourth, section: "maintenance" },
+        ],
+      });
+      await openMenu();
+
+      const menu = screen.getByRole("menu");
+      const layout = Array.from(menu.querySelectorAll('[role="menuitem"], [role="separator"]')).map(
+        (node) => (node.getAttribute("role") === "separator" ? "---" : node.textContent?.trim()),
+      );
+      expect(layout).toEqual([
+        "Reinstall",
+        "Remove",
+        "---",
+        "Open archive",
+        "---",
+        "Generate report",
+      ]);
+    });
+
+    // `t` returns the key here, so these read the wording each target asks for.
+    it("says a pin puts an action on the toolbar", async () => {
+      renderToolbar({ actions: pinnable([["Deploy", false]]) });
+      await openMenu();
+
+      expect(pinOf("Deploy")).toHaveAttribute("aria-label", "Pin {{name}} to the toolbar");
+    });
+
+    it("says a pin puts an action on the row, for a table row's actions", async () => {
+      renderToolbar({ actions: pinnable([["Deploy", true]]), pinTarget: "row" });
+      await openMenu();
+
+      expect(pinOf("Deploy")).toHaveAttribute("aria-label", "Unpin {{name}} from the row");
+    });
 
     it("puts the pinned actions on the bar, and every action in the menu", async () => {
       renderToolbar({

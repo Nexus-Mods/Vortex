@@ -95,6 +95,19 @@
             background-color: var(--color-translucent-100);
         }
 
+        &[data-loading] {
+            cursor: progress;
+
+            .nxm-switch-thumb {
+                animation: nxm-switch-loading 0.6s ease-in-out infinite alternate;
+            }
+        }
+
+        [data-reduce-motion="true"] &[data-loading] .nxm-switch-thumb {
+            animation: none;
+            opacity: 0.5;
+        }
+
         &[data-disabled] {
             cursor: not-allowed;
 
@@ -118,6 +131,13 @@
             &[data-indeterminate] .nxm-switch-thumb {
                 border-color: var(--color-surface-low);
             }
+        }
+    }
+
+    /* A switch working on a change: its thumb fades in and out until the change lands. */
+    @keyframes nxm-switch-loading {
+        to {
+            opacity: 0.4;
         }
     }
 

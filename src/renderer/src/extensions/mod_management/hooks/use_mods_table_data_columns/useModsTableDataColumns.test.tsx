@@ -16,7 +16,7 @@ vi.mock("../../../gamemode_management/util/modTypeExtensions", () => ({
 
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
-import type { IModRow } from "../../util/modsTableViews";
+import type { IModRow } from "../../util/mods_table_views/modsTableViews";
 import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
 import { useModsTableDataColumns } from "./useModsTableDataColumns.hook";
 
@@ -102,6 +102,16 @@ describe("useModsTableDataColumns", () => {
     expect(cellText(columnById(columns, "installTime"), modRow)).toBe("Not installed");
     expect(cellText(columnById(columns, "enabledTime"), modRow)).toBe("Never");
     expect(cellText(columnById(columns, "downloadTime"), modRow)).toBe("Unknown");
+  });
+
+  // A search matches what's on screen, so each column searches by the text its cell shows.
+  it("searches each column by the text its cell shows", () => {
+    const columns = renderColumns();
+    const modRow = row({ archiveId: "archive", attributes: { author: "Gervig" } });
+
+    columns.forEach((column) => {
+      expect(column.searchText?.(modRow)).toBe(cellText(column, modRow));
+    });
   });
 
   it("names the collections a mod came from, by name", () => {

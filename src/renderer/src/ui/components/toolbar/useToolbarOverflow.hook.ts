@@ -5,6 +5,8 @@ import { useToolbarContext } from "./Toolbar.context";
 /** Intrinsic widths of one group's controls, in CSS pixels. */
 export interface IToolbarGroupMetrics {
   itemWidths: number[];
+  /** Whatever else the group holds, which always shows, so it takes its room first. */
+  fixedWidths?: number[];
   kebabWidth: number;
   gap: number;
   padding: number;
@@ -62,6 +64,15 @@ const measureGroup = (group: HTMLElement): IToolbarGroupMetrics => {
     itemWidths: children
       .filter((child) => child.hasAttribute(TOOLBAR_CONTROL_ATTRIBUTE))
       .map((child) => child.offsetWidth),
+    // Laid out ones only: a hidden sentinel Headless UI puts beside a popover takes no room.
+    fixedWidths: children
+      .filter(
+        (child) =>
+          !child.hasAttribute(TOOLBAR_CONTROL_ATTRIBUTE) &&
+          !child.hasAttribute(TOOLBAR_OVERFLOW_ATTRIBUTE),
+      )
+      .map((child) => child.offsetWidth)
+      .filter((width) => width > 0),
     kebabWidth:
       children.find((child) => child.hasAttribute(TOOLBAR_OVERFLOW_ATTRIBUTE))?.offsetWidth ?? 0,
     gap: parsePx(style.columnGap),
@@ -128,7 +139,10 @@ export const fitVisibleActions = ({
       return true;
     }
 
-    const widths = indices.map((index) => metrics.itemWidths[index] ?? 0);
+    const widths = [
+      ...indices.map((index) => metrics.itemWidths[index] ?? 0),
+      ...(metrics.fixedWidths ?? []),
+    ];
 
     if (withKebab) {
       widths.push(metrics.kebabWidth);

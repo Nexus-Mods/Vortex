@@ -8,6 +8,7 @@ import React, { useState } from "react";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { AlertDemo } from "@/ui/components/alert/Alert.demo";
+import { BadgesDemo } from "@/ui/components/badges/Badges.demo";
 import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { CollectionTileDemo } from "@/ui/components/collection_tile/CollectionTile.demo";
@@ -24,7 +25,6 @@ import { PaginationDemo } from "@/ui/components/pagination/Pagination.demo";
 import { PickerDemo } from "@/ui/components/picker/Picker.demo";
 import { PillDemo } from "@/ui/components/pill/Pill.demo";
 import { PopoverDemo } from "@/ui/components/popover/Popover.demo";
-import { PremiumBadgeDemo } from "@/ui/components/premium_badge/PremiumBadge.demo";
 import { TableDemo } from "@/ui/components/table/Table.demo";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
@@ -178,7 +178,7 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
                 <TabBar>
                   <TabButton name="Icon" panelId="icon" />
 
-                  <TabButton name="Premium Badge" panelId="premium-badge" />
+                  <TabButton name="Badges" panelId="badges" />
 
                   <TabButton name="Bullet" panelId="bullet" />
                 </TabBar>
@@ -188,8 +188,8 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
                     <IconDemo />
                   </TabPanel>
 
-                  <TabPanel id="premium-badge">
-                    <PremiumBadgeDemo />
+                  <TabPanel id="badges">
+                    <BadgesDemo />
                   </TabPanel>
 
                   <TabPanel id="bullet">

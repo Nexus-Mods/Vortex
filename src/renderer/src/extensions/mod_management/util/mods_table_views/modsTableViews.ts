@@ -2,11 +2,11 @@ import type { TFunction } from "i18next";
 
 import type { ITableGroup } from "@/ui/components/table/Table.types";
 
-import { MOD_TYPE as COLLECTION_TYPE } from "../../collections/constants";
-import { collectionsByMod } from "../../collections/util/collectionsByMod";
-import type { IMod } from "../types/IMod";
-import type { IModWithState } from "../types/IModProps";
-import modName from "./modName";
+import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
+import { collectionsByMod } from "../../../collections/util/collectionsByMod";
+import type { IMod } from "../../types/IMod";
+import type { IModWithState } from "../../types/IModProps";
+import modName from "../modName";
 
 export interface IModRow {
   /** The mod the row shows. */
@@ -22,8 +22,16 @@ export interface IModGroup extends ITableGroup<IModRow> {
   avatar?: { src?: string };
 }
 
-/** What a view groups the mods by; none lists them flat. */
-export type ModsTableGrouping = "none" | "collection" | "author";
+/** What the table groups the mods by: "none" lists them flat, otherwise a column's id. */
+export type ModsTableGrouping = string;
+
+/** A column the table can group by, from the value it gives each row. */
+export interface IModsTableGroupingColumn {
+  id: string;
+  header: string;
+  /** The value a row is grouped under; "" for none. */
+  groupBy: (row: IModRow) => string;
+}
 
 export interface IModsTableView {
   /** Stable, unique, and language-independent, so a choice of view can be stored. */
@@ -144,11 +152,50 @@ const groupByAuthor = (mods: { [id: string]: IModWithState }, t: TFunction): IMo
   return [...noAuthor, ...authorGroups];
 };
 
-/** The view's groups, or undefined for a flat list of every mod. */
+/** The mods with no value for the column first, then the mods by its values, by name. */
+const groupByColumn = (
+  mods: { [id: string]: IModWithState },
+  column: IModsTableGroupingColumn,
+  t: TFunction,
+): IModGroup[] => {
+  const byValue = new Map<string, IModRow[]>();
+  const none: IModRow[] = [];
+
+  toRows(Object.values(mods)).forEach((row) => {
+    const value = column.groupBy(row).trim();
+
+    if (!value) {
+      none.push(row);
+      return;
+    }
+
+    byValue.set(value, [...(byValue.get(value) ?? []), row]);
+  });
+
+  const valueGroups = Array.from(byValue, ([value, rows]) => ({
+    id: `${column.id}:${value}`,
+    label: value,
+    rows,
+  })).sort((a, b) => a.label.localeCompare(b.label));
+
+  const noValue = ungroupedFirst(
+    `no-${column.id}`,
+    t("No {{column}}", { column: column.header.toLocaleLowerCase() }),
+    none,
+  );
+
+  return [...noValue, ...valueGroups];
+};
+
+/**
+ * The groups for a grouping, or undefined for a flat list of every mod. Collections and
+ * authors have groups of their own, with pictures; any other column groups by its values.
+ */
 export const groupMods = (
   mods: { [id: string]: IModWithState },
   grouping: ModsTableGrouping,
   t: TFunction,
+  column?: IModsTableGroupingColumn,
 ): IModGroup[] | undefined => {
   if (grouping === "collection") {
     return groupByCollection(mods, t);
@@ -156,6 +203,10 @@ export const groupMods = (
 
   if (grouping === "author") {
     return groupByAuthor(mods, t);
+  }
+
+  if (column !== undefined && column.id === grouping) {
+    return groupByColumn(mods, column, t);
   }
 
   return undefined;

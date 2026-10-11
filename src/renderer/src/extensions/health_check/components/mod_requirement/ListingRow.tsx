@@ -2,8 +2,8 @@ import { mdiMonitorArrowDownVariant } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
+import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Button } from "@/ui/components/button/Button";
-import { PremiumBadge } from "@/ui/components/premium_badge/PremiumBadge";
 
 import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 import { useModRequirementActions } from "../../hooks/useModRequirementActions";

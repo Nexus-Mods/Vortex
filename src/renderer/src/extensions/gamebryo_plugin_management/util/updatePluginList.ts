@@ -1,12 +1,13 @@
+import { readdir } from "node:fs/promises";
 import * as path from "path";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import { dismissNotification } from "../../../actions/notifications";
 import { log } from "../../../logging";
 import type { ThunkStore } from "../../../types/IExtensionContext";
 import { withActivityTracking } from "../../../util/activity";
-import { setErrorContext } from "../../../util/errorHandling";
+import { recordErrorSpan, setErrorContext } from "../../../util/errorHandling";
 import * as fs from "../../../util/fs";
 import { showError } from "../../../util/message";
 import { discoveryByGame } from "../../gamemode_management/selectors";
@@ -21,6 +22,7 @@ import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { isNativePlugin, pluginFormat, supportsBlueprintPlugins } from "./gameSupport";
 import { selectPluginFiles } from "./isPlugin";
 import type PluginPersistor from "./PluginPersistor";
+import { withFileRetry } from "./PluginPersistor";
 import { SpanAttribute } from "./spanAttributes";
 import toPluginId from "./toPluginId";
 
@@ -69,11 +71,24 @@ async function updatePluginListImpl(
   const dataModType: unknown = game.details?.dataModType;
   const modType = typeof dataModType === "string" ? dataModType : "";
   const modPath = game.getModPaths(discovery.path)[modType];
-  // an unreadable game folder is for the game mode management to report
-  const deployedScan = fs
-    .readdirAsync(modPath)
-    .catch(() => [])
-    .then((fileNames) => selectPluginFiles(modPath, fileNames, gameId));
+  const scanGameFolder = async (): Promise<string[] | undefined> => {
+    let fileNames: string[];
+    try {
+      fileNames = await withFileRetry(() => readdir(modPath));
+    } catch (err) {
+      // the game's own plugins only come from here, so keep the previous list
+      log("warn", "failed to read the game folder, keeping the plugin list", {
+        path: modPath,
+        error: getErrorMessageOrDefault(err),
+      });
+      recordErrorSpan("the game folder could not be read", unknownToError(err), {
+        [SpanAttribute.ErrorCode]: getErrorCode(err) ?? "",
+      });
+      return undefined;
+    }
+    return selectPluginFiles(modPath, fileNames, gameId);
+  };
+  const deployedScan = scanGameFolder();
 
   const enabledModIds = Object.keys(gameMods).filter(
     (modId) => newModList[modId]?.enabled ?? false,
@@ -123,7 +138,11 @@ async function updatePluginListImpl(
     store.dispatch(dismissNotification("failed-to-read-mods"));
   }
 
-  for (const fileName of await deployedScan) {
+  const deployedFileNames = await deployedScan;
+  if (deployedFileNames === undefined) {
+    return;
+  }
+  for (const fileName of deployedFileNames) {
     addPlugin(modPath, fileName, modIdByFileName[fileName] ?? "", true);
   }
 

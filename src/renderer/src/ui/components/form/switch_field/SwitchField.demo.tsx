@@ -13,9 +13,23 @@ import { SwitchField } from "./SwitchField";
 
 const CHILD_LABELS = ["Auto-update", "Notifications", "Telemetry"];
 
+/** How long the demo's change takes to land, standing in for whatever the switch waits on. */
+const SAVE_MS = 1500;
+
 export const SwitchFieldDemo = () => {
   const [enabled, setEnabled] = useState(true);
   const [children, setChildren] = useState<boolean[]>([true, false, false]);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState<boolean>();
+
+  // Shows the change at once, loading, until it lands.
+  const save = (checked: boolean) => {
+    setSaving(checked);
+    setTimeout(() => {
+      setSaved(checked);
+      setSaving(undefined);
+    }, SAVE_MS);
+  };
 
   const allOn = children.every(Boolean);
   const noneOn = !children.some(Boolean);
@@ -49,6 +63,22 @@ export const SwitchFieldDemo = () => {
         <SwitchField checked disabled label="On, disabled" />
 
         <SwitchField disabled indeterminate label="Semi-on, disabled" />
+      </Section>
+
+      <Section
+        description="A change under way: the thumb pulses, it reads out as busy, and clicks wait until it's done. The last one shows its change at once and takes a moment to land, as a mod's switch does."
+        title="Loading"
+      >
+        <SwitchField isLoading checked={false} label="Off, loading" onChange={() => undefined} />
+
+        <SwitchField checked isLoading label="On, loading" onChange={() => undefined} />
+
+        <SwitchField
+          checked={saving ?? saved}
+          isLoading={saving !== undefined}
+          label="Click to save"
+          onChange={save}
+        />
       </Section>
 
       <Section

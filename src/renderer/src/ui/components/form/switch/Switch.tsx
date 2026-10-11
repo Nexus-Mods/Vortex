@@ -23,14 +23,25 @@ export type ISwitchProps = Omit<ComponentProps<typeof Checkbox>, "className"> & 
   className?: string;
   /** Renders the "semi-on" state and reports `aria-checked="mixed"`. */
   indeterminate?: boolean;
+  /** Shows a change under way, as `aria-busy`, and ignores clicks until it's done. */
+  isLoading?: boolean;
 };
 
 /**
  * The bare switch. Inside a `Field` it's named by the field's `Label`; on its own it needs an
  * `aria-label`. For a switch with its label and hints, use `SwitchField`.
  */
-export const Switch = forwardRef<HTMLSpanElement, ISwitchProps>(({ className, ...props }, ref) => (
-  <Checkbox className={joinClasses(["nxm-switch", className])} ref={ref} {...props}>
-    <span className="nxm-switch-thumb" />
-  </Checkbox>
-));
+export const Switch = forwardRef<HTMLSpanElement, ISwitchProps>(
+  ({ className, isLoading = false, onChange, ...props }, ref) => (
+    <Checkbox
+      aria-busy={isLoading || undefined}
+      className={joinClasses(["nxm-switch", className])}
+      data-loading={isLoading ? "" : undefined}
+      ref={ref}
+      onChange={isLoading ? undefined : onChange}
+      {...props}
+    >
+      <span className="nxm-switch-thumb" />
+    </Checkbox>
+  ),
+);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { collectionsByMod } from "../../collections/util/collectionsByMod";
-import type { IModWithState } from "../types/IModProps";
+import { collectionsByMod } from "../../../collections/util/collectionsByMod";
+import type { IModWithState } from "../../types/IModProps";
 import { groupMods, sharedMods } from "./modsTableViews";
 
 const t = ((key: string) => key) as Parameters<typeof groupMods>[2];
@@ -47,5 +47,35 @@ describe("sharedMods", () => {
 
   it("finds none for the mods in no collection", () => {
     expect(sharedMods(group("no-collection"), collectionsByMod(MODS)).rows).toEqual([]);
+  });
+});
+
+describe("groupMods by a column", () => {
+  const category = {
+    id: "category",
+    header: "Category",
+    groupBy: ({ mod }: { mod: IModWithState }) => String(mod.attributes?.category ?? ""),
+  };
+
+  const CATEGORISED = {
+    a: mod("a", "Alpha", { attributes: { name: "Alpha", category: "Weapons" } }),
+    b: mod("b", "Beta", { attributes: { name: "Beta", category: "Armour" } }),
+    c: mod("c", "Gamma", { attributes: { name: "Gamma", category: "Weapons" } }),
+    d: mod("d", "Delta"),
+  };
+
+  it("groups the mods without a value first, then by each value, by name", () => {
+    const groups = groupMods(CATEGORISED, "category", t, category);
+
+    expect(groups.map(({ id, label, rows }) => [id, label, rows.map((row) => row.name)])).toEqual([
+      ["no-category", "No {{column}}", ["Delta"]],
+      ["category:Armour", "Armour", ["Beta"]],
+      ["category:Weapons", "Weapons", ["Alpha", "Gamma"]],
+    ]);
+  });
+
+  it("leaves the mods ungrouped without the column it names", () => {
+    expect(groupMods(CATEGORISED, "category", t)).toBeUndefined();
+    expect(groupMods(CATEGORISED, "none", t, category)).toBeUndefined();
   });
 });

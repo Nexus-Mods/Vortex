@@ -26,6 +26,11 @@
             }
         }
 
+        /* The legacy brand colour, where a region's two scrollbars meet. */
+        ::-webkit-scrollbar-corner {
+            background-color: transparent !important;
+        }
+
         :where(:not(:focus-visible, [data-focus])) {
             outline-color: transparent;
         }

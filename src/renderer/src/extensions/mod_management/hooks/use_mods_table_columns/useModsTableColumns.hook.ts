@@ -5,7 +5,11 @@ import { setAttributeVisible } from "@/actions/tables";
 import type { IState } from "@/types/IState";
 import type { ITableColumn } from "@/ui/components/table/Table.types";
 
-import type { IModGroup, IModRow } from "../../util/modsTableViews";
+import type {
+  IModGroup,
+  IModRow,
+  IModsTableGroupingColumn,
+} from "../../util/mods_table_views/modsTableViews";
 
 /** Shared with the legacy table, so the columns a user chose there carry over. */
 export const MODS_TABLE_ID = "mods";
@@ -17,6 +21,12 @@ export interface IModsTableColumn extends ITableColumn<IModRow, IModGroup> {
   isDefaultVisible?: boolean;
   /** Its legacy attribute's `position`, lowest first; default 100, ties keeping their order. */
   position?: number;
+  /** The value a row is grouped under when the table groups by it; without one, it can't. */
+  groupBy?: (row: IModRow) => string;
+  /** Its name in the Group by options, where that isn't its header. */
+  groupLabel?: string;
+  /** The text its cell shows, which a search matches; without one, a search passes it by. */
+  searchText?: (row: IModRow) => string;
 }
 
 /** A toggleable column, as the display options list it. */
@@ -33,13 +43,11 @@ const isDefaultVisible = (column: IModsTableColumn) => column.isDefaultVisible ?
 const byPosition = (a: IModsTableColumn, b: IModsTableColumn) =>
   (a.position ?? 100) - (b.position ?? 100);
 
-/**
- * The columns that can't be hidden, as given, then the rest in the legacy table's order.
- * The first stays first, since a group's row puts its collapse button there.
- */
+/** The fixed columns, then the toggleable ones in the legacy table's order, then any sticky one. */
 const ordered = (columns: IModsTableColumn[]) => [
-  ...columns.filter((column) => !column.isToggleable),
+  ...columns.filter((column) => !column.isToggleable && !column.sticky),
   ...columns.filter((column) => column.isToggleable).sort(byPosition),
+  ...columns.filter((column) => column.sticky),
 ];
 
 /** The columns the user has chosen to show, and the toggles to choose them with. */
@@ -82,5 +90,14 @@ export const useModsTableColumns = (givenColumns: IModsTableColumn[]) => {
     [columns, setColumnVisible],
   );
 
-  return { visibleColumns, toggles, canReset, setColumnVisible, resetColumns };
+  // In the table's order, hidden or not, as the legacy table offered them, by their group label.
+  const groupable = useMemo(
+    () =>
+      columns
+        .filter((column): column is IModsTableGroupingColumn & IModsTableColumn => !!column.groupBy)
+        .map((column) => ({ ...column, header: column.groupLabel ?? column.header })),
+    [columns],
+  );
+
+  return { visibleColumns, toggles, groupable, canReset, setColumnVisible, resetColumns };
 };

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0-beta.2] - 2026-10-08
+
+### Fixed
+
+- Empty `plugins.txt` reported for games that only have their own plugins ([#24463](https://github.com/Nexus-Mods/Vortex/pull/24463))
+- Plugin list reset by a rescan when the game folder could not be read ([#24461](https://github.com/Nexus-Mods/Vortex/pull/24461))
+- LOOT process left running after Vortex closed or crashed ([#24450](https://github.com/Nexus-Mods/Vortex/pull/24450))
+- LOOT staying down for the rest of the session when its worker ended without being closed ([#24449](https://github.com/Nexus-Mods/Vortex/pull/24449))
+- LOOT failing to start when the active game changed or was cleared while the previous instance was settling ([#24447](https://github.com/Nexus-Mods/Vortex/pull/24447))
+- Plugin list failing to refresh after deployment for profiles with no mods enabled ([#24442](https://github.com/Nexus-Mods/Vortex/pull/24442))
+
 ## [2.9.0-beta.1] - 2026-10-06
 
 _First beta of the 2.9 release._
@@ -2486,6 +2497,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.9.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.2
 [2.9.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.1
 [2.8.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0
 [2.8.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0-beta.2

@@ -43,7 +43,12 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
     role="row"
   >
     {columns.map((column, index) => (
-      <TableCell align={column.align} key={column.id}>
+      <TableCell
+        align={column.align}
+        key={column.id}
+        sticky={column.sticky}
+        tint={column.sticky ? group.image : undefined}
+      >
         {index === 0 && (
           <button
             aria-expanded={expanded}

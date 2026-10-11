@@ -442,6 +442,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             </SuperTable>
           }
           mods={this.state.primaryMods}
+          rowActions={this.modActions}
           onSetModsEnabled={this.setModsEnabledFromTable}
         />
       );
@@ -1438,7 +1439,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       (modId) => mods[modId] === undefined || modState[modId]?.enabled !== true,
     );
 
-    Promise.all(
+    return Promise.all(
       filtered.map((modId) =>
         this.installIfNecessary(modId).catch((err) => {
           if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
@@ -1463,7 +1464,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     modIds = modIds.filter(
       (modId) => mods[modId] !== undefined && modState[modId]?.enabled === true,
     );
-    this.setModsEnabled(modIds, false);
+    return this.setModsEnabled(modIds, false);
   };
 
   private removeRelated = (modIds: string[]) => {
