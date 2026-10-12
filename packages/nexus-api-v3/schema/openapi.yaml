@@ -297,6 +297,63 @@ paths:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+  "/mods/{id}":
+    patch:
+      tags:
+        - mods
+      summary: Edit mod details
+      description: |
+        Update a mod page's summary and/or description. Only the fields present in the
+        request are changed; omitted fields are left as they are.
+
+        Text is stored in the same encoding the mod page editor uses, so the result is
+        identical to saving the same text from the website. The caller must be on the
+        mod's team or an admin. A mod under moderation review can only be edited by its
+        team when staff have allowed edits.
+      operationId: editMod
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/EditModRequest"
+      responses:
+        "204":
+          description: Successfully updated the mod.
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          description: The mod was not found.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
   "/mods/{id}/files":
     get:
       tags:
@@ -1570,7 +1627,13 @@ paths:
         \ <Part>                                                                                                                                                                                                                                                                           \n
         \   <PartNumber>3</PartNumber>                                                                                                                                                                                                                                                     \n
         \   <ETag>acbd18db4cc2f85cedef654fccc4a4d8</ETag>                                                                                                                                                                                                                                \n
-        \ </Part>                                                                                                                                                                                                                                                                          \n</CompleteMultipartUpload>\n```\n"
+        \ </Part>                                                                                                                                                                                                                                                                          \n</CompleteMultipartUpload>\n```\n\n###
+        Content integrity (`crc64nvme`)\n\nSupplying `crc64nvme` binds the `complete_presigned_url`
+        to one file: storage computes the CRC-64/NVME of the assembled object on completion
+        and rejects it on mismatch, so the whole file is verified end-to-end, not
+        just each part. Send the same value in an `x-amz-checksum-crc64nvme` header
+        on your `POST` to `complete_presigned_url`. It is optional today; omit it
+        to complete exactly as before.\n"
       operationId: createMultipartUpload
       requestBody:
         required: true
@@ -2119,6 +2182,22 @@ components:
           type: integer
           nullable: true
           description: ID of the parent category.
+    EditModRequest:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: Short description shown on mod tiles and at the top of the
+            mod page. Line breaks and runs of whitespace are collapsed to single spaces;
+            must not be blank once collapsed.
+          minLength: 1
+          maxLength: 350
+          nullable: false
+        description:
+          type: string
+          description: Full mod page description, in BBCode. Must not be blank.
+          minLength: 1
+          nullable: false
     TrendingModsResponse:
       type: object
       required:
@@ -3051,6 +3130,21 @@ components:
           description: |
             Filename for the archive being uploaded. This is the name sent in the `Content-Disposition` header
             when you upload the data, not the name of the mod file version created from it.
+        crc64nvme:
+          type: string
+          nullable: true
+          description: |
+            Optional. A CRC-64/NVME checksum of the complete file, base64-encoded — the value for the
+            `x-amz-checksum-crc64nvme` header. `null` is treated the same as omitting the field.
+
+            When supplied it binds the `complete_presigned_url` to this one object: storage computes the
+            CRC-64/NVME across the assembled parts on completion and rejects the upload if it does not
+            match, giving end-to-end integrity for the whole file. Your `POST` to `complete_presigned_url`
+            must send the same value in an `x-amz-checksum-crc64nvme` header.
+
+            CRC-64/NVME is the only algorithm storage validates against a whole multipart object; MD5 is not
+            available here because the multipart `ETag` is a hash of the part digests, not of the file.
+          pattern: "^[A-Za-z0-9+/]{11}=$"
     CreateSinglePartUploadRequest:
       type: object
       required:
@@ -3536,22 +3630,10 @@ components:
       type: object
       description: The store listings a Vortex client found installed, by store.
       required:
-        - instance_id
-        - vortex_version
         - steam
         - gog
         - epic
       properties:
-        instance_id:
-          type: string
-          minLength: 1
-          maxLength: 64
-          description: Anonymous identifier of the Vortex install.
-          example: 9f2c1a7b-4e6d-8f03-1a2b-3c4d5e6f7a8b
-        vortex_version:
-          type: string
-          description: The Vortex client version sending the list.
-          example: 2.7.0
         steam:
           type: array
           description: Steam app ids.
@@ -3623,7 +3705,8 @@ components:
           example: false
         extension:
           nullable: true
-          description: The Vortex game extension for the game, or null when there is none.
+          description: The Vortex game extension for the game, or null when there
+            is none.
           allOf:
             - "$ref": "#/components/schemas/VortexAsset"
     DetectedGameStoreIds:
