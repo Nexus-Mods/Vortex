@@ -269,7 +269,7 @@ export function createNexusV3InternalClient(
     },
 
     async telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
-      await client.POST("/telemetry/events", {
+      const { data, error, response } = await client.POST("/telemetry/events", {
         body: {
           client: {
             name: options.clientName,
@@ -288,6 +288,9 @@ export function createNexusV3InternalClient(
           ],
         },
       });
+
+      if (error) throw toV3Error(error, response);
+      return data.data;
     },
   };
 }
