@@ -20,6 +20,18 @@ describe("sortLoadOrderAlphabetically", () => {
     expect(ids(sorted)).toEqual(["moda", "modB", "ModC"]);
   });
 
+  it("orders digits before underscores", () => {
+    const sorted = sortLoadOrderAlphabetically(entries("mod_Beta", "mod0Alpha"));
+
+    expect(ids(sorted)).toEqual(["mod0Alpha", "mod_Beta"]);
+  });
+
+  it("orders digits, then underscores, then letters, then tildes", () => {
+    const sorted = sortLoadOrderAlphabetically(entries("mod~x", "modAx", "mod_x", "mod0x"));
+
+    expect(ids(sorted)).toEqual(["mod0x", "mod_x", "modAx", "mod~x"]);
+  });
+
   it("keeps locked entries at the top in their existing order", () => {
     const sorted = sortLoadOrderAlphabetically(
       entries("modB", `${LOCKED_PREFIX}Merged`, "modA", `${LOCKED_PREFIX}Compilation`),
