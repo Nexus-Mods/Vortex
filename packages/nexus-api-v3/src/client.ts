@@ -1,6 +1,7 @@
 import createClient, { type Middleware } from "openapi-fetch";
 
 import { V3ApiError } from "./errors";
+import type { TelemetryEvent } from "./eventTypes";
 import type { components, paths } from "./generated/nexus-api-v3";
 import type {
   components as internalComponents,
@@ -238,7 +239,13 @@ export type NexusV3InternalClient = ReturnType<typeof createNexusV3InternalClien
  * fragment. Same auth and transport as the public client; kept as a separate client so the
  * internal paths stay off the public surface.
  */
-export function createNexusV3InternalClient(options: NexusV3ClientOptions) {
+export function createNexusV3InternalClient(
+  options: NexusV3ClientOptions & {
+    clientName: string;
+    clientVersion: string;
+    instanceId?: string;
+  },
+) {
   const client = createClient<internalPaths>({
     baseUrl: options.baseUrl,
     headers: authHeaders(options),
@@ -259,6 +266,28 @@ export function createNexusV3InternalClient(options: NexusV3ClientOptions) {
       });
       if (error) throw toV3Error(error, response);
       return data.data;
+    },
+
+    async telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
+      await client.POST("/telemetry/events", {
+        body: {
+          client: {
+            name: options.clientName,
+            version: options.clientVersion,
+            instance_id: options.instanceId,
+          },
+
+          events: [
+            {
+              id: id,
+              occurred_at: date.toString(),
+              version: event.version,
+              type: event.type,
+              payload: event.payload,
+            },
+          ],
+        },
+      });
     },
   };
 }
