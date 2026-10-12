@@ -42,6 +42,10 @@ export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) =
   const showDetails = useCallback(() => setDetailsOpen(true), []);
   const closeDetails = useCallback(() => setDetailsOpen(false), []);
 
+  // added games' lead action is an "Open", so they don't record an add origin
+  const source: GameSource | undefined =
+    section === "detected" ? "detected_list" : section === "supported" ? "all_games" : undefined;
+
   // Registered actions still know games as managed or unmanaged, the older split of this.
   const { menu, primary } = useGameCardActions(
     game.id,
@@ -51,10 +55,6 @@ export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) =
   );
   const name = game.name.replace(/\t/g, " ");
   const store = useSelector((state: IState) => state.settings.gameMode.discovered[game.id]?.store);
-
-  // added games' lead action is an "Open", so they don't record an add origin
-  const source: GameSource | undefined =
-    section === "detected" ? "detected_list" : section === "supported" ? "all_games" : undefined;
 
   const actions: Record<
     IGameSection,
