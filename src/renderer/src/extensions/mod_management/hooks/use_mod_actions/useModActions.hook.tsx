@@ -23,7 +23,7 @@ import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { NexusBadge } from "@/ui/components/badges/nexus_badge/NexusBadge";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
-import { nxmCollectionOutline, nxmResetTv } from "@/ui/icon-paths";
+import { nxmCollection, nxmCollectionOutline, nxmResetTv } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 import { getIconPath } from "@/views/components/iconMap";
 
@@ -74,6 +74,11 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
     section: "manage",
     items: [
       { title: "Add to Collection...", label: "Add to Collection", iconPath: nxmCollectionOutline },
+      {
+        title: "Remove from Collection...",
+        label: "Remove from Collection",
+        iconPath: nxmCollection,
+      },
       { title: "Install", label: "Install", iconPath: mdiMonitorArrowDown },
       { title: "Unpack (as-is)", label: "Unpack (as-is)" },
       { title: "Reinstall", label: "Reinstall", iconPath: nxmResetTv },

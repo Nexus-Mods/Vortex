@@ -7,6 +7,7 @@ import { setActionPinned } from "@/actions/toolbars";
 import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { IActionDefinition } from "@/types/IActionDefinition";
+import { nxmCollection } from "@/ui/icon-paths";
 
 const { registered } = vi.hoisted(() => ({
   registered: { current: {} as { [group: string]: IActionDefinition[] } },
@@ -80,6 +81,20 @@ describe("useModRowActions", () => {
 
     const [openOnNexus] = result.current.actionsFor("a");
     expect(isValidElement(openOnNexus.icon)).toBe(true);
+  });
+
+  it("puts Remove from Collection below Add to Collection, with the filled collection icon", () => {
+    const { result } = renderRowActions(
+      [],
+      [
+        { title: "Remove from Collection...", position: 300, icon: "collection" },
+        { title: "Add to Collection...", position: 300, icon: "collection" },
+      ],
+    );
+
+    const [add, remove] = result.current.actionsFor("a");
+    expect(labels([add, remove])).toEqual(["Add to Collection", "Remove from Collection"]);
+    expect(remove.iconPath).toBe(nxmCollection);
   });
 
   it("puts any action the design doesn't list last, by position", () => {
