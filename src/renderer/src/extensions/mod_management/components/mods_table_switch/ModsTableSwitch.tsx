@@ -26,6 +26,7 @@ import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/Toolb
 import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
+import { makeCollectionModsResolver } from "../../../collections/util/resolveCollectionMods/resolveCollectionMods";
 import { activeProfile } from "../../../profile_management/selectors";
 import {
   MOD_ROW_PINNING_ID,
@@ -209,7 +210,9 @@ export const ModsTableSwitch = ({
   const [grouping, setGrouping] = useState<ModsTableGrouping>("none");
   const rows = useMemo(() => allModRows(mods), [mods]);
   const [search, setSearch] = useState("");
-  const memberships = useMemo(() => collectionsByMod(mods), [mods]);
+  // Kept, so a change to the mods only retests those that changed against each collection.
+  const [resolveMembers] = useState(makeCollectionModsResolver);
+  const memberships = useMemo(() => collectionsByMod(mods, resolveMembers), [mods, resolveMembers]);
   const [pendingDisable, setPendingDisable] = useState<IPendingDisable>();
 
   // Extensions get a say before a mod's state changes, which can take a while, so the
@@ -401,8 +404,8 @@ export const ModsTableSwitch = ({
   // Regroups when the grouped-by column changes, not whenever any column does, as Status does on each switch.
   const groupColumn = groupable.find((column) => column.id === grouping);
   const groups = useMemo(
-    () => groupMods(mods, grouping, t, groupColumn),
-    [mods, grouping, t, groupColumn],
+    () => groupMods(mods, grouping, t, memberships, groupColumn),
+    [mods, grouping, t, memberships, groupColumn],
   );
 
   // The columns shown, so a search finds only what's on screen.
