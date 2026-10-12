@@ -306,6 +306,7 @@ describe("useModToolbarActions beta table", () => {
       label: "Switch to beta view",
       description: "Try the new mod list. Some features aren't supported yet.",
       active: false,
+      trackingProperties: { view: "beta" },
     });
 
     betaTable()?.onClick?.();
@@ -320,6 +321,7 @@ describe("useModToolbarActions beta table", () => {
       label: "Switch to classic view",
       description: "Return to the original mod list.",
       active: true,
+      trackingProperties: { view: "classic" },
     });
 
     betaTable()?.onClick?.();

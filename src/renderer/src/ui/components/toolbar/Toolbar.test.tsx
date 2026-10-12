@@ -1032,6 +1032,21 @@ describe("click tracking", () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
+  it("reports an action's own properties with its click", async () => {
+    const onActionClick = vi.fn();
+    trackedToolbar(
+      [{ label: "Beta", id: "beta", trackingProperties: { view: "beta" }, onClick: vi.fn() }],
+      onActionClick,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Beta" }));
+
+    expect(onActionClick).toHaveBeenCalledWith(
+      { id: "beta", extension: undefined, properties: { view: "beta" } },
+      "bar",
+    );
+  });
+
   it("reports an overflowed action against the overflow, not the bar", async () => {
     const onActionClick = vi.fn();
     const onClick = vi.fn();

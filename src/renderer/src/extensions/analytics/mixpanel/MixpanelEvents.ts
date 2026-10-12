@@ -50,6 +50,7 @@ export class AppLaunchedEvent implements MixpanelEvent {
     update_channel?: string,
     zoom_percent?: number,
     is_hidpi?: boolean,
+    mods_table_view?: "beta" | "classic",
   ) {
     this.properties = {
       $os: mapPlatformToMixpanel(os), // Override auto-detected OS for accuracy
@@ -64,6 +65,9 @@ export class AppLaunchedEvent implements MixpanelEvent {
       // Whether this session's display is above the app's HiDPI threshold — lets zoom
       // usage be cross-referenced against display density.
       is_hidpi,
+      // Which Mods table the session opens on: the classic one, or the new one in beta.
+      // Named as the toolbar toggle's clicks name the view they switch to.
+      mods_table_view,
     };
   }
 }

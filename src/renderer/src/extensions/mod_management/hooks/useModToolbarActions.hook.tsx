@@ -159,6 +159,8 @@ const useBetaTableAction = (t: TFunction): IPositionedAction => {
         pinned: true,
         section: "view",
         testId: "beta-mods-table",
+        // The view it switches to.
+        trackingProperties: { view: betaTable ? "classic" : "beta" },
         onClick: () => dispatch(setBetaModsTable(!betaTable)),
       },
     }),

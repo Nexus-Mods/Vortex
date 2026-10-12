@@ -4,7 +4,11 @@ import type { IMenuAction, IPopoverPanel } from "@/ui/components/popover/Popover
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import type { IToolbarAnalytics, ToolbarSurface } from "./Toolbar.context";
+import type {
+  IToolbarAnalytics,
+  IToolbarTrackingProperties,
+  ToolbarSurface,
+} from "./Toolbar.context";
 import { identityOf, useToolbarContext } from "./Toolbar.context";
 import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarOverflow } from "./ToolbarOverflow";
@@ -43,6 +47,11 @@ export type IToolbarAction = IMenuAction & {
    * buttons come from. Absent for an action the page owns.
    */
   extension?: string;
+  /**
+   * Extra properties its clicks report on a toolbar that counts them, such as which way a
+   * toggle went. Never anything about the user.
+   */
+  trackingProperties?: IToolbarTrackingProperties;
 };
 
 type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
