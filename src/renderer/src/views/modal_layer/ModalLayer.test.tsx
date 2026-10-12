@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { settleTransitions } from "@/test-utils/transitions";
 
-import { closeDialog, closeDialogs } from "../../actions/notifications";
+import { closeDialog, closeDialogs, triggerDialogLink } from "../../actions/notifications";
 import type { IDialog, IDialogContent } from "../../types/IDialog";
 import type { IState } from "../../types/IState";
 import { ModalLayer } from "./ModalLayer";
@@ -24,6 +24,7 @@ vi.mock("../../actions/notifications", () => ({
     action,
     input,
   })),
+  triggerDialogLink: vi.fn(),
 }));
 
 const dialogWith = (id: string, content: IDialogContent): IDialog => ({
@@ -252,6 +253,91 @@ describe("ModalLayer", () => {
       renderLayer([dialogWith("one", { text: "Hello" })]);
 
       expect(screen.getByTestId("dialog-action-Delete")).toHaveClass("nxm-button-primary");
+
+      await settleTransitions();
+    });
+  });
+  describe("inputs", () => {
+    const withInput = (value?: string): IDialog => ({
+      ...dialogWith("one", {
+        text: "Name it",
+        input: [{ id: "name", label: "Name", placeholder: "AAA", value }],
+      }),
+      defaultAction: "Delete",
+    });
+
+    it("shows the input with its starting value and focuses it", async () => {
+      renderLayer([withInput("Start")]);
+
+      await settleTransitions();
+
+      expect(screen.getByTestId("dialog-input-name")).toHaveValue("Start");
+      expect(screen.getByTestId("dialog-input-name")).toHaveFocus();
+    });
+
+    it("answers with what was typed, keyed by input id", async () => {
+      renderLayer([withInput("Start")]);
+
+      await userEvent.clear(screen.getByTestId("dialog-input-name"));
+      await userEvent.type(screen.getByTestId("dialog-input-name"), "Typed");
+      await userEvent.click(screen.getByTestId("dialog-action-Delete"));
+
+      expect(closeDialog).toHaveBeenCalledWith("one", "Delete", { name: "Typed" });
+
+      await settleTransitions();
+    });
+
+    it("answers with the starting value when nothing was typed, and undefined when there is none", async () => {
+      renderLayer([withInput()]);
+
+      await userEvent.click(screen.getByTestId("dialog-action-Cancel"));
+
+      expect(closeDialog).toHaveBeenCalledWith("one", "Cancel", { name: undefined });
+
+      await settleTransitions();
+    });
+
+    it("answers the default action when Enter is pressed in the input", async () => {
+      renderLayer([withInput("Start")]);
+
+      await userEvent.type(screen.getByTestId("dialog-input-name"), "{Enter}");
+
+      expect(closeDialog).toHaveBeenCalledWith("one", "Delete", { name: "Start" });
+
+      await settleTransitions();
+    });
+
+    it("shows a dialog that is only an input", async () => {
+      renderLayer([
+        dialogWith("one", { input: [{ id: "password", label: "Password", type: "password" }] }),
+      ]);
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByTestId("dialog-input-password")).toHaveAttribute("type", "password");
+
+      await settleTransitions();
+    });
+
+    it("leaves a multiline input to the legacy renderer", () => {
+      renderLayer([
+        dialogWith("one", { text: "t", input: [{ id: "a", label: "A", type: "multiline" }] }),
+      ]);
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("links", () => {
+    it("runs the link's callback without answering the dialog", async () => {
+      renderLayer([
+        dialogWith("one", { text: "t", links: [{ label: "Open" }, { label: "Open elsewhere" }] }),
+      ]);
+
+      await userEvent.click(screen.getByTestId("dialog-link-1"));
+
+      expect(triggerDialogLink).toHaveBeenCalledExactlyOnceWith("one", 1);
+      expect(closeDialog).not.toHaveBeenCalled();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
 
       await settleTransitions();
     });

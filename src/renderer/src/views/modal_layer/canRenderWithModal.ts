@@ -1,4 +1,4 @@
-import type { ICheckbox, IDialog, IDialogContent } from "../../types/IDialog";
+import type { ICheckbox, IDialog, IDialogContent, IInput, ILink } from "../../types/IDialog";
 
 // What ModalLayer knows how to draw. Anything else a dialog carries, including a field this list
 // has never heard of, keeps it on the legacy renderer. Add an entry as each content type gets a
@@ -6,6 +6,8 @@ import type { ICheckbox, IDialog, IDialogContent } from "../../types/IDialog";
 const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "text",
   "checkboxes",
+  "input",
+  "links",
   "parameters",
   "options",
 ]);
@@ -16,6 +18,27 @@ const SUPPORTED_OPTIONS = new Set(["translated", "wrap"]);
 
 const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>(["id", "value", "text", "disabled"]);
 
+const SUPPORTED_INPUT_FIELDS = new Set<keyof IInput>([
+  "id",
+  "type",
+  "value",
+  "label",
+  "placeholder",
+]);
+
+// What TextField can draw. `multiline` has no counterpart yet.
+const SUPPORTED_INPUT_TYPES = new Set([
+  "text",
+  "password",
+  "number",
+  "date",
+  "time",
+  "email",
+  "url",
+]);
+
+const SUPPORTED_LINK_FIELDS = new Set<keyof ILink>(["label", "id", "action"]);
+
 // The new dialog's action row holds one to three buttons.
 const MAX_ACTIONS = 3;
 
@@ -25,15 +48,25 @@ const usesOnly = (fields: object, supported: Set<string>) =>
 const isSupportedCheckbox = (checkbox: ICheckbox) =>
   !!checkbox.text && usesOnly(checkbox, SUPPORTED_CHECKBOX_FIELDS);
 
+// TextField needs a label to name the input.
+const isSupportedInput = (input: IInput) =>
+  !!input.label &&
+  usesOnly(input, SUPPORTED_INPUT_FIELDS) &&
+  (input.type === undefined || SUPPORTED_INPUT_TYPES.has(input.type));
+
+const isSupportedLink = (link: ILink) => !!link.label && usesOnly(link, SUPPORTED_LINK_FIELDS);
+
 export const canRenderWithModal = (dialog: IDialog): boolean => {
   const { actions, content } = dialog;
 
   return (
-    !!content.text &&
+    (!!content.text || (content.input?.length ?? 0) > 0) &&
     actions.length >= 1 &&
     actions.length <= MAX_ACTIONS &&
     usesOnly(content, SUPPORTED_CONTENT) &&
     usesOnly(content.options ?? {}, SUPPORTED_OPTIONS) &&
-    (content.checkboxes ?? []).every(isSupportedCheckbox)
+    (content.checkboxes ?? []).every(isSupportedCheckbox) &&
+    (content.input ?? []).every(isSupportedInput) &&
+    (content.links ?? []).every(isSupportedLink)
   );
 };
