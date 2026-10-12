@@ -91,13 +91,24 @@ function toDetectedGame(game: DetectedGame, gameId: number): IDetectedGame {
   };
 }
 
+/** Request currently running, so concurrent triggers (post-scan hook + login hook)
+    share one call instead of racing past the payload hash concurrently. */
+let inFlight: Promise<void> | undefined;
+
 /**
  * Collect the store listings found installed and resolve them against the
  * detected-games endpoint, writing the result into session.gameMode. Skipped
  * when logged out or when the payload is unchanged since the last successful
  * send. Fire and forget: failures are logged, never surfaced to the user.
  */
-export async function requestDetectedGames(api: IExtensionApi): Promise<void> {
+export function requestDetectedGames(api: IExtensionApi): Promise<void> {
+  inFlight ??= requestDetectedGamesBody(api).finally(() => {
+    inFlight = undefined;
+  });
+  return inFlight;
+}
+
+async function requestDetectedGamesBody(api: IExtensionApi): Promise<void> {
   const state = api.getState();
 
   if (!isLoggedIn(state)) {
