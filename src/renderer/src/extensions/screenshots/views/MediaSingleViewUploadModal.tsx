@@ -101,7 +101,7 @@ function gameMediaTagsToBBCode(tags: readonly GameMediaModTag[]): string | undef
   const tagList = tags
     .map(
       (t) =>
-        `[*][url=https://www.nexusmods.com/${t.domainName}/mods/${t.modId}/tab?=files&file_id=${t.fileId}&nmm=1]${t.name}[/url]`,
+        `[*][url=https://www.nexusmods.com/${t.domainName}/mods/${t.modId}?tab=files&file_id=${t.fileId}&nmm=1]${t.name}[/url]`,
     )
     .join("\n");
 
