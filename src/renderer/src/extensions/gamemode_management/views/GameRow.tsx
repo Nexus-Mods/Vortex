@@ -15,6 +15,8 @@ import IconBar from "../../../controls/IconBar";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import opn from "../../../util/opn";
 import type { IMod } from "../../mod_management/types/IMod";
+import { setGameAddOrigin } from "../actions/session";
+import type { GameSource } from "../types/GameSource";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
@@ -27,6 +29,8 @@ export interface IProps {
   mods?: { [modId: string]: IMod };
   active: boolean;
   type: string;
+  /** Which Games page list the row is in, recorded for the app_game_manage event. */
+  source?: GameSource;
   onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
   onBrowseGameLocation: (gameId: string) => PromiseLike<void>;
 }
@@ -60,7 +64,7 @@ class GameRow extends ComponentEx<IProps, {}> {
     }
 
     return (
-      <ListGroupItem className={classes.join(" ")}>
+      <ListGroupItem className={classes.join(" ")} onClickCapture={this.tagOrigin}>
         <Media>
           <Media.Left>
             <div className="game-thumbnail-container-list">
@@ -147,6 +151,15 @@ class GameRow extends ComponentEx<IProps, {}> {
   private openLocation = () => {
     const { discovery } = this.props;
     opn(discovery.path).catch(() => null);
+  };
+
+  // Click capture, because the list layout's add button sits inside IconBar, whose
+  // actions don't take a click context: any click on an unadded row records the row's
+  // list, and only the add the emit is keyed to ends up read.
+  private tagOrigin = () => {
+    if (this.props.source !== undefined) {
+      this.context.api.store.dispatch(setGameAddOrigin(this.props.game.id, this.props.source));
+    }
   };
 
   private changeLocation = () => {

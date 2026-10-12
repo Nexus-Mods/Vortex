@@ -11,6 +11,7 @@ import { GameTile } from "@/ui/components/game_tile/GameTile";
 import { activeGameId } from "@/util/selectors";
 
 import { useGameCardActions } from "../hooks/use_game_card_actions/useGameCardActions.hook";
+import type { GameSource } from "../types/GameSource";
 import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
 import { GameDetailsModal } from "./GameDetailsModal";
@@ -41,11 +42,16 @@ export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) =
   const showDetails = useCallback(() => setDetailsOpen(true), []);
   const closeDetails = useCallback(() => setDetailsOpen(false), []);
 
+  // added games' lead action is an "Open", so they don't record an add origin
+  const source: GameSource | undefined =
+    section === "detected" ? "detected_list" : section === "supported" ? "all_games" : undefined;
+
   // Registered actions still know games as managed or unmanaged, the older split of this.
   const { menu, primary } = useGameCardActions(
     game.id,
     section === "added" ? "managed" : "unmanaged",
     showDetails,
+    source,
   );
   const name = game.name.replace(/\t/g, " ");
   const store = useSelector((state: IState) => state.settings.gameMode.discovered[game.id]?.store);

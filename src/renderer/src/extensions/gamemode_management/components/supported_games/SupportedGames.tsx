@@ -88,6 +88,7 @@ export const SupportedGames = forwardRef<HTMLDivElement, ISupportedGamesProps>(
                 discoveredGames={discoveredGames}
                 gameMode={gameMode}
                 games={paged}
+                source="all_games"
                 t={t}
                 type="unmanaged"
                 onBrowseGameLocation={onBrowseGameLocation}

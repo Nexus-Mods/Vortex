@@ -1,3 +1,4 @@
+import type { GameSource } from "../../gamemode_management/types/GameSource";
 import type { ExtensionInstallSource } from "./extensionInstallAnalytics";
 
 /**
@@ -317,13 +318,16 @@ export interface GameManagedProps {
   // Store id from discovery (steam, gog, epic, xbox...), null when Vortex couldn't tell.
   game_store: string | null;
   discovery_method: GameDiscoveryMethod;
+  // The Games page list the user picked the game from, null when the add started
+  // elsewhere (command line, extension install flows).
+  game_source: GameSource | null;
 }
 
 /**
  * Sent the first time a game is managed, when its first profile is created.
  * `extension_version` is the version of the game's support extension, `game_store` the store the
- * game was installed from, and `discovery_method` whether its folder was found automatically or
- * set by hand.
+ * game was installed from, `discovery_method` whether its folder was found automatically or
+ * set by hand, and `game_source` the list the user picked the game from.
  */
 export class AppGameManagedEvent implements MixpanelEvent {
   readonly eventName = "app_game_manage";
