@@ -155,8 +155,10 @@
             color: var(--color-premium-moderate);
         }
 
+        /* A toggle that's on, darker than a primary row so the two read apart, and after the
+           brands so it wins over one. */
         &.nxm-dropdown-item-active .nxm-dropdown-item-icon:first-child {
-            color: var(--color-primary-strong);
+            color: var(--color-primary-subdued);
         }
 
         &.nxm-dropdown-item-danger {
