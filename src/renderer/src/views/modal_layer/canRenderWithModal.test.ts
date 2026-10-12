@@ -20,12 +20,35 @@ describe("canRenderWithModal", () => {
     expect(canRenderWithModal(dialogWith({ text: "Are you sure?" }))).toBe(true);
   });
 
-  it("accepts parameters and options, which only affect how the text is translated", () => {
+  it("accepts parameters and the options that only affect how the text is read", () => {
     expect(
       canRenderWithModal(
-        dialogWith({ text: "{{name}}", parameters: { name: "x" }, options: { translated: true } }),
+        dialogWith({
+          text: "{{name}}",
+          parameters: { name: "x" },
+          options: { translated: true, wrap: true },
+        }),
       ),
     ).toBe(true);
+  });
+
+  it("ignores a field that is present but undefined", () => {
+    expect(canRenderWithModal(dialogWith({ text: "t", bbcode: undefined }))).toBe(true);
+  });
+
+  it.each<[string, IDialogContent["options"]]>([
+    ["order", { order: ["checkboxes", "text"] }],
+    ["hideMessage", { hideMessage: true }],
+    ["linksAsButtons", { linksAsButtons: true }],
+    ["bbcodeContext", { bbcodeContext: {} as never }],
+  ])("rejects the %s option, which ModalLayer does not follow", (_name, options) => {
+    expect(canRenderWithModal(dialogWith({ text: "t", options }))).toBe(false);
+  });
+
+  it("rejects a field it has never heard of", () => {
+    const content = { text: "t", somethingNew: true } as IDialogContent;
+
+    expect(canRenderWithModal(dialogWith(content))).toBe(false);
   });
 
   it("rejects a dialog without text", () => {
@@ -58,6 +81,7 @@ describe("canRenderWithModal", () => {
     ["no text", { id: "a", value: false }],
     ["bbcode", { id: "a", value: false, text: "t", bbcode: "[b]b[/b]" }],
     ["a sub-line", { id: "a", value: false, text: "t", subText: "more" }],
+    ["a field it has never heard of", { id: "a", value: false, text: "t", extra: 1 } as ICheckbox],
   ])("rejects a checkbox with %s", (_name, checkbox) => {
     expect(canRenderWithModal(dialogWith({ text: "t", checkboxes: [checkbox] }))).toBe(false);
   });

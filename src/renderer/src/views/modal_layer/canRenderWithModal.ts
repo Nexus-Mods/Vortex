@@ -1,26 +1,29 @@
 import type { ICheckbox, IDialog, IDialogContent } from "../../types/IDialog";
 
-// Everything the legacy renderer can show besides plain text. A dialog that uses any of these
-// has no design in the new Modal yet, so it stays on the legacy renderer. Remove an entry as its
-// design lands; once the list is empty this file and the legacy Dialog can both go.
-const UNSUPPORTED_CONTENT: Array<keyof IDialogContent> = [
-  "message",
-  "bbcode",
-  "md",
-  "htmlText",
-  "htmlFile",
-  "choices",
-  "input",
-  "links",
-  "condition",
-];
+// What ModalLayer knows how to draw. Anything else a dialog carries, including a field this list
+// has never heard of, keeps it on the legacy renderer. Add an entry as each content type gets a
+// design; once ModalLayer draws everything, this file and the legacy Dialog can both go.
+const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
+  "text",
+  "checkboxes",
+  "parameters",
+  "options",
+]);
+
+// The options that only change how the text is read. The rest (such as `order`) change the layout
+// in ways ModalLayer doesn't follow.
+const SUPPORTED_OPTIONS = new Set(["translated", "wrap"]);
+
+const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>(["id", "value", "text", "disabled"]);
 
 // The new dialog's action row holds one to three buttons.
 const MAX_ACTIONS = 3;
 
-// A checkbox with rich text or a sub-line has no design in the new Modal yet either.
-const isPlainCheckbox = (checkbox: ICheckbox) =>
-  !!checkbox.text && checkbox.bbcode === undefined && checkbox.subText === undefined;
+const usesOnly = (fields: object, supported: Set<string>) =>
+  Object.entries(fields).every(([name, value]) => value === undefined || supported.has(name));
+
+const isSupportedCheckbox = (checkbox: ICheckbox) =>
+  !!checkbox.text && usesOnly(checkbox, SUPPORTED_CHECKBOX_FIELDS);
 
 export const canRenderWithModal = (dialog: IDialog): boolean => {
   const { actions, content } = dialog;
@@ -29,7 +32,8 @@ export const canRenderWithModal = (dialog: IDialog): boolean => {
     !!content.text &&
     actions.length >= 1 &&
     actions.length <= MAX_ACTIONS &&
-    UNSUPPORTED_CONTENT.every((key) => content[key] === undefined) &&
-    (content.checkboxes ?? []).every(isPlainCheckbox)
+    usesOnly(content, SUPPORTED_CONTENT) &&
+    usesOnly(content.options ?? {}, SUPPORTED_OPTIONS) &&
+    (content.checkboxes ?? []).every(isSupportedCheckbox)
   );
 };
