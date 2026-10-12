@@ -147,6 +147,51 @@
         padding-block: calc((var(--nxm-table-toolbar-min-height) - var(--spacing) * 7) / 2);
     }
 
+    /* A view in the toolbar, a toggle: lit while it's the open one. One with a menu holds
+       its "…" button tight to its right edge. */
+    .nxm-table-view-button {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        column-gap: calc(var(--spacing) * 1.5);
+        height: calc(var(--spacing) * 7);
+        padding-inline: calc(var(--spacing) * 2);
+        border-radius: var(--radius-sm);
+        background-color: var(--color-surface-low);
+        color: var(--color-neutral-subdued);
+        white-space: nowrap;
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+        cursor: pointer;
+        transition-property: color, background-color, outline-color;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &:hover {
+            color: var(--color-neutral-strong);
+            background-image: linear-gradient(
+                --alpha(var(--color-white) / 3%),
+                --alpha(var(--color-white) / 3%)
+            );
+        }
+
+        &[aria-pressed="true"] {
+            color: var(--color-neutral-strong);
+            background-color: var(--color-surface-mid);
+            background-image: none;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-subdued);
+            outline-offset: 2px;
+        }
+    }
+
+    .nxm-table-view-button-menu {
+        padding-right: calc(var(--spacing) * 0.5);
+    }
+
     .nxm-table-header {
         height: var(--nxm-table-header-height);
         color: var(--color-translucent-subdued);

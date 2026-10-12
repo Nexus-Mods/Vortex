@@ -7,6 +7,7 @@ import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import modName from "../modName";
+import updateState from "../modUpdateState";
 
 export interface IModRow {
   /** The mod the row shows. */
@@ -35,24 +36,67 @@ export interface IModsTableGroupingColumn {
   groupOrder?: string[];
 }
 
+/** How a view starts out, before the user changes it. */
+export interface IModsTableViewDefaults {
+  /** What its mods are grouped by. */
+  grouping: ModsTableGrouping;
+  /** The toggleable columns it shows, by id; the rest are hidden. */
+  columns: string[];
+}
+
 export interface IModsTableView {
   /** Stable, unique, and language-independent, so a choice of view can be stored. */
   id: string;
-  /** The view's name, untranslated; translate it to show it. */
+  /** The view's name: untranslated for a built-in one, as the user typed it for their own. */
   label: string;
-  /** What its mods are grouped by. */
-  grouping: ModsTableGrouping;
+  defaults: IModsTableViewDefaults;
+  /** Whether it's one of the user's own, which has no defaults to reset to. */
+  isCustom?: boolean;
 }
 
-/**
- * The views every user has. They'll sit alongside the user's own, each a set of filters
- * and view options; for now a view is only how it groups.
- */
-export const MODS_TABLE_PRESETS: IModsTableView[] = [
-  { id: "all", label: "All mods", grouping: "none" },
-  { id: "collections", label: "Collections", grouping: "collection" },
-  { id: "status", label: "Status", grouping: "status" },
+/** A built-in view, which is only offered while it has something to show. */
+interface IBuiltInModsTableView extends IModsTableView {
+  /** Whether to offer it for these mods; always, without one. */
+  isAvailable?: (mods: { [id: string]: IModWithState }) => boolean;
+}
+
+const BASE_COLUMNS = ["version", "installTime"];
+
+/** How a view the user makes starts out. */
+export const NEW_VIEW_DEFAULTS: IModsTableViewDefaults = {
+  grouping: "none",
+  columns: BASE_COLUMNS,
+};
+
+/** The views every user has, in order, each offered while it has anything to show. */
+export const MODS_TABLE_VIEWS: IBuiltInModsTableView[] = [
+  { id: "all", label: "All mods", defaults: { grouping: "none", columns: BASE_COLUMNS } },
+  { id: "status", label: "Status", defaults: { grouping: "status", columns: BASE_COLUMNS } },
+  {
+    id: "updates",
+    label: "Updates",
+    defaults: { grouping: "version", columns: BASE_COLUMNS },
+    isAvailable: (mods) =>
+      Object.values(mods).some(
+        (mod) => mod.state === "installed" && updateState(mod.attributes ?? {}) !== "current",
+      ),
+  },
+  {
+    id: "categories",
+    label: "Categories",
+    defaults: { grouping: "category", columns: BASE_COLUMNS },
+  },
+  {
+    id: "collections",
+    label: "Collections",
+    defaults: { grouping: "collection", columns: ["version", "collection", "installTime"] },
+    isAvailable: (mods) => Object.values(mods).some((mod) => mod.type === COLLECTION_TYPE),
+  },
 ];
+
+/** The built-in views to offer for these mods, in order. */
+export const availableViews = (mods: { [id: string]: IModWithState }): IModsTableView[] =>
+  MODS_TABLE_VIEWS.filter((view) => view.isAvailable?.(mods) ?? true);
 
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
 

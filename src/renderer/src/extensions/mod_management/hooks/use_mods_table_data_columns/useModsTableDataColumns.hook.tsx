@@ -37,7 +37,6 @@ const textColumn = (
   header,
   width,
   isToggleable: true,
-  isDefaultVisible: false,
   sort: (a, b) => text(a).localeCompare(text(b)),
   groupBy: text,
   searchText: text,
@@ -76,7 +75,6 @@ export const useModsTableDataColumns = (memberships: {
         header,
         width: "140px",
         isToggleable: true,
-        isDefaultVisible: false,
         sort: (a, b) => (time(a) ?? 0) - (time(b) ?? 0),
         searchText: text,
         cell: (row) => <span className="truncate">{text(row)}</span>,
@@ -131,7 +129,6 @@ export const useModsTableDataColumns = (memberships: {
             .sort((a, b) => a.localeCompare(b))
             .join(", "),
         ),
-        isDefaultVisible: true,
       },
       // Content (`content`, mod-content): icons for what a mod holds, scanned from its
       // staging folder when first shown.
@@ -151,7 +148,6 @@ export const useModsTableDataColumns = (memberships: {
           ({ mod }) => timeOf(mod.attributes?.installTime),
           t("Not installed"),
         ),
-        isDefaultVisible: true,
         position: 110,
       },
       {
