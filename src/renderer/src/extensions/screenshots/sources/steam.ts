@@ -1,0 +1,185 @@
+import fs from "fs/promises";
+import path from "path";
+
+import { parse } from "simple-vdf";
+
+import { TString } from "@/util/i18n";
+import Steam from "@/util/Steam";
+
+import type {
+  GameMediaItem,
+  GameMediaSource,
+  ResolvedGameMediaSource,
+  SteamLoginUsersVDF,
+  SteamScreenshotsVDF,
+} from "../util/mediaTypes";
+
+// The global offset between SteamID and Account ID.
+const STEAM64_OFFSET = 76561197960265728n;
+
+export async function getSteamMedia(
+  gamePath: string,
+  flags: { showVideos?: boolean },
+  knownId?: string | number,
+): Promise<Record<string, GameMediaSource>> {
+  const res: Record<string, GameMediaSource> = {};
+  const steamPathExe = await Steam.getGameStorePath();
+  const steamPath = path.resolve(steamPathExe, "..");
+  const steamGame = (await Steam.allGames()).find((g) => g.gamePath === gamePath);
+  if (!steamGame) return res;
+  const steamId = knownId ? String(knownId) : steamGame.appid;
+  const userDataFolder = path.join(steamPath, "userdata");
+  const loggedInSteamUsers = await getLoggedInSteamUsers(steamPath);
+  const steamUsers = await fs.readdir(userDataFolder);
+  for (const userId of steamUsers) {
+    const screenshotFolder = await screenshotsFolderBySteamID(
+      userDataFolder,
+      steamId,
+      userId,
+      loggedInSteamUsers[userId],
+    );
+    Object.assign(res, screenshotFolder);
+    if (!flags.showVideos) continue;
+    const videosFolder = await clipsFolderBySteamID(
+      userDataFolder,
+      steamId,
+      userId,
+      loggedInSteamUsers[userId],
+    );
+    Object.assign(res, videosFolder);
+  }
+  return res;
+}
+
+async function getLoggedInSteamUsers(steamPath: string): Promise<Record<string, string>> {
+  const steamLoginUsersVDF = path.join(steamPath, "config", "loginusers.vdf");
+  const canAccess = await fs
+    .access(steamLoginUsersVDF)
+    .then(() => true)
+    .catch(() => false);
+  if (!canAccess) return {};
+  try {
+    const raw = await fs.readFile(steamLoginUsersVDF, { encoding: "utf-8" });
+    const loginUsers = parse(raw) as SteamLoginUsersVDF;
+    return Object.keys(loginUsers.users).reduce((accum, cur) => {
+      const accountId = steam64ToAccountId(cur);
+      accum[accountId] = loginUsers.users[cur].PersonaName;
+      return accum;
+    }, {});
+  } catch {
+    window.api.log("warn", "Could not read steam loginusers.vdf");
+    return {};
+  }
+}
+
+export async function screenshotsFolderBySteamID(
+  userDataFolder: string,
+  steamGameId: string,
+  userId: string,
+  userName?: string,
+): Promise<Record<string, ResolvedGameMediaSource>> {
+  // Images live at userdata\{USER ID}\760\remote\{STEAM APP ID}\screenshots
+  // Images have a manifest at userdata\{USER ID}\760\remote\screenshots.vdf
+  const res: Record<string, ResolvedGameMediaSource> = {};
+  const screenshotsVDF = path.join(userDataFolder, userId, "760", "screenshots.vdf");
+  try {
+    await fs.access(screenshotsVDF);
+    const raw = await fs.readFile(screenshotsVDF, { encoding: "utf-8" });
+    const parsed = parse(raw) as SteamScreenshotsVDF;
+    if (
+      parsed?.screenshots?.[steamGameId] &&
+      Object.keys(parsed?.screenshots?.[steamGameId]).length
+    ) {
+      res[`steam-screenshots-${userId}`] = {
+        name: new TString("sources::steam::screenshots", {}, "media_page"),
+        description: new TString(
+          "sources::steam::screenshots_desc",
+          { user: userName ?? userId },
+          "media_page",
+        ),
+        path: path.join(userDataFolder, userId, "760", "remote", steamGameId, "screenshots"),
+      };
+    }
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT")
+      window.api.log("warn", "Failed to acccess VDF", JSON.stringify({ screenshotsVDF, err }));
+  }
+  return res;
+}
+
+export async function clipsFolderBySteamID(
+  userDataFolder: string,
+  steamGameId: string,
+  userId: string,
+  userName?: string,
+): Promise<Record<string, ResolvedGameMediaSource>> {
+  const res: Record<string, ResolvedGameMediaSource> = {};
+  // Videos live at userdata\{USER ID}\gamerecordings\clips\
+  // with a subfolder for each clip, containing a Thumbnail.jpg
+  // folder names are clip_{STEAM ID}_{YYYMMDD}_{HHMMSS(UTC Time)}
+  // Videos aren't stored in a format we can easily play, so we should probably open steam://nav/games/details/{Steam GAME ID} for the user
+  const videosFolder = path.join(userDataFolder, userId, "gamerecordings", "clips");
+  try {
+    await fs.access(videosFolder);
+    const dirList = await fs.readdir(videosFolder);
+    const gameClips = dirList.filter((d) => d.toLowerCase().startsWith(`clip_${steamGameId}`));
+    if (gameClips.length > 0) {
+      res[`steam-videos-${userId}`] = {
+        name: new TString("sources::steam::clips", {}, "media_page"),
+        path: videosFolder,
+        description: new TString(
+          "sources::steam::clips_desc",
+          { user: userName ?? userId },
+          "media_page",
+        ),
+        discoverFn: (mediaPath: string) => discoverSteamClips(mediaPath, steamGameId, userId),
+      };
+    }
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT")
+      window.api.log(
+        "warn",
+        "Failed to acccess Steam videos folder",
+        JSON.stringify({ videosFolder, err }),
+      );
+  }
+
+  return res;
+}
+
+async function discoverSteamClips(
+  mediaPath: string,
+  steamGameId: string,
+  userId: string,
+): Promise<GameMediaItem[]> {
+  const clips = await fs.readdir(mediaPath);
+  const thisGameClips = clips.filter((s) => s.toLowerCase().startsWith(`clip_${steamGameId}`));
+  return Promise.all(
+    thisGameClips.map(async (c) => {
+      const clipPath = path.join(mediaPath, c);
+      const stats = await fs.stat(clipPath);
+      const videoPaths = await fs.readdir(path.join(clipPath, "video"));
+      const sessionMPD = videoPaths[0]
+        ? path.join(clipPath, "video", videoPaths[0], "session.mpd")
+        : undefined;
+      return {
+        id: `steam-videos-${userId}::${c}`,
+        path: sessionMPD ?? clipPath,
+        name: c,
+        sourceId: `steam-videos-${userId}`,
+        type: "video",
+        thumbnailPath: path.join(mediaPath, c, "thumbnail.jpg"),
+        createdAt: stats.birthtime,
+        modifiedAt: stats.mtime,
+      };
+    }),
+  );
+}
+
+export function accountIdToSteam64(accountId: number | string): string {
+  return (BigInt(accountId) + STEAM64_OFFSET).toString();
+}
+
+export function steam64ToAccountId(steam64Id: string): string {
+  return (BigInt(steam64Id) - STEAM64_OFFSET).toString();
+}
