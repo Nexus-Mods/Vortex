@@ -22,6 +22,8 @@ import { Section } from "../section/Section";
 interface IDetectedGamesProps {
   games: IGameStored[];
   count: string;
+  /** Internal ids of the caller's favourite games; they lead every sort. */
+  favourites?: string[];
   filtering: boolean;
   hasAddedGames: boolean;
   onBrowseGameLocation: (gameId: string) => PromiseLike<void>;
@@ -32,6 +34,7 @@ interface IDetectedGamesProps {
 /** Games found installed but not added yet, and the scan that finds them. */
 export const DetectedGames = ({
   count,
+  favourites,
   filtering,
   games,
   hasAddedGames,
@@ -154,11 +157,15 @@ export const DetectedGames = ({
 
   const emptyState = getEmptyState();
 
-  // Sorted here because the order is this section's own setting; undated games sort oldest.
-  const shownGames = [...games].sort((lhs, rhs) =>
-    sortOrder === "alphabetical"
-      ? lhs.name.localeCompare(rhs.name)
-      : (discoveredGames[rhs.id]?.timestamp ?? 0) - (discoveredGames[lhs.id]?.timestamp ?? 0),
+  // Sorted here because the order is this section's own setting; favourites lead
+  // regardless of it, and undated games sort oldest.
+  const favouriteSet = new Set(favourites ?? []);
+  const shownGames = [...games].sort(
+    (lhs, rhs) =>
+      Number(favouriteSet.has(rhs.id)) - Number(favouriteSet.has(lhs.id)) ||
+      (sortOrder === "alphabetical"
+        ? lhs.name.localeCompare(rhs.name)
+        : (discoveredGames[rhs.id]?.timestamp ?? 0) - (discoveredGames[lhs.id]?.timestamp ?? 0)),
   );
 
   // Anything waiting to be added lights the section, new to this scan or not.
