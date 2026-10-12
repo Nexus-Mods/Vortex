@@ -1,8 +1,6 @@
 import safeCreateAction from "../../../actions/safeCreateAction";
 import { UserCanceled } from "../../../util/CustomErrors";
-import type { IFileChange } from "../types/IDeploymentMethod";
 import type { IFileEntry } from "../types/IFileEntry";
-import { changeToEntry } from "../util/externalChanges";
 
 export interface IDeploymentProblem {
   activator: string;
@@ -61,15 +59,11 @@ export const setExternalChangeAction = safeCreateAction(
 let curResolve;
 let curReject;
 
-export function showExternalChanges(changes: { [typeId: string]: IFileChange[] }) {
+export function showExternalChanges(entries: IFileEntry[]) {
   return (dispatch) =>
     new Promise<IFileEntry[]>((resolve, reject) => {
       curResolve = resolve;
       curReject = reject;
-      const entries: IFileEntry[] = [];
-      Object.keys(changes).forEach((typeId) => {
-        changes[typeId].forEach((fileChange) => entries.push(changeToEntry(typeId, fileChange)));
-      });
       dispatch(setExternalChanges(entries));
     });
 }

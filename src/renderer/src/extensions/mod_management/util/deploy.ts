@@ -1,4 +1,4 @@
-import { getErrorCode } from "@vortex/shared";
+import { getErrorCode, VortexProfileId, VortexStagingFolder } from "@vortex/shared";
 import { generate as shortid } from "shortid";
 
 import { startActivity, stopActivity } from "../../../actions/session";
@@ -256,8 +256,8 @@ async function purgeModsImpl(
         await dealWithExternalChanges(
           api,
           activator,
-          profile.id,
-          stagingPath,
+          VortexProfileId(profile.id),
+          VortexStagingFolder(stagingPath),
           modPaths,
           lastDeployment,
         );
