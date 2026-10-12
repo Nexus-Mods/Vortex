@@ -1,6 +1,7 @@
 import type { components } from "@vortex/nexus-api-v3";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
+import { emitDetectedGamesEvent } from "@/extensions/analytics/utils/detectedGamesEvent";
 import { toAvailableExtension, finite } from "@/extensions/extension_manager/availableExtensions";
 import { createVortexNexusV3Client } from "@/extensions/nexus_integration/nexusV3Client";
 import { isLoggedIn } from "@/extensions/nexus_integration/selectors";
@@ -121,6 +122,10 @@ export async function requestDetectedGames(api: IExtensionApi): Promise<void> {
   if (payload === lastSuccessfulPayload) {
     return;
   }
+
+  void emitDetectedGamesEvent(api, listings).catch((err) =>
+    log("warn", "failed to send detected games event", err),
+  );
 
   let games: DetectedGame[];
   try {
