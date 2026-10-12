@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { getErrorCode, unknownToError } from "@vortex/shared";
+import { getErrorCode, unknownToError, VortexProfileId, VortexStagingFolder } from "@vortex/shared";
 import { CycleError } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import React from "react";
@@ -836,8 +836,8 @@ function genUpdateModDeployment(installManager: InstallManager) {
               await dealWithExternalChanges(
                 api,
                 activator,
-                profileId,
-                stagingPath,
+                VortexProfileId(profile.id),
+                VortexStagingFolder(stagingPath),
                 modPaths,
                 lastDeployment,
                 recentChanges,

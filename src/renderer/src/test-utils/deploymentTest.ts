@@ -13,7 +13,7 @@ import moveInit from "../extensions/move_activator";
 import symlinkInit from "../extensions/symlink_activator";
 import type { IGame } from "../types/IGame";
 import type { Normalize } from "../util/getNormalizeFunc";
-import { makeApiHarness, registerHarnessGame } from "./builders";
+import { makeApiHarness, registerHarnessGame, type IHarnessReducerBinding } from "./builders";
 import { test as harnessTest } from "./harnessTest";
 import type { IApiHarness, IDriverHarnessState } from "./harnessTypes";
 
@@ -51,6 +51,7 @@ export interface IDeploymentOptions extends Partial<IDriverHarnessState> {
   method?: DeploymentMethodName;
   modName?: string;
   gameId?: string;
+  extraReducers?: IHarnessReducerBinding[];
 }
 
 /**
@@ -63,7 +64,7 @@ export function makeDeploymentHarness(
 ): IDeploymentHarness & { cleanup: () => void } {
   const gameId = options.gameId ?? "skyrimse";
   const modName = options.modName ?? "SomeMod";
-  const base = makeApiHarness(options);
+  const base = makeApiHarness(options, options.extraReducers);
   registerHarnessGame(gameId);
 
   const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), "vortex-deploy-"));
