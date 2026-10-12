@@ -30,11 +30,21 @@ export async function emitDetectedGamesEvent(
   }
 
   try {
-    await createVortexNexusV3InternalClient(api).telemetryEvent(uuid(), Temporal.Now.instant(), {
-      type: "detected_games",
-      version: 1,
-      payload: listings,
-    });
+    const res = await createVortexNexusV3InternalClient(api).telemetryEvent(
+      uuid(),
+      Temporal.Now.instant(),
+      {
+        type: "detected_games",
+        version: 1,
+        payload: listings,
+      },
+    );
+
+    if (res.accepted > 0 || res.rejected.length > 0)
+      log("debug", "telemetry events send", {
+        accepted: res.accepted,
+        rejected: res.rejected.length,
+      });
   } catch (err) {
     log("warn", "detected-games: telemetry submit failed", {
       error: getErrorMessageOrDefault(err),
