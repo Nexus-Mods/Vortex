@@ -111,9 +111,9 @@ const NO_ACTIONS: IPositionedAction[] = [];
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
-/** Deploy (Apply changes) — was `ActivationButton`. Disabled and unbranded while applying. */
+/** Deploy (Apply changes) — was `ActivationButton`. Neutral always; disabled while applying. */
 const useDeployAction = (t: TFunction): IPositionedAction => {
-  const { needToDeploy, isDeploying, deploy } = useDeployMods();
+  const { isDeploying, deploy } = useDeployMods();
 
   return useMemo(
     () => ({
@@ -124,12 +124,11 @@ const useDeployAction = (t: TFunction): IPositionedAction => {
         iconPath: getIconPath("deploy"),
         pinned: true,
         testId: "deploy-mods",
-        brand: needToDeploy && !isDeploying ? "primary" : "neutral",
         disabled: isDeploying,
         onClick: deploy,
       },
     }),
-    [deploy, isDeploying, needToDeploy, t],
+    [deploy, isDeploying, t],
   );
 };
 

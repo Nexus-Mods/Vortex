@@ -270,25 +270,21 @@ describe("useModToolbarActions deploy", () => {
     expect(deployAction()?.disabled).toBe(false);
   });
 
-  it("is branded while changes are waiting", () => {
+  it("stays neutral while changes are waiting", () => {
     setPending(true);
     setModActivity([]);
-    expect(deployAction()?.brand).toBe("primary");
+    expect(deployAction()?.brand).toBeUndefined();
   });
 
-  it.each(["deployment", "deployment_pending"])(
-    "is disabled, says so and drops its brand while %s",
-    (activity) => {
-      setPending(true);
-      setModActivity([activity]);
+  it.each(["deployment", "deployment_pending"])("is disabled and says so while %s", (activity) => {
+    setPending(true);
+    setModActivity([activity]);
 
-      const action = deployAction();
+    const action = deployAction();
 
-      expect(action?.disabled).toBe(true);
-      expect(action?.label).toBe("Applying mod changes…");
-      expect(action?.brand).toBe("neutral");
-    },
-  );
+    expect(action?.disabled).toBe(true);
+    expect(action?.label).toBe("Applying mod changes…");
+  });
 });
 
 describe("useModToolbarActions beta table", () => {
