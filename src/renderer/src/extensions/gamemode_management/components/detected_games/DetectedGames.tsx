@@ -241,6 +241,7 @@ export const DetectedGames = ({
               discoveredGames={discoveredGames}
               gameMode={gameMode}
               games={shownGames}
+              source="detected_list"
               t={t}
               type="unmanaged"
               onBrowseGameLocation={onBrowseGameLocation}

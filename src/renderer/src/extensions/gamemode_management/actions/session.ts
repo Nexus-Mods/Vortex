@@ -1,5 +1,6 @@
 import { createAction } from "redux-act";
 
+import type { GameSource } from "../types/GameSource";
 import type { IDetectedGame } from "../types/IDetectedGame";
 import type { IGameStored } from "../types/IGameStored";
 
@@ -32,3 +33,12 @@ export const setDetectedGames = createAction("SET_DETECTED_GAMES", identity<IDet
 export const setFavouriteGames = createAction("SET_FAVOURITE_GAMES", identity<number[]>);
 
 export const clearFavouriteGames = createAction("CLEAR_FAVOURITE_GAMES");
+
+/**
+ * records which Games page list the user is adding a game from, so the
+ * app_game_manage event can carry the origin when the add completes
+ */
+export const setGameAddOrigin = createAction(
+  "SET_GAME_ADD_ORIGIN",
+  (gameId: string, source: GameSource) => ({ gameId, source }),
+);

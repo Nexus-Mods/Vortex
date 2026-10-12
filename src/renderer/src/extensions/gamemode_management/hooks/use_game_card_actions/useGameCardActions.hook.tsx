@@ -11,7 +11,9 @@ import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/PopoverMenuItem";
 import { getIconPath } from "@/views/components/iconMap";
 
+import { setGameAddOrigin } from "../../actions/session";
 import { setGameHidden } from "../../actions/settings";
+import type { GameSource } from "../../types/GameSource";
 
 /**
  * Where a tile stops leading with an action and starts filing it in the menu. It's the
@@ -108,6 +110,7 @@ export const useGameCardActions = (
   gameId: string,
   type: string,
   onShowDetails: () => void,
+  source?: GameSource,
 ): IGameCardActions => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -172,9 +175,22 @@ export const useGameCardActions = (
 
     return {
       menu: [menu],
-      primary: leads
-        ? { label: sorted[0].action.label, onClick: () => sorted[0].action.onClick?.() }
-        : undefined,
+      primary:
+        leads &&
+        // The lead action of an unadded game is its add; recording the list it was
+        // picked from lets app_game_manage attribute the add. Never set for the
+        // added section, whose lead is an "Open".
+        source !== undefined
+          ? {
+              label: sorted[0].action.label,
+              onClick: () => {
+                dispatch(setGameAddOrigin(gameId, source));
+                sorted[0].action.onClick?.();
+              },
+            }
+          : leads
+            ? { label: sorted[0].action.label, onClick: () => sorted[0].action.onClick?.() }
+            : undefined,
     };
-  }, [dispatch, gameId, hidden, onShowDetails, registered, t]);
+  }, [dispatch, gameId, hidden, onShowDetails, registered, source, t]);
 };

@@ -11,6 +11,7 @@ import { GameTile } from "@/ui/components/game_tile/GameTile";
 import { activeGameId } from "@/util/selectors";
 
 import { useGameCardActions } from "../hooks/use_game_card_actions/useGameCardActions.hook";
+import type { GameSource } from "../types/GameSource";
 import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
 import { GameDetailsModal } from "./GameDetailsModal";
@@ -46,9 +47,14 @@ export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) =
     game.id,
     section === "added" ? "managed" : "unmanaged",
     showDetails,
+    source,
   );
   const name = game.name.replace(/\t/g, " ");
   const store = useSelector((state: IState) => state.settings.gameMode.discovered[game.id]?.store);
+
+  // added games' lead action is an "Open", so they don't record an add origin
+  const source: GameSource | undefined =
+    section === "detected" ? "detected_list" : section === "supported" ? "all_games" : undefined;
 
   const actions: Record<
     IGameSection,
