@@ -9,6 +9,7 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { Html } from "@/ui/components/prose/html/Html";
 import { PlainText } from "@/ui/components/prose/plain_text/PlainText";
 import { ToolbarButton } from "@/ui/components/toolbar/ToolbarButton";
+import { TitledTooltip } from "@/ui/components/tooltip/TitledTooltip";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { activeGameId } from "@/util/selectors";
 
@@ -33,22 +34,6 @@ interface IChangelog {
   /** The changelog itself, in that format. */
   content: string;
 }
-
-interface ITitledTooltipProps {
-  /** What it's about, in bold. */
-  title: string;
-  /** What that means, under it. */
-  body: string;
-}
-
-/** A tooltip's bold title over what it means, as the design words these: 240px wide. */
-const TitledTooltip = ({ title, body }: ITitledTooltipProps) => (
-  <div className="nxm-tooltip-content max-w-60">
-    <p className="font-semibold">{title}</p>
-
-    <p>{body}</p>
-  </div>
-);
 
 /** What there is to say about updating a mod, worked out once for its Version cell. */
 export interface IModUpdateDetails {
