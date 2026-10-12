@@ -8,6 +8,13 @@ export function sortLoadOrderAlphabetically<T extends types.ILoadOrderEntry>(loa
   const locked = loadOrder.filter((entry) => isLockedEntry(entry.id));
   const rest = loadOrder
     .filter((entry) => !isLockedEntry(entry.id))
-    .sort((lhs, rhs) => lhs.id.toLowerCase().localeCompare(rhs.id.toLowerCase()));
+    .sort((lhs, rhs) => compareFolderNames(lhs.id, rhs.id));
   return withPositionPrefix([...locked, ...rest]);
+}
+
+/** Case-insensitive by character code, so digits sort before underscores. */
+function compareFolderNames(lhs: string, rhs: string): number {
+  const lhsLower = lhs.toLowerCase();
+  const rhsLower = rhs.toLowerCase();
+  return lhsLower < rhsLower ? -1 : lhsLower > rhsLower ? 1 : 0;
 }
