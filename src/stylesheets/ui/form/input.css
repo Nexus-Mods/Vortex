@@ -21,7 +21,7 @@
 
         &::placeholder {
             color: var(--color-neutral-subdued);
-            font-style: normal;
+            font-style: italic;
         }
 
         &[data-disabled],

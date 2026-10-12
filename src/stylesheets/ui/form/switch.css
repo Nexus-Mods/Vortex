@@ -10,7 +10,7 @@
         height: calc(var(--spacing) * 4);
 
         border: 2px solid var(--color-translucent-subdued);
-        background-color: transparent;
+        background-color: var(--color-translucent-dark-400);
 
         transition-property: background-color, border-color, outline-color;
         transition-duration: var(--default-transition-duration);
@@ -19,7 +19,7 @@
         &[data-checked],
         &[data-indeterminate] {
             border-color: transparent;
-            background-color: var(--color-translucent-strong);
+            background-color: var(--color-neutral-strong);
         }
 
         &[data-focus] {
