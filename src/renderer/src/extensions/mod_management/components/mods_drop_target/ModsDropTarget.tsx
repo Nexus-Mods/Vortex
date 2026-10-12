@@ -1,4 +1,4 @@
-import { mdiFolderDownload } from "@mdi/js";
+import { mdiFolderDownloadOutline } from "@mdi/js";
 import { webUtils } from "electron";
 import React, {
   type DragEvent,
@@ -111,26 +111,24 @@ export const ModsDropTarget = ({ onDropFiles, children }: IModsDropTargetProps) 
           className="pointer-events-none absolute inset-0 z-1000 flex items-center justify-center bg-scrim-800 p-6"
           data-testid="mods-drop-overlay"
         >
-          <div className="flex w-full max-w-md flex-col items-center gap-y-2 rounded-lg border-2 border-dashed border-on-scrim-weak px-6 py-10 text-center">
-            <Icon className="text-on-scrim-moderate" path={mdiFolderDownload} size="2xl" />
+          {/* A card on the scrim, styled like the modal panel, so the text sits on a solid
+              surface rather than on the darkened page. */}
+          <div className="w-full max-w-md rounded-lg border border-surface-translucent-low bg-surface-low p-3 shadow-xl">
+            <div className="flex flex-col items-center gap-y-2 rounded-md border-2 border-dashed border-primary-moderate px-6 py-10 text-center">
+              <Icon className="text-primary-moderate" path={mdiFolderDownloadOutline} size="2xl" />
 
-            <Typography
-              appearance="strong"
-              as="p"
-              brand="neutral-on-scrim"
-              typographyType="heading-xs"
-            >
-              {t("Drop files to install")}
-            </Typography>
+              <Typography appearance="strong" as="p" typographyType="heading-xs">
+                {t("Drop files to add mods")}
+              </Typography>
 
-            <Typography
-              appearance="moderate"
-              as="p"
-              brand="neutral-on-scrim"
-              typographyType="body-md"
-            >
-              {t("Archives are added to your downloads, other files can become a new mod")}
-            </Typography>
+              <Typography appearance="subdued" as="p" typographyType="body-md">
+                {t("Archives (.zip, .rar, .7z) are added as mods to your list.")}
+              </Typography>
+
+              <Typography appearance="subdued" as="p" typographyType="body-md">
+                {t("Individual files and folders are packaged into mods before being added.")}
+              </Typography>
+            </div>
           </div>
         </div>
       )}
