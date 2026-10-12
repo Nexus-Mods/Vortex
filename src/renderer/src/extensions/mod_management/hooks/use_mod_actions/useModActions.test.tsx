@@ -111,11 +111,39 @@ describe("useModRowActions", () => {
     ).toEqual(["manage: Remove", "other: Sooner", "other: Later"]);
   });
 
-  it("offers Check for updates for an installed mod only", () => {
+  it("offers Uninstall and Check for updates for an installed mod only", () => {
     const { result } = renderRowActions([{ title: "Remove" }], [], { a: { id: "a" } });
 
-    expect(labels(result.current.actionsFor("a"))).toEqual(["Check for updates", "Remove"]);
+    expect(labels(result.current.actionsFor("a"))).toEqual([
+      "Uninstall",
+      "Remove",
+      "Check for updates",
+    ]);
     expect(labels(result.current.actionsFor("b"))).toEqual(["Remove"]);
+  });
+
+  it("orders the first section as the design does", () => {
+    const { result } = renderRowActions(
+      [
+        { title: "Check for Update" },
+        { title: "Remove" },
+        { title: "Remove related" },
+        { title: "Reinstall" },
+        { title: "Install" },
+      ],
+      [{ title: "Add to Collection..." }],
+      { a: { id: "a" } },
+    );
+
+    expect(labels(result.current.actionsFor("a"))).toEqual([
+      "Add to Collection",
+      "Install",
+      "Reinstall",
+      "Uninstall",
+      "Remove related",
+      "Remove",
+      "Check for updates",
+    ]);
   });
 
   it("leaves out components, classic-only actions and a repeated title", () => {
@@ -209,14 +237,15 @@ describe("useModSelectionActions", () => {
     );
 
     expect(labels(result.current)).toEqual([
-      "Add to Collection",
       "Check for updates",
+      "Add to Collection",
+      "Uninstall",
       "Remove",
       "Combine",
     ]);
   });
 
-  it("pins Add to Collection, Check for updates, Reinstall and Remove until the user says otherwise", () => {
+  it("pins Add to Collection, Reinstall, Uninstall, Check for updates and Remove until the user says otherwise", () => {
     const { result } = renderSelectionActions(
       [{ title: "Remove" }, { title: "Reinstall" }, { title: "Combine" }],
       ["a"],
@@ -224,9 +253,10 @@ describe("useModSelectionActions", () => {
     );
 
     expect(result.current.filter(({ pinned }) => pinned).map(({ label }) => label)).toEqual([
+      "Check for updates",
       "Add to Collection",
       "Reinstall",
-      "Check for updates",
+      "Uninstall",
       "Remove",
     ]);
   });
@@ -245,7 +275,7 @@ describe("useModSelectionActions", () => {
 
     expect(
       result.current
-        .filter(({ label }) => label !== "Check for updates")
+        .filter(({ section }) => section !== "manage")
         .map(({ label, section }) => `${section}: ${label}`),
     ).toEqual([
       "organise: Combine",
@@ -256,6 +286,23 @@ describe("useModSelectionActions", () => {
     ]);
   });
 
+  it("orders the first section with Check for updates first", () => {
+    const { result } = renderSelectionActions(
+      [{ title: "Remove" }, { title: "Reinstall" }, { title: "Install" }],
+      ["a"],
+      [{ title: "Add to Collection..." }],
+    );
+
+    expect(labels(result.current)).toEqual([
+      "Check for updates",
+      "Add to Collection",
+      "Install",
+      "Reinstall",
+      "Uninstall",
+      "Remove",
+    ]);
+  });
+
   it("keeps a default pin that rules itself out, disabled, unless the user unpinned it", () => {
     const { result, store } = renderSelectionActions(
       [{ title: "Reinstall", condition: () => false }],
@@ -263,8 +310,9 @@ describe("useModSelectionActions", () => {
     );
 
     expect(labels(result.current)).toEqual([
-      "Reinstall (disabled)",
       "Check for updates (disabled)",
+      "Reinstall (disabled)",
+      "Uninstall (disabled)",
     ]);
 
     act(() => {
@@ -277,7 +325,10 @@ describe("useModSelectionActions", () => {
       );
     });
 
-    expect(labels(result.current)).toEqual(["Check for updates (disabled)"]);
+    expect(labels(result.current)).toEqual([
+      "Check for updates (disabled)",
+      "Uninstall (disabled)",
+    ]);
   });
 
   it("checks and runs an action against every selected mod", () => {

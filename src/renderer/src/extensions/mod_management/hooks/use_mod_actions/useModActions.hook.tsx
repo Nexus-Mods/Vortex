@@ -4,6 +4,7 @@ import {
   mdiDeleteOutline,
   mdiFileAlertOutline,
   mdiFolderOpenOutline,
+  mdiMinusCircleOutline,
   mdiMonitorArrowDown,
   mdiPaw,
   mdiPawOutline,
@@ -28,6 +29,7 @@ import { activeGameId } from "@/util/selectors";
 import { getIconPath } from "@/views/components/iconMap";
 
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
+import { useUninstallMods } from "../use_uninstall_mods/useUninstallMods.hook";
 
 /** Where the rows' pins are stored, shared so an action pinned on one row shows on every row. */
 export const MOD_ROW_PINNING_ID = "mods-table-row";
@@ -42,7 +44,13 @@ const ROW_ACTIONS_GROUP = "mods-action-icons";
 const SELECTION_ACTIONS_GROUP = "mods-multirow-actions";
 
 /** On the selected mods' bar until the user unpins them. */
-const SELECTION_PINS = new Set(["Add to Collection...", "Check for Update", "Reinstall", "Remove"]);
+const SELECTION_PINS = new Set([
+  "Add to Collection...",
+  "Check for Update",
+  "Reinstall",
+  "Uninstall",
+  "Remove",
+]);
 
 /** The legacy table's, which the selected mods' bar has a switch for instead. */
 const SWITCH_TITLES = new Set(["Enable", "Disable"]);
@@ -82,9 +90,10 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       { title: "Install", label: "Install", iconPath: mdiMonitorArrowDown },
       { title: "Unpack (as-is)", label: "Unpack (as-is)" },
       { title: "Reinstall", label: "Reinstall", iconPath: nxmResetTv },
-      { title: "Check for Update", label: "Check for updates", iconPath: mdiRefresh },
+      { title: "Uninstall", label: "Uninstall", iconPath: mdiMinusCircleOutline },
       { title: "Remove related", label: "Remove related", iconPath: mdiDeleteOutline },
       { title: "Remove", label: "Remove", iconPath: mdiDeleteOutline },
+      { title: "Check for Update", label: "Check for updates", iconPath: mdiRefresh },
     ],
   },
   {
@@ -133,19 +142,43 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
   },
 ];
 
+/** The selected mods' menu reorders the first section: Check for updates first. */
+const SELECTION_MANAGE_ORDER = [
+  "Check for Update",
+  "Add to Collection...",
+  "Remove from Collection...",
+  "Install",
+  "Unpack (as-is)",
+  "Reinstall",
+  "Uninstall",
+  "Remove related",
+  "Remove",
+];
+
+const SELECTION_MENU = ROW_MENU.map(({ section, items }) => ({
+  section,
+  items:
+    section === "manage"
+      ? SELECTION_MANAGE_ORDER.flatMap((title) => items.filter((item) => item.title === title))
+      : items,
+}));
+
 const OTHER_SECTION = "other";
 
-const MENU_ITEMS = new Map(
-  ROW_MENU.flatMap(({ section, items }, sectionIndex) =>
-    items.map((item, index) => [
-      item.title,
-      { ...item, section, order: sectionIndex * 100 + index },
-    ]),
-  ),
-);
+type IMenuItems = Map<string, IRowMenuItem & { section: string; order: number }>;
 
-const menuOrder = (definition: IActionDefinition) =>
-  MENU_ITEMS.get(definition.title)?.order ?? Number.MAX_SAFE_INTEGER;
+const menuItems = (menu: typeof ROW_MENU): IMenuItems =>
+  new Map(
+    menu.flatMap(({ section, items }, sectionIndex) =>
+      items.map((item, index) => [
+        item.title,
+        { ...item, section, order: sectionIndex * 100 + index },
+      ]),
+    ),
+  );
+
+const menuOrder = (menu: IMenuItems, definition: IActionDefinition) =>
+  menu.get(definition.title)?.order ?? Number.MAX_SAFE_INTEGER;
 
 /** Where one set of a mod's actions comes from, and where its pins are kept. */
 interface IModActionsSource {
@@ -159,6 +192,8 @@ interface IModActionsSource {
   defaultPins: Set<string>;
   /** Titles left out, for something offered another way. */
   leftOut: Set<string>;
+  /** How its menu lays the actions out. */
+  menu: IMenuItems;
 }
 
 const ROW_SOURCE: IModActionsSource = {
@@ -167,6 +202,7 @@ const ROW_SOURCE: IModActionsSource = {
   pinningId: MOD_ROW_PINNING_ID,
   defaultPins: NO_TITLES,
   leftOut: NO_TITLES,
+  menu: menuItems(ROW_MENU),
 };
 
 const SELECTION_SOURCE: IModActionsSource = {
@@ -175,6 +211,7 @@ const SELECTION_SOURCE: IModActionsSource = {
   pinningId: MOD_SELECTION_PINNING_ID,
   defaultPins: SELECTION_PINS,
   leftOut: SWITCH_TITLES,
+  menu: menuItems(SELECTION_MENU),
 };
 
 /**
@@ -194,22 +231,37 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
   );
   const store = useStore<IState>();
   const checkForUpdate = useCheckModUpdate();
+  const uninstall = useUninstallMods();
 
   // Titles are the ids pins are stored against, so the first of a title wins.
   const definitions = useMemo(() => {
     const seen = new Set<string>();
 
+    const someInstalled = (modIds: string[]) => {
+      const state = store.getState();
+      return modIds.some((modId) => state.persistent.mods?.[activeGameId(state)]?.[modId]);
+    };
+
     // In place of the legacy table's, a component: offered for an installed mod, as that was.
     const checkForUpdateAction: IActionDefinition = {
       title: "Check for Update",
       action: (modIds: string[]) => void checkForUpdate(modIds),
-      condition: (modIds: string[]) => {
-        const state = store.getState();
-        return modIds.some((modId) => state.persistent.mods?.[activeGameId(state)]?.[modId]);
-      },
+      condition: someInstalled,
     };
 
-    return [checkForUpdateAction, ...rowActions.filter(source.offers), ...registered]
+    // The legacy table's "Uninstalled" status, as an action: the archive stays to reinstall from.
+    const uninstallAction: IActionDefinition = {
+      title: "Uninstall",
+      action: (modIds: string[]) => void uninstall(modIds),
+      condition: someInstalled,
+    };
+
+    return [
+      checkForUpdateAction,
+      uninstallAction,
+      ...rowActions.filter(source.offers),
+      ...registered,
+    ]
       .filter(
         (definition) =>
           definition.title !== undefined &&
@@ -218,9 +270,9 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
           !source.leftOut.has(definition.title),
       )
       .sort(byPosition)
-      .sort((a, b) => menuOrder(a) - menuOrder(b))
+      .sort((a, b) => menuOrder(source.menu, a) - menuOrder(source.menu, b))
       .filter((definition) => !seen.has(definition.title) && !!seen.add(definition.title));
-  }, [checkForUpdate, registered, rowActions, source, store]);
+  }, [checkForUpdate, registered, rowActions, source, store, uninstall]);
 
   const isPinned = useCallback(
     (title: string) => pins[title] ?? source.defaultPins.has(title),
@@ -247,7 +299,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
           return list;
         }
 
-        const menuItem = MENU_ITEMS.get(definition.title);
+        const menuItem = source.menu.get(definition.title);
 
         list.push({
           // The registered title, not its translation, so a pin survives a language change.
@@ -305,8 +357,8 @@ export const useModRowActions = (rowActions: ITableRowAction[]) => {
 /**
  * The actions on the selected mods' bar: the legacy table's own for several rows and every
  * extension's in `mods-multirow-actions`, but Enable and Disable, which the bar's switch
- * does. Add to Collection, Check for updates, Reinstall and Remove are pinned until the user
- * unpins them.
+ * does. Add to Collection, Reinstall, Uninstall, Check for updates and Remove are pinned until
+ * the user unpins them.
  */
 export const useModSelectionActions = (rowActions: ITableRowAction[], modIds: string[]) => {
   const { build } = useModActions(rowActions, SELECTION_SOURCE);
