@@ -11,7 +11,7 @@
         --nxm-table-head-height: calc(
             var(--nxm-table-head-padding) * 2 + var(--nxm-table-header-height)
         );
-        --nxm-table-toolbar-height: calc(var(--spacing) * 7);
+        --nxm-table-toolbar-height: calc(var(--spacing) * 9);
         --nxm-table-leading-width: calc(var(--spacing) * 5);
         --nxm-table-sticky-fade: calc(var(--spacing) * 2);
         --nxm-table-sticky-solid: calc(var(--spacing) * 3);
