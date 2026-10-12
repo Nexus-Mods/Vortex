@@ -51,7 +51,7 @@ export interface IModsTableView {
 export const MODS_TABLE_PRESETS: IModsTableView[] = [
   { id: "all", label: "All mods", grouping: "none" },
   { id: "collections", label: "Collections", grouping: "collection" },
-  { id: "author", label: "Author", grouping: "author" },
+  { id: "status", label: "Status", grouping: "status" },
 ];
 
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
