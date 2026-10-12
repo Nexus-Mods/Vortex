@@ -87,7 +87,9 @@ describe("ModVersion", () => {
 
     const removeIn = (name: string) =>
       within(
-        screen.getByRole("menuitemradio", { name: new RegExp(name.replace(/[()]/g, "\\$&")) }),
+        screen.getByRole("menuitemradio", {
+          name: (accessibleName) => accessibleName.startsWith(name),
+        }),
       ).getByRole("button", { name: "Remove version" });
 
     it("removes one from its row's button, without switching to it, and closes", async () => {
