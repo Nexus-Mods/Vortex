@@ -53,17 +53,12 @@ export function resolveCollectionMods(
   // the only ones that can newly match a member it left unresolved (keyed by mod id)
   const prior = previous?.rules === rules ? previous : undefined;
   let changedMods: Record<string, IMod> | undefined;
-  if (prior !== undefined) {
-    changedMods = {};
-    for (const [modId, mod] of Object.entries(mods)) {
-      if (prior.mods[modId] !== mod) {
-        changedMods[modId] = mod;
-      }
-    }
-  }
 
   const byRule = new Map<string, IMod>();
-  for (const rule of (rules ?? []).filter(isDependencyRule)) {
+  for (const rule of rules) {
+    if (!isDependencyRule(rule)) {
+      continue;
+    }
     const id = modRuleId(rule);
     // Match priority mirrors testModReference's exact-identity markers. A collection member's
     // installed mod carries the rule's referenceTag (authoritative), and is also keyed by content
@@ -75,19 +70,16 @@ export function resolveCollectionMods(
       mod = modByMd5.get(fileMD5);
     }
     // Neither index resolved the mod (e.g. a fuzzy/latest member whose tag drifted across
-    // collections and has no fileMD5). Fall back to findModByRef - the same identity match
-    // reconstructSessionMods uses - so the table agrees with the session rather than showing an
-    // installed member as "pending".
+    // collections and has no fileMD5), so fall back to findModByRef.
     if (mod === undefined) {
       const priorMod = prior?.byRule.get(id);
-      if (prior === undefined) {
-        mod = findModByRef(rule.reference, mods);
-      } else if (priorMod === undefined) {
+      if (prior !== undefined && priorMod === undefined) {
+        changedMods ??= modsChangedSince(prior.mods, mods);
         mod = findModByRef(rule.reference, changedMods);
-      } else if (mods[priorMod.id] === priorMod) {
+      } else if (priorMod !== undefined && mods[priorMod.id] === priorMod) {
         mod = priorMod;
       } else {
-        // the mod it matched was changed or removed, so it may no longer match
+        // no prior result, or the mod it matched was changed or removed
         mod = findModByRef(rule.reference, mods);
       }
     }
@@ -96,6 +88,22 @@ export function resolveCollectionMods(
     }
   }
   return { rules, mods, byRule };
+}
+
+/** the mods added or replaced since `before` */
+function modsChangedSince(
+  // keyed by mod id
+  before: Record<string, IMod>,
+  // keyed by mod id
+  after: Record<string, IMod>,
+): Record<string, IMod> {
+  const changed: Record<string, IMod> = {};
+  for (const modId of Object.keys(after)) {
+    if (before[modId] !== after[modId]) {
+      changed[modId] = after[modId];
+    }
+  }
+  return changed;
 }
 
 /** resolveCollectionMods for any collection, remembering each one's last result */

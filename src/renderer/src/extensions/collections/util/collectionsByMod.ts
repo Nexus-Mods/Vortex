@@ -6,7 +6,7 @@ import { isDependencyRule } from "../../mod_management/util/testModReference";
 import { MOD_TYPE } from "../constants";
 import {
   type CollectionModsResolver,
-  resolveCollectionMods,
+  makeCollectionModsResolver,
 } from "./resolveCollectionMods/resolveCollectionMods";
 
 /**
@@ -16,7 +16,7 @@ import {
  */
 export function collectionsByMod(
   mods: { [modId: string]: IMod },
-  resolve: CollectionModsResolver = (rules, all) => resolveCollectionMods(rules ?? [], all),
+  resolve: CollectionModsResolver = makeCollectionModsResolver(),
 ): {
   [modId: string]: IMod[];
 } {
