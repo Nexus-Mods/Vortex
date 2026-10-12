@@ -9,13 +9,14 @@ const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "checkboxes",
   "input",
   "links",
+  "condition",
   "parameters",
   "options",
 ]);
 
-// The options ModalLayer follows: how the text is read, and how the message box behaves. The rest
-// (such as `order`) change the layout in ways it doesn't.
-const SUPPORTED_OPTIONS = new Set(["translated", "wrap", "hideMessage"]);
+// The options ModalLayer follows: how the text is read, how the message box behaves, and how links
+// look. The rest (such as `order`) change the layout in ways it doesn't.
+const SUPPORTED_OPTIONS = new Set(["translated", "wrap", "hideMessage", "linksAsButtons"]);
 
 const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>(["id", "value", "text", "disabled"]);
 

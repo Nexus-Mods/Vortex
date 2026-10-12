@@ -105,6 +105,23 @@ export const ModalLayer = () => {
       )
       .join("\n");
 
+  // The dialog's condition is checked against what the user has entered so far. It names the
+  // control it is about and the buttons that can't be pressed until it is met.
+  const results =
+    content.condition?.({
+      ...content,
+      ...(content.input && { input: inputs.map((field) => ({ ...field, value: valueOf(field) })) }),
+      ...(content.checkboxes && {
+        checkboxes: checkboxes.map((box) => ({ ...box, value: isChecked(box) })),
+      }),
+    }) ?? [];
+  const errorFor = (controlId: string) =>
+    results
+      .filter((result) => result.id === controlId)
+      .map((result) => result.errorText)
+      .join("\n");
+  const isDisabled = (action: string) => results.some((result) => result.actions.includes(action));
+
   const hasDangerAction = actions.some((action) => DANGER_ACTIONS.has(action));
 
   const answer = (action: string) => {
@@ -123,7 +140,7 @@ export const ModalLayer = () => {
 
   // The legacy renderer answers the default action when Enter is pressed in an input.
   const answerDefaultOnEnter = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" && defaultAction !== undefined) {
+    if (event.key === "Enter" && defaultAction !== undefined && !isDisabled(defaultAction)) {
       event.preventDefault();
       answer(defaultAction);
     }
@@ -160,6 +177,7 @@ export const ModalLayer = () => {
           {inputs.map((input, index) => (
             <TextField
               data-testid={`dialog-input-${input.id}`}
+              errorMessage={errorFor(input.id) || undefined}
               key={input.id}
               label={translate(input.label)}
               placeholder={input.placeholder}
@@ -203,17 +221,30 @@ export const ModalLayer = () => {
 
       {links.length > 0 && (
         <div className="mt-3 flex flex-col items-start gap-y-1">
-          {links.map((link, index) => (
+          {links.map((link, index) =>
             // A link runs its callback and leaves the dialog open.
-            <TypographyLink
-              data-testid={`dialog-link-${index}`}
-              key={`${index}-${link.label}`}
-              typographyType="body-sm"
-              onClick={() => triggerDialogLink(id, index)}
-            >
-              {link.label}
-            </TypographyLink>
-          ))}
+            content.options?.linksAsButtons ? (
+              <Button
+                appearance="moderate"
+                brand="neutral"
+                data-testid={`dialog-link-${index}`}
+                key={`${index}-${link.label}`}
+                size="sm"
+                onClick={() => triggerDialogLink(id, index)}
+              >
+                {link.label}
+              </Button>
+            ) : (
+              <TypographyLink
+                data-testid={`dialog-link-${index}`}
+                key={`${index}-${link.label}`}
+                typographyType="body-sm"
+                onClick={() => triggerDialogLink(id, index)}
+              >
+                {link.label}
+              </TypographyLink>
+            ),
+          )}
         </div>
       )}
 
@@ -227,6 +258,7 @@ export const ModalLayer = () => {
             <Button
               className="min-w-fit flex-1"
               data-testid={`dialog-action-${action}`}
+              disabled={isDisabled(action)}
               key={action}
               ref={isDefault ? defaultButtonRef : undefined}
               {...(isDanger && { brand: "danger" })}

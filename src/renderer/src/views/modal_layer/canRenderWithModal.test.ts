@@ -38,7 +38,6 @@ describe("canRenderWithModal", () => {
 
   it.each<[string, IDialogContent["options"]]>([
     ["order", { order: ["checkboxes", "text"] }],
-    ["linksAsButtons", { linksAsButtons: true }],
     ["bbcodeContext", { bbcodeContext: {} as never }],
   ])("rejects the %s option, which ModalLayer does not follow", (_name, options) => {
     expect(canRenderWithModal(dialogWith({ text: "t", options }))).toBe(false);
@@ -60,7 +59,6 @@ describe("canRenderWithModal", () => {
     ["htmlText", { text: "t", htmlText: "<b>b</b>" }],
     ["htmlFile", { text: "t", htmlFile: "f.html" }],
     ["choices", { text: "t", choices: [{ id: "a", value: true }] }],
-    ["condition", { text: "t", condition: () => [] }],
   ])("rejects a dialog with %s", (_name, content) => {
     expect(canRenderWithModal(dialogWith(content))).toBe(false);
   });
@@ -80,6 +78,16 @@ describe("canRenderWithModal", () => {
     ["a field it has never heard of", { id: "a", value: false, text: "t", extra: 1 } as ICheckbox],
   ])("rejects a checkbox with %s", (_name, checkbox) => {
     expect(canRenderWithModal(dialogWith({ text: "t", checkboxes: [checkbox] }))).toBe(false);
+  });
+
+  describe("condition", () => {
+    it("accepts a condition, which ModalLayer checks as the user types", () => {
+      expect(
+        canRenderWithModal(
+          dialogWith({ text: "t", input: [{ id: "a", label: "A" }], condition: () => [] }),
+        ),
+      ).toBe(true);
+    });
   });
 
   describe("message", () => {
@@ -130,12 +138,12 @@ describe("canRenderWithModal", () => {
       expect(canRenderWithModal(dialogWith({ text: "t", links: [link] }))).toBe(false);
     });
 
-    it("keeps links shown as buttons on the legacy renderer", () => {
+    it("accepts links shown as buttons", () => {
       expect(
         canRenderWithModal(
           dialogWith({ text: "t", links: [{ label: "Open" }], options: { linksAsButtons: true } }),
         ),
-      ).toBe(false);
+      ).toBe(true);
     });
   });
 

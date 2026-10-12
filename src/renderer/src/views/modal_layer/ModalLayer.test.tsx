@@ -327,6 +327,27 @@ describe("ModalLayer", () => {
     });
   });
 
+  describe("links as buttons", () => {
+    it("shows the links as buttons that run their callback without answering", async () => {
+      renderLayer([
+        dialogWith("one", {
+          text: "t",
+          links: [{ label: "Open" }],
+          options: { linksAsButtons: true },
+        }),
+      ]);
+
+      expect(screen.getByTestId("dialog-link-0")).toHaveClass("nxm-button");
+
+      await userEvent.click(screen.getByTestId("dialog-link-0"));
+
+      expect(triggerDialogLink).toHaveBeenCalledExactlyOnceWith("one", 0);
+      expect(closeDialog).not.toHaveBeenCalled();
+
+      await settleTransitions();
+    });
+  });
+
   describe("links", () => {
     it("runs the link's callback without answering the dialog", async () => {
       renderLayer([
@@ -377,6 +398,76 @@ describe("ModalLayer", () => {
       renderLayer([dialogWith("one", { message: "details" })]);
 
       expect(screen.getByTestId("dialog-message")).toHaveValue("details");
+
+      await settleTransitions();
+    });
+  });
+  describe("condition", () => {
+    const requireName = (content: IDialogContent) =>
+      content.input?.[0]?.value
+        ? []
+        : [{ actions: ["Delete"], errorText: "A name is required", id: "name" }];
+
+    const named = (): IDialog => ({
+      ...dialogWith("one", {
+        text: "Name it",
+        input: [{ id: "name", label: "Name" }],
+        condition: requireName,
+      }),
+      defaultAction: "Delete",
+    });
+
+    it("marks the input invalid and disables the buttons the condition names", async () => {
+      renderLayer([named()]);
+
+      expect(screen.getByTestId("dialog-input-name")).toHaveAttribute("aria-invalid", "true");
+      expect(screen.getByTestId("dialog-action-Delete")).toBeDisabled();
+      expect(screen.getByTestId("dialog-action-Cancel")).toBeEnabled();
+
+      await settleTransitions();
+    });
+
+    it("clears the error and enables the button once the condition is met", async () => {
+      renderLayer([named()]);
+
+      await userEvent.type(screen.getByTestId("dialog-input-name"), "Done");
+
+      expect(screen.getByTestId("dialog-input-name")).not.toHaveAttribute("aria-invalid", "true");
+      expect(screen.getByTestId("dialog-action-Delete")).toBeEnabled();
+
+      await settleTransitions();
+    });
+
+    it("checks the condition against what has been typed and ticked so far", async () => {
+      const condition = vi.fn(() => []);
+      renderLayer([
+        dialogWith("one", {
+          text: "t",
+          input: [{ id: "name", label: "Name", value: "Start" }],
+          checkboxes: [{ id: "agree", value: false, text: "Agree" }],
+          condition,
+        }),
+      ]);
+
+      await userEvent.type(screen.getByTestId("dialog-input-name"), "!");
+      await userEvent.click(screen.getByTestId("dialog-checkbox-agree"));
+
+      expect(condition).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          input: [expect.objectContaining({ id: "name", value: "Start!" })],
+          checkboxes: [expect.objectContaining({ id: "agree", value: true })],
+        }),
+      );
+
+      await settleTransitions();
+    });
+
+    it("does not answer the default action on Enter while it is disabled", async () => {
+      renderLayer([named()]);
+
+      await userEvent.type(screen.getByTestId("dialog-input-name"), "{Enter}");
+
+      expect(closeDialog).not.toHaveBeenCalled();
 
       await settleTransitions();
     });
