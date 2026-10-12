@@ -3,8 +3,17 @@
 
 openapi: 3.0.3
 info:
-  title: Telemetry — Vortex mod-list ingestion (internal)
-  version: 1.0.0
+  title: Nexus Mods API
+  version: 3.0.0
+tags:
+  - name: telemetry
+    description: Telemetry ingestion
+servers:
+  - url: https://api.nexusmods.com/v3
+    description: Production server
+security:
+  - ApiKeyAuth: []
+  - BearerJwtAuth: []
 
 paths:
   /telemetry/mod-lists:
@@ -54,8 +63,82 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+  "/telemetry/events":
+    post:
+      tags:
+        - telemetry
+      x-badges:
+        - name: Internal
+      summary: Submit client telemetry events
+      description: |
+        Records a batch of telemetry events from a client. Each event has a `type` and
+        `version`; its `payload` is stored as sent, without validation, and unknown types are accepted.
+        Payload shapes are documented per type in `contracts/telemetry/`.
 
+        Accepted asynchronously: the endpoint returns `202` once the batch is enqueued. An event whose
+        payload exceeds 64 KB, or holds a number with no JSON representation (such as `1e400`), is
+        rejected on its own and listed in `rejected`; the rest are accepted. Event ids are compared
+        without regard to case.
+
+        ### Retries
+        * `503`: retry the batch later. A retried event keeps its `id` and is stored once.
+        * `413` and `422`: drop the batch; resending it fails the same way.
+        * Events in `rejected`: drop them.
+      operationId: submitTelemetryEvents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TelemetryEventBatch"
+      responses:
+        "202":
+          description: The batch was accepted for processing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/TelemetryEventsAck"
+        "401":
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "413":
+          description: Payload Too Large - the payloads of the events not rejected exceed 256 KB.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: Unprocessable - the request body failed schema validation.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "503":
+          description: Service Unavailable - the batch could not be enqueued for processing.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Get your personal API key from https://www.nexusmods.com/settings/api-keys
+    BearerJwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "A signed JWT sent as `Authorization: Bearer <token>`."
   schemas:
     ModListSnapshot:
       type: object
@@ -155,3 +238,109 @@ components:
           type: string
           format: uri
           description: A URI reference that identifies the specific occurrence of the problem.
+    TelemetryEventBatch:
+      type: object
+      description: A batch of telemetry events from one client.
+      required:
+        - client
+        - events
+      properties:
+        client:
+          "$ref": "#/components/schemas/TelemetryClient"
+        events:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            "$ref": "#/components/schemas/TelemetryEvent"
+    TelemetryEventsAck:
+      type: object
+      description: Acknowledgement of a telemetry batch.
+      required:
+        - accepted
+        - rejected
+      properties:
+        accepted:
+          type: integer
+          description: The number of events accepted for processing.
+          example: 12
+        rejected:
+          type: array
+          description: The events that were not accepted.
+          items:
+            "$ref": "#/components/schemas/TelemetryEventRejection"
+    TelemetryClient:
+      type: object
+      description: The client that sent the batch.
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: The client application.
+          example: vortex
+        version:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: The client application version.
+          example: 1.15.0
+        instance_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Anonymous identifier of the client install.
+          example: 9f2c1a7b-4e6d-8f03-1a2b-3c4d5e6f7a8b
+    TelemetryEvent:
+      type: object
+      description: One telemetry event.
+      required:
+        - id
+        - type
+        - version
+        - occurred_at
+        - payload
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The client's id for the event. A retried event keeps its id, so it is stored once.
+          example: 6f1c2e0a-4b7d-4e2a-9c1f-3d5e7a9b1c2d
+        type:
+          type: string
+          pattern: "^[a-z][a-z0-9_]*$"
+          maxLength: 64
+          description: The event type.
+          example: store_game_version
+        version:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: The payload shape version for `type`.
+          example: 1
+        occurred_at:
+          type: string
+          format: date-time
+          description: When the event happened, by the client's clock. Values more than 30 days before the request, or after it, are stored as the nearest bound.
+        payload:
+          type: object
+          additionalProperties: true
+          description: The event data, shaped by `type` and `version`. Stored without validation.
+    TelemetryEventRejection:
+      type: object
+      description: An event that was not accepted.
+      required:
+        - index
+        - reason
+      properties:
+        index:
+          type: integer
+          description: The position of the event in `events`, from 0.
+          example: 3
+        reason:
+          type: string
+          description: Why the event was rejected.
+          example: Payload exceeds the 65536-byte limit (70000 received).
