@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { OPTIONAL_PHASE } from "../extensions/mod_management/util/rulePhase";
 import {
   makeInstallState,
   makeLookup,
@@ -20,10 +21,12 @@ import type {
   ICollectionModInstallInfo,
 } from "../types/collections/ICollectionInstallSession";
 import {
+  getCollectionCurrentPhase,
   getCollectionInstallProgress,
   getCollectionModByReference,
   getCollectionPhaseProgress,
   getCollectionStatusBreakdown,
+  getCollectionTotalPhases,
   getFailedOptionalMods,
   isCollectionPhaseComplete,
   isCollectionPhaseSettledSuccessfully,
@@ -43,7 +46,11 @@ function stateWith(entries: Entry[]) {
   for (const e of entries) {
     mods[e.ruleId] = makeModInstallInfo({
       // phase is read off the rule via rulePhase(); tag keeps each rule distinct
-      rule: makeRule({ phase: e.phase ?? 0, reference: { tag: e.ruleId } }),
+      rule: makeRule({
+        type: e.type ?? "requires",
+        phase: e.phase ?? 0,
+        reference: { tag: e.ruleId },
+      }),
       type: e.type ?? "requires",
       status: e.status ?? "pending",
     });
@@ -70,9 +77,9 @@ describe("getCollectionPhaseProgress", () => {
     ]);
 
     const phases = getCollectionPhaseProgress(state);
-    expect(phases.map((p) => p.phase)).toEqual([0, 1]);
+    expect(phases.map((p) => p.phase)).toEqual([0, 1, OPTIONAL_PHASE]);
 
-    const [p0, p1] = phases;
+    const [p0, p1, optionalPhase] = phases;
     // phase 0: one installed + one failed = both required terminal -> complete
     expect(p0.required).toBe(2);
     expect(p0.installed).toBe(1);
@@ -80,12 +87,15 @@ describe("getCollectionPhaseProgress", () => {
     expect(p0.progress).toBe(100);
     expect(p0.isComplete).toBe(true);
 
-    // phase 1: one required still pending (the recommends one does not count) -> incomplete
+    // phase 1: one required still pending -> incomplete
     expect(p1.required).toBe(1);
-    expect(p1.optional).toBe(1);
     expect(p1.pending).toBe(1);
     expect(p1.progress).toBe(0);
     expect(p1.isComplete).toBe(false);
+
+    expect(optionalPhase.optional).toBe(1);
+    expect(optionalPhase.required).toBe(0);
+    expect(optionalPhase.isComplete).toBe(true);
   });
 
   it("treats a phase of only optional mods as complete", () => {
@@ -93,6 +103,36 @@ describe("getCollectionPhaseProgress", () => {
     const [p0] = getCollectionPhaseProgress(state);
     expect(p0.required).toBe(0);
     expect(p0.isComplete).toBe(true);
+  });
+});
+
+describe("getCollectionTotalPhases", () => {
+  it("counts each authored phase plus one for the optional group", () => {
+    const state = stateWith([
+      { ruleId: "r1", phase: 0 },
+      { ruleId: "r2", phase: 2 },
+      { ruleId: "o1", type: "recommends" },
+    ]);
+    expect(getCollectionTotalPhases(state)).toBe(3);
+  });
+});
+
+describe("getCollectionCurrentPhase", () => {
+  it("returns the lowest phase with an outstanding required member", () => {
+    const state = stateWith([
+      { ruleId: "r1", phase: 0, status: "installed" },
+      { ruleId: "r2", phase: 2, status: "pending" },
+      { ruleId: "o1", type: "recommends", status: "pending" },
+    ]);
+    expect(getCollectionCurrentPhase(state)).toBe(2);
+  });
+
+  it("returns -1 once every required member is done, with optionals still pending", () => {
+    const state = stateWith([
+      { ruleId: "r1", phase: 0, status: "installed" },
+      { ruleId: "o1", type: "recommends", status: "pending" },
+    ]);
+    expect(getCollectionCurrentPhase(state)).toBe(-1);
   });
 });
 
