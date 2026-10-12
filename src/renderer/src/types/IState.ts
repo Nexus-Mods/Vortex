@@ -293,6 +293,8 @@ export interface ISettingsMods {
   confirmPurge: boolean;
   cleanupOnDeploy: boolean;
   installerSandbox: boolean;
+  /** Whether the Mods page shows the new table, in beta, rather than the classic one. */
+  betaTable: boolean;
 }
 
 export interface ISettingsNotification {

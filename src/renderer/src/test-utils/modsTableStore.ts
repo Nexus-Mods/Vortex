@@ -15,7 +15,7 @@ export const MODS_TABLE_TEST_GAME = "game";
 /**
  * A store with what the new Mods table reads: the column choices in `settings.tables` and
  * the rows' pins in `settings.toolbars`, which it changes, and a game's mods, downloads
- * and categories, which it only reads.
+ * and categories, which it only reads. The beta view is on unless `betaTable` says not.
  */
 export const makeModsTableStore = ({
   tables = {},
@@ -23,15 +23,22 @@ export const makeModsTableStore = ({
   categories = {},
   modState,
   mods = {},
+  betaTable = true,
 }: {
   tables?: IModsTableTestTables;
   downloads?: { [id: string]: Partial<IDownload> };
   categories?: ICategoryDictionary;
   modState?: { [modId: string]: { enabled: boolean } };
   mods?: { [modId: string]: object };
+  betaTable?: boolean;
 } = {}) => {
   const initial = {
-    settings: { tables, toolbars: {}, profiles: { activeProfileId: "profile" } },
+    settings: {
+      tables,
+      toolbars: {},
+      profiles: { activeProfileId: "profile" },
+      mods: { betaTable },
+    },
     persistent: {
       profiles: { profile: { gameId: MODS_TABLE_TEST_GAME, modState } },
       downloads: { files: downloads },

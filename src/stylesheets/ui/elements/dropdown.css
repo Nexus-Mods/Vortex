@@ -155,6 +155,10 @@
             color: var(--color-premium-moderate);
         }
 
+        &.nxm-dropdown-item-active .nxm-dropdown-item-icon:first-child {
+            color: var(--color-primary-strong);
+        }
+
         &.nxm-dropdown-item-danger {
             color: var(--color-danger-strong);
 

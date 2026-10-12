@@ -23,6 +23,8 @@ export type IToolbarPanel = IPopoverPanel;
  */
 export type IToolbarAction = IMenuAction & {
   showLabel?: boolean;
+  /** Said under the label in its tooltip on the bar, where there's more to say than its name. */
+  description?: string;
   testId?: string;
   /**
    * What a decision to pin this action is stored against, so it must not change with
@@ -72,7 +74,9 @@ const widthSignature = (actions: IToolbarAction[]): string =>
 const controlProps = (action: IToolbarAction) => ({
   appearance: "weak" as const,
   brand: action.brand ?? "neutral",
+  className: action.active ? "nxm-button-active" : undefined,
   "data-testid": action.testId,
+  description: action.description,
   disabled: action.disabled,
   isLoading: action.isLoading,
   label: action.label,
@@ -219,10 +223,11 @@ const ToolbarGroupBody = ({
       ref={groupRef}
       {...props}
     >
+      {/* By id where there is one, so a toggle whose label changes keeps its button, and focus. */}
       {visibleActions.map((action) => (
         <ToolbarControl
           action={action}
-          key={action.label}
+          key={action.id ?? action.label}
           onClick={panelClickReporter(action, tracking?.onActionClick)}
         />
       ))}
