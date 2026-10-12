@@ -1,5 +1,5 @@
 import { mdiArrowDown, mdiArrowUp } from "@mdi/js";
-import React, { type ReactNode } from "react";
+import React, { type ReactNode, type Ref } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
 
@@ -12,6 +12,8 @@ interface ITableHeaderProps<T, G extends ITableGroup<T>> {
   columns: Array<ITableColumn<T, G>>;
   /** Controls above the header row, the head's first row when there are any. */
   toolbar?: ReactNode;
+  /** The toolbar's cell, for the table to measure as what's in it wraps. */
+  toolbarRef?: Ref<HTMLDivElement>;
   /** The column the rows are sorted by, and which way, if any. */
   sort?: ITableSort;
   /** The checkbox for every row, at the start of the first header, when rows can be selected. */
@@ -28,6 +30,7 @@ interface ITableHeaderProps<T, G extends ITableGroup<T>> {
 export const TableHeader = <T, G extends ITableGroup<T>>({
   columns,
   toolbar,
+  toolbarRef,
   checkbox,
   sort,
   onSort,
@@ -40,7 +43,12 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
 
     {!!toolbar && (
       <div aria-rowindex={1} className="nxm-table-toolbar" role="row">
-        <div aria-colspan={columns.length} className="nxm-table-toolbar-cell" role="gridcell">
+        <div
+          aria-colspan={columns.length}
+          className="nxm-table-toolbar-cell"
+          ref={toolbarRef}
+          role="gridcell"
+        >
           {toolbar}
         </div>
       </div>
