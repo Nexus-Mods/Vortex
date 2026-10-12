@@ -74,6 +74,15 @@ describe("groupMods by a column", () => {
     ]);
   });
 
+  it("puts the values a column orders first, in its order, then the rest by name", () => {
+    const groups = groupMods(CATEGORISED, "category", t, {
+      ...category,
+      groupOrder: ["Weapons"],
+    });
+
+    expect(groups.map(({ label }) => label)).toEqual(["No {{column}}", "Weapons", "Armour"]);
+  });
+
   it("leaves the mods ungrouped without the column it names", () => {
     expect(groupMods(CATEGORISED, "category", t)).toBeUndefined();
     expect(groupMods(CATEGORISED, "none", t, category)).toBeUndefined();

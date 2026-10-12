@@ -17,7 +17,7 @@ vi.mock("../collection_revision/CollectionRevision", () => ({
   ),
 }));
 
-import { ModVersion, modVersionText } from "./ModVersion";
+import { ModVersion, modVersionGroup, modVersionText } from "./ModVersion";
 
 const mod = (id: string, version: string, variant?: string, type = "") =>
   ({ id, type, attributes: { version, variant } }) as unknown as IMod;
@@ -144,5 +144,19 @@ describe("ModVersion", () => {
 
     expect(modVersionText(current, undefined, t)).toBe("1.1.15");
     expect(modVersionText(current, [current, mod("b", "1.0")], t)).toBe("1.1.15 (Lite)");
+  });
+});
+
+describe("modVersionGroup", () => {
+  const withNewest = (version: string, newestVersion?: string) =>
+    ({ id: "a", attributes: { source: "nexus", version, newestVersion } }) as unknown as IMod;
+
+  it("groups a mod with no newer version as up to date, as the classic table did", () => {
+    expect(modVersionGroup(withNewest("1.0.0"), t)).toBe("Up-to-date");
+    expect(modVersionGroup(withNewest("1.0.0", "1.0.0"), t)).toBe("Up-to-date");
+  });
+
+  it("groups a mod with a newer version as having an update", () => {
+    expect(modVersionGroup(withNewest("1.0.0", "1.1.0"), t)).toBe("Update available");
   });
 });

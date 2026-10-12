@@ -392,6 +392,7 @@ describe("ModsTableSwitch", () => {
 
         expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
           "None",
+          "Version",
           "Author",
           "Archive name",
           "Category",
@@ -410,6 +411,20 @@ describe("ModsTableSwitch", () => {
         const rows = bodyRows(screen.getByRole("treegrid"));
         expect(rows.map(cellText)).toEqual(["Disabled1", "Beta", "Enabled1", "Alpha"]);
         expect(pressedViews()).toEqual(["false", "false", "false"]);
+      });
+
+      it("groups by version, updates first, as the classic table named them", async () => {
+        renderSwitch({
+          a: mod("a", "Alpha", true, {
+            attributes: { name: "Alpha", source: "nexus", version: "1.0", newestVersion: "1.1" },
+          }),
+          b: mod("b", "Beta", true),
+        });
+
+        await groupBy("Version");
+
+        const rows = bodyRows(screen.getByRole("treegrid"));
+        expect(rows.map(cellText)).toEqual(["Update available1", "Alpha", "Up-to-date1", "Beta"]);
       });
 
       it("selects the view a grouping matches", async () => {

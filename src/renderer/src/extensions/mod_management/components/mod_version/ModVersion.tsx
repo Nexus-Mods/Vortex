@@ -13,6 +13,7 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
 import type { IMod } from "../../types/IMod";
+import updateState from "../../util/modUpdateState";
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { ModUpdate, modUpdateShows } from "../mod_update/ModUpdate";
 import { VersionText } from "../version_text/VersionText";
@@ -37,6 +38,10 @@ export const modVersionText = (mod: IMod, alternatives: IMod[] | undefined, t: T
   mod.type !== COLLECTION_TYPE && (alternatives?.length ?? 0) > 1
     ? versionLabel(mod, t)
     : (mod.attributes?.version ?? "");
+
+/** The group a row falls in by version, as the classic table named them. */
+export const modVersionGroup = (mod: IMod, t: TFunction) =>
+  updateState(mod.attributes ?? {}) === "current" ? t("Up-to-date") : t("Update available");
 
 /**
  * A mod's version and what it says about updating, or a collection's revision with its

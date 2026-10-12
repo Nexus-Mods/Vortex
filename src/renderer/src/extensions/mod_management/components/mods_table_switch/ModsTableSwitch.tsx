@@ -50,7 +50,7 @@ import {
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
 import { ModThumbnail } from "../mod_thumbnail/ModThumbnail";
-import { ModVersion, modVersionText } from "../mod_version/ModVersion";
+import { ModVersion, modVersionGroup, modVersionText } from "../mod_version/ModVersion";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
 import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
@@ -402,6 +402,8 @@ export const ModsTableSwitch = ({
         isToggleable: true,
         position: 40,
         searchText: ({ mod }) => modVersionText(mod, alternatives[mod.id], t),
+        groupBy: ({ mod }) => modVersionGroup(mod, t),
+        groupOrder: [t("Update available"), t("Up-to-date")],
         cell: ({ mod }) => (
           <ModVersion
             alternatives={alternatives[mod.id]}
