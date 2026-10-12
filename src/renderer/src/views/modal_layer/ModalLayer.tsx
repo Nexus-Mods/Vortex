@@ -29,6 +29,13 @@ const rememberedDialogIds = (dialogs: IDialog[], current: IDialog): string[] => 
     .map((dialog) => dialog.id);
 };
 
+// Buttons that destroy something get the danger variant. In a dialog with one, the default button
+// stays neutral, so the red button is the only one that stands out. Add a label as design asks.
+const DANGER_ACTIONS = new Set(["Remove"]);
+
+// A short message reads better in the small modal. Longer ones keep the medium size.
+const SMALL_MAX_TEXT_LENGTH = 120;
+
 // Escape and backdrop clicks don't answer a legacy dialog, so there is nothing for them to do
 // here either: closing without an action would leave the caller's promise pending forever.
 const ignoreClose = () => undefined;
@@ -62,6 +69,15 @@ export const ModalLayer = () => {
 
   const translate = (text: string) => t(text, { replace: content.parameters, count });
 
+  // `translated` means the caller already translated the text, so only interpolate.
+  const text = t(content.text, {
+    replace: content.parameters,
+    count,
+    ...(content.options?.translated && { lngs: [] }),
+  });
+
+  const hasDangerAction = actions.some((action) => DANGER_ACTIONS.has(action));
+
   const answer = (action: string) => {
     // `{}` is what the legacy renderer hands back when the dialog has no controls.
     const input = Object.fromEntries(checkboxes.map((box) => [box.id, isChecked(box)]));
@@ -79,17 +95,12 @@ export const ModalLayer = () => {
       isOpen
       key={id}
       showCloseButton={false}
-      size="md"
+      size={text.length <= SMALL_MAX_TEXT_LENGTH ? "sm" : "md"}
       title={translate(title)}
       onClose={ignoreClose}
     >
       <Typography appearance="subdued" className="whitespace-pre-wrap" typographyType="body-sm">
-        {/* `translated` means the caller already translated the text, so only interpolate. */}
-        {t(content.text, {
-          replace: content.parameters,
-          count,
-          ...(content.options?.translated && { lngs: [] }),
-        })}
+        {text}
       </Typography>
 
       {checkboxes.length > 0 && (
@@ -111,17 +122,20 @@ export const ModalLayer = () => {
         </div>
       )}
 
-      <div className="mt-4 flex gap-x-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         {actions.map((action) => {
           const isDefault = action === defaultAction;
+          const isDanger = DANGER_ACTIONS.has(action);
+          const isPrimary = isDefault && !hasDangerAction;
 
           return (
             <Button
-              className="flex-1"
+              className="min-w-fit flex-1"
               data-testid={`dialog-action-${action}`}
               key={action}
               ref={isDefault ? defaultButtonRef : undefined}
-              {...(!isDefault && { appearance: "moderate", brand: "neutral" })}
+              {...(isDanger && { brand: "danger" })}
+              {...(!isDanger && !isPrimary && { appearance: "moderate", brand: "neutral" })}
               onClick={() => answer(action)}
             >
               {t(action)}

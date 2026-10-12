@@ -206,4 +206,54 @@ describe("ModalLayer", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
+  describe("size", () => {
+    it("uses the small modal for a short message", async () => {
+      renderLayer([dialogWith("one", { text: "Remove it?" })]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-sm");
+
+      await settleTransitions();
+    });
+
+    it("uses the medium modal for a longer message", async () => {
+      renderLayer([dialogWith("one", { text: "x".repeat(121) })]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
+
+      await settleTransitions();
+    });
+  });
+  describe("destructive actions", () => {
+    const removing = (): IDialog => ({
+      ...dialogWith("one", { text: "Remove it?" }),
+      defaultAction: "Cancel",
+      actions: ["Cancel", "Remove"],
+    });
+
+    it("shows Remove as a danger button and keeps the default Cancel neutral", async () => {
+      renderLayer([removing()]);
+
+      expect(screen.getByTestId("dialog-action-Remove")).toHaveClass("nxm-button-danger");
+      expect(screen.getByTestId("dialog-action-Cancel")).toHaveClass("nxm-button-neutral");
+      expect(screen.getByTestId("dialog-action-Cancel")).not.toHaveClass("nxm-button-primary");
+
+      await settleTransitions();
+    });
+
+    it("still focuses the default action", async () => {
+      renderLayer([removing()]);
+
+      await settleTransitions();
+
+      expect(screen.getByTestId("dialog-action-Cancel")).toHaveFocus();
+    });
+
+    it("keeps the default action primary when nothing is destructive", async () => {
+      renderLayer([dialogWith("one", { text: "Hello" })]);
+
+      expect(screen.getByTestId("dialog-action-Delete")).toHaveClass("nxm-button-primary");
+
+      await settleTransitions();
+    });
+  });
 });
