@@ -29,6 +29,7 @@ ui/
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
 │   ├── listing/         - List display component
+│   ├── message_box/     - Read-only, selectable box for details, optionally behind a show/hide toggle
 │   ├── modal/           - Modal dialog (Headless UI Dialog)
 │   ├── pictogram/       - Decorative SVG pictograms
 │   ├── listing_loader/  - Loading skeleton for lists

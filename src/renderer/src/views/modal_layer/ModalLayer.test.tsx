@@ -342,4 +342,43 @@ describe("ModalLayer", () => {
       await settleTransitions();
     });
   });
+  describe("message", () => {
+    it("shows the message in a read-only box, joining the parts of a line with a space", async () => {
+      renderLayer([dialogWith("one", { text: "Failed", message: "first\tpart\nsecond line" })]);
+
+      expect(screen.getByTestId("dialog-message")).toHaveValue("first part\nsecond line");
+
+      await settleTransitions();
+    });
+
+    it("keeps the message behind a toggle when the dialog asks to hide it", async () => {
+      renderLayer([
+        dialogWith("one", { text: "Failed", message: "details", options: { hideMessage: true } }),
+      ]);
+
+      expect(screen.queryByTestId("dialog-message")).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByTestId("dialog-message-toggle"));
+
+      expect(screen.getByTestId("dialog-message")).toHaveValue("details");
+
+      await settleTransitions();
+    });
+
+    it("uses the medium modal even when the text is short", async () => {
+      renderLayer([dialogWith("one", { text: "Short.", message: "details" })]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
+
+      await settleTransitions();
+    });
+
+    it("shows a dialog that is only a message", async () => {
+      renderLayer([dialogWith("one", { message: "details" })]);
+
+      expect(screen.getByTestId("dialog-message")).toHaveValue("details");
+
+      await settleTransitions();
+    });
+  });
 });

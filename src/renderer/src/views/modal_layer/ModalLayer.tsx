@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Button } from "@/ui/components/button/Button";
 import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField";
 import { TextField } from "@/ui/components/form/text_field/TextField";
+import { MessageBox } from "@/ui/components/message_box/MessageBox";
 import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
@@ -86,6 +87,24 @@ export const ModalLayer = () => {
       })
     : "";
 
+  // Each line, and each tab-separated part of it, is a translation key, as in the legacy renderer.
+  const translateMessage = (message: string) =>
+    message
+      .split("\n")
+      .map((line) =>
+        line
+          .split("\t")
+          .map((part) =>
+            t(part, {
+              replace: content.parameters,
+              count,
+              ...(content.options?.translated && { lngs: [] }),
+            }),
+          )
+          .join(" "),
+      )
+      .join("\n");
+
   const hasDangerAction = actions.some((action) => DANGER_ACTIONS.has(action));
 
   const answer = (action: string) => {
@@ -116,7 +135,7 @@ export const ModalLayer = () => {
       isOpen
       key={id}
       showCloseButton={false}
-      size={text.length <= SMALL_MAX_TEXT_LENGTH ? "sm" : "md"}
+      size={!content.message && text.length <= SMALL_MAX_TEXT_LENGTH ? "sm" : "md"}
       title={translate(title)}
       onClose={ignoreClose}
     >
@@ -124,6 +143,16 @@ export const ModalLayer = () => {
         <Typography appearance="subdued" className="whitespace-pre-wrap" typographyType="body-sm">
           {text}
         </Typography>
+      )}
+
+      {content.message !== undefined && (
+        <MessageBox
+          hideLabel={t("Hide Details")}
+          isCollapsible={content.options?.hideMessage === true}
+          message={translateMessage(content.message)}
+          shouldWrap={content.options?.wrap === true}
+          showLabel={t("Show Details")}
+        />
       )}
 
       {inputs.length > 0 && (

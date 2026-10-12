@@ -5,6 +5,7 @@ import type { ICheckbox, IDialog, IDialogContent, IInput, ILink } from "../../ty
 // design; once ModalLayer draws everything, this file and the legacy Dialog can both go.
 const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "text",
+  "message",
   "checkboxes",
   "input",
   "links",
@@ -12,9 +13,9 @@ const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "options",
 ]);
 
-// The options that only change how the text is read. The rest (such as `order`) change the layout
-// in ways ModalLayer doesn't follow.
-const SUPPORTED_OPTIONS = new Set(["translated", "wrap"]);
+// The options ModalLayer follows: how the text is read, and how the message box behaves. The rest
+// (such as `order`) change the layout in ways it doesn't.
+const SUPPORTED_OPTIONS = new Set(["translated", "wrap", "hideMessage"]);
 
 const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>(["id", "value", "text", "disabled"]);
 
@@ -60,7 +61,7 @@ export const canRenderWithModal = (dialog: IDialog): boolean => {
   const { actions, content } = dialog;
 
   return (
-    (!!content.text || (content.input?.length ?? 0) > 0) &&
+    (!!content.text || !!content.message || (content.input?.length ?? 0) > 0) &&
     actions.length >= 1 &&
     actions.length <= MAX_ACTIONS &&
     usesOnly(content, SUPPORTED_CONTENT) &&

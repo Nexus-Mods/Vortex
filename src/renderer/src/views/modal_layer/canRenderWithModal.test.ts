@@ -38,7 +38,6 @@ describe("canRenderWithModal", () => {
 
   it.each<[string, IDialogContent["options"]]>([
     ["order", { order: ["checkboxes", "text"] }],
-    ["hideMessage", { hideMessage: true }],
     ["linksAsButtons", { linksAsButtons: true }],
     ["bbcodeContext", { bbcodeContext: {} as never }],
   ])("rejects the %s option, which ModalLayer does not follow", (_name, options) => {
@@ -56,7 +55,6 @@ describe("canRenderWithModal", () => {
   });
 
   it.each<[string, IDialogContent]>([
-    ["message", { text: "t", message: "m" }],
     ["bbcode", { text: "t", bbcode: "[b]b[/b]" }],
     ["md", { text: "t", md: "# h" }],
     ["htmlText", { text: "t", htmlText: "<b>b</b>" }],
@@ -82,6 +80,18 @@ describe("canRenderWithModal", () => {
     ["a field it has never heard of", { id: "a", value: false, text: "t", extra: 1 } as ICheckbox],
   ])("rejects a checkbox with %s", (_name, checkbox) => {
     expect(canRenderWithModal(dialogWith({ text: "t", checkboxes: [checkbox] }))).toBe(false);
+  });
+
+  describe("message", () => {
+    it("accepts a message, with or without text, and the options that shape its box", () => {
+      expect(canRenderWithModal(dialogWith({ text: "t", message: "m" }))).toBe(true);
+      expect(canRenderWithModal(dialogWith({ message: "m" }))).toBe(true);
+      expect(
+        canRenderWithModal(
+          dialogWith({ text: "t", message: "m", options: { wrap: true, hideMessage: true } }),
+        ),
+      ).toBe(true);
+    });
   });
 
   describe("inputs", () => {
