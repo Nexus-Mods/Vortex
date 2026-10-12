@@ -53,7 +53,12 @@ export const ModVersion = ({ mod, alternatives, onSelect, onRemove }: IModVersio
 
   return (
     // The version shrinks before the buttons after it, which sit closer to a dropdown.
-    <div className={joinClasses(["flex min-w-0 items-center", hasChoice ? "gap-x-1" : "gap-x-2"])}>
+    <div
+      className={joinClasses([
+        "flex min-w-0 flex-1 items-center",
+        hasChoice ? "gap-x-1" : "gap-x-2",
+      ])}
+    >
       {!hasChoice ? (
         <VersionText fixed={modUpdateShows(mod)} version={mod.attributes?.version ?? ""} />
       ) : (
@@ -98,7 +103,7 @@ const ModVersionPicker = ({
   );
 
   return (
-    <Popover className="flex min-w-0">
+    <Popover className="flex min-w-0 flex-1">
       {({ open }) => (
         <>
           <Tooltip
@@ -112,13 +117,11 @@ const ModVersionPicker = ({
             }
             disabled={open}
           >
-            {/* As wide as its label, up to the cell's width, past which the label truncates:
-                shrinking, as a button doesn't by default. */}
             <PopoverButton
               appearance="moderate"
               aria-haspopup="menu"
               brand="neutral"
-              className="min-w-0 shrink px-1 [&>span]:truncate"
+              className="min-w-0 flex-1 justify-between px-1 [&>span]:truncate"
               rightIconPath={mdiChevronDown}
               size="sm"
             >
