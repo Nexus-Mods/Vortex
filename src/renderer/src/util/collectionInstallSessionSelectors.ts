@@ -4,7 +4,7 @@ import { createSelector } from "reselect";
 
 import { activeDownloads } from "../extensions/download_management/selectors";
 import { modsForActiveGame } from "../extensions/mod_management/selectors";
-import { rulePhase } from "../extensions/mod_management/util/rulePhase";
+import { collectionRulePhases, rulePhase } from "../extensions/mod_management/util/rulePhase";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 import testModReference, {
   isOptionalRule,
@@ -266,15 +266,19 @@ export const getCollectionModsForPhase = (
   return Object.values(mods).filter((mod) => rulePhase(mod.rule) === phase);
 };
 
+const getCollectionSessionPhases = (state: IState): number[] =>
+  collectionRulePhases(
+    Object.values(getCollectionActiveSessionMods(state))
+      .map((mod) => mod.rule)
+      .filter((rule) => rule !== undefined),
+  );
+
 /**
  * Get the total number of phases in the active session
- * @returns The highest phase number, or 0 if no active session
+ * @returns The number of distinct phases, optionals counting as one
  */
-export const getCollectionTotalPhases = (state: IState): number => {
-  const mods = getCollectionActiveSessionMods(state);
-  const phases = Object.values(mods).map((mod) => rulePhase(mod.rule));
-  return phases.length > 0 ? Math.max(...phases) + 1 : 0;
-};
+export const getCollectionTotalPhases = (state: IState): number =>
+  getCollectionSessionPhases(state).length;
 
 /**
  * Get installation progress statistics for the active session
@@ -506,19 +510,10 @@ export const isCollectionPhaseSettledSuccessfully = (state: IState, phase: numbe
 
 /**
  * Get the current phase being processed
- * @returns The lowest phase number with incomplete mods, or -1 if all complete
+ * @returns The lowest phase with incomplete required mods, or -1 once all required mods are done
  */
-export const getCollectionCurrentPhase = (state: IState): number => {
-  const totalPhases = getCollectionTotalPhases(state);
-
-  for (let phase = 0; phase < totalPhases; phase++) {
-    if (!isCollectionPhaseComplete(state, phase)) {
-      return phase;
-    }
-  }
-
-  return -1; // All phases complete
-};
+export const getCollectionCurrentPhase = (state: IState): number =>
+  getCollectionSessionPhases(state).find((phase) => !isCollectionPhaseComplete(state, phase)) ?? -1;
 
 /**
  * Get detailed phase progress information

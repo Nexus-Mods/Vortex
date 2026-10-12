@@ -5,7 +5,7 @@
  */
 
 import type { IModRule } from "../types/IMod";
-import { isDependencyRule } from "./testModReference";
+import { isDependencyRule, isOptionalRule, isRequiredRule } from "./testModReference";
 
 /**
  * Install phase reserved for optional (recommends) members. It sorts after every authored
@@ -39,4 +39,28 @@ export function collectionRulePhases(rules: IModRule[]): number[] {
   const phases = new Set<number>();
   (rules ?? []).filter(isDependencyRule).forEach((rule) => phases.add(rulePhase(rule)));
   return Array.from(phases).sort((a, b) => a - b);
+}
+
+/** Undefined for an optional, which installs after every phase. */
+export function assignablePhase(rule: IModRule | undefined): number | undefined {
+  return rule !== undefined && isOptionalRule(rule) ? undefined : rulePhase(rule);
+}
+
+/** A phase does not carry across a type change, so the copy drops it from both locations. */
+export function changeRuleType(rule: IModRule, type: "requires" | "recommends"): IModRule {
+  if (rule.type === type) {
+    return rule;
+  }
+  const { phase: _phase, extra, ...rest } = rule;
+  if (extra === undefined) {
+    return { ...rest, type };
+  }
+  const { phase: _legacyPhase, ...otherExtra } = extra;
+  return { ...rest, type, extra: otherExtra };
+}
+
+export function highestRequiredPhase(rules: IModRule[]): number {
+  return rules
+    .filter(isRequiredRule)
+    .reduce((highest, rule) => Math.max(highest, rulePhase(rule)), 0);
 }
