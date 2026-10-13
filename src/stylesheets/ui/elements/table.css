@@ -11,7 +11,9 @@
         --nxm-table-head-height: calc(
             var(--nxm-table-head-padding) * 2 + var(--nxm-table-header-height)
         );
-        --nxm-table-toolbar-height: calc(var(--spacing) * 9);
+        /* At least one line of controls; the table measures it taller as they wrap. */
+        --nxm-table-toolbar-min-height: calc(var(--spacing) * 9);
+        --nxm-table-toolbar-height: var(--nxm-table-toolbar-min-height);
         --nxm-table-leading-width: calc(var(--spacing) * 5);
         --nxm-table-sticky-fade: calc(var(--spacing) * 2);
         --nxm-table-sticky-solid: calc(var(--spacing) * 3);
@@ -131,13 +133,63 @@
         }
     }
 
+    /* As tall as its controls, not stretched to the row, so the table can measure it as they
+       wrap; at the top, centred in the first line's height. */
     .nxm-table-toolbar-cell {
         display: flex;
         flex: 1;
-        align-items: center;
+        align-self: flex-start;
+        align-items: flex-start;
+        min-height: var(--nxm-table-toolbar-min-height);
         justify-content: space-between;
         gap: calc(var(--spacing) * 2);
         min-width: 0;
+        padding-block: calc((var(--nxm-table-toolbar-min-height) - var(--spacing) * 7) / 2);
+    }
+
+    /* A view in the toolbar, a toggle: lit while it's the open one. One with a menu holds
+       its "…" button tight to its right edge. */
+    .nxm-table-view-button {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        column-gap: calc(var(--spacing) * 1.5);
+        height: calc(var(--spacing) * 7);
+        padding-inline: calc(var(--spacing) * 2);
+        border-radius: var(--radius-sm);
+        background-color: var(--color-surface-low);
+        color: var(--color-neutral-subdued);
+        white-space: nowrap;
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+        cursor: pointer;
+        transition-property: color, background-color, outline-color;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &:hover {
+            color: var(--color-neutral-strong);
+            background-image: linear-gradient(
+                --alpha(var(--color-white) / 3%),
+                --alpha(var(--color-white) / 3%)
+            );
+        }
+
+        &[aria-pressed="true"] {
+            color: var(--color-neutral-strong);
+            background-color: var(--color-surface-mid);
+            background-image: none;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-subdued);
+            outline-offset: 2px;
+        }
+    }
+
+    .nxm-table-view-button-menu {
+        padding-right: calc(var(--spacing) * 0.5);
     }
 
     .nxm-table-header {

@@ -47,6 +47,14 @@ const renderSwitch = (
 
 const showView = (name: string) => userEvent.click(screen.getByRole("button", { name }));
 
+// The views, by whether each is open; the Add view button beside them isn't one.
+const viewButtons = () =>
+  within(screen.getByRole("group", { name: "Views" }))
+    .getAllByRole("button")
+    .filter((button) => button.hasAttribute("aria-pressed"));
+
+const pressedViews = () => viewButtons().map((view) => view.getAttribute("aria-pressed"));
+
 const groupBy = async (option: string) => {
   await userEvent.click(screen.getByRole("button", { name: "View options" }));
   await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
@@ -161,16 +169,182 @@ describe("ModsTableSwitch", () => {
     });
   });
 
-  it("offers the preset views, showing all the mods to begin with", () => {
+  it("offers the built-in views, showing all the mods to begin with", () => {
     renderSwitch({ a: mod("a", "Alpha", true) });
 
-    const views = within(screen.getByRole("group", { name: "Views" })).getAllByRole("button");
-    expect(views.map((view) => view.textContent)).toEqual(["All mods", "Collections", "Status"]);
-    expect(views.map((view) => view.getAttribute("aria-pressed"))).toEqual([
-      "true",
-      "false",
-      "false",
+    expect(viewButtons().map((view) => view.textContent)).toEqual([
+      "All mods",
+      "Status",
+      "Categories",
     ]);
+    expect(pressedViews()).toEqual(["true", "false", "false"]);
+  });
+
+  it("offers Updates and Collections only while there's an update or a collection", () => {
+    renderSwitch({
+      a: mod("a", "Alpha", true, {
+        state: "installed",
+        attributes: { name: "Alpha", source: "nexus", version: "1.0", newestVersion: "1.1" },
+      }),
+      pack: collection("pack", "Starter Pack", ["a"]),
+    });
+
+    expect(viewButtons().map((view) => view.textContent)).toEqual([
+      "All mods",
+      "Status",
+      "Updates",
+      "Categories",
+      "Collections",
+    ]);
+  });
+
+  describe("a view of the user's own", () => {
+    const createView = async (name: string) => {
+      await userEvent.click(screen.getByRole("button", { name: "Add view" }));
+      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), name);
+      await userEvent.click(screen.getByRole("button", { name: "Create view" }));
+    };
+
+    it("is made from Add view, after the built-in ones, and opens", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await createView("Recently installed");
+
+      expect(viewButtons().map((view) => view.textContent)).toEqual([
+        "All mods",
+        "Status",
+        "Categories",
+        "Recently installed",
+      ]);
+      expect(pressedViews()).toEqual(["false", "false", "false", "true"]);
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("starts each new view's name afresh, after one was cancelled", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await userEvent.click(screen.getByRole("button", { name: "Add view" }));
+      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), "Half-typed");
+      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      await userEvent.click(screen.getByRole("button", { name: "Add view" }));
+
+      expect(screen.getByRole("textbox", { name: "Name view" })).toHaveValue("");
+    });
+
+    it("starts ungrouped, with the version and installation time columns", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await createView("Mine");
+
+      expect(screen.getByRole("grid")).toBeInTheDocument();
+      expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
+        "Name",
+        "Version",
+        "Installation time",
+        "Actions",
+      ]);
+    });
+
+    // Named for its view, which the identity translation leaves as the key.
+    const openViewMenu = () =>
+      userEvent.click(screen.getByRole("button", { name: "{{name}} view actions" }));
+
+    it("opens its menu from the … inside its button, without opening the view", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await createView("Mine");
+      await showView("All mods");
+
+      await openViewMenu();
+
+      expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+        "Rename view",
+        "Edit view options",
+        "Delete view",
+      ]);
+      expect(pressedViews()).toEqual(["true", "false", "false", "false"]);
+    });
+
+    it("is renamed from its menu, in the name modal", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await createView("Mine");
+
+      await openViewMenu();
+      await userEvent.click(screen.getByRole("menuitem", { name: "Rename view" }));
+      const field = screen.getByRole("textbox", { name: "Name view" });
+      expect(field).toHaveValue("Mine");
+      await userEvent.clear(field);
+      await userEvent.type(field, "Theirs{Enter}");
+
+      expect(viewButtons().map((view) => view.textContent)).toContain("Theirs");
+    });
+
+    it("is deleted from its menu once confirmed, back to All mods", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await createView("Mine");
+
+      await openViewMenu();
+      await userEvent.click(screen.getByRole("menuitem", { name: "Delete view" }));
+      expect(screen.getByRole("dialog", { name: "Delete view" })).toHaveTextContent(
+        "Are you sure you want to delete",
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Delete view" }));
+
+      expect(viewButtons().map((view) => view.textContent)).toEqual([
+        "All mods",
+        "Status",
+        "Categories",
+      ]);
+      expect(pressedViews()).toEqual(["true", "false", "false"]);
+    });
+
+    it("is kept if the delete isn't confirmed", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await createView("Mine");
+
+      await openViewMenu();
+      await userEvent.click(screen.getByRole("menuitem", { name: "Delete view" }));
+      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(viewButtons().map((view) => view.textContent)).toContain("Mine");
+    });
+
+    it("opens the view and its view options from its menu", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await createView("Mine");
+      await showView("All mods");
+
+      await openViewMenu();
+      await userEvent.click(screen.getByRole("menuitem", { name: "Edit view options" }));
+
+      expect(pressedViews()).toEqual(["false", "false", "false", "true"]);
+      expect(await screen.findByRole("button", { name: /Group by/ })).toBeInTheDocument();
+    });
+
+    it("keeps what's changed about it, with no default to reset to", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await createView("Mine");
+      await groupBy("Author");
+
+      expect(screen.getByRole("treegrid")).toBeInTheDocument();
+      expect(screen.queryByText("Reset to default")).toBeNull();
+    });
+  });
+
+  it("opens the view the user left open", () => {
+    renderSwitch({ a: mod("a", "Alpha", true) }, [], {
+      views: { selected: "status", changes: {}, custom: [] },
+    });
+
+    expect(pressedViews()).toEqual(["false", "true", "false"]);
+  });
+
+  it("opens the first view while the one left open isn't offered", () => {
+    renderSwitch({ a: mod("a", "Alpha", true) }, [], {
+      views: { selected: "updates", changes: {}, custom: [] },
+    });
+
+    expect(pressedViews()).toEqual(["true", "false", "false"]);
   });
 
   it("groups the mods from no collection first, then each collection's", async () => {
@@ -454,10 +628,32 @@ describe("ModsTableSwitch", () => {
   describe("display options", () => {
     const headers = () => screen.getAllByRole("columnheader").map((header) => header.textContent);
 
-    it("shows the version, collection and installation time columns by default", () => {
+    it("shows the version and installation time columns by default", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
+      expect(headers()).toEqual(["Name", "Version", "Installation time", "Actions"]);
+    });
+
+    it("shows the collection column too in the Collections view", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), pack: collection("pack", "Pack", ["a"]) });
+
+      await showView("Collections");
+
       expect(headers()).toEqual(["Name", "Version", "Collection", "Installation time", "Actions"]);
+    });
+
+    it("keeps the columns shown to the view they were shown in", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await userEvent.click(screen.getByRole("button", { name: "View options" }));
+      await userEvent.click(screen.getByRole("button", { name: "Author" }));
+      expect(headers()).toContain("Author");
+
+      await showView("Status");
+      expect(headers()).not.toContain("Author");
+
+      await showView("All mods");
+      expect(headers()).toContain("Author");
     });
 
     it("adds a column chosen from the display options", async () => {
@@ -479,11 +675,6 @@ describe("ModsTableSwitch", () => {
         b: mod("b", "Beta", false),
       };
 
-      const pressedViews = () =>
-        within(screen.getByRole("group", { name: "Views" }))
-          .getAllByRole("button")
-          .map((view) => view.getAttribute("aria-pressed"));
-
       it("offers none, then each column that can group, in the table's order", async () => {
         renderSwitch(CATEGORISED);
 
@@ -503,17 +694,17 @@ describe("ModsTableSwitch", () => {
         ]);
       });
 
-      it("groups by a column's values, no view selected", async () => {
+      it("groups the open view by a column's values, which stays open", async () => {
         renderSwitch(CATEGORISED);
 
         await groupBy("Category");
 
         const rows = bodyRows(screen.getByRole("treegrid"));
         expect(rows.map(cellText)).toEqual(["No {{column}}2", "Alpha", "Beta"]);
-        expect(pressedViews()).toEqual(["false", "false", "false"]);
+        expect(pressedViews()).toEqual(["true", "false", "false"]);
       });
 
-      it("groups by status: uninstalled, installing, enabled, then disabled, its view selected", async () => {
+      it("groups the Status view uninstalled, installing, enabled, then disabled", async () => {
         renderSwitch({
           ...CATEGORISED,
           i: mod("i", "Iota", false, { state: "installing" }),
@@ -523,7 +714,7 @@ describe("ModsTableSwitch", () => {
           }),
         });
 
-        await groupBy("Status");
+        await showView("Status");
 
         const rows = bodyRows(screen.getByRole("treegrid"));
         expect(rows.map(cellText)).toEqual([
@@ -536,7 +727,6 @@ describe("ModsTableSwitch", () => {
           "Disabled1",
           "Beta",
         ]);
-        expect(pressedViews()).toEqual(["false", "false", "true"]);
       });
 
       it("groups by version, updates first, as the classic table named them", async () => {
@@ -553,27 +743,48 @@ describe("ModsTableSwitch", () => {
         expect(rows.map(cellText)).toEqual(["Update available1", "Alpha", "Up-to-date1", "Beta"]);
       });
 
-      it("selects no view for a grouping without one, such as Author", async () => {
+      it("keeps a view's grouping to it, and back on returning to it", async () => {
         renderSwitch(CATEGORISED);
 
         await groupBy("Author");
+        await showView("Status");
+        expect(screen.queryByRole("button", { name: "Ada" })).toBeNull();
 
-        expect(pressedViews()).toEqual(["false", "false", "false"]);
+        await showView("All mods");
+        expect(screen.getByRole("button", { name: "Ada" })).toBeInTheDocument();
+      });
+
+      it("keeps a built-in view that groups to its grouping, leaving All mods free", async () => {
+        renderSwitch(CATEGORISED);
+        const picker = () => screen.getByRole("button", { name: /Group by/ });
+
+        await showView("Status");
+        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+        expect(picker()).toBeDisabled();
+        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+
+        await showView("All mods");
+        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+        expect(picker()).toBeEnabled();
       });
 
       it("shows what a view groups by", async () => {
         renderSwitch(CATEGORISED);
 
-        await showView("Collections");
+        await showView("Categories");
         await userEvent.click(screen.getByRole("button", { name: "View options" }));
 
-        expect(screen.getByRole("button", { name: /Group by/ })).toHaveTextContent("Collection");
+        expect(screen.getByRole("button", { name: /Group by/ })).toHaveTextContent("Category");
       });
 
-      it("ungroups on reset", async () => {
+      it("resets a built-in view to its defaults, offering to only once it's changed", async () => {
         renderSwitch(CATEGORISED);
 
-        await groupBy("Status");
+        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+        expect(screen.queryByText("Reset to default")).toBeNull();
+        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+
+        await groupBy("Author");
         await userEvent.click(screen.getByText("Reset to default"));
 
         expect(screen.getByRole("grid")).toBeInTheDocument();
@@ -806,9 +1017,9 @@ describe("ModsTableSwitch", () => {
         pack: collection("pack", "Starter Pack", ["b"]),
       });
 
-      // Collection shows by default, and the collection's own row its name; Author doesn't show.
+      // Collection doesn't show in All mods, so only the collection's own row has its name.
       await searchFor("starter");
-      expect(names()).toEqual(["Beta", "Starter Pack"]);
+      expect(names()).toEqual(["Starter Pack"]);
 
       await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
       await userEvent.keyboard("gervig");

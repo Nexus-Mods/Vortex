@@ -5,6 +5,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { activeGameId } from "@/util/selectors";
 
 import type { IMod } from "../../types/IMod";
+import { collectionRevisions } from "../../util/mod_has_update/modHasUpdate";
 
 /** A revision's changelog, by collection slug and revision; "" for one that has none. */
 const changelogs = new Map<string, Promise<string>>();
@@ -25,16 +26,6 @@ const setUpdating = (id: string, value: boolean) => {
     updating.delete(id);
   }
   listeners.forEach((listener) => listener());
-};
-
-const revisionNumber = (value: string | undefined) => parseInt(value ?? "0", 10) || 0;
-
-/** An installed collection's revision, the newest that's out, and whether that's newer. */
-export const collectionRevisions = (collection: IMod) => {
-  const revision = revisionNumber(collection.attributes?.version);
-  const newest = Math.max(revision, revisionNumber(collection.attributes?.newestVersion));
-
-  return { revision, newest, hasUpdate: newest > revision };
 };
 
 /**

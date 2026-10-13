@@ -1,4 +1,12 @@
-import React, { type CSSProperties, Fragment, useCallback, useMemo, useState } from "react";
+import React, {
+  type CSSProperties,
+  Fragment,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -123,6 +131,23 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
   const backdrops = useTableGroupBackdrops({ getItemSize, items, rendered: virtual.items });
 
+  // The toolbar grows as what's in it wraps, and the head, the scroll margins and the group
+  // backdrops all reckon with its height, so it's measured into the variable they read.
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarHeight, setToolbarHeight] = useState<number>();
+  const hasToolbar = !!toolbar;
+
+  useLayoutEffect(() => {
+    const element = toolbarRef.current;
+    if (element === null || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver(() => setToolbarHeight(element.offsetHeight));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [hasToolbar]);
+
   return (
     <div
       aria-label={label}
@@ -138,6 +163,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-height": `${GROUP_ROW_HEIGHT}px`,
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           "--nxm-table-sticky-reveal": revealWidth,
+          "--nxm-table-toolbar-height": toolbarHeight ? `${toolbarHeight}px` : undefined,
           gridTemplateColumns: [
             "var(--nxm-table-gutter-start)",
             ...columns.map((column) => column.width ?? DEFAULT_COLUMN_WIDTH),
@@ -164,6 +190,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         checkbox={selectable ? selection.header : undefined}
         sort={sort}
         toolbar={toolbar}
+        toolbarRef={toolbarRef}
         onSort={toggleSort}
       />
 

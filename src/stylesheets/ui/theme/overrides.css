@@ -32,6 +32,11 @@
             cursor: pointer !important;
         }
 
+        /* And every role="button" too; a button is a button, whatever its element. */
+        [role="button"] {
+            cursor: pointer !important;
+        }
+
         /* The legacy brand colour, where a region's two scrollbars meet. */
         ::-webkit-scrollbar-corner {
             background-color: transparent !important;

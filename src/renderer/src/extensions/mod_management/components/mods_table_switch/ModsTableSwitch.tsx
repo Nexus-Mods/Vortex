@@ -46,6 +46,7 @@ import {
   useModsTableColumns,
 } from "../../hooks/use_mods_table_columns/useModsTableColumns.hook";
 import { useModsTableDataColumns } from "../../hooks/use_mods_table_data_columns/useModsTableDataColumns.hook";
+import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
 import { UNINSTALLING_ACTIVITY } from "../../hooks/use_uninstall_mods/useUninstallMods.hook";
 import type { IModWithState } from "../../types/IModProps";
 import {
@@ -54,7 +55,6 @@ import {
   type IModGroup,
   type IModRow,
   type ISharedMods,
-  type ModsTableGrouping,
   sharedMods,
 } from "../../util/mods_table_views/modsTableViews";
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
@@ -316,7 +316,21 @@ export const ModsTableSwitch = ({
   const { t } = useTranslation(["common"]);
   const newTable = useSelector(betaTable);
 
-  const [grouping, setGrouping] = useState<ModsTableGrouping>("none");
+  const {
+    views,
+    view,
+    grouping,
+    groupingLocked,
+    isColumnShown,
+    canReset,
+    select: selectView,
+    setGrouping,
+    setColumnVisible,
+    reset: resetView,
+    addView,
+    renameView,
+    removeView,
+  } = useModsTableView(mods);
   const rows = useMemo(() => allModRows(mods), [mods]);
   const [search, setSearch] = useState("");
   const memberships = useMemo(() => collectionsByMod(mods), [mods]);
@@ -545,8 +559,7 @@ export const ModsTableSwitch = ({
     ],
   );
 
-  const { visibleColumns, toggles, groupable, canReset, setColumnVisible, resetColumns } =
-    useModsTableColumns(columns);
+  const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
 
   // Regroups when the grouped-by column changes, not whenever any column does, as Status does on each switch.
   const groupColumn = groupable.find((column) => column.id === grouping);
@@ -591,18 +604,20 @@ export const ModsTableSwitch = ({
 
   const displayOptions = useDisplayOptionsAction({
     label: t("View options"),
-    canReset: canReset || grouping !== "none",
+    canReset,
     children: (
       <>
-        <ModsTableGroupBy columns={groupable} grouping={grouping} onChange={setGrouping} />
+        <ModsTableGroupBy
+          columns={groupable}
+          disabled={groupingLocked}
+          grouping={grouping}
+          onChange={setGrouping}
+        />
 
         <ModsTableColumnToggles toggles={toggles} onToggle={setColumnVisible} />
       </>
     ),
-    onReset: () => {
-      resetColumns();
-      setGrouping("none");
-    },
+    onReset: resetView,
   });
 
   if (!newTable) {
@@ -634,10 +649,14 @@ export const ModsTableSwitch = ({
     toolbar: (
       <ModsTableToolbar
         displayOptions={displayOptions}
-        grouping={grouping}
         search={search}
-        onGroupingChange={setGrouping}
+        selectedView={view.id}
+        views={views}
+        onAddView={addView}
+        onRemoveView={removeView}
+        onRenameView={renameView}
         onSearchChange={changeSearch}
+        onSelectView={selectView}
       />
     ),
     columns: visibleColumns,

@@ -12,8 +12,8 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
-import { collectionRevisions } from "../../hooks/use_collection_revision/useCollectionRevision.hook";
 import type { IMod } from "../../types/IMod";
+import { modHasUpdate } from "../../util/mod_has_update/modHasUpdate";
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { ModUpdate, modUpdateDetails } from "../mod_update/ModUpdate";
 import { VersionText } from "../version_text/VersionText";
@@ -43,14 +43,8 @@ export const modVersionText = (mod: IMod, alternatives: IMod[] | undefined, t: T
  * The group a row falls in by version, as the classic table named them: by whether its cell
  * offers an update, a collection's by its revision.
  */
-export const modVersionGroup = (mod: IMod, t: TFunction) => {
-  const hasUpdate =
-    mod.type === COLLECTION_TYPE
-      ? collectionRevisions(mod).hasUpdate
-      : modUpdateDetails(mod).hasUpdate;
-
-  return hasUpdate ? t("Update available") : t("Up-to-date");
-};
+export const modVersionGroup = (mod: IMod, t: TFunction) =>
+  modHasUpdate(mod) ? t("Update available") : t("Up-to-date");
 
 /**
  * A mod's version and what it says about updating, or a collection's revision with its

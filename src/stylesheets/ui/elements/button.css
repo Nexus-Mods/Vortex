@@ -30,7 +30,7 @@
             cursor: not-allowed;
         }
 
-        &:is(a, :enabled):not(.nxm-button-disabled) {
+        &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
             cursor: pointer;
 
             &:focus-visible {
@@ -76,9 +76,8 @@
     .nxm-button-moderate {
         background-color: var(--color-surface-translucent-mid);
 
-        &:is(a, :enabled):not(.nxm-button-disabled) {
+        &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
             &:hover,
-            &:focus-visible,
             &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                 background-color: var(--color-surface-translucent-high);
             }
@@ -91,9 +90,8 @@
 
     .nxm-button-subdued,
     .nxm-button-weak {
-        &:is(a, :enabled):not(.nxm-button-disabled) {
+        &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
             &:hover,
-            &:focus-visible,
             &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                 background-color: var(--color-surface-translucent-mid);
             }
@@ -113,9 +111,8 @@
         color: var(--color-primary-subdued);
         background-color: var(--color-surface-translucent-low);
 
-        &:is(a, :enabled):not(.nxm-button-disabled) {
+        &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
             &:hover,
-            &:focus-visible,
             &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                 color: var(--color-primary-strong);
                 background-color: var(--color-surface-translucent-mid);
@@ -127,9 +124,8 @@
         &.nxm-button-strong {
             background-color: var(--color-primary-moderate);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-primary-strong);
                 }
@@ -143,9 +139,8 @@
         &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
             color: var(--color-primary-moderate);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-primary-strong);
                 }
@@ -161,9 +156,8 @@
         &.nxm-button-strong {
             background-color: var(--color-info-moderate);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-info-strong);
                 }
@@ -177,16 +171,9 @@
         &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
             color: var(--color-info-strong);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
-                &:hover,
-                &:focus-visible,
-                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
-                    color: var(--color-info-moderate);
-                }
-
-                &:active {
-                    color: var(--color-info-subdued);
-                }
+            /* Strong but pressed, its background changing on hover. */
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled):active {
+                color: var(--color-info-moderate);
             }
         }
     }
@@ -195,9 +182,8 @@
         &.nxm-button-strong {
             background-color: var(--color-success-moderate);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-success-strong);
                 }
@@ -211,9 +197,8 @@
         &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
             color: var(--color-success-moderate);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-success-strong);
                 }
@@ -226,35 +211,29 @@
     }
 
     .nxm-button-danger {
+        /* A step brighter than the other brands, as the design has it: strong at rest, lighter
+           still on hover, which no token is, and moderate pressed. */
         &.nxm-button-strong {
-            background-color: var(--color-danger-moderate);
+            background-color: var(--color-danger-strong);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
-                    background-color: var(--color-danger-strong);
+                    background-color: color-mix(in srgb, var(--color-danger-strong), white 20%);
                 }
 
                 &:active {
-                    background-color: var(--color-danger-subdued);
+                    background-color: var(--color-danger-moderate);
                 }
             }
         }
 
+        /* Strong but pressed, its background changing on hover. */
         &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
-            color: var(--color-danger-moderate);
+            color: var(--color-danger-strong);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
-                &:hover,
-                &:focus-visible,
-                &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
-                    color: var(--color-danger-strong);
-                }
-
-                &:active {
-                    color: var(--color-danger-subdued);
-                }
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled):active {
+                color: var(--color-danger-subdued);
             }
         }
     }
@@ -264,9 +243,8 @@
             color: var(--color-neutral-strong);
             background-color: var(--color-premium-moderate);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-premium-subdued);
                 }
@@ -280,9 +258,8 @@
         &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
             color: var(--color-premium-moderate);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-premium-strong);
                 }
@@ -298,9 +275,8 @@
         &.nxm-button-strong {
             background-color: var(--color-neutral-strong);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-neutral-subdued);
                 }
@@ -318,9 +294,8 @@
         &:is(.nxm-button-subdued, .nxm-button-weak) {
             color: var(--color-translucent-moderate);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     color: var(--color-translucent-strong);
                 }
@@ -332,9 +307,8 @@
             border: 1px solid var(--color-stroke-weak);
             background-color: var(--color-scrim-500);
 
-            &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:is(a, :enabled, span[role="button"]):not(.nxm-button-disabled) {
                 &:hover,
-                &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
                     background-color: var(--color-scrim-700);
                 }

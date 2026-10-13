@@ -16,6 +16,7 @@ import { activeGameId } from "@/util/selectors";
 import type { IMod } from "../../types/IMod";
 import { collectionNamesByMod } from "../../util/collection_membership/collectionMembership";
 import { confirmCollectionModUpdate } from "../../util/collection_update_warning/collectionUpdateWarning";
+import { offersUpdate } from "../../util/mod_has_update/modHasUpdate";
 import type { UpdateState } from "../../util/modUpdateState";
 import updateState, { isIdValid } from "../../util/modUpdateState";
 import { ChangelogButton } from "../changelog_button/ChangelogButton";
@@ -53,7 +54,7 @@ export const modUpdateDetails = (mod: IMod): IModUpdateDetails => {
   const valid = isIdValid(mod);
   const attributes = mod.attributes ?? {};
   const state = updateState(attributes);
-  const hasUpdate = state === "update" || state === "update-site";
+  const hasUpdate = offersUpdate(state);
   const changelog: IChangelog | undefined =
     state === "current" ? undefined : attributes.newestChangelog;
 
