@@ -29,8 +29,8 @@ that every required mod ended up installed.
 1. **Confirm Vortex is running and logged in.** Snapshot the Vortex main
    window. The header should show an avatar / username, not a `Log in`
    button. If Vortex is not running, or shows `Log in`, report that and
-   stop: the collection flow needs a logged-in Vortex (log in first with
-   the `check-mod-install` prompt's step 1b).
+   stop (BLOCKED): the collection flow needs a logged-in Vortex (log in
+   first with the `1-check-mod-install` prompt's step 2).
 
 2. **Make sure Stardew Valley is the managed, active game.** Open the
    `Games` page. If Stardew Valley is under `Added games` and is the
@@ -49,10 +49,11 @@ that every required mod ended up installed.
    - whether the page says "Go premium to unlock one-click collections".
      Note this: it means the account is free.
    - If the page shows a login prompt instead of an avatar, report that
-     and stop (the website login is handled by the `check-mod-install`
-     prompt).
+     and stop (BLOCKED).
 
-4. **Add the collection to Vortex.** Click the `Add collection` button
+4. **Add the collection to Vortex.** First select the collection's tab
+   with `browser_tabs` (`action: select`) so it is in front. Click the
+   `Add collection` button
    (not `Add collection (Desktop only)`; use whichever is visible and
    enabled). Chrome hands an `nxm://` link to Vortex, which is
    pre-approved, so no "Open Vortex?" prompt should appear. If one does,
@@ -75,6 +76,10 @@ that every required mod ended up installed.
    - If a dialog asks where to install: accept the defaults. Leave
      `Install optional mods` unticked. Create the new profile only if
      the dialog recommends it; otherwise keep the current profile.
+   - If Vortex then asks whether to switch to the new profile, answer
+     `Yes`: the collection's mods are only enabled in that profile.
+   - A "Game version mismatch" dialog usually follows: click `Continue`
+     straight away (it is a known flag, so note it).
    - If a changelog or instructions dialog appears, read it, then
      continue with the primary positive button (`Continue`, `Install`).
    - Do NOT click anything that purges or overwrites existing files:
@@ -114,9 +119,13 @@ that every required mod ended up installed.
      marked failed) by name.
    - Optional mods are allowed to be uninstalled (we left them off).
      Required mods are not.
-   - Compute `installed required mods / total required mods` from what
-     the page shows. The collection is **fully installed** only if every
-     required mod is installed with none failed.
+   - Count every required mod's state: `installed required mods / total
+     required mods`. The list draws only about 15 rows at a time, so
+     filter or sort it (for example by status) and count the rows, or
+     scroll through all of it; a spot-check is not a count. The
+     collection is **fully installed** only if every required mod is
+     installed with none failed. If you cannot count them all, say so:
+     the result is FAIL.
    - Open the Stardew Valley `Mods` view and confirm it lists the
      collection's mods as `Enabled` (spot-check at least 5, including
      SMAPI if the collection includes it).
@@ -127,8 +136,8 @@ that every required mod ended up installed.
     - Vortex logged in, Stardew Valley active (and whether you had to add
       it).
     - Collection name, revision, mod count on the website vs in Vortex.
-    - Whether the account was Premium. If free, say BLOCKED and stop the
-      report there.
+    - Whether the account was Premium. If free, stop the report there
+      and end it with `RESULT: BLOCKED`.
     - How the nxm:// handoff behaved (prompt shown or not).
     - Install start dialogs and what you chose.
     - Total time from clicking install to the final state.
@@ -138,9 +147,17 @@ that every required mod ended up installed.
     - Any UX or behaviour that looked wrong (a button missing, a dialog
       that should not appear, a list that does not update, errors, big
       slowdowns): list each as a flag with where you saw it.
-    - **Outcome: PASS, PASS WITH FLAGS or FAIL.** Missing required mods or
-      failed downloads are always FAIL. UX oddities alone are PASS WITH
-      FLAGS. BLOCKED (free account) is reported as BLOCKED, not as PASS.
+
+    End the report with exactly one of these as its last line, with
+    nothing after it:
+    - `RESULT: PASS`: fully installed and nothing looked wrong.
+    - `RESULT: PASS_WITH_FLAGS`: fully installed, with flags raised (UX
+      oddities alone are never a FAIL).
+    - `RESULT: FAIL`: any required mod missing or failed, a failed
+      download, a timeout, or a count you could not complete.
+    - `RESULT: BLOCKED`: the run could not get going (Vortex not running
+      or logged out, a free account, or the website showed a sign-in
+      form).
 
 ## Guidance
 
@@ -148,7 +165,6 @@ that every required mod ended up installed.
 - Do not change settings, activate other games, or launch the game.
 - Do not confirm any purge / cleanup / overwrite prompt: always pick the
   cancel / abort option.
-- The Nexus Mods password is never needed in this prompt. If a login form
-  appears, report it and stop.
+- If a login form appears, report it and stop (BLOCKED).
 - If an unrelated modal blocks the UI, describe it and stop. Do not
   dismiss it without instructions.

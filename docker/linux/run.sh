@@ -9,7 +9,7 @@
 #   docker/linux/connect.sh
 set -euo pipefail
 
-CONTAINER="${CONTAINER_NAME:-vortex-vnc}"
+CONTAINER="vortex-vnc"
 IMAGE="${IMAGE_NAME:-vortex-vnc}"
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -19,7 +19,7 @@ fi
 
 if ! docker image inspect "${IMAGE}" >/dev/null 2>&1; then
     echo "error: image '${IMAGE}' not found." >&2
-    echo "       Build it first: docker build -f docker/linux/Dockerfile.vnc -t ${IMAGE} ." >&2
+    echo "       Build it first: docker/linux/build.sh" >&2
     exit 1
 fi
 
@@ -38,8 +38,8 @@ if docker container inspect "${CONTAINER}" >/dev/null 2>&1; then
 fi
 
 # Keep Chrome's profile on the host so the Nexus Mods website login (and its
-# Cloudflare check) survives fresh containers. Owned by uid 1000, like the
-# container's vortex user.
+# Cloudflare check) survives fresh containers. build.sh gives the container's
+# vortex user the host user's uid, so the container can write to it.
 CHROME_PROFILE_DIR="${CHROME_PROFILE_DIR:-${HOME}/.cache/vortex-qa/chrome-profile}"
 mkdir -p "${CHROME_PROFILE_DIR}" && chmod 700 "${CHROME_PROFILE_DIR}"
 # A container killed mid-run leaves Chrome's lock behind, and the next container
@@ -49,8 +49,8 @@ rm -f "${CHROME_PROFILE_DIR}"/SingletonLock "${CHROME_PROFILE_DIR}"/SingletonCoo
 
 id="$(docker run -d \
     --name "${CONTAINER}" \
-    -p 5901:5901 \
-    -p 6901:6901 \
+    -p 127.0.0.1:5901:5901 \
+    -p 127.0.0.1:6901:6901 \
     -p 127.0.0.1:9222:9322 \
     -p 127.0.0.1:9223:9323 \
     --shm-size=2g \

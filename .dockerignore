@@ -33,3 +33,9 @@ result-*
 # Platform-specific docker contexts (the host's copy isn't needed inside the
 # image we're building).
 docker/windows
+
+# Host-side QA harness, except the two files the Dockerfile copies in.
+docker/linux/*
+!docker/linux/vnc-entrypoint.sh
+!docker/linux/game-click
+.playwright-mcp

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Read an agent's final report on stdin and print its verdict from the last
+# non-empty line, which every prompt ends with: RESULT: PASS,
+# PASS_WITH_FLAGS, FAIL or BLOCKED. Exits 0 only for PASS and PASS_WITH_FLAGS;
+# a report without that line prints NO_RESULT and exits 1.
+set -euo pipefail
+
+last="$(awk 'NF { line = $0 } END { print line }' | sed -E 's/^[[:space:]*`]+|[[:space:]*`]+$//g')"
+
+case "${last}" in
+    "RESULT: PASS" | "RESULT: PASS_WITH_FLAGS")
+        echo "${last#RESULT: }"
+        ;;
+    "RESULT: FAIL" | "RESULT: BLOCKED")
+        echo "${last#RESULT: }"
+        exit 1
+        ;;
+    *)
+        echo "NO_RESULT"
+        exit 1
+        ;;
+esac

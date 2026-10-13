@@ -1,8 +1,7 @@
 # Vortex Linux + VNC Image
 # See docker/linux/README.vnc.md for build and run instructions.
 
-# Docker tags "latest" to the current Ubuntu LTS release.
-FROM ubuntu:latest
+FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
@@ -10,9 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
 # Build toolchain + Electron runtime libraries + VNC stack.
-# Package names target Ubuntu 24.04 (noble) and 26.04 (the current LTS).
-# Both ship libasound2t64; the t64 transition packages are picked up
-# automatically.
+# Package names target Ubuntu 26.04.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
@@ -88,12 +85,15 @@ RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
 ENV DOTNET_ROOT=/usr/share/dotnet \
     PATH="/usr/share/dotnet:/usr/share/dotnet/tools:${PATH}"
 
-# Exact Node.js from package.json engines.node; pnpm-workspace.yaml sets
-# engineStrict, so a floating 24.x would fail the install.
-RUN curl -fsSL https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.xz \
+# Exact Node.js from package.json engines.node (build.sh passes it in);
+# pnpm-workspace.yaml sets engineStrict, so a floating 24.x would fail the
+# install. Corepack runs the pnpm pinned by package.json's packageManager.
+ARG NODE_VERSION
+RUN test -n "${NODE_VERSION}" \
+    && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
         | tar -xJ -C /usr/local --strip-components=1 \
-    && corepack enable \
-    && corepack prepare pnpm@11.10.0 --activate
+    && corepack enable
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 # Non-root user. Electron refuses to run as root without --no-sandbox, and the
 # build itself works happily under an unprivileged user.
@@ -134,11 +134,13 @@ USER ${USERNAME}
 # permissions line up.
 ENV PNPM_HOME=/home/${USERNAME}/.local/share/pnpm \
     PATH=/home/${USERNAME}/.local/share/pnpm:${PATH} \
+    pnpm_config_store_dir=/home/${USERNAME}/.pnpm-store \
     NX_DAEMON=false
 
 # `@vortex/main:build` pulls in renderer, preload, bundled extensions and
 # assets via its nx dependsOn, which is everything `electron .` needs.
-RUN pnpm install --frozen-lockfile \
+RUN --mount=type=cache,target=/home/${USERNAME}/.pnpm-store,uid=${USER_UID},gid=${USER_GID} \
+    pnpm install --frozen-lockfile \
     && pnpm nx run @vortex/main:build
 
 # ----- VNC + entrypoint -----
@@ -179,13 +181,11 @@ RUN mkdir -p /etc/opt/chrome/policies/managed \
     && printf '{"AutoLaunchProtocolsFromOrigins":[{"allowed_origins":["https://www.nexusmods.com"],"protocol":"nxm"}]}\n' \
         > /etc/opt/chrome/policies/managed/nxm.json
 
-# ----- Optional: bake in the host's Steam root -----
-# Supplied via `--build-context steam=<path>`. build.sh auto-points this
-# at the host's native or snap Steam root when present, and falls back to
-# docker/linux/steam-stub (effectively a no-op) otherwise. The full tree is needed -- not just
-# steamapps/common -- because Vortex's Linux discovery validates each
-# Steam root by checking for config/libraryfolders.vdf and parses
-# appmanifest_*.acf files to enumerate installed games. Placed after the
+# ----- Optional: bake in Stardew Valley from the host's Steam root -----
+# Supplied via `--build-context steam=<path>`. build.sh stages
+# config/libraryfolders.vdf, the Stardew Valley appmanifest and game folder
+# from the host's Steam root when present, and falls back to
+# docker/linux/steam-stub (effectively a no-op) otherwise. Placed after the
 # pnpm build so swapping in a different Steam tree doesn't invalidate it.
 COPY --from=steam --chown=${USER_UID}:${USER_GID} ["./", "/home/vortex/.local/share/Steam/"]
 

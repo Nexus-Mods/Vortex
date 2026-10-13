@@ -23,7 +23,7 @@ fi
 
 if ! docker container inspect "${CONTAINER}" >/dev/null 2>&1; then
     echo "error: container '${CONTAINER}' not found." >&2
-    echo "       Start it with: docker run --rm -it -p 5901:5901 -p 6901:6901 --name ${CONTAINER} vortex-vnc" >&2
+    echo "       Start it with: docker/linux/run.sh" >&2
     exit 1
 fi
 

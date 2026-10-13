@@ -4,9 +4,7 @@
       "mcp__vnc__*",
       "mcp__vortex__*",
       "mcp__chrome__*",
-      "Bash(docker exec vortex-vnc game-click:*)",
-      "Read(~/nexusmodsuser)",
-      "Read(~/nexusmodspassword)"
+      "Bash(docker exec vortex-vnc game-click:*)"
     ]
   }
 }

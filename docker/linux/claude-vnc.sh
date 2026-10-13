@@ -13,24 +13,27 @@
 # side pane (tail -f on a log file) so the main pane stays clean for the
 # banners and summary table. Disable with NO_SPLIT=1.
 #
+# Each prompt's report ends with a RESULT line (see result-verdict). The
+# script exits 0 only when every prompt run reports PASS or PASS_WITH_FLAGS.
+#
 # Environment overrides:
-#   CONTAINER       Vortex VNC container name  (default: vortex-vnc)
-#   VNC_MCP_IMAGE   MCP server image           (default: ghcr.io/regulad/vnc-mcp:latest)
-#   CLAUDE_MODEL    model for the run, e.g. sonnet or opus (default: claude's default)
+#   VNC_MCP_IMAGE   MCP server image           (default: pinned ghcr.io/regulad/vnc-mcp digest)
+#   CLAUDE_MODEL    model for the run, e.g. sonnet or opus (default: sonnet)
 #   NO_SPLIT        set to 1 to disable the tmux side pane
 #   SPLIT_DIR       tmux pane direction: -h (horizontal, default) or -v
 #   MCP_TOOL_TIMEOUT  ms before a hung VNC tool call fails (default: 60000)
 #
 # Prerequisites: the Vortex VNC container must be running
-# (`docker/linux/run.sh`). `claude` and `docker` must be on PATH.
+# (`docker/linux/run.sh`). `claude`, `docker` and `jq` must be on PATH.
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPTS_DIR="${SCRIPT_DIR}/claude-prompts"
 NOTES_FILE="${SCRIPT_DIR}/qa-notes.md"
 
-CONTAINER="${CONTAINER:-vortex-vnc}"
-VNC_MCP_IMAGE="${VNC_MCP_IMAGE:-ghcr.io/regulad/vnc-mcp:latest}"
+CONTAINER="vortex-vnc"
+VNC_MCP_IMAGE="${VNC_MCP_IMAGE:-ghcr.io/regulad/vnc-mcp@sha256:42f35f373196f9f7c5004e0e9ed4f305bb0c761d95b76e479e02253dd1fbe14b}"
+PLAYWRIGHT_MCP="@playwright/mcp@0.0.83"
 # vnc-mcp occasionally never answers a screenshot; without this claude waits forever.
 export MCP_TOOL_TIMEOUT="${MCP_TOOL_TIMEOUT:-60000}"
 
@@ -65,68 +68,43 @@ choose_md_renderer() {
 MD_RENDER_CMD="$(choose_md_renderer)"
 
 # Format a single claude stream-json NDJSON line as a short human-readable
-# event for the side pane. Falls back to raw passthrough if jq isn't on
-# PATH. The `--unbuffered` flag keeps `tail -f` responsive.
+# event for the side pane. The `--unbuffered` flag keeps `tail -f` responsive.
 format_stream_event() {
-    if command -v jq >/dev/null 2>&1; then
-        jq -rR --unbuffered '
-            fromjson? // empty
-            | if .type == "system" then
-                "[system] \(.subtype // "ready")"
-              elif .type == "assistant" then
-                (.message.content // []) | map(
-                    if .type == "text" then
-                        "[assistant] " + ((.text // "") | split("\n")[0])
-                    elif .type == "tool_use" then
-                        "[tool] \(.name)(\(.input | tojson | .[0:120]))"
-                    else "[" + .type + "]" end
-                ) | join("\n")
-              elif .type == "user" then
-                (.message.content // []) | map(
-                    if .type == "tool_result" then
-                        "[result] " + ((.content // "") | tostring | gsub("\\s+"; " ") | .[0:120])
-                    else "[" + .type + "]" end
-                ) | join("\n")
-              elif .type == "result" then
-                "[done] \(.subtype // "")"
-              else "[" + .type + "]" end
-        '
-    else
-        cat
-    fi
+    jq -rR --unbuffered '
+        fromjson? // empty
+        | if .type == "system" then
+            "[system] \(.subtype // "ready")"
+          elif .type == "assistant" then
+            (.message.content // []) | map(
+                if .type == "text" then
+                    "[assistant] " + ((.text // "") | split("\n")[0])
+                elif .type == "tool_use" then
+                    "[tool] \(.name)(\(.input | tojson | .[0:120]))"
+                else "[" + .type + "]" end
+            ) | join("\n")
+          elif .type == "user" then
+            (.message.content // []) | map(
+                if .type == "tool_result" then
+                    "[result] " + ((.content // "") | tostring | gsub("\\s+"; " ") | .[0:120])
+                else "[" + .type + "]" end
+            ) | join("\n")
+          elif .type == "result" then
+            "[done] \(.subtype // "")"
+          else "[" + .type + "]" end
+    '
 }
 
 # Read claude stream-json NDJSON on stdin, write the final result event's
 # `.result` field (the polished assistant response) to stdout. Returns
 # empty if no result event was seen.
 extract_final_result() {
-    if command -v jq >/dev/null 2>&1; then
-        jq -rRs '
-            split("\n")
-            | map(fromjson? // empty)
-            | map(select(.type == "result"))
-            | last
-            | .result // empty
-        '
-    elif command -v python3 >/dev/null 2>&1; then
-        python3 -c '
-import json, sys
-result = ""
-for line in sys.stdin:
-    line = line.strip()
-    if not line:
-        continue
-    try:
-        ev = json.loads(line)
-    except Exception:
-        continue
-    if ev.get("type") == "result":
-        result = ev.get("result", "") or ""
-sys.stdout.write(result)
-'
-    else
-        cat
-    fi
+    jq -rRs '
+        split("\n")
+        | map(fromjson? // empty)
+        | map(select(.type == "result"))
+        | last
+        | .result // empty
+    '
 }
 
 # Mode: "all" (default) | "single" | "interactive"
@@ -145,6 +123,10 @@ fi
 if ! command -v claude >/dev/null 2>&1; then
     echo "error: claude CLI is not on PATH" >&2
     echo "       Install with: npm install -g @anthropic-ai/claude-code" >&2
+    exit 1
+fi
+if ! command -v jq >/dev/null 2>&1; then
+    echo "error: jq is not on PATH" >&2
     exit 1
 fi
 
@@ -184,8 +166,7 @@ fi
 # dontAsk refuses anything not pre-approved in .claude/settings.json. The run has
 # no human to approve, so a prompt would hang about a minute before failing.
 # CLAUDE_MODEL picks the model that drives the run (e.g. sonnet, opus).
-MODEL_ARGS=()
-[[ -n "${CLAUDE_MODEL:-}" ]] && MODEL_ARGS=(--model "${CLAUDE_MODEL}")
+MODEL_ARGS=(--model "${CLAUDE_MODEL:-sonnet}")
 
 MCP_CONFIG="$(mktemp -t vortex-vnc-mcp.XXXXXX.json)"
 
@@ -217,7 +198,7 @@ cat >"${MCP_CONFIG}" <<JSON
     "vnc": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm", "--pull=always", "--network=host",
+        "run", "-i", "--rm", "--network=host",
         "--env", "VNCMCP_HOST",
         "--env", "VNCMCP_PORT",
         "--env", "VNCMCP_PASSWORD",
@@ -231,11 +212,11 @@ cat >"${MCP_CONFIG}" <<JSON
     },
     "vortex": {
       "command": "sh",
-      "args": ["-c", "cd \"\$HOME\" && exec npx -y @playwright/mcp@latest --cdp-endpoint http://localhost:9222"]
+      "args": ["-c", "cd \"\$HOME\" && exec npx -y ${PLAYWRIGHT_MCP} --cdp-endpoint http://localhost:9222"]
     },
     "chrome": {
       "command": "sh",
-      "args": ["-c", "cd \"\$HOME\" && exec npx -y @playwright/mcp@latest --cdp-endpoint http://localhost:9223"]
+      "args": ["-c", "cd \"\$HOME\" && exec npx -y ${PLAYWRIGHT_MCP} --cdp-endpoint http://localhost:9223"]
     }
   }
 }
@@ -265,79 +246,60 @@ if [[ ${USE_SPLIT} -eq 1 ]]; then
 fi
 echo
 
-# Runs claude --print non-interactively on one prompt file, echoing the
-# full output and capturing it into a global for the end-of-run summary.
-# Sets RUN_STATUS to "ok" or "fail" based on claude's exit code.
+# Runs claude non-interactively on one prompt file, streaming its events to
+# the side pane when there is one, and rendering its final report. Sets
+# RUN_STATUS to the report's verdict, or ERROR when claude itself failed,
+# and RUN_PASSED to 1 for PASS or PASS_WITH_FLAGS.
 RUN_STATUS=""
-RUN_OUTPUT=""
+RUN_PASSED=0
 run_one_prompt() {
     local prompt_file="$1"
+    RUN_PASSED=0
     if [[ ! -r "${prompt_file}" ]]; then
         echo "error: prompt file not readable: ${prompt_file}" >&2
-        RUN_STATUS="fail"
-        RUN_OUTPUT="(prompt file not readable)"
-        return 1
+        RUN_STATUS="ERROR"
+        return 0
     fi
-    # `--print` runs non-interactively and writes claude's final response
-    # to stdout. `--mcp-config=` uses the `=` form to avoid the next
-    # positional arg being consumed as another config path. `--` then
-    # separates flags from the positional prompt body.
-    local rc final
+    local event_log="/dev/null"
     if [[ ${USE_SPLIT} -eq 1 ]]; then
-        # Banner in the side pane so the user can tell which prompt's
-        # events are flowing.
+        event_log="${OUTPUT_LOG}"
         {
             printf '\n============================================================\n'
             printf '  PROMPT: %s\n' "$(basename "${prompt_file}" .md)"
             printf '============================================================\n\n'
         } >>"${OUTPUT_LOG}"
-
-        # Stream every event to the side pane (via tee → format_stream_event)
-        # while extracting the final assistant response for the main pane.
-        # `--output-format=stream-json --verbose` makes claude emit one
-        # NDJSON event per line.
-        local final_file
-        final_file="$(mktemp -t claude-vnc-final.XXXXXX)"
-        set +e
-        claude --print --permission-mode dontAsk "${MODEL_ARGS[@]}" --output-format=stream-json --verbose \
-            --add-dir "${HOME}" \
-            "--mcp-config=${MCP_CONFIG}" -- "$(cat "${NOTES_FILE}" "${prompt_file}")" 2>&1 \
-            | tee >(format_stream_event >>"${OUTPUT_LOG}") \
-            | extract_final_result >"${final_file}"
-        rc=${PIPESTATUS[0]}
-        set -e
-        final="$(cat "${final_file}")"
-        rm -f "${final_file}"
-        [[ -z "${final}" ]] && \
-            final="(no final result extracted — see side pane for events)"
-
-        # Render the polished final response in the main pane.
-        printf '%s\n' "${final}" | eval "${MD_RENDER_CMD}"
-        RUN_OUTPUT="${final}"
-    else
-        # Inline mode: no streaming, just --print and render in place.
-        local out
-        set +e
-        out="$(claude --print --permission-mode dontAsk "${MODEL_ARGS[@]}" --add-dir "${HOME}" "--mcp-config=${MCP_CONFIG}" -- "$(cat "${NOTES_FILE}" "${prompt_file}")" 2>&1)"
-        rc=$?
-        set -e
-        printf '%s\n' "${out}" | eval "${MD_RENDER_CMD}"
-        RUN_OUTPUT="${out}"
     fi
-    if [[ ${rc} -eq 0 ]]; then
-        RUN_STATUS="ok"
-    else
-        RUN_STATUS="fail"
+
+    local rc final final_file
+    final_file="$(mktemp -t claude-vnc-final.XXXXXX)"
+    set +e
+    claude --print --permission-mode dontAsk "${MODEL_ARGS[@]}" --output-format=stream-json --verbose \
+        "--mcp-config=${MCP_CONFIG}" -- "$(cat "${NOTES_FILE}" "${prompt_file}")" \
+        | tee >(format_stream_event >>"${event_log}") \
+        | extract_final_result >"${final_file}"
+    rc=${PIPESTATUS[0]}
+    set -e
+    final="$(cat "${final_file}")"
+    rm -f "${final_file}"
+    [[ -z "${final}" ]] && final="(no final result extracted)"
+    printf '%s\n' "${final}" | eval "${MD_RENDER_CMD}"
+
+    if [[ ${rc} -ne 0 ]]; then
+        RUN_STATUS="ERROR"
+    elif RUN_STATUS="$(printf '%s\n' "${final}" | "${SCRIPT_DIR}/result-verdict")"; then
+        RUN_PASSED=1
     fi
     return 0
 }
 
 case "${MODE}" in
     interactive)
-        claude --add-dir "${HOME}" "--mcp-config=${MCP_CONFIG}"
+        claude "--mcp-config=${MCP_CONFIG}"
         ;;
     single)
         run_one_prompt "${SINGLE_PROMPT}"
+        echo "Result: ${RUN_STATUS}"
+        [[ ${RUN_PASSED} -eq 1 ]] || exit 1
         ;;
     all)
         shopt -s nullglob
@@ -348,7 +310,8 @@ case "${MODE}" in
             exit 1
         fi
 
-        declare -a result_names result_status result_last
+        declare -a result_names result_status
+        all_passed=1
         for prompt in "${prompts[@]}"; do
             name="$(basename "${prompt}" .md)"
             echo "============================================================"
@@ -358,9 +321,7 @@ case "${MODE}" in
             echo
             result_names+=("${name}")
             result_status+=("${RUN_STATUS}")
-            # Keep the last non-empty line as a one-line summary anchor.
-            last="$(echo "${RUN_OUTPUT}" | awk 'NF{line=$0} END{print line}')"
-            result_last+=("${last}")
+            [[ ${RUN_PASSED} -eq 1 ]] || all_passed=0
         done
 
         echo "============================================================"
@@ -372,10 +333,8 @@ case "${MODE}" in
             (( ${#n} > max )) && max=${#n}
         done
         for i in "${!result_names[@]}"; do
-            printf "  %-${max}s  [%s]  %s\n" \
-                "${result_names[$i]}" \
-                "${result_status[$i]}" \
-                "${result_last[$i]}"
+            printf "  %-${max}s  [%s]\n" "${result_names[$i]}" "${result_status[$i]}"
         done
+        [[ ${all_passed} -eq 1 ]] || exit 1
         ;;
 esac
