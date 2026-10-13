@@ -199,15 +199,21 @@ describe("ModalLayer", () => {
       await settleTransitions();
     });
 
-    it("leaves a dialog with a rich-text checkbox to the legacy renderer", () => {
+    it("draws a checkbox's bbcode as its label", async () => {
       renderLayer([
         dialogWith("one", {
           text: "t",
-          checkboxes: [{ id: "a", value: false, bbcode: "[b]b[/b]" }],
+          checkboxes: [{ id: "agree", value: false, bbcode: "I [b]agree[/b]" }],
         }),
       ]);
 
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      const labelId = screen.getByTestId("dialog-checkbox-agree").getAttribute("aria-labelledby");
+      const label = document.getElementById(labelId ?? "");
+
+      expect(label).toHaveTextContent("I agree");
+      expect(label?.querySelector("b, strong")).toHaveTextContent("agree");
+
+      await settleTransitions();
     });
   });
   describe("size", () => {
@@ -634,6 +640,56 @@ describe("ModalLayer", () => {
       renderLayer([dialogWith("one", { bbcode: "Short" })]);
 
       expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
+
+      await settleTransitions();
+    });
+  });
+  describe("beyond the basics", () => {
+    it("names an input without a label after the dialog's title, without showing a label", async () => {
+      renderLayer([dialogWith("one", { text: "t", input: [{ id: "url", type: "url" }] })]);
+
+      expect(screen.getByRole("textbox", { name: "Title one" })).toBe(
+        screen.getByTestId("dialog-input-url"),
+      );
+
+      await settleTransitions();
+    });
+
+    it("shows every button of a dialog with more than three", async () => {
+      const dialog: IDialog = {
+        ...dialogWith("one", { text: "Pick one" }),
+        actions: ["One", "Two", "Three", "Four", "Five"],
+        defaultAction: "One",
+      };
+      renderLayer([dialog]);
+
+      expect(screen.getAllByRole("button")).toHaveLength(5);
+
+      await settleTransitions();
+    });
+
+    it("uses the medium modal for more than three buttons, so they fit on one row", async () => {
+      const dialog: IDialog = {
+        ...dialogWith("one", { text: "Short." }),
+        actions: ["One", "Two", "Three", "Four"],
+        defaultAction: "One",
+      };
+      renderLayer([dialog]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
+
+      await settleTransitions();
+    });
+
+    it("keeps the small modal for three buttons", async () => {
+      const dialog: IDialog = {
+        ...dialogWith("one", { text: "Short." }),
+        actions: ["One", "Two", "Three"],
+        defaultAction: "One",
+      };
+      renderLayer([dialog]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-sm");
 
       await settleTransitions();
     });

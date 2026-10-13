@@ -27,7 +27,13 @@ const SUPPORTED_OPTIONS = new Set([
   "bbcodeContext",
 ]);
 
-const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>(["id", "value", "text", "disabled"]);
+const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>([
+  "id",
+  "value",
+  "text",
+  "bbcode",
+  "disabled",
+]);
 
 const SUPPORTED_INPUT_FIELDS = new Set<keyof IInput>([
   "id",
@@ -50,18 +56,14 @@ const SUPPORTED_INPUT_TYPES = new Set<IInput["type"]>([
 
 const SUPPORTED_LINK_FIELDS = new Set<keyof ILink>(["label", "id", "action"]);
 
-// The new dialog's action row holds one to three buttons.
-const MAX_ACTIONS = 3;
-
 const usesOnly = (fields: object, supported: Set<string>) =>
   Object.entries(fields).every(([name, value]) => value === undefined || supported.has(name));
 
+// A checkbox is named by its text, or by its bbcode when it has that instead.
 const isSupportedCheckbox = (checkbox: ICheckbox) =>
-  !!checkbox.text && usesOnly(checkbox, SUPPORTED_CHECKBOX_FIELDS);
+  (!!checkbox.text || !!checkbox.bbcode) && usesOnly(checkbox, SUPPORTED_CHECKBOX_FIELDS);
 
-// TextField needs a label to name the input.
 const isSupportedInput = (input: IInput) =>
-  !!input.label &&
   usesOnly(input, SUPPORTED_INPUT_FIELDS) &&
   (input.type === undefined || SUPPORTED_INPUT_TYPES.has(input.type));
 
@@ -78,7 +80,6 @@ export const canRenderWithModal = (dialog: IDialog): boolean => {
       !!content.message ||
       (content.input?.length ?? 0) > 0) &&
     actions.length >= 1 &&
-    actions.length <= MAX_ACTIONS &&
     usesOnly(content, SUPPORTED_CONTENT) &&
     usesOnly(content.options ?? {}, SUPPORTED_OPTIONS) &&
     (content.checkboxes ?? []).every(isSupportedCheckbox) &&
