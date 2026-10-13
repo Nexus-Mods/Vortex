@@ -26,6 +26,7 @@ import {
   addExtension,
   forgetExtension,
   setExtensionEnabled,
+  setExtensionModId,
   setExtensionVersion,
 } from "./actions/app";
 import type { DialogActions, DialogType, IDialogContent } from "./actions/notifications";
@@ -743,6 +744,7 @@ class ExtensionManager {
   private mPendingDisables: string[] = [];
   private mPendingRemoves: string[] = [];
   private mPendingAdds: IExtensionState[] = [];
+  private mPendingModIds: Array<{ extId: string; modId: number }> = [];
   // Extension-registered persistors for custom hives (e.g., loadOrder -> plugins.txt)
   private mExtensionPersistors: {
     [hive: string]: { persistor: IPersistor; debounce: number };
@@ -1017,6 +1019,11 @@ class ExtensionManager {
       store.dispatch(addExtension(state));
     });
     this.mPendingAdds = [];
+
+    this.mPendingModIds.forEach(({ extId, modId }) => {
+      store.dispatch(setExtensionModId(extId, modId));
+    });
+    this.mPendingModIds = [];
 
     this.mExtensionState = getSafe(store.getState(), ["app", "extensions"], {});
 
@@ -3118,6 +3125,14 @@ class ExtensionManager {
       })),
       "failed to persist removal of extension entries",
     );
+    this.persistAppDiff(
+      this.mPendingModIds.map(({ extId, modId }) => ({
+        type: "set" as const,
+        path: ["extensions", extId, "modId"],
+        value: modId,
+      })),
+      "failed to persist restored extension mod ids",
+    );
 
     return staticExts.concat(userExts).concat(bundledExts);
   }
@@ -3150,6 +3165,11 @@ class ExtensionManager {
 
       const ext = this.loadDynamicExtension(state.path, alreadyLoaded, false);
       if (ext !== undefined) {
+        // since 2.7, entries rebuilt from a scan dropped the mod id an older
+        // Vortex wrote to info.json
+        if (state.modId === undefined && ext.info?.modId !== undefined) {
+          this.mPendingModIds.push({ extId, modId: ext.info.modId });
+        }
         result.push(ext);
         loadedExtensions.add(ext.name);
         loadedFromState.add(ext.name);

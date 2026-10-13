@@ -47,7 +47,7 @@ export interface ExtensionInfo {
   bundled?: boolean;
   /** @deprecated not read from info.json anymore */
   path?: string;
-  /** @deprecated not read from info.json anymore */
+  /** @deprecated only read to re-link extensions installed before Vortex 2.7 */
   modId?: number;
   /** @deprecated not read from info.json anymore */
   fileId?: number;

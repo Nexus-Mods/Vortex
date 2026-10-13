@@ -66,6 +66,7 @@ export function extensionStateFromScan(
     enabled: recorded?.enabled ?? true,
     endorsed: recorded?.endorsed ?? "Undecided",
     remove: recorded?.remove ?? false,
+    modId: recorded?.modId ?? ext.info?.modId,
   };
 }
 
@@ -107,10 +108,10 @@ export function isAlreadyInstalled(
 /** Find all currently installed versions of an extension. */
 export function findPreviousVersions(
   installedExtension: Record<string, IExtensionState>,
-  catalogEntry: IAvailableExtension,
+  query: { modId: number },
 ): Array<{ key: string; extension: IExtensionState }> {
   return Object.entries(installedExtension)
-    .filter(([_, extension]) => extension.modId === catalogEntry.modId)
+    .filter(([_, extension]) => extension.modId === query.modId)
     .map(([key, extension]) => ({ key, extension }));
 }
 
