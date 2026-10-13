@@ -69,7 +69,7 @@ describe("ModalLayer", () => {
 
   it("renders nothing when the first dialog needs the legacy renderer", () => {
     renderLayer([
-      dialogWith("legacy", { text: "t", bbcode: "[b]b[/b]" }),
+      dialogWith("legacy", { text: "t", htmlText: "<b>b</b>" }),
       dialogWith("text", { text: "t" }),
     ]);
 
@@ -568,6 +568,7 @@ describe("ModalLayer", () => {
       await settleTransitions();
     });
   });
+
   describe("text", () => {
     it("draws the text as small prose, keeping its line breaks", async () => {
       renderLayer([dialogWith("one", { text: "First line\n\nSecond line" })]);
@@ -576,6 +577,63 @@ describe("ModalLayer", () => {
 
       expect(prose).toHaveClass("nxm-prose-sm", "whitespace-pre-line");
       expect(prose?.textContent).toBe("First line\n\nSecond line");
+
+      await settleTransitions();
+    });
+  });
+
+  describe("bbcode and markdown", () => {
+    it("draws bbcode tags", async () => {
+      renderLayer([dialogWith("one", { bbcode: "A [b]bold[/b] word" })]);
+
+      expect(screen.getByTestId("dialog-bbcode")).toHaveTextContent("A bold word");
+      expect(screen.getByTestId("dialog-bbcode").querySelector("b, strong")).toHaveTextContent(
+        "bold",
+      );
+
+      await settleTransitions();
+    });
+
+    it("fills in the parameters by hand, since bbcode is not a translation key", async () => {
+      renderLayer([
+        dialogWith("one", {
+          bbcode: "Hello [b]{{name}}[/b], you have {{count}} mods",
+          parameters: { name: "Ada", count: 3 },
+        }),
+      ]);
+
+      expect(screen.getByTestId("dialog-bbcode")).toHaveTextContent("Hello Ada, you have 3 mods");
+
+      await settleTransitions();
+    });
+
+    it("draws markdown", async () => {
+      renderLayer([dialogWith("one", { md: "Some **strong** text" })]);
+
+      expect(screen.getByTestId("dialog-markdown").querySelector("strong")).toHaveTextContent(
+        "strong",
+      );
+
+      await settleTransitions();
+    });
+
+    it("shows the bbcode after the text", async () => {
+      renderLayer([dialogWith("one", { text: "First", bbcode: "Second" })]);
+
+      const prose = screen.getByRole("dialog").querySelector(".nxm-prose") as HTMLElement;
+
+      expect(
+        prose.compareDocumentPosition(screen.getByTestId("dialog-bbcode")) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+
+      await settleTransitions();
+    });
+
+    it("uses the medium modal even when the body is short", async () => {
+      renderLayer([dialogWith("one", { bbcode: "Short" })]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
 
       await settleTransitions();
     });
