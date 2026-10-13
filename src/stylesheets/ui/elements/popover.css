@@ -18,7 +18,6 @@
         padding-block: calc(var(--spacing) * 1);
         min-width: calc(var(--spacing) * 52);
         max-width: calc(var(--spacing) * 72) !important;
-        --anchor-max-height: calc(var(--spacing) * 128);
     }
 
     .nxm-popover-panel-group {

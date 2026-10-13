@@ -28,6 +28,9 @@ export interface ITableRowClick {
  * `rows` is every row as it's shown, in order, so a range runs down the screen: a row in
  * two groups is there twice, and a range runs from the place it was clicked in.
  *
+ * A right-click selects just the row it's on, unless that's selected already, so a menu
+ * opened there is for what's selected; `add` and `remove` change the selection by rows.
+ *
  * Kept here unless `controlled` is given, with `onChange` to take each change.
  */
 export const useTableSelection = (
@@ -115,5 +118,25 @@ export const useTableSelection = (
     setSelected(new Set());
   }, [setSelected]);
 
-  return { header, checkbox, click, clear };
+  const contextClick = useCallback(
+    (row: ITableSelectionRow) => {
+      if (!selected.has(row.id)) {
+        anchorRef.current = row.key;
+        setSelected(new Set([row.id]));
+      }
+    },
+    [selected, setSelected],
+  );
+
+  const add = useCallback(
+    (ids: string[]) => setSelected(new Set([...selected, ...ids])),
+    [selected, setSelected],
+  );
+
+  const remove = useCallback(
+    (ids: string[]) => setSelected(new Set([...selected].filter((id) => !ids.includes(id)))),
+    [selected, setSelected],
+  );
+
+  return { header, checkbox, click, clear, contextClick, add, remove, selected };
 };

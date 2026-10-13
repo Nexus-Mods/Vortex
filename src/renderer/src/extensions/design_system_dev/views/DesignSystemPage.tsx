@@ -12,6 +12,7 @@ import { BadgesDemo } from "@/ui/components/badges/Badges.demo";
 import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { CollectionTileDemo } from "@/ui/components/collection_tile/CollectionTile.demo";
+import { ContextMenuDemo } from "@/ui/components/context_menu/ContextMenu.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
 import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
 import { SelectFieldDemo } from "@/ui/components/form/select_field/SelectField.demo";
@@ -225,6 +226,8 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
                   <TabButton name="Picker" panelId="picker" />
 
                   <TabButton name="Popover" panelId="popover" />
+
+                  <TabButton name="Context menu" panelId="context-menu" />
                 </TabBar>
 
                 <div className="mt-6">
@@ -238,6 +241,10 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
 
                   <TabPanel id="popover">
                     <PopoverDemo />
+                  </TabPanel>
+
+                  <TabPanel id="context-menu">
+                    <ContextMenuDemo />
                   </TabPanel>
                 </div>
               </TabProvider>

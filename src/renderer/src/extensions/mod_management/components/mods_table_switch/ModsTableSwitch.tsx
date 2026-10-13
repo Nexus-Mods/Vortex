@@ -25,6 +25,7 @@ import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/Tab
 import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { TitledTooltip } from "@/ui/components/tooltip/TitledTooltip";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { activeGameId } from "@/util/selectors";
@@ -666,6 +667,23 @@ export const ModsTableSwitch = ({
     getRowLabel: ({ name }: IModRow) => name,
     selectedIds: selected,
     onSelectedIdsChange: setSelected,
+    rowMenu: ({ mod, name }: IModRow, close: () => void) =>
+      multiSelected ? (
+        <ToolbarMenu
+          actions={selectionActions}
+          label={t("Selected mods actions")}
+          pinningId={MOD_SELECTION_PINNING_ID}
+          onSelect={close}
+        />
+      ) : (
+        <ToolbarMenu
+          actions={actionsFor(mod.id)}
+          label={t("{{name}} actions", { name })}
+          pinningId={MOD_ROW_PINNING_ID}
+          pinTarget="row"
+          onSelect={close}
+        />
+      ),
     defaultSort: BY_NAME,
     footer,
     empty: matches ? (

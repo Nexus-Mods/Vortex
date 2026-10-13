@@ -1,6 +1,7 @@
 import React, {
   type CSSProperties,
   Fragment,
+  type MouseEvent,
   useCallback,
   useLayoutEffect,
   useMemo,
@@ -8,10 +9,16 @@ import React, {
   useState,
 } from "react";
 
+import {
+  ContextMenu,
+  contextMenuPosition,
+  type IContextMenuPosition,
+} from "@/ui/components/context_menu/ContextMenu";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { ITableGroup, ITableProps, TableItem } from "./Table.types";
 import { TableGroupBackdrop } from "./TableGroupBackdrop";
+import { TableGroupMenu } from "./TableGroupMenu";
 import { TableGroupRow } from "./TableGroupRow";
 import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
@@ -34,7 +41,10 @@ const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
  * every row is a subgrid of them, so cells line up across rows without a `<table>`.
  * Carries the grid roles, so it reads as a table to assistive tech; grouped, it's a
  * treegrid whose group rows collapse. Only the rows in view render, against the page's
- * scroller, under a header that sticks to it.
+ * scroller, under a header that sticks to it. A right-click on a group row offers to collapse
+ * or expand it or every group, and to select its rows; on a row, its `rowMenu`, once the
+ * row is selected. Every selected row shows what's in it as a hovered one does, so a table
+ * that shows actions in its rows decides itself what several selected rows show.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columns,
@@ -51,6 +61,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowLabel,
   selectedIds,
   onSelectedIdsChange,
+  rowMenu,
 }: ITableProps<T, G>) => {
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
 
@@ -69,6 +80,11 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       }
       return next;
     });
+
+  const [menu, setMenu] = useState<
+    | { position: IContextMenuPosition; kind: "row"; row: T }
+    | { position: IContextMenuPosition; kind: "group"; group: G; expanded: boolean }
+  >();
 
   // Every row in order, a group's under it while it's open, as the virtualiser counts them.
   const items = useMemo<Array<TableItem<T, G>>>(() => {
@@ -217,6 +233,15 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 group={item.group}
                 index={index}
                 rowIndex={index + headRows + 1}
+                onContextMenu={(event: MouseEvent<HTMLDivElement>) => {
+                  event.preventDefault();
+                  setMenu({
+                    position: contextMenuPosition(event),
+                    kind: "group",
+                    group: item.group,
+                    expanded: item.expanded,
+                  });
+                }}
                 onToggle={() => toggle(item.group.id)}
               />
             ) : (
@@ -241,6 +266,21 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                     ? (click) => selection.click({ key: item.key, id: getRowId(item.row) }, click)
                     : undefined
                 }
+                onContextMenu={
+                  rowMenu
+                    ? (event) => {
+                        event.preventDefault();
+                        if (selectable) {
+                          selection.contextClick({ key: item.key, id: getRowId(item.row) });
+                        }
+                        setMenu({
+                          position: contextMenuPosition(event),
+                          kind: "row",
+                          row: item.row,
+                        });
+                      }
+                    : undefined
+                }
               />
             )}
           </Fragment>
@@ -256,6 +296,36 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           </div>
         </div>
       )}
+
+      <ContextMenu position={menu?.position} onClose={() => setMenu(undefined)}>
+        {(close) => {
+          if (menu?.kind === "group") {
+            return (
+              <TableGroupMenu
+                expanded={menu.expanded}
+                label={menu.group.label}
+                onSelect={close}
+                allSelected={
+                  menu.group.rows.length > 0 &&
+                  menu.group.rows.every((row) => selection.selected.has(getRowId(row)))
+                }
+                onDeselectAll={
+                  selectable ? () => selection.remove(menu.group.rows.map(getRowId)) : undefined
+                }
+                onSelectAll={
+                  selectable ? () => selection.add(menu.group.rows.map(getRowId)) : undefined
+                }
+                onSetAllExpanded={(expanded) =>
+                  setCollapsed(new Set(expanded ? [] : (groups ?? []).map((group) => group.id)))
+                }
+                onToggle={() => toggle(menu.group.id)}
+              />
+            );
+          }
+
+          return menu === undefined ? null : rowMenu?.(menu.row, close);
+        }}
+      </ContextMenu>
 
       {!!footer && (
         <div aria-rowindex={bodyRows + headRows + 1} className="nxm-table-footer" role="row">
