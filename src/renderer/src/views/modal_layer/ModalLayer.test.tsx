@@ -217,7 +217,7 @@ describe("ModalLayer", () => {
     });
 
     it("uses the medium modal for a longer message", async () => {
-      renderLayer([dialogWith("one", { text: "x".repeat(121) })]);
+      renderLayer([dialogWith("one", { text: "x".repeat(201) })]);
 
       expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
 
@@ -468,6 +468,54 @@ describe("ModalLayer", () => {
       await userEvent.type(screen.getByTestId("dialog-input-name"), "{Enter}");
 
       expect(closeDialog).not.toHaveBeenCalled();
+
+      await settleTransitions();
+    });
+  });
+  describe("buttons", () => {
+    const asking = (actions: string[], defaultAction?: string): IDialog => ({
+      ...dialogWith("one", { text: "Hello" }),
+      actions,
+      defaultAction: defaultAction as string,
+    });
+
+    it("lets the buttons hug their labels instead of filling the row", async () => {
+      renderLayer([asking(["Cancel", "Continue"], "Continue")]);
+
+      for (const button of screen.getAllByRole("button")) {
+        expect(button).not.toHaveClass("flex-1");
+      }
+
+      await settleTransitions();
+    });
+
+    it("shows a lone action that is not the default as the strong neutral button", async () => {
+      renderLayer([asking(["Close"])]);
+
+      expect(screen.getByTestId("dialog-action-Close")).toHaveClass(
+        "nxm-button-neutral",
+        "nxm-button-strong",
+      );
+
+      await settleTransitions();
+    });
+
+    it("shows a lone action that is the default as the primary button", async () => {
+      renderLayer([asking(["Save"], "Save")]);
+
+      expect(screen.getByTestId("dialog-action-Save")).toHaveClass("nxm-button-primary");
+
+      await settleTransitions();
+    });
+
+    it("shows the other actions of a dialog as neutral alternatives", async () => {
+      renderLayer([asking(["Cancel", "Continue"], "Continue")]);
+
+      expect(screen.getByTestId("dialog-action-Cancel")).toHaveClass(
+        "nxm-button-neutral",
+        "nxm-button-moderate",
+      );
+      expect(screen.getByTestId("dialog-action-Continue")).toHaveClass("nxm-button-primary");
 
       await settleTransitions();
     });

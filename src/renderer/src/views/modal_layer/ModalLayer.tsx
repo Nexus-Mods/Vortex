@@ -37,7 +37,7 @@ const rememberedDialogIds = (dialogs: IDialog[], current: IDialog): string[] => 
 const DANGER_ACTIONS = new Set(["Remove"]);
 
 // A short message reads better in the small modal. Longer ones keep the medium size.
-const SMALL_MAX_TEXT_LENGTH = 120;
+const SMALL_MAX_TEXT_LENGTH = 200;
 
 // Escape and backdrop clicks don't answer a legacy dialog, so there is nothing for them to do
 // here either: closing without an action would leave the caller's promise pending forever.
@@ -123,6 +123,23 @@ export const ModalLayer = () => {
   const isDisabled = (action: string) => results.some((result) => result.actions.includes(action));
 
   const hasDangerAction = actions.some((action) => DANGER_ACTIONS.has(action));
+
+  // The default action is the primary one, unless the dialog has a danger button, which then stands
+  // out alone. A lone action that isn't the default is a way out, like "Close", so it is the strong
+  // neutral button. Anything else is a neutral alternative.
+  const buttonColour = (action: string) => {
+    if (DANGER_ACTIONS.has(action)) {
+      return { brand: "danger" } as const;
+    }
+
+    if (action === defaultAction && !hasDangerAction) {
+      return {};
+    }
+
+    return actions.length === 1
+      ? ({ appearance: "strong", brand: "neutral" } as const)
+      : ({ appearance: "moderate", brand: "neutral" } as const);
+  };
 
   const answer = (action: string) => {
     // `{}` is what the legacy renderer hands back when the dialog has no controls.
@@ -248,27 +265,19 @@ export const ModalLayer = () => {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {actions.map((action) => {
-          const isDefault = action === defaultAction;
-          const isDanger = DANGER_ACTIONS.has(action);
-          const isPrimary = isDefault && !hasDangerAction;
-
-          return (
-            <Button
-              className="min-w-fit flex-1"
-              data-testid={`dialog-action-${action}`}
-              disabled={isDisabled(action)}
-              key={action}
-              ref={isDefault ? defaultButtonRef : undefined}
-              {...(isDanger && { brand: "danger" })}
-              {...(!isDanger && !isPrimary && { appearance: "moderate", brand: "neutral" })}
-              onClick={() => answer(action)}
-            >
-              {t(action)}
-            </Button>
-          );
-        })}
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        {actions.map((action) => (
+          <Button
+            data-testid={`dialog-action-${action}`}
+            disabled={isDisabled(action)}
+            key={action}
+            ref={action === defaultAction ? defaultButtonRef : undefined}
+            {...buttonColour(action)}
+            onClick={() => answer(action)}
+          >
+            {t(action)}
+          </Button>
+        ))}
       </div>
     </Modal>
   );
