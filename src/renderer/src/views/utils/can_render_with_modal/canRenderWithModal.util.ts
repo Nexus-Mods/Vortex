@@ -7,6 +7,7 @@ const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "text",
   "bbcode",
   "md",
+  "htmlText",
   "message",
   "checkboxes",
   "choices",
@@ -91,6 +92,7 @@ export const canRenderWithModal = (dialog: IDialog): boolean => {
     (!!content.text ||
       !!content.bbcode ||
       !!content.md ||
+      !!content.htmlText ||
       !!content.message ||
       (content.choices?.length ?? 0) > 0 ||
       (content.input?.length ?? 0) > 0) &&
