@@ -3,6 +3,10 @@ import userEvent from "@testing-library/user-event";
 import React, { type MouseEvent } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { Popover } from "@/ui/components/popover/Popover";
+import { PopoverButton } from "@/ui/components/popover/PopoverButton";
+import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
+
 import { ContextMenu, contextMenuPosition, type IContextMenuPosition } from "./ContextMenu";
 
 const renderMenu = (position: IContextMenuPosition | undefined, onClose = vi.fn()) => {
@@ -86,6 +90,28 @@ describe("ContextMenu", () => {
     fireEvent.pointerDown(document.body);
 
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("stays open on a press in a panel one of its rows opened", async () => {
+    const onClose = vi.fn();
+    render(
+      <ContextMenu position={{ x: 10, y: 20 }} onClose={onClose}>
+        {() => (
+          <Popover>
+            <PopoverButton>Move to</PopoverButton>
+
+            <PopoverPanel anchor="right start">
+              <button type="button">Archive</button>
+            </PopoverPanel>
+          </Popover>
+        )}
+      </ContextMenu>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Move to", hidden: true }));
+    fireEvent.pointerDown(await screen.findByRole("button", { name: "Archive", hidden: true }));
+
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
 

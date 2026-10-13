@@ -806,6 +806,43 @@ describe("Table's context menus", () => {
     expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("selects the group's rows as they are when chosen, not when it opened", async () => {
+    const { rerender } = renderGrouped();
+    fireEvent.contextMenu(groupRow("First"));
+
+    rerender(
+      <Table
+        selectable
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+        groups={[{ id: "first", label: "First", rows: ROWS }]}
+        label="Files"
+      />,
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+
+    expect([checked("Alpha"), checked("Beta")]).toEqual([true, true]);
+  });
+
+  it("closes once its group is gone", () => {
+    const { rerender } = renderGrouped();
+    fireEvent.contextMenu(groupRow("First"));
+
+    rerender(
+      <Table
+        selectable
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+        groups={[GROUPS[1]]}
+        label="Files"
+      />,
+    );
+
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
   it("offers no selecting where rows can't be selected", () => {
     renderGrouped(false);
 

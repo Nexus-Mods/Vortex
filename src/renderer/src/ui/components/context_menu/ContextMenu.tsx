@@ -25,9 +25,6 @@ export interface IContextMenuPosition {
   element?: Element;
 }
 
-/** Headless UI's portals, such as a panel a menu row opened, which are part of the menu. */
-const HEADLESS_PORTAL = "[data-headlessui-portal]";
-
 /**
  * Where a `contextmenu` event asks for a menu: at the pointer, or, from the keyboard (Shift+F10
  * or the Menu key), under the start of the element with focus. Chromium marks a keyboard one
@@ -105,13 +102,7 @@ export const ContextMenu = ({ position, onClose, children }: IContextMenuProps) 
     }
   }, [position, refs]);
 
-  const { getFloatingProps } = useInteractions([
-    useDismiss(context, {
-      ancestorScroll: true,
-      outsidePress: (event) =>
-        !(event.target instanceof Element && event.target.closest(HEADLESS_PORTAL)),
-    }),
-  ]);
+  const { getFloatingProps } = useInteractions([useDismiss(context, { ancestorScroll: true })]);
 
   const returnTo = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {

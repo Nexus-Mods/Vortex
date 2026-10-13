@@ -3,6 +3,7 @@ import React, {
   Fragment,
   type MouseEvent,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -83,8 +84,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
   const [menu, setMenu] = useState<
     | { position: IContextMenuPosition; kind: "row"; row: T }
-    | { position: IContextMenuPosition; kind: "group"; group: G; expanded: boolean }
+    | { position: IContextMenuPosition; kind: "group"; groupId: string }
   >();
+  const menuGroup =
+    menu?.kind === "group" ? groups?.find((group) => group.id === menu.groupId) : undefined;
+
+  useEffect(() => {
+    if (menu?.kind === "group" && !menuGroup) {
+      setMenu(undefined);
+    }
+  }, [menu, menuGroup]);
 
   // Every row in order, a group's under it while it's open, as the virtualiser counts them.
   const items = useMemo<Array<TableItem<T, G>>>(() => {
@@ -238,8 +247,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                   setMenu({
                     position: contextMenuPosition(event),
                     kind: "group",
-                    group: item.group,
-                    expanded: item.expanded,
+                    groupId: item.group.id,
                   });
                 }}
                 onToggle={() => toggle(item.group.id)}
@@ -300,25 +308,29 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       <ContextMenu position={menu?.position} onClose={() => setMenu(undefined)}>
         {(close) => {
           if (menu?.kind === "group") {
+            if (!menuGroup) {
+              return null;
+            }
+
             return (
               <TableGroupMenu
-                expanded={menu.expanded}
-                label={menu.group.label}
+                expanded={!collapsed.has(menuGroup.id)}
+                label={menuGroup.label}
                 onSelect={close}
                 allSelected={
-                  menu.group.rows.length > 0 &&
-                  menu.group.rows.every((row) => selection.selected.has(getRowId(row)))
+                  !!menuGroup.rows.length &&
+                  menuGroup.rows.every((row) => selection.selected.has(getRowId(row)))
                 }
                 onDeselectAll={
-                  selectable ? () => selection.remove(menu.group.rows.map(getRowId)) : undefined
+                  selectable ? () => selection.remove(menuGroup.rows.map(getRowId)) : undefined
                 }
                 onSelectAll={
-                  selectable ? () => selection.add(menu.group.rows.map(getRowId)) : undefined
+                  selectable ? () => selection.add(menuGroup.rows.map(getRowId)) : undefined
                 }
                 onSetAllExpanded={(expanded) =>
                   setCollapsed(new Set(expanded ? [] : (groups ?? []).map((group) => group.id)))
                 }
-                onToggle={() => toggle(menu.group.id)}
+                onToggle={() => toggle(menuGroup.id)}
               />
             );
           }
