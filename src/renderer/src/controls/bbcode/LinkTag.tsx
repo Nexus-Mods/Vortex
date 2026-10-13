@@ -41,11 +41,14 @@ class LinkTag extends Tag {
     const title = linkUrl.startsWith("cb:") ? undefined : linkUrl;
 
     const { callbacks, allowLocal } = this.renderer.options;
+    // Worked out now: the renderer's options are only set while it renders, not when React does.
+    const href = this.href(linkUrl);
+
     return (
       <ErrorContext.Consumer>
         {(context) => (
           <a
-            href={linkUrl}
+            href={href}
             // tslint:disable-next-line:jsx-no-lambda
             onClick={context.safeCB(
               (evt) => this.clicked(evt, callbacks, allowLocal),
@@ -58,6 +61,11 @@ class LinkTag extends Tag {
         )}
       </ErrorContext.Consumer>
     );
+  }
+
+  /** The target the link points at. Subclasses can leave it off, to keep it from being followed. */
+  protected href(linkUrl: string): string | undefined {
+    return linkUrl;
   }
 
   private clicked = (evt: React.MouseEvent<any>, callbacks, allowLocal: boolean) => {
