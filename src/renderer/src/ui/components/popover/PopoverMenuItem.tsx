@@ -44,6 +44,11 @@ interface IMenuActionBase {
   panelRole?: "dialog" | "menu";
   /** Colours the row for a brand, such as a premium action. */
   brand?: IButtonBrand;
+  /**
+   * Shows a toggle as on: its icon in the accent colour, and on a toolbar a background its
+   * button keeps at rest. Its label should say what activating it does next.
+   */
+  active?: boolean;
   /** A pin toggle at the row's end, for pinning the action outside the menu. */
   pin?: {
     /** Whether the action is pinned now, which picks the pin or unpin icon. */
@@ -211,6 +216,7 @@ const PopoverMenuPanelItem = forwardRef<
           <HeadlessPopoverButton
             aria-haspopup={action.panelRole ?? "dialog"}
             className={joinClasses(["nxm-dropdown-item", dropdownItemBrandClass(action.brand)], {
+              "nxm-dropdown-item-active": !!action.active,
               "nxm-dropdown-item-focus": hasFocus || open,
             })}
             aria-disabled={keepsPin || undefined}
@@ -317,6 +323,7 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
     return (
       <button
         className={joinClasses(["nxm-dropdown-item", dropdownItemBrandClass(action.brand)], {
+          "nxm-dropdown-item-active": !!action.active,
           "nxm-dropdown-item-focus": hasFocus,
         })}
         aria-disabled={keepsPin || undefined}

@@ -2,13 +2,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { Provider } from "react-redux";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const mocks = vi.hoisted(() => ({ newTable: false }));
-
-vi.mock("@/views/components/dev_tools/useDevSetting.hook", () => ({
-  useDevSetting: () => mocks.newTable,
-}));
+import { describe, expect, it, vi } from "vitest";
 
 import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
@@ -25,10 +19,14 @@ const collection = (id: string, name: string, memberIds: string[]) =>
     rules: memberIds.map((memberId) => ({ type: "requires", reference: { id: memberId } })),
   });
 
-const renderSwitch = (mods: { [id: string]: IModWithState }, rowActions?: ITableRowAction[]) => {
+const renderSwitch = (
+  mods: { [id: string]: IModWithState },
+  rowActions?: ITableRowAction[],
+  betaTable = true,
+) => {
   const onSetModsEnabled = vi.fn();
   render(
-    <Provider store={makeModsTableStore()}>
+    <Provider store={makeModsTableStore({ betaTable })}>
       <ModsTableSwitch
         legacy={<div data-testid="legacy-table" />}
         mods={mods}
@@ -54,13 +52,8 @@ const bodyRows = (table: HTMLElement) =>
 const cellText = (row: HTMLElement) => within(row).getAllByRole("gridcell")[0].textContent;
 
 describe("ModsTableSwitch", () => {
-  beforeEach(() => {
-    mocks.newTable = true;
-  });
-
-  it("shows the legacy table while the new table design is off", () => {
-    mocks.newTable = false;
-    renderSwitch({ a: mod("a", "Alpha", true) });
+  it("shows the classic table while the beta view is off", () => {
+    renderSwitch({ a: mod("a", "Alpha", true) }, undefined, false);
 
     expect(screen.getByTestId("legacy-table")).toBeInTheDocument();
     expect(screen.queryByRole("grid")).toBeNull();

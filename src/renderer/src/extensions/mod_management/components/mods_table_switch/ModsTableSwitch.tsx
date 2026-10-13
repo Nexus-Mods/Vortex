@@ -23,7 +23,6 @@ import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/Tab
 import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
-import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import { activeProfile } from "../../../profile_management/selectors";
@@ -57,7 +56,7 @@ import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
 interface IModsTableSwitchProps {
   /** The mods the table lists, collections among them. */
   mods: { [id: string]: IModWithState };
-  /** The table shown unless the dev tools "New table design" switch is on. */
+  /** The table shown unless the user has switched to the beta view. */
   legacy: ReactNode;
   /** Enables or disables mods, installing any that are only downloaded first; settles once done. */
   onSetModsEnabled: (modIds: string[], enabled: boolean) => void | PromiseLike<unknown>;
@@ -77,6 +76,8 @@ const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
 
 const profileModState = (state: IState) => activeProfile(state)?.modState;
 
+const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
+
 /**
  * Whether a row shows the text searched for, ignoring case, in any of the columns' cells;
  * undefined while there's nothing to search for.
@@ -92,7 +93,7 @@ const searchFilter = (columns: IModsTableColumn[], search: string) => {
     columns.some((column) => column.searchText?.(row).toLocaleLowerCase().includes(query));
 };
 
-/** The Mods page's table: the legacy one, or the new table while it's being built. */
+/** The Mods page's table: the classic one, or the new one while the user has the beta view on. */
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 
 // The switch and the menu's button; each pinned action adds a 28px button and an 8px gap.
@@ -204,7 +205,7 @@ export const ModsTableSwitch = ({
   rowActions = NO_ROW_ACTIONS,
 }: IModsTableSwitchProps) => {
   const { t } = useTranslation(["common"]);
-  const newTable = useDevSetting("newTable");
+  const newTable = useSelector(betaTable);
 
   const [grouping, setGrouping] = useState<ModsTableGrouping>("none");
   const rows = useMemo(() => allModRows(mods), [mods]);

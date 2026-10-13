@@ -4,7 +4,11 @@ import type { IMenuAction, IPopoverPanel } from "@/ui/components/popover/Popover
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import type { IToolbarAnalytics, ToolbarSurface } from "./Toolbar.context";
+import type {
+  IToolbarAnalytics,
+  IToolbarTrackingProperties,
+  ToolbarSurface,
+} from "./Toolbar.context";
 import { identityOf, useToolbarContext } from "./Toolbar.context";
 import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarOverflow } from "./ToolbarOverflow";
@@ -23,6 +27,8 @@ export type IToolbarPanel = IPopoverPanel;
  */
 export type IToolbarAction = IMenuAction & {
   showLabel?: boolean;
+  /** Said under the label in its tooltip on the bar, where there's more to say than its name. */
+  description?: string;
   testId?: string;
   /**
    * What a decision to pin this action is stored against, so it must not change with
@@ -41,6 +47,11 @@ export type IToolbarAction = IMenuAction & {
    * buttons come from. Absent for an action the page owns.
    */
   extension?: string;
+  /**
+   * Extra properties its clicks report on a toolbar that counts them, such as which way a
+   * toggle went. Never anything about the user.
+   */
+  trackingProperties?: IToolbarTrackingProperties;
 };
 
 type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
@@ -72,7 +83,9 @@ const widthSignature = (actions: IToolbarAction[]): string =>
 const controlProps = (action: IToolbarAction) => ({
   appearance: "weak" as const,
   brand: action.brand ?? "neutral",
+  className: action.active ? "nxm-button-active" : undefined,
   "data-testid": action.testId,
+  description: action.description,
   disabled: action.disabled,
   isLoading: action.isLoading,
   label: action.label,
@@ -219,10 +232,11 @@ const ToolbarGroupBody = ({
       ref={groupRef}
       {...props}
     >
+      {/* By id where there is one, so a toggle whose label changes keeps its button, and focus. */}
       {visibleActions.map((action) => (
         <ToolbarControl
           action={action}
-          key={action.label}
+          key={action.id ?? action.label}
           onClick={panelClickReporter(action, tracking?.onActionClick)}
         />
       ))}

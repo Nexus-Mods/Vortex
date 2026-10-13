@@ -102,7 +102,8 @@ export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => 
 
             {!!pinning?.canReset && (
               <>
-                <DropdownDivider />
+                {/* Out of the menu's rows and their gap, so it makes up the gap's 2px itself. */}
+                <DropdownDivider className="mt-1" />
 
                 <PopoverPanelGroupItem className="h-auto justify-end py-3">
                   <TypographyLink

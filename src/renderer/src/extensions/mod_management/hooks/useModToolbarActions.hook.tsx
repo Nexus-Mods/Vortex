@@ -15,6 +15,7 @@ import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { trackedActions } from "@/ui/components/toolbar/ToolbarGroup";
+import { nxmLabs } from "@/ui/icon-paths";
 import { fileMD5 } from "@/util/checksum";
 import { TemporaryError, UserCanceled } from "@/util/CustomErrors";
 import * as fs from "@/util/fs";
@@ -25,6 +26,7 @@ import { batchDispatch } from "@/util/util";
 import { getIconPath } from "@/views/components/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
+import { setBetaModsTable } from "../actions/settings";
 import { selectModsToUpdate } from "../util/collection_update_warning/collectionUpdateWarning";
 import { NoDeployment } from "../util/exceptions";
 import metaLookupMatch from "../util/metaLookupMatch";
@@ -61,6 +63,7 @@ const POSITION = {
   deploy: 105,
   purge: 110,
   import: 120,
+  betaTable: 1000,
 };
 
 /**
@@ -108,9 +111,9 @@ const NO_ACTIONS: IPositionedAction[] = [];
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
-/** Deploy (Apply changes) — was `ActivationButton`. Disabled and unbranded while applying. */
+/** Deploy (Apply changes) — was `ActivationButton`. Neutral always; disabled while applying. */
 const useDeployAction = (t: TFunction): IPositionedAction => {
-  const { needToDeploy, isDeploying, deploy } = useDeployMods();
+  const { isDeploying, deploy } = useDeployMods();
 
   return useMemo(
     () => ({
@@ -121,12 +124,47 @@ const useDeployAction = (t: TFunction): IPositionedAction => {
         iconPath: getIconPath("deploy"),
         pinned: true,
         testId: "deploy-mods",
-        brand: needToDeploy && !isDeploying ? "primary" : "neutral",
         disabled: isDeploying,
         onClick: deploy,
       },
     }),
-    [deploy, isDeploying, needToDeploy, t],
+    [deploy, isDeploying, t],
+  );
+};
+
+/**
+ * Switches the Mods page between the classic table and the new one, in beta. After every
+ * other action, in a section of its own in the overflow menu, and lit while the beta is on.
+ */
+const useBetaTableAction = (t: TFunction): IPositionedAction => {
+  const dispatch = useDispatch();
+  const betaTable = useSelector((state: IState) => state.settings.mods.betaTable === true);
+
+  return useMemo(
+    () => ({
+      position: POSITION.betaTable,
+      action: {
+        id: "beta-table",
+        ...(betaTable
+          ? {
+              label: t("Switch to classic view"),
+              description: t("Return to the original mod list."),
+            }
+          : {
+              label: t("Switch to beta view"),
+              description: t("Try the new mod list. Some features aren't supported yet."),
+            }),
+        iconPath: nxmLabs,
+        active: betaTable,
+        pinned: true,
+        section: "view",
+        testId: "beta-mods-table",
+        // The view it switches to.
+        trackingProperties: { view: betaTable ? "classic" : "beta" },
+        onClick: () => dispatch(setBetaModsTable(!betaTable)),
+      },
+    }),
+    [betaTable, dispatch, t],
   );
 };
 
@@ -615,6 +653,7 @@ export const useModToolbarActions = (
   const checkVersions = useCheckVersionsAction(t);
   const deploy = useDeployAction(t);
   const purge = usePurgeAction(t);
+  const betaTable = useBetaTableAction(t);
   const registered = useRegisteredActions("mod-icons");
 
   const byIcon = useMemo(() => _.groupBy(registered, (entry) => entry.icon), [registered]);
@@ -633,10 +672,10 @@ export const useModToolbarActions = (
 
   return useMemo(
     () =>
-      [installFromFile, checkVersions, deploy, purge, open, importFrom, ...ownRow]
+      [installFromFile, checkVersions, deploy, purge, open, importFrom, betaTable, ...ownRow]
         .filter((entry): entry is IPositionedAction => entry !== undefined)
         .sort((lhs, rhs) => lhs.position - rhs.position)
         .map((entry) => entry.action),
-    [checkVersions, deploy, importFrom, installFromFile, open, ownRow, purge],
+    [betaTable, checkVersions, deploy, importFrom, installFromFile, open, ownRow, purge],
   );
 };

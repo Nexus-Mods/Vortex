@@ -1032,6 +1032,21 @@ describe("click tracking", () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
+  it("reports an action's own properties with its click", async () => {
+    const onActionClick = vi.fn();
+    trackedToolbar(
+      [{ label: "Beta", id: "beta", trackingProperties: { view: "beta" }, onClick: vi.fn() }],
+      onActionClick,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Beta" }));
+
+    expect(onActionClick).toHaveBeenCalledWith(
+      { id: "beta", extension: undefined, properties: { view: "beta" } },
+      "bar",
+    );
+  });
+
   it("reports an overflowed action against the overflow, not the bar", async () => {
     const onActionClick = vi.fn();
     const onClick = vi.fn();
@@ -1138,5 +1153,78 @@ describe("click tracking", () => {
 
       expect(onActionClick).toHaveBeenCalledOnce();
     });
+  });
+});
+
+describe("ToolbarGroup toggles", () => {
+  /** An action that toggles, saying what pressing it does next, as the beta table's does. */
+  const Toggle = () => {
+    const [on, setOn] = React.useState(false);
+
+    return (
+      <ToolbarGroup
+        actions={[
+          {
+            id: "toggle",
+            label: on ? "Turn off" : "Turn on",
+            description: on ? "Back to how it was." : "Try it out.",
+            iconPath: "mdi-test",
+            active: on,
+            onClick: () => setOn(!on),
+          },
+        ]}
+      />
+    );
+  };
+
+  it("shows an active action's button as on", async () => {
+    render(<Toggle />);
+    const button = screen.getByRole("button", { name: "Turn on" });
+
+    expect(button).not.toHaveClass("nxm-button-active");
+
+    await userEvent.click(button);
+
+    expect(screen.getByRole("button", { name: "Turn off" })).toHaveClass("nxm-button-active");
+  });
+
+  it("keeps the button, and focus on it, as its label changes", async () => {
+    render(<Toggle />);
+    const button = screen.getByRole("button", { name: "Turn on" });
+
+    await userEvent.click(button);
+
+    expect(screen.getByRole("button", { name: "Turn off" })).toBe(button);
+    expect(button).toHaveFocus();
+  });
+
+  it("titles a described action's tooltip, with what it means under it", async () => {
+    render(<Toggle />);
+    const button = screen.getByRole("button", { name: "Turn on" });
+
+    expect(button).toHaveAccessibleDescription("Try it out.");
+
+    await userEvent.hover(button);
+
+    const tooltip = await screen.findByRole("tooltip");
+    expect(within(tooltip).getByText("Turn on")).toHaveClass("font-semibold");
+    expect(tooltip).toHaveTextContent("Try it out.");
+  });
+
+  it("shows an active action's row in the overflow menu as on", async () => {
+    render(
+      <ToolbarGroup
+        actions={[
+          ...makeActions(7),
+          { label: "Turn off", iconPath: "mdi-test", active: true, onClick: () => undefined },
+        ]}
+        maxVisible={7}
+      />,
+    );
+    await userEvent.click(getKebab());
+
+    expect(screen.getByRole("menuitem", { name: "Turn off" })).toHaveClass(
+      "nxm-dropdown-item-active",
+    );
   });
 });

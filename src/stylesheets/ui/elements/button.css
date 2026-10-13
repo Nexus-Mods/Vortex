@@ -108,6 +108,21 @@
         border: 1px solid var(--color-stroke-weak);
     }
 
+    /* A toggle that's on: the accent colour, brightening on hover, on a background it keeps at rest. */
+    .nxm-button.nxm-button-weak.nxm-button-active {
+        color: var(--color-primary-subdued);
+        background-color: var(--color-surface-translucent-low);
+
+        &:is(a, :enabled):not(.nxm-button-disabled) {
+            &:hover,
+            &:focus-visible,
+            &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
+                color: var(--color-primary-strong);
+                background-color: var(--color-surface-translucent-mid);
+            }
+        }
+    }
+
     .nxm-button-primary {
         &.nxm-button-strong {
             background-color: var(--color-primary-moderate);
