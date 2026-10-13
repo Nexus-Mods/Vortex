@@ -7,7 +7,7 @@ import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField
 import { TextField } from "@/ui/components/form/text_field/TextField";
 import { MessageBox } from "@/ui/components/message_box/MessageBox";
 import { Modal } from "@/ui/components/modal/Modal";
-import { Typography } from "@/ui/components/typography/Typography";
+import { PlainText } from "@/ui/components/prose/plain_text/PlainText";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 
 import { closeDialog, closeDialogs, triggerDialogLink } from "../../actions/notifications";
@@ -173,11 +173,7 @@ export const ModalLayer = () => {
       title={translate(title)}
       onClose={ignoreClose}
     >
-      {!!text && (
-        <Typography appearance="subdued" className="whitespace-pre-wrap" typographyType="body-sm">
-          {text}
-        </Typography>
-      )}
+      {!!text && <PlainText size="sm" text={text} />}
 
       {content.message !== undefined && (
         <MessageBox

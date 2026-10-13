@@ -520,4 +520,16 @@ describe("ModalLayer", () => {
       await settleTransitions();
     });
   });
+  describe("text", () => {
+    it("draws the text as small prose, keeping its line breaks", async () => {
+      renderLayer([dialogWith("one", { text: "First line\n\nSecond line" })]);
+
+      const prose = screen.getByRole("dialog").querySelector(".nxm-prose");
+
+      expect(prose).toHaveClass("nxm-prose-sm", "whitespace-pre-line");
+      expect(prose?.textContent).toBe("First line\n\nSecond line");
+
+      await settleTransitions();
+    });
+  });
 });
