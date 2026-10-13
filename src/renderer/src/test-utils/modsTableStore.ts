@@ -24,6 +24,7 @@ export const makeModsTableStore = ({
   modState,
   mods = {},
   betaTable = true,
+  activity = {},
 }: {
   tables?: IModsTableTestTables;
   downloads?: { [id: string]: Partial<IDownload> };
@@ -31,6 +32,8 @@ export const makeModsTableStore = ({
   modState?: { [modId: string]: { enabled: boolean } };
   mods?: { [modId: string]: object };
   betaTable?: boolean;
+  /** What's under way, by group, as `session.base.activity` lists it. */
+  activity?: { [group: string]: string[] };
 } = {}) => {
   const initial = {
     settings: {
@@ -39,6 +42,7 @@ export const makeModsTableStore = ({
       profiles: { activeProfileId: "profile" },
       mods: { betaTable },
     },
+    session: { base: { activity } },
     persistent: {
       profiles: { profile: { gameId: MODS_TABLE_TEST_GAME, modState } },
       downloads: { files: downloads },
