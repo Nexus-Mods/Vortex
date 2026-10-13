@@ -11,6 +11,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  # paths-filter lists PR files via the API
+  pull-requests: read
+
 jobs:
   # Required status checks stay "Expected" forever when a workflow is skipped by
   # paths-ignore, so filter inside the workflow instead: a skipped job reports success.
