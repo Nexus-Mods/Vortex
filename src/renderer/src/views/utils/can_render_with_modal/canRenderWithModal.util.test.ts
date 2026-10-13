@@ -70,9 +70,16 @@ describe("canRenderWithModal", () => {
     ).toBe(true);
   });
 
+  it("accepts a checkbox named by its bbcode", () => {
+    expect(
+      canRenderWithModal(
+        dialogWith({ text: "t", checkboxes: [{ id: "a", value: false, bbcode: "[b]Agree[/b]" }] }),
+      ),
+    ).toBe(true);
+  });
+
   it.each<[string, ICheckbox]>([
-    ["no text", { id: "a", value: false }],
-    ["bbcode", { id: "a", value: false, text: "t", bbcode: "[b]b[/b]" }],
+    ["no text and no bbcode", { id: "a", value: false }],
     ["a sub-line", { id: "a", value: false, text: "t", subText: "more" }],
     ["a field it has never heard of", { id: "a", value: false, text: "t", extra: 1 } as ICheckbox],
   ])("rejects a checkbox with %s", (_name, checkbox) => {
@@ -125,8 +132,13 @@ describe("canRenderWithModal", () => {
       expect(canRenderWithModal(dialogWith({ input }))).toBe(true);
     });
 
+    it("accepts an input without a label, which the dialog's title names", () => {
+      expect(
+        canRenderWithModal(dialogWith({ text: "t", input: [{ id: "url", type: "url" }] })),
+      ).toBe(true);
+    });
+
     it.each<[string, IInput]>([
-      ["no label", { id: "a" }],
       ["a multiline type", { id: "a", label: "A", type: "multiline" }],
       ["a field it has never heard of", { id: "a", label: "A", extra: 1 } as IInput],
     ])("rejects an input with %s", (_name, input) => {
@@ -162,13 +174,12 @@ describe("canRenderWithModal", () => {
     });
   });
 
-  it.each([1, 2, 3])("accepts %i actions", (count) => {
+  it.each([1, 2, 3, 4, 6])("accepts %i actions", (count) => {
     const actions = Array.from({ length: count }, (_v, i) => `Action ${i}`);
     expect(canRenderWithModal(dialogWith({ text: "t" }, actions))).toBe(true);
   });
 
-  it.each([0, 4])("rejects %i actions", (count) => {
-    const actions = Array.from({ length: count }, (_v, i) => `Action ${i}`);
-    expect(canRenderWithModal(dialogWith({ text: "t" }, actions))).toBe(false);
+  it("rejects a dialog with no actions", () => {
+    expect(canRenderWithModal(dialogWith({ text: "t" }, []))).toBe(false);
   });
 });

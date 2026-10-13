@@ -45,8 +45,10 @@ const DANGER_ACTIONS = new Set(["Remove"]);
 const DISMISS_ACTIONS = new Set(["Close"]);
 
 // A short message reads better in the small modal. Longer ones keep the medium size, and so does a
-// dialog whose body needs room: bbcode, markdown or a message box.
+// dialog that needs room: a bbcode, markdown or message body, or more than three buttons, which
+// then fit on one row as they did in the legacy dialog.
 const SMALL_MAX_TEXT_LENGTH = 200;
+const MAX_BUTTONS_IN_SMALL = 3;
 
 // The app's global styles strip list bullets and size headings for a page, so the rich text in a
 // dialog (bbcode and markdown) gets bullets back and headings at the size of the text around them.
@@ -100,6 +102,14 @@ export const ModalLayer = () => {
 
   const translate = (text: string) => t(text, { replace: content.parameters, count });
 
+  // A checkbox's bbcode, when it has any, is its label. `translated: false` leaves it as given.
+  const checkboxLabel = (checkbox: ICheckbox) => {
+    const label = checkbox.bbcode ?? checkbox.text;
+    const shown = content.options?.translated === false ? label : translate(label);
+
+    return checkbox.bbcode === undefined ? shown : bbcode(shown, content.options?.bbcodeContext);
+  };
+
   // `translated` means the caller already translated the text, so only interpolate.
   const translateBody = (key: string) =>
     t(key, {
@@ -131,7 +141,10 @@ export const ModalLayer = () => {
   const isDisabled = (action: string) => results.some((result) => result.actions.includes(action));
 
   const needsRoom =
-    content.bbcode !== undefined || content.md !== undefined || content.message !== undefined;
+    content.bbcode !== undefined ||
+    content.md !== undefined ||
+    content.message !== undefined ||
+    actions.length > MAX_BUTTONS_IN_SMALL;
 
   const hasDangerAction = actions.some((action) => DANGER_ACTIONS.has(action));
 
@@ -236,8 +249,10 @@ export const ModalLayer = () => {
             <TextField
               data-testid={`dialog-input-${input.id}`}
               errorMessage={errorFor(input.id) || undefined}
+              // The old dialog showed no label for an input without one, so the title names it.
+              hideLabel={!input.label}
               key={input.id}
-              label={translate(input.label)}
+              label={translate(input.label ?? title)}
               placeholder={input.placeholder}
               ref={index === 0 ? firstInputRef : undefined}
               type={input.type === "multiline" ? undefined : input.type}
@@ -262,9 +277,7 @@ export const ModalLayer = () => {
               data-testid={`dialog-checkbox-${checkbox.id}`}
               disabled={checkbox.disabled}
               key={checkbox.id}
-              label={
-                content.options?.translated === false ? checkbox.text : translate(checkbox.text)
-              }
+              label={checkboxLabel(checkbox)}
               onChange={(checked) =>
                 setEdits({
                   dialogId: id,
