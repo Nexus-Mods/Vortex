@@ -26,12 +26,7 @@ type StoreGameVersionBase = {
   extension_version: string | null;
 };
 
-type StoreGameVersionPayload =
-  | (StoreGameVersionBase & { store: "steam"; steam: SteamInstall | null })
-  | (StoreGameVersionBase & { store: "gog"; gog: GogInstall | null })
-  | (StoreGameVersionBase & { store: "epic" | "xbox" });
-
-type SteamInstall = {
+type SteamInstallBase = {
   app_id: number;
   build_id: number;
   branch: string | null;
@@ -39,22 +34,30 @@ type SteamInstall = {
   mounted_language: string;
   state_flags: number;
   target_build_id: number;
+};
+
+export type StoreGameVersionPayload =
+  | (StoreGameVersionBase & { store: "steam"; steam: SteamInstall | null })
+  | (StoreGameVersionBase & { store: "gog"; gog: GogInstall | null })
+  | (StoreGameVersionBase & { store: "epic" | "xbox" });
+
+export type SteamInstall = SteamInstallBase & {
   depots: SteamDepot[];
   shared_depots: SteamSharedDepot[];
 };
 
-type SteamDepot = {
+export type SteamDepot = {
   depot_id: number;
   manifest_id: string;
   dlc_app_id: string | null;
 };
 
-type SteamSharedDepot = {
+export type SteamSharedDepot = {
   depot_id: number;
   owner_app_id: number;
 };
 
-type GogInstall = {
+export type GogInstall = {
   product_id: string;
   build_id: string;
   install_language: string;

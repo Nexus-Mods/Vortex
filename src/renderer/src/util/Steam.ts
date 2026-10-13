@@ -24,8 +24,19 @@ const STORE_NAME = "Steam";
 const STEAM_EXEC = process.platform === "win32" ? "Steam.exe" : "steam.sh";
 const STORE_PRIORITY = 40;
 
+/** One InstalledDepots entry, pulled from the raw acf: simple-vdf collapses the
+    inline `"123" { "manifest" "..." }` lines of real manifests into empty blocks. */
+export interface ISteamManifestDepot {
+  depotId: string;
+  manifestId: string;
+  dlcAppId: string | null;
+}
+
 export interface ISteamEntry extends IGameStoreEntry {
   manifestData?: any;
+  /** InstalledDepots entries in file order; the order is mount order, which the
+      depot-id keys of the parsed object cannot preserve. */
+  installedDepots?: ISteamManifestDepot[];
   usesProton?: boolean;
   compatDataPath?: string;
   protonPath?: string;
@@ -343,6 +354,14 @@ class Steam implements IGameStore {
       return undefined;
     }
 
+    // simple-vdf yields plain objects, so the depot keys lose their file order
+    // (JS iterates integer-like keys numerically). Pull the order off the raw text.
+    const depotsBlock = /"InstalledDepots"\s*\{([\s\S]*?)\n[ \t]*\}/.exec(manifestData)?.[1];
+    const depotOrder =
+      depotsBlock === undefined
+        ? undefined
+        : Array.from(depotsBlock.matchAll(/"(\d+)"[ \t]*\{/g), (match) => match[1]);
+
     try {
       const result: ISteamEntry = {
         appid: parsedObj["AppState"]["appid"],
@@ -352,6 +371,7 @@ class Steam implements IGameStore {
         lastUser: parsedObj["AppState"]["LastOwner"],
         lastUpdated: new Date(parsedObj["AppState"]["LastUpdated"] * 1000),
         manifestData: parsedObj,
+        depotOrder,
       };
 
       if (process.platform === "linux") {
