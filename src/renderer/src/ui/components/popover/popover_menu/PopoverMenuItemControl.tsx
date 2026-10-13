@@ -5,8 +5,8 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 /**
  * A control within a row: its pin, or a button such as remove. Tabbable on the row the
- * keyboard is on rather than the row the menu keeps its own tab stop on — which is always
- * the first — so arrowing down and pressing Tab reaches the control of the row you are
+ * keyboard is on rather than the row the menu keeps its own tab stop on (always
+ * the first), so arrowing down and pressing Tab reaches the control of the row you are
  * actually on. Reaching for the row's `tabIndex` instead left every other row's control
  * unreachable, and Tab took focus out of the panel, closing the menu.
  */

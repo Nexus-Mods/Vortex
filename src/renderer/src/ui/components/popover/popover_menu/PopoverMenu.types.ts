@@ -5,7 +5,7 @@ import type { XOr } from "@/ui/utils/types";
 
 /**
  * The contents of the floating panel an action opens. Whatever rendered the action
- * anchors the panel to it — a toolbar button, or its row in a menu — so the panel
+ * anchors the panel to it (a toolbar button, or its row in a menu), so the panel
  * doesn't have to know where it was opened from.
  *
  * `close` dismisses the panel. `dismiss` also dismisses whatever the panel was

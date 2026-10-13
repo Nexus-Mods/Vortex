@@ -40,7 +40,7 @@ const plainAction = (label: string, onClick = () => {}): IMenuAction => ({
   onClick,
 });
 
-/** A row whose panel is itself a menu — the header's nested Help submenu. */
+/** A row whose panel is itself a menu, as the header's nested Help submenu is. */
 const submenuAction = (rows: IMenuAction[][], onDismissSpy?: () => void): IMenuAction => ({
   iconPath: "mdi-help",
   label: "Help",
@@ -565,7 +565,7 @@ describe("PopoverMenu", () => {
       expect(screen.getByRole("menuitem", { name: "About" })).toHaveFocus();
     });
 
-    // Picking a help destination ends the interaction, so both surfaces go away —
+    // Picking a help destination ends the interaction, so both surfaces go away,
     // unlike a settings panel, which leaves the menu it was opened from standing.
     it("dismisses both surfaces when a submenu row is chosen", async () => {
       const onDismiss = vi.fn();

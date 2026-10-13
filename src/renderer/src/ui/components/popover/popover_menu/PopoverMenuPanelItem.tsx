@@ -13,13 +13,13 @@ import { takeFocus } from "./takeFocus";
 const HOVER_CLOSE_DELAY = 150;
 
 /**
- * A row whose panel opens beside it, leaving the menu itself open — the panel is
+ * A row whose panel opens beside it, leaving the menu itself open. The panel is
  * portalled, but Headless UI registers it as part of the enclosing popover, so
  * reaching into it doesn't read as leaving the menu.
  *
  * Pointing at the row opens it, as a menu should. Headless UI's popover is driven by
- * clicks alone, so hovering reaches for the button the same way the keyboard does —
- * activating it — rather than trying to drive the machine from outside.
+ * clicks alone, so hovering reaches for the button the same way the keyboard does,
+ * by activating it, rather than trying to drive the machine from outside.
  */
 export const PopoverMenuPanelItem = forwardRef<
   HTMLButtonElement,
@@ -36,7 +36,7 @@ export const PopoverMenuPanelItem = forwardRef<
     timerRef.current = undefined;
   };
 
-  // A row can be unmounted mid-hover — the menu closing, or its actions changing —
+  // A row can be unmounted mid-hover (the menu closing, or its actions changing),
   // and a timer left running would then toggle a button that has gone.
   useEffect(() => cancelHover, []);
 
