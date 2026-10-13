@@ -1,3 +1,5 @@
+import * as path from "node:path";
+
 import { mdiPuzzleOutline } from "@mdi/js";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as semver from "semver";
@@ -83,6 +85,13 @@ async function offerNexusLinks(api: IExtensionApi): Promise<void> {
   if (candidates.length === 0) return;
   candidates.forEach(({ key }) => offeredLinks.add(key));
 
+  // the state entry's name is an identifier, often the folder name
+  const loaded = api.getLoadedExtensions();
+  const samePath = (lhs: string, rhs: string) =>
+    path.normalize(lhs).toLowerCase() === path.normalize(rhs).toLowerCase();
+  const displayName = (installed: IExtensionState) =>
+    loaded.find((ext) => samePath(ext.path, installed.path))?.info?.name ?? installed.name;
+
   const result = await api.showDialog(
     "question",
     "Extension updates available",
@@ -94,7 +103,7 @@ async function offerNexusLinks(api: IExtensionApi): Promise<void> {
         "them again.",
       checkboxes: candidates.map(({ key, installed, available }) => ({
         id: key,
-        text: `${installed.name} ${installed.version} → ${available.version}`,
+        text: `${displayName(installed)} ${installed.version} → ${available.version}`,
         value: true,
       })),
     },
