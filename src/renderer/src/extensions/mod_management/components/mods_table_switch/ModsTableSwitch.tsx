@@ -29,6 +29,7 @@ import { TitledTooltip } from "@/ui/components/tooltip/TitledTooltip";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { activeGameId } from "@/util/selectors";
 
+import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import { activeProfile } from "../../../profile_management/selectors";
 import {
@@ -57,10 +58,10 @@ import {
   type ISharedMods,
   sharedMods,
 } from "../../util/mods_table_views/modsTableViews";
+import { CollectionHoverCard } from "../collection_hover_card/CollectionHoverCard";
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
 import { ModHoverCard } from "../mod_hover_card/ModHoverCard";
-import { ModThumbnail } from "../mod_thumbnail/ModThumbnail";
 import { ModVersion, modVersionGroup, modVersionText } from "../mod_version/ModVersion";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
 import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
@@ -427,12 +428,11 @@ export const ModsTableSwitch = ({
         searchText: ({ name }) => name,
         cell: ({ mod, name }) => (
           <>
-            <ModHoverCard mod={mod} name={name}>
-              <ModThumbnail
-                className="ml-2 h-5 rounded-sm"
-                pictureUrl={mod.attributes?.pictureUrl}
-              />
-            </ModHoverCard>
+            {mod.type === COLLECTION_TYPE ? (
+              <CollectionHoverCard className="ml-2 h-5 rounded-sm" collection={mod} />
+            ) : (
+              <ModHoverCard className="ml-2 h-5 rounded-sm" mod={mod} name={name} />
+            )}
 
             <span className="ml-2 truncate">{name}</span>
           </>
@@ -451,13 +451,7 @@ export const ModsTableSwitch = ({
             )}
 
             {!!collection && (
-              <Image
-                alt=""
-                className="ml-3 h-8 rounded-xs"
-                fit="cover"
-                imageType="collection"
-                src={collection.attributes?.pictureUrl}
-              />
+              <CollectionHoverCard className="ml-3 h-8 rounded-xs" collection={collection} />
             )}
 
             <span className="ml-2 truncate">{label}</span>

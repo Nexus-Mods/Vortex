@@ -8,6 +8,8 @@
             var(--color-surface-mid)
         );
 
+        /* Its own width, past the tooltip's cap, which a collection's card is wider than. */
+        max-width: none;
         background-color: var(--nxm-hover-card-bg);
 
         /* Its fill, and the line that hides the card's border under it. */
@@ -28,5 +30,12 @@
         width: calc(var(--spacing) * 72);
         padding-block: calc(var(--spacing) * 2);
         overflow-wrap: anywhere;
+    }
+
+    /* A collection's: wider, the cover beside the text, padded all round. */
+    .nxm-hover-card-collection {
+        gap: calc(var(--spacing) * 3);
+        width: calc(var(--spacing) * 104);
+        padding: calc(var(--spacing) * 2);
     }
 }

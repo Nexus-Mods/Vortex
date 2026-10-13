@@ -1,6 +1,7 @@
 /**
  * HoverCard Demo Component
- * Demonstrates a card with a picture, tinted in its colour, and one without
+ * Demonstrates a mod's card with a picture, tinted in its colour, one without, and a
+ * collection's, its cover beside its title
  */
 
 import React from "react";
@@ -18,8 +19,7 @@ const Footer = ({ author, size }: { author: string; size: string }) => (
   </>
 );
 
-// A thumbnail-sized trigger, as a table row's. An element, not a component, as the card
-// holds its trigger by a ref to its DOM node.
+// A thumbnail-sized trigger, as a table row's.
 const TRIGGER_CLASS = "flex h-10 items-center rounded-sm bg-surface-high px-3 text-body-sm";
 
 export const HoverCardDemo = () => (
@@ -44,6 +44,16 @@ export const HoverCardDemo = () => (
         title="Forgotten Dungeons SSE"
       >
         <span className={TRIGGER_CLASS}>Without one</span>
+      </HoverCard>
+
+      <HoverCard
+        description="Most endorsed collection ever. Perfect for your first collection experience."
+        footer={<Footer author="canliberk" size="486 mods" />}
+        image="https://picsum.photos/seed/collection/400/500"
+        imageType="collection"
+        title="Immersive & Adult"
+      >
+        <span className={TRIGGER_CLASS}>A collection</span>
       </HoverCard>
     </div>
   </div>

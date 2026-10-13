@@ -40,7 +40,14 @@ import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
-export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExtensionApi }) => {
+interface IDesignSystemPageProps {
+  /** Whether the page is the one showing, which its `Page` needs. */
+  active?: boolean;
+  /** The extension API, for the demos that use it. */
+  api: IExtensionApi;
+}
+
+export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
   const [selectedTab, setSelectedTab] = useState("button");
   const [selectedTypographyTab, setSelectedTypographyTab] = useState("typography");
   const [selectedIconTab, setSelectedIconTab] = useState("icon");

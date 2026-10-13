@@ -46,12 +46,13 @@ describe("HoverCard", () => {
     expect(card.querySelector(".nxm-hover-card-tooltip .nxm-overlay-arrow")).not.toBeNull();
   });
 
-  it("has neither picture nor tint without one", async () => {
+  it("shows the fallback icon, untinted, without a picture", async () => {
     renderCard({ description: "Adds 50 dungeons." });
 
     const card = await openCard();
 
     expect(card.querySelector("img")).toBeNull();
+    expect(card.querySelector(".nxm-image-fallback")).not.toBeNull();
     expect(
       card
         .querySelector<HTMLElement>(".nxm-hover-card-tooltip")
@@ -66,5 +67,21 @@ describe("HoverCard", () => {
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("lays a collection's card out wider, its cover beside its title", async () => {
+    renderCard({
+      description: "Most endorsed.",
+      image: "https://example.com/cover.png",
+      imageType: "collection",
+    });
+
+    const card = await openCard();
+    const body = card.querySelector(".nxm-hover-card");
+
+    expect(body).toHaveClass("nxm-hover-card-collection");
+    expect(body?.querySelector(".nxm-image-collection")?.nextElementSibling).toHaveTextContent(
+      "Forgotten Dungeons",
+    );
   });
 });

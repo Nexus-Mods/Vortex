@@ -60,6 +60,7 @@ export type ITooltipDelay = number | { close?: number; open?: number };
 interface ITooltipBaseProps {
   /** The trigger. Must forward a ref to a DOM node — wrap bare text in a `span`. */
   children: ReactElement;
+  /** Classes for the tooltip's box, such as one that restyles it. */
   className?: string;
   /**
    * Closes when the trigger is pressed, so it never covers a menu the trigger opens.
@@ -83,6 +84,7 @@ interface ITooltipBaseProps {
   placement?: ITooltipPlacement;
   /** Classes for the positioned layer, which owns the stacking, e.g. a lower z-index. */
   positionerClassName?: string;
+  /** Whether it has a beak pointing at its trigger. Default true. */
   showArrow?: boolean;
   /** Inline styles for the tooltip's box, such as a custom property its class reads. */
   style?: CSSProperties;
