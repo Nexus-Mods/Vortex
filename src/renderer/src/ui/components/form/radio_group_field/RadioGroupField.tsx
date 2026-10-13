@@ -1,9 +1,10 @@
-import { Radio, RadioGroup, type RadioGroupProps } from "@headlessui/react";
+import { RadioGroup, type RadioGroupProps } from "@headlessui/react";
 import React, { forwardRef } from "react";
 
 import { Description } from "@/ui/components/form/field/Description";
 import { Field } from "@/ui/components/form/field/Field";
 import { Label } from "@/ui/components/form/field/Label";
+import { Radio } from "@/ui/components/form/radio/Radio";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IRadioOption {
@@ -46,7 +47,7 @@ export const RadioGroupField = forwardRef<HTMLDivElement, IRadioGroupFieldProps>
       {options.map((option) => (
         <Field className="nxm-radio-field" disabled={option.disabled} key={option.value}>
           <div className="nxm-field-control">
-            <Radio className="nxm-radio" data-testid={option.testId} value={option.value} />
+            <Radio data-testid={option.testId} value={option.value} />
 
             <Label>{option.label}</Label>
           </div>

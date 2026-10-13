@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { closeDialog, closeDialogs, triggerDialogLink } from "@/actions/notifications";
-import bbcode from "@/controls/bbcode";
+import { renderSafeBBCode } from "@/controls/bbcode";
 import type {
   DialogContentItem,
   ICheckbox,
@@ -137,7 +137,9 @@ export const ModalLayer = () => {
     const label = checkbox.bbcode ?? checkbox.text;
     const shown = content.options?.translated === false ? label : translate(label);
 
-    return checkbox.bbcode === undefined ? shown : bbcode(shown, content.options?.bbcodeContext);
+    return checkbox.bbcode === undefined
+      ? shown
+      : renderSafeBBCode(shown, content.options?.bbcodeContext);
   };
 
   // `translated` means the caller already translated the text, so only interpolate.
