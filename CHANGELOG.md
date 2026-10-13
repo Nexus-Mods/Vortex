@@ -86,6 +86,16 @@ _First beta of the 2.9 release._
 - Locked index not shown for mixed-case plugins, and locking a plugin lowercasing every name in the plugins table ([#24188](https://github.com/Nexus-Mods/Vortex/pull/24188))
 - Spurious conflicts when the game is installed in a path containing a `.` ([#24089](https://github.com/Nexus-Mods/Vortex/pull/24089))
 
+## [2.8.2] - 2026-10-13
+
+### Added
+
+- Prompt to update orphaned extensions that have no `modId` ([#24510](https://github.com/Nexus-Mods/Vortex/pull/24510))
+
+### Fixed
+
+- Extension auto-update not working when the `modId` was missing ([#24509](https://github.com/Nexus-Mods/Vortex/pull/24509))
+
 ## [2.8.1] - 2026-10-12
 
 ### Fixed
@@ -2517,6 +2527,7 @@ _Yanked due to critical issue found with file overrides_
 [2.9.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.3
 [2.9.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.2
 [2.9.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.1
+[2.8.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.2
 [2.8.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.1
 [2.8.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0
 [2.8.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.8.0-beta.2
