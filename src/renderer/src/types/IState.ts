@@ -165,6 +165,8 @@ export interface IExtensionState {
   fileId?: number;
   /** Nexus Mods endorsed status of the extension mod page. */
   endorsed: EndorsedStatus;
+  /** Set when the user declined linking this unlinked extension to its Nexus Mods page. */
+  nexusLinkDeclined?: boolean;
 }
 
 /**
