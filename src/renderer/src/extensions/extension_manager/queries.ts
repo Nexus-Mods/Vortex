@@ -129,26 +129,68 @@ export function getMissingOptionalExtensions(
   );
 }
 
+type ExtensionUpdate = { key: string; installed: IExtensionState; available: IAvailableExtension };
+
+function isNewer(installed: IExtensionState, available: IAvailableExtension): boolean {
+  const installedVersion = semver.coerce(installed.version);
+  const availableVersion = semver.coerce(available.version);
+  if (installedVersion === null || availableVersion === null) return false;
+  return semver.lt(installedVersion, availableVersion);
+}
+
 /** Find all installed extensions that have updates available. */
 export function findUpdatableExtensions(
   installedExtensions: Record<string, IExtensionState>,
   catalog: IAvailableExtension[],
-): Array<{ key: string; installed: IExtensionState; available: IAvailableExtension }> {
-  const result: Array<{ key: string; installed: IExtensionState; available: IAvailableExtension }> =
-    [];
+): ExtensionUpdate[] {
+  const result: ExtensionUpdate[] = [];
 
   for (const [key, installed] of Object.entries(installedExtensions)) {
     const available = findInCatalog(catalog, { modId: installed.modId });
-    if (available === undefined) continue;
-
-    const installedVersion = semver.coerce(installed.version);
-    const availableVersion = semver.coerce(available.version);
-
-    if (installedVersion === null || availableVersion === null) {
-      continue;
+    if (available !== undefined && isNewer(installed, available)) {
+      result.push({ key, installed, available });
     }
+  }
 
-    if (semver.lt(installedVersion, availableVersion)) {
+  return result;
+}
+
+/**
+ * Find installed game extensions without a mod id that the catalog has a newer
+ * version of, matched through the Nexus Mods domain of the games each one
+ * registers. The match is a guess, so the user has to confirm it.
+ */
+export function findLinkCandidates(
+  installedExtensions: Record<string, IExtensionState>,
+  games: Array<{ extensionPath?: string; domain: string }>,
+  catalog: IAvailableExtension[],
+): ExtensionUpdate[] {
+  const result: ExtensionUpdate[] = [];
+
+  for (const [key, installed] of Object.entries(installedExtensions)) {
+    if (installed.modId !== undefined || installed.path === undefined) continue;
+    if (installed.bundled || installed.remove || installed.nexusLinkDeclined) continue;
+
+    const installedPath = path.normalize(installed.path).toLowerCase();
+    const domains = new Set(
+      games
+        .filter(
+          (game) =>
+            game.extensionPath !== undefined &&
+            path.normalize(game.extensionPath).toLowerCase() === installedPath,
+        )
+        .map((game) => game.domain.toLowerCase()),
+    );
+    const matches = catalog.filter(
+      (entry) => entry.type === "game" && domains.has(entry.gameDomain?.toLowerCase()),
+    );
+
+    // only a match naming exactly one mod page is worth offering
+    if (new Set(matches.map((entry) => entry.modId)).size !== 1) continue;
+    const available = matches[0];
+
+    if (findInstalled(installedExtensions, { modId: available.modId }) !== undefined) continue;
+    if (isNewer(installed, available)) {
       result.push({ key, installed, available });
     }
   }
