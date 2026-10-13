@@ -3,31 +3,46 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { useMainContext } from "@/contexts";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
-import { Html } from "@/ui/components/html/Html";
 import { Icon } from "@/ui/components/icon/Icon";
-import { Markdown } from "@/ui/components/markdown/Markdown";
+import { Html } from "@/ui/components/prose/html/Html";
+import { PlainText } from "@/ui/components/prose/plain_text/PlainText";
 import { ToolbarButton } from "@/ui/components/toolbar/ToolbarButton";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { activeGameId } from "@/util/selectors";
 
 import type { IMod } from "../../types/IMod";
+import { collectionNamesByMod } from "../../util/collection_membership/collectionMembership";
+import { confirmCollectionModUpdate } from "../../util/collection_update_warning/collectionUpdateWarning";
+import type { UpdateState } from "../../util/modUpdateState";
 import updateState, { isIdValid } from "../../util/modUpdateState";
 import { ChangelogButton } from "../changelog_button/ChangelogButton";
 
 interface IModUpdateProps {
   /** The mod the row shows. */
   mod: IMod;
+  /** What there is to say about updating it, when the cell has already worked it out. */
+  details?: IModUpdateDetails;
 }
 
 /** A changelog as the update check stores it, from Nexus Mods. */
 interface IChangelog {
+  /** How its content is written: HTML, or plain text. */
   format: "html" | "text";
+  /** The changelog itself, in that format. */
   content: string;
 }
 
+interface ITitledTooltipProps {
+  /** What it's about, in bold. */
+  title: string;
+  /** What that means, under it. */
+  body: string;
+}
+
 /** A tooltip's bold title over what it means, as the design words these: 240px wide. */
-const TitledTooltip = ({ title, body }: { title: string; body: string }) => (
+const TitledTooltip = ({ title, body }: ITitledTooltipProps) => (
   <div className="nxm-tooltip-content max-w-60">
     <p className="font-semibold">{title}</p>
 
@@ -35,27 +50,47 @@ const TitledTooltip = ({ title, body }: { title: string; body: string }) => (
   </div>
 );
 
-/**
- * What there is to say about updating a mod: its update state, and the newest version's
- * changelog while there's an update, as a check that finds none leaves the last one behind.
- */
-const updateDetails = (mod: IMod) => {
+/** What there is to say about updating a mod, worked out once for its Version cell. */
+export interface IModUpdateDetails {
+  /** Whether Vortex can tell which mod it is, so check it for updates. */
+  valid: boolean;
+  /** Its update state, as the update check leaves it. */
+  state: UpdateState;
+  /** Whether there's an update the cell offers, so the row groups under "Update available". */
+  hasUpdate: boolean;
+  /** The newest version's changelog, unless it's up to date, as a check leaves the last behind. */
+  changelog?: IChangelog;
+  /** Whether `ModUpdate` shows anything: a warning, a button or a changelog. */
+  shows: boolean;
+}
+
+export const modUpdateDetails = (mod: IMod): IModUpdateDetails => {
+  const valid = isIdValid(mod);
   const attributes = mod.attributes ?? {};
   const state = updateState(attributes);
+  const hasUpdate = state === "update" || state === "update-site";
   const changelog: IChangelog | undefined =
     state === "current" ? undefined : attributes.newestChangelog;
 
-  return { state, changelog };
+  return { valid, state, hasUpdate, changelog, shows: !valid || hasUpdate || !!changelog?.content };
 };
 
-/** Whether `ModUpdate` shows anything for a mod: a warning, a button or a changelog. */
-export const modUpdateShows = (mod: IMod) => {
-  if (!isIdValid(mod)) {
-    return true;
+/** Updates a mod to its newest file, asking first if a collection has it, as that pins its version. */
+const updateMod = async (api: IExtensionApi, mod: IMod, gameId: string) => {
+  const state = api.getState();
+  const mods = state.persistent.mods[activeGameId(state)] ?? {};
+  const collectionNames = collectionNamesByMod(mods, [mod.id])[mod.id];
+  if (collectionNames !== undefined && !(await confirmCollectionModUpdate(collectionNames))) {
+    return;
   }
 
-  const { state, changelog } = updateDetails(mod);
-  return state === "update" || state === "update-site" || !!changelog?.content;
+  api.events.emit(
+    "mod-update",
+    gameId,
+    mod.attributes?.modId,
+    mod.attributes?.newestFileId,
+    mod.attributes?.source,
+  );
 };
 
 /**
@@ -65,12 +100,13 @@ export const modUpdateShows = (mod: IMod) => {
  * version's changelog. Nothing while it's up to date. The bugged states are left out, as
  * nothing marks a version bugged.
  */
-export const ModUpdate = ({ mod }: IModUpdateProps) => {
+export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdateProps) => {
   const { t } = useTranslation(["common"]);
   const { api } = useMainContext();
   const { attributes = {} } = mod;
+  const { valid, state, changelog, shows } = details;
 
-  if (!isIdValid(mod)) {
+  if (!valid) {
     const [title, body] =
       attributes.source === undefined
         ? [
@@ -100,11 +136,10 @@ export const ModUpdate = ({ mod }: IModUpdateProps) => {
     );
   }
 
-  if (!modUpdateShows(mod)) {
+  if (!shows) {
     return null;
   }
 
-  const { state, changelog } = updateDetails(mod);
   const gameId = () => attributes.downloadGame ?? activeGameId(api.getState());
 
   return (
@@ -116,15 +151,7 @@ export const ModUpdate = ({ mod }: IModUpdateProps) => {
           label={t("Update to {{version}}", { version: attributes.newestVersion ?? "?" })}
           leftIconPath={mdiTrayArrowDown}
           size="sm"
-          onClick={() =>
-            api.events.emit(
-              "mod-update",
-              gameId(),
-              attributes.modId,
-              attributes.newestFileId,
-              attributes.source,
-            )
-          }
+          onClick={() => void updateMod(api, mod, gameId())}
         />
       )}
 
@@ -157,7 +184,7 @@ export const ModUpdate = ({ mod }: IModUpdateProps) => {
           {changelog.format === "html" ? (
             <Html html={changelog.content} size="sm" />
           ) : (
-            <Markdown markdown={changelog.content} size="sm" />
+            <PlainText size="sm" text={changelog.content} />
           )}
         </ChangelogButton>
       )}

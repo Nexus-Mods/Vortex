@@ -8,7 +8,10 @@ import type { IMod } from "../../types/IMod";
 // A mod with "update" in its id has something to say about updating; the rest don't.
 vi.mock("../mod_update/ModUpdate", () => ({
   ModUpdate: ({ mod }: { mod: IMod }) => <span>update of {mod.id}</span>,
-  modUpdateShows: (mod: IMod) => mod.id.includes("update"),
+  modUpdateDetails: (mod: IMod) => ({
+    shows: mod.id.includes("update"),
+    hasUpdate: mod.attributes?.newestVersion === "1.1.0",
+  }),
 }));
 
 vi.mock("../collection_revision/CollectionRevision", () => ({
@@ -158,5 +161,13 @@ describe("modVersionGroup", () => {
 
   it("groups a mod with a newer version as having an update", () => {
     expect(modVersionGroup(withNewest("1.0.0", "1.1.0"), t)).toBe("Update available");
+  });
+
+  it("groups a collection by its revisions, as its cell offers the update", () => {
+    const revisions = (version: string, newestVersion: string) =>
+      ({ id: "c", type: "collection", attributes: { version, newestVersion } }) as unknown as IMod;
+
+    expect(modVersionGroup(revisions("10", "11"), t)).toBe("Update available");
+    expect(modVersionGroup(revisions("11", "10"), t)).toBe("Up-to-date");
   });
 });

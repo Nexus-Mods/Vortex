@@ -12,10 +12,10 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
+import { collectionRevisions } from "../../hooks/use_collection_revision/useCollectionRevision.hook";
 import type { IMod } from "../../types/IMod";
-import updateState from "../../util/modUpdateState";
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
-import { ModUpdate, modUpdateShows } from "../mod_update/ModUpdate";
+import { ModUpdate, modUpdateDetails } from "../mod_update/ModUpdate";
 import { VersionText } from "../version_text/VersionText";
 
 interface IModVersionProps {
@@ -39,9 +39,18 @@ export const modVersionText = (mod: IMod, alternatives: IMod[] | undefined, t: T
     ? versionLabel(mod, t)
     : (mod.attributes?.version ?? "");
 
-/** The group a row falls in by version, as the classic table named them. */
-export const modVersionGroup = (mod: IMod, t: TFunction) =>
-  updateState(mod.attributes ?? {}) === "current" ? t("Up-to-date") : t("Update available");
+/**
+ * The group a row falls in by version, as the classic table named them: by whether its cell
+ * offers an update, a collection's by its revision.
+ */
+export const modVersionGroup = (mod: IMod, t: TFunction) => {
+  const hasUpdate =
+    mod.type === COLLECTION_TYPE
+      ? collectionRevisions(mod).hasUpdate
+      : modUpdateDetails(mod).hasUpdate;
+
+  return hasUpdate ? t("Update available") : t("Up-to-date");
+};
 
 /**
  * A mod's version and what it says about updating, or a collection's revision with its
@@ -55,6 +64,7 @@ export const ModVersion = ({ mod, alternatives, onSelect, onRemove }: IModVersio
   }
 
   const hasChoice = alternatives !== undefined && alternatives.length > 1;
+  const details = modUpdateDetails(mod);
 
   return (
     // The version shrinks before the buttons after it, which sit closer to a dropdown.
@@ -65,7 +75,7 @@ export const ModVersion = ({ mod, alternatives, onSelect, onRemove }: IModVersio
       ])}
     >
       {!hasChoice ? (
-        <VersionText fixed={modUpdateShows(mod)} version={mod.attributes?.version ?? ""} />
+        <VersionText fixed={details.shows} version={mod.attributes?.version ?? ""} />
       ) : (
         <ModVersionPicker
           alternatives={alternatives}
@@ -75,7 +85,7 @@ export const ModVersion = ({ mod, alternatives, onSelect, onRemove }: IModVersio
         />
       )}
 
-      <ModUpdate mod={mod} />
+      <ModUpdate details={details} mod={mod} />
     </div>
   );
 };

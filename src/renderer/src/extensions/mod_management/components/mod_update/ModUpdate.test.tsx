@@ -5,9 +5,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IMod } from "../../types/IMod";
 
-const api = vi.hoisted(() => ({ events: { emit: vi.fn() }, getState: vi.fn() }));
+const api = vi.hoisted(() => ({
+  events: { emit: vi.fn() },
+  getState: vi.fn(() => ({ persistent: { mods: {} } })),
+}));
+const confirm = vi.hoisted(() => vi.fn());
 
 vi.mock("@/contexts", () => ({ useMainContext: () => ({ api }) }));
+vi.mock("../../util/collection_update_warning/collectionUpdateWarning", () => ({
+  confirmCollectionModUpdate: confirm,
+}));
+// "a" is in a collection.
+vi.mock("../../util/collection_membership/collectionMembership", () => ({
+  collectionNamesByMod: (_mods: unknown, ids: string[]) =>
+    ids.includes("a") ? { a: ["Pack"] } : {},
+}));
 vi.mock("@/util/selectors", () => ({ activeGameId: () => "stardewvalley" }));
 // Nexus Mods identifies each file, so an installed mod from it needs its file id.
 vi.mock("../../util/modSource", () => ({
@@ -15,11 +27,11 @@ vi.mock("../../util/modSource", () => ({
     id === "nexus" ? { id, options: { supportsModId: true } } : { id, options: {} },
 }));
 
-import { ModUpdate, modUpdateShows } from "./ModUpdate";
+import { ModUpdate, modUpdateDetails } from "./ModUpdate";
 
-const mod = (attributes: object, state = "installed") =>
+const mod = (attributes: object, state = "installed", id = "b") =>
   ({
-    id: "a",
+    id,
     type: "",
     state,
     attributes: { source: "nexus", modId: 12, fileId: 100, version: "1.0", ...attributes },
@@ -29,9 +41,11 @@ describe("ModUpdate", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("says whether it shows anything, for the version beside it", () => {
-    expect(modUpdateShows(mod({ newestVersion: "1.0" }))).toBe(false);
-    expect(modUpdateShows(mod({ newestVersion: "1.1", newestFileId: 101 }))).toBe(true);
-    expect(modUpdateShows(mod({ source: undefined }))).toBe(true);
+    const shows = (attributes: object) => modUpdateDetails(mod(attributes)).shows;
+
+    expect(shows({ newestVersion: "1.0" })).toBe(false);
+    expect(shows({ newestVersion: "1.1", newestFileId: 101 })).toBe(true);
+    expect(shows({ source: undefined })).toBe(true);
   });
 
   it("says nothing while the mod is up to date", () => {
@@ -47,6 +61,30 @@ describe("ModUpdate", () => {
     await userEvent.click(screen.getByRole("button", { name: "Update to {{version}}" }));
 
     expect(api.events.emit).toHaveBeenCalledWith("mod-update", "stardewvalley", 12, 101, "nexus");
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("asks first when a collection has the mod, as that pins its version", async () => {
+    confirm.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    render(<ModUpdate mod={mod({ newestVersion: "1.1", newestFileId: 101 }, "installed", "a")} />);
+    const button = screen.getByRole("button", { name: "Update to {{version}}" });
+
+    await userEvent.click(button);
+    expect(confirm).toHaveBeenCalledWith(["Pack"]);
+    expect(api.events.emit).not.toHaveBeenCalled();
+
+    await userEvent.click(button);
+    expect(api.events.emit).toHaveBeenCalledWith("mod-update", "stardewvalley", 12, 101, "nexus");
+  });
+
+  it("groups only what it offers an update for, not a bugged version without one", () => {
+    expect(modUpdateDetails(mod({ newestVersion: "1.1", newestFileId: 101 })).hasUpdate).toBe(true);
+    expect(modUpdateDetails(mod({ newestVersion: "1.1", newestFileId: "unknown" })).hasUpdate).toBe(
+      true,
+    );
+    expect(modUpdateDetails(mod({ newestVersion: "1.0", bugMessage: "Broken" })).hasUpdate).toBe(
+      false,
+    );
   });
 
   it("opens the mod's page to pick the file when the newest can't be told", async () => {
@@ -73,6 +111,23 @@ describe("ModUpdate", () => {
     expect(screen.getByText("Changelog")).toBeInTheDocument();
     expect(screen.getByText("Newest Version")).toBeInTheDocument();
     expect(screen.getByText("things").tagName).toBe("B");
+  });
+
+  it("shows a plain-text changelog as it's written, not as markdown", async () => {
+    render(
+      <ModUpdate
+        mod={mod({
+          newestVersion: "1.1",
+          newestFileId: 101,
+          newestChangelog: { format: "text", content: "# Fixed *things*\nAdded more" },
+        })}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "View changelog" }));
+
+    expect(screen.getByText(/# Fixed \*things\*\s+Added more/)).toHaveClass("whitespace-pre-line");
+    expect(screen.queryByRole("heading")).toBeNull();
   });
 
   it("leaves out a changelog left behind once the mod is up to date", () => {

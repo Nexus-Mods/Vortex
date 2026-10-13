@@ -9,7 +9,7 @@ import { ToolbarButton } from "@/ui/components/toolbar/ToolbarButton";
 import { Typography } from "@/ui/components/typography/Typography";
 
 interface IChangelogButtonProps {
-  /** The newest version's or revision's changelog, as `Markdown` or `Html` renders it at `sm`. */
+  /** The newest version's or revision's changelog, as `Markdown`, `Html` or `PlainText` renders it at `sm`. */
   children: ReactNode;
 }
 

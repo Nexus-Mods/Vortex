@@ -1,7 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { VortexError } from "@vortex/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { UserCanceled } from "@/util/CustomErrors";
 
 import type { IMod } from "../../types/IMod";
 
@@ -15,7 +14,7 @@ const api = vi.hoisted(() => ({
 vi.mock("@/contexts", () => ({ useMainContext: () => ({ api }) }));
 vi.mock("@/util/selectors", () => ({ activeGameId: () => "stardewvalley" }));
 
-import { useCollectionRevision } from "./useCollectionRevision.hook";
+import { useCollectionChangelog, useCollectionRevision } from "./useCollectionRevision.hook";
 
 let slugs = 0;
 
@@ -49,28 +48,63 @@ describe("useCollectionRevision", () => {
     expect(result.current.hasUpdate).toBe(false);
   });
 
-  it("fetches the newest revision's changelog, once", async () => {
-    const coll = collection({ version: "112", newestVersion: "113" });
-    const { result } = renderHook(() => useCollectionRevision(coll));
-    await waitFor(() => expect(result.current.changelog).toBe("Fixed things"));
+  it("fetches a revision's changelog, once", async () => {
+    const slug = `slug-${++slugs}`;
+    const { result } = renderHook(() => useCollectionChangelog(slug, 113));
+    await waitFor(() =>
+      expect(result.current).toEqual({ status: "loaded", changelog: "Fixed things" }),
+    );
 
-    const again = renderHook(() => useCollectionRevision(coll));
-    await waitFor(() => expect(again.result.current.changelog).toBe("Fixed things"));
+    const again = renderHook(() => useCollectionChangelog(slug, 113));
+    await waitFor(() =>
+      expect(again.result.current).toEqual({ status: "loaded", changelog: "Fixed things" }),
+    );
 
     expect(api.emitAndAwait).toHaveBeenCalledTimes(1);
-    expect(api.emitAndAwait).toHaveBeenCalledWith(
-      "get-nexus-collection-revision",
-      coll.attributes.collectionSlug,
-      113,
-    );
+    expect(api.emitAndAwait).toHaveBeenCalledWith("get-nexus-collection-revision", slug, 113);
   });
 
-  it("has no changelog for a revision without one", async () => {
+  it("has an empty changelog for a revision without one", async () => {
     api.emitAndAwait.mockResolvedValue([{ collectionChangelog: { description: "" } }]);
-    const { result } = renderHook(() => useCollectionRevision(collection({ version: "10" })));
+    const slug = `slug-${++slugs}`;
+    const { result } = renderHook(() => useCollectionChangelog(slug, 10));
 
-    await waitFor(() => expect(api.emitAndAwait).toHaveBeenCalled());
-    expect(result.current.changelog).toBeUndefined();
+    await waitFor(() => expect(result.current).toEqual({ status: "loaded", changelog: "" }));
+  });
+
+  it("says when it couldn't fetch one, and tries again next time", async () => {
+    api.emitAndAwait.mockRejectedValueOnce(new Error("offline"));
+    const slug = `slug-${++slugs}`;
+    const { result } = renderHook(() => useCollectionChangelog(slug, 10));
+    await waitFor(() => expect(result.current).toEqual({ status: "failed" }));
+
+    const again = renderHook(() => useCollectionChangelog(slug, 10));
+    await waitFor(() =>
+      expect(again.result.current).toEqual({ status: "loaded", changelog: "Fixed things" }),
+    );
+    expect(api.emitAndAwait).toHaveBeenCalledTimes(2);
+  });
+
+  it("drops the last revision's changelog while the next one's coming", async () => {
+    const slug = `slug-${++slugs}`;
+    const { result, rerender } = renderHook(
+      ({ revision }) => useCollectionChangelog(slug, revision),
+      { initialProps: { revision: 113 } },
+    );
+    await waitFor(() =>
+      expect(result.current).toEqual({ status: "loaded", changelog: "Fixed things" }),
+    );
+
+    api.emitAndAwait.mockReturnValue(new Promise(() => undefined));
+    rerender({ revision: 114 });
+
+    expect(result.current).toEqual({ status: "loading" });
+  });
+
+  it("fetches nothing until asked for a changelog", () => {
+    renderHook(() => useCollectionRevision(collection({ version: "112", newestVersion: "113" })));
+
+    expect(api.emitAndAwait).not.toHaveBeenCalled();
   });
 
   it("updates as the collection's own Update does", async () => {
@@ -97,7 +131,9 @@ describe("useCollectionRevision", () => {
     const { result } = renderHook(() => useCollectionRevision(coll));
 
     api.events.emit.mockImplementation((...args: unknown[]) =>
-      (args.at(-1) as (err: Error) => void)(new UserCanceled()),
+      (args.at(-1) as (err: Error) => void)(
+        new VortexError("canceled by user", { kind: "user-canceled", skipped: false }),
+      ),
     );
     await act(() => result.current.update());
     expect(api.showErrorNotification).not.toHaveBeenCalled();
@@ -110,5 +146,30 @@ describe("useCollectionRevision", () => {
       "Failed to update collection",
       expect.any(Error),
     );
+  });
+
+  it("starts one update for the collection, however many of its rows ask", async () => {
+    let finish: () => void = () => undefined;
+    api.events.emit.mockImplementation((...args: unknown[]) => {
+      finish = args.at(-1) as () => void;
+    });
+    const coll = collection({ version: "112", newestVersion: "113" });
+    const group = renderHook(() => useCollectionRevision(coll));
+    const row = renderHook(() => useCollectionRevision(coll));
+
+    let first: Promise<void> = Promise.resolve();
+    act(() => {
+      first = group.result.current.update();
+    });
+    expect(row.result.current.updating).toBe(true);
+
+    await act(() => row.result.current.update());
+    expect(api.events.emit).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      finish();
+      await first;
+    });
+    expect(row.result.current.updating).toBe(false);
   });
 });

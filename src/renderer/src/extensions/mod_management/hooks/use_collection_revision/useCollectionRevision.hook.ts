@@ -1,84 +1,145 @@
-import { useCallback, useEffect, useState } from "react";
+import { parseError } from "@vortex/shared";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { useMainContext } from "@/contexts";
-import { UserCanceled } from "@/util/CustomErrors";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import { activeGameId } from "@/util/selectors";
-import { toPromise } from "@/util/util";
 
 import type { IMod } from "../../types/IMod";
 
 /** A revision's changelog, by collection slug and revision; "" for one that has none. */
 const changelogs = new Map<string, Promise<string>>();
 
+/** Collections updating, by id: shared, so a collection's two rows can't each start one. */
+const updating = new Set<string>();
+const listeners = new Set<() => void>();
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+
+const setUpdating = (id: string, value: boolean) => {
+  if (value) {
+    updating.add(id);
+  } else {
+    updating.delete(id);
+  }
+  listeners.forEach((listener) => listener());
+};
+
 const revisionNumber = (value: string | undefined) => parseInt(value ?? "0", 10) || 0;
 
+/** An installed collection's revision, the newest that's out, and whether that's newer. */
+export const collectionRevisions = (collection: IMod) => {
+  const revision = revisionNumber(collection.attributes?.version);
+  const newest = Math.max(revision, revisionNumber(collection.attributes?.newestVersion));
+
+  return { revision, newest, hasUpdate: newest > revision };
+};
+
 /**
- * An installed collection's revision, whether a newer one is out, a way to update to it,
- * and the newest revision's changelog. The changelog isn't stored, so it's fetched, once
- * per revision for the whole session; undefined until it's in, or when there isn't one.
+ * An installed collection's revision, whether a newer one is out, and a way to update to it.
+ * Its rows share whether it's updating, so its group's and its own can't both start one.
  */
 export const useCollectionRevision = (collection: IMod) => {
   const { api } = useMainContext();
   const { attributes } = collection;
-  const revision = revisionNumber(attributes?.version);
-  const newest = Math.max(revision, revisionNumber(attributes?.newestVersion));
-  const slug: string | undefined = attributes?.collectionSlug;
+  const isUpdating = useSyncExternalStore(subscribe, () => updating.has(collection.id));
 
-  const [changelog, setChangelog] = useState<string>();
-  const [updating, setUpdating] = useState(false);
-
-  useEffect(() => {
-    if (slug === undefined || newest === 0) {
+  // As the collection's own Update does: the update shows the changelog, then installs.
+  const update = useCallback(async () => {
+    if (updating.has(collection.id)) {
       return;
     }
+    setUpdating(collection.id, true);
 
-    const key = `${slug}:${newest}`;
-    let fetched = changelogs.get(key);
-
-    if (fetched === undefined) {
-      fetched = api
-        .emitAndAwait("get-nexus-collection-revision", slug, newest)
-        .then((results) => results[0]?.collectionChangelog?.description ?? "")
-        // Offline or refused: no button, and another go next time it's shown.
-        .catch(() => {
-          changelogs.delete(key);
-          return "";
-        });
-      changelogs.set(key, fetched);
+    try {
+      await new Promise<void>((resolve, reject) =>
+        api.events.emit(
+          "collection-update",
+          attributes?.downloadGame ?? activeGameId(api.getState()),
+          attributes?.collectionSlug,
+          attributes?.newestVersion,
+          attributes?.source,
+          collection.id,
+          (err: Error | null) => (err ? reject(err) : resolve()),
+        ),
+      );
+    } catch (err) {
+      if (parseError(err).data.kind !== "user-canceled") {
+        api.showErrorNotification("Failed to update collection", err);
+      }
+    } finally {
+      setUpdating(collection.id, false);
     }
+  }, [api, attributes, collection.id]);
 
+  return { ...collectionRevisions(collection), update, updating: isUpdating };
+};
+
+/** Fetches a revision's changelog, forgetting it if that fails so the next ask tries again. */
+const requestChangelog = async (
+  api: IExtensionApi,
+  key: string,
+  slug: string,
+  revision: number,
+): Promise<string> => {
+  try {
+    const results = await api.emitAndAwait("get-nexus-collection-revision", slug, revision);
+    return results[0]?.collectionChangelog?.description ?? "";
+  } catch (err) {
+    changelogs.delete(key);
+    throw err;
+  }
+};
+
+/** A revision's changelog as it's fetched: coming, in ("" for a revision without one), or failed. */
+export type ChangelogFetch =
+  | { status: "loading" }
+  | { status: "loaded"; changelog: string }
+  | { status: "failed" };
+
+/**
+ * A collection revision's changelog. It isn't stored, so it's fetched, once per revision for
+ * the whole session; one that fails, offline or refused, is fetched again next time.
+ */
+export const useCollectionChangelog = (slug: string, revision: number): ChangelogFetch => {
+  const { api } = useMainContext();
+  const key = `${slug}:${revision}`;
+
+  // Kept with the revision it's for, so another's never shows while this one's coming.
+  const [fetched, setFetched] = useState<{ key: string; result: ChangelogFetch }>();
+
+  useEffect(() => {
     let current = true;
-    void fetched.then((description) => current && setChangelog(description || undefined));
+
+    const load = async () => {
+      // One fetch per revision, however many popovers ask for it.
+      let changelog = changelogs.get(key);
+      if (changelog === undefined) {
+        changelog = requestChangelog(api, key, slug, revision);
+        changelogs.set(key, changelog);
+      }
+
+      let result: ChangelogFetch;
+      try {
+        result = { status: "loaded", changelog: await changelog };
+      } catch {
+        result = { status: "failed" };
+      }
+
+      if (current) {
+        setFetched({ key, result });
+      }
+    };
+
+    void load();
 
     return () => {
       current = false;
     };
-  }, [api, newest, slug]);
+  }, [api, key, revision, slug]);
 
-  // As the collection's own Update does: the update shows the changelog, then installs.
-  const update = useCallback(async () => {
-    setUpdating(true);
-
-    try {
-      await toPromise((cb) =>
-        api.events.emit(
-          "collection-update",
-          attributes?.downloadGame ?? activeGameId(api.getState()),
-          slug,
-          attributes?.newestVersion,
-          attributes?.source,
-          collection.id,
-          cb,
-        ),
-      );
-    } catch (err) {
-      if (!(err instanceof UserCanceled)) {
-        api.showErrorNotification("Failed to update collection", err);
-      }
-    } finally {
-      setUpdating(false);
-    }
-  }, [api, attributes, collection.id, slug]);
-
-  return { revision, newest, hasUpdate: newest > revision, update, updating, changelog };
+  return fetched?.key === key ? fetched.result : { status: "loading" };
 };
