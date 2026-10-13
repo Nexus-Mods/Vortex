@@ -196,6 +196,16 @@ describe("extensionStateFromScan", () => {
     expect(extensionStateFromScan(scanned, recorded).remove).toBe(true);
   });
 
+  // Vortex before 2.7 recorded the Nexus link in info.json
+  it("keeps the mod id the extension's info.json records", () => {
+    const linked = makeRegisteredExtension({
+      name: "game-cyberpunk2077",
+      path: "/plugins/game-cyberpunk2077",
+      info: makeExtensionInfo({ modId: 196 }),
+    });
+    expect(extensionStateFromScan(linked, makeLegacyExtensionState()).modId).toBe(196);
+  });
+
   it("marks a bundled extension bundled", () => {
     const bundled = makeRegisteredExtension({
       name: "fnis-integration",
