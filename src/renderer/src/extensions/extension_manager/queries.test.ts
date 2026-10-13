@@ -17,6 +17,7 @@ import {
   findUpdatableExtensions,
   getMissingOptionalExtensions,
   isAlreadyInstalled,
+  isExtensionDownload,
   matchesQuery,
 } from "./queries";
 
@@ -259,6 +260,25 @@ describe("findDependencyInCatalog", () => {
   it("returns undefined for empty catalog", () => {
     const result = findDependencyInCatalog([], "test-id");
     expect(result).toBeUndefined();
+  });
+});
+
+describe("isExtensionDownload", () => {
+  const catalog = [makeAvailableExtension({ modId: 875 })];
+
+  it("recognises a catalog extension whatever its archive is called", () => {
+    expect(isExtensionDownload(catalog, "game-mount-and-blade2-875-1-3-3-1768810241", 875)).toBe(
+      true,
+    );
+  });
+
+  it("treats a site download outside the catalog as a modding tool", () => {
+    expect(isExtensionDownload(catalog, "some-modding-tool-1-0", 42)).toBe(false);
+  });
+
+  it("falls back to the archive name without a nexus mod id", () => {
+    expect(isExtensionDownload(catalog, "Vortex Extension Update - Foo", undefined)).toBe(true);
+    expect(isExtensionDownload(catalog, "some-modding-tool-1-0", undefined)).toBe(false);
   });
 });
 

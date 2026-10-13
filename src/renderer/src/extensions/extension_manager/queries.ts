@@ -91,6 +91,22 @@ export function findDependencyInCatalog(
   return catalog.find((catalogEntry) => catalogEntry.name === dependencyId);
 }
 
+/**
+ * Checks whether a download from the "site" domain is a Vortex extension rather than a modding
+ * tool. Archive names are not reliable (CDN names rarely say "extension"), so the catalog decides
+ * when the download carries its Nexus mod id.
+ */
+export function isExtensionDownload(
+  catalog: IAvailableExtension[],
+  archiveName: string,
+  nexusModId: number | undefined,
+): boolean {
+  if (nexusModId !== undefined && findInCatalog(catalog, { modId: nexusModId }) !== undefined) {
+    return true;
+  }
+  return archiveName.toLowerCase().includes("extension");
+}
+
 /** Checks whether an extension from the catalog is already installed. */
 export function isAlreadyInstalled(
   installedExtensions: Record<string, IExtensionState>,
