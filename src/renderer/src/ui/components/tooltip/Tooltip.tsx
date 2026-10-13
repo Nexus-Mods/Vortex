@@ -23,6 +23,7 @@ import {
 } from "@floating-ui/react";
 import React, {
   cloneElement,
+  type CSSProperties,
   isValidElement,
   type PointerEvent as ReactPointerEvent,
   type ReactElement,
@@ -83,6 +84,8 @@ interface ITooltipBaseProps {
   /** Classes for the positioned layer, which owns the stacking, e.g. a lower z-index. */
   positionerClassName?: string;
   showArrow?: boolean;
+  /** Inline styles for the tooltip's box, such as a custom property its class reads. */
+  style?: CSSProperties;
   /** Every open and close, with Floating UI's reason for it. */
   onOpenChange?: (open: boolean, reason?: OpenChangeReason) => void;
 }
@@ -108,6 +111,7 @@ export const Tooltip = ({
   placement = "top",
   positionerClassName,
   showArrow = true,
+  style,
   onOpenChange,
 }: ITooltipProps) => {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
@@ -262,7 +266,10 @@ export const Tooltip = ({
             style={floatingStyles}
             {...interactions.getFloatingProps()}
           >
-            <div className={joinClasses(["nxm-tooltip", className])} style={transitionStyles}>
+            <div
+              className={joinClasses(["nxm-tooltip", className])}
+              style={{ ...style, ...transitionStyles }}
+            >
               {/* The wrapper stays for both: it carries the scroll clamp, which
                   can't sit on .nxm-tooltip without clipping the arrow. */}
               <div

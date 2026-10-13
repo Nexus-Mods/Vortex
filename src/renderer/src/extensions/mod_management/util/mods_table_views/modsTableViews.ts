@@ -8,6 +8,7 @@ import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import { modHasUpdate } from "../mod_has_update/modHasUpdate";
 import modName from "../modName";
+import { uploaderAvatar } from "../uploaderAvatar";
 
 export interface IModRow {
   /** The mod the row shows. */
@@ -143,10 +144,6 @@ const groupByCollection = (
   return [...ungroupedFirst("no-collection", t("No collection"), ungrouped), ...collectionGroups];
 };
 
-// Where Nexus serves a member's avatar; a mod's own attributes only carry one for a
-// collection, whose metadata comes from the API that returns it.
-const memberAvatar = (memberId: number) => `https://avatars.nexusmods.com/${memberId}/100`;
-
 /**
  * The author's avatar, from a mod they uploaded themselves. Only the uploader's is known,
  * and the author can be someone else, so a mod uploaded by another name says nothing
@@ -163,7 +160,7 @@ const authorAvatar = (author: string, rows: IModRow[]): string | undefined => {
     return undefined;
   }
 
-  return attributes.uploaderAvatar || memberAvatar(attributes.uploaderId);
+  return uploaderAvatar(attributes);
 };
 
 /** The mods with no author, then the mods grouped by author, by name. */

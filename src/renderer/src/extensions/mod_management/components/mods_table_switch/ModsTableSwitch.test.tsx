@@ -1116,4 +1116,19 @@ describe("ModsTableSwitch", () => {
       expect(onRemoveVersion).toHaveBeenCalledWith("a1");
     });
   });
+
+  it("shows a mod's card on hovering its thumbnail", async () => {
+    renderSwitch({
+      a: mod("a", "Alpha", true, {
+        attributes: { name: "Alpha", modName: "Alpha Page", shortDescription: "Does things." },
+      }),
+    });
+
+    const thumbnail = document.querySelector(".nxm-image-mod")!.parentElement!;
+    await userEvent.hover(thumbnail);
+
+    const card = await screen.findByRole("tooltip");
+    expect(card).toHaveTextContent("Alpha Page");
+    expect(card).toHaveTextContent("Does things.");
+  });
 });

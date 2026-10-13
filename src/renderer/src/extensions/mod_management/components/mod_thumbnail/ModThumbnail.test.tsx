@@ -67,4 +67,13 @@ describe("ModThumbnail", () => {
 
     expect(getFallback()).not.toBeNull();
   });
+
+  it("takes a ref and props on its own node, so it can be a tooltip's trigger", () => {
+    const ref = React.createRef<HTMLSpanElement>();
+    render(<ModThumbnail aria-describedby="card" pictureUrl={NESTED} ref={ref} />);
+
+    expect(ref.current).toBeInstanceOf(HTMLSpanElement);
+    expect(ref.current).toHaveAttribute("aria-describedby", "card");
+    expect(ref.current).toContainElement(getImg());
+  });
 });

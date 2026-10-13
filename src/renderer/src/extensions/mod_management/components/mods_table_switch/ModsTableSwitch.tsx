@@ -59,6 +59,7 @@ import {
 } from "../../util/mods_table_views/modsTableViews";
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
+import { ModHoverCard } from "../mod_hover_card/ModHoverCard";
 import { ModThumbnail } from "../mod_thumbnail/ModThumbnail";
 import { ModVersion, modVersionGroup, modVersionText } from "../mod_version/ModVersion";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
@@ -426,7 +427,12 @@ export const ModsTableSwitch = ({
         searchText: ({ name }) => name,
         cell: ({ mod, name }) => (
           <>
-            <ModThumbnail className="ml-2 h-5 rounded-sm" pictureUrl={mod.attributes?.pictureUrl} />
+            <ModHoverCard mod={mod} name={name}>
+              <ModThumbnail
+                className="ml-2 h-5 rounded-sm"
+                pictureUrl={mod.attributes?.pictureUrl}
+              />
+            </ModHoverCard>
 
             <span className="ml-2 truncate">{name}</span>
           </>
