@@ -18,7 +18,7 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId } from "../../../util/selectors";
-import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { convertGameIdReverse, nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setShowHiddenGames } from "../actions/session";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
@@ -31,6 +31,7 @@ import {
   DEFAULT_PICKER_LAYOUT,
   useDisplayOptionsAction,
 } from "../hooks/useDisplayOptionsAction.hook";
+import type { IDetectedGame } from "../types/IDetectedGame";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 
@@ -67,6 +68,8 @@ interface IConnectedProps {
   sortManaged: string;
   sortUnmanaged: string;
   showHidden: boolean;
+  detectedGames: IDetectedGame[];
+  favouriteGames: number[];
 }
 
 interface IActionProps {
@@ -98,6 +101,8 @@ const GamePicker = ({
   sortUnmanaged,
   showHidden,
   gameMode,
+  detectedGames,
+  favouriteGames,
   nexusGames,
   onRefreshGameInfo,
   onBrowseGameLocation,
@@ -130,6 +135,18 @@ const GamePicker = ({
           prev[entry.name] = entry;
           return prev;
         }, {}),
+      ),
+    [],
+  );
+
+  // the detected-games response identifies games by the numeric Nexus id
+  const nexusGameByNexusId = useMemo(
+    () =>
+      memoizeOne((gameList: IGameListEntry[]) =>
+        gameList.reduce<Map<number, IGameListEntry>>((prev, entry) => {
+          prev.set(entry.id, entry);
+          return prev;
+        }, new Map<number, IGameListEntry>()),
       ),
     [],
   );
@@ -222,15 +239,14 @@ const GamePicker = ({
   );
 
   const managedGameList: IGameStored[] = [];
-  const discoveredGameList: IGameStored[] = [];
   const supportedGameList: IGameStored[] = [];
 
   displayedGames.forEach((game: IGameStored) => {
     if (getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined) {
+      // games the user hasn't added come from the detected-games response now,
+      // so the disk scan no longer supplies this section's tiles
       if (profileGames.has(game.id)) {
         managedGameList.push(game);
-      } else {
-        discoveredGameList.push(game);
       }
     } else {
       supportedGameList.push(game);
@@ -258,17 +274,50 @@ const GamePicker = ({
       }
       if (profileGames.has(gameId)) {
         managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
-      } else {
-        discoveredGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
       }
     }
   });
 
+  // The detected section is fed by the detected-games response, which names the user's
+  // store-installed games. Only games with a Vortex extension are listable, and the
+  // nexus games list supplies the name plus the internal id the store's actions know.
+  const nexusGameByNexusIdMap = nexusGameByNexusId(nexusGames);
+  const favourites = new Set(favouriteGames);
+  const favouriteGameIds: string[] = [];
+  const detectedGameList: IGameStored[] = detectedGames
+    .filter((game) => game.extension !== undefined)
+    .map<IGameStored | undefined>((game) => {
+      const nexusGame = nexusGameByNexusIdMap.get(game.gameId);
+      if (nexusGame === undefined) {
+        return undefined;
+      }
+      // profiles and actions know games by their internal id, which is usually the
+      // nexus domain but not always
+      const internalId = convertGameIdReverse(knownGames, nexusGame.domain_name);
+      if (profileGames.has(internalId)) {
+        return undefined;
+      }
+      // keep the section's hide-a-game behaviour working; a search also shows hidden
+      if (!showHidden && !currentFilterValue && (discoveredGames[internalId]?.hidden ?? false)) {
+        return undefined;
+      }
+      if (favourites.has(game.gameId)) {
+        favouriteGameIds.push(internalId);
+      }
+      return {
+        id: internalId,
+        name: nexusGame.name,
+        extensionPath: undefined,
+        imageURL: game.imageUrl,
+        requiredFiles: [],
+        executable: undefined,
+      };
+    })
+    .filter((game): game is IGameStored => game !== undefined);
+
   const filteredManaged = managedGameList.filter(applyGameFilter).sort(sortBy(sortManaged));
-  // Detection results are a short list with no sort control of their own, so they stay
-  // alphabetical rather than following the catalogue's sort.
-  // Ordering is the detected section's own setting, so it sorts what it's given.
-  const filteredDetected = discoveredGameList.filter(applyGameFilter);
+  // The section owns its own sort control, so the input is only filtered here.
+  const filteredDetected = detectedGameList.filter(applyGameFilter);
   const filteredSupported = supportedGameList.filter(applyGameFilter).sort(sortBy(sortUnmanaged));
 
   const displayOptions = useDisplayOptionsAction({
@@ -326,8 +375,9 @@ const GamePicker = ({
 
       <PageScroll isFullWidth ref={scrollAreaRef}>
         <DetectedGames
-          count={getTabGameNumber(discoveredGameList, filteredDetected)}
+          count={getTabGameNumber(detectedGameList, filteredDetected)}
           filtering={!!currentFilterValue}
+          favourites={favouriteGameIds}
           games={filteredDetected}
           hasAddedGames={!!managedGameList.length}
           onBrowseGameLocation={onBrowseGameLocation}
@@ -373,6 +423,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     sortManaged: state.settings.gameMode.sortManaged ?? "alphabetical",
     sortUnmanaged: state.settings.gameMode.sortUnmanaged ?? "alphabetical",
     showHidden: state.session.gameMode.showHidden ?? false,
+    detectedGames: state.session.gameMode.detectedGames ?? [],
+    favouriteGames: state.session.gameMode.favouriteGames ?? [],
   };
 }
 

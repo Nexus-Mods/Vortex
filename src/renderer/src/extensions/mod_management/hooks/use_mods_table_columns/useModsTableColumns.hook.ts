@@ -23,6 +23,8 @@ export interface IModsTableColumn extends ITableColumn<IModRow, IModGroup> {
   position?: number;
   /** The value a row is grouped under when the table groups by it; without one, it can't. */
   groupBy?: (row: IModRow) => string;
+  /** Values whose groups come first, in this order; the rest follow by name. */
+  groupOrder?: string[];
   /** Its name in the Group by options, where that isn't its header. */
   groupLabel?: string;
   /** The text its cell shows, which a search matches; without one, a search passes it by. */

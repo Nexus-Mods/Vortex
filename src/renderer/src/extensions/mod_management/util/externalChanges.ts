@@ -1,6 +1,14 @@
+import { stat } from "node:fs/promises";
 import * as path from "path";
 
-import { getErrorCode, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  unknownToError,
+  VortexModId,
+  VortexModStagingFolder,
+  type VortexProfileId,
+  type VortexStagingFolder,
+} from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type {
@@ -21,13 +29,14 @@ import {
 import { setdefault, truthy } from "../../../util/util";
 import { showExternalChanges } from "../actions/session";
 import { MERGED_PATH } from "../modMerging";
+import { modsForGame } from "../selectors";
 import type { FileAction, IFileEntry } from "../types/IFileEntry";
 
 /**
  * look at the file actions and act accordingly. Depending on the action this can
  * be a direct file operation or a modification to the previous manifest so that
  * the deployment ext runs the necessary operation
- * @param {string} sourcePath the "virtual" mod directory
+ * @param {VortexStagingFolder} sourcePath the "virtual" mod directory
  * @param {string} outputPath the destination directory where the game expects mods
  * @param {IDeployedFile[]} lastDeployment previous deployment to use as reference
  * @param {IFileEntry[]} fileActions actions the user selected for external changes
@@ -36,8 +45,9 @@ import type { FileAction, IFileEntry } from "../types/IFileEntry";
  */
 async function applyFileActions(
   api: IExtensionApi,
-  profileId: string,
-  sourcePath: string,
+  gameId: string,
+  modIdByFolder: ReadonlyMap<VortexModStagingFolder, VortexModId>,
+  sourcePath: VortexStagingFolder,
   outputPath: string,
   lastDeployment: IDeployedFile[],
   fileActions: IFileEntry[],
@@ -120,34 +130,25 @@ async function applyFileActions(
   const newDeployment = lastDeployment.filter((entry) => !dropSet.has(entry.relPath));
   lastDeployment = newDeployment;
 
-  const affectedMods = new Set<string>();
-  const testFileOverrides: { [modId: string]: string[] } = {};
+  const affectedMods = new Set<VortexModId>();
+  const testFileOverrides: Record<VortexModId, string[]> = {};
   fileActions.forEach((action) => {
+    const modId =
+      action.source !== "" ? modIdByFolder.get(VortexModStagingFolder(action.source)) : undefined;
+    if (modId === undefined) {
+      return;
+    }
+
     if (["import", "newest", "nop", "delete", "drop"].indexOf(action.action) !== -1) {
-      affectedMods.add(action.source);
+      affectedMods.add(modId);
     }
 
     if (action.type === "srcdeleted" && action.action === "drop") {
       // A file has been deleted from the staging folder - we need to check whether
       //  the user had set a file override for it.
-      const current = testFileOverrides[action.source] || [];
-      testFileOverrides[action.source] = current.concat(action.filePath);
+      (testFileOverrides[modId] ??= []).push(action.filePath);
     }
   });
-
-  const state = api.store.getState();
-  let gameId: string;
-
-  if (profileId !== undefined) {
-    const profile = profileById(state, profileId);
-    if (profile !== undefined) {
-      gameId = profile.id;
-    }
-  }
-
-  if (gameId === undefined) {
-    gameId = activeGameId(state);
-  }
 
   if (Object.keys(testFileOverrides).length > 0) {
     api.events.emit("check-file-override-redundancies", gameId, testFileOverrides);
@@ -160,18 +161,26 @@ async function applyFileActions(
   return lastDeployment;
 }
 
-function defaultAction(changeType: string): FileAction {
-  switch (changeType) {
+function defaultAction(
+  change: IFileChange,
+  existingFolders: ReadonlySet<VortexModStagingFolder>,
+): FileAction {
+  switch (change.changeType) {
     case "refchange":
       return "newest";
     case "valchange":
       return "nop";
     case "deleted":
-      return "delete";
+      return "restore";
     case "srcdeleted":
-      return "drop";
-    default:
-      throw new Error("invalid file change " + changeType);
+      // the deployed file is the last copy; keep it while its mod's folder exists
+      return change.source !== "" && existingFolders.has(VortexModStagingFolder(change.source))
+        ? "import"
+        : "drop";
+    default: {
+      const exhausted: never = change.changeType;
+      throw new Error(`invalid file change ${exhausted as string}`);
+    }
   }
 }
 
@@ -201,16 +210,25 @@ export function classifyExternalChange(
   return "rest";
 }
 
-export function changeToEntry(modTypeId: string, change: IFileChange): IFileEntry {
+function fileEntry(modTypeId: string, change: IFileChange, action: FileAction): IFileEntry {
   return {
     modTypeId,
     filePath: change.filePath,
     source: change.source,
     type: change.changeType,
-    action: defaultAction(change.changeType),
+    action,
     sourceModified: change.sourceTime,
     destModified: change.destTime,
   };
+}
+
+/** The dialog's entry for a change; `existingFolders` are the mod folders still in staging. */
+export function changeToEntry(
+  modTypeId: string,
+  change: IFileChange,
+  existingFolders: ReadonlySet<VortexModStagingFolder>,
+): IFileEntry {
+  return fileEntry(modTypeId, change, defaultAction(change, existingFolders));
 }
 
 function defaultInternalAction(typeId: string, input: IFileChange): IFileEntry {
@@ -223,17 +241,14 @@ function defaultInternalAction(typeId: string, input: IFileChange): IFileEntry {
     srcdeleted: "drop",
   }[input.changeType] as FileAction;
 
-  return {
-    ...changeToEntry(typeId, input),
-    action,
-  };
+  return fileEntry(typeId, input, action);
 }
 
 async function checkForExternalChanges(
   api: IExtensionApi,
   activator: IDeploymentMethod,
-  profileId: string,
-  stagingPath: string,
+  profileId: VortexProfileId,
+  stagingPath: VortexStagingFolder,
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
 ): Promise<{ [typeId: string]: IFileChange[] }> {
@@ -267,11 +282,33 @@ async function checkForExternalChanges(
   return changes;
 }
 
+/** The mod folders of deleted staging files that still exist. */
+async function existingSourceFolders(
+  stagingPath: VortexStagingFolder,
+  changes: { [typeId: string]: IFileChange[] },
+): Promise<Set<VortexModStagingFolder>> {
+  const folders = new Set(
+    Object.values(changes)
+      .flat()
+      .filter((change) => change.changeType === "srcdeleted" && change.source !== "")
+      .map((change) => VortexModStagingFolder(change.source)),
+  );
+  const existing = await Promise.all(
+    [...folders].map((folder) =>
+      stat(path.join(stagingPath, folder)).then(
+        (stats) => (stats.isDirectory() ? [folder] : []),
+        () => [],
+      ),
+    ),
+  );
+  return new Set(existing.flat());
+}
+
 export function dealWithExternalChanges(
   api: IExtensionApi,
   activator: IDeploymentMethod,
-  profileId: string,
-  stagingPath: string,
+  profileId: VortexProfileId,
+  stagingPath: VortexStagingFolder,
   modPaths: { [typeId: string]: string },
   lastDeployment: { [typeId: string]: IDeployedFile[] },
   // Installation paths whose mods Vortex itself just installed or removed.
@@ -319,19 +356,37 @@ export function dealWithExternalChanges(
             })),
           ),
         });
-        return api.store
-          .dispatch(showExternalChanges(userChanges))
+        return existingSourceFolders(stagingPath, userChanges)
+          .then((existingFolders) => {
+            const entries = Object.entries(userChanges).flatMap(([typeId, list]) =>
+              list.map((change) => changeToEntry(typeId, change, existingFolders)),
+            );
+            return api.store.dispatch(showExternalChanges(entries));
+          })
           .then((userActions) => [].concat(automaticActions, userActions));
       } else {
         return automaticActions;
       }
     })
     .then(async (fileActions: IFileEntry[]) => {
+      if (fileActions.length === 0) {
+        return Object.values(lastDeployment);
+      }
+      const state = api.getState();
+      const gameId = profileById(state, profileId)?.gameId ?? activeGameId(state);
+      const modIdByFolder = new Map(
+        Object.values(modsForGame(state, gameId))
+          .filter((mod) => mod.installationPath !== undefined && mod.installationPath !== "")
+          .map(
+            (mod) => [VortexModStagingFolder(mod.installationPath), VortexModId(mod.id)] as const,
+          ),
+      );
       const results: IDeployedFile[][] = [];
       for (const typeId of Object.keys(lastDeployment)) {
         const newLastDeployment = await applyFileActions(
           api,
-          profileId,
+          gameId,
+          modIdByFolder,
           stagingPath,
           modPaths[typeId],
           lastDeployment[typeId],

@@ -165,6 +165,12 @@ describe("DetectedGames", () => {
       expect(screen.getByTestId("games-grid")).toHaveTextContent("alpha,mike,zulu");
     });
 
+    it("puts favourite games ahead of the section's own order", () => {
+      state.current.settings.gameMode.discovered = detected;
+      renderComponent({ ...threeGames, favourites: ["zulu"] });
+      expect(screen.getByTestId("games-grid")).toHaveTextContent("zulu,mike,alpha");
+    });
+
     it("records the reader's choice of order", async () => {
       renderComponent({ count: "1", games: [game("skyrim")] });
 

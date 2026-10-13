@@ -77,6 +77,7 @@ import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import { deploymentReducer } from "../extensions/mod_management/reducers/deployment";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
+import type { IFileChange } from "../extensions/mod_management/types/IDeploymentMethod";
 import type {
   IChoiceType,
   IFileListItem,
@@ -205,6 +206,18 @@ export function makeMod(overrides: Partial<IMod> = {}): IMod {
     type: "",
     installationPath: "mods/mod-1",
     attributes: {},
+    ...overrides,
+  };
+}
+
+/** A file change as a deployment method's externalChanges reports it. */
+export function makeFileChange(overrides: Partial<IFileChange> = {}): IFileChange {
+  return {
+    filePath: "plugin.esp",
+    source: "mod-1",
+    sourceTime: new Date(0),
+    destTime: new Date(0),
+    changeType: "refchange",
     ...overrides,
   };
 }

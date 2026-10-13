@@ -4,11 +4,11 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { Popover } from "./Popover";
-import { PopoverButton } from "./PopoverButton";
+import { Popover } from "../Popover";
+import { PopoverButton } from "../PopoverButton";
+import { PopoverPanel } from "../PopoverPanel";
 import { PopoverMenu } from "./PopoverMenu";
-import type { IMenuAction } from "./PopoverMenuItem";
-import { PopoverPanel } from "./PopoverPanel";
+import type { IMenuAction } from "./PopoverMenu.types";
 
 // --- Helpers ---
 
@@ -40,7 +40,7 @@ const plainAction = (label: string, onClick = () => {}): IMenuAction => ({
   onClick,
 });
 
-/** A row whose panel is itself a menu — the header's nested Help submenu. */
+/** A row whose panel is itself a menu, as the header's nested Help submenu is. */
 const submenuAction = (rows: IMenuAction[][], onDismissSpy?: () => void): IMenuAction => ({
   iconPath: "mdi-help",
   label: "Help",
@@ -354,6 +354,73 @@ describe("PopoverMenu", () => {
     });
   });
 
+  describe("a choice", () => {
+    const choice = (onClick = vi.fn()): IMenuAction[][] => [
+      [
+        { label: "1.0", checked: false, onClick },
+        { label: "2.0", checked: true, onClick: vi.fn() },
+      ],
+    ];
+
+    it("offers each row as one of a choice, the one chosen checked", async () => {
+      await openMenu(choice());
+
+      const rows = screen.getAllByRole("menuitemradio");
+      expect(rows.map((row) => row.getAttribute("aria-checked"))).toEqual(["false", "true"]);
+    });
+
+    // Every row holds the check's room, so the controls before it line up.
+    it("shows the check on the chosen row alone, keeping its room on the rest", async () => {
+      await openMenu(choice());
+
+      const [first, second] = screen.getAllByRole("menuitemradio");
+      expect(first.querySelector(".nxm-dropdown-item-check-hidden")).toBeInTheDocument();
+      expect(second.querySelector(".nxm-dropdown-item-check-hidden")).toBeNull();
+    });
+  });
+
+  describe("a row's control", () => {
+    const withControl = (onClick: () => void, onControl: () => void): IMenuAction[][] => [
+      [
+        {
+          ...plainAction("Refresh", onClick),
+          control: { label: "Remove Refresh", iconPath: "mdi-remove", onClick: onControl },
+        },
+      ],
+    ];
+
+    it("runs only the control, then closes the menu", async () => {
+      const onClick = vi.fn();
+      const onControl = vi.fn();
+      await openMenu(withControl(onClick, onControl));
+
+      await userEvent.click(screen.getByRole("button", { name: "Remove Refresh" }));
+
+      expect(onControl).toHaveBeenCalled();
+      expect(onClick).not.toHaveBeenCalled();
+      expect(screen.queryByRole("menu")).toBeNull();
+    });
+
+    it("names itself in a tooltip on hover", async () => {
+      await openMenu(withControl(vi.fn(), vi.fn()));
+
+      await userEvent.hover(screen.getByRole("button", { name: "Remove Refresh" }));
+
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Remove Refresh");
+    });
+
+    it("is reached with Tab from its row", async () => {
+      const onControl = vi.fn();
+      await openMenu(withControl(vi.fn(), onControl));
+
+      await userEvent.keyboard("{Tab}");
+      expect(screen.getByRole("button", { name: "Remove Refresh" })).toHaveFocus();
+
+      await userEvent.keyboard("{Enter}");
+      expect(onControl).toHaveBeenCalled();
+    });
+  });
+
   describe("nested menus", () => {
     /** The account menu open, with its Help row ready to fly out. */
     const openParent = async (onDismissSpy?: () => void) => {
@@ -498,7 +565,7 @@ describe("PopoverMenu", () => {
       expect(screen.getByRole("menuitem", { name: "About" })).toHaveFocus();
     });
 
-    // Picking a help destination ends the interaction, so both surfaces go away —
+    // Picking a help destination ends the interaction, so both surfaces go away,
     // unlike a settings panel, which leaves the menu it was opened from standing.
     it("dismisses both surfaces when a submenu row is chosen", async () => {
       const onDismiss = vi.fn();

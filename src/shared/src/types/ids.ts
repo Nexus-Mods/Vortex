@@ -1,28 +1,4 @@
-import { VortexError } from "../errors/base";
-
-declare const brand: unique symbol;
-
-type Brand<Base, Tag> = Base & { readonly [brand]: { readonly __base__: Base; readonly tag: Tag } };
-type AnyBrand = Brand<unknown, any>;
-type BaseOf<B extends AnyBrand> = B[typeof brand]["__base__"];
-type Brander<B extends AnyBrand> = (value: BaseOf<B>) => B;
-
-function make<B extends AnyBrand>(validate?: (value: BaseOf<B>) => void): Brander<B> {
-  return (value: BaseOf<B>): B => {
-    validate?.(value);
-
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    return value as unknown as B;
-  };
-}
-
-function validateNonEmptyString(value: string) {
-  if (value.length > 0) return;
-  throw new VortexError("Must be a non-empty string!", {
-    kind: "argument-invalid",
-    argument: "value",
-  });
-}
+import { type Brand, type Brander, make, validateNonEmptyString } from "./brand";
 
 /**
  * The id Vortex gives an installed mod, the key of `persistent.mods[gameId]`. Not a Nexus Mods mod id, which

@@ -31,6 +31,8 @@ export interface IModsTableGroupingColumn {
   header: string;
   /** The value a row is grouped under; "" for none. */
   groupBy: (row: IModRow) => string;
+  /** Values whose groups come first, in this order; the rest follow by name. */
+  groupOrder?: string[];
 }
 
 export interface IModsTableView {
@@ -49,7 +51,7 @@ export interface IModsTableView {
 export const MODS_TABLE_PRESETS: IModsTableView[] = [
   { id: "all", label: "All mods", grouping: "none" },
   { id: "collections", label: "Collections", grouping: "collection" },
-  { id: "author", label: "Author", grouping: "author" },
+  { id: "status", label: "Status", grouping: "status" },
 ];
 
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
@@ -152,7 +154,10 @@ const groupByAuthor = (mods: { [id: string]: IModWithState }, t: TFunction): IMo
   return [...noAuthor, ...authorGroups];
 };
 
-/** The mods with no value for the column first, then the mods by its values, by name. */
+/**
+ * The mods with no value for the column first, then the mods by its values: those in its
+ * `groupOrder` in that order, then the rest by name.
+ */
 const groupByColumn = (
   mods: { [id: string]: IModWithState },
   column: IModsTableGroupingColumn,
@@ -176,7 +181,12 @@ const groupByColumn = (
     id: `${column.id}:${value}`,
     label: value,
     rows,
-  })).sort((a, b) => a.label.localeCompare(b.label));
+  })).sort((a, b) => {
+    const order = column.groupOrder ?? [];
+    // Unlisted values rank after every listed one, then fall back to their names.
+    const rank = (value: string) => (order.includes(value) ? order.indexOf(value) : order.length);
+    return rank(a.label) - rank(b.label) || a.label.localeCompare(b.label);
+  });
 
   const noValue = ungroupedFirst(
     `no-${column.id}`,

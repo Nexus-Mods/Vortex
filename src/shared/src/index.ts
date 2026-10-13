@@ -2,6 +2,7 @@ export * from "./constants";
 export * from "./Debouncer";
 export * from "./errors";
 export * from "./types/ids";
+export * from "./types/stagingFolders";
 export * from "./types/logging";
 
 export { CAUSE_SEPARATOR, VortexError } from "./errors/base";

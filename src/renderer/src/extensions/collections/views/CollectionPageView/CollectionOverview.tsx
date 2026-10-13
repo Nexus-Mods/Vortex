@@ -509,6 +509,7 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
             { label: "Close" },
             {
               label: "Endorse",
+              default: true,
               action: () => {
                 this.context.api.events.emit(
                   "endorse-mod",

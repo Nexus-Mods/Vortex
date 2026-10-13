@@ -167,6 +167,32 @@ describe("AppLaunchedEvent is_hidpi", () => {
   });
 });
 
+describe("AppLaunchedEvent mods_table_view", () => {
+  beforeEach(() => {
+    analyticsMixpanel.stop();
+    vi.clearAllMocks();
+  });
+
+  it.each(["beta", "classic"] as const)("sends mods_table_view=%s through to mixpanel", (view) => {
+    analyticsMixpanel.start(userInfo, false);
+
+    analyticsMixpanel.trackEvent(
+      new AppLaunchedEvent("win32", "10.0.22000", "x64", false, undefined, 100, false, view),
+    );
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_launched",
+      expect.objectContaining({ mods_table_view: view }),
+    );
+  });
+
+  it("leaves mods_table_view undefined when the caller omits it", () => {
+    const event = new AppLaunchedEvent("win32", "10.0.22000", "x64");
+
+    expect(event.properties.mods_table_view).toBeUndefined();
+  });
+});
+
 describe("AppUIModeChangedEvent", () => {
   beforeEach(() => {
     analyticsMixpanel.stop();

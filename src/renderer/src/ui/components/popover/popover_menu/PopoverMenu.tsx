@@ -1,7 +1,8 @@
 import React, { Fragment, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
-import { type IMenuAction, PopoverMenuItem } from "@/ui/components/popover/PopoverMenuItem";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
+import { PopoverMenuItem } from "@/ui/components/popover/popover_menu/PopoverMenuItem";
 
 interface IPopoverMenuProps {
   actions: IMenuAction[][];
@@ -14,7 +15,7 @@ interface IPopoverMenuProps {
  * A menu of actions filling a {@link PopoverPanel}.
  *
  * A `Popover` rather than a `Menu`, because an action here can open a panel of its
- * own and a `Menu` closes the moment focus reaches one — it has no notion of a
+ * own and a `Menu` closes the moment focus reaches one. It has no notion of a
  * surface nested inside it, where a `Popover` registers a child's portal as part of
  * itself. What `Menu` would have given us for free is supplied here instead: the
  * menu roles, focus on open, and arrow-key navigation.
@@ -56,7 +57,7 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
 
     const focusable = focusableRows();
     const focused = event.currentTarget.ownerDocument.activeElement;
-    // The row focus is on, or the row holding whatever is — a row can contain a
+    // The row focus is on, or the row holding whatever is: a row can contain a
     // control of its own, such as a pin, and arrowing from there has to carry on
     // from that row rather than from nowhere.
     const current = focusable.findIndex((row) => row === focused || row.contains(focused));
@@ -78,7 +79,7 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
     focusable[destination % focusable.length]?.focus();
   };
 
-  // Groups are a visual device only — the rows are laid out and focused as one flat
+  // Groups are a visual device only. The rows are laid out and focused as one flat
   // list, so arrowing runs through the whole menu rather than stopping at a rule,
   // and one group's refs can't overwrite another's.
   let nextIndex = 0;
@@ -109,8 +110,8 @@ export const PopoverMenu = ({ actions, label, onClose, onSelect }: IPopoverMenuP
               }}
               reservesChevron={reservesChevron}
               tabIndex={index === 0 ? 0 : -1}
-              onTakeFocus={() => setFocusedRow(index)}
               onSelect={onSelect}
+              onTakeFocus={() => setFocusedRow(index)}
             />
           ))}
         </Fragment>

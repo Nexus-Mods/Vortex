@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
 import { Popover } from "@/ui/components/popover/Popover";
+import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
-import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
@@ -102,7 +102,8 @@ export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => 
 
             {!!pinning?.canReset && (
               <>
-                <DropdownDivider />
+                {/* Out of the menu's rows and their gap, so it makes up the gap's 2px itself. */}
+                <DropdownDivider className="mt-1" />
 
                 <PopoverPanelGroupItem className="h-auto justify-end py-3">
                   <TypographyLink
