@@ -1,18 +1,16 @@
 import React from "react";
 
-import { useImageCanvas } from "./useImageCanvas.hook";
+import { useImageColour } from "@/ui/components/image/useImageColour.hook";
 
 /** A sticky cell's share of its group's tint, which its solid background would hide. */
 export const TableCellTint = ({ src }: { src: string }) => {
-  const canvasRef = useImageCanvas(src);
+  const colour = useImageColour(src);
+
+  if (colour === undefined) {
+    return null;
+  }
 
   return (
-    <canvas
-      aria-hidden={true}
-      className="nxm-table-cell-tint"
-      height={1}
-      ref={canvasRef}
-      width={1}
-    />
+    <span aria-hidden={true} className="nxm-table-cell-tint" style={{ backgroundColor: colour }} />
   );
 };

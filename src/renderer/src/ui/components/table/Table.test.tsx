@@ -3,6 +3,11 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// jsdom loads no pictures, so every picture's colour is the same, known one.
+vi.mock("@/ui/components/image/useImageColour.hook", () => ({
+  useImageColour: (src: string | undefined) => (src ? "rgb(1, 2, 3)" : undefined),
+}));
+
 import { Table } from "./Table";
 import type { ITableColumn } from "./Table.types";
 import { useTableRowEngaged } from "./TableRow.context";
@@ -587,8 +592,9 @@ describe("Table with groups", () => {
     );
 
     const groupRows = container.querySelectorAll(".nxm-table-group-row");
-    expect(groupRows[0].lastElementChild?.tagName).toBe("CANVAS");
-    expect(groupRows[1].querySelector("canvas")).toBeNull();
+    expect(groupRows[0].lastElementChild).toHaveClass("nxm-table-group-wash");
+    expect(groupRows[0].lastElementChild).toHaveStyle({ backgroundColor: "rgb(1, 2, 3)" });
+    expect(groupRows[1].querySelector(".nxm-table-group-wash")).toBeNull();
   });
 
   it("tints an open group's rows from its image, below its own row, until it collapses", async () => {

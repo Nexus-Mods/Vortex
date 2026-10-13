@@ -1,21 +1,19 @@
 import React from "react";
 
-import { useImageCanvas } from "./useImageCanvas.hook";
+import { useImageColour } from "@/ui/components/image/useImageColour.hook";
 
 /**
- * A group row's background, in its picture's colour: one pixel, which CSS stretches over
- * the row and fades across it, so there's no blur filter to repaint as the table scrolls.
+ * A group row's background, in its picture's colour, which CSS fades across the row, so
+ * there's no blur filter to repaint as the table scrolls. Nothing until the colour is known.
  */
 export const TableGroupWash = ({ src }: { src: string }) => {
-  const canvasRef = useImageCanvas(src);
+  const colour = useImageColour(src);
+
+  if (colour === undefined) {
+    return null;
+  }
 
   return (
-    <canvas
-      aria-hidden={true}
-      className="nxm-table-group-wash"
-      height={1}
-      ref={canvasRef}
-      width={1}
-    />
+    <span aria-hidden={true} className="nxm-table-group-wash" style={{ backgroundColor: colour }} />
   );
 };
