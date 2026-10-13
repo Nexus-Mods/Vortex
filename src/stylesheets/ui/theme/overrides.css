@@ -28,7 +28,7 @@
 
         /* desktop.scss gives every link the default cursor, as a native app would, and
            unlayered it beats any layered rule; a link in prose is a link to the web. */
-        .nxm-prose a {
+        .nxm-prose a[href] {
             cursor: pointer !important;
         }
 

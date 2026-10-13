@@ -35,4 +35,18 @@ describe("Markdown", () => {
     rerender(<Markdown markdown="Hi" size="sm" />);
     expect(container.firstElementChild).toHaveClass("nxm-prose", "nxm-prose-sm");
   });
+
+  it("keeps links to web pages only, so one can't open a file or app", () => {
+    render(
+      <Markdown
+        markdown={
+          "[web](https://example.com) [file](file:///C:/run.exe) " +
+          "[share](\\\\server\\share\\run.exe) [app](steam://run/1) [relative](run.exe)"
+        }
+      />,
+    );
+
+    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["web"]);
+    expect(screen.getByText("file")).toBeInTheDocument();
+  });
 });

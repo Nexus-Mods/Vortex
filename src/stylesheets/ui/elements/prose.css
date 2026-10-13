@@ -39,7 +39,7 @@
 
         /* As a primary Link is: underlined, in the text's own colour, lighter on hover. Its
            pointer cursor is in overrides.css, past the legacy rule that takes it away. */
-        & :where(a) {
+        & :where(a[href]) {
             color: inherit;
             text-decoration-line: underline;
             transition-property: color;
@@ -49,6 +49,13 @@
             &:hover {
                 color: var(--nxm-prose-link-hover);
             }
+        }
+
+        /* Bootstrap's layer gives every link its colour and a hover underline; past it, one
+           without a target is plain text. */
+        & :where(a:not([href])) {
+            color: inherit;
+            text-decoration-line: none;
         }
 
         & :where(ul, ol) {

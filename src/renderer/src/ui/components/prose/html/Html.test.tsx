@@ -34,4 +34,18 @@ describe("Html", () => {
     expect(container.querySelector("script")).toBeNull();
     expect(container.querySelector("img")?.getAttribute("src") ?? null).toBeNull();
   });
+
+  it("keeps links to web pages only, so one can't open a file or app", () => {
+    render(
+      <Html
+        html={
+          '<p><a href="https://example.com">web</a> <a href="file:///C:/run.exe">file</a> ' +
+          '<a href="\\\\server\\share\\run.exe">share</a> <a href="steam://run/1">app</a> ' +
+          '<a href="run.exe">relative</a></p>'
+        }
+      />,
+    );
+
+    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["web"]);
+  });
 });
