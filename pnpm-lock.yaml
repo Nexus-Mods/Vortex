@@ -401,6 +401,9 @@ catalogs:
     '@types/minimist':
       specifier: 1.2.5
       version: 1.2.5
+    '@types/node':
+      specifier: 24.12.2
+      version: 24.12.2
     '@types/node-7z':
       specifier: 2.1.11
       version: 2.1.11
@@ -3895,6 +3898,12 @@ importers:
         version: 0.4.5(vitest@4.1.9)
 
   packages/pe-resources: {}
+
+  packages/steam-kv-parser:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.2
 
   packages/vortex-api:
     dependencies:
