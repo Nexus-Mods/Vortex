@@ -348,10 +348,10 @@ describe("ModsTableSwitch", () => {
   describe("display options", () => {
     const headers = () => screen.getAllByRole("columnheader").map((header) => header.textContent);
 
-    it("shows the installation time and collection columns by default", () => {
+    it("shows the version, collection and installation time columns by default", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      expect(headers()).toEqual(["Name", "Collection", "Installation time", "Actions"]);
+      expect(headers()).toEqual(["Name", "Version", "Collection", "Installation time", "Actions"]);
     });
 
     it("adds a column chosen from the display options", async () => {
@@ -392,6 +392,7 @@ describe("ModsTableSwitch", () => {
 
         expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
           "None",
+          "Version",
           "Author",
           "Archive name",
           "Category",
@@ -410,6 +411,20 @@ describe("ModsTableSwitch", () => {
         const rows = bodyRows(screen.getByRole("treegrid"));
         expect(rows.map(cellText)).toEqual(["Disabled1", "Beta", "Enabled1", "Alpha"]);
         expect(pressedViews()).toEqual(["false", "false", "false"]);
+      });
+
+      it("groups by version, updates first, as the classic table named them", async () => {
+        renderSwitch({
+          a: mod("a", "Alpha", true, {
+            attributes: { name: "Alpha", source: "nexus", version: "1.0", newestVersion: "1.1" },
+          }),
+          b: mod("b", "Beta", true),
+        });
+
+        await groupBy("Version");
+
+        const rows = bodyRows(screen.getByRole("treegrid"));
+        expect(rows.map(cellText)).toEqual(["Update available1", "Alpha", "Up-to-date1", "Beta"]);
       });
 
       it("selects the view a grouping matches", async () => {
@@ -709,6 +724,57 @@ describe("ModsTableSwitch", () => {
         (row) => row.getAttribute("aria-selected") === "true",
       );
       expect(selected.map(cellText)).toEqual(["Alpha"]);
+    });
+  });
+
+  describe("version", () => {
+    it("switches a mod to another of its versions from its row", async () => {
+      const onSelectVersion = vi.fn();
+      const current = mod("a", "Alpha", true, { attributes: { name: "Alpha", version: "2.0" } });
+      const older = mod("a1", "Alpha", false, { attributes: { name: "Alpha", version: "1.0" } });
+      render(
+        <Provider store={makeModsTableStore()}>
+          <ModsTableSwitch
+            alternatives={{ a: [current, older] }}
+            legacy={<div />}
+            mods={{ a: current }}
+            onSelectVersion={onSelectVersion}
+            onSetModsEnabled={vi.fn()}
+          />
+        </Provider>,
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
+      await userEvent.click(screen.getByRole("menuitemradio", { name: /^1\.0 \(default\)/ }));
+
+      expect(onSelectVersion).toHaveBeenCalledWith("a", "a1");
+    });
+
+    it("removes one of a mod's versions from its row, as ModList does", async () => {
+      const onRemoveVersion = vi.fn();
+      const current = mod("a", "Alpha", true, { attributes: { name: "Alpha", version: "2.0" } });
+      const older = mod("a1", "Alpha", false, { attributes: { name: "Alpha", version: "1.0" } });
+      render(
+        <Provider store={makeModsTableStore()}>
+          <ModsTableSwitch
+            alternatives={{ a: [current, older] }}
+            legacy={<div />}
+            mods={{ a: current }}
+            onRemoveVersion={onRemoveVersion}
+            onSetModsEnabled={vi.fn()}
+          />
+        </Provider>,
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
+      await userEvent.click(
+        within(screen.getByRole("menuitemradio", { name: /^1\.0 \(default\)/ })).getByRole(
+          "button",
+          { name: "Remove version" },
+        ),
+      );
+
+      expect(onRemoveVersion).toHaveBeenCalledWith("a1");
     });
   });
 });

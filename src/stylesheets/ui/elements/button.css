@@ -175,13 +175,13 @@
         }
 
         &:is(.nxm-button-moderate, .nxm-button-subdued, .nxm-button-weak) {
-            color: var(--color-info-moderate);
+            color: var(--color-info-strong);
 
             &:is(a, :enabled):not(.nxm-button-disabled) {
                 &:hover,
                 &:focus-visible,
                 &[aria-expanded="true"]:not(.nxm-button-no-expanded-style) {
-                    color: var(--color-info-strong);
+                    color: var(--color-info-moderate);
                 }
 
                 &:active {
