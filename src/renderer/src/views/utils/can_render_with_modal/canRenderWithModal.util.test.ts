@@ -37,6 +37,11 @@ describe("canRenderWithModal", () => {
     expect(canRenderWithModal(dialogWith({ text: "t", bbcode: undefined }))).toBe(true);
   });
 
+  it("accepts html text, with or without other text", () => {
+    expect(canRenderWithModal(dialogWith({ htmlText: "<b>b</b>" }))).toBe(true);
+    expect(canRenderWithModal(dialogWith({ text: "t", htmlText: "<b>b</b>" }))).toBe(true);
+  });
+
   it("accepts the order option, which ModalLayer follows", () => {
     expect(
       canRenderWithModal(dialogWith({ text: "t", options: { order: ["checkboxes", "text"] } })),
@@ -53,12 +58,12 @@ describe("canRenderWithModal", () => {
     expect(canRenderWithModal(dialogWith({}))).toBe(false);
   });
 
-  it.each<[string, IDialogContent]>([
-    ["htmlText", { text: "t", htmlText: "<b>b</b>" }],
-    ["htmlFile", { text: "t", htmlFile: "f.html" }],
-  ])("rejects a dialog with %s", (_name, content) => {
-    expect(canRenderWithModal(dialogWith(content))).toBe(false);
-  });
+  it.each<[string, IDialogContent]>([["htmlFile", { text: "t", htmlFile: "f.html" }]])(
+    "rejects a dialog with %s",
+    (_name, content) => {
+      expect(canRenderWithModal(dialogWith(content))).toBe(false);
+    },
+  );
 
   describe("choices", () => {
     it("accepts radio choices, with or without a hint, and with or without text", () => {

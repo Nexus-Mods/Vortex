@@ -21,6 +21,7 @@ import { TextField } from "@/ui/components/form/text_field/TextField";
 import { MessageBox } from "@/ui/components/message_box/MessageBox";
 import { Modal } from "@/ui/components/modal/Modal";
 import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
+import { Html } from "@/ui/components/prose/html/Html";
 import { Markdown } from "@/ui/components/prose/markdown/Markdown";
 import { PlainText } from "@/ui/components/prose/plain_text/PlainText";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
@@ -86,6 +87,9 @@ const orderedSections = (sections: ISection[], order: DialogContentItem[] | unde
 
   return [...sections].sort((lhs, rhs) => rank(lhs) - rank(rhs));
 };
+
+// A long list of checkboxes gets "Enable all" and "Disable all" above it, as in the legacy dialog.
+const MAX_CHECKBOXES_WITHOUT_BULK = 3;
 
 // Escape and backdrop clicks don't answer a legacy dialog, so there is nothing for them to do
 // here either: closing without an action would leave the caller's promise pending forever.
@@ -172,6 +176,7 @@ export const ModalLayer = () => {
   const needsRoom =
     content.bbcode !== undefined ||
     content.md !== undefined ||
+    content.htmlText !== undefined ||
     content.message !== undefined ||
     choices.length > 0 ||
     inputs.some((input) => input.type === "multiline") ||
@@ -198,6 +203,19 @@ export const ModalLayer = () => {
       ? ({ appearance: "strong", brand: "neutral" } as const)
       : ({ appearance: "moderate", brand: "neutral" } as const);
   };
+
+  // Ticks or unticks every checkbox the user can change.
+  const setAllChecked = (checked: boolean) =>
+    setEdits({
+      dialogId: id,
+      checked: {
+        ...editedChecked,
+        ...Object.fromEntries(
+          checkboxes.filter((box) => !box.disabled).map((box) => [box.id, checked]),
+        ),
+      },
+      typed: editedTyped,
+    });
 
   const answer = (action: string) => {
     // `{}` is what the legacy renderer hands back when the dialog has no controls.
@@ -249,6 +267,10 @@ export const ModalLayer = () => {
 
   if (content.md !== undefined) {
     sections.push({ id: "md", node: <Markdown markdown={translateBody(content.md)} size="sm" /> });
+  }
+
+  if (content.htmlText !== undefined) {
+    sections.push({ id: "htmlText", node: <Html html={content.htmlText} size="sm" /> });
   }
 
   if (content.message !== undefined) {
@@ -309,6 +331,26 @@ export const ModalLayer = () => {
       id: "checkboxes",
       node: (
         <div className="mt-3 flex flex-col gap-y-2">
+          {checkboxes.length > MAX_CHECKBOXES_WITHOUT_BULK && (
+            <div className="mb-1 flex gap-x-3">
+              <TypographyLink
+                data-testid="dialog-enable-all"
+                typographyType="body-sm"
+                onClick={() => setAllChecked(true)}
+              >
+                {t("Enable all")}
+              </TypographyLink>
+
+              <TypographyLink
+                data-testid="dialog-disable-all"
+                typographyType="body-sm"
+                onClick={() => setAllChecked(false)}
+              >
+                {t("Disable all")}
+              </TypographyLink>
+            </div>
+          )}
+
           {checkboxes.map((checkbox) => (
             <CheckboxField
               checked={isChecked(checkbox)}

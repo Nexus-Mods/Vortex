@@ -72,7 +72,7 @@ describe("ModalLayer", () => {
 
   it("renders nothing when the first dialog needs the legacy renderer", () => {
     renderLayer([
-      dialogWith("legacy", { text: "t", htmlText: "<b>b</b>" }),
+      dialogWith("legacy", { text: "t", htmlFile: "notes.html" }),
       dialogWith("text", { text: "t" }),
     ]);
 
@@ -657,6 +657,84 @@ describe("ModalLayer", () => {
       await userEvent.click(screen.getByTestId("dialog-action-Delete"));
 
       expect(closeDialog).toHaveBeenCalledWith("one", "Delete", { notes: "first\nsecond" });
+
+      await settleTransitions();
+    });
+  });
+
+  describe("html text", () => {
+    it("draws the html as small prose, in the medium modal", async () => {
+      renderLayer([dialogWith("one", { htmlText: "<p>Some <b>bold</b> notes</p>" })]);
+
+      const prose = proseOf(screen.getByRole("dialog"));
+
+      expect(prose).toHaveClass("nxm-prose-sm");
+      expect(prose.querySelector("b, strong")).toHaveTextContent("bold");
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
+
+      await settleTransitions();
+    });
+
+    it("leaves out images, which the legacy dialog would have loaded", async () => {
+      renderLayer([
+        dialogWith("one", { htmlText: '<p>Notes</p><img src="https://example.com/a.png">' }),
+      ]);
+
+      expect(proseOf(screen.getByRole("dialog")).querySelector("img")).toBeNull();
+
+      await settleTransitions();
+    });
+  });
+
+  describe("enable all and disable all", () => {
+    const boxes = (count: number) =>
+      Array.from({ length: count }, (_value, index) => ({
+        id: `box${index}`,
+        value: index === 0,
+        text: `Box ${index}`,
+        disabled: index === count - 1 ? true : undefined,
+      }));
+
+    it("are shown above more than three checkboxes, and not above three", async () => {
+      renderLayer([dialogWith("one", { text: "t", checkboxes: boxes(4) })]);
+
+      expect(screen.getByTestId("dialog-enable-all")).toBeInTheDocument();
+      expect(screen.getByTestId("dialog-disable-all")).toBeInTheDocument();
+
+      await settleTransitions();
+    });
+
+    it("are not shown above three checkboxes", async () => {
+      renderLayer([dialogWith("one", { text: "t", checkboxes: boxes(3) })]);
+
+      expect(screen.queryByTestId("dialog-enable-all")).not.toBeInTheDocument();
+
+      await settleTransitions();
+    });
+
+    it("tick or untick every checkbox that can be changed", async () => {
+      renderLayer([dialogWith("one", { text: "t", checkboxes: boxes(4) })]);
+
+      await userEvent.click(screen.getByTestId("dialog-enable-all"));
+      await userEvent.click(screen.getByTestId("dialog-action-Delete"));
+
+      // The last one is disabled, so it keeps its own value.
+      expect(closeDialog).toHaveBeenLastCalledWith("one", "Delete", {
+        box0: true,
+        box1: true,
+        box2: true,
+        box3: false,
+      });
+
+      await userEvent.click(screen.getByTestId("dialog-disable-all"));
+      await userEvent.click(screen.getByTestId("dialog-action-Delete"));
+
+      expect(closeDialog).toHaveBeenLastCalledWith("one", "Delete", {
+        box0: false,
+        box1: false,
+        box2: false,
+        box3: false,
+      });
 
       await settleTransitions();
     });
