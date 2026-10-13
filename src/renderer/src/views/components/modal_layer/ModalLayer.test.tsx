@@ -329,14 +329,6 @@ describe("ModalLayer", () => {
 
       await settleTransitions();
     });
-
-    it("leaves a multiline input to the legacy renderer", () => {
-      renderLayer([
-        dialogWith("one", { text: "t", input: [{ id: "a", label: "A", type: "multiline" }] }),
-      ]);
-
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
   });
 
   describe("links as buttons", () => {
@@ -645,6 +637,176 @@ describe("ModalLayer", () => {
       await settleTransitions();
     });
   });
+  describe("multiline input", () => {
+    it("shows a text area, where Enter adds a line and does not answer", async () => {
+      renderLayer([
+        dialogWith("one", {
+          text: "t",
+          input: [{ id: "notes", label: "Notes", type: "multiline", value: "first" }],
+        }),
+      ]);
+
+      const notes = screen.getByTestId("dialog-input-notes");
+      expect(notes.tagName).toBe("TEXTAREA");
+
+      await userEvent.type(notes, "{Enter}second");
+
+      expect(notes).toHaveValue("first\nsecond");
+      expect(closeDialog).not.toHaveBeenCalled();
+
+      await userEvent.click(screen.getByTestId("dialog-action-Delete"));
+
+      expect(closeDialog).toHaveBeenCalledWith("one", "Delete", { notes: "first\nsecond" });
+
+      await settleTransitions();
+    });
+  });
+
+  describe("size with a text area", () => {
+    it("uses the medium modal, even when the text is short", async () => {
+      renderLayer([
+        dialogWith("one", {
+          text: "Short.",
+          input: [{ id: "notes", label: "Notes", type: "multiline" }],
+        }),
+      ]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
+
+      await settleTransitions();
+    });
+  });
+
+  describe("choices", () => {
+    const withChoices = (): IDialog =>
+      dialogWith("one", {
+        text: "How do you want to update?",
+        choices: [
+          { id: "replace", value: true, text: "Replace", subText: "Updates every profile" },
+          { id: "alongside", value: false, text: "Install alongside" },
+          { id: "locked", value: false, text: "Locked", disabled: true },
+        ],
+      });
+
+    it("shows a radio per choice, with the one whose value is true checked", async () => {
+      renderLayer([withChoices()]);
+
+      expect(screen.getAllByRole("radio")).toHaveLength(3);
+      expect(screen.getByTestId("dialog-choice-replace")).toBeChecked();
+      expect(screen.getByTestId("dialog-choice-alongside")).not.toBeChecked();
+
+      await settleTransitions();
+    });
+
+    it("shows a choice's help text as its description", async () => {
+      renderLayer([withChoices()]);
+
+      const described = screen
+        .getByTestId("dialog-choice-replace")
+        .getAttribute("aria-describedby");
+
+      expect(document.getElementById(described ?? "")).toHaveTextContent("Updates every profile");
+
+      await settleTransitions();
+    });
+
+    it("answers with a boolean per choice, true for the one that was picked", async () => {
+      renderLayer([withChoices()]);
+
+      await userEvent.click(screen.getByTestId("dialog-choice-alongside"));
+      await userEvent.click(screen.getByTestId("dialog-action-Delete"));
+
+      expect(closeDialog).toHaveBeenCalledWith("one", "Delete", {
+        replace: false,
+        alongside: true,
+        locked: false,
+      });
+
+      await settleTransitions();
+    });
+
+    it("checks the condition against the choice that is picked", async () => {
+      const condition = vi.fn(() => []);
+      renderLayer([
+        dialogWith("one", {
+          text: "t",
+          choices: [
+            { id: "a", value: true, text: "A" },
+            { id: "b", value: false, text: "B" },
+          ],
+          condition,
+        }),
+      ]);
+
+      await userEvent.click(screen.getByTestId("dialog-choice-b"));
+
+      expect(condition).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          choices: [
+            expect.objectContaining({ id: "a", value: false }),
+            expect.objectContaining({ id: "b", value: true }),
+          ],
+        }),
+      );
+
+      await settleTransitions();
+    });
+
+    it("uses the medium modal, even when the text is short", async () => {
+      renderLayer([
+        dialogWith("one", {
+          text: "Short.",
+          choices: [{ id: "a", value: true, text: "A", subText: "A longer line of help text" }],
+        }),
+      ]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-md");
+
+      await settleTransitions();
+    });
+  });
+
+  describe("order", () => {
+    const content: IDialogContent = {
+      text: "Some text",
+      checkboxes: [{ id: "agree", value: false, text: "Agree" }],
+      choices: [{ id: "a", value: true, text: "A" }],
+    };
+
+    // The text, the checkbox and the radio, in the order they appear on screen.
+    const onScreen = () => {
+      const text = proseOf(screen.getByRole("dialog"));
+      const checkbox = screen.getByTestId("dialog-checkbox-agree");
+      const radio = screen.getByTestId("dialog-choice-a");
+
+      return [text, checkbox, radio]
+        .sort((left, right) =>
+          left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+        )
+        .map((element) =>
+          element === text ? "text" : element === checkbox ? "checkboxes" : "choices",
+        );
+    };
+
+    it("shows the parts of a dialog in the usual order", async () => {
+      renderLayer([dialogWith("one", content)]);
+
+      expect(onScreen()).toEqual(["text", "checkboxes", "choices"]);
+
+      await settleTransitions();
+    });
+
+    it("moves the parts the dialog names to the end, in the order it gives them", async () => {
+      renderLayer([
+        dialogWith("one", { ...content, options: { order: ["choices", "checkboxes"] } }),
+      ]);
+
+      expect(onScreen()).toEqual(["text", "choices", "checkboxes"]);
+
+      await settleTransitions();
+    });
+  });
+
   describe("beyond the basics", () => {
     it("names an input without a label after the dialog's title, without showing a label", async () => {
       renderLayer([dialogWith("one", { text: "t", input: [{ id: "url", type: "url" }] })]);

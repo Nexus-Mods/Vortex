@@ -9,6 +9,7 @@ const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "md",
   "message",
   "checkboxes",
+  "choices",
   "input",
   "links",
   "condition",
@@ -17,14 +18,14 @@ const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
 ]);
 
 // The options ModalLayer follows: how the text is read, how the message box behaves, how links
-// look, and the context bbcode tags are drawn in. The rest (such as `order`) change the layout in
-// ways it doesn't.
+// look, the context bbcode tags are drawn in, and the order the parts of the dialog come in.
 const SUPPORTED_OPTIONS = new Set([
   "translated",
   "wrap",
   "hideMessage",
   "linksAsButtons",
   "bbcodeContext",
+  "order",
 ]);
 
 const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>([
@@ -32,6 +33,15 @@ const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>([
   "value",
   "text",
   "bbcode",
+  "disabled",
+]);
+
+// A radio option can also carry a line of help text under its label.
+const SUPPORTED_CHOICE_FIELDS = new Set<keyof ICheckbox>([
+  "id",
+  "value",
+  "text",
+  "subText",
   "disabled",
 ]);
 
@@ -43,7 +53,7 @@ const SUPPORTED_INPUT_FIELDS = new Set<keyof IInput>([
   "placeholder",
 ]);
 
-// What TextField can draw. `multiline` has no counterpart yet.
+// What TextField and TextAreaField can draw.
 const SUPPORTED_INPUT_TYPES = new Set<IInput["type"]>([
   "text",
   "password",
@@ -52,6 +62,7 @@ const SUPPORTED_INPUT_TYPES = new Set<IInput["type"]>([
   "time",
   "email",
   "url",
+  "multiline",
 ]);
 
 const SUPPORTED_LINK_FIELDS = new Set<keyof ILink>(["label", "id", "action"]);
@@ -62,6 +73,9 @@ const usesOnly = (fields: object, supported: Set<string>) =>
 // A checkbox is named by its text, or by its bbcode when it has that instead.
 const isSupportedCheckbox = (checkbox: ICheckbox) =>
   (!!checkbox.text || !!checkbox.bbcode) && usesOnly(checkbox, SUPPORTED_CHECKBOX_FIELDS);
+
+const isSupportedChoice = (choice: ICheckbox) =>
+  !!choice.text && usesOnly(choice, SUPPORTED_CHOICE_FIELDS);
 
 const isSupportedInput = (input: IInput) =>
   usesOnly(input, SUPPORTED_INPUT_FIELDS) &&
@@ -78,11 +92,13 @@ export const canRenderWithModal = (dialog: IDialog): boolean => {
       !!content.bbcode ||
       !!content.md ||
       !!content.message ||
+      (content.choices?.length ?? 0) > 0 ||
       (content.input?.length ?? 0) > 0) &&
     actions.length >= 1 &&
     usesOnly(content, SUPPORTED_CONTENT) &&
     usesOnly(content.options ?? {}, SUPPORTED_OPTIONS) &&
     (content.checkboxes ?? []).every(isSupportedCheckbox) &&
+    (content.choices ?? []).every(isSupportedChoice) &&
     (content.input ?? []).every(isSupportedInput) &&
     (content.links ?? []).every(isSupportedLink)
   );

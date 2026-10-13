@@ -20,10 +20,12 @@ ui/
 │   │   ├── checkbox_field/ - Checkbox with its label beside it, hints and error
 │   │   ├── field/       - Field, Label, Description, ErrorMessage, CharacterCount (Headless UI Field)
 │   │   ├── input/       - Bare text input (Headless UI Input)
+│   │   ├── radio_group_field/ - Radio options, one chosen at a time, each with its label and hint
 │   │   ├── select/      - Bare native select with its chevron (Headless UI Select)
 │   │   ├── select_field/ - Select with its label, hints and error
 │   │   ├── switch/      - Bare tri-state switch: off / on / semi-on (Headless UI Checkbox)
 │   │   ├── switch_field/ - Switch with its label beside it and hints under both
+│   │   ├── text_area_field/ - Multi-line text input with its label, hints and error
 │   │   └── text_field/  - Text input with its label, hints, error and character count
 │   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
@@ -417,6 +419,43 @@ import { CheckboxField } from "../../ui/components/form/checkbox_field/CheckboxF
 **Props:** Headless UI `Checkbox` props — `checked`, `onChange(checked: boolean)`, `disabled`, `indeterminate`, `name`/`value` for form submission, `defaultChecked` — plus `label` (required, and can be rich content), `hideLabel`, `hints`, `errorMessage` and `fieldClassName`. `onChange` receives the new checked value, not an event. `className` goes on the checkbox.
 
 `Checkbox` is the bare control: a `<span role="checkbox">`, so pass `name` for the value to take part in form submission, and outside a `Field` give it an `aria-label`. `indeterminate` shows a dash and reports `aria-checked="mixed"`; `invalid` marks it with `aria-invalid` and `data-invalid`.
+
+#### TextAreaField
+
+A multi-line text input with its label, hints and error. It looks like `TextField` and grows downwards. `label` is required: `hideLabel` hides it on screen, not from screen readers.
+
+```tsx
+import { TextAreaField } from "../../ui/components/form/text_area_field/TextAreaField";
+
+<TextAreaField
+    label="Notes"
+    hints="Plain text only"
+    value={notes}
+    onChange={(event) => setNotes(event.target.value)}
+/>;
+```
+
+**Props:** everything Headless UI's `Textarea` takes except `id`, plus `label`, `hideLabel`, `hints`, `errorMessage` and `fieldClassName`. `className` goes on the text area. `onChange` receives the native change event. For one line, use `TextField`.
+
+#### RadioGroupField
+
+A group of radio options, one chosen at a time, each with its label and an optional hint. Clicking a label chooses its option, and the arrow keys move between them.
+
+```tsx
+import { RadioGroupField } from "../../ui/components/form/radio_group_field/RadioGroupField";
+
+<RadioGroupField
+    label="Update mode"
+    options={[
+        { value: "replace", label: "Replace", hint: "Updates every profile." },
+        { value: "alongside", label: "Install alongside" },
+    ]}
+    value={mode}
+    onChange={setMode}
+/>;
+```
+
+**Props:** `options` (each with `value`, `label`, and optionally `hint`, `disabled` and `testId`), `value` (the chosen option's value, or `undefined` while none is chosen), `onChange(value: string)`, and `label`, which names the group for screen readers and isn't shown. Everything else Headless UI's `RadioGroup` takes passes through, except `id`. `className` goes on the group.
 
 #### Building blocks
 
