@@ -1116,4 +1116,51 @@ describe("ModsTableSwitch", () => {
       expect(onRemoveVersion).toHaveBeenCalledWith("a1");
     });
   });
+
+  it("shows a mod's card on hovering its thumbnail", async () => {
+    renderSwitch({
+      a: mod("a", "Alpha", true, {
+        attributes: { name: "Alpha", modName: "Alpha Page", shortDescription: "Does things." },
+      }),
+    });
+
+    const thumbnail = document.querySelector(".nxm-image-mod")!.parentElement!;
+    await userEvent.hover(thumbnail);
+
+    const card = await screen.findByRole("tooltip");
+    expect(card).toHaveTextContent("Alpha Page");
+    expect(card).toHaveTextContent("Does things.");
+  });
+
+  describe("a collection's card", () => {
+    const withSummary = () => ({
+      b: mod("b", "Beta", false),
+      x: mod("x", "Xenon", true, {
+        type: "collection",
+        attributes: { name: "Xenon", shortDescription: "A starter pack." },
+        rules: [{ type: "requires", reference: { id: "b" } }],
+      }),
+    });
+
+    it("shows on hovering its cover on its group's row", async () => {
+      renderSwitch(withSummary());
+      await showView("Collections");
+
+      await userEvent.hover(document.querySelector(".nxm-image-collection")!.parentElement!);
+
+      const card = await screen.findByRole("tooltip");
+      expect(card.querySelector(".nxm-hover-card-collection")).not.toBeNull();
+      expect(card).toHaveTextContent("A starter pack.");
+    });
+
+    it("shows on hovering its cover on its own row", async () => {
+      renderSwitch(withSummary());
+
+      const row = screen.getByRole("row", { name: /Xenon/ });
+      await userEvent.hover(row.querySelector<HTMLElement>(".nxm-image-collection")!);
+
+      const card = await screen.findByRole("tooltip");
+      expect(card.querySelector(".nxm-hover-card-collection")).not.toBeNull();
+    });
+  });
 });

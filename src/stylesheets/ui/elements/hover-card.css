@@ -1,0 +1,41 @@
+@layer components {
+    /* A tooltip as a card, it and its beak tinted in its picture's colour, set inline. Over
+       the tooltip's own background, whose stylesheet comes later. */
+    .nxm-tooltip.nxm-hover-card-tooltip {
+        --nxm-hover-card-bg: color-mix(
+            in srgb,
+            var(--nxm-hover-card-tint, var(--color-surface-mid)) 10%,
+            var(--color-surface-mid)
+        );
+
+        /* Its own width, past the tooltip's cap, which a collection's card is wider than. */
+        max-width: none;
+        background-color: var(--nxm-hover-card-bg);
+
+        /* Its fill, and the line that hides the card's border under it. */
+        .nxm-overlay-arrow {
+            fill: var(--nxm-hover-card-bg);
+
+            path:not([clip-path]) {
+                stroke: var(--nxm-hover-card-bg);
+            }
+        }
+    }
+
+    /* Its body: a card's width and layout. */
+    .nxm-hover-card {
+        display: flex;
+        flex-direction: column;
+        gap: calc(var(--spacing) * 2);
+        width: calc(var(--spacing) * 72);
+        padding-block: calc(var(--spacing) * 2);
+        overflow-wrap: anywhere;
+    }
+
+    /* A collection's: wider, the cover beside the text, padded all round. */
+    .nxm-hover-card-collection {
+        gap: calc(var(--spacing) * 3);
+        width: calc(var(--spacing) * 104);
+        padding: calc(var(--spacing) * 2);
+    }
+}

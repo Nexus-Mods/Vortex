@@ -18,6 +18,7 @@ import { SelectFieldDemo } from "@/ui/components/form/select_field/SelectField.d
 import { SwitchFieldDemo } from "@/ui/components/form/switch_field/SwitchField.demo";
 import { TextFieldDemo } from "@/ui/components/form/text_field/TextField.demo";
 import { GameTileDemo } from "@/ui/components/game_tile/GameTile.demo";
+import { HoverCardDemo } from "@/ui/components/hover_card/HoverCard.demo";
 import { IconDemo } from "@/ui/components/icon/Icon.demo";
 import { ImageDemo } from "@/ui/components/image/Image.demo";
 import { ListingDemo } from "@/ui/components/listing/Listing.demo";
@@ -39,13 +40,21 @@ import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
-export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExtensionApi }) => {
+interface IDesignSystemPageProps {
+  /** Whether the page is the one showing, which its `Page` needs. */
+  active?: boolean;
+  /** The extension API, for the demos that use it. */
+  api: IExtensionApi;
+}
+
+export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
   const [selectedTab, setSelectedTab] = useState("button");
   const [selectedTypographyTab, setSelectedTypographyTab] = useState("typography");
   const [selectedIconTab, setSelectedIconTab] = useState("icon");
   const [selectedFormTab, setSelectedFormTab] = useState("text-field");
   const [selectedDropdownTab, setSelectedDropdownTab] = useState("dropdown");
   const [selectedTileTab, setSelectedTileTab] = useState("game-tile");
+  const [selectedTooltipTab, setSelectedTooltipTab] = useState("tooltip-basic");
 
   return (
     <Page active={active} id="page-design-system-dev" scrollable={false}>
@@ -276,7 +285,28 @@ export const DesignSystemPage = ({ active, api }: { active?: boolean; api: IExte
             </TabPanel>
 
             <TabPanel id="tooltip">
-              <TooltipDemo />
+              <TabProvider
+                tab={selectedTooltipTab}
+                tabListId="tooltip-demo-tabs"
+                tabType="secondary"
+                onSetSelectedTab={setSelectedTooltipTab}
+              >
+                <TabBar>
+                  <TabButton name="Tooltip" panelId="tooltip-basic" />
+
+                  <TabButton name="Hover card" panelId="hover-card" />
+                </TabBar>
+
+                <div className="mt-6">
+                  <TabPanel id="tooltip-basic">
+                    <TooltipDemo />
+                  </TabPanel>
+
+                  <TabPanel id="hover-card">
+                    <HoverCardDemo />
+                  </TabPanel>
+                </div>
+              </TabProvider>
             </TabPanel>
 
             <TabPanel id="alert">
