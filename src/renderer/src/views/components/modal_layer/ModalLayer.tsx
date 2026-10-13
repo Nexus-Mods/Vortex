@@ -1,14 +1,22 @@
-import React, { useRef, useState } from "react";
+import React, { type ReactNode, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { closeDialog, closeDialogs, triggerDialogLink } from "@/actions/notifications";
 import bbcode from "@/controls/bbcode";
-import type { ICheckbox, IDialog, IDialogContent, IInput } from "@/types/IDialog";
+import type {
+  DialogContentItem,
+  ICheckbox,
+  IDialog,
+  IDialogContent,
+  IInput,
+} from "@/types/IDialog";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField";
+import { RadioGroupField } from "@/ui/components/form/radio_group_field/RadioGroupField";
+import { TextAreaField } from "@/ui/components/form/text_area_field/TextAreaField";
 import { TextField } from "@/ui/components/form/text_field/TextField";
 import { MessageBox } from "@/ui/components/message_box/MessageBox";
 import { Modal } from "@/ui/components/modal/Modal";
@@ -45,7 +53,7 @@ const DANGER_ACTIONS = new Set(["Remove"]);
 const DISMISS_ACTIONS = new Set(["Close"]);
 
 // A short message reads better in the small modal. Longer ones keep the medium size, and so does a
-// dialog that needs room: a bbcode, markdown or message body, or more than three buttons, which
+// dialog that needs room: a bbcode, markdown, message, choices or text area body, or more than three buttons, which
 // then fit on one row as they did in the legacy dialog.
 const SMALL_MAX_TEXT_LENGTH = 200;
 const MAX_BUTTONS_IN_SMALL = 3;
@@ -57,6 +65,27 @@ const fillParameters = (text: string, parameters: IDialogContent["parameters"] =
     (filled, [name, value]) => filled.split(`{{${name}}}`).join(String(value)),
     text,
   );
+
+// A part of the dialog's body, named the way the dialog's `order` option names it.
+interface ISection {
+  id: DialogContentItem;
+  node: ReactNode;
+}
+
+// The parts come in the order they are listed in. A dialog's `order` option moves the ones it names
+// to the end, in the order it gives them, as in the legacy renderer.
+const orderedSections = (sections: ISection[], order: DialogContentItem[] | undefined) => {
+  if (order === undefined) {
+    return sections;
+  }
+
+  const rank = (section: ISection) =>
+    order.includes(section.id)
+      ? sections.length + order.indexOf(section.id)
+      : sections.indexOf(section);
+
+  return [...sections].sort((lhs, rhs) => rank(lhs) - rank(rhs));
+};
 
 // Escape and backdrop clicks don't answer a legacy dialog, so there is nothing for them to do
 // here either: closing without an action would leave the caller's promise pending forever.
@@ -76,7 +105,7 @@ export const ModalLayer = () => {
   const dialogs = useSelector(allDialogs);
   const [edits, setEdits] = useState<IEdits>();
   const defaultButtonRef = useRef<HTMLButtonElement>(null);
-  const firstInputRef = useRef<HTMLInputElement>(null);
+  const firstInputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
 
   const dialog = dialogs[0];
 
@@ -87,12 +116,14 @@ export const ModalLayer = () => {
   const { actions, content, defaultAction, id, title } = dialog;
   const { count } = content.parameters ?? {};
   const checkboxes = content.checkboxes ?? [];
+  const choices = content.choices ?? [];
   const inputs = content.input ?? [];
   const links = content.links ?? [];
   const editedChecked = edits?.dialogId === id ? edits.checked : {};
   const editedTyped = edits?.dialogId === id ? edits.typed : {};
 
   const isChecked = (checkbox: ICheckbox) => editedChecked[checkbox.id] ?? checkbox.value;
+  const chosenId = choices.find(isChecked)?.id;
   const valueOf = (input: IInput) => editedTyped[input.id] ?? input.value;
 
   const translate = (text: string) => t(text, { replace: content.parameters, count });
@@ -127,6 +158,9 @@ export const ModalLayer = () => {
       ...(content.checkboxes && {
         checkboxes: checkboxes.map((box) => ({ ...box, value: isChecked(box) })),
       }),
+      ...(content.choices && {
+        choices: choices.map((choice) => ({ ...choice, value: isChecked(choice) })),
+      }),
     }) ?? [];
   const errorFor = (controlId: string) =>
     results
@@ -139,6 +173,8 @@ export const ModalLayer = () => {
     content.bbcode !== undefined ||
     content.md !== undefined ||
     content.message !== undefined ||
+    choices.length > 0 ||
+    inputs.some((input) => input.type === "multiline") ||
     actions.length > MAX_BUTTONS_IN_SMALL;
 
   const hasDangerAction = actions.some((action) => DANGER_ACTIONS.has(action));
@@ -168,6 +204,7 @@ export const ModalLayer = () => {
     const input = Object.fromEntries([
       ...inputs.map((field) => [field.id, valueOf(field)]),
       ...checkboxes.map((box) => [box.id, isChecked(box)]),
+      ...choices.map((choice) => [choice.id, isChecked(choice)]),
     ]);
 
     dispatch(
@@ -177,37 +214,47 @@ export const ModalLayer = () => {
     );
   };
 
-  // The legacy renderer answers the default action when Enter is pressed in an input.
+  // The legacy renderer answers the default action when Enter is pressed in an input. In a text
+  // area Enter starts a new line.
   const answerDefaultOnEnter = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" && defaultAction !== undefined && !isDisabled(defaultAction)) {
+    if (
+      event.key === "Enter" &&
+      !(event.target instanceof HTMLTextAreaElement) &&
+      defaultAction !== undefined &&
+      !isDisabled(defaultAction)
+    ) {
       event.preventDefault();
       answer(defaultAction);
     }
   };
 
-  return (
-    <Modal
-      initialFocusRef={inputs.length > 0 ? firstInputRef : defaultButtonRef}
-      isOpen
-      key={id}
-      showCloseButton={false}
-      size={needsRoom || text.length > SMALL_MAX_TEXT_LENGTH ? "md" : "sm"}
-      title={translate(title)}
-      onClose={ignoreClose}
-    >
-      {!!text && <PlainText size="sm" text={text} />}
+  const sections: ISection[] = [];
 
-      {content.bbcode !== undefined && (
+  if (text) {
+    sections.push({ id: "text", node: <PlainText size="sm" text={text} /> });
+  }
+
+  if (content.bbcode !== undefined) {
+    sections.push({
+      id: "bbcode",
+      node: (
         <BBCode
           bbcode={fillParameters(content.bbcode, content.parameters)}
           context={content.options?.bbcodeContext}
           size="sm"
         />
-      )}
+      ),
+    });
+  }
 
-      {content.md !== undefined && <Markdown markdown={translateBody(content.md)} size="sm" />}
+  if (content.md !== undefined) {
+    sections.push({ id: "md", node: <Markdown markdown={translateBody(content.md)} size="sm" /> });
+  }
 
-      {content.message !== undefined && (
+  if (content.message !== undefined) {
+    sections.push({
+      id: "message",
+      node: (
         <div className="mt-3">
           <MessageBox
             copyLabel={t("Copy message")}
@@ -219,35 +266,48 @@ export const ModalLayer = () => {
             showLabel={t("Show Details")}
           />
         </div>
-      )}
+      ),
+    });
+  }
 
-      {inputs.length > 0 && (
+  if (inputs.length > 0) {
+    sections.push({
+      id: "input",
+      node: (
         <div className="mt-3 flex flex-col gap-y-3" onKeyDown={answerDefaultOnEnter}>
-          {inputs.map((input, index) => (
-            <TextField
-              data-testid={`dialog-input-${input.id}`}
-              errorMessage={errorFor(input.id) || undefined}
+          {inputs.map((input, index) => {
+            const fieldProps = {
+              "data-testid": `dialog-input-${input.id}`,
+              errorMessage: errorFor(input.id) || undefined,
               // The old dialog showed no label for an input without one, so the title names it.
-              hideLabel={!input.label}
-              key={input.id}
-              label={translate(input.label ?? title)}
-              placeholder={input.placeholder}
-              ref={index === 0 ? firstInputRef : undefined}
-              type={input.type === "multiline" ? undefined : input.type}
-              value={valueOf(input) ?? ""}
-              onChange={(event) =>
+              hideLabel: !input.label,
+              label: translate(input.label ?? title),
+              placeholder: input.placeholder,
+              ref: index === 0 ? firstInputRef : undefined,
+              value: valueOf(input) ?? "",
+              onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                 setEdits({
                   dialogId: id,
                   checked: editedChecked,
                   typed: { ...editedTyped, [input.id]: event.target.value },
-                })
-              }
-            />
-          ))}
-        </div>
-      )}
+                }),
+            };
 
-      {checkboxes.length > 0 && (
+            return input.type === "multiline" ? (
+              <TextAreaField key={input.id} {...fieldProps} />
+            ) : (
+              <TextField key={input.id} {...fieldProps} type={input.type} />
+            );
+          })}
+        </div>
+      ),
+    });
+  }
+
+  if (checkboxes.length > 0) {
+    sections.push({
+      id: "checkboxes",
+      node: (
         <div className="mt-3 flex flex-col gap-y-2">
           {checkboxes.map((checkbox) => (
             <CheckboxField
@@ -266,9 +326,45 @@ export const ModalLayer = () => {
             />
           ))}
         </div>
-      )}
+      ),
+    });
+  }
 
-      {links.length > 0 && (
+  if (choices.length > 0) {
+    sections.push({
+      id: "choices",
+      node: (
+        <RadioGroupField
+          className="mt-3"
+          label={translate(title)}
+          options={choices.map((choice) => ({
+            disabled: choice.disabled,
+            hint: choice.subText ? translate(choice.subText) : undefined,
+            label: translate(choice.text),
+            testId: `dialog-choice-${choice.id}`,
+            value: choice.id,
+          }))}
+          value={chosenId}
+          // Choosing one clears the rest, as the legacy renderer does.
+          onChange={(chosen) =>
+            setEdits({
+              dialogId: id,
+              checked: {
+                ...editedChecked,
+                ...Object.fromEntries(choices.map((choice) => [choice.id, choice.id === chosen])),
+              },
+              typed: editedTyped,
+            })
+          }
+        />
+      ),
+    });
+  }
+
+  if (links.length > 0) {
+    sections.push({
+      id: "links",
+      node: (
         <div className="mt-3 flex flex-col items-start gap-y-1">
           {links.map((link, index) =>
             // A link runs its callback and leaves the dialog open.
@@ -295,7 +391,23 @@ export const ModalLayer = () => {
             ),
           )}
         </div>
-      )}
+      ),
+    });
+  }
+
+  return (
+    <Modal
+      initialFocusRef={inputs.length > 0 ? firstInputRef : defaultButtonRef}
+      isOpen
+      key={id}
+      showCloseButton={false}
+      size={needsRoom || text.length > SMALL_MAX_TEXT_LENGTH ? "md" : "sm"}
+      title={translate(title)}
+      onClose={ignoreClose}
+    >
+      {orderedSections(sections, content.options?.order).map((section) => (
+        <React.Fragment key={section.id}>{section.node}</React.Fragment>
+      ))}
 
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         {actions.map((action) => (

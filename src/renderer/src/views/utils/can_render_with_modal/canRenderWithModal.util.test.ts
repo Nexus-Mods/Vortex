@@ -37,12 +37,11 @@ describe("canRenderWithModal", () => {
     expect(canRenderWithModal(dialogWith({ text: "t", bbcode: undefined }))).toBe(true);
   });
 
-  it.each<[string, IDialogContent["options"]]>([["order", { order: ["checkboxes", "text"] }]])(
-    "rejects the %s option, which ModalLayer does not follow",
-    (_name, options) => {
-      expect(canRenderWithModal(dialogWith({ text: "t", options }))).toBe(false);
-    },
-  );
+  it("accepts the order option, which ModalLayer follows", () => {
+    expect(
+      canRenderWithModal(dialogWith({ text: "t", options: { order: ["checkboxes", "text"] } })),
+    ).toBe(true);
+  });
 
   it("rejects a field it has never heard of", () => {
     const content = { text: "t", somethingNew: true } as IDialogContent;
@@ -57,9 +56,31 @@ describe("canRenderWithModal", () => {
   it.each<[string, IDialogContent]>([
     ["htmlText", { text: "t", htmlText: "<b>b</b>" }],
     ["htmlFile", { text: "t", htmlFile: "f.html" }],
-    ["choices", { text: "t", choices: [{ id: "a", value: true }] }],
   ])("rejects a dialog with %s", (_name, content) => {
     expect(canRenderWithModal(dialogWith(content))).toBe(false);
+  });
+
+  describe("choices", () => {
+    it("accepts radio choices, with or without a hint, and with or without text", () => {
+      const choices = [
+        { id: "a", value: true, text: "A", subText: "More about A" },
+        { id: "b", value: false, text: "B" },
+      ];
+
+      expect(canRenderWithModal(dialogWith({ text: "t", choices }))).toBe(true);
+      expect(canRenderWithModal(dialogWith({ choices }))).toBe(true);
+    });
+
+    it.each<[string, ICheckbox]>([
+      ["no text", { id: "a", value: false }],
+      ["bbcode", { id: "a", value: false, text: "t", bbcode: "[b]b[/b]" }],
+      [
+        "a field it has never heard of",
+        { id: "a", value: false, text: "t", extra: 1 } as ICheckbox,
+      ],
+    ])("rejects a choice with %s", (_name, choice) => {
+      expect(canRenderWithModal(dialogWith({ text: "t", choices: [choice] }))).toBe(false);
+    });
   });
 
   it("accepts plain checkboxes", () => {
@@ -138,8 +159,15 @@ describe("canRenderWithModal", () => {
       ).toBe(true);
     });
 
+    it("accepts a multiline input", () => {
+      expect(
+        canRenderWithModal(
+          dialogWith({ text: "t", input: [{ id: "a", label: "A", type: "multiline" }] }),
+        ),
+      ).toBe(true);
+    });
+
     it.each<[string, IInput]>([
-      ["a multiline type", { id: "a", label: "A", type: "multiline" }],
       ["a field it has never heard of", { id: "a", label: "A", extra: 1 } as IInput],
     ])("rejects an input with %s", (_name, input) => {
       expect(canRenderWithModal(dialogWith({ text: "t", input: [input] }))).toBe(false);
