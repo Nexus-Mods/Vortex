@@ -26,6 +26,12 @@ export const topologicalSort = memoize((graph: types.IMod[]): string[] => {
         visit(rule.reference.id as string, rule.type);
       }
     });
+    // "other before this" is "this after other"
+    graph
+      .filter((other) =>
+        other.rules?.some((rule) => rule.type === "before" && rule.reference.id === modId),
+      )
+      .forEach((other) => visit(other.id));
     result.push(modId);
   };
 
