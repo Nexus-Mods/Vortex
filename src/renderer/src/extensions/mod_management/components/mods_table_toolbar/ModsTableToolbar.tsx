@@ -1,6 +1,6 @@
 import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
 import { mdiDeleteOutline, mdiDotsHorizontal, mdiPencil, mdiPlus, mdiTune } from "@mdi/js";
-import React, { Fragment, type MouseEvent, useMemo, useRef, useState } from "react";
+import React, { Fragment, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
@@ -11,6 +11,7 @@ import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { ToolbarSearch } from "@/ui/components/toolbar/toolbar_search/ToolbarSearch";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import type { IToolbarPanelHandle } from "@/ui/components/toolbar/ToolbarPanelButton";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 import type { IModsTableView } from "../../util/mods_table_views/modsTableViews";
@@ -37,9 +38,6 @@ interface IModsTableToolbarProps {
   /** Filters the rows by what's typed into the search. */
   onSearchChange: (search: string) => void;
 }
-
-/** The id the view options' button carries, for a view's menu to open it. */
-const VIEW_OPTIONS_ID = "view-options";
 
 interface ICustomViewButtonProps {
   view: IModsTableView;
@@ -127,21 +125,24 @@ export const ModsTableToolbar = ({
   // "new" while making a view, the view while renaming one, and unset otherwise.
   const [naming, setNaming] = useState<IModsTableView | "new">();
   const [deleting, setDeleting] = useState<IModsTableView>();
-  const viewsRef = useRef<HTMLDivElement>(null);
+  const optionsPanel = useRef<IToolbarPanelHandle>(null);
+  const [optionsFor, setOptionsFor] = useState<string>();
 
   const actions = useMemo<IToolbarAction[]>(
-    () => [{ ...displayOptions, testId: VIEW_OPTIONS_ID }],
+    () => [{ ...displayOptions, panelHandle: optionsPanel }],
     [displayOptions],
   );
 
-  // Opens the view, then its options once it's the one they're for.
+  useEffect(() => {
+    if (optionsFor !== undefined && optionsFor === selectedView) {
+      optionsPanel.current?.open();
+      setOptionsFor(undefined);
+    }
+  }, [optionsFor, selectedView]);
+
   const editOptions = (viewId: string) => {
     onSelectView(viewId);
-    requestAnimationFrame(() =>
-      viewsRef.current?.parentElement
-        ?.querySelector<HTMLElement>(`[data-testid="${VIEW_OPTIONS_ID}"]`)
-        ?.click(),
-    );
+    setOptionsFor(viewId);
   };
 
   return (
@@ -149,7 +150,6 @@ export const ModsTableToolbar = ({
       <div
         aria-label={t("Views")}
         className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
-        ref={viewsRef}
         role="group"
       >
         {views.map((view, index) => {

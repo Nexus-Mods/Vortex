@@ -6,8 +6,8 @@ import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
+import { modHasUpdate } from "../mod_has_update/modHasUpdate";
 import modName from "../modName";
-import updateState from "../modUpdateState";
 
 export interface IModRow {
   /** The mod the row shows. */
@@ -77,9 +77,7 @@ export const MODS_TABLE_VIEWS: IBuiltInModsTableView[] = [
     label: "Updates",
     defaults: { grouping: "version", columns: BASE_COLUMNS },
     isAvailable: (mods) =>
-      Object.values(mods).some(
-        (mod) => mod.state === "installed" && updateState(mod.attributes ?? {}) !== "current",
-      ),
+      Object.values(mods).some((mod) => mod.state === "installed" && modHasUpdate(mod)),
   },
   {
     id: "categories",

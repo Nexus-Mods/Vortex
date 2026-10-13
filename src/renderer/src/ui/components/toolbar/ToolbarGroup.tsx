@@ -1,4 +1,4 @@
-import React, { type HTMLAttributes, type ReactNode } from "react";
+import React, { type HTMLAttributes, type ReactNode, type Ref } from "react";
 
 import type {
   IMenuAction,
@@ -15,7 +15,7 @@ import type {
 import { identityOf, useToolbarContext } from "./Toolbar.context";
 import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarOverflow } from "./ToolbarOverflow";
-import { ToolbarPanelButton } from "./ToolbarPanelButton";
+import { type IToolbarPanelHandle, ToolbarPanelButton } from "./ToolbarPanelButton";
 import { TOOLBAR_CONTROL_ATTRIBUTE, useToolbarOverflow } from "./useToolbarOverflow.hook";
 import { type IToolbarPinning, useToolbarPinning } from "./useToolbarPinning.hook";
 
@@ -29,36 +29,30 @@ export type IToolbarPanel = IPopoverPanel;
  * single meaning, so the two are mutually exclusive.
  */
 export type IToolbarAction = IMenuAction & {
+  /** Shows its label as text beside its icon on the bar, rather than in a tooltip. */
   showLabel?: boolean;
   /** Said under the label in its tooltip on the bar, where there's more to say than its name. */
   description?: string;
+  /** A `data-testid` for its control on the bar. */
   testId?: string;
-  /**
-   * What a decision to pin this action is stored against, so it must not change with
-   * the language or the release. Only needed on a toolbar that offers pinning.
-   */
+  /** For a panel action: filled with a way to open its panel, while it's on the bar. */
+  panelHandle?: Ref<IToolbarPanelHandle>;
+  /** What pinning it is stored against, so unchanged by language or release; for pinning only. */
   id?: string;
-  /**
-   * Whether it sits on the bar until the user says otherwise. Ignored by a toolbar
-   * that doesn't offer pinning, which shows every action it was given.
-   */
+  /** Whether it sits on the bar until the user says otherwise; ignored without pinning. */
   pinned?: boolean;
   /** Its section of the overflow menu: a rule divides each run of actions from the next. */
   section?: string;
-  /**
-   * The extension that registered this action, for a toolbar counting where its
-   * buttons come from. Absent for an action the page owns.
-   */
+  /** The extension that registered it, for counting clicks; absent for the page's own. */
   extension?: string;
-  /**
-   * Extra properties its clicks report on a toolbar that counts them, such as which way a
-   * toggle went. Never anything about the user.
-   */
+  /** Extra properties its counted clicks report, such as a toggle's way; never about the user. */
   trackingProperties?: IToolbarTrackingProperties;
 };
 
 type IToolbarGroupProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
+  /** Its controls, in order; those that don't fit go to the overflow menu. */
   actions: IToolbarAction[];
+  /** The most it shows on the bar, however many would fit. */
   maxVisible?: number;
   /** Shown after the actions and before the overflow menu, always, so it takes its room first. */
   beforeOverflow?: ReactNode;
@@ -173,6 +167,7 @@ const ToolbarControl = ({ action, onClick }: { action: IToolbarAction; onClick?:
   action.panel ? (
     <ToolbarPanelButton
       {...controlProps(action)}
+      handle={action.panelHandle}
       panel={action.panel}
       panelRole={action.panelRole}
       onClick={onClick}
