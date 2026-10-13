@@ -1,4 +1,3 @@
-import { parseError } from "@vortex/shared";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { useMainContext } from "@/contexts";
@@ -66,10 +65,8 @@ export const useCollectionRevision = (collection: IMod) => {
           (err: Error | null) => (err ? reject(err) : resolve()),
         ),
       );
-    } catch (err) {
-      if (parseError(err).data.kind !== "user-canceled") {
-        api.showErrorNotification("Failed to update collection", err);
-      }
+    } catch {
+      // The update reports its own failure, or the user cancelled it.
     } finally {
       setUpdating(collection.id, false);
     }
@@ -86,8 +83,13 @@ const requestChangelog = async (
   revision: number,
 ): Promise<string> => {
   try {
-    const results = await api.emitAndAwait("get-nexus-collection-revision", slug, revision);
-    return results[0]?.collectionChangelog?.description ?? "";
+    const [result] = await api.emitAndAwait("get-nexus-collection-revision", slug, revision);
+    // The handler reports its own failures and resolves with nothing: not an empty changelog.
+    if (result === undefined) {
+      throw new Error(`Couldn't fetch revision ${revision} of ${slug}`);
+    }
+
+    return result.collectionChangelog?.description ?? "";
   } catch (err) {
     changelogs.delete(key);
     throw err;

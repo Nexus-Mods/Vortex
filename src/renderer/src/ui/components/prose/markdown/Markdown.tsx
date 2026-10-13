@@ -18,13 +18,19 @@ const WebLink = ({ href, children }: { href?: string; children?: ReactNode }) =>
 
 const COMPONENTS = { a: WebLink };
 
+/** Images are left out, so markdown we don't write can't load from elsewhere. */
+const DISALLOWED = ["img"];
+
 /**
  * Markdown we don't write ourselves, such as a changelog, rendered in the app's prose
  * styles: its own type, so it needs no `Typography` around it. Its links to web pages open
- * in the browser, as the window sends any navigation there; other links are text.
+ * in the browser, as the window sends any navigation there; other links are text, and images
+ * are left out.
  */
 export const Markdown = ({ markdown, size = "md", className }: IMarkdownProps) => (
   <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
-    <ReactMarkdown components={COMPONENTS}>{markdown}</ReactMarkdown>
+    <ReactMarkdown components={COMPONENTS} disallowedElements={DISALLOWED}>
+      {markdown}
+    </ReactMarkdown>
   </div>
 );

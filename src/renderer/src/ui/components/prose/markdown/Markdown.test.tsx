@@ -49,4 +49,11 @@ describe("Markdown", () => {
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["web"]);
     expect(screen.getByText("file")).toBeInTheDocument();
   });
+
+  it("leaves out images, so nothing loads from elsewhere", () => {
+    const { container } = render(<Markdown markdown={"Hi ![a](https://example.com/a.png)"} />);
+
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.innerHTML).not.toContain("example.com");
+  });
 });

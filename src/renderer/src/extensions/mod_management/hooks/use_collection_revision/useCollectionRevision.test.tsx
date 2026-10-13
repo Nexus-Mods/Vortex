@@ -1,5 +1,4 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { VortexError } from "@vortex/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IMod } from "../../types/IMod";
@@ -85,6 +84,18 @@ describe("useCollectionRevision", () => {
     expect(api.emitAndAwait).toHaveBeenCalledTimes(2);
   });
 
+  it("counts a fetch that comes back with nothing as failed, not as none", async () => {
+    api.emitAndAwait.mockResolvedValueOnce([undefined]);
+    const slug = `slug-${++slugs}`;
+    const { result } = renderHook(() => useCollectionChangelog(slug, 10));
+    await waitFor(() => expect(result.current).toEqual({ status: "failed" }));
+
+    const again = renderHook(() => useCollectionChangelog(slug, 10));
+    await waitFor(() =>
+      expect(again.result.current).toEqual({ status: "loaded", changelog: "Fixed things" }),
+    );
+  });
+
   it("drops the last revision's changelog while the next one's coming", async () => {
     const slug = `slug-${++slugs}`;
     const { result, rerender } = renderHook(
@@ -126,26 +137,17 @@ describe("useCollectionRevision", () => {
     expect(result.current.updating).toBe(false);
   });
 
-  it("says when the update fails, but not when the user cancels it", async () => {
+  it("leaves saying the update failed to the update, which does", async () => {
     const coll = collection({ version: "112", newestVersion: "113" });
     const { result } = renderHook(() => useCollectionRevision(coll));
-
-    api.events.emit.mockImplementation((...args: unknown[]) =>
-      (args.at(-1) as (err: Error) => void)(
-        new VortexError("canceled by user", { kind: "user-canceled", skipped: false }),
-      ),
-    );
-    await act(() => result.current.update());
-    expect(api.showErrorNotification).not.toHaveBeenCalled();
 
     api.events.emit.mockImplementation((...args: unknown[]) =>
       (args.at(-1) as (err: Error) => void)(new Error("offline")),
     );
     await act(() => result.current.update());
-    expect(api.showErrorNotification).toHaveBeenCalledWith(
-      "Failed to update collection",
-      expect.any(Error),
-    );
+
+    expect(api.showErrorNotification).not.toHaveBeenCalled();
+    expect(result.current.updating).toBe(false);
   });
 
   it("starts one update for the collection, however many of its rows ask", async () => {
