@@ -42,6 +42,11 @@ import {
 } from "./queries";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions } from "./util";
+import {
+  type ILinkCandidate,
+  type ILinkExtensionsDialogProps,
+  LinkExtensionsDialog,
+} from "./views/LinkExtensionsDialog";
 
 declare module "../../types/IExtensionContext" {
   interface ApiEvents {
@@ -70,6 +75,13 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
 // asked at most once per session, so refreshing the catalog doesn't repeat the question
 const offeredLinks = new Set<string>();
 
+const LINK_DIALOG_ID = "link-extensions-dialog";
+// read by the dialog's props callback, which runs when the dialog is shown
+let linkOffer: {
+  candidates: ILinkCandidate[];
+  answer: (selected: string[] | undefined) => void;
+} = { candidates: [], answer: () => undefined };
+
 async function offerNexusLinks(api: IExtensionApi): Promise<void> {
   const state = api.getState();
   const games = knownGames(state).map((game) => ({
@@ -92,26 +104,22 @@ async function offerNexusLinks(api: IExtensionApi): Promise<void> {
   const displayName = (installed: IExtensionState) =>
     loaded.find((ext) => samePath(ext.path, installed.path))?.info?.name ?? installed.name;
 
-  const result = await api.showDialog(
-    "question",
-    "Extension updates available",
-    {
-      text:
-        "Vortex can't tell whether these extensions came from Nexus Mods, so it doesn't " +
-        "update them automatically. Select the ones to update and keep up to date. " +
-        "Unselected extensions stay on their current version and you won't be asked about " +
-        "them again.",
-      checkboxes: candidates.map(({ key, installed, available }) => ({
-        id: key,
-        text: `${displayName(installed)} ${installed.version} → ${available.version}`,
-        value: true,
+  const selected = await new Promise<string[] | undefined>((resolve) => {
+    linkOffer = {
+      candidates: candidates.map(({ key, installed, available }) => ({
+        key,
+        name: displayName(installed),
+        version: installed.version,
+        replacementName: available.name,
+        replacementVersion: available.version,
       })),
-    },
-    [{ label: "Later" }, { label: "Update selected", default: true }],
-  );
-  if (result.action !== "Update selected") return;
+      answer: resolve,
+    };
+    api.store.dispatch(setDialogVisible(LINK_DIALOG_ID));
+  });
+  if (selected === undefined) return;
 
-  const accepted = candidates.filter(({ key }) => result.input[key] === true);
+  const accepted = candidates.filter(({ key }) => selected.includes(key));
   for (const { key, available } of candidates) {
     api.store.dispatch(
       accepted.some((candidate) => candidate.key === key)
@@ -351,6 +359,21 @@ function init(context: IExtensionContext) {
   const forceUpdateExtensions = () => {
     void updateAvailableExtensions(context.api, true);
   };
+
+  context.registerDialog(
+    LINK_DIALOG_ID,
+    LinkExtensionsDialog,
+    () =>
+      ({
+        candidates: linkOffer.candidates,
+        onAnswer: (selected) => {
+          const { answer } = linkOffer;
+          // the dialog can close more than once, the offer is answered once
+          linkOffer = { ...linkOffer, answer: () => undefined };
+          answer(selected);
+        },
+      }) satisfies Partial<ILinkExtensionsDialogProps>,
+  );
 
   context.registerDialog(
     "browse-extensions",
