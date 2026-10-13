@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
 import { useDispatch, useSelector } from "react-redux";
 
 import { closeDialog, closeDialogs, triggerDialogLink } from "@/actions/notifications";
@@ -13,8 +12,9 @@ import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField
 import { TextField } from "@/ui/components/form/text_field/TextField";
 import { MessageBox } from "@/ui/components/message_box/MessageBox";
 import { Modal } from "@/ui/components/modal/Modal";
+import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
+import { Markdown } from "@/ui/components/prose/markdown/Markdown";
 import { PlainText } from "@/ui/components/prose/plain_text/PlainText";
-import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { canRenderWithModal } from "@/views/utils/can_render_with_modal/canRenderWithModal.util";
 import { translateMessageParts } from "@/views/utils/translate_message_parts/translateMessageParts.util";
@@ -49,11 +49,6 @@ const DISMISS_ACTIONS = new Set(["Close"]);
 // then fit on one row as they did in the legacy dialog.
 const SMALL_MAX_TEXT_LENGTH = 200;
 const MAX_BUTTONS_IN_SMALL = 3;
-
-// The app's global styles strip list bullets and size headings for a page, so the rich text in a
-// dialog (bbcode and markdown) gets bullets back and headings at the size of the text around them.
-const RICH_TEXT_CLASSES =
-  "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_:is(h1,h2,h3,h4,h5,h6)]:text-body-md [&_:is(h1,h2,h3,h4,h5,h6)]:font-semibold";
 
 // bbcode is raw text, not a translation key, and i18next would split it on its key separators. So
 // the parameters are put in by hand, as in the legacy renderer.
@@ -203,31 +198,14 @@ export const ModalLayer = () => {
       {!!text && <PlainText size="sm" text={text} />}
 
       {content.bbcode !== undefined && (
-        <Typography
-          appearance="subdued"
-          as="div"
-          className={RICH_TEXT_CLASSES}
-          data-testid="dialog-bbcode"
-          typographyType="body-sm"
-        >
-          {bbcode(
-            fillParameters(content.bbcode, content.parameters),
-            content.options?.bbcodeContext,
-          )}
-        </Typography>
+        <BBCode
+          bbcode={fillParameters(content.bbcode, content.parameters)}
+          context={content.options?.bbcodeContext}
+          size="sm"
+        />
       )}
 
-      {content.md !== undefined && (
-        <Typography
-          appearance="subdued"
-          as="div"
-          className={RICH_TEXT_CLASSES}
-          data-testid="dialog-markdown"
-          typographyType="body-sm"
-        >
-          <ReactMarkdown>{translateBody(content.md)}</ReactMarkdown>
-        </Typography>
-      )}
+      {content.md !== undefined && <Markdown markdown={translateBody(content.md)} size="sm" />}
 
       {content.message !== undefined && (
         <div className="mt-3">

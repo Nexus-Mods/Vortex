@@ -39,6 +39,9 @@ const dialogWith = (id: string, content: IDialogContent): IDialog => ({
   actions: ["Cancel", "Delete"],
 });
 
+// The prose that draws a dialog's bbcode or markdown, which has no test id of its own.
+const proseOf = (dialog: HTMLElement) => dialog.querySelector(".nxm-prose") as HTMLElement;
+
 const renderLayer = (dialogs: IDialog[]) => {
   const dispatch = vi.fn();
   const store = {
@@ -592,10 +595,10 @@ describe("ModalLayer", () => {
     it("draws bbcode tags", async () => {
       renderLayer([dialogWith("one", { bbcode: "A [b]bold[/b] word" })]);
 
-      expect(screen.getByTestId("dialog-bbcode")).toHaveTextContent("A bold word");
-      expect(screen.getByTestId("dialog-bbcode").querySelector("b, strong")).toHaveTextContent(
-        "bold",
-      );
+      const prose = proseOf(screen.getByRole("dialog"));
+
+      expect(prose).toHaveTextContent("A bold word");
+      expect(prose.querySelector("b, strong")).toHaveTextContent("bold");
 
       await settleTransitions();
     });
@@ -608,7 +611,7 @@ describe("ModalLayer", () => {
         }),
       ]);
 
-      expect(screen.getByTestId("dialog-bbcode")).toHaveTextContent("Hello Ada, you have 3 mods");
+      expect(proseOf(screen.getByRole("dialog"))).toHaveTextContent("Hello Ada, you have 3 mods");
 
       await settleTransitions();
     });
@@ -616,7 +619,7 @@ describe("ModalLayer", () => {
     it("draws markdown", async () => {
       renderLayer([dialogWith("one", { md: "Some **strong** text" })]);
 
-      expect(screen.getByTestId("dialog-markdown").querySelector("strong")).toHaveTextContent(
+      expect(proseOf(screen.getByRole("dialog")).querySelector("strong")).toHaveTextContent(
         "strong",
       );
 
@@ -626,12 +629,10 @@ describe("ModalLayer", () => {
     it("shows the bbcode after the text", async () => {
       renderLayer([dialogWith("one", { text: "First", bbcode: "Second" })]);
 
-      const prose = screen.getByRole("dialog").querySelector(".nxm-prose") as HTMLElement;
+      const [text, rich] = screen.getByRole("dialog").querySelectorAll(".nxm-prose");
 
-      expect(
-        prose.compareDocumentPosition(screen.getByTestId("dialog-bbcode")) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
+      expect(text).toHaveTextContent("First");
+      expect(rich).toHaveTextContent("Second");
 
       await settleTransitions();
     });
