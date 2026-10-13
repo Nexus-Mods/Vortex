@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { createSelector } from "reselect";
 
 import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
@@ -95,13 +96,42 @@ const profileModState = (state: IState) => activeProfile(state)?.modState;
 
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
 
-const NO_ACTIVITY: string[] = [];
-const uninstallingMods = (state: IState) =>
-  state.session?.base?.activity?.[UNINSTALLING_ACTIVITY] ?? NO_ACTIVITY;
-const installingArchives = (state: IState) =>
-  state.session?.base?.activity?.[INSTALLING_ACTIVITY] ?? NO_ACTIVITY;
-
 const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
+
+/** The archives the stored mods come from, worked out once each time the mods change. */
+const storedArchiveIds = createSelector(
+  storedMods,
+  (stored) => new Set(Object.values(stored ?? {}).map((mod) => mod.archiveId)),
+);
+
+/**
+ * What a row's mod is under way with, if anything, as a plain value, so a row re-renders
+ * only when its own answer changes, not on every write to the store.
+ *
+ * The list catches up with the store after a debounce, so a row can outlive what it shows:
+ * an archive a mod in the store now comes from has just been installed, and a mod gone from
+ * the store has just been uninstalled. Either stays loading until its new row takes over.
+ */
+const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | undefined =>
+  useSelector((state: IState) => {
+    const activity = state.session?.base?.activity;
+    const justInstalled = modState === "downloaded" && storedArchiveIds(state).has(modId);
+    if (
+      modState === "installing" ||
+      activity?.[INSTALLING_ACTIVITY]?.includes(modId) ||
+      justInstalled
+    ) {
+      return "installing";
+    }
+
+    const stored = storedMods(state);
+    const removed = modState === "installed" && stored !== undefined && !stored[modId];
+    if (activity?.[UNINSTALLING_ACTIVITY]?.includes(modId) || removed) {
+      return "uninstalling";
+    }
+
+    return undefined;
+  });
 
 /**
  * Whether a row shows the text searched for, ignoring case, in any of the columns' cells;
@@ -149,8 +179,8 @@ interface IModRowActionsProps {
   switchOnly: boolean;
   /** Installs the mod, for one only downloaded, whose button stands in for the switch. */
   onInstall?: (modId: string) => void;
-  /** What's under way that the install button shows, loading, in the switch's place. */
-  busy?: RowBusy;
+  /** The mod's state, from which the row works out what's under way, as its own selector. */
+  modState: IModWithState["state"];
   /** The install button's name, while there is one. */
   installLabel?: string;
 }
@@ -188,9 +218,10 @@ const ModRowActions = memo(
     switchOnly,
     onInstall,
     installLabel,
-    busy,
+    modState,
   }: IModRowActionsProps) => {
     const { t } = useTranslation(["common"]);
+    const busy = useRowBusy(modId, modState);
     const engaged = useTableRowEngaged();
     const restingRef = useRef<HTMLDivElement>(null);
     // the cell, while the resting switch has focus as the toolbar replaces it
@@ -352,28 +383,6 @@ export const ModsTableSwitch = ({
   // From the profile, which a switch changes at once; the mods catch up only once ModList,
   // after its debounce, rebuilds them.
   const modState = useSelector(profileModState);
-  const uninstalling = useSelector(uninstallingMods);
-  const installing = useSelector(installingArchives);
-  const stored = useSelector(storedMods);
-  const storedArchives = useMemo(
-    () => new Set(Object.values(stored ?? {}).map((mod) => mod.archiveId)),
-    [stored],
-  );
-
-  // The list catches up with the store after a debounce, so a row can outlive what it shows:
-  // an archive a mod in the store now comes from has just been installed, and a mod gone from
-  // the store has just been uninstalled. Either stays loading until its new row takes over.
-  const busyFor = useCallback(
-    (mod: IModWithState): RowBusy | undefined => {
-      const justInstalled = mod.state === "downloaded" && storedArchives.has(mod.id);
-      if (mod.state === "installing" || installing.includes(mod.id) || justInstalled) {
-        return "installing";
-      }
-      const removed = mod.state === "installed" && stored !== undefined && !stored[mod.id];
-      return uninstalling.includes(mod.id) || removed ? "uninstalling" : undefined;
-    },
-    [installing, stored, storedArchives, uninstalling],
-  );
   const isEnabled = useCallback(
     (mod: IModWithState) => changing.get(mod.id) ?? modState?.[mod.id]?.enabled ?? !!mod.enabled,
     [changing, modState],
@@ -463,7 +472,7 @@ export const ModsTableSwitch = ({
         cell: ({ mod, name }) => (
           <ModRowActions
             actions={actionsFor(mod.id)}
-            busy={busyFor(mod)}
+            modState={mod.state}
             enabled={isEnabled(mod)}
             installLabel={t("Install {{name}}", { name })}
             isLoading={changing.has(mod.id)}
@@ -522,7 +531,6 @@ export const ModsTableSwitch = ({
     [
       actionsFor,
       alternatives,
-      busyFor,
       changing,
       dataColumns,
       install,

@@ -242,6 +242,17 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
       return modIds.some((modId) => state.persistent.mods?.[activeGameId(state)]?.[modId]);
     };
 
+    // Installed, and with the archive to install it again from: one without would be gone
+    // for good, which is Remove's to do, as it asks first.
+    const uninstallable = (modIds: string[]) => {
+      const state = store.getState();
+      const installed = state.persistent.mods?.[activeGameId(state)] ?? {};
+      return modIds.filter((modId) => {
+        const archiveId = installed[modId]?.archiveId;
+        return archiveId !== undefined && state.persistent.downloads.files[archiveId] !== undefined;
+      });
+    };
+
     // In place of the legacy table's, a component: offered for an installed mod, as that was.
     const checkForUpdateAction: IActionDefinition = {
       title: "Check for Update",
@@ -252,8 +263,8 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
     // The legacy table's "Uninstalled" status, as an action: the archive stays to reinstall from.
     const uninstallAction: IActionDefinition = {
       title: "Uninstall",
-      action: (modIds: string[]) => void uninstall(modIds),
-      condition: someInstalled,
+      action: (modIds: string[]) => void uninstall(uninstallable(modIds)),
+      condition: (modIds: string[]) => uninstallable(modIds).length > 0,
     };
 
     return [
