@@ -5,6 +5,8 @@ import type { ICheckbox, IDialog, IDialogContent, IInput, ILink } from "@/types/
 // design; once ModalLayer draws everything, this file and the legacy Dialog can both go.
 const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "text",
+  "bbcode",
+  "md",
   "message",
   "checkboxes",
   "input",
@@ -14,9 +16,16 @@ const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "options",
 ]);
 
-// The options ModalLayer follows: how the text is read, how the message box behaves, and how links
-// look. The rest (such as `order`) change the layout in ways it doesn't.
-const SUPPORTED_OPTIONS = new Set(["translated", "wrap", "hideMessage", "linksAsButtons"]);
+// The options ModalLayer follows: how the text is read, how the message box behaves, how links
+// look, and the context bbcode tags are drawn in. The rest (such as `order`) change the layout in
+// ways it doesn't.
+const SUPPORTED_OPTIONS = new Set([
+  "translated",
+  "wrap",
+  "hideMessage",
+  "linksAsButtons",
+  "bbcodeContext",
+]);
 
 const SUPPORTED_CHECKBOX_FIELDS = new Set<keyof ICheckbox>(["id", "value", "text", "disabled"]);
 
@@ -62,7 +71,12 @@ export const canRenderWithModal = (dialog: IDialog): boolean => {
   const { actions, content } = dialog;
 
   return (
-    (!!content.text || !!content.message || (content.input?.length ?? 0) > 0) &&
+    // Something to show besides the buttons.
+    (!!content.text ||
+      !!content.bbcode ||
+      !!content.md ||
+      !!content.message ||
+      (content.input?.length ?? 0) > 0) &&
     actions.length >= 1 &&
     actions.length <= MAX_ACTIONS &&
     usesOnly(content, SUPPORTED_CONTENT) &&

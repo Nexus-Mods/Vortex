@@ -37,12 +37,12 @@ describe("canRenderWithModal", () => {
     expect(canRenderWithModal(dialogWith({ text: "t", bbcode: undefined }))).toBe(true);
   });
 
-  it.each<[string, IDialogContent["options"]]>([
-    ["order", { order: ["checkboxes", "text"] }],
-    ["bbcodeContext", { bbcodeContext: {} as never }],
-  ])("rejects the %s option, which ModalLayer does not follow", (_name, options) => {
-    expect(canRenderWithModal(dialogWith({ text: "t", options }))).toBe(false);
-  });
+  it.each<[string, IDialogContent["options"]]>([["order", { order: ["checkboxes", "text"] }]])(
+    "rejects the %s option, which ModalLayer does not follow",
+    (_name, options) => {
+      expect(canRenderWithModal(dialogWith({ text: "t", options }))).toBe(false);
+    },
+  );
 
   it("rejects a field it has never heard of", () => {
     const content = { text: "t", somethingNew: true } as IDialogContent;
@@ -55,8 +55,6 @@ describe("canRenderWithModal", () => {
   });
 
   it.each<[string, IDialogContent]>([
-    ["bbcode", { text: "t", bbcode: "[b]b[/b]" }],
-    ["md", { text: "t", md: "# h" }],
     ["htmlText", { text: "t", htmlText: "<b>b</b>" }],
     ["htmlFile", { text: "t", htmlFile: "f.html" }],
     ["choices", { text: "t", choices: [{ id: "a", value: true }] }],
@@ -86,6 +84,22 @@ describe("canRenderWithModal", () => {
       expect(
         canRenderWithModal(
           dialogWith({ text: "t", input: [{ id: "a", label: "A" }], condition: () => [] }),
+        ),
+      ).toBe(true);
+    });
+  });
+
+  describe("bbcode and markdown", () => {
+    it("accepts a bbcode or markdown body, with or without text", () => {
+      expect(canRenderWithModal(dialogWith({ text: "t", bbcode: "[b]b[/b]" }))).toBe(true);
+      expect(canRenderWithModal(dialogWith({ bbcode: "[b]b[/b]" }))).toBe(true);
+      expect(canRenderWithModal(dialogWith({ md: "# Heading" }))).toBe(true);
+    });
+
+    it("accepts the context bbcode tags are drawn in", () => {
+      expect(
+        canRenderWithModal(
+          dialogWith({ bbcode: "[b]b[/b]", options: { bbcodeContext: {} as never } }),
         ),
       ).toBe(true);
     });

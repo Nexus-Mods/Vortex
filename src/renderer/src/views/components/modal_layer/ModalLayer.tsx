@@ -1,10 +1,12 @@
 import React, { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
 import { useDispatch, useSelector } from "react-redux";
 
 import { closeDialog, closeDialogs, triggerDialogLink } from "@/actions/notifications";
-import type { ICheckbox, IDialog, IInput } from "@/types/IDialog";
+import bbcode from "@/controls/bbcode";
+import type { ICheckbox, IDialog, IDialogContent, IInput } from "@/types/IDialog";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField";
@@ -12,6 +14,7 @@ import { TextField } from "@/ui/components/form/text_field/TextField";
 import { MessageBox } from "@/ui/components/message_box/MessageBox";
 import { Modal } from "@/ui/components/modal/Modal";
 import { PlainText } from "@/ui/components/prose/plain_text/PlainText";
+import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { canRenderWithModal } from "@/views/utils/can_render_with_modal/canRenderWithModal.util";
 import { translateMessageParts } from "@/views/utils/translate_message_parts/translateMessageParts.util";
@@ -41,8 +44,22 @@ const DANGER_ACTIONS = new Set(["Remove"]);
 // even when it is marked the default, as an error dialog marks "Close". Add a label as design asks.
 const DISMISS_ACTIONS = new Set(["Close"]);
 
-// A short message reads better in the small modal. Longer ones keep the medium size.
+// A short message reads better in the small modal. Longer ones keep the medium size, and so does a
+// dialog whose body needs room: bbcode, markdown or a message box.
 const SMALL_MAX_TEXT_LENGTH = 200;
+
+// The app's global styles strip list bullets and size headings for a page, so the rich text in a
+// dialog (bbcode and markdown) gets bullets back and headings at the size of the text around them.
+const RICH_TEXT_CLASSES =
+  "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_:is(h1,h2,h3,h4,h5,h6)]:text-body-md [&_:is(h1,h2,h3,h4,h5,h6)]:font-semibold";
+
+// bbcode is raw text, not a translation key, and i18next would split it on its key separators. So
+// the parameters are put in by hand, as in the legacy renderer.
+const fillParameters = (text: string, parameters: IDialogContent["parameters"] = {}) =>
+  Object.entries(parameters).reduce(
+    (filled, [name, value]) => filled.split(`{{${name}}}`).join(String(value)),
+    text,
+  );
 
 // Escape and backdrop clicks don't answer a legacy dialog, so there is nothing for them to do
 // here either: closing without an action would leave the caller's promise pending forever.
@@ -84,22 +101,17 @@ export const ModalLayer = () => {
   const translate = (text: string) => t(text, { replace: content.parameters, count });
 
   // `translated` means the caller already translated the text, so only interpolate.
-  const text = content.text
-    ? t(content.text, {
-        replace: content.parameters,
-        count,
-        ...(content.options?.translated && { lngs: [] }),
-      })
-    : "";
+  const translateBody = (key: string) =>
+    t(key, {
+      replace: content.parameters,
+      count,
+      ...(content.options?.translated && { lngs: [] }),
+    });
+
+  const text = content.text ? translateBody(content.text) : "";
 
   const translateMessage = (message: string) =>
-    translateMessageParts(message, (part) =>
-      t(part, {
-        replace: content.parameters,
-        count,
-        ...(content.options?.translated && { lngs: [] }),
-      }),
-    );
+    translateMessageParts(message, translateBody);
 
   // The dialog's condition is checked against what the user has entered so far. It names the
   // control it is about and the buttons that can't be pressed until it is met.
@@ -117,6 +129,9 @@ export const ModalLayer = () => {
       .map((result) => result.errorText)
       .join("\n");
   const isDisabled = (action: string) => results.some((result) => result.actions.includes(action));
+
+  const needsRoom =
+    content.bbcode !== undefined || content.md !== undefined || content.message !== undefined;
 
   const hasDangerAction = actions.some((action) => DANGER_ACTIONS.has(action));
 
@@ -168,11 +183,38 @@ export const ModalLayer = () => {
       isOpen
       key={id}
       showCloseButton={false}
-      size={!content.message && text.length <= SMALL_MAX_TEXT_LENGTH ? "sm" : "md"}
+      size={needsRoom || text.length > SMALL_MAX_TEXT_LENGTH ? "md" : "sm"}
       title={translate(title)}
       onClose={ignoreClose}
     >
       {!!text && <PlainText size="sm" text={text} />}
+
+      {content.bbcode !== undefined && (
+        <Typography
+          appearance="subdued"
+          as="div"
+          className={RICH_TEXT_CLASSES}
+          data-testid="dialog-bbcode"
+          typographyType="body-sm"
+        >
+          {bbcode(
+            fillParameters(content.bbcode, content.parameters),
+            content.options?.bbcodeContext,
+          )}
+        </Typography>
+      )}
+
+      {content.md !== undefined && (
+        <Typography
+          appearance="subdued"
+          as="div"
+          className={RICH_TEXT_CLASSES}
+          data-testid="dialog-markdown"
+          typographyType="body-sm"
+        >
+          <ReactMarkdown>{translateBody(content.md)}</ReactMarkdown>
+        </Typography>
+      )}
 
       {content.message !== undefined && (
         <div className="mt-3">
