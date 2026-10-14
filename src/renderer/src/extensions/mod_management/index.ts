@@ -1,6 +1,12 @@
 import * as path from "path";
 
-import { getErrorCode, unknownToError, VortexProfileId, VortexStagingFolder } from "@vortex/shared";
+import {
+  getErrorCode,
+  unknownToError,
+  VortexModId,
+  VortexProfileId,
+  VortexStagingFolder,
+} from "@vortex/shared";
 import { CycleError } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import React from "react";
@@ -63,7 +69,10 @@ import {
   setModEnabled,
   forgetMod,
 } from "../profile_management/actions/profiles";
-import { enabledModCountForProfile } from "../profile_management/selectors";
+import {
+  enabledModCountForProfile,
+  lastActiveProfileForGame,
+} from "../profile_management/selectors";
 import type { IProfile, IProfileMod } from "../profile_management/types/IProfile";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
 import { setDeploymentNecessary } from "./actions/deployment";
@@ -83,7 +92,7 @@ import {
 import InstallManager from "./InstallManager";
 import deployMods from "./modActivation";
 import { deriveModInstallName } from "./modIdManager";
-import mergeMods, { MERGED_PATH } from "./modMerging";
+import mergeMods, { mergedSourceName } from "./modMerging";
 import preStartDeployHook from "./preStartDeployHook";
 import { deploymentReducer } from "./reducers/deployment";
 import { modsReducer } from "./reducers/mods";
@@ -113,7 +122,13 @@ import {
 import allTypesSupported from "./util/allTypesSupported";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
-import { genSubDirFunc, purgeMods, purgeModsInPath } from "./util/deploy";
+import {
+  activateSingleMod,
+  genSubDirFunc,
+  laterStagingFolders,
+  purgeMods,
+  purgeModsInPath,
+} from "./util/deploy";
 import { reportRecordedFailures, resetDeploymentFailures } from "./util/deploymentFailures";
 import {
   getAllActivators,
@@ -462,12 +477,19 @@ function checkIncompatibilities(
   }
 }
 
-function doSortMods(api: IExtensionApi, profile: IProfile, mods: { [modId: string]: IMod }) {
+function doSortMods(
+  api: IExtensionApi,
+  profile: IProfile,
+  mods: { [modId: string]: IMod },
+  includeModId?: VortexModId,
+) {
   // sort (all) mods based on their dependencies so the right files get activated
   const modState: { [id: string]: IProfileMod } = profile !== undefined ? profile.modState : {};
   const unsorted = Object.keys(mods)
     .map((key: string) => mods[key])
-    .filter((mod: IMod) => getSafe(modState, [mod.id, "enabled"], false));
+    .filter(
+      (mod: IMod) => mod.id === includeModId || getSafe(modState, [mod.id, "enabled"], false),
+    );
 
   return sortMods(profile.gameId, unsorted, api).catch((unknownErr) => {
     const err = unknownToError(unknownErr);
@@ -519,7 +541,7 @@ async function doMergeMods(
 
   // sequential: clean up merged mods in order
   for (const typeId of mergeModTypes) {
-    const mergePath = truthy(typeId) ? MERGED_PATH + "." + typeId : MERGED_PATH;
+    const mergePath = mergedSourceName(typeId);
     await fs.removeAsync(path.join(stagingPath, mergePath));
   }
 
@@ -1295,18 +1317,26 @@ function onDeploySingleMod(api: IExtensionApi) {
           activator,
         );
         resetDeploymentFailures(api, gameId);
-        await activator.prepare(dataPath, false, lastActivation, normalize);
-        if (mod !== undefined) {
-          if (enable !== false) {
-            await activator.activate(
-              modPath,
-              mod.installationPath,
-              subdir(mod),
-              new BlacklistSet(mod.fileOverrides ?? [], game, normalize),
-            );
-          } else {
-            await activator.deactivate(modPath, subdir(mod), mod.installationPath);
-          }
+        if (enable !== false) {
+          const profile = profileById(state, lastActiveProfileForGame(state, gameId));
+          const sorted =
+            profile !== undefined
+              ? await doSortMods(api, profile, state.persistent.mods[gameId], VortexModId(mod.id))
+              : [];
+          await activateSingleMod({
+            method: activator,
+            game,
+            dataPath,
+            normalize,
+            lastActivation,
+            mod,
+            modPath,
+            subDir: subdir(mod),
+            laterSources: laterStagingFolders(sorted, mod),
+          });
+        } else {
+          await activator.prepare(dataPath, false, lastActivation, normalize);
+          await activator.deactivate(modPath, subdir(mod), mod.installationPath);
         }
         const newActivation = await activator.finalize(gameId, dataPath, stagingPath);
         await doSaveActivation(

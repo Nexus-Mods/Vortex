@@ -1,4 +1,9 @@
-import { getErrorCode, VortexProfileId, VortexStagingFolder } from "@vortex/shared";
+import {
+  getErrorCode,
+  VortexModStagingFolder,
+  VortexProfileId,
+  VortexStagingFolder,
+} from "@vortex/shared";
 import { generate as shortid } from "shortid";
 
 import { startActivity, stopActivity } from "../../../actions/session";
@@ -12,6 +17,7 @@ import type { IGame } from "../../../types/IGame";
 import type { IProfile } from "../../../types/IState";
 import { ProcessCanceled, TemporaryError } from "../../../util/CustomErrors";
 import { withTrackedActivity } from "../../../util/errorHandling";
+import type { Normalize } from "../../../util/getNormalizeFunc";
 import {
   activeProfile,
   discoveryByGame,
@@ -22,6 +28,7 @@ import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import type { IModType } from "../../gamemode_management/types/IModType";
 import { getGame } from "../../gamemode_management/util/getGame";
+import { mergedSourceName } from "../modMerging";
 import { installPath, installPathForGame } from "../selectors";
 import type { IMod } from "../types/IMod";
 import {
@@ -31,6 +38,7 @@ import {
   saveActivation,
   withActivationLock,
 } from "./activationStore";
+import BlacklistSet, { fileOverrideEntries, skipListEntries } from "./BlacklistSet";
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import { NoDeployment } from "./exceptions";
 import { dealWithExternalChanges } from "./externalChanges";
@@ -59,6 +67,52 @@ export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => st
       }
     };
   }
+}
+
+export interface ISingleModActivation {
+  method: IDeploymentMethod;
+  game: IGame;
+  dataPath: string;
+  normalize: Normalize;
+  lastActivation: IDeployedFile[];
+  mod: IMod;
+  modPath: string;
+  subDir: string;
+  /** staging folders a full deployment activates after `mod` */
+  laterSources: Set<VortexModStagingFolder>;
+}
+
+/** The mods sorted after `mod`, then its type's merged output. */
+export function laterStagingFolders(sortedMods: IMod[], mod: IMod): Set<VortexModStagingFolder> {
+  const position = sortedMods.findIndex((entry) => entry.id === mod.id);
+  const laterMods = sortedMods
+    .slice(position + 1)
+    .filter((entry) => entry.installationPath !== undefined && entry.installationPath !== "");
+  return new Set([
+    ...laterMods.map((entry) => VortexModStagingFolder(entry.installationPath)),
+    VortexModStagingFolder(mergedSourceName(mod.type)),
+  ]);
+}
+
+/** Activates one mod over the last deployment of its type; files from later sources stay deployed. */
+export async function activateSingleMod(activation: ISingleModActivation): Promise<void> {
+  const { method, game, dataPath, normalize, lastActivation, mod, modPath, subDir, laterSources } =
+    activation;
+  const laterSourceNames: ReadonlySet<string> = laterSources;
+  // only files in the same output folder can collide with this mod's
+  const laterRelPaths = lastActivation
+    .filter((file) => (file.target ?? "") === subDir && laterSourceNames.has(file.source))
+    .map((file) => file.relPath);
+  const skip = new BlacklistSet(
+    [
+      ...fileOverrideEntries(mod, dataPath, normalize),
+      ...skipListEntries(mod.installationPath, laterRelPaths, normalize),
+    ],
+    game,
+    normalize,
+  );
+  await method.prepare(dataPath, false, lastActivation, normalize);
+  await method.activate(modPath, mod.installationPath, subDir, skip);
 }
 
 async function filterManifest(
