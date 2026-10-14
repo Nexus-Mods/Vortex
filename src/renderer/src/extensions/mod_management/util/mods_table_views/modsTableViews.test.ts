@@ -81,10 +81,16 @@ describe("groupMods by a column", () => {
   });
 
   it("puts the values a column orders first, in its order, then the rest by name", () => {
-    const groups = groupMods(CATEGORISED, "category", t, {
-      ...category,
-      groupOrder: ["Weapons"],
-    });
+    const groups = groupMods(
+      CATEGORISED,
+      "category",
+      t,
+      {},
+      {
+        ...category,
+        groupOrder: ["Weapons"],
+      },
+    );
 
     expect(groups.map(({ label }) => label)).toEqual(["No {{column}}", "Weapons", "Armour"]);
   });
