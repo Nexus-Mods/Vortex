@@ -9,9 +9,9 @@
         display: flex;
         column-gap: calc(var(--spacing) * 1);
 
-        font-size: var(--text-body-md);
-        line-height: var(--text-body-md--line-height);
-        letter-spacing: var(--text-body-md--letter-spacing);
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
         color: var(--color-neutral-strong);
 
         .nxm-field-label-required {

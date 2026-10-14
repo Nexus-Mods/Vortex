@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { IActionDefinition, IActionOptions } from "@/types/IActionDefinition";
 
-const { getState, objects } = vi.hoisted(() => ({
+const { dispatch, getState, objects } = vi.hoisted(() => ({
+  dispatch: vi.fn(),
   getState: vi.fn(() => ({})),
   objects: { current: [] as IActionDefinition[] },
 }));
@@ -38,7 +39,7 @@ vi.mock("@/ExtensionProvider", async (importOriginal) => ({
 
 const state = {
   settings: {
-    mods: { activator: {}, confirmPurge: true },
+    mods: { activator: {}, confirmPurge: true, betaTable: false },
     downloads: { copyOnIFF: false },
     automation: { install: false },
   },
@@ -51,7 +52,7 @@ vi.mock("react-redux", async () => {
 
   return {
     ...actual,
-    useDispatch: () => vi.fn(),
+    useDispatch: () => dispatch,
     useSelector: (selector: (input: unknown) => unknown) => {
       try {
         return selector(state);
@@ -64,6 +65,7 @@ vi.mock("react-redux", async () => {
   };
 });
 
+import { setBetaModsTable } from "../actions/settings";
 import { useModToolbarActions } from "./useModToolbarActions.hook";
 
 const t = ((key: string) => key) as never;
@@ -124,7 +126,7 @@ describe("useModToolbarActions", () => {
       options: {},
     } as unknown as IActionDefinition;
 
-    expect(labels([asComponent])).toHaveLength(4);
+    expect(labels([asComponent])).toEqual(labels([]));
   });
 });
 
@@ -268,23 +270,62 @@ describe("useModToolbarActions deploy", () => {
     expect(deployAction()?.disabled).toBe(false);
   });
 
-  it("is branded while changes are waiting", () => {
+  it("stays neutral while changes are waiting", () => {
     setPending(true);
     setModActivity([]);
-    expect(deployAction()?.brand).toBe("primary");
+    expect(deployAction()?.brand).toBeUndefined();
   });
 
-  it.each(["deployment", "deployment_pending"])(
-    "is disabled, says so and drops its brand while %s",
-    (activity) => {
-      setPending(true);
-      setModActivity([activity]);
+  it.each(["deployment", "deployment_pending"])("is disabled and says so while %s", (activity) => {
+    setPending(true);
+    setModActivity([activity]);
 
-      const action = deployAction();
+    const action = deployAction();
 
-      expect(action?.disabled).toBe(true);
-      expect(action?.label).toBe("Applying mod changes…");
-      expect(action?.brand).toBe("neutral");
-    },
-  );
+    expect(action?.disabled).toBe(true);
+    expect(action?.label).toBe("Applying mod changes…");
+  });
+});
+
+describe("useModToolbarActions beta table", () => {
+  afterEach(() => {
+    state.settings.mods.betaTable = false;
+    dispatch.mockClear();
+  });
+
+  const betaTable = () => actionsFor([]).find((action) => action.id === "beta-table");
+
+  it("comes last, pinned, in a section of its own", () => {
+    const actions = actionsFor([plain("Manage Rules")]);
+
+    expect(actions.at(-1)).toMatchObject({ id: "beta-table", pinned: true, section: "view" });
+  });
+
+  it("offers the beta view while the classic one shows", () => {
+    expect(betaTable()).toMatchObject({
+      label: "Switch to beta view",
+      description: "Try the new mod list. Some features aren't supported yet.",
+      active: false,
+      trackingProperties: { view: "beta" },
+    });
+
+    betaTable()?.onClick?.();
+
+    expect(dispatch).toHaveBeenCalledWith(setBetaModsTable(true));
+  });
+
+  it("offers the classic view, lit, while the beta one shows", () => {
+    state.settings.mods.betaTable = true;
+
+    expect(betaTable()).toMatchObject({
+      label: "Switch to classic view",
+      description: "Return to the original mod list.",
+      active: true,
+      trackingProperties: { view: "classic" },
+    });
+
+    betaTable()?.onClick?.();
+
+    expect(dispatch).toHaveBeenCalledWith(setBetaModsTable(false));
+  });
 });

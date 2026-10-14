@@ -12,6 +12,7 @@ import {
 } from "../../util/selectors";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
+import { ModalLayer } from "../modal_layer/ModalLayer";
 
 /**
  * Provides a profile switcher component.
@@ -55,6 +56,8 @@ export const ProfileSwitcher: FC<React.PropsWithChildren<unknown>> = () => {
       </div>
 
       <Dialog />
+
+      <ModalLayer />
 
       <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
     </div>

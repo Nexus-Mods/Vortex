@@ -36,9 +36,11 @@ import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
 import { setModType } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
+import { isLoggedIn } from "../nexus_integration/selectors";
 import { nexusGames } from "../nexus_integration/util";
 import { setNextProfile } from "../profile_management/actions/settings";
 import { setGameInfo } from "./actions/persistent";
+import { clearFavouriteGames } from "./actions/session";
 import {
   addDiscoveredGame,
   clearDiscoveredGame,
@@ -55,6 +57,7 @@ import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from "./
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";
+import { requestDetectedGames, resetDetectedGamesHash } from "./util/detectedGames";
 import getDriveList from "./util/getDriveList";
 import { getGame, getGameStore, getGameStores } from "./util/getGame";
 import { identifyStore } from "./util/identifyStore";
@@ -1216,6 +1219,27 @@ function init(context: IExtensionContext): boolean {
         }
       },
     );
+
+    {
+      // login/logout transitions: favourites are user-scoped, so they are cleared
+      // on logout and (re)requested on login. A different account may have
+      // different favourites even though the machine payload is unchanged, which
+      // is why the unchanged-payload skip has to be reset on login.
+      let loggedIn = isLoggedIn(store.getState());
+      context.api.onStateChange(["confidential", "account", "nexus"], () => {
+        const nowLoggedIn = isLoggedIn(store.getState());
+        if (loggedIn && !nowLoggedIn) {
+          store.dispatch(clearFavouriteGames());
+        } else if (!loggedIn && nowLoggedIn) {
+          resetDetectedGamesHash();
+          void requestDetectedGames(context.api).catch((err) =>
+            log("warn", "detected-games: unexpected failure", { err }),
+          );
+        }
+
+        loggedIn = nowLoggedIn;
+      });
+    }
 
     {
       const profile: IProfile = activeProfile(store.getState());

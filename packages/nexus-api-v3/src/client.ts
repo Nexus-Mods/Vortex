@@ -1,6 +1,7 @@
 import createClient, { type Middleware } from "openapi-fetch";
 
 import { V3ApiError } from "./errors";
+import type { TelemetryEvent } from "./eventTypes";
 import type { components, paths } from "./generated/nexus-api-v3";
 import type {
   components as internalComponents,
@@ -184,6 +185,38 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       };
     },
 
+    async resolveDetectedGames(
+      contents: paths["/vortex/detected-games"]["post"]["requestBody"]["content"]["application/json"],
+    ): Promise<components["schemas"]["DetectedGame"][]> {
+      const { data, error, response } = await client.POST("/vortex/detected-games", {
+        body: contents,
+      });
+
+      if (error) throw toV3Error(error, response);
+
+      const { games } = data.data;
+      const res = Array.from<components["schemas"]["DetectedGame"]>({ length: games.length });
+
+      for (let i = 0; i < games.length; i++) {
+        const game = games[i]!;
+
+        res[i] = {
+          extension: game.extension,
+          game_id: game.game_id,
+          game_uid: game.game_uid,
+          image_url: game.image_url,
+          is_favourite: game.is_favourite,
+          store_ids: {
+            epic: Array.from(game.store_ids.epic),
+            gog: Array.from(game.store_ids.gog),
+            steam: Array.from(game.store_ids.steam),
+          },
+        };
+      }
+
+      return res;
+    },
+
     /**
      * Resolve mod-level display details (name, summary, status, thumbnail, adult
      * flag) for a set of composite mod UIDs. Up to 2000 `modIds` per call;
@@ -206,7 +239,13 @@ export type NexusV3InternalClient = ReturnType<typeof createNexusV3InternalClien
  * fragment. Same auth and transport as the public client; kept as a separate client so the
  * internal paths stay off the public surface.
  */
-export function createNexusV3InternalClient(options: NexusV3ClientOptions) {
+export function createNexusV3InternalClient(
+  options: NexusV3ClientOptions & {
+    clientName: string;
+    clientVersion: string;
+    instanceId?: string;
+  },
+) {
   const client = createClient<internalPaths>({
     baseUrl: options.baseUrl,
     headers: authHeaders(options),
@@ -225,6 +264,31 @@ export function createNexusV3InternalClient(options: NexusV3ClientOptions) {
       const { data, error, response } = await client.POST("/telemetry/mod-lists", {
         body: snapshot,
       });
+      if (error) throw toV3Error(error, response);
+      return data.data;
+    },
+
+    async telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
+      const { data, error, response } = await client.POST("/telemetry/events", {
+        body: {
+          client: {
+            name: options.clientName,
+            version: options.clientVersion,
+            instance_id: options.instanceId,
+          },
+
+          events: [
+            {
+              id: id,
+              occurred_at: date.toString(),
+              version: event.version,
+              type: event.type,
+              payload: event.payload,
+            },
+          ],
+        },
+      });
+
       if (error) throw toV3Error(error, response);
       return data.data;
     },

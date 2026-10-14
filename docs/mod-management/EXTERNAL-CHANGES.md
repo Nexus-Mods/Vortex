@@ -14,7 +14,8 @@ Before each new deployment, Vortex compares the current state of the game folder
     - **Merged file changes** (from `__merged` folder) — auto-resolved silently, never shown to user
     - **Collection/auto-resolve changes** — auto-resolved when a collection is being installed or `autoResolveAll` is set
     - **User changes** — everything else, shown in the dialog
-4. The Redux action `showExternalChanges(userChanges)` is dispatched, which populates `state.session.mods.changes` and opens the dialog. It returns a Promise that resolves when the user clicks Confirm/Cancel
+4. `changeToEntry()` turns each user change into a dialog entry with its preselected action. For a deleted staging file, that depends on whether the mod's folder is still in staging, which is checked on disk.
+5. The Redux action `showExternalChanges(entries)` is dispatched, which populates `state.session.mods.changes` and opens the dialog. It returns a Promise that resolves when the user clicks Confirm/Cancel
 
 ## The four change types
 
@@ -52,17 +53,17 @@ Note: `valchange` is commented out in the dialog UI — it's never actually show
 
 ### `deleted` — Deployed link was deleted from game folder
 
-| Action    | Label                          | What it does                                                                                                                                                                       |
-| --------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `restore` | "Revert change (restore file)" | Removes the file from the deployment manifest, so next deployment re-creates the link. The file reappears in the game folder.                                                      |
-| `delete`  | "Save change (delete file)"    | Deletes the corresponding staging file permanently. The mod file is gone from both locations. **This is destructive** — triggers a confirmation dialog if >1 file. Default action. |
+| Action    | Label                          | What it does                                                                                                                                                      |
+| --------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `restore` | "Revert change (restore file)" | Removes the file from the deployment manifest, so next deployment re-creates the link. The file reappears in the game folder. Default action.                     |
+| `delete`  | "Save change (delete file)"    | Deletes the corresponding staging file permanently. The mod file is gone from both locations. **This is destructive**: triggers a confirmation dialog if >1 file. |
 
 ### `srcdeleted` — Staging file was deleted
 
-| Action   | Label                          | What it does                                                                                 |
-| -------- | ------------------------------ | -------------------------------------------------------------------------------------------- |
-| `import` | "Revert change (restore file)" | Moves the deployed file from the game folder back into staging, restoring the source.        |
-| `drop`   | "Save change (delete file)"    | Deletes the deployed file from the game folder. The file is gone everywhere. Default action. |
+| Action   | Label                          | What it does                                                                                                                                      |
+| -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `import` | "Revert change (restore file)" | Moves the deployed file from the game folder back into staging, restoring the source. Default action while the mod's staging folder still exists. |
+| `drop`   | "Save change (delete file)"    | Deletes the deployed file from the game folder. The file is gone everywhere. Default action once the mod's staging folder is gone.                |
 
 ## Dialog UI grouping
 
@@ -97,9 +98,11 @@ These defaults prioritize staging as the source of truth — appropriate for aut
 ```
 activator.externalChanges()  →  IFileChange[]
         ↓
+existingSourceFolders()  →  mod folders of deleted staging files still in staging
+        ↓
 changeToEntry() / defaultAction()  →  IFileEntry[] with default actions
         ↓
-dispatch(showExternalChanges())  →  populates Redux state, opens dialog
+dispatch(showExternalChanges(entries))  →  populates Redux state, opens dialog
         ↓
 User edits actions in dialog  →  dispatch(setExternalChangeAction())
         ↓

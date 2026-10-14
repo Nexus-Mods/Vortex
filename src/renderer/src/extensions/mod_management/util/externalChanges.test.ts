@@ -1,184 +1,190 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { existsSync, rmSync } from "node:fs";
+import * as path from "node:path";
 
-import type {
-  IDeployedFile,
-  IDeploymentMethod,
-  IExtensionApi,
-  IFileChange,
-} from "../../../types/IExtensionContext";
-import type { IState } from "../../../types/IState";
+import {
+  VortexModId,
+  VortexModStagingFolder,
+  VortexProfileId,
+  VortexStagingFolder,
+} from "@vortex/shared";
+import { describe, expect, it, vi } from "vitest";
+
+import {
+  makeFileChange,
+  makeMod,
+  makeProfile,
+  setCollectionSession,
+} from "../../../test-utils/builders";
+import { test as deploymentTest } from "../../../test-utils/deploymentTest";
+import {
+  confirmExternalChangesDialogs,
+  EXTERNAL_CHANGES_BINDINGS,
+  test,
+} from "../../../test-utils/externalChangesTest";
 import { MERGED_PATH } from "../modMerging";
-
-// Mock fs. applyFileActions inside dealWithExternalChanges calls into it
-// whenever any auto-resolved changes are present. Real fs ops would fail in a
-// unit test, so make every call a no-op.
-vi.mock("../../../util/fs", () => ({
-  removeAsync: vi.fn(() => Promise.resolve()),
-  moveAsync: vi.fn(() => Promise.resolve()),
-  statAsync: vi.fn(() => Promise.resolve({ mtime: new Date(0) })),
-  lstatAsync: vi.fn(() => Promise.resolve({ mtime: new Date(0) })),
-}));
+import { changeToEntry, dealWithExternalChanges } from "./externalChanges";
 
 vi.mock("../../../logging", () => {
   const log = vi.fn();
   return { default: log, log };
 });
 
-// Required mocks for the real InstallManager imported below. The integration
-// test at the bottom builds a real InstallManager so it can drive the
-// markRecentInstall / markRecentRemoval / consumeRecentChanges flow against
-// the live implementation (rather than re-stating the resulting Set inline).
-vi.mock("../util/dependencies");
-vi.mock("../../../util/api");
-vi.mock("../../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }));
+const MOD_A = VortexModId("mod-a");
+const MOD_A_FOLDER = VortexModStagingFolder("mod-a-folder");
+const REMOVED_FOLDER = VortexModStagingFolder("removed-folder");
+const MODS_WITH_A = { [MOD_A]: makeMod({ id: MOD_A, installationPath: MOD_A_FOLDER }) };
 
-// Capture every payload passed to showExternalChanges so each test can assert
-// what would have been surfaced to the user.
-const showExternalChangesCalls: Array<{ [typeId: string]: IFileChange[] }> = [];
-// externalChanges.ts only imports `showExternalChanges` from this module, so
-// stubbing that one export is sufficient. The returned thunk resolves with
-// [] (simulating the user clicking Confirm without overriding any default
-// action); downstream applyFileActions is still exercised but is a no-op
-// given mocked fs.
-vi.mock("../actions/session", () => ({
-  showExternalChanges: vi.fn((changes: { [typeId: string]: IFileChange[] }) => {
-    return () => {
-      showExternalChangesCalls.push(changes);
-      return Promise.resolve([]);
-    };
-  }),
-}));
+describe("changeToEntry", () => {
+  const existing = new Set([MOD_A_FOLDER]);
 
-import InstallManager from "../InstallManager";
-import { dealWithExternalChanges } from "./externalChanges";
+  it("preselects restoring a deployed file that was deleted on disk", () => {
+    const change = makeFileChange({ changeType: "deleted", source: MOD_A_FOLDER });
 
-function makeRefchange(source: string, filePath: string): IFileChange {
-  return {
-    filePath,
-    source,
-    sourceTime: new Date(0),
-    destTime: new Date(0),
-    changeType: "refchange",
-  };
-}
+    expect(changeToEntry("", change, existing).action).toBe("restore");
+  });
 
-function makeApi(opts: { externalChanges: IFileChange[]; activeSession?: unknown }): {
-  api: IExtensionApi;
-  activator: IDeploymentMethod;
-} {
-  const state = {
-    persistent: {
-      profiles: {
-        "test-profile": {
-          id: "test-profile",
-          gameId: "skyrimse",
-        },
-      },
-    },
-    session: {
-      collections: { activeSession: opts.activeSession ?? undefined },
-    },
-    settings: {
-      profiles: { activeProfileId: "test-profile" },
-    },
-  } as unknown as IState;
+  it("preselects keeping the deployed file when its mod's staging folder still exists", () => {
+    const change = makeFileChange({ changeType: "srcdeleted", source: MOD_A_FOLDER });
 
-  const api: IExtensionApi = {
-    store: {
-      getState: () => state,
-      dispatch: vi.fn((action: unknown) => {
-        // Honour thunks (functions). That's how showExternalChanges resolves.
-        if (typeof action === "function") {
-          return (action as (d: unknown) => unknown)(vi.fn());
-        }
-        return action;
-      }),
-    },
-    events: {
-      emit: vi.fn(),
-    },
-  } as unknown as IExtensionApi;
+    expect(changeToEntry("", change, existing).action).toBe("import");
+  });
 
-  const activator: IDeploymentMethod = {
-    externalChanges: vi.fn(() => Promise.resolve(opts.externalChanges)),
-  } as unknown as IDeploymentMethod;
+  it("preselects removing the deployed file when its mod's staging folder is gone", () => {
+    const change = makeFileChange({ changeType: "srcdeleted", source: REMOVED_FOLDER });
 
-  return { api, activator };
-}
-
-const FAKE_STAGING = "C:\\staging";
-const FAKE_MOD_PATHS = { "": "C:\\game\\Data" };
-// dealWithExternalChanges iterates over lastDeployment keys (modTypes) to
-// dispatch applyFileActions; the per-entry contents don't matter once changes
-// are produced by the (mocked) activator.
-const FAKE_LAST_DEPLOYMENT: { [typeId: string]: IDeployedFile[] } = { "": [] };
+    expect(changeToEntry("", change, existing).action).toBe("drop");
+  });
+});
 
 describe("dealWithExternalChanges", () => {
-  beforeEach(() => {
-    showExternalChangesCalls.length = 0;
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("auto-resolves __merged changes regardless of recentChanges", async () => {
-    const { api, activator } = makeApi({
-      externalChanges: [makeRefchange(`${MERGED_PATH}_skyrim`, "Data/merged.esp")],
+  deploymentTest("re-deploys a file deleted from the game folder", async ({ makeDeployment }) => {
+    const profile = makeProfile();
+    const h = makeDeployment({
+      files: { "plugin.esp": "plugin" },
+      profiles: { [profile.id]: profile },
+      activeProfileId: profile.id,
+      extraReducers: EXTERNAL_CHANGES_BINDINGS,
     });
+    confirmExternalChangesDialogs(h);
+    const manifest = await h.deploy();
+    rmSync(h.inGame("plugin.esp"));
 
-    await dealWithExternalChanges(
-      api,
-      activator,
-      "test-profile",
-      FAKE_STAGING,
-      FAKE_MOD_PATHS,
-      FAKE_LAST_DEPLOYMENT,
+    const [resolved] = await dealWithExternalChanges(
+      h.api,
+      h.method,
+      VortexProfileId(profile.id),
+      VortexStagingFolder(h.stagingDir),
+      { "": h.gameDir },
+      { "": manifest },
       new Set(),
     );
+    await h.deploy(resolved);
 
-    expect(showExternalChangesCalls).toHaveLength(0);
+    expect(h.deployedFiles()).toEqual(["plugin.esp"]);
   });
 
-  it("auto-resolves every change during a collection install", async () => {
-    const { api, activator } = makeApi({
-      externalChanges: [
-        makeRefchange("some-mod-A", "Data/a.bsa"),
-        makeRefchange("some-mod-B", "Data/b.bsa"),
-      ],
-      activeSession: { collectionSlug: "fake-collection", state: "installing" },
-    });
+  test("keeps the deployed file of a mod whose staging file was deleted", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([
+      makeFileChange({ changeType: "srcdeleted", source: MOD_A_FOLDER, filePath: "plugin.esp" }),
+    ]);
+    await h.stageFile(MOD_A_FOLDER, "other.esp");
+    await h.deployFile("plugin.esp");
 
-    await dealWithExternalChanges(
-      api,
-      activator,
-      "test-profile",
-      FAKE_STAGING,
-      FAKE_MOD_PATHS,
-      FAKE_LAST_DEPLOYMENT,
-      new Set(),
-    );
+    await h.dealWithExternalChanges(new Set());
 
-    expect(showExternalChangesCalls).toHaveLength(0);
+    expect(h.dialogs).toHaveLength(1);
+    expect(existsSync(path.join(h.stagingPath, MOD_A_FOLDER, "plugin.esp"))).toBe(true);
   });
 
-  it("treats an undefined recentChanges as 'nothing recently touched'", async () => {
-    const { api, activator } = makeApi({
-      externalChanges: [makeRefchange("any-mod", "Data/file.esp")],
+  test("removes the deployed file of a mod whose staging folder is gone", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([
+      makeFileChange({ changeType: "srcdeleted", source: REMOVED_FOLDER, filePath: "plugin.esp" }),
+    ]);
+    await h.deployFile("plugin.esp");
+
+    await h.dealWithExternalChanges(new Set());
+
+    expect(h.dialogs).toHaveLength(1);
+    expect(existsSync(path.join(h.gameDir, "plugin.esp"))).toBe(false);
+  });
+
+  test("reports a mod's changed content by game and mod id", async ({ makeExternalChanges }) => {
+    const h = await makeExternalChanges(
+      [makeFileChange({ changeType: "srcdeleted", source: MOD_A_FOLDER })],
+      MODS_WITH_A,
+    );
+    await h.stageFile(MOD_A_FOLDER, "other.esp");
+    const changed: Array<[string, string]> = [];
+    h.api.events.on("mod-content-changed", (gameId: string, modId: string) => {
+      changed.push([gameId, modId]);
     });
 
-    await dealWithExternalChanges(
-      api,
-      activator,
-      "test-profile",
-      FAKE_STAGING,
-      FAKE_MOD_PATHS,
-      FAKE_LAST_DEPLOYMENT,
-      undefined,
+    await h.dealWithExternalChanges(new Set());
+
+    expect(changed).toEqual([[h.gameId, MOD_A]]);
+  });
+
+  test("checks the file overrides of files deleted from staging by game and mod id", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges(
+      [makeFileChange({ changeType: "srcdeleted", source: MOD_A_FOLDER, filePath: "plugin.esp" })],
+      MODS_WITH_A,
+    );
+    const checked: Array<[string, Record<VortexModId, string[]>]> = [];
+    h.api.events.on(
+      "check-file-override-redundancies",
+      (gameId: string, deletedFiles: Record<VortexModId, string[]>) => {
+        checked.push([gameId, deletedFiles]);
+      },
     );
 
-    expect(showExternalChangesCalls).toHaveLength(1);
-    expect(showExternalChangesCalls[0][""]?.[0].source).toBe("any-mod");
+    await h.dealWithExternalChanges(new Set());
+
+    expect(checked).toEqual([[h.gameId, { [MOD_A]: ["plugin.esp"] }]]);
+  });
+
+  test("auto-resolves __merged changes regardless of recentChanges", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([
+      makeFileChange({ source: `${MERGED_PATH}_skyrim`, filePath: "Data/merged.esp" }),
+    ]);
+
+    await h.dealWithExternalChanges(new Set());
+
+    expect(h.dialogs).toHaveLength(0);
+  });
+
+  test("auto-resolves every change during a collection install", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([
+      makeFileChange({ source: "some-mod-A", filePath: "Data/a.bsa" }),
+      makeFileChange({ source: "some-mod-B", filePath: "Data/b.bsa" }),
+    ]);
+    setCollectionSession(h, true);
+
+    await h.dealWithExternalChanges(new Set());
+
+    expect(h.dialogs).toHaveLength(0);
+  });
+
+  test("treats an undefined recentChanges as 'nothing recently touched'", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([
+      makeFileChange({ source: "any-mod", filePath: "Data/file.esp" }),
+    ]);
+
+    await h.dealWithExternalChanges(undefined);
+
+    expect(h.dialogs).toHaveLength(1);
+    expect(h.dialogs[0][0].source).toBe("any-mod");
   });
 
   // A deployment cycle consumes the recentChanges snapshot ONCE at the start,
@@ -192,70 +198,48 @@ describe("dealWithExternalChanges", () => {
   // upstream concern is whether two install/deploy flows should overlap at
   // all. Locks in the snapshot-at-consume-time contract between
   // InstallManager and dealWithExternalChanges.
-  it("only auto-resolves against the recentChanges snapshot taken at consume time", async () => {
+  test("only auto-resolves against the recentChanges snapshot taken at consume time", async ({
+    makeInstallManager,
+    makeExternalChanges,
+  }) => {
     const gameId = "skyrimse";
     const modA = "mod-A-installed-before-consume";
     const modB = "mod-B-installed-after-consume";
-
-    const state = {
-      persistent: {
-        mods: {
-          [gameId]: {
-            [modA]: { id: modA, installationPath: modA },
-            [modB]: { id: modB, installationPath: modB },
-          },
+    const { manager } = makeInstallManager({
+      mods: {
+        [gameId]: {
+          [modA]: makeMod({ id: modA, installationPath: modA }),
+          [modB]: makeMod({ id: modB, installationPath: modB }),
         },
       },
-    };
-    const installManagerApi = {
-      getState: vi.fn(() => state),
-      store: { dispatch: vi.fn(), getState: vi.fn(() => state) },
-      events: { emit: vi.fn(), on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
-      onAsync: vi.fn(),
-      onStateChange: vi.fn(),
-      sendNotification: vi.fn(),
-      dismissNotification: vi.fn(),
-      showErrorNotification: vi.fn(),
-      translate: vi.fn((key: string) => key),
-      registerInstaller: vi.fn(),
-    } as unknown as IExtensionApi;
-    const installManager = new InstallManager(installManagerApi, vi.fn());
+    });
 
     // Install A completes BEFORE the deployment cycle starts.
-    installManager.markRecentInstall(modA, gameId);
+    manager.markRecentInstall(modA, gameId);
 
     // Deployment cycle begins: snapshot recentChanges.
-    const snapshot = installManager.consumeRecentChanges();
+    const snapshot = manager.consumeRecentChanges();
     expect(snapshot).toEqual(new Set([modA]));
 
     // Install B completes WHILE the deployment cycle is in flight, after
     // the snapshot has been taken. Its path goes into the next batch.
-    installManager.markRecentInstall(modB, gameId);
+    manager.markRecentInstall(modB, gameId);
 
     // The current deployment cycle calls dealWithExternalChanges with the
     // snapshot. The activator reports a refchange attributed to mod B
     // (a stale manifest entry, an in-flight unlink/relink, etc.).
-    const { api, activator } = makeApi({
-      externalChanges: [makeRefchange(modA, "Data/a.esp"), makeRefchange(modB, "Data/b.esp")],
-    });
+    const h = await makeExternalChanges([
+      makeFileChange({ source: modA, filePath: "Data/a.esp" }),
+      makeFileChange({ source: modB, filePath: "Data/b.esp" }),
+    ]);
 
-    await dealWithExternalChanges(
-      api,
-      activator,
-      "test-profile",
-      FAKE_STAGING,
-      FAKE_MOD_PATHS,
-      FAKE_LAST_DEPLOYMENT,
-      snapshot,
-    );
+    await h.dealWithExternalChanges(snapshot);
 
     // A is auto-resolved (in snapshot), B surfaces (not in snapshot).
-    expect(showExternalChangesCalls).toHaveLength(1);
-    const surfaced = showExternalChangesCalls[0][""];
-    expect(surfaced).toHaveLength(1);
-    expect(surfaced?.[0].source).toBe(modB);
+    expect(h.dialogs).toHaveLength(1);
+    expect(h.dialogs[0].map((entry) => entry.source)).toEqual([modB]);
 
     // The next deployment cycle would pick up B.
-    expect(installManager.consumeRecentChanges()).toEqual(new Set([modB]));
+    expect(manager.consumeRecentChanges()).toEqual(new Set([modB]));
   });
 });

@@ -723,7 +723,7 @@ import { Pagination } from "../../ui/components/pagination/Pagination";
 
 ### Table
 
-Column-driven table drawn as one CSS grid: the column widths make its tracks and every row is a subgrid of them, so cells line up without a `<table>`. It carries the grid roles. Work in progress towards the new table design; on the Mods page it only shows while the dev tools "New table design" switch is on.
+Column-driven table drawn as one CSS grid: the column widths make its tracks and every row is a subgrid of them, so cells line up without a `<table>`. It carries the grid roles. Work in progress towards the new table design; on the Mods page it shows in place of the classic table while the toolbar's beta view is on.
 
 ```tsx
 import { Table } from "../../ui/components/table/Table";

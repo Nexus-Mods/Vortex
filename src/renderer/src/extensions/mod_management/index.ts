@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { getErrorCode, unknownToError } from "@vortex/shared";
+import { getErrorCode, unknownToError, VortexProfileId, VortexStagingFolder } from "@vortex/shared";
 import { CycleError } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import React from "react";
@@ -87,6 +87,7 @@ import mergeMods, { MERGED_PATH } from "./modMerging";
 import preStartDeployHook from "./preStartDeployHook";
 import { deploymentReducer } from "./reducers/deployment";
 import { modsReducer } from "./reducers/mods";
+import { modsTableViewsReducer } from "./reducers/modsTableViews";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
 import { transactionsReducer } from "./reducers/transactions";
@@ -836,8 +837,8 @@ function genUpdateModDeployment(installManager: InstallManager) {
               await dealWithExternalChanges(
                 api,
                 activator,
-                profileId,
-                stagingPath,
+                VortexProfileId(profile.id),
+                VortexStagingFolder(stagingPath),
                 modPaths,
                 lastDeployment,
                 recentChanges,
@@ -2014,6 +2015,7 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["session", "mods"], sessionReducer);
   context.registerReducer(["settings", "mods"], settingsReducer);
+  context.registerReducer(["settings", "modsTableViews"], modsTableViewsReducer);
   context.registerReducer(["persistent", "mods"], modsReducer);
   context.registerReducer(["persistent", "deployment"], deploymentReducer);
   context.registerReducer(["persistent", "transactions"], transactionsReducer);

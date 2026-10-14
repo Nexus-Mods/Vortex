@@ -3,45 +3,18 @@ name: Main
 on:
   push:
     branches: [master, release/*, integration/*]
-    paths-ignore:
-      - "**.md"
-      - "docs/**"
-      - "locales/**"
-      - ".devcontainer/**"
-      - "docker/**"
-      - "flatpak/**"
-      - "*.nix"
-      - "flake.*"
-      - "default.nix"
-      - "shell.nix"
-      - ".env.example"
-      - ".envrc"
-      - ".editorconfig"
-      - "vortex.bat"
-      - "translation-strings.txt"
   pull_request:
     branches: [master, release/*, integration/*, task/laz-*, fix/laz-*]
-    paths-ignore:
-      - "**.md"
-      - "docs/**"
-      - "locales/**"
-      - ".devcontainer/**"
-      - "docker/**"
-      - "flatpak/**"
-      - "*.nix"
-      - "flake.*"
-      - "default.nix"
-      - "shell.nix"
-      - ".env.example"
-      - ".envrc"
-      - ".editorconfig"
-      - "vortex.bat"
-      - "translation-strings.txt"
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  # paths-filter lists PR files via the API
+  pull-requests: read
 
 jobs:
   # Required status checks stay "Expected" forever when a workflow is skipped by
@@ -76,6 +49,7 @@ jobs:
               - "!translation-strings.txt"
 
   build:
+    name: Compile (${{ matrix.os }})
     needs: changes
     # Fails open: if the filter job itself fails, code is empty and the full build runs.
     if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.code != 'false') }}
@@ -145,3 +119,22 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+  # A skipped matrix job reports one unexpanded "build" check, so the required
+  # "build (<os>)" checks come from this gate, which always runs.
+  build-status:
+    name: build (${{ matrix.os }})
+    needs: build
+    if: ${{ always() }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check build result
+        if: ${{ needs.build.result != 'success' && needs.build.result != 'skipped' }}
+        run: |
+          echo "build result: ${{ needs.build.result }}"
+          exit 1

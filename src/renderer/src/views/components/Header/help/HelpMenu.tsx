@@ -3,8 +3,8 @@ import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Popover } from "@/ui/components/popover/Popover";
+import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
-import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 

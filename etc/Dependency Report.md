@@ -16,8 +16,8 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
 | @nexusmods/file-dependency-resolver | link:../../packages/file-dependency-resolver |
-| @nexusmods/fomod-installer-ipc | 0.13.3 |
-| @nexusmods/fomod-installer-native | 0.13.3 |
+| @nexusmods/fomod-installer-ipc | 0.13.4 |
+| @nexusmods/fomod-installer-native | 0.13.4 |
 | @nexusmods/nexus-api | 1.7.3 |
 | @nosferatu500/react-sortable-tree | 4.4.0 |
 | @nosferatu500/theme-file-explorer | 3.0.21 |
@@ -29,6 +29,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @opentelemetry/sdk-trace-base | 2.8.0 |
 | @opentelemetry/semantic-conventions | 1.40.0 |
 | @tailwindcss/cli | 4.3.2 |
+| @tanstack/react-virtual | 3.13.23 |
 | @types/bluebird | 3.5.20 |
 | @types/uuid | 3.4.13 |
 | @vortex/nexus-api-v3 | link:../../packages/nexus-api-v3 |

@@ -293,6 +293,8 @@ export interface ISettingsMods {
   confirmPurge: boolean;
   cleanupOnDeploy: boolean;
   installerSandbox: boolean;
+  /** Whether the Mods page shows the new table, in beta, rather than the classic one. */
+  betaTable: boolean;
 }
 
 export interface ISettingsNotification {
@@ -345,13 +347,6 @@ export interface IStateTransactions {
   // gamebryo plugin management, so it lives in this cross-extension slice rather than on either
   // extension's own state. The value is the epoch-ms time the marker was queued.
   pendingPluginSort: Record<string, Record<string, number>>;
-}
-
-export interface ISessionGameMode {
-  known: IGameStored[];
-  addDialogVisible: boolean;
-  disabled: { [gameId: string]: string };
-  showHidden: boolean;
 }
 
 export interface IGameInfoEntry {
@@ -427,7 +422,6 @@ export interface ICollectionsPersistentState {
 export interface ISessionState {
   base: ISession;
   collections: ICollectionInstallState;
-  gameMode: ISessionGameMode;
   discovery: IDiscoveryState;
   notifications: INotificationState;
   browser: IBrowserState;

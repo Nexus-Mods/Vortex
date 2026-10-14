@@ -44,7 +44,7 @@ export const TableDemo = () => (
 
       <Typography appearance="subdued">
         A column-driven table drawn as one CSS grid, each row a subgrid of its columns. Work in
-        progress towards the new table design, behind the dev tools "New table design" switch.
+        progress towards the new table design, on the Mods page behind the toolbar's beta view.
       </Typography>
     </div>
 

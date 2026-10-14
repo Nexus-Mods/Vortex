@@ -98,5 +98,12 @@ export function createVortexNexusV3InternalClient(
   api: IExtensionApi,
   options: VortexNexusV3ClientOptions = {},
 ): NexusV3InternalClient {
-  return createNexusV3InternalClient(vortexV3Options(api, options));
+  return createNexusV3InternalClient({
+    ...vortexV3Options(api, options),
+    clientName: "vortex",
+    clientVersion: getApplication().version,
+    // the anonymous install id the telemetry batch carries; empty before the
+    // instance id is assigned, so it's omitted rather than failing the schema
+    instanceId: api.getState().app.instanceId || undefined,
+  });
 }

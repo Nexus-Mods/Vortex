@@ -26,6 +26,17 @@
             }
         }
 
+        /* desktop.scss gives every link the default cursor, as a native app would, and
+           unlayered it beats any layered rule; a link in prose is a link to the web. */
+        .nxm-prose a[href] {
+            cursor: pointer !important;
+        }
+
+        /* And every role="button" too; a button is a button, whatever its element. */
+        [role="button"] {
+            cursor: pointer !important;
+        }
+
         /* The legacy brand colour, where a region's two scrollbars meet. */
         ::-webkit-scrollbar-corner {
             background-color: transparent !important;

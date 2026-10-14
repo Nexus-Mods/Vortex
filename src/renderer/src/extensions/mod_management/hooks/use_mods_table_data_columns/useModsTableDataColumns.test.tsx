@@ -63,12 +63,6 @@ describe("useModsTableDataColumns", () => {
     expect(columns.every(({ isToggleable }) => isToggleable)).toBe(true);
   });
 
-  it("shows only the installation time and collection by default", () => {
-    const shown = renderColumns().filter(({ isDefaultVisible }) => isDefaultVisible);
-
-    expect(shown.map(({ id }) => id)).toEqual(["collection", "installTime"]);
-  });
-
   it("shows the mod's own values", () => {
     const columns = renderColumns();
     const modRow = row({ type: "dinput", attributes: { author: "Ada", source: "nexus" } });

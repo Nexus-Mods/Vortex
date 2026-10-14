@@ -7,6 +7,7 @@ import { getSafe } from "../../util/storeHelper";
 import { SITE_ID } from "./constants";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
+import "./reducers/session";
 
 export function knownGames(state: IState): IGameStored[] {
   return state.session.gameMode.known ?? [];
