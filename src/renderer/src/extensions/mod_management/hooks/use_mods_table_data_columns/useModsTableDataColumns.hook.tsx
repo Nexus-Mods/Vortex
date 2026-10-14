@@ -7,6 +7,7 @@ import type { TableColumnWidth } from "@/ui/components/table/Table.types";
 import { getCurrentLanguage } from "@/util/i18n";
 import { userFriendlyTime } from "@/util/relativeTime";
 import { activeGameId } from "@/util/selectors";
+import { bytesToString } from "@/util/util";
 
 import { getModType } from "../../../gamemode_management/util/modTypeExtensions";
 import type { IMod } from "../../types/IMod";
@@ -81,6 +82,27 @@ export const useModsTableDataColumns = (memberships: {
       };
     };
 
+    /**
+     * An installed mod's size on disk, kept when it's installed and when Refresh content runs,
+     * or the archive's size for one that isn't installed. Unlike the legacy table's, the cell
+     * can't be clicked to work it out: Refresh content does that.
+     */
+    const size = ({ mod }: IModRow): number | undefined =>
+      mod.state === "installed" ? mod.attributes?.modSize : downloads[mod.archiveId]?.size;
+    const sizeText = (row: IModRow) => {
+      const bytes = size(row);
+      return bytes === undefined ? t("Unknown") : bytesToString(bytes);
+    };
+    const sizeColumn: IModsTableColumn = {
+      id: "modSize",
+      header: t("Mod size"),
+      width: "100px",
+      isToggleable: true,
+      sort: (a, b) => (size(a) ?? -1) - (size(b) ?? -1),
+      searchText: sizeText,
+      cell: (row) => <span className="truncate">{sizeText(row)}</span>,
+    };
+
     return [
       // Version (`version`, 40): its update and changelog buttons, and the other versions
       // of the mod, which the legacy table groups under it.
@@ -97,8 +119,10 @@ export const useModsTableDataColumns = (memberships: {
         ),
         position: 60,
       },
-      // Mod size (`modSize`, 100): an installed mod's size is only known once the user asks
-      // for it to be calculated, from the folder on disk.
+      {
+        ...sizeColumn,
+        position: 100,
+      },
       // The other extensions' columns have no position, so they take 100 and come in the
       // order the extensions load, after ModList's own.
       textColumn("category", t("Category"), "160px", ({ mod }) => {

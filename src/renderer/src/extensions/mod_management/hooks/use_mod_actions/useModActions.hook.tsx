@@ -28,6 +28,7 @@ import { nxmCollection, nxmCollectionOutline, nxmResetTv } from "@/ui/icon-paths
 import { activeGameId } from "@/util/selectors";
 import { getIconPath } from "@/views/components/iconMap";
 
+import { calculateModSize } from "../../util/calculate_mod_size/calculateModSize.util";
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
 import { useUninstallMods } from "../use_uninstall_mods/useUninstallMods.hook";
 
@@ -165,6 +166,9 @@ const SELECTION_MENU = ROW_MENU.map(({ section, items }) => ({
 
 const OTHER_SECTION = "other";
 
+/** The mod-content extension's, which also works out the mods' sizes again here. */
+const REFRESH_CONTENT = "Refresh Content";
+
 type IMenuItems = Map<string, IRowMenuItem & { section: string; order: number }>;
 
 const menuItems = (menu: typeof ROW_MENU): IMenuItems =>
@@ -267,12 +271,29 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
       condition: (modIds: string[]) => uninstallable(modIds).length > 0,
     };
 
+    // The Mod size column can't be clicked to work a size out, as the legacy table's can,
+    // so Refresh content does it as well.
+    const withSizeRefresh = (definition: IActionDefinition): IActionDefinition =>
+      definition.title !== REFRESH_CONTENT
+        ? definition
+        : {
+            ...definition,
+            action: (...args: Parameters<IActionDefinition["action"]>) => {
+              definition.action?.(...args);
+              const [instanceIds] = args;
+              const modIds = Array.isArray(instanceIds) ? instanceIds : [instanceIds];
+              const gameId = activeGameId(store.getState());
+              modIds.forEach((modId) => void calculateModSize(store, gameId, modId));
+            },
+          };
+
     return [
       checkForUpdateAction,
       uninstallAction,
       ...rowActions.filter(source.offers),
       ...registered,
     ]
+      .map(withSizeRefresh)
       .filter(
         (definition) =>
           definition.title !== undefined &&

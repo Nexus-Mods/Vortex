@@ -5,14 +5,17 @@ import { describe, expect, it, vi } from "vitest";
 
 import { setActionPinned } from "@/actions/toolbars";
 import type { ITableRowAction } from "@/controls/Table";
-import { makeModsTableStore } from "@/test-utils/modsTableStore";
+import { MODS_TABLE_TEST_GAME, makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import { nxmCollection } from "@/ui/icon-paths";
 
-const { registered, uninstall } = vi.hoisted(() => ({
+const { registered, uninstall, calculateModSize } = vi.hoisted(() => ({
   registered: { current: {} as { [group: string]: IActionDefinition[] } },
   uninstall: vi.fn(),
+  calculateModSize: vi.fn(() => Promise.resolve()),
 }));
+
+vi.mock("../../util/calculate_mod_size/calculateModSize.util", () => ({ calculateModSize }));
 
 vi.mock("../use_uninstall_mods/useUninstallMods.hook", () => ({
   useUninstallMods: () => uninstall,
@@ -230,6 +233,30 @@ describe("useModRowActions", () => {
     expect(result.current.actionsFor("a")).not.toBe(first);
     expect(condition).toHaveBeenCalledTimes(2);
   });
+
+  // The Mod size column has nothing to click, so the size is worked out again from here.
+  it("works out the mod's size again when Refresh content runs", () => {
+    calculateModSize.mockClear();
+    const refresh = vi.fn();
+    const { result, store } = renderRowActions([], [{ title: "Refresh Content", action: refresh }]);
+
+    const refreshContent = result.current
+      .actionsFor("a")
+      .find(({ label }) => label === "Refresh content")!;
+    act(() => refreshContent.onClick?.());
+
+    expect(refresh).toHaveBeenCalledWith(["a"]);
+    expect(calculateModSize).toHaveBeenCalledWith(store, MODS_TABLE_TEST_GAME, "a");
+  });
+
+  it("leaves other actions as they were registered", () => {
+    calculateModSize.mockClear();
+    const { result } = renderRowActions([], [{ title: "Create Report", action: vi.fn() }]);
+
+    act(() => result.current.actionsFor("a")[0].onClick?.());
+
+    expect(calculateModSize).not.toHaveBeenCalled();
+  });
 });
 
 describe("useModSelectionActions", () => {
@@ -380,5 +407,21 @@ describe("useModSelectionActions", () => {
     expect(result.current.find(({ label }) => label === "Uninstall")).toMatchObject({
       disabled: true,
     });
+  });
+
+  it("works out every selected mod's size again when Refresh content runs", () => {
+    calculateModSize.mockClear();
+    const { result, store } = renderSelectionActions(
+      [],
+      ["a", "c"],
+      [{ title: "Refresh Content", action: vi.fn() }],
+    );
+
+    act(() => result.current.find(({ label }) => label === "Refresh content")!.onClick?.());
+
+    expect(calculateModSize.mock.calls).toEqual([
+      [store, MODS_TABLE_TEST_GAME, "a"],
+      [store, MODS_TABLE_TEST_GAME, "c"],
+    ]);
   });
 });
