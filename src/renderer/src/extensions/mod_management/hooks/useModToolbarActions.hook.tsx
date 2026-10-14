@@ -15,7 +15,7 @@ import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { trackedActions } from "@/ui/components/toolbar/ToolbarGroup";
-import { nxmLabs } from "@/ui/icon-paths";
+import { nxmExperiment } from "@/ui/icon-paths";
 import { fileMD5 } from "@/util/checksum";
 import { TemporaryError, UserCanceled } from "@/util/CustomErrors";
 import * as fs from "@/util/fs";
@@ -154,7 +154,7 @@ const useBetaTableAction = (t: TFunction): IPositionedAction => {
               label: t("Switch to beta view"),
               description: t("Try the new mod list. Some features aren't supported yet."),
             }),
-        iconPath: nxmLabs,
+        iconPath: nxmExperiment,
         active: betaTable,
         pinned: true,
         section: "view",
