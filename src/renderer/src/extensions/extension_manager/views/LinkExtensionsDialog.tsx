@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
-import { Checkbox } from "@/ui/components/form/checkbox/Checkbox";
+import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField";
 import { ModalPanel, ModalWrapper } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 
@@ -69,26 +69,26 @@ export const LinkExtensionsDialog = ({
         <ul className="mt-4 min-h-0 divide-y divide-stroke-weak overflow-y-auto">
           {candidates.map((candidate) => (
             <li className="py-4 first:pt-0 last:pb-0" key={candidate.key}>
-              <Checkbox
+              <CheckboxField
                 checked={selected.has(candidate.key)}
-                className="items-start gap-x-3.5"
                 data-testid={`link-extension-${candidate.key}`}
+                label={
+                  <span className="flex flex-col gap-1">
+                    <Typography as="span" typographyType="body-sm">
+                      {withVersion(candidate.name, candidate.version)}
+                    </Typography>
+
+                    <Typography appearance="subdued" as="span" typographyType="body-sm">
+                      {t("linkDialog::replaceWith")}
+                    </Typography>
+
+                    <Typography as="span" typographyType="body-sm">
+                      {withVersion(candidate.replacementName, candidate.replacementVersion)}
+                    </Typography>
+                  </span>
+                }
                 onChange={() => toggle(candidate.key)}
-              >
-                <span className="flex flex-col gap-1">
-                  <Typography as="span" typographyType="body-sm">
-                    {withVersion(candidate.name, candidate.version)}
-                  </Typography>
-
-                  <Typography appearance="subdued" as="span" typographyType="body-sm">
-                    {t("linkDialog::replaceWith")}
-                  </Typography>
-
-                  <Typography as="span" typographyType="body-sm">
-                    {withVersion(candidate.replacementName, candidate.replacementVersion)}
-                  </Typography>
-                </span>
-              </Checkbox>
+              />
             </li>
           ))}
         </ul>
