@@ -25,6 +25,7 @@ import * as path from "path";
 
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
+import { VortexProfileId } from "@vortex/shared";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import type { LootAsync, PluginInterface, PluginMetadata, Vertex } from "loot";
@@ -78,6 +79,7 @@ import type InstallManager from "../extensions/mod_management/InstallManager";
 import { deploymentReducer } from "../extensions/mod_management/reducers/deployment";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
 import type { IFileChange } from "../extensions/mod_management/types/IDeploymentMethod";
+import type { IDeployOptions } from "../extensions/mod_management/types/IDeployOptions";
 import type {
   IChoiceType,
   IFileListItem,
@@ -1177,15 +1179,30 @@ export async function makeProfileSwitchHarness(
 
   const { store } = base.api;
   const deployed: string[] = [];
-  base.api.events.on("deploy-mods", (cb: (err: Error | null) => void, profileId: string) => {
-    deployed.push(profileId);
-    const gameId = base.getState().persistent.profiles[profileId]?.gameId;
-    // stands in for the per-profile config a deployment generates (plugins.txt and the like)
-    void writeSettings(gameSettingsPath(gameId), `deployed:${profileId}`).then(() => {
-      store.dispatch(setDeploymentNecessary(gameId, false));
-      cb(null);
-    });
-  });
+  base.api.events.on(
+    "deploy-mods",
+    (
+      cb: (err: Error | null) => void,
+      profileId: string,
+      _progress?: unknown,
+      deployOptions?: IDeployOptions,
+    ) => {
+      deployed.push(profileId);
+      const gameId = base.getState().persistent.profiles[profileId]?.gameId;
+      const failure = opts.failingDeploys?.[VortexProfileId(profileId)];
+      if (failure !== undefined) {
+        // the real deployment notifies and only hands the error on when asked to
+        store.dispatch(setDeploymentNecessary(gameId, true));
+        cb(deployOptions?.failOnError ? failure : null);
+        return;
+      }
+      // stands in for the per-profile config a deployment generates (plugins.txt and the like)
+      void writeSettings(gameSettingsPath(gameId), `deployed:${profileId}`).then(() => {
+        store.dispatch(setDeploymentNecessary(gameId, false));
+        cb(null);
+      });
+    },
+  );
 
   const onceCallbacks: Array<() => void> = [];
   const registered: Record<string, unknown> = {
@@ -1216,6 +1233,7 @@ export async function makeProfileSwitchHarness(
       store.dispatch(setNextProfile(profileId));
       return switched;
     },
+    profileChanged: nextProfileChange,
     gameSettings: (gameId: string) => readSettings(gameSettingsPath(gameId)),
     savedSettings: (profileId: string) => readSettings(savedSettingsPath(profileId)),
     // test-setup stubs window.api.log with a vi.fn, so its calls are the renderer's log

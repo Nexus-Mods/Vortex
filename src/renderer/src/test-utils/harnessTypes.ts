@@ -4,6 +4,7 @@
  * in each other's runtime code.
  */
 import type NexusT from "@nexusmods/nexus-api";
+import type { VortexProfileId } from "@vortex/shared";
 import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
 import type { LootAsync } from "loot";
 import type { Mock } from "vitest";
@@ -345,11 +346,15 @@ export interface IProfileSwitchOpts {
   gameSettings?: Record<string, string>;
   // the settings file saved in each profile, keyed by profileId
   savedSettings?: Record<string, string>;
+  // the error a profile's deployment fails with, keyed by profileId
+  failingDeploys?: Record<VortexProfileId, Error>;
 }
 
 export interface IProfileSwitchHarness extends IApiHarness {
   // switch the way the UI does (SET_NEXT_PROFILE) and resolve once the profile is active
   switchTo: (profileId: string) => Promise<void>;
+  // resolves on the next profile-did-change, for switches a test triggers some other way
+  profileChanged: () => Promise<void>;
   // the profiles deployed since the harness was built, in order
   deployed: string[];
   // the game's live settings file, which a deploy of profile X rewrites to "deployed:X"
