@@ -26,65 +26,101 @@ const isFileDrag = (evt: DragEvent<HTMLElement>): boolean =>
   Array.from(evt.dataTransfer?.types ?? []).includes("Files");
 
 /**
+ * React drag events bubble through portals, so a tooltip, menu or dialog opened from inside
+ * the page reaches its handlers without being part of its DOM. Only a drag over the page's
+ * own DOM counts.
+ */
+const isOverPage = (evt: DragEvent<HTMLElement>): boolean =>
+  evt.currentTarget.contains(evt.target as Node);
+
+/** Longer than the gap between the dragover events Chromium sends while a drag holds still. */
+export const DRAG_WATCHDOG_MS = 1000;
+
+/**
  * Makes the whole Mods page a drop target for files from Explorer, with an overlay over the
- * page while a drag is over it. Drag enter and leave fire for every child the pointer
- * crosses, so a depth count rather than the latest event decides whether it is showing.
+ * page while a drag is over it. The overlay is a card on the scrim, styled like the modal
+ * panel, so its text sits on a solid surface rather than on the darkened page.
+ *
+ * Enter and leave events don't pair up reliably: a child that unmounts mid-drag never sends
+ * its leave, and a drag from outside the app never gets a dragend. So a leave hides the
+ * overlay only when the pointer has gone somewhere outside the page, and a watchdog hides it
+ * when the dragover events a held drag keeps sending stop arriving, as they do after Esc.
+ * A drop anywhere else in the window hides it too.
+ *
+ * Dragover sets the drop effect itself because react-dnd's window listener may already
+ * have set "none" for a drag it has no target for.
  */
 export const ModsDropTarget = ({ onDropFiles, children }: IModsDropTargetProps) => {
   const { t } = useTranslation("mod_management");
-  const depth = useRef(0);
   const [dragging, setDragging] = useState(false);
+  const watchdog = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const reset = useCallback(() => {
-    depth.current = 0;
+    clearTimeout(watchdog.current);
+    watchdog.current = undefined;
     setDragging(false);
   }, []);
 
-  // A drag cancelled with Esc, or dropped somewhere else, may never send the last leave.
+  const show = useCallback(() => {
+    clearTimeout(watchdog.current);
+    watchdog.current = setTimeout(reset, DRAG_WATCHDOG_MS);
+    setDragging(true);
+  }, [reset]);
+
   useEffect(() => {
-    window.addEventListener("dragend", reset);
     window.addEventListener("drop", reset);
     return () => {
-      window.removeEventListener("dragend", reset);
       window.removeEventListener("drop", reset);
+      clearTimeout(watchdog.current);
     };
   }, [reset]);
 
-  const onDragEnter = useCallback((evt: DragEvent<HTMLDivElement>) => {
-    if (!isFileDrag(evt)) {
-      return;
-    }
-    evt.preventDefault();
-    depth.current += 1;
-    setDragging(true);
-  }, []);
+  const onDragEnter = useCallback(
+    (evt: DragEvent<HTMLDivElement>) => {
+      if (!isFileDrag(evt) || !isOverPage(evt)) {
+        return;
+      }
+      evt.preventDefault();
+      show();
+    },
+    [show],
+  );
 
-  const onDragLeave = useCallback((evt: DragEvent<HTMLDivElement>) => {
-    if (!isFileDrag(evt)) {
-      return;
-    }
-    depth.current = Math.max(0, depth.current - 1);
-    if (depth.current === 0) {
-      setDragging(false);
-    }
-  }, []);
+  const onDragLeave = useCallback(
+    (evt: DragEvent<HTMLDivElement>) => {
+      if (!isFileDrag(evt)) {
+        return;
+      }
+      const next = evt.relatedTarget as Node | null;
+      if (next === null || !evt.currentTarget.contains(next)) {
+        reset();
+      }
+    },
+    [reset],
+  );
 
-  const onDragOver = useCallback((evt: DragEvent<HTMLDivElement>) => {
-    if (!isFileDrag(evt)) {
-      return;
-    }
-    evt.preventDefault();
-    // react-dnd's window listener may have set "none" for a drag it has no target for.
-    evt.dataTransfer.dropEffect = "copy";
-  }, []);
+  const onDragOver = useCallback(
+    (evt: DragEvent<HTMLDivElement>) => {
+      if (!isFileDrag(evt) || !isOverPage(evt)) {
+        return;
+      }
+      evt.preventDefault();
+      evt.dataTransfer.dropEffect = "copy";
+      show();
+    },
+    [show],
+  );
 
   const onDrop = useCallback(
     (evt: DragEvent<HTMLDivElement>) => {
       if (!isFileDrag(evt)) {
         return;
       }
-      evt.preventDefault();
       reset();
+      if (!isOverPage(evt)) {
+        return;
+      }
+      evt.preventDefault();
       const paths = Array.from(evt.dataTransfer.files)
         .map((file) => webUtils.getPathForFile(file))
         .filter((filePath) => !!filePath);
@@ -111,8 +147,6 @@ export const ModsDropTarget = ({ onDropFiles, children }: IModsDropTargetProps) 
           className="pointer-events-none absolute inset-0 z-1000 flex items-center justify-center bg-scrim-800 p-6"
           data-testid="mods-drop-overlay"
         >
-          {/* A card on the scrim, styled like the modal panel, so the text sits on a solid
-              surface rather than on the darkened page. */}
           <div className="w-full max-w-md rounded-lg border border-surface-translucent-low bg-surface-low p-3 shadow-xl">
             <div className="flex flex-col items-center gap-y-2 rounded-md border-2 border-dashed border-primary-moderate px-6 py-10 text-center">
               <Icon className="text-primary-moderate" path={mdiFolderDownloadOutline} size="2xl" />
