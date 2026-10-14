@@ -69,8 +69,8 @@ export const PageHeader = ({
                 <Typography
                   appearance={compact ? "subdued" : "moderate"}
                   as="h2"
-                  className="transition-colors"
-                  typographyType="heading-xs"
+                  className="font-medium transition-colors"
+                  typographyType="body-xl"
                 >
                   {title}
                 </Typography>

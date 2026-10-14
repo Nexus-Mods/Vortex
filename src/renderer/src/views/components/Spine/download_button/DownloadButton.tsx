@@ -144,7 +144,7 @@ export const DownloadButton = () => {
               <Typography
                 as="span"
                 brand="none"
-                className="relative z-1 leading-none font-semibold text-shadow-halo text-shadow-translucent-dark-100"
+                className="relative z-1 leading-none font-medium text-shadow-halo text-shadow-translucent-dark-100"
                 type="body-sm"
               >
                 {isTime ? Math.ceil(estimatedMins) : speedMBps.toFixed(1)}
