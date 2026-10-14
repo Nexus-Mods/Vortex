@@ -7,6 +7,7 @@ import globals from "globals";
 import noBluebirdPromiseAliasRule from "../../eslint-rules/no-bluebird-promise-alias.mjs";
 import noBluebirdResolveWithPromiseLike from "../../eslint-rules/no-bluebird-resolve-promiselike.mjs";
 import noRestrictedImportsRule from "../../eslint-rules/no-restricted-imports.mjs";
+import typographyWrapsTextRule from "../../eslint-rules/typography-wraps-text.mjs";
 import { baseConfig } from "../../eslint.config.base.mjs";
 
 export default defineConfig([
@@ -33,6 +34,7 @@ export default defineConfig([
           "no-bluebird-resolve-promiselike": noBluebirdResolveWithPromiseLike,
           "no-restricted-imports-errors": noRestrictedImportsRule,
           "no-restricted-imports-warnings": noRestrictedImportsRule,
+          "typography-wraps-text": typographyWrapsTextRule,
         },
       },
     },
@@ -75,6 +77,7 @@ export default defineConfig([
       // Vortex custom rules
       "vortex/no-bluebird-promise-alias": "error",
       "vortex/no-bluebird-resolve-promiselike": "warn", // TODO: change to error
+      "vortex/typography-wraps-text": "warn", // On trial
       "no-restricted-imports": [
         "error",
         {
