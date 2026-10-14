@@ -4,7 +4,16 @@ import React from "react";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ installMods: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  emit: vi.fn<(channel: string, event?: { eventName: string; properties: object }) => void>(),
+  installMods: vi.fn(),
+}));
+
+// The table's analytics send through the api's events; the tests read them off this spy.
+vi.mock("@/contexts", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useMainContext: () => ({ api: { events: { emit: mocks.emit } } }),
+}));
 
 vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -1292,6 +1301,91 @@ describe("ModsTableSwitch", () => {
       const menu = screen.getByRole("menu", { name: "{{name}} actions" });
       expect(within(menu).getByRole("menuitem", { name: /^Remove/ })).toBeInTheDocument();
       expect(within(menu).getAllByRole("button", { name: /the row/ }).length).toBeGreaterThan(0);
+    });
+  });
+
+  // End to end through the real toolbars and table, so a component missing its tracking shows.
+  describe("tracking", () => {
+    /** The properties of each analytics event sent with this name, in order. */
+    const sent = (eventName: string) =>
+      mocks.emit.mock.calls
+        .filter(
+          ([channel, event]) =>
+            channel === "analytics-track-mixpanel-event" && event.eventName === eventName,
+        )
+        .map(([, event]) => event.properties);
+
+    const rowOf = (name: string) =>
+      screen.getAllByRole("row").find((row) => within(row).queryByText(name) !== null)!;
+
+    beforeEach(() => {
+      mocks.emit.mockReset();
+      (window as unknown as { api: Record<string, unknown> }).api.shell = { openUrl: vi.fn() };
+    });
+
+    it("reports the feedback button from the table's own toolbar", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await userEvent.click(screen.getByRole("button", { name: "Give feedback" }));
+
+      expect(sent("app_toolbar_action_clicked")).toEqual([
+        expect.objectContaining({ action: "feedback", toolbar: "mods-table", surface: "bar" }),
+      ]);
+    });
+
+    it("reports a row's action from its … menu, as the row toolbar's overflow", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      await hoverRow(rowOf("Alpha"));
+      await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+      expect(sent("app_toolbar_action_clicked")).toEqual([
+        expect.objectContaining({
+          action: "Remove",
+          toolbar: "mods-table-row",
+          surface: "overflow",
+        }),
+      ]);
+    });
+
+    it("reports a row's action from its right-click menu", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      fireEvent.contextMenu(rowOf("Alpha"), { clientX: 10, clientY: 10 });
+      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+      expect(sent("app_toolbar_action_clicked")).toEqual([
+        expect.objectContaining({ action: "Remove", toolbar: "mods-table-row", surface: "menu" }),
+      ]);
+    });
+
+    it("reports a right-click menu opening on a row", () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      fireEvent.contextMenu(rowOf("Alpha"), { clientX: 10, clientY: 10 });
+
+      expect(sent("app_mods_table_menu_opened")).toEqual([{ target: "row", via: "pointer" }]);
+    });
+
+    it("reports picking another view, and changing its grouping", async () => {
+      renderSwitch({ b: mod("b", "Beta", true), pack: collection("pack", "Starter Pack", ["b"]) });
+
+      // Collections keeps to its own grouping, so the grouping changes in All mods first.
+      await groupBy("Author");
+      await showView("Collections");
+
+      expect(sent("app_mods_table_view_selected")).toEqual([{ view: "collections" }]);
+      expect(sent("app_mods_table_grouping_changed")).toHaveLength(1);
+    });
+
+    it("reports a search once as it starts, without the text", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await userEvent.click(screen.getByRole("button", { name: "Search" }));
+      await userEvent.keyboard("alp");
+
+      expect(sent("app_mods_table_searched")).toEqual([{}]);
     });
   });
 });

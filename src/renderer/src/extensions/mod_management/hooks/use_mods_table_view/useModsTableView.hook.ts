@@ -20,6 +20,7 @@ import {
   type ModsTableGrouping,
   NEW_VIEW_DEFAULTS,
 } from "../../util/mods_table_views/modsTableViews";
+import { useModsTableAnalytics } from "../use_mods_table_analytics/useModsTableAnalytics.hook";
 
 const NO_CUSTOM: IModsTableCustomView[] = [];
 const NO_CHANGES: IModsTableViewChanges = {};
@@ -35,6 +36,7 @@ const viewsState = (state: IState) => state.settings.modsTableViews;
  */
 export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
   const dispatch = useDispatch();
+  const analytics = useModsTableAnalytics();
   const state = useSelector(viewsState);
   const custom = state?.custom ?? NO_CUSTOM;
 
@@ -70,34 +72,62 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
         ([columnId, shown]) => shown !== view.defaults.columns.includes(columnId),
       ));
 
-  const select = useCallback((viewId: string) => dispatch(selectModsTableView(viewId)), [dispatch]);
+  const select = useCallback(
+    (viewId: string) => {
+      const next = views.find(({ id }) => id === viewId);
+      if (next !== undefined && next.id !== view.id) {
+        analytics.onViewSelected(next);
+      }
+      dispatch(selectModsTableView(viewId));
+    },
+    [analytics, dispatch, view.id, views],
+  );
 
   const setGrouping = useCallback(
-    (next: ModsTableGrouping) => dispatch(setModsTableViewGrouping(view.id, next)),
-    [dispatch, view.id],
+    (next: ModsTableGrouping) => {
+      if (next !== grouping) {
+        analytics.onGroupingChanged(next);
+      }
+      dispatch(setModsTableViewGrouping(view.id, next));
+    },
+    [analytics, dispatch, grouping, view.id],
   );
 
   const setColumnVisible = useCallback(
-    (columnId: string, visible: boolean) =>
-      dispatch(setModsTableViewColumn(view.id, columnId, visible)),
-    [dispatch, view.id],
+    (columnId: string, visible: boolean) => {
+      analytics.onColumnToggled(columnId, visible);
+      dispatch(setModsTableViewColumn(view.id, columnId, visible));
+    },
+    [analytics, dispatch, view.id],
   );
 
-  const reset = useCallback(() => dispatch(resetModsTableView(view.id)), [dispatch, view.id]);
+  const reset = useCallback(() => {
+    analytics.onViewChanged("reset");
+    dispatch(resetModsTableView(view.id));
+  }, [analytics, dispatch, view.id]);
 
   const addView = useCallback(
-    (name: string) => dispatch(addModsTableView(`custom-${crypto.randomUUID()}`, name)),
-    [dispatch],
+    (name: string) => {
+      analytics.onViewChanged("created");
+      dispatch(addModsTableView(`custom-${crypto.randomUUID()}`, name));
+    },
+    [analytics, dispatch],
   );
 
   const renameView = useCallback(
-    (viewId: string, name: string) => dispatch(renameModsTableView(viewId, name)),
-    [dispatch],
+    (viewId: string, name: string) => {
+      analytics.onViewChanged("renamed");
+      dispatch(renameModsTableView(viewId, name));
+    },
+    [analytics, dispatch],
   );
 
   const removeView = useCallback(
-    (viewId: string) => dispatch(removeModsTableView(viewId)),
-    [dispatch],
+    (viewId: string) => {
+      analytics.onViewChanged("deleted");
+      dispatch(removeModsTableView(viewId));
+    },
+    [analytics, dispatch],
   );
 
   return {

@@ -25,8 +25,10 @@ import { ToolbarSearch } from "@/ui/components/toolbar/toolbar_search/ToolbarSea
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import type { IToolbarPanelHandle } from "@/ui/components/toolbar/ToolbarPanelButton";
+import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
+import { MODS_TABLE_TOOLBARS } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import type { IModsTableView } from "../../util/mods_table_views/modsTableViews";
 import { DeleteModsTableViewModal } from "../delete_mods_table_view_modal/DeleteModsTableViewModal";
 import { ModsTableViewNameModal } from "../mods_table_view_name_modal/ModsTableViewNameModal";
@@ -151,17 +153,19 @@ export const ModsTableToolbar = ({
   const [naming, setNaming] = useState<IModsTableView | "new">();
   const [deleting, setDeleting] = useState<IModsTableView>();
   const optionsPanel = useRef<IToolbarPanelHandle>(null);
+  const tracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.head);
   const [optionsFor, setOptionsFor] = useState<string>();
 
   // Feedback first, then the view options, whose panel a view's menu can open.
   const actions = useMemo<IToolbarAction[]>(
     () => [
       {
+        id: "feedback",
         label: t("Give feedback"),
         iconPath: mdiMessageStarOutline,
         onClick: () => window.api.shell.openUrl(MODS_TABLE_FEEDBACK_URL),
       },
-      { ...displayOptions, panelHandle: optionsPanel },
+      { ...displayOptions, id: "view-options", panelHandle: optionsPanel },
     ],
     [displayOptions, t],
   );
@@ -230,7 +234,7 @@ export const ModsTableToolbar = ({
         </Tooltip>
       </div>
 
-      <Toolbar className="shrink-0 justify-end">
+      <Toolbar className="shrink-0 justify-end" tracking={tracking}>
         <ToolbarGroup actions={actions} />
 
         <ToolbarSearch label={t("Search")} value={search} onChange={onSearchChange} />
