@@ -154,9 +154,11 @@ import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
 
 Colour is expressed as `brand` × `appearance`: `brand` picks the colour family, `appearance` picks the intensity.
 
-**Defaults:** `as="p"`, `brand="neutral"`, `appearance="strong"`, `typographyType` inferred from `as` — only set these when you need something different.
+**Defaults:** `as="p"`, `brand="neutral"`, `appearance="strong"`, `typographyType="body-md"` — only set these when you need something different.
 
-When `typographyType` is omitted it falls back based on `as`: `h1`→`heading-2xl`, `h2`→`heading-xl`, `h3`→`heading-lg`, `h4`→`heading-md`, `h5`→`heading-sm`, `h6`→`heading-xs`, everything else→`body-md`.
+`as` only picks the element; it never changes the type style, so a heading sets its `typographyType` too. `typographyType="inherit"` keeps the parent's type style, for a nested Typography that only changes colour.
+
+Wrap a list or several paragraphs in one Typography with plain elements inside, rather than one per item. See "Text" in `docs/frontend.md`.
 
 ```tsx
 import { Typography } from "../../ui/components/typography/Typography";
@@ -165,10 +167,11 @@ import { Typography } from "../../ui/components/typography/Typography";
 <Typography>Some body text</Typography>
 
 // Only override what differs
-<Typography as="h1">Page Heading</Typography>
+<Typography as="h1" typographyType="heading-2xl">Page Heading</Typography>
 <Typography appearance="subdued">Muted text (neutral)</Typography>
 <Typography brand="info" appearance="moderate">Info text</Typography>
 <Typography as="span" typographyType="body-sm">Inline small text</Typography>
+<Typography appearance="subdued" as="span" typographyType="inherit">Muted, at the parent's size</Typography>
 
 // inverted is neutral-only (for light surfaces)
 <Typography appearance="inverted">On a light background</Typography>
@@ -182,8 +185,8 @@ import { Typography } from "../../ui/components/typography/Typography";
 </Typography>
 ```
 
-**Elements:** `h1`–`h6`, `p`, `span`, `div`, `ul`
-**Types:** `heading-2xl` through `heading-xs`, `title-md` through `title-xs`, `body-2xl` through `body-xs`
+**Elements:** `h1`–`h6`, `p`, `span`, `div`, `ul`, `ol`
+**Types:** `heading-2xl` through `heading-xs`, `title-md` through `title-xs`, `body-2xl` through `body-xs`, plus `inherit`
 **Brands:** `neutral` (default), `primary`, `info`, `success`, `premium`, `danger`, `warning`, `neutral-translucent` (white-alpha translucent ramp), `neutral-on-scrim` (the fixed `on-scrim` ramp, for text laid over a scrim — stays light whatever the theme), `none` (opt out of colour)
 **Appearances:** `weak`, `subdued`, `moderate`, `strong` — plus `inverted` on `neutral` and `neutral-translucent` only. Setting `appearance` with `brand="none"` is disallowed (it would be redundant).
 

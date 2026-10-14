@@ -44,19 +44,20 @@ export type ITypographyElements =
   | "p"
   | "span"
   | "div"
-  | "ul";
+  | "ul"
+  | "ol";
 
 /** Colour family. */
 export type ITypographyBrand =
   | "neutral"
   | "neutral-translucent"
+  | "neutral-on-scrim"
   | "premium"
   | "primary"
   | "info"
   | "success"
   | "danger"
   | "warning"
-  | "neutral-on-scrim"
   | "none";
 
 /** Colour intensity. */
@@ -83,23 +84,13 @@ export type ITypographyColour =
   | { brand: "none"; appearance?: never };
 
 export type ITypographyProps = AllHTMLAttributes<HTMLElement> & {
+  /** The element rendered; `p` by default. */
   as?: ITypographyElements;
+  /** Forwarded to the rendered element. */
   ref?: Ref<HTMLElement>;
-  typographyType?: ITypographyTypes | ITypographyTypeObject;
+  /** The type style, or one per screen size; `body-md` by default, `inherit` to take the parent's. */
+  typographyType?: ITypographyTypes | ITypographyTypeObject | "inherit";
 } & ITypographyColour;
-
-const typeFallbacks: Record<ITypographyElements, ITypographyTypes> = {
-  div: "body-md",
-  h1: "heading-2xl",
-  h2: "heading-xl",
-  h3: "heading-lg",
-  h4: "heading-md",
-  h5: "heading-sm",
-  h6: "heading-xs",
-  p: "body-md",
-  span: "body-md",
-  ul: "body-md",
-};
 
 const toClasses = (type: ITypographyTypes, prefix = "") => {
   const classes = [`${prefix}text-${type}`];
@@ -112,11 +103,9 @@ const toClasses = (type: ITypographyTypes, prefix = "") => {
 };
 
 export const getTypographyStyles = ({
-  as = "span",
   typographyType,
 }: {
-  as?: ITypographyProps["as"];
-  typographyType: ITypographyProps["typographyType"];
+  typographyType: ITypographyTypes | ITypographyTypeObject;
 }) => {
   if (typeof typographyType === "object") {
     return Object.entries(typographyType).flatMap(([size, type]) =>
@@ -124,7 +113,7 @@ export const getTypographyStyles = ({
     );
   }
 
-  return toClasses(typographyType ?? typeFallbacks[as]);
+  return toClasses(typographyType);
 };
 
 // Shared by Typography and TypographyLink — maps a brand × appearance pair to a
@@ -151,20 +140,40 @@ export const getTypographyColourClass = (
   return `text-${brand}-${appearance}`;
 };
 
+/**
+ * A block of text in one type style and colour, which its descendants inherit. Wrap a list
+ * or several paragraphs in one, rather than one per item:
+ *
+ * ```tsx
+ * <Typography as="ul" className="list-inside list-disc space-y-2">
+ *   <li>First</li>
+ *   <li>Second</li>
+ * </Typography>
+ *
+ * <Typography as="div" className="space-y-2">
+ *   <p>First paragraph.</p>
+ *   <p>Second paragraph.</p>
+ * </Typography>
+ * ```
+ *
+ * Nest another only where the style changes, such as a heading or a subdued line. One that
+ * changes only the colour takes `typographyType="inherit"`, keeping its parent's type style
+ * rather than resetting it to `body-md`.
+ */
 export const Typography = ({
   appearance = "strong",
   as = "p",
   brand = "neutral",
   children,
   className,
-  typographyType,
+  typographyType = "body-md",
   ...props
 }: ITypographyProps) => {
   return createElement(
     as,
     {
       className: joinClasses([
-        ...getTypographyStyles({ as, typographyType }),
+        ...(typographyType === "inherit" ? [] : getTypographyStyles({ typographyType })),
         getTypographyColourClass(brand, appearance),
         className,
       ]),
