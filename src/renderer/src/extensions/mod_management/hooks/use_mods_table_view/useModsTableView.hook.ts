@@ -95,10 +95,12 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
 
   const setColumnVisible = useCallback(
     (columnId: string, visible: boolean) => {
-      analytics.onColumnToggled(columnId, visible);
+      if (visible !== isColumnShown(columnId)) {
+        analytics.onColumnToggled(columnId, visible);
+      }
       dispatch(setModsTableViewColumn(view.id, columnId, visible));
     },
-    [analytics, dispatch, view.id],
+    [analytics, dispatch, isColumnShown, view.id],
   );
 
   const reset = useCallback(() => {
@@ -108,8 +110,10 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
 
   const addView = useCallback(
     (name: string) => {
+      const id = `custom-${crypto.randomUUID()}`;
       analytics.onViewChanged("created");
-      dispatch(addModsTableView(`custom-${crypto.randomUUID()}`, name));
+      analytics.onViewSelected({ id, label: name, defaults: NEW_VIEW_DEFAULTS, isCustom: true });
+      dispatch(addModsTableView(id, name));
     },
     [analytics, dispatch],
   );
@@ -125,9 +129,12 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
   const removeView = useCallback(
     (viewId: string) => {
       analytics.onViewChanged("deleted");
+      if (viewId === view.id) {
+        analytics.onViewSelected(views[0]);
+      }
       dispatch(removeModsTableView(viewId));
     },
-    [analytics, dispatch],
+    [analytics, dispatch, view.id, views],
   );
 
   return {

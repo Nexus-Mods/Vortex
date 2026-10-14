@@ -63,7 +63,11 @@ const groupActionEvent = (action: TableGroupMenuAction): MixpanelEvent => ({
 
 /** Usage tracking for the new Mods table, as callbacks for where each happens. */
 export interface IModsTableAnalytics {
-  /** The user picked a view. */
+  /**
+   * A different view opened because of something the user did: picking it, creating it, or
+   * deleting the open one, which goes back to the first. Not sent when a view stops being
+   * offered, such as Updates once there are none.
+   */
   onViewSelected: (view: IModsTableView) => void;
   /** The user created, renamed or deleted a view of their own, or reset a built-in one. */
   onViewChanged: (change: ModsTableViewChange) => void;
