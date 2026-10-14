@@ -9,6 +9,7 @@
     --z-index-flyout: 1040;
     --z-index-modal: 1050;
     --z-index-tooltip: 1060;
+    --z-index-dropzone: 1070;
     --z-index-toast: 1090;
 
     --aspect-avatar: 1 / 1;
