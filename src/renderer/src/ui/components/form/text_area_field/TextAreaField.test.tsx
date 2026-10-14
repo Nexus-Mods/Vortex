@@ -58,6 +58,16 @@ describe("TextAreaField", () => {
     expect(descriptions()).toEqual(["First hint", "Second hint"]);
   });
 
+  it("shows two identical hints, without a duplicate key", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    renderField({ hints: ["Same", "Same"] });
+
+    expect(descriptions()).toEqual(["Same", "Same"]);
+    expect(consoleError).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
+
   it("shows (Required) for a required text area, unless showRequiredLabel says not to", () => {
     const { unmount } = renderField({ required: true });
     expect(screen.getByRole("textbox", { name: "Notes (Required)" })).toBeRequired();

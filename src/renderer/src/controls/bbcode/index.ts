@@ -10,6 +10,7 @@ import LinkTag from "./LinkTag";
 import MoreTag from "./MoreTag";
 import OmittedTag from "./OmittedTag";
 import SafeLinkTag from "./SafeLinkTag";
+import SafeStyleTag from "./SafeStyleTag";
 import SizeTag from "./SizeTag";
 import SpoilerTag from "./SpoilerTag";
 import StyleTag from "./StyleTag";
@@ -53,7 +54,7 @@ const createFullParser = (safe: boolean) => {
   parser.registerTag("svg", SvgTag);
   parser.registerTag("more", MoreTag);
   parser.registerTag("tooltip", TooltipTag);
-  parser.registerTag("style", StyleTag);
+  parser.registerTag("style", safe ? SafeStyleTag : StyleTag);
 
   // The parser's own image tag loads whatever address it is given.
   if (safe) {

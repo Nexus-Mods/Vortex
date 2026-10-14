@@ -379,6 +379,44 @@ describe("ModalLayer", () => {
       expect(writeText).toHaveBeenCalledWith("details");
 
       vi.unstubAllGlobals();
+
+      await settleTransitions();
+    });
+  });
+
+  describe("checkbox with a link in its label", () => {
+    const withTermsLink = (): IDialog => ({
+      ...dialogWith("one", {
+        text: "Hello",
+        checkboxes: [
+          {
+            id: "agree",
+            value: false,
+            text: "",
+            bbcode: "I accept the [url=cb://terms]terms[/url]",
+          },
+        ],
+        options: { bbcodeContext: { callbacks: { terms: vi.fn() } } },
+      }),
+    });
+
+    it("runs the link without ticking the checkbox", async () => {
+      renderLayer([withTermsLink()]);
+
+      await userEvent.click(screen.getByRole("link", { name: "terms" }));
+
+      expect(screen.getByTestId("dialog-checkbox-agree")).not.toBeChecked();
+
+      await settleTransitions();
+    });
+
+    it("still ticks the checkbox when the rest of the label is clicked", async () => {
+      renderLayer([withTermsLink()]);
+
+      await userEvent.click(screen.getByText(/I accept the/));
+
+      expect(screen.getByTestId("dialog-checkbox-agree")).toBeChecked();
+
       await settleTransitions();
     });
   });
@@ -735,6 +773,16 @@ describe("ModalLayer", () => {
         box2: false,
         box3: false,
       });
+
+      await settleTransitions();
+    });
+  });
+
+  describe("size with an empty message", () => {
+    it("stays small, as a dialog with no message would", async () => {
+      renderLayer([dialogWith("one", { text: "Short.", message: "" })]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-sm");
 
       await settleTransitions();
     });
