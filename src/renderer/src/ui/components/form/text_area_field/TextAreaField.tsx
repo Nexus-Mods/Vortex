@@ -86,8 +86,8 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, ITextAreaFieldProps
             <div className="nxm-field-messages">
               {showError && <ErrorMessage>{errorMessage}</ErrorMessage>}
 
-              {hintList.map((hint) => (
-                <Description key={hint}>{hint}</Description>
+              {hintList.map((hint, index) => (
+                <Description key={`${index}-${hint}`}>{hint}</Description>
               ))}
             </div>
 

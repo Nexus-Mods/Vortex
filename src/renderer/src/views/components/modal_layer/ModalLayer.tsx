@@ -54,8 +54,8 @@ const DANGER_ACTIONS = new Set(["Remove"]);
 const DISMISS_ACTIONS = new Set(["Close"]);
 
 // A short message reads better in the small modal. Longer ones keep the medium size, and so does a
-// dialog that needs room: a bbcode, markdown, message, choices or text area body, or more than three buttons, which
-// then fit on one row as they did in the legacy dialog.
+// dialog that needs room: a bbcode, markdown, HTML, message, choices or text area body, or more
+// than three buttons, which then fit on one row as they did in the legacy dialog.
 const SMALL_MAX_TEXT_LENGTH = 200;
 const MAX_BUTTONS_IN_SMALL = 3;
 
@@ -109,7 +109,11 @@ export const ModalLayer = () => {
   const dialogs = useSelector(allDialogs);
   const [edits, setEdits] = useState<IEdits>();
   const defaultButtonRef = useRef<HTMLButtonElement>(null);
-  const firstInputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
+  // The first field, whichever kind it is: an input or a text area.
+  const firstInputRef = useRef<HTMLElement>(null);
+  const rememberFirstInput = (element: HTMLElement | null) => {
+    firstInputRef.current = element;
+  };
 
   const dialog = dialogs[0];
 
@@ -152,8 +156,7 @@ export const ModalLayer = () => {
 
   const text = content.text ? translateBody(content.text) : "";
 
-  const translateMessage = (message: string) =>
-    translateMessageParts(message, translateBody);
+  const translateMessage = (message: string) => translateMessageParts(message, translateBody);
 
   // The dialog's condition is checked against what the user has entered so far. It names the
   // control it is about and the buttons that can't be pressed until it is met.
@@ -179,7 +182,7 @@ export const ModalLayer = () => {
     content.bbcode !== undefined ||
     content.md !== undefined ||
     content.htmlText !== undefined ||
-    content.message !== undefined ||
+    !!content.message ||
     choices.length > 0 ||
     inputs.some((input) => input.type === "multiline") ||
     actions.length > MAX_BUTTONS_IN_SMALL;
@@ -307,7 +310,7 @@ export const ModalLayer = () => {
               hideLabel: !input.label,
               label: translate(input.label ?? title),
               placeholder: input.placeholder,
-              ref: index === 0 ? firstInputRef : undefined,
+              ref: index === 0 ? rememberFirstInput : undefined,
               value: valueOf(input) ?? "",
               onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                 setEdits({

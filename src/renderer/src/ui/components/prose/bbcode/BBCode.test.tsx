@@ -93,4 +93,21 @@ describe("BBCode", () => {
       );
     });
   });
+
+  describe("style", () => {
+    it.each(["dialog-danger-text", "dialog-success-text"])("keeps the %s class", (style) => {
+      render(<BBCode bbcode={`Be [style=${style}]careful[/style] now`} />);
+
+      expect(screen.getByText("careful")).toHaveClass(style);
+    });
+
+    it("leaves any other class off, so bbcode can't use the app's classes to cover it", () => {
+      const { container } = render(
+        <BBCode bbcode="Be [style=fixed inset-0 z-50]careful[/style] now" />,
+      );
+
+      expect(screen.getByText("careful")).not.toHaveAttribute("class");
+      expect(container).toHaveTextContent("Be careful now");
+    });
+  });
 });

@@ -20,7 +20,8 @@ interface IBBCodeProps extends IProseProps {
  * `Html` and `PlainText` render theirs in, so it needs no `Typography` around it. The tags are
  * drawn by the app's bbcode renderer. As `Html` does, it leaves out images and videos, and a link
  * is kept only if it goes to a web page, to a callback in `context`, or to a local file `context`
- * allows. Any other link is text.
+ * allows. Any other link is text. A `[style]` keeps only the classes our dialogs use to colour
+ * text.
  */
 export const BBCode = ({ bbcode, context, size = "md", className }: IBBCodeProps) => (
   <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
