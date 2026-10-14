@@ -23,3 +23,13 @@ export interface IDetectedGame {
   /** The Vortex game extension for the game, undefined when there is none. */
   extension?: IAvailableExtension;
 }
+
+/** How the detected-games request is going, for the section to show. */
+export interface IDetectedGamesStatus {
+  /** A request is in flight. */
+  running: boolean;
+  /** The last request failed, e.g. with no connection. */
+  failed: boolean;
+  /** A request has succeeded, so there are results to tell new games from. */
+  hasResult: boolean;
+}

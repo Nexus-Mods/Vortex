@@ -1,7 +1,7 @@
 import { createAction } from "redux-act";
 
 import type { GameSource } from "../types/GameSource";
-import type { IDetectedGame } from "../types/IDetectedGame";
+import type { IDetectedGame, IDetectedGamesStatus } from "../types/IDetectedGame";
 import type { IGameStored } from "../types/IGameStored";
 
 const identity = <T>(input: T): T => input;
@@ -25,6 +25,15 @@ export const setShowHiddenGames = createAction("SET_SHOW_HIDDEN_GAMES", identity
  * game. Machine data, survives logout.
  */
 export const setDetectedGames = createAction("SET_DETECTED_GAMES", identity<IDetectedGame[]>);
+
+/**
+ * records whether a detected-games request is running, and whether the last one
+ * failed; either field alone can be given
+ */
+export const setDetectedGamesStatus = createAction(
+  "SET_DETECTED_GAMES_STATUS",
+  identity<Partial<IDetectedGamesStatus>>,
+);
 
 /**
  * sets the Nexus Mods game ids the user has favourited, as reported alongside

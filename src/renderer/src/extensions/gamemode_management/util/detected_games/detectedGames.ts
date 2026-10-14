@@ -12,9 +12,9 @@ import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 import { getApplication } from "@/util/application";
 import type { EpicGamesStoreEntry } from "@/util/EpicGamesLauncher";
 
-import { setDetectedGames, setFavouriteGames } from "../actions/session";
-import type { IDetectedGame } from "../types/IDetectedGame";
-import { getGameStoresSafe } from "./getGame";
+import { setDetectedGames, setDetectedGamesStatus, setFavouriteGames } from "../../actions/session";
+import type { IDetectedGame } from "../../types/IDetectedGame";
+import { getGameStoresSafe } from "../getGame";
 
 type DetectedGame = components["schemas"]["DetectedGame"];
 
@@ -69,11 +69,6 @@ function isEpicEntry(entry: IGameStoreEntry): entry is EpicGamesStoreEntry {
 /** JSON of the last payload the endpoint accepted; used to skip identical re-sends. */
 let lastSuccessfulPayload: string | undefined;
 
-/** Forget the last accepted payload so the next request is sent even if unchanged. */
-export function resetDetectedGamesHash(): void {
-  lastSuccessfulPayload = undefined;
-}
-
 function toDetectedGame(game: DetectedGame, gameId: number): IDetectedGame {
   return {
     gameUid: game.game_uid,
@@ -95,23 +90,66 @@ function toDetectedGame(game: DetectedGame, gameId: number): IDetectedGame {
     share one call instead of racing past the payload hash concurrently. */
 let inFlight: Promise<void> | undefined;
 
+/** Forget the last accepted payload so the next request is sent even if unchanged. */
+export function resetDetectedGamesHash(): void {
+  lastSuccessfulPayload = undefined;
+}
+
+export interface IRequestDetectedGamesOptions {
+  /** Send even if the payload is unchanged, as a scan the user asked for does. */
+  force?: boolean;
+}
+
 /**
  * Collect the store listings found installed and resolve them against the
- * detected-games endpoint, writing the result into session.gameMode. Skipped
- * when logged out or when the payload is unchanged since the last successful
- * send. Fire and forget: failures are logged, never surfaced to the user.
+ * detected-games endpoint, writing the result and its status into session.gameMode.
+ * Skipped when logged out, or when the payload is unchanged since the last successful
+ * send unless forced. A request already running is shared. Never rejects: a failure is
+ * logged and recorded in the status, for the Games page to show.
  */
-export function requestDetectedGames(api: IExtensionApi): Promise<void> {
-  inFlight ??= requestDetectedGamesBody(api).finally(() => {
-    inFlight = undefined;
-  });
+export function requestDetectedGames(
+  api: IExtensionApi,
+  options: IRequestDetectedGamesOptions = {},
+): Promise<void> {
+  return share(api, options.force ?? false);
+}
+
+function share(api: IExtensionApi, force: boolean): Promise<void> {
+  inFlight ??= requestDetectedGamesBody(api, force)
+    .catch((err) => {
+      log("warn", "detected-games: request failed", { error: getErrorMessageOrDefault(err) });
+      recordFailure(api);
+    })
+    .finally(() => {
+      inFlight = undefined;
+    });
   return inFlight;
 }
 
-async function requestDetectedGamesBody(api: IExtensionApi): Promise<void> {
+/** Records a failed request, unless the user logged out while it ran: that says nothing about now. */
+function recordFailure(api: IExtensionApi): void {
+  let failed = true;
+  try {
+    failed = isLoggedIn(api.getState());
+  } catch {
+    // with the state unreadable, report the failure rather than hide it
+  }
+  api.store.dispatch(setDetectedGamesStatus({ running: false, failed }));
+}
+
+/** Clears a recorded failure, once something shows it no longer applies. */
+function clearFailure(api: IExtensionApi): void {
+  if (api.getState().session?.gameMode?.detectedGamesStatus?.failed) {
+    api.store.dispatch(setDetectedGamesStatus({ failed: false }));
+  }
+}
+
+async function requestDetectedGamesBody(api: IExtensionApi, force: boolean): Promise<void> {
   const state = api.getState();
 
   if (!isLoggedIn(state)) {
+    // A failure from before logging out says nothing about now.
+    clearFailure(api);
     return;
   }
 
@@ -130,7 +168,9 @@ async function requestDetectedGamesBody(api: IExtensionApi): Promise<void> {
 
   const payload = JSON.stringify(body);
 
-  if (payload === lastSuccessfulPayload) {
+  if (!force && payload === lastSuccessfulPayload) {
+    // The stored results are for this very payload, so they're current.
+    clearFailure(api);
     return;
   }
 
@@ -138,33 +178,36 @@ async function requestDetectedGamesBody(api: IExtensionApi): Promise<void> {
     log("warn", "failed to send detected games event", err),
   );
 
-  let games: DetectedGame[];
-  try {
-    games = await createVortexNexusV3Client(api).resolveDetectedGames(body);
-  } catch (err) {
-    log("warn", "detected-games: request failed", { error: getErrorMessageOrDefault(err) });
-    return;
-  }
+  api.store.dispatch(setDetectedGamesStatus({ running: true }));
 
   const detected: IDetectedGame[] = [];
   const favouriteGames: number[] = [];
-  for (const game of games) {
-    const gameId = finite(game.game_id);
-    if (gameId === undefined) {
-      log("debug", "detected-games: dropped entry with unusable game id", {
-        game_uid: game.game_uid,
-      });
+  try {
+    const games = await createVortexNexusV3Client(api).resolveDetectedGames(body);
 
-      continue;
+    for (const game of games) {
+      const gameId = finite(game.game_id);
+      if (gameId === undefined) {
+        log("debug", "detected-games: dropped entry with unusable game id", {
+          game_uid: game.game_uid,
+        });
+
+        continue;
+      }
+
+      detected.push(toDetectedGame(game, gameId));
+      if (game.is_favourite) favouriteGames.push(gameId);
     }
 
-    detected.push(toDetectedGame(game, gameId));
-    if (game.is_favourite) favouriteGames.push(gameId);
+    api.store.dispatch(setDetectedGames(detected));
+    api.store.dispatch(setFavouriteGames(favouriteGames));
+  } catch (err) {
+    log("warn", "detected-games: request failed", { error: getErrorMessageOrDefault(err) });
+    recordFailure(api);
+    return;
   }
 
-  api.store.dispatch(setDetectedGames(detected));
-  api.store.dispatch(setFavouriteGames(favouriteGames));
-
+  api.store.dispatch(setDetectedGamesStatus({ running: false, failed: false, hasResult: true }));
   lastSuccessfulPayload = payload;
 
   log("info", "detected-games: resolved installed games", {
