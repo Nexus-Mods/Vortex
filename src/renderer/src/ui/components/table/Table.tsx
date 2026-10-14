@@ -3,7 +3,6 @@ import React, {
   Fragment,
   type MouseEvent,
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -71,6 +70,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     () => [...new Set((rows ?? groups?.flatMap((group) => group.rows) ?? []).map(getRowId))],
     [getRowId, groups, rows],
   );
+
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggle = (groupId: string) =>
@@ -83,17 +83,24 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     });
 
   const [menu, setMenu] = useState<
-    | { position: IContextMenuPosition; kind: "row"; row: T }
+    | { position: IContextMenuPosition; kind: "row"; rowId: string }
     | { position: IContextMenuPosition; kind: "group"; groupId: string }
   >();
+
   const menuGroup =
     menu?.kind === "group" ? groups?.find((group) => group.id === menu.groupId) : undefined;
 
-  useEffect(() => {
-    if (menu?.kind === "group" && !menuGroup) {
-      setMenu(undefined);
-    }
-  }, [menu, menuGroup]);
+  const menuRow =
+    menu?.kind === "row"
+      ? (rows ?? groups?.flatMap((group) => group.rows))?.find(
+          (row) => getRowId(row) === menu.rowId,
+        )
+      : undefined;
+
+  // Closed while rendering once what it was opened on is gone, so it never shows a frame for nothing.
+  if ((menu?.kind === "group" && !menuGroup) || (menu?.kind === "row" && menuRow === undefined)) {
+    setMenu(undefined);
+  }
 
   // Every row in order, a group's under it while it's open, as the virtualiser counts them.
   const items = useMemo<Array<TableItem<T, G>>>(() => {
@@ -137,6 +144,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       ),
     [getRowId, items],
   );
+
   const selection = useTableSelection(rowIds, shownRows, selectedIds, onSelectedIdsChange);
 
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
@@ -148,6 +156,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
   const virtual = useTableVirtualizer({ count: items.length, getItemKey, getItemSize });
   const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
+
   // The rows in the sticky head, which come before the table's own in aria-rowindex.
   const headRows = toolbar ? 2 : 1;
   const showsEmpty = items.length === 0 && !!empty;
@@ -211,8 +220,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       onFocus={virtual.onFocus}
     >
       <TableHeader
-        columns={columns}
         checkbox={selectable ? selection.header : undefined}
+        columns={columns}
         sort={sort}
         toolbar={toolbar}
         toolbarRef={toolbarRef}
@@ -254,12 +263,6 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
               />
             ) : (
               <TableRow
-                columns={columns}
-                index={index}
-                level={item.level}
-                row={item.row}
-                rowIndex={index + headRows + 1}
-                sortedColumnId={sort?.columnId}
                 checkbox={
                   selectable
                     ? selection.checkbox(
@@ -268,6 +271,12 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                       )
                     : undefined
                 }
+                columns={columns}
+                index={index}
+                level={item.level}
+                row={item.row}
+                rowIndex={index + headRows + 1}
+                sortedColumnId={sort?.columnId}
                 tint={item.tint}
                 onClick={
                   selectable
@@ -284,7 +293,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                         setMenu({
                           position: contextMenuPosition(event),
                           kind: "row",
-                          row: item.row,
+                          rowId: getRowId(item.row),
                         });
                       }
                     : undefined
@@ -314,16 +323,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
             return (
               <TableGroupMenu
-                expanded={!collapsed.has(menuGroup.id)}
-                label={menuGroup.label}
-                onSelect={close}
                 allSelected={
                   !!menuGroup.rows.length &&
                   menuGroup.rows.every((row) => selection.selected.has(getRowId(row)))
                 }
+                expanded={!collapsed.has(menuGroup.id)}
+                label={menuGroup.label}
                 onDeselectAll={
                   selectable ? () => selection.remove(menuGroup.rows.map(getRowId)) : undefined
                 }
+                onSelect={close}
                 onSelectAll={
                   selectable ? () => selection.add(menuGroup.rows.map(getRowId)) : undefined
                 }
@@ -335,7 +344,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
             );
           }
 
-          return menu === undefined ? null : rowMenu?.(menu.row, close);
+          return menuRow === undefined ? null : rowMenu?.(menuRow, close);
         }}
       </ContextMenu>
 

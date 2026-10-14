@@ -889,6 +889,42 @@ describe("Table's context menus", () => {
       expect([checked("Alpha"), checked("Beta")]).toEqual([true, true]);
     });
 
+    it("builds its menu from the row as it is now, and closes once it's gone", () => {
+      const menuFor = (r: IRow) => <span>Menu for {r.name}</span>;
+      const { rerender } = render(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={ROWS}
+        />,
+      );
+      fireEvent.contextMenu(row("Alpha"));
+
+      rerender(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={[{ ...ROWS[0], name: "Renamed" }, ROWS[1]]}
+        />,
+      );
+      expect(screen.getByText("Menu for Renamed")).toBeInTheDocument();
+
+      rerender(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={[ROWS[1]]}
+        />,
+      );
+      expect(screen.queryByRole("menu")).toBeNull();
+    });
+
     it("opens from the keyboard under the focused control, handing focus back to it", async () => {
       renderWithMenu();
       const control = checkbox("Alpha");
