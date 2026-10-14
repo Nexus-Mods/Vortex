@@ -9,12 +9,12 @@ import type { IState } from "@/types/IState";
 const { staging } = vi.hoisted(() => ({ staging: { current: "" } }));
 
 // The real selector resolves placeholders against Vortex's own paths.
-vi.mock("../selectors", () => ({
+vi.mock("../../selectors", () => ({
   installPathForGame: () => staging.current,
 }));
 
-import { setModAttribute } from "../actions/mods";
-import { calculateModSize } from "./calculateModSize";
+import { setModAttribute } from "../../actions/mods";
+import { calculateModSize } from "./calculateModSize.util";
 
 const storeWith = (mods: { [modId: string]: object }) => ({
   getState: () => ({ persistent: { mods: { game: mods } } }) as unknown as IState,

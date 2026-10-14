@@ -185,7 +185,7 @@ import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
 import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
 import type { IReplaceChoice, ReplaceChoice } from "./types/IReplaceChoice";
 import type { ISupportedResult, ITestSupportedDetails, TestSupported } from "./types/TestSupported";
-import { calculateModSize } from "./util/calculateModSize";
+import { calculateModSize } from "./util/calculate_mod_size/calculateModSize.util";
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
 import gatherDependencies, {
   findDownloadByRef,

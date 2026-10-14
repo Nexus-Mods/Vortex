@@ -28,7 +28,7 @@ import { nxmCollection, nxmCollectionOutline, nxmResetTv } from "@/ui/icon-paths
 import { activeGameId } from "@/util/selectors";
 import { getIconPath } from "@/views/components/iconMap";
 
-import { calculateModSize } from "../../util/calculateModSize";
+import { calculateModSize } from "../../util/calculate_mod_size/calculateModSize.util";
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
 import { useUninstallMods } from "../use_uninstall_mods/useUninstallMods.hook";
 

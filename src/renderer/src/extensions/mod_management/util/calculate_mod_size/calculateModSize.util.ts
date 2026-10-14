@@ -7,8 +7,8 @@ import type { IState } from "@/types/IState";
 import calculateFolderSize from "@/util/calculateFolderSize";
 import * as fs from "@/util/fs";
 
-import { setModAttribute } from "../actions/mods";
-import { installPathForGame } from "../selectors";
+import { setModAttribute } from "../../actions/mods";
+import { installPathForGame } from "../../selectors";
 
 /**
  * Works out an installed mod's size, the total of the files in its staging folder, and keeps

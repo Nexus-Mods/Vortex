@@ -15,7 +15,7 @@ const { registered, uninstall, calculateModSize } = vi.hoisted(() => ({
   calculateModSize: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock("../../util/calculateModSize", () => ({ calculateModSize }));
+vi.mock("../../util/calculate_mod_size/calculateModSize.util", () => ({ calculateModSize }));
 
 vi.mock("../use_uninstall_mods/useUninstallMods.hook", () => ({
   useUninstallMods: () => uninstall,
