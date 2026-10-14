@@ -451,6 +451,22 @@ describe("DetectedGames", () => {
   });
 
   describe("a failed scan", () => {
+    it("says it couldn't check, in place of a count", async () => {
+      scanFailing(new Error("no connection"));
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
+      expect(sendNotification).toHaveBeenCalledOnce();
+      expect(sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Couldn't check for new games. Check your internet connection.",
+          type: "error",
+          displayMS: 4000,
+        }),
+      );
+    });
+
     it("says so in the description when cards fill the section", async () => {
       scanFailing(new Error("no connection"));
       const { rerender } = renderComponent({ count: "1", games: [game("skyrim")] });
@@ -464,7 +480,9 @@ describe("DetectedGames", () => {
         ),
       ).toBeInTheDocument();
       expect(screen.getByTestId("games-grid")).toHaveTextContent("skyrim");
-      expect(sendNotification).not.toHaveBeenCalled();
+      expect(sendNotification).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: "No new games found" }),
+      );
     });
 
     it("says so in the description while a search fills the section", () => {
@@ -527,7 +545,9 @@ describe("DetectedGames", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
       expect(await screen.findByText("Can't detect games right now")).toBeInTheDocument();
-      expect(sendNotification).not.toHaveBeenCalled();
+      expect(sendNotification).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: "No new games found" }),
+      );
 
       // retrying clears the failure rather than leaving the error on screen
       state.current.session.gameMode.detectedGamesStatus.failed = false;

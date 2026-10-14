@@ -41,8 +41,9 @@ type ScanFailure = "discovery" | "detection";
  * The scanning state also covers a detection request started elsewhere, at startup or
  * login. A detection failure shows as the panel when the section is empty, and in the
  * description when cards or a search fill it; both follow the stored status, so they clear
- * when detection recovers. A discovery failure raises its own error notification. A
- * cancelled scan's result is ignored. "Found N new" is only counted against an earlier
+ * when detection recovers. A scan the user starts reports its outcome in one short
+ * toast, found, none or couldn't check; a discovery failure raises its own error
+ * notification instead. A cancelled scan's result is ignored. "Found N new" is only counted against an earlier
  * successful detection, as without one there's nothing to tell new games from.
  */
 export const DetectedGames = ({
@@ -109,8 +110,17 @@ export const DetectedGames = ({
           return;
         }
 
-        if (failure !== undefined) {
-          setScanFailed(failure === "discovery");
+        if (failure === "discovery") {
+          setScanFailed(true);
+          return;
+        }
+
+        if (failure === "detection") {
+          api.sendNotification({
+            type: "error",
+            message: t("Couldn't check for new games. Check your internet connection."),
+            displayMS: 4000,
+          });
           return;
         }
 
