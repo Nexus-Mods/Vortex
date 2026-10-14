@@ -18,13 +18,18 @@
 
 import * as path from "path";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import {
+  getErrorMessageOrDefault,
+  isEnvironmentalError,
+  VortexError,
+  VortexProfileId,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 
 import type { IDialogResult } from "../../actions/notifications";
-import { addNotification, showDialog } from "../../actions/notifications";
+import { addNotification, dismissNotification, showDialog } from "../../actions/notifications";
 import { clearUIBlocker, setProgress, setUIBlocker } from "../../actions/session";
 import { log } from "../../logging";
 import type { IExtensionDownloadInfo, IRegisteredExtension } from "../../types/extensions";
@@ -63,13 +68,13 @@ import {
   willRemoveProfile,
 } from "./actions/profiles";
 import { clearLastActiveProfile, setCurrentProfile, setNextProfile } from "./actions/settings";
-import { STUCK_TIMEOUT } from "./constants";
+import { PROFILE_SWITCH_FAILED_NOTIFICATION_ID, STUCK_TIMEOUT } from "./constants";
 import { profilesReducer } from "./reducers/profiles";
 import { settingsReducer } from "./reducers/settings";
 import transferSetupReducer from "./reducers/transferSetup";
 import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } from "./selectors";
 import { syncFromProfile, syncToProfile } from "./sync";
-import { CorruptActiveProfile } from "./types/Errors";
+import { CorruptActiveProfile, ProfileSwitchStep } from "./types/Errors";
 import type { IProfile } from "./types/IProfile";
 import type { IProfileFeature } from "./types/IProfileFeature";
 import { sanitizeProfile } from "./util/sanitizeProfile";
@@ -227,8 +232,22 @@ function activateGame(store: ThunkStore<IState>, gameId: string): PromiseBB<void
   }
 }
 
+const SWITCH_STEP_LABEL: Record<ProfileSwitchStep, string> = {
+  [ProfileSwitchStep.PendingProfile]: "pending profile",
+  [ProfileSwitchStep.PreviousProfile]: "previously active profile",
+  [ProfileSwitchStep.NextProfile]: "next active profile",
+};
+
+const isSwitchDeployFailure = (err: unknown): err is VortexError =>
+  err instanceof VortexError && err.data.kind === "profile-switch:deploy-failed";
+
 /** Deploys the profile unless it is its game's last active one with nothing pending. */
-function deploy(api: IExtensionApi, profileId: string | undefined, what: string): PromiseBB<void> {
+function deploy(
+  api: IExtensionApi,
+  profileId: string | undefined,
+  step: ProfileSwitchStep,
+): PromiseBB<void> {
+  const what = SWITCH_STEP_LABEL[step];
   const state: IState = api.store.getState();
   if (profileId === undefined || state.persistent.profiles[profileId] === undefined) {
     return PromiseBB.resolve();
@@ -277,8 +296,19 @@ function deploy(api: IExtensionApi, profileId: string | undefined, what: string)
         if (err === null) {
           log("info", `did deploy ${what}`, profileId);
           resolve();
-        } else {
+        } else if (err instanceof UserCanceled) {
           reject(err);
+        } else {
+          const failure = new VortexError(
+            `Deploying the ${what} failed`,
+            { kind: "profile-switch:deploy-failed", step, profileId: VortexProfileId(profileId) },
+            { cause: err },
+          );
+          if (isEnvironmentalError(err)) {
+            // telemetry classifies by this flag, it does not look at the cause
+            Object.assign(failure, { allowReport: false });
+          }
+          reject(failure);
         }
       }),
       profileId,
@@ -286,6 +316,7 @@ function deploy(api: IExtensionApi, profileId: string | undefined, what: string)
         lastProgress = Date.now();
         api.store.dispatch(setProgress("profile", "deploying", text, percent));
       },
+      { failOnError: true },
     );
   });
 }
@@ -301,7 +332,7 @@ function genOnProfileChange(
   onFinishProfileSwitch: (callback: () => void) => void,
 ) {
   let finishProfileSwitchPromise: PromiseBB<void> = PromiseBB.resolve();
-  const { store } = api;
+  const store = api.store as ThunkStore<IState>;
 
   let cancelPromise: () => void;
 
@@ -315,7 +346,12 @@ function genOnProfileChange(
 
   const cancelSwitch = () => {
     invokeCancel();
-    store.dispatch(setCurrentProfile(undefined, undefined));
+    if (store.getState().settings.profiles.activeProfileId === undefined) {
+      // nothing changes, so the state watcher that announces the end of a switch stays silent
+      api.events.emit("profile-did-change", undefined);
+    } else {
+      store.dispatch(setCurrentProfile(undefined, undefined));
+    }
     store.dispatch(setNextProfile(undefined));
   };
 
@@ -335,6 +371,9 @@ function genOnProfileChange(
 
   return (prev: string, current: string) => {
     log("debug", "profile change", { from: prev, to: current });
+    if (current !== undefined) {
+      store.dispatch(dismissNotification(PROFILE_SWITCH_FAILED_NOTIFICATION_ID));
+    }
     finishProfileSwitchPromise
       .then(() => {
         const state: IState = store.getState();
@@ -450,7 +489,7 @@ function genOnProfileChange(
                   if (pendingId === undefined) {
                     return undefined;
                   }
-                  return deploy(api, pendingId, "pending profile").then(() =>
+                  return deploy(api, pendingId, ProfileSwitchStep.PendingProfile).then(() =>
                     refreshProfile(store, profileById(api.getState(), pendingId), "import"),
                   );
                 })
@@ -460,8 +499,8 @@ function genOnProfileChange(
                 })
                 // ensure the old profile is synchronised before we switch, otherwise me might
                 // revert some changes
-                .then(() => deploy(api, prevId, "previously active profile"))
-                .then(() => deploy(api, nextId, "next active profile"))
+                .then(() => deploy(api, prevId, ProfileSwitchStep.PreviousProfile))
+                .then(() => deploy(api, nextId, ProfileSwitchStep.NextProfile))
                 .then(() => {
                   const prof = profileById(api.store.getState() as IState, current);
                   if (prof === undefined) {
@@ -485,6 +524,17 @@ function genOnProfileChange(
       .catch((err) => {
         cancelSwitch();
         return PromiseBB.reject(err);
+      })
+      .catch(isSwitchDeployFailure, (err: VortexError) => {
+        // the deployment already reported its own error in detail
+        showError(store.dispatch, "Failed to set profile", err.message, {
+          id: PROFILE_SWITCH_FAILED_NOTIFICATION_ID,
+          allowReport: false,
+          actions:
+            prev === undefined
+              ? []
+              : [{ title: "Switch back", action: () => store.dispatch(setNextProfile(prev)) }],
+        });
       })
       .catch(ProcessCanceled, (err) => {
         showError(store.dispatch, "Failed to set profile", err.message, {

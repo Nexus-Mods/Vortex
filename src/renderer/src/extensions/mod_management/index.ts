@@ -966,6 +966,10 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 });
               }
             }
+            api.store.dispatch(setDeploymentNecessary(gameId, true));
+            if (deployOptions?.failOnError) {
+              throw err;
+            }
           } finally {
             api.store.dispatch(stopActivity("mods", "deployment"));
             api.store.dispatch(setProgress("mods", "deployment", undefined, 0));
