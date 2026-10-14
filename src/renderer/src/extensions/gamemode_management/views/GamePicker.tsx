@@ -34,6 +34,7 @@ import {
 import type { IDetectedGame } from "../types/IDetectedGame";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
+import { isListableDetectedGame } from "../util/detected_games/listableDetectedIds";
 
 const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
   id,
@@ -279,13 +280,15 @@ const GamePicker = ({
   });
 
   // The detected section is fed by the detected-games response, which names the user's
-  // store-installed games. Only games with a Vortex extension are listable, and the
-  // nexus games list supplies the name plus the internal id the store's actions know.
+  // store-installed games. A game is listable when the endpoint returned an extension for
+  // it, or when Vortex already knows it because an extension is installed (the endpoint
+  // returns no extension for the ones bundled with Vortex). The nexus games list supplies
+  // the name plus the internal id the store's actions know.
   const nexusGameByNexusIdMap = nexusGameByNexusId(nexusGames);
   const favourites = new Set(favouriteGames);
   const favouriteGameIds: string[] = [];
+  const listedIds = new Set<string>();
   const detectedGameList: IGameStored[] = detectedGames
-    .filter((game) => game.extension !== undefined)
     .map<IGameStored | undefined>((game) => {
       const nexusGame = nexusGameByNexusIdMap.get(game.gameId);
       if (nexusGame === undefined) {
@@ -297,10 +300,19 @@ const GamePicker = ({
       if (profileGames.has(internalId)) {
         return undefined;
       }
+      // an installed extension is the ground truth, whatever the endpoint returned
+      if (!isListableDetectedGame(game, internalId, knownGames)) {
+        return undefined;
+      }
+      // the same game can be reported more than once, e.g. by several stores
+      if (listedIds.has(internalId)) {
+        return undefined;
+      }
       // keep the section's hide-a-game behaviour working; a search also shows hidden
       if (!showHidden && !currentFilterValue && (discoveredGames[internalId]?.hidden ?? false)) {
         return undefined;
       }
+      listedIds.add(internalId);
       if (favourites.has(game.gameId)) {
         favouriteGameIds.push(internalId);
       }
