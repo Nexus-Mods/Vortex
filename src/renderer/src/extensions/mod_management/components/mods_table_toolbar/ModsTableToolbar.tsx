@@ -1,5 +1,12 @@
 import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
-import { mdiDeleteOutline, mdiDotsHorizontal, mdiPencil, mdiPlus, mdiTune } from "@mdi/js";
+import {
+  mdiDeleteOutline,
+  mdiDotsHorizontal,
+  mdiMessageStarOutline,
+  mdiPencil,
+  mdiPlus,
+  mdiTune,
+} from "@mdi/js";
 import React, { Fragment, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -23,6 +30,10 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import type { IModsTableView } from "../../util/mods_table_views/modsTableViews";
 import { DeleteModsTableViewModal } from "../delete_mods_table_view_modal/DeleteModsTableViewModal";
 import { ModsTableViewNameModal } from "../mods_table_view_name_modal/ModsTableViewNameModal";
+
+/** Where the new Mods table's users tell us what they think of it, while it's in beta. */
+export const MODS_TABLE_FEEDBACK_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSeQgFzQQjWgVGwsFOC22JL2KZpKcKltN6_narrxyxUYydChxQ/viewform";
 
 interface IModsTableToolbarProps {
   /** The views to offer: the built-in ones, then the user's own. */
@@ -121,7 +132,8 @@ const CustomViewButton = ({
 /**
  * The new Mods table's views and actions, in its sticky head. Views aren't tabs, with no
  * panels of their own, so they're toggle buttons. The built-in views come first, the user's
- * own after a divider, each with a menu, then the button to make another.
+ * own after a divider, each with a menu, then the button to make another. On the right, the
+ * feedback form, the view options and the search.
  */
 export const ModsTableToolbar = ({
   views,
@@ -141,9 +153,17 @@ export const ModsTableToolbar = ({
   const optionsPanel = useRef<IToolbarPanelHandle>(null);
   const [optionsFor, setOptionsFor] = useState<string>();
 
+  // Feedback first, then the view options, whose panel a view's menu can open.
   const actions = useMemo<IToolbarAction[]>(
-    () => [{ ...displayOptions, panelHandle: optionsPanel }],
-    [displayOptions],
+    () => [
+      {
+        label: t("Give feedback"),
+        iconPath: mdiMessageStarOutline,
+        onClick: () => window.api.shell.openUrl(MODS_TABLE_FEEDBACK_URL),
+      },
+      { ...displayOptions, panelHandle: optionsPanel },
+    ],
+    [displayOptions, t],
   );
 
   useEffect(() => {
