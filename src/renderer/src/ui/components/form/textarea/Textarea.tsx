@@ -4,6 +4,7 @@ import React, { forwardRef } from "react";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export type ITextareaProps = Omit<TextareaProps, "className"> & {
+  /** Classes for the text area, added to its base ones. */
   className?: string;
 };
 

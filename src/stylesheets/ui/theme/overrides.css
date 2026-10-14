@@ -68,5 +68,12 @@
                 outline: none;
             }
         }
+
+        /* A modal takes focus itself when nothing inside it should, such as a dialog with no
+           default button. It isn't a control, so after a key press it shouldn't wear the
+           browser's own ring, which takes the system's accent colour and can be orange. */
+        .nxm-modal:focus-visible {
+            outline: none;
+        }
     }
 }
