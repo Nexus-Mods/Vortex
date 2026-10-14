@@ -183,6 +183,7 @@ catalog:
   loot: github:Nexus-Mods/node-loot#44306bda0dd9c54e1e38c8ab217afedffd4510aa
   lru-cache: 11.2.7
   markdown-ast: 0.2.1
+  material-symbols: 0.48.0
   memoize-one: 5.2.1
   minimatch: 3.1.5
   minimist: 1.2.8

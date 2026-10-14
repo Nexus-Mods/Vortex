@@ -2,16 +2,22 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { describe, it, expect } from "vitest";
 
-import { Icon } from "./Icon";
+import { Icon, type IPathIconProps, type ISymbolIconProps } from "./Icon";
 
 // --- Helpers ---
 
-const renderComponent = (props: Partial<React.ComponentProps<typeof Icon>> = {}) => {
+const renderComponent = (props: Partial<IPathIconProps> = {}) => {
   const path = "M0 0h24v24H0z";
 
   render(<Icon path={path} {...props} />);
 
   return { path };
+};
+
+const renderSymbol = (props: Partial<ISymbolIconProps> = {}) => {
+  const { container } = render(<Icon name="home" {...props} />);
+
+  return container.querySelector("span") as HTMLSpanElement;
 };
 
 // --- Tests ---
@@ -83,6 +89,89 @@ describe("Icon", () => {
     it("forwards arbitrary svg attributes", () => {
       renderComponent({ id: "icon" });
       expect(document.querySelector("#icon")).toBeInTheDocument();
+    });
+  });
+  describe("symbol", () => {
+    it("writes the symbol's name for the font to draw", () => {
+      const el = renderSymbol({ name: "settings" });
+      expect(el).toHaveTextContent("settings");
+      expect(el).toHaveClass("material-symbols-outlined", "shrink-0");
+      expect(document.querySelector("svg")).not.toBeInTheDocument();
+    });
+
+    it("is hidden from assistive technology with no title", () => {
+      const el = renderSymbol();
+      expect(el).toHaveAttribute("aria-hidden", "true");
+      expect(el).not.toHaveAttribute("role");
+    });
+
+    it('exposes role="img" and the title as its label when a title is given', () => {
+      renderSymbol({ title: "Home" });
+      const el = screen.getByRole("img", { name: "Home" });
+      expect(el).not.toHaveAttribute("aria-hidden");
+    });
+
+    it.each([
+      ["xs", "size-3", "text-[12px]"],
+      ["sm", "size-4", "text-[16px]"],
+      ["md", "size-5", "text-[20px]"],
+      ["lg", "size-6", "text-[24px]"],
+      ["xl", "size-8", "text-[32px]"],
+      ["2xl", "size-12", "text-[48px]"],
+    ] as const)("sizes %s as %s with a %s font", (size, box, font) => {
+      expect(renderSymbol({ size })).toHaveClass(box, font);
+    });
+
+    it("defaults to md", () => {
+      expect(renderSymbol()).toHaveClass("size-5", "text-[20px]");
+    });
+
+    it('takes the size of the text around it for size="none"', () => {
+      const className = renderSymbol({ size: "none" }).getAttribute("class");
+      expect(className).not.toMatch(/\bsize-\d/);
+      expect(className).not.toMatch(/text-\[/);
+    });
+
+    it("sets no font axes unless asked", () => {
+      const el = renderSymbol();
+      expect(el.style.fontVariationSettings).toBeFalsy();
+      expect(el.style.fontWeight).toBeFalsy();
+    });
+
+    it("sets the fill axis", () => {
+      expect(renderSymbol({ fill: true }).style.fontVariationSettings).toBe('"FILL" 1');
+      expect(renderSymbol({ fill: false }).style.fontVariationSettings).toBe('"FILL" 0');
+    });
+
+    it("sets the grade axis alongside fill", () => {
+      expect(renderSymbol({ fill: true, grade: 200 }).style.fontVariationSettings).toBe(
+        '"FILL" 1, "GRAD" 200',
+      );
+    });
+
+    it("sets the optical size axis", () => {
+      expect(renderSymbol({ opticalSize: 48 }).style.fontVariationSettings).toBe('"opsz" 48');
+    });
+
+    it("sets every axis it is given, in one declaration", () => {
+      const el = renderSymbol({ fill: true, grade: -25, opticalSize: 20 });
+      expect(el.style.fontVariationSettings).toBe('"FILL" 1, "GRAD" -25, "opsz" 20');
+    });
+
+    it("sets the weight axis through the font weight", () => {
+      expect(renderSymbol({ weight: 300 }).style.fontWeight).toBe("300");
+    });
+
+    it("lets a style prop add to the axes", () => {
+      const el = renderSymbol({ fill: true, style: { opacity: 0.5 } });
+      expect(el.style.fontVariationSettings).toBe('"FILL" 1');
+      expect(el.style.opacity).toBe("0.5");
+    });
+
+    it("merges a custom className and forwards other attributes", () => {
+      const el = renderSymbol({ className: "text-danger-strong", id: "symbol" });
+      expect(el).toHaveClass("material-symbols-outlined", "text-danger-strong");
+      expect(el).toHaveAttribute("id", "symbol");
     });
   });
 });

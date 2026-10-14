@@ -704,6 +704,9 @@ catalogs:
     markdown-ast:
       specifier: 0.2.1
       version: 0.2.1
+    material-symbols:
+      specifier: 0.48.0
+      version: 0.48.0
     memoize-one:
       specifier: 5.2.1
       version: 5.2.1
@@ -4885,6 +4888,9 @@ importers:
       markdown-ast:
         specifier: 'catalog:'
         version: 0.2.1
+      material-symbols:
+        specifier: 'catalog:'
+        version: 0.48.0
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
@@ -10606,6 +10612,9 @@ packages:
 
   material-colors@1.2.6:
     resolution: {integrity: sha512-6qE4B9deFBIa9YSpOc9O0Sgc43zTeVYbgDT5veRKSlB2+ZuHNoVVxA1L/ckMUayV9Ay9y7Z/SZCLcGteW9i7bg==}
+
+  material-symbols@0.48.0:
+    resolution: {integrity: sha512-onKVWr4wcIWRbm+u+vkICQkw68KLqR2NRNhI0eafWvkE1FnHXHsQ8yUuSpkmVeARhbgVB0G/5ItfMSresLsBFw==}
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -18748,6 +18757,8 @@ snapshots:
   markdown-ast@0.2.1: {}
 
   material-colors@1.2.6: {}
+
+  material-symbols@0.48.0: {}
 
   math-intrinsics@1.1.0: {}
 

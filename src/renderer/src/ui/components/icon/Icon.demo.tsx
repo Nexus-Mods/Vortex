@@ -26,6 +26,15 @@ const mdiIcons = [
   { path: mdiMagnify, label: "Search" },
 ];
 
+const symbols = [
+  { name: "person", label: "Account" },
+  { name: "settings", label: "Settings" },
+  { name: "download", label: "Download" },
+  { name: "favorite", label: "Favorite" },
+  { name: "search", label: "Search" },
+  { name: "rule", label: "Rules" },
+] as const;
+
 const nxmIcons = [
   { path: nxmVortex, label: "nxmVortex" },
   { path: nxmInstall, label: "nxmInstall" },
@@ -60,6 +69,102 @@ export const IconDemo = () => (
 
         {` icon paths for Nexus Mods-specific icons.`}
       </Typography>
+    </div>
+
+    <div className="space-y-4">
+      <Typography as="h3" typographyType="heading-xs">
+        Material Symbols
+      </Typography>
+
+      <Typography appearance="subdued" typographyType="body-sm">
+        {`Pass a symbol's `}
+
+        <span className="font-semibold">name</span>
+
+        {` instead of a path to draw it from the variable font. The same sizes apply, and `}
+
+        <span className="font-semibold">fill</span>
+
+        {`, `}
+
+        <span className="font-semibold">weight</span>
+
+        {`, `}
+
+        <span className="font-semibold">grade</span>
+
+        {` and `}
+
+        <span className="font-semibold">opticalSize</span>
+
+        {` set the font's axes.`}
+      </Typography>
+
+      <div className="flex flex-wrap items-end gap-6">
+        {symbols.map(({ name, label }) => (
+          <div className="flex flex-col items-center gap-2" key={name}>
+            <Icon name={name} size="lg" title={label} />
+
+            <Typography appearance="subdued" typographyType="body-xs">
+              {name}
+            </Typography>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-end gap-6">
+        {([false, true] as const).map((fill) => (
+          <div className="flex flex-col items-center gap-2" key={String(fill)}>
+            <Icon fill={fill} name="star" size="xl" />
+
+            <Typography appearance="subdued" typographyType="body-xs">
+              {fill ? "fill" : "outline"}
+            </Typography>
+          </div>
+        ))}
+
+        {([100, 400, 700] as const).map((weight) => (
+          <div className="flex flex-col items-center gap-2" key={weight}>
+            <Icon name="settings" size="xl" weight={weight} />
+
+            <Typography appearance="subdued" typographyType="body-xs">
+              {`weight ${weight}`}
+            </Typography>
+          </div>
+        ))}
+
+        {([20, 24, 48] as const).map((opticalSize) => (
+          <div className="flex flex-col items-center gap-2" key={opticalSize}>
+            <Icon name="settings" opticalSize={opticalSize} size="xl" />
+
+            <Typography appearance="subdued" typographyType="body-xs">
+              {`optical size ${opticalSize}`}
+            </Typography>
+          </div>
+        ))}
+
+        {([-25, 0, 200] as const).map((grade) => (
+          <div className="flex flex-col items-center gap-2" key={grade}>
+            <Icon grade={grade} name="settings" size="xl" />
+
+            <Typography appearance="subdued" typographyType="body-xs">
+              {`grade ${grade}`}
+            </Typography>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-end gap-6">
+        {(["xs", "sm", "md", "lg", "xl", "2xl"] as const).map((size) => (
+          <div className="flex flex-col items-center gap-2" key={size}>
+            <Icon name="download" size={size} />
+
+            <Typography appearance="subdued" typographyType="body-xs">
+              {size}
+            </Typography>
+          </div>
+        ))}
+      </div>
     </div>
 
     <div className="space-y-4">
