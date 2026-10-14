@@ -403,7 +403,7 @@ async function downloadStream(
   let pendingBytes = 0;
   const flush = async () => {
     if (pendingBytes === 0) return;
-    const block = Buffer.concat(pending, pendingBytes);
+    const block = pending.length === 1 ? pending[0] : Buffer.concat(pending, pendingBytes);
     pending = [];
     pendingBytes = 0;
     try {
