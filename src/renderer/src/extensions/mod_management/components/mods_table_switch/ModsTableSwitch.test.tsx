@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { Provider } from "react-redux";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ installMods: vi.fn() }));
 
@@ -15,6 +15,7 @@ import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import type { IModWithState } from "../../types/IModProps";
+import { MODS_TABLE_FEEDBACK_URL } from "../mods_table_toolbar/ModsTableToolbar";
 import { ModsTableSwitch } from "./ModsTableSwitch";
 
 const mod = (id: string, name: string, enabled: boolean, extra: object = {}) =>
@@ -1131,6 +1132,38 @@ describe("ModsTableSwitch", () => {
         (row) => row.getAttribute("aria-selected") === "true",
       );
       expect(selected.map(cellText)).toEqual(["Alpha"]);
+    });
+  });
+
+  describe("feedback", () => {
+    // The test setup's window.api has no shell; this gives it one to watch.
+    const openUrl = vi.fn();
+
+    beforeEach(() => {
+      openUrl.mockClear();
+      (window as unknown as { api: Record<string, unknown> }).api.shell = { openUrl };
+    });
+
+    it("sits before the view options and the search", () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      const toolbar = screen
+        .getAllByRole("toolbar")
+        .find((bar) => within(bar).queryByRole("button", { name: "View options" }))!;
+      expect(
+        within(toolbar)
+          .getAllByRole("button")
+          .map((button) => button.getAttribute("aria-label")),
+      ).toEqual(["Give feedback", "View options", "Search"]);
+    });
+
+    it("opens the feedback form in the browser", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await userEvent.click(screen.getByRole("button", { name: "Give feedback" }));
+
+      expect(openUrl).toHaveBeenCalledTimes(1);
+      expect(openUrl).toHaveBeenCalledWith(MODS_TABLE_FEEDBACK_URL);
     });
   });
 
