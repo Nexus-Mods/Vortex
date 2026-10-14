@@ -33,10 +33,15 @@ export interface IDeploymentHarness extends IApiHarness {
   stagingDir: string;
   /** prepare + activate + finalize against the seeded mod */
   deploy: (lastDeployment?: IDeployedFile[]) => Promise<IDeployedFile[]>;
+  /** prepare + activate + finalize against one of the seeded mods */
+  deployMod: (modName: string, lastDeployment?: IDeployedFile[]) => Promise<IDeployedFile[]>;
+  modDir: (modName: string) => string;
+  /** the game the skip list reads `details.ignoreDeploy` from */
+  game: IGame;
   inGame: (relPath: string) => string;
-  /** relative paths currently present in the game folder */
+  /** the primary mod's relative paths currently present in the game folder */
   deployedFiles: () => string[];
-  /** manifest listing every seeded file, at the given deploy time */
+  /** manifest listing every file of the primary mod, at the given deploy time */
   manifest: (time?: number) => IDeployedFile[];
   normalize: Normalize;
   /** answer to the "File busy" retry dialog */
@@ -50,6 +55,8 @@ export interface IDeploymentOptions extends Partial<IDriverHarnessState> {
   files: Record<string, string>;
   method?: DeploymentMethodName;
   modName?: string;
+  /** more mods in the same staging folder: modName -> relPath -> content */
+  otherMods?: Record<string, Record<string, string>>;
   gameId?: string;
   extraReducers?: IHarnessReducerBinding[];
 }
@@ -70,15 +77,21 @@ export function makeDeploymentHarness(
   const root = nodeFs.mkdtempSync(path.join(os.tmpdir(), "vortex-deploy-"));
   const gameDir = path.join(root, "game", "Data");
   const stagingDir = path.join(root, "staging");
-  const modDir = path.join(stagingDir, modName);
+  const modDir = (name: string) => path.join(stagingDir, name);
   nodeFs.mkdirSync(gameDir, { recursive: true });
-  nodeFs.mkdirSync(modDir, { recursive: true });
 
   const relPaths = Object.keys(options.files);
-  for (const relPath of relPaths) {
-    const source = path.join(modDir, relPath);
-    nodeFs.mkdirSync(path.dirname(source), { recursive: true });
-    nodeFs.writeFileSync(source, options.files[relPath]);
+  const seedMod = (name: string, files: Record<string, string>) => {
+    nodeFs.mkdirSync(modDir(name), { recursive: true });
+    for (const relPath of Object.keys(files)) {
+      const source = path.join(modDir(name), relPath);
+      nodeFs.mkdirSync(path.dirname(source), { recursive: true });
+      nodeFs.writeFileSync(source, files[relPath]);
+    }
+  };
+  seedMod(modName, options.files);
+  for (const [name, files] of Object.entries(options.otherMods ?? {})) {
+    seedMod(name, files);
   }
 
   let method: IDeploymentMethod;
@@ -105,18 +118,24 @@ export function makeDeploymentHarness(
 
   const normalize: Normalize = (input: string) => input.toLowerCase();
   // BlacklistSet only reads game.details?.ignoreDeploy
-  const blacklist = new BlacklistSet([], { details: {} } as unknown as IGame, normalize);
+  const game = { details: {} } as unknown as IGame;
+  const blacklist = new BlacklistSet([], game, normalize);
+
+  const deployMod = async (name: string, lastDeployment: IDeployedFile[] = []) => {
+    await method.prepare(gameDir, false, lastDeployment, normalize);
+    await method.activate(modDir(name), name, "", blacklist);
+    return method.finalize(gameId, gameDir, stagingDir);
+  };
 
   return {
     ...base,
     method,
     gameDir,
     stagingDir,
-    deploy: async (lastDeployment: IDeployedFile[] = []) => {
-      await method.prepare(gameDir, false, lastDeployment, normalize);
-      await method.activate(modDir, modName, "", blacklist);
-      return method.finalize(gameId, gameDir, stagingDir);
-    },
+    deploy: (lastDeployment: IDeployedFile[] = []) => deployMod(modName, lastDeployment),
+    deployMod,
+    modDir,
+    game,
     inGame: (relPath: string) => path.join(gameDir, relPath),
     deployedFiles: () =>
       relPaths.filter(

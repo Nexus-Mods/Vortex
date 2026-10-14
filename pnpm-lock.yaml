@@ -4666,6 +4666,9 @@ importers:
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
+      '@types/minimatch':
+        specifier: 'catalog:'
+        version: 2.0.29
       '@types/node-7z':
         specifier: 'catalog:'
         version: 2.1.11

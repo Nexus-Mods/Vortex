@@ -1,3 +1,4 @@
+import { lstat } from "node:fs/promises";
 import * as path from "path";
 
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
@@ -32,6 +33,31 @@ export interface IDeployment {
 // TODO: guess I need to pull this out of the linking activator as the deployment
 //   code needs to know about these files when merging archives
 export const BACKUP_TAG = ".vortex_backup";
+
+async function isAbsent(filePath: string): Promise<boolean> {
+  try {
+    await lstat(filePath);
+    return false;
+  } catch (err: unknown) {
+    if (getErrorCode(err) === "ENOENT") {
+      return true;
+    }
+    throw err;
+  }
+}
+
+/** Moves a file aside for a link, refusing when an earlier backup already holds the name. */
+async function backUpGameFile(filePath: string): Promise<void> {
+  const backupPath = filePath + BACKUP_TAG;
+  if (await isAbsent(filePath)) {
+    return;
+  }
+  if (!(await isAbsent(backupPath))) {
+    throw new Error(`"${backupPath}" already exists`);
+  }
+  // the util/fs rename keeps the busy-retry and elevated-unlock handling a locked game file needs
+  await fs.renameAsync(filePath, backupPath);
+}
 
 interface IDeploymentContext {
   previousDeployment: IDeployment;
@@ -796,7 +822,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           .then((link) =>
             link
               ? Promise.resolve(undefined) // don't re-create link that's already correct
-              : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG),
+              : backUpGameFile(fullOutputPath),
           )
           .catch((err: unknown) =>
             getErrorCode(err) === "ENOENT"
