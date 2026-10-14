@@ -341,7 +341,12 @@
         transition-property: color, background-color, border-color, outline-color, fill, stroke;
     }
 
-    .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+    .nxm-table-row:is(
+            :hover,
+            :has(:focus-visible),
+            :has([aria-expanded="true"]),
+            [aria-selected="true"]
+        )
         :is([data-toolbar-control], [data-toolbar-overflow]) {
         opacity: 1;
         pointer-events: auto;
@@ -360,7 +365,12 @@
     /* The sticky cell widens over the cells before it once what its row shows has mounted, so
        the two appear together, and blends into them without the shadow the column casts. */
     .nxm-table[data-sticky-reveal]
-        .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+        .nxm-table-row:is(
+            :hover,
+            :has(:focus-visible),
+            :has([aria-expanded="true"]),
+            [aria-selected="true"]
+        )
         .nxm-table-cell[data-sticky="end"]:has([data-toolbar-control]) {
         margin-left: calc(-1 * var(--nxm-table-sticky-reveal));
 
@@ -537,7 +547,12 @@
         /* A widened row keeps the shadow at the column's edge, under its pins, so it runs on
            unbroken down the column. */
         .nxm-table[data-sticky-reveal]
-            .nxm-table-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"]))
+            .nxm-table-row:is(
+                :hover,
+                :has(:focus-visible),
+                :has([aria-expanded="true"]),
+                [aria-selected="true"]
+            )
             .nxm-table-cell[data-sticky="end"]:has([data-toolbar-control]) {
             margin-left: calc(
                 -1 * (var(--nxm-table-sticky-reveal) + var(--nxm-table-sticky-clearance))

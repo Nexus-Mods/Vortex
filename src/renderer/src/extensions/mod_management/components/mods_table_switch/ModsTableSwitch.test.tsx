@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { Provider } from "react-redux";
@@ -249,6 +249,34 @@ describe("ModsTableSwitch", () => {
     const openViewMenu = () =>
       userEvent.click(screen.getByRole("button", { name: "{{name}} view actions" }));
 
+    it("opens its menu from the keyboard, handing focus back to its button on closing", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await createView("Mine");
+      const tab = screen.getByRole("button", { name: "Mine" });
+      tab.focus();
+
+      fireEvent.contextMenu(tab, { button: -1 });
+      expect(await screen.findByRole("menuitem", { name: "Rename view" })).toHaveFocus();
+      await userEvent.keyboard("{Escape}");
+
+      await waitFor(() => expect(tab).toHaveFocus());
+    });
+
+    it("opens its menu on a right-click on its button, and a built-in view opens none", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await createView("Mine");
+
+      fireEvent.contextMenu(screen.getByRole("button", { name: "Mine" }));
+      expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+        "Rename view",
+        "Edit view options",
+        "Delete view",
+      ]);
+      await userEvent.keyboard("{Escape}");
+
+      expect(fireEvent.contextMenu(screen.getByRole("button", { name: "All mods" }))).toBe(false);
+    });
+
     it("opens its menu from the … inside its button, without opening the view", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
       await createView("Mine");
@@ -264,39 +292,6 @@ describe("ModsTableSwitch", () => {
       expect(pressedViews()).toEqual(["true", "false", "false", "false"]);
     });
 
-    it("is renamed from its menu, in the name modal", async () => {
-      renderSwitch({ a: mod("a", "Alpha", true) });
-      await createView("Mine");
-
-      await openViewMenu();
-      await userEvent.click(screen.getByRole("menuitem", { name: "Rename view" }));
-      const field = screen.getByRole("textbox", { name: "Name view" });
-      expect(field).toHaveValue("Mine");
-      await userEvent.clear(field);
-      await userEvent.type(field, "Theirs{Enter}");
-
-      expect(viewButtons().map((view) => view.textContent)).toContain("Theirs");
-    });
-
-    it("is deleted from its menu once confirmed, back to All mods", async () => {
-      renderSwitch({ a: mod("a", "Alpha", true) });
-      await createView("Mine");
-
-      await openViewMenu();
-      await userEvent.click(screen.getByRole("menuitem", { name: "Delete view" }));
-      expect(screen.getByRole("dialog", { name: "Delete view" })).toHaveTextContent(
-        "Are you sure you want to delete",
-      );
-      await userEvent.click(screen.getByRole("button", { name: "Delete view" }));
-
-      expect(viewButtons().map((view) => view.textContent)).toEqual([
-        "All mods",
-        "Status",
-        "Categories",
-      ]);
-      expect(pressedViews()).toEqual(["true", "false", "false"]);
-    });
-
     it("is kept if the delete isn't confirmed", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
       await createView("Mine");
@@ -308,16 +303,70 @@ describe("ModsTableSwitch", () => {
       expect(viewButtons().map((view) => view.textContent)).toContain("Mine");
     });
 
-    it("opens the view and its view options from its menu", async () => {
+    describe.each([
+      ["its …", openViewMenu],
+      [
+        "a right-click on it",
+        () => fireEvent.contextMenu(screen.getByRole("button", { name: "Mine" })),
+      ],
+    ])("from %s", (_, openMenu) => {
+      it("is renamed from its menu, in the name modal", async () => {
+        renderSwitch({ a: mod("a", "Alpha", true) });
+        await createView("Mine");
+
+        await openMenu();
+        await userEvent.click(screen.getByRole("menuitem", { name: "Rename view" }));
+        const field = screen.getByRole("textbox", { name: "Name view" });
+        expect(field).toHaveValue("Mine");
+        await userEvent.clear(field);
+        await userEvent.type(field, "Theirs{Enter}");
+
+        expect(viewButtons().map((view) => view.textContent)).toContain("Theirs");
+      });
+
+      it("is deleted from its menu once confirmed, back to All mods", async () => {
+        renderSwitch({ a: mod("a", "Alpha", true) });
+        await createView("Mine");
+
+        await openMenu();
+        await userEvent.click(screen.getByRole("menuitem", { name: "Delete view" }));
+        expect(screen.getByRole("dialog", { name: "Delete view" })).toHaveTextContent(
+          "Are you sure you want to delete",
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Delete view" }));
+
+        expect(viewButtons().map((view) => view.textContent)).toEqual([
+          "All mods",
+          "Status",
+          "Categories",
+        ]);
+        expect(pressedViews()).toEqual(["true", "false", "false"]);
+      });
+
+      it("opens the view and its view options from its menu", async () => {
+        renderSwitch({ a: mod("a", "Alpha", true) });
+        await createView("Mine");
+        await showView("All mods");
+
+        await openMenu();
+        await userEvent.click(screen.getByRole("menuitem", { name: "Edit view options" }));
+
+        expect(pressedViews()).toEqual(["false", "false", "false", "true"]);
+        expect(await screen.findByRole("button", { name: /Group by/ })).toBeInTheDocument();
+      });
+    });
+
+    it("hands focus back to its button once renamed from a right-click", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
       await createView("Mine");
-      await showView("All mods");
+      const tab = screen.getByRole("button", { name: "Mine" });
+      tab.focus();
 
-      await openViewMenu();
-      await userEvent.click(screen.getByRole("menuitem", { name: "Edit view options" }));
+      fireEvent.contextMenu(tab);
+      await userEvent.click(screen.getByRole("menuitem", { name: "Rename view" }));
+      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), "s{Enter}");
 
-      expect(pressedViews()).toEqual(["false", "false", "false", "true"]);
-      expect(await screen.findByRole("button", { name: /Group by/ })).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByRole("button", { name: "Mines" })).toHaveFocus());
     });
 
     it("keeps what's changed about it, with no default to reset to", async () => {
@@ -908,6 +957,25 @@ describe("ModsTableSwitch", () => {
       expect(bodyRows(screen.getByRole("grid"))[0]).toHaveAttribute("aria-selected", "false");
     });
 
+    it("opens the bar's menu on a right-click on one of the selected mods", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: vi.fn() },
+        { title: "Combine", action: vi.fn(), multiRowAction: true, singleRowAction: false },
+      ]);
+      await selectWithCtrl("Alpha", "Beta");
+
+      fireEvent.contextMenu(screen.getByText("Alpha"));
+
+      const menu = screen.getByRole("menu", { name: "Selected mods actions" });
+      expect(screen.getByText("{{count}} items selected")).toBeInTheDocument();
+      expect(within(menu).getByRole("menuitem", { name: /Combine/ })).toBeInTheDocument();
+      expect(within(menu).queryAllByRole("button", { name: /Pin|Unpin/ })).toHaveLength(0);
+      // Still both selected, the bar hidden behind the menu, which holds focus.
+      expect(
+        screen.getByRole("region", { name: "{{count}} selected", hidden: true }),
+      ).toBeInTheDocument();
+    });
+
     it("pins Reinstall, Uninstall, Check for updates and Remove to the bar, the rest in its menu", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
         { title: "Enable", singleRowAction: false },
@@ -1161,6 +1229,36 @@ describe("ModsTableSwitch", () => {
 
       const card = await screen.findByRole("tooltip");
       expect(card.querySelector(".nxm-hover-card-collection")).not.toBeNull();
+    });
+  });
+
+  describe("a row's context menu", () => {
+    it("changes the row's pins from its pin toggles", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+      const pins = () =>
+        within(screen.getByRole("menu", { name: "{{name}} actions" }))
+          .getAllByRole("button", { name: /the row/ })
+          .map((pin) => pin.getAttribute("aria-label"));
+
+      fireEvent.contextMenu(screen.getByText("Alpha"));
+      const before = pins();
+      await userEvent.click(
+        within(screen.getByRole("menu", { name: "{{name}} actions" })).getAllByRole("button", {
+          name: /the row/,
+        })[0],
+      );
+
+      expect(pins()[0]).not.toBe(before[0]);
+    });
+
+    it("opens the row's own menu, as its … has it, its pins for the row", () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+
+      fireEvent.contextMenu(screen.getByText("Alpha"));
+
+      const menu = screen.getByRole("menu", { name: "{{name}} actions" });
+      expect(within(menu).getByRole("menuitem", { name: /^Remove/ })).toBeInTheDocument();
+      expect(within(menu).getAllByRole("button", { name: /the row/ }).length).toBeGreaterThan(0);
     });
   });
 });

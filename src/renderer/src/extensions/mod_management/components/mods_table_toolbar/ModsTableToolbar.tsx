@@ -4,8 +4,14 @@ import React, { Fragment, type MouseEvent, useEffect, useMemo, useRef, useState 
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
+import {
+  ContextMenu,
+  contextMenuPosition,
+  type IContextMenuPosition,
+} from "@/ui/components/context_menu/ContextMenu";
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { ToolbarSearch } from "@/ui/components/toolbar/toolbar_search/ToolbarSearch";
@@ -50,7 +56,8 @@ interface ICustomViewButtonProps {
 
 /**
  * A view of the user's own: its button, with a menu of what can be done with it on a "…"
- * nested inside, as a menu row's pin is, which opens the menu without opening the view.
+ * nested inside, as a menu row's pin is, which opens the menu without opening the view. A
+ * right-click on the button, or Shift+F10, opens the same menu where it's asked for.
  */
 const CustomViewButton = ({
   view,
@@ -61,6 +68,16 @@ const CustomViewButton = ({
   onRemove,
 }: ICustomViewButtonProps) => {
   const { t } = useTranslation(["common"]);
+  const [contextMenu, setContextMenu] = useState<IContextMenuPosition>();
+
+  const label = t("{{name}} view actions", { name: view.label });
+  const actions: IMenuAction[][] = [
+    [
+      { label: t("Rename view"), iconPath: mdiPencil, onClick: onRename },
+      { label: t("Edit view options"), iconPath: mdiTune, onClick: onEditOptions },
+      { label: t("Delete view"), iconPath: mdiDeleteOutline, onClick: onRemove },
+    ],
+  ];
 
   return (
     <Popover className="flex">
@@ -70,6 +87,10 @@ const CustomViewButton = ({
         className="nxm-table-view-button nxm-table-view-button-menu"
         type="button"
         onClick={onSelect}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setContextMenu(contextMenuPosition(event));
+        }}
       >
         <span>{view.label}</span>
 
@@ -77,7 +98,7 @@ const CustomViewButton = ({
           nested
           appearance="weak"
           aria-haspopup="menu"
-          aria-label={t("{{name}} view actions", { name: view.label })}
+          aria-label={label}
           as={Button}
           brand="neutral"
           leftIconPath={mdiDotsHorizontal}
@@ -87,20 +108,12 @@ const CustomViewButton = ({
       </button>
 
       <PopoverPanel anchor={{ gap: 4, to: "bottom start" }} className="nxm-popover-panel-dropdown">
-        {({ close }) => (
-          <PopoverMenu
-            actions={[
-              [
-                { label: t("Rename view"), iconPath: mdiPencil, onClick: onRename },
-                { label: t("Edit view options"), iconPath: mdiTune, onClick: onEditOptions },
-                { label: t("Delete view"), iconPath: mdiDeleteOutline, onClick: onRemove },
-              ],
-            ]}
-            label={t("{{name}} view actions", { name: view.label })}
-            onSelect={close}
-          />
-        )}
+        {({ close }) => <PopoverMenu actions={actions} label={label} onSelect={close} />}
       </PopoverPanel>
+
+      <ContextMenu position={contextMenu} onClose={() => setContextMenu(undefined)}>
+        {(close) => <PopoverMenu actions={actions} label={label} onSelect={close} />}
+      </ContextMenu>
     </Popover>
   );
 };
@@ -177,6 +190,7 @@ export const ModsTableToolbar = ({
                   className="nxm-table-view-button"
                   type="button"
                   onClick={() => onSelectView(view.id)}
+                  onContextMenu={(event) => event.preventDefault()}
                 >
                   {t(view.label)}
                 </button>

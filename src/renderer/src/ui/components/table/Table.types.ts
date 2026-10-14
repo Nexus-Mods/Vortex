@@ -72,6 +72,8 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   selectedIds?: ReadonlySet<string>;
   /** Takes the selection the user changes it to, with `selectedIds`. */
   onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
+  /** A row's context menu, given the way to close it; unset, rows have none. */
+  rowMenu?: (row: T, close: () => void) => ReactNode;
 } & (
   | {
       /** The rows, ungrouped. */

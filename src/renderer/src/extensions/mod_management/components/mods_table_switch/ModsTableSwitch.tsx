@@ -16,6 +16,8 @@ import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
+import { DropdownBlock } from "@/ui/components/dropdown/DropdownBlock";
+import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
 import { Switch } from "@/ui/components/form/switch/Switch";
 import { Image } from "@/ui/components/image/Image";
 import { NoResults } from "@/ui/components/no_results/NoResults";
@@ -25,8 +27,10 @@ import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/Tab
 import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { TitledTooltip } from "@/ui/components/tooltip/TitledTooltip";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { Typography } from "@/ui/components/typography/Typography";
 import { activeGameId } from "@/util/selectors";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
@@ -429,7 +433,7 @@ export const ModsTableSwitch = ({
         cell: ({ mod, name }) => (
           <>
             {mod.type === COLLECTION_TYPE ? (
-              <CollectionHoverCard className="ml-2 h-5 rounded-sm" collection={mod} />
+              <CollectionHoverCard className="mr-2.5 ml-4.5 h-5 rounded-sm" collection={mod} />
             ) : (
               <ModHoverCard className="ml-2 h-5 rounded-sm" mod={mod} name={name} />
             )}
@@ -666,6 +670,32 @@ export const ModsTableSwitch = ({
     getRowLabel: ({ name }: IModRow) => name,
     selectedIds: selected,
     onSelectedIdsChange: setSelected,
+    rowMenu: ({ mod, name }: IModRow, close: () => void) =>
+      multiSelected ? (
+        <>
+          <DropdownBlock>
+            <Typography appearance="subdued" typographyType="body-sm">
+              {t("{{count}} items selected", { count: selectedIds.length })}
+            </Typography>
+          </DropdownBlock>
+
+          <DropdownDivider />
+
+          <ToolbarMenu
+            actions={selectionActions}
+            label={t("Selected mods actions")}
+            onSelect={close}
+          />
+        </>
+      ) : (
+        <ToolbarMenu
+          actions={actionsFor(mod.id)}
+          label={t("{{name}} actions", { name })}
+          pinningId={MOD_ROW_PINNING_ID}
+          pinTarget="row"
+          onSelect={close}
+        />
+      ),
     defaultSort: BY_NAME,
     footer,
     empty: matches ? (
