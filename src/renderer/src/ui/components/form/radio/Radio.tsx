@@ -4,6 +4,7 @@ import React, { forwardRef } from "react";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export type IRadioProps = Omit<RadioProps<"span", string>, "className"> & {
+  /** Classes for the radio, added to its base ones. */
   className?: string;
 };
 
