@@ -5,6 +5,7 @@ import type { Store } from "redux";
 import { log } from "@/logging";
 import type { IState } from "@/types/IState";
 import calculateFolderSize from "@/util/calculateFolderSize";
+import * as fs from "@/util/fs";
 
 import { setModAttribute } from "../actions/mods";
 import { installPathForGame } from "../selectors";
@@ -26,7 +27,9 @@ export const calculateModSize = (
   }
 
   const modPath = path.join(installPathForGame(state, gameId), mod.installationPath);
-  return calculateFolderSize(modPath)
+  // The walk reads a folder it can't open as empty, which would make the mod 0 B.
+  return Promise.resolve(fs.statAsync(modPath))
+    .then(() => calculateFolderSize(modPath))
     .then((totalSize) => {
       store.dispatch(setModAttribute(gameId, modId, "modSize", totalSize));
     })

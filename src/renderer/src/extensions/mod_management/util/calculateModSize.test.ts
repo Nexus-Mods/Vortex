@@ -1,16 +1,16 @@
+import { mkdir, writeFile } from "node:fs/promises";
 import * as path from "path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { makeTempDir } from "@/test-utils/tempDir";
 import type { IState } from "@/types/IState";
 
-const { folderSize } = vi.hoisted(() => ({ folderSize: vi.fn() }));
-
-vi.mock("@/util/calculateFolderSize", () => ({ default: folderSize }));
+const { staging } = vi.hoisted(() => ({ staging: { current: "" } }));
 
 // The real selector resolves placeholders against Vortex's own paths.
 vi.mock("../selectors", () => ({
-  installPathForGame: (_state: unknown, gameId: string) => path.join("staging", gameId),
+  installPathForGame: () => staging.current,
 }));
 
 import { setModAttribute } from "../actions/mods";
@@ -22,18 +22,19 @@ const storeWith = (mods: { [modId: string]: object }) => ({
 });
 
 describe("calculateModSize", () => {
-  beforeEach(() => {
-    folderSize.mockReset();
+  beforeEach(async () => {
+    staging.current = await makeTempDir("vortex-mod-size-");
   });
 
   it("keeps the size of the mod's staging folder on the mod", async () => {
-    folderSize.mockResolvedValue(2048);
+    await mkdir(path.join(staging.current, "alpha", "textures"), { recursive: true });
+    await writeFile(path.join(staging.current, "alpha", "alpha.esp"), Buffer.alloc(1000));
+    await writeFile(path.join(staging.current, "alpha", "textures", "a.dds"), Buffer.alloc(48));
     const store = storeWith({ a: { id: "a", installationPath: "alpha" } });
 
     await calculateModSize(store, "game", "a");
 
-    expect(folderSize).toHaveBeenCalledWith(path.join("staging", "game", "alpha"));
-    expect(store.dispatch).toHaveBeenCalledWith(setModAttribute("game", "a", "modSize", 2048));
+    expect(store.dispatch).toHaveBeenCalledWith(setModAttribute("game", "a", "modSize", 1048));
   });
 
   it("leaves a mod that isn't installed alone", async () => {
@@ -41,12 +42,11 @@ describe("calculateModSize", () => {
 
     await calculateModSize(store, "game", "a");
 
-    expect(folderSize).not.toHaveBeenCalled();
     expect(store.dispatch).not.toHaveBeenCalled();
   });
 
-  it("keeps the size it had when the folder can't be read", async () => {
-    folderSize.mockRejectedValue(new Error("EPERM"));
+  // The folder walk treats a missing folder as empty, which would record the mod as 0 B.
+  it("keeps the size it had when the mod's folder is gone", async () => {
     const store = storeWith({ a: { id: "a", installationPath: "alpha" } });
 
     await expect(calculateModSize(store, "game", "a")).resolves.toBeUndefined();
