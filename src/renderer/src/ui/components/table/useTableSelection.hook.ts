@@ -134,7 +134,7 @@ export const useTableSelection = (
   );
 
   const remove = useCallback(
-    (ids: string[]) => setSelected(new Set([...selected].filter((id) => !ids.includes(id)))),
+    (ids: string[]) => setSelected(selected.difference(new Set(ids))),
     [selected, setSelected],
   );
 
