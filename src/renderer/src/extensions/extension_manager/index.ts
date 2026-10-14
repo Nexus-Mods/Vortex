@@ -1,9 +1,17 @@
+import * as path from "node:path";
+
 import { mdiPuzzleOutline } from "@mdi/js";
+import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as semver from "semver";
 
 import { log } from "@/logging";
 
-import { setDialogVisible, setExtensionEnabled } from "../../actions";
+import {
+  declineExtensionNexusLink,
+  setDialogVisible,
+  setExtensionEnabled,
+  setExtensionModId,
+} from "../../actions";
 import { isExtSame } from "../../ExtensionManager";
 import type { IAvailableExtension, IExtensionDownloadInfo } from "../../types/extensions";
 import type {
@@ -16,6 +24,8 @@ import { getGame } from "../../util/api";
 import { relaunch } from "../../util/commandLine";
 import { DataInvalid, ProcessCanceled } from "../../util/CustomErrors";
 import makeReactive from "../../util/makeReactive";
+import { knownGames } from "../gamemode_management/selectors";
+import { nexusGameId } from "../nexus_integration/util/convertGameId";
 import { setAvailableExtensions, setExtensionsUpdate } from "./actions";
 import BrowseExtensions from "./BrowseExtensions";
 import type { IBrowseExtensionsProps } from "./BrowseExtensions";
@@ -26,11 +36,17 @@ import {
   findInCatalog,
   findInstalled,
   findInstalledDependency,
+  findLinkCandidates,
   findUpdatableExtensions,
   getMissingOptionalExtensions,
 } from "./queries";
 import sessionReducer from "./reducers";
 import { downloadAndInstallExtension, fetchAvailableExtensions } from "./util";
+import {
+  type ILinkCandidate,
+  type ILinkExtensionsDialogProps,
+  LinkExtensionsDialog,
+} from "./views/LinkExtensionsDialog";
 
 declare module "../../types/IExtensionContext" {
   interface ApiEvents {
@@ -53,8 +69,72 @@ async function checkForUpdates(api: IExtensionApi): Promise<void> {
   const { available } = state.session.extensions;
   const installed = state.app.extensions ?? {};
 
-  const updateable = findUpdatableExtensions(installed, available);
+  await updateExtensions(api, findUpdatableExtensions(installed, available));
+}
 
+// asked at most once per session, so refreshing the catalog doesn't repeat the question
+const offeredLinks = new Set<string>();
+
+const LINK_DIALOG_ID = "link-extensions-dialog";
+// read by the dialog's props callback, which runs when the dialog is shown
+let linkOffer: {
+  candidates: ILinkCandidate[];
+  answer: (selected: string[] | undefined) => void;
+} = { candidates: [], answer: () => undefined };
+
+async function offerNexusLinks(api: IExtensionApi): Promise<void> {
+  const state = api.getState();
+  const games = knownGames(state).map((game) => ({
+    extensionPath: game.extensionPath,
+    domain: nexusGameId(game),
+  }));
+  const candidates = findLinkCandidates(
+    state.app.extensions ?? {},
+    games,
+    state.session.extensions.available,
+  ).filter(({ key }) => !offeredLinks.has(key));
+
+  if (candidates.length === 0) return;
+  candidates.forEach(({ key }) => offeredLinks.add(key));
+
+  // the state entry's name is an identifier, often the folder name
+  const loaded = api.getLoadedExtensions();
+  const samePath = (lhs: string, rhs: string) =>
+    path.normalize(lhs).toLowerCase() === path.normalize(rhs).toLowerCase();
+  const displayName = (installed: IExtensionState) =>
+    loaded.find((ext) => samePath(ext.path, installed.path))?.info?.name ?? installed.name;
+
+  const selected = await new Promise<string[] | undefined>((resolve) => {
+    linkOffer = {
+      candidates: candidates.map(({ key, installed, available }) => ({
+        key,
+        name: displayName(installed),
+        version: installed.version,
+        replacementName: available.name,
+        replacementVersion: available.version,
+      })),
+      answer: resolve,
+    };
+    api.store.dispatch(setDialogVisible(LINK_DIALOG_ID));
+  });
+  if (selected === undefined) return;
+
+  const accepted = candidates.filter(({ key }) => selected.includes(key));
+  for (const { key, available } of candidates) {
+    api.store.dispatch(
+      accepted.some((candidate) => candidate.key === key)
+        ? setExtensionModId(key, available.modId)
+        : declineExtensionNexusLink(key),
+    );
+  }
+
+  await updateExtensions(api, accepted);
+}
+
+async function updateExtensions(
+  api: IExtensionApi,
+  updateable: Array<{ installed: IExtensionState; available: IAvailableExtension }>,
+): Promise<void> {
   if (updateable.length === 0) return;
 
   api.sendNotification({
@@ -108,6 +188,12 @@ async function updateAvailableExtensions(
     api.store.dispatch(setExtensionsUpdate(Date.now()));
     api.store.dispatch(setAvailableExtensions(extensions));
     await checkForUpdates(api);
+    // not awaited: extension installs wait for this fetch, not for the user's answer
+    offerNexusLinks(api).catch((err) =>
+      log("warn", "failed to offer linking extensions", {
+        error: getErrorMessageOrDefault(err),
+      }),
+    );
   } catch (err) {
     const allowReport = !(err instanceof DataInvalid);
 
@@ -273,6 +359,21 @@ function init(context: IExtensionContext) {
   const forceUpdateExtensions = () => {
     void updateAvailableExtensions(context.api, true);
   };
+
+  context.registerDialog(
+    LINK_DIALOG_ID,
+    LinkExtensionsDialog,
+    () =>
+      ({
+        candidates: linkOffer.candidates,
+        onAnswer: (selected) => {
+          const { answer } = linkOffer;
+          // the dialog can close more than once, the offer is answered once
+          linkOffer = { ...linkOffer, answer: () => undefined };
+          answer(selected);
+        },
+      }) satisfies Partial<ILinkExtensionsDialogProps>,
+  );
 
   context.registerDialog(
     "browse-extensions",
