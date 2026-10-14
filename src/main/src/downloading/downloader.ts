@@ -42,6 +42,26 @@ export type Checkpoint = {
 
 export type { TimeoutOptions };
 
+type SessionGotOptions = {
+  cookieJar?: CookieJar;
+  abortSignal?: AbortSignal;
+  timeout?: TimeoutOptions;
+  userAgent?: string;
+};
+
+/** @internal */
+export function createSessionGot(options?: SessionGotOptions): Got {
+  return got.extend({
+    cookieJar: options?.cookieJar,
+    signal: options?.abortSignal,
+    timeout: createGotTimeoutOptions(options?.timeout),
+    retry: { limit: 0 },
+    headers: {
+      "User-Agent": options?.userAgent,
+    },
+  } satisfies ExtendOptions);
+}
+
 /** @internal */
 export async function download<T>(
   resource: T,
@@ -52,14 +72,10 @@ export async function download<T>(
     rateLimiter?: RateLimiter;
     retry?: RetryStrategy;
   },
-  options?: {
-    cookieJar?: CookieJar;
+  options?: SessionGotOptions & {
     progressReporter?: ProgressReporter;
-    abortSignal?: AbortSignal;
     chunkConcurrency?: number;
     checkpoint?: Checkpoint;
-    timeout?: TimeoutOptions;
-    userAgent?: string;
   },
 ): Promise<void> {
   if (options?.abortSignal?.aborted) {
@@ -81,15 +97,7 @@ export async function download<T>(
     }
   }
 
-  const sessionGot = got.extend({
-    cookieJar: options?.cookieJar,
-    signal: options?.abortSignal,
-    timeout: createGotTimeoutOptions(options?.timeout),
-    retry: { limit: 0 },
-    headers: {
-      "User-Agent": options?.userAgent,
-    },
-  } satisfies ExtendOptions);
+  const sessionGot = createSessionGot(options);
 
   let resolved: NormalizedResource;
   try {
@@ -403,7 +411,7 @@ async function downloadStream(
   let pendingBytes = 0;
   const flush = async () => {
     if (pendingBytes === 0) return;
-    const block = pending.length === 1 ? pending[0] : Buffer.concat(pending, pendingBytes);
+    const block = pending.length === 1 ? pending[0]! : Buffer.concat(pending, pendingBytes);
     pending = [];
     pendingBytes = 0;
     try {
