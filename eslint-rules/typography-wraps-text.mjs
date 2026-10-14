@@ -27,6 +27,16 @@ const styleKey = (element, sourceCode) => {
     .join(" ");
 };
 
+/** Whether it keeps its parent's type style, so it only changes colour. */
+const inheritsType = (element) =>
+  element.openingElement.attributes.some(
+    (attribute) =>
+      attribute.type === "JSXAttribute" &&
+      attribute.name.name === "typographyType" &&
+      attribute.value?.type === "Literal" &&
+      attribute.value.value === "inherit",
+  );
+
 /** @type {import("eslint").Rule.RuleModule} */
 export default {
   meta: {
@@ -72,7 +82,8 @@ export default {
         if (
           STYLED_BY_PARENT.has(parent) &&
           children.length === 1 &&
-          nameOf(children[0]) === COMPONENT
+          nameOf(children[0]) === COMPONENT &&
+          !inheritsType(children[0])
         ) {
           context.report({
             node: children[0].openingElement,
