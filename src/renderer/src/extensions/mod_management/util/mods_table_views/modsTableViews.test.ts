@@ -30,7 +30,8 @@ const MODS = {
   z: collection("z", "Zinc", ["c"]),
 };
 
-const group = (id: string) => groupMods(MODS, "collection", t).find((g) => g.id === id);
+const group = (id: string) =>
+  groupMods(MODS, "collection", t, collectionsByMod(MODS)).find((g) => g.id === id);
 
 describe("sharedMods", () => {
   it("finds a collection's mods other collections have too, and names those, by name", () => {
@@ -70,7 +71,7 @@ describe("groupMods by a column", () => {
   };
 
   it("groups the mods without a value first, then by each value, by name", () => {
-    const groups = groupMods(CATEGORISED, "category", t, category);
+    const groups = groupMods(CATEGORISED, "category", t, {}, category);
 
     expect(groups.map(({ id, label, rows }) => [id, label, rows.map((row) => row.name)])).toEqual([
       ["no-category", "No {{column}}", ["Delta"]],
@@ -80,17 +81,23 @@ describe("groupMods by a column", () => {
   });
 
   it("puts the values a column orders first, in its order, then the rest by name", () => {
-    const groups = groupMods(CATEGORISED, "category", t, {
-      ...category,
-      groupOrder: ["Weapons"],
-    });
+    const groups = groupMods(
+      CATEGORISED,
+      "category",
+      t,
+      {},
+      {
+        ...category,
+        groupOrder: ["Weapons"],
+      },
+    );
 
     expect(groups.map(({ label }) => label)).toEqual(["No {{column}}", "Weapons", "Armour"]);
   });
 
   it("leaves the mods ungrouped without the column it names", () => {
-    expect(groupMods(CATEGORISED, "category", t)).toBeUndefined();
-    expect(groupMods(CATEGORISED, "none", t, category)).toBeUndefined();
+    expect(groupMods(CATEGORISED, "category", t, {})).toBeUndefined();
+    expect(groupMods(CATEGORISED, "none", t, {}, category)).toBeUndefined();
   });
 });
 

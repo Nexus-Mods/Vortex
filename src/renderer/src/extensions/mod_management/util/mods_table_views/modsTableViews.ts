@@ -3,7 +3,6 @@ import type { TFunction } from "i18next";
 import type { ITableGroup } from "@/ui/components/table/Table.types";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
-import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import { modHasUpdate } from "../mod_has_update/modHasUpdate";
@@ -117,8 +116,8 @@ const ungroupedFirst = (id: string, label: string, rows: IModRow[]): IModGroup[]
 const groupByCollection = (
   mods: { [id: string]: IModWithState },
   t: TFunction,
+  memberships: { [modId: string]: IMod[] },
 ): IModGroup[] | undefined => {
-  const memberships = collectionsByMod(mods);
   const rows = installedMods(mods);
 
   const collectionGroups = Object.values(mods)
@@ -239,15 +238,17 @@ const groupByColumn = (
 /**
  * The groups for a grouping, or undefined for a flat list of every mod. Collections and
  * authors have groups of their own, with pictures; any other column groups by its values.
+ * Collections group by `memberships`, from collectionsByMod, worked out once by the caller.
  */
 export const groupMods = (
   mods: { [id: string]: IModWithState },
   grouping: ModsTableGrouping,
   t: TFunction,
+  memberships: { [modId: string]: IMod[] },
   column?: IModsTableGroupingColumn,
 ): IModGroup[] | undefined => {
   if (grouping === "collection") {
-    return groupByCollection(mods, t);
+    return groupByCollection(mods, t, memberships);
   }
 
   if (grouping === "author") {
