@@ -1,7 +1,6 @@
 import React, { type ReactNode } from "react";
 
 import type { ITableColumn } from "./Table.types";
-import { TableCellTint } from "./TableCellTint";
 
 interface ITableCellProps {
   /** Where the content sits in the column, from the column's own `align`. */
@@ -16,8 +15,6 @@ interface ITableCellProps {
   sorted?: boolean;
   /** From the column's own `sticky`. */
   sticky?: ITableColumn<unknown>["sticky"];
-  /** A picture to tint a sticky cell with, as its group's rows are. */
-  tint?: string;
 }
 
 /** A cell in its column's track. Its content truncates itself; the cell doesn't clip. */
@@ -28,7 +25,6 @@ export const TableCell = ({
   role = "gridcell",
   sorted = false,
   sticky,
-  tint,
 }: ITableCellProps) => (
   <div
     aria-sort={ariaSort}
@@ -38,7 +34,6 @@ export const TableCell = ({
     data-sticky={sticky}
     role={role}
   >
-    {!!tint && <TableCellTint src={tint} />}
     {children}
   </div>
 );

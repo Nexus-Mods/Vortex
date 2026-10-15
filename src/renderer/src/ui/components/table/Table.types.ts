@@ -113,8 +113,6 @@ export type TableItem<T, G> =
       row: T;
       /** 2 under a group, unset in a flat grid. */
       level?: number;
-      /** The picture of the group it's under, which tints it. */
-      tint?: string;
     }
   | {
       kind: "group";

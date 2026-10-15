@@ -5,7 +5,6 @@ import { Icon } from "@/ui/components/icon/Icon";
 
 import type { ITableColumn, ITableGroup } from "./Table.types";
 import { TableCell } from "./TableCell";
-import { TableGroupWash } from "./TableGroupWash";
 
 interface ITableGroupRowProps<T, G extends ITableGroup<T>> {
   /** The table's columns, each rendering one of the group's cells. */
@@ -59,12 +58,7 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
       }}
     >
       {columns.map((column, index) => (
-        <TableCell
-          align={column.align}
-          key={column.id}
-          sticky={column.sticky}
-          tint={column.sticky ? group.image : undefined}
-        >
+        <TableCell align={column.align} key={column.id} sticky={column.sticky}>
           {index === 0 && (
             <button
               aria-expanded={expanded}
@@ -82,9 +76,6 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
           {index === menuIndex && menu}
         </TableCell>
       ))}
-
-      {/* Last, so it's not the first child that the cells' columns start from. */}
-      {!!group.image && <TableGroupWash src={group.image} />}
     </div>
   );
 };
