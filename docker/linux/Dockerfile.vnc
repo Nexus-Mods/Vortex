@@ -1,0 +1,221 @@
+# Vortex Linux + VNC Image
+# See docker/linux/README.vnc.md for build and run instructions.
+
+FROM ubuntu:26.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=Etc/UTC
+
+# Build toolchain + Electron runtime libraries + VNC stack.
+# Package names target Ubuntu 26.04.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        gnupg \
+        xz-utils \
+        sudo \
+        locales \
+        tzdata \
+        # Build toolchain for native node modules (node-gyp, leveldown,
+        # xxhash-addon, turbowalk, winapi-bindings stubs, etc.)
+        build-essential \
+        cmake \
+        pkg-config \
+        python3 \
+        python3-setuptools \
+        libfontconfig1-dev \
+        libicu-dev \
+        libsecret-1-dev \
+        # Electron 44 runtime dependencies (GTK 3, NSS, ALSA, X11 shims).
+        libgtk-3-0 \
+        libnotify4 \
+        libnss3 \
+        libxss1 \
+        libxtst6 \
+        libxrandr2 \
+        libxkbfile1 \
+        libsecret-1-0 \
+        libatk1.0-0 \
+        libatk-bridge2.0-0 \
+        libcups2 \
+        libdrm2 \
+        libgbm1 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libcairo2 \
+        libcairo-gobject2 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxfixes3 \
+        libxshmfence1 \
+        libasound2t64 \
+        libglib2.0-0 \
+        libgdk-pixbuf-2.0-0 \
+        librsvg2-common \
+        # VNC + lightweight desktop
+        tigervnc-standalone-server \
+        tigervnc-common \
+        tigervnc-tools \
+        fluxbox \
+        xterm \
+        xdg-utils \
+        dbus \
+        dbus-x11 \
+        xfonts-base \
+        xfonts-75dpi \
+        xfonts-100dpi \
+        x11-xserver-utils \
+        # Synthesises *held* mouse clicks (mousedown → sleep → mouseup) for
+        # games that poll input per-frame and miss the ~0ms clicks the VNC
+        # MCP server sends. See game-click below.
+        xdotool \
+        # noVNC (browser-based VNC) and its websocket bridge
+        novnc \
+        websockify \
+    && rm -rf /var/lib/apt/lists/*
+
+# .NET SDK 9.0 (required for the fomod-installer native components)
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
+    && bash /tmp/dotnet-install.sh --channel 9.0 --install-dir /usr/share/dotnet \
+    && rm /tmp/dotnet-install.sh \
+    && ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+ENV DOTNET_ROOT=/usr/share/dotnet \
+    PATH="/usr/share/dotnet:/usr/share/dotnet/tools:${PATH}"
+
+# Exact Node.js from package.json engines.node (build.sh passes it in);
+# pnpm-workspace.yaml sets engineStrict, so a floating 24.x would fail the
+# install. Corepack runs the pnpm pinned by package.json's packageManager.
+ARG NODE_VERSION
+RUN test -n "${NODE_VERSION}" \
+    && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
+        | tar -xJ -C /usr/local --strip-components=1 \
+    && corepack enable
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+# Non-root user. Electron refuses to run as root without --no-sandbox, and the
+# build itself works happily under an unprivileged user.
+# Ubuntu 24.04+ base images ship with a pre-existing `ubuntu` user at UID
+# 1000, so drop it (and any colliding group) before creating ours.
+ARG USERNAME=vortex
+ARG USER_UID=1000
+ARG USER_GID=1000
+RUN if id -u ${USER_UID} >/dev/null 2>&1; then \
+        existing_user="$(getent passwd ${USER_UID} | cut -d: -f1)"; \
+        userdel --remove "${existing_user}" 2>/dev/null || userdel "${existing_user}"; \
+    fi \
+    && if getent group ${USER_GID} >/dev/null; then \
+        existing_group="$(getent group ${USER_GID} | cut -d: -f1)"; \
+        groupdel "${existing_group}" || true; \
+    fi \
+    && groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} --create-home --shell /bin/bash ${USERNAME} \
+    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${USERNAME}
+
+# ----- Build Vortex -----
+ARG APP_DIR=/home/${USERNAME}/vortex
+
+# Create the workspace owned by the build user up-front. `WORKDIR` would
+# otherwise create it as root, leaving the directory itself unwritable by
+# the `vortex` user even though `COPY --chown` sets the file ownership.
+RUN mkdir -p ${APP_DIR} && chown ${USER_UID}:${USER_GID} ${APP_DIR}
+WORKDIR ${APP_DIR}
+
+# Copy the workspace. .dockerignore should exclude node_modules and dist
+# directories from the host. If it does not, the COPY is still safe but
+# slower.
+COPY --chown=${USER_UID}:${USER_GID} . ${APP_DIR}
+
+USER ${USERNAME}
+
+# pnpm cache lives in $HOME by default; keep it inside the user's home so the
+# permissions line up.
+ENV PNPM_HOME=/home/${USERNAME}/.local/share/pnpm \
+    PATH=/home/${USERNAME}/.local/share/pnpm:${PATH} \
+    pnpm_config_store_dir=/home/${USERNAME}/.pnpm-store \
+    NX_DAEMON=false
+
+# `@vortex/main:build` pulls in renderer, preload, bundled extensions and
+# assets via its nx dependsOn, which is everything `electron .` needs.
+RUN --mount=type=cache,target=/home/${USERNAME}/.pnpm-store,uid=${USER_UID},gid=${USER_GID} \
+    pnpm install --frozen-lockfile \
+    && pnpm nx run @vortex/main:build
+
+# ----- VNC + entrypoint -----
+USER root
+
+# Google Chrome (independent of Electron's bundled Chromium). Installed
+# after the Vortex build so iterating on Chrome config doesn't invalidate
+# the (slow) pnpm install + build layer above. Pulled from Google's
+# official apt repo -- a real .deb that installs cleanly inside a
+# container, unlike Ubuntu's snap-based `chromium-browser`. `gnupg`
+# (installed in the base apt layer) supplies `gpg --dearmor` for the
+# signing key.
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
+        | gpg --dearmor -o /etc/apt/trusted.gpg.d/google-chrome.gpg \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
+        > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends google-chrome-stable socat \
+    && rm -rf /var/lib/apt/lists/*
+
+# Chrome's setuid + user-namespace sandbox can't acquire the namespaces it
+# needs under Docker's default seccomp profile ("Failed to move to new
+# namespace: Operation not permitted"). A /usr/local/bin shim only catches
+# PATH-based invocations -- xdg-open and .desktop activations resolve the
+# absolute path from the Exec= line and bypass it. Use dpkg-divert to
+# rename the real binary aside and replace it in place with a wrapper, so
+# every entrypoint (direct invocation, xdg-open, .desktop activations,
+# Vortex's shell.openExternal) picks up --no-sandbox.
+RUN dpkg-divert --local --rename --divert /usr/bin/google-chrome-stable.real \
+        --add /usr/bin/google-chrome-stable \
+    && printf '#!/usr/bin/env bash\nexec /usr/bin/google-chrome-stable.real --no-sandbox --no-first-run --no-default-browser-check --remote-debugging-port=9223 --user-data-dir="$HOME/chrome-profile" "$@"\n' \
+        > /usr/bin/google-chrome-stable \
+    && chmod +x /usr/bin/google-chrome-stable
+
+# Let nexusmods.com open nxm:// links in Vortex without the native "Open
+# Vortex?" prompt, which Playwright can't see.
+RUN mkdir -p /etc/opt/chrome/policies/managed \
+    && printf '{"AutoLaunchProtocolsFromOrigins":[{"allowed_origins":["https://www.nexusmods.com"],"protocol":"nxm"}]}\n' \
+        > /etc/opt/chrome/policies/managed/nxm.json
+
+# ----- Optional: bake in Stardew Valley from the host's Steam root -----
+# Supplied via `--build-context steam=<path>`. build.sh stages
+# config/libraryfolders.vdf, the Stardew Valley appmanifest and game folder
+# from the host's Steam root when present, and falls back to
+# docker/linux/steam-stub (effectively a no-op) otherwise. Placed after the
+# pnpm build so swapping in a different Steam tree doesn't invalidate it.
+COPY --from=steam --chown=${USER_UID}:${USER_GID} ["./", "/home/vortex/.local/share/Steam/"]
+
+# Default VNC parameters - override at `docker run` time as needed.
+# VNC_PASSWORD is deliberately NOT baked in here; the entrypoint reads it
+# from the environment at runtime, or generates a random one if unset.
+ENV DISPLAY=:1 \
+    VNC_DISPLAY=:1 \
+    VNC_PORT=5901 \
+    NOVNC_PORT=6901 \
+    VNC_GEOMETRY=1600x1000 \
+    VNC_DEPTH=24 \
+    ELECTRON_DISABLE_SANDBOX=1
+
+COPY docker/linux/vnc-entrypoint.sh /usr/local/bin/vnc-entrypoint.sh
+RUN chmod +x /usr/local/bin/vnc-entrypoint.sh
+
+# Held-click helper for in-game (per-frame input polling) clicks. Invoked
+# from the host via `docker exec <container> game-click X Y`.
+COPY docker/linux/game-click /usr/local/bin/game-click
+RUN chmod +x /usr/local/bin/game-click
+
+# 9322/9323 are socat forwards to the Vortex/Chrome CDP ports, which only bind loopback.
+EXPOSE 5901 6901 9322 9323
+
+USER ${USERNAME}
+WORKDIR ${APP_DIR}
+
+ENTRYPOINT ["/usr/local/bin/vnc-entrypoint.sh"]
+# Runs src/main's `start` (`electron .`) directly: the root `start` goes
+# through nx, which would re-check the build. Containers can't use the SUID
+# sandbox, and the flag is more reliable than $ELECTRON_DISABLE_SANDBOX alone.
+CMD ["pnpm", "-C", "src/main", "start", "--no-sandbox", "--remote-debugging-port=9222"]
