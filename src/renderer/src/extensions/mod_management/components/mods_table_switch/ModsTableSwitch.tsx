@@ -34,7 +34,6 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { activeGameId } from "@/util/selectors";
 
-import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import { makeCollectionModsResolver } from "../../../collections/util/resolveCollectionMods/resolveCollectionMods";
 import { activeProfile } from "../../../profile_management/selectors";
@@ -78,7 +77,7 @@ import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
 
 interface IModsTableSwitchProps {
-  /** The mods the table lists, collections among them. */
+  /** The mods, collections among them: the collections head their groups, never rows. */
   mods: { [id: string]: IModWithState };
   /** The table shown unless the user has switched to the beta view. */
   legacy: ReactNode;
@@ -445,11 +444,7 @@ export const ModsTableSwitch = ({
         searchText: ({ name }) => name,
         cell: ({ mod, name }) => (
           <>
-            {mod.type === COLLECTION_TYPE ? (
-              <CollectionHoverCard className="mr-2.5 ml-4.5 h-5 rounded-sm" collection={mod} />
-            ) : (
-              <ModHoverCard className="ml-2 h-5 rounded-sm" mod={mod} name={name} />
-            )}
+            <ModHoverCard className="ml-2 h-5 rounded-sm" mod={mod} name={name} />
 
             <span className="ml-2 truncate">{name}</span>
           </>

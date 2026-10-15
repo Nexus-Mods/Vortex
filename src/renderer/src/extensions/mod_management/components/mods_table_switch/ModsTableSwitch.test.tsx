@@ -102,6 +102,20 @@ describe("ModsTableSwitch", () => {
     );
   });
 
+  it("leaves a collection's own row out of the flat list", () => {
+    renderSwitch({ b: mod("b", "Beta", false), x: collection("x", "Xenon", ["b"]) });
+
+    expect(bodyRows(screen.getByRole("grid")).map(cellText)).toEqual(["Beta"]);
+  });
+
+  it("leaves a collection's own row out of a column's groups", async () => {
+    renderSwitch({ b: mod("b", "Beta", false), x: collection("x", "Xenon", ["b"]) });
+
+    await showView("Status");
+
+    expect(bodyRows(screen.getByRole("treegrid")).map(cellText)).toEqual(["Disabled1", "Beta"]);
+  });
+
   // ModList rebuilds the mods only after a debounce, so a switch would lag behind its click.
   it("shows a mod's enabled state from the profile, ahead of the mods it was given", () => {
     render(
@@ -1099,9 +1113,8 @@ describe("ModsTableSwitch", () => {
         pack: collection("pack", "Starter Pack", ["b"]),
       });
 
-      // Collection doesn't show in All mods, so only the collection's own row has its name.
       await searchFor("starter");
-      expect(names()).toEqual(["Starter Pack"]);
+      expect(screen.getByText("No mods match your search")).toBeInTheDocument();
 
       await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
       await userEvent.keyboard("gervig");
@@ -1265,16 +1278,6 @@ describe("ModsTableSwitch", () => {
       const card = await screen.findByRole("tooltip");
       expect(card.querySelector(".nxm-hover-card-collection")).not.toBeNull();
       expect(card).toHaveTextContent("A starter pack.");
-    });
-
-    it("shows on hovering its cover on its own row", async () => {
-      renderSwitch(withSummary());
-
-      const row = screen.getByRole("row", { name: /Xenon/ });
-      await userEvent.hover(row.querySelector<HTMLElement>(".nxm-image-collection")!);
-
-      const card = await screen.findByRole("tooltip");
-      expect(card.querySelector(".nxm-hover-card-collection")).not.toBeNull();
     });
   });
 
