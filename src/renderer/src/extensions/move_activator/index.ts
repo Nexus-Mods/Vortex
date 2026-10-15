@@ -5,13 +5,13 @@ import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import type { IEntry } from "turbowalk";
 import turbowalk from "turbowalk";
-import * as winapi from "winapi-bindings";
 
 import { setSettingsPage } from "../../actions/session";
 import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
+import { getVolumePath } from "../../util/getVolumePath";
 import { log } from "../../util/log";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -118,7 +118,7 @@ class DeploymentMethod extends LinkingDeployment {
           solution: (t) => {
             let displayPath = modPaths[typeId];
             try {
-              displayPath = winapi.GetVolumePathName(modPaths[typeId]);
+              displayPath = getVolumePath(modPaths[typeId]);
             } catch (err) {
               log("warn", "Failed to resolve volume path", {
                 path: modPaths[typeId],
