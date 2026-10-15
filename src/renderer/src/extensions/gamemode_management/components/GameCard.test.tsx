@@ -10,7 +10,7 @@ const { state } = vi.hoisted(() => ({
     current: {
       persistent: { profiles: {} },
       settings: {
-        gameMode: { discovered: {} as Record<string, { path?: string; store?: string }> },
+        gameMode: { discovered: {} },
         profiles: { activeProfileId: undefined },
       },
     },
