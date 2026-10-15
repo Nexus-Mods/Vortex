@@ -137,7 +137,9 @@ function launchConfig(opts: IOptions): ILaunchConfig {
     // the launcher has already printed why (a missing fixture, a missing build)
     throw new Error("could not prepare the fixture; see the message above");
   }
-  const parsed: unknown = JSON.parse(output);
+  // the settings are the last line: a first run in a fresh checkout can print download progress
+  // ahead of them
+  const parsed: unknown = JSON.parse(output.trim().split(/\r?\n/).at(-1) ?? "");
   if (!isLaunchConfig(parsed)) {
     throw new Error("the fixture launcher printed an unexpected configuration");
   }
