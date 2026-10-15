@@ -94,7 +94,7 @@ describe("MessageBox", () => {
       expect(screen.getByTestId("dialog-message-copy")).toHaveClass(
         "nxm-button",
         "nxm-button-neutral",
-        "nxm-button-moderate",
+        "nxm-button-weak",
         "nxm-button-sm",
       );
     });

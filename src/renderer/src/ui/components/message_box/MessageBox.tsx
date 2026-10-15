@@ -70,7 +70,7 @@ export const MessageBox = ({
 
         {isOpen && (
           <button
-            className="nxm-button nxm-button-neutral nxm-button-moderate nxm-button-sm nxm-message-box-copy"
+            className="nxm-button nxm-button-neutral nxm-button-weak nxm-button-sm nxm-message-box-copy"
             data-testid="dialog-message-copy"
             type="button"
             onClick={copy}

@@ -36,7 +36,7 @@
         }
     }
 
-    /* The copy button is a small neutral button, with the button styles' own classes. */
+    /* The copy button is a small, weak neutral button, with the button styles' own classes. */
     .nxm-message-box-copy {
         margin-left: auto;
     }
