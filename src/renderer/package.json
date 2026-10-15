@@ -49,7 +49,7 @@
           "{projectRoot}/api-build.mjs"
         ],
         "outputs": [
-          "{workspaceRoot}/packages/vortex-api/lib/api.d.ts"
+          "{workspaceRoot}/packages/vortex-api/lib/*.d.ts"
         ]
       }
     }

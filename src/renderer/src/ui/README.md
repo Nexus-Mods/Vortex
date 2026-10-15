@@ -52,6 +52,23 @@ ui/
 
 ## Importing Components
 
+### From Extensions
+
+Extensions get the stable components from the `@nexusmods/vortex-api/ui` entry point, exported from [`ui/api.ts`](./api.ts):
+
+```tsx
+import { Button, Typography, iconPaths } from "@nexusmods/vortex-api/ui";
+
+<Button brand="neutral" leftIconPath={iconPaths.nxmVortex}>Open</Button>
+<Typography typographyType="heading-sm">Settings</Typography>
+```
+
+The same exports are on the root module as the `ui` namespace (`import { ui } from "vortex-api"`, then `<ui.Button />`), and both resolve to the same objects at runtime. The subpath is for extensions that want plain named imports; it needs a Vortex that recognises it in `util/extensionRequire.ts`, the same release that adds the namespace.
+
+Neither form touches the legacy controls, several of which share a name (`Icon`, `Image`, `Modal`, `Dropdown`, `ContextMenu`). Anything added to `ui/api.ts` becomes public extension API, so only add a component once it's stable. The new `Table` stays out while it is behind a dev switch.
+
+Tailwind only generates classes it finds in Vortex's own source, so a utility class an extension passes through `className` has no effect unless Vortex already uses it. Prefer the components' own props.
+
 ### Within Vortex Source
 
 Import directly from the source file:

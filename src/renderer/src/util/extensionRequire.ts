@@ -112,7 +112,11 @@ function extensionRequire(
 ) {
   const extensionPaths = ExtensionManager.getExtensionPaths();
   return function (id) {
-    if (id === "vortex-api" || id === "@nexusmods/vortex-api") {
+    if (id === "vortex-api/ui" || id === "@nexusmods/vortex-api/ui") {
+      // The design-system components, also reachable as `ui` on the root module.
+      // Nothing in them is per-extension, so they skip the proxy below.
+      return api.ui;
+    } else if (id === "vortex-api" || id === "@nexusmods/vortex-api") {
       const ext = getExtensions().find((iter) => this.filename.startsWith(iter.path));
       if (ext !== undefined) {
         if (handlerMapAPI[ext.name] === undefined) {

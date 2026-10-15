@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `@nexusmods/vortex-api/ui` entry point exposing the design-system components as named exports, e.g. `import { Button } from "@nexusmods/vortex-api/ui"`. The same exports are available as the `ui` namespace on the root module (`import { ui } from "@nexusmods/vortex-api"`, then `<ui.Button>`). It covers `Button`, `Typography`/`TypographyLink`, `Icon` and `iconPaths`, `Pictogram`, `Image`/`AdultAwareImage`, `Alert`, `Pill`, `Bullet`, `NexusBadge`/`PremiumBadge`, `Tooltip`/`TitledTooltip`/`TooltipDelayGroup`, `HoverCard`, `ContextMenu`, `Modal`, the `Dropdown*`, `Popover*` and `Listbox*` families, `Picker`, tabs (`TabProvider`, `TabBar`, `TabButton`, `TabPanel`), form controls (`Field`, `Label`, `Input`, `Checkbox`, `Select`, `Switch`, `TextField`, `CheckboxField`, `SelectField`, `SwitchField`, ...), `Listing`/`ListingLoader`/`NoResults`, `Pagination`, prose (`Markdown`, `Html`, `PlainText`), `GameTile`, the `Toolbar*` family and `joinClasses`, with their props types. The legacy controls keep their top-level names (`Icon`, `Modal`, `Dropdown`, ...), so existing extensions are unaffected
+- `@headlessui/react` and `@floating-ui/react` peer dependencies, which the `ui` props types build on
+
 ### Deprecated
 
 - `util.steam` and `util.epicGamesLauncher` are deprecated as of 2.8 and will be removed in 2.10. Both now delegate to `GameStoreHelper`: `util.steam.findByAppId(id)` becomes `GameStoreHelper.findByAppId(id, "steam")`, `util.steam.findByName(name)` becomes `GameStoreHelper.findByName(name, "steam")`, and likewise for `epicGamesLauncher` with `"epic"`. `util.steam.id` remains the constant `"steam"` string. `epicGamesLauncher.isGameInstalled` has no drop-in replacement and needs inlining. Each deprecated call logs a warning (once per session); any other member access also warns and returns `undefined` - see the [game store section of the migration guide](./docs/MIGRATION.md#vortex-2x-utilsteam-and-utilepicgameslauncher)
@@ -15,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - React peer dependency upgraded to 18.3.1; `@types/react` and `@types/react-dom` peer dependencies are now 18. Extension source may need type-level fixes on next rebuild (explicit `children` props, removed type aliases) - see the [React 18 section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-18)
 - `IExtensionContext` registration surfaces and `IMainPage` now use `React.FC` instead of the removed `React.StatelessComponent` (source-compatible)
+
+### Fixed
+
+- `api.d.ts` no longer contains unresolvable `@/...` imports (e.g. `IState`, `IMod`, `IProfile`, `IDownload`), which left those types as `any` for extensions and duplicated several interfaces in the bundle
 
 ## [v2.0.0]
 
