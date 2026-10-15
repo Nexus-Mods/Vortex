@@ -198,7 +198,7 @@ export class NxmProtocol {
   }
 
   /** Registered as the OS handler for nxm:// links. */
-  readonly handleLink = (url: string, install: boolean) => {
+  readonly handleLink = async (url: string, install: boolean) => {
     let nxmUrl: NXMUrl;
     try {
       nxmUrl = new NXMUrl(url);
@@ -211,19 +211,10 @@ export class NxmProtocol {
         log("info", "nxm premium link, re-reading the membership");
         scheduleMembershipRefresh(this.#api);
         return false;
-      } else if (nxmUrl.gameId === SITE_ID && this.#isExtensionAvailable(nxmUrl.modId)) {
-        if (install) {
-          return this.#api.emitAndAwait("install-extension", {
-            name: "Pending",
-            modId: nxmUrl.modId,
-            fileId: nxmUrl.fileId,
-          });
-        }
-        this.#api.events.emit("show-extension-page", nxmUrl.modId);
-        bringToFront();
-        return Promise.resolve();
+      } else if (nxmUrl.gameId === SITE_ID && (await this.#handleSiteLink(nxmUrl, install))) {
+        return;
       } else if (state.settings.interface.foregroundDL) {
-        bringToFront();
+        void bringToFront();
       }
     } catch (err) {
       this.#api.showErrorNotification("Invalid URL", err, { allowReport: false });
@@ -237,8 +228,30 @@ export class NxmProtocol {
     void this.#startLinkDownload(nxmUrl, url, install);
   };
 
+  /** Installs or shows a site link that is an extension; false for a modding tool to download. */
+  async #handleSiteLink(nxmUrl: NXMUrl, install: boolean): Promise<boolean> {
+    // a link that starts Vortex arrives before the catalog has been fetched
+    await this.#api.emitAndAwait("await-extension-catalog");
+
+    if (!this.#isExtensionAvailable(nxmUrl.modId)) {
+      return false;
+    }
+
+    if (install) {
+      await this.#api.emitAndAwait("install-extension", {
+        name: "Pending",
+        modId: nxmUrl.modId,
+        fileId: nxmUrl.fileId,
+      });
+    } else {
+      this.#api.events.emit("show-extension-page", nxmUrl.modId);
+      void bringToFront();
+    }
+    return true;
+  }
+
   readonly dialogHandlers: IFreeUserDialogHandlers = {
-    onUpdated: bringToFront,
+    onUpdated: () => void bringToFront(),
 
     /** Send the user to the file's page to generate an authorised link. */
     onDownload: (inputUrl: string) => {
