@@ -4241,7 +4241,7 @@ class InstallManager {
                 },
               ],
             },
-            [{ label: "Cancel" }, { label: "Continue" }],
+            [{ label: "Cancel" }, { label: "Continue", default: true }],
           ),
         )
         .then((result: IDialogResult) => {
