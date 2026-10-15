@@ -52,10 +52,19 @@ vi.mock("react-redux", async () => {
 });
 
 // The tiles are the grid's concern and pull in the store; this file is about which of
-// the four empty states this section picks, so the lists are stubbed out.
+// the four empty states this section picks, so the lists are stubbed out. The grid's
+// stand-in also shows the detected stores it was handed.
 vi.mock("../GamesGrid", () => ({
-  GamesGrid: ({ games }: { games: IGameStored[] }) => (
-    <div data-testid="games-grid">{games.map((iter) => iter.name).join(",")}</div>
+  GamesGrid: ({
+    detectedStores,
+    games,
+  }: {
+    detectedStores?: Record<string, string>;
+    games: IGameStored[];
+  }) => (
+    <div data-stores={JSON.stringify(detectedStores)} data-testid="games-grid">
+      {games.map((iter) => iter.name).join(",")}
+    </div>
   ),
 }));
 
@@ -147,6 +156,15 @@ describe("DetectedGames", () => {
   it("hands its games to the grid", () => {
     renderComponent({ count: "1", games: [game("skyrim")] });
     expect(screen.getByTestId("games-grid")).toHaveTextContent("skyrim");
+  });
+
+  it("hands the grid the store each game was detected on", () => {
+    renderComponent({ count: "1", detectedStores: { skyrim: "steam" }, games: [game("skyrim")] });
+
+    expect(screen.getByTestId("games-grid")).toHaveAttribute(
+      "data-stores",
+      JSON.stringify({ skyrim: "steam" }),
+    );
   });
 
   it("hands them to the list when the layout says so", () => {

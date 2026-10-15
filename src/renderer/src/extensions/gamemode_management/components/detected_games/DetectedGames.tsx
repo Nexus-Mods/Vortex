@@ -23,6 +23,8 @@ import { Section } from "../section/Section";
 interface IDetectedGamesProps {
   games: IGameStored[];
   count: string;
+  /** The store each game was detected on, by internal id, for its tile to name. */
+  detectedStores?: Record<string, string>;
   /** Internal ids of the caller's favourite games; they lead every sort. */
   favourites?: string[];
   filtering: boolean;
@@ -49,6 +51,7 @@ type ScanFailure = "discovery" | "detection";
  */
 export const DetectedGames = ({
   count,
+  detectedStores,
   favourites,
   filtering,
   games,
@@ -306,6 +309,7 @@ export const DetectedGames = ({
             />
           ) : (
             <GamesGrid
+              detectedStores={detectedStores}
               games={shownGames}
               section="detected"
               onRefreshGameInfo={onRefreshGameInfo}
