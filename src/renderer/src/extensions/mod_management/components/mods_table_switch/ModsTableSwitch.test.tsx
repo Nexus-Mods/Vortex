@@ -79,7 +79,7 @@ const hoverRow = (row: HTMLElement) => userEvent.hover(row);
 const bodyRows = (table: HTMLElement) =>
   within(table)
     .getAllByRole("row")
-    .filter((row) => row.closest('[role="rowgroup"]') === null);
+    .filter((row) => row.closest(".nxm-table-head") === null);
 
 const cellText = (row: HTMLElement) => within(row).getAllByRole("gridcell")[0].textContent;
 

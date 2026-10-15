@@ -17,8 +17,6 @@ interface ITableRowProps<T, G extends ITableGroup<T>> {
   level?: number;
   /** The item the row shows, passed to each column's cell. */
   row: T;
-  /** Its group's picture, for a sticky cell to tint itself with. */
-  tint?: string;
   /** Its checkbox, at the start of its first cell, when rows can be selected. */
   checkbox?: ITableCheckboxProps;
   /** The column the rows are sorted by, whose cell stands out. */
@@ -75,7 +73,6 @@ export const TableRow = <T, G extends ITableGroup<T>>({
   rowIndex,
   checkbox,
   sortedColumnId,
-  tint,
   onClick,
   onContextMenu,
 }: ITableRowProps<T, G>) => (
@@ -110,7 +107,6 @@ export const TableRow = <T, G extends ITableGroup<T>>({
         key={column.id}
         sorted={column.id === sortedColumnId}
         sticky={column.sticky}
-        tint={column.sticky ? tint : undefined}
       >
         {index === 0 && !!checkbox && <TableCheckbox {...checkbox} />}
         {column.cell(row)}
