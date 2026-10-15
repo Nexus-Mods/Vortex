@@ -1,74 +1,45 @@
-import {
-  mdiBroom,
-  mdiCogOutline,
-  mdiCommentTextOutline,
-  mdiContentSaveOutline,
-  mdiDownload,
-  mdiEyeOffOutline,
-  mdiEyeOutline,
-  mdiFolderOpenOutline,
-  mdiFolderSearchOutline,
-  mdiGamepadSquareOutline,
-  mdiHelpCircleOutline,
-  mdiHistory,
-  mdiImport,
-  mdiListStatus,
-  mdiInformationOutline,
-  mdiMenu,
-  mdiPaletteOutline,
-  mdiPowerPlugOutline,
-  mdiRefresh,
-  mdiRocketLaunchOutline,
-  mdiShapeOutline,
-  mdiSwapHorizontal,
-  mdiTagMultipleOutline,
-  mdiTextBoxOutline,
-  mdiTrashCanOutline,
-  mdiTune,
-  mdiUndoVariant,
-  mdiViewDashboardOutline,
-  mdiWeb,
-  mdiWrenchOutline,
-} from "@mdi/js";
+import type { IIconSource } from "@/ui/components/icon/Icon";
+import { nxmModOutline } from "@/ui/icon-paths";
 
-import { nxmHeartPulseOutline, nxmModOutline } from "@/ui/icon-paths";
-
-// Map legacy icon names to MDI paths
-const iconMap: Record<string, string> = {
-  dashboard: mdiViewDashboardOutline,
-  mods: nxmModOutline,
-  settings: mdiCogOutline,
-  download: mdiDownload,
-  game: mdiGamepadSquareOutline,
-  health: nxmHeartPulseOutline,
-  support: mdiHelpCircleOutline,
-  about: mdiInformationOutline,
-  menu: mdiMenu,
-  show: mdiEyeOutline,
-  feedback: mdiCommentTextOutline,
-  nexus: mdiWeb,
-  palette: mdiPaletteOutline,
-  plugins: mdiPowerPlugOutline,
-  savegame: mdiContentSaveOutline,
-  tools: mdiWrenchOutline,
-  tune: mdiTune,
+/**
+ * The legacy icon names that actions and pages register with, and so extensions do, as the icons
+ * the new UI draws for them.
+ */
+const iconMap: Record<string, IIconSource> = {
+  dashboard: "dashboard",
+  mods: { path: nxmModOutline },
+  settings: "settings",
+  download: "download",
+  game: "stadia_controller",
+  health: "cardiology",
+  support: "help",
+  about: "info",
+  menu: "menu",
+  show: "visibility",
+  feedback: "comment",
+  nexus: "language",
+  palette: "palette",
+  plugins: "power",
+  savegame: "save",
+  tools: "build",
+  tune: "tune",
   // icon names used by toolbar actions registered through `registerAction`
-  browse: mdiFolderSearchOutline,
-  categories: mdiTagMultipleOutline,
-  changelog: mdiTextBoxOutline,
-  delete: mdiTrashCanOutline,
-  deploy: mdiRocketLaunchOutline,
-  hide: mdiEyeOffOutline,
-  history: mdiHistory,
-  import: mdiImport,
-  "open-ext": mdiFolderOpenOutline,
-  purge: mdiBroom,
-  refresh: mdiRefresh,
-  rules: mdiListStatus,
-  swap: mdiSwapHorizontal,
-  undo: mdiUndoVariant,
+  browse: "folder_managed",
+  categories: "sell",
+  changelog: "article",
+  delete: "delete",
+  deploy: "rocket_launch",
+  hide: "visibility_off",
+  history: "history",
+  import: "input",
+  "open-ext": "folder_open",
+  purge: "cleaning_services",
+  refresh: "refresh",
+  rules: "rule",
+  swap: "swap_horiz",
+  undo: "undo",
 };
 
-export const getIconPath = (iconName: string, fallbackIcon: string = mdiShapeOutline): string => {
-  return iconMap[iconName] ?? fallbackIcon;
-};
+/** The icon for a legacy icon name, or `fallbackIcon` for one with none. */
+export const getIcon = (iconName: string, fallbackIcon: IIconSource = "category"): IIconSource =>
+  iconMap[iconName] ?? fallbackIcon;

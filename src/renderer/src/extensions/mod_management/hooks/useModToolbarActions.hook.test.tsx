@@ -65,8 +65,6 @@ vi.mock("react-redux", async () => {
   };
 });
 
-import { nxmExperiment } from "@/ui/icon-paths";
-
 import { setBetaModsTable } from "../actions/settings";
 import { useModToolbarActions } from "./useModToolbarActions.hook";
 
@@ -304,7 +302,7 @@ describe("useModToolbarActions beta table", () => {
   });
 
   it("shows the experiment flask", () => {
-    expect(betaTable()?.iconPath).toBe(nxmExperiment);
+    expect(betaTable()?.icon).toBe("experiment");
   });
 
   it("offers the beta view while the classic one shows", () => {

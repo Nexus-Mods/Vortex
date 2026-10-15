@@ -3,8 +3,6 @@
  * Provides browsing functionality for Nexus Mods collections and mods
  */
 
-import { mdiMagnify } from "@mdi/js";
-
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import { activeGameId } from "../../util/selectors";
 import BrowseNexusPage from "./views/BrowseNexusPage";
@@ -19,7 +17,7 @@ function init(context: IExtensionContext): boolean {
     props: () => ({
       api: context.api,
     }),
-    mdi: mdiMagnify,
+    menuIcon: "search",
   });
 
   return true;

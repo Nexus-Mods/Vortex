@@ -1,4 +1,3 @@
-import { mdiImageBroken } from "@mdi/js";
 import React from "react";
 import { useSelector } from "react-redux";
 
@@ -54,7 +53,7 @@ export const ModHoverCard = ({ mod, name, className }: IModHoverCardProps) => {
       <Image
         alt=""
         className={className}
-        fallbackIconPath={mdiImageBroken}
+        fallbackIcon="broken_image"
         fit="cover"
         imageType="mod"
         src={thumbnail}

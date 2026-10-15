@@ -1,4 +1,3 @@
-import { mdiMonitorArrowDownVariant } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -73,7 +72,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftIconPath={mdiMonitorArrowDownVariant}
+              leftIcon="install_desktop"
               rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
               size="sm"
               onClick={(e) => {

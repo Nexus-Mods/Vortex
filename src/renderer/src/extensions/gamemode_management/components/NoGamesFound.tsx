@@ -1,4 +1,3 @@
-import { mdiHelpCircleOutline, mdiOpenInNew } from "@mdi/js";
 import type { TFunction } from "i18next";
 import React from "react";
 
@@ -13,14 +12,14 @@ interface INoGamesFoundProps {
 export const NoGamesFound = ({ className, t }: INoGamesFoundProps) => (
   <NoResults
     className={className}
-    iconPath={mdiHelpCircleOutline}
+    icon="help"
     message={t("It may not be supported yet but adding it yourself may be easier than you think.")}
     title={t("Can't find the game you're looking for?")}
   >
     <Button
       appearance="moderate"
       brand="neutral"
-      leftIconPath={mdiOpenInNew}
+      leftIcon="open_in_new"
       onClick={() =>
         window.api.shell.openUrl(
           "https://github.com/Nexus-Mods/Vortex/wiki/MODDINGWIKI-Developers-General-Creating-a-game-extension",

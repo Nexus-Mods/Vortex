@@ -1,12 +1,4 @@
 import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
-import {
-  mdiDeleteOutline,
-  mdiDotsHorizontal,
-  mdiMessageStarOutline,
-  mdiPencil,
-  mdiPlus,
-  mdiTune,
-} from "@mdi/js";
 import React, { Fragment, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -86,9 +78,9 @@ const CustomViewButton = ({
   const label = t("{{name}} view actions", { name: view.label });
   const actions: IMenuAction[][] = [
     [
-      { label: t("Rename view"), iconPath: mdiPencil, onClick: onRename },
-      { label: t("Edit view options"), iconPath: mdiTune, onClick: onEditOptions },
-      { label: t("Delete view"), iconPath: mdiDeleteOutline, onClick: onRemove },
+      { label: t("Rename view"), icon: "edit", onClick: onRename },
+      { label: t("Edit view options"), icon: "tune", onClick: onEditOptions },
+      { label: t("Delete view"), icon: "delete", onClick: onRemove },
     ],
   ];
 
@@ -114,7 +106,7 @@ const CustomViewButton = ({
           aria-label={label}
           as={Button}
           brand="neutral"
-          leftIconPath={mdiDotsHorizontal}
+          leftIcon="more_horiz"
           size="sm"
           onClick={(event: MouseEvent) => event.stopPropagation()}
         />
@@ -162,7 +154,7 @@ export const ModsTableToolbar = ({
       {
         id: "feedback",
         label: t("Give feedback"),
-        iconPath: mdiMessageStarOutline,
+        icon: "rate_review",
         onClick: () => window.api.shell.openUrl(MODS_TABLE_FEEDBACK_URL),
       },
       { ...displayOptions, id: "view-options", panelHandle: optionsPanel },
@@ -228,7 +220,7 @@ export const ModsTableToolbar = ({
             appearance="weak"
             aria-label={t("Add view")}
             brand="neutral"
-            leftIconPath={mdiPlus}
+            leftIcon="add"
             onClick={() => setNaming("new")}
           />
         </Tooltip>

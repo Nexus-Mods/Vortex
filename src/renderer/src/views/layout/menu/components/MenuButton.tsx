@@ -1,21 +1,21 @@
 import React, { type ButtonHTMLAttributes, type ComponentType, type FC } from "react";
 
 import { useWindowContext } from "@/contexts";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 interface MenuButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: string;
-  iconPath: string;
+  icon: IIconSource;
   isActive?: boolean;
   Badge?: ComponentType<React.PropsWithChildren<unknown>>;
 }
 
 export const MenuButton: FC<React.PropsWithChildren<MenuButtonProps>> = ({
   children,
-  iconPath,
+  icon,
   isActive,
   Badge,
   ...props
@@ -32,7 +32,7 @@ export const MenuButton: FC<React.PropsWithChildren<MenuButtonProps>> = ({
         ])}
         {...props}
       >
-        <Icon className="shrink-0" path={iconPath} size="sm" />
+        <Icon {...iconSourceProps(icon)} className="shrink-0" size="sm" />
 
         <Typography
           as="span"

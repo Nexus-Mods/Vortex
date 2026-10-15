@@ -1,4 +1,3 @@
-import { mdiAlertOutline, mdiFileQuestionOutline, mdiTrayArrowDown } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -116,7 +115,7 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
           role="img"
           tabIndex={0}
         >
-          <Icon path={mdiAlertOutline} size="sm" />
+          <Icon name="warning" size="sm" />
         </span>
       </Tooltip>
     );
@@ -135,7 +134,7 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
           appearance="moderate"
           brand="info"
           label={t("Update to {{version}}", { version: attributes.newestVersion ?? "?" })}
-          leftIconPath={mdiTrayArrowDown}
+          leftIcon="download"
           size="sm"
           onClick={() => void updateMod(api, mod, gameId())}
         />
@@ -156,7 +155,7 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
             aria-description={t("Vortex can't determine the correct update automatically.")}
             aria-label={t("Choose update file")}
             brand="info"
-            leftIconPath={mdiFileQuestionOutline}
+            leftIcon="unknown_document"
             size="sm"
             onClick={() =>
               api.events.emit("open-mod-page", gameId(), attributes.modId, attributes.source)

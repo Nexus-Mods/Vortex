@@ -1,11 +1,10 @@
-import { mdiChevronRight } from "@mdi/js";
 import React, { type KeyboardEvent, type ReactNode } from "react";
 
 import {
   type Severity,
   severityStyleMap,
 } from "@/extensions/health_check/utils/shared/severityStyles";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -44,8 +43,8 @@ export const ListingRow = ({
       }}
     >
       <Icon
+        {...iconSourceProps(severityStyle.icon)}
         className={joinClasses(["shrink-0", severityStyle.textClassName])}
-        path={severityStyle.iconPath}
       />
 
       <div className="min-w-0 grow text-left">
@@ -70,7 +69,7 @@ export const ListingRow = ({
 
       {action}
 
-      <Icon className="shrink-0 text-translucent-moderate" path={mdiChevronRight} size="lg" />
+      <Icon className="shrink-0 text-translucent-moderate" name="chevron_right" size="lg" />
     </div>
   );
 };

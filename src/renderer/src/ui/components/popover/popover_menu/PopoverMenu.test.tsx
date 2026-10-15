@@ -1,4 +1,3 @@
-import { mdiChevronRight, mdiPinOffOutline, mdiPinOutline } from "@mdi/js";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -35,14 +34,14 @@ const openMenu = async (actions: IMenuAction[][]) => {
 };
 
 const plainAction = (label: string, onClick = () => {}): IMenuAction => ({
-  iconPath: "mdi-test",
+  icon: { path: "mdi-test" },
   label,
   onClick,
 });
 
 /** A row whose panel is itself a menu, as the header's nested Help submenu is. */
 const submenuAction = (rows: IMenuAction[][], onDismissSpy?: () => void): IMenuAction => ({
-  iconPath: "mdi-help",
+  icon: { path: "mdi-help" },
   label: "Help",
   panelRole: "menu",
   panel: ({ close, dismiss }) => (
@@ -321,9 +320,12 @@ describe("PopoverMenu", () => {
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
     });
 
-    /** The path the pin's icon is currently drawing. */
-    const pinIconPath = (name: string) =>
-      screen.getByRole("button", { name }).querySelector("path")?.getAttribute("d");
+    /** The symbol the pin's icon is currently drawing. */
+    const pinSymbol = (name: string) =>
+      screen
+        .getByRole("button", { name })
+        .querySelector("[data-symbol]")
+        ?.getAttribute("data-symbol");
 
     // The icon is an offer, not a report: it shows what the click does, matching the
     // label beside it, rather than the state the row is already in.
@@ -337,7 +339,7 @@ describe("PopoverMenu", () => {
         ],
       ]);
 
-      expect(pinIconPath("Pin Refresh")).toBe(mdiPinOutline);
+      expect(pinSymbol("Pin Refresh")).toBe("keep");
     });
 
     it("offers to unpin a row that is pinned", async () => {
@@ -350,7 +352,17 @@ describe("PopoverMenu", () => {
         ],
       ]);
 
-      expect(pinIconPath("Unpin Refresh")).toBe(mdiPinOffOutline);
+      expect(pinSymbol("Unpin Refresh")).toBe("keep_off");
+    });
+  });
+
+  describe("icons", () => {
+    it("draws a row's symbol before its label", async () => {
+      await openMenu([[{ label: "Deploy", icon: { name: "rocket_launch" }, onClick: () => {} }]]);
+
+      expect(
+        screen.getByRole("menuitem", { name: "Deploy" }).querySelector("[data-symbol]"),
+      ).toHaveAttribute("data-symbol", "rocket_launch");
     });
   });
 
@@ -384,7 +396,7 @@ describe("PopoverMenu", () => {
       [
         {
           ...plainAction("Refresh", onClick),
-          control: { label: "Remove Refresh", iconPath: "mdi-remove", onClick: onControl },
+          control: { label: "Remove Refresh", icon: "close", onClick: onControl },
         },
       ],
     ];
@@ -422,6 +434,12 @@ describe("PopoverMenu", () => {
   });
 
   describe("nested menus", () => {
+    /** Whether the row draws a chevron, the symbol pointing at the surface it opens. */
+    const hasChevron = (row: HTMLElement) =>
+      [...row.querySelectorAll("[data-symbol]")].some(
+        (symbol) => symbol.getAttribute("data-symbol") === "chevron_right",
+      );
+
     /** The account menu open, with its Help row ready to fly out. */
     const openParent = async (onDismissSpy?: () => void) => {
       await openMenu([
@@ -440,7 +458,7 @@ describe("PopoverMenu", () => {
     it("points a chevron at the surface the row opens", async () => {
       const row = await openParent();
 
-      expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).toBeInTheDocument();
+      expect(hasChevron(row)).toBe(true);
       expect(row.querySelector(".nxm-dropdown-item-chevron-hidden")).not.toBeInTheDocument();
       // Decorative: the chevron must not become part of the row's name.
       expect(row).toHaveAccessibleName("Help");
@@ -452,7 +470,7 @@ describe("PopoverMenu", () => {
       await openParent();
       const row = screen.getByRole("menuitem", { name: "Refresh" });
 
-      expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).toBeInTheDocument();
+      expect(hasChevron(row)).toBe(true);
       expect(row.querySelector(".nxm-dropdown-item-chevron-hidden")).toBeInTheDocument();
     });
 
@@ -460,7 +478,7 @@ describe("PopoverMenu", () => {
       await openMenu([[plainAction("Logout")]]);
       const row = screen.getByRole("menuitem", { name: "Logout" });
 
-      expect(row.querySelector(`path[d="${mdiChevronRight}"]`)).not.toBeInTheDocument();
+      expect(hasChevron(row)).toBe(false);
     });
 
     it("opens the submenu from its row", async () => {

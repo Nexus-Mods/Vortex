@@ -46,7 +46,10 @@ const makeStore = (toolbars: IToolbarStates) => {
 };
 
 const makeActions = (count: number): IToolbarAction[] =>
-  Array.from({ length: count }, (_, i) => ({ label: `Action ${i + 1}`, iconPath: "mdi-test" }));
+  Array.from({ length: count }, (_, i) => ({
+    label: `Action ${i + 1}`,
+    icon: { path: "mdi-test" },
+  }));
 
 /**
  * The kebab is found by test id, not by its name: that name is translated, and
@@ -179,9 +182,16 @@ describe("ToolbarGroup", () => {
     });
 
     it("renders an icon-only button (label as aria-label, not visible text)", () => {
-      render(<ToolbarGroup actions={[{ label: "Refresh", iconPath: "mdi-test" }]} />);
+      render(<ToolbarGroup actions={[{ label: "Refresh", icon: { path: "mdi-test" } }]} />);
       expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
       expect(screen.queryByText("Refresh")).not.toBeInTheDocument();
+    });
+
+    it("draws an action's symbol as the button's icon", () => {
+      render(<ToolbarGroup actions={[{ label: "Refresh", icon: "refresh" }]} />);
+      expect(
+        screen.getByRole("button", { name: "Refresh" }).querySelector("[data-symbol]"),
+      ).toHaveAttribute("data-symbol", "refresh");
     });
 
     it("renders visible label text when showLabel is set", () => {
@@ -190,12 +200,14 @@ describe("ToolbarGroup", () => {
     });
 
     it("defaults actions to the neutral brand", () => {
-      render(<ToolbarGroup actions={[{ label: "Plain", iconPath: "mdi-test" }]} />);
+      render(<ToolbarGroup actions={[{ label: "Plain", icon: { path: "mdi-test" } }]} />);
       expect(screen.getByRole("button", { name: "Plain" })).toHaveClass("nxm-button-neutral");
     });
 
     it("applies a custom brand", () => {
-      render(<ToolbarGroup actions={[{ label: "Info", iconPath: "mdi-test", brand: "info" }]} />);
+      render(
+        <ToolbarGroup actions={[{ label: "Info", icon: { path: "mdi-test" }, brand: "info" }]} />,
+      );
       expect(screen.getByRole("button", { name: "Info" })).toHaveClass("nxm-button-info");
     });
 
@@ -208,7 +220,7 @@ describe("ToolbarGroup", () => {
   describe("interactions", () => {
     it("calls an action's onClick when its button is clicked", async () => {
       const onClick = vi.fn();
-      render(<ToolbarGroup actions={[{ label: "Go", iconPath: "mdi-test", onClick }]} />);
+      render(<ToolbarGroup actions={[{ label: "Go", icon: { path: "mdi-test" }, onClick }]} />);
       await userEvent.click(screen.getByRole("button", { name: "Go" }));
       expect(onClick).toHaveBeenCalledOnce();
     });
@@ -217,7 +229,7 @@ describe("ToolbarGroup", () => {
       const onClick = vi.fn();
       render(
         <ToolbarGroup
-          actions={[{ label: "Nope", iconPath: "mdi-test", onClick, disabled: true }]}
+          actions={[{ label: "Nope", icon: { path: "mdi-test" }, onClick, disabled: true }]}
         />,
       );
       const button = screen.getByRole("button", { name: "Nope" });
@@ -254,7 +266,10 @@ describe("ToolbarGroup", () => {
 
     it("calls an overflowed action's onClick from the menu, then dismisses it", async () => {
       const onClick = vi.fn();
-      const actions = [...makeActions(7), { label: "Overflowed", iconPath: "mdi-test", onClick }];
+      const actions = [
+        ...makeActions(7),
+        { label: "Overflowed", icon: { path: "mdi-test" }, onClick },
+      ];
       render(<ToolbarGroup actions={actions} maxVisible={7} />);
       await userEvent.click(getKebab());
       await userEvent.click(screen.getByText("Overflowed"));
@@ -340,7 +355,7 @@ describe("ToolbarGroup", () => {
   describe("panel actions", () => {
     const panelAction: IToolbarAction = {
       label: "Display options",
-      iconPath: "mdi-test",
+      icon: { path: "mdi-test" },
       panel: ({ close }) => (
         <>
           <span>Panel content</span>
@@ -465,7 +480,9 @@ describe("ToolbarGroup", () => {
     };
 
     it("shows a tooltip with the label when a visible control is hovered", async () => {
-      render(<ToolbarGroup actions={[{ label: "Update extensions", iconPath: "mdi-test" }]} />);
+      render(
+        <ToolbarGroup actions={[{ label: "Update extensions", icon: { path: "mdi-test" } }]} />,
+      );
 
       expect(getTooltip()).not.toBeInTheDocument();
 
@@ -475,7 +492,7 @@ describe("ToolbarGroup", () => {
     });
 
     it("hides the tooltip again once the pointer leaves", async () => {
-      render(<ToolbarGroup actions={[{ label: "Refresh", iconPath: "mdi-test" }]} />);
+      render(<ToolbarGroup actions={[{ label: "Refresh", icon: { path: "mdi-test" } }]} />);
       const button = screen.getByRole("button", { name: "Refresh" });
 
       await userEvent.hover(button);
@@ -496,7 +513,9 @@ describe("ToolbarGroup", () => {
 
     it("gives a showLabel action no tooltip repeating its visible text", async () => {
       render(
-        <ToolbarGroup actions={[{ label: "1 selected", iconPath: "mdi-test", showLabel: true }]} />,
+        <ToolbarGroup
+          actions={[{ label: "1 selected", icon: { path: "mdi-test" }, showLabel: true }]}
+        />,
       );
 
       await userEvent.hover(screen.getByRole("button", { name: "1 selected" }));
@@ -505,7 +524,7 @@ describe("ToolbarGroup", () => {
     });
 
     it("keeps one accessible name per control, not a name plus a duplicate", async () => {
-      render(<ToolbarGroup actions={[{ label: "Refresh", iconPath: "mdi-test" }]} />);
+      render(<ToolbarGroup actions={[{ label: "Refresh", icon: { path: "mdi-test" } }]} />);
       const button = screen.getByRole("button", { name: "Refresh" });
 
       // Icon-only, so the name comes from aria-label and nothing else.
@@ -622,7 +641,7 @@ describe("ToolbarGroup", () => {
     const pinnable = (specs: Array<[label: string, pinned: boolean]>): IToolbarAction[] =>
       specs.map(([label, pinned]) => ({
         id: label.toLowerCase().replace(/ /g, "-"),
-        iconPath: "mdi-test",
+        icon: { path: "mdi-test" },
         label,
         pinned,
       }));
@@ -840,7 +859,10 @@ describe("ToolbarGroup", () => {
       // Without an id there is nothing to key a decision on, so the action stays on
       // the bar rather than being offered a toggle that would do nothing.
       renderToolbar({
-        actions: [{ iconPath: "mdi-test", label: "Nameless" }, ...pinnable([["Deploy", true]])],
+        actions: [
+          { icon: { path: "mdi-test" }, label: "Nameless" },
+          ...pinnable([["Deploy", true]]),
+        ],
       });
 
       expect(barLabels()).toEqual(["Nameless", "Deploy"]);
@@ -1168,7 +1190,7 @@ describe("ToolbarGroup toggles", () => {
             id: "toggle",
             label: on ? "Turn off" : "Turn on",
             description: on ? "Back to how it was." : "Try it out.",
-            iconPath: "mdi-test",
+            icon: { path: "mdi-test" },
             active: on,
             onClick: () => setOn(!on),
           },
@@ -1216,7 +1238,7 @@ describe("ToolbarGroup toggles", () => {
       <ToolbarGroup
         actions={[
           ...makeActions(7),
-          { label: "Turn off", iconPath: "mdi-test", active: true, onClick: () => undefined },
+          { label: "Turn off", icon: { path: "mdi-test" }, active: true, onClick: () => undefined },
         ]}
         maxVisible={7}
       />,

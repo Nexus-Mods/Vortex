@@ -4,7 +4,6 @@
  * Adapted from Figma design for collection browsing
  */
 
-import { mdiCheck, mdiOpenInNew, mdiStar, mdiThumbUp } from "@mdi/js";
 import { type ICollection } from "@nexusmods/nexus-api";
 import numeral from "numeral";
 import React, {
@@ -22,7 +21,7 @@ import {
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Button } from "@/ui/components/button/Button";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Typography } from "@/ui/components/typography/Typography";
 import { nxmFileSize, nxmMod } from "@/ui/icon-paths";
@@ -50,9 +49,9 @@ export interface ICollectionTileProps {
   className?: string;
 }
 
-const Stat = ({ children, iconPath }: PropsWithChildren<{ iconPath: string }>) => (
+const Stat = ({ children, icon }: PropsWithChildren<{ icon: IIconSource }>) => (
   <div className="flex items-center gap-x-1">
-    <Icon className="text-neutral-subdued" path={iconPath} size="sm" />
+    <Icon {...iconSourceProps(icon)} className="text-neutral-subdued" size="sm" />
 
     <Typography appearance="moderate" typographyType="body-sm">
       {children}
@@ -136,7 +135,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
               className="absolute inset-x-0 bottom-0 z-2 flex h-7 items-center gap-x-1 bg-info-weak px-1.5 text-info-50"
               typographyType="title-xs"
             >
-              <Icon path={mdiStar} size="xs" />
+              <Icon name="star" fill size="xs" />
 
               <span title={easyInstallBadge.description}>{easyInstallBadge.name}</span>
             </Typography>
@@ -185,11 +184,13 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
           </div>
 
           <div className="flex items-center gap-x-5 border-t border-stroke-weak pt-1.5">
-            <Stat iconPath={mdiThumbUp}>{numeral(collection.endorsements).format("0 a")}</Stat>
+            <Stat icon={{ name: "thumb_up", fill: true }}>
+              {numeral(collection.endorsements).format("0 a")}
+            </Stat>
 
-            <Stat iconPath={nxmFileSize}>{numeral(revision.totalSize).format("0.0 b")}</Stat>
+            <Stat icon={{ path: nxmFileSize }}>{numeral(revision.totalSize).format("0.0 b")}</Stat>
 
-            <Stat iconPath={nxmMod}>{numeral(revision.modCount).format("0,0")}</Stat>
+            <Stat icon={{ path: nxmMod }}>{numeral(revision.modCount).format("0,0")}</Stat>
           </div>
 
           <Typography
@@ -208,7 +209,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
             appearance="weak"
             brand="neutral"
             disabled={true}
-            leftIconPath={!isLoggedIn ? undefined : mdiCheck}
+            leftIcon={!isLoggedIn ? undefined : "check"}
             size="sm"
             title={!isLoggedIn ? "Log in to add collections" : undefined}
           >
@@ -223,7 +224,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
         <Button
           appearance="weak"
           brand="neutral"
-          leftIconPath={mdiOpenInNew}
+          leftIcon="open_in_new"
           size="sm"
           onClick={onViewPage}
         >

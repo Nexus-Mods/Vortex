@@ -1,0 +1,36 @@
+/**
+ *  Material Symbols (outlined), the variable font behind the Icon component's `name`.
+ *  Its axes are FILL, wght, GRAD and opsz; the Icon component sets them per use.
+ */
+
+@font-face {
+    font-family: "Material Symbols Outlined";
+    font-style: normal;
+    font-weight: 100 700;
+    // Until it loads, an icon's name would show as text, so show nothing instead.
+    font-display: block;
+    src: url(assets/fonts/material-symbols-outlined.woff2) format("woff2");
+}
+
+// A symbol is drawn by writing its name, which the font's ligatures turn into the glyph. The name
+// is written by the stylesheet, from `data-symbol`, so it never becomes part of the page's text:
+// found by a search, selected, copied, or read out.
+.material-symbols-outlined::before {
+    content: attr(data-symbol);
+}
+
+.material-symbols-outlined {
+    display: inline-block;
+    font-family: "Material Symbols Outlined";
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: "liga";
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+}

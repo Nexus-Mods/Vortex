@@ -30,11 +30,23 @@ describe("TypographyLink", () => {
 
     it("renders left and right icons from paths", () => {
       render(
-        <TypographyLink leftIconPath="mdi-left" rightIconPath="mdi-right">
+        <TypographyLink leftIcon={{ path: "mdi-left" }} rightIcon={{ path: "mdi-right" }}>
           link
         </TypographyLink>,
       );
       expect(screen.getAllByRole("presentation")).toHaveLength(2);
+    });
+  });
+
+  describe("symbols", () => {
+    it("renders left and right icons from symbols", () => {
+      render(
+        <TypographyLink leftIcon="search" rightIcon="open_in_new">
+          link
+        </TypographyLink>,
+      );
+      const symbols = [...document.querySelectorAll<HTMLElement>("[data-symbol]")];
+      expect(symbols.map((symbol) => symbol.dataset.symbol)).toEqual(["search", "open_in_new"]);
     });
   });
 

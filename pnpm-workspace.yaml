@@ -34,7 +34,6 @@ catalog:
   "@headlessui/react": 2.2.10
   "@hot-updater/bsdiff": 0.30.6
   "@iarna/toml": 2.2.5
-  "@mdi/js": 7.4.47
   "@microsoft/api-extractor": 7.58.9
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.4
@@ -155,6 +154,7 @@ catalog:
   eslint-plugin-perfectionist: 5.9.1
   feedparser: 2.3.0
   font-scanner: 0.2.1
+  fontkit: 2.0.4
   fork-ts-checker-webpack-plugin: 9.1.0
   fs-extra: 9.1.0
   fuzzball: 1.4.0
@@ -183,6 +183,7 @@ catalog:
   loot: github:Nexus-Mods/node-loot#44306bda0dd9c54e1e38c8ab217afedffd4510aa
   lru-cache: 11.2.7
   markdown-ast: 0.2.1
+  material-symbols: 0.48.0
   memoize-one: 5.2.1
   minimatch: 3.1.5
   minimist: 1.2.8
@@ -242,6 +243,7 @@ catalog:
   source-map-loader: 5.0.0
   source-map-support: 0.5.21
   string-template: 1.0.0
+  subset-font: 2.9.0
   tailwindcss: 4.3.2
   temporal-polyfill: 1.0.4
   terser-webpack-plugin: 5.6.1

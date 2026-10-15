@@ -1,9 +1,3 @@
-import {
-  mdiCheckboxBlankOutline,
-  mdiCheckboxMarkedOutline,
-  mdiUnfoldLessHorizontal,
-  mdiUnfoldMoreHorizontal,
-} from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -48,7 +42,7 @@ export const TableGroupMenu = ({
   const folding: IMenuAction[] = [
     {
       label: expanded ? t("Collapse") : t("Expand"),
-      iconPath: expanded ? mdiUnfoldLessHorizontal : mdiUnfoldMoreHorizontal,
+      icon: expanded ? "unfold_less" : "unfold_more",
       onClick: onToggle,
     },
     {
@@ -61,13 +55,13 @@ export const TableGroupMenu = ({
   if (allSelected && onDeselectAll !== undefined) {
     selecting.push({
       label: t("Deselect all in group"),
-      iconPath: mdiCheckboxBlankOutline,
+      icon: "check_box_outline_blank",
       onClick: onDeselectAll,
     });
   } else if (onSelectAll !== undefined) {
     selecting.push({
       label: t("Select all in group"),
-      iconPath: mdiCheckboxMarkedOutline,
+      icon: "check_box",
       onClick: onSelectAll,
     });
   }

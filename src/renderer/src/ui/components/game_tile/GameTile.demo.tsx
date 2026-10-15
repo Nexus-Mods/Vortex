@@ -1,16 +1,16 @@
-import { mdiEyeOffOutline, mdiFolderOpenOutline, mdiPlus, mdiWeb } from "@mdi/js";
 import React from "react";
 
 import { Button } from "@/ui/components/button/Button";
 import { GameTile } from "@/ui/components/game_tile/GameTile";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 
-const menu = {
+const menu: { actions: IMenuAction[][]; label: string } = {
   label: "Game options",
   actions: [
     [
-      { iconPath: mdiEyeOffOutline, label: "Hide", onClick: () => undefined },
-      { iconPath: mdiFolderOpenOutline, label: "Open game folder", onClick: () => undefined },
-      { iconPath: mdiWeb, label: "Open Nexus Mods Page", onClick: () => undefined },
+      { icon: "visibility_off", label: "Hide", onClick: () => undefined },
+      { icon: "folder_open", label: "Open game folder", onClick: () => undefined },
+      { icon: "language", label: "Open Nexus Mods Page", onClick: () => undefined },
     ],
   ],
 };
@@ -41,7 +41,7 @@ export const GameTileDemo = () => (
         menu={menu}
         name="A Plague Tale: Requiem or a longer name than fits"
         primaryAction={
-          <Button className="w-full" leftIconPath={mdiPlus} onClick={() => undefined}>
+          <Button className="w-full" leftIcon="add" onClick={() => undefined}>
             Add game
           </Button>
         }

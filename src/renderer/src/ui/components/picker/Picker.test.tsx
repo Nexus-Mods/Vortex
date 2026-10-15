@@ -76,8 +76,8 @@ describe("Picker", () => {
     expect(getTrigger()).toHaveTextContent("Blue");
   });
 
-  it("renders an option icon when iconPath is provided", async () => {
-    renderComponent([{ iconPath: "M0 0h24v24H0z", label: "With icon", value: "x" }], "x");
+  it("renders an option icon when given an SVG path", async () => {
+    renderComponent([{ icon: { path: "M0 0h24v24H0z" }, label: "With icon", value: "x" }], "x");
     await userEvent.click(getTrigger());
     expect(
       screen.getByRole("option", { name: /with icon/i }).querySelector(".nxm-dropdown-item-icon"),
