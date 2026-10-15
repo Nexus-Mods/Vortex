@@ -51,6 +51,8 @@ import {
 declare module "../../types/IExtensionContext" {
   interface ApiEvents {
     "install-extension": (info: IExtensionDownloadInfo) => boolean;
+    /** Settles once the startup fetch of the extension catalog has finished, successful or not. */
+    "await-extension-catalog": () => void;
   }
 }
 
@@ -419,6 +421,10 @@ function init(context: IExtensionContext) {
 
       if (success) signalRestartNeeded(context.api);
       return success;
+    });
+
+    context.api.onAsync<"await-extension-catalog">("await-extension-catalog", () => {
+      return didFetchAvailableExtensions;
     });
 
     context.api.events.on("gamemode-activated", (gameMode: string) => {

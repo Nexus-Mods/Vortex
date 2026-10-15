@@ -154,6 +154,7 @@ import { finishDownload } from "../download_management/actions/state";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
 import { appendReferenceTagActions } from "../download_management/util/referenceTags";
+import { isExtensionDownload } from "../extension_manager/queries";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import type { IModType } from "../gamemode_management/types/IModType";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -1340,13 +1341,15 @@ class InstallManager {
                       new ProcessCanceled("You need to select a game before installing this mod"),
                     );
                   }
-                  if (installGameId === "site" && baseName.toLowerCase().includes("extension")) {
-                    // Assumption here is that anything we try to install from the "Modding Tools"/"site" domain
-                    //  that contains "extension" in its archive name is an extension... If a non-extension tool
-                    //  contains "extension" in its archive name... well, that's not good but there's nothing we can
-                    //  do without API providing a unique tag for us to identify Vortex extensions. (AFAIK we can't even query the existing tags from the website)
-                    // Installation of non-Vortex tools with the extension basename will just install as a mod for
-                    //  the current game which I guess should be fine.
+                  if (
+                    installGameId === "site" &&
+                    isExtensionDownload(
+                      state.session.extensions.available,
+                      baseName,
+                      dlInfo?.modInfo?.nexus?.ids?.modId,
+                    )
+                  ) {
+                    // other "site" downloads are modding tools and install as a mod for the current game
                     return Promise.resolve(installGameId);
                   }
                   if (games.find((iter) => iter.id === installGameId) === undefined) {
