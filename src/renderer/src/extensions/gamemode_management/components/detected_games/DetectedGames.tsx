@@ -76,6 +76,7 @@ export const DetectedGames = ({
   );
   const detectedGames = useSelector((state: IState) => state.session.gameMode?.detectedGames);
   const knownGames = useSelector((state: IState) => state.session.gameMode?.known);
+  const profiles = useSelector((state: IState) => state.persistent.profiles);
   const detectionStatus = useSelector(
     (state: IState) => state.session.gameMode?.detectedGamesStatus,
   );
@@ -90,7 +91,10 @@ export const DetectedGames = ({
   const failed = scanFailed || detectionFailed;
 
   const handleScan = () => {
-    const knownBefore = new Set(listableDetectedIds(detectedGames ?? [], knownGames));
+    const addedGameIds = new Set(Object.values(profiles).map((profile) => profile.gameId));
+    const knownBefore = new Set(
+      listableDetectedIds(detectedGames ?? [], knownGames, discoveredGames, addedGameIds),
+    );
     const comparable = detectionStatus === "success" || (detectedGames?.length ?? 0) > 0;
     const scanId = ++scanIdRef.current;
 

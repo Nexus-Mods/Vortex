@@ -59,3 +59,38 @@ describe("listableDetectedIds", () => {
     expect(listableDetectedIds([detected(102, false)])).toEqual([]);
   });
 });
+
+describe("listableDetectedIds with discovery", () => {
+  // Emberville stands in for an extension in development, for a game the response can't name.
+  const withEmberville = [
+    ...known,
+    { id: "emberville", name: "Emberville" },
+  ] as unknown as IGameStored[];
+
+  it("adds a game only discovery found, by its internal id", () => {
+    const ids = listableDetectedIds([], withEmberville, {
+      emberville: { path: "C:/Games/Emberville" },
+    });
+
+    expect(ids).toEqual(["emberville"]);
+  });
+
+  it("counts a game the response and discovery both found once", () => {
+    const ids = listableDetectedIds([detected(1704, false)], withEmberville, {
+      skyrimse: { path: "C:/Games/Skyrim Special Edition" },
+    });
+
+    expect(ids).toEqual(["uid-1704"]);
+  });
+
+  it("leaves out a discovered game the user has added", () => {
+    const ids = listableDetectedIds(
+      [],
+      withEmberville,
+      { emberville: { path: "C:/Games/Emberville" } },
+      new Set(["emberville"]),
+    );
+
+    expect(ids).toEqual([]);
+  });
+});
