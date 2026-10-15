@@ -40,7 +40,7 @@ import { isLoggedIn } from "../nexus_integration/selectors";
 import { nexusGames } from "../nexus_integration/util";
 import { setNextProfile } from "../profile_management/actions/settings";
 import { setGameInfo } from "./actions/persistent";
-import { clearFavouriteGames } from "./actions/session";
+import { clearFavouriteGames, setDetectedGamesStatus } from "./actions/session";
 import {
   addDiscoveredGame,
   clearDiscoveredGame,
@@ -57,7 +57,8 @@ import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from "./
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";
-import { requestDetectedGames, resetDetectedGamesHash } from "./util/detectedGames";
+import { requestDetectedGames, resetDetectedGamesHash } from "./util/detected_games/detectedGames";
+import { listableDetectedIds } from "./util/detected_games/listableDetectedIds";
 import getDriveList from "./util/getDriveList";
 import { getGame, getGameStore, getGameStores } from "./util/getGame";
 import { identifyStore } from "./util/identifyStore";
@@ -992,29 +993,37 @@ function init(context: IExtensionContext): boolean {
       }
     });
 
-    events.on("start-quick-discovery", (cb?: (gameIds: string[], err?: Error) => void) => {
-      const { discovered } = store.getState().settings.gameMode;
-      const discoveredGames = new Set(
-        Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
-      );
+    // Reports the detected games' ids once the scan and its detection are done, with an
+    // error saying which step failed if one did.
+    events.on(
+      "start-quick-discovery",
+      (cb?: (detectedIds: string[], err?: Error, failure?: "discovery" | "detection") => void) => {
+        const { discovered } = store.getState().settings.gameMode;
+        const discoveredGames = new Set(
+          Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
+        );
+        const detectedIds = () =>
+          listableDetectedIds(store.getState().session.gameMode.detectedGames);
 
-      $.gameModeManager
-        .startQuickDiscovery()
-        .then((gameIds: string[]) => {
-          return removeDisappearedGames(context.api, discoveredGames).then(() => {
-            if (cb !== undefined) {
-              cb(gameIds);
+        $.gameModeManager
+          .startQuickDiscovery()
+          .then(() => removeDisappearedGames(context.api, discoveredGames))
+          .then(() => {
+            if (store.getState().session.gameMode.detectedGamesStatus === "failed") {
+              cb?.(detectedIds(), new Error("Game detection failed"), "detection");
+            } else {
+              cb?.(detectedIds());
             }
-          });
-        })
-        .catch((err) => {
-          const error = unknownToError(err);
+          })
+          .catch((err) => {
+            const error = unknownToError(err);
 
-          error["attachLogOnReport"] = true;
-          context.api.showErrorNotification("Discovery failed", err);
-          cb?.(Array.from(discoveredGames), error);
-        });
-    });
+            error["attachLogOnReport"] = true;
+            context.api.showErrorNotification("Discovery failed", err);
+            cb?.(detectedIds(), error, "discovery");
+          });
+      },
+    );
 
     context.api.onAsync<"discover-tools">("discover-tools", (gameId) =>
       $.gameModeManager.startToolDiscovery(gameId),
@@ -1230,6 +1239,9 @@ function init(context: IExtensionContext): boolean {
         const nowLoggedIn = isLoggedIn(store.getState());
         if (loggedIn && !nowLoggedIn) {
           store.dispatch(clearFavouriteGames());
+          if (store.getState().session.gameMode.detectedGamesStatus === "failed") {
+            store.dispatch(setDetectedGamesStatus(undefined));
+          }
         } else if (!loggedIn && nowLoggedIn) {
           resetDetectedGamesHash();
           void requestDetectedGames(context.api).catch((err) =>

@@ -36,7 +36,7 @@ import { addDiscoveredGame, addDiscoveredTool, clearDiscoveredGame } from "./act
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IToolStored } from "./types/IToolStored";
-import { requestDetectedGames } from "./util/detectedGames";
+import { requestDetectedGames } from "./util/detected_games/detectedGames";
 import {
   assertToolDir,
   discoverRelativeTools,
@@ -284,7 +284,7 @@ class GameModeManager {
     this.mQuickDiscoveryAbort = abort;
 
     try {
-      await this.reloadStoreGames();
+      await this.reloadStoreGames(false);
 
       const results = await quickDiscovery(
         games ?? this.mKnownGames,
@@ -299,6 +299,8 @@ class GameModeManager {
       }
 
       this.postDiscovery();
+      // Detection runs last, and is forced so a scan always asks the endpoint afresh.
+      await requestDetectedGames(this.mApi, { force: true });
       return results;
     } finally {
       if (this.mQuickDiscoveryAbort === abort) {
@@ -499,7 +501,8 @@ class GameModeManager {
     }
   }
 
-  private async reloadStoreGames(): Promise<void> {
+  /** Reloads the stores' games, then starts detection unless the caller will run it itself. */
+  private async reloadStoreGames(detect = true): Promise<void> {
     const stores = this.mKnownGameStores;
     this.mApi.sendNotification?.({
       id: "gamestore-reload",
@@ -524,9 +527,9 @@ class GameModeManager {
       await Promise.all(promsies);
     } finally {
       this.mApi.dismissNotification?.("gamestore-reload");
-      void requestDetectedGames(this.mApi).catch((err) =>
-        log("warn", "detected-games: unexpected failure", { err }),
-      );
+      if (detect) {
+        void requestDetectedGames(this.mApi);
+      }
     }
   }
 
