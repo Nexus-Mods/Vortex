@@ -8,6 +8,8 @@ export type FileAction = FileActionRef | FileActionVal | FileActionDel | FileAct
 export interface IFileEntry {
   filePath: string;
   source: string;
+  // the mod's subfolder, for games that don't merge mods (mergeMods off)
+  target?: string;
   type: "refchange" | "valchange" | "deleted" | "srcdeleted";
   action: FileAction;
   modTypeId: string;

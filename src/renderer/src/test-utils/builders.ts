@@ -78,7 +78,11 @@ import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import { deploymentReducer } from "../extensions/mod_management/reducers/deployment";
 import { modsReducer } from "../extensions/mod_management/reducers/mods";
-import type { IFileChange } from "../extensions/mod_management/types/IDeploymentMethod";
+import type {
+  IDeployedFile,
+  IDeploymentMethod,
+  IFileChange,
+} from "../extensions/mod_management/types/IDeploymentMethod";
 import type { IDeployOptions } from "../extensions/mod_management/types/IDeployOptions";
 import type {
   IChoiceType,
@@ -222,6 +226,33 @@ export function makeFileChange(overrides: Partial<IFileChange> = {}): IFileChang
     changeType: "refchange",
     ...overrides,
   };
+}
+
+/** A file of a deployment manifest: a mod's file deployed straight into the mod type's folder. */
+export function makeDeployedFile(overrides: Partial<IDeployedFile> = {}): IDeployedFile {
+  return {
+    relPath: "plugin.esp",
+    source: "mod-1",
+    time: 1,
+    ...overrides,
+  };
+}
+
+/** A deployment method that supports every game and whose purge steps do nothing. */
+export function makeDeploymentMethod(
+  overrides: Partial<IDeploymentMethod> = {},
+): IDeploymentMethod {
+  return {
+    id: "test-method",
+    name: "Test Deployment",
+    priority: 1,
+    isFallbackPurgeSafe: true,
+    isSupported: () => undefined,
+    prePurge: () => Promise.resolve(),
+    purge: () => Promise.resolve(),
+    postPurge: () => Promise.resolve(),
+    ...overrides,
+  } as IDeploymentMethod;
 }
 
 /**
@@ -984,6 +1015,7 @@ export function makeApiHarness(
   const dialogCalls: Array<{ type: DialogType; title: string }> = [];
   const errorNotifications: IApiHarness["errorNotifications"] = [];
   const notifications: IApiHarness["notifications"] = [];
+  const dismissedNotifications: IApiHarness["dismissedNotifications"] = [];
   const historyEntries: IApiHarness["historyEntries"] = [];
   const showHistoryCalls: IApiHarness["showHistoryCalls"] = [];
   const runExecutableCalls: IApiHarness["runExecutableCalls"] = [];
@@ -1022,7 +1054,9 @@ export function makeApiHarness(
       return runProcess(options);
     },
     genMd5Hash: () => Promise.resolve({ md5sum: "test-md5", numBytes: 0 }),
-    dismissNotification: () => undefined,
+    dismissNotification: (id: string) => {
+      dismissedNotifications.push(id);
+    },
     showErrorNotification: (
       title: string,
       message: unknown,
@@ -1080,6 +1114,7 @@ export function makeApiHarness(
     dialogCalls,
     errorNotifications,
     notifications,
+    dismissedNotifications,
     historyEntries,
     showHistoryCalls,
     runExecutableCalls,
@@ -1121,6 +1156,16 @@ export function makeGameHarness(
     },
     extraReducers,
   );
+  if (opts.instanceId !== undefined || opts.activatorId !== undefined) {
+    base.setState((draft) => {
+      if (opts.instanceId !== undefined) {
+        draft.app = { ...draft.app, instanceId: opts.instanceId };
+      }
+      if (opts.activatorId !== undefined) {
+        draft.settings.mods.activator = { [gameId]: opts.activatorId };
+      }
+    });
+  }
   const dataPath = gamePath !== undefined ? getGame(gameId).getModPaths(gamePath)[""] : undefined;
   return { ...base, gameId, profileId, stagingPath, dataPath };
 }
