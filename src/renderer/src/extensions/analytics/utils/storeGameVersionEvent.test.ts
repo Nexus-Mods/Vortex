@@ -10,7 +10,6 @@ import {
   emitStoreGameVersionEvent,
   gogInstallFromInfo,
   resetStoreGameVersionHash,
-  steamInstallFromManifest,
   storeGameVersionChangeKey,
 } from "./storeGameVersionEvent";
 
@@ -23,68 +22,25 @@ vi.mock("../../gamemode_management/util/getGame", () => ({
   getGameStoresSafe: vi.fn(),
 }));
 
-// Parsed appmanifest, as simple-vdf leaves it: every leaf is a string.
-const APP_STATE = {
-  appid: "489830",
-  StateFlags: "4",
-  buildid: "16659740",
-  TargetBuildID: "16659740",
-  InstalledDepots: {
-    "489831": { manifest: "7997079406114800065", size: "1000" },
-    "736261": { manifest: "5847185504493819274", size: "1000", dlcappid: "736260" },
-  },
-  SharedDepots: { "228990": "228980" },
-  UserConfig: { language: "english", BetaKey: "public" },
-  MountedConfig: { language: "english" },
+import type { ISteamInstallData } from "../../../util/Steam";
+
+// Scan-validated install data, as a steam-kv-parser + zod scan would produce it.
+const INSTALL_DATA: ISteamInstallData = {
+  appId: 489830,
+  buildId: 16659740,
+  stateFlags: 4,
+  targetBuildId: 16659740,
+  branch: null,
+  language: "english",
+  mountedLanguage: "english",
+  depots: [
+    { depotId: 489831, manifestId: "7997079406114800065", dlcAppId: null },
+    { depotId: 736261, manifestId: "5847185504493819274", dlcAppId: "736260" },
+  ],
+  sharedDepots: [{ depotId: 228990, ownerAppId: 228980 }],
 };
 
-describe("steamInstallFromManifest", () => {
-  it("maps the acf AppState onto the contract", () => {
-    expect(steamInstallFromManifest(APP_STATE)).toEqual({
-      app_id: 489830,
-      build_id: 16659740,
-      branch: null,
-      language: "english",
-      mounted_language: "english",
-      state_flags: 4,
-      target_build_id: 16659740,
-      depots: [
-        { depot_id: 489831, manifest_id: "7997079406114800065", dlc_app_id: null },
-        { depot_id: 736261, manifest_id: "5847185504493819274", dlc_app_id: "736260" },
-      ],
-      shared_depots: [{ depot_id: 228990, owner_app_id: 228980 }],
-    });
-  });
-
-  it("keeps a non-default branch, loses the default", () => {
-    expect(steamInstallFromManifest(APP_STATE)?.branch).toBe(null);
-    expect(
-      steamInstallFromManifest({
-        ...APP_STATE,
-        UserConfig: { ...APP_STATE.UserConfig, BetaKey: "beta-2" },
-      })?.branch,
-    ).toBe("beta-2");
-  });
-
-  it("keeps depot file order when the caller supplies it", () => {
-    // simple-vdf re-sorts the numeric keys, so order arrives from the scan-side regex
-    const install = steamInstallFromManifest(
-      {
-        ...APP_STATE,
-        InstalledDepots: {
-          "2": { manifest: "mm2" },
-          "1": { manifest: "mm1" },
-          "3": {},
-        },
-      },
-      ["2", "1", "3"],
-    );
-    expect(install?.depots).toEqual([
-      { depot_id: 2, manifest_id: "mm2", dlc_app_id: null },
-      { depot_id: 1, manifest_id: "mm1", dlc_app_id: null },
-    ]);
-  });
-
+describe("gogInstallFromInfo", () => {
   it("reads a 64-bit id through regex, not JSON.parse", () => {
     // JSON.parse rounds this to ...188; the extractor must see the raw digits.
     expect(
@@ -104,8 +60,7 @@ describe("steamInstallFromManifest", () => {
     });
   });
 
-  it("rejects installs it cannot identify", () => {
-    expect(steamInstallFromManifest({ ...APP_STATE, StateFlags: undefined })).toBeNull();
+  it("rejects content without a build id", () => {
     expect(gogInstallFromInfo('{"languages": ["en-US"]}', "1")).toBeNull();
   });
 });
@@ -157,36 +112,38 @@ interface SeedState {
   confidential: { account: { nexus?: { APIKey?: string } } };
 }
 
-const DISCOVERED = {
-  skyrimse: { path: "c:\\games\\skyrim", store: "steam" },
-};
-
 function seed(
   harness: IApiHarness,
-  { enabled = true, loggedIn = true }: { enabled?: boolean; loggedIn?: boolean } = {},
+  {
+    enabled = true,
+    loggedIn = true,
+    discovered = { skyrimse: { path: "c:\\games\\skyrim", store: "steam" } },
+  }: {
+    enabled?: boolean;
+    loggedIn?: boolean;
+    discovered?: Record<string, { path?: string; store?: string }>;
+  } = {},
 ): void {
   harness.setState((draft) => {
     const state = draft as unknown as SeedState;
     state.settings.analytics = { enabled };
-    state.settings.gameMode = { discovered: DISCOVERED };
+    state.settings.gameMode = { discovered };
     state.app = { instanceId: "inst-1" };
     state.confidential = { account: loggedIn ? { nexus: { APIKey: "test-api-key" } } : {} };
   });
 }
 
-function steamEntry(manifestData: unknown, gamePath = "C:\\Games\\Skyrim"): unknown {
-  return {
-    appid: "489830",
-    name: "Skyrim",
-    gamePath,
-    gameStoreId: "steam",
-    manifestData,
-  };
-}
+const steamEntry = (installData?: ISteamInstallData, gamePath = "C:\\Games\\Skyrim"): unknown => ({
+  appid: "489830",
+  name: "Skyrim",
+  gamePath,
+  gameStoreId: "steam",
+  installData,
+});
 
-function withEntries(...entries: unknown[]): unknown {
-  return [{ id: "steam", snapshot: () => ({ entries, isInstalled: true }) }];
-}
+const withEntries = (...entries: unknown[]): unknown => [
+  { id: "steam", snapshot: () => ({ entries, isInstalled: true }) },
+];
 
 describe("emitStoreGameVersionEvent", () => {
   const telemetryEvent = vi.fn();
@@ -202,9 +159,7 @@ describe("emitStoreGameVersionEvent", () => {
       getInstalledVersion: vi.fn().mockResolvedValue("1.6.1170.0"),
       details: { steamAppId: 489830 },
     } as unknown as ReturnType<typeof getGame>);
-    vi.mocked(getGameStoresSafe).mockReturnValue(
-      withEntries(steamEntry({ AppState: APP_STATE })) as never,
-    );
+    vi.mocked(getGameStoresSafe).mockReturnValue(withEntries(steamEntry(INSTALL_DATA)) as never);
     resetStoreGameVersionHash();
   });
 
@@ -260,7 +215,7 @@ describe("emitStoreGameVersionEvent", () => {
     const harness = makeApi();
     seed(harness);
     vi.mocked(getGameStoresSafe).mockReturnValue(
-      withEntries(steamEntry({ AppState: APP_STATE }, "D:\\somewhere-else")) as never,
+      withEntries(steamEntry(INSTALL_DATA), "D:\\somewhere-else") as never,
     );
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
@@ -269,21 +224,30 @@ describe("emitStoreGameVersionEvent", () => {
     expect(telemetryEvent.mock.calls[0][2].payload.steam.build_id).toBe(16659740);
   });
 
-  test("sends a failure record instead of staying silent", async ({ makeApi }) => {
+  test("sends failure records instead of staying silent", async ({ makeApi }) => {
     const harness = makeApi();
     seed(harness);
-    vi.mocked(getGameStoresSafe).mockReturnValue(withEntries() as never);
 
+    // no matching store entry at all
+    vi.mocked(getGameStoresSafe).mockReturnValue(withEntries() as never);
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
 
-    const payload = telemetryEvent.mock.calls[0]?.[2].payload;
-    expect(payload).toMatchObject({
-      game_id: "1704",
+    // store entry present, but the manifest lacked the install fields
+    vi.mocked(getGameStoresSafe).mockReturnValue(withEntries(steamEntry(undefined)) as never);
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    const [missed, unparsed] = telemetryEvent.mock.calls.map((call) => call[2].payload);
+    expect(missed).toMatchObject({
       store: "steam",
       steam: null,
       failure_reason: "store-entry-not-found",
-      exe_version: "1.6.1170.0",
     });
+    expect(unparsed).toMatchObject({
+      store: "steam",
+      steam: null,
+      failure_reason: "acf-parse-failed",
+    });
+    expect(missed).toMatchObject({ exe_version: "1.6.1170.0" });
   });
 
   test("skips games without a resolvable numeric nexus id", async ({ makeApi }) => {
@@ -297,11 +261,8 @@ describe("emitStoreGameVersionEvent", () => {
 
   test("skips games not discovered through steam or gog", async ({ makeApi }) => {
     const harness = makeApi();
-    seed(harness);
-    harness.setState((draft) => {
-      (draft as unknown as SeedState).settings.gameMode = {
-        discovered: { skyrimse: { path: "c:\\games\\skyrim", store: "epic" } },
-      };
+    seed(harness, {
+      discovered: { skyrimse: { path: "c:\\games\\skyrim", store: "epic" } },
     });
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
@@ -310,10 +271,7 @@ describe("emitStoreGameVersionEvent", () => {
 
   test("skips games without a discovery result", async ({ makeApi }) => {
     const harness = makeApi();
-    seed(harness);
-    harness.setState((draft) => {
-      (draft as unknown as SeedState).settings.gameMode = { discovered: {} };
-    });
+    seed(harness, { discovered: {} });
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
     expect(telemetryEvent).not.toHaveBeenCalled();

@@ -33,26 +33,35 @@ const MANIFEST = `"AppState"
   "LastUpdated" "0"
 }`;
 
-/** Mini appmanifest with two depots whose file order differs from depot-id order.
-    Every block opens on its own line, like a real Steam file writes them. */
+/** Mini appmanifest with the depot values the telemetry needs: depot ids whose
+    file order differs from depot-id order, inline-brace entries like real Steam
+    files write them, plus branch/language and a shared (redistributable) depot. */
 const DEPOT_MANIFEST = `"AppState"
 {
   "appid" "42"
   "name" "Test Game"
   "installdir" "TestGame"
   "buildid" "12345"
+  "TargetBuildID" "12346"
   "StateFlags" "4"
   "InstalledDepots"
   {
-    "7"
-    {
-      "manifest"  "m7"
-    }
-    "3"
-    {
-      "manifest"  "m3"
-      "dlcappid"  "1"
-    }
+    "7" { "manifest" "m7" "size" "1" }
+    "3" { "manifest" "m3" "size" "2" "dlcappid" "1" }
+  }
+  "SharedDepots"
+  {
+    "5" "4"
+  }
+  "UserConfig"
+  {
+    "language" "english"
+    "BetaKey" "beta-2"
+  }
+  "MountedConfig"
+  {
+    "language" "english"
+    "BetaKey" "beta-2"
   }
 }`;
 
@@ -289,12 +298,31 @@ describe("Steam.allGames", () => {
   it("keeps the InstalledDepots file order, which depot-id sort would lose", async () => {
     const entries = await scanAllGames(DEPOT_MANIFEST);
 
-    expect(entries[0]?.depotOrder).toEqual(["7", "3"]);
+    expect(entries[0]?.installData).toEqual({
+      appId: 42,
+      buildId: 12345,
+      stateFlags: 4,
+      targetBuildId: 12346,
+      branch: "beta-2",
+      language: "english",
+      mountedLanguage: "english",
+      depots: [
+        { depotId: 7, manifestId: "m7", dlcAppId: null },
+        { depotId: 3, manifestId: "m3", dlcAppId: "1" },
+      ],
+      sharedDepots: [{ depotId: 5, ownerAppId: 4 }],
+    });
   });
 
-  it("omits depotOrder when the manifest has no InstalledDepots", async () => {
+  it("normalizes the default branch to null", async () => {
+    const entries = await scanAllGames(DEPOT_MANIFEST.replace("beta-2", "public"));
+
+    expect(entries[0]?.installData?.branch).toBeNull();
+  });
+
+  it("skips install data when the manifest lacks build or state fields", async () => {
     const entries = await scanAllGames();
 
-    expect(entries[0]?.depotOrder).toBeUndefined();
+    expect(entries[0]?.installData).toBeUndefined();
   });
 });
