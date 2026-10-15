@@ -160,6 +160,8 @@ Colour is expressed as `brand` × `appearance`: `brand` picks the colour family,
 
 Wrap a list or several paragraphs in one Typography with plain elements inside, rather than one per item. See "Text" in `docs/frontend.md`.
 
+Body styles are normal weight; Design's Medium and Semi Bold variants are `className="font-medium"` (500) and `className="font-semibold"` (600) on the same `typographyType`.
+
 ```tsx
 import { Typography } from "../../ui/components/typography/Typography";
 

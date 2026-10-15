@@ -89,6 +89,16 @@ a **block** of text, and everything inside it inherits that style. `as` picks th
 element for its meaning only; `typographyType` picks the style, `body-md` unless
 given.
 
+A body style is normal weight. For Design's Medium and Semi Bold variants, add
+`font-medium` (500) or `font-semibold` (600) to its `className`; the size, line
+height and letter spacing stay the body style's.
+
+```tsx
+<Typography className="font-medium" typographyType="body-sm">
+    Mods
+</Typography>
+```
+
 Wrap a list or a run of paragraphs in one `Typography`, and put plain elements
 inside:
 

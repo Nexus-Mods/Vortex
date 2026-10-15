@@ -37,7 +37,7 @@ export const MenuButton: FC<React.PropsWithChildren<MenuButtonProps>> = ({
         <Typography
           as="span"
           brand="none"
-          className="grow truncate font-semibold"
+          className="grow truncate font-medium"
           typographyType="body-sm"
         >
           {children}

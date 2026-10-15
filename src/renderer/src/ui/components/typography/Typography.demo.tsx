@@ -13,6 +13,13 @@ import { Typography } from "./Typography";
 const colourBrands = ["primary", "info", "success", "premium", "danger", "warning"] as const;
 const appearances = ["weak", "subdued", "moderate", "strong"] as const;
 
+const bodyTypes = ["body-2xl", "body-xl", "body-lg", "body-md", "body-sm", "body-xs"] as const;
+const weights = [
+  { label: "Normal", className: undefined },
+  { label: "Medium", className: "font-medium" },
+  { label: "Semi Bold", className: "font-semibold" },
+] as const;
+
 export const TypographyDemo = () => (
   <div className="space-y-8">
     <div className="rounded-sm bg-surface-mid p-4">
@@ -104,6 +111,32 @@ export const TypographyDemo = () => (
         <Typography as="p" typographyType="body-xs">
           body-xs: The quick brown fox
         </Typography>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <Typography as="h3" typographyType="heading-xs">
+        Body Weights
+      </Typography>
+
+      <Typography appearance="subdued" typographyType="body-sm">
+        Normal by default; font-medium or font-semibold for more weight.
+      </Typography>
+
+      <div className="space-y-2">
+        {bodyTypes.map((type) => (
+          <div className="flex items-baseline gap-x-6" key={type}>
+            <Typography appearance="subdued" className="w-20 shrink-0" typographyType="body-sm">
+              {type}
+            </Typography>
+
+            {weights.map(({ label, className }) => (
+              <Typography className={className} key={label} typographyType={type}>
+                {label}
+              </Typography>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
 
