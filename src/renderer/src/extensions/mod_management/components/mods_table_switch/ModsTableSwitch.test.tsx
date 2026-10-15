@@ -1281,6 +1281,68 @@ describe("ModsTableSwitch", () => {
     });
   });
 
+  describe("a collection's group heading", () => {
+    const withCollection = () => ({
+      a: mod("a", "Alpha", true),
+      b: mod("b", "Beta", false),
+      x: collection("x", "Xenon", ["b"]),
+    });
+    const groupRowOf = (name: string) =>
+      screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement;
+    const menuItems = () => screen.getAllByRole("menuitem").map((item) => item.textContent);
+
+    it("offers the collection's actions after folding and selecting, run against the collection", async () => {
+      const remove = vi.fn();
+      renderSwitch(withCollection(), [{ title: "Remove", action: remove }]);
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("Xenon"));
+
+      expect(menuItems().slice(0, 4)).toEqual([
+        "Collapse",
+        "Collapse all",
+        "Select all in group",
+        "View collection",
+      ]);
+      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      expect(remove).toHaveBeenCalledWith(["x"]);
+    });
+
+    it("opens the collection's page from View collection", async () => {
+      renderSwitch(withCollection());
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("Xenon"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "View collection" }));
+
+      expect(mocks.emit).toHaveBeenCalledWith("view-collection", "x");
+    });
+
+    it("offers the same actions from the heading's …", async () => {
+      const remove = vi.fn();
+      renderSwitch(withCollection(), [{ title: "Remove", action: remove }]);
+      await showView("Collections");
+
+      await userEvent.click(
+        within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
+      );
+      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+      expect(remove).toHaveBeenCalledWith(["x"]);
+    });
+
+    it("gives the no-collection group neither", async () => {
+      renderSwitch(withCollection(), [{ title: "Remove", action: vi.fn() }]);
+      await showView("Collections");
+
+      expect(
+        within(groupRowOf("No collection")).queryByRole("button", { name: "More actions" }),
+      ).toBeNull();
+      fireEvent.contextMenu(groupRowOf("No collection"));
+      expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+    });
+  });
+
   describe("a row's context menu", () => {
     it("changes the row's pins from its pin toggles", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);

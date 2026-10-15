@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
 
+import { useMainContext } from "@/contexts";
 import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
@@ -26,12 +27,17 @@ import type { ITableSort, TableColumnWidth } from "@/ui/components/table/Table.t
 import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/TableSelectionBar";
 import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
-import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
-import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
+import {
+  type IToolbarAction,
+  ToolbarGroup,
+  trackedActions,
+} from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarMenu, toolbarMenuSections } from "@/ui/components/toolbar/ToolbarMenu";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
 import { TitledTooltip } from "@/ui/components/tooltip/TitledTooltip";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
+import { nxmCollectionOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
@@ -49,6 +55,7 @@ import {
 } from "../../hooks/use_mod_actions/useModActions.hook";
 import {
   MODS_TABLE_TOOLBARS,
+  modsTableGroupToolbar,
   useModsTableAnalytics,
 } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import {
@@ -58,6 +65,7 @@ import {
 import { useModsTableDataColumns } from "../../hooks/use_mods_table_data_columns/useModsTableDataColumns.hook";
 import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
 import { UNINSTALLING_ACTIVITY } from "../../hooks/use_uninstall_mods/useUninstallMods.hook";
+import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
@@ -421,6 +429,23 @@ export const ModsTableSwitch = ({
   const analytics = useModsTableAnalytics();
   const rowTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
   const selectionTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.selection);
+  const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
+  const { api } = useMainContext();
+
+  /** A collection's own row isn't listed, so its group's heading offers what that row would have, and its page. */
+  const collectionActions = useCallback(
+    (collection: IMod): IToolbarAction[] => [
+      {
+        id: "view-collection",
+        label: t("View collection"),
+        iconPath: nxmCollectionOutline,
+        section: "view",
+        onClick: () => api.events.emit("view-collection", collection.id),
+      },
+      ...actionsFor(collection.id),
+    ],
+    [actionsFor, api, t],
+  );
 
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   // Those still listed, as a removed mod can't be acted on.
@@ -510,23 +535,38 @@ export const ModsTableSwitch = ({
             onSetEnabled={setEnabled}
           />
         ),
-        // Part on while only some of its mods are, as after keeping the shared ones.
+        /** Part on while only some of its mods are, as after keeping the shared ones; against the end, past room for a menu, so it lines up with its rows' switches. */
         groupCell: (group) => {
           const enabled = group.rows.filter(({ mod }) => isEnabled(mod)).length;
 
-          // Against the end, past room for a menu, so it lines up with its rows' switches.
-          return (
-            <div className="flex w-full items-center justify-end gap-x-2">
-              <Switch
-                aria-label={t("{{name}} enabled", { name: group.label })}
-                checked={group.rows.length > 0 && enabled === group.rows.length}
-                indeterminate={enabled > 0 && enabled < group.rows.length}
-                isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
-                onChange={(checked) => setGroupEnabled(group, checked)}
-              />
+          const toggle = (
+            <Switch
+              aria-label={t("{{name}} enabled", { name: group.label })}
+              checked={group.rows.length > 0 && enabled === group.rows.length}
+              indeterminate={enabled > 0 && enabled < group.rows.length}
+              isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
+              onChange={(checked) => setGroupEnabled(group, checked)}
+            />
+          );
 
-              <span aria-hidden className="w-7 shrink-0" />
-            </div>
+          if (group.collection === undefined) {
+            return (
+              <div className="flex w-full items-center justify-end gap-x-2">
+                {toggle}
+
+                <span aria-hidden className="w-7 shrink-0" />
+              </div>
+            );
+          }
+
+          return (
+            <Toolbar className="w-full justify-end" tracking={groupTracking}>
+              <ToolbarGroup
+                actions={collectionActions(group.collection)}
+                beforeOverflow={toggle}
+                maxVisible={0}
+              />
+            </Toolbar>
           );
         },
       },
@@ -558,6 +598,7 @@ export const ModsTableSwitch = ({
       actionsFor,
       alternatives,
       changing,
+      collectionActions,
       dataColumns,
       install,
       isEnabled,
@@ -565,6 +606,7 @@ export const ModsTableSwitch = ({
       onRemoveVersion,
       onSelectVersion,
       setEnabled,
+      groupTracking,
       setGroupEnabled,
       shownPins,
       t,
@@ -713,6 +755,14 @@ export const ModsTableSwitch = ({
           onSelect={close}
         />
       ),
+    groupMenu: ({ collection }: IModGroup) => {
+      if (collection === undefined) {
+        return [];
+      }
+      return toolbarMenuSections(
+        trackedActions(collectionActions(collection), "menu", groupTracking.onActionClick),
+      );
+    },
     onMenuOpen: analytics.onMenuOpen,
     onGroupMenuAction: analytics.onGroupMenuAction,
     defaultSort: BY_NAME,

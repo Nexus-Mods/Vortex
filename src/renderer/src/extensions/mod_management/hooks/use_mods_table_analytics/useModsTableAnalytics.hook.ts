@@ -17,6 +17,9 @@ export const MODS_TABLE_TOOLBARS = {
   selection: "mods-table-selection",
 } as const;
 
+/** A group heading's toolbar, named by its view's grouping, e.g. `"mods-table-group-collection"`. */
+export const modsTableGroupToolbar = (grouping: string) => `mods-table-group-${grouping}`;
+
 /** How a custom view of the user's own changed. */
 export type ModsTableViewChange = "created" | "renamed" | "deleted" | "reset";
 
