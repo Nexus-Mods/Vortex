@@ -62,7 +62,8 @@ async function addGameManually(gamesPage: GamesPage, gameName: string): Promise<
 
   const tile = gamesPage.gameTileInSection(gamesPage.supportedSection, gameName);
   await expect(tile).toBeVisible({ timeout: Timeouts.NETWORK });
-  await tile.scrollIntoViewIfNeeded();
+  // hover scrolls the tile into view itself, and unlike scrollIntoViewIfNeeded it
+  // retries if the list re-renders the tile in the meantime
   await tile.hover();
 
   const manualAddButton = gamesPage.manualAddButton(gameName);
@@ -87,7 +88,6 @@ async function openAddedGame(
 ): Promise<void> {
   const addedTile = gamesPage.gameTileInSection(gamesPage.addedSection, gameName);
   await expect(addedTile).toBeVisible({ timeout: Timeouts.GAME_ACTIVATION });
-  await addedTile.scrollIntoViewIfNeeded();
   await addedTile.hover();
 
   const openButton = gamesPage.openButton(gameName);
