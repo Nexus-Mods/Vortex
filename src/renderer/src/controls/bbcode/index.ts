@@ -8,6 +8,9 @@ import IdentityTag from "./IdentityTag";
 import LineTag from "./LineTag";
 import LinkTag from "./LinkTag";
 import MoreTag from "./MoreTag";
+import OmittedTag from "./OmittedTag";
+import SafeLinkTag from "./SafeLinkTag";
+import SafeStyleTag from "./SafeStyleTag";
 import SizeTag from "./SizeTag";
 import SpoilerTag from "./SpoilerTag";
 import StyleTag from "./StyleTag";
@@ -35,22 +38,37 @@ export interface IBBCodeContext {
   allowLocal?: boolean;
 }
 
-const fullParser = new bbcode.Parser();
+const createFullParser = (safe: boolean) => {
+  const parser = new bbcode.Parser();
 
-fullParser.registerTag("size", SizeTag);
-fullParser.registerTag("br", BrTag);
-fullParser.registerTag("email", LinkTag);
-fullParser.registerTag("link", LinkTag);
-fullParser.registerTag("url", LinkTag);
-fullParser.registerTag("spoiler", SpoilerTag);
-fullParser.registerTag("font", FontTag);
-fullParser.registerTag("youtube", YoutubeTag);
-fullParser.registerTag("line", LineTag);
-fullParser.registerTag("heading", HeadingTag);
-fullParser.registerTag("svg", SvgTag);
-fullParser.registerTag("more", MoreTag);
-fullParser.registerTag("tooltip", TooltipTag);
-fullParser.registerTag("style", StyleTag);
+  parser.registerTag("size", SizeTag);
+  parser.registerTag("br", BrTag);
+  parser.registerTag("email", safe ? SafeLinkTag : LinkTag);
+  parser.registerTag("link", safe ? SafeLinkTag : LinkTag);
+  parser.registerTag("url", safe ? SafeLinkTag : LinkTag);
+  parser.registerTag("spoiler", SpoilerTag);
+  parser.registerTag("font", FontTag);
+  parser.registerTag("youtube", safe ? OmittedTag : YoutubeTag);
+  parser.registerTag("line", LineTag);
+  parser.registerTag("heading", HeadingTag);
+  parser.registerTag("svg", SvgTag);
+  parser.registerTag("more", MoreTag);
+  parser.registerTag("tooltip", TooltipTag);
+  parser.registerTag("style", safe ? SafeStyleTag : StyleTag);
+
+  // The parser's own image tag loads whatever address it is given.
+  if (safe) {
+    parser.registerTag("img", OmittedTag);
+  }
+
+  return parser;
+};
+
+const fullParser = createFullParser(false);
+
+// For bbcode we don't write ourselves: no images or videos, and links only to places they are
+// allowed to go.
+const safeParser = createFullParser(true);
 
 const stripParser = new bbcode.Parser();
 stripParser.registerTag("br", BrTag);
@@ -85,16 +103,25 @@ export function preProcess(input: string): string {
   return input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol);
 }
 
-function renderBBCode(input: string, context?: unknown): React.ReactChild[] {
+function render(parser: typeof fullParser, input: string, context?: unknown): React.ReactChild[] {
   if (input === undefined) {
     return [""];
   }
 
   if (context !== undefined) {
-    return fullParser["renderer"].context(context, () => fullParser.toReact(preProcess(input)));
+    return parser["renderer"].context(context, () => parser.toReact(preProcess(input)));
   } else {
-    return fullParser.toReact(preProcess(input));
+    return parser.toReact(preProcess(input));
   }
+}
+
+function renderBBCode(input: string, context?: unknown): React.ReactChild[] {
+  return render(fullParser, input, context);
+}
+
+/** As `renderBBCode`, for bbcode we don't write ourselves: no images or videos, and safe links. */
+export function renderSafeBBCode(input: string, context?: unknown): React.ReactChild[] {
+  return render(safeParser, input, context);
 }
 
 export function stripBBCode(input: string): string {
