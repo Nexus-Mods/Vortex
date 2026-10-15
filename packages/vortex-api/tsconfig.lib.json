@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
-  "files": ["lib/api.d.ts"],
+  "files": ["lib/api.d.ts", "lib/ui.d.ts"],
   "compilerOptions": {
     "declaration": true,
     "noEmit": true,

@@ -12,24 +12,16 @@ import { EndorsedStatus } from '@nexusmods/nexus-api';
 import { FC } from 'react';
 import { i18n } from 'i18next';
 import I18next from 'i18next';
-import { ICategoryDictionary } from '@/extensions/category_management/types/ICategoryDictionary';
 import { ICollection } from '@nexusmods/nexus-api';
 import { ICollectionManifest } from '@nexusmods/nexus-api';
 import { ICollectionSearchOptions } from '@nexusmods/nexus-api';
 import { ICollectionSearchResult } from '@nexusmods/nexus-api';
-import { IDiscoveryResult } from '@/extensions/gamemode_management/types/IDiscoveryResult';
-import { IDownload } from '@/extensions/download_management/types/IDownload';
 import { IDownloadURL } from '@nexusmods/nexus-api';
 import { IFeedbackResponse } from '@nexusmods/nexus-api';
 import { IFileInfo } from '@nexusmods/nexus-api';
 import { IHashResult } from 'modmeta-db';
-import { IHealthCheckPersistentState } from '@/extensions/health_check/reducers/persistent';
-import { IHealthCheckSessionState } from '@/extensions/health_check/reducers/session';
-import { IHistoryPersistent } from '@/extensions/history_management/reducers';
-import { IHistoryState } from '@/extensions/history_management/reducers';
 import { IIssue } from '@nexusmods/nexus-api';
 import { ILookupResult } from 'modmeta-db';
-import { IMod } from '@/extensions/mod_management/types/IMod';
 import { IModFileContentPage } from '@nexusmods/nexus-api';
 import { IModFileContentPageQuery } from '@nexusmods/nexus-api';
 import { IModFileContentSearchFilter } from '@nexusmods/nexus-api';
@@ -38,12 +30,10 @@ import { IModInfo as IModInfo_2 } from '@nexusmods/nexus-api';
 import { IModRequirements } from '@nexusmods/nexus-api';
 import { IPreference } from '@nexusmods/nexus-api';
 import { IPreferenceQuery } from '@nexusmods/nexus-api';
-import { IProfile } from '@/extensions/profile_management/types/IProfile';
 import { IReference } from 'modmeta-db';
 import { IRevision } from '@nexusmods/nexus-api';
 import { IRule } from 'modmeta-db';
 import { IServer } from 'modmeta-db';
-import { IUpdaterSessionState } from '@/extensions/updater/reducers';
 import { Modal as Modal_2 } from 'react-bootstrap';
 import { ModalBody } from 'react-bootstrap';
 import { ModalFooter } from 'react-bootstrap';
@@ -87,7 +77,7 @@ type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];
 
 // @public (undocumented)
 export namespace actions {
-    export { Condition, ConditionResults, DialogActions, DialogContentItem, DialogType, ICheckbox, IConditionResult, IControlBase, IDialog, IDialogAction, IDialogContent, IDialogResult, IDictionary, IEnableOptions, IInput, ILink, ISetFBLoadOrderEntryPayload, ISetFBLoadOrderPayload, addDialog, addDiscoveredGame, addDiscoveredTool, addExtension, addLocalDownload, addMod, addModRule, addMods, addNotification, cacheModReference, clearDialog, clearDiscoveredGame, clearModRules, clearOAuthCredentials, clearPendingPluginSort, clearUIBlocker, closeBrowser, closeDialog, closeDialogs, collapseGroup, completeMigration, dismissAllNotifications, dismissDialog, dismissNotification, displayGroup, downloadProgress, endDialog, finalizingDownload, finalizingProgress, finishDownload, fireNotificationAction, forgetExtension, forgetMod, initDownload, loadCategories, mergeDownloadModInfo, pauseDownload, removeCategory, removeDownload, removeDownloadSilent, removeExtension, removeFBLoadOrderProfile, removeMod, removeModRule, removeProfile, renameCategory, resetSuppression, setActivator, setAdvancedMode, setAlwaysCompactHeaders, setApplicationVersion, setAssociatedWithNXMURLs, setAttributeFilter, setAttributeSort, setAttributeVisible, setAutoDeployment, setAutoEnable, setAutoInstall, setAutoStart, setCategory, setCategoryOrder, setCleanupOnDeploy, setCollapsedGroups, setCollectionConcurrency, setCommandLine, setCompatibleGames, setConfirmPurge, setCopyOnIFF, setCustomTitlebar, setDeploymentNecessary, setDesktopNotifications, setDialogState, setDialogVisible, setDownloadFilePath, setDownloadGameFilter, setDownloadHash, setDownloadHashByFile, setDownloadInstalled, setDownloadInterrupted, setDownloadModInfo, setDownloadPath, setDownloadPausable, setDownloadSpeed, setDownloadSpeeds, setDownloadTime, setExtensionEnabled, setExtensionEndorsed, setExtensionLoadFailures, setExtensionVersion, setFBLoadOrder, setFBLoadOrderEntry, setFeature, setFileOverride, setForcedLogout, setForegroundDL, setGameHidden, setGameParameters, setGamePath, setGameSearchPaths, setGroupingAttribute, setHideTopLevelCategory, setINITweakEnabled, setInstallPath, setInstallPathMode, setInstallType, setInstanceId, setLanguage, setLoadOrder, setLoadOrderEntry, setMaxBandwidth, setMaxDownloads, setMaximized, setModArchiveId, setModAttribute, setModAttributes, setModEnabled, setModInstallationPath, setModState, setModType, setModsEnabled, setNetworkConnected, setNewestVersion, setNextProfile, setOAuthCredentials, setOpenMainPage, setPendingPluginSort, setPickerLayout, setPrimaryTool, setProfile, setProfileActivated, setProfilesVisible, setProgress, setReduceMotion, setRelativeTimes, setSettingsPage, setShowDLDropzone, setShowDLGraph, setShowModDropzone, setSortDetected, setSortManaged, setSortUnmanaged, setStartMinimized, setStateVersion, setSuggestInstallPathDirectory, setTabsMinimized, setToolOrder, setToolPid, setToolPinned, setToolRunning, setToolStopped, setToolValid, setToolVisible, setUIBlocker, setUpdateChannel, setUpdaterActive, setUpdaterSnapshot, setUseModernLayout, setUserAPIKey, setUserInfo, setWarnedAdmin, setWindowPosition, setWindowSize, setZoomFactor, setupNotificationSuppression, showDialog, showURL, showUsageInstruction, startActivity, startDialog, startDownload, startNotification, stopActivity, stopAllNotifications, stopNotification, suppressNotification, triggerDialogLink, updateCategories, updateNotification, willRemoveProfile };
+    export { Condition, ConditionResults, DialogActions, DialogContentItem, DialogType, ICheckbox, IConditionResult, IControlBase, IDialog, IDialogAction, IDialogContent, IDialogResult, IDictionary, IEnableOptions, IInput, ILink, ISetFBLoadOrderEntryPayload, ISetFBLoadOrderPayload, addDialog, addDiscoveredGame, addDiscoveredTool, addExtension, addLocalDownload, addMod, addModRule, addMods, addNotification, cacheModReference, clearDialog, clearDiscoveredGame, clearModRules, clearOAuthCredentials, clearPendingPluginSort, clearUIBlocker, closeBrowser, closeDialog, closeDialogs, collapseGroup, completeMigration, declineExtensionNexusLink, dismissAllNotifications, dismissDialog, dismissNotification, displayGroup, downloadProgress, endDialog, finalizingDownload, finalizingProgress, finishDownload, fireNotificationAction, forgetExtension, forgetMod, initDownload, loadCategories, mergeDownloadModInfo, pauseDownload, removeCategory, removeDownload, removeDownloadSilent, removeExtension, removeFBLoadOrderProfile, removeMod, removeModRule, removeProfile, renameCategory, resetSuppression, setActivator, setAdvancedMode, setAlwaysCompactHeaders, setApplicationVersion, setAssociatedWithNXMURLs, setAttributeFilter, setAttributeSort, setAttributeVisible, setAutoDeployment, setAutoEnable, setAutoInstall, setAutoStart, setBetaModsTable, setCategory, setCategoryOrder, setCleanupOnDeploy, setCollapsedGroups, setCollectionConcurrency, setCommandLine, setCompatibleGames, setConfirmPurge, setCopyOnIFF, setCustomTitlebar, setDeploymentNecessary, setDesktopNotifications, setDialogState, setDialogVisible, setDownloadFilePath, setDownloadGameFilter, setDownloadHash, setDownloadHashByFile, setDownloadInstalled, setDownloadInterrupted, setDownloadModInfo, setDownloadPath, setDownloadPausable, setDownloadSpeed, setDownloadSpeeds, setDownloadTime, setExtensionEnabled, setExtensionEndorsed, setExtensionLoadFailures, setExtensionModId, setExtensionVersion, setFBLoadOrder, setFBLoadOrderEntry, setFeature, setFileOverride, setForcedLogout, setForegroundDL, setGameHidden, setGameParameters, setGamePath, setGameSearchPaths, setGroupingAttribute, setHideTopLevelCategory, setINITweakEnabled, setInstallPath, setInstallPathMode, setInstallType, setInstanceId, setLanguage, setLoadOrder, setLoadOrderEntry, setMaxBandwidth, setMaxDownloads, setMaximized, setModArchiveId, setModAttribute, setModAttributes, setModEnabled, setModInstallationPath, setModState, setModType, setModsEnabled, setNetworkConnected, setNewestVersion, setNextProfile, setOAuthCredentials, setOpenMainPage, setPendingPluginSort, setPickerLayout, setPrimaryTool, setProfile, setProfileActivated, setProfilesVisible, setProgress, setReduceMotion, setRelativeTimes, setSettingsPage, setShowDLDropzone, setShowDLGraph, setShowModDropzone, setSortDetected, setSortManaged, setSortUnmanaged, setStartMinimized, setStateVersion, setSuggestInstallPathDirectory, setTabsMinimized, setToolOrder, setToolPid, setToolPinned, setToolRunning, setToolStopped, setToolValid, setToolVisible, setUIBlocker, setUpdateChannel, setUpdaterActive, setUpdaterSnapshot, setUseModernLayout, setUserAPIKey, setUserInfo, setWarnedAdmin, setWindowPosition, setWindowSize, setZoomFactor, setupNotificationSuppression, showDialog, showURL, showUsageInstruction, startActivity, startDialog, startDownload, startNotification, stopActivity, stopAllNotifications, stopNotification, suppressNotification, triggerDialogLink, updateCategories, updateNotification, willRemoveProfile };
 }
 
 // @public (undocumented)
@@ -264,6 +254,9 @@ type DownloadCheckpoint<T = unknown> = {
     completedRanges: ByteRange[];
     etag: string | undefined;
 };
+
+// @public (undocumented)
+type DownloadState = "init" | "started" | "paused" | "finalizing" | "finished" | "failed" | "redirect";
 
 // Warning: (ae-forgotten-export) The symbol "IDraggableListProps" needs to be exported by the entry point api.d.ts
 //
@@ -480,15 +473,15 @@ enum HealthCheckCategory {
     Tools = "tools"
 }
 
-// Warning: (ae-forgotten-export) The symbol "IExtensionApi$1" needs to be exported by the entry point api.d.ts
+// Warning: (ae-forgotten-export) The symbol "IExtensionApi" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-type HealthCheckFixFunction = (api: IExtensionApi$1) => Promise<void>;
+type HealthCheckFixFunction = (api: IExtensionApi) => Promise<void>;
 
 // Warning: (ae-forgotten-export) The symbol "IHealthCheckResult" needs to be exported by the entry point api.d.ts
 //
 // @public
-type HealthCheckFunction = (api: IExtensionApi$1, signal?: AbortSignal) => Promise<IHealthCheckResult>;
+type HealthCheckFunction = (api: IExtensionApi, signal?: AbortSignal) => Promise<IHealthCheckResult>;
 
 // @public (undocumented)
 enum HealthCheckSeverity {
@@ -607,7 +600,7 @@ interface IApp {
     appVersion: string;
     // (undocumented)
     extensions: {
-        [id: string]: IExtensionState$1;
+        [id: string]: IExtensionState;
     };
     // Warning: (ae-forgotten-export) The symbol "VortexInstallType" needs to be exported by the entry point api.d.ts
     //
@@ -970,6 +963,24 @@ interface IBrowserState {
 // @public (undocumented)
 type IButtonBrand = "primary" | "info" | "neutral" | "success" | "danger" | "premium";
 
+// @public (undocumented)
+interface ICategory {
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    order: number;
+    // (undocumented)
+    parentCategory: string;
+}
+
+// @public (undocumented)
+interface ICategoryDictionary {
+    // Warning: (ae-forgotten-export) The symbol "ICategory" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    [id: string]: ICategory;
+}
+
 // Warning: (ae-forgotten-export) The symbol "IControlBase" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
@@ -1106,14 +1117,14 @@ interface ICollectionsGameSupportEntry {
     //
     // (undocumented)
     generator: (state: IState, gameId: string, stagingPath: string, modIds: string[], mods: {
-        [modId: string]: IMod$1;
+        [modId: string]: IMod;
     }) => Promise<any>;
     // Warning: (ae-forgotten-export) The symbol "IGameSpecificInterfaceProps" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
     interface: (props: IGameSpecificInterfaceProps) => JSX.Element;
     // (undocumented)
-    parser: (api: IExtensionApi$1, gameId: string, collection: any) => Promise<void>;
+    parser: (api: IExtensionApi, gameId: string, collection: any) => Promise<void>;
 }
 
 // @public
@@ -1237,7 +1248,7 @@ interface ICommonModAttributes {
 // @public
 interface IComponentContext {
     // (undocumented)
-    api: IExtensionApi$1;
+    api: IExtensionApi;
     // Warning: (ae-forgotten-export) The symbol "IModifiers" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
@@ -1370,7 +1381,7 @@ interface IDeploymentMethod {
     isSupported: (state: any, gameId: string, modTypeId: string) => IUnavailableReason;
     readonly name: string;
     readonly noRedundancy?: boolean;
-    onSelected?: (api: IExtensionApi$1) => PromiseLike<void>;
+    onSelected?: (api: IExtensionApi) => PromiseLike<void>;
     postPurge: () => PromiseLike<void>;
     // Warning: (ae-forgotten-export) The symbol "IDeployedFile" needs to be exported by the entry point api.d.ts
     // Warning: (ae-forgotten-export) The symbol "Normalize" needs to be exported by the entry point api.d.ts
@@ -1383,6 +1394,7 @@ interface IDeploymentMethod {
 
 // @public (undocumented)
 interface IDeployOptions {
+    failOnError?: boolean;
     // (undocumented)
     isCollectionPostprocessCall?: boolean;
     // (undocumented)
@@ -1475,12 +1487,67 @@ interface IDimensions {
     width: number;
 }
 
+// Warning: (ae-forgotten-export) The symbol "ITool" needs to be exported by the entry point api.d.ts
+//
+// @public (undocumented)
+interface IDiscoveredTool extends ITool {
+    // (undocumented)
+    custom: boolean;
+    // (undocumented)
+    hidden: boolean;
+    // (undocumented)
+    path: string;
+    // (undocumented)
+    timestamp?: number;
+    // (undocumented)
+    workingDirectory?: string;
+}
+
 // @public (undocumented)
 interface IDiscoveryPhase {
     // (undocumented)
     directory: string;
     // (undocumented)
     progress: number;
+}
+
+// @public
+interface IDiscoveryResult {
+    // (undocumented)
+    environment?: {
+        [key: string]: string;
+    };
+    // (undocumented)
+    executable?: string;
+    // (undocumented)
+    extensionPath?: string;
+    // (undocumented)
+    hidden?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    logo?: string;
+    // (undocumented)
+    mergeMods?: boolean;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    parameters?: string[];
+    // (undocumented)
+    path?: string;
+    // (undocumented)
+    pathSetManually?: boolean;
+    // (undocumented)
+    shell?: boolean;
+    // (undocumented)
+    shortName?: string;
+    // (undocumented)
+    store?: string;
+    timestamp?: number;
+    // (undocumented)
+    tools?: {
+        [id: string]: IDiscoveredTool;
+    };
 }
 
 // @public
@@ -1507,6 +1574,41 @@ interface IDNDContainerProps {
     children?: React$1.ReactNode;
     // (undocumented)
     style?: React$1.CSSProperties;
+}
+
+// @public
+interface IDownload {
+    // Warning: (ae-forgotten-export) The symbol "IDownloadFailCause" needs to be exported by the entry point api.d.ts
+    failCause?: IDownloadFailCause;
+    fileMD5?: string;
+    fileTime: number;
+    game: string[];
+    // (undocumented)
+    id: string;
+    installed?: {
+        gameId: string;
+        modId: string;
+    };
+    localPath?: string;
+    // Warning: (ae-forgotten-export) The symbol "IModInfo$2" needs to be exported by the entry point api.d.ts
+    modInfo: IModInfo$2;
+    pausable?: boolean;
+    pauseCount?: number;
+    received: number;
+    size: number;
+    startTime: number;
+    // Warning: (ae-forgotten-export) The symbol "DownloadState" needs to be exported by the entry point api.d.ts
+    state: DownloadState;
+    urls: string[];
+    verified: number;
+}
+
+// @public (undocumented)
+interface IDownloadFailCause {
+    // (undocumented)
+    htmlFile?: string;
+    // (undocumented)
+    message?: string;
 }
 
 // @public (undocumented)
@@ -1669,7 +1771,7 @@ interface IExtensibleProps {
 }
 
 // @public
-interface IExtensionApi$1 {
+interface IExtensionApi {
     addMetaServer: (id: string, server: IServer) => void;
     awaitUI: () => default_2<void>;
     clearStylesheet: () => void;
@@ -1763,7 +1865,7 @@ interface IExtensionApiExtension extends INexusAPIExtension, IModsAPIExtension, 
 
 // @public
 interface IExtensionContext {
-    api: IExtensionApi$1;
+    api: IExtensionApi;
     once: (callback: () => void | PromiseLike<void>) => void;
     // @deprecated
     onceMain: (callback: () => void) => void;
@@ -1876,7 +1978,7 @@ type IExtensionLoadFailure = {
 } | ExtensionLoadFailureException | ExtensionLoadFailureDependency;
 
 // @public (undocumented)
-interface IExtensionState$1 {
+interface IExtensionState {
     author: string;
     bundled?: boolean;
     description: string;
@@ -1887,6 +1989,7 @@ interface IExtensionState$1 {
     infoJsonId?: string;
     modId?: number;
     name: string;
+    nexusLinkDeclined?: boolean;
     path: string;
     remove: boolean;
     type?: ExtensionType;
@@ -1908,6 +2011,7 @@ interface IFileChange {
     filePath: string;
     source: string;
     sourceTime?: Date;
+    target?: string;
 }
 
 // @public (undocumented)
@@ -2000,8 +2104,6 @@ interface IFormPathProps extends IFormItemProps {
     extensions?: string[];
 }
 
-// Warning: (ae-forgotten-export) The symbol "ITool" needs to be exported by the entry point api.d.ts
-//
 // @public
 interface IGame extends ITool {
     compatible?: {
@@ -2017,6 +2119,7 @@ interface IGame extends ITool {
     extensionPath?: string;
     final?: boolean;
     getGameVersion?: (gamePath: string, exePath: string) => PromiseLike<string>;
+    // Warning: (ae-forgotten-export) The symbol "IDiscoveryResult" needs to be exported by the entry point api.d.ts
     getInstalledVersion?: (discovery: IDiscoveryResult) => default_2<string>;
     getModPaths?: (gamePath: string) => {
         [typeId: string]: string;
@@ -2105,7 +2208,7 @@ interface IGameLoadOrderEntry {
 // @public (undocumented)
 interface IGameSpecificInterfaceProps {
     // (undocumented)
-    collection: IMod$1;
+    collection: IMod;
     // (undocumented)
     revisionInfo: IRevision;
     // (undocumented)
@@ -2113,7 +2216,7 @@ interface IGameSpecificInterfaceProps {
 }
 
 // @public (undocumented)
-interface IGameStoreEntry$1 {
+interface IGameStoreEntry {
     // (undocumented)
     appid: string;
     // (undocumented)
@@ -2170,6 +2273,21 @@ interface IHealthCheck {
 }
 
 // @public (undocumented)
+interface IHealthCheckPersistentState {
+    feedbackGiven: {
+        [modId: number]: string[];
+    };
+    fileRequirementsEnabled: boolean;
+    hiddenFileRequirements: {
+        [sourceFileUID: string]: string[];
+    };
+    hiddenRequirements: {
+        [modId: number]: string[];
+    };
+    modRequirementsEnabled: boolean;
+}
+
+// @public (undocumented)
 interface IHealthCheckResult<TMetadata = unknown> {
     // (undocumented)
     checkId: string;
@@ -2194,6 +2312,15 @@ interface IHealthCheckResult<TMetadata = unknown> {
 }
 
 // @public (undocumented)
+interface IHealthCheckSessionState {
+    lastFullRun?: number;
+    results: {
+        [checkId: string]: IHealthCheckResult;
+    };
+    runningChecks: string[];
+}
+
+// @public (undocumented)
 interface IHistoryEvent {
     // (undocumented)
     data: any;
@@ -2210,6 +2337,14 @@ interface IHistoryEvent {
 }
 
 // @public (undocumented)
+interface IHistoryPersistent {
+    // (undocumented)
+    historyStacks: {
+        [key: string]: IHistoryEvent[];
+    };
+}
+
+// @public (undocumented)
 interface IHistoryStack {
     // Warning: (ae-forgotten-export) The symbol "Revertability" needs to be exported by the entry point api.d.ts
     canRevert: (event: IHistoryEvent) => Revertability;
@@ -2217,6 +2352,12 @@ interface IHistoryStack {
     describeRevert: (event: IHistoryEvent) => string;
     revert: (event: IHistoryEvent) => Promise<void>;
     size: number;
+}
+
+// @public (undocumented)
+interface IHistoryState {
+    // (undocumented)
+    stackToShow: string;
 }
 
 // @public (undocumented)
@@ -2545,7 +2686,7 @@ interface IMergeFilter {
 }
 
 // @public
-interface IMod$1 {
+interface IMod {
     // (undocumented)
     archiveId?: string;
     // Warning: (ae-forgotten-export) The symbol "IModAttributes" needs to be exported by the entry point api.d.ts
@@ -2601,6 +2742,46 @@ interface IModifiers {
     ctrl: boolean;
     // (undocumented)
     shift: boolean;
+}
+
+// @public
+interface IModInfo$2 {
+    // (undocumented)
+    [key: string]: any;
+    // (undocumented)
+    collectionSlug?: string;
+    // (undocumented)
+    game?: string;
+    // Warning: (ae-forgotten-export) The symbol "INexusModMeta" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    meta?: INexusModMeta;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    nexus?: {
+        ids?: {
+            collectionSlug?: string;
+            collectionId?: number;
+            fileId?: number;
+            gameId?: string;
+            modId?: number;
+            revisionId?: number;
+            revisionNumber?: number;
+        };
+        parentCollectionId?: string;
+        parentRevisionId?: string;
+        fileInfo?: IFileInfo;
+        [key: string]: any;
+    };
+    // (undocumented)
+    referenceTag?: string;
+    // (undocumented)
+    referenceTags?: string[];
+    // (undocumented)
+    revisionNumber?: number;
+    // (undocumented)
+    source?: string;
 }
 
 // @public
@@ -2820,7 +3001,7 @@ interface IMoreProps {
 interface INexusAPIExtension {
     // (undocumented)
     nexusCheckModsVersion?: (gameId: string, mods: {
-        [modId: string]: IMod$1;
+        [modId: string]: IMod;
     }, forceFull: boolean | "silent") => void;
     // (undocumented)
     nexusDownload?: (gameId: string, modId: number, fileId: number, fileName?: string, allowInstall?: boolean) => PromiseLike<string>;
@@ -2884,6 +3065,43 @@ interface INexusAPIExtension {
     nexusSubmitCollection?: (collectionInfo: ICollectionManifest, assetFilePath: string, collectionId: number, callback: (err: Error, response?: any) => void) => void;
     // (undocumented)
     nexusSubmitFeedback?: (title: string, message: string, hash: string, feedbackFiles: string[], anonymous: boolean, callback: (err: Error, response?: IFeedbackResponse) => void) => void;
+}
+
+// @public
+interface INexusModMeta {
+    // (undocumented)
+    archived?: boolean;
+    // (undocumented)
+    details?: {
+        author?: string;
+        category?: string;
+        description?: string;
+        fileId?: string;
+        homepage?: string;
+        modId?: string;
+    };
+    // (undocumented)
+    domainName?: string;
+    // (undocumented)
+    expires?: number;
+    // (undocumented)
+    fileMD5?: string;
+    // (undocumented)
+    fileName?: string;
+    // (undocumented)
+    fileSizeBytes?: number;
+    // (undocumented)
+    fileVersion?: string;
+    // (undocumented)
+    gameId?: string;
+    // (undocumented)
+    logicalFileName?: string;
+    // (undocumented)
+    source?: string;
+    // (undocumented)
+    sourceURI?: string;
+    // (undocumented)
+    status?: string;
 }
 
 // @public
@@ -3047,6 +3265,55 @@ interface IParameters {
     userData?: string;
 }
 
+// @public (undocumented)
+interface IPersistentState {
+    // (undocumented)
+    categories: {
+        [gameId: string]: ICategoryDictionary;
+    };
+    // Warning: (ae-forgotten-export) The symbol "ICollectionsPersistentState" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    collections: ICollectionsPersistentState;
+    // (undocumented)
+    deployment: {
+        needToDeploy: {
+            [gameId: string]: boolean;
+        };
+        deploymentCounter: {
+            [gameId: string]: number;
+        };
+    };
+    // Warning: (ae-forgotten-export) The symbol "IStateDownloads" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    downloads: IStateDownloads;
+    // Warning: (ae-forgotten-export) The symbol "IStateGameMode" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    gameMode: IStateGameMode;
+    // Warning: (ae-forgotten-export) The symbol "IHealthCheckPersistentState" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    healthCheck: IHealthCheckPersistentState;
+    // Warning: (ae-forgotten-export) The symbol "IHistoryPersistent" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    history: IHistoryPersistent;
+    // Warning: (ae-forgotten-export) The symbol "IModTable" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    mods: IModTable;
+    // (undocumented)
+    profiles: {
+        [profileId: string]: IProfile;
+    };
+    // Warning: (ae-forgotten-export) The symbol "IStateTransactions" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    transactions: IStateTransactions;
+}
+
 // @public
 interface IPersistor {
     // (undocumented)
@@ -3115,6 +3382,38 @@ interface IPreviewFile {
 }
 
 // @public (undocumented)
+interface IProfile {
+    // (undocumented)
+    features?: {
+        [featureId: string]: any;
+    };
+    // (undocumented)
+    gameId: string;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    lastActivated: number;
+    // (undocumented)
+    modState: {
+        [id: string]: IProfileMod;
+    };
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    pendingRemove?: boolean;
+}
+
+// @public (undocumented)
+interface IProfileMod {
+    // (undocumented)
+    disabledTime?: number;
+    // (undocumented)
+    enabled: boolean;
+    // (undocumented)
+    enabledTime: number;
+}
+
+// @public (undocumented)
 interface IProgress {
     // (undocumented)
     percent: number;
@@ -3162,7 +3461,7 @@ type IProps$1 = React$2.HTMLAttributes<HTMLDivElement> & IToggleProps;
 // @public (undocumented)
 interface IProps$10 {
     // (undocumented)
-    api: IExtensionApi$1;
+    api: IExtensionApi;
     // (undocumented)
     className?: string;
     // (undocumented)
@@ -3467,8 +3766,12 @@ interface ISessionState {
     //
     // (undocumented)
     discovery: IDiscoveryState;
+    // Warning: (ae-forgotten-export) The symbol "IHealthCheckSessionState" needs to be exported by the entry point api.d.ts
+    //
     // (undocumented)
     healthCheck: IHealthCheckSessionState;
+    // Warning: (ae-forgotten-export) The symbol "IHistoryState" needs to be exported by the entry point api.d.ts
+    //
     // (undocumented)
     history: IHistoryState;
     // Warning: (ae-forgotten-export) The symbol "INotificationState" needs to be exported by the entry point api.d.ts
@@ -3479,6 +3782,8 @@ interface ISessionState {
     //
     // (undocumented)
     overlays: IOverlaysState;
+    // Warning: (ae-forgotten-export) The symbol "IUpdaterSessionState" needs to be exported by the entry point api.d.ts
+    //
     // (undocumented)
     updater: IUpdaterSessionState;
 }
@@ -3651,6 +3956,7 @@ interface ISettingsMods {
     activator: {
         [gameId: string]: string;
     };
+    betaTable: boolean;
     // (undocumented)
     cleanupOnDeploy: boolean;
     // (undocumented)
@@ -3735,30 +4041,10 @@ interface IState {
     confidential: {
         account: {};
     };
+    // Warning: (ae-forgotten-export) The symbol "IPersistentState" needs to be exported by the entry point api.d.ts
+    //
     // (undocumented)
-    persistent: {
-        profiles: {
-            [profileId: string]: IProfile;
-        };
-        mods: IModTable;
-        downloads: IStateDownloads;
-        collections: ICollectionsPersistentState;
-        categories: {
-            [gameId: string]: ICategoryDictionary;
-        };
-        gameMode: IStateGameMode;
-        deployment: {
-            needToDeploy: {
-                [gameId: string]: boolean;
-            };
-            deploymentCounter: {
-                [gameId: string]: number;
-            };
-        };
-        transactions: IStateTransactions;
-        history: IHistoryPersistent;
-        healthCheck: IHealthCheckPersistentState;
-    };
+    persistent: IPersistentState;
     // Warning: (ae-forgotten-export) The symbol "ISessionState" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
@@ -4051,8 +4337,8 @@ interface ITool {
     name: string;
     onStart?: "hide" | "hide_recover" | "close";
     parameters?: string[];
-    // Warning: (ae-forgotten-export) The symbol "IGameStoreEntry$1" needs to be exported by the entry point api.d.ts
-    queryPath?: () => string | default_2<string | IGameStoreEntry$1>;
+    // Warning: (ae-forgotten-export) The symbol "IGameStoreEntry" needs to be exported by the entry point api.d.ts
+    queryPath?: () => string | default_2<string | IGameStoreEntry>;
     relative?: boolean;
     requiredFiles: string[];
     shell?: boolean;
@@ -4156,7 +4442,7 @@ interface IUIBlocker {
 // @public
 interface IUnavailableReason {
     description: (t: TFunction$1) => string;
-    fixCallback?: (api: IExtensionApi$1) => PromiseLike<void>;
+    fixCallback?: (api: IExtensionApi) => PromiseLike<void>;
     order?: number;
     solution?: (t: TFunction$1) => string;
 }
@@ -4165,6 +4451,14 @@ interface IUnavailableReason {
 interface IUpdateable {
     // (undocumented)
     forceUpdate: () => void;
+}
+
+// @public
+interface IUpdaterSessionState {
+    // Warning: (ae-forgotten-export) The symbol "UpdaterSnapshot" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    snapshot?: UpdaterSnapshot;
 }
 
 // @public (undocumented)
@@ -4458,7 +4752,7 @@ export class OverlayTrigger extends React$2.Component<IProps$4, {
 // Warning: (ae-forgotten-export) The symbol "IModCheckContext" needs to be exported by the entry point api.d.ts
 //
 // @public (undocumented)
-type PerModCheckFunction = (api: IExtensionApi$1, mod: IModCheckContext, signal?: AbortSignal) => Promise<IHealthCheckResult>;
+type PerModCheckFunction = (api: IExtensionApi, mod: IModCheckContext, signal?: AbortSignal) => Promise<IHealthCheckResult>;
 
 // @public
 type PersistingType = "global" | "game" | "profile";
@@ -4534,7 +4828,7 @@ type RedownloadMode = "always" | "never" | "ask" | "replace";
 
 // @public (undocumented)
 class ReduxProp<T> {
-    constructor(api: IExtensionApi$1, inputs: string[][], func: (...args: unknown[]) => T);
+    constructor(api: IExtensionApi, inputs: string[][], func: (...args: unknown[]) => T);
     // Warning: (ae-forgotten-export) The symbol "IUpdateable" needs to be exported by the entry point api.d.ts
     //
     // (undocumented)
@@ -4742,7 +5036,12 @@ export const TriStateCheckbox: any;
 
 // @public (undocumented)
 export namespace types {
-    export { ActionFunc, ApiEventArgs, ApiEventMap, ApiEventName, ApiEventResult, ApiEvents, ArchiveHandlerCreator, AttributeExtractor, AttributeRenderer, CheckFunction, CollectionModStatus, Condition, ConditionResults, DialogActions, DialogContentItem, DialogType, DirectoryCleaningMode, ExtensionInfo, ExtensionLoadFailureDependency, ExtensionLoadFailureException, ConflictWinner as FBLOConflictWinner, LoadOrder as FBLOLoadOrder, LockedState as FBLOLockState, GameEntryNotFound, GameInfoQuery, GameLaunchType, GameStoreNotFound, HealthCheckCategory, HealthCheckFixFunction, HealthCheckFunction, HealthCheckSeverity, HealthCheckTrigger, IActionDefinition, IActionOptions, IApiFuncOptions, IApp, IArchiveHandler, IArchiveOptions, IAttachment, IAttributeState, IAvailableExtension, IBrowserState, ICheckbox, IChoiceType, ICollectionInstallSession, ICollectionInstallState, ICollectionModInstallInfo, ICollectionsPersistentState, IComponentContext, IConditionResult, IControlBase, ICustomExecutionInfo, ICustomProps, IDashletOptions, IDashletSettings, IDeployOptions, IDeployedFile, IDeploymentManifest, IDeploymentMethod, IDialog, IDialogAction, IDialogContent, IDialogResult, IDimensions, IDiscoveredTool, IDiscoveryPhase, IDiscoveryResult$1 as IDiscoveryResult, IDiscoveryState, IDownload, IEditChoice, IEnableOptions, IErrorOptions, IExecInfo, IExtension, IExtensionApi$1 as IExtensionApi, IExtensionApiExtension, IExtensionContext, IExtensionLoadFailure, IExtensionOptional, IExtensionState$1 as IExtensionState, ILoadOrderGameInfo as IFBLOGameInfo, IInvalidResult as IFBLOInvalidResult, IItemRendererProps as IFBLOItemRendererProps, ILoadOrderEntry$1 as IFBLOLoadOrderEntry, IValidationResult as IFBLOValidationResult, IFileChange, IFileFilter, IFileListItem, IFilterProps, IGame, IGameDetail, IGameInfoEntry, IGameModeSettings, IGameStoreEntry$1 as IGameStoreEntry, IGameStored, IHealthCheck, IHealthCheckEntry, IHealthCheckResult, IHistoryEvent, IHistoryStack, IInput, IInstallResult, IInstallationDetails, IInstallerInstall, IInstallerMatch, IInstallerSpec, IInstruction, ILegacyTestAdapter, ILink, ILoadOrderDisplayItem, ILoadOrderEntry$1 as ILoadOrderEntry, ILoadOrderGameInfo, ILookupDetails, ILookupResult, IMainPageOptions, IMembership, IMergeFilter, IMod$1 as IMod, IModCheckContext, IModHealthCheck, IModInfo$1 as IModInfo, IModInstallSpec, IModLookupInfo, IModPatches, IModReference, IModRepoId, IModRule, IModRuleExtra, IModSourceOptions, IModTable, IModType, IModTypeOptions, IModifiers, INotification, INotificationAction, INotificationState, IOpenOptions, IOverlay, IOverlayOptions, IOverlaysState, IPersistor, IPosition, IPreviewFile, IProfile$1 as IProfile, IProfileMod, IProgress, IProgressProfile, IProgressProfileDeploying, IProgressWithProfile, IQuery, IQueryArgEntry, IReducerSpec, IReference$1 as IReference, IReferenceIdentifiers, IRegisterProtocol, IRegisterRepositoryLookup, IRegisteredExtension, IRemoveModOptions, IRowState, IRunOptions, IRunParameters, IRunningTool, ISaveOptions, ISession, ISessionState, ISettings, ISettingsAutomation, ISettingsDownloads, ISettingsGameMode, ISettingsInterface, ISettingsMods, ISettingsNotification, ISettingsProfiles, ISettingsUpdate, ISettingsWorkarounds, IStarterInfo, IState, IStateDownloads, IStateGameMode, IStatePaths, IStateTransactions, IStateVerifier, IStoreQuery, ISupportedResult, ITableAttribute, ITableFilter, ITableState, ITableStates, ITestResult, ITestSupportedDetails, IToDoButton, ITool, IToolStored, IToolbarState, IToolbarStates, IUIBlocker, IUnavailableReason, IUser, IValidateKeyData, IValidationResult, IVerifierRepairContext, IWindow, InstallFunc, InstallPathMode, InstallerMatchMode, InstallerSpecInstallFunc, InstructionType, LoadOrder, MergeFunc, MergeTest, NotificationDismiss, NotificationType, PayloadT, PerModCheckFunction, PersistingType, PersistorKey, Placement, ProblemSeverity, ProgressDelegate, PropsCallback, PropsCallbackTyped, RegisterAction, RegisterBanner, RegisterControlWrapper, RegisterDashlet, RegisterDialog, RegisterFooter, RegisterMainPage, RegisterOverlay, RegisterSettings, RegisterToDo, Revertability, SortDirection, SortType, StateChangeCallback, TFunction$1 as TFunction, TestSupported, ThunkStore, ToDoType, ToolParameterCB, UPDATE_CHANNELS, UpdateChannel, UpdateType, ValidationState, VerifierDrop, VerifierDropParent, addReducer, isModHealthCheck, toUpdateChannel };
+    export { ActionFunc, ApiEventArgs, ApiEventMap, ApiEventName, ApiEventResult, ApiEvents, ArchiveHandlerCreator, AttributeExtractor, AttributeRenderer, CheckFunction, CollectionModStatus, Condition, ConditionResults, DialogActions, DialogContentItem, DialogType, DirectoryCleaningMode, ExtensionInfo, ExtensionLoadFailureDependency, ExtensionLoadFailureException, ConflictWinner as FBLOConflictWinner, LoadOrder as FBLOLoadOrder, LockedState as FBLOLockState, GameEntryNotFound, GameInfoQuery, GameLaunchType, GameStoreNotFound, HealthCheckCategory, HealthCheckFixFunction, HealthCheckFunction, HealthCheckSeverity, HealthCheckTrigger, IActionDefinition, IActionOptions, IApiFuncOptions, IApp, IArchiveHandler, IArchiveOptions, IAttachment, IAttributeState, IAvailableExtension, IBrowserState, ICheckbox, IChoiceType, ICollectionInstallSession, ICollectionInstallState, ICollectionModInstallInfo, ICollectionsPersistentState, IComponentContext, IConditionResult, IControlBase, ICustomExecutionInfo, ICustomProps, IDashletOptions, IDashletSettings, IDeployOptions, IDeployedFile, IDeploymentManifest, IDeploymentMethod, IDialog, IDialogAction, IDialogContent, IDialogResult, IDimensions, IDiscoveredTool, IDiscoveryPhase, IDiscoveryResult, IDiscoveryState, IDownload, IEditChoice, IEnableOptions, IErrorOptions, IExecInfo, IExtension, IExtensionApi, IExtensionApiExtension, IExtensionContext, IExtensionLoadFailure, IExtensionOptional, IExtensionState, ILoadOrderGameInfo as IFBLOGameInfo, IInvalidResult as IFBLOInvalidResult, IItemRendererProps as IFBLOItemRendererProps, ILoadOrderEntry$1 as IFBLOLoadOrderEntry, IValidationResult as IFBLOValidationResult, IFileChange, IFileFilter, IFileListItem, IFilterProps, IGame, IGameDetail, IGameInfoEntry, IGameModeSettings, IGameStoreEntry, IGameStored, IHealthCheck, IHealthCheckEntry, IHealthCheckResult, IHistoryEvent, IHistoryStack, IInput, IInstallResult, IInstallationDetails, IInstallerInstall, IInstallerMatch, IInstallerSpec, IInstruction, ILegacyTestAdapter, ILink, ILoadOrderDisplayItem, ILoadOrderEntry$1 as ILoadOrderEntry, ILoadOrderGameInfo, ILookupDetails, ILookupResult, IMainPageOptions, IMembership, IMergeFilter, IMod, IModCheckContext, IModHealthCheck, IModInfo$1 as IModInfo, IModInstallSpec, IModLookupInfo, IModPatches, IModReference, IModRepoId, IModRule, IModRuleExtra, IModSourceOptions, IModTable, IModType, IModTypeOptions, IModifiers, INotification, INotificationAction, INotificationState, IOpenOptions, IOverlay, IOverlayOptions, IOverlaysState, IPersistentState, IPersistor, IPosition, IPreviewFile, IProfile, IProfileMod, IProgress, IProgressProfile, IProgressProfileDeploying, IProgressWithProfile, IQuery, IQueryArgEntry, IReducerSpec, IReference$1 as IReference, IReferenceIdentifiers, IRegisterProtocol, IRegisterRepositoryLookup, IRegisteredExtension, IRemoveModOptions, IRowState, IRunOptions, IRunParameters, IRunningTool, ISaveOptions, ISession, ISessionState, ISettings, ISettingsAutomation, ISettingsDownloads, ISettingsGameMode, ISettingsInterface, ISettingsMods, ISettingsNotification, ISettingsProfiles, ISettingsUpdate, ISettingsWorkarounds, IStarterInfo, IState, IStateDownloads, IStateGameMode, IStatePaths, IStateTransactions, IStateVerifier, IStoreQuery, ISupportedResult, ITableAttribute, ITableFilter, ITableState, ITableStates, ITestResult, ITestSupportedDetails, IToDoButton, ITool, IToolStored, IToolbarState, IToolbarStates, IUIBlocker, IUnavailableReason, IUser, IValidateKeyData, IValidationResult, IVerifierRepairContext, IWindow, InstallFunc, InstallPathMode, InstallerMatchMode, InstallerSpecInstallFunc, InstructionType, LoadOrder, MergeFunc, MergeTest, NotificationDismiss, NotificationType, PayloadT, PerModCheckFunction, PersistingType, PersistorKey, Placement, ProblemSeverity, ProgressDelegate, PropsCallback, PropsCallbackTyped, RegisterAction, RegisterBanner, RegisterControlWrapper, RegisterDashlet, RegisterDialog, RegisterFooter, RegisterMainPage, RegisterOverlay, RegisterSettings, RegisterToDo, Revertability, SortDirection, SortType, StateChangeCallback, TFunction$1 as TFunction, TestSupported, ThunkStore, ToDoType, ToolParameterCB, UPDATE_CHANNELS, UpdateChannel, UpdateType, ValidationState, VerifierDrop, VerifierDropParent, addReducer, isModHealthCheck, toUpdateChannel };
+}
+
+// @public (undocumented)
+export namespace ui {
+    export { AdultAwareImage, Alert, AlertSeverity, Bullet, Button, CharacterCount, Checkbox$1 as Checkbox, CheckboxField, ContextMenu, Description, Dropdown, DropdownBlock, DropdownButton, DropdownDivider, DropdownItem, DropdownItems, ErrorMessage, Field, GameTile, HoverCard, Html, IAdultAwareImageProps, IAlertProps, IBulletProps, IButtonAppearance, IButtonBrand, IButtonColour, IButtonProps, ICheckboxFieldProps, ICheckboxProps, IContextMenuPosition, IDescriptionProps, IDropdownButtonProps, IErrorMessageProps, IFieldProps, IGameTileProps, IIconSize, IImageProps, IInputProps, ILabelProps, IListboxButtonProps, IListboxOption, IMenuAction, IPaginationProps, IPictogramBrand, IPictogramName, IPillAppearance, IPillBrand, IPopoverButtonProps, IPopoverMenuItemProps, IPopoverPanel, IProseProps, ISelectFieldProps, ISelectProps, ISwitchFieldProps, ISwitchProps, ITabButtonProps, ITabProviderProps, ITabsState, ITextFieldProps, IToolbarAction, IToolbarActionIdentity, IToolbarAnalytics, IToolbarButtonProps, IToolbarPanel, IToolbarPanelButtonProps, IToolbarPanelHandle, IToolbarTrackingProperties, ITooltipDelay, ITooltipPlacement, ITooltipProps, ITypographyAppearance, ITypographyBrand, ITypographyColour, ITypographyElements, ITypographyLinkProps, ITypographyProps, ITypographyTypes, Icon, Image, Input, JumpToPage, Label, Listbox$1 as Listbox, ListboxButton, ListboxOption$1 as ListboxOption, ListboxOptions$1 as ListboxOptions, Listing, ListingLoader, Markdown, Modal, ModalPanel, ModalWrapper, NexusBadge, NoResults, Pagination, Picker, Pictogram, Pill, PlainText, Popover$1 as Popover, PopoverButton, PopoverMenu, PopoverPanel$1 as PopoverPanel, PopoverPanelGroup, PopoverPanelGroupItem, PremiumBadge, ResponsiveScreenSizes, Select, SelectField, Switch, SwitchField, TabBar, TabButton, TabContext, TabPanel, TabProvider, TextField, TitledTooltip, Toolbar, ToolbarButton, ToolbarGroup, ToolbarPanelButton, ToolbarPinTarget, ToolbarSearch, ToolbarSurface, Tooltip, TooltipDelayGroup, Typography, TypographyLink, XOr, contextMenuPosition, getTypographyColourClass, getTypographyStyles, icon_paths_d_exports as iconPaths, joinClasses, openedFromKeyboard, useTabContext };
 }
 
 // @public (undocumented)
@@ -4753,6 +5052,54 @@ const UPDATE_CHANNELS: readonly ["stable", "beta", "none"];
 //
 // @public (undocumented)
 type UpdateChannel = ValuesOf<typeof UPDATE_CHANNELS>;
+
+// @public
+type UpdateKind = "patch" | "update" | "downgrade";
+
+// @public
+interface UpdaterSnapshot {
+    justUpdatedFrom?: string;
+    // Warning: (ae-forgotten-export) The symbol "UpdaterState" needs to be exported by the entry point api.d.ts
+    //
+    // (undocumented)
+    state: UpdaterState;
+}
+
+// @public
+type UpdaterState = {
+    type: "disabled";
+} | {
+    type: "idle";
+} | {
+    type: "checking";
+    manual: boolean;
+} | {
+    type: "available";
+    version: string;
+    releaseNotes?: string;
+} | {
+    type: "downgrade-offered";
+    version: string;
+} | {
+    type: "downloading";
+    version: string;
+    kind: UpdateKind;
+    manual: boolean;
+    percent?: number;
+} | {
+    type: "staged";
+    version: string;
+    kind: UpdateKind;
+    releaseNotes?: string;
+} | {
+    type: "error";
+    message: string;
+    manual: boolean;
+    retry?: {
+        version: string;
+        releaseNotes?: string;
+    };
+};
 
 // @public (undocumented)
 type UpdateType = "drag-n-drop" | "props-update" | "refresh";
@@ -4919,36 +5266,37 @@ export class ZoomableImage extends React$2.Component<IZoomableImageProps, {
 
 // Warnings were encountered during analysis:
 //
-// lib/api.d.ts:177:5 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:179:5 - (ae-forgotten-export) The symbol "DialogContentItem" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:649:3 - (ae-forgotten-export) The symbol "ByteRange" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:709:3 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:958:5 - (ae-forgotten-export) The symbol "ICollectionModInstallInfo" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:1116:5 - (ae-forgotten-export) The symbol "IItemRendererProps" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:2111:5 - (ae-forgotten-export) The symbol "IQueryArgEntry" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:2780:5 - (ae-forgotten-export) The symbol "IEditChoice" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:3462:5 - (ae-forgotten-export) The symbol "IMod$1" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:3861:3 - (ae-forgotten-export) The symbol "IGameDetail" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:4287:5 - (ae-forgotten-export) The symbol "IStateVerifier" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:4982:7 - (ae-forgotten-export) The symbol "IProgress" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:4987:5 - (ae-forgotten-export) The symbol "IExtensionLoadFailure" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:4990:5 - (ae-forgotten-export) The symbol "IRunningTool" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:4993:5 - (ae-forgotten-export) The symbol "IUIBlocker" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5008:5 - (ae-forgotten-export) The symbol "IRowState" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5051:5 - (ae-forgotten-export) The symbol "IExtensionState$1" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5088:5 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5108:5 - (ae-forgotten-export) The symbol "IDashletSettings" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5174:5 - (ae-forgotten-export) The symbol "IAttributeState" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5235:7 - (ae-forgotten-export) The symbol "IGameInfoEntry" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5267:5 - (ae-forgotten-export) The symbol "IOverlay" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5315:5 - (ae-forgotten-export) The symbol "IModTable" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5316:5 - (ae-forgotten-export) The symbol "IStateDownloads" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5317:5 - (ae-forgotten-export) The symbol "ICollectionsPersistentState" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5321:5 - (ae-forgotten-export) The symbol "IStateGameMode" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5330:5 - (ae-forgotten-export) The symbol "IStateTransactions" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:5348:5 - (ae-forgotten-export) The symbol "IDiscoveryPhase" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:8810:3 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
-// lib/api.d.ts:8811:3 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:264:3 - (ae-forgotten-export) The symbol "ByteRange" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:640:5 - (ae-forgotten-export) The symbol "IDiscoveredTool" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:832:5 - (ae-forgotten-export) The symbol "IItemRendererProps" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:1527:3 - (ae-forgotten-export) The symbol "IChoices" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2064:5 - (ae-forgotten-export) The symbol "IBBCodeContext" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2066:5 - (ae-forgotten-export) The symbol "DialogContentItem" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2134:5 - (ae-forgotten-export) The symbol "IQueryArgEntry" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:2957:5 - (ae-forgotten-export) The symbol "IEditChoice" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:3259:5 - (ae-forgotten-export) The symbol "ICollectionModInstallInfo" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:3557:5 - (ae-forgotten-export) The symbol "IProfileMod" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:3614:5 - (ae-forgotten-export) The symbol "IMod" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:3735:3 - (ae-forgotten-export) The symbol "UpdateKind" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:4013:3 - (ae-forgotten-export) The symbol "IGameDetail" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:4439:5 - (ae-forgotten-export) The symbol "IStateVerifier" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5114:7 - (ae-forgotten-export) The symbol "IProgress" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5119:5 - (ae-forgotten-export) The symbol "IExtensionLoadFailure" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5122:5 - (ae-forgotten-export) The symbol "IRunningTool" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5125:5 - (ae-forgotten-export) The symbol "IUIBlocker" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5140:5 - (ae-forgotten-export) The symbol "IRowState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5185:5 - (ae-forgotten-export) The symbol "IExtensionState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5219:5 - (ae-forgotten-export) The symbol "IDownload" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5222:5 - (ae-forgotten-export) The symbol "DownloadCheckpoint" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5242:5 - (ae-forgotten-export) The symbol "IDashletSettings" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5308:5 - (ae-forgotten-export) The symbol "IAttributeState" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5371:7 - (ae-forgotten-export) The symbol "IGameInfoEntry" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5403:5 - (ae-forgotten-export) The symbol "IOverlay" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5441:5 - (ae-forgotten-export) The symbol "IProfile" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5447:5 - (ae-forgotten-export) The symbol "ICategoryDictionary" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:5485:5 - (ae-forgotten-export) The symbol "IDiscoveryPhase" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:9062:3 - (ae-forgotten-export) The symbol "MainPageBody" needs to be exported by the entry point api.d.ts
+// lib/api.d.ts:9063:3 - (ae-forgotten-export) The symbol "MainPageHeader" needs to be exported by the entry point api.d.ts
 
 // (No @packageDocumentation comment for this package)
 

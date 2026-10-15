@@ -24,6 +24,9 @@
   "exports": {
     ".": {
       "types": "./lib/api.d.ts"
+    },
+    "./ui": {
+      "types": "./lib/ui.d.ts"
     }
   },
   "files": [
@@ -45,7 +48,7 @@
         ],
         "cache": false,
         "outputs": [
-          "{projectRoot}/lib/api.d.ts"
+          "{projectRoot}/lib/*.d.ts"
         ]
       },
       "typecheck": {
@@ -55,7 +58,7 @@
         "cache": true,
         "inputs": [
           "default",
-          "{projectRoot}/lib/api.d.ts",
+          "{projectRoot}/lib/*.d.ts",
           "{projectRoot}/tsconfig.lib.json"
         ],
         "outputs": []
@@ -71,7 +74,7 @@
         "inputs": [
           "default",
           "{projectRoot}/api-extractor.json",
-          "{projectRoot}/lib/api.d.ts"
+          "{projectRoot}/lib/*.d.ts"
         ],
         "outputs": [
           "{workspaceRoot}/etc/vortex.api.md",
@@ -81,6 +84,8 @@
     }
   },
   "devDependencies": {
+    "@floating-ui/react": "catalog:",
+    "@headlessui/react": "catalog:",
     "@microsoft/api-extractor": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
     "@types/react": "catalog:",
@@ -97,6 +102,8 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
+    "@floating-ui/react": "catalog:",
+    "@headlessui/react": "catalog:",
     "@types/bluebird": "catalog:",
     "bluebird": "catalog:",
     "fs-extra": "catalog:",

@@ -6,6 +6,7 @@ import PromiseBB from "bluebird";
 import * as actions from "./actions/index";
 import { log } from "./logging";
 import * as types from "./types/api";
+import * as ui from "./ui/api";
 import * as util from "./util/api";
 import * as fs from "./util/fs";
 import * as selectors from "./util/selectors";
@@ -13,7 +14,7 @@ import * as selectors from "./util/selectors";
 export * from "./controls/api";
 export { ComponentEx, PureComponentEx } from "./controls/ComponentEx";
 // TODO: don't re-export bluebird Promis as "Promise", that's fucking insidious
-export { actions, PromiseBB as Promise, fs, log, selectors, types, util };
+export { actions, PromiseBB as Promise, fs, log, selectors, types, ui, util };
 
 export * from "./views/api";
 
