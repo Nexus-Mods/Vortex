@@ -13,6 +13,7 @@ import type { ISteamEntry } from "../../../util/Steam";
 import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
+import { readGameVersions } from "../../gamemode_management/util/getGameVersion";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
@@ -69,12 +70,10 @@ function refreshCache(
   api.store.dispatch(setStoreGameVersionCache({ gameId, cache: entry }));
 }
 
-/** Everything a game's store install contributes except the exe version, which is
-    the only expensive field: failures carry their reason, `install` is null and a
-    record undefined only when the discovery result is not a steam/gog install. */
+/** Everything a game's store install contributes except the two game versions,
+    the only expensive fields: failures carry their reason and `install` is null. */
 interface InstallRecord {
   storeId: StoreId;
-  extensionVersion: string | null;
   install: InstallBlock | null;
   failureReason: string | null;
 }
@@ -105,7 +104,7 @@ const asPayload = (
 async function scanInstall(
   internalGameId: string,
   discovery: IDiscoveryResult,
-): Promise<InstallRecord | undefined> {
+): Promise<InstallRecord> {
   const storeId = discovery.store as StoreId;
   const game = getGame(internalGameId);
   const entries =
@@ -124,7 +123,6 @@ async function scanInstall(
   if (entry === undefined) {
     return {
       storeId,
-      extensionVersion: (game?.version ?? null) as string | null,
       install: null,
       failureReason: "store-entry-not-found",
     };
@@ -147,14 +145,12 @@ async function scanInstall(
     if (info === null) {
       return {
         storeId,
-        extensionVersion: (game?.version ?? null) as string | null,
         install: null,
         failureReason: "info-parse-failed",
       };
     }
     return {
       storeId,
-      extensionVersion: (game?.version ?? null) as string | null,
       install: info,
       failureReason: null,
     };
@@ -165,14 +161,12 @@ async function scanInstall(
   if (data === undefined) {
     return {
       storeId,
-      extensionVersion: (game?.version ?? null) as string | null,
       install: null,
       failureReason: "acf-parse-failed",
     };
   }
   return {
     storeId,
-    extensionVersion: (game?.version ?? null) as string | null,
     install: {
       app_id: data.appId,
       build_id: data.buildId,
@@ -195,16 +189,16 @@ async function scanInstall(
   };
 }
 
-/** The cheap change key: the record with the exe version (the expensive field)
+/** The cheap change key: the record with both game versions (the expensive fields)
     nulled out, so identity drift is visible without resolving versions. */
-function stableKeyOf(internalGameId: string, gameId: number, record: InstallRecord): string {
+function stableKeyOf(gameId: number, record: InstallRecord): string {
   return storeGameVersionChangeKey(
     asPayload(
       {
         game_id: String(gameId),
         failure_reason: record.failureReason,
         exe_version: null,
-        extension_version: record.extensionVersion,
+        extension_version: null,
       },
       record.storeId,
       record.install,
@@ -216,16 +210,8 @@ function stableKeyOf(internalGameId: string, gameId: number, record: InstallReco
  * Submits the store_game_version telemetry event for ONE game's store install.
  * A no-op unless the user consented to analytics and is logged in, the game is a Nexus
  * game, and it was discovered through the steam or gog store. Installs are gated by a
- * cheap identity check, so only games whose manifest or extension changed ever reach
- * the exe-version lookup. Fire and forget: failures are logged, never thrown, so the
- * deployment that triggered this never depends on it.
- */
-/**
- * Submits the store_game_version telemetry event for ONE game's store install.
- * A no-op unless the user consented to analytics and is logged in, the game is a Nexus
- * game, and it was discovered through the steam or gog store. Installs are gated by a
- * cheap identity check, so only games whose manifest or extension changed ever reach
- * the exe-version lookup. Fire and forget: failures are logged, never thrown, so the
+ * cheap identity check, so only games whose store install changed ever reach the game
+ * version lookups. Fire and forget: failures are logged, never thrown, so the
  * deployment that triggered this never depends on it.
  */
 export async function emitStoreGameVersionEvent(
@@ -248,22 +234,22 @@ export async function emitStoreGameVersionEvent(
   }
 
   const record = await scanInstall(internalGameId, discovery);
-  if (record === undefined) {
-    return;
-  }
-
-  const stableKey = stableKeyOf(internalGameId, gameId, record);
+  const stableKey = stableKeyOf(gameId, record);
   const cached = api.getState().persistent.analyticsTelemetry.storeGameVersions[internalGameId];
   if (cached !== undefined && cached.stableKey === stableKey) {
     return;
   }
 
-  // the install identity moved; (re)resolve the exe version
+  // the install identity moved; (re)read both game versions
   let exeVersion: string | null = null;
+  let extensionVersion: string | null = null;
   try {
-    exeVersion = (await getGame(internalGameId)?.getInstalledVersion?.(discovery)) ?? null;
+    ({ exe: exeVersion, extension: extensionVersion } = await readGameVersions(
+      getGame(internalGameId),
+      discovery,
+    ));
   } catch (err) {
-    log("debug", "store-game-version: exe version lookup failed", {
+    log("debug", "store-game-version: game version lookup failed", {
       gameId: internalGameId,
       error: getErrorMessageOrDefault(err),
     });
@@ -276,7 +262,7 @@ export async function emitStoreGameVersionEvent(
       failure_reason:
         record.failureReason ?? (exeVersion === null ? "version-lookup-failed" : null),
       exe_version: exeVersion,
-      extension_version: record.extensionVersion,
+      extension_version: extensionVersion,
     },
     record.storeId,
     record.install,
