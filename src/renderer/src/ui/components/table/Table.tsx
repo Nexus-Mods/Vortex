@@ -13,6 +13,7 @@ import {
   ContextMenu,
   contextMenuPosition,
   type IContextMenuPosition,
+  openedFromKeyboard,
 } from "@/ui/components/context_menu/ContextMenu";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -62,6 +63,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   selectedIds,
   onSelectedIdsChange,
   rowMenu,
+  onMenuOpen,
+  onGroupMenuAction,
 }: ITableProps<T, G>) => {
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
 
@@ -253,6 +256,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 rowIndex={index + headRows + 1}
                 onContextMenu={(event: MouseEvent<HTMLDivElement>) => {
                   event.preventDefault();
+                  onMenuOpen?.("group", openedFromKeyboard(event) ? "keyboard" : "pointer");
                   setMenu({
                     position: contextMenuPosition(event),
                     kind: "group",
@@ -287,8 +291,15 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                   rowMenu
                     ? (event) => {
                         event.preventDefault();
+                        const id = getRowId(item.row);
+                        const inSelection =
+                          selectable && selection.selected.has(id) && selection.selected.size > 1;
+                        onMenuOpen?.(
+                          inSelection ? "selection" : "row",
+                          openedFromKeyboard(event) ? "keyboard" : "pointer",
+                        );
                         if (selectable) {
-                          selection.contextClick({ key: item.key, id: getRowId(item.row) });
+                          selection.contextClick({ key: item.key, id });
                         }
                         setMenu({
                           position: contextMenuPosition(event),
@@ -330,16 +341,30 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 expanded={!collapsed.has(menuGroup.id)}
                 label={menuGroup.label}
                 onDeselectAll={
-                  selectable ? () => selection.remove(menuGroup.rows.map(getRowId)) : undefined
+                  selectable
+                    ? () => {
+                        onGroupMenuAction?.("deselect_all");
+                        selection.remove(menuGroup.rows.map(getRowId));
+                      }
+                    : undefined
                 }
                 onSelect={close}
                 onSelectAll={
-                  selectable ? () => selection.add(menuGroup.rows.map(getRowId)) : undefined
+                  selectable
+                    ? () => {
+                        onGroupMenuAction?.("select_all");
+                        selection.add(menuGroup.rows.map(getRowId));
+                      }
+                    : undefined
                 }
-                onSetAllExpanded={(expanded) =>
-                  setCollapsed(new Set(expanded ? [] : (groups ?? []).map((group) => group.id)))
-                }
-                onToggle={() => toggle(menuGroup.id)}
+                onSetAllExpanded={(expanded) => {
+                  onGroupMenuAction?.(expanded ? "expand_all" : "collapse_all");
+                  setCollapsed(new Set(expanded ? [] : (groups ?? []).map((group) => group.id)));
+                }}
+                onToggle={() => {
+                  onGroupMenuAction?.(collapsed.has(menuGroup.id) ? "expand" : "collapse");
+                  toggle(menuGroup.id);
+                }}
               />
             );
           }

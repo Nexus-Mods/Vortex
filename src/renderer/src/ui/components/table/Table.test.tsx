@@ -973,4 +973,68 @@ describe("Table's context menus", () => {
       expect(fireEvent.contextMenu(row("Alpha"))).toBe(true);
     });
   });
+
+  // The table reports, through callbacks, what's done with its menus; what's made of that is
+  // the page's, so the table itself stays free of analytics.
+  describe("reporting", () => {
+    const renderReporting = () => {
+      const onMenuOpen = vi.fn();
+      const onGroupMenuAction = vi.fn();
+
+      render(
+        <Table
+          selectable
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          getRowLabel={(r) => r.name}
+          groups={GROUPS}
+          label="Files"
+          rowMenu={(r) => <span>Menu for {r.name}</span>}
+          onGroupMenuAction={onGroupMenuAction}
+          onMenuOpen={onMenuOpen}
+        />,
+      );
+
+      return { onGroupMenuAction, onMenuOpen };
+    };
+
+    it("says a menu opened on a group header, from the pointer", () => {
+      const { onMenuOpen } = renderReporting();
+
+      fireEvent.contextMenu(groupRow("First"), { clientX: 10, clientY: 10 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("group", "pointer");
+    });
+
+    it("says a menu opened on a row, from the keyboard", () => {
+      const { onMenuOpen } = renderReporting();
+
+      fireEvent.contextMenu(row("Alpha"), { button: -1 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("row", "keyboard");
+    });
+
+    it("says a menu opened on a row of a multi-selection", async () => {
+      const { onMenuOpen } = renderReporting();
+      await userEvent.click(checkbox("Alpha"));
+      await userEvent.click(checkbox("Beta"));
+
+      fireEvent.contextMenu(row("Alpha"), { clientX: 10, clientY: 10 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("selection", "pointer");
+    });
+
+    it("says which of a group menu's items was used", async () => {
+      const { onGroupMenuAction } = renderReporting();
+
+      fireEvent.contextMenu(groupRow("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+      fireEvent.contextMenu(groupRow("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
+      fireEvent.contextMenu(groupRow("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+
+      expect(onGroupMenuAction.mock.calls).toEqual([["collapse"], ["expand_all"], ["select_all"]]);
+    });
+  });
 });

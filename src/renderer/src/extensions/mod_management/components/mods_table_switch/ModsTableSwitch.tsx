@@ -28,6 +28,7 @@ import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
+import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
 import { TitledTooltip } from "@/ui/components/tooltip/TitledTooltip";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
@@ -46,6 +47,10 @@ import {
   useModRowActions,
   useModSelectionActions,
 } from "../../hooks/use_mod_actions/useModActions.hook";
+import {
+  MODS_TABLE_TOOLBARS,
+  useModsTableAnalytics,
+} from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import {
   type IModsTableColumn,
   useModsTableColumns,
@@ -227,6 +232,7 @@ const ModRowActions = memo(
     modState,
   }: IModRowActionsProps) => {
     const { t } = useTranslation(["common"]);
+    const tracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
     const busy = useRowBusy(modId, modState);
     const engaged = useTableRowEngaged();
     const restingRef = useRef<HTMLDivElement>(null);
@@ -303,6 +309,7 @@ const ModRowActions = memo(
         pinningId={MOD_ROW_PINNING_ID}
         pinTarget="row"
         style={{ width }}
+        tracking={tracking}
       >
         <ToolbarGroup actions={actions} beforeOverflow={toggle} />
       </Toolbar>
@@ -409,6 +416,9 @@ export const ModsTableSwitch = ({
   );
 
   const { actionsFor, pinnedCount } = useModRowActions(rowActions);
+  const analytics = useModsTableAnalytics();
+  const rowTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
+  const selectionTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.selection);
 
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   // Those still listed, as a removed mod can't be acted on.
@@ -592,6 +602,9 @@ export const ModsTableSwitch = ({
 
   // A selected mod the search hides is deselected, so nothing acts on a mod out of sight.
   const changeSearch = (next: string) => {
+    if (search.trim() === "" && next.trim() !== "") {
+      analytics.onSearchStarted();
+    }
     setSearch(next);
 
     const nextMatches = searchFilter(searchColumns, next);
@@ -630,7 +643,11 @@ export const ModsTableSwitch = ({
 
   const footer = multiSelected ? (
     <TableSelectionBar count={selectedIds.length} onClear={() => setSelected(new Set())}>
-      <Toolbar className="min-w-0 flex-1 justify-end" pinningId={MOD_SELECTION_PINNING_ID}>
+      <Toolbar
+        className="min-w-0 flex-1 justify-end"
+        pinningId={MOD_SELECTION_PINNING_ID}
+        tracking={selectionTracking}
+      >
         {/* Always on the bar, ahead of the menu: the one action that can't be unpinned. */}
         <ToolbarGroup
           actions={selectionActions}
@@ -684,6 +701,7 @@ export const ModsTableSwitch = ({
           <ToolbarMenu
             actions={selectionActions}
             label={t("Selected mods actions")}
+            tracking={selectionTracking}
             onSelect={close}
           />
         </>
@@ -693,9 +711,12 @@ export const ModsTableSwitch = ({
           label={t("{{name}} actions", { name })}
           pinningId={MOD_ROW_PINNING_ID}
           pinTarget="row"
+          tracking={rowTracking}
           onSelect={close}
         />
       ),
+    onMenuOpen: analytics.onMenuOpen,
+    onGroupMenuAction: analytics.onGroupMenuAction,
     defaultSort: BY_NAME,
     footer,
     empty: matches ? (

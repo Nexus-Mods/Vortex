@@ -30,9 +30,12 @@ export interface IContextMenuPosition {
  * or the Menu key), under the start of the element with focus. Chromium marks a keyboard one
  * with no button, and places it mid-element; one with no position at all is the keyboard's too.
  */
+/** Whether a context menu was asked for from the keyboard (Shift+F10 or the Menu key). */
+export const openedFromKeyboard = (event: MouseEvent<Element>): boolean =>
+  event.button === -1 || (event.clientX === 0 && event.clientY === 0);
+
 export const contextMenuPosition = (event: MouseEvent<Element>): IContextMenuPosition => {
-  const fromKeyboard = event.button === -1 || (event.clientX === 0 && event.clientY === 0);
-  if (!fromKeyboard) {
+  if (!openedFromKeyboard(event)) {
     return { x: event.clientX, y: event.clientY, element: event.currentTarget };
   }
 
