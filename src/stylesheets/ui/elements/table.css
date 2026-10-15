@@ -233,6 +233,8 @@
         background-color: var(--nxm-table-row-tint);
         color: var(--color-translucent-strong);
         font-weight: var(--font-weight-semibold);
+        /* Scrolled to as a whole, its top and the gap above it clear of the sticky header. */
+        scroll-margin-top: calc(var(--nxm-table-head-height) + var(--nxm-table-group-row-gap));
     }
 
     /* Focus scrolls a control into view clear of the sticky header. Its own margin, not the row's. */

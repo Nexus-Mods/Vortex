@@ -90,6 +90,10 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   rowMenu?: (row: T, close: () => void) => ReactNode;
   /** Sections of a group header's menu after its own, such as actions on what the group is for. */
   groupMenu?: (group: G) => IMenuAction[][];
+  /** A group to open and bring into view, once the table has it. */
+  focusGroupId?: string;
+  /** Told once `focusGroupId`'s group is open and being scrolled to, so it can be dropped. */
+  onGroupFocused?: () => void;
   /** Told when a context menu opens, on what, and whether from the pointer or keyboard. */
   onMenuOpen?: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
   /** Told when an item of a group header's menu is used. */

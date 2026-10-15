@@ -3,6 +3,7 @@ import React, {
   Fragment,
   type MouseEvent,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -45,8 +46,10 @@ const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
  * scroller, under a header that sticks to it. A right-click on a group row offers to collapse
  * or expand it or every group, and to select its rows; then its `groupMenu`; on a row, its
  * `rowMenu`, once the row is selected. Every selected row shows what's in it as a hovered one
- * does, so a table
- * that shows actions in its rows decides itself what several selected rows show.
+ * does, so a table that shows actions in its rows decides itself what several selected rows
+ * show.
+ * Given `focusGroupId`, it opens that group and scrolls it to the top once it has it; the group
+ * opens while rendering, so its rows are counted before it's scrolled to.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columns,
@@ -65,6 +68,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   onSelectedIdsChange,
   rowMenu,
   groupMenu,
+  focusGroupId,
+  onGroupFocused,
   onMenuOpen,
   onGroupMenuAction,
 }: ITableProps<T, G>) => {
@@ -160,6 +165,31 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   );
 
   const virtual = useTableVirtualizer({ count: items.length, getItemKey, getItemSize });
+
+  const hasFocusGroup = !!focusGroupId && !!groups?.some((group) => group.id === focusGroupId);
+
+  if (hasFocusGroup && collapsed.has(focusGroupId)) {
+    const next = new Set(collapsed);
+    next.delete(focusGroupId);
+    setCollapsed(next);
+  }
+
+  const { ready, scrollToIndex } = virtual;
+
+  useEffect(() => {
+    if (!hasFocusGroup || !ready) {
+      return;
+    }
+
+    const index = items.findIndex((item) => item.key === `group:${focusGroupId}`);
+    if (index === -1) {
+      return;
+    }
+
+    scrollToIndex(index);
+    onGroupFocused?.();
+  }, [focusGroupId, hasFocusGroup, items, onGroupFocused, ready, scrollToIndex]);
+
   const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
 
   // The rows in the sticky head, which come before the table's own in aria-rowindex.

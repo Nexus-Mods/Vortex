@@ -75,6 +75,8 @@ interface ITableVirtualizerOptions {
  * Virtualises the table's rows against the page's scroller, its nearest scrolling ancestor,
  * so the page scrolls rather than the table. Keeps the focused row rendered however far it
  * scrolls out of view, so focus and Tab order survive. With no scroller, every row renders.
+ * `scrollToIndex` brings a row to the top: the virtualiser renders it, then the row scrolls
+ * into view, a group's row's scroll margin clearing the sticky head.
  */
 export const useTableVirtualizer = ({
   count,
@@ -156,6 +158,21 @@ export const useTableVirtualizer = ({
     }
   };
 
+  const scrollToIndex = useCallback(
+    (index: number) => {
+      if (scroller) {
+        virtualizer.scrollToIndex(index, { align: "start" });
+      }
+
+      requestAnimationFrame(() =>
+        tableRef.current
+          ?.querySelector<HTMLElement>(`[data-index="${index}"]`)
+          ?.scrollIntoView({ block: "start" }),
+      );
+    },
+    [scroller, virtualizer],
+  );
+
   const placeRows = (): IPlacedRow[] => {
     // Not looked for yet.
     if (scroller === undefined) {
@@ -180,6 +197,8 @@ export const useTableVirtualizer = ({
     endGap: scroller ? virtualizer.getTotalSize() - renderedEnd : 0,
     onBlur,
     onFocus,
+    ready: scroller !== undefined,
+    scrollToIndex,
     startRef,
     tableRef,
   };

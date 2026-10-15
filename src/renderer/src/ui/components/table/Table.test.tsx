@@ -1095,3 +1095,67 @@ describe("Table's context menus", () => {
     });
   });
 });
+
+describe("Table's focused group", () => {
+  const GROUPS = [
+    { id: "first", label: "First", rows: [ROWS[0]] },
+    { id: "second", label: "Second", rows: [ROWS[1]] },
+  ];
+  const groupRow = (name: string) =>
+    screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement;
+  const scrollIntoView = vi.fn();
+
+  beforeEach(() => {
+    scrollIntoView.mockClear();
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  const table = (props: {
+    groups?: typeof GROUPS;
+    focusGroupId?: string;
+    onGroupFocused?: () => void;
+  }) => (
+    <Table
+      columns={COLUMNS}
+      focusGroupId={props.focusGroupId}
+      getRowId={(r) => r.id}
+      groups={props.groups ?? GROUPS}
+      label="Files"
+      onGroupFocused={props.onGroupFocused}
+    />
+  );
+
+  it("opens the group, scrolls to its row and says so", async () => {
+    const onGroupFocused = vi.fn();
+    const { rerender } = render(table({}));
+    await userEvent.click(screen.getByRole("button", { name: "Second" }));
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+
+    rerender(table({ focusGroupId: "second", onGroupFocused }));
+
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute("aria-expanded", "true");
+    expect(onGroupFocused).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+    expect(scrollIntoView.mock.contexts[0]).toBe(groupRow("Second"));
+  });
+
+  it("waits for a group it doesn't have yet", () => {
+    const onGroupFocused = vi.fn();
+    const { rerender } = render(
+      table({ groups: [GROUPS[0]], focusGroupId: "second", onGroupFocused }),
+    );
+
+    expect(onGroupFocused).not.toHaveBeenCalled();
+
+    rerender(table({ focusGroupId: "second", onGroupFocused }));
+
+    expect(onGroupFocused).toHaveBeenCalledTimes(1);
+  });
+});
