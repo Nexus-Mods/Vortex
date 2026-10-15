@@ -941,9 +941,13 @@ describe("ModsTableSwitch", () => {
   describe("selected mods", () => {
     const bar = () => screen.queryByRole("region", { name: "{{count}} selected" });
 
+    // Selects the first mod, unless it's the one selected already, as a click would deselect it.
     const selectWithCtrl = async (...names: string[]) => {
       const user = userEvent.setup();
-      await user.click(screen.getByText(names[0]));
+      const first = screen.getByText(names[0]).closest('[role="row"]');
+      if (first?.getAttribute("aria-selected") !== "true") {
+        await user.click(screen.getByText(names[0]));
+      }
       await user.keyboard("{Control>}");
       for (const name of names.slice(1)) {
         await user.click(screen.getByText(name));

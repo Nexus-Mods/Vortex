@@ -352,6 +352,26 @@ describe("Table with selectable rows", () => {
       expect(rowCheckbox(1)).toHaveAttribute("aria-checked", "true");
     });
 
+    it("deselects the only selected row when it's clicked again", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await userEvent.click(cell("Alpha"));
+
+      expect(selected()).toEqual([]);
+      expect(rowCheckbox(0)).toHaveAttribute("aria-checked", "false");
+    });
+
+    it("keeps just the row clicked from several selected", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await clickWith("Beta", "Control");
+      await userEvent.click(cell("Beta"));
+
+      expect(selected()).toEqual(["Beta"]);
+    });
+
     it("adds and removes a row with Ctrl held, leaving the rest", async () => {
       renderFive();
 
