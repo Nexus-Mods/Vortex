@@ -15,9 +15,7 @@ function getFileList(basePath: string): Promise<IFileEntry[]> {
   const result: IFileEntry[] = [];
 
   return walk(basePath, (filePath: string, stats: fs.Stats) => {
-    if (!IGNORABLE_PREFIXES.some((prefix) => filePath.toLowerCase().startsWith(prefix))) {
-      result.push({ filePath, stats });
-    }
+    result.push({ filePath, stats });
     return Promise.resolve();
   })
     .then(() => result)

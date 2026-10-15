@@ -1387,8 +1387,6 @@ interface IDeployOptions {
     isCollectionPostprocessCall?: boolean;
     // (undocumented)
     manual?: boolean;
-    // (undocumented)
-    profileId?: string;
 }
 
 // @public (undocumented)
