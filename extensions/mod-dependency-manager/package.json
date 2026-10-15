@@ -6,6 +6,7 @@
     "_assets": "copyfiles -u 1 -f src/stylesheets/*.scss src/language.json dist",
     "build": "node build.mjs && pnpm run _assets && pnpm extractInfo",
     "typecheck": "pnpm tsc",
+    "test": "pnpm exec vitest run",
     "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs"
   },
   "author": "Black Tree Gaming Ltd.",
@@ -48,7 +49,8 @@
     "semver": "catalog:",
     "shortid": "catalog:",
     "turbowalk": "catalog:",
-    "@nexusmods/vortex-api": "workspace:*"
+    "@nexusmods/vortex-api": "workspace:*",
+    "@vortex/shared": "workspace:*"
   },
   "nx": {
     "tags": [
