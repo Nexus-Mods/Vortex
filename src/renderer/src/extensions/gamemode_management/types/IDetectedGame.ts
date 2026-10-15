@@ -24,12 +24,5 @@ export interface IDetectedGame {
   extension?: IAvailableExtension;
 }
 
-/** How the detected-games request is going, for the section to show. */
-export interface IDetectedGamesStatus {
-  /** A request is in flight. */
-  running: boolean;
-  /** The last request failed, e.g. with no connection. */
-  failed: boolean;
-  /** A request has succeeded, so there are results to tell new games from. */
-  hasResult: boolean;
-}
+/** How the last detected-games request went, for the section to show; none before any. */
+export type DetectedGamesStatus = "running" | "failed" | "success";

@@ -14,7 +14,7 @@ const { baseState, dispatch, emit, sendNotification, state } = vi.hoisted(() => 
       discovery: { running: false },
       gameMode: {
         detectedGames: [] as Array<{ gameUid: string; extension?: object }>,
-        detectedGamesStatus: { failed: false, hasResult: true, running: false },
+        detectedGamesStatus: "success" as "running" | "failed" | "success" | undefined,
       },
     },
     settings: {
@@ -99,7 +99,7 @@ const scanFailing = (err: Error, failure: "discovery" | "detection" = "detection
     (event: string, cb?: (ids: string[], error?: Error, step?: string) => void) => {
       if (event === "start-quick-discovery") {
         if (failure === "detection") {
-          state.current.session.gameMode.detectedGamesStatus.failed = true;
+          state.current.session.gameMode.detectedGamesStatus = "failed";
         }
         cb?.([], err, failure);
       }
@@ -404,7 +404,7 @@ describe("DetectedGames", () => {
 
     // Without an earlier result there's nothing to tell new games from.
     it("reports no count before any detection has succeeded", async () => {
-      state.current.session.gameMode.detectedGamesStatus.hasResult = false;
+      state.current.session.gameMode.detectedGamesStatus = undefined;
       scanResolving(["skyrim", "fallout4"]);
       renderComponent();
 
@@ -412,6 +412,20 @@ describe("DetectedGames", () => {
 
       expect(sendNotification).toHaveBeenCalledWith(
         expect.objectContaining({ message: "Game detection finished", type: "info" }),
+      );
+    });
+
+    // Only a successful detection stores games, so they're still a result after a later failure.
+    it("still counts against stored games after a later detection failed", async () => {
+      state.current.session.gameMode.detectedGamesStatus = "failed";
+      state.current.session.gameMode.detectedGames = [{ gameUid: "skyrim", extension: {} }];
+      scanResolving(["skyrim", "fallout4"]);
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+
+      expect(sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Found {{count}} new game", type: "success" }),
       );
     });
 
@@ -429,13 +443,13 @@ describe("DetectedGames", () => {
 
   describe("detection status", () => {
     it("shows detection running as scanning", () => {
-      state.current.session.gameMode.detectedGamesStatus.running = true;
+      state.current.session.gameMode.detectedGamesStatus = "running";
       renderComponent();
       expect(screen.getByText("Scanning for installed games...")).toBeInTheDocument();
     });
 
     it("shows a failed detection as the connection panel, with a retry", async () => {
-      state.current.session.gameMode.detectedGamesStatus.failed = true;
+      state.current.session.gameMode.detectedGamesStatus = "failed";
       renderComponent();
       expect(screen.getByText("Can't detect games right now")).toBeInTheDocument();
 
@@ -444,7 +458,7 @@ describe("DetectedGames", () => {
     });
 
     it("keeps the panel when games are already added", () => {
-      state.current.session.gameMode.detectedGamesStatus.failed = true;
+      state.current.session.gameMode.detectedGamesStatus = "failed";
       renderComponent({ count: "0", games: [], hasAddedGames: true });
       expect(screen.getByText("Can't detect games right now")).toBeInTheDocument();
     });
@@ -486,7 +500,7 @@ describe("DetectedGames", () => {
     });
 
     it("says so in the description while a search fills the section", () => {
-      state.current.session.gameMode.detectedGamesStatus.failed = true;
+      state.current.session.gameMode.detectedGamesStatus = "failed";
       renderComponent({ count: "0/1", filtering: true });
 
       expect(screen.getByText("No games found")).toBeInTheDocument();
@@ -498,10 +512,10 @@ describe("DetectedGames", () => {
     });
 
     it("drops the description once detection recovers", () => {
-      state.current.session.gameMode.detectedGamesStatus.failed = true;
+      state.current.session.gameMode.detectedGamesStatus = "failed";
       const { rerender } = renderComponent({ count: "1", games: [game("skyrim")] });
 
-      state.current.session.gameMode.detectedGamesStatus.failed = false;
+      state.current.session.gameMode.detectedGamesStatus = "success";
       rerender();
 
       expect(screen.getByText("Installed games you haven't added yet.")).toBeInTheDocument();
@@ -524,7 +538,7 @@ describe("DetectedGames", () => {
       await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
       expect(await screen.findByText("Can't detect games right now")).toBeInTheDocument();
 
-      state.current.session.gameMode.detectedGamesStatus.failed = false;
+      state.current.session.gameMode.detectedGamesStatus = "success";
       rerender();
 
       expect(screen.getByText("No installed games detected")).toBeInTheDocument();
@@ -550,7 +564,7 @@ describe("DetectedGames", () => {
       );
 
       // retrying clears the failure rather than leaving the error on screen
-      state.current.session.gameMode.detectedGamesStatus.failed = false;
+      state.current.session.gameMode.detectedGamesStatus = "success";
       scanResolving();
       await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
       expect(await screen.findByText("No installed games detected")).toBeInTheDocument();

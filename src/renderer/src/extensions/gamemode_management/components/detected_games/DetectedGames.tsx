@@ -44,7 +44,8 @@ type ScanFailure = "discovery" | "detection";
  * when detection recovers. A scan the user starts reports its outcome in one short
  * toast, found, none or couldn't check; a discovery failure raises its own error
  * notification instead. A cancelled scan's result is ignored. "Found N new" is only counted against an earlier
- * successful detection, as without one there's nothing to tell new games from.
+ * successful detection, as without one there's nothing to tell new games from: the last request
+ * succeeded, or games it stored remain, which only a successful one stores, after a later failure.
  */
 export const DetectedGames = ({
   count,
@@ -71,15 +72,11 @@ export const DetectedGames = ({
     (state: IState) => state.session.discovery?.running ?? false,
   );
   const detectedGames = useSelector((state: IState) => state.session.gameMode?.detectedGames);
-  const detectionRunning = useSelector(
-    (state: IState) => state.session.gameMode?.detectedGamesStatus?.running ?? false,
+  const detectionStatus = useSelector(
+    (state: IState) => state.session.gameMode?.detectedGamesStatus,
   );
-  const detectionFailed = useSelector(
-    (state: IState) => state.session.gameMode?.detectedGamesStatus?.failed ?? false,
-  );
-  const detectionHasResult = useSelector(
-    (state: IState) => state.session.gameMode?.detectedGamesStatus?.hasResult ?? false,
-  );
+  const detectionRunning = detectionStatus === "running";
+  const detectionFailed = detectionStatus === "failed";
 
   const [quickScanning, setQuickScanning] = useState(false);
   const [scanFailed, setScanFailed] = useState(false);
@@ -90,7 +87,7 @@ export const DetectedGames = ({
 
   const handleScan = () => {
     const knownBefore = new Set(listableDetectedIds(detectedGames ?? []));
-    const comparable = detectionHasResult;
+    const comparable = detectionStatus === "success" || (detectedGames?.length ?? 0) > 0;
     const scanId = ++scanIdRef.current;
 
     setScanFailed(false);

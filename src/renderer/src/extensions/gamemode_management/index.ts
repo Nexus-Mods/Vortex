@@ -1009,7 +1009,7 @@ function init(context: IExtensionContext): boolean {
           .startQuickDiscovery()
           .then(() => removeDisappearedGames(context.api, discoveredGames))
           .then(() => {
-            if (store.getState().session.gameMode.detectedGamesStatus.failed) {
+            if (store.getState().session.gameMode.detectedGamesStatus === "failed") {
               cb?.(detectedIds(), new Error("Game detection failed"), "detection");
             } else {
               cb?.(detectedIds());
@@ -1239,7 +1239,9 @@ function init(context: IExtensionContext): boolean {
         const nowLoggedIn = isLoggedIn(store.getState());
         if (loggedIn && !nowLoggedIn) {
           store.dispatch(clearFavouriteGames());
-          store.dispatch(setDetectedGamesStatus({ failed: false }));
+          if (store.getState().session.gameMode.detectedGamesStatus === "failed") {
+            store.dispatch(setDetectedGamesStatus(undefined));
+          }
         } else if (!loggedIn && nowLoggedIn) {
           resetDetectedGamesHash();
           void requestDetectedGames(context.api).catch((err) =>

@@ -2,7 +2,7 @@ import { actionsToReducerSpec } from "@/reducers/builder";
 
 import * as actions from "../actions/session";
 import type { GameSource } from "../types/GameSource";
-import type { IDetectedGame, IDetectedGamesStatus } from "../types/IDetectedGame";
+import type { DetectedGamesStatus, IDetectedGame } from "../types/IDetectedGame";
 import type { IGameStored } from "../types/IGameStored";
 
 type DefaultState = {
@@ -10,7 +10,8 @@ type DefaultState = {
   disabled: Record<string, string>;
   showHidden: boolean;
   detectedGames: IDetectedGame[];
-  detectedGamesStatus: IDetectedGamesStatus;
+  /** Unset before any request, or once there's nothing to say about the last one. */
+  detectedGamesStatus?: DetectedGamesStatus;
   favouriteGames: number[];
   gameAddOrigin: { gameId: string; source: GameSource } | null;
 };
@@ -26,7 +27,6 @@ const defaultState: DefaultState = {
   disabled: {},
   showHidden: false,
   detectedGames: [],
-  detectedGamesStatus: { running: false, failed: false, hasResult: false },
   favouriteGames: [],
   gameAddOrigin: null,
 };
@@ -57,7 +57,7 @@ export const sessionReducer = actionsToReducerSpec(defaultState, actions, {
   }),
   setDetectedGamesStatus: (state, payload) => ({
     ...state,
-    detectedGamesStatus: { ...state.detectedGamesStatus, ...payload },
+    detectedGamesStatus: payload,
   }),
   setFavouriteGames: (state, payload) => ({
     ...state,

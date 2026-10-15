@@ -13,7 +13,7 @@ import { getApplication } from "@/util/application";
 import type { EpicGamesStoreEntry } from "@/util/EpicGamesLauncher";
 
 import { setDetectedGames, setDetectedGamesStatus, setFavouriteGames } from "../../actions/session";
-import type { IDetectedGame } from "../../types/IDetectedGame";
+import type { DetectedGamesStatus, IDetectedGame } from "../../types/IDetectedGame";
 import { getGameStoresSafe } from "../getGame";
 
 type DetectedGame = components["schemas"]["DetectedGame"];
@@ -134,13 +134,13 @@ function recordFailure(api: IExtensionApi): void {
   } catch {
     // with the state unreadable, report the failure rather than hide it
   }
-  api.store.dispatch(setDetectedGamesStatus({ running: false, failed }));
+  api.store.dispatch(setDetectedGamesStatus(failed ? "failed" : undefined));
 }
 
-/** Clears a recorded failure, once something shows it no longer applies. */
-function clearFailure(api: IExtensionApi): void {
-  if (api.getState().session?.gameMode?.detectedGamesStatus?.failed) {
-    api.store.dispatch(setDetectedGamesStatus({ failed: false }));
+/** Clears a recorded failure, once something shows it no longer applies, for what does. */
+function clearFailure(api: IExtensionApi, status: DetectedGamesStatus | undefined): void {
+  if (api.getState().session?.gameMode?.detectedGamesStatus === "failed") {
+    api.store.dispatch(setDetectedGamesStatus(status));
   }
 }
 
@@ -149,7 +149,7 @@ async function requestDetectedGamesBody(api: IExtensionApi, force: boolean): Pro
 
   if (!isLoggedIn(state)) {
     // A failure from before logging out says nothing about now.
-    clearFailure(api);
+    clearFailure(api, undefined);
     return;
   }
 
@@ -170,7 +170,7 @@ async function requestDetectedGamesBody(api: IExtensionApi, force: boolean): Pro
 
   if (!force && payload === lastSuccessfulPayload) {
     // The stored results are for this very payload, so they're current.
-    clearFailure(api);
+    clearFailure(api, "success");
     return;
   }
 
@@ -178,7 +178,7 @@ async function requestDetectedGamesBody(api: IExtensionApi, force: boolean): Pro
     log("warn", "failed to send detected games event", err),
   );
 
-  api.store.dispatch(setDetectedGamesStatus({ running: true }));
+  api.store.dispatch(setDetectedGamesStatus("running"));
 
   const detected: IDetectedGame[] = [];
   const favouriteGames: number[] = [];
@@ -207,7 +207,7 @@ async function requestDetectedGamesBody(api: IExtensionApi, force: boolean): Pro
     return;
   }
 
-  api.store.dispatch(setDetectedGamesStatus({ running: false, failed: false, hasResult: true }));
+  api.store.dispatch(setDetectedGamesStatus("success"));
   lastSuccessfulPayload = payload;
 
   log("info", "detected-games: resolved installed games", {

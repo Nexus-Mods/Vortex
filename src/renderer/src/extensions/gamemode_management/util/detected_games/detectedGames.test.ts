@@ -40,7 +40,7 @@ const makeApi = (failed = false) => {
   const api = {
     getState: () => ({
       app: { instanceId: "instance" },
-      session: { gameMode: { detectedGamesStatus: { failed, running: false } } },
+      session: { gameMode: { detectedGamesStatus: failed ? "failed" : undefined } },
     }),
     store: { dispatch },
   };
@@ -77,10 +77,7 @@ describe("requestDetectedGames", () => {
         payload: [expect.objectContaining({ gameUid: "uid-1", gameId: 1 })],
       }),
     );
-    expect(statuses(dispatch)).toEqual([
-      { running: true },
-      { running: false, failed: false, hasResult: true },
-    ]);
+    expect(statuses(dispatch)).toEqual(["running", "success"]);
   });
 
   it("records a failure without rejecting", async () => {
@@ -89,7 +86,7 @@ describe("requestDetectedGames", () => {
 
     await expect(requestDetectedGames(api as never)).resolves.toBeUndefined();
 
-    expect(statuses(dispatch)).toEqual([{ running: true }, { running: false, failed: true }]);
+    expect(statuses(dispatch)).toEqual(["running", "failed"]);
   });
 
   it("records no failure for a request that ends after logging out", async () => {
@@ -101,7 +98,7 @@ describe("requestDetectedGames", () => {
 
     await requestDetectedGames(api as never);
 
-    expect(statuses(dispatch)).toEqual([{ running: true }, { running: false, failed: false }]);
+    expect(statuses(dispatch)).toEqual(["running", undefined]);
   });
 
   it("sends nothing, and records nothing, while logged out", async () => {
@@ -121,7 +118,7 @@ describe("requestDetectedGames", () => {
     await requestDetectedGames(api as never);
 
     expect(resolveDetectedGames).not.toHaveBeenCalled();
-    expect(statuses(dispatch)).toEqual([{ failed: false }]);
+    expect(statuses(dispatch)).toEqual([undefined]);
   });
 
   it("clears an old failure when the payload is one the endpoint accepted", async () => {
@@ -131,7 +128,7 @@ describe("requestDetectedGames", () => {
     await requestDetectedGames(api as never);
 
     expect(resolveDetectedGames).toHaveBeenCalledOnce();
-    expect(statuses(dispatch)).toEqual([{ failed: false }]);
+    expect(statuses(dispatch)).toEqual(["success"]);
   });
 
   it("records a throw before the request as a failure, without rejecting", async () => {
@@ -142,7 +139,7 @@ describe("requestDetectedGames", () => {
 
     await expect(requestDetectedGames(api as never)).resolves.toBeUndefined();
 
-    expect(statuses(dispatch)).toEqual([{ running: false, failed: true }]);
+    expect(statuses(dispatch)).toEqual(["failed"]);
   });
 
   it("skips a request whose payload the endpoint already accepted", async () => {
