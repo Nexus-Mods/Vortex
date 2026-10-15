@@ -3,13 +3,14 @@ import React, {
   memo,
   type ReactNode,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { createSelector } from "reselect";
 
 import { useMainContext } from "@/contexts";
@@ -43,6 +44,7 @@ import { activeGameId } from "@/util/selectors";
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import { makeCollectionModsResolver } from "../../../collections/util/resolveCollectionMods/resolveCollectionMods";
 import { activeProfile } from "../../../profile_management/selectors";
+import { focusModsTableGroup } from "../../actions/session";
 import {
   INSTALLING_ACTIVITY,
   useInstallMods,
@@ -114,6 +116,13 @@ const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
 const profileModState = (state: IState) => activeProfile(state)?.modState;
 
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
+
+/**
+ * A group the table is asked to show, which it opens and scrolls to, then drops. A search could
+ * hide the group, so a new request clears it once. A request no group answers, as when the view
+ * isn't grouped by collection, is dropped.
+ */
+const focusedGroupId = (state: IState) => state.session.mods?.focusedGroupId;
 
 const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
 
@@ -354,6 +363,16 @@ export const ModsTableSwitch = ({
   } = useModsTableView(mods);
   const rows = useMemo(() => allModRows(mods), [mods]);
   const [search, setSearch] = useState("");
+  const dispatch = useDispatch();
+  const focusGroupId = useSelector(focusedGroupId);
+  const groupFocused = useCallback(() => dispatch(focusModsTableGroup(undefined)), [dispatch]);
+  const [searchClearedFor, setSearchClearedFor] = useState<string>();
+  if (focusGroupId !== searchClearedFor) {
+    setSearchClearedFor(focusGroupId);
+    if (focusGroupId !== undefined) {
+      setSearch("");
+    }
+  }
   // Kept, so a change to the mods only retests those that changed against each collection.
   const [resolveMembers] = useState(makeCollectionModsResolver);
   const memberships = useMemo(() => collectionsByMod(mods, resolveMembers), [mods, resolveMembers]);
@@ -622,6 +641,12 @@ export const ModsTableSwitch = ({
     [mods, grouping, t, memberships, groupColumn],
   );
 
+  useEffect(() => {
+    if (focusGroupId !== undefined && !groups?.some((group) => group.id === focusGroupId)) {
+      groupFocused();
+    }
+  }, [focusGroupId, groups, groupFocused]);
+
   // The columns shown, so a search finds only what's on screen.
   const searchColumns = useMemo(
     () => visibleColumns.filter((column) => column.searchText !== undefined),
@@ -706,6 +731,8 @@ export const ModsTableSwitch = ({
   ) : undefined;
 
   const tableProps = {
+    focusGroupId,
+    onGroupFocused: groupFocused,
     className: "mb-2 flex-1",
     toolbar: (
       <ModsTableToolbar

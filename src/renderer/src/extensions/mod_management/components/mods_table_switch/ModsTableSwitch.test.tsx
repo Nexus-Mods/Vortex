@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { Provider } from "react-redux";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   emit: vi.fn<(channel: string, event?: { eventName: string; properties: object }) => void>(),
@@ -23,6 +23,7 @@ vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOrigina
 import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
+import { focusModsTableGroup } from "../../actions/session";
 import type { IModWithState } from "../../types/IModProps";
 import { MODS_TABLE_FEEDBACK_URL } from "../mods_table_toolbar/ModsTableToolbar";
 import { ModsTableSwitch } from "./ModsTableSwitch";
@@ -1340,6 +1341,83 @@ describe("ModsTableSwitch", () => {
       ).toBeNull();
       fireEvent.contextMenu(groupRowOf("No collection"));
       expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+    });
+
+    describe("asked to show it", () => {
+      beforeEach(() => {
+        Element.prototype.scrollIntoView = vi.fn();
+      });
+
+      afterEach(() => {
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+      });
+
+      const renderAsked = () => {
+        const store = makeModsTableStore({
+          views: { selected: "collections", changes: {}, custom: [] },
+          focusedGroupId: "x",
+        });
+        render(
+          <Provider store={store}>
+            <ModsTableSwitch legacy={<div />} mods={withCollection()} onSetModsEnabled={vi.fn()} />
+          </Provider>,
+        );
+        return store;
+      };
+
+      it("opens its group and drops the request", async () => {
+        const store = renderAsked();
+
+        expect(screen.getByRole("button", { name: "Xenon" })).toHaveAttribute(
+          "aria-expanded",
+          "true",
+        );
+        await waitFor(() => expect(store.getState().session.mods.focusedGroupId).toBeUndefined());
+      });
+
+      it("drops a request no group answers, leaving the table as it was", async () => {
+        const store = makeModsTableStore({
+          views: { selected: "all", changes: {}, custom: [] },
+          focusedGroupId: "x",
+        });
+        render(
+          <Provider store={store}>
+            <ModsTableSwitch legacy={<div />} mods={withCollection()} onSetModsEnabled={vi.fn()} />
+          </Provider>,
+        );
+
+        await waitFor(() => expect(store.getState().session.mods.focusedGroupId).toBeUndefined());
+        expect(screen.queryByRole("button", { name: "Xenon" })).toBeNull();
+      });
+
+      it("lets the user search once the request is honoured", async () => {
+        renderAsked();
+        await userEvent.click(screen.getByRole("button", { name: "Search" }));
+        await userEvent.keyboard("Alpha");
+
+        expect(screen.getByRole("textbox", { name: "Search" })).toHaveValue("Alpha");
+      });
+
+      it("clears a search that would hide it", async () => {
+        const store = makeModsTableStore({
+          views: { selected: "collections", changes: {}, custom: [] },
+        });
+        render(
+          <Provider store={store}>
+            <ModsTableSwitch legacy={<div />} mods={withCollection()} onSetModsEnabled={vi.fn()} />
+          </Provider>,
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Search" }));
+        await userEvent.keyboard("Alpha");
+        expect(screen.queryByRole("button", { name: "Xenon" })).toBeNull();
+
+        act(() => {
+          store.dispatch(focusModsTableGroup("x"));
+        });
+
+        expect(await screen.findByRole("button", { name: "Xenon" })).toBeInTheDocument();
+        expect(screen.getByRole("textbox", { name: "Search" })).toHaveValue("");
+      });
     });
   });
 
