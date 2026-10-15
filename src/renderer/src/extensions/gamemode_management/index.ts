@@ -1003,7 +1003,10 @@ function init(context: IExtensionContext): boolean {
           Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
         );
         const detectedIds = () =>
-          listableDetectedIds(store.getState().session.gameMode.detectedGames);
+          listableDetectedIds(
+            store.getState().session.gameMode.detectedGames,
+            store.getState().session.gameMode.known,
+          );
 
         $.gameModeManager
           .startQuickDiscovery()
