@@ -1,9 +1,9 @@
 import type { IGameStored } from "@/types/IState";
 
 import { numericGameIdToDomainName } from "../../../nexus_integration/util";
-import { convertGameIdReverse } from "../../../nexus_integration/util/convertGameId";
 import type { IDetectedGame } from "../../types/IDetectedGame";
 import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
+import { detectedInternalId } from "./detectedInternalId";
 import { locallyDetectedGames } from "./locallyDetectedGames";
 
 /**
@@ -35,7 +35,8 @@ export function listableDetectedIds(
 
   for (const game of detected) {
     const domain = numericGameIdToDomainName(game.gameId);
-    const internalId = domain === undefined ? undefined : convertGameIdReverse(knownGames, domain);
+    const internalId =
+      domain === undefined ? undefined : detectedInternalId(knownGames, discovered, domain);
     if (isListableDetectedGame(game, internalId, knownGames)) {
       ids.push(game.gameUid);
       if (internalId !== undefined) {

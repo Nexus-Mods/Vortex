@@ -83,6 +83,20 @@ describe("listableDetectedIds with discovery", () => {
     expect(ids).toEqual(["uid-1704"]);
   });
 
+  // Skyrim VR shares Skyrim SE's Nexus page, and only VR is installed here.
+  it("counts a game once when it shares its Nexus domain with another known game", () => {
+    const withVR = [
+      ...known,
+      { id: "skyrimvr", details: { nexusPageId: "skyrimspecialedition" } },
+    ] as unknown as IGameStored[];
+
+    const ids = listableDetectedIds([detected(1704, false)], withVR, {
+      skyrimvr: { path: "C:/Games/Skyrim VR" },
+    });
+
+    expect(ids).toEqual(["uid-1704"]);
+  });
+
   it("leaves out a discovered game the user has added", () => {
     const ids = listableDetectedIds(
       [],
