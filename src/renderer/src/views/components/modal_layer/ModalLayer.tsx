@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -12,9 +13,8 @@ import { MessageBox } from "@/ui/components/message_box/MessageBox";
 import { Modal } from "@/ui/components/modal/Modal";
 import { PlainText } from "@/ui/components/prose/plain_text/PlainText";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
-
-import { canRenderWithModal } from "./utils/can_render_with_modal/canRenderWithModal.util";
-import { translateMessageParts } from "./utils/translate_message_parts/translateMessageParts.util";
+import { canRenderWithModal } from "@/views/utils/can_render_with_modal/canRenderWithModal.util";
+import { translateMessageParts } from "@/views/utils/translate_message_parts/translateMessageParts.util";
 
 // One dialog at a time, and the reducer puts a new one at the front, so the newest is shown first.
 // The legacy renderer does the same.
@@ -177,10 +177,11 @@ export const ModalLayer = () => {
       {content.message !== undefined && (
         <div className="mt-3">
           <MessageBox
-            copyLabel={t("Copy")}
+            copyLabel={t("Copy message")}
             hideLabel={t("Hide Details")}
             isCollapsible={content.options?.hideMessage === true}
             message={translateMessage(content.message)}
+            onCopied={() => toast.success(t("Copied to clipboard"))}
             shouldWrap={content.options?.wrap === true}
             showLabel={t("Show Details")}
           />

@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { toast } from "react-hot-toast";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,6 +11,8 @@ import type { IDialog, IDialogContent } from "@/types/IDialog";
 import type { IState } from "@/types/IState";
 
 import { ModalLayer } from "./ModalLayer";
+
+vi.mock("react-hot-toast", () => ({ toast: { success: vi.fn() } }));
 
 vi.mock("@/actions/notifications", () => ({
   closeDialog: vi.fn((id: string, action?: string, input?: unknown) => ({
@@ -363,6 +366,22 @@ describe("ModalLayer", () => {
       await settleTransitions();
     });
   });
+  describe("copying a message", () => {
+    it("says so in a toast once the message has been copied", async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal("api", { clipboard: { writeText } });
+      renderLayer([dialogWith("one", { text: "Failed", message: "details" })]);
+
+      await userEvent.click(screen.getByTestId("dialog-message-copy"));
+
+      await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Copied to clipboard"));
+      expect(writeText).toHaveBeenCalledWith("details");
+
+      vi.unstubAllGlobals();
+      await settleTransitions();
+    });
+  });
+
   describe("message", () => {
     it("shows the message in a read-only box, joining the parts of a line with a space", async () => {
       renderLayer([dialogWith("one", { text: "Failed", message: "first\tpart\nsecond line" })]);

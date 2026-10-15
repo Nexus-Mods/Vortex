@@ -1,7 +1,9 @@
 import { mdiCheck, mdiChevronDown, mdiChevronUp, mdiContentCopy } from "@mdi/js";
 import React, { useEffect, useState } from "react";
 
+import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 /** How long the copy button shows a tick after the message has been copied. */
 const COPIED_MS = 2000;
@@ -17,13 +19,16 @@ interface IMessageBoxProps {
   hideLabel: string;
   /** The toggle's label while the box is closed. */
   showLabel: string;
-  /** The copy button's label. */
+  /** Names the copy button, which shows only an icon, for screen readers and as its tooltip. */
   copyLabel: string;
+  /** Called once the message has been copied, such as to say so in a toast. */
+  onCopied?: () => void;
 }
 
 /**
- * A read-only, selectable box for details such as an error message or a path, with a button that
- * copies it, optionally behind a "show details" toggle that starts closed. It has no margin of
+ * A read-only, selectable box for details such as an error message or a path, with an icon button
+ * in its top right corner that copies it, optionally behind a "show details" toggle that starts
+ * closed. It has no margin of
  * its own: its parent places it.
  */
 export const MessageBox = ({
@@ -31,6 +36,7 @@ export const MessageBox = ({
   hideLabel,
   isCollapsible,
   message,
+  onCopied,
   shouldWrap,
   showLabel,
 }: IMessageBoxProps) => {
@@ -48,52 +54,51 @@ export const MessageBox = ({
   }, [hasCopied]);
 
   const copy = () => {
-    void window.api.clipboard.writeText(message).then(() => setHasCopied(true));
+    void window.api.clipboard.writeText(message).then(() => {
+      setHasCopied(true);
+      onCopied?.();
+    });
   };
 
   return (
     <div className="nxm-message-box">
-      <div className="nxm-message-box-header">
-        {isCollapsible && (
-          <button
-            aria-expanded={isOpen}
-            className="nxm-message-box-toggle"
-            data-testid="dialog-message-toggle"
-            type="button"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? hideLabel : showLabel}
+      {isCollapsible && (
+        <button
+          aria-expanded={isOpen}
+          className="nxm-message-box-toggle"
+          data-testid="dialog-message-toggle"
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {isOpen ? hideLabel : showLabel}
 
-            <Icon path={isOpen ? mdiChevronUp : mdiChevronDown} size="sm" />
-          </button>
-        )}
-
-        {isOpen && (
-          <button
-            className="nxm-button nxm-button-neutral nxm-button-weak nxm-button-sm nxm-message-box-copy"
-            data-testid="dialog-message-copy"
-            type="button"
-            onClick={copy}
-          >
-            <Icon
-              className="nxm-button-icon"
-              path={hasCopied ? mdiCheck : mdiContentCopy}
-              size="none"
-            />
-
-            <span>{copyLabel}</span>
-          </button>
-        )}
-      </div>
+          <Icon path={isOpen ? mdiChevronUp : mdiChevronDown} size="sm" />
+        </button>
+      )}
 
       {isOpen && (
-        <textarea
-          className="nxm-message-box-text"
-          data-testid="dialog-message"
-          readOnly
-          value={message}
-          wrap={shouldWrap ? "soft" : "off"}
-        />
+        <div className="nxm-message-box-body">
+          <textarea
+            className="nxm-message-box-text"
+            data-testid="dialog-message"
+            readOnly
+            value={message}
+            wrap={shouldWrap ? "soft" : "off"}
+          />
+
+          <Tooltip content={copyLabel} placement="left">
+            <Button
+              appearance="weak"
+              aria-label={copyLabel}
+              brand="neutral"
+              className="nxm-message-box-copy"
+              data-testid="dialog-message-copy"
+              leftIconPath={hasCopied ? mdiCheck : mdiContentCopy}
+              size="sm"
+              onClick={copy}
+            />
+          </Tooltip>
+        </div>
       )}
     </div>
   );

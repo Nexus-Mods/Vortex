@@ -99,6 +99,31 @@ describe("MessageBox", () => {
       );
     });
 
+    it("tells its parent once the message has been copied, and not before", async () => {
+      const writeText = stubClipboard();
+      const onCopied = vi.fn();
+      renderBox({ onCopied });
+
+      expect(onCopied).not.toHaveBeenCalled();
+
+      await userEvent.click(screen.getByTestId("dialog-message-copy"));
+
+      await waitFor(() => expect(onCopied).toHaveBeenCalledTimes(1));
+      expect(writeText).toHaveBeenCalledWith("first line\nsecond line");
+    });
+
+    it("shows only an icon, named by copyLabel, with the same text as its tooltip", async () => {
+      renderBox({ copyLabel: "Copy message" });
+
+      const button = screen.getByRole("button", { name: "Copy message" });
+      expect(button).toHaveTextContent("");
+      expect(button.querySelector("svg")).toBeInTheDocument();
+
+      await userEvent.hover(button);
+
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Copy message");
+    });
+
     it("is not shown while the box is closed", () => {
       renderBox({ isCollapsible: true });
 
