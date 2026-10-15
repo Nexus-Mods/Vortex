@@ -4,17 +4,19 @@ import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
+import type { IHarnessReducerBinding } from "@/test-utils/builders";
+
 import { installInMemoryFS } from "../../../test-utils/fsApi";
 import { test } from "../../../test-utils/harnessTest";
 import type { IApiHarness } from "../../../test-utils/harnessTypes";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
+import telemetryReducer from "../reducers/telemetry.reducer";
 import {
   emitStoreGameVersions,
   emitStoreGameVersionEvent,
   gogInstallFromInfo,
-  resetStoreGameVersionHash,
   storeGameVersionChangeKey,
 } from "./storeGameVersionEvent";
 
@@ -28,6 +30,12 @@ vi.mock("../../gamemode_management/util/getGame", () => ({
 }));
 
 import type { ISteamInstallData } from "../../../util/Steam";
+
+/** every emit writes its cache through the reducer, so bind it per harness */
+const TELEMETRY_BINDING: IHarnessReducerBinding = {
+  path: ["persistent", "analyticsTelemetry"],
+  reducer: telemetryReducer,
+};
 
 // Scan-validated install data, as a steam-kv-parser + zod scan would produce it.
 const INSTALL_DATA: ISteamInstallData = {
@@ -180,11 +188,10 @@ describe("emitStoreGameVersionEvent", () => {
       details: { steamAppId: 489830 },
     } as unknown as ReturnType<typeof getGame>);
     vi.mocked(getGameStoresSafe).mockReturnValue(withEntries(steamEntry(INSTALL_DATA)) as never);
-    resetStoreGameVersionHash();
   });
 
   test("posts the steam snapshot once and again only after a change", async ({ makeApi }) => {
-    const harness = makeApi();
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness);
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
@@ -237,8 +244,27 @@ describe("emitStoreGameVersionEvent", () => {
     expect(installVersionSpy).toHaveBeenCalledTimes(2);
   });
 
+  test("volatile-only changes refresh the gate without a send", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness);
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(1);
+
+    // state_flags and target_build_id flip on routine updates; the identity is unchanged
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      withEntries(steamEntry({ ...INSTALL_DATA, stateFlags: 8, targetBuildId: 17 })) as never,
+    );
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(1);
+
+    // and the refreshed cache gates the next identical emit
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(1);
+  });
+
   test("matches the store entry by steam app id when the path diverges", async ({ makeApi }) => {
-    const harness = makeApi();
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness);
     vi.mocked(getGameStoresSafe).mockReturnValue(
       withEntries(steamEntry(INSTALL_DATA), "D:\\somewhere-else") as never,
@@ -251,7 +277,7 @@ describe("emitStoreGameVersionEvent", () => {
   });
 
   test("sends failure records instead of staying silent", async ({ makeApi }) => {
-    const harness = makeApi();
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness);
 
     // no matching store entry at all
@@ -277,7 +303,7 @@ describe("emitStoreGameVersionEvent", () => {
   });
 
   test("skips games without a resolvable numeric nexus id", async ({ makeApi }) => {
-    const harness = makeApi();
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness);
     vi.mocked(numericNexusGameId).mockReturnValue(null);
 
@@ -286,7 +312,7 @@ describe("emitStoreGameVersionEvent", () => {
   });
 
   test("skips games not discovered through steam or gog", async ({ makeApi }) => {
-    const harness = makeApi();
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness, {
       discovered: { skyrimse: { path: "c:\\games\\skyrim", store: "epic" } },
     });
@@ -296,7 +322,7 @@ describe("emitStoreGameVersionEvent", () => {
   });
 
   test("skips games without a discovery result", async ({ makeApi }) => {
-    const harness = makeApi();
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness, { discovered: {} });
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
@@ -304,7 +330,7 @@ describe("emitStoreGameVersionEvent", () => {
   });
 
   test("is a no-op without consent or login", async ({ makeApi }) => {
-    const harness = makeApi();
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness, { enabled: false });
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
@@ -376,18 +402,16 @@ describe("emitStoreGameVersions", () => {
         }),
       });
     }).restore;
-
-    resetStoreGameVersionHash();
   });
 
   afterEach(() => restoreFs());
 
   const harnessWithVersionLookups = (
-    makeApi: (overrides?: object) => IApiHarness,
+    makeApi: (overrides?: object, extraReducers?: IHarnessReducerBinding[]) => IApiHarness,
     exeCalls: Record<string, number>,
     seedOptions?: Parameters<typeof seed>[1],
   ): IApiHarness => {
-    const harness = makeApi();
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness, { discovered: DISCOVERED_THREE, ...seedOptions });
     const versions: Record<string, { version: string; details: unknown; exe: string }> = {
       skyrimse: { version: "1.6.1170", details: { steamAppId: 489830 }, exe: "1.6.1170.0" },
@@ -485,5 +509,73 @@ describe("emitStoreGameVersions", () => {
     const gameIds = telemetryEvent.mock.calls.map((call) => call[2].payload.game_id).sort();
     expect(gameIds).toEqual(["1704", "1705"]);
     expect(exeCalls).toEqual({ skyrimse: 1, skyrimvr: 1 });
+  });
+
+  test("a fresh session with unchanged installs sends nothing", async ({ makeApi }) => {
+    const exeCalls: Record<string, number> = {};
+    const harness = harnessWithVersionLookups(makeApi, exeCalls);
+
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+
+    await emitStoreGameVersions(harness.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(3);
+
+    // a new harness hydrates the same cache: a fresh session, nothing changed
+    const carried = harness.api.getState().persistent.analyticsTelemetry.storeGameVersions;
+    const next = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(next, { discovered: DISCOVERED_THREE });
+    // seed() replaces the whole state, so the cache is carried in afterwards
+    next.setState((draft) => {
+      (draft as unknown as { persistent: { analyticsTelemetry: unknown } }).persistent[
+        "analyticsTelemetry"
+      ] = structuredClone(carried);
+    });
+
+    const nextCalls: Record<string, number> = {};
+    vi.mocked(getGame).mockImplementation(
+      (gameId) =>
+        ({
+          version: "1.6.1170",
+          details: gameId === "skyrimse" ? { steamAppId: 489830 } : {},
+          getInstalledVersion: vi.fn().mockImplementation(() => {
+            nextCalls[gameId] = (nextCalls[gameId] ?? 0) + 1;
+            return "1.6.1170.0";
+          }),
+        }) as unknown as ReturnType<typeof getGame>,
+    );
+
+    await emitStoreGameVersions(next.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(3);
+    expect(nextCalls).toEqual({});
+  });
+
+  test("a fresh session sends only the game whose install changed", async ({ makeApi }) => {
+    const exeCalls: Record<string, number> = {};
+    const harness = harnessWithVersionLookups(makeApi, exeCalls);
+
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+
+    await emitStoreGameVersions(harness.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(3);
+
+    // a new session starts from the persisted cache alone
+    const carried = harness.api.getState().persistent.analyticsTelemetry;
+    const next = harnessWithVersionLookups(makeApi, exeCalls);
+    next.setState((draft) => {
+      draft.persistent.analyticsTelemetry = structuredClone(carried);
+    });
+
+    // skyrimse's steam update moved its build id
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      steamStoreWith(steamEntry({ ...INSTALL_DATA, buildId: 16659741 })) as never,
+    );
+
+    await emitStoreGameVersions(next.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(4);
+    expect(telemetryEvent.mock.calls[3][2].payload).toMatchObject({
+      game_id: "1704",
+      steam: { build_id: 16659741 },
+    });
+    expect(exeCalls).toEqual({ skyrimse: 2, witcher3: 1, skyrimvr: 1 });
   });
 });

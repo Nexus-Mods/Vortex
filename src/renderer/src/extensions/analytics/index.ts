@@ -17,6 +17,7 @@ import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
 import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
+import telemetryReducer from "./reducers/telemetry.reducer";
 import { analyticsLog } from "./utils/analyticsLog";
 import { emitStoreGameVersions } from "./utils/storeGameVersionEvent";
 import SettingsAnalytics from "./views/SettingsAnalytics";
@@ -25,6 +26,7 @@ let ignoreNextAnalyticsStateChange = false;
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "analytics"], settingsReducer);
+  context.registerReducer(["persistent", "analyticsTelemetry"], telemetryReducer);
   context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
 
   context.once(() => {
@@ -86,8 +88,7 @@ function init(context: IExtensionContext): boolean {
       AnalyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacy }));
     });
 
-    // Store install version telemetry for all discovered steam/gog installs; the
-    // per-game change gates make it cheap on deploys that changed nothing.
+    // Store install version telemetry; the per-game change gates make it cheap on deploys that changed nothing.
     // Fire and forget: the event must never delay or fail the deployment chain.
     context.api.onAsync("did-deploy", async () => {
       void emitStoreGameVersions(context.api).catch((err) =>

@@ -3,6 +3,9 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { v4 as uuid } from "uuid";
 
+import { setStoreGameVersionCache } from "@/extensions/analytics/actions/telemetry.action";
+import type { IStoreGameVersionCacheEntry } from "@/extensions/analytics/types/telemetry";
+
 import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
@@ -51,19 +54,20 @@ export function storeGameVersionChangeKey(payload: StoreGameVersionPayload): str
   ]);
 }
 
-/** Per game: the cheap gate that skips unchanged installs before the version
-    lookup, plus the full change key of the last successful send. */
-const lastAccepted = new Map<string, { stableKey: string; fullKey: string }>();
-
-/** Forget what was accepted so the next request is sent even if unchanged. */
-export function resetStoreGameVersionHash(): void {
-  lastAccepted.clear();
-}
-
 type SteamInstallBlock = Extract<StoreGameVersionPayload, { store: "steam" }>["steam"];
 type GogInstallBlock = Extract<StoreGameVersionPayload, { store: "gog" }>["gog"];
 type InstallBlock = SteamInstallBlock | GogInstallBlock;
 type StoreId = "steam" | "gog";
+
+/** Cache writes dispatch through the analytics reducer under
+    persistent.analyticsTelemetry, which persists across Vortex sessions. */
+function refreshCache(
+  api: IExtensionApi,
+  gameId: string,
+  entry: IStoreGameVersionCacheEntry,
+): void {
+  api.store.dispatch(setStoreGameVersionCache({ gameId, cache: entry }));
+}
 
 /** Everything a game's store install contributes except the exe version, which is
     the only expensive field: failures carry their reason, `install` is null and a
@@ -216,6 +220,14 @@ function stableKeyOf(internalGameId: string, gameId: number, record: InstallReco
  * the exe-version lookup. Fire and forget: failures are logged, never thrown, so the
  * deployment that triggered this never depends on it.
  */
+/**
+ * Submits the store_game_version telemetry event for ONE game's store install.
+ * A no-op unless the user consented to analytics and is logged in, the game is a Nexus
+ * game, and it was discovered through the steam or gog store. Installs are gated by a
+ * cheap identity check, so only games whose manifest or extension changed ever reach
+ * the exe-version lookup. Fire and forget: failures are logged, never thrown, so the
+ * deployment that triggered this never depends on it.
+ */
 export async function emitStoreGameVersionEvent(
   api: IExtensionApi,
   internalGameId: string,
@@ -241,7 +253,7 @@ export async function emitStoreGameVersionEvent(
   }
 
   const stableKey = stableKeyOf(internalGameId, gameId, record);
-  const cached = lastAccepted.get(internalGameId);
+  const cached = api.getState().persistent.analyticsTelemetry.storeGameVersions[internalGameId];
   if (cached !== undefined && cached.stableKey === stableKey) {
     return;
   }
@@ -273,10 +285,9 @@ export async function emitStoreGameVersionEvent(
   const fullKey = storeGameVersionChangeKey(payload);
   if (cached !== undefined && cached.fullKey === fullKey) {
     // only the volatile fields moved; refresh the cheap gate without a send
-    lastAccepted.set(internalGameId, { stableKey, fullKey: cached.fullKey });
+    refreshCache(api, internalGameId, { stableKey, fullKey: cached.fullKey });
     return;
   }
-
   try {
     const res = await createVortexNexusV3InternalClient(api).telemetryEvent(
       uuid(),
@@ -288,7 +299,7 @@ export async function emitStoreGameVersionEvent(
       },
     );
 
-    lastAccepted.set(internalGameId, { stableKey, fullKey });
+    refreshCache(api, internalGameId, { stableKey, fullKey });
 
     if (res.accepted > 0 || res.rejected.length > 0)
       log("debug", "telemetry events send", {
