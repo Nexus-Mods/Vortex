@@ -1,7 +1,7 @@
 import PromiseBB from "bluebird";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { makeDownload, makeGameStored } from "@/test-utils/builders";
+import { makeAvailableExtension, makeDownload, makeGameStored } from "@/test-utils/builders";
 import type { INxmHarness } from "@/test-utils/harnessTypes";
 import type { INxmFixtures, INxmSetup } from "@/test-utils/nxmTest";
 import { COLLECTION_URL, FREE, MOD_URL, test } from "@/test-utils/nxmTest";
@@ -59,12 +59,12 @@ describe("nxm link callback", () => {
     expect(beginDownload).not.toHaveBeenCalled();
   });
 
-  test("treats a premium url as a prompt to re-read the membership", ({ makeNxm }) => {
+  test("treats a premium url as a prompt to re-read the membership", async ({ makeNxm }) => {
     const { harness, handleLink } = arrangeLink(makeNxm());
     const refresh = vi.fn();
     harness.api.events.on("refresh-user-info", refresh);
 
-    expect(handleLink("nxm://premium", false)).toBe(false);
+    await expect(handleLink("nxm://premium", false)).resolves.toBe(false);
 
     expect(refresh).toHaveBeenCalled();
     expect(beginDownload).not.toHaveBeenCalled();
@@ -90,28 +90,72 @@ describe("nxm link callback", () => {
         }),
       );
 
-    test("installs the extension when the link asks to install", ({ makeNxm }) => {
+    test("installs the extension when the link asks to install", async ({ makeNxm }) => {
       const { harness, handleLink } = arrangeSite(makeNxm);
       const emitAndAwait = vi.spyOn(harness.api, "emitAndAwait");
 
       handleLink(`nxm://${SITE_ID}/mods/100/files/500`, true);
 
-      expect(emitAndAwait).toHaveBeenCalledWith("install-extension", {
-        name: "Pending",
-        modId: 100,
-        fileId: 500,
-      });
+      await vi.waitFor(() =>
+        expect(emitAndAwait).toHaveBeenCalledWith("install-extension", {
+          name: "Pending",
+          modId: 100,
+          fileId: 500,
+        }),
+      );
+      expect(beginDownload).not.toHaveBeenCalled();
     });
 
-    test("opens the extension page when the link is only a view", ({ makeNxm }) => {
+    test("opens the extension page when the link is only a view", async ({ makeNxm }) => {
       const { harness, handleLink } = arrangeSite(makeNxm);
       const shown = vi.fn();
       harness.api.events.on("show-extension-page", shown);
 
       handleLink(`nxm://${SITE_ID}/mods/100/files/500`, false);
 
-      expect(shown).toHaveBeenCalledWith(100);
+      await vi.waitFor(() => expect(shown).toHaveBeenCalledWith(100));
       expect(focusWindow).toHaveBeenCalled();
+    });
+
+    // a link that launches Vortex is handled before the startup catalog fetch has finished
+    test("waits for the extension catalog before deciding what the link is", async ({
+      makeNxm,
+    }) => {
+      const { harness, handleLink } = arrangeLink(
+        makeNxm({ knownGames: [makeGameStored({ id: SITE_ID, details: undefined })] }),
+      );
+      let catalogFetched: () => void = () => undefined;
+      const emitAndAwait = vi
+        .spyOn(harness.api, "emitAndAwait")
+        .mockImplementation(((event: string) =>
+          event === "await-extension-catalog"
+            ? new Promise<void>((resolve) => (catalogFetched = resolve))
+            : Promise.resolve([])) as never);
+
+      handleLink(`nxm://${SITE_ID}/mods/100/files/500`, true);
+      harness.setState((draft) => {
+        draft.session.extensions.available = [makeAvailableExtension({ modId: 100 })];
+      });
+      catalogFetched();
+
+      await vi.waitFor(() =>
+        expect(emitAndAwait).toHaveBeenCalledWith("install-extension", expect.anything()),
+      );
+      expect(beginDownload).not.toHaveBeenCalled();
+    });
+
+    test("downloads a modding tool that is not in the extension catalog", async ({ makeNxm }) => {
+      const { handleLink } = arrangeSite(makeNxm);
+
+      handleLink(`nxm://${SITE_ID}/mods/200/files/500`, false);
+
+      await vi.waitFor(() =>
+        expect(beginDownload).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          `nxm://${SITE_ID}/mods/200/files/500`,
+        ),
+      );
     });
   });
 
