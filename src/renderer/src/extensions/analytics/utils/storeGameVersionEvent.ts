@@ -7,7 +7,7 @@ import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
 import type { ISteamEntry } from "../../../util/Steam";
-import { discoveryByGame } from "../../gamemode_management/selectors";
+import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
@@ -51,12 +51,28 @@ export function storeGameVersionChangeKey(payload: StoreGameVersionPayload): str
   ]);
 }
 
-/** Last accepted change key per game, so an unchanged install is never re-sent. */
-const lastAccepted = new Map<string, string>();
+/** Per game: the cheap gate that skips unchanged installs before the version
+    lookup, plus the full change key of the last successful send. */
+const lastAccepted = new Map<string, { stableKey: string; fullKey: string }>();
 
 /** Forget what was accepted so the next request is sent even if unchanged. */
 export function resetStoreGameVersionHash(): void {
   lastAccepted.clear();
+}
+
+type SteamInstallBlock = Extract<StoreGameVersionPayload, { store: "steam" }>["steam"];
+type GogInstallBlock = Extract<StoreGameVersionPayload, { store: "gog" }>["gog"];
+type InstallBlock = SteamInstallBlock | GogInstallBlock;
+type StoreId = "steam" | "gog";
+
+/** Everything a game's store install contributes except the exe version, which is
+    the only expensive field: failures carry their reason, `install` is null and a
+    record undefined only when the discovery result is not a steam/gog install. */
+interface InstallRecord {
+  storeId: StoreId;
+  extensionVersion: string | null;
+  install: InstallBlock | null;
+  failureReason: string | null;
 }
 
 /** Windows and POSIX disagree about separators and case; matches either way. */
@@ -66,10 +82,6 @@ const normPath = (value: string): string =>
     .replace(/\/$/, "")
     .toLowerCase();
 
-type SteamInstallBlock = Extract<StoreGameVersionPayload, { store: "steam" }>["steam"];
-type GogInstallBlock = Extract<StoreGameVersionPayload, { store: "gog" }>["gog"];
-type InstallBlock = SteamInstallBlock | GogInstallBlock;
-
 const asPayload = (
   base: {
     game_id: string;
@@ -77,38 +89,24 @@ const asPayload = (
     exe_version: string | null;
     extension_version: string | null;
   },
-  storeId: "steam" | "gog",
+  storeId: StoreId,
   install: InstallBlock,
 ): StoreGameVersionPayload =>
   storeId === "steam"
     ? { ...base, store: "steam", steam: install as SteamInstallBlock }
     : { ...base, store: "gog", gog: install as GogInstallBlock };
 
-async function collectStoreGameVersion(
+/** Collect the store install identity for one game, from data that is cheap to
+    read per deploy: store snapshots, manifest install data, GOG .info files. */
+async function scanInstall(
   internalGameId: string,
-  gameId: number,
   discovery: IDiscoveryResult,
-): Promise<StoreGameVersionPayload> {
+): Promise<InstallRecord | undefined> {
+  const storeId = discovery.store as StoreId;
   const game = getGame(internalGameId);
-  const base = {
-    game_id: String(gameId),
-    failure_reason: null as string | null,
-    exe_version: null as string | null,
-    extension_version: (game?.version ?? null) as string | null,
-  };
-
-  try {
-    base.exe_version = (await game?.getInstalledVersion?.(discovery)) ?? null;
-  } catch (err) {
-    log("debug", "store-game-version: exe version lookup failed", {
-      gameId: internalGameId,
-      error: getErrorMessageOrDefault(err),
-    });
-  }
-
   const entries =
     getGameStoresSafe()
-      .find((store) => store.id === discovery.store)
+      .find((store) => store.id === storeId)
       ?.snapshot().entries ?? [];
   const entry =
     entries.find(
@@ -119,18 +117,16 @@ async function collectStoreGameVersion(
       ? entries.find((iter) => iter.appid === String(game?.details?.steamAppId))
       : undefined);
 
-  // install identity problems outrank version lookup problems in failure_reason
-  const versionFailure = base.exe_version === null ? "version-lookup-failed" : null;
-
   if (entry === undefined) {
-    return asPayload(
-      { ...base, failure_reason: "store-entry-not-found" },
-      discovery.store as "steam" | "gog",
-      null,
-    );
+    return {
+      storeId,
+      extensionVersion: (game?.version ?? null) as string | null,
+      install: null,
+      failureReason: "store-entry-not-found",
+    };
   }
 
-  if (discovery.store === "gog") {
+  if (storeId === "gog") {
     let info: GogInstall | null = null;
     try {
       const blob = await window.api.fs.readFile(
@@ -145,41 +141,80 @@ async function collectStoreGameVersion(
       });
     }
     if (info === null) {
-      return asPayload({ ...base, failure_reason: "info-parse-failed" }, "gog", null);
+      return {
+        storeId,
+        extensionVersion: (game?.version ?? null) as string | null,
+        install: null,
+        failureReason: "info-parse-failed",
+      };
     }
-    return asPayload({ ...base, failure_reason: versionFailure }, "gog", info);
+    return {
+      storeId,
+      extensionVersion: (game?.version ?? null) as string | null,
+      install: info,
+      failureReason: null,
+    };
   }
 
-  // steam branch: install data comes pre-parsed and zod-validated from the scan
+  // steam: install data comes pre-parsed and zod-validated from the scan
   const data = (entry as ISteamEntry).installData;
   if (data === undefined) {
-    return asPayload({ ...base, failure_reason: "acf-parse-failed" }, "steam", null);
+    return {
+      storeId,
+      extensionVersion: (game?.version ?? null) as string | null,
+      install: null,
+      failureReason: "acf-parse-failed",
+    };
   }
-  return asPayload({ ...base, failure_reason: versionFailure }, "steam", {
-    app_id: data.appId,
-    build_id: data.buildId,
-    branch: data.branch,
-    language: data.language,
-    mounted_language: data.mountedLanguage,
-    state_flags: data.stateFlags,
-    target_build_id: data.targetBuildId,
-    depots: data.depots.map((depot) => ({
-      depot_id: depot.depotId,
-      manifest_id: depot.manifestId,
-      dlc_app_id: depot.dlcAppId,
-    })),
-    shared_depots: data.sharedDepots.map((depot) => ({
-      depot_id: depot.depotId,
-      owner_app_id: depot.ownerAppId,
-    })),
-  });
+  return {
+    storeId,
+    extensionVersion: (game?.version ?? null) as string | null,
+    install: {
+      app_id: data.appId,
+      build_id: data.buildId,
+      branch: data.branch,
+      language: data.language,
+      mounted_language: data.mountedLanguage,
+      state_flags: data.stateFlags,
+      target_build_id: data.targetBuildId,
+      depots: data.depots.map((depot) => ({
+        depot_id: depot.depotId,
+        manifest_id: depot.manifestId,
+        dlc_app_id: depot.dlcAppId,
+      })),
+      shared_depots: data.sharedDepots.map((depot) => ({
+        depot_id: depot.depotId,
+        owner_app_id: depot.ownerAppId,
+      })),
+    },
+    failureReason: null,
+  };
+}
+
+/** The cheap change key: the record with the exe version (the expensive field)
+    nulled out, so identity drift is visible without resolving versions. */
+function stableKeyOf(internalGameId: string, gameId: number, record: InstallRecord): string {
+  return storeGameVersionChangeKey(
+    asPayload(
+      {
+        game_id: String(gameId),
+        failure_reason: record.failureReason,
+        exe_version: null,
+        extension_version: record.extensionVersion,
+      },
+      record.storeId,
+      record.install,
+    ),
+  );
 }
 
 /**
- * Submits the store_game_version telemetry event for one game's store install.
+ * Submits the store_game_version telemetry event for ONE game's store install.
  * A no-op unless the user consented to analytics and is logged in, the game is a Nexus
- * game, and it was discovered through the steam or gog store. Fire and forget: failures
- * are logged, never thrown, so the deployment that triggered this never depends on it.
+ * game, and it was discovered through the steam or gog store. Installs are gated by a
+ * cheap identity check, so only games whose manifest or extension changed ever reach
+ * the exe-version lookup. Fire and forget: failures are logged, never thrown, so the
+ * deployment that triggered this never depends on it.
  */
 export async function emitStoreGameVersionEvent(
   api: IExtensionApi,
@@ -200,10 +235,45 @@ export async function emitStoreGameVersionEvent(
     return;
   }
 
-  const payload = await collectStoreGameVersion(internalGameId, gameId, discovery);
+  const record = await scanInstall(internalGameId, discovery);
+  if (record === undefined) {
+    return;
+  }
 
-  const changeKey = storeGameVersionChangeKey(payload);
-  if (lastAccepted.get(internalGameId) === changeKey) {
+  const stableKey = stableKeyOf(internalGameId, gameId, record);
+  const cached = lastAccepted.get(internalGameId);
+  if (cached !== undefined && cached.stableKey === stableKey) {
+    return;
+  }
+
+  // the install identity moved; (re)resolve the exe version
+  let exeVersion: string | null = null;
+  try {
+    exeVersion = (await getGame(internalGameId)?.getInstalledVersion?.(discovery)) ?? null;
+  } catch (err) {
+    log("debug", "store-game-version: exe version lookup failed", {
+      gameId: internalGameId,
+      error: getErrorMessageOrDefault(err),
+    });
+  }
+
+  const payload = asPayload(
+    {
+      game_id: String(gameId),
+      // install identity problems outrank version lookup problems in failure_reason
+      failure_reason:
+        record.failureReason ?? (exeVersion === null ? "version-lookup-failed" : null),
+      exe_version: exeVersion,
+      extension_version: record.extensionVersion,
+    },
+    record.storeId,
+    record.install,
+  );
+
+  const fullKey = storeGameVersionChangeKey(payload);
+  if (cached !== undefined && cached.fullKey === fullKey) {
+    // only the volatile fields moved; refresh the cheap gate without a send
+    lastAccepted.set(internalGameId, { stableKey, fullKey: cached.fullKey });
     return;
   }
 
@@ -218,7 +288,7 @@ export async function emitStoreGameVersionEvent(
       },
     );
 
-    lastAccepted.set(internalGameId, changeKey);
+    lastAccepted.set(internalGameId, { stableKey, fullKey });
 
     if (res.accepted > 0 || res.rejected.length > 0)
       log("debug", "telemetry events send", {
@@ -226,8 +296,37 @@ export async function emitStoreGameVersionEvent(
         rejected: res.rejected.length,
       });
   } catch (err) {
+    // a failed send leaves the cache untouched, so the next deploy retries
     log("warn", "store-game-version: telemetry submit failed", {
       error: getErrorMessageOrDefault(err),
     });
   }
+}
+
+/**
+ * Submits the store_game_version event for every discovered steam/gog install, not
+ * just the game being deployed. Games run one at a time: a mass update could
+ * otherwise fan out dozens of .info reads and exe-version lookups at once.
+ */
+export async function emitStoreGameVersions(api: IExtensionApi): Promise<void> {
+  const candidates = Object.keys(discovered(api.getState())).filter((gameId) => {
+    const discovery = discoveryByGame(api.getState(), gameId);
+    return (
+      discovery?.path !== undefined && (discovery.store === "steam" || discovery.store === "gog")
+    );
+  });
+
+  // sequential on purpose
+  let chain = Promise.resolve();
+  for (const gameId of candidates) {
+    chain = chain.then(() =>
+      emitStoreGameVersionEvent(api, gameId).catch((err) =>
+        log("warn", "store-game-version: emit failed", {
+          gameId,
+          error: getErrorMessageOrDefault(err),
+        }),
+      ),
+    );
+  }
+  return chain;
 }

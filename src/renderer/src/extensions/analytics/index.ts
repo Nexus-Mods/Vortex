@@ -9,7 +9,6 @@ import { getCPUArch } from "@/util/nativeArch";
 import { isHidpiDisplay } from "../../contexts/WindowContext";
 import { activeGameId, activeProfileId } from "../../util/selectors";
 import { nexusGamesProm } from "../nexus_integration/util";
-import { profileById } from "../profile_management/selectors";
 import { zoomFromState } from "../settings_interface/utils/zoom";
 import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
@@ -19,7 +18,7 @@ import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEven
 import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
 import { analyticsLog } from "./utils/analyticsLog";
-import { emitStoreGameVersionEvent } from "./utils/storeGameVersionEvent";
+import { emitStoreGameVersions } from "./utils/storeGameVersionEvent";
 import SettingsAnalytics from "./views/SettingsAnalytics";
 
 let ignoreNextAnalyticsStateChange = false;
@@ -87,17 +86,15 @@ function init(context: IExtensionContext): boolean {
       AnalyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacy }));
     });
 
-    // Store install version telemetry for the game the user just deployed to.
+    // Store install version telemetry for all discovered steam/gog installs; the
+    // per-game change gates make it cheap on deploys that changed nothing.
     // Fire and forget: the event must never delay or fail the deployment chain.
-    context.api.onAsync("did-deploy", async (profileId: string) => {
-      const profile = profileById(context.api.store.getState(), profileId);
-      if (profile !== undefined) {
-        void emitStoreGameVersionEvent(context.api, profile.gameId).catch((err) =>
-          analyticsLog("warn", "store-game-version emit failed", {
-            error: getErrorMessageOrDefault(err),
-          }),
-        );
-      }
+    context.api.onAsync("did-deploy", async () => {
+      void emitStoreGameVersions(context.api).catch((err) =>
+        analyticsLog("warn", "store-game-version emit failed", {
+          error: getErrorMessageOrDefault(err),
+        }),
+      );
     });
 
     // Keep the active-game super properties in sync so every event carries game scope.

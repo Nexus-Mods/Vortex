@@ -1,12 +1,17 @@
-import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as path from "node:path";
 
+import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
+import { QualifiedPath } from "@vortex/shared/filesystem";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+
+import { installInMemoryFS } from "../../../test-utils/fsApi";
 import { test } from "../../../test-utils/harnessTest";
 import type { IApiHarness } from "../../../test-utils/harnessTypes";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
 import {
+  emitStoreGameVersions,
   emitStoreGameVersionEvent,
   gogInstallFromInfo,
   resetStoreGameVersionHash,
@@ -147,16 +152,18 @@ const withEntries = (...entries: unknown[]): unknown => [
 
 describe("emitStoreGameVersionEvent", () => {
   const telemetryEvent = vi.fn();
+  let installVersionSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     telemetryEvent.mockReset().mockResolvedValue({ accepted: 1, rejected: [] });
+    installVersionSpy = vi.fn().mockResolvedValue("1.6.1170.0");
     vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
       telemetryEvent,
     } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
     vi.mocked(numericNexusGameId).mockReturnValue(1704);
     vi.mocked(getGame).mockReturnValue({
       version: "1.6.1170",
-      getInstalledVersion: vi.fn().mockResolvedValue("1.6.1170.0"),
+      getInstalledVersion: installVersionSpy,
       details: { steamAppId: 489830 },
     } as unknown as ReturnType<typeof getGame>);
     vi.mocked(getGameStoresSafe).mockReturnValue(withEntries(steamEntry(INSTALL_DATA)) as never);
@@ -199,16 +206,22 @@ describe("emitStoreGameVersionEvent", () => {
     });
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
-    expect(telemetryEvent).toHaveBeenCalledTimes(1);
+    expect(installVersionSpy).toHaveBeenCalledTimes(1);
 
-    vi.mocked(getGame).mockReturnValue({
-      version: "1.6.1170",
-      getInstalledVersion: vi.fn().mockResolvedValue("1.7.0.0"),
-      details: { steamAppId: 489830 },
-    } as unknown as ReturnType<typeof getGame>);
+    // an exe-version-only change does not re-send: the identity is unchanged, so the
+    // cheap gate skips before the version lookup happens again
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(1);
+    expect(installVersionSpy).toHaveBeenCalledTimes(1);
+
+    // an install-identity change (steam update, new build id) re-sends
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      withEntries(steamEntry({ ...INSTALL_DATA, buildId: 16659741 })) as never,
+    );
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
     expect(telemetryEvent).toHaveBeenCalledTimes(2);
-    expect(telemetryEvent.mock.calls[1][2].payload.exe_version).toBe("1.7.0.0");
+    expect(telemetryEvent.mock.calls[1][2].payload.steam.build_id).toBe(16659741);
+    expect(installVersionSpy).toHaveBeenCalledTimes(2);
   });
 
   test("matches the store entry by steam app id when the path diverges", async ({ makeApi }) => {
@@ -286,5 +299,162 @@ describe("emitStoreGameVersionEvent", () => {
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
 
     expect(telemetryEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("emitStoreGameVersions", () => {
+  const telemetryEvent = vi.fn();
+
+  const GOG_ID = "1207658924";
+  const GOG_PATH = "C:\\GOG Games\\Witcher3";
+  const DISCOVERED_THREE = {
+    skyrimse: { path: "c:\\games\\skyrim", store: "steam" },
+    witcher3: { path: "c:\\gog games\\witcher3", store: "gog" },
+    skyrimvr: { path: "c:\\games\\skyrimvr", store: "steam" },
+  };
+
+  const VARIANT: typeof INSTALL_DATA = {
+    ...INSTALL_DATA,
+    appId: 489831,
+    buildId: 73340,
+    targetBuildId: 0,
+  };
+
+  const SKYRIMVR_ENTRY = {
+    appid: "489831",
+    name: "Skyrim VR",
+    gamePath: "C:\\Games\\SkyrimVR",
+    gameStoreId: "steam",
+    installData: VARIANT,
+  };
+
+  const GOG_ENTRY = { appid: GOG_ID, name: "Witcher 3", gamePath: GOG_PATH, gameStoreId: "gog" };
+
+  const steamStoreWith = (first: unknown): unknown[] => [
+    {
+      id: "steam",
+      snapshot: () => ({ entries: [first, SKYRIMVR_ENTRY], isInstalled: true }),
+    },
+    {
+      id: "gog",
+      snapshot: () => ({ entries: [GOG_ENTRY], isInstalled: true }),
+    },
+  ];
+
+  let restoreFs: () => void;
+
+  beforeEach(() => {
+    telemetryEvent.mockReset().mockResolvedValue({ accepted: 1, rejected: [] });
+    vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
+      telemetryEvent,
+    } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
+    vi.mocked(numericNexusGameId).mockImplementation((gameId) => {
+      const ids: Record<string, number> = { skyrimse: 1704, witcher3: 1720, skyrimvr: 1705 };
+      return ids[gameId] ?? null;
+    });
+
+    restoreFs = installInMemoryFS((builder) => {
+      builder.file(QualifiedPath.fromNative(path.join(GOG_PATH, `goggame-${GOG_ID}.info`)), {
+        type: "text",
+        data: JSON.stringify({
+          rootGameId: 1207658924,
+          buildId: 55136646198962190,
+          languages: ["en-US"],
+        }),
+      });
+    }).restore;
+
+    resetStoreGameVersionHash();
+  });
+
+  afterEach(() => restoreFs());
+
+  const harnessWithVersionLookups = (
+    makeApi: (overrides?: object) => IApiHarness,
+    exeCalls: Record<string, number>,
+  ): IApiHarness => {
+    const harness = makeApi();
+    seed(harness, { discovered: DISCOVERED_THREE });
+    const versions: Record<string, { version: string; details: unknown; exe: string }> = {
+      skyrimse: { version: "1.6.1170", details: { steamAppId: 489830 }, exe: "1.6.1170.0" },
+      witcher3: { version: "1.0", details: {}, exe: "1.0.5" },
+      skyrimvr: { version: "1.4", details: {}, exe: "1.4.2" },
+    };
+    vi.mocked(getGame).mockImplementation((gameId) => {
+      const game = versions[gameId];
+      return {
+        version: game?.version,
+        details: game?.details,
+        getInstalledVersion: vi.fn().mockImplementation(() => {
+          exeCalls[gameId] = (exeCalls[gameId] ?? 0) + 1;
+          return game?.exe;
+        }),
+      } as unknown as ReturnType<typeof getGame>;
+    });
+    return harness;
+  };
+
+  test("sends one record per discovered game and only re-sends the changed one", async ({
+    makeApi,
+  }) => {
+    const exeCalls: Record<string, number> = {};
+    const harness = harnessWithVersionLookups(makeApi, exeCalls);
+
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+
+    await emitStoreGameVersions(harness.api);
+
+    expect(telemetryEvent).toHaveBeenCalledTimes(3);
+    const gameIds = telemetryEvent.mock.calls.map((call) => call[2].payload.game_id).sort();
+    expect(gameIds).toEqual(["1704", "1705", "1720"]);
+
+    // only skyrimse's install identity changes (a steam update wrote a new build id)
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      steamStoreWith(steamEntry({ ...INSTALL_DATA, buildId: 16659741 })) as never,
+    );
+
+    await emitStoreGameVersions(harness.api);
+
+    expect(telemetryEvent).toHaveBeenCalledTimes(4);
+    expect(telemetryEvent.mock.calls[3][2].payload).toMatchObject({
+      game_id: "1704",
+      failure_reason: null,
+      steam: { build_id: 16659741 },
+    });
+    // the changed game resolved its version again; the unchanged ones skipped stage 2
+    expect(exeCalls).toEqual({ skyrimse: 2, witcher3: 1, skyrimvr: 1 });
+  });
+
+  test("retries a failed send on the next deploy without re-sending successes", async ({
+    makeApi,
+  }) => {
+    const exeCalls: Record<string, number> = {};
+    const harness = harnessWithVersionLookups(makeApi, exeCalls);
+
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+
+    telemetryEvent.mockRejectedValueOnce(new Error("socket reset"));
+    await emitStoreGameVersions(harness.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(3);
+
+    await emitStoreGameVersions(harness.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(4);
+    expect(telemetryEvent.mock.calls[3][2].payload.game_id).toBe("1704");
+  });
+
+  test("skips candidates without a resolvable numeric id, others still send", async ({
+    makeApi,
+  }) => {
+    const exeCalls: Record<string, number> = {};
+    const harness = harnessWithVersionLookups(makeApi, exeCalls);
+
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(numericNexusGameId).mockImplementation((gameId) =>
+      gameId === "witcher3" ? null : 1704,
+    );
+
+    await emitStoreGameVersions(harness.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(2);
+    expect(exeCalls).toEqual({ skyrimse: 1, skyrimvr: 1 });
   });
 });
