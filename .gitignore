@@ -66,6 +66,8 @@ nul
 # Claude Code directory
 .claude/settings.local.json
 
+/.pi/
+
 # direnv
 .direnv/
 

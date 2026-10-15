@@ -3896,6 +3896,12 @@ importers:
 
   packages/pe-resources: {}
 
+  packages/steam-kv-parser:
+    devDependencies:
+      '@types/node':
+        specifier: 24.12.2
+        version: 24.12.2
+
   packages/vortex-api:
     dependencies:
       '@types/bluebird':
