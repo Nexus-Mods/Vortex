@@ -766,6 +766,43 @@ describe("Table's context menus", () => {
     expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
   });
 
+  it("adds a group's own sections after its built-in ones", async () => {
+    const open = vi.fn();
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        groupMenu={(group) => (group.id === "first" ? [[{ label: "Open", onClick: open }]] : [])}
+        groups={GROUPS}
+        label="Files"
+        selectable
+      />,
+    );
+
+    fireEvent.contextMenu(groupRow("First"));
+    expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group", "Open"]);
+
+    await userEvent.click(screen.getByRole("menuitem", { name: "Open" }));
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it("adds nothing to a group whose sections are empty", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        groupMenu={() => []}
+        groups={GROUPS}
+        label="Files"
+        selectable
+      />,
+    );
+
+    fireEvent.contextMenu(groupRow("Second"));
+
+    expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+  });
+
   it("collapses the group, then offers to expand it", async () => {
     renderGrouped();
 

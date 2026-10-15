@@ -38,8 +38,8 @@ interface IToolbarMenuContentProps {
   onSelect: () => void;
 }
 
-/** Each run of actions in the same `section`, in order, for the menu to divide. */
-const sections = <T extends IToolbarAction>(rows: T[]): T[][] =>
+/** Each run of actions in the same `section`, in order, for a menu to divide. */
+export const toolbarMenuSections = <T extends IToolbarAction>(rows: T[]): T[][] =>
   rows.reduce<T[][]>((runs, row) => {
     const run = runs.at(-1);
     if (run !== undefined && run[0].section === row.section) {
@@ -102,7 +102,7 @@ export const ToolbarMenuContent = ({
 
   return (
     <>
-      <PopoverMenu actions={sections(rows)} label={label} onSelect={onSelect} />
+      <PopoverMenu actions={toolbarMenuSections(rows)} label={label} onSelect={onSelect} />
 
       {!!pinning?.canReset && (
         <>

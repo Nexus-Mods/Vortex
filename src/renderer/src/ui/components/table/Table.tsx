@@ -43,8 +43,9 @@ const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
  * Carries the grid roles, so it reads as a table to assistive tech; grouped, it's a
  * treegrid whose group rows collapse. Only the rows in view render, against the page's
  * scroller, under a header that sticks to it. A right-click on a group row offers to collapse
- * or expand it or every group, and to select its rows; on a row, its `rowMenu`, once the
- * row is selected. Every selected row shows what's in it as a hovered one does, so a table
+ * or expand it or every group, and to select its rows; then its `groupMenu`; on a row, its
+ * `rowMenu`, once the row is selected. Every selected row shows what's in it as a hovered one
+ * does, so a table
  * that shows actions in its rows decides itself what several selected rows show.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
@@ -63,6 +64,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   selectedIds,
   onSelectedIdsChange,
   rowMenu,
+  groupMenu,
   onMenuOpen,
   onGroupMenuAction,
 }: ITableProps<T, G>) => {
@@ -339,6 +341,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                   menuGroup.rows.every((row) => selection.selected.has(getRowId(row)))
                 }
                 expanded={!collapsed.has(menuGroup.id)}
+                extra={groupMenu?.(menuGroup)}
                 label={menuGroup.label}
                 onDeselectAll={
                   selectable

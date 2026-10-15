@@ -25,13 +25,15 @@ interface ITableGroupMenuProps {
   onSelectAll?: () => void;
   /** Takes the group's rows out of the selection. */
   onDeselectAll?: () => void;
+  /** Sections after collapsing and selecting, each divided from the last. */
+  extra?: IMenuAction[][];
   /** Closes the menu, once a row is chosen. */
   onSelect: () => void;
 }
 
 /**
  * A group row's context menu: collapse or expand it, or every group, and select its rows, or
- * deselect them once they all are.
+ * deselect them once they all are, then the table's own sections for the group.
  */
 export const TableGroupMenu = ({
   label,
@@ -41,6 +43,7 @@ export const TableGroupMenu = ({
   allSelected = false,
   onSelectAll,
   onDeselectAll,
+  extra = [],
   onSelect,
 }: ITableGroupMenuProps) => {
   const { t } = useTranslation();
@@ -74,7 +77,7 @@ export const TableGroupMenu = ({
 
   return (
     <PopoverMenu
-      actions={[folding, selecting].filter((section) => section.length > 0)}
+      actions={[folding, selecting, ...extra].filter((section) => section.length > 0)}
       label={t("{{name}} group actions", { name: label })}
       onSelect={onSelect}
     />

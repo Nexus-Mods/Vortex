@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
+
 /** A collapsible run of rows under a row of its own. */
 export interface ITableGroup<T> {
   /** Stable, unique identifier for the group. */
@@ -86,6 +88,8 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
   /** A row's context menu, given the way to close it; unset, rows have none. */
   rowMenu?: (row: T, close: () => void) => ReactNode;
+  /** Sections of a group header's menu after its own, such as actions on what the group is for. */
+  groupMenu?: (group: G) => IMenuAction[][];
   /** Told when a context menu opens, on what, and whether from the pointer or keyboard. */
   onMenuOpen?: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
   /** Told when an item of a group header's menu is used. */
