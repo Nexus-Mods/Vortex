@@ -1,0 +1,75 @@
+"AppState"
+{
+	"appid"		"262060"
+	"universe"		"1"
+	"name"		"Darkest Dungeon®"
+	"StateFlags"		"4"
+	"installdir"		"DarkestDungeon"
+	"LastUpdated"		"1791541452"
+	"LastPlayed"		"1768158112"
+	"SizeOnDisk"		"4183238288"
+	"StagingSize"		"0"
+	"buildid"		"25810065"
+	"LastOwner"		"76561198110222274"
+	"DownloadType"		"1"
+	"UpdateResult"		"0"
+	"BytesToDownload"		"10430368"
+	"BytesDownloaded"		"10430368"
+	"BytesToStage"		"171759533"
+	"BytesStaged"		"171759533"
+	"TargetBuildID"		"25810065"
+	"AutoUpdateBehavior"		"0"
+	"AllowOtherDownloadsWhileRunning"		"0"
+	"ScheduledAutoUpdate"		"0"
+	"InstalledDepots"
+	{
+		"262065"
+		{
+			"manifest"		"340638292043141637"
+			"size"		"194838824"
+		}
+		"262066"
+		{
+			"manifest"		"2696495893750052224"
+			"size"		"2370944287"
+		}
+		"445702"
+		{
+			"manifest"		"303813516494152901"
+			"size"		"19940108"
+			"dlcappid"		"445700"
+		}
+		"580102"
+		{
+			"manifest"		"4506000746151544241"
+			"size"		"360696546"
+			"dlcappid"		"580100"
+		}
+		"702542"
+		{
+			"manifest"		"4258374143576351227"
+			"size"		"40024569"
+			"dlcappid"		"702540"
+		}
+		"735732"
+		{
+			"manifest"		"4131764727576325281"
+			"size"		"651754999"
+			"dlcappid"		"735730"
+		}
+		"1117862"
+		{
+			"manifest"		"5150525322187587414"
+			"size"		"545038955"
+			"dlcappid"		"1117860"
+		}
+	}
+	"UserConfig"
+	{
+		"language"		"english"
+	}
+	"MountedConfig"
+	{
+		"language"		"english"
+	}
+}

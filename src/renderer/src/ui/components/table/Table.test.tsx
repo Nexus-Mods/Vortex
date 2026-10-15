@@ -1,7 +1,13 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { createPortal } from "react-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// jsdom loads no pictures, so every picture's colour is the same, known one.
+vi.mock("@/ui/components/image/useImageColour.hook", () => ({
+  useImageColour: (src: string | undefined) => (src ? "rgb(1, 2, 3)" : undefined),
+}));
 
 import { Table } from "./Table";
 import type { ITableColumn } from "./Table.types";
@@ -96,6 +102,25 @@ describe("Table", () => {
       fireEvent.focus(rowOf(ROWS[1].id));
       fireEvent.blur(rowOf(ROWS[1].id));
 
+      expect(engagedIn(ROWS[1].id)).toBe("true");
+    });
+
+    it("tells its cells while it's selected, though never pointed at, as a hovered row's", () => {
+      render(
+        <Table
+          selectable
+          columns={[
+            COLUMNS[0],
+            { id: "engaged", header: "Engaged", cell: (row) => <Engaged id={row.id} /> },
+          ]}
+          getRowId={(row) => row.id}
+          label="Files"
+          rows={ROWS}
+          selectedIds={new Set([ROWS[1].id])}
+        />,
+      );
+
+      expect(engagedIn(ROWS[0].id)).toBe("false");
       expect(engagedIn(ROWS[1].id)).toBe("true");
     });
   });
@@ -587,8 +612,9 @@ describe("Table with groups", () => {
     );
 
     const groupRows = container.querySelectorAll(".nxm-table-group-row");
-    expect(groupRows[0].lastElementChild?.tagName).toBe("CANVAS");
-    expect(groupRows[1].querySelector("canvas")).toBeNull();
+    expect(groupRows[0].lastElementChild).toHaveClass("nxm-table-group-wash");
+    expect(groupRows[0].lastElementChild).toHaveStyle({ backgroundColor: "rgb(1, 2, 3)" });
+    expect(groupRows[1].querySelector(".nxm-table-group-wash")).toBeNull();
   });
 
   it("tints an open group's rows from its image, below its own row, until it collapses", async () => {
@@ -683,5 +709,332 @@ describe("Table in a scrolling page", () => {
     expect(screen.getByRole("button", { name: "Row 100" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Row 0" })).toHaveFocus();
     expect(screen.queryByRole("button", { name: "Row 1" })).toBeNull();
+  });
+});
+
+describe("Table's context menus", () => {
+  const GROUPS = [
+    { id: "first", label: "First", rows: [ROWS[0]] },
+    { id: "second", label: "Second", rows: [ROWS[1]] },
+  ];
+
+  const groupRow = (name: string) =>
+    screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement;
+  const row = (name: string) => screen.getByText(name).closest('[role="row"]') as HTMLElement;
+  const menuItems = () => screen.getAllByRole("menuitem").map((item) => item.textContent);
+  // Hidden too: an open menu hides the rest of the page from assistive tech, as it holds focus.
+  const checkbox = (name: string) => within(row(name)).getByRole("checkbox", { hidden: true });
+  const checked = (name: string) => checkbox(name).getAttribute("aria-checked") === "true";
+
+  const renderGrouped = (selectable = true) =>
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+        groups={GROUPS}
+        label="Files"
+        selectable={selectable}
+      />,
+    );
+
+  it("offers to collapse an open group, or every one, and to select its rows", () => {
+    renderGrouped();
+
+    fireEvent.contextMenu(groupRow("First"));
+
+    expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+  });
+
+  it("collapses the group, then offers to expand it", async () => {
+    renderGrouped();
+
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+    expect(screen.getByRole("button", { name: "First" })).toHaveAttribute("aria-expanded", "false");
+    fireEvent.contextMenu(groupRow("First"));
+    expect(menuItems()).toEqual(["Expand", "Expand all", "Select all in group"]);
+  });
+
+  it("collapses every group, and expands them all again", async () => {
+    renderGrouped();
+
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Collapse all" }));
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+
+    fireEvent.contextMenu(groupRow("Second"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
+    expect(screen.getByRole("button", { name: "First" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("adds the group's rows to the selection", async () => {
+    renderGrouped();
+    await userEvent.click(checkbox("Beta"));
+
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+
+    expect([checked("Alpha"), checked("Beta")]).toEqual([true, true]);
+  });
+
+  it("offers to deselect the group's rows once they're all selected, leaving the rest", async () => {
+    renderGrouped();
+    await userEvent.click(checkbox("Alpha"));
+    await userEvent.click(checkbox("Beta"));
+
+    fireEvent.contextMenu(groupRow("First"));
+    expect(menuItems()).toEqual(["Collapse", "Collapse all", "Deselect all in group"]);
+    await userEvent.click(screen.getByRole("menuitem", { name: "Deselect all in group" }));
+
+    expect([checked("Alpha"), checked("Beta")]).toEqual([false, true]);
+  });
+
+  it("expands every group from a collapsed one, though others are open", async () => {
+    renderGrouped();
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
+
+    expect(screen.getByRole("button", { name: "First" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("selects the group's rows as they are when chosen, not when it opened", async () => {
+    const { rerender } = renderGrouped();
+    fireEvent.contextMenu(groupRow("First"));
+
+    rerender(
+      <Table
+        selectable
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+        groups={[{ id: "first", label: "First", rows: ROWS }]}
+        label="Files"
+      />,
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+
+    expect([checked("Alpha"), checked("Beta")]).toEqual([true, true]);
+  });
+
+  it("closes once its group is gone", () => {
+    const { rerender } = renderGrouped();
+    fireEvent.contextMenu(groupRow("First"));
+
+    rerender(
+      <Table
+        selectable
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+        groups={[GROUPS[1]]}
+        label="Files"
+      />,
+    );
+
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("offers no selecting where rows can't be selected", () => {
+    renderGrouped(false);
+
+    fireEvent.contextMenu(groupRow("First"));
+
+    expect(menuItems()).toEqual(["Collapse", "Collapse all"]);
+  });
+
+  describe("a row's", () => {
+    const renderWithMenu = () =>
+      render(
+        <Table
+          selectable
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          getRowLabel={(r) => r.name}
+          label="Files"
+          rowMenu={(r, close) => (
+            <button type="button" onClick={close}>
+              Menu for {r.name}
+            </button>
+          )}
+          rows={ROWS}
+        />,
+      );
+
+    it("opens its menu, selecting just it when it wasn't selected", async () => {
+      renderWithMenu();
+      await userEvent.click(checkbox("Beta"));
+
+      fireEvent.contextMenu(row("Alpha"));
+
+      expect(screen.getByRole("button", { name: "Menu for Alpha" })).toBeInTheDocument();
+      expect([checked("Alpha"), checked("Beta")]).toEqual([true, false]);
+    });
+
+    it("keeps the selection when it's one of those selected", async () => {
+      renderWithMenu();
+      await userEvent.click(checkbox("Alpha"));
+      await userEvent.click(checkbox("Beta"));
+
+      fireEvent.contextMenu(row("Alpha"));
+
+      expect([checked("Alpha"), checked("Beta")]).toEqual([true, true]);
+    });
+
+    it("builds its menu from the row as it is now, and closes once it's gone", () => {
+      const menuFor = (r: IRow) => <span>Menu for {r.name}</span>;
+      const { rerender } = render(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={ROWS}
+        />,
+      );
+      fireEvent.contextMenu(row("Alpha"));
+
+      rerender(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={[{ ...ROWS[0], name: "Renamed" }, ROWS[1]]}
+        />,
+      );
+      expect(screen.getByText("Menu for Renamed")).toBeInTheDocument();
+
+      rerender(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={[ROWS[1]]}
+        />,
+      );
+      expect(screen.queryByRole("menu")).toBeNull();
+    });
+
+    it("opens from the keyboard under the focused control, handing focus back to it", async () => {
+      renderWithMenu();
+      const control = checkbox("Alpha");
+      control.focus();
+
+      fireEvent.contextMenu(control, { button: -1 });
+      expect(
+        screen.getByRole("button", { name: "Menu for Alpha", hidden: true }),
+      ).toBeInTheDocument();
+      await userEvent.keyboard("{Escape}");
+
+      expect(control).toHaveFocus();
+    });
+
+    it("opens none from a right-click in something its row portalled out", () => {
+      render(
+        <Table
+          selectable
+          columns={[
+            {
+              id: "name",
+              header: "Name",
+              cell: (r) => (
+                <>
+                  {r.name}
+                  {r.id === "a" && createPortal(<span>Portalled</span>, document.body)}
+                </>
+              ),
+            },
+          ]}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={(r) => <span>Menu for {r.name}</span>}
+          rows={ROWS}
+        />,
+      );
+
+      fireEvent.contextMenu(screen.getByText("Portalled"));
+
+      expect(screen.queryByText(/Menu for/)).toBeNull();
+    });
+
+    it("leaves the browser's menu alone without one", () => {
+      renderTable();
+
+      expect(fireEvent.contextMenu(row("Alpha"))).toBe(true);
+    });
+  });
+
+  // The table reports, through callbacks, what's done with its menus; what's made of that is
+  // the page's, so the table itself stays free of analytics.
+  describe("reporting", () => {
+    const renderReporting = () => {
+      const onMenuOpen = vi.fn();
+      const onGroupMenuAction = vi.fn();
+
+      render(
+        <Table
+          selectable
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          getRowLabel={(r) => r.name}
+          groups={GROUPS}
+          label="Files"
+          rowMenu={(r) => <span>Menu for {r.name}</span>}
+          onGroupMenuAction={onGroupMenuAction}
+          onMenuOpen={onMenuOpen}
+        />,
+      );
+
+      return { onGroupMenuAction, onMenuOpen };
+    };
+
+    it("says a menu opened on a group header, from the pointer", () => {
+      const { onMenuOpen } = renderReporting();
+
+      fireEvent.contextMenu(groupRow("First"), { clientX: 10, clientY: 10 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("group", "pointer");
+    });
+
+    it("says a menu opened on a row, from the keyboard", () => {
+      const { onMenuOpen } = renderReporting();
+
+      fireEvent.contextMenu(row("Alpha"), { button: -1 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("row", "keyboard");
+    });
+
+    it("says a menu opened on a row of a multi-selection", async () => {
+      const { onMenuOpen } = renderReporting();
+      await userEvent.click(checkbox("Alpha"));
+      await userEvent.click(checkbox("Beta"));
+
+      fireEvent.contextMenu(row("Alpha"), { clientX: 10, clientY: 10 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("selection", "pointer");
+    });
+
+    it("says which of a group menu's items was used", async () => {
+      const { onGroupMenuAction } = renderReporting();
+
+      fireEvent.contextMenu(groupRow("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+      fireEvent.contextMenu(groupRow("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
+      fireEvent.contextMenu(groupRow("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+
+      expect(onGroupMenuAction.mock.calls).toEqual([["collapse"], ["expand_all"], ["select_all"]]);
+    });
   });
 });

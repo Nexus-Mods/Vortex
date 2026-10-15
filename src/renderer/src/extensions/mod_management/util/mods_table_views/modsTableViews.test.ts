@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Nexus Mods identifies each file, so the update check can say which to update to.
+vi.mock("../modSource", () => ({
+  getModSource: (id: string) => ({ id, options: { supportsModId: true } }),
+}));
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import type { IModWithState } from "../../types/IModProps";
-import { groupMods, sharedMods } from "./modsTableViews";
+import { availableViews, groupMods, sharedMods } from "./modsTableViews";
 
 const t = ((key: string) => key) as Parameters<typeof groupMods>[2];
 
@@ -25,7 +30,8 @@ const MODS = {
   z: collection("z", "Zinc", ["c"]),
 };
 
-const group = (id: string) => groupMods(MODS, "collection", t).find((g) => g.id === id);
+const group = (id: string) =>
+  groupMods(MODS, "collection", t, collectionsByMod(MODS)).find((g) => g.id === id);
 
 describe("sharedMods", () => {
   it("finds a collection's mods other collections have too, and names those, by name", () => {
@@ -65,7 +71,7 @@ describe("groupMods by a column", () => {
   };
 
   it("groups the mods without a value first, then by each value, by name", () => {
-    const groups = groupMods(CATEGORISED, "category", t, category);
+    const groups = groupMods(CATEGORISED, "category", t, {}, category);
 
     expect(groups.map(({ id, label, rows }) => [id, label, rows.map((row) => row.name)])).toEqual([
       ["no-category", "No {{column}}", ["Delta"]],
@@ -74,8 +80,57 @@ describe("groupMods by a column", () => {
     ]);
   });
 
+  it("puts the values a column orders first, in its order, then the rest by name", () => {
+    const groups = groupMods(
+      CATEGORISED,
+      "category",
+      t,
+      {},
+      {
+        ...category,
+        groupOrder: ["Weapons"],
+      },
+    );
+
+    expect(groups.map(({ label }) => label)).toEqual(["No {{column}}", "Weapons", "Armour"]);
+  });
+
   it("leaves the mods ungrouped without the column it names", () => {
-    expect(groupMods(CATEGORISED, "category", t)).toBeUndefined();
-    expect(groupMods(CATEGORISED, "none", t, category)).toBeUndefined();
+    expect(groupMods(CATEGORISED, "category", t, {})).toBeUndefined();
+    expect(groupMods(CATEGORISED, "none", t, {}, category)).toBeUndefined();
+  });
+});
+
+describe("availableViews", () => {
+  const offersUpdates = (mods: { [id: string]: IModWithState }) =>
+    availableViews(mods).some((view) => view.id === "updates");
+  const NEXUS = { name: "Alpha", source: "nexus", fileId: 100, version: "1.0" };
+
+  it("offers Updates for an installed mod with an update", () => {
+    const a = mod("a", "Alpha", {
+      state: "installed",
+      attributes: { ...NEXUS, newestVersion: "1.1", newestFileId: 101 },
+    });
+
+    expect(offersUpdates({ a })).toBe(true);
+  });
+
+  it("doesn't offer Updates for a mod that's only bugged, which has no update", () => {
+    const a = mod("a", "Alpha", {
+      state: "installed",
+      attributes: { ...NEXUS, newestVersion: "1.0", bugMessage: "Broken" },
+    });
+
+    expect(offersUpdates({ a })).toBe(false);
+  });
+
+  it("offers Updates for a collection with a newer revision", () => {
+    const x = mod("x", "Xenon", {
+      state: "installed",
+      type: "collection",
+      attributes: { name: "Xenon", version: "10", newestVersion: "11" },
+    });
+
+    expect(offersUpdates({ x })).toBe(true);
   });
 });

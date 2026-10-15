@@ -9,10 +9,14 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { createSelector } from "reselect";
 
 import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
+import { Button } from "@/ui/components/button/Button";
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
+import { DropdownBlock } from "@/ui/components/dropdown/DropdownBlock";
+import { DropdownDivider } from "@/ui/components/dropdown/DropdownDivider";
 import { Switch } from "@/ui/components/form/switch/Switch";
 import { Image } from "@/ui/components/image/Image";
 import { NoResults } from "@/ui/components/no_results/NoResults";
@@ -22,10 +26,21 @@ import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/Tab
 import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
-import { useDevSetting } from "@/views/components/dev_tools/useDevSetting.hook";
+import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
+import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
+import { TitledTooltip } from "@/ui/components/tooltip/TitledTooltip";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+import { Typography } from "@/ui/components/typography/Typography";
+import { activeGameId } from "@/util/selectors";
 
+import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
+import { makeCollectionModsResolver } from "../../../collections/util/resolveCollectionMods/resolveCollectionMods";
 import { activeProfile } from "../../../profile_management/selectors";
+import {
+  INSTALLING_ACTIVITY,
+  useInstallMods,
+} from "../../hooks/use_install_mods/useInstallMods.hook";
 import {
   MOD_ROW_PINNING_ID,
   MOD_SELECTION_PINNING_ID,
@@ -33,10 +48,16 @@ import {
   useModSelectionActions,
 } from "../../hooks/use_mod_actions/useModActions.hook";
 import {
+  MODS_TABLE_TOOLBARS,
+  useModsTableAnalytics,
+} from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
+import {
   type IModsTableColumn,
   useModsTableColumns,
 } from "../../hooks/use_mods_table_columns/useModsTableColumns.hook";
 import { useModsTableDataColumns } from "../../hooks/use_mods_table_data_columns/useModsTableDataColumns.hook";
+import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
+import { UNINSTALLING_ACTIVITY } from "../../hooks/use_uninstall_mods/useUninstallMods.hook";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
@@ -44,11 +65,13 @@ import {
   type IModGroup,
   type IModRow,
   type ISharedMods,
-  type ModsTableGrouping,
   sharedMods,
 } from "../../util/mods_table_views/modsTableViews";
+import { CollectionHoverCard } from "../collection_hover_card/CollectionHoverCard";
+import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
-import { ModThumbnail } from "../mod_thumbnail/ModThumbnail";
+import { ModHoverCard } from "../mod_hover_card/ModHoverCard";
+import { ModVersion, modVersionGroup, modVersionText } from "../mod_version/ModVersion";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
 import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
@@ -56,12 +79,18 @@ import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
 interface IModsTableSwitchProps {
   /** The mods the table lists, collections among them. */
   mods: { [id: string]: IModWithState };
-  /** The table shown unless the dev tools "New table design" switch is on. */
+  /** The table shown unless the user has switched to the beta view. */
   legacy: ReactNode;
   /** Enables or disables mods, installing any that are only downloaded first; settles once done. */
   onSetModsEnabled: (modIds: string[], enabled: boolean) => void | PromiseLike<unknown>;
   /** The legacy table's row actions, offered in each row's menu with the extensions' own. */
   rowActions?: ITableRowAction[];
+  /** Each listed mod's installed versions and variants, itself included, by its id. */
+  alternatives?: { [modId: string]: IModWithState[] };
+  /** Switches from a mod to another of its versions or variants, by id. */
+  onSelectVersion?: (modId: string, alternativeId: string) => void;
+  /** Removes one of a mod's versions or variants, by id, asking first. */
+  onRemoveVersion?: (alternativeId: string) => void;
 }
 
 /** A group being disabled, while the user decides about the mods it shares. */
@@ -75,6 +104,45 @@ const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
 const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
 
 const profileModState = (state: IState) => activeProfile(state)?.modState;
+
+const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
+
+const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
+
+/** The archives the stored mods come from, worked out once each time the mods change. */
+const storedArchiveIds = createSelector(
+  storedMods,
+  (stored) => new Set(Object.values(stored ?? {}).map((mod) => mod.archiveId)),
+);
+
+/**
+ * What a row's mod is under way with, if anything, as a plain value, so a row re-renders
+ * only when its own answer changes, not on every write to the store.
+ *
+ * The list catches up with the store after a debounce, so a row can outlive what it shows:
+ * an archive a mod in the store now comes from has just been installed, and a mod gone from
+ * the store has just been uninstalled. Either stays loading until its new row takes over.
+ */
+const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | undefined =>
+  useSelector((state: IState) => {
+    const activity = state.session?.base?.activity;
+    const justInstalled = modState === "downloaded" && storedArchiveIds(state).has(modId);
+    if (
+      modState === "installing" ||
+      activity?.[INSTALLING_ACTIVITY]?.includes(modId) ||
+      justInstalled
+    ) {
+      return "installing";
+    }
+
+    const stored = storedMods(state);
+    const removed = modState === "installed" && stored !== undefined && !stored[modId];
+    if (activity?.[UNINSTALLING_ACTIVITY]?.includes(modId) || removed) {
+      return "uninstalling";
+    }
+
+    return undefined;
+  });
 
 /**
  * Whether a row shows the text searched for, ignoring case, in any of the columns' cells;
@@ -91,8 +159,10 @@ const searchFilter = (columns: IModsTableColumn[], search: string) => {
     columns.some((column) => column.searchText?.(row).toLocaleLowerCase().includes(query));
 };
 
-/** The Mods page's table: the legacy one, or the new table while it's being built. */
+/** The Mods page's table: the classic one, or the new one while the user has the beta view on. */
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
+const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
+const nop = () => undefined;
 
 // The switch and the menu's button; each pinned action adds a 28px button and an 8px gap.
 const ACTIONS_WIDTH = 78;
@@ -118,7 +188,19 @@ interface IModRowActionsProps {
   onSetEnabled: (modIds: string[], enabled: boolean) => void;
   /** Shows the switch alone while several rows are selected, so no action reads as for them all. */
   switchOnly: boolean;
+  /** Installs the mod, for one only downloaded, whose button stands in for the switch. */
+  onInstall?: (modId: string) => void;
+  /** The mod's state, from which the row works out what's under way, as its own selector. */
+  modState: IModWithState["state"];
+  /** The install button's name, while there is one. */
+  installLabel?: string;
 }
+
+/** A mod being installed or uninstalled, which its row shows on the install button. */
+type RowBusy = "installing" | "uninstalling";
+
+/** Marks the switch, or the install button in its place, for focus to return to. */
+const ROW_CONTROL = "data-row-control";
 
 /**
  * A row's pinned actions, its switch, then its menu of every action. Against the cell's end,
@@ -131,6 +213,9 @@ interface IModRowActionsProps {
  * opened from it isn't torn down. Memoized, since rows re-render on each frame of a scroll.
  *
  * While several rows are selected, only the switch shows, in the same place, as at rest.
+ *
+ * A mod that's only downloaded has an Install button in the switch's place; one being installed
+ * or uninstalled has it loading.
  */
 const ModRowActions = memo(
   ({
@@ -142,7 +227,13 @@ const ModRowActions = memo(
     isLoading,
     onSetEnabled,
     switchOnly,
+    onInstall,
+    installLabel,
+    modState,
   }: IModRowActionsProps) => {
+    const { t } = useTranslation(["common"]);
+    const tracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
+    const busy = useRowBusy(modId, modState);
     const engaged = useTableRowEngaged();
     const restingRef = useRef<HTMLDivElement>(null);
     // the cell, while the resting switch has focus as the toolbar replaces it
@@ -150,19 +241,48 @@ const ModRowActions = memo(
 
     useLayoutEffect(() => {
       if (engaged && refocusIn.current !== null) {
-        refocusIn.current.querySelector<HTMLElement>(".nxm-switch")?.focus();
+        refocusIn.current.querySelector<HTMLElement>(`[${ROW_CONTROL}]`)?.focus();
         refocusIn.current = null;
       }
     }, [engaged]);
 
-    const toggle = (
-      <Switch
-        aria-label={label}
-        checked={enabled}
-        isLoading={isLoading}
-        onChange={(checked) => onSetEnabled([modId], checked)}
-      />
+    const installDescription = t(
+      "Installs the mod into your game, where it can be enabled or disabled.",
     );
+
+    const toggle =
+      onInstall === undefined && busy === undefined ? (
+        <Switch
+          {...{ [ROW_CONTROL]: true }}
+          aria-label={label}
+          checked={enabled}
+          isLoading={isLoading}
+          onChange={(checked) => onSetEnabled([modId], checked)}
+        />
+      ) : (
+        // On a wrapper, as a loading button is disabled and takes no hover. As wide as the switch
+        // it stands in for, from its start, so it lines up with theirs.
+        <Tooltip
+          {...(busy === undefined
+            ? { customContent: <TitledTooltip body={installDescription} title={t("Install")} /> }
+            : { content: busy === "installing" ? t("Installing…") : t("Uninstalling…") })}
+        >
+          <span className="flex w-8 shrink-0">
+            <Button
+              {...{ [ROW_CONTROL]: true }}
+              // a step lighter while loading, so it drops its border
+              appearance={busy === undefined ? "subdued" : "weak"}
+              aria-description={busy === undefined ? installDescription : undefined}
+              aria-label={installLabel}
+              brand="primary"
+              isLoading={isLoading || busy !== undefined}
+              leftSymbol="add"
+              size="sm"
+              onClick={() => onInstall?.(modId)}
+            />
+          </span>
+        </Tooltip>
+      );
 
     if (!engaged || switchOnly) {
       return (
@@ -189,6 +309,7 @@ const ModRowActions = memo(
         pinningId={MOD_ROW_PINNING_ID}
         pinTarget="row"
         style={{ width }}
+        tracking={tracking}
       >
         <ToolbarGroup actions={actions} beforeOverflow={toggle} />
       </Toolbar>
@@ -201,14 +322,33 @@ export const ModsTableSwitch = ({
   legacy,
   onSetModsEnabled,
   rowActions = NO_ROW_ACTIONS,
+  alternatives = NO_ALTERNATIVES,
+  onSelectVersion = nop,
+  onRemoveVersion,
 }: IModsTableSwitchProps) => {
   const { t } = useTranslation(["common"]);
-  const newTable = useDevSetting("newTable");
+  const newTable = useSelector(betaTable);
 
-  const [grouping, setGrouping] = useState<ModsTableGrouping>("none");
+  const {
+    views,
+    view,
+    grouping,
+    groupingLocked,
+    isColumnShown,
+    canReset,
+    select: selectView,
+    setGrouping,
+    setColumnVisible,
+    reset: resetView,
+    addView,
+    renameView,
+    removeView,
+  } = useModsTableView(mods);
   const rows = useMemo(() => allModRows(mods), [mods]);
   const [search, setSearch] = useState("");
-  const memberships = useMemo(() => collectionsByMod(mods), [mods]);
+  // Kept, so a change to the mods only retests those that changed against each collection.
+  const [resolveMembers] = useState(makeCollectionModsResolver);
+  const memberships = useMemo(() => collectionsByMod(mods, resolveMembers), [mods, resolveMembers]);
   const [pendingDisable, setPendingDisable] = useState<IPendingDisable>();
 
   // Extensions get a say before a mod's state changes, which can take a while, so the
@@ -234,6 +374,10 @@ export const ModsTableSwitch = ({
     },
     [onSetModsEnabled],
   );
+
+  const enableInstalled = useCallback((ids: string[]) => setEnabled(ids, true), [setEnabled]);
+  const installMods = useInstallMods(enableInstalled);
+  const install = useCallback((modId: string) => void installMods([modId]), [installMods]);
 
   // Turning a group off asks first when other collections share some of its mods.
   const setGroupEnabled = useCallback(
@@ -274,6 +418,9 @@ export const ModsTableSwitch = ({
   );
 
   const { actionsFor, pinnedCount } = useModRowActions(rowActions);
+  const analytics = useModsTableAnalytics();
+  const rowTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
+  const selectionTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.selection);
 
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   // Those still listed, as a removed mod can't be acted on.
@@ -297,7 +444,11 @@ export const ModsTableSwitch = ({
         searchText: ({ name }) => name,
         cell: ({ mod, name }) => (
           <>
-            <ModThumbnail className="ml-2 h-5 rounded-sm" pictureUrl={mod.attributes?.pictureUrl} />
+            {mod.type === COLLECTION_TYPE ? (
+              <CollectionHoverCard className="mr-2.5 ml-4.5 h-5 rounded-sm" collection={mod} />
+            ) : (
+              <ModHoverCard className="ml-2 h-5 rounded-sm" mod={mod} name={name} />
+            )}
 
             <span className="ml-2 truncate">{name}</span>
           </>
@@ -316,13 +467,7 @@ export const ModsTableSwitch = ({
             )}
 
             {!!collection && (
-              <Image
-                alt=""
-                className="ml-3 h-8 rounded-xs"
-                fit="cover"
-                imageType="collection"
-                src={collection.attributes?.pictureUrl}
-              />
+              <CollectionHoverCard className="ml-3 h-8 rounded-xs" collection={collection} />
             )}
 
             <span className="ml-2 truncate">{label}</span>
@@ -347,15 +492,25 @@ export const ModsTableSwitch = ({
           }
           return isEnabled(mod) ? t("Enabled") : t("Disabled");
         },
+        groupOrder: [
+          t("Never installed"),
+          t("Uninstalled"),
+          t("Installing"),
+          t("Enabled"),
+          t("Disabled"),
+        ],
         cell: ({ mod, name }) => (
           <ModRowActions
             actions={actionsFor(mod.id)}
+            modState={mod.state}
             enabled={isEnabled(mod)}
+            installLabel={t("Install {{name}}", { name })}
             isLoading={changing.has(mod.id)}
             label={t("{{name}} enabled", { name })}
             modId={mod.id}
             switchOnly={multiSelected}
             width={actionsWidth(shownPins)}
+            onInstall={mod.state === "downloaded" ? install : undefined}
             onSetEnabled={setEnabled}
           />
         ),
@@ -379,14 +534,40 @@ export const ModsTableSwitch = ({
           );
         },
       },
+      // The legacy table's, sharing its choice to show it and its place.
+      {
+        id: "version",
+        header: t("Version"),
+        width: "160px",
+        isToggleable: true,
+        position: 40,
+        searchText: ({ mod }) => modVersionText(mod, alternatives[mod.id], t),
+        groupBy: ({ mod }) => modVersionGroup(mod, t),
+        groupOrder: [t("Update available"), t("Up-to-date")],
+        cell: ({ mod }) => (
+          <ModVersion
+            alternatives={alternatives[mod.id]}
+            mod={mod}
+            onRemove={onRemoveVersion}
+            onSelect={onSelectVersion}
+          />
+        ),
+        // A collection's group shows its revision, as the collection's own row does.
+        groupCell: ({ collection }) =>
+          collection === undefined ? null : <CollectionRevision collection={collection} />,
+      },
       ...dataColumns,
     ],
     [
       actionsFor,
+      alternatives,
       changing,
       dataColumns,
+      install,
       isEnabled,
       multiSelected,
+      onRemoveVersion,
+      onSelectVersion,
       setEnabled,
       setGroupEnabled,
       shownPins,
@@ -394,14 +575,13 @@ export const ModsTableSwitch = ({
     ],
   );
 
-  const { visibleColumns, toggles, groupable, canReset, setColumnVisible, resetColumns } =
-    useModsTableColumns(columns);
+  const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
 
   // Regroups when the grouped-by column changes, not whenever any column does, as Status does on each switch.
   const groupColumn = groupable.find((column) => column.id === grouping);
   const groups = useMemo(
-    () => groupMods(mods, grouping, t, groupColumn),
-    [mods, grouping, t, groupColumn],
+    () => groupMods(mods, grouping, t, memberships, groupColumn),
+    [mods, grouping, t, memberships, groupColumn],
   );
 
   // The columns shown, so a search finds only what's on screen.
@@ -424,6 +604,9 @@ export const ModsTableSwitch = ({
 
   // A selected mod the search hides is deselected, so nothing acts on a mod out of sight.
   const changeSearch = (next: string) => {
+    if (search.trim() === "" && next.trim() !== "") {
+      analytics.onSearchStarted();
+    }
     setSearch(next);
 
     const nextMatches = searchFilter(searchColumns, next);
@@ -439,18 +622,21 @@ export const ModsTableSwitch = ({
   };
 
   const displayOptions = useDisplayOptionsAction({
-    canReset: canReset || grouping !== "none",
+    label: t("View options"),
+    canReset,
     children: (
       <>
-        <ModsTableGroupBy columns={groupable} grouping={grouping} onChange={setGrouping} />
+        <ModsTableGroupBy
+          columns={groupable}
+          disabled={groupingLocked}
+          grouping={grouping}
+          onChange={setGrouping}
+        />
 
         <ModsTableColumnToggles toggles={toggles} onToggle={setColumnVisible} />
       </>
     ),
-    onReset: () => {
-      resetColumns();
-      setGrouping("none");
-    },
+    onReset: resetView,
   });
 
   if (!newTable) {
@@ -459,7 +645,11 @@ export const ModsTableSwitch = ({
 
   const footer = multiSelected ? (
     <TableSelectionBar count={selectedIds.length} onClear={() => setSelected(new Set())}>
-      <Toolbar className="min-w-0 flex-1 justify-end" pinningId={MOD_SELECTION_PINNING_ID}>
+      <Toolbar
+        className="min-w-0 flex-1 justify-end"
+        pinningId={MOD_SELECTION_PINNING_ID}
+        tracking={selectionTracking}
+      >
         {/* Always on the bar, ahead of the menu: the one action that can't be unpinned. */}
         <ToolbarGroup
           actions={selectionActions}
@@ -482,10 +672,14 @@ export const ModsTableSwitch = ({
     toolbar: (
       <ModsTableToolbar
         displayOptions={displayOptions}
-        grouping={grouping}
         search={search}
-        onGroupingChange={setGrouping}
+        selectedView={view.id}
+        views={views}
+        onAddView={addView}
+        onRemoveView={removeView}
+        onRenameView={renameView}
         onSearchChange={changeSearch}
+        onSelectView={selectView}
       />
     ),
     columns: visibleColumns,
@@ -495,6 +689,36 @@ export const ModsTableSwitch = ({
     getRowLabel: ({ name }: IModRow) => name,
     selectedIds: selected,
     onSelectedIdsChange: setSelected,
+    rowMenu: ({ mod, name }: IModRow, close: () => void) =>
+      multiSelected ? (
+        <>
+          <DropdownBlock>
+            <Typography appearance="subdued" typographyType="body-sm">
+              {t("{{count}} items selected", { count: selectedIds.length })}
+            </Typography>
+          </DropdownBlock>
+
+          <DropdownDivider />
+
+          <ToolbarMenu
+            actions={selectionActions}
+            label={t("Selected mods actions")}
+            tracking={selectionTracking}
+            onSelect={close}
+          />
+        </>
+      ) : (
+        <ToolbarMenu
+          actions={actionsFor(mod.id)}
+          label={t("{{name}} actions", { name })}
+          pinningId={MOD_ROW_PINNING_ID}
+          pinTarget="row"
+          tracking={rowTracking}
+          onSelect={close}
+        />
+      ),
+    onMenuOpen: analytics.onMenuOpen,
+    onGroupMenuAction: analytics.onGroupMenuAction,
     defaultSort: BY_NAME,
     footer,
     empty: matches ? (

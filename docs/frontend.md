@@ -82,6 +82,67 @@ build/test/format loop.
 - Shared components also expose semantic `nxm-`-prefixed classes
   (`nxm-tab-button`). Keep that pattern for reusable primitives.
 
+### Text
+
+`Typography` (`src/renderer/src/ui/components/typography/Typography.tsx`) styles
+a **block** of text, and everything inside it inherits that style. `as` picks the
+element for its meaning only; `typographyType` picks the style, `body-md` unless
+given.
+
+A body style is normal weight. For Design's Medium and Semi Bold variants, add
+`font-medium` (500) or `font-semibold` (600) to its `className`; the size, line
+height and letter spacing stay the body style's.
+
+```tsx
+<Typography className="font-medium" typographyType="body-sm">
+    Mods
+</Typography>
+```
+
+Wrap a list or a run of paragraphs in one `Typography`, and put plain elements
+inside:
+
+```tsx
+<Typography as="ul" className="list-inside list-disc space-y-2">
+  <li>First</li>
+  <li>Second</li>
+</Typography>
+
+<Typography as="div" className="space-y-2">
+  <p>First paragraph.</p>
+  <p>Second paragraph.</p>
+</Typography>
+```
+
+Not one per item:
+
+```tsx
+<ul>
+  <li><Typography as="span">First</Typography></li>
+  <li><Typography as="span">Second</Typography></li>
+</ul>
+
+<Typography>First paragraph.</Typography>
+<Typography>Second paragraph.</Typography>
+```
+
+Nest another `Typography` only where the style changes: a heading, a subdued
+line, a different size. One that changes only the colour takes
+`typographyType="inherit"`, so it keeps the parent's type style instead of
+resetting to `body-md`:
+
+```tsx
+<Typography as="div" className="space-y-2" typographyType="body-sm">
+    <p>
+        {`Some text, and `}
+        <Typography appearance="subdued" as="span" typographyType="inherit">
+            a subdued phrase
+        </Typography>
+        .
+    </p>
+</Typography>
+```
+
 ### Scrims
 
 A scrim darkens a **backdrop** so whatever sits on top stays readable: game art

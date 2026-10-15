@@ -165,6 +165,8 @@ export interface IExtensionState {
   fileId?: number;
   /** Nexus Mods endorsed status of the extension mod page. */
   endorsed: EndorsedStatus;
+  /** Set when the user declined linking this unlinked extension to its Nexus Mods page. */
+  nexusLinkDeclined?: boolean;
 }
 
 /**
@@ -293,6 +295,8 @@ export interface ISettingsMods {
   confirmPurge: boolean;
   cleanupOnDeploy: boolean;
   installerSandbox: boolean;
+  /** Whether the Mods page shows the new table, in beta, rather than the classic one. */
+  betaTable: boolean;
 }
 
 export interface ISettingsNotification {

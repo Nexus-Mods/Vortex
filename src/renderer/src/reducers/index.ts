@@ -23,7 +23,6 @@ import * as fs from "../util/fs";
 import getVortexPath from "../util/getVortexPath";
 import { deleteOrNop, getSafe, rehydrate, setSafe } from "../util/storeHelper";
 import { appReducer } from "./app";
-import { devToolsReducer } from "./devTools";
 import { downloadsReducer } from "./downloads";
 import { loReducer } from "./loadOrder";
 import { notificationsReducer } from "./notifications";
@@ -262,7 +261,6 @@ export function buildReducerTree(extensionReducers: IExtensionReducer[]): Reduce
     },
     session: {
       base: sessionReducer,
-      devTools: devToolsReducer,
       notifications: notificationsReducer,
     },
     settings: {

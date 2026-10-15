@@ -40,7 +40,7 @@ const Content = ({
         // While applying the bar sets the colour, so the text picks it up from there.
         {...(isApplying ? { brand: "none" as const } : { appearance: "inverted" as const })}
         as="span"
-        className="font-semibold"
+        className="font-medium"
         typographyType="body-lg"
       >
         {label}

@@ -1,9 +1,25 @@
-import React, { type CSSProperties, Fragment, useCallback, useMemo, useState } from "react";
+import React, {
+  type CSSProperties,
+  Fragment,
+  type MouseEvent,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
+import {
+  ContextMenu,
+  contextMenuPosition,
+  type IContextMenuPosition,
+  openedFromKeyboard,
+} from "@/ui/components/context_menu/ContextMenu";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { ITableGroup, ITableProps, TableItem } from "./Table.types";
 import { TableGroupBackdrop } from "./TableGroupBackdrop";
+import { TableGroupMenu } from "./TableGroupMenu";
 import { TableGroupRow } from "./TableGroupRow";
 import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
@@ -26,7 +42,10 @@ const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
  * every row is a subgrid of them, so cells line up across rows without a `<table>`.
  * Carries the grid roles, so it reads as a table to assistive tech; grouped, it's a
  * treegrid whose group rows collapse. Only the rows in view render, against the page's
- * scroller, under a header that sticks to it.
+ * scroller, under a header that sticks to it. A right-click on a group row offers to collapse
+ * or expand it or every group, and to select its rows; on a row, its `rowMenu`, once the
+ * row is selected. Every selected row shows what's in it as a hovered one does, so a table
+ * that shows actions in its rows decides itself what several selected rows show.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columns,
@@ -43,6 +62,9 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowLabel,
   selectedIds,
   onSelectedIdsChange,
+  rowMenu,
+  onMenuOpen,
+  onGroupMenuAction,
 }: ITableProps<T, G>) => {
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
 
@@ -51,6 +73,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     () => [...new Set((rows ?? groups?.flatMap((group) => group.rows) ?? []).map(getRowId))],
     [getRowId, groups, rows],
   );
+
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggle = (groupId: string) =>
@@ -61,6 +84,26 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       }
       return next;
     });
+
+  const [menu, setMenu] = useState<
+    | { position: IContextMenuPosition; kind: "row"; rowId: string }
+    | { position: IContextMenuPosition; kind: "group"; groupId: string }
+  >();
+
+  const menuGroup =
+    menu?.kind === "group" ? groups?.find((group) => group.id === menu.groupId) : undefined;
+
+  const menuRow =
+    menu?.kind === "row"
+      ? (rows ?? groups?.flatMap((group) => group.rows))?.find(
+          (row) => getRowId(row) === menu.rowId,
+        )
+      : undefined;
+
+  // Closed while rendering once what it was opened on is gone, so it never shows a frame for nothing.
+  if ((menu?.kind === "group" && !menuGroup) || (menu?.kind === "row" && menuRow === undefined)) {
+    setMenu(undefined);
+  }
 
   // Every row in order, a group's under it while it's open, as the virtualiser counts them.
   const items = useMemo<Array<TableItem<T, G>>>(() => {
@@ -104,6 +147,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       ),
     [getRowId, items],
   );
+
   const selection = useTableSelection(rowIds, shownRows, selectedIds, onSelectedIdsChange);
 
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
@@ -115,6 +159,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
   const virtual = useTableVirtualizer({ count: items.length, getItemKey, getItemSize });
   const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
+
   // The rows in the sticky head, which come before the table's own in aria-rowindex.
   const headRows = toolbar ? 2 : 1;
   const showsEmpty = items.length === 0 && !!empty;
@@ -122,6 +167,23 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   const bodyRows = showsEmpty ? 1 : items.length;
 
   const backdrops = useTableGroupBackdrops({ getItemSize, items, rendered: virtual.items });
+
+  // The toolbar grows as what's in it wraps, and the head, the scroll margins and the group
+  // backdrops all reckon with its height, so it's measured into the variable they read.
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarHeight, setToolbarHeight] = useState<number>();
+  const hasToolbar = !!toolbar;
+
+  useLayoutEffect(() => {
+    const element = toolbarRef.current;
+    if (element === null || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver(() => setToolbarHeight(element.offsetHeight));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [hasToolbar]);
 
   return (
     <div
@@ -138,6 +200,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-height": `${GROUP_ROW_HEIGHT}px`,
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           "--nxm-table-sticky-reveal": revealWidth,
+          "--nxm-table-toolbar-height": toolbarHeight ? `${toolbarHeight}px` : undefined,
           gridTemplateColumns: [
             "var(--nxm-table-gutter-start)",
             ...columns.map((column) => column.width ?? DEFAULT_COLUMN_WIDTH),
@@ -160,10 +223,11 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       onFocus={virtual.onFocus}
     >
       <TableHeader
-        columns={columns}
         checkbox={selectable ? selection.header : undefined}
+        columns={columns}
         sort={sort}
         toolbar={toolbar}
+        toolbarRef={toolbarRef}
         onSort={toggleSort}
       />
 
@@ -190,16 +254,19 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 group={item.group}
                 index={index}
                 rowIndex={index + headRows + 1}
+                onContextMenu={(event: MouseEvent<HTMLDivElement>) => {
+                  event.preventDefault();
+                  onMenuOpen?.("group", openedFromKeyboard(event) ? "keyboard" : "pointer");
+                  setMenu({
+                    position: contextMenuPosition(event),
+                    kind: "group",
+                    groupId: item.group.id,
+                  });
+                }}
                 onToggle={() => toggle(item.group.id)}
               />
             ) : (
               <TableRow
-                columns={columns}
-                index={index}
-                level={item.level}
-                row={item.row}
-                rowIndex={index + headRows + 1}
-                sortedColumnId={sort?.columnId}
                 checkbox={
                   selectable
                     ? selection.checkbox(
@@ -208,10 +275,38 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                       )
                     : undefined
                 }
+                columns={columns}
+                index={index}
+                level={item.level}
+                row={item.row}
+                rowIndex={index + headRows + 1}
+                sortedColumnId={sort?.columnId}
                 tint={item.tint}
                 onClick={
                   selectable
                     ? (click) => selection.click({ key: item.key, id: getRowId(item.row) }, click)
+                    : undefined
+                }
+                onContextMenu={
+                  rowMenu
+                    ? (event) => {
+                        event.preventDefault();
+                        const id = getRowId(item.row);
+                        const inSelection =
+                          selectable && selection.selected.has(id) && selection.selected.size > 1;
+                        onMenuOpen?.(
+                          inSelection ? "selection" : "row",
+                          openedFromKeyboard(event) ? "keyboard" : "pointer",
+                        );
+                        if (selectable) {
+                          selection.contextClick({ key: item.key, id });
+                        }
+                        setMenu({
+                          position: contextMenuPosition(event),
+                          kind: "row",
+                          rowId: getRowId(item.row),
+                        });
+                      }
                     : undefined
                 }
               />
@@ -229,6 +324,54 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           </div>
         </div>
       )}
+
+      <ContextMenu position={menu?.position} onClose={() => setMenu(undefined)}>
+        {(close) => {
+          if (menu?.kind === "group") {
+            if (!menuGroup) {
+              return null;
+            }
+
+            return (
+              <TableGroupMenu
+                allSelected={
+                  !!menuGroup.rows.length &&
+                  menuGroup.rows.every((row) => selection.selected.has(getRowId(row)))
+                }
+                expanded={!collapsed.has(menuGroup.id)}
+                label={menuGroup.label}
+                onDeselectAll={
+                  selectable
+                    ? () => {
+                        onGroupMenuAction?.("deselect_all");
+                        selection.remove(menuGroup.rows.map(getRowId));
+                      }
+                    : undefined
+                }
+                onSelect={close}
+                onSelectAll={
+                  selectable
+                    ? () => {
+                        onGroupMenuAction?.("select_all");
+                        selection.add(menuGroup.rows.map(getRowId));
+                      }
+                    : undefined
+                }
+                onSetAllExpanded={(expanded) => {
+                  onGroupMenuAction?.(expanded ? "expand_all" : "collapse_all");
+                  setCollapsed(new Set(expanded ? [] : (groups ?? []).map((group) => group.id)));
+                }}
+                onToggle={() => {
+                  onGroupMenuAction?.(collapsed.has(menuGroup.id) ? "expand" : "collapse");
+                  toggle(menuGroup.id);
+                }}
+              />
+            );
+          }
+
+          return menuRow === undefined ? null : rowMenu?.(menuRow, close);
+        }}
+      </ContextMenu>
 
       {!!footer && (
         <div aria-rowindex={bodyRows + headRows + 1} className="nxm-table-footer" role="row">

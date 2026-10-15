@@ -80,7 +80,6 @@ import type { IExtensionApi, ThunkStore } from "../../types/IExtensionContext";
 import type { IProfile, IState } from "../../types/IState";
 import { withActivityTracking } from "../../util/activity";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
-import calculateFolderSize from "../../util/calculateFolderSize";
 import {
   generateCollectionSessionId,
   isOutstandingOptionalMember,
@@ -186,6 +185,7 @@ import type { IModInstaller, ISupportedInstaller } from "./types/IModInstaller";
 import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
 import type { IReplaceChoice, ReplaceChoice } from "./types/IReplaceChoice";
 import type { ISupportedResult, ITestSupportedDetails, TestSupported } from "./types/TestSupported";
+import { calculateModSize } from "./util/calculate_mod_size/calculateModSize.util";
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
 import gatherDependencies, {
   findDownloadByRef,
@@ -2306,23 +2306,7 @@ class InstallManager {
   }
 
   private setModSize(api: IExtensionApi, modId: string, gameId: string): Promise<void> {
-    const state = api.getState();
-    const stagingFolder = installPathForGame(state, gameId);
-    const mod = state.persistent.mods[gameId]?.[modId];
-    if (mod?.installationPath === undefined) {
-      log("debug", "failed to calculate modSize", "mod is not in state");
-      return Promise.resolve();
-    }
-    const modPath = path.join(stagingFolder, mod.installationPath);
-    return Promise.resolve(calculateFolderSize(modPath))
-      .then((totalSize) => {
-        api.store.dispatch(setModAttribute(gameId, mod.id, "modSize", totalSize));
-        return Promise.resolve();
-      })
-      .catch((err) => {
-        log("debug", "failed to calculate modSize", err);
-        return Promise.resolve();
-      });
+    return calculateModSize(api.store, gameId, modId);
   }
 
   /**

@@ -433,8 +433,8 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
               <Typography
                 appearance={compact ? "subdued" : "moderate"}
                 as="h2"
-                className="transition-colors"
-                typographyType="heading-xs"
+                className="font-medium transition-colors"
+                typographyType="body-xl"
               >
                 {t("listing::title")}
               </Typography>

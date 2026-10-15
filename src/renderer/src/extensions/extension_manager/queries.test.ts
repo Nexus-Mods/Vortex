@@ -13,6 +13,7 @@ import {
   findDependencyInCatalog,
   findInCatalog,
   findInstalled,
+  findLinkCandidates,
   findPreviousVersions,
   findUpdatableExtensions,
   getMissingOptionalExtensions,
@@ -194,6 +195,16 @@ describe("extensionStateFromScan", () => {
   it("keeps a pending removal, so the next startup retries the delete", () => {
     const recorded = makeLegacyExtensionState({ remove: true });
     expect(extensionStateFromScan(scanned, recorded).remove).toBe(true);
+  });
+
+  // Vortex before 2.7 recorded the Nexus link in info.json
+  it("keeps the mod id the extension's info.json records", () => {
+    const linked = makeRegisteredExtension({
+      name: "game-cyberpunk2077",
+      path: "/plugins/game-cyberpunk2077",
+      info: makeExtensionInfo({ modId: 196 }),
+    });
+    expect(extensionStateFromScan(linked, makeLegacyExtensionState()).modId).toBe(196);
   });
 
   it("marks a bundled extension bundled", () => {
@@ -400,6 +411,72 @@ describe("getMissingOptionalExtensions", () => {
     ];
     const result = getMissingOptionalExtensions(optionals, loaded);
     expect(result).toEqual([]);
+  });
+});
+
+describe("findLinkCandidates", () => {
+  const extPath = "/plugins/Cyberpunk 2077 Support 0.13.0";
+  const games = [{ extensionPath: extPath, domain: "cyberpunk2077" }];
+  const unlinked = makeExtensionState({ path: extPath, version: "0.13.0" });
+  const catalogEntry = makeAvailableExtension({
+    modId: 196,
+    version: "0.13.1",
+    type: "game",
+    gameDomain: "cyberpunk2077",
+  });
+
+  it("matches an unlinked game extension through the domain of the game it registers", () => {
+    const result = findLinkCandidates({ "ext-1": unlinked }, games, [catalogEntry]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ key: "ext-1", available: { modId: 196 } });
+  });
+
+  it("matches the game's extension path case-insensitively", () => {
+    const upper = [{ extensionPath: extPath.toUpperCase(), domain: "cyberpunk2077" }];
+    expect(findLinkCandidates({ "ext-1": unlinked }, upper, [catalogEntry])).toHaveLength(1);
+  });
+
+  it("offers nothing when the catalog has no newer version", () => {
+    const current = makeExtensionState({ path: extPath, version: "0.13.1" });
+    expect(findLinkCandidates({ "ext-1": current }, games, [catalogEntry])).toEqual([]);
+  });
+
+  it.each([
+    ["is already linked", { modId: 196 }],
+    ["was declined", { nexusLinkDeclined: true }],
+    ["is bundled", { bundled: true }],
+    ["is pending removal", { remove: true }],
+  ])("skips an extension that %s", (_name, overrides) => {
+    const installed = { "ext-1": { ...unlinked, ...overrides } };
+    expect(findLinkCandidates(installed, games, [catalogEntry])).toEqual([]);
+  });
+
+  it("skips an extension that registers no game", () => {
+    expect(findLinkCandidates({ "ext-1": unlinked }, [], [catalogEntry])).toEqual([]);
+  });
+
+  it("skips a match naming more than one mod page", () => {
+    const twoGames = [...games, { extensionPath: extPath, domain: "cyberpunk2077demo" }];
+    const other = makeAvailableExtension({
+      modId: 197,
+      version: "1.0.0",
+      type: "game",
+      gameDomain: "cyberpunk2077demo",
+    });
+    expect(findLinkCandidates({ "ext-1": unlinked }, twoGames, [catalogEntry, other])).toEqual([]);
+  });
+
+  it("skips a match whose mod page another installed extension is linked to", () => {
+    const installed = {
+      "ext-1": unlinked,
+      "ext-2": makeExtensionState({ path: "/plugins/other", modId: 196, version: "0.13.1" }),
+    };
+    expect(findLinkCandidates(installed, games, [catalogEntry])).toEqual([]);
+  });
+
+  it("ignores catalog entries that aren't game extensions", () => {
+    const tool = { ...catalogEntry, type: undefined };
+    expect(findLinkCandidates({ "ext-1": unlinked }, games, [tool])).toEqual([]);
   });
 });
 

@@ -47,6 +47,18 @@ export interface ITableSort {
   direction: "ascending" | "descending";
 }
 
+/** What a context menu was opened on: a group header, a row, or a row in a multi-selection. */
+export type TableMenuTarget = "group" | "row" | "selection";
+
+/** An item of a group header's menu. */
+export type TableGroupMenuAction =
+  | "collapse"
+  | "expand"
+  | "collapse_all"
+  | "expand_all"
+  | "select_all"
+  | "deselect_all";
+
 export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   /** The columns, in order, each making a track of the table's grid. */
   columns: Array<ITableColumn<T, G>>;
@@ -72,6 +84,12 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   selectedIds?: ReadonlySet<string>;
   /** Takes the selection the user changes it to, with `selectedIds`. */
   onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
+  /** A row's context menu, given the way to close it; unset, rows have none. */
+  rowMenu?: (row: T, close: () => void) => ReactNode;
+  /** Told when a context menu opens, on what, and whether from the pointer or keyboard. */
+  onMenuOpen?: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
+  /** Told when an item of a group header's menu is used. */
+  onGroupMenuAction?: (action: TableGroupMenuAction) => void;
 } & (
   | {
       /** The rows, ungrouped. */

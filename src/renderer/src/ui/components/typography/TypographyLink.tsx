@@ -23,15 +23,32 @@ type ITypographyLinkTypeObject = ITypographyLinkTypeObjectDefault & {
 };
 
 export type ITypographyLinkProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  /** The size of both icons. */
   iconSize?: IIconSize;
+  /** An icon's path, shown before the label. */
   leftIconPath?: string;
+  /** A Material Symbol, shown before the label. */
   leftSymbol?: ISymbolSource;
+  /** Forwarded to the button. */
   ref?: Ref<HTMLButtonElement>;
+  /** An icon's path, shown after the label. */
   rightIconPath?: string;
+  /** A Material Symbol, shown after the label. */
   rightSymbol?: ISymbolSource;
+  /** The type style, or one per screen size; `body-md` by default, `inherit` to take the parent's. */
   typographyType?: ITypographyLinkTypes | ITypographyLinkTypeObject;
+  /** `primary` is always underlined, `secondary` only on hover or focus, `none` never. */
   variant?: "primary" | "secondary" | "none";
-} & XOr<{ children?: string }, { customContent: ReactNode }> &
+} & XOr<
+    {
+      /** The label, shown between the icons. */
+      children?: string;
+    },
+    {
+      /** Content shown in place of the label and icons. */
+      customContent: ReactNode;
+    }
+  > &
   ITypographyColour;
 
 // On hover, the colour shifts one step toward `strong`; `strong` (already the
@@ -109,7 +126,10 @@ export const TypographyLink = ({
     typographyType === "inherit"
       ? []
       : getTypographyStyles({
-          typographyType: typographyType as ITypographyProps["typographyType"],
+          typographyType: typographyType as Exclude<
+            ITypographyProps["typographyType"],
+            "inherit" | undefined
+          >,
         });
 
   return (

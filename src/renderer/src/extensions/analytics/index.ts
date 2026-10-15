@@ -31,6 +31,8 @@ function init(context: IExtensionContext): boolean {
     const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
     // `?? true` because state persisted before the setting existed has no value for it.
     const isLegacyUI = () => !(context.api.getState().settings.window.useModernLayout ?? true);
+    const modsTableView = () =>
+      context.api.getState().settings.mods?.betaTable === true ? "beta" : "classic";
 
     // check for update when the user changes the analytics, toggle
     const analyticsSettings = ["settings", "analytics", "enabled"];
@@ -147,6 +149,7 @@ function init(context: IExtensionContext): boolean {
             toUpdateChannel(context.api.getState().settings.update.channel), // population for the update funnel
             Math.round(zoomFromState(context.api.getState()) * 100), // zoom level this session runs at
             isHidpiDisplay(), // whether this session's display is above the HiDPI threshold
+            modsTableView(), // which Mods table, classic or the new one in beta, this session opens on
           ),
         );
 

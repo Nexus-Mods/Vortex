@@ -125,7 +125,7 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
                 <Typography
                   appearance="inverted"
                   as="span"
-                  className="font-semibold"
+                  className="font-medium"
                   typographyType="body-lg"
                 >
                   {label}

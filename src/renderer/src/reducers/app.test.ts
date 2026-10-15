@@ -14,6 +14,16 @@ describe("app reducer extension field writes", () => {
     expect(result.extensions.abc123.enabled).toBe(false);
   });
 
+  it("applies declineExtensionNexusLink to an existing entry", () => {
+    const result = apply(actions.declineExtensionNexusLink, "abc123");
+    expect(result.extensions.abc123.nexusLinkDeclined).toBe(true);
+  });
+
+  it("applies setExtensionModId to an existing entry", () => {
+    const result = apply(actions.setExtensionModId, { extensionId: "abc123", modId: 196 });
+    expect(result.extensions.abc123.modId).toBe(196);
+  });
+
   // a write through a key naming no entry must not mint a partial one
   it.each([
     [
@@ -27,6 +37,8 @@ describe("app reducer extension field writes", () => {
       actions.setExtensionEndorsed,
       { extensionId: "missing", endorsed: "Endorsed" },
     ],
+    ["setExtensionModId", actions.setExtensionModId, { extensionId: "missing", modId: 196 }],
+    ["declineExtensionNexusLink", actions.declineExtensionNexusLink, "missing"],
     ["removeExtension", actions.removeExtension, "missing"],
   ])("ignores %s for an unknown key", (_name, action, payload) => {
     expect(apply(action, payload).extensions).toEqual(base.extensions);

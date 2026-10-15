@@ -68,7 +68,7 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
 
         <Typography
           brand="none"
-          className="flex grow items-center gap-x-2 overflow-hidden font-semibold whitespace-nowrap"
+          className="flex grow items-center gap-x-2 overflow-hidden font-medium whitespace-nowrap"
         >
           <span className="truncate text-neutral-strong">{title}</span>
 

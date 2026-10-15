@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type MouseEvent } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
 
@@ -19,6 +19,8 @@ interface ITableGroupRowProps<T, G extends ITableGroup<T>> {
   rowIndex: number;
   /** Collapses or opens the group, from its button. */
   onToggle: () => void;
+  /** Opens the group's context menu, from a right-click or the keyboard's menu key. */
+  onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
 }
 
 /**
@@ -31,6 +33,7 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
   group,
   index,
   onToggle,
+  onContextMenu,
   rowIndex,
 }: ITableGroupRowProps<T, G>) => (
   <div
@@ -40,6 +43,11 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
     className="nxm-table-group-row"
     data-index={index}
     role="row"
+    onContextMenu={(event) => {
+      if (onContextMenu && event.currentTarget.contains(event.target as Node)) {
+        onContextMenu(event);
+      }
+    }}
   >
     {columns.map((column, index) => (
       <TableCell

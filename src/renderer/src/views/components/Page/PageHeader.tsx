@@ -31,7 +31,8 @@ export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
  * Pass `title` for the common heading, or `customTitle` when the title needs
  * more than a string (e.g. a badge alongside it); `subtitle` renders below
  * either. `title` goes subdued once compact — `customTitle` takes a
- * render-prop so it can match.
+ * render-prop so it can match. Expanded, the title drops a little to centre the
+ * title and subtitle on the pictogram.
  */
 export const PageHeader = ({
   children,
@@ -64,13 +65,18 @@ export const PageHeader = ({
 
         <div className="min-w-0 grow">
           <div className="flex items-center justify-between gap-x-6">
-            <div className="min-w-0">
+            <div
+              className={joinClasses([
+                "min-w-0 transition-[margin]",
+                !compact && !!pictogramName ? "mt-1" : "mt-0",
+              ])}
+            >
               {(typeof customTitle === "function" ? customTitle(compact) : customTitle) ?? (
                 <Typography
                   appearance={compact ? "subdued" : "moderate"}
                   as="h2"
-                  className="transition-colors"
-                  typographyType="heading-xs"
+                  className="font-medium transition-colors"
+                  typographyType="body-xl"
                 >
                   {title}
                 </Typography>

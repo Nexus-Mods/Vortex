@@ -28,17 +28,11 @@
         background-color: var(--color-surface-translucent-mid);
     }
 
-    .nxm-dropdown-title {
+    .nxm-dropdown-block {
         width: 100%;
-        padding-block: calc(var(--spacing) * 1.5);
-        padding-inline: calc(var(--spacing) * 3);
-
-        text-transform: uppercase;
-        font-size: var(--text-2xs);
-        color: var(--color-neutral-subdued);
-        line-height: var(--text-2xs--line-height);
-        letter-spacing: var(--tracking-widest);
-        font-weight: var(--font-weight-semibold);
+        padding-top: calc(var(--spacing) * 1);
+        padding-bottom: calc(var(--spacing) * 1.5);
+        padding-inline: calc(var(--spacing) * 2.5);
     }
 
     .nxm-dropdown-item-pin {
@@ -74,7 +68,10 @@
         }
     }
 
-    .nxm-dropdown-item-chevron-hidden {
+    /* Held in place but not shown, so the rows' controls line up: a chevron where another row
+       opens a submenu, a check where another row is the one chosen. */
+    .nxm-dropdown-item-chevron-hidden,
+    .nxm-dropdown-item-check-hidden {
         visibility: hidden;
     }
 
@@ -147,7 +144,7 @@
         }
 
         &.nxm-dropdown-item-info .nxm-dropdown-item-icon:first-child {
-            color: var(--color-info-moderate);
+            color: var(--color-info-strong);
         }
 
         &.nxm-dropdown-item-success .nxm-dropdown-item-icon:first-child {
@@ -156,6 +153,12 @@
 
         &.nxm-dropdown-item-premium .nxm-dropdown-item-icon:first-child {
             color: var(--color-premium-moderate);
+        }
+
+        /* A toggle that's on, darker than a primary row so the two read apart, and after the
+           brands so it wins over one. */
+        &.nxm-dropdown-item-active .nxm-dropdown-item-icon:first-child {
+            color: var(--color-primary-subdued);
         }
 
         &.nxm-dropdown-item-danger {

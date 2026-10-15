@@ -3,7 +3,7 @@ import * as nodeFs from "node:fs";
 import { expect } from "vitest";
 
 import { test } from "../../test-utils/deploymentTest";
-import type { IDeployment } from "./LinkingDeployment";
+import { BACKUP_TAG, type IDeployment } from "./LinkingDeployment";
 import type { IDeployedFile, IDeploymentMethod } from "./types/IDeploymentMethod";
 
 /** The private members of LinkingActivator this exercises directly. */
@@ -50,6 +50,41 @@ test("keeps every file whose unlink succeeded in the re-link list", async ({ mak
   );
 
   expect(relink).toEqual(keys.filter((key) => !failing.includes(key)));
+});
+
+const SHARED = "d3d9.dll";
+const twoTypesSharingAGameFile = {
+  files: { [SHARED]: "enb" },
+  modName: "Enb",
+  otherMods: { Dinput: { [SHARED]: "dinput" } },
+};
+
+test("a second mod type deploying over a game file keeps the game's original backup", async ({
+  makeDeployment,
+}) => {
+  const h = makeDeployment(twoTypesSharingAGameFile);
+  nodeFs.writeFileSync(h.inGame(SHARED), "original");
+  await h.deployMod("Dinput");
+
+  await h.deployMod("Enb");
+
+  expect(nodeFs.readFileSync(h.inGame(`${SHARED}${BACKUP_TAG}`), "utf8")).toBe("original");
+  expect(nodeFs.readFileSync(h.inGame(SHARED), "utf8")).toBe("dinput");
+});
+
+test("disabling a mod type that could not back up a game file leaves the other type's file and the backup", async ({
+  makeDeployment,
+}) => {
+  const h = makeDeployment(twoTypesSharingAGameFile);
+  nodeFs.writeFileSync(h.inGame(SHARED), "original");
+  await h.deployMod("Dinput");
+  const enbManifest = await h.deployMod("Enb");
+
+  await h.method.prepare(h.gameDir, true, enbManifest, h.normalize);
+  await h.method.finalize("skyrimse", h.gameDir, h.stagingDir);
+
+  expect(nodeFs.readFileSync(h.inGame(SHARED), "utf8")).toBe("dinput");
+  expect(nodeFs.readFileSync(h.inGame(`${SHARED}${BACKUP_TAG}`), "utf8")).toBe("original");
 });
 
 test("removes the folders a deployment emptied before the deployment completes", async ({

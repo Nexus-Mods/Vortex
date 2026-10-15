@@ -100,6 +100,7 @@
     "@types/json-socket": "catalog:",
     "@types/jsonwebtoken": "catalog:",
     "@types/lodash": "catalog:",
+    "@types/minimatch": "catalog:",
     "@types/node-7z": "catalog:",
     "@types/numeral": "catalog:",
     "@types/packery": "catalog:",

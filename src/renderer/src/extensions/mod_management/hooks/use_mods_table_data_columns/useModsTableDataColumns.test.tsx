@@ -29,7 +29,9 @@ const collection = (name: string) => ({ id: name, attributes: { name } }) as unk
 
 const renderColumns = (memberships: { [modId: string]: IMod[] } = {}) => {
   const store = makeModsTableStore({
-    downloads: { archive: { localPath: "alpha-1.0.zip", fileTime: Date.now() - 60_000 } },
+    downloads: {
+      archive: { localPath: "alpha-1.0.zip", fileTime: Date.now() - 60_000, size: 3 * 1024 * 1024 },
+    },
     categories: { "95": { name: "Armour", parentCategory: undefined, order: 0 } },
   });
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -52,6 +54,7 @@ describe("useModsTableDataColumns", () => {
     expect(columns.map(({ id }) => id)).toEqual([
       "author",
       "archiveName",
+      "modSize",
       "category",
       "modType",
       "modSource",
@@ -61,12 +64,6 @@ describe("useModsTableDataColumns", () => {
       "downloadTime",
     ]);
     expect(columns.every(({ isToggleable }) => isToggleable)).toBe(true);
-  });
-
-  it("shows only the installation time and collection by default", () => {
-    const shown = renderColumns().filter(({ isDefaultVisible }) => isDefaultVisible);
-
-    expect(shown.map(({ id }) => id)).toEqual(["collection", "installTime"]);
   });
 
   it("shows the mod's own values", () => {
@@ -125,5 +122,55 @@ describe("useModsTableDataColumns", () => {
     const rows = [row({ enabledTime: 2000 }), row({}), row({ enabledTime: 1000 })];
 
     expect([...rows].sort(sort).map(({ mod }) => mod.enabledTime)).toEqual([undefined, 1000, 2000]);
+  });
+
+  // Worked out when it was installed, from its staging folder; Refresh content works it out again.
+  it("shows an installed mod's size on disk", () => {
+    const column = columnById(renderColumns(), "modSize");
+
+    expect(
+      cellText(
+        column,
+        row({ state: "installed", archiveId: "archive", attributes: { modSize: 2048 } }),
+      ),
+    ).toBe("2 KB");
+    expect(cellText(column, row({ state: "installed", attributes: { modSize: 0 } }))).toBe("0 B");
+  });
+
+  it("says an installed mod's size isn't known until it's worked out", () => {
+    const column = columnById(renderColumns(), "modSize");
+
+    expect(cellText(column, row({ state: "installed", archiveId: "archive" }))).toBe("Unknown");
+  });
+
+  it("shows the archive's size for a mod that isn't installed", () => {
+    const column = columnById(renderColumns(), "modSize");
+
+    expect(cellText(column, row({ state: "downloaded", archiveId: "archive" }))).toBe("3.0 MB");
+    expect(cellText(column, row({ state: "downloaded", archiveId: "gone" }))).toBe("Unknown");
+  });
+
+  it("shows the size as text, with nothing to click", () => {
+    const column = columnById(renderColumns(), "modSize");
+    const { container } = render(
+      <>{column.cell(row({ state: "installed", attributes: { modSize: 2048 } }))}</>,
+    );
+
+    expect(container.querySelector("a, button")).toBeNull();
+  });
+
+  it("sorts sizes smallest first, with unknown sizes before any", () => {
+    const sort = columnById(renderColumns(), "modSize").sort!;
+    const rows = [
+      row({ state: "installed", attributes: { modSize: 2048 } }),
+      row({ state: "installed" }),
+      row({ state: "installed", attributes: { modSize: 10 } }),
+    ];
+
+    expect([...rows].sort(sort).map(({ mod }) => mod.attributes.modSize)).toEqual([
+      undefined,
+      10,
+      2048,
+    ]);
   });
 });

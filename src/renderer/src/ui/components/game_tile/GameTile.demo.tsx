@@ -2,7 +2,7 @@ import React from "react";
 
 import { Button } from "@/ui/components/button/Button";
 import { GameTile } from "@/ui/components/game_tile/GameTile";
-import type { IMenuAction } from "@/ui/components/popover/PopoverMenuItem";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 
 const menu: { actions: IMenuAction[][]; label: string } = {
   label: "Game options",

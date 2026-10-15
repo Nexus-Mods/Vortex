@@ -3,6 +3,7 @@
 @import "./button.css";
 @import "./dropdown.css";
 @import "./grid.css";
+@import "./hover-card.css";
 @import "./hover-overlay.css";
 @import "./image.css";
 @import "./link.css";
@@ -11,6 +12,7 @@
 @import "./pagination.css";
 @import "./pill.css";
 @import "./popover.css";
+@import "./prose.css";
 @import "./scrollbar.css";
 @import "./table.css";
 @import "./tab.css";

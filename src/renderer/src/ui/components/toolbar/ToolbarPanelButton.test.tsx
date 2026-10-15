@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it } from "vitest";
@@ -7,7 +7,7 @@ import { Picker } from "@/ui/components/picker/Picker";
 import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 
-import { ToolbarPanelButton } from "./ToolbarPanelButton";
+import { type IToolbarPanelHandle, ToolbarPanelButton } from "./ToolbarPanelButton";
 
 // --- Helpers ---
 
@@ -77,5 +77,23 @@ describe("ToolbarPanelButton", () => {
     await userEvent.keyboard("{Escape}");
 
     await waitFor(() => expect(panelRow()).not.toBeInTheDocument());
+  });
+
+  it("opens its panel from its handle, and leaves it open if it already is", async () => {
+    const handle = React.createRef<IToolbarPanelHandle>();
+    render(
+      <ToolbarPanelButton
+        handle={handle}
+        label="Display options"
+        leftSymbol="tune"
+        panel={displayOptions}
+      />,
+    );
+
+    act(() => handle.current?.open());
+    await waitFor(() => expect(panelRow()).toBeInTheDocument());
+
+    act(() => handle.current?.open());
+    expect(panelRow()).toBeInTheDocument();
   });
 });

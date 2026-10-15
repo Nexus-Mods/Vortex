@@ -7,6 +7,7 @@ import type { TableColumnWidth } from "@/ui/components/table/Table.types";
 import { getCurrentLanguage } from "@/util/i18n";
 import { userFriendlyTime } from "@/util/relativeTime";
 import { activeGameId } from "@/util/selectors";
+import { bytesToString } from "@/util/util";
 
 import { getModType } from "../../../gamemode_management/util/modTypeExtensions";
 import type { IMod } from "../../types/IMod";
@@ -37,7 +38,6 @@ const textColumn = (
   header,
   width,
   isToggleable: true,
-  isDefaultVisible: false,
   sort: (a, b) => text(a).localeCompare(text(b)),
   groupBy: text,
   searchText: text,
@@ -76,11 +76,31 @@ export const useModsTableDataColumns = (memberships: {
         header,
         width: "140px",
         isToggleable: true,
-        isDefaultVisible: false,
         sort: (a, b) => (time(a) ?? 0) - (time(b) ?? 0),
         searchText: text,
         cell: (row) => <span className="truncate">{text(row)}</span>,
       };
+    };
+
+    /**
+     * An installed mod's size on disk, kept when it's installed and when Refresh content runs,
+     * or the archive's size for one that isn't installed. Unlike the legacy table's, the cell
+     * can't be clicked to work it out: Refresh content does that.
+     */
+    const size = ({ mod }: IModRow): number | undefined =>
+      mod.state === "installed" ? mod.attributes?.modSize : downloads[mod.archiveId]?.size;
+    const sizeText = (row: IModRow) => {
+      const bytes = size(row);
+      return bytes === undefined ? t("Unknown") : bytesToString(bytes);
+    };
+    const sizeColumn: IModsTableColumn = {
+      id: "modSize",
+      header: t("Mod size"),
+      width: "100px",
+      isToggleable: true,
+      sort: (a, b) => (size(a) ?? -1) - (size(b) ?? -1),
+      searchText: sizeText,
+      cell: (row) => <span className="truncate">{sizeText(row)}</span>,
     };
 
     return [
@@ -99,8 +119,10 @@ export const useModsTableDataColumns = (memberships: {
         ),
         position: 60,
       },
-      // Mod size (`modSize`, 100): an installed mod's size is only known once the user asks
-      // for it to be calculated, from the folder on disk.
+      {
+        ...sizeColumn,
+        position: 100,
+      },
       // The other extensions' columns have no position, so they take 100 and come in the
       // order the extensions load, after ModList's own.
       textColumn("category", t("Category"), "160px", ({ mod }) => {
@@ -131,7 +153,6 @@ export const useModsTableDataColumns = (memberships: {
             .sort((a, b) => a.localeCompare(b))
             .join(", "),
         ),
-        isDefaultVisible: true,
       },
       // Content (`content`, mod-content): icons for what a mod holds, scanned from its
       // staging folder when first shown.
@@ -151,7 +172,6 @@ export const useModsTableDataColumns = (memberships: {
           ({ mod }) => timeOf(mod.attributes?.installTime),
           t("Not installed"),
         ),
-        isDefaultVisible: true,
         position: 110,
       },
       {

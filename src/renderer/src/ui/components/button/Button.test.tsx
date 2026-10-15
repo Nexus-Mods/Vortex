@@ -268,4 +268,59 @@ describe("Button", () => {
       expect(getButton()).toHaveClass("nxm-button", "my-class");
     });
   });
+
+  describe("nested", () => {
+    it("is a span with the button role, reachable by Tab, styled as a button", () => {
+      render(<Button nested>Click</Button>);
+
+      expect(getButton().tagName).toBe("SPAN");
+      expect(getButton()).toHaveAttribute("tabindex", "0");
+      expect(getButton()).toHaveClass("nxm-button");
+    });
+
+    it("is pressed by a click, Enter or Space", async () => {
+      const onClick = vi.fn();
+      render(
+        <Button nested onClick={onClick}>
+          Click
+        </Button>,
+      );
+
+      await userEvent.click(getButton());
+      getButton().focus();
+      await userEvent.keyboard("{Enter}");
+      await userEvent.keyboard(" ");
+
+      expect(onClick).toHaveBeenCalledTimes(3);
+    });
+
+    it("leaves a key alone that its own handler acted on", async () => {
+      const onClick = vi.fn();
+      render(
+        <Button nested onClick={onClick} onKeyDown={(event) => event.preventDefault()}>
+          Click
+        </Button>,
+      );
+
+      getButton().focus();
+      await userEvent.keyboard("{Enter}");
+
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it("does nothing, and says so, while disabled", async () => {
+      const onClick = vi.fn();
+      render(
+        <Button disabled nested onClick={onClick}>
+          Click
+        </Button>,
+      );
+
+      await userEvent.click(getButton());
+
+      expect(onClick).not.toHaveBeenCalled();
+      expect(getButton()).toHaveAttribute("aria-disabled", "true");
+      expect(getButton()).toHaveAttribute("tabindex", "-1");
+    });
+  });
 });

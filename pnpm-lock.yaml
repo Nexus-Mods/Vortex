@@ -3899,6 +3899,12 @@ importers:
 
   packages/pe-resources: {}
 
+  packages/steam-kv-parser:
+    devDependencies:
+      '@types/node':
+        specifier: 24.12.2
+        version: 24.12.2
+
   packages/vortex-api:
     dependencies:
       '@types/bluebird':
@@ -4669,6 +4675,9 @@ importers:
       '@types/lodash':
         specifier: 'catalog:'
         version: 4.17.24
+      '@types/minimatch':
+        specifier: 'catalog:'
+        version: 2.0.29
       '@types/node-7z':
         specifier: 'catalog:'
         version: 2.1.11

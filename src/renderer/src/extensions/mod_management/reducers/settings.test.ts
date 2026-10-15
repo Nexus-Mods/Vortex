@@ -71,3 +71,16 @@ describe("setActivator", () => {
     });
   });
 });
+
+describe("setBetaModsTable", () => {
+  it("switches the beta Mods table on and off", () => {
+    const on = settingsReducer.reducers.SET_BETA_MODS_TABLE({ betaTable: false }, true);
+    expect(on).toEqual({ betaTable: true });
+
+    expect(settingsReducer.reducers.SET_BETA_MODS_TABLE(on, false)).toEqual({ betaTable: false });
+  });
+
+  it("is off by default", () => {
+    expect(settingsReducer.defaults.betaTable).toBe(false);
+  });
+});
