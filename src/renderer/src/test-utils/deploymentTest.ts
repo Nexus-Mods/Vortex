@@ -35,6 +35,8 @@ export interface IDeploymentHarness extends IApiHarness {
   deploy: (lastDeployment?: IDeployedFile[]) => Promise<IDeployedFile[]>;
   /** prepare + activate + finalize against one of the seeded mods */
   deployMod: (modName: string, lastDeployment?: IDeployedFile[]) => Promise<IDeployedFile[]>;
+  /** prepare + deactivate + finalize against the seeded mod, as removing it does */
+  remove: (lastDeployment: IDeployedFile[]) => Promise<IDeployedFile[]>;
   modDir: (modName: string) => string;
   /** the game the skip list reads `details.ignoreDeploy` from */
   game: IGame;
@@ -59,6 +61,10 @@ export interface IDeploymentOptions extends Partial<IDriverHarnessState> {
   otherMods?: Record<string, Record<string, string>>;
   gameId?: string;
   extraReducers?: IHarnessReducerBinding[];
+  /** each mod deploys into a folder named after it, as for games that don't merge mods (mergeMods off) */
+  modFolders?: boolean;
+  /** how the deployment folder's paths compare; upper-case by default, as on Windows */
+  normalize?: Normalize;
 }
 
 /**
@@ -71,6 +77,7 @@ export function makeDeploymentHarness(
 ): IDeploymentHarness & { cleanup: () => void } {
   const gameId = options.gameId ?? "skyrimse";
   const modName = options.modName ?? "SomeMod";
+  const subDir = (name: string) => (options.modFolders === true ? name : "");
   const base = makeApiHarness(options, options.extraReducers);
   registerHarnessGame(gameId);
 
@@ -116,16 +123,17 @@ export function makeDeploymentHarness(
     },
   };
 
-  const normalize: Normalize = (input: string) => input.toLowerCase();
+  const normalize: Normalize = options.normalize ?? ((input: string) => input.toUpperCase());
   // BlacklistSet only reads game.details?.ignoreDeploy
   const game = { details: {} } as unknown as IGame;
   const blacklist = new BlacklistSet([], game, normalize);
 
   const deployMod = async (name: string, lastDeployment: IDeployedFile[] = []) => {
     await method.prepare(gameDir, false, lastDeployment, normalize);
-    await method.activate(modDir(name), name, "", blacklist);
+    await method.activate(modDir(name), name, subDir(name), blacklist);
     return method.finalize(gameId, gameDir, stagingDir);
   };
+  const inGame = (relPath: string) => path.join(gameDir, subDir(modName), relPath);
 
   return {
     ...base,
@@ -134,25 +142,29 @@ export function makeDeploymentHarness(
     stagingDir,
     deploy: (lastDeployment: IDeployedFile[] = []) => deployMod(modName, lastDeployment),
     deployMod,
+    remove: async (lastDeployment: IDeployedFile[]) => {
+      await method.prepare(gameDir, false, lastDeployment, normalize);
+      await method.deactivate(modDir(modName), subDir(modName), modName);
+      return method.finalize(gameId, gameDir, stagingDir);
+    },
     modDir,
     game,
-    inGame: (relPath: string) => path.join(gameDir, relPath),
+    inGame,
     deployedFiles: () =>
       relPaths.filter(
-        (rel) =>
-          nodeFs.statSync(path.join(gameDir, rel), { throwIfNoEntry: false })?.isFile() === true,
+        (rel) => nodeFs.statSync(inGame(rel), { throwIfNoEntry: false })?.isFile() === true,
       ),
     manifest: (time = 1) =>
-      relPaths.map((relPath) => ({ relPath, source: modName, target: "", time })),
+      relPaths.map((relPath) => ({ relPath, source: modName, target: subDir(modName), time })),
     normalize,
     setBusyDialogAnswer: (answer) => {
       busyAnswer = answer;
     },
     blockUnlink: (relPath: string) => {
-      const target = path.join(gameDir, relPath);
-      nodeFs.unlinkSync(target);
-      nodeFs.mkdirSync(target);
-      nodeFs.writeFileSync(path.join(target, "occupied"), "");
+      const deployedPath = inGame(relPath);
+      nodeFs.unlinkSync(deployedPath);
+      nodeFs.mkdirSync(deployedPath);
+      nodeFs.writeFileSync(path.join(deployedPath, "occupied"), "");
     },
     cleanup: () => {
       nodeFs.rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
