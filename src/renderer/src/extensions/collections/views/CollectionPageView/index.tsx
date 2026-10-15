@@ -42,7 +42,10 @@ import { getSafe } from "../../../../util/storeHelper";
 import { batchDispatch, sanitizeCSSId } from "../../../../util/util";
 import type { IDownload } from "../../../download_management/types/IDownload";
 import { addModRule, removeModRule } from "../../../mod_management/actions/mods";
+import { selectModsTableView } from "../../../mod_management/actions/modsTableViews";
+import { focusModsTableGroup } from "../../../mod_management/actions/session";
 import type { IMod, IModRule } from "../../../mod_management/types/IMod";
+import { checkModUpdates } from "../../../mod_management/util/check_mod_updates/checkModUpdates";
 import { coerceToSemver } from "../../../mod_management/util/coerceToSemver";
 import renderModName, { renderModReference } from "../../../mod_management/util/modName";
 import { removeMods } from "../../../mod_management/util/removeMods";
@@ -62,6 +65,7 @@ import {
   collectRemovalTargets,
   isRemovableItem,
 } from "../../installSession/itemRows";
+import { applyCollectionRules } from "../../util/apply_collection_rules/applyCollectionRules";
 import type InstallDriver from "../../util/InstallDriver";
 import { makeCollectionModsResolver } from "../../util/resolveCollectionMods/resolveCollectionMods";
 import CollectionInstructions from "./CollectionInstructions";
@@ -611,6 +615,8 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
               totalSize={totalSize}
               votedSuccess={votedSuccess}
               onClone={this.clone}
+              onApplyRules={this.applyRules}
+              onCheckForUpdate={this.checkForUpdate}
               onClose={this.close}
               onRemove={this.remove}
               onSetEnabled={this.setEnabled}
@@ -741,9 +747,28 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     setModsEnabled(this.context.api, profile.id, [collection.id], enable);
   };
 
+  private checkForUpdate = () => {
+    void checkModUpdates(this.context.api, [this.props.collection.id]);
+  };
+
+  private applyRules = () => {
+    void applyCollectionRules(this.context.api, this.props.collection.id);
+  };
+
   private showMods = () => {
     const { collection } = this.props;
     const { api } = this.context;
+
+    const { settings } = api.getState();
+
+    if (settings.mods?.betaTable === true && (settings.window.useModernLayout ?? true)) {
+      batchDispatch(api.store, [
+        selectModsTableView("collections"),
+        focusModsTableGroup(collection.id),
+      ]);
+      api.events.emit("show-main-page", "Mods");
+      return;
+    }
 
     const batch = [];
     batch.push(setAttributeFilter("mods", undefined, undefined));

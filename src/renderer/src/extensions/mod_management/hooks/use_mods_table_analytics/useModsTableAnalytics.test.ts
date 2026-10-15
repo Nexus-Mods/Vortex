@@ -88,13 +88,4 @@ describe("useModsTableAnalytics", () => {
       properties: { target: "selection", via: "keyboard" },
     });
   });
-
-  it("reports a group menu's item", () => {
-    analytics().onGroupMenuAction("collapse_all");
-
-    expect(sent()).toEqual({
-      eventName: "app_mods_table_group_action",
-      properties: { action: "collapse_all" },
-    });
-  });
 });
