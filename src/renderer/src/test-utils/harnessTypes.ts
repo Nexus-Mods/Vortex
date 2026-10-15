@@ -31,6 +31,7 @@ import type { HealthCheckRegistry } from "../extensions/health_check/core/Health
 import type { IHistoryEvent } from "../extensions/history_management/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
+import type { IDeployedFile } from "../extensions/mod_management/types/IDeploymentMethod";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
@@ -99,6 +100,8 @@ export interface IApiHarness {
   errorNotifications: Array<{ title: string; message: unknown; allowReport: boolean | undefined }>;
   // sendNotification calls, recorded in order (full notification, so ids/actions are assertable)
   notifications: INotification[];
+  // dismissNotification calls, the notification ids in order
+  dismissedNotifications: string[];
   // ext.addToHistory calls, recorded in order
   historyEntries: Array<{ stack: string; entry: IHistoryEvent }>;
   // ext.showHistory calls, recorded in order
@@ -127,6 +130,20 @@ export interface IGameHarnessOpts {
   // the game's discovered install folder (state.settings.gameMode.discovered[gameId].path);
   // undiscovered unless set
   gamePath?: string;
+  // this Vortex instance's id (state.app.instanceId), which deployment manifests record
+  instanceId?: string;
+  // the game's configured deployment method (state.settings.mods.activator); none unless set
+  activatorId?: string;
+}
+
+export interface IDeployedGameHarness extends IGameHarness {
+  // writes a file into the default mod type's deploy target and returns its manifest entry
+  deployFile: (relPath: string, target?: string) => Promise<IDeployedFile>;
+  // saves the default mod type's manifest as written by the given deployment method
+  saveManifest: (files: IDeployedFile[], methodId: string) => PromiseLike<unknown>;
+  // the relPaths the default mod type's manifest lists
+  recordedFiles: () => Promise<string[]>;
+  isDeployed: (file: IDeployedFile) => boolean;
 }
 
 export interface IGameHarness extends IApiHarness {

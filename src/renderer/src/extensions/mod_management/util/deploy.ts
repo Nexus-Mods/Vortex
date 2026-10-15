@@ -35,7 +35,8 @@ import {
   fallbackPurgeType,
   getManifest,
   loadActivation,
-  saveActivation,
+  ownDeployedFiles,
+  savePurgeLeftovers,
   withActivationLock,
 } from "./activationStore";
 import BlacklistSet, { fileOverrideEntries, skipListEntries } from "./BlacklistSet";
@@ -113,21 +114,6 @@ export async function activateSingleMod(activation: ISingleModActivation): Promi
   );
   await method.prepare(dataPath, false, lastActivation, normalize);
   await method.activate(modPath, mod.installationPath, subDir, skip);
-}
-
-async function filterManifest(
-  activator: IDeploymentMethod,
-  deployPath: string,
-  stagingPath: string,
-  deployment: IDeployedFile[],
-): Promise<IDeployedFile[]> {
-  const results = await Promise.all(
-    deployment.map(async (item) => ({
-      item,
-      keep: await activator.isDeployed(stagingPath, deployPath, item),
-    })),
-  );
-  return results.filter((r) => r.keep).map((r) => r.item);
 }
 
 export async function loadAllManifests(
@@ -294,6 +280,21 @@ async function purgeModsImpl(
       let lastDeployment: { [typeId: string]: IDeployedFile[] };
       let purgeSucceeded = true;
       api.store.dispatch(startActivity("mods", "purging"));
+      // keyed by mod type
+      const saveLeftovers = (deployments: Record<string, IDeployedFile[]>) =>
+        Promise.all(
+          modTypes.map((typeId) =>
+            savePurgeLeftovers(
+              gameId,
+              typeId,
+              api.getState().app.instanceId,
+              modPaths[typeId],
+              stagingPath,
+              deployments[typeId] ?? [],
+              activator.id,
+            ),
+          ),
+        );
 
       // TODO: we really should be using the deployment specified in the manifest,
       //   not the current one! This only works because we force a purge when switching
@@ -327,37 +328,10 @@ async function purgeModsImpl(
 
         onProgress(75, "Saving updated manifest");
 
-        await Promise.all(
-          modTypes.map((typeId) =>
-            saveActivation(
-              gameId,
-              typeId,
-              state.app.instanceId,
-              modPaths[typeId],
-              stagingPath,
-              [],
-              activator.id,
-            ),
-          ),
-        );
+        await saveLeftovers(lastDeployment);
       } catch (err: unknown) {
         if (lastDeployment !== undefined) {
-          await Promise.all(
-            modTypes.map((typeId) =>
-              filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId]).then(
-                (files) =>
-                  saveActivation(
-                    gameId,
-                    typeId,
-                    state.app.instanceId,
-                    modPaths[typeId],
-                    stagingPath,
-                    files,
-                    activator.id,
-                  ),
-              ),
-            ),
-          );
+          await saveLeftovers(lastDeployment);
         }
         if (!(err instanceof ProcessCanceled)) {
           purgeSucceeded = false;
@@ -453,16 +427,17 @@ export function purgeModsInPath(
         let purgeSucceeded = true;
         try {
           await activator.prePurge(stagingPath);
+          const lastDeployment = await ownDeployedFiles(api, typeId, modPath, stagingPath);
           onProgress(25, "Removing links");
           await activator.purge(stagingPath, modPath, gameId);
           onProgress(50, "Saving updated manifest");
-          await saveActivation(
+          await savePurgeLeftovers(
             gameId,
             typeId,
             state.app.instanceId,
             modPath,
             stagingPath,
-            [],
+            lastDeployment,
             activator.id,
           );
         } catch (err: unknown) {

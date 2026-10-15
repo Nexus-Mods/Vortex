@@ -1,4 +1,4 @@
-import { mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -13,4 +13,11 @@ export async function makeTempDir(prefix: string): Promise<string> {
   const dir = await realpath(await mkdtemp(path.join(os.tmpdir(), prefix)));
   onTestFinished(() => rm(dir, { recursive: true, force: true }));
   return dir;
+}
+
+/** Writes a file at relPath under folder, creating its folders; its content is relPath. */
+export async function writeInto(folder: string, relPath: string): Promise<void> {
+  const filePath = path.join(folder, relPath);
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, relPath);
 }
