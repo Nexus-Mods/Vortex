@@ -1,3 +1,5 @@
+import type { Stats } from "node:fs";
+import { lstat, readFile } from "node:fs/promises";
 import * as path from "path";
 
 import type msgpackT from "@msgpack/msgpack";
@@ -8,6 +10,7 @@ import { showDialog } from "../../../actions/notifications";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
 import type { IState } from "../../../types/IState";
+import ConcurrencyLimiter from "../../../util/ConcurrencyLimiter";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import { writeFileAtomic } from "../../../util/fsAtomic";
@@ -20,6 +23,7 @@ import { deBOM, makeQueue, truthy } from "../../../util/util";
 import { getGame } from "../../gamemode_management/util/getGame";
 import type { IDeploymentManifest, ManifestFormat } from "../types/IDeploymentManifest";
 import type { IDeployedFile, IDeploymentMethod } from "../types/IDeploymentMethod";
+import { deployedFilePath } from "./deployedFilePath";
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import format_1 from "./manifest_formats/format_1";
 
@@ -28,6 +32,17 @@ const CURRENT_VERSION = 1;
 const formats: { [version: number]: ManifestFormat } = {
   1: format_1,
 };
+
+/** A mod type's manifest in the deployment target and its two backups in the staging folder. */
+function manifestPaths(deployPath: string, stagingPath: string, modType: string) {
+  const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
+  const fileName = `vortex.deployment.${typeTag}json`;
+  return {
+    manifestPath: path.join(deployPath, fileName),
+    backupPath: path.join(stagingPath, fileName),
+    binaryBackupPath: path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`),
+  };
+}
 
 function emptyManifest(instance: string): IDeploymentManifest {
   return {
@@ -100,17 +115,63 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
   return repairManifest(parsed);
 }
 
+/** Whether the file at an entry's path is the deployed one; manifest times are whole seconds. */
+function isDeployedFile(stats: Stats, file: IDeployedFile): boolean {
+  return Math.abs(stats.mtime.getTime() - file.time) < 1000;
+}
+
+// manifests can list 100k files
+const PRESENCE_CHECK_CONCURRENCY = 256;
+
+/** The manifest entries whose deployed files or links are still in the deployment target. */
+export async function filesStillDeployed(
+  basePath: string,
+  files: IDeployedFile[],
+): Promise<IDeployedFile[]> {
+  const limit = new ConcurrencyLimiter(PRESENCE_CHECK_CONCURRENCY);
+  const present = await Promise.all(
+    files.map((file) =>
+      limit.do(() =>
+        lstat(deployedFilePath(basePath, file.target, file.relPath)).then(
+          // a link left behind is still Vortex's, whatever its target
+          (stats) => stats.isSymbolicLink() || isDeployedFile(stats, file),
+          (err: unknown) => getErrorCode(err) !== "ENOENT",
+        ),
+      ),
+    ),
+  );
+  return files.filter((_file, idx) => present[idx]);
+}
+
+/** Saves a mod type's manifest after a purge, listing the deployed files it left behind. */
+export async function savePurgeLeftovers(
+  gameId: string,
+  modType: string,
+  instance: string,
+  deployPath: string,
+  stagingPath: string,
+  deployed: IDeployedFile[],
+  activatorId: string,
+): Promise<void> {
+  await saveActivation(
+    gameId,
+    modType,
+    instance,
+    deployPath,
+    stagingPath,
+    await filesStillDeployed(deployPath, deployed),
+    activatorId,
+  );
+}
+
 export function purgeDeployedFiles(basePath: string, files: IDeployedFile[]): Promise<void> {
   return Promise.all(
     files.map((file) => {
-      const fullPath = path.join(basePath, file.relPath);
+      const fullPath = deployedFilePath(basePath, file.target, file.relPath);
       return fs
         .statAsync(fullPath)
         .then((stats) => {
-          // the timestamp from stat has ms precision but the one from the manifest doesn't
-          return stats.mtime.getTime() - file.time < 1000
-            ? fs.unlinkAsync(fullPath)
-            : Promise.resolve();
+          return isDeployedFile(stats, file) ? fs.unlinkAsync(fullPath) : Promise.resolve();
         })
         .catch((err: unknown) => {
           if (getErrorCode(err) !== "ENOENT") {
@@ -195,11 +256,10 @@ function readManifestFileBinary(filePath: string): Promise<any> {
 function getManifestImpl(
   api: IExtensionApi,
   instanceId: string,
-  filePath: string,
-  backupPath: string,
-  backup2Path: string,
+  paths: ReturnType<typeof manifestPaths>,
 ): Promise<IDeploymentManifest> {
-  return readManifestFile(filePath)
+  const { manifestPath, backupPath, binaryBackupPath } = paths;
+  return readManifestFile(manifestPath)
     .catch((err: unknown) => {
       if (err instanceof UserCanceled) {
         return Promise.reject(err);
@@ -211,7 +271,7 @@ function getManifestImpl(
       }
       if (code === "EPERM") {
         errObj.message =
-          `The manifest file "${filePath}" is inaccessible due to ` +
+          `The manifest file "${manifestPath}" is inaccessible due to ` +
           "insufficient permissions.\nPlease ensure your Windows user account " +
           "has full read/write permissions to the manifest file and try again.";
         errObj["allowReport"] = false;
@@ -223,12 +283,12 @@ function getManifestImpl(
         errObj.message.startsWith("Unexpected end of JSON input")
       ) {
         errObj.message =
-          `The manifest file "${filePath}" is corrupted.\n` +
+          `The manifest file "${manifestPath}" is corrupted.\n` +
           'You should delete it, then immediately click the "Purge" button ' +
           'on the "Mods" page, then deploy again.';
       }
 
-      return readManifestFileBinary(backup2Path)
+      return readManifestFileBinary(binaryBackupPath)
         .catch((inner: unknown) => {
           if (getErrorCode(inner) === "ENOENT") {
             return readManifestFile(backupPath);
@@ -245,7 +305,7 @@ function getManifestImpl(
                   "The deployment manifest has been corrupted.\n" +
                   "Fortunately we have a backup that seems to be intact.",
                 parameters: {
-                  filePath,
+                  filePath: manifestPath,
                 },
               },
               [{ label: "Cancel" }, { label: "Restore from backup" }],
@@ -267,6 +327,23 @@ function getManifestImpl(
     .then((manifest) => (manifest !== undefined ? manifest : emptyManifest(instanceId)));
 }
 
+/** Asks before purging files whose deployment method left the game folder with the only copy. */
+async function confirmUnsafePurge(api: IExtensionApi): Promise<void> {
+  const result = await api.showDialog(
+    "question",
+    "Purge mod files?",
+    {
+      text:
+        "The game folder holds the only copy of these mod files. Purging deletes them " +
+        "permanently.",
+    },
+    [{ label: "Cancel" }, { label: "Purge" }],
+  );
+  if (result.action !== "Purge") {
+    throw new UserCanceled();
+  }
+}
+
 export function fallbackPurgeType(
   api: IExtensionApi,
   activator: IDeploymentMethod,
@@ -276,25 +353,22 @@ export function fallbackPurgeType(
   stagingPath: string,
 ): Promise<void> {
   const state: IState = api.store.getState();
-  const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
-  const tagFileName = `vortex.deployment.${typeTag}json`;
-  const tagFilePath = path.join(deployPath, tagFileName);
-  const tagBackupPath = path.join(stagingPath, tagFileName);
-  const tagBackup2Path = path.join(stagingPath, `vortex.deployment.backup.${typeTag}msgpack`);
   const instanceId = state.app.instanceId;
 
-  return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
+  return getManifestImpl(api, instanceId, manifestPaths(deployPath, stagingPath, modType))
     .then((tagObject) => {
       let result: Promise<void>;
       if (tagObject.files.length > 0) {
         let safe = true;
         if (tagObject.deploymentMethod !== undefined) {
+          // a method that isn't installed can't vouch for its files
           const previousActivator = getActivator(tagObject.deploymentMethod);
-          if (previousActivator !== undefined && !previousActivator.isFallbackPurgeSafe) {
+          if (previousActivator === undefined || !previousActivator.isFallbackPurgeSafe) {
             safe = false;
           }
         }
-        result = purgeDeployedFiles(deployPath, tagObject.files)
+        result = (safe ? Promise.resolve() : confirmUnsafePurge(api))
+          .then(() => purgeDeployedFiles(deployPath, tagObject.files))
           .then(() =>
             saveActivation(
               gameId,
@@ -343,6 +417,25 @@ export function withActivationLock(func: () => PromiseLike<any>, tryOnly: boolea
   return activationQueue(func, tryOnly);
 }
 
+/** The files a mod type's manifest lists; none if another instance wrote it. */
+export async function ownDeployedFiles(
+  api: IExtensionApi,
+  modType: string,
+  deployPath: string,
+  stagingPath: string,
+): Promise<IDeployedFile[]> {
+  const { instanceId } = api.getState().app;
+  // a damaged manifest lists nothing, so the purge still runs
+  let manifest: IDeploymentManifest | undefined;
+  try {
+    const { manifestPath } = manifestPaths(deployPath, stagingPath, modType);
+    manifest = readManifest(await readFile(manifestPath, "utf8"));
+  } catch {
+    manifest = undefined;
+  }
+  return manifest?.instance === instanceId ? manifest.files : [];
+}
+
 /**
  * return a manifest (detailing which files are currently deployed by Vortex)
  * Please note that the manifest is intended only as kind of a fallback, core functionality
@@ -385,13 +478,7 @@ export function getManifest(
       return Promise.resolve(emptyManifest(instanceId));
     }
 
-    const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
-    const tagFileName = `vortex.deployment.${typeTag}json`;
-    const tagFilePath = path.join(deployPath, tagFileName);
-    const tagBackupPath = path.join(stagingPath, tagFileName);
-    const tagBackup2Path = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
-
-    return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path);
+    return getManifestImpl(api, instanceId, manifestPaths(deployPath, stagingPath, modType));
   } catch (err) {
     return Promise.reject(err);
   }
@@ -408,14 +495,9 @@ export function loadActivation(
   if (deployPath === undefined) {
     return Promise.resolve([]);
   }
-  const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
-  const tagFileName = `vortex.deployment.${typeTag}json`;
-  const tagFilePath = path.join(deployPath, tagFileName);
-  const tagBackupPath = path.join(stagingPath, tagFileName);
-  const tagBackup2Path = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;
-  return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path).then(
+  return getManifestImpl(api, instanceId, manifestPaths(deployPath, stagingPath, modType)).then(
     (tagObject) => {
       let result: Promise<IDeployedFile[]>;
       if (tagObject.instance !== instanceId && tagObject.files.length > 0) {
@@ -456,7 +538,6 @@ export function saveActivation(
   activation: IDeployedFile[],
   activatorId?: string,
 ) {
-  const typeTag = modType !== undefined && modType.length > 0 ? modType + "." : "";
   const dataRaw = {
     instance,
     version: CURRENT_VERSION,
@@ -479,21 +560,23 @@ export function saveActivation(
     repErr["attachFilesOnReport"] = [failedPath];
     return Promise.reject(repErr);
   }
-  const tagFileName = `vortex.deployment.${typeTag}json`;
-  const tagFilePath = path.join(gamePath, tagFileName);
-  const tagBackupPath = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
+  const { manifestPath, backupPath, binaryBackupPath } = manifestPaths(
+    gamePath,
+    stagingPath,
+    modType,
+  );
 
   if (activation.length > 0) {
     // write backup synchronously
     try {
       const msgpack: typeof msgpackT = require("@msgpack/msgpack");
-      writeAtomicSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
+      writeAtomicSync(binaryBackupPath, Buffer.from(msgpack.encode(dataRaw)));
     } catch (err) {
       log("error", "Failed to write manifest backup", getErrorMessageOrDefault(err));
     }
   } else {
     try {
-      fs.removeSync(tagBackupPath);
+      fs.removeSync(binaryBackupPath);
     } catch (err) {
       const code = getErrorCode(err);
       if (code !== "ENOENT") {
@@ -503,9 +586,9 @@ export function saveActivation(
   }
 
   return activation.length === 0
-    ? fs.removeAsync(tagFilePath).catch(() => undefined)
-    : writeFileAtomic(tagFilePath, dataJSON).then(() =>
-        fs.removeAsync(path.join(stagingPath, tagFileName)).catch((err: unknown) => {
+    ? fs.removeAsync(manifestPath).catch(() => undefined)
+    : writeFileAtomic(manifestPath, dataJSON).then(() =>
+        fs.removeAsync(backupPath).catch((err: unknown) => {
           if (getErrorCode(err) === "ENOENT") {
             return null;
           }

@@ -2,9 +2,12 @@ import * as nodeFs from "node:fs";
 
 import { expect } from "vitest";
 
+import { makeDeployedFile } from "../../test-utils/builders";
 import { test } from "../../test-utils/deploymentTest";
+import { writeInto } from "../../test-utils/tempDir";
 import { BACKUP_TAG, type IDeployment } from "./LinkingDeployment";
 import type { IDeployedFile, IDeploymentMethod } from "./types/IDeploymentMethod";
+import { deployedFilePath } from "./util/deployedFilePath";
 
 /** The private members of LinkingActivator this exercises directly. */
 interface ILinkingInternals {
@@ -27,6 +30,25 @@ const FILES = {
   "ActorLimitFix.log": "log line",
   "SkyUI_SE.esp": "esp data",
 };
+
+test("reports a file deleted from staging for each mod that deploys it into its subfolder", async ({
+  makeDeployment,
+}) => {
+  const h = makeDeployment({ files: {} });
+  const deployed = ["AAA-mod-a", "AAB-mod-b"].map((target) =>
+    makeDeployedFile({ relPath: "ModInfo.xml", source: target, target }),
+  );
+  for (const file of deployed) {
+    await writeInto(deployedFilePath(h.gameDir, file.target, ""), file.relPath);
+  }
+
+  const changes = await h.method.externalChanges("skyrimse", h.stagingDir, h.gameDir, deployed);
+
+  expect(changes.map((change) => [change.changeType, change.target])).toEqual([
+    ["srcdeleted", "AAA-mod-a"],
+    ["srcdeleted", "AAB-mod-b"],
+  ]);
+});
 
 test("keeps every file whose unlink succeeded in the re-link list", async ({ makeDeployment }) => {
   const h = makeDeployment({ files: FILES });
