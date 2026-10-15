@@ -123,10 +123,13 @@ function seed(
     enabled = true,
     loggedIn = true,
     discovered = { skyrimse: { path: "c:\\games\\skyrim", store: "steam" } },
+    unmanaged = [],
   }: {
     enabled?: boolean;
     loggedIn?: boolean;
     discovered?: Record<string, { path?: string; store?: string }>;
+    // game ids present in discovered but intentionally not managed (no profile)
+    unmanaged?: string[];
   } = {},
 ): void {
   harness.setState((draft) => {
@@ -135,6 +138,16 @@ function seed(
     state.settings.gameMode = { discovered };
     state.app = { instanceId: "inst-1" };
     state.confidential = { account: loggedIn ? { nexus: { APIKey: "test-api-key" } } : {} };
+    draft.persistent.profiles ??= {};
+    for (const gameId of Object.keys(discovered)) {
+      if (unmanaged?.includes(gameId)) {
+        continue;
+      }
+      draft.persistent.profiles[`p-${gameId}`] = {
+        id: `p-${gameId}`,
+        gameId,
+      } as never;
+    }
   });
 }
 
@@ -372,9 +385,10 @@ describe("emitStoreGameVersions", () => {
   const harnessWithVersionLookups = (
     makeApi: (overrides?: object) => IApiHarness,
     exeCalls: Record<string, number>,
+    seedOptions?: Parameters<typeof seed>[1],
   ): IApiHarness => {
     const harness = makeApi();
-    seed(harness, { discovered: DISCOVERED_THREE });
+    seed(harness, { discovered: DISCOVERED_THREE, ...seedOptions });
     const versions: Record<string, { version: string; details: unknown; exe: string }> = {
       skyrimse: { version: "1.6.1170", details: { steamAppId: 489830 }, exe: "1.6.1170.0" },
       witcher3: { version: "1.0", details: {}, exe: "1.0.5" },
@@ -455,6 +469,21 @@ describe("emitStoreGameVersions", () => {
 
     await emitStoreGameVersions(harness.api);
     expect(telemetryEvent).toHaveBeenCalledTimes(2);
+    expect(exeCalls).toEqual({ skyrimse: 1, skyrimvr: 1 });
+  });
+
+  test("sends only for managed games: a discovered install without a profile is silent", async ({
+    makeApi,
+  }) => {
+    const exeCalls: Record<string, number> = {};
+    const harness = harnessWithVersionLookups(makeApi, exeCalls, { unmanaged: ["witcher3"] });
+
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+
+    await emitStoreGameVersions(harness.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(2);
+    const gameIds = telemetryEvent.mock.calls.map((call) => call[2].payload.game_id).sort();
+    expect(gameIds).toEqual(["1704", "1705"]);
     expect(exeCalls).toEqual({ skyrimse: 1, skyrimvr: 1 });
   });
 });

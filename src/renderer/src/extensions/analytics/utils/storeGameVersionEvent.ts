@@ -304,13 +304,22 @@ export async function emitStoreGameVersionEvent(
 }
 
 /**
- * Submits the store_game_version event for every discovered steam/gog install, not
- * just the game being deployed. Games run one at a time: a mass update could
- * otherwise fan out dozens of .info reads and exe-version lookups at once.
+ * Submits the store_game_version event for every managed steam/gog install (the
+ * games the user has profiles for), not just the game being deployed. Games run
+ * one at a time: a mass update could otherwise fan out dozens of .info reads and
+ * exe-version lookups at once.
  */
 export async function emitStoreGameVersions(api: IExtensionApi): Promise<void> {
-  const candidates = Object.keys(discovered(api.getState())).filter((gameId) => {
-    const discovery = discoveryByGame(api.getState(), gameId);
+  const state = api.getState();
+  const managedGameIds = new Set(
+    Object.values(state.persistent.profiles).map((profile) => profile.gameId),
+  );
+
+  const candidates = Object.keys(discovered(state)).filter((gameId) => {
+    if (!managedGameIds.has(gameId)) {
+      return false;
+    }
+    const discovery = discoveryByGame(state, gameId);
     return (
       discovery?.path !== undefined && (discovery.store === "steam" || discovery.store === "gog")
     );
