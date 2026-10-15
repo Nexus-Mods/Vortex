@@ -2,6 +2,9 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { closeDialog, closeDialogs, triggerDialogLink } from "@/actions/notifications";
+import type { ICheckbox, IDialog, IInput } from "@/types/IDialog";
+import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField";
 import { TextField } from "@/ui/components/form/text_field/TextField";
@@ -10,10 +13,8 @@ import { Modal } from "@/ui/components/modal/Modal";
 import { PlainText } from "@/ui/components/prose/plain_text/PlainText";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 
-import { closeDialog, closeDialogs, triggerDialogLink } from "../../actions/notifications";
-import type { ICheckbox, IDialog, IInput } from "../../types/IDialog";
-import type { IState } from "../../types/IState";
-import { canRenderWithModal } from "./canRenderWithModal";
+import { canRenderWithModal } from "./utils/can_render_with_modal/canRenderWithModal.util";
+import { translateMessageParts } from "./utils/translate_message_parts/translateMessageParts.util";
 
 // One dialog at a time, and the reducer puts a new one at the front, so the newest is shown first.
 // The legacy renderer does the same.
@@ -35,6 +36,10 @@ const rememberedDialogIds = (dialogs: IDialog[], current: IDialog): string[] => 
 // Buttons that destroy something get the danger variant. In a dialog with one, the default button
 // stays neutral, so the red button is the only one that stands out. Add a label as design asks.
 const DANGER_ACTIONS = new Set(["Remove"]);
+
+// Buttons that only dismiss the dialog. Alone in a dialog, such a button is the strong neutral one
+// even when it is marked the default, as an error dialog marks "Close". Add a label as design asks.
+const DISMISS_ACTIONS = new Set(["Close"]);
 
 // A short message reads better in the small modal. Longer ones keep the medium size.
 const SMALL_MAX_TEXT_LENGTH = 200;
@@ -87,23 +92,14 @@ export const ModalLayer = () => {
       })
     : "";
 
-  // Each line, and each tab-separated part of it, is a translation key, as in the legacy renderer.
   const translateMessage = (message: string) =>
-    message
-      .split("\n")
-      .map((line) =>
-        line
-          .split("\t")
-          .map((part) =>
-            t(part, {
-              replace: content.parameters,
-              count,
-              ...(content.options?.translated && { lngs: [] }),
-            }),
-          )
-          .join(" "),
-      )
-      .join("\n");
+    translateMessageParts(message, (part) =>
+      t(part, {
+        replace: content.parameters,
+        count,
+        ...(content.options?.translated && { lngs: [] }),
+      }),
+    );
 
   // The dialog's condition is checked against what the user has entered so far. It names the
   // control it is about and the buttons that can't be pressed until it is met.
@@ -126,17 +122,20 @@ export const ModalLayer = () => {
 
   // The default action is the primary one, unless the dialog has a danger button, which then stands
   // out alone. A lone action that isn't the default is a way out, like "Close", so it is the strong
-  // neutral button. Anything else is a neutral alternative.
+  // neutral button, and so is a lone dismiss button that is the default. Anything else is a neutral
+  // alternative.
   const buttonColour = (action: string) => {
+    const isLone = actions.length === 1;
+
     if (DANGER_ACTIONS.has(action)) {
       return { brand: "danger" } as const;
     }
 
-    if (action === defaultAction && !hasDangerAction) {
+    if (action === defaultAction && !hasDangerAction && !(isLone && DISMISS_ACTIONS.has(action))) {
       return {};
     }
 
-    return actions.length === 1
+    return isLone
       ? ({ appearance: "strong", brand: "neutral" } as const)
       : ({ appearance: "moderate", brand: "neutral" } as const);
   };
@@ -176,13 +175,16 @@ export const ModalLayer = () => {
       {!!text && <PlainText size="sm" text={text} />}
 
       {content.message !== undefined && (
-        <MessageBox
-          hideLabel={t("Hide Details")}
-          isCollapsible={content.options?.hideMessage === true}
-          message={translateMessage(content.message)}
-          shouldWrap={content.options?.wrap === true}
-          showLabel={t("Show Details")}
-        />
+        <div className="mt-3">
+          <MessageBox
+            copyLabel={t("Copy")}
+            hideLabel={t("Hide Details")}
+            isCollapsible={content.options?.hideMessage === true}
+            message={translateMessage(content.message)}
+            shouldWrap={content.options?.wrap === true}
+            showLabel={t("Show Details")}
+          />
+        </div>
       )}
 
       {inputs.length > 0 && (

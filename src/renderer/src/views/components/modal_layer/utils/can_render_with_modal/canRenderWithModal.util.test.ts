@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { ICheckbox, IDialog, IDialogContent, IInput, ILink } from "../../types/IDialog";
-import { canRenderWithModal } from "./canRenderWithModal";
+import type { ICheckbox, IDialog, IDialogContent, IInput, ILink } from "@/types/IDialog";
+
+import { canRenderWithModal } from "./canRenderWithModal.util";
 
 const dialogWith = (
   content: IDialogContent,

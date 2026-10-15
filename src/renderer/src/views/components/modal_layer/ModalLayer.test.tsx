@@ -4,14 +4,14 @@ import React from "react";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { closeDialog, closeDialogs, triggerDialogLink } from "@/actions/notifications";
 import { settleTransitions } from "@/test-utils/transitions";
+import type { IDialog, IDialogContent } from "@/types/IDialog";
+import type { IState } from "@/types/IState";
 
-import { closeDialog, closeDialogs, triggerDialogLink } from "../../actions/notifications";
-import type { IDialog, IDialogContent } from "../../types/IDialog";
-import type { IState } from "../../types/IState";
 import { ModalLayer } from "./ModalLayer";
 
-vi.mock("../../actions/notifications", () => ({
+vi.mock("@/actions/notifications", () => ({
   closeDialog: vi.fn((id: string, action?: string, input?: unknown) => ({
     type: "CLOSE_DIALOG",
     id,
@@ -496,6 +496,35 @@ describe("ModalLayer", () => {
         "nxm-button-neutral",
         "nxm-button-strong",
       );
+
+      await settleTransitions();
+    });
+
+    it("shows a lone Close as the strong neutral button even when it is the default", async () => {
+      renderLayer([asking(["Close"], "Close")]);
+
+      expect(screen.getByTestId("dialog-action-Close")).toHaveClass(
+        "nxm-button-neutral",
+        "nxm-button-strong",
+      );
+      expect(screen.getByTestId("dialog-action-Close")).not.toHaveClass("nxm-button-primary");
+
+      await settleTransitions();
+    });
+
+    it("keeps Close as the default button's focus, whatever its colour", async () => {
+      renderLayer([asking(["Close"], "Close")]);
+
+      await settleTransitions();
+
+      expect(screen.getByTestId("dialog-action-Close")).toHaveFocus();
+    });
+
+    it("still shows Close as the primary button beside another action", async () => {
+      renderLayer([asking(["Report", "Close"], "Close")]);
+
+      expect(screen.getByTestId("dialog-action-Close")).toHaveClass("nxm-button-primary");
+      expect(screen.getByTestId("dialog-action-Report")).toHaveClass("nxm-button-moderate");
 
       await settleTransitions();
     });

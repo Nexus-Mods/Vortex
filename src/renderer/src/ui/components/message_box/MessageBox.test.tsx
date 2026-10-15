@@ -1,13 +1,15 @@
-import { render, screen } from "@testing-library/react";
+import { mdiCheck, mdiContentCopy } from "@mdi/js";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MessageBox } from "./MessageBox";
 
 const renderBox = (props: Partial<React.ComponentProps<typeof MessageBox>> = {}) =>
   render(
     <MessageBox
+      copyLabel="Copy"
       hideLabel="Hide Details"
       isCollapsible={false}
       message={"first line\nsecond line"}
@@ -16,6 +18,11 @@ const renderBox = (props: Partial<React.ComponentProps<typeof MessageBox>> = {})
       {...props}
     />,
   );
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe("MessageBox", () => {
   it("shows the message in a read-only box", () => {
@@ -58,5 +65,65 @@ describe("MessageBox", () => {
 
     renderBox({ shouldWrap: false });
     expect(screen.getByTestId("dialog-message")).toHaveAttribute("wrap", "off");
+  });
+
+  it("has no margin of its own, so its parent places it", () => {
+    const { container } = renderBox();
+
+    expect(container.firstElementChild).toHaveClass("nxm-message-box");
+    expect(container.firstElementChild?.className).not.toMatch(/\bm[tblrxy]?-\d/);
+  });
+
+  describe("copy button", () => {
+    const stubClipboard = () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal("api", { clipboard: { writeText } });
+
+      return writeText;
+    };
+
+    it("is named by copyLabel", () => {
+      renderBox({ copyLabel: "Copy details" });
+
+      expect(screen.getByRole("button", { name: "Copy details" })).toBeInTheDocument();
+    });
+
+    it("is drawn as a small neutral button, with the button styles' classes", () => {
+      renderBox();
+
+      expect(screen.getByTestId("dialog-message-copy")).toHaveClass(
+        "nxm-button",
+        "nxm-button-neutral",
+        "nxm-button-moderate",
+        "nxm-button-sm",
+      );
+    });
+
+    it("is not shown while the box is closed", () => {
+      renderBox({ isCollapsible: true });
+
+      expect(screen.queryByTestId("dialog-message-copy")).not.toBeInTheDocument();
+    });
+
+    it("copies the message, and shows a tick for a moment", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const writeText = stubClipboard();
+      renderBox();
+
+      const copy = screen.getByTestId("dialog-message-copy");
+      const iconPath = () => copy.querySelector("path")?.getAttribute("d");
+      expect(iconPath()).toBe(mdiContentCopy);
+
+      await userEvent.click(copy);
+
+      expect(writeText).toHaveBeenCalledWith("first line\nsecond line");
+      await waitFor(() => expect(iconPath()).toBe(mdiCheck));
+
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expect(iconPath()).toBe(mdiContentCopy);
+    });
   });
 });

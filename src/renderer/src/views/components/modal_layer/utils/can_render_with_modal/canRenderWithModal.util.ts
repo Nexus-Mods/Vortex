@@ -1,4 +1,4 @@
-import type { ICheckbox, IDialog, IDialogContent, IInput, ILink } from "../../types/IDialog";
+import type { ICheckbox, IDialog, IDialogContent, IInput, ILink } from "@/types/IDialog";
 
 // What ModalLayer knows how to draw. Anything else a dialog carries, including a field this list
 // has never heard of, keeps it on the legacy renderer. Add an entry as each content type gets a
@@ -29,7 +29,7 @@ const SUPPORTED_INPUT_FIELDS = new Set<keyof IInput>([
 ]);
 
 // What TextField can draw. `multiline` has no counterpart yet.
-const SUPPORTED_INPUT_TYPES = new Set([
+const SUPPORTED_INPUT_TYPES = new Set<IInput["type"]>([
   "text",
   "password",
   "number",

@@ -28,6 +28,7 @@ export const MessageBoxDemo = () => (
 
     <div className="max-w-md">
       <MessageBox
+        copyLabel="Copy"
         hideLabel="Hide Details"
         isCollapsible={false}
         message={DETAILS}
@@ -49,6 +50,7 @@ export const MessageBoxDemo = () => (
 
     <div className="max-w-md">
       <MessageBox
+        copyLabel="Copy"
         hideLabel="Hide Details"
         isCollapsible
         message={DETAILS}

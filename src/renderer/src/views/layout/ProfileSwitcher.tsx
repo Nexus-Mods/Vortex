@@ -10,9 +10,9 @@ import {
   nextProfileId as nextProfileIdSelector,
   profileById as profileByIdSelector,
 } from "../../util/selectors";
+import { ModalLayer } from "../components/modal_layer/ModalLayer";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
-import { ModalLayer } from "../modal_layer/ModalLayer";
 
 /**
  * Provides a profile switcher component.
