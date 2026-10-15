@@ -4,15 +4,16 @@ import {
   mdiUnfoldLessHorizontal,
   mdiUnfoldMoreHorizontal,
 } from "@mdi/js";
-import React from "react";
-import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
-import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
-import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 
-interface ITableGroupMenuProps {
-  /** The group's name, which names the menu. */
-  label: string;
+/** What a built-in item's click reports: the state it moves the group, or its rows, to. */
+const reporting = (properties: { expanded: boolean } | { selected: boolean }) => ({
+  trackingProperties: properties,
+});
+
+interface ITableGroupMenuSectionsOptions {
   /** Whether the group is open, which offers to collapse it, or to expand it. */
   expanded: boolean;
   /** Collapses the group, or expands it. */
@@ -25,61 +26,75 @@ interface ITableGroupMenuProps {
   onSelectAll?: () => void;
   /** Takes the group's rows out of the selection. */
   onDeselectAll?: () => void;
-  /** Sections after collapsing and selecting, each divided from the last. */
-  extra?: IMenuAction[][];
-  /** Closes the menu, once a row is chosen. */
-  onSelect: () => void;
+  /** Translates the labels. */
+  t: TFunction;
 }
 
 /**
- * A group row's context menu: collapse or expand it, or every group, and select its rows, or
- * deselect them once they all are, then the table's own sections for the group.
+ * A group's built-in menu sections: folding it, or every group, then selecting its rows. Empty
+ * sections are left out. Each item keeps its id whichever way its label reads (`collapse`,
+ * `collapse-all`, `select-all`), and says in `trackingProperties` the state it moves to:
+ * `expanded` for folding, `selected` for selecting.
  */
-export const TableGroupMenu = ({
-  label,
+export const tableGroupMenuSections = ({
   expanded,
   onToggle,
   onSetAllExpanded,
   allSelected = false,
   onSelectAll,
   onDeselectAll,
-  extra = [],
-  onSelect,
-}: ITableGroupMenuProps) => {
-  const { t } = useTranslation();
-
-  const folding: IMenuAction[] = [
+  t,
+}: ITableGroupMenuSectionsOptions): IToolbarAction[][] => {
+  const folding: IToolbarAction[] = [
     {
+      id: "collapse",
+      ...reporting({ expanded: !expanded }),
       label: expanded ? t("Collapse") : t("Expand"),
       iconPath: expanded ? mdiUnfoldLessHorizontal : mdiUnfoldMoreHorizontal,
       onClick: onToggle,
     },
     {
+      id: "collapse-all",
+      ...reporting({ expanded: !expanded }),
       label: expanded ? t("Collapse all") : t("Expand all"),
+      iconPath: expanded ? mdiUnfoldLessHorizontal : mdiUnfoldMoreHorizontal,
       onClick: () => onSetAllExpanded(!expanded),
     },
   ];
 
-  const selecting: IMenuAction[] = [];
-  if (allSelected && onDeselectAll !== undefined) {
+  const selecting: IToolbarAction[] = [];
+  if (allSelected && onDeselectAll) {
     selecting.push({
+      id: "select-all",
+      ...reporting({ selected: false }),
       label: t("Deselect all in group"),
       iconPath: mdiCheckboxBlankOutline,
       onClick: onDeselectAll,
     });
-  } else if (onSelectAll !== undefined) {
+  } else if (onSelectAll) {
     selecting.push({
+      id: "select-all",
+      ...reporting({ selected: true }),
       label: t("Select all in group"),
       iconPath: mdiCheckboxMarkedOutline,
       onClick: onSelectAll,
     });
   }
 
-  return (
-    <PopoverMenu
-      actions={[folding, selecting, ...extra].filter((section) => section.length > 0)}
-      label={t("{{name}} group actions", { name: label })}
-      onSelect={onSelect}
-    />
-  );
+  return [folding, selecting].filter((section) => section.length > 0);
+};
+
+/**
+ * The built-in sections as toolbar actions, for the heading's toolbar menus: a `section` each,
+ * so a rule divides them. The heading's toolbar counts their clicks by id.
+ */
+export const tableGroupMenuActions = (
+  options: ITableGroupMenuSectionsOptions,
+): IToolbarAction[] => {
+  const [folding, selecting = []] = tableGroupMenuSections(options);
+
+  return [
+    ...folding.map((action): IToolbarAction => ({ ...action, section: "folding" })),
+    ...selecting.map((action): IToolbarAction => ({ ...action, section: "selecting" })),
+  ];
 };

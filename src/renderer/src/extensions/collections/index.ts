@@ -1552,6 +1552,17 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
     }, 100);
   });
 
+  api.events.on("remove-collection", (modId: string) => {
+    const gameId = selectors.activeGameId(api.getState());
+    removeCollection(api, gameId, modId, true).catch((err) => {
+      if (!(err instanceof UserCanceled)) {
+        api.showErrorNotification("Failed to remove collection", unknownToError(err), {
+          allowReport: !(err instanceof ProcessCanceled),
+        });
+      }
+    });
+  });
+
   api.events.on("resume-collection", (gameId: string, modId: string) => {
     const state = api.getState();
 

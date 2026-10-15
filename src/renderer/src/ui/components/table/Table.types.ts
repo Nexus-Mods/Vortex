@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
-import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
+import type { IToolbarContext } from "@/ui/components/toolbar/Toolbar.context";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 
 /** A collapsible run of rows under a row of its own. */
 export interface ITableGroup<T> {
@@ -52,15 +53,6 @@ export interface ITableSort {
 /** What a context menu was opened on: a group header, a row, or a row in a multi-selection. */
 export type TableMenuTarget = "group" | "row" | "selection";
 
-/** An item of a group header's menu. */
-export type TableGroupMenuAction =
-  | "collapse"
-  | "expand"
-  | "collapse_all"
-  | "expand_all"
-  | "select_all"
-  | "deselect_all";
-
 export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   /** The columns, in order, each making a track of the table's grid. */
   columns: Array<ITableColumn<T, G>>;
@@ -88,16 +80,16 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
   /** A row's context menu, given the way to close it; unset, rows have none. */
   rowMenu?: (row: T, close: () => void) => ReactNode;
-  /** Sections of a group header's menu after its own, such as actions on what the group is for. */
-  groupMenu?: (group: G) => IMenuAction[][];
+  /** A group heading's own actions, after the built-ins in its "…" and right-click menu. */
+  groupMenu?: (group: G) => IToolbarAction[];
+  /** Counts the clicks in a heading's menus, built-ins included, as a toolbar's `tracking` does. */
+  groupTracking?: IToolbarContext["tracking"];
   /** A group to open and bring into view, once the table has it. */
   focusGroupId?: string;
   /** Told once `focusGroupId`'s group is open and being scrolled to, so it can be dropped. */
   onGroupFocused?: () => void;
   /** Told when a context menu opens, on what, and whether from the pointer or keyboard. */
   onMenuOpen?: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
-  /** Told when an item of a group header's menu is used. */
-  onGroupMenuAction?: (action: TableGroupMenuAction) => void;
 } & (
   | {
       /** The rows, ungrouped. */

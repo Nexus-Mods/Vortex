@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { useMainContext } from "@/contexts";
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
-import type { TableGroupMenuAction, TableMenuTarget } from "@/ui/components/table/Table.types";
+import type { TableMenuTarget } from "@/ui/components/table/Table.types";
 
 import type { IModsTableView, ModsTableGrouping } from "../../util/mods_table_views/modsTableViews";
 
@@ -59,11 +59,6 @@ const menuOpenedEvent = (target: TableMenuTarget, via: "pointer" | "keyboard"): 
   properties: { target, via },
 });
 
-const groupActionEvent = (action: TableGroupMenuAction): MixpanelEvent => ({
-  eventName: "app_mods_table_group_action",
-  properties: { action },
-});
-
 /** Usage tracking for the new Mods table, as callbacks for where each happens. */
 export interface IModsTableAnalytics {
   /**
@@ -82,8 +77,6 @@ export interface IModsTableAnalytics {
   onSearchStarted: () => void;
   /** A context menu opened. */
   onMenuOpen: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
-  /** An item of a group header's menu was used. */
-  onGroupMenuAction: (action: TableGroupMenuAction) => void;
 }
 
 /**
@@ -107,7 +100,6 @@ export const useModsTableAnalytics = (): IModsTableAnalytics => {
       onColumnToggled: (column, visible) => send(columnToggledEvent(column, visible)),
       onSearchStarted: () => send(searchedEvent()),
       onMenuOpen: (target, via) => send(menuOpenedEvent(target, via)),
-      onGroupMenuAction: (action) => send(groupActionEvent(action)),
     };
   }, [api]);
 };

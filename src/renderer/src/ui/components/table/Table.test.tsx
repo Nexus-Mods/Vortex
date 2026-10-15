@@ -1,3 +1,4 @@
+import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from "@mdi/js";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -9,8 +10,11 @@ vi.mock("@/ui/components/image/useImageColour.hook", () => ({
   useImageColour: (src: string | undefined) => (src ? "rgb(1, 2, 3)" : undefined),
 }));
 
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
+
 import { Table } from "./Table";
 import type { ITableColumn } from "./Table.types";
+import { tableGroupMenuSections } from "./TableGroupMenu";
 import { useTableRowEngaged } from "./TableRow.context";
 
 interface IRow {
@@ -766,13 +770,171 @@ describe("Table's context menus", () => {
     expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
   });
 
-  it("adds a group's own sections after its built-in ones", async () => {
+  describe("a group heading's …", () => {
+    const more = (name: string) =>
+      within(groupRow(name)).getByRole("button", { name: "More actions" });
+    const separators = () => screen.getAllByRole("separator").length;
+
+    const tracking = () => ({
+      onActionClick: vi.fn(),
+      onPinChange: vi.fn(),
+      onPinsReset: vi.fn(),
+    });
+
+    const renderWithMenu = ({
+      groupMenu,
+      groupTracking,
+      sticky = false,
+    }: {
+      groupMenu?: (group: { id: string }) => IToolbarAction[];
+      groupTracking?: ReturnType<typeof tracking>;
+      sticky?: boolean;
+    } = {}) =>
+      render(
+        <Table
+          columns={[
+            { ...COLUMNS[0], groupCell: () => <span>start</span> },
+            { ...COLUMNS[1], sticky: sticky ? "end" : undefined },
+            { id: "last", header: "Last", width: "40px", cell: () => null },
+          ]}
+          getRowId={(r) => r.id}
+          groupMenu={groupMenu}
+          groupTracking={groupTracking}
+          groups={GROUPS}
+          label="Files"
+          selectable
+        />,
+      );
+
+    const open = (onClick = vi.fn()): IToolbarAction => ({
+      id: "open",
+      label: "Open",
+      onClick,
+      section: "own",
+    });
+
+    it("is on every group heading, at the end of the last column's cell", () => {
+      renderWithMenu();
+
+      for (const name of ["First", "Second"]) {
+        const cells = within(groupRow(name)).getAllByRole("gridcell");
+        expect(cells[cells.length - 1].lastElementChild).toContainElement(more(name));
+      }
+    });
+
+    it("is in the sticky column's cell, where there is one", () => {
+      renderWithMenu({ sticky: true });
+
+      const stuck = groupRow("First").querySelector('[data-sticky="end"]') as HTMLElement;
+      expect(within(stuck).getByRole("button", { name: "More actions" })).toBeInTheDocument();
+    });
+
+    it("lists exactly the context menu's items, the group's own after the built-in ones", async () => {
+      renderWithMenu({ groupMenu: (group) => (group.id === "first" ? [open()] : []) });
+
+      fireEvent.contextMenu(groupRow("First"));
+      const contextItems = menuItems();
+      const contextSeparators = separators();
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(more("First"));
+
+      expect(menuItems()).toEqual(contextItems);
+      expect(separators()).toBe(contextSeparators);
+      expect(contextItems).toEqual(["Collapse", "Collapse all", "Select all in group", "Open"]);
+      expect(contextSeparators).toBe(2);
+    });
+
+    const clicks = (groupTracking: ReturnType<typeof tracking>) =>
+      groupTracking.onActionClick.mock.calls.map(([{ id, properties }, surface]) => [
+        id,
+        properties,
+        surface,
+      ]);
+
+    it("counts a built-in item once from either, with the state it moves to", async () => {
+      const groupTracking = tracking();
+      renderWithMenu({ groupTracking });
+
+      await userEvent.click(more("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+      expect(clicks(groupTracking)).toEqual([["collapse", { expanded: false }, "overflow"]]);
+      expect(groupRow("First").getAttribute("aria-expanded")).toBe("false");
+      expect(screen.queryByRole("menu")).toBeNull();
+
+      fireEvent.contextMenu(groupRow("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+      expect(groupRow("Second").getAttribute("aria-expanded")).toBe("false");
+      expect(screen.queryByRole("menu")).toBeNull();
+
+      await userEvent.click(more("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Expand" }));
+
+      expect(clicks(groupTracking)).toEqual([
+        ["collapse", { expanded: false }, "overflow"],
+        ["collapse", { expanded: false }, "menu"],
+        ["collapse", { expanded: true }, "overflow"],
+      ]);
+      expect(groupRow("First").getAttribute("aria-expanded")).toBe("true");
+    });
+
+    it("counts Collapse all and Select all in group by id, with the state they move to", async () => {
+      const groupTracking = tracking();
+      renderWithMenu({ groupTracking });
+
+      await userEvent.click(more("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse all" }));
+      fireEvent.contextMenu(groupRow("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
+      fireEvent.contextMenu(groupRow("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+      await userEvent.click(more("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Deselect all in group" }));
+
+      expect(clicks(groupTracking)).toEqual([
+        ["collapse-all", { expanded: false }, "overflow"],
+        ["collapse-all", { expanded: true }, "menu"],
+        ["select-all", { selected: true }, "menu"],
+        ["select-all", { selected: false }, "overflow"],
+      ]);
+    });
+
+    it("counts the group's own action through groupTracking, as menu or overflow", async () => {
+      const groupTracking = tracking();
+      const onClick = vi.fn();
+      renderWithMenu({ groupMenu: () => [open(onClick)], groupTracking });
+
+      fireEvent.contextMenu(groupRow("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Open" }));
+      await userEvent.click(more("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Open" }));
+
+      expect(onClick).toHaveBeenCalledTimes(2);
+      expect(groupTracking.onActionClick.mock.calls).toEqual([
+        [expect.objectContaining({ id: "open" }), "menu"],
+        [expect.objectContaining({ id: "open" }), "overflow"],
+      ]);
+    });
+
+    it("neither collapses the group nor selects its rows when clicked", async () => {
+      renderWithMenu();
+
+      await userEvent.click(more("First"));
+
+      expect(groupRow("First").getAttribute("aria-expanded")).toBe("true");
+      expect(checked("Alpha")).toBe(false);
+    });
+  });
+
+  it("adds a group's own actions after its built-in ones", async () => {
     const open = vi.fn();
     render(
       <Table
         columns={COLUMNS}
         getRowId={(r) => r.id}
-        groupMenu={(group) => (group.id === "first" ? [[{ label: "Open", onClick: open }]] : [])}
+        groupMenu={(group) => (group.id === "first" ? [{ label: "Open", onClick: open }] : [])}
         groups={GROUPS}
         label="Files"
         selectable
@@ -786,7 +948,7 @@ describe("Table's context menus", () => {
     expect(open).toHaveBeenCalledTimes(1);
   });
 
-  it("adds nothing to a group whose sections are empty", () => {
+  it("adds nothing to a group without actions of its own", () => {
     render(
       <Table
         columns={COLUMNS}
@@ -1036,7 +1198,6 @@ describe("Table's context menus", () => {
   describe("reporting", () => {
     const renderReporting = () => {
       const onMenuOpen = vi.fn();
-      const onGroupMenuAction = vi.fn();
 
       render(
         <Table
@@ -1047,12 +1208,11 @@ describe("Table's context menus", () => {
           groups={GROUPS}
           label="Files"
           rowMenu={(r) => <span>Menu for {r.name}</span>}
-          onGroupMenuAction={onGroupMenuAction}
           onMenuOpen={onMenuOpen}
         />,
       );
 
-      return { onGroupMenuAction, onMenuOpen };
+      return { onMenuOpen };
     };
 
     it("says a menu opened on a group header, from the pointer", () => {
@@ -1079,19 +1239,6 @@ describe("Table's context menus", () => {
       fireEvent.contextMenu(row("Alpha"), { clientX: 10, clientY: 10 });
 
       expect(onMenuOpen).toHaveBeenCalledWith("selection", "pointer");
-    });
-
-    it("says which of a group menu's items was used", async () => {
-      const { onGroupMenuAction } = renderReporting();
-
-      fireEvent.contextMenu(groupRow("First"));
-      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
-      fireEvent.contextMenu(groupRow("First"));
-      await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
-      fireEvent.contextMenu(groupRow("Second"));
-      await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
-
-      expect(onGroupMenuAction.mock.calls).toEqual([["collapse"], ["expand_all"], ["select_all"]]);
     });
   });
 });
@@ -1157,5 +1304,46 @@ describe("Table's focused group", () => {
     rerender(table({ focusGroupId: "second", onGroupFocused }));
 
     expect(onGroupFocused).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("tableGroupMenuSections", () => {
+  const folding = (expanded: boolean) =>
+    tableGroupMenuSections({
+      expanded,
+      onToggle: vi.fn(),
+      onSetAllExpanded: vi.fn(),
+      t: ((text: string) => text) as never,
+    })[0];
+
+  it("gives Collapse all Collapse's icon, and Expand all Expand's", () => {
+    expect(folding(true).map(({ label, iconPath }) => [label, iconPath])).toEqual([
+      ["Collapse", mdiUnfoldLessHorizontal],
+      ["Collapse all", mdiUnfoldLessHorizontal],
+    ]);
+    expect(folding(false).map(({ label, iconPath }) => [label, iconPath])).toEqual([
+      ["Expand", mdiUnfoldMoreHorizontal],
+      ["Expand all", mdiUnfoldMoreHorizontal],
+    ]);
+  });
+
+  it("gives each built-in item its id, whichever way its label reads", () => {
+    for (const expanded of [true, false]) {
+      for (const allSelected of [true, false]) {
+        const ids = tableGroupMenuSections({
+          allSelected,
+          expanded,
+          onDeselectAll: vi.fn(),
+          onSelectAll: vi.fn(),
+          onSetAllExpanded: vi.fn(),
+          onToggle: vi.fn(),
+          t: ((text: string) => text) as never,
+        })
+          .flat()
+          .map(({ id }) => id);
+
+        expect(ids).toEqual(["collapse", "collapse-all", "select-all"]);
+      }
+    }
   });
 });

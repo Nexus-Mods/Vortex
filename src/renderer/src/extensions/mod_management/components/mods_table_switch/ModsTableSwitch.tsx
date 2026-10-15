@@ -3,17 +3,15 @@ import React, {
   memo,
   type ReactNode,
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
 
-import { useMainContext } from "@/contexts";
 import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
@@ -28,23 +26,18 @@ import type { ITableSort, TableColumnWidth } from "@/ui/components/table/Table.t
 import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/TableSelectionBar";
 import { useTableRowEngaged } from "@/ui/components/table/TableRow.context";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
-import {
-  type IToolbarAction,
-  ToolbarGroup,
-  trackedActions,
-} from "@/ui/components/toolbar/ToolbarGroup";
-import { ToolbarMenu, toolbarMenuSections } from "@/ui/components/toolbar/ToolbarMenu";
+import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
 import { TitledTooltip } from "@/ui/components/tooltip/TitledTooltip";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
-import { nxmCollectionOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import { makeCollectionModsResolver } from "../../../collections/util/resolveCollectionMods/resolveCollectionMods";
 import { activeProfile } from "../../../profile_management/selectors";
-import { focusModsTableGroup } from "../../actions/session";
+import { useCollectionGroupActions } from "../../hooks/use_collection_group_actions/useCollectionGroupActions.hook";
 import {
   INSTALLING_ACTIVITY,
   useInstallMods,
@@ -65,9 +58,9 @@ import {
   useModsTableColumns,
 } from "../../hooks/use_mods_table_columns/useModsTableColumns.hook";
 import { useModsTableDataColumns } from "../../hooks/use_mods_table_data_columns/useModsTableDataColumns.hook";
+import { useModsTableFocusRequest } from "../../hooks/use_mods_table_focus_request/useModsTableFocusRequest.hook";
 import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
 import { UNINSTALLING_ACTIVITY } from "../../hooks/use_uninstall_mods/useUninstallMods.hook";
-import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
@@ -122,8 +115,6 @@ const profileModState = (state: IState) => activeProfile(state)?.modState;
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
 
 /** The group the table is asked to show. */
-const focusedGroupId = (state: IState) => state.session.mods?.focusedGroupId;
-
 const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
 
 /** The archives the stored mods come from, worked out once each time the mods change. */
@@ -336,9 +327,7 @@ const ModRowActions = memo(
 /**
  * The Mods page's table: the classic one, or the new one while the user has the beta view on.
  *
- * The new table is asked to show a group, which it opens and scrolls to, then drops. A search
- * could hide the group, so a new request clears it once. A request no group answers, as when the
- * view isn't grouped by collection, is dropped.
+ * The new table is asked to show a group; see useModsTableFocusRequest.
  */
 export const ModsTableSwitch = ({
   mods,
@@ -369,16 +358,6 @@ export const ModsTableSwitch = ({
   } = useModsTableView(mods);
   const rows = useMemo(() => allModRows(mods), [mods]);
   const [search, setSearch] = useState("");
-  const dispatch = useDispatch();
-  const focusGroupId = useSelector(focusedGroupId);
-  const groupFocused = useCallback(() => dispatch(focusModsTableGroup(undefined)), [dispatch]);
-  const [searchClearedFor, setSearchClearedFor] = useState<string>();
-  if (focusGroupId !== searchClearedFor) {
-    setSearchClearedFor(focusGroupId);
-    if (focusGroupId) {
-      setSearch("");
-    }
-  }
   // Kept, so a change to the mods only retests those that changed against each collection.
   const [resolveMembers] = useState(makeCollectionModsResolver);
   const memberships = useMemo(() => collectionsByMod(mods, resolveMembers), [mods, resolveMembers]);
@@ -455,25 +434,8 @@ export const ModsTableSwitch = ({
   const rowTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
   const selectionTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.selection);
   const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
-  const { api } = useMainContext();
 
-  /**
-   * A collection's own row isn't listed, so its group's heading offers what that row would have,
-   * and its page.
-   */
-  const collectionActions = useCallback(
-    (collection: IMod): IToolbarAction[] => [
-      {
-        id: "view-collection",
-        label: t("View collection"),
-        iconPath: nxmCollectionOutline,
-        section: "view",
-        onClick: () => api.events.emit("view-collection", collection.id),
-      },
-      ...actionsFor(collection.id),
-    ],
-    [actionsFor, api, t],
-  );
+  const collectionActions = useCollectionGroupActions(actionsFor);
 
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   // Those still listed, as a removed mod can't be acted on.
@@ -551,12 +513,12 @@ export const ModsTableSwitch = ({
         cell: ({ mod, name }) => (
           <ModRowActions
             actions={actionsFor(mod.id)}
-            modState={mod.state}
             enabled={isEnabled(mod)}
             installLabel={t("Install {{name}}", { name })}
             isLoading={changing.has(mod.id)}
             label={t("{{name}} enabled", { name })}
             modId={mod.id}
+            modState={mod.state}
             switchOnly={multiSelected}
             width={actionsWidth(shownPins)}
             onInstall={mod.state === "downloaded" ? install : undefined}
@@ -564,40 +526,22 @@ export const ModsTableSwitch = ({
           />
         ),
         /**
-         * Part on while only some of its mods are, as after keeping the shared ones; against the
-         * end, past room for a menu, so it lines up with its rows' switches.
+         * Part on while only some of its mods are, as after keeping the shared ones; right-aligned
+         * before the "…" the table puts at the cell's end, so it lines up with its rows' switches.
          */
         groupCell: (group) => {
           const enabled = group.rows.filter(({ mod }) => isEnabled(mod)).length;
 
-          const toggle = (
-            <Switch
-              aria-label={t("{{name}} enabled", { name: group.label })}
-              checked={group.rows.length > 0 && enabled === group.rows.length}
-              indeterminate={enabled > 0 && enabled < group.rows.length}
-              isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
-              onChange={(checked) => setGroupEnabled(group, checked)}
-            />
-          );
-
-          if (!group.collection) {
-            return (
-              <div className="flex w-full items-center justify-end gap-x-2">
-                {toggle}
-
-                <span aria-hidden className="w-7 shrink-0" />
-              </div>
-            );
-          }
-
           return (
-            <Toolbar className="w-full justify-end" tracking={groupTracking}>
-              <ToolbarGroup
-                actions={collectionActions(group.collection)}
-                beforeOverflow={toggle}
-                maxVisible={0}
+            <div className="flex min-w-0 flex-1 items-center justify-end">
+              <Switch
+                aria-label={t("{{name}} enabled", { name: group.label })}
+                checked={group.rows.length > 0 && enabled === group.rows.length}
+                indeterminate={enabled > 0 && enabled < group.rows.length}
+                isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
+                onChange={(checked) => setGroupEnabled(group, checked)}
               />
-            </Toolbar>
+            </div>
           );
         },
       },
@@ -629,7 +573,6 @@ export const ModsTableSwitch = ({
       actionsFor,
       alternatives,
       changing,
-      collectionActions,
       dataColumns,
       install,
       isEnabled,
@@ -637,7 +580,6 @@ export const ModsTableSwitch = ({
       onRemoveVersion,
       onSelectVersion,
       setEnabled,
-      groupTracking,
       setGroupEnabled,
       shownPins,
       t,
@@ -653,11 +595,7 @@ export const ModsTableSwitch = ({
     [mods, grouping, t, memberships, groupColumn],
   );
 
-  useEffect(() => {
-    if (focusGroupId && !groups?.some((group) => group.id === focusGroupId)) {
-      groupFocused();
-    }
-  }, [focusGroupId, groups, groupFocused]);
+  const { focusGroupId, onGroupFocused } = useModsTableFocusRequest({ groups, search, setSearch });
 
   // The columns shown, so a search finds only what's on screen.
   const searchColumns = useMemo(
@@ -744,7 +682,7 @@ export const ModsTableSwitch = ({
 
   const tableProps = {
     focusGroupId,
-    onGroupFocused: groupFocused,
+    onGroupFocused,
     className: "mb-2 flex-1",
     toolbar: (
       <ModsTableToolbar
@@ -798,12 +736,10 @@ export const ModsTableSwitch = ({
       if (!collection) {
         return [];
       }
-      return toolbarMenuSections(
-        trackedActions(collectionActions(collection), "menu", groupTracking.onActionClick),
-      );
+      return collectionActions(collection);
     },
+    groupTracking,
     onMenuOpen: analytics.onMenuOpen,
-    onGroupMenuAction: analytics.onGroupMenuAction,
     defaultSort: BY_NAME,
     footer,
     empty: matches ? (

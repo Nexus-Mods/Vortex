@@ -1316,21 +1316,37 @@ describe("ModsTableSwitch", () => {
       screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement;
     const menuItems = () => screen.getAllByRole("menuitem").map((item) => item.textContent);
 
-    it("offers the collection's actions after folding and selecting, run against the collection", async () => {
-      const remove = vi.fn();
-      renderSwitch(withCollection(), [{ title: "Remove", action: remove }]);
+    const rowActions = (): ITableRowAction[] => [
+      { title: "Reinstall", action: vi.fn() },
+      { title: "Check for Update", action: vi.fn() },
+    ];
+    const installed = { mods: { x: {} } };
+    const collectionItems = ["View collection", "Check for updates", "Remove"];
+
+    it("offers only the collection's actions, after folding and selecting", async () => {
+      renderSwitch(withCollection(), rowActions(), installed);
       await showView("Collections");
 
       fireEvent.contextMenu(groupRowOf("Xenon"));
 
-      expect(menuItems().slice(0, 4)).toEqual([
+      expect(menuItems()).toEqual([
         "Collapse",
         "Collapse all",
         "Select all in group",
-        "View collection",
+        ...collectionItems,
       ]);
+    });
+
+    it("removes the collection as its page does", async () => {
+      const reinstall = vi.fn();
+      renderSwitch(withCollection(), [{ title: "Reinstall", action: reinstall }]);
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("Xenon"));
       await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
-      expect(remove).toHaveBeenCalledWith(["x"]);
+
+      expect(mocks.emit).toHaveBeenCalledWith("remove-collection", "x");
+      expect(reinstall).not.toHaveBeenCalled();
     });
 
     it("opens the collection's page from View collection", async () => {
@@ -1343,17 +1359,40 @@ describe("ModsTableSwitch", () => {
       expect(mocks.emit).toHaveBeenCalledWith("view-collection", "x");
     });
 
-    it("offers the same actions from the heading's …", async () => {
-      const remove = vi.fn();
-      renderSwitch(withCollection(), [{ title: "Remove", action: remove }]);
+    it("offers exactly the context menu's items from the heading's …", async () => {
+      renderSwitch(withCollection(), rowActions(), installed);
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("Xenon"));
+      const contextItems = menuItems();
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(
+        within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
+      );
+
+      expect(menuItems()).toEqual(contextItems);
+      expect(contextItems).toEqual([
+        "Collapse",
+        "Collapse all",
+        "Select all in group",
+        ...collectionItems,
+      ]);
+    });
+
+    it("collapses the group from the heading's …", async () => {
+      renderSwitch(withCollection(), rowActions(), installed);
       await showView("Collections");
 
       await userEvent.click(
         within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
       );
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
 
-      expect(remove).toHaveBeenCalledWith(["x"]);
+      expect(screen.getByRole("button", { name: "Xenon" })).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
     });
 
     describe("reports to the group toolbar", () => {
@@ -1371,7 +1410,7 @@ describe("ModsTableSwitch", () => {
       });
 
       it("an action from the heading's …, as overflow", async () => {
-        renderSwitch(withCollection(), [{ title: "Remove", action: vi.fn() }]);
+        renderSwitch(withCollection());
         await showView("Collections");
 
         await userEvent.click(
@@ -1383,13 +1422,13 @@ describe("ModsTableSwitch", () => {
           expect.objectContaining({
             toolbar: "mods-table-group-collection",
             surface: "overflow",
-            action: "Remove",
+            action: "remove-collection",
           }),
         ]);
       });
 
       it("an action from the heading's context menu, as menu", async () => {
-        renderSwitch(withCollection(), [{ title: "Remove", action: vi.fn() }]);
+        renderSwitch(withCollection());
         await showView("Collections");
 
         fireEvent.contextMenu(groupRowOf("Xenon"));
@@ -1399,8 +1438,35 @@ describe("ModsTableSwitch", () => {
           expect.objectContaining({
             toolbar: "mods-table-group-collection",
             surface: "menu",
-            action: "Remove",
+            action: "remove-collection",
           }),
+        ]);
+      });
+
+      it("a built-in item from either, with the state it moves to", async () => {
+        renderSwitch(withCollection());
+        await showView("Collections");
+
+        await userEvent.click(
+          within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
+        );
+        await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+        fireEvent.contextMenu(groupRowOf("Xenon"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Expand" }));
+
+        expect(sent()).toEqual([
+          {
+            toolbar: "mods-table-group-collection",
+            surface: "overflow",
+            action: "collapse",
+            expanded: false,
+          },
+          {
+            toolbar: "mods-table-group-collection",
+            surface: "menu",
+            action: "collapse",
+            expanded: true,
+          },
         ]);
       });
 
@@ -1421,14 +1487,17 @@ describe("ModsTableSwitch", () => {
       });
     });
 
-    it("gives the no-collection group neither", async () => {
+    it("gives the no-collection group only the built-in items, from either", async () => {
       renderSwitch(withCollection(), [{ title: "Remove", action: vi.fn() }]);
       await showView("Collections");
 
-      expect(
-        within(groupRowOf("No collection")).queryByRole("button", { name: "More actions" }),
-      ).toBeNull();
       fireEvent.contextMenu(groupRowOf("No collection"));
+      expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(
+        within(groupRowOf("No collection")).getByRole("button", { name: "More actions" }),
+      );
       expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
     });
 

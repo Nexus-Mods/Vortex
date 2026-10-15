@@ -9,6 +9,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   ContextMenu,
@@ -16,11 +17,14 @@ import {
   type IContextMenuPosition,
   openedFromKeyboard,
 } from "@/ui/components/context_menu/ContextMenu";
+import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { ITableGroup, ITableProps, TableItem } from "./Table.types";
 import { TableGroupBackdrop } from "./TableGroupBackdrop";
-import { TableGroupMenu } from "./TableGroupMenu";
+import { tableGroupMenuActions } from "./TableGroupMenu";
 import { TableGroupRow } from "./TableGroupRow";
 import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
@@ -43,11 +47,17 @@ const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
  * every row is a subgrid of them, so cells line up across rows without a `<table>`.
  * Carries the grid roles, so it reads as a table to assistive tech; grouped, it's a
  * treegrid whose group rows collapse. Only the rows in view render, against the page's
- * scroller, under a header that sticks to it. A right-click on a group row offers to collapse
- * or expand it or every group, and to select its rows; then its `groupMenu`; on a row, its
- * `rowMenu`, once the row is selected. Every selected row shows what's in it as a hovered one
- * does, so a table that shows actions in its rows decides itself what several selected rows
- * show.
+ * scroller, under a header that sticks to it. A right-click on a row offers its `rowMenu`, once
+ * the row is selected. Every selected row shows what's in it as a hovered one does, so a table
+ * that shows actions in its rows decides itself what several selected rows show.
+ *
+ * A group heading has a "…" at its end, in the sticky column or the last, and a right-click menu,
+ * both listing the same items, drawn by the toolbar components as a row's are. First the table's
+ * built-in items, each with a stable id (`collapse`, `collapse-all`, `select-all`): collapsing or expanding the
+ * group or every group, and selecting its rows. Then the page's `groupMenu` actions. The heading's
+ * toolbar counts every click through `groupTracking`, as a row's toolbar counts its own; the
+ * built-ins say in `trackingProperties` which way they went.
+ *
  * Given `focusGroupId`, it opens that group and scrolls it to the top once it has it; the group
  * opens while rendering, so its rows are counted before it's scrolled to.
  */
@@ -68,11 +78,12 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   onSelectedIdsChange,
   rowMenu,
   groupMenu,
+  groupTracking,
   focusGroupId,
   onGroupFocused,
   onMenuOpen,
-  onGroupMenuAction,
 }: ITableProps<T, G>) => {
+  const { t } = useTranslation();
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
 
   // Each row once, though a row in two groups shows in both.
@@ -156,6 +167,22 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   );
 
   const selection = useTableSelection(rowIds, shownRows, selectedIds, onSelectedIdsChange);
+
+  const groupMenuOptions = (group: G) => ({
+    allSelected:
+      !!group.rows.length && group.rows.every((row) => selection.selected.has(getRowId(row))),
+    expanded: !collapsed.has(group.id),
+    onDeselectAll: selectable ? () => selection.remove(group.rows.map(getRowId)) : undefined,
+    onSelectAll: selectable ? () => selection.add(group.rows.map(getRowId)) : undefined,
+    onSetAllExpanded: (expanded: boolean) =>
+      setCollapsed(new Set(expanded ? [] : (groups ?? []).map((other) => other.id))),
+    onToggle: () => toggle(group.id),
+  });
+
+  const groupActions = (group: G) => [
+    ...tableGroupMenuActions({ ...groupMenuOptions(group), t }),
+    ...(groupMenu?.(group) ?? []),
+  ];
 
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
   const getItemSize = useCallback(
@@ -285,6 +312,11 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
                 expanded={item.expanded}
                 group={item.group}
                 index={index}
+                menu={
+                  <Toolbar className="ml-auto pl-1" tracking={groupTracking}>
+                    <ToolbarGroup actions={groupActions(item.group)} maxVisible={0} />
+                  </Toolbar>
+                }
                 rowIndex={index + headRows + 1}
                 onContextMenu={(event: MouseEvent<HTMLDivElement>) => {
                   event.preventDefault();
@@ -365,39 +397,11 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
             }
 
             return (
-              <TableGroupMenu
-                allSelected={
-                  !!menuGroup.rows.length &&
-                  menuGroup.rows.every((row) => selection.selected.has(getRowId(row)))
-                }
-                expanded={!collapsed.has(menuGroup.id)}
-                extra={groupMenu?.(menuGroup)}
-                label={menuGroup.label}
-                onDeselectAll={
-                  selectable
-                    ? () => {
-                        onGroupMenuAction?.("deselect_all");
-                        selection.remove(menuGroup.rows.map(getRowId));
-                      }
-                    : undefined
-                }
+              <ToolbarMenu
+                actions={groupActions(menuGroup)}
+                label={t("{{name}} group actions", { name: menuGroup.label })}
+                tracking={groupTracking}
                 onSelect={close}
-                onSelectAll={
-                  selectable
-                    ? () => {
-                        onGroupMenuAction?.("select_all");
-                        selection.add(menuGroup.rows.map(getRowId));
-                      }
-                    : undefined
-                }
-                onSetAllExpanded={(expanded) => {
-                  onGroupMenuAction?.(expanded ? "expand_all" : "collapse_all");
-                  setCollapsed(new Set(expanded ? [] : (groups ?? []).map((group) => group.id)));
-                }}
-                onToggle={() => {
-                  onGroupMenuAction?.(collapsed.has(menuGroup.id) ? "expand" : "collapse");
-                  toggle(menuGroup.id);
-                }}
               />
             );
           }
