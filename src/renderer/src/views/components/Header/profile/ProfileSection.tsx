@@ -1,8 +1,9 @@
-import { mdiAccountCircle, mdiLogout, mdiRefresh } from "@mdi/js";
+import { mdiAccountCircle, mdiCogOutline, mdiLogout, mdiRefresh } from "@mdi/js";
 import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { setOpenMainPage } from "@/actions/session";
 import { useExtensionContext } from "@/ExtensionProvider";
 import {
   clearOAuthCredentials,
@@ -47,17 +48,24 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   const label = userInfo?.name ?? t("Account");
 
   const sections: IMenuAction[][] = [
-    !userInfo
-      ? []
-      : [
-          {
-            iconPath: mdiAccountCircle,
-            label: t("View profile on web"),
-            onClick: () => {
-              opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
+    [
+      ...(userInfo
+        ? [
+            {
+              iconPath: mdiAccountCircle,
+              label: t("View profile on web"),
+              onClick: () => {
+                opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
+              },
             },
-          },
-        ],
+          ]
+        : []),
+      {
+        iconPath: mdiCogOutline,
+        label: t("Settings"),
+        onClick: () => dispatch(setOpenMainPage("application_settings", false)),
+      },
+    ],
     [
       {
         iconPath: mdiRefresh,
