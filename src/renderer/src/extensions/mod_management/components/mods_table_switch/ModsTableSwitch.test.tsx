@@ -658,7 +658,7 @@ describe("ModsTableSwitch", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Keep shared mods enabled" }));
 
-      expect(onSetModsEnabled).toHaveBeenCalledWith(["b"], false);
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b"], false);
       expect(screen.queryByRole("dialog")).toBeNull();
     });
 
@@ -669,7 +669,7 @@ describe("ModsTableSwitch", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Disable all mods" }));
 
-      expect(onSetModsEnabled).toHaveBeenCalledWith(["b", "c"], false);
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b", "c"], false);
     });
 
     it("changes nothing on cancel", async () => {
@@ -695,7 +695,31 @@ describe("ModsTableSwitch", () => {
       await userEvent.click(groupSwitch("Xenon"));
 
       expect(screen.queryByRole("dialog")).toBeNull();
-      expect(onSetModsEnabled).toHaveBeenCalledWith(["b", "c"], true);
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b", "c"], true);
+    });
+
+    it("turns a collection off with its mods, when none are shared", async () => {
+      const onSetModsEnabled = renderSwitch({
+        b: mod("b", "Beta", true),
+        x: collection("x", "Xenon", ["b"]),
+      });
+      await showView("Collections");
+
+      await userEvent.click(groupSwitch("Xenon"));
+
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b"], false);
+    });
+
+    it("turns a collection on with its mods", async () => {
+      const onSetModsEnabled = renderSwitch({
+        b: mod("b", "Beta", false),
+        x: collection("x", "Xenon", ["b"]),
+      });
+      await showView("Collections");
+
+      await userEvent.click(groupSwitch("Xenon"));
+
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b"], true);
     });
   });
 
@@ -1330,6 +1354,71 @@ describe("ModsTableSwitch", () => {
       await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
 
       expect(remove).toHaveBeenCalledWith(["x"]);
+    });
+
+    describe("reports to the group toolbar", () => {
+      const sent = () =>
+        mocks.emit.mock.calls
+          .filter(
+            ([channel, event]) =>
+              channel === "analytics-track-mixpanel-event" &&
+              event.eventName === "app_toolbar_action_clicked",
+          )
+          .map(([, event]) => event.properties);
+
+      beforeEach(() => {
+        mocks.emit.mockReset();
+      });
+
+      it("an action from the heading's …, as overflow", async () => {
+        renderSwitch(withCollection(), [{ title: "Remove", action: vi.fn() }]);
+        await showView("Collections");
+
+        await userEvent.click(
+          within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
+        );
+        await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+        expect(sent()).toEqual([
+          expect.objectContaining({
+            toolbar: "mods-table-group-collection",
+            surface: "overflow",
+            action: "Remove",
+          }),
+        ]);
+      });
+
+      it("an action from the heading's context menu, as menu", async () => {
+        renderSwitch(withCollection(), [{ title: "Remove", action: vi.fn() }]);
+        await showView("Collections");
+
+        fireEvent.contextMenu(groupRowOf("Xenon"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+        expect(sent()).toEqual([
+          expect.objectContaining({
+            toolbar: "mods-table-group-collection",
+            surface: "menu",
+            action: "Remove",
+          }),
+        ]);
+      });
+
+      it("View collection, by its id", async () => {
+        renderSwitch(withCollection());
+        await showView("Collections");
+
+        fireEvent.contextMenu(groupRowOf("Xenon"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "View collection" }));
+
+        expect(sent()).toEqual([
+          expect.objectContaining({
+            toolbar: "mods-table-group-collection",
+            surface: "menu",
+            action: "view-collection",
+          }),
+        ]);
+      });
     });
 
     it("gives the no-collection group neither", async () => {

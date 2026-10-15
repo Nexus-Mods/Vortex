@@ -113,15 +113,15 @@ const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
 
 const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
 
+/** A group's mods, and its collection's own, which no row switches. */
+const groupModIds = ({ collection, rows }: IModGroup) =>
+  collection ? [collection.id, ...modIds(rows)] : modIds(rows);
+
 const profileModState = (state: IState) => activeProfile(state)?.modState;
 
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
 
-/**
- * A group the table is asked to show, which it opens and scrolls to, then drops. A search could
- * hide the group, so a new request clears it once. A request no group answers, as when the view
- * isn't grouped by collection, is dropped.
- */
+/** The group the table is asked to show. */
 const focusedGroupId = (state: IState) => state.session.mods?.focusedGroupId;
 
 const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
@@ -176,7 +176,6 @@ const searchFilter = (columns: IModsTableColumn[], search: string) => {
     columns.some((column) => column.searchText?.(row).toLocaleLowerCase().includes(query));
 };
 
-/** The Mods page's table: the classic one, or the new one while the user has the beta view on. */
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
 const nop = () => undefined;
@@ -334,6 +333,13 @@ const ModRowActions = memo(
   },
 );
 
+/**
+ * The Mods page's table: the classic one, or the new one while the user has the beta view on.
+ *
+ * The new table is asked to show a group, which it opens and scrolls to, then drops. A search
+ * could hide the group, so a new request clears it once. A request no group answers, as when the
+ * view isn't grouped by collection, is dropped.
+ */
 export const ModsTableSwitch = ({
   mods,
   legacy,
@@ -369,7 +375,7 @@ export const ModsTableSwitch = ({
   const [searchClearedFor, setSearchClearedFor] = useState<string>();
   if (focusGroupId !== searchClearedFor) {
     setSearchClearedFor(focusGroupId);
-    if (focusGroupId !== undefined) {
+    if (focusGroupId) {
       setSearch("");
     }
   }
@@ -412,7 +418,7 @@ export const ModsTableSwitch = ({
       const shared = sharedMods(group, memberships);
 
       if (enabled || shared.rows.length === 0) {
-        setEnabled(modIds(group.rows), enabled);
+        setEnabled(groupModIds(group), enabled);
         return;
       }
 
@@ -428,7 +434,7 @@ export const ModsTableSwitch = ({
 
     const keep = new Set(keepShared ? modIds(pendingDisable.shared.rows) : []);
     setEnabled(
-      modIds(pendingDisable.group.rows).filter((id) => !keep.has(id)),
+      groupModIds(pendingDisable.group).filter((id) => !keep.has(id)),
       false,
     );
     setPendingDisable(undefined);
@@ -451,7 +457,10 @@ export const ModsTableSwitch = ({
   const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
   const { api } = useMainContext();
 
-  /** A collection's own row isn't listed, so its group's heading offers what that row would have, and its page. */
+  /**
+   * A collection's own row isn't listed, so its group's heading offers what that row would have,
+   * and its page.
+   */
   const collectionActions = useCallback(
     (collection: IMod): IToolbarAction[] => [
       {
@@ -554,7 +563,10 @@ export const ModsTableSwitch = ({
             onSetEnabled={setEnabled}
           />
         ),
-        /** Part on while only some of its mods are, as after keeping the shared ones; against the end, past room for a menu, so it lines up with its rows' switches. */
+        /**
+         * Part on while only some of its mods are, as after keeping the shared ones; against the
+         * end, past room for a menu, so it lines up with its rows' switches.
+         */
         groupCell: (group) => {
           const enabled = group.rows.filter(({ mod }) => isEnabled(mod)).length;
 
@@ -568,7 +580,7 @@ export const ModsTableSwitch = ({
             />
           );
 
-          if (group.collection === undefined) {
+          if (!group.collection) {
             return (
               <div className="flex w-full items-center justify-end gap-x-2">
                 {toggle}
@@ -642,7 +654,7 @@ export const ModsTableSwitch = ({
   );
 
   useEffect(() => {
-    if (focusGroupId !== undefined && !groups?.some((group) => group.id === focusGroupId)) {
+    if (focusGroupId && !groups?.some((group) => group.id === focusGroupId)) {
       groupFocused();
     }
   }, [focusGroupId, groups, groupFocused]);
@@ -783,7 +795,7 @@ export const ModsTableSwitch = ({
         />
       ),
     groupMenu: ({ collection }: IModGroup) => {
-      if (collection === undefined) {
+      if (!collection) {
         return [];
       }
       return toolbarMenuSections(
