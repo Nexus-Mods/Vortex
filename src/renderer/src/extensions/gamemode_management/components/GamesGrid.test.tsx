@@ -28,7 +28,7 @@ describe("GamesGrid", () => {
         detectedStores={{ cyberpunk2077: "gog", skyrimse: "steam" }}
         games={[game("skyrimse"), game("cyberpunk2077"), game("fallout4")]}
         section="detected"
-        onRefreshGameInfo={vi.fn()}
+        onRefreshGameInfo={vi.fn<(gameId: string) => PromiseLike<void>>()}
       />,
     );
 
@@ -39,7 +39,13 @@ describe("GamesGrid", () => {
   });
 
   it("hands no store in a section that has none to give", () => {
-    render(<GamesGrid games={[game("skyrimse")]} section="added" onRefreshGameInfo={vi.fn()} />);
+    render(
+      <GamesGrid
+        games={[game("skyrimse")]}
+        section="added"
+        onRefreshGameInfo={vi.fn<(gameId: string) => PromiseLike<void>>()}
+      />,
+    );
 
     expect(screen.getByTestId("card-skyrimse")).not.toHaveAttribute("data-store");
   });

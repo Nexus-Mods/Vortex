@@ -19,7 +19,7 @@ const { state } = vi.hoisted(() => ({
 
 vi.mock("@/contexts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useMainContext: () => ({ api: { events: { emit: vi.fn() } } }),
+  useMainContext: () => ({ api: { events: { emit: vi.fn<() => void>() } } }),
 }));
 
 vi.mock("react-redux", async () => {
