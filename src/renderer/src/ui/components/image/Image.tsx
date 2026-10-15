@@ -1,6 +1,6 @@
 import React, { useCallback, useState, type ImgHTMLAttributes } from "react";
 
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IImageProps extends Omit<
@@ -12,9 +12,7 @@ export interface IImageProps extends Omit<
   /** Classes for the frame, which sets the size and corners. */
   className?: string;
   /** Replaces the broken-image icon; given one, a missing `src` shows it too. */
-  fallbackIconPath?: string;
-  /** As `fallbackIconPath`, a Material Symbol. */
-  fallbackSymbol?: ISymbolSource;
+  fallbackIcon?: IIconSource;
   /** Fills the frame, cropping, or fits inside it whole. Default `contain`. */
   fit?: "cover" | "contain";
   /** Classes for the `img` itself. */
@@ -39,8 +37,7 @@ export const Image = ({
   alt,
   children,
   className,
-  fallbackIconPath,
-  fallbackSymbol,
+  fallbackIcon,
   fit = "contain",
   imageClassName,
   imageType = "other",
@@ -70,11 +67,7 @@ export const Image = ({
 
   // Only the caller knows a source is coming when there is no src; a failed one is settled.
   const showSpinner = !errored && (isLoading === true || (!!src && !loaded));
-  const showFallback =
-    errored ||
-    ((fallbackIconPath !== undefined || fallbackSymbol !== undefined) &&
-      !src &&
-      isLoading !== true);
+  const showFallback = errored || (fallbackIcon !== undefined && !src && isLoading !== true);
 
   return (
     <div className={joinClasses(["nxm-image", imageTypeMap[imageType], className])}>
@@ -106,9 +99,7 @@ export const Image = ({
         />
       ) : (
         <Icon
-          {...(fallbackIconPath && !fallbackSymbol
-            ? { path: fallbackIconPath }
-            : symbolProps(fallbackSymbol ?? "broken_image"))}
+          {...iconSourceProps(fallbackIcon ?? "broken_image")}
           className="nxm-image-fallback"
           size="none"
           title={alt}

@@ -74,7 +74,7 @@ export const TextFieldDemo = () => (
       description="An icon inside the input, and a label kept for screen readers only."
       title="Icon and hidden label"
     >
-      <TextField label="Icon" leftSymbol="search" placeholder="Search..." />
+      <TextField label="Icon" leftIcon="search" placeholder="Search..." />
 
       <TextField
         hideLabel

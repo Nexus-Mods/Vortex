@@ -50,7 +50,7 @@ export const SupportBundleDialog = ({ visible, onHide }: ISupportBundleDialogPro
             <TypographyLink
               brand="primary"
               data-testid="support-bundle-link-forums"
-              rightSymbol="open_in_new"
+              rightIcon="open_in_new"
               onClick={() => window.api.shell.openUrl(SUPPORT_FORUM_URL)}
             >
               {t("dialog::links::forums")}
@@ -59,8 +59,8 @@ export const SupportBundleDialog = ({ visible, onHide }: ISupportBundleDialogPro
             <TypographyLink
               brand="primary"
               data-testid="support-bundle-link-discord"
-              leftIconPath={nxmDiscord}
-              rightSymbol="open_in_new"
+              leftIcon={{ path: nxmDiscord }}
+              rightIcon="open_in_new"
               onClick={() => window.api.shell.openUrl(SUPPORT_DISCORD_URL)}
             >
               {t("dialog::links::discord")}

@@ -31,7 +31,7 @@ export function CategoryAddParent({
   const actions: IToolbarAction[] = [
     {
       label: t("Create"),
-      symbol: "add",
+      icon: "add",
       showLabel: true,
       onClick: makeCategory,
       brand: "primary",
@@ -39,7 +39,7 @@ export function CategoryAddParent({
     },
     {
       label: t("Cancel"),
-      symbol: "block",
+      icon: "block",
       showLabel: true,
       onClick: toggle,
     },

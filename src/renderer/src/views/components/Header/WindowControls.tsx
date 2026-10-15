@@ -1,20 +1,20 @@
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
 import { close, minimize, toggleMaximize, useIsMaximized } from "@/hooks";
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 interface WindowControlButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
-  symbol: ISymbolSource;
+  icon: IIconSource;
   title: string;
 }
 
 const WindowControlButton: FC<React.PropsWithChildren<WindowControlButtonProps>> = ({
   className,
-  symbol,
+  icon,
   title,
   ...props
 }) => (
@@ -27,7 +27,7 @@ const WindowControlButton: FC<React.PropsWithChildren<WindowControlButtonProps>>
       ])}
       {...props}
     >
-      <Icon {...symbolProps(symbol)} size="sm" />
+      <Icon {...iconSourceProps(icon)} size="sm" />
     </button>
   </Tooltip>
 );
@@ -39,21 +39,21 @@ export const WindowControls: FC<React.PropsWithChildren<unknown>> = () => {
     <TooltipDelayGroup as="div" className="flex">
       <WindowControlButton
         className="hover:bg-surface-mid"
-        symbol="minimize"
+        icon="minimize"
         title="Minimize"
         onClick={minimize}
       />
 
       <WindowControlButton
         className="hover:bg-surface-mid"
-        symbol={isMaximized ? "select_window_2" : "crop_square"}
+        icon={isMaximized ? "select_window_2" : "crop_square"}
         title={isMaximized ? "Restore" : "Maximize"}
         onClick={toggleMaximize}
       />
 
       <WindowControlButton
         className="w-9 hover:bg-danger-subdued"
-        symbol="close"
+        icon="close"
         title="Close"
         onClick={close}
       />

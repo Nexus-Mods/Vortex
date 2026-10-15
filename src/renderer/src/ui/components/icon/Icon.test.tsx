@@ -2,7 +2,14 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { describe, it, expect } from "vitest";
 
-import { Icon, type IPathIconProps, type ISymbolIconProps } from "./Icon";
+import {
+  Icon,
+  IconSlot,
+  iconSourceProps,
+  isIconSource,
+  type IPathIconProps,
+  type ISymbolIconProps,
+} from "./Icon";
 
 // --- Helpers ---
 
@@ -173,6 +180,58 @@ describe("Icon", () => {
       const el = renderSymbol({ className: "text-danger-strong", id: "symbol" });
       expect(el).toHaveClass("material-symbols-outlined", "text-danger-strong");
       expect(el).toHaveAttribute("id", "symbol");
+    });
+  });
+  describe("isIconSource", () => {
+    it.each([
+      ["a symbol's name", "settings"],
+      ["a symbol with its axes", { name: "star", fill: true }],
+      ["an SVG path", { path: "M0 0h24v24H0z" }],
+    ] as const)("takes %s as a source", (_, icon) => {
+      expect(isIconSource(icon)).toBe(true);
+    });
+
+    it.each([
+      ["an element", <span key="a" />],
+      ["a list of elements", [<span key="a" />]],
+      ["nothing", undefined],
+      ["null", null],
+      ["false", false],
+    ])("takes %s as a node, not a source", (_, icon) => {
+      expect(isIconSource(icon)).toBe(false);
+    });
+  });
+
+  describe("iconSourceProps", () => {
+    it("turns a name into the props that draw it", () => {
+      expect(iconSourceProps("settings")).toEqual({ name: "settings" });
+    });
+
+    it("passes an object on as it is", () => {
+      const source = { name: "star", fill: true } as const;
+      expect(iconSourceProps(source)).toBe(source);
+    });
+  });
+
+  describe("IconSlot", () => {
+    it("draws a symbol with the class and size it is given", () => {
+      const { container } = render(<IconSlot className="slot" icon="settings" size="sm" />);
+      expect(container.querySelector("[data-symbol='settings']")).toHaveClass("slot", "size-4");
+    });
+
+    it("draws an SVG path", () => {
+      const { container } = render(<IconSlot className="slot" icon={{ path: "M0 0h24v24H0z" }} />);
+      expect(container.querySelector("svg")).toHaveClass("slot");
+    });
+
+    it("puts a node in a box with the class", () => {
+      render(<IconSlot className="slot" icon={<i data-testid="node" />} />);
+      expect(screen.getByTestId("node").parentElement).toHaveClass("slot", "flex");
+    });
+
+    it("draws nothing for no icon", () => {
+      const { container } = render(<IconSlot className="slot" />);
+      expect(container).toBeEmptyDOMElement();
     });
   });
 });

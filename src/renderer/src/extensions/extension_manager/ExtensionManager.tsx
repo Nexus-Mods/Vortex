@@ -255,12 +255,12 @@ export const ExtensionManager = ({
   const toolbarActions: IToolbarAction[] = [
     {
       label: t("Update extensions"),
-      symbol: "refresh",
+      icon: "refresh",
       onClick: onRefresh,
     },
     {
       label: t("Browse extensions"),
-      symbol: "add",
+      icon: "add",
       onClick: () => dispatch(setDialogVisible("browse-extensions")),
     },
     displayOptions,

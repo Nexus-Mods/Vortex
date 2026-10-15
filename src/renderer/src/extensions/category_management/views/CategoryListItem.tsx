@@ -101,19 +101,19 @@ export default function CategoryListItem({
   const actions: IToolbarAction[] = [
     {
       label: "Edit",
-      symbol: "drive_file_rename_outline",
+      icon: "drive_file_rename_outline",
       testId: "category-rename",
       onClick: () => setEditMode("name"),
     },
     {
       label: "New Sub-Category",
-      symbol: "create_new_folder",
+      icon: "create_new_folder",
       testId: "category-add-subcategory",
       onClick: () => setEditMode("subcategory"),
     },
     {
       label: "Delete",
-      symbol: { name: "delete", fill: true },
+      icon: { name: "delete", fill: true },
       testId: "category-delete",
       onClick: () => remove(categoryId),
     },
@@ -163,7 +163,7 @@ export default function CategoryListItem({
                 aria-label="Expand/Collapse"
                 brand="neutral"
                 data-testid="category-expand"
-                leftSymbol={expanded ? "expand_more" : "chevron_right"}
+                leftIcon={expanded ? "expand_more" : "chevron_right"}
                 title="Expand/Collapse"
                 onClick={() => expand(categoryId)}
               />
@@ -199,7 +199,7 @@ export default function CategoryListItem({
                   aria-label="Save"
                   brand="primary"
                   data-testid="category-rename-save"
-                  leftSymbol="add"
+                  leftIcon="add"
                   onClick={rename}
                 />
 
@@ -208,7 +208,7 @@ export default function CategoryListItem({
                   aria-label="Cancel"
                   brand="neutral"
                   data-testid="category-rename-cancel"
-                  leftSymbol="block"
+                  leftIcon="block"
                   onClick={() => setEditMode()}
                 />
               </div>
@@ -243,7 +243,7 @@ export default function CategoryListItem({
             brand="primary"
             data-testid="category-subcategory-save"
             disabled={newSubcategoryName.length < 2}
-            leftSymbol="add"
+            leftIcon="add"
             size="sm"
             onClick={() => createCategory(newSubcategoryName)}
           />
@@ -253,7 +253,7 @@ export default function CategoryListItem({
             aria-label="Cancel"
             brand="neutral"
             data-testid="category-subcategory-cancel"
-            leftSymbol="block"
+            leftIcon="block"
             onClick={() => setEditMode()}
           />
         </div>

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Icon, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, IconSlot } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { IMenuAction } from "./PopoverMenu.types";
@@ -24,15 +24,7 @@ export const PopoverMenuItemContent = ({
   onSelect: () => void;
 }) => (
   <>
-    {action.icon ? (
-      <span className="nxm-dropdown-item-icon flex items-center justify-center">{action.icon}</span>
-    ) : action.symbol ? (
-      <Icon {...symbolProps(action.symbol)} className="nxm-dropdown-item-icon" size="none" />
-    ) : (
-      !!action.iconPath && (
-        <Icon className="nxm-dropdown-item-icon" path={action.iconPath} size="none" />
-      )
-    )}
+    <IconSlot className="nxm-dropdown-item-icon" icon={action.icon} />
 
     <span className="nxm-dropdown-item-label">{action.label}</span>
 
@@ -40,8 +32,8 @@ export const PopoverMenuItemContent = ({
       <PopoverMenuItemControl
         showTooltip
         hasFocus={hasFocus}
+        icon={action.control.icon}
         label={action.control.label}
-        symbol={action.control.symbol}
         onActivate={() => {
           action.control?.onClick();
           onSelect();
@@ -52,9 +44,9 @@ export const PopoverMenuItemContent = ({
     {!!action.pin && (
       <PopoverMenuItemControl
         hasFocus={hasFocus}
+        icon={action.pin.pinned ? "keep_off" : "keep"}
         label={action.pin.label}
         pressed={action.pin.pinned}
-        symbol={action.pin.pinned ? "keep_off" : "keep"}
         onActivate={action.pin.onToggle}
       />
     )}

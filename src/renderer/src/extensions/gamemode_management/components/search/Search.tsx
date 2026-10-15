@@ -40,7 +40,7 @@ export const Search = ({
           fieldClassName="w-full max-w-60"
           hideLabel={true}
           label={label ?? placeholder ?? ""}
-          leftSymbol="search"
+          leftIcon="search"
           placeholder={placeholder}
           value={value}
           onChange={(evt) => onChange(evt.target.value)}

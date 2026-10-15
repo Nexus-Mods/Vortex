@@ -69,7 +69,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
       data-testid="spine"
     >
       <SpineButton
-        symbol={{ name: "home", fill: selection.type === "home" }}
+        icon={{ name: "home", fill: selection.type === "home" }}
         isActive={selection.type === "home"}
         title="Home"
         onClick={selectHome}
@@ -103,7 +103,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
 
             <SpineButton
               border="hidden"
-              symbol="add"
+              icon="add"
               title="Games"
               onClick={() => handleGlobalPageClick("Games")}
             />

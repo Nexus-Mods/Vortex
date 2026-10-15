@@ -1,6 +1,6 @@
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
-import type { ISymbolSource } from "@/ui/components/icon/Icon";
+import type { IIconSource } from "@/ui/components/icon/Icon";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import {
   nxmElectronicArts,
@@ -15,7 +15,7 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 import { useGameImage } from "./utils";
 
 // Fallback for stores without specific icons
-const _DEFAULT_STORE_ICON: ISymbolSource = "question_mark";
+const _DEFAULT_STORE_ICON: IIconSource = "question_mark";
 
 // Map store IDs to icon paths
 // Since we can have custom game stores,

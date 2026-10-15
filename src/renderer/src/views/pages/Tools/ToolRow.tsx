@@ -94,7 +94,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
                 brand="neutral"
                 appearance="weak"
                 disabled={isFirst}
-                leftSymbol="arrow_upward"
+                leftIcon="arrow_upward"
                 title={isFirst ? t("Already at the top") : t("Move up")}
                 onClick={() => onMoveUp?.(starter)}
               />
@@ -103,7 +103,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
                 brand="neutral"
                 appearance="weak"
                 disabled={isLast}
-                leftSymbol="arrow_downward"
+                leftIcon="arrow_downward"
                 title={isLast ? t("Already at the bottom") : t("Move down")}
                 onClick={() => onMoveDown?.(starter)}
               />
@@ -119,7 +119,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
               brand="neutral"
               appearance="weak"
               disabled={!isPinned && pinDisabled}
-              leftSymbol={{ name: isPinned ? "keep_off" : "keep", fill: true }}
+              leftIcon={{ name: isPinned ? "keep_off" : "keep", fill: true }}
               title={
                 !isPinned && pinDisabled
                   ? pinDisabledReason
@@ -136,18 +136,18 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
               as={Button}
               brand="neutral"
               appearance="weak"
-              leftSymbol="more_vert"
+              leftIcon="more_vert"
               size="sm"
             />
 
             <DropdownItems>
-              <DropdownItem leftSymbol="edit" onClick={() => onEdit(starterInfo)}>
+              <DropdownItem leftIcon="edit" onClick={() => onEdit(starterInfo)}>
                 {t("Edit")}
               </DropdownItem>
 
               <DropdownItem
                 disabled={!isPrimary && !isValid}
-                leftSymbol={isPrimary ? "flash_off" : { name: "bolt", fill: true }}
+                leftIcon={isPrimary ? "flash_off" : { name: "bolt", fill: true }}
                 onClick={() => onSetPrimary(starterInfo)}
               >
                 {isPrimary ? t("Remove default launcher") : t("Set as default launcher")}
@@ -156,7 +156,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
               {!starter.isGame && (
                 <DropdownItem
                   brand="danger"
-                  leftSymbol={{ name: "delete", fill: true }}
+                  leftIcon={{ name: "delete", fill: true }}
                   onClick={() => onRemove(starterInfo)}
                 >
                   {t("Delete")}
@@ -172,7 +172,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
           brand="neutral"
           appearance="strong"
           disabled={!isValid}
-          leftSymbol={{ name: "play_arrow", fill: true }}
+          leftIcon={{ name: "play_arrow", fill: true }}
           title={t("Launch tool")}
           onClick={() => onRun(starterInfo)}
         />

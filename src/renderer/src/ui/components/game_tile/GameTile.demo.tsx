@@ -8,9 +8,9 @@ const menu: { actions: IMenuAction[][]; label: string } = {
   label: "Game options",
   actions: [
     [
-      { symbol: "visibility_off", label: "Hide", onClick: () => undefined },
-      { symbol: "folder_open", label: "Open game folder", onClick: () => undefined },
-      { symbol: "language", label: "Open Nexus Mods Page", onClick: () => undefined },
+      { icon: "visibility_off", label: "Hide", onClick: () => undefined },
+      { icon: "folder_open", label: "Open game folder", onClick: () => undefined },
+      { icon: "language", label: "Open Nexus Mods Page", onClick: () => undefined },
     ],
   ],
 };
@@ -41,7 +41,7 @@ export const GameTileDemo = () => (
         menu={menu}
         name="A Plague Tale: Requiem or a longer name than fits"
         primaryAction={
-          <Button className="w-full" leftSymbol="add" onClick={() => undefined}>
+          <Button className="w-full" leftIcon="add" onClick={() => undefined}>
             Add game
           </Button>
         }

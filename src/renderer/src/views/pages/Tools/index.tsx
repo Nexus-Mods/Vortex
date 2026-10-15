@@ -2,7 +2,7 @@ import React, { type FC, type PropsWithChildren, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
@@ -17,12 +17,12 @@ const Panel = ({
   actions,
   children,
   heading,
-  symbol,
+  icon,
   tooltip,
 }: PropsWithChildren<{
   actions?: () => ReactNode;
   heading: string;
-  symbol: ISymbolSource;
+  icon: IIconSource;
   tooltip: string;
 }>) => (
   <div className="space-y-2">
@@ -32,7 +32,7 @@ const Panel = ({
         className="flex grow items-center gap-x-2 font-semibold"
         typographyType="body-sm"
       >
-        <Icon {...symbolProps(symbol)} className="shrink-0" size="sm" />
+        <Icon {...iconSourceProps(icon)} className="shrink-0" size="sm" />
 
         {heading}
       </Typography>
@@ -97,7 +97,7 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                 {/* Default launcher section */}
                 <Panel
                   heading={t("Default launcher")}
-                  symbol={{ name: "bolt", fill: true }}
+                  icon={{ name: "bolt", fill: true }}
                   tooltip={t("Runs instead of the game when you hit Play")}
                 >
                   {launcherTool ? (
@@ -127,7 +127,7 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                     count: pinnedCount,
                     max: MAX_PINNED_TOOLS,
                   })}
-                  symbol={{ name: "keep", fill: true }}
+                  icon={{ name: "keep", fill: true }}
                   tooltip={t("Pin shortcuts to your most used tools in the left menu")}
                 >
                   {otherPinnedTools.length > 0 ? (
@@ -167,13 +167,13 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                 <Button
                   appearance="moderate"
                   brand="neutral"
-                  leftSymbol="add"
+                  leftIcon="add"
                   title={t("Add tool")}
                   onClick={addNewTool}
                 />
               )}
               heading={t("Tools")}
-              symbol={{ name: "build", fill: true }}
+              icon={{ name: "build", fill: true }}
               tooltip={t("Use the + button to add a new tool")}
             >
               {unpinnedTools.length > 0 ? (

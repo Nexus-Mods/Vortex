@@ -7,7 +7,7 @@ import type { IState } from "@/types/IState";
 import type { IButtonBrand } from "@/ui/components/button/Button";
 import { Button } from "@/ui/components/button/Button";
 import { GameTile } from "@/ui/components/game_tile/GameTile";
-import type { ISymbolSource } from "@/ui/components/icon/Icon";
+import type { IIconSource } from "@/ui/components/icon/Icon";
 import { activeGameId } from "@/util/selectors";
 
 import { useGameCardActions } from "../hooks/use_game_card_actions/useGameCardActions.hook";
@@ -58,11 +58,11 @@ export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) =
 
   const actions: Record<
     IGameSection,
-    { brand: IButtonBrand; symbol?: ISymbolSource; label: string; reveal: boolean }
+    { brand: IButtonBrand; icon?: IIconSource; label: string; reveal: boolean }
   > = {
     added: { brand: "neutral", label: t("Open"), reveal: true },
-    detected: { brand: "primary", symbol: "add", label: t("Add game"), reveal: false },
-    supported: { brand: "neutral", symbol: "add", label: t("Manual add"), reveal: true },
+    detected: { brand: "primary", icon: "add", label: t("Add game"), reveal: false },
+    supported: { brand: "neutral", icon: "add", label: t("Manual add"), reveal: true },
   };
 
   const action = actions[section];
@@ -85,7 +85,7 @@ export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) =
               appearance="strong"
               brand={action.brand}
               className="w-full"
-              leftSymbol={action.symbol}
+              leftIcon={action.icon}
               onClick={onPrimary}
             >
               {action.label}

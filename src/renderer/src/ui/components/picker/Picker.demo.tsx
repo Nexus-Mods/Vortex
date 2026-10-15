@@ -39,18 +39,18 @@ const colorOptions = [
 ] satisfies IListboxOption<string>[];
 
 const languageOptions = [
-  { label: "English", value: "en", symbol: "translate" },
-  { label: "French", value: "fr", symbol: "translate" },
-  { label: "German", value: "de", symbol: "translate" },
-  { label: "Spanish", value: "es", symbol: "translate" },
-  { label: "Japanese", value: "ja", symbol: "translate" },
+  { label: "English", value: "en", icon: "translate" },
+  { label: "French", value: "fr", icon: "translate" },
+  { label: "German", value: "de", icon: "translate" },
+  { label: "Spanish", value: "es", icon: "translate" },
+  { label: "Japanese", value: "ja", icon: "translate" },
 ] satisfies IListboxOption<string>[];
 
 const themeOptions = [
-  { label: "Default", value: "default", symbol: { name: "palette", fill: true } },
-  { label: "Dark", value: "dark", symbol: { name: "palette", fill: true } },
-  { label: "Light", value: "light", symbol: { name: "palette", fill: true } },
-  { label: "High Contrast", value: "high-contrast", symbol: { name: "palette", fill: true } },
+  { label: "Default", value: "default", icon: { name: "palette", fill: true } },
+  { label: "Dark", value: "dark", icon: { name: "palette", fill: true } },
+  { label: "Light", value: "light", icon: { name: "palette", fill: true } },
+  { label: "High Contrast", value: "high-contrast", icon: { name: "palette", fill: true } },
 ] satisfies IListboxOption<string>[];
 
 export const PickerDemo = () => {
@@ -90,7 +90,7 @@ export const PickerDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Options can include icons via the iconPath prop. Multiple pickers can be used together for
+          Options can include icons via the icon prop. Multiple pickers can be used together for
           related selections.
         </Typography>
 
@@ -133,7 +133,7 @@ export const PickerDemo = () => {
 
           <li>A checkmark icon appears next to the currently selected option</li>
 
-          <li>Options can include icons via the iconPath or icon props</li>
+          <li>Options can include icons via the icon prop, a symbol, an SVG path or a node</li>
         </Typography>
       </div>
     </div>

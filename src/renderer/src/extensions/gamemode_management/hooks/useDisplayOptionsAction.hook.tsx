@@ -39,15 +39,15 @@ export const useDisplayOptionsAction = ({
           <PopoverPanelGroupItem passive label={t("Display as")}>
             <Picker<PickerLayout>
               button={{
-                leftSymbol: {
+                leftIcon: {
                   name: pickerLayout === "list" ? "view_list" : "grid_view",
                   fill: true,
                 },
                 size: "sm",
               }}
               options={[
-                { label: t("Grid"), value: "small", symbol: { name: "grid_view", fill: true } },
-                { label: t("List"), value: "list", symbol: { name: "view_list", fill: true } },
+                { label: t("Grid"), value: "small", icon: { name: "grid_view", fill: true } },
+                { label: t("List"), value: "list", icon: { name: "view_list", fill: true } },
               ]}
               value={pickerLayout}
               onChange={onSetPickerLayout}

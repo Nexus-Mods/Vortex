@@ -61,7 +61,7 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
             aria-label={menuIsCollapsed ? t("Open menu") : t("Collapse menu")}
             brand="neutral"
             className="[-webkit-app-region:no-drag]"
-            leftSymbol={menuIsCollapsed ? "left_panel_open" : "left_panel_close"}
+            leftIcon={menuIsCollapsed ? "left_panel_open" : "left_panel_close"}
             onClick={handleToggleMenu}
           />
         </Tooltip>

@@ -16,10 +16,10 @@ const displayOptions = () => (
   <PopoverPanelGroup>
     <PopoverPanelGroupItem passive label="Display as">
       <Picker<string>
-        button={{ leftSymbol: { name: "grid_view", fill: true }, size: "sm" }}
+        button={{ leftIcon: { name: "grid_view", fill: true }, size: "sm" }}
         options={[
-          { label: "Grid", value: "small", symbol: { name: "grid_view", fill: true } },
-          { label: "List", value: "list", symbol: { name: "view_list", fill: true } },
+          { label: "Grid", value: "small", icon: { name: "grid_view", fill: true } },
+          { label: "List", value: "list", icon: { name: "view_list", fill: true } },
         ]}
         value="small"
         onChange={() => {}}
@@ -29,7 +29,7 @@ const displayOptions = () => (
 );
 
 const openPanel = async () => {
-  render(<ToolbarPanelButton label="Display options" leftSymbol="tune" panel={displayOptions} />);
+  render(<ToolbarPanelButton label="Display options" leftIcon="tune" panel={displayOptions} />);
 
   await userEvent.click(screen.getByRole("button", { name: "Display options" }));
   await waitFor(() => expect(screen.getByText("Display as")).toBeInTheDocument());
@@ -85,7 +85,7 @@ describe("ToolbarPanelButton", () => {
       <ToolbarPanelButton
         handle={handle}
         label="Display options"
-        leftSymbol="tune"
+        leftIcon="tune"
         panel={displayOptions}
       />,
     );

@@ -39,11 +39,11 @@ export const ContextMenuDemo = () => {
           <PopoverMenu
             actions={[
               [
-                { label: "Rename", symbol: "edit", onClick: () => setChosen("Rename") },
-                { label: "Options", symbol: "tune", onClick: () => setChosen("Options") },
+                { label: "Rename", icon: "edit", onClick: () => setChosen("Rename") },
+                { label: "Options", icon: "tune", onClick: () => setChosen("Options") },
                 {
                   label: "Move to",
-                  symbol: "drive_file_move",
+                  icon: "drive_file_move",
                   panelRole: "menu",
                   panel: ({ close: closeSubmenu, dismiss }) => (
                     <PopoverMenu
@@ -60,7 +60,7 @@ export const ContextMenuDemo = () => {
                   ),
                 },
               ],
-              [{ label: "Delete", symbol: "delete", onClick: () => setChosen("Delete") }],
+              [{ label: "Delete", icon: "delete", onClick: () => setChosen("Delete") }],
             ]}
             label="Area actions"
             onSelect={close}

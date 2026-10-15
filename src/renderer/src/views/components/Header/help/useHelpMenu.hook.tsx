@@ -6,7 +6,7 @@ import { setDialogVisible } from "@/actions";
 import { useExtensionContext } from "@/ExtensionProvider";
 import { AppSupportBundleClickedEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IActionDefinition } from "@/types/IActionDefinition";
-import type { ISymbolSource } from "@/ui/components/icon/Icon";
+import type { IIconSource } from "@/ui/components/icon/Icon";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 
@@ -14,7 +14,7 @@ import { useGlobalIconActions } from "./useGlobalIconActions";
 
 // Actions from built-in extensions that should render among Vortex's own help rows
 // with their own icons, rather than under the "extension provided" puzzle section.
-const builtInActionIcons: Record<string, ISymbolSource> = {
+const builtInActionIcons: Record<string, IIconSource> = {
   feedback: "thumbs_up_down",
   bug: "bug_report",
 };
@@ -33,8 +33,8 @@ export const useHelpMenuSections = (): IMenuAction[][] => {
 
   const globalIconActions = useGlobalIconActions(extensions);
 
-  const asMenuAction = (action: IActionDefinition, symbol: ISymbolSource): IMenuAction => ({
-    symbol,
+  const asMenuAction = (action: IActionDefinition, icon: IIconSource): IMenuAction => ({
+    icon,
     label: t(action.title, { ns: action.options?.namespace }),
     onClick: () => action.action?.([]),
   });
@@ -46,17 +46,17 @@ export const useHelpMenuSections = (): IMenuAction[][] => {
 
     [
       {
-        symbol: "help",
+        icon: "help",
         label: t("Help centre"),
         onClick: () => api.events.emit("open-knowledge-base"),
       },
       {
-        symbol: "description",
+        icon: "description",
         label: t("View logs"),
         onClick: () => dispatch(setDialogVisible("diagnostics-files-dialog")),
       },
       {
-        symbol: "package_2",
+        icon: "package_2",
         label: t("Create support bundle"),
         onClick: () => {
           api.events.emit(
@@ -70,7 +70,7 @@ export const useHelpMenuSections = (): IMenuAction[][] => {
         .filter((action) => action.icon in builtInActionIcons)
         .map((action) => asMenuAction(action, builtInActionIcons[action.icon])),
       {
-        symbol: "info",
+        icon: "info",
         label: t("About"),
         onClick: () => api.events.emit("show-main-page", "About"),
       },
@@ -90,7 +90,7 @@ export const useHelpAction = (): IMenuAction => {
   const label = t("Help");
 
   return {
-    symbol: "help",
+    icon: "help",
     label,
     panelRole: "menu",
     panel: ({ close, dismiss }) => (

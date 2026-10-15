@@ -42,7 +42,7 @@ export const TableGroupMenu = ({
   const folding: IMenuAction[] = [
     {
       label: expanded ? t("Collapse") : t("Expand"),
-      symbol: expanded ? "unfold_less" : "unfold_more",
+      icon: expanded ? "unfold_less" : "unfold_more",
       onClick: onToggle,
     },
     {
@@ -55,13 +55,13 @@ export const TableGroupMenu = ({
   if (allSelected && onDeselectAll !== undefined) {
     selecting.push({
       label: t("Deselect all in group"),
-      symbol: "check_box_outline_blank",
+      icon: "check_box_outline_blank",
       onClick: onDeselectAll,
     });
   } else if (onSelectAll !== undefined) {
     selecting.push({
       label: t("Select all in group"),
-      symbol: "check_box",
+      icon: "check_box",
       onClick: onSelectAll,
     });
   }

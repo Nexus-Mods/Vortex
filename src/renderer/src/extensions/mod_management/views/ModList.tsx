@@ -417,7 +417,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       content = (
         <NoResults
           className="my-auto"
-          iconPath={nxmModOutline}
+          icon={{ path: nxmModOutline }}
           message={t("But don't worry, I know a place...")}
           title={t("You don't have any installed mods")}
         >
@@ -651,7 +651,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     if (filtered.length === 1) {
       return (
-        <Button leftSymbol="open_in_new" onClick={this.getMoreMods}>
+        <Button leftIcon="open_in_new" onClick={this.getMoreMods}>
           {label}
         </Button>
       );
@@ -659,7 +659,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Dropdown>
-        <UiDropdownButton rightSymbol="expand_more">{label}</UiDropdownButton>
+        <UiDropdownButton rightIcon="expand_more">{label}</UiDropdownButton>
 
         <DropdownItems>
           {filtered.map((source) => (

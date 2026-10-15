@@ -32,7 +32,7 @@ export const TableSelectionBar = ({ count, onClear, children }: ITableSelectionB
           appearance="weak"
           aria-label={t("Deselect all")}
           brand="neutral"
-          leftSymbol="close"
+          leftIcon="close"
           onClick={onClear}
         >
           {t("{{count}} selected", { count })}

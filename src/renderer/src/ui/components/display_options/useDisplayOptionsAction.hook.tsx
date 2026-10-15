@@ -43,7 +43,7 @@ export const useDisplayOptionsAction = ({
   const { t } = useTranslation();
 
   return {
-    symbol: "tune",
+    icon: "tune",
     label: label ?? t("Display options"),
     panel: () => (
       <>

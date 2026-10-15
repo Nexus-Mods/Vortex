@@ -67,15 +67,15 @@ export const DropdownDemo = () => {
             </MenuButton>
 
             <DropdownItems className="right-auto left-0">
-              <DropdownItem leftSymbol="edit" onClick={() => handleClick("Edit")}>
+              <DropdownItem leftIcon="edit" onClick={() => handleClick("Edit")}>
                 Edit
               </DropdownItem>
 
-              <DropdownItem leftSymbol="content_copy" onClick={() => handleClick("Duplicate")}>
+              <DropdownItem leftIcon="content_copy" onClick={() => handleClick("Duplicate")}>
                 Duplicate
               </DropdownItem>
 
-              <DropdownItem leftSymbol="download" onClick={() => handleClick("Download")}>
+              <DropdownItem leftIcon="download" onClick={() => handleClick("Download")}>
                 Download
               </DropdownItem>
 
@@ -83,7 +83,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="danger"
-                leftSymbol={{ name: "delete", fill: true }}
+                leftIcon={{ name: "delete", fill: true }}
                 onClick={() => handleClick("Delete")}
               >
                 Delete
@@ -114,7 +114,7 @@ export const DropdownDemo = () => {
             <DropdownItems className="right-auto left-0">
               <DropdownItem
                 brand="primary"
-                leftSymbol="rocket_launch"
+                leftIcon="rocket_launch"
                 onClick={() => handleClick("Deploy")}
               >
                 Deploy
@@ -122,7 +122,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="info"
-                leftSymbol="download"
+                leftIcon="download"
                 onClick={() => handleClick("Check for updates")}
               >
                 Check for updates
@@ -130,7 +130,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="success"
-                leftSymbol="check_circle"
+                leftIcon="check_circle"
                 onClick={() => handleClick("Verify")}
               >
                 Verify
@@ -138,13 +138,13 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="premium"
-                leftSymbol="star"
+                leftIcon="star"
                 onClick={() => handleClick("Go premium")}
               >
                 Go premium
               </DropdownItem>
 
-              <DropdownItem leftSymbol="edit" onClick={() => handleClick("Rename")}>
+              <DropdownItem leftIcon="edit" onClick={() => handleClick("Rename")}>
                 Rename
               </DropdownItem>
 
@@ -152,7 +152,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="danger"
-                leftSymbol={{ name: "delete", fill: true }}
+                leftIcon={{ name: "delete", fill: true }}
                 onClick={() => handleClick("Delete")}
               >
                 Delete
@@ -177,21 +177,21 @@ export const DropdownDemo = () => {
               as={Button}
               brand="neutral"
               appearance="subdued"
-              leftSymbol="more_vert"
+              leftIcon="more_vert"
               size="sm"
             />
 
             <DropdownItems className="right-auto left-0">
-              <DropdownItem leftSymbol="edit" onClick={() => handleClick("Edit")}>
+              <DropdownItem leftIcon="edit" onClick={() => handleClick("Edit")}>
                 Edit
               </DropdownItem>
 
-              <DropdownItem leftSymbol="content_copy" onClick={() => handleClick("Duplicate")}>
+              <DropdownItem leftIcon="content_copy" onClick={() => handleClick("Duplicate")}>
                 Duplicate
               </DropdownItem>
 
               <DropdownItem
-                leftSymbol={{ name: "delete", fill: true }}
+                leftIcon={{ name: "delete", fill: true }}
                 onClick={() => handleClick("Delete")}
               >
                 Delete

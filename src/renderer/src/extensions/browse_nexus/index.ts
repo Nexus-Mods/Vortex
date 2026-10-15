@@ -17,7 +17,7 @@ function init(context: IExtensionContext): boolean {
     props: () => ({
       api: context.api,
     }),
-    symbol: "search",
+    menuIcon: "search",
   });
 
   return true;

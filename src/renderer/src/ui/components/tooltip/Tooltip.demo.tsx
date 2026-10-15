@@ -6,7 +6,7 @@
 import React, { useState } from "react";
 
 import { Button } from "@/ui/components/button/Button";
-import { Icon, type ISymbolSource } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
@@ -14,11 +14,11 @@ import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { Tooltip } from "./Tooltip";
 import { TooltipDelayGroup } from "./TooltipDelayGroup";
 
-const toolbarActions: Array<{ symbol: ISymbolSource; label: string }> = [
-  { symbol: "folder_open", label: "Open mods folder" },
-  { symbol: "history", label: "Deployment history" },
-  { symbol: "refresh", label: "Rescan mods" },
-  { symbol: "tune", label: "Display options" },
+const toolbarActions: Array<{ icon: IIconSource; label: string }> = [
+  { icon: "folder_open", label: "Open mods folder" },
+  { icon: "history", label: "Deployment history" },
+  { icon: "refresh", label: "Rescan mods" },
+  { icon: "tune", label: "Display options" },
 ];
 
 /** Rich body: a heading, supporting copy, and a status list. */
@@ -288,7 +288,7 @@ export const TooltipDemo = () => (
               appearance="weak"
               aria-label={action.label}
               brand="neutral"
-              leftSymbol={action.symbol}
+              leftIcon={action.icon}
             />
           </Tooltip>
         ))}
@@ -301,7 +301,7 @@ export const TooltipDemo = () => (
               appearance="weak"
               aria-label={action.label}
               brand="neutral"
-              leftSymbol={action.symbol}
+              leftIcon={action.icon}
             />
           </Tooltip>
         ))}
@@ -329,7 +329,7 @@ export const TooltipDemo = () => (
 
               <TypographyLink
                 brand="primary"
-                rightSymbol="open_in_new"
+                rightIcon="open_in_new"
                 typographyType="body-xs"
                 onClick={() => undefined}
               >

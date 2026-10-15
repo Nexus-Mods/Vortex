@@ -275,11 +275,13 @@ label, so selecting a tab stopped working as soon as the label was translated.
   fails the typecheck, or the build. `copy-assets.mjs` cuts the full font down to the list
   (some 4 MB to under 100 KB), so a new symbol shows in a dev run only once the assets are
   copied again.
-- Components take an icon as `symbol` (a Material Symbol, by name or as `{ name, fill }`) or as
-  `iconPath` (an SVG path, for the custom `nxm*` icons the font lacks). Legacy icon names, which
-  actions and extensions register with, resolve through `getIconProps(name)` in
-  `views/components/iconMap.ts`. Pages can pass a `symbol` directly; an extension's own `mdi`
-  path still works.
+- A component's `icon` prop (`leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by
+  name (`icon="star"`), a symbol with its axes (`icon={{ name: "star", fill: true }}`), an SVG
+  path for the custom `nxm*` icons the font lacks (`icon={{ path: nxmMod }}`), or a node. The type
+  is `IIconProp` (`IIconSource` where a node makes no sense), from `Icon.tsx`. Legacy icon names,
+  which actions and extensions register with, resolve through `getIcon(name)` in
+  `views/components/iconMap.ts`. Pages can pass a `menuIcon`; an extension's own `mdi` path
+  still works.
 - Custom SVGs must use the 24x24 viewBox the `Icon` component renders. To port a
   Material Symbols icon (`0 -960 960 960`): scale by 0.025 and offset absolute Y
   by +960. Keep it a single filled path with `fill="currentColor"`.

@@ -82,13 +82,13 @@ describe("Pill", () => {
   });
 
   describe("icon", () => {
-    it("renders an icon from iconPath", () => {
-      renderComponent({ iconPath: "M0 0h24v24H0z" });
+    it("renders an icon from an SVG path", () => {
+      renderComponent({ icon: { path: "M0 0h24v24H0z" } });
       expect(screen.getByRole("presentation")).toHaveClass("nxm-pill-icon");
     });
 
     it("renders an icon from a symbol", () => {
-      renderComponent({ symbol: "check_circle" });
+      renderComponent({ icon: "check_circle" });
       expect(document.querySelector("[data-symbol]")).toHaveAttribute(
         "data-symbol",
         "check_circle",

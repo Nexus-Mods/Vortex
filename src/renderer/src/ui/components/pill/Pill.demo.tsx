@@ -94,7 +94,7 @@ export const PillDemo = () => {
                   appearance={appearance}
                   as="button"
                   brand={brand}
-                  symbol="check_circle"
+                  icon="check_circle"
                   key={brand}
                 >
                   {brand}
@@ -102,7 +102,7 @@ export const PillDemo = () => {
               ))}
 
               {/* Closes each row so the disabled treatment can be read against both grounds */}
-              <Pill appearance={appearance} as="button" disabled={true} symbol="check_circle">
+              <Pill appearance={appearance} as="button" disabled={true} icon="check_circle">
                 disabled
               </Pill>
             </div>
@@ -116,9 +116,9 @@ export const PillDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Pill symbol={{ name: "sell", fill: true }}>Tagged</Pill>
+          <Pill icon={{ name: "sell", fill: true }}>Tagged</Pill>
 
-          <Pill symbol="check">Verified</Pill>
+          <Pill icon="check">Verified</Pill>
 
           <Pill icon={<Icon name="star" fill size="none" />}>Custom icon node</Pill>
         </div>
@@ -138,7 +138,7 @@ export const PillDemo = () => {
             Clickable
           </Pill>
 
-          <Pill as="button" symbol="close" onClick={() => setClicks((count) => count + 1)}>
+          <Pill as="button" icon="close" onClick={() => setClicks((count) => count + 1)}>
             With icon
           </Pill>
 

@@ -71,7 +71,7 @@ export const Alert = ({
           aria-label={dismissLabel ?? t("Dismiss")}
           brand="neutral"
           className="nxm-alert-dismiss"
-          leftSymbol="close"
+          leftIcon="close"
           size="sm"
           onClick={dismiss}
         />

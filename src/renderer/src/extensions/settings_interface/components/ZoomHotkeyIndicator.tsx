@@ -89,7 +89,7 @@ export function ZoomHotkeyIndicator() {
         aria-label={t("Zoom out")}
         brand="neutral"
         disabled={factor <= MIN_ZOOM}
-        leftSymbol="remove"
+        leftIcon="remove"
         size="sm"
         onClick={() => adjustZoom(factor - ZOOM_STEP)}
       />
@@ -99,7 +99,7 @@ export function ZoomHotkeyIndicator() {
         aria-label={t("Zoom in")}
         brand="neutral"
         disabled={factor >= MAX_ZOOM}
-        leftSymbol="add"
+        leftIcon="add"
         size="sm"
         onClick={() => adjustZoom(factor + ZOOM_STEP)}
       />

@@ -12,7 +12,7 @@ export const ListboxButton = ({ showChevron = true, ...props }: IListboxButtonPr
     appearance="moderate"
     as={Button}
     brand="neutral"
-    rightSymbol={showChevron ? "unfold_more" : undefined}
+    rightIcon={showChevron ? "unfold_more" : undefined}
     size="sm"
     {...props}
   />

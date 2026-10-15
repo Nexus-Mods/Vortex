@@ -49,7 +49,7 @@ describe("useDisplayOptionsAction", () => {
     const { action } = renderPanel({ canReset: false });
 
     expect(action.label).toBe("Display options");
-    expect(action.symbol).toBeTruthy();
+    expect(action.icon).toBeTruthy();
   });
 
   it("renders the setting rows it was given", () => {

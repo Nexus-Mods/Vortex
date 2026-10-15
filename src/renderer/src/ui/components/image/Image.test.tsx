@@ -137,13 +137,13 @@ describe("Image", () => {
     });
 
     it("shows the caller's icon instead, when given one", () => {
-      renderComponent({ fallbackSymbol: { name: "person", fill: true }, src: "bad.png" });
+      renderComponent({ fallbackIcon: { name: "person", fill: true }, src: "bad.png" });
       fireEvent.error(getImg() as Element);
       expect(document.querySelector("[data-symbol]")).toHaveAttribute("data-symbol", "person");
     });
 
     it("shows the caller's icon when there's no src at all", () => {
-      renderComponent({ fallbackSymbol: { name: "person", fill: true }, src: undefined });
+      renderComponent({ fallbackIcon: { name: "person", fill: true }, src: undefined });
       expect(getImg()).toBeNull();
       expect(screen.getByRole("img", { name: "A mod" })).toHaveAttribute("data-symbol", "person");
     });

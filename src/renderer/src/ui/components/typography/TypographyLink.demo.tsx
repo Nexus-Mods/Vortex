@@ -113,11 +113,11 @@ export const TypographyLinkDemo = () => (
       </Typography>
 
       <div className="flex flex-wrap items-center gap-6">
-        <TypographyLink leftSymbol="arrow_forward">Left icon</TypographyLink>
+        <TypographyLink leftIcon="arrow_forward">Left icon</TypographyLink>
 
-        <TypographyLink rightSymbol="open_in_new">Right icon</TypographyLink>
+        <TypographyLink rightIcon="open_in_new">Right icon</TypographyLink>
 
-        <TypographyLink leftSymbol="arrow_forward" rightSymbol="open_in_new">
+        <TypographyLink leftIcon="arrow_forward" rightIcon="open_in_new">
           Both icons
         </TypographyLink>
       </div>

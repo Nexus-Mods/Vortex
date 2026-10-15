@@ -33,7 +33,7 @@ export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => 
         aria-label={label}
         brand="neutral"
         data-testid="toolbar-overflow"
-        leftSymbol="more_horiz"
+        leftIcon="more_horiz"
       />
 
       <PopoverPanel className="nxm-popover-panel-dropdown">

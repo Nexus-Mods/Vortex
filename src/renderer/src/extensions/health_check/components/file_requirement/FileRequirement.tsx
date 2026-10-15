@@ -2,7 +2,7 @@ import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Bullet } from "@/ui/components/bullet/Bullet";
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
@@ -15,7 +15,7 @@ import { Divider } from "../divider/Divider";
 interface IFileRequirementProps {
   actions?: ReactNode;
   file: IFileRequirementData;
-  fileSymbol?: ISymbolSource;
+  fileIcon?: IIconSource;
   hideImage?: boolean;
   isOr?: boolean;
   showMod?: boolean;
@@ -26,7 +26,7 @@ interface IFileRequirementProps {
 export function FileRequirement({
   actions,
   file,
-  fileSymbol = "draft",
+  fileIcon = "draft",
   hideImage = false,
   isOr,
   showMod = true,
@@ -108,7 +108,7 @@ export function FileRequirement({
           className="flex min-w-0 items-center gap-x-1.5"
           typographyType="body-sm"
         >
-          <Icon {...symbolProps(fileSymbol)} size="sm" />
+          <Icon {...iconSourceProps(fileIcon)} size="sm" />
 
           {onOpenFile ? (
             <TypographyLink
@@ -135,14 +135,14 @@ export function FileRequirement({
         <div className="flex items-center gap-x-2">
           {file.installed && (
             <>
-              <Pill symbol="install_desktop">{t("detail::item::installed")}</Pill>
+              <Pill icon="install_desktop">{t("detail::item::installed")}</Pill>
 
               {file.enabled ? (
-                <Pill symbol="check_circle" brand="success">
+                <Pill icon="check_circle" brand="success">
                   {t("detail::item::enabled")}
                 </Pill>
               ) : (
-                <Pill symbol="cancel">{t("detail::item::disabled")}</Pill>
+                <Pill icon="cancel">{t("detail::item::disabled")}</Pill>
               )}
 
               {!!actions && <div className="w-px self-stretch bg-stroke-weak" />}

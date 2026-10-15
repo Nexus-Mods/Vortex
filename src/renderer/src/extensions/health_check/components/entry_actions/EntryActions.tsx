@@ -69,7 +69,7 @@ export function EntryActions({
             brand="neutral"
             data-testid="health-check-feedback-helpful"
             disabled={givenFeedback}
-            leftSymbol="thumb_up"
+            leftIcon="thumb_up"
             onClick={handle(() => {
               trackFeedbackHelpful({ issue_type: issueType, resolution_type: resolutionType });
               onHelpful();
@@ -84,7 +84,7 @@ export function EntryActions({
             brand="neutral"
             data-testid="health-check-feedback-not-helpful"
             disabled={givenFeedback}
-            leftSymbol="thumb_down"
+            leftIcon="thumb_down"
             onClick={handle(() => setShowFeedbackModal(true))}
           />
         </Tooltip>
@@ -97,7 +97,7 @@ export function EntryActions({
             aria-label={isHidden ? t("common:::unhide") : t("common:::hide")}
             brand="neutral"
             data-testid="health-check-entry-hide"
-            leftSymbol={isHidden ? "visibility" : "visibility_off"}
+            leftIcon={isHidden ? "visibility" : "visibility_off"}
             onClick={handle(onToggleHide)}
           />
         </Tooltip>

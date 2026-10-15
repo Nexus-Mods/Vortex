@@ -27,7 +27,7 @@ export const DevToolsMenu = () => {
         aria-label="Dev tools"
         brand="primary"
         data-testid="dev-tools-trigger"
-        leftSymbol="build"
+        leftIcon="build"
         title="Dev tools"
       />
 

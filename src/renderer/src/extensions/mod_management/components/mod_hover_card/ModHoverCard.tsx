@@ -53,7 +53,7 @@ export const ModHoverCard = ({ mod, name, className }: IModHoverCardProps) => {
       <Image
         alt=""
         className={className}
-        fallbackSymbol="broken_image"
+        fallbackIcon="broken_image"
         fit="cover"
         imageType="mod"
         src={thumbnail}

@@ -718,7 +718,7 @@ function init(context: IExtensionContext): boolean {
         nexusGames: nexusGames(),
       }),
       activity,
-      symbol: "stadia_controller",
+      menuIcon: "stadia_controller",
     },
   );
   context.registerFooter("discovery-progress", ProgressFooter);

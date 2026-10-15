@@ -19,7 +19,7 @@ function init(context: IExtensionContext): boolean {
   context.registerMainPage("highlight-ui", "Design System", DesignSystemPage, {
     priority: 40,
     group: "global",
-    symbol: "palette",
+    menuIcon: "palette",
     newLayout: true,
   });
 

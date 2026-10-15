@@ -3,14 +3,12 @@ import React, {
   forwardRef,
   type ForwardRefExoticComponent,
   type HTMLAttributes,
-  type ReactNode,
   type Ref,
   type RefAttributes,
 } from "react";
 
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { type IIconProp, IconSlot } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
-import type { XOr } from "@/ui/utils/types";
 
 /** Colour family. Tints the icon only; `light` takes the strong step where `neutral` does not. */
 export type IPillBrand =
@@ -30,7 +28,8 @@ type IBasePillProps = {
   appearance?: IPillAppearance;
   brand?: IPillBrand;
   children: string;
-} & XOr<{ iconPath?: string; symbol?: ISymbolSource }, { icon?: ReactNode }>;
+  icon?: IIconProp;
+};
 
 type IPillDefaultProps = HTMLAttributes<HTMLDivElement> & {
   as?: never;
@@ -52,27 +51,18 @@ const getPillClasses = (
   className?: string,
 ) => joinClasses(["nxm-pill", `nxm-pill-${brand}`, `nxm-pill-${appearance}`, className]);
 
-const Content = ({
-  icon,
-  iconPath,
-  label,
-  symbol,
-}: Pick<IPillProps, "icon" | "iconPath" | "symbol"> & { label?: string }) => (
+const Content = ({ icon, label }: Pick<IPillProps, "icon"> & { label?: string }) => (
   <>
-    {!!icon && <span className="nxm-pill-icon flex items-center justify-center">{icon}</span>}
-
-    {!!symbol && <Icon {...symbolProps(symbol)} className="nxm-pill-icon" size="none" />}
-
-    {!!iconPath && <Icon className="nxm-pill-icon" path={iconPath} size="none" />}
+    <IconSlot className="nxm-pill-icon" icon={icon} />
 
     <span className="nxm-pill-label">{label}</span>
   </>
 );
 
 export const Pill: IPill = forwardRef<IPillElement, IPillProps>((allProps, ref) => {
-  const { appearance, brand, children, className, icon, iconPath, symbol, ...rest } = allProps;
+  const { appearance, brand, children, className, icon, ...rest } = allProps;
 
-  const content = <Content icon={icon} iconPath={iconPath} label={children} symbol={symbol} />;
+  const content = <Content icon={icon} label={children} />;
 
   if (rest.as === "button") {
     const { as, disabled, ...props } = rest;

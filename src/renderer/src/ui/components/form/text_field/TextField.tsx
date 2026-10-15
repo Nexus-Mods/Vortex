@@ -6,7 +6,7 @@ import { ErrorMessage } from "@/ui/components/form/field/ErrorMessage";
 import { Field } from "@/ui/components/form/field/Field";
 import { Label } from "@/ui/components/form/field/Label";
 import { Input, type IInputProps } from "@/ui/components/form/input/Input";
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { type IIconProp, IconSlot } from "@/ui/components/icon/Icon";
 
 // No `id`: Headless UI generates the ids that link the label, and a custom one breaks click-to-focus.
 export type ITextFieldProps = Omit<IInputProps, "id" | "invalid"> & {
@@ -24,10 +24,8 @@ export type ITextFieldProps = Omit<IInputProps, "id" | "invalid"> & {
   showRequiredLabel?: boolean;
   /** Classes for the field around the input; `className` goes on the input itself. */
   fieldClassName?: string;
-  /** An icon path drawn inside the input, before the text, for one the font doesn't have. */
-  leftIconPath?: string;
-  /** A Material Symbol drawn inside the input, before the text. */
-  leftSymbol?: ISymbolSource;
+  /** An icon drawn inside the input, before the text. */
+  leftIcon?: IIconProp;
 };
 
 /** A text input with its label, hints, error and, given `maxLength`, a character count. */
@@ -42,8 +40,7 @@ export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
       hideLabel = false,
       hints = [],
       label,
-      leftIconPath,
-      leftSymbol,
+      leftIcon,
       maxLength,
       required,
       showRequiredLabel,
@@ -69,13 +66,7 @@ export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
         </Label>
 
         <div className="nxm-field-control">
-          {!!leftSymbol && (
-            <Icon {...symbolProps(leftSymbol)} className="nxm-input-icon" size="sm" />
-          )}
-
-          {!!leftIconPath && !leftSymbol && (
-            <Icon className="nxm-input-icon" path={leftIconPath} size="sm" />
-          )}
+          <IconSlot className="nxm-input-icon" icon={leftIcon} size="sm" />
 
           <Input
             {...props}

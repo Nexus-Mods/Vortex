@@ -291,7 +291,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                 <Button
                   appearance="moderate"
                   brand="neutral"
-                  leftSymbol="search"
+                  leftIcon="search"
                   title={t("common:actions.search")}
                   type="submit"
                 />
@@ -302,7 +302,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   <Button
                     appearance="moderate"
                     brand="neutral"
-                    leftSymbol="refresh"
+                    leftIcon="refresh"
                     title={t("collection:browse.refresh")}
                     onClick={handleRefresh}
                   />
@@ -340,7 +340,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   <Button
                     appearance="moderate"
                     brand="neutral"
-                    leftSymbol="open_in_new"
+                    leftIcon="open_in_new"
                     onClick={() =>
                       window.api.shell.openUrl(
                         `https://www.nexusmods.com/games/${gameDomainName}/mods`,
@@ -384,14 +384,14 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           <TabPanel id="mods">
             <NoResults
               className="py-16"
-              symbol="schedule"
+              icon="schedule"
               message={t("collection:browse.modsComingSoon.description")}
               title={t("collection:browse.modsComingSoon.title")}
             >
               <Button
                 appearance="moderate"
                 brand="neutral"
-                leftSymbol="open_in_new"
+                leftIcon="open_in_new"
                 onClick={() =>
                   window.api.shell.openUrl(`https://www.nexusmods.com/games/${gameDomainName}/mods`)
                 }

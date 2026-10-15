@@ -10,9 +10,8 @@ import React, {
   type Ref,
 } from "react";
 
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconProp, iconSourceProps, isIconSource } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
-import type { XOr } from "@/ui/utils/types";
 
 export type IButtonBrand = "primary" | "info" | "neutral" | "success" | "danger" | "premium";
 export type IButtonAppearance = "weak" | "subdued" | "moderate" | "strong";
@@ -51,43 +50,14 @@ export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   href?: never;
   /** Not a link: links have their own component. */
   isExternal?: never;
-} & IButtonColour &
-  XOr<
-    {
-      /** The icon before its label, as an SVG path, for an icon the font lacks. */
-      leftIconPath?: string;
-      /** The icon before its label, a Material Symbol. */
-      leftSymbol?: ISymbolSource;
-    },
-    {
-      /** Drawn in place of `leftIconPath`, for an icon a single path can't draw. */
-      leftIcon?: ReactNode;
-    }
-  > &
-  XOr<
-    {
-      /** The icon after its label, as an SVG path, for an icon the font lacks. */
-      rightIconPath?: string;
-      /** The icon after its label, a Material Symbol. */
-      rightSymbol?: ISymbolSource;
-    },
-    {
-      /** Drawn in place of `rightIconPath`, for an icon a single path can't draw. */
-      rightIcon?: ReactNode;
-    }
-  >;
+} & IButtonColour & {
+    /** The icon before its label: a symbol or SVG path for `Icon` to draw, or a node to show as is. */
+    leftIcon?: IIconProp;
+    /** The icon after its label, as `leftIcon`. */
+    rightIcon?: IIconProp;
+  };
 
-const ButtonIcon = ({
-  icon,
-  isLoading = false,
-  path,
-  symbol,
-}: {
-  icon?: ReactNode;
-  isLoading?: boolean;
-  path?: string;
-  symbol?: ISymbolSource;
-}) => {
+const ButtonIcon = ({ icon, isLoading = false }: { icon?: IIconProp; isLoading?: boolean }) => {
   if (isLoading) {
     return (
       <span className="nxm-button-icon relative animate-spin">
@@ -106,12 +76,8 @@ const ButtonIcon = ({
     });
   }
 
-  if (symbol) {
-    return <Icon {...symbolProps(symbol)} className="nxm-button-icon" size="none" />;
-  }
-
-  if (path) {
-    return <Icon className="nxm-button-icon" path={path} size="none" />;
+  if (isIconSource(icon)) {
+    return <Icon {...iconSourceProps(icon)} className="nxm-button-icon" size="none" />;
   }
 
   return null;
@@ -131,12 +97,8 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
       isExternal,
       isLoading = false,
       leftIcon,
-      leftIconPath,
-      leftSymbol,
       nested = false,
       rightIcon,
-      rightIconPath,
-      rightSymbol,
       size = "md",
       type,
       ...props
@@ -158,11 +120,11 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
 
     const content = customContent ?? (
       <>
-        <ButtonIcon icon={leftIcon} isLoading={isLoading} path={leftIconPath} symbol={leftSymbol} />
+        <ButtonIcon icon={leftIcon} isLoading={isLoading} />
 
         {!!children && <span>{children}</span>}
 
-        <ButtonIcon icon={rightIcon} path={rightIconPath} symbol={rightSymbol} />
+        <ButtonIcon icon={rightIcon} />
       </>
     );
 

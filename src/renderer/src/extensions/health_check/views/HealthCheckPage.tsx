@@ -175,13 +175,13 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     () => [
       {
         label: t("common:::refresh"),
-        symbol: "refresh",
+        icon: "refresh",
         isLoading: isRefreshing,
         onClick: () => onRefresh?.(),
       },
       {
         label: t("common:::settings"),
-        symbol: "settings",
+        icon: "settings",
         testId: "health-check-settings",
         onClick: () => {
           trackSettingsOpened();
@@ -338,7 +338,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
                   <Button
                     appearance="subdued"
                     brand="neutral"
-                    leftSymbol={tab === "active" ? "visibility_off" : "visibility"}
+                    leftIcon={tab === "active" ? "visibility_off" : "visibility"}
                     size="sm"
                     onClick={() =>
                       tab === "active"
@@ -353,7 +353,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
                 {tab === "active" && !!installCount && (
                   <Button
                     brand="neutral"
-                    leftSymbol="install_desktop"
+                    leftIcon="install_desktop"
                     rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
                     size="sm"
                     onClick={() => installAll(issueType, sectionItems.length)}
@@ -394,7 +394,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   const loggedOutState = (
     <NoResults
       className="py-24"
-      symbol="info"
+      icon="info"
       message={t("listing::no_results_logged_out::message")}
       title={t("listing::no_results_logged_out::title")}
     >
@@ -408,7 +408,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     <NoResults
       appearance="success"
       className="py-24"
-      symbol="check_circle"
+      icon="check_circle"
       message={t("listing::no_results_active::message")}
       title={t("listing::no_results_active::title")}
     />
@@ -476,7 +476,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
                 ) : (
                   <NoResults
                     className="py-24"
-                    symbol="visibility_off"
+                    icon="visibility_off"
                     title={t("listing::no_results_hidden::title")}
                   />
                 )}

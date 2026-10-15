@@ -30,7 +30,7 @@ describe("TypographyLink", () => {
 
     it("renders left and right icons from paths", () => {
       render(
-        <TypographyLink leftIconPath="mdi-left" rightIconPath="mdi-right">
+        <TypographyLink leftIcon={{ path: "mdi-left" }} rightIcon={{ path: "mdi-right" }}>
           link
         </TypographyLink>,
       );
@@ -41,7 +41,7 @@ describe("TypographyLink", () => {
   describe("symbols", () => {
     it("renders left and right icons from symbols", () => {
       render(
-        <TypographyLink leftSymbol="search" rightSymbol="open_in_new">
+        <TypographyLink leftIcon="search" rightIcon="open_in_new">
           link
         </TypographyLink>,
       );

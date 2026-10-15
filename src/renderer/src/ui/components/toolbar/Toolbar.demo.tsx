@@ -15,31 +15,31 @@ import { Toolbar } from "./Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "./ToolbarGroup";
 
 const generalActions: IToolbarAction[] = [
-  { label: "Install mod", symbol: "add_circle" },
-  { label: "Open mods folder", symbol: "folder_open" },
-  { label: "History", symbol: "history" },
-  { label: "Refresh", symbol: "refresh" },
-  { label: "Categories", symbol: "label" },
-  { label: "Manage rules", symbol: "playlist_add_check" },
+  { label: "Install mod", icon: "add_circle" },
+  { label: "Open mods folder", icon: "folder_open" },
+  { label: "History", icon: "history" },
+  { label: "Refresh", icon: "refresh" },
+  { label: "Categories", icon: "label" },
+  { label: "Manage rules", icon: "playlist_add_check" },
 ];
 
 const contextualActions: IToolbarAction[] = [
-  { label: "1 selected", symbol: "close", showLabel: true },
-  { label: "Remove", symbol: "delete" },
-  { label: "Refresh", symbol: "refresh" },
-  { label: "Download updates", symbol: "cloud_download", brand: "info" },
-  { label: "Enable", symbol: "check" },
-  { label: "Disable", symbol: "close" },
+  { label: "1 selected", icon: "close", showLabel: true },
+  { label: "Remove", icon: "delete" },
+  { label: "Refresh", icon: "refresh" },
+  { label: "Download updates", icon: "cloud_download", brand: "info" },
+  { label: "Enable", icon: "check" },
+  { label: "Disable", icon: "close" },
 ];
 
 // Ten actions, used below to show both limits: a `maxVisible` slot cap, and the
 // width of the toolbar itself.
 const manyActions: IToolbarAction[] = [
   ...generalActions,
-  { label: "Combine", symbol: "call_merge" },
-  { label: "Highlight", symbol: "visibility" },
-  { label: "Track", symbol: { name: "pets", fill: true } },
-  { label: "Untrack", symbol: "pets" },
+  { label: "Combine", icon: "call_merge" },
+  { label: "Highlight", icon: "visibility" },
+  { label: "Track", icon: { name: "pets", fill: true } },
+  { label: "Untrack", icon: "pets" },
 ];
 
 // The same ten with a pin at each end, to show that a pin holds its place rather

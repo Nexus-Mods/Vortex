@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Popover } from "@/ui/components/popover/Popover";
@@ -24,13 +24,13 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
 /** Known stores, keyed by the id `IDiscoveryResult.store` carries. */
-const STORES: Record<string, { iconPath: string; label: string }> = {
-  epic: { iconPath: nxmEpicGames, label: "Epic Games" },
-  gog: { iconPath: nxmGog, label: "GOG" },
-  origin: { iconPath: nxmElectronicArts, label: "Origin" },
-  steam: { iconPath: nxmSteam, label: "Steam" },
-  uplay: { iconPath: nxmUbisoft, label: "Ubisoft" },
-  xbox: { iconPath: nxmXbox, label: "Xbox" },
+const STORES: Record<string, { icon: IIconSource; label: string }> = {
+  epic: { icon: { path: nxmEpicGames }, label: "Epic Games" },
+  gog: { icon: { path: nxmGog }, label: "GOG" },
+  origin: { icon: { path: nxmElectronicArts }, label: "Origin" },
+  steam: { icon: { path: nxmSteam }, label: "Steam" },
+  uplay: { icon: { path: nxmUbisoft }, label: "Ubisoft" },
+  xbox: { icon: { path: nxmXbox }, label: "Xbox" },
 };
 
 export interface IGameTileProps {
@@ -104,7 +104,7 @@ export const GameTile = ({
           >
             <div className="flex gap-x-4">
               {!!store && (
-                <Pill appearance="scrim" brand="light" iconPath={knownStore?.iconPath}>
+                <Pill appearance="scrim" brand="light" icon={knownStore?.icon}>
                   {knownStore?.label ?? titleCase(store)}
                 </Pill>
               )}
@@ -118,7 +118,7 @@ export const GameTile = ({
                       aria-label={menu.label}
                       brand="neutral"
                       className={revealedWhenActive}
-                      leftSymbol="more_vert"
+                      leftIcon="more_vert"
                       size="sm"
                     />
                   </Tooltip>

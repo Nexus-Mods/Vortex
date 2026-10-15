@@ -21,7 +21,7 @@ import {
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Button } from "@/ui/components/button/Button";
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Typography } from "@/ui/components/typography/Typography";
 import { nxmFileSize, nxmMod } from "@/ui/icon-paths";
@@ -49,17 +49,9 @@ export interface ICollectionTileProps {
   className?: string;
 }
 
-const Stat = ({
-  children,
-  iconPath,
-  symbol,
-}: PropsWithChildren<{ iconPath?: string; symbol?: ISymbolSource }>) => (
+const Stat = ({ children, icon }: PropsWithChildren<{ icon: IIconSource }>) => (
   <div className="flex items-center gap-x-1">
-    <Icon
-      {...(symbol ? symbolProps(symbol) : { path: iconPath ?? "" })}
-      className="text-neutral-subdued"
-      size="sm"
-    />
+    <Icon {...iconSourceProps(icon)} className="text-neutral-subdued" size="sm" />
 
     <Typography appearance="moderate" typographyType="body-sm">
       {children}
@@ -192,13 +184,13 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
           </div>
 
           <div className="flex items-center gap-x-5 border-t border-stroke-weak pt-1.5">
-            <Stat symbol={{ name: "thumb_up", fill: true }}>
+            <Stat icon={{ name: "thumb_up", fill: true }}>
               {numeral(collection.endorsements).format("0 a")}
             </Stat>
 
-            <Stat iconPath={nxmFileSize}>{numeral(revision.totalSize).format("0.0 b")}</Stat>
+            <Stat icon={{ path: nxmFileSize }}>{numeral(revision.totalSize).format("0.0 b")}</Stat>
 
-            <Stat iconPath={nxmMod}>{numeral(revision.modCount).format("0,0")}</Stat>
+            <Stat icon={{ path: nxmMod }}>{numeral(revision.modCount).format("0,0")}</Stat>
           </div>
 
           <Typography
@@ -217,7 +209,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
             appearance="weak"
             brand="neutral"
             disabled={true}
-            leftSymbol={!isLoggedIn ? undefined : "check"}
+            leftIcon={!isLoggedIn ? undefined : "check"}
             size="sm"
             title={!isLoggedIn ? "Log in to add collections" : undefined}
           >
@@ -232,7 +224,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
         <Button
           appearance="weak"
           brand="neutral"
-          leftSymbol="open_in_new"
+          leftIcon="open_in_new"
           size="sm"
           onClick={onViewPage}
         >

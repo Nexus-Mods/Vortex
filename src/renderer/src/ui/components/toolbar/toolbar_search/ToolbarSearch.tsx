@@ -87,7 +87,7 @@ export const ToolbarSearch = ({ label, value, onChange }: IToolbarSearchProps) =
         aria-expanded={isOpen}
         brand="neutral"
         label={isOpen ? t("Close search") : label}
-        leftSymbol={isOpen ? "close" : "search"}
+        leftIcon={isOpen ? "close" : "search"}
         ref={buttonRef}
         // Ahead of the input's blur, which would close it before this could.
         onMouseDown={(event) => isOpen && event.preventDefault()}

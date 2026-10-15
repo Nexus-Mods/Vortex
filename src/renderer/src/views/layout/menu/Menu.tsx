@@ -6,7 +6,7 @@ import { setOpenMainPage } from "@/actions";
 import { usePagesContext, useWindowContext } from "@/contexts";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
-import { getIconProps } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/iconMap";
 import { useSpineContext } from "@/views/components/Spine/SpineContext";
 
 import { DownloadsMenuContent } from "./components/DownloadsMenuContent";
@@ -70,11 +70,7 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
           ) : (
             visiblePages.map((page) => (
               <MenuButton
-                {...(page.symbol
-                  ? { symbol: page.symbol }
-                  : page.mdi
-                    ? { iconPath: page.mdi }
-                    : getIconProps(page.icon))}
+                icon={page.menuIcon ?? (page.mdi ? { path: page.mdi } : getIcon(page.icon))}
                 Badge={page.menuBadge}
                 isActive={mainPage === page.id}
                 key={page.id}

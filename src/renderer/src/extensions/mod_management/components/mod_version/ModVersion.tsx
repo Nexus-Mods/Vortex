@@ -104,7 +104,7 @@ const ModVersionPicker = ({
           ? undefined
           : {
               label: t("Remove version"),
-              symbol: "do_not_disturb_on",
+              icon: "do_not_disturb_on",
               onClick: () => onRemove(alternative.id),
             },
     }),
@@ -130,7 +130,7 @@ const ModVersionPicker = ({
               aria-haspopup="menu"
               brand="neutral"
               className="min-w-0 flex-1 justify-between px-1 [&>span]:truncate"
-              rightSymbol="expand_more"
+              rightIcon="expand_more"
               size="sm"
             >
               {label}

@@ -42,7 +42,7 @@ function init(context: IExtensionContext): boolean {
     hotkey: "1",
     group: "dashboard",
     props: () => ({ dashlets }),
-    symbol: "dashboard",
+    menuIcon: "dashboard",
   });
 
   context.registerSettings("Interface", Settings, () => ({ dashlets }), undefined, 1000);

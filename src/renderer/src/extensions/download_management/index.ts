@@ -977,7 +977,7 @@ function init(context: IExtensionContext): boolean {
       downloadPathForGame,
       columns: downloadColumns,
     }),
-    symbol: "download",
+    menuIcon: "download",
   });
 
   context.registerSettings("Download", Settings, undefined, undefined, 75);

@@ -39,7 +39,7 @@ export const CollectionRevision = ({ collection }: ICollectionRevisionProps) => 
             brand="info"
             isLoading={updating}
             label={t("Update to {{revision}}", { revision: newest })}
-            leftSymbol="download"
+            leftIcon="download"
             size="sm"
             onClick={() => void update()}
           />

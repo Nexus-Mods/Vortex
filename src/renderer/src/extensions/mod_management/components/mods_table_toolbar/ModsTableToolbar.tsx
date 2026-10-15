@@ -78,9 +78,9 @@ const CustomViewButton = ({
   const label = t("{{name}} view actions", { name: view.label });
   const actions: IMenuAction[][] = [
     [
-      { label: t("Rename view"), symbol: "edit", onClick: onRename },
-      { label: t("Edit view options"), symbol: "tune", onClick: onEditOptions },
-      { label: t("Delete view"), symbol: "delete", onClick: onRemove },
+      { label: t("Rename view"), icon: "edit", onClick: onRename },
+      { label: t("Edit view options"), icon: "tune", onClick: onEditOptions },
+      { label: t("Delete view"), icon: "delete", onClick: onRemove },
     ],
   ];
 
@@ -106,7 +106,7 @@ const CustomViewButton = ({
           aria-label={label}
           as={Button}
           brand="neutral"
-          leftSymbol="more_horiz"
+          leftIcon="more_horiz"
           size="sm"
           onClick={(event: MouseEvent) => event.stopPropagation()}
         />
@@ -154,7 +154,7 @@ export const ModsTableToolbar = ({
       {
         id: "feedback",
         label: t("Give feedback"),
-        symbol: "rate_review",
+        icon: "rate_review",
         onClick: () => window.api.shell.openUrl(MODS_TABLE_FEEDBACK_URL),
       },
       { ...displayOptions, id: "view-options", panelHandle: optionsPanel },
@@ -220,7 +220,7 @@ export const ModsTableToolbar = ({
             appearance="weak"
             aria-label={t("Add view")}
             brand="neutral"
-            leftSymbol="add"
+            leftIcon="add"
             onClick={() => setNaming("new")}
           />
         </Tooltip>

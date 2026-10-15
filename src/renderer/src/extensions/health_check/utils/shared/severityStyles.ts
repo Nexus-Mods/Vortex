@@ -1,24 +1,24 @@
-import type { ISymbolSource } from "@/ui/components/icon/Icon";
+import type { IIconSource } from "@/ui/components/icon/Icon";
 
 export type Severity = "suggestion" | "warning" | "error";
 
 export const severityStyleMap: Record<
   Severity,
-  { backgroundClassName: string; symbol: ISymbolSource; textClassName: string }
+  { backgroundClassName: string; icon: IIconSource; textClassName: string }
 > = {
   error: {
     backgroundClassName: "bg-danger-moderate",
-    symbol: "report",
+    icon: "report",
     textClassName: "text-danger-strong",
   },
   suggestion: {
     backgroundClassName: "bg-info-moderate",
-    symbol: "info",
+    icon: "info",
     textClassName: "text-info-strong",
   },
   warning: {
     backgroundClassName: "bg-warning-moderate",
-    symbol: "warning",
+    icon: "warning",
     textClassName: "text-warning-strong",
   },
 };

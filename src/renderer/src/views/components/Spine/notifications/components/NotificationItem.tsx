@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 
 import type { INotification, NotificationType } from "@/types/INotification";
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { useNotificationTranslation } from "../hooks/useNotificationTranslation.hook";
@@ -18,11 +18,11 @@ const STATUS_MAP = {
   activity: { className: "text-info-strong animate-spin", icon: "progress_activity" },
   global: { className: "text-info-strong", icon: "info" },
   silent: { className: "text-info-strong", icon: "info" },
-} satisfies Record<NotificationType, { className: string; icon: ISymbolSource }>;
+} satisfies Record<NotificationType, { className: string; icon: IIconSource }>;
 
 const getNotificationStatus = (
   type: NotificationType,
-): { className: string; icon: ISymbolSource } => {
+): { className: string; icon: IIconSource } => {
   return STATUS_MAP[type];
 };
 
@@ -79,7 +79,7 @@ export const NotificationItem = ({
     <div className="flex gap-x-3 border-stroke-weak p-2 not-last:border-b">
       <Icon
         className={joinClasses(["relative mt-0.5 shrink-0", status.className])}
-        {...symbolProps(status.icon)}
+        {...iconSourceProps(status.icon)}
         size="sm"
       />
 

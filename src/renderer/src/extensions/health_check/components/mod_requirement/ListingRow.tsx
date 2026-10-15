@@ -72,7 +72,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftSymbol="install_desktop"
+              leftIcon="install_desktop"
               rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
               size="sm"
               onClick={(e) => {

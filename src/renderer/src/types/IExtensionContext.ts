@@ -29,7 +29,7 @@ import type {
 import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
 import type ReduxProp from "../ReduxProp";
 import type { SanityCheck } from "../store/reduxSanity";
-import type { ISymbolSource } from "../ui/components/icon/Icon";
+import type { IIconSource } from "../ui/components/icon/Icon";
 import type { Archive } from "../util/archives";
 import type { i18n, TFunction } from "../util/i18n";
 import type {
@@ -218,7 +218,7 @@ export interface IMainPageOptions {
   /** An SVG path for the page's icon in the menu, for an extension that brings its own. */
   mdi?: string;
   /** The page's icon in the menu, a Material Symbol. */
-  symbol?: ISymbolSource;
+  menuIcon?: IIconSource;
   /** Self-subscribing status badge shown on this page's left-menu item. */
   menuBadge?: React.ComponentType<React.PropsWithChildren<unknown>>;
 }

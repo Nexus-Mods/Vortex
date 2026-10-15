@@ -21,7 +21,7 @@ import type { TFunction } from "@/util/i18n";
 import * as selectors from "@/util/selectors";
 import { getSafe } from "@/util/storeHelper";
 import { batchDispatch } from "@/util/util";
-import { getIconProps } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
 import { setBetaModsTable } from "../actions/settings";
@@ -119,7 +119,7 @@ const useDeployAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "deploy",
         label: isDeploying ? t("Applying mod changes…") : t("Deploy (Apply changes)"),
-        ...getIconProps("deploy"),
+        icon: getIcon("deploy"),
         pinned: true,
         testId: "deploy-mods",
         disabled: isDeploying,
@@ -152,7 +152,7 @@ const useBetaTableAction = (t: TFunction): IPositionedAction => {
               label: t("Switch to beta view"),
               description: t("Try the new mod list. Some features aren't supported yet."),
             }),
-        symbol: "experiment",
+        icon: "experiment",
         active: betaTable,
         pinned: true,
         section: "view",
@@ -281,7 +281,7 @@ const usePurgeAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "purge",
         label: t("Purge Mods"),
-        ...getIconProps("purge"),
+        icon: getIcon("purge"),
         pinned: true,
         testId: "purge-mods",
         onClick: activator !== undefined ? purge : noMethod,
@@ -362,7 +362,7 @@ const useInstallFromFileAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "install-from-file",
         label: t("Install From File"),
-        symbol: "add_circle",
+        icon: "add_circle",
         pinned: true,
         testId: "install-from-archive",
         onClick: install,
@@ -488,7 +488,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         ? {
             id: "check-versions",
             label: t("Checking for mod updates"),
-            ...getIconProps("refresh"),
+            icon: getIcon("refresh"),
             pinned: true,
             disabled: true,
             isLoading: true,
@@ -496,7 +496,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         : {
             id: "check-versions",
             label: t("Check for Updates"),
-            ...getIconProps("refresh"),
+            icon: getIcon("refresh"),
             pinned: true,
             testId: "check-mod-updates-button",
             onClick: check,
@@ -569,7 +569,7 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
         id: definition.title,
         label: !notice ? definition.title : `${definition.title} (${notice})`,
         brand: brands[index],
-        ...getIconProps(definition.icon, "extension"),
+        icon: getIcon(definition.icon, "extension"),
         pinned: definition.options?.pinned ?? false,
         disabled: typeof condition === "string",
         extension: definition.options?.namespace,
@@ -625,7 +625,7 @@ const useActionMenu = (
       action: {
         id: menu.id,
         label: `${label}...`,
-        ...getIconProps(menu.icon),
+        icon: getIcon(menu.icon),
         pinned: menu.pinned,
         panelRole: "menu",
         panel: ({ dismiss }) => (

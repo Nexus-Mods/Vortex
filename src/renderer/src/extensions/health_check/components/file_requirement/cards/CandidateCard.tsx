@@ -75,7 +75,7 @@ export const CandidateCard = ({
             <Button
               appearance="subdued"
               brand="neutral"
-              leftSymbol="open_in_new"
+              leftIcon="open_in_new"
               onClick={handleModPage}
             >
               {ctx.showPremiumAd
@@ -87,7 +87,7 @@ export const CandidateCard = ({
               appearance={ctx.installButtonAppearance ?? "strong"}
               brand="neutral"
               isLoading={loading}
-              leftSymbol="install_desktop"
+              leftIcon="install_desktop"
               rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
               size="sm"
               onClick={handleInstall}

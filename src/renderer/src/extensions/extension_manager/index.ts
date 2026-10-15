@@ -352,7 +352,7 @@ function init(context: IExtensionContext) {
         },
         onRefresh: () => forceUpdateExtensions(),
       }) satisfies Partial<IExtensionManagerProps>,
-    symbol: "extension",
+    menuIcon: "extension",
   });
 
   const forceUpdateExtensions = () => {

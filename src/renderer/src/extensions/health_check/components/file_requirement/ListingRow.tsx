@@ -120,7 +120,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftSymbol="install_desktop"
+              leftIcon="install_desktop"
               rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
               size="sm"
               onClick={doQuickInstall}
@@ -133,7 +133,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftSymbol="call_split"
+              leftIcon="call_split"
               onClick={(e) => {
                 e.stopPropagation();
                 trackViewPickOptionsClicked({});
@@ -146,7 +146,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftSymbol="swap_horiz"
+              leftIcon="swap_horiz"
               onClick={(e) => {
                 e.stopPropagation();
                 trackEnableThisVersionClicked({
@@ -166,7 +166,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               <Button
                 appearance="moderate"
                 brand="neutral"
-                leftSymbol="check"
+                leftIcon="check"
                 onClick={(e) => {
                   e.stopPropagation();
 

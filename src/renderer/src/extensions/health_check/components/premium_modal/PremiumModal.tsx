@@ -133,7 +133,7 @@ export const PremiumModal = ({
           appearance="moderate"
           brand="neutral"
           className="w-full"
-          leftSymbol={downloadScope === "single" ? "open_in_new" : undefined}
+          leftIcon={downloadScope === "single" ? "open_in_new" : undefined}
           onClick={() => {
             trackPremiumModalFallbackClicked({
               ...identity,
@@ -151,7 +151,7 @@ export const PremiumModal = ({
         <Button
           brand="premium"
           className="w-full"
-          leftSymbol="diamond"
+          leftIcon="diamond"
           onClick={() => {
             trackPremiumModalUnlockClicked({
               ...identity,

@@ -39,30 +39,30 @@ export default function useCategoryToolbarActions(props: ICategoryToolbarActions
     () => [
       {
         label: expanded.size === 0 ? t("Expand All") : t("Collapse All"),
-        symbol: expanded.size === 0 ? "expand_all" : "collapse_all",
+        icon: expanded.size === 0 ? "expand_all" : "collapse_all",
         showLabel: true,
         onClick: () =>
           expanded.size === 0 ? expandAll(flattenTreeToIDs(treeData)) : collapseAll(),
       },
       {
         label: showEmpty ? t("Hide Empty") : t("Show Empty"),
-        symbol: { name: showEmpty ? "visibility_off" : "visibility", fill: true },
+        icon: { name: showEmpty ? "visibility_off" : "visibility", fill: true },
         showLabel: true,
         onClick: toggleEmpty,
       },
       {
         label: t("Add Top Level"),
-        symbol: "create_new_folder",
+        icon: "create_new_folder",
         onClick: () => setAddParentVisible(!addParentVisible),
       },
       {
         label: t("Sort A-Z"),
-        symbol: "sort_by_alpha",
+        icon: "sort_by_alpha",
         onClick: sortAlphabetically,
       },
       {
         label: t("Fetch from Nexus Mods"),
-        symbol: "sync",
+        icon: "sync",
         onClick: () => {
           void importCategoriesFromNexusMods(false);
         },

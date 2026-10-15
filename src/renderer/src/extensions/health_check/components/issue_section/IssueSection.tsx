@@ -47,7 +47,7 @@ export const IssueSection = ({
             aria-label={t(collapsed ? "listing::section::expand" : "listing::section::collapse")}
             brand="neutral"
             hasExpandedStyle={false}
-            leftSymbol={collapsed ? "expand_more" : "expand_less"}
+            leftIcon={collapsed ? "expand_more" : "expand_less"}
             size="sm"
             onClick={() => setCollapsed((value) => !value)}
           />

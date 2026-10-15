@@ -115,7 +115,7 @@ export const DetectedGames = ({
           </Button>
         ),
         iconClassName: "animate-spin text-primary-strong",
-        symbol: "progress_activity" as const,
+        icon: "progress_activity" as const,
         message: t("We'll show detected games here as we find them."),
         title: t("Scanning for installed games..."),
       };
@@ -131,7 +131,7 @@ export const DetectedGames = ({
     if (scanFailed) {
       return {
         children: retryButton,
-        symbol: "wifi_off" as const,
+        icon: "wifi_off" as const,
         message: t(
           "We're having trouble connecting. Check your internet connection and try again.",
         ),
@@ -196,7 +196,7 @@ export const DetectedGames = ({
                   appearance="subdued"
                   aria-label={t("Refresh scan")}
                   brand="neutral"
-                  leftSymbol="refresh"
+                  leftIcon="refresh"
                   size="sm"
                   onClick={handleScan}
                 />
@@ -235,7 +235,7 @@ export const DetectedGames = ({
           entityCount={shownGames.length}
           noResultsChildren={emptyState.children}
           noResultsIconClassName={emptyState.iconClassName}
-          noResultsSymbol={emptyState.symbol}
+          noResultsIcon={emptyState.icon}
           noResultsMessage={emptyState.message}
           noResultsTitle={emptyState.title}
         >

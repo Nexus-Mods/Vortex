@@ -121,7 +121,7 @@ export const DownloadsMenuContent: FC<React.PropsWithChildren<unknown>> = () => 
   return (
     <>
       <MenuButton
-        symbol="download"
+        icon="download"
         isActive={downloadGameFilter === null}
         onClick={() => setDownloadGameFilter(null)}
       >

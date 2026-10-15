@@ -1,4 +1,10 @@
-import React, { type CSSProperties, type HTMLAttributes, type SVGAttributes } from "react";
+import React, {
+  type CSSProperties,
+  type HTMLAttributes,
+  isValidElement,
+  type ReactNode,
+  type SVGAttributes,
+} from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -122,18 +128,6 @@ const SymbolIcon = ({
   );
 };
 
-/**
- * A Material Symbol as a component takes it: its name, or the name with the font axes it is drawn
- * with, as `{ name: "star", fill: true }`. What a prop called `symbol` is.
- */
-export type ISymbolSource =
-  | SymbolName
-  | Pick<ISymbolIconProps, "name" | "fill" | "weight" | "grade" | "opticalSize">;
-
-/** The props that draw a symbol from the source, for `<Icon {...symbolProps(symbol)} />`. */
-export const symbolProps = (symbol: ISymbolSource) =>
-  typeof symbol === "string" ? { name: symbol } : symbol;
-
 const isSymbol = (props: IIconProps): props is ISymbolIconProps => props.name !== undefined;
 
 /**
@@ -142,3 +136,50 @@ const isSymbol = (props: IIconProps): props is ISymbolIconProps => props.name !=
  */
 export const Icon = (props: IIconProps) =>
   isSymbol(props) ? <SymbolIcon {...props} /> : <PathIcon {...props} />;
+
+/**
+ * An icon as a component's `icon` prop takes it for `Icon` to draw: a Material Symbol by its
+ * name, or by `{ name, fill, … }` with the font axes it is drawn with, or an SVG path as
+ * `{ path }`.
+ */
+export type IIconSource =
+  | SymbolName
+  | Pick<ISymbolIconProps, "name" | "fill" | "weight" | "grade" | "opticalSize">
+  | { path: string };
+
+/** What a component's `icon` prop takes: a source for `Icon` to draw, or a node to show as is. */
+export type IIconProp = ReactNode | IIconSource;
+
+/** Whether an `icon` prop is a source for `Icon` to draw, and not a node to show as it is. */
+export const isIconSource = (icon: IIconProp): icon is IIconSource =>
+  typeof icon === "string" ||
+  (typeof icon === "object" &&
+    icon !== null &&
+    !isValidElement(icon) &&
+    ("name" in icon || "path" in icon));
+
+/** The props that draw a source, for `<Icon {...iconSourceProps(source)} />`. */
+export const iconSourceProps = (source: IIconSource): IIconProps =>
+  typeof source === "string" ? { name: source } : source;
+
+/**
+ * The icon a component shows for its `icon` prop: a source drawn by `Icon`, with the class and
+ * size the component gives its icons, or a node in a box with that class. Nothing for no icon.
+ */
+export const IconSlot = ({
+  className,
+  icon,
+  size = "none",
+}: {
+  className: string;
+  icon?: IIconProp;
+  size?: IIconSize;
+}) => {
+  if (isIconSource(icon)) {
+    return <Icon {...iconSourceProps(icon)} className={className} size={size} />;
+  }
+
+  return icon ? (
+    <span className={joinClasses([className, "flex items-center justify-center"])}>{icon}</span>
+  ) : null;
+};

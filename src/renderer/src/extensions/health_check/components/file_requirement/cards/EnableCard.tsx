@@ -57,18 +57,13 @@ export const EnableCard = ({
           <Button
             appearance="subdued"
             brand="neutral"
-            leftIconPath={nxmModOutline}
+            leftIcon={{ path: nxmModOutline }}
             onClick={handleViewInMods}
           >
             {t("detail::item::view_in_mods")}
           </Button>
 
-          <Button
-            appearance="strong"
-            brand="neutral"
-            leftSymbol="swap_horiz"
-            onClick={handleEnable}
-          >
+          <Button appearance="strong" brand="neutral" leftIcon="swap_horiz" onClick={handleEnable}>
             {t("detail::item::enable_this_version")}
           </Button>
         </>

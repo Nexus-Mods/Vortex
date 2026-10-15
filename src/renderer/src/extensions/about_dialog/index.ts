@@ -8,7 +8,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerMainPage("", "About", AboutPage, {
     group: "hidden",
-    symbol: "info",
+    menuIcon: "info",
   });
 
   return true;

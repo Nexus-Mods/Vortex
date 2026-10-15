@@ -50,7 +50,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
       ? []
       : [
           {
-            symbol: { name: "account_circle", fill: true },
+            icon: { name: "account_circle", fill: true },
             label: t("View profile on web"),
             onClick: () => {
               opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
@@ -59,7 +59,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
         ],
     [
       {
-        symbol: "refresh",
+        icon: "refresh",
         label: t("Refresh user info"),
         onClick: () => scheduleMembershipRefresh(api),
       },
@@ -67,7 +67,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
     ],
     [
       {
-        symbol: "logout",
+        icon: "logout",
         label: t("Logout"),
         onClick: () => {
           dispatch(setUserAPIKey(undefined));

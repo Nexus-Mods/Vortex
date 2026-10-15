@@ -9,11 +9,11 @@ import { useExtensionObjects } from "@/ExtensionProvider";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { NexusBadge } from "@/ui/components/badges/nexus_badge/NexusBadge";
-import type { ISymbolSource } from "@/ui/components/icon/Icon";
+import type { IIconProp } from "@/ui/components/icon/Icon";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { nxmCollection, nxmCollectionOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
-import { getIconProps } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/iconMap";
 
 import { calculateModSize } from "../../util/calculate_mod_size/calculateModSize.util";
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
@@ -56,11 +56,7 @@ interface IRowMenuItem {
   /** What the menu calls it, untranslated. */
   label: string;
   /** Unset keeps the icon it registered with. */
-  symbol?: ISymbolSource;
-  /** As `symbol`, an SVG path, for an icon the font lacks. */
-  iconPath?: string;
-  /** In place of `symbol` and `iconPath`, for an icon a path can't draw. */
-  icon?: ReactNode;
+  icon?: IIconProp;
 }
 
 /**
@@ -71,19 +67,23 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
   {
     section: "manage",
     items: [
-      { title: "Add to Collection...", label: "Add to Collection", iconPath: nxmCollectionOutline },
+      {
+        title: "Add to Collection...",
+        label: "Add to Collection",
+        icon: { path: nxmCollectionOutline },
+      },
       {
         title: "Remove from Collection...",
         label: "Remove from Collection",
-        iconPath: nxmCollection,
+        icon: { path: nxmCollection },
       },
-      { title: "Install", label: "Install", symbol: "install_desktop" },
+      { title: "Install", label: "Install", icon: "install_desktop" },
       { title: "Unpack (as-is)", label: "Unpack (as-is)" },
-      { title: "Reinstall", label: "Reinstall", symbol: "reset_tv" },
-      { title: "Uninstall", label: "Uninstall", symbol: "do_not_disturb_on" },
-      { title: "Remove related", label: "Remove related", symbol: "delete" },
-      { title: "Remove", label: "Remove", symbol: "delete" },
-      { title: "Check for Update", label: "Check for updates", symbol: "refresh" },
+      { title: "Reinstall", label: "Reinstall", icon: "reset_tv" },
+      { title: "Uninstall", label: "Uninstall", icon: "do_not_disturb_on" },
+      { title: "Remove related", label: "Remove related", icon: "delete" },
+      { title: "Remove", label: "Remove", icon: "delete" },
+      { title: "Check for Update", label: "Check for updates", icon: "refresh" },
     ],
   },
   {
@@ -92,12 +92,12 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       {
         title: "Manage File Conflicts",
         label: "Manage file conflicts",
-        ...getIconProps("rules"),
+        icon: getIcon("rules"),
       },
       {
         title: "Install Recommendations",
         label: "Install recommendations",
-        symbol: "install_desktop",
+        icon: "install_desktop",
       },
     ],
   },
@@ -107,9 +107,9 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       {
         title: "Open in File Manager",
         label: "Open in file manager",
-        symbol: "folder_open",
+        icon: "folder_open",
       },
-      { title: "Open Archive", label: "Open archive", symbol: "folder_open" },
+      { title: "Open Archive", label: "Open archive", icon: "folder_open" },
       { title: "Open on Nexus Mods", label: "Open on Nexus Mods", icon: <NexusBadge /> },
     ],
   },
@@ -117,20 +117,20 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
   {
     section: "organise",
     items: [
-      { title: "Combine", label: "Combine", symbol: "call_merge" },
-      { title: "Track", label: "Track", symbol: "pets" },
-      { title: "Untrack", label: "Untrack", symbol: { name: "pets", fill: true } },
+      { title: "Combine", label: "Combine", icon: "call_merge" },
+      { title: "Track", label: "Track", icon: "pets" },
+      { title: "Untrack", label: "Untrack", icon: { name: "pets", fill: true } },
     ],
   },
   {
     section: "maintenance",
     items: [
-      { title: "Refresh Content", label: "Refresh content", symbol: "rotate_right" },
-      { title: "Fix missing IDs", label: "Fix missing IDs", symbol: "manage_search" },
+      { title: "Refresh Content", label: "Refresh content", icon: "rotate_right" },
+      { title: "Fix missing IDs", label: "Fix missing IDs", icon: "manage_search" },
       {
         title: "Create Report",
         label: "Generate mod report",
-        symbol: { name: "bug_report", fill: true },
+        icon: { name: "bug_report", fill: true },
       },
     ],
   },
@@ -330,10 +330,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
           // The registered title, not its translation, so a pin survives a language change.
           id: definition.title,
           label: t(menuItem?.label ?? definition.title),
-          ...(menuItem?.symbol || menuItem?.iconPath
-            ? { iconPath: menuItem.iconPath, symbol: menuItem.symbol }
-            : getIconProps(definition.icon, "extension")),
-          icon: menuItem?.icon,
+          icon: menuItem?.icon ?? getIcon(definition.icon, "extension"),
           section: menuItem?.section ?? OTHER_SECTION,
           pinned: source.defaultPins.has(definition.title),
           disabled: condition !== true,

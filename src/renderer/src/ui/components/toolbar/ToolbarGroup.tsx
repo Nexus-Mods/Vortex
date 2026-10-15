@@ -68,8 +68,7 @@ const widthSignature = (actions: IToolbarAction[]): string =>
   [
     actions.length,
     ...actions.map(
-      (action) =>
-        `${action.symbol || action.iconPath || action.icon !== undefined ? "i" : ""}${action.showLabel ? action.label : ""}`,
+      (action) => `${action.icon !== undefined ? "i" : ""}${action.showLabel ? action.label : ""}`,
     ),
   ].join(":");
 
@@ -86,9 +85,7 @@ const controlProps = (action: IToolbarAction) => ({
   disabled: action.disabled,
   isLoading: action.isLoading,
   label: action.label,
-  ...(action.icon !== undefined
-    ? { leftIcon: action.icon }
-    : { leftIconPath: action.iconPath, leftSymbol: action.symbol }),
+  leftIcon: action.icon,
   showLabel: action.showLabel,
 });
 

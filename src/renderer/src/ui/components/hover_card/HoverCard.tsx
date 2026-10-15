@@ -40,7 +40,7 @@ const HoverCardImage = ({
       "h-44": imageType === "collection",
       "w-full": imageType === "mod",
     })}
-    fallbackSymbol="broken_image"
+    fallbackIcon="broken_image"
     fit="cover"
     imageType={imageType}
     src={src}

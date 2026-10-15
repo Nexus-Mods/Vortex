@@ -34,14 +34,14 @@ const openMenu = async (actions: IMenuAction[][]) => {
 };
 
 const plainAction = (label: string, onClick = () => {}): IMenuAction => ({
-  iconPath: "mdi-test",
+  icon: { path: "mdi-test" },
   label,
   onClick,
 });
 
 /** A row whose panel is itself a menu, as the header's nested Help submenu is. */
 const submenuAction = (rows: IMenuAction[][], onDismissSpy?: () => void): IMenuAction => ({
-  iconPath: "mdi-help",
+  icon: { path: "mdi-help" },
   label: "Help",
   panelRole: "menu",
   panel: ({ close, dismiss }) => (
@@ -358,7 +358,7 @@ describe("PopoverMenu", () => {
 
   describe("icons", () => {
     it("draws a row's symbol before its label", async () => {
-      await openMenu([[{ label: "Deploy", symbol: { name: "rocket_launch" }, onClick: () => {} }]]);
+      await openMenu([[{ label: "Deploy", icon: { name: "rocket_launch" }, onClick: () => {} }]]);
 
       expect(
         screen.getByRole("menuitem", { name: "Deploy" }).querySelector("[data-symbol]"),
@@ -396,7 +396,7 @@ describe("PopoverMenu", () => {
       [
         {
           ...plainAction("Refresh", onClick),
-          control: { label: "Remove Refresh", symbol: "close", onClick: onControl },
+          control: { label: "Remove Refresh", icon: "close", onClick: onControl },
         },
       ],
     ];

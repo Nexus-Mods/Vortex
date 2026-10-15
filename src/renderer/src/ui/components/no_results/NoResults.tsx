@@ -1,7 +1,7 @@
 import React, { type PropsWithChildren } from "react";
 
 import { Button } from "@/ui/components/button/Button";
-import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -20,27 +20,25 @@ export const NoResults = ({
   appearance = "default",
   children,
   className,
+  icon,
   iconClassName,
-  iconPath,
   isError,
   message,
-  symbol,
   title,
 }: PropsWithChildren<{
   appearance?: IAppearance;
   className?: string;
+  icon?: IIconSource;
   iconClassName?: string;
-  iconPath?: string;
   isError?: boolean;
   message?: string;
-  symbol?: ISymbolSource;
   title: string;
 }>) => (
   <div className={joinClasses(["mx-auto flex max-w-md flex-col items-center gap-y-4", className])}>
     <div className="flex flex-col items-center gap-y-2">
-      {(!!iconPath || !!symbol || isError) && (
+      {(!!icon || isError) && (
         <Icon
-          {...(iconPath && !symbol ? { path: iconPath } : symbolProps(symbol ?? "error"))}
+          {...iconSourceProps(icon ?? "error")}
           className={iconClassName ?? getIconClassName(appearance)}
           size="xl"
         />
@@ -61,7 +59,7 @@ export const NoResults = ({
           <Button
             appearance="moderate"
             brand="neutral"
-            leftSymbol="open_in_new"
+            leftIcon="open_in_new"
             onClick={() =>
               window.api.shell.openUrl("https://help.nexusmods.com/article/125-contact-us")
             }

@@ -21,14 +21,14 @@ import { PopoverPanelGroup } from "./PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "./PopoverPanelGroupItem";
 
 const layoutOptions = [
-  { label: "Grid", value: "grid", symbol: { name: "grid_view", fill: true } },
-  { label: "List", value: "list", symbol: { name: "view_list", fill: true } },
+  { label: "Grid", value: "grid", icon: { name: "grid_view", fill: true } },
+  { label: "List", value: "list", icon: { name: "view_list", fill: true } },
 ] satisfies IListboxOption<string>[];
 
 const helpActions: IMenuAction[][] = [
   [
-    { label: "Help centre", symbol: "help", onClick: () => {} },
-    { label: "About", symbol: "info", onClick: () => {} },
+    { label: "Help centre", icon: "help", onClick: () => {} },
+    { label: "About", icon: "info", onClick: () => {} },
   ],
 ];
 
@@ -41,22 +41,22 @@ const accountActions: IMenuAction[][] = [
   [
     {
       label: "View profile on web",
-      symbol: { name: "account_circle", fill: true },
+      icon: { name: "account_circle", fill: true },
       onClick: () => {},
     },
   ],
   [
-    { label: "Refresh user info", symbol: "refresh", onClick: () => {} },
+    { label: "Refresh user info", icon: "refresh", onClick: () => {} },
     {
       label: "Help",
-      symbol: "help",
+      icon: "help",
       panelRole: "menu",
       panel: ({ close, dismiss }) => (
         <PopoverMenu actions={helpActions} label="Help" onClose={close} onSelect={dismiss} />
       ),
     },
   ],
-  [{ label: "Logout", symbol: "logout", onClick: () => {} }],
+  [{ label: "Logout", icon: "logout", onClick: () => {} }],
 ];
 
 const sortRows: IMenuAction[][] = [
@@ -84,7 +84,7 @@ const twoSubmenuActions: IMenuAction[][] = [
   [
     {
       label: "Sort by",
-      symbol: "sort",
+      icon: "sort",
       panelRole: "menu",
       panel: ({ close, dismiss }) => (
         <PopoverMenu actions={sortRows} label="Sort by" onClose={close} onSelect={dismiss} />
@@ -92,14 +92,14 @@ const twoSubmenuActions: IMenuAction[][] = [
     },
     {
       label: "Filter",
-      symbol: "filter_alt",
+      icon: "filter_alt",
       panelRole: "menu",
       panel: ({ close, dismiss }) => (
         <PopoverMenu actions={filterRows} label="Filter" onClose={close} onSelect={dismiss} />
       ),
     },
   ],
-  [{ label: "Refresh", symbol: "refresh", onClick: () => {} }],
+  [{ label: "Refresh", icon: "refresh", onClick: () => {} }],
 ];
 
 /**
@@ -109,13 +109,13 @@ const twoSubmenuActions: IMenuAction[][] = [
  */
 const brandedActions: IMenuAction[][] = [
   [
-    { label: "Deploy Mods", symbol: "rocket_launch", brand: "primary", onClick: () => {} },
-    { label: "Check for Updates", symbol: "refresh", brand: "info", onClick: () => {} },
-    { label: "Verified", symbol: "check_circle", brand: "success", onClick: () => {} },
-    { label: "Go Premium", symbol: "star", brand: "premium", onClick: () => {} },
-    { label: "Purge Mods", symbol: "cleaning_services", brand: "neutral", onClick: () => {} },
+    { label: "Deploy Mods", icon: "rocket_launch", brand: "primary", onClick: () => {} },
+    { label: "Check for Updates", icon: "refresh", brand: "info", onClick: () => {} },
+    { label: "Verified", icon: "check_circle", brand: "success", onClick: () => {} },
+    { label: "Go Premium", icon: "star", brand: "premium", onClick: () => {} },
+    { label: "Purge Mods", icon: "cleaning_services", brand: "neutral", onClick: () => {} },
   ],
-  [{ label: "Remove Mod", symbol: "delete", brand: "danger", onClick: () => {} }],
+  [{ label: "Remove Mod", icon: "delete", brand: "danger", onClick: () => {} }],
 ];
 
 export const PopoverDemo = () => {
@@ -151,14 +151,14 @@ export const PopoverDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Popover>
-            <PopoverButton appearance="subdued" brand="neutral" leftSymbol="tune" />
+            <PopoverButton appearance="subdued" brand="neutral" leftIcon="tune" />
 
             <PopoverPanel className="nxm-popover-panel-controls">
               <PopoverPanelGroup>
                 <PopoverPanelGroupItem passive label="Display as">
                   <Picker
                     button={{
-                      leftSymbol: {
+                      leftIcon: {
                         name: layout === "list" ? "view_list" : "grid_view",
                         fill: true,
                       },
@@ -216,7 +216,7 @@ export const PopoverDemo = () => {
             <PopoverButton
               appearance="subdued"
               brand="neutral"
-              leftSymbol={{ name: "account_circle", fill: true }}
+              leftIcon={{ name: "account_circle", fill: true }}
             />
 
             <PopoverPanel className="nxm-popover-panel-dropdown">
@@ -242,7 +242,7 @@ export const PopoverDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Popover>
-            <PopoverButton appearance="subdued" brand="neutral" leftSymbol="sort" />
+            <PopoverButton appearance="subdued" brand="neutral" leftIcon="sort" />
 
             <PopoverPanel className="nxm-popover-panel-dropdown">
               {({ close }) => (
@@ -271,7 +271,7 @@ export const PopoverDemo = () => {
             <PopoverButton
               appearance="subdued"
               brand="neutral"
-              leftSymbol={{ name: "palette", fill: true }}
+              leftIcon={{ name: "palette", fill: true }}
             />
 
             <PopoverPanel className="nxm-popover-panel-dropdown">

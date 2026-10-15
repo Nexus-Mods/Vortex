@@ -9,7 +9,7 @@ import {
 import type { IFileRequirementReport } from "@/extensions/health_check/utils/fileRequirements/fileRequirementReport";
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
 import type { IState } from "@/types/IState";
-import { Icon, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -87,7 +87,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
       <div className="flex items-center justify-between gap-x-4 border-b border-stroke-weak p-3">
         <div className="flex min-w-0 items-center gap-x-2">
           <Icon
-            {...symbolProps(severityStyle.symbol)}
+            {...iconSourceProps(severityStyle.icon)}
             className={joinClasses(["shrink-0", severityStyle.textClassName])}
           />
 

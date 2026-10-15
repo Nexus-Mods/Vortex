@@ -1,6 +1,6 @@
 import React, { type ComponentType, type PropsWithChildren, type ReactNode } from "react";
 
-import type { ISymbolSource } from "@/ui/components/icon/Icon";
+import type { IIconSource } from "@/ui/components/icon/Icon";
 import { ListingLoader } from "@/ui/components/listing_loader/ListingLoader";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 
@@ -12,16 +12,14 @@ export const Listing = ({
   customError,
   customNoResults,
   entityCount,
-  errorIconPath,
+  errorIcon,
   errorMessage,
-  errorSymbol,
   errorTitle,
   isError,
   isLoading,
   noResultsClassName = "py-16",
+  noResultsIcon = "zoom_out",
   noResultsIconClassName,
-  noResultsIconPath,
-  noResultsSymbol,
   noResultsChildren,
   noResultsMessage = "Try adjusting your filters or search terms.",
   noResultsTitle = "No items found",
@@ -35,17 +33,15 @@ export const Listing = ({
   customError?: ReactNode;
   customNoResults?: ReactNode;
   entityCount?: number;
-  errorIconPath?: string;
-  errorSymbol?: ISymbolSource;
+  errorIcon?: IIconSource;
   errorMessage?: string;
   errorTitle?: string;
   isError?: boolean;
   isLoading?: boolean;
   noResultsClassName?: string;
   noResultsChildren?: ReactNode;
+  noResultsIcon?: IIconSource;
   noResultsIconClassName?: string;
-  noResultsIconPath?: string;
-  noResultsSymbol?: ISymbolSource;
   noResultsMessage?: string;
   noResultsTitle?: string;
   skeletonCount?: number;
@@ -74,10 +70,9 @@ export const Listing = ({
         {customError ?? (
           <NoResults
             className={noResultsClassName}
-            iconPath={errorIconPath}
+            icon={errorIcon}
             isError={true}
             message={errorMessage}
-            symbol={errorSymbol}
             title={errorTitle}
           />
         )}
@@ -90,10 +85,9 @@ export const Listing = ({
       {customNoResults ?? (
         <NoResults
           className={noResultsClassName}
+          icon={noResultsIcon}
           iconClassName={noResultsIconClassName}
-          iconPath={noResultsIconPath}
           message={noResultsMessage}
-          symbol={noResultsIconPath ? undefined : (noResultsSymbol ?? "zoom_out")}
           title={noResultsTitle}
         >
           {noResultsChildren}

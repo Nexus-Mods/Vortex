@@ -25,7 +25,7 @@ export const ChangelogButton = ({ children }: IChangelogButtonProps) => {
             as={PopoverButton}
             brand="info"
             label={t("View changelog")}
-            leftSymbol="description"
+            leftIcon="description"
             size="sm"
             tooltipDisabled={open}
           />

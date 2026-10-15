@@ -134,7 +134,7 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
           appearance="moderate"
           brand="info"
           label={t("Update to {{version}}", { version: attributes.newestVersion ?? "?" })}
-          leftSymbol="download"
+          leftIcon="download"
           size="sm"
           onClick={() => void updateMod(api, mod, gameId())}
         />
@@ -155,7 +155,7 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
             aria-description={t("Vortex can't determine the correct update automatically.")}
             aria-label={t("Choose update file")}
             brand="info"
-            leftSymbol="unknown_document"
+            leftIcon="unknown_document"
             size="sm"
             onClick={() =>
               api.events.emit("open-mod-page", gameId(), attributes.modId, attributes.source)

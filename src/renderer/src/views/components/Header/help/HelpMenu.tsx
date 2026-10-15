@@ -30,7 +30,7 @@ export const HelpMenu: FC<React.PropsWithChildren<unknown>> = () => {
               aria-haspopup="menu"
               aria-label={label}
               brand="neutral"
-              leftSymbol="more_horiz"
+              leftIcon="more_horiz"
             />
           </Tooltip>
 

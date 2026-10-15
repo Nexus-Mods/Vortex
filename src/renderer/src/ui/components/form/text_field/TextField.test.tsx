@@ -129,8 +129,8 @@ describe("TextField", () => {
     expect(document.querySelector(".nxm-input-icon")).toBeNull();
   });
 
-  it("draws leftSymbol in the container, before the input", () => {
-    renderField({ leftSymbol: "search" });
+  it("draws leftIcon in the container, before the input", () => {
+    renderField({ leftIcon: "search" });
     expect(getInput().previousElementSibling).toHaveClass("nxm-input-icon");
   });
 });

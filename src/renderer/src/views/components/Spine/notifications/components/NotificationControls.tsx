@@ -30,7 +30,7 @@ export const NotificationControls = ({
         <Button
           appearance="weak"
           brand="neutral"
-          leftSymbol="visibility_off"
+          leftIcon="visibility_off"
           size="sm"
           title={t("Never show again")}
           onClick={onSuppress}
@@ -41,7 +41,7 @@ export const NotificationControls = ({
         <Button
           appearance="weak"
           brand="neutral"
-          leftSymbol="close"
+          leftIcon="close"
           size="sm"
           title={collapsed > 1 ? t("Dismiss All") : t("Dismiss")}
           onClick={onDismiss}

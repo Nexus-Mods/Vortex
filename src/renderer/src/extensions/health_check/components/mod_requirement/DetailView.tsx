@@ -15,7 +15,7 @@ import { severityStyleMap } from "@/extensions/health_check/utils/shared/severit
 import type { IDetailViewProps } from "@/extensions/health_check/views/content/types";
 import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Button } from "@/ui/components/button/Button";
-import { Icon, symbolProps } from "@/ui/components/icon/Icon";
+import { Icon, iconSourceProps } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import opn from "@/util/opn";
@@ -144,7 +144,10 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
       <div className="rounded-lg border border-stroke-weak">
         <div className="flex items-center justify-between gap-x-4 border-b border-stroke-weak p-3">
           <div className="flex min-w-0 items-center gap-x-2">
-            <Icon {...symbolProps(severityStyle.symbol)} className={severityStyle.textClassName} />
+            <Icon
+              {...iconSourceProps(severityStyle.icon)}
+              className={severityStyle.textClassName}
+            />
 
             <Typography as="div" className="font-semibold">
               {t("shared::mod_may_be_required_for", { modName: mod.requiredBy.modName })}
@@ -176,7 +179,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                   <Button
                     appearance="moderate"
                     brand="neutral"
-                    leftSymbol="open_in_new"
+                    leftIcon="open_in_new"
                     onClick={openModPage}
                   >
                     {t("detail::item::open_external_mod_page")}
@@ -188,7 +191,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                     <Button
                       appearance="moderate"
                       brand="neutral"
-                      leftSymbol="open_in_new"
+                      leftIcon="open_in_new"
                       onClick={handleModPage}
                     >
                       {t("detail::item::install_via_mod_page")}
@@ -198,7 +201,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                   <Button
                     appearance="strong"
                     brand="neutral"
-                    leftSymbol="install_desktop"
+                    leftIcon="install_desktop"
                     rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
                     size="sm"
                     onClick={handleInstall}
@@ -219,7 +222,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                 : modToFileData(mod, mod.mainFile)
             }
             {...(mod.externalRequirement
-              ? { fileSymbol: "language", hideImage: true, onOpenFile: openModPage }
+              ? { fileIcon: "language", hideImage: true, onOpenFile: openModPage }
               : {})}
           />
 
@@ -240,7 +243,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                 <Button
                   appearance="moderate"
                   brand="neutral"
-                  leftSymbol="check"
+                  leftIcon="check"
                   onClick={handleConfirmInstall}
                 >
                   {t("detail::item::confirm_install")}

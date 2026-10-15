@@ -364,7 +364,7 @@ function init(context: types.IExtensionContext) {
       dumpReduxActionsToFile,
       removeFiles,
     }),
-    symbol: "comment",
+    menuIcon: "comment",
   } as any);
 
   context.registerAction(

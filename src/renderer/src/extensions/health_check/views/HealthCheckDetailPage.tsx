@@ -53,7 +53,7 @@ const BackButton = ({ onBack }: { onBack: () => void }) => {
     <Button
       appearance="weak"
       brand="neutral"
-      leftSymbol="arrow_back"
+      leftIcon="arrow_back"
       onClick={() => {
         trackBackClicked({ time_spent_on_detail_ms: Date.now() - openedAtRef.current });
         onBack();

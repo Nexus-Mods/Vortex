@@ -276,7 +276,7 @@ const ModRowActions = memo(
               aria-label={installLabel}
               brand="primary"
               isLoading={isLoading || busy !== undefined}
-              leftSymbol="add"
+              leftIcon="add"
               size="sm"
               onClick={() => onInstall?.(modId)}
             />
@@ -459,7 +459,7 @@ export const ModsTableSwitch = ({
               <Image
                 alt=""
                 className="ml-3.5 h-6 rounded-full"
-                fallbackSymbol={{ name: "person", fill: true }}
+                fallbackIcon={{ name: "person", fill: true }}
                 fit="cover"
                 imageType="avatar"
                 src={avatar.src}
@@ -721,9 +721,7 @@ export const ModsTableSwitch = ({
     onGroupMenuAction: analytics.onGroupMenuAction,
     defaultSort: BY_NAME,
     footer,
-    empty: matches ? (
-      <NoResults symbol="search" title={t("No mods match your search")} />
-    ) : undefined,
+    empty: matches ? <NoResults icon="search" title={t("No mods match your search")} /> : undefined,
   };
 
   // A table takes rows or groups, never both; typed, so neither gains the other as undefined.

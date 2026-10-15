@@ -302,7 +302,7 @@ describe("useModToolbarActions beta table", () => {
   });
 
   it("shows the experiment flask", () => {
-    expect(betaTable()?.symbol).toBe("experiment");
+    expect(betaTable()?.icon).toBe("experiment");
   });
 
   it("offers the beta view while the classic one shows", () => {
