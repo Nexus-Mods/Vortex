@@ -433,6 +433,22 @@ export interface ISessionState {
   updater: IUpdaterSessionState;
 }
 
+export interface IPersistentState {
+  profiles: { [profileId: string]: IProfile };
+  mods: IModTable;
+  downloads: IStateDownloads;
+  collections: ICollectionsPersistentState;
+  categories: { [gameId: string]: ICategoryDictionary };
+  gameMode: IStateGameMode;
+  deployment: {
+    needToDeploy: { [gameId: string]: boolean };
+    deploymentCounter: { [gameId: string]: number };
+  };
+  transactions: IStateTransactions;
+  history: IHistoryPersistent;
+  healthCheck: IHealthCheckPersistentState;
+}
+
 export interface IState {
   app: IApp;
   user: IUser;
@@ -441,21 +457,7 @@ export interface IState {
   };
   session: ISessionState;
   settings: ISettings;
-  persistent: {
-    profiles: { [profileId: string]: IProfile };
-    mods: IModTable;
-    downloads: IStateDownloads;
-    collections: ICollectionsPersistentState;
-    categories: { [gameId: string]: ICategoryDictionary };
-    gameMode: IStateGameMode;
-    deployment: {
-      needToDeploy: { [gameId: string]: boolean };
-      deploymentCounter: { [gameId: string]: number };
-    };
-    transactions: IStateTransactions;
-    history: IHistoryPersistent;
-    healthCheck: IHealthCheckPersistentState;
-  };
+  persistent: IPersistentState;
 }
 
 export interface IDiscoveryPhase {

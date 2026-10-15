@@ -17,13 +17,16 @@ import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
 import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
+import telemetryReducer from "./reducers/telemetry.reducer";
 import { analyticsLog } from "./utils/analyticsLog";
+import { emitStoreGameVersions } from "./utils/storeGameVersionEvent";
 import SettingsAnalytics from "./views/SettingsAnalytics";
 
 let ignoreNextAnalyticsStateChange = false;
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "analytics"], settingsReducer);
+  context.registerReducer(["persistent", "analyticsTelemetry"], telemetryReducer);
   context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
 
   context.once(() => {
@@ -83,6 +86,16 @@ function init(context: IExtensionContext): boolean {
     // and would otherwise report itself as a switch the user never made.
     context.api.events.on("analytics-track-ui-mode-changed", (isLegacy: boolean) => {
       AnalyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacy }));
+    });
+
+    // Store install version telemetry; the per-game change gates make it cheap on deploys that changed nothing.
+    // Fire and forget: the event must never delay or fail the deployment chain.
+    context.api.onAsync("did-deploy", async () => {
+      void emitStoreGameVersions(context.api).catch((err) =>
+        analyticsLog("warn", "store-game-version emit failed", {
+          error: getErrorMessageOrDefault(err),
+        }),
+      );
     });
 
     // Keep the active-game super properties in sync so every event carries game scope.
