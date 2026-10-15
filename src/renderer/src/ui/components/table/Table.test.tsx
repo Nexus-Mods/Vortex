@@ -587,8 +587,8 @@ describe("Table with groups", () => {
       <Table columns={GROUPED_COLUMNS} getRowId={(row) => row.id} groups={GROUPS} label="Files" />,
     );
 
-  // Its solid background would hide the group's tint, so it draws its own.
-  it("tints a sticky column's cells with their group's picture", () => {
+  // Its solid background would hide the group's tint, so it takes the group's colour itself.
+  it("gives a sticky column's cells their group's colour", () => {
     render(
       <Table
         columns={[GROUPED_COLUMNS[0], { ...GROUPED_COLUMNS[1], sticky: "end" }]}
@@ -598,12 +598,14 @@ describe("Table with groups", () => {
       />,
     );
 
-    const tinted = [...document.querySelectorAll('[data-sticky="end"]')].filter((cell) =>
-      cell.querySelector(".nxm-table-cell-tint"),
+    const colours = [...document.querySelectorAll<HTMLElement>('[data-sticky="end"]')].map(
+      (cell) =>
+        cell
+          .closest<HTMLElement>(".nxm-table-group")
+          ?.style.getPropertyValue("--nxm-table-group-colour") ?? "header",
     );
-    // The first group's row and its two rows; not the header, nor the second group's.
-    expect(tinted).toHaveLength(3);
-    expect(document.querySelectorAll(".nxm-table-cell-tint")).toHaveLength(3);
+    // The header, the first group's row and its two rows, then the second group's.
+    expect(colours).toEqual(["header", ...Array(3).fill("rgb(1, 2, 3)"), "", ""]);
   });
 
   it("is a treegrid of group rows, each above its own rows, a row in two groups in both", () => {
@@ -625,8 +627,8 @@ describe("Table with groups", () => {
     ]);
   });
 
-  it("washes a group's row from its image, when it has one", () => {
-    const { container } = render(
+  it("tints a group from its image, when it has one", () => {
+    render(
       <Table
         columns={GROUPED_COLUMNS}
         getRowId={(row) => row.id}
@@ -635,31 +637,13 @@ describe("Table with groups", () => {
       />,
     );
 
-    const groupRows = container.querySelectorAll(".nxm-table-group-row");
-    expect(groupRows[0].lastElementChild).toHaveClass("nxm-table-group-wash");
-    expect(groupRows[0].lastElementChild).toHaveStyle({ backgroundColor: "rgb(1, 2, 3)" });
-    expect(groupRows[1].querySelector(".nxm-table-group-wash")).toBeNull();
-  });
+    const groupOf = (name: string) =>
+      screen.getByRole("button", { name }).closest('[role="rowgroup"]') as HTMLElement;
 
-  it("tints an open group's rows from its image, below its own row, until it collapses", async () => {
-    const { container } = render(
-      <Table
-        columns={GROUPED_COLUMNS}
-        getRowId={(row) => row.id}
-        groups={[{ ...GROUPS[0], image: "first.png" }, GROUPS[1]]}
-        label="Files"
-      />,
+    expect(groupOf("First").style.getPropertyValue("--nxm-table-group-colour")).toBe(
+      "rgb(1, 2, 3)",
     );
-
-    const backdrops = () => container.querySelectorAll<HTMLElement>(".nxm-table-group-backdrop");
-    expect(backdrops()).toHaveLength(1);
-    // Under the first group's row, 48px and a 4px gap, over its two 40px rows.
-    expect(backdrops()[0].style.getPropertyValue("--nxm-table-backdrop-top")).toBe("52px");
-    expect(backdrops()[0].style.height).toBe("80px");
-
-    await userEvent.click(screen.getByRole("button", { name: "First" }));
-
-    expect(backdrops()).toHaveLength(0);
+    expect(groupOf("Second").style.getPropertyValue("--nxm-table-group-colour")).toBe("");
   });
 
   it("collapses a group's rows from its button, and opens them again", async () => {
@@ -733,6 +717,59 @@ describe("Table in a scrolling page", () => {
     expect(screen.getByRole("button", { name: "Row 100" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Row 0" })).toHaveFocus();
     expect(screen.queryByRole("button", { name: "Row 1" })).toBeNull();
+  });
+
+  const renderGroupedInPage = () =>
+    render(
+      <div data-testid="page" style={{ overflowY: "auto" }}>
+        <Table
+          columns={FOCUSABLE}
+          getRowId={(row) => row.id}
+          groups={[
+            { id: "first", label: "First", rows: MANY.slice(0, 100) },
+            { id: "second", label: "Second", rows: MANY.slice(100) },
+          ]}
+          label="Files"
+        />
+      </div>,
+    );
+
+  const groupOf = (name: string) =>
+    screen.getByRole("button", { name }).closest('[role="rowgroup"]') as HTMLElement;
+
+  // A heading's height with the gap above it, a row's, and the spacers' between them.
+  const heightOf = (group: HTMLElement) =>
+    [...group.children].reduce((height, child) => {
+      if (child.getAttribute("role") === "row") {
+        return height + (child.getAttribute("aria-expanded") === null ? 40 : 52);
+      }
+      return height + parseFloat((child as HTMLElement).style.height || "0");
+    }, 0);
+
+  it("keeps the heading of the group scrolled into, which sticks over its rows", () => {
+    renderGroupedInPage();
+
+    scrollTo(screen.getByTestId("page"), 2000);
+
+    expect(screen.getByRole("button", { name: "First" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Row 1" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Second" })).toBeNull();
+  });
+
+  it("puts a group's heading and rows in a rowgroup as tall as all its rows", () => {
+    renderGroupedInPage();
+
+    scrollTo(screen.getByTestId("page"), 2000);
+
+    const first = groupOf("First");
+    expect(within(first).getByRole("button", { name: "Row 50" })).toBeInTheDocument();
+    expect(heightOf(first)).toBe(52 + 100 * 40);
+  });
+
+  it("starts each group's rowgroup where its heading is", () => {
+    renderGroupedInPage();
+
+    expect(within(groupOf("First")).getByRole("button", { name: "Row 0" })).toBeInTheDocument();
   });
 });
 
