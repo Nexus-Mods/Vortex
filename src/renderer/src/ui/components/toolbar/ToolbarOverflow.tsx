@@ -1,4 +1,3 @@
-import { mdiDotsHorizontal } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -92,7 +91,7 @@ export const ToolbarOverflow = ({ actions, pinning }: IToolbarOverflowProps) => 
         aria-label={label}
         brand="neutral"
         data-testid="toolbar-overflow"
-        leftIconPath={mdiDotsHorizontal}
+        leftSymbol="more_horiz"
       />
 
       <PopoverPanel className="nxm-popover-panel-dropdown">

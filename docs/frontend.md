@@ -207,12 +207,18 @@ label, so selecting a tab stopped working as soon as the label was translated.
 ## Icons
 
 - `<Icon name="settings" />` draws a Material Symbol from the variable font, by the
-  symbol's name. `fill`, `weight`, `grade` and `opticalSize` set the font's axes; `size` keeps the same
-  steps as for a path. `name` is typed from the `material-symbols` package, so a name the
-  font doesn't have fails the typecheck. The font is `material-symbols-outlined.woff2`,
-  copied to `assets/fonts` by `copy-assets.mjs`, and `Icon` takes either `name` or `path`.
-- MDI paths from `@mdi/js`, mapped in `views/components/iconMap.ts` via
-  `getIconPath(name)`. Pages can pass an `mdi` path directly.
+  symbol's name. `fill`, `weight`, `grade` and `opticalSize` set the font's axes; `size` keeps
+  the same steps as for a path. `Icon` takes either `name` or `path`.
+- The font ships only the symbols in `ui/components/icon/symbols.ts`, and `name` takes only
+  those. To use another, add it there, in alphabetical order: a name the font doesn't have
+  fails the typecheck, or the build. `copy-assets.mjs` cuts the full font down to the list
+  (some 4 MB to under 100 KB), so a new symbol shows in a dev run only once the assets are
+  copied again.
+- Components take an icon as `symbol` (a Material Symbol, by name or as `{ name, fill }`) or as
+  `iconPath` (an SVG path, for the custom `nxm*` icons the font lacks). Legacy icon names, which
+  actions and extensions register with, resolve through `getIconProps(name)` in
+  `views/components/iconMap.ts`. Pages can pass a `symbol` directly; an extension's own `mdi`
+  path still works.
 - Custom SVGs must use the 24x24 viewBox the `Icon` component renders. To port a
   Material Symbols icon (`0 -960 960 960`): scale by 0.025 and offset absolute Y
   by +960. Keep it a single filled path with `fill="currentColor"`.

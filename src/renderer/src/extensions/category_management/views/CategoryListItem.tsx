@@ -1,14 +1,3 @@
-import {
-  mdiCancel,
-  mdiChevronDown,
-  mdiChevronRight,
-  mdiDelete,
-  mdiDrag,
-  mdiFolderPlus,
-  mdiPlus,
-  mdiRename,
-  mdiSubdirectoryArrowRight,
-} from "@mdi/js";
 import type { TFunction } from "i18next";
 import React, { useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
@@ -112,19 +101,19 @@ export default function CategoryListItem({
   const actions: IToolbarAction[] = [
     {
       label: "Edit",
-      iconPath: mdiRename,
+      symbol: "drive_file_rename_outline",
       testId: "category-rename",
       onClick: () => setEditMode("name"),
     },
     {
       label: "New Sub-Category",
-      iconPath: mdiFolderPlus,
+      symbol: "create_new_folder",
       testId: "category-add-subcategory",
       onClick: () => setEditMode("subcategory"),
     },
     {
       label: "Delete",
-      iconPath: mdiDelete,
+      symbol: { name: "delete", fill: true },
       testId: "category-delete",
       onClick: () => remove(categoryId),
     },
@@ -164,9 +153,9 @@ export default function CategoryListItem({
       <div className={`flex ${indicatorClass}`} ref={ref}>
         <div className="flex grow gap-2">
           <div className="flex items-center gap-2">
-            <Icon className="cursor-move" path={mdiDrag} />
+            <Icon className="cursor-move" name="drag_indicator" />
 
-            {!!parentId && <Icon path={mdiSubdirectoryArrowRight} />}
+            {!!parentId && <Icon name="subdirectory_arrow_right" />}
 
             {children.length > 0 && (
               <Button
@@ -174,7 +163,7 @@ export default function CategoryListItem({
                 aria-label="Expand/Collapse"
                 brand="neutral"
                 data-testid="category-expand"
-                leftIconPath={expanded ? mdiChevronDown : mdiChevronRight}
+                leftSymbol={expanded ? "expand_more" : "chevron_right"}
                 title="Expand/Collapse"
                 onClick={() => expand(categoryId)}
               />
@@ -210,7 +199,7 @@ export default function CategoryListItem({
                   aria-label="Save"
                   brand="primary"
                   data-testid="category-rename-save"
-                  leftIconPath={mdiPlus}
+                  leftSymbol="add"
                   onClick={rename}
                 />
 
@@ -219,7 +208,7 @@ export default function CategoryListItem({
                   aria-label="Cancel"
                   brand="neutral"
                   data-testid="category-rename-cancel"
-                  leftIconPath={mdiCancel}
+                  leftSymbol="block"
                   onClick={() => setEditMode()}
                 />
               </div>
@@ -254,7 +243,7 @@ export default function CategoryListItem({
             brand="primary"
             data-testid="category-subcategory-save"
             disabled={newSubcategoryName.length < 2}
-            leftIconPath={mdiPlus}
+            leftSymbol="add"
             size="sm"
             onClick={() => createCategory(newSubcategoryName)}
           />
@@ -264,7 +253,7 @@ export default function CategoryListItem({
             aria-label="Cancel"
             brand="neutral"
             data-testid="category-subcategory-cancel"
-            leftIconPath={mdiCancel}
+            leftSymbol="block"
             onClick={() => setEditMode()}
           />
         </div>

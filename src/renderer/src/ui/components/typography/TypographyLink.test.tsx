@@ -38,6 +38,18 @@ describe("TypographyLink", () => {
     });
   });
 
+  describe("symbols", () => {
+    it("renders left and right icons from symbols", () => {
+      render(
+        <TypographyLink leftSymbol="search" rightSymbol="open_in_new">
+          link
+        </TypographyLink>,
+      );
+      const symbols = [...document.querySelectorAll<HTMLElement>("[data-symbol]")];
+      expect(symbols.map((symbol) => symbol.dataset.symbol)).toEqual(["search", "open_in_new"]);
+    });
+  });
+
   describe("variant", () => {
     it.each([
       ["primary", "nxm-link-variant-primary"],

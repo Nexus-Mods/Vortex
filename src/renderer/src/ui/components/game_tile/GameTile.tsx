@@ -1,11 +1,3 @@
-import {
-  mdiAccount,
-  mdiDotsVertical,
-  mdiGog,
-  mdiMicrosoftXbox,
-  mdiSteam,
-  mdiUbisoft,
-} from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -19,7 +11,14 @@ import type { IMenuAction } from "@/ui/components/popover/PopoverMenuItem";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
-import { nxmElectronicArts, nxmEpicGames } from "@/ui/icon-paths";
+import {
+  nxmElectronicArts,
+  nxmEpicGames,
+  nxmGog,
+  nxmSteam,
+  nxmUbisoft,
+  nxmXbox,
+} from "@/ui/icon-paths";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -27,11 +26,11 @@ const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice
 /** Known stores, keyed by the id `IDiscoveryResult.store` carries. */
 const STORES: Record<string, { iconPath: string; label: string }> = {
   epic: { iconPath: nxmEpicGames, label: "Epic Games" },
-  gog: { iconPath: mdiGog, label: "GOG" },
+  gog: { iconPath: nxmGog, label: "GOG" },
   origin: { iconPath: nxmElectronicArts, label: "Origin" },
-  steam: { iconPath: mdiSteam, label: "Steam" },
-  uplay: { iconPath: mdiUbisoft, label: "Ubisoft" },
-  xbox: { iconPath: mdiMicrosoftXbox, label: "Xbox" },
+  steam: { iconPath: nxmSteam, label: "Steam" },
+  uplay: { iconPath: nxmUbisoft, label: "Ubisoft" },
+  xbox: { iconPath: nxmXbox, label: "Xbox" },
 };
 
 export interface IGameTileProps {
@@ -119,7 +118,7 @@ export const GameTile = ({
                       aria-label={menu.label}
                       brand="neutral"
                       className={revealedWhenActive}
-                      leftIconPath={mdiDotsVertical}
+                      leftSymbol="more_vert"
                       size="sm"
                     />
                   </Tooltip>
@@ -145,7 +144,7 @@ export const GameTile = ({
                     placement="top"
                   >
                     <div className={joinClasses(["flex items-center gap-x-1", revealedWhenActive])}>
-                      <Icon className="text-primary-moderate" path={mdiAccount} size="xs" />
+                      <Icon className="text-primary-moderate" name="person" fill size="xs" />
 
                       <Typography
                         appearance="moderate"

@@ -9,7 +9,7 @@ import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/PopoverMenuItem";
-import { getIconPath } from "@/views/components/iconMap";
+import { getIconProps } from "@/views/components/iconMap";
 
 import { setGameAddOrigin } from "../../actions/session";
 import { setGameHidden } from "../../actions/settings";
@@ -86,7 +86,7 @@ const useRegisteredActions = (group: string, gameId: string): IPositionedAction[
         // Registrations are inconsistent about translating their own title, and a
         // string already translated passes through untouched.
         label: t(definition.title),
-        iconPath: getIconPath(definition.icon),
+        ...getIconProps(definition.icon),
         disabled: typeof condition === "string",
         onClick: () => definition.action?.(instanceIds),
       },
@@ -128,7 +128,7 @@ export const useGameCardActions = (
       position: MENU_POSITION,
       action: {
         label: hidden ? t("Show") : t("Hide"),
-        iconPath: getIconPath(hidden ? "show" : "hide"),
+        ...getIconProps(hidden ? "show" : "hide"),
         onClick: () => dispatch(setGameHidden(gameId, !hidden)),
       },
     };
@@ -137,7 +137,7 @@ export const useGameCardActions = (
       position: DETAILS_POSITION,
       action: {
         label: t("Game details"),
-        iconPath: getIconPath("game"),
+        ...getIconProps("game"),
         onClick: onShowDetails,
       },
     };
@@ -155,7 +155,7 @@ export const useGameCardActions = (
               position: opens[0].position,
               action: {
                 label: openLabel,
-                iconPath: getIconPath(OPEN_ICON),
+                ...getIconProps(OPEN_ICON),
                 panelRole: "menu",
                 panel: ({ dismiss }) => (
                   <PopoverMenu

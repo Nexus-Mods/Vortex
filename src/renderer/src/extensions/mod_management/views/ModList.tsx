@@ -1,6 +1,5 @@
 import path from "path";
 
-import { mdiChevronDown, mdiOpenInNew } from "@mdi/js";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
@@ -667,7 +666,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     if (filtered.length === 1) {
       return (
-        <Button leftIconPath={mdiOpenInNew} onClick={this.getMoreMods}>
+        <Button leftSymbol="open_in_new" onClick={this.getMoreMods}>
           {label}
         </Button>
       );
@@ -675,7 +674,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Dropdown>
-        <UiDropdownButton rightIconPath={mdiChevronDown}>{label}</UiDropdownButton>
+        <UiDropdownButton rightSymbol="expand_more">{label}</UiDropdownButton>
 
         <DropdownItems>
           {filtered.map((source) => (

@@ -184,6 +184,13 @@ describe("ToolbarGroup", () => {
       expect(screen.queryByText("Refresh")).not.toBeInTheDocument();
     });
 
+    it("draws an action's symbol as the button's icon", () => {
+      render(<ToolbarGroup actions={[{ label: "Refresh", symbol: "refresh" }]} />);
+      expect(
+        screen.getByRole("button", { name: "Refresh" }).querySelector("[data-symbol]"),
+      ).toHaveAttribute("data-symbol", "refresh");
+    });
+
     it("renders visible label text when showLabel is set", () => {
       render(<ToolbarGroup actions={[{ label: "1 selected", showLabel: true }]} />);
       expect(screen.getByText("1 selected")).toBeInTheDocument();

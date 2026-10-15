@@ -1,4 +1,3 @@
-import { mdiMagnify } from "@mdi/js";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
@@ -130,8 +129,8 @@ describe("TextField", () => {
     expect(document.querySelector(".nxm-input-icon")).toBeNull();
   });
 
-  it("draws leftIconPath in the container, before the input", () => {
-    renderField({ leftIconPath: mdiMagnify });
+  it("draws leftSymbol in the container, before the input", () => {
+    renderField({ leftSymbol: "search" });
     expect(getInput().previousElementSibling).toHaveClass("nxm-input-icon");
   });
 });

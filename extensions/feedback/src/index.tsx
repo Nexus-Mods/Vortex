@@ -1,6 +1,5 @@
 import * as path from "path";
 
-import { mdiCommentTextOutline } from "@mdi/js";
 import { fs, log, types, util } from "@nexusmods/vortex-api";
 import Promise from "bluebird";
 import * as tmp from "tmp";
@@ -365,7 +364,7 @@ function init(context: types.IExtensionContext) {
       dumpReduxActionsToFile,
       removeFiles,
     }),
-    mdi: mdiCommentTextOutline,
+    symbol: "comment",
   } as any);
 
   context.registerAction(

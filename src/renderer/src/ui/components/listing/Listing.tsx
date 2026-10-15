@@ -1,6 +1,6 @@
-import { mdiMagnifyRemoveOutline } from "@mdi/js";
 import React, { type ComponentType, type PropsWithChildren, type ReactNode } from "react";
 
+import type { ISymbolSource } from "@/ui/components/icon/Icon";
 import { ListingLoader } from "@/ui/components/listing_loader/ListingLoader";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 
@@ -14,12 +14,14 @@ export const Listing = ({
   entityCount,
   errorIconPath,
   errorMessage,
+  errorSymbol,
   errorTitle,
   isError,
   isLoading,
   noResultsClassName = "py-16",
   noResultsIconClassName,
   noResultsIconPath,
+  noResultsSymbol,
   noResultsChildren,
   noResultsMessage = "Try adjusting your filters or search terms.",
   noResultsTitle = "No items found",
@@ -34,6 +36,7 @@ export const Listing = ({
   customNoResults?: ReactNode;
   entityCount?: number;
   errorIconPath?: string;
+  errorSymbol?: ISymbolSource;
   errorMessage?: string;
   errorTitle?: string;
   isError?: boolean;
@@ -42,6 +45,7 @@ export const Listing = ({
   noResultsChildren?: ReactNode;
   noResultsIconClassName?: string;
   noResultsIconPath?: string;
+  noResultsSymbol?: ISymbolSource;
   noResultsMessage?: string;
   noResultsTitle?: string;
   skeletonCount?: number;
@@ -73,6 +77,7 @@ export const Listing = ({
             iconPath={errorIconPath}
             isError={true}
             message={errorMessage}
+            symbol={errorSymbol}
             title={errorTitle}
           />
         )}
@@ -86,8 +91,9 @@ export const Listing = ({
         <NoResults
           className={noResultsClassName}
           iconClassName={noResultsIconClassName}
-          iconPath={noResultsIconPath ?? mdiMagnifyRemoveOutline}
+          iconPath={noResultsIconPath}
           message={noResultsMessage}
+          symbol={noResultsIconPath ? undefined : (noResultsSymbol ?? "zoom_out")}
           title={noResultsTitle}
         >
           {noResultsChildren}

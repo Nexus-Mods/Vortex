@@ -43,6 +43,8 @@
             flex-shrink: 0;
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
+            /* A symbol is drawn at its font size, so it matches the box. */
+            font-size: calc(var(--spacing) * 4);
 
             &:first-child {
                 margin-left: calc(var(--spacing) * -0.5);

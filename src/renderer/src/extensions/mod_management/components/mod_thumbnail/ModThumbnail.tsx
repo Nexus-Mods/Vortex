@@ -1,4 +1,3 @@
-import { mdiImageBroken } from "@mdi/js";
 import React from "react";
 
 import { Image } from "@/ui/components/image/Image";
@@ -25,7 +24,7 @@ export const ModThumbnail = ({ pictureUrl, className }: IModThumbnailProps) => (
   <Image
     alt=""
     className={className}
-    fallbackIconPath={mdiImageBroken}
+    fallbackSymbol="broken_image"
     fit="cover"
     imageType="mod"
     src={modThumbnailUrl(pictureUrl)}

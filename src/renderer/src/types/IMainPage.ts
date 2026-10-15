@@ -1,6 +1,7 @@
 import type * as React from "react";
 
 import type ReduxProp from "../ReduxProp";
+import type { ISymbolSource } from "../ui/components/icon/Icon";
 
 /**
  * interface of a "main page", that is: a content page
@@ -13,7 +14,10 @@ import type ReduxProp from "../ReduxProp";
 export interface IMainPage {
   id: string;
   icon: string;
+  /** An SVG path for the page's icon in the menu, for an extension that brings its own. */
   mdi?: string;
+  /** The page's icon in the menu, a Material Symbol. */
+  symbol?: ISymbolSource;
   title: string;
   component: React.ComponentClass<any> | React.FunctionComponent<React.PropsWithChildren<any>>;
   propsFunc: () => any;

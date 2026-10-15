@@ -1,4 +1,3 @@
-import { mdiPlusCircleOutline, mdiPuzzleOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import _ from "lodash";
 import React, { useCallback, useMemo } from "react";
@@ -22,7 +21,7 @@ import type { TFunction } from "@/util/i18n";
 import * as selectors from "@/util/selectors";
 import { getSafe } from "@/util/storeHelper";
 import { batchDispatch } from "@/util/util";
-import { getIconPath } from "@/views/components/iconMap";
+import { getIconProps } from "@/views/components/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
 import { selectModsToUpdate } from "../util/collection_update_warning/collectionUpdateWarning";
@@ -118,7 +117,7 @@ const useDeployAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "deploy",
         label: isDeploying ? t("Applying mod changes…") : t("Deploy (Apply changes)"),
-        iconPath: getIconPath("deploy"),
+        ...getIconProps("deploy"),
         pinned: true,
         testId: "deploy-mods",
         brand: needToDeploy && !isDeploying ? "primary" : "neutral",
@@ -245,7 +244,7 @@ const usePurgeAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "purge",
         label: t("Purge Mods"),
-        iconPath: getIconPath("purge"),
+        ...getIconProps("purge"),
         pinned: true,
         testId: "purge-mods",
         onClick: activator !== undefined ? purge : noMethod,
@@ -326,7 +325,7 @@ const useInstallFromFileAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "install-from-file",
         label: t("Install From File"),
-        iconPath: mdiPlusCircleOutline,
+        symbol: "add_circle",
         pinned: true,
         testId: "install-from-archive",
         onClick: install,
@@ -452,7 +451,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         ? {
             id: "check-versions",
             label: t("Checking for mod updates"),
-            iconPath: getIconPath("refresh"),
+            ...getIconProps("refresh"),
             pinned: true,
             disabled: true,
             isLoading: true,
@@ -460,7 +459,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         : {
             id: "check-versions",
             label: t("Check for Updates"),
-            iconPath: getIconPath("refresh"),
+            ...getIconProps("refresh"),
             pinned: true,
             testId: "check-mod-updates-button",
             onClick: check,
@@ -533,7 +532,7 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
         id: definition.title,
         label: !notice ? definition.title : `${definition.title} (${notice})`,
         brand: brands[index],
-        iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
+        ...getIconProps(definition.icon, "extension"),
         pinned: definition.options?.pinned ?? false,
         disabled: typeof condition === "string",
         extension: definition.options?.namespace,
@@ -589,7 +588,7 @@ const useActionMenu = (
       action: {
         id: menu.id,
         label: `${label}...`,
-        iconPath: getIconPath(menu.icon),
+        ...getIconProps(menu.icon),
         pinned: menu.pinned,
         panelRole: "menu",
         panel: ({ dismiss }) => (

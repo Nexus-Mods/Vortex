@@ -135,6 +135,8 @@
             "dependentTasksOutputFiles": "**/dist/**"
           },
           "{projectRoot}/copy-assets.mjs",
+          "{projectRoot}/subset_symbols/subsetSymbols.mjs",
+          "{workspaceRoot}/src/renderer/src/ui/components/icon/symbols.ts",
           "{workspaceRoot}/src/stylesheets/**/*.scss",
           "{workspaceRoot}/src/renderer/src/index.html",
           "{workspaceRoot}/src/renderer/src/splash.html",
@@ -233,7 +235,6 @@
     "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
     "@hot-updater/bsdiff": "catalog:",
-    "@mdi/js": "catalog:",
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",
@@ -398,9 +399,11 @@
     "electron": "catalog:",
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
+    "fontkit": "catalog:",
     "openapi-typescript": "catalog:",
     "react-refresh": "catalog:",
     "redux-freeze": "catalog:",
+    "subset-font": "catalog:",
     "vitest-fetch-mock": "catalog:"
   }
 }

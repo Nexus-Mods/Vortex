@@ -1,4 +1,3 @@
-import { mdiAccountCircle, mdiLogout, mdiRefresh } from "@mdi/js";
 import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -51,7 +50,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
       ? []
       : [
           {
-            iconPath: mdiAccountCircle,
+            symbol: { name: "account_circle", fill: true },
             label: t("View profile on web"),
             onClick: () => {
               opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
@@ -60,7 +59,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
         ],
     [
       {
-        iconPath: mdiRefresh,
+        symbol: "refresh",
         label: t("Refresh user info"),
         onClick: () => scheduleMembershipRefresh(api),
       },
@@ -68,7 +67,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
     ],
     [
       {
-        iconPath: mdiLogout,
+        symbol: "logout",
         label: t("Logout"),
         onClick: () => {
           dispatch(setUserAPIKey(undefined));
@@ -98,7 +97,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
                     src={userInfo.profileUrl}
                   />
                 ) : (
-                  <Icon path={mdiAccountCircle} />
+                  <Icon name="account_circle" fill />
                 )
               }
             />

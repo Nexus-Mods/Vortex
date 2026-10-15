@@ -12,7 +12,13 @@
     src: url(assets/fonts/material-symbols-outlined.woff2) format("woff2");
 }
 
-// A symbol is drawn by writing its name, which the font's ligatures turn into the glyph.
+// A symbol is drawn by writing its name, which the font's ligatures turn into the glyph. The name
+// is written by the stylesheet, from `data-symbol`, so it never becomes part of the page's text:
+// found by a search, selected, copied, or read out.
+.material-symbols-outlined::before {
+    content: attr(data-symbol);
+}
+
 .material-symbols-outlined {
     display: inline-block;
     font-family: "Material Symbols Outlined";

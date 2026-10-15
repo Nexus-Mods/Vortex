@@ -1,6 +1,6 @@
 import React, { type ButtonHTMLAttributes, forwardRef, type PropsWithChildren } from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -20,7 +20,7 @@ const BORDER_CLASSES: Record<SpineButtonBorder, string> = {
 interface ISpineButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   border?: SpineButtonBorder;
   className?: string;
-  iconPath?: false | string;
+  symbol?: ISymbolSource;
   isActive?: boolean;
   isCircular?: boolean;
   title: string;
@@ -39,9 +39,9 @@ export const SpineButton = forwardRef<HTMLButtonElement, PropsWithChildren<ISpin
       border = "visible",
       children,
       className,
-      iconPath,
       isActive,
       isCircular,
+      symbol,
       title,
       tooltipDisabled,
       ...props
@@ -63,7 +63,7 @@ export const SpineButton = forwardRef<HTMLButtonElement, PropsWithChildren<ISpin
         {...props}
         ref={ref}
       >
-        {!!iconPath && <Icon className="transition-colors" path={iconPath} size="lg" />}
+        {!!symbol && <Icon {...symbolProps(symbol)} className="transition-colors" size="lg" />}
 
         {children}
       </button>

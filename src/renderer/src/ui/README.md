@@ -25,7 +25,7 @@ ui/
 │   │   ├── switch/      - Bare tri-state switch: off / on / semi-on (Headless UI Checkbox)
 │   │   ├── switch_field/ - Switch with its label beside it and hints under both
 │   │   └── text_field/  - Text input with its label, hints, error and character count
-│   ├── icon/            - Icon rendering (MDI + Nexus custom icons)
+│   ├── icon/            - Icon rendering (Material Symbols + Nexus custom icons)
 │   ├── image/           - Image wrapper with aspect ratios and fallback (+ adult-aware variant)
 │   ├── listbox/         - Listbox select (Headless UI Listbox)
 │   ├── listing/         - List display component
@@ -73,7 +73,6 @@ import type { XOr, ResponsiveScreenSizes } from "../../ui/utils/types";
 
 ```tsx
 import { nxmVortex, nxmCollection } from "../../ui/lib/icon_paths/iconPaths";
-import { mdiDownload, mdiAccount } from "@mdi/js";
 ```
 
 ## CSS Convention
@@ -116,17 +115,16 @@ import { Button } from "../../ui/components/button/Button";
 <Button brand="success">Saved</Button>
 
 // With icons
-import { mdiDownload } from "@mdi/js";
-<Button leftIconPath={mdiDownload}>Download</Button>
+<Button leftSymbol="download">Download</Button>
 
 // Icon-only (collapses to a square — always pass an aria-label)
-<Button aria-label="Download" leftIconPath={mdiDownload} />
+<Button aria-label="Download" leftSymbol="download" />
 
 // Loading state
 <Button isLoading>Processing...</Button>
 
 // Disclosure toggle: keeps aria-expanded, without the menu-trigger "open" highlight
-<Button aria-expanded={!collapsed} hasExpandedStyle={false} leftIconPath={mdiChevronUp} />
+<Button aria-expanded={!collapsed} hasExpandedStyle={false} leftSymbol="expand_less" />
 ```
 
 **Brands:** `primary`, `info`, `neutral`, `success`, `premium`, `danger`
@@ -141,10 +139,9 @@ A button with no `children`/`customContent` but an icon renders icon-only (squar
 
 ```tsx
 import { Icon } from "../../ui/components/icon/Icon";
-import { mdiAccount } from "@mdi/js";
 import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
 
-<Icon path={mdiAccount} size="md" />
+<Icon name="person" fill size="md" />
 <Icon path={nxmVortex} size="lg" title="Vortex" />
 ```
 
@@ -207,7 +204,7 @@ import { TypographyLink } from "../../ui/components/typography/TypographyLink";
 <TypographyLink variant="secondary">Secondary</TypographyLink>
 
 // Icons + inherit the surrounding text size (e.g. inside a Trans/sentence)
-<TypographyLink rightIconPath={mdiOpenInNew} typographyType="inherit">Open</TypographyLink>
+<TypographyLink rightSymbol="open_in_new" typographyType="inherit">Open</TypographyLink>
 ```
 
 **Variants:** `primary` (always underlined), `secondary` (underlines on hover), `none` (no underline)
@@ -262,12 +259,11 @@ Use `flex-1` specifically, **not** `shrink`. Both let the toolbar narrow, but `s
 ```tsx
 import { Toolbar } from "../../ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "../../ui/components/toolbar/ToolbarGroup";
-import { mdiFolderOpenOutline, mdiHistory, mdiRefresh } from "@mdi/js";
 
 const actions: IToolbarAction[] = [
-    { label: "Open mods folder", iconPath: mdiFolderOpenOutline, onClick: openFolder },
-    { label: "History", iconPath: mdiHistory, onClick: showHistory },
-    { label: "Refresh", iconPath: mdiRefresh, onClick: refresh, disabled: isBusy },
+    { label: "Open mods folder", symbol: "folder_open", onClick: openFolder },
+    { label: "History", symbol: "history", onClick: showHistory },
+    { label: "Refresh", symbol: "refresh", onClick: refresh, disabled: isBusy },
 ];
 
 <Toolbar>
@@ -278,7 +274,7 @@ const actions: IToolbarAction[] = [
 </Toolbar>;
 ```
 
-**`IToolbarAction` fields:** `label` (required — the accessible name, tooltip, menu label, and button text when `showLabel`), `iconPath`, `onClick`, `panel` (see below), `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill), `pinned` (see below).
+**`IToolbarAction` fields:** `label` (required — the accessible name, tooltip, menu label, and button text when `showLabel`), `symbol` (a Material Symbol, by name or `{ name, fill }`) or `iconPath` (an SVG path, for an icon the font lacks), `onClick`, `panel` (see below), `disabled`, `brand` (defaults to `neutral`), `showLabel` (render the label as visible button text instead of icon-only, e.g. a "1 selected" pill), `pinned` (see below).
 
 Actions are keyed internally by `label`, so labels should be unique within a group. The kebab is generated automatically — callers never author it.
 
@@ -286,10 +282,10 @@ Actions are keyed internally by `label`, so labels should be unique within a gro
 
 ```tsx
 const actions: IToolbarAction[] = [
-    { label: "Refresh", iconPath: mdiRefresh, onClick: refresh },
+    { label: "Refresh", symbol: "refresh", onClick: refresh },
     {
         label: "Display options",
-        iconPath: mdiTune,
+        symbol: "tune",
         panel: ({ close }) => <MyPanelRows onDone={close} />,
     },
 ];
@@ -303,9 +299,9 @@ The overflow menu is a [`PopoverMenu`](#popovermenu) rather than a `Menu` precis
 
 ```tsx
 const actions: IToolbarAction[] = [
-    { label: "Install mod", iconPath: mdiPlusCircleOutline, onClick: install, pinned: true },
-    { label: "Open mods folder", iconPath: mdiFolderOpenOutline, onClick: openFolder },
-    { label: "History", iconPath: mdiHistory, onClick: showHistory },
+    { label: "Install mod", symbol: "add_circle", onClick: install, pinned: true },
+    { label: "Open mods folder", symbol: "folder_open", onClick: openFolder },
+    { label: "History", symbol: "history", onClick: showHistory },
 ];
 ```
 
@@ -373,7 +369,7 @@ import { TextField } from "../../ui/components/form/text_field/TextField";
 <TextField hideLabel label="Filter categories" placeholder="Filter categories..." />
 ```
 
-**Props:** everything `Input` takes except `id` (Headless UI generates the ids that link the parts), plus `label`, `hideLabel`, `hints` (a string or a list), `errorMessage`, `hideErrors` (off screen only; screen readers still get it), `showRequiredLabel` (defaults to `required`), `fieldClassName` and `leftIconPath` (an mdi icon inside the input, before the text). `className` goes on the input and `fieldClassName` on the field around it. `onChange` receives the native change event.
+**Props:** everything `Input` takes except `id` (Headless UI generates the ids that link the parts), plus `label`, `hideLabel`, `hints` (a string or a list), `errorMessage`, `hideErrors` (off screen only; screen readers still get it), `showRequiredLabel` (defaults to `required`), `fieldClassName` and `leftSymbol` (a Material Symbol inside the input, before the text) or `leftIconPath` (an SVG path). `className` goes on the input and `fieldClassName` on the field around it. `onChange` receives the native change event.
 
 #### SelectField
 
@@ -496,10 +492,9 @@ A floating panel of arbitrary interactive content built on Headless UI `Popover`
 import { Popover } from "../../ui/components/popover/Popover";
 import { PopoverButton } from "../../ui/components/popover/PopoverButton";
 import { PopoverPanel } from "../../ui/components/popover/PopoverPanel";
-import { mdiTune } from "@mdi/js";
 
 <Popover>
-    <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiTune} size="sm" />
+    <PopoverButton appearance="subdued" brand="neutral" leftSymbol="tune" size="sm" />
 
     <PopoverPanel>{/* pickers, switches, buttons, … */}</PopoverPanel>
 </Popover>;
@@ -554,7 +549,7 @@ Give the panel `nxm-popover-panel-dropdown`. The base panel is sized for label-a
 ```tsx
 const helpAction: IMenuAction = {
     label: t("Help"),
-    iconPath: mdiHelpCircleOutline,
+    symbol: "help",
     panelRole: "menu",
     panel: ({ close, dismiss }) => (
         <PopoverMenu actions={helpRows} label={t("Help")} onClose={close} onSelect={dismiss} />
@@ -814,46 +809,44 @@ Single-value selector built on Headless UI `Listbox` — the chosen option shows
 
 ```tsx
 import { Picker } from "../../ui/components/picker/Picker";
-import { mdiViewGrid } from "@mdi/js";
 
 <Picker options={options} value={value} onChange={setValue} />
 
 // Style the trigger via `button` — it forwards all Button props (+ showChevron)
 <Picker
-  button={{ size: "xs", leftIconPath: mdiViewGrid }}
+  button={{ size: "xs", leftSymbol: { name: "grid_view", fill: true } }}
   options={options}
   value={value}
   onChange={setValue}
 />
 ```
 
-**Props:** `options` (`{ label, value, iconPath?/icon? }[]`), `value`, `onChange` (required); `button` (props forwarded to the trigger `ListboxButton` — Button props + `showChevron`; any `children` is ignored, the label is always the selected option), `placement` (`"left"`/`"right"`, default `"right"` — which edge of the trigger the panel aligns to), `className`.
+**Props:** `options` (`{ label, value, symbol?/iconPath?/icon? }[]`), `value`, `onChange` (required); `button` (props forwarded to the trigger `ListboxButton` — Button props + `showChevron`; any `children` is ignored, the label is always the selected option), `placement` (`"left"`/`"right"`, default `"right"` — which edge of the trigger the panel aligns to), `className`.
 
 ### Pill
 
-Compact, rounded label for tags and statuses. Renders as a non-interactive `div` by default, or as a `button` when given `as="button"`. Accepts an icon via either `iconPath` (an MDI/Nexus path string) or `icon` (a custom node) — not both.
+Compact, rounded label for tags and statuses. Renders as a non-interactive `div` by default, or as a `button` when given `as="button"`. Accepts an icon via `symbol` (a Material Symbol), `iconPath` (an SVG path string) or `icon` (a custom node) — not both.
 
 **Defaults:** `brand="neutral"`, `appearance="subdued"` — only set these when you need something different.
 
 ```tsx
 import { Pill } from "../../ui/components/pill/Pill";
-import { mdiCheckCircleOutline, mdiTag } from "@mdi/js";
 
 // Uses defaults (neutral, subdued)
 <Pill>Default</Pill>
 
 // Brand tints the icon, so it needs one to say anything
-<Pill brand="success" iconPath={mdiCheckCircleOutline}>Enabled</Pill>
+<Pill brand="success" symbol="check_circle">Enabled</Pill>
 
 // For laying over a scrim — game art, a modal backdrop
-<Pill appearance="scrim" iconPath={mdiSteam}>Steam</Pill>
+<Pill appearance="scrim" iconPath={nxmSteam}>Steam</Pill>
 
 // Opt out of the treatment entirely
 <Pill appearance="none">Unstyled</Pill>
 
 // With an icon (path or custom node)
-<Pill iconPath={mdiTag}>Tagged</Pill>
-<Pill icon={<Icon path={mdiTag} size="none" />}>Custom node</Pill>
+<Pill symbol={{ name: "sell", fill: true }}>Tagged</Pill>
+<Pill icon={<Icon name="sell" fill size="none" />}>Custom node</Pill>
 
 // As an interactive button
 <Pill as="button" onClick={handleClick}>Clickable</Pill>

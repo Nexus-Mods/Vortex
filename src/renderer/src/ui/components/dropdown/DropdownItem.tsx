@@ -2,7 +2,7 @@ import { MenuItem } from "@headlessui/react";
 import React, { type ComponentProps, type ReactNode } from "react";
 
 import type { IButtonBrand } from "@/ui/components/button/Button";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
@@ -13,8 +13,8 @@ type IDropdownItemProps = {
   customContent?: ReactNode;
   brand?: IButtonBrand;
   onClick?: () => void;
-} & XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
-  XOr<{ rightIconPath?: string }, { rightIcon?: ReactNode }>;
+} & XOr<{ leftIconPath?: string; leftSymbol?: ISymbolSource }, { leftIcon?: ReactNode }> &
+  XOr<{ rightIconPath?: string; rightSymbol?: ISymbolSource }, { rightIcon?: ReactNode }>;
 
 /**
  * What `MenuItem` takes, less the props this component states itself. `MenuItem` is
@@ -23,9 +23,21 @@ type IDropdownItemProps = {
  */
 type IPassedThroughProps = Omit<ComponentProps<typeof MenuItem>, "children" | "onClick">;
 
-const DropdownItemIcon = ({ icon, path }: { icon?: ReactNode; path?: string }) => {
+const DropdownItemIcon = ({
+  icon,
+  path,
+  symbol,
+}: {
+  icon?: ReactNode;
+  path?: string;
+  symbol?: ISymbolSource;
+}) => {
   if (icon) {
     return <span className="nxm-dropdown-item-icon flex items-center justify-center">{icon}</span>;
+  }
+
+  if (symbol) {
+    return <Icon {...symbolProps(symbol)} className="nxm-dropdown-item-icon" size="none" />;
   }
 
   if (path) {
@@ -42,8 +54,10 @@ export const DropdownItem = ({
   customContent,
   leftIcon,
   leftIconPath,
+  leftSymbol,
   rightIcon,
   rightIconPath,
+  rightSymbol,
   onClick,
   ...props
 }: IPassedThroughProps & IDropdownItemProps) => (
@@ -58,11 +72,11 @@ export const DropdownItem = ({
       >
         {customContent ?? (
           <>
-            <DropdownItemIcon icon={leftIcon} path={leftIconPath} />
+            <DropdownItemIcon icon={leftIcon} path={leftIconPath} symbol={leftSymbol} />
 
             {!!children && <span className="nxm-dropdown-item-label">{children}</span>}
 
-            <DropdownItemIcon icon={rightIcon} path={rightIconPath} />
+            <DropdownItemIcon icon={rightIcon} path={rightIconPath} symbol={rightSymbol} />
           </>
         )}
       </button>

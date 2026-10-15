@@ -1,4 +1,3 @@
-import { mdiSwapHorizontal } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -67,7 +66,7 @@ export const EnableCard = ({
           <Button
             appearance="strong"
             brand="neutral"
-            leftIconPath={mdiSwapHorizontal}
+            leftSymbol="swap_horiz"
             onClick={handleEnable}
           >
             {t("detail::item::enable_this_version")}

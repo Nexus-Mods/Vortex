@@ -1,5 +1,4 @@
 import { Select as HeadlessSelect, type SelectProps } from "@headlessui/react";
-import { mdiMenuDown } from "@mdi/js";
 import React, { forwardRef } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -18,7 +17,7 @@ export const Select = forwardRef<HTMLSelectElement, ISelectProps>(
     <div className="nxm-field-control">
       <HeadlessSelect className={joinClasses(["nxm-select", className])} ref={ref} {...props} />
 
-      <Icon className="nxm-select-icon" path={mdiMenuDown} size="lg" />
+      <Icon className="nxm-select-icon" name="arrow_drop_down" size="lg" />
     </div>
   ),
 );

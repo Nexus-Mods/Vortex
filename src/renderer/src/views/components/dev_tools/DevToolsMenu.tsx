@@ -1,4 +1,3 @@
-import { mdiWrenchOutline } from "@mdi/js";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -32,7 +31,7 @@ export const DevToolsMenu = () => {
         aria-label="Dev tools"
         brand="primary"
         data-testid="dev-tools-trigger"
-        leftIconPath={mdiWrenchOutline}
+        leftSymbol="build"
         title="Dev tools"
       />
 

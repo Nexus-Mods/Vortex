@@ -59,6 +59,7 @@
             max-height: 75%;
             color: var(--color-neutral-subdued);
             height: calc(var(--spacing) * 5);
+            font-size: calc(var(--spacing) * 5);
         }
 
         & .nxm-image-spinner {

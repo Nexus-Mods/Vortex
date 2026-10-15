@@ -1,74 +1,53 @@
-import {
-  mdiBroom,
-  mdiCogOutline,
-  mdiCommentTextOutline,
-  mdiContentSaveOutline,
-  mdiDownload,
-  mdiEyeOffOutline,
-  mdiEyeOutline,
-  mdiFolderOpenOutline,
-  mdiFolderSearchOutline,
-  mdiGamepadSquareOutline,
-  mdiHelpCircleOutline,
-  mdiHistory,
-  mdiImport,
-  mdiListStatus,
-  mdiInformationOutline,
-  mdiMenu,
-  mdiPaletteOutline,
-  mdiPowerPlugOutline,
-  mdiRefresh,
-  mdiRocketLaunchOutline,
-  mdiShapeOutline,
-  mdiSwapHorizontal,
-  mdiTagMultipleOutline,
-  mdiTextBoxOutline,
-  mdiTrashCanOutline,
-  mdiTune,
-  mdiUndoVariant,
-  mdiViewDashboardOutline,
-  mdiWeb,
-  mdiWrenchOutline,
-} from "@mdi/js";
+import type { ISymbolSource } from "@/ui/components/icon/Icon";
+import { nxmModOutline } from "@/ui/icon-paths";
 
-import { nxmHeartPulseOutline, nxmModOutline } from "@/ui/icon-paths";
+/** The props an icon is given to a component by: a symbol, or an SVG path for one the font lacks. */
+export interface IIconSourceProps {
+  iconPath?: string;
+  symbol?: ISymbolSource;
+}
 
-// Map legacy icon names to MDI paths
-const iconMap: Record<string, string> = {
-  dashboard: mdiViewDashboardOutline,
-  mods: nxmModOutline,
-  settings: mdiCogOutline,
-  download: mdiDownload,
-  game: mdiGamepadSquareOutline,
-  health: nxmHeartPulseOutline,
-  support: mdiHelpCircleOutline,
-  about: mdiInformationOutline,
-  menu: mdiMenu,
-  show: mdiEyeOutline,
-  feedback: mdiCommentTextOutline,
-  nexus: mdiWeb,
-  palette: mdiPaletteOutline,
-  plugins: mdiPowerPlugOutline,
-  savegame: mdiContentSaveOutline,
-  tools: mdiWrenchOutline,
-  tune: mdiTune,
+/**
+ * The legacy icon names that actions and pages register with, and so extensions do, as the symbols
+ * the new UI draws for them.
+ */
+const iconMap: Record<string, IIconSourceProps> = {
+  dashboard: { symbol: "dashboard" },
+  mods: { iconPath: nxmModOutline },
+  settings: { symbol: "settings" },
+  download: { symbol: "download" },
+  game: { symbol: "stadia_controller" },
+  health: { symbol: "cardiology" },
+  support: { symbol: "help" },
+  about: { symbol: "info" },
+  menu: { symbol: "menu" },
+  show: { symbol: "visibility" },
+  feedback: { symbol: "comment" },
+  nexus: { symbol: "language" },
+  palette: { symbol: "palette" },
+  plugins: { symbol: "power" },
+  savegame: { symbol: "save" },
+  tools: { symbol: "build" },
+  tune: { symbol: "tune" },
   // icon names used by toolbar actions registered through `registerAction`
-  browse: mdiFolderSearchOutline,
-  categories: mdiTagMultipleOutline,
-  changelog: mdiTextBoxOutline,
-  delete: mdiTrashCanOutline,
-  deploy: mdiRocketLaunchOutline,
-  hide: mdiEyeOffOutline,
-  history: mdiHistory,
-  import: mdiImport,
-  "open-ext": mdiFolderOpenOutline,
-  purge: mdiBroom,
-  refresh: mdiRefresh,
-  rules: mdiListStatus,
-  swap: mdiSwapHorizontal,
-  undo: mdiUndoVariant,
+  browse: { symbol: "folder_managed" },
+  categories: { symbol: "sell" },
+  changelog: { symbol: "article" },
+  delete: { symbol: "delete" },
+  deploy: { symbol: "rocket_launch" },
+  hide: { symbol: "visibility_off" },
+  history: { symbol: "history" },
+  import: { symbol: "input" },
+  "open-ext": { symbol: "folder_open" },
+  purge: { symbol: "cleaning_services" },
+  refresh: { symbol: "refresh" },
+  rules: { symbol: "rule" },
+  swap: { symbol: "swap_horiz" },
+  undo: { symbol: "undo" },
 };
 
-export const getIconPath = (iconName: string, fallbackIcon: string = mdiShapeOutline): string => {
-  return iconMap[iconName] ?? fallbackIcon;
-};
+/** The icon for a legacy icon name, as the props to give a component, or a symbol of `fallbackSymbol`. */
+export const getIconProps = (
+  iconName: string,
+  fallbackSymbol: ISymbolSource = "category",
+): IIconSourceProps => iconMap[iconName] ?? { symbol: fallbackSymbol };

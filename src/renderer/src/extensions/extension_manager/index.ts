@@ -1,4 +1,3 @@
-import { mdiPuzzleOutline } from "@mdi/js";
 import * as semver from "semver";
 
 import { log } from "@/logging";
@@ -267,7 +266,7 @@ function init(context: IExtensionContext) {
         },
         onRefresh: () => forceUpdateExtensions(),
       }) satisfies Partial<IExtensionManagerProps>,
-    mdi: mdiPuzzleOutline,
+    symbol: "extension",
   });
 
   const forceUpdateExtensions = () => {

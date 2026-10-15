@@ -1,4 +1,3 @@
-import { mdiTune, mdiViewGrid, mdiViewList } from "@mdi/js";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -17,10 +16,10 @@ const displayOptions = () => (
   <PopoverPanelGroup>
     <PopoverPanelGroupItem passive label="Display as">
       <Picker<string>
-        button={{ leftIconPath: mdiViewGrid, size: "sm" }}
+        button={{ leftSymbol: { name: "grid_view", fill: true }, size: "sm" }}
         options={[
-          { label: "Grid", value: "small", iconPath: mdiViewGrid },
-          { label: "List", value: "list", iconPath: mdiViewList },
+          { label: "Grid", value: "small", symbol: { name: "grid_view", fill: true } },
+          { label: "List", value: "list", symbol: { name: "view_list", fill: true } },
         ]}
         value="small"
         onChange={() => {}}
@@ -30,9 +29,7 @@ const displayOptions = () => (
 );
 
 const openPanel = async () => {
-  render(
-    <ToolbarPanelButton label="Display options" leftIconPath={mdiTune} panel={displayOptions} />,
-  );
+  render(<ToolbarPanelButton label="Display options" leftSymbol="tune" panel={displayOptions} />);
 
   await userEvent.click(screen.getByRole("button", { name: "Display options" }));
   await waitFor(() => expect(screen.getByText("Display as")).toBeInTheDocument());

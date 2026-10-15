@@ -1,4 +1,3 @@
-import { mdiMagnify } from "@mdi/js";
 import * as React from "react";
 
 import { TextField } from "@/ui/components/form/text_field/TextField";
@@ -51,7 +50,7 @@ export default function CategoryList() {
       </Toolbar>
 
       <div className="my-2 flex items-center gap-2">
-        <MdiIcon className="nxm-neutral" path={mdiMagnify} />
+        <MdiIcon className="nxm-neutral" name="search" />
 
         <TextField
           hideLabel

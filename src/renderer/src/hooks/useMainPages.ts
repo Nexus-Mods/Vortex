@@ -21,6 +21,7 @@ const registerMainPage = (
     id: options.id || title,
     icon,
     mdi: options.mdi,
+    symbol: options.symbol,
     title,
     component,
     propsFunc: options.props || emptyFunc,

@@ -1,7 +1,10 @@
-import type { MaterialSymbol } from "material-symbols";
 import React, { type CSSProperties, type HTMLAttributes, type SVGAttributes } from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
+
+import type { SymbolName } from "./symbols";
+
+export type { SymbolName } from "./symbols";
 
 export type IIconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
 
@@ -32,17 +35,17 @@ interface IIconBaseProps {
   title?: string;
 }
 
-/** An icon drawn from an SVG path, as the 24x24 `viewBox` of MDI and the custom `nxm*` icons. */
+/** An icon drawn from an SVG path in a 24x24 `viewBox`, for the custom `nxm*` icons the font lacks. */
 export type IPathIconProps = IIconBaseProps &
   Omit<SVGAttributes<SVGSVGElement>, "size" | "path"> & {
     path: string;
     name?: never;
   };
 
-/** An icon drawn from Material Symbols, the variable font, by the symbol's name. */
+/** An icon drawn from Material Symbols, the variable font, by the symbol's name from `symbols.ts`. */
 export type ISymbolIconProps = IIconBaseProps &
   Omit<HTMLAttributes<HTMLSpanElement>, "children" | "title"> & {
-    name: MaterialSymbol;
+    name: SymbolName;
     path?: never;
     /** The solid form of the symbol, where it has one: the font's fill axis. */
     fill?: boolean;
@@ -112,13 +115,24 @@ const SymbolIcon = ({
         className,
       ])}
       role={title ? "img" : undefined}
+      data-symbol={name}
       style={{ ...axesStyle, ...style }}
       {...props}
-    >
-      {name}
-    </span>
+    />
   );
 };
+
+/**
+ * A Material Symbol as a component takes it: its name, or the name with the font axes it is drawn
+ * with, as `{ name: "star", fill: true }`. What a prop called `symbol` is.
+ */
+export type ISymbolSource =
+  | SymbolName
+  | Pick<ISymbolIconProps, "name" | "fill" | "weight" | "grade" | "opticalSize">;
+
+/** The props that draw a symbol from the source, for `<Icon {...symbolProps(symbol)} />`. */
+export const symbolProps = (symbol: ISymbolSource) =>
+  typeof symbol === "string" ? { name: symbol } : symbol;
 
 const isSymbol = (props: IIconProps): props is ISymbolIconProps => props.name !== undefined;
 

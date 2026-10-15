@@ -157,8 +157,8 @@ describe("Button", () => {
 
     it("renders two icons (circle + spinner) when isLoading=true", () => {
       render(<Button isLoading={true}>Click</Button>);
-      // ButtonIcon in loading state renders two SVG icons
-      expect(screen.getAllByRole("presentation")).toHaveLength(2);
+      // ButtonIcon in loading state renders two symbols
+      expect(document.querySelectorAll("[data-symbol]")).toHaveLength(2);
     });
   });
 
@@ -180,6 +180,17 @@ describe("Button", () => {
     it("renders left icon from path", () => {
       render(<Button leftIconPath="mdi-home">Click</Button>);
       expect(screen.getByRole("presentation")).toBeInTheDocument();
+    });
+
+    it("renders icons on either side from a symbol, with the fill axis if given", () => {
+      render(
+        <Button leftSymbol="add" rightSymbol={{ name: "star", fill: true }}>
+          Click
+        </Button>,
+      );
+      const symbols = [...document.querySelectorAll<HTMLElement>("[data-symbol]")];
+      expect(symbols.map((symbol) => symbol.dataset.symbol)).toEqual(["add", "star"]);
+      expect(symbols[1].style.fontVariationSettings).toBe('"FILL" 1');
     });
 
     it("renders left icon from ReactNode", () => {

@@ -8,7 +8,7 @@ export default mergeConfig(
     test: {
       name: "@vortex/main",
       environment: "node",
-      include: ["src/**/*.test.ts", "*.test.ts"],
+      include: ["src/**/*.test.ts", "*.test.ts", "subset_symbols/*.test.ts"],
       setupFiles: "./src/test-setup.ts",
     },
   }),

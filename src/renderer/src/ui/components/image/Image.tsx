@@ -1,7 +1,6 @@
-import { mdiCircleOutline, mdiImageBroken, mdiLoading } from "@mdi/js";
 import React, { useCallback, useState, type ImgHTMLAttributes } from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IImageProps extends Omit<
@@ -14,6 +13,8 @@ export interface IImageProps extends Omit<
   className?: string;
   /** Replaces the broken-image icon; given one, a missing `src` shows it too. */
   fallbackIconPath?: string;
+  /** As `fallbackIconPath`, a Material Symbol. */
+  fallbackSymbol?: ISymbolSource;
   /** Fills the frame, cropping, or fits inside it whole. Default `contain`. */
   fit?: "cover" | "contain";
   /** Classes for the `img` itself. */
@@ -39,6 +40,7 @@ export const Image = ({
   children,
   className,
   fallbackIconPath,
+  fallbackSymbol,
   fit = "contain",
   imageClassName,
   imageType = "other",
@@ -68,7 +70,11 @@ export const Image = ({
 
   // Only the caller knows a source is coming when there is no src; a failed one is settled.
   const showSpinner = !errored && (isLoading === true || (!!src && !loaded));
-  const showFallback = errored || (fallbackIconPath !== undefined && !src && isLoading !== true);
+  const showFallback =
+    errored ||
+    ((fallbackIconPath !== undefined || fallbackSymbol !== undefined) &&
+      !src &&
+      isLoading !== true);
 
   return (
     <div className={joinClasses(["nxm-image", imageTypeMap[imageType], className])}>
@@ -100,8 +106,10 @@ export const Image = ({
         />
       ) : (
         <Icon
+          {...(fallbackIconPath && !fallbackSymbol
+            ? { path: fallbackIconPath }
+            : symbolProps(fallbackSymbol ?? "broken_image"))}
           className="nxm-image-fallback"
-          path={fallbackIconPath ?? mdiImageBroken}
           size="none"
           title={alt}
         />
@@ -109,9 +117,9 @@ export const Image = ({
 
       {showSpinner && (
         <span className="nxm-image-spinner">
-          <Icon className="opacity-40" path={mdiCircleOutline} size="none" />
+          <Icon className="opacity-40" name="radio_button_unchecked" size="none" />
 
-          <Icon className="absolute inset-0" path={mdiLoading} size="none" />
+          <Icon className="absolute inset-0" name="progress_activity" size="none" />
         </span>
       )}
 

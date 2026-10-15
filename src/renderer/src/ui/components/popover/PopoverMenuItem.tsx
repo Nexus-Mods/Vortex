@@ -1,5 +1,4 @@
 import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
-import { mdiChevronRight, mdiPinOffOutline, mdiPinOutline } from "@mdi/js";
 import React, {
   forwardRef,
   type KeyboardEvent,
@@ -11,7 +10,7 @@ import React, {
 
 import type { IButtonBrand } from "@/ui/components/button/Button";
 import { dropdownItemBrandClass } from "@/ui/components/dropdown/dropdownItemBrand";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -32,9 +31,11 @@ export type IPopoverPanel = (props: { close: () => void; dismiss: () => void }) 
 interface IMenuActionBase {
   /** The row's text, and its accessible name. */
   label: string;
-  /** The icon before the label, as an SVG path. */
+  /** The icon before the label, a Material Symbol. */
+  symbol?: ISymbolSource;
+  /** The icon before the label, as an SVG path, for one the font doesn't have. */
   iconPath?: string;
-  /** Drawn in place of `iconPath`, for an icon a single path can't draw, such as a logo. */
+  /** Drawn in place of `symbol` and `iconPath`, for an icon a single path can't draw, such as a logo. */
   icon?: ReactNode;
   /** Turns the action off; a row with a pin stays reachable so it can still be pinned. */
   disabled?: boolean;
@@ -100,6 +101,8 @@ const PopoverMenuItemContent = ({
   <>
     {action.icon !== undefined ? (
       <span className="nxm-dropdown-item-icon flex items-center justify-center">{action.icon}</span>
+    ) : action.symbol !== undefined ? (
+      <Icon {...symbolProps(action.symbol)} className="nxm-dropdown-item-icon" size="none" />
     ) : (
       !!action.iconPath && (
         <Icon className="nxm-dropdown-item-icon" path={action.iconPath} size="none" />
@@ -115,7 +118,7 @@ const PopoverMenuItemContent = ({
         className={joinClasses("nxm-dropdown-item-icon", {
           "nxm-dropdown-item-chevron-hidden": !hasPanel,
         })}
-        path={mdiChevronRight}
+        name="chevron_right"
         size="none"
       />
     )}
@@ -158,7 +161,7 @@ const PopoverMenuItemPin = ({
         }
       }}
     >
-      <Icon path={pin.pinned ? mdiPinOffOutline : mdiPinOutline} size="none" />
+      <Icon name={pin.pinned ? "keep_off" : "keep"} size="none" />
     </span>
   );
 };

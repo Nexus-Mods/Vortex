@@ -1,4 +1,3 @@
-import { mdiViewGrid, mdiViewList } from "@mdi/js";
 import type { TFunction } from "i18next";
 import React from "react";
 
@@ -40,12 +39,15 @@ export const useDisplayOptionsAction = ({
           <PopoverPanelGroupItem passive label={t("Display as")}>
             <Picker<PickerLayout>
               button={{
-                leftIconPath: pickerLayout === "list" ? mdiViewList : mdiViewGrid,
+                leftSymbol: {
+                  name: pickerLayout === "list" ? "view_list" : "grid_view",
+                  fill: true,
+                },
                 size: "sm",
               }}
               options={[
-                { label: t("Grid"), value: "small", iconPath: mdiViewGrid },
-                { label: t("List"), value: "list", iconPath: mdiViewList },
+                { label: t("Grid"), value: "small", symbol: { name: "grid_view", fill: true } },
+                { label: t("List"), value: "list", symbol: { name: "view_list", fill: true } },
               ]}
               value={pickerLayout}
               onChange={onSetPickerLayout}

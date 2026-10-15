@@ -39,6 +39,11 @@ describe("NoResults", () => {
       expect(screen.getByRole("presentation")).toBeInTheDocument();
     });
 
+    it("renders a symbol when one is given", () => {
+      renderComponent({ symbol: "zoom_out" });
+      expect(document.querySelector('[data-symbol="zoom_out"]')).toBeInTheDocument();
+    });
+
     it("renders no icon by default", () => {
       renderComponent();
       expect(screen.queryByRole("presentation")).not.toBeInTheDocument();
@@ -53,9 +58,9 @@ describe("NoResults", () => {
     });
 
     it("shows an icon when isError even without an iconPath", () => {
-      // children suppress the default button (whose icon also has role=presentation)
+      // children suppress the default button, which has an icon of its own
       renderComponent({ children: <span />, isError: true, title: "" });
-      expect(screen.getByRole("presentation")).toBeInTheDocument();
+      expect(document.querySelector('[data-symbol="error"]')).toBeInTheDocument();
     });
 
     it("renders a Contact support button that opens the help URL", async () => {

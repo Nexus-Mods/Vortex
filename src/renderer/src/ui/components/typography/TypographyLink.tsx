@@ -1,6 +1,6 @@
 import React, { type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
 
-import { Icon, type IIconSize } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSize, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { ResponsiveScreenSizes, XOr } from "@/ui/utils/types";
 
@@ -25,8 +25,10 @@ type ITypographyLinkTypeObject = ITypographyLinkTypeObjectDefault & {
 export type ITypographyLinkProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   iconSize?: IIconSize;
   leftIconPath?: string;
+  leftSymbol?: ISymbolSource;
   ref?: Ref<HTMLButtonElement>;
   rightIconPath?: string;
+  rightSymbol?: ISymbolSource;
   typographyType?: ITypographyLinkTypes | ITypographyLinkTypeObject;
   variant?: "primary" | "secondary" | "none";
 } & XOr<{ children?: string }, { customContent: ReactNode }> &
@@ -45,16 +47,29 @@ const LinkContent = ({
   iconSize,
   label,
   leftIconPath,
+  leftSymbol,
   rightIconPath,
-}: Pick<ITypographyLinkProps, "iconSize" | "leftIconPath" | "rightIconPath"> & {
+  rightSymbol,
+}: Pick<
+  ITypographyLinkProps,
+  "iconSize" | "leftIconPath" | "leftSymbol" | "rightIconPath" | "rightSymbol"
+> & {
   label?: string;
 }) => (
   <>
-    {!!leftIconPath && <Icon className="shrink-0" path={leftIconPath} size={iconSize} />}
+    {!!leftSymbol && <Icon {...symbolProps(leftSymbol)} className="shrink-0" size={iconSize} />}
+
+    {!!leftIconPath && !leftSymbol && (
+      <Icon className="shrink-0" path={leftIconPath} size={iconSize} />
+    )}
 
     {label}
 
-    {!!rightIconPath && <Icon className="shrink-0" path={rightIconPath} size={iconSize} />}
+    {!!rightSymbol && <Icon {...symbolProps(rightSymbol)} className="shrink-0" size={iconSize} />}
+
+    {!!rightIconPath && !rightSymbol && (
+      <Icon className="shrink-0" path={rightIconPath} size={iconSize} />
+    )}
   </>
 );
 
@@ -68,8 +83,10 @@ export const TypographyLink = ({
   disabled,
   iconSize,
   leftIconPath,
+  leftSymbol,
   ref,
   rightIconPath,
+  rightSymbol,
   typographyType = "body-md",
   variant = "primary",
   ...props
@@ -117,7 +134,9 @@ export const TypographyLink = ({
           iconSize={iconSize}
           label={children}
           leftIconPath={leftIconPath}
+          leftSymbol={leftSymbol}
           rightIconPath={rightIconPath}
+          rightSymbol={rightSymbol}
         />
       )}
     </button>

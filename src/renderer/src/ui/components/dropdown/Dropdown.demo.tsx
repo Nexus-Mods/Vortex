@@ -4,16 +4,6 @@
  */
 
 import { MenuButton } from "@headlessui/react";
-import {
-  mdiCheckCircleOutline,
-  mdiContentCopy,
-  mdiDelete,
-  mdiDotsVertical,
-  mdiDownload,
-  mdiPencil,
-  mdiRocketLaunchOutline,
-  mdiStarOutline,
-} from "@mdi/js";
 import React, { useCallback } from "react";
 
 import { Button } from "@/ui/components/button/Button";
@@ -77,15 +67,15 @@ export const DropdownDemo = () => {
             </MenuButton>
 
             <DropdownItems className="right-auto left-0">
-              <DropdownItem leftIconPath={mdiPencil} onClick={() => handleClick("Edit")}>
+              <DropdownItem leftSymbol="edit" onClick={() => handleClick("Edit")}>
                 Edit
               </DropdownItem>
 
-              <DropdownItem leftIconPath={mdiContentCopy} onClick={() => handleClick("Duplicate")}>
+              <DropdownItem leftSymbol="content_copy" onClick={() => handleClick("Duplicate")}>
                 Duplicate
               </DropdownItem>
 
-              <DropdownItem leftIconPath={mdiDownload} onClick={() => handleClick("Download")}>
+              <DropdownItem leftSymbol="download" onClick={() => handleClick("Download")}>
                 Download
               </DropdownItem>
 
@@ -93,7 +83,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="danger"
-                leftIconPath={mdiDelete}
+                leftSymbol={{ name: "delete", fill: true }}
                 onClick={() => handleClick("Delete")}
               >
                 Delete
@@ -124,7 +114,7 @@ export const DropdownDemo = () => {
             <DropdownItems className="right-auto left-0">
               <DropdownItem
                 brand="primary"
-                leftIconPath={mdiRocketLaunchOutline}
+                leftSymbol="rocket_launch"
                 onClick={() => handleClick("Deploy")}
               >
                 Deploy
@@ -132,7 +122,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="info"
-                leftIconPath={mdiDownload}
+                leftSymbol="download"
                 onClick={() => handleClick("Check for updates")}
               >
                 Check for updates
@@ -140,7 +130,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="success"
-                leftIconPath={mdiCheckCircleOutline}
+                leftSymbol="check_circle"
                 onClick={() => handleClick("Verify")}
               >
                 Verify
@@ -148,13 +138,13 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="premium"
-                leftIconPath={mdiStarOutline}
+                leftSymbol="star"
                 onClick={() => handleClick("Go premium")}
               >
                 Go premium
               </DropdownItem>
 
-              <DropdownItem leftIconPath={mdiPencil} onClick={() => handleClick("Rename")}>
+              <DropdownItem leftSymbol="edit" onClick={() => handleClick("Rename")}>
                 Rename
               </DropdownItem>
 
@@ -162,7 +152,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="danger"
-                leftIconPath={mdiDelete}
+                leftSymbol={{ name: "delete", fill: true }}
                 onClick={() => handleClick("Delete")}
               >
                 Delete
@@ -187,20 +177,23 @@ export const DropdownDemo = () => {
               as={Button}
               brand="neutral"
               appearance="subdued"
-              leftIconPath={mdiDotsVertical}
+              leftSymbol="more_vert"
               size="sm"
             />
 
             <DropdownItems className="right-auto left-0">
-              <DropdownItem leftIconPath={mdiPencil} onClick={() => handleClick("Edit")}>
+              <DropdownItem leftSymbol="edit" onClick={() => handleClick("Edit")}>
                 Edit
               </DropdownItem>
 
-              <DropdownItem leftIconPath={mdiContentCopy} onClick={() => handleClick("Duplicate")}>
+              <DropdownItem leftSymbol="content_copy" onClick={() => handleClick("Duplicate")}>
                 Duplicate
               </DropdownItem>
 
-              <DropdownItem leftIconPath={mdiDelete} onClick={() => handleClick("Delete")}>
+              <DropdownItem
+                leftSymbol={{ name: "delete", fill: true }}
+                onClick={() => handleClick("Delete")}
+              >
                 Delete
               </DropdownItem>
             </DropdownItems>

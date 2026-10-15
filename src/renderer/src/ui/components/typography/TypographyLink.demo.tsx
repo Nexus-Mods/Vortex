@@ -3,7 +3,6 @@
  * Demonstrates the TypographyLink component variants, appearances and icons
  */
 
-import { mdiArrowRight, mdiOpenInNew } from "@mdi/js";
 import React from "react";
 
 import { Typography } from "./Typography";
@@ -114,11 +113,11 @@ export const TypographyLinkDemo = () => (
       </Typography>
 
       <div className="flex flex-wrap items-center gap-6">
-        <TypographyLink leftIconPath={mdiArrowRight}>Left icon</TypographyLink>
+        <TypographyLink leftSymbol="arrow_forward">Left icon</TypographyLink>
 
-        <TypographyLink rightIconPath={mdiOpenInNew}>Right icon</TypographyLink>
+        <TypographyLink rightSymbol="open_in_new">Right icon</TypographyLink>
 
-        <TypographyLink leftIconPath={mdiArrowRight} rightIconPath={mdiOpenInNew}>
+        <TypographyLink leftSymbol="arrow_forward" rightSymbol="open_in_new">
           Both icons
         </TypographyLink>
       </div>

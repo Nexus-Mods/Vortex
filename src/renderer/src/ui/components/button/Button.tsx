@@ -1,4 +1,3 @@
-import { mdiCircleOutline, mdiLoading } from "@mdi/js";
 import React, {
   type ButtonHTMLAttributes,
   cloneElement,
@@ -8,7 +7,7 @@ import React, {
   type ReactNode,
 } from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
@@ -30,24 +29,26 @@ export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   href?: never;
   isExternal?: never;
 } & IButtonColour &
-  XOr<{ leftIconPath?: string }, { leftIcon?: ReactNode }> &
-  XOr<{ rightIconPath?: string }, { rightIcon?: ReactNode }>;
+  XOr<{ leftIconPath?: string; leftSymbol?: ISymbolSource }, { leftIcon?: ReactNode }> &
+  XOr<{ rightIconPath?: string; rightSymbol?: ISymbolSource }, { rightIcon?: ReactNode }>;
 
 const ButtonIcon = ({
   icon,
   isLoading = false,
   path,
+  symbol,
 }: {
   icon?: ReactNode;
   isLoading?: boolean;
   path?: string;
+  symbol?: ISymbolSource;
 }) => {
   if (isLoading) {
     return (
       <span className="nxm-button-icon relative animate-spin">
-        <Icon className="opacity-40" path={mdiCircleOutline} size="none" />
+        <Icon className="opacity-40" name="radio_button_unchecked" size="none" />
 
-        <Icon className="absolute inset-0" path={mdiLoading} size="none" />
+        <Icon className="absolute inset-0" name="progress_activity" size="none" />
       </span>
     );
   }
@@ -58,6 +59,10 @@ const ButtonIcon = ({
     return cloneElement(element, {
       className: joinClasses(["nxm-button-icon", element.props.className]),
     });
+  }
+
+  if (symbol) {
+    return <Icon {...symbolProps(symbol)} className="nxm-button-icon" size="none" />;
   }
 
   if (path) {
@@ -82,8 +87,10 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
       isLoading = false,
       leftIcon,
       leftIconPath,
+      leftSymbol,
       rightIcon,
       rightIconPath,
+      rightSymbol,
       size = "md",
       type,
       ...props
@@ -109,11 +116,16 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
     >
       {customContent ?? (
         <>
-          <ButtonIcon icon={leftIcon} isLoading={isLoading} path={leftIconPath} />
+          <ButtonIcon
+            icon={leftIcon}
+            isLoading={isLoading}
+            path={leftIconPath}
+            symbol={leftSymbol}
+          />
 
           {!!children && <span>{children}</span>}
 
-          <ButtonIcon icon={rightIcon} path={rightIconPath} />
+          <ButtonIcon icon={rightIcon} path={rightIconPath} symbol={rightSymbol} />
         </>
       )}
     </button>

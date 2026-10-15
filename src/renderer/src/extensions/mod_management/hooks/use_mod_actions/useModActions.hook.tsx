@@ -1,16 +1,3 @@
-import {
-  mdiBug,
-  mdiCallMerge,
-  mdiDeleteOutline,
-  mdiFileAlertOutline,
-  mdiFolderOpenOutline,
-  mdiMonitorArrowDown,
-  mdiPaw,
-  mdiPawOutline,
-  mdiPuzzleOutline,
-  mdiRefresh,
-  mdiRotateRight,
-} from "@mdi/js";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import React, { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,10 +9,11 @@ import { useExtensionObjects } from "@/ExtensionProvider";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { NexusBadge } from "@/ui/components/badges/nexus_badge/NexusBadge";
+import type { ISymbolSource } from "@/ui/components/icon/Icon";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
-import { nxmCollectionOutline, nxmResetTv } from "@/ui/icon-paths";
+import { nxmCollectionOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
-import { getIconPath } from "@/views/components/iconMap";
+import { getIconProps } from "@/views/components/iconMap";
 
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
 
@@ -60,8 +48,10 @@ interface IRowMenuItem {
   /** What the menu calls it, untranslated. */
   label: string;
   /** Unset keeps the icon it registered with. */
+  symbol?: ISymbolSource;
+  /** As `symbol`, an SVG path, for an icon the font lacks. */
   iconPath?: string;
-  /** In place of `iconPath`, for an icon a path can't draw. */
+  /** In place of `symbol` and `iconPath`, for an icon a path can't draw. */
   icon?: ReactNode;
 }
 
@@ -74,12 +64,12 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
     section: "manage",
     items: [
       { title: "Add to Collection...", label: "Add to Collection", iconPath: nxmCollectionOutline },
-      { title: "Install", label: "Install", iconPath: mdiMonitorArrowDown },
+      { title: "Install", label: "Install", symbol: "install_desktop" },
       { title: "Unpack (as-is)", label: "Unpack (as-is)" },
-      { title: "Reinstall", label: "Reinstall", iconPath: nxmResetTv },
-      { title: "Check for Update", label: "Check for updates", iconPath: mdiRefresh },
-      { title: "Remove related", label: "Remove related", iconPath: mdiDeleteOutline },
-      { title: "Remove", label: "Remove", iconPath: mdiDeleteOutline },
+      { title: "Reinstall", label: "Reinstall", symbol: "reset_tv" },
+      { title: "Check for Update", label: "Check for updates", symbol: "refresh" },
+      { title: "Remove related", label: "Remove related", symbol: "delete" },
+      { title: "Remove", label: "Remove", symbol: "delete" },
     ],
   },
   {
@@ -88,12 +78,12 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       {
         title: "Manage File Conflicts",
         label: "Manage file conflicts",
-        iconPath: getIconPath("rules"),
+        ...getIconProps("rules"),
       },
       {
         title: "Install Recommendations",
         label: "Install recommendations",
-        iconPath: mdiMonitorArrowDown,
+        symbol: "install_desktop",
       },
     ],
   },
@@ -103,9 +93,9 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       {
         title: "Open in File Manager",
         label: "Open in file manager",
-        iconPath: mdiFolderOpenOutline,
+        symbol: "folder_open",
       },
-      { title: "Open Archive", label: "Open archive", iconPath: mdiFolderOpenOutline },
+      { title: "Open Archive", label: "Open archive", symbol: "folder_open" },
       { title: "Open on Nexus Mods", label: "Open on Nexus Mods", icon: <NexusBadge /> },
     ],
   },
@@ -113,17 +103,21 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
   {
     section: "organise",
     items: [
-      { title: "Combine", label: "Combine", iconPath: mdiCallMerge },
-      { title: "Track", label: "Track", iconPath: mdiPawOutline },
-      { title: "Untrack", label: "Untrack", iconPath: mdiPaw },
+      { title: "Combine", label: "Combine", symbol: "call_merge" },
+      { title: "Track", label: "Track", symbol: "pets" },
+      { title: "Untrack", label: "Untrack", symbol: { name: "pets", fill: true } },
     ],
   },
   {
     section: "maintenance",
     items: [
-      { title: "Refresh Content", label: "Refresh content", iconPath: mdiRotateRight },
-      { title: "Fix missing IDs", label: "Fix missing IDs", iconPath: mdiFileAlertOutline },
-      { title: "Create Report", label: "Generate mod report", iconPath: mdiBug },
+      { title: "Refresh Content", label: "Refresh content", symbol: "rotate_right" },
+      { title: "Fix missing IDs", label: "Fix missing IDs", symbol: "manage_search" },
+      {
+        title: "Create Report",
+        label: "Generate mod report",
+        symbol: { name: "bug_report", fill: true },
+      },
     ],
   },
 ];
@@ -248,7 +242,9 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
           // The registered title, not its translation, so a pin survives a language change.
           id: definition.title,
           label: t(menuItem?.label ?? definition.title),
-          iconPath: menuItem?.iconPath ?? getIconPath(definition.icon, mdiPuzzleOutline),
+          ...(menuItem?.symbol || menuItem?.iconPath
+            ? { iconPath: menuItem.iconPath, symbol: menuItem.symbol }
+            : getIconProps(definition.icon, "extension")),
           icon: menuItem?.icon,
           section: menuItem?.section ?? OTHER_SECTION,
           pinned: source.defaultPins.has(definition.title),

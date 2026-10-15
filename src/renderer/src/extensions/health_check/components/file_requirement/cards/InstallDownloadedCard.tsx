@@ -1,4 +1,3 @@
-import { mdiCheck, mdiSwapHorizontal } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -75,7 +74,7 @@ export const InstallDownloadedCard = ({
             appearance="strong"
             brand="neutral"
             isLoading={isLoading}
-            leftIconPath={isSwitch ? mdiSwapHorizontal : mdiCheck}
+            leftSymbol={isSwitch ? "swap_horiz" : "check"}
             onClick={handleInstall}
           >
             {isLoading

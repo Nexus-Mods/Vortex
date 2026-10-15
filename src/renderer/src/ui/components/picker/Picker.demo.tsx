@@ -3,7 +3,6 @@
  * Demonstrates the Picker component variants and features
  */
 
-import { mdiPalette, mdiTranslate } from "@mdi/js";
 import React, { useState } from "react";
 
 import { type IListboxOption } from "@/ui/components/listbox/ListboxOption";
@@ -40,18 +39,18 @@ const colorOptions = [
 ] satisfies IListboxOption<string>[];
 
 const languageOptions = [
-  { label: "English", value: "en", iconPath: mdiTranslate },
-  { label: "French", value: "fr", iconPath: mdiTranslate },
-  { label: "German", value: "de", iconPath: mdiTranslate },
-  { label: "Spanish", value: "es", iconPath: mdiTranslate },
-  { label: "Japanese", value: "ja", iconPath: mdiTranslate },
+  { label: "English", value: "en", symbol: "translate" },
+  { label: "French", value: "fr", symbol: "translate" },
+  { label: "German", value: "de", symbol: "translate" },
+  { label: "Spanish", value: "es", symbol: "translate" },
+  { label: "Japanese", value: "ja", symbol: "translate" },
 ] satisfies IListboxOption<string>[];
 
 const themeOptions = [
-  { label: "Default", value: "default", iconPath: mdiPalette },
-  { label: "Dark", value: "dark", iconPath: mdiPalette },
-  { label: "Light", value: "light", iconPath: mdiPalette },
-  { label: "High Contrast", value: "high-contrast", iconPath: mdiPalette },
+  { label: "Default", value: "default", symbol: { name: "palette", fill: true } },
+  { label: "Dark", value: "dark", symbol: { name: "palette", fill: true } },
+  { label: "Light", value: "light", symbol: { name: "palette", fill: true } },
+  { label: "High Contrast", value: "high-contrast", symbol: { name: "palette", fill: true } },
 ] satisfies IListboxOption<string>[];
 
 export const PickerDemo = () => {

@@ -1,4 +1,3 @@
-import { mdiAccount, mdiMagnify } from "@mdi/js";
 import React, {
   memo,
   type ReactNode,
@@ -309,7 +308,7 @@ export const ModsTableSwitch = ({
               <Image
                 alt=""
                 className="ml-3.5 h-6 rounded-full"
-                fallbackIconPath={mdiAccount}
+                fallbackSymbol={{ name: "person", fill: true }}
                 fit="cover"
                 imageType="avatar"
                 src={avatar.src}
@@ -499,7 +498,7 @@ export const ModsTableSwitch = ({
     defaultSort: BY_NAME,
     footer,
     empty: matches ? (
-      <NoResults iconPath={mdiMagnify} title={t("No mods match your search")} />
+      <NoResults symbol="search" title={t("No mods match your search")} />
     ) : undefined,
   };
 

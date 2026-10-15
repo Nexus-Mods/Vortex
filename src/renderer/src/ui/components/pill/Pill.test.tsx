@@ -87,6 +87,15 @@ describe("Pill", () => {
       expect(screen.getByRole("presentation")).toHaveClass("nxm-pill-icon");
     });
 
+    it("renders an icon from a symbol", () => {
+      renderComponent({ symbol: "check_circle" });
+      expect(document.querySelector("[data-symbol]")).toHaveAttribute(
+        "data-symbol",
+        "check_circle",
+      );
+      expect(document.querySelector("[data-symbol]")).toHaveClass("nxm-pill-icon");
+    });
+
     it("renders a custom icon node", () => {
       renderComponent({ icon: <span data-testid="custom-icon" /> });
       expect(screen.getByTestId("custom-icon")).toBeInTheDocument();

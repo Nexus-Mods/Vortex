@@ -8,7 +8,7 @@ import React, {
   type RefAttributes,
 } from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type ISymbolSource, symbolProps } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { XOr } from "@/ui/utils/types";
 
@@ -30,7 +30,7 @@ type IBasePillProps = {
   appearance?: IPillAppearance;
   brand?: IPillBrand;
   children: string;
-} & XOr<{ iconPath?: string }, { icon?: ReactNode }>;
+} & XOr<{ iconPath?: string; symbol?: ISymbolSource }, { icon?: ReactNode }>;
 
 type IPillDefaultProps = HTMLAttributes<HTMLDivElement> & {
   as?: never;
@@ -56,9 +56,12 @@ const Content = ({
   icon,
   iconPath,
   label,
-}: Pick<IPillProps, "icon" | "iconPath"> & { label?: string }) => (
+  symbol,
+}: Pick<IPillProps, "icon" | "iconPath" | "symbol"> & { label?: string }) => (
   <>
     {!!icon && <span className="nxm-pill-icon flex items-center justify-center">{icon}</span>}
+
+    {!!symbol && <Icon {...symbolProps(symbol)} className="nxm-pill-icon" size="none" />}
 
     {!!iconPath && <Icon className="nxm-pill-icon" path={iconPath} size="none" />}
 
@@ -67,9 +70,9 @@ const Content = ({
 );
 
 export const Pill: IPill = forwardRef<IPillElement, IPillProps>((allProps, ref) => {
-  const { appearance, brand, children, className, icon, iconPath, ...rest } = allProps;
+  const { appearance, brand, children, className, icon, iconPath, symbol, ...rest } = allProps;
 
-  const content = <Content icon={icon} iconPath={iconPath} label={children} />;
+  const content = <Content icon={icon} iconPath={iconPath} label={children} symbol={symbol} />;
 
   if (rest.as === "button") {
     const { as, disabled, ...props } = rest;

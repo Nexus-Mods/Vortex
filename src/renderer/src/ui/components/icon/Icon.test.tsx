@@ -92,9 +92,10 @@ describe("Icon", () => {
     });
   });
   describe("symbol", () => {
-    it("writes the symbol's name for the font to draw", () => {
+    it("gives the symbol's name for the font to draw, outside the page's text", () => {
       const el = renderSymbol({ name: "settings" });
-      expect(el).toHaveTextContent("settings");
+      expect(el).toHaveAttribute("data-symbol", "settings");
+      expect(el).toBeEmptyDOMElement();
       expect(el).toHaveClass("material-symbols-outlined", "shrink-0");
       expect(document.querySelector("svg")).not.toBeInTheDocument();
     });
