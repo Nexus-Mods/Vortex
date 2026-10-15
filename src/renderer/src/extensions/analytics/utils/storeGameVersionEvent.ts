@@ -283,9 +283,12 @@ export async function emitStoreGameVersionEvent(
   );
 
   const fullKey = storeGameVersionChangeKey(payload);
+  // a failed lookup may be transient: leave the cheap gate open so the next emit
+  // retries it, while the full key still dedupes a repeat of the same failure
+  const gateKey = exeVersion === null ? null : stableKey;
   if (cached !== undefined && cached.fullKey === fullKey) {
     // only the volatile fields moved; refresh the cheap gate without a send
-    refreshCache(api, internalGameId, { stableKey, fullKey: cached.fullKey });
+    refreshCache(api, internalGameId, { stableKey: gateKey, fullKey: cached.fullKey });
     return;
   }
   try {
@@ -299,13 +302,16 @@ export async function emitStoreGameVersionEvent(
       },
     );
 
-    refreshCache(api, internalGameId, { stableKey, fullKey });
-
-    if (res.accepted > 0 || res.rejected.length > 0)
-      log("debug", "telemetry events send", {
-        accepted: res.accepted,
-        rejected: res.rejected.length,
+    if (res.rejected.length > 0) {
+      // a rejected event counts as a failed send: leave the cache for a retry
+      log("warn", "store-game-version: telemetry event rejected", {
+        gameId: internalGameId,
+        rejected: res.rejected,
       });
+      return;
+    }
+
+    refreshCache(api, internalGameId, { stableKey: gateKey, fullKey });
   } catch (err) {
     // a failed send leaves the cache untouched, so the next deploy retries
     log("warn", "store-game-version: telemetry submit failed", {

@@ -276,6 +276,53 @@ describe("emitStoreGameVersionEvent", () => {
     expect(telemetryEvent.mock.calls[0][2].payload.steam.build_id).toBe(16659740);
   });
 
+  test("leaves the cache untouched when the server rejects the event", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness);
+
+    telemetryEvent.mockResolvedValueOnce({ accepted: 0, rejected: [{ index: 0 }] });
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(harness.api.getState().persistent.analyticsTelemetry.storeGameVersions).toEqual({});
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(2);
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(2);
+  });
+
+  test("retries a failed version lookup without re-sending the same failure", async ({
+    makeApi,
+  }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness);
+
+    installVersionSpy.mockRejectedValue(new Error("exe locked"));
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(1);
+    expect(telemetryEvent.mock.calls[0][2].payload).toMatchObject({
+      exe_version: null,
+      failure_reason: "version-lookup-failed",
+    });
+
+    // the lookup runs again, but an identical failure is not re-sent
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(installVersionSpy).toHaveBeenCalledTimes(2);
+    expect(telemetryEvent).toHaveBeenCalledTimes(1);
+
+    // once the lookup recovers, the resolved version goes out and closes the gate
+    installVersionSpy.mockResolvedValue("1.6.1170.0");
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(2);
+    expect(telemetryEvent.mock.calls[1][2].payload).toMatchObject({
+      exe_version: "1.6.1170.0",
+      failure_reason: null,
+    });
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(installVersionSpy).toHaveBeenCalledTimes(3);
+    expect(telemetryEvent).toHaveBeenCalledTimes(2);
+  });
+
   test("sends failure records instead of staying silent", async ({ makeApi }) => {
     const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness);
