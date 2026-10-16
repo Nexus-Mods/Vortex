@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { makeInstalledCollection, makeMod, makeRule } from "../../../../test-utils/builders";
+import { test } from "../../../../test-utils/harnessTest";
+import type { IApiHarness } from "../../../../test-utils/harnessTypes";
 import type { IMod, IModRule } from "../../types/IMod";
-import { collectionNamesByMod } from "./collectionMembership";
+import { collectionNamesByMod, ignorePinnedCollectionRules } from "./collectionMembership";
 
 vi.mock("../../../../util/log", () => ({
   log: vi.fn(),
@@ -88,5 +90,81 @@ describe("collectionNamesByMod", () => {
     const mods = toMap(collection, memberA);
 
     expect(collectionNamesByMod(mods, ["missing"])).toEqual({});
+  });
+});
+
+describe("ignorePinnedCollectionRules", () => {
+  const GAME = "skyrimse";
+  const memberA = makeMod({ id: "member-a", attributes: { fileMD5: "md5-a", version: "1.0.0" } });
+  const memberB = makeMod({ id: "member-b", attributes: { fileMD5: "md5-b", version: "1.0.0" } });
+
+  const rulesOf = (harness: IApiHarness, collectionId: string) =>
+    harness.getState().persistent.mods[GAME][collectionId].rules;
+
+  test("ignores the rule that pins the updated mod's version", ({ makeApi }) => {
+    const pinned = requiresRule("md5-a");
+    const harness = makeApi({
+      mods: { [GAME]: toMap(createCollection("col-1", "Pack", [pinned]), memberA) },
+    });
+
+    ignorePinnedCollectionRules(harness.api, GAME, ["member-a"]);
+
+    expect(rulesOf(harness, "col-1")).toEqual([{ ...pinned, ignored: true }]);
+  });
+
+  test("leaves a rule that follows the mod's latest version", ({ makeApi }) => {
+    const latest = makeRule({
+      reference: { fileMD5: "md5-a", logicalFileName: "a", versionMatch: "*" },
+    });
+    const harness = makeApi({
+      mods: { [GAME]: toMap(createCollection("col-1", "Pack", [latest]), memberA) },
+    });
+
+    ignorePinnedCollectionRules(harness.api, GAME, ["member-a"]);
+
+    expect(rulesOf(harness, "col-1")).toEqual([latest]);
+  });
+
+  test("leaves the rule of an optional member", ({ makeApi }) => {
+    const optional = makeRule({ type: "recommends", reference: { fileMD5: "md5-a" } });
+    const harness = makeApi({
+      mods: { [GAME]: toMap(createCollection("col-1", "Pack", [optional]), memberA) },
+    });
+
+    ignorePinnedCollectionRules(harness.api, GAME, ["member-a"]);
+
+    expect(rulesOf(harness, "col-1")).toEqual([optional]);
+  });
+
+  test("leaves the rules of members that are not updated", ({ makeApi }) => {
+    const pinnedA = requiresRule("md5-a");
+    const pinnedB = requiresRule("md5-b");
+    const harness = makeApi({
+      mods: {
+        [GAME]: toMap(createCollection("col-1", "Pack", [pinnedA, pinnedB]), memberA, memberB),
+      },
+    });
+
+    ignorePinnedCollectionRules(harness.api, GAME, ["member-a"]);
+
+    expect(rulesOf(harness, "col-1")).toEqual([{ ...pinnedA, ignored: true }, pinnedB]);
+  });
+
+  test("ignores the pinning rule in every collection the mod belongs to", ({ makeApi }) => {
+    const pinned = requiresRule("md5-a");
+    const harness = makeApi({
+      mods: {
+        [GAME]: toMap(
+          createCollection("col-1", "Pack", [pinned]),
+          createCollection("col-2", "Other Pack", [pinned]),
+          memberA,
+        ),
+      },
+    });
+
+    ignorePinnedCollectionRules(harness.api, GAME, ["member-a"]);
+
+    expect(rulesOf(harness, "col-1")).toEqual([{ ...pinned, ignored: true }]);
+    expect(rulesOf(harness, "col-2")).toEqual([{ ...pinned, ignored: true }]);
   });
 });
