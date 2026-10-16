@@ -6,7 +6,6 @@ import { IconButton } from "../../../controls/TooltipControls";
 import { getSafe } from "../../../util/storeHelper";
 import type { IDownload } from "../../download_management/types/IDownload";
 import type { IModWithState } from "../types/IModProps";
-import { collectionNamesByMod } from "../util/collection_membership/collectionMembership";
 import { confirmCollectionModUpdate } from "../util/collection_update_warning/collectionUpdateWarning";
 import type { UpdateState } from "../util/modUpdateState";
 import { isIdValid } from "../util/modUpdateState";
@@ -114,10 +113,9 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
 
   private updateMod = async (downloadGame: string, newestFileId: number) => {
     const { api } = this.context;
-    const { mod, mods } = this.props;
+    const { gameMode, mod } = this.props;
 
-    const collectionNames = collectionNamesByMod(mods, [mod.id])[mod.id];
-    if (collectionNames !== undefined && !(await confirmCollectionModUpdate(collectionNames))) {
+    if (!(await confirmCollectionModUpdate(api, gameMode, mod.id))) {
       return;
     }
 

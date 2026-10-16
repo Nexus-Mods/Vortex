@@ -1595,7 +1595,9 @@ class InstallManager {
                       }
                       const depRule = (mods[iter].rules ?? []).find(
                         (rule) =>
-                          rule.type === "requires" && testModReference(existingMod, rule.reference),
+                          rule.type === "requires" &&
+                          rule.ignored !== true &&
+                          testModReference(existingMod, rule.reference),
                       );
                       if (depRule !== undefined) {
                         prev[iter] = { owner: iter, rule: depRule };
