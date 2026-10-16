@@ -11,7 +11,6 @@ import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { isContributed } from "@/util/isContributed";
-import { getSafe } from "@/util/storeHelper";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
@@ -246,7 +245,7 @@ const GamePicker = ({
   const supportedGameList: IGameStored[] = [];
 
   displayedGames.forEach((game: IGameStored) => {
-    if (getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined) {
+    if (discoveredGames[game.id]?.path !== undefined) {
       // games the user hasn't added go to the detected section, further down
       if (profileGames.has(game.id)) {
         managedGameList.push(game);

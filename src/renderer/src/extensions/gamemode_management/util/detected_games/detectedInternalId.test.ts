@@ -5,13 +5,22 @@ import type { IGameStored } from "@/types/IState";
 import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 import { detectedInternalId } from "./detectedInternalId";
 
+const game = (id: string, nexusPageId?: string): IGameStored => ({
+  id,
+  name: id,
+  executable: undefined,
+  extensionPath: undefined,
+  requiredFiles: [],
+  details: nexusPageId === undefined ? undefined : { nexusPageId },
+});
+
 // Games that share a Nexus page id, as the bundled extensions register them.
 const known = [
-  { id: "nwn", details: { nexusPageId: "neverwinter" } },
-  { id: "nwnee", details: { nexusPageId: "neverwinter" } },
-  { id: "fallout4" },
-  { id: "fallout4vr", details: { nexusPageId: "fallout4" } },
-] as unknown as IGameStored[];
+  game("nwn", "neverwinter"),
+  game("nwnee", "neverwinter"),
+  game("fallout4"),
+  game("fallout4vr", "fallout4"),
+];
 
 const installed = (...ids: string[]): { [gameId: string]: IDiscoveryResult } =>
   Object.fromEntries(ids.map((id) => [id, { path: `C:/Games/${id}` }]));

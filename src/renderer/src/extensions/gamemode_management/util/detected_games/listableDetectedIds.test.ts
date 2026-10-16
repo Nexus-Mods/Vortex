@@ -20,6 +20,15 @@ const detected = (gameId: number, withExtension: boolean): IDetectedGame => ({
     : undefined,
 });
 
+const game = (id: string, nexusPageId?: string): IGameStored => ({
+  id,
+  name: id,
+  executable: undefined,
+  extensionPath: undefined,
+  requiredFiles: [],
+  details: nexusPageId === undefined ? undefined : { nexusPageId },
+});
+
 // Skyrim SE's nexus page id differs from its internal id, as it does in the real game list.
 const known = [
   { id: "skyrimse", details: { nexusPageId: "skyrimspecialedition" } },
@@ -62,10 +71,7 @@ describe("listableDetectedIds", () => {
 
 describe("listableDetectedIds with discovery", () => {
   // Emberville stands in for an extension in development, for a game the response can't name.
-  const withEmberville = [
-    ...known,
-    { id: "emberville", name: "Emberville" },
-  ] as unknown as IGameStored[];
+  const withEmberville = [...known, game("emberville")];
 
   it("adds a game only discovery found, by its internal id", () => {
     const ids = listableDetectedIds([], withEmberville, {
@@ -85,10 +91,7 @@ describe("listableDetectedIds with discovery", () => {
 
   // Skyrim VR shares Skyrim SE's Nexus page, and only VR is installed here.
   it("counts a game once when it shares its Nexus domain with another known game", () => {
-    const withVR = [
-      ...known,
-      { id: "skyrimvr", details: { nexusPageId: "skyrimspecialedition" } },
-    ] as unknown as IGameStored[];
+    const withVR = [...known, game("skyrimvr", "skyrimspecialedition")];
 
     const ids = listableDetectedIds([detected(1704, false)], withVR, {
       skyrimvr: { path: "C:/Games/Skyrim VR" },
