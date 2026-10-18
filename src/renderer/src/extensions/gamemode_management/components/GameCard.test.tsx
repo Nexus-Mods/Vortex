@@ -73,7 +73,8 @@ describe("GameCard", () => {
     expect(screen.getByTestId("game-tile")).toHaveAttribute("data-store", "gog");
   });
 
-  // A path set by hand, or one identifyStore couldn't place, leaves the store unset.
+  // Discovery records a path with no store when identifyStore can't place it, including a
+  // path the user set by hand and left on "Other".
   it("names the detected store when discovery found the game but not its store", () => {
     state.current.settings.gameMode.discovered = { skyrimse: { path: "C:/Games/Skyrim" } };
     render(<GameCard detectedStore="steam" game={skyrim} section="detected" />);

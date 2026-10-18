@@ -8,7 +8,7 @@ import type { IDetectedGame } from "../../types/IDetectedGame";
 const STORE_ORDER = ["steam", "epic", "gog"] as const;
 
 /**
- * The store a detected game's tile names until discovery has found the game: one the
+ * The store a detected game's tile names until discovery records one of its own: one the
  * detected-games response matched an installed listing on, or undefined if none matched.
  */
 export function detectedStore(game: IDetectedGame): string | undefined {
