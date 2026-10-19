@@ -147,6 +147,7 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
+import { registerResolveLockFile } from "./util/resolveLockFile";
 import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
@@ -1719,6 +1720,11 @@ function once(api: IExtensionApi) {
   api.events.on("create-mod", (gameMode: string, mod: IMod, callback: (error: Error) => void) => {
     onAddMod(api, gameMode, mod, callback);
   });
+
+  // hashes every staged file, so only dev builds resolve the lockfile for now
+  if (process.env.NODE_ENV === "development") {
+    registerResolveLockFile(api);
+  }
 
   api.events.on("profile-will-change", () => {
     // when the profile changes there is a good chance the cycle warning doesn't apply and if

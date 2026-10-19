@@ -59,6 +59,20 @@ type SortOutcome =
 
 const failed = (error: VortexError): SortOutcome => ({ result: "failed", error });
 
+/** How a sort that ran ended. */
+export type FinishedSortResult = Exclude<SortOutcome["result"], "deferred">;
+
+declare module "../../types/IExtensionContext" {
+  interface ApiEvents {
+    /** a plugin sort ran; a sort deferred behind a deployment signals once it runs */
+    "did-sort-plugins": (
+      gameId: string,
+      profileId: string | undefined,
+      result: FinishedSortResult,
+    ) => void;
+  }
+}
+
 // A CJS module at a runtime path has to come in through the raw node require,
 // the renderer's own import() resolves through the browser loader, which cannot load it.
 let LootAsyncClass: typeof LootAsync | undefined;
@@ -238,6 +252,15 @@ class LootInterface {
         message: "LOOT sorting successful",
         displayMS: 3000,
       });
+    }
+    if (outcome.result !== "deferred") {
+      const state = this.mExtensionApi.getState();
+      this.mExtensionApi.events.emit(
+        "did-sort-plugins",
+        activeGameId(state),
+        activeProfile(state)?.id,
+        outcome.result,
+      );
     }
     if (callback !== undefined) {
       callback(outcome.result === "failed" ? outcome.error : null);
