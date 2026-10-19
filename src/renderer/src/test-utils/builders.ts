@@ -1147,6 +1147,8 @@ export function makeApiHarness(
       },
     },
     emitAndAwait: () => Promise.resolve([]),
+    // no meta server rules; sorting uses the mods' own
+    lookupModMeta: () => Promise.resolve([]),
   } as unknown as IExtensionApi;
 
   return {

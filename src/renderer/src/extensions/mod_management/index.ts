@@ -73,7 +73,7 @@ import {
   enabledModCountForProfile,
   lastActiveProfileForGame,
 } from "../profile_management/selectors";
-import type { IProfile, IProfileMod } from "../profile_management/types/IProfile";
+import type { IProfile } from "../profile_management/types/IProfile";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
 import { setDeploymentNecessary } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
@@ -147,7 +147,7 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import sortMods from "./util/sort";
+import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
 import DeactivationButton from "./views/DeactivationButton";
@@ -476,31 +476,6 @@ function checkIncompatibilities(
   } else {
     return Promise.resolve();
   }
-}
-
-function doSortMods(
-  api: IExtensionApi,
-  profile: IProfile,
-  mods: { [modId: string]: IMod },
-  includeModId?: VortexModId,
-) {
-  // sort (all) mods based on their dependencies so the right files get activated
-  const modState: { [id: string]: IProfileMod } = profile !== undefined ? profile.modState : {};
-  const unsorted = Object.keys(mods)
-    .map((key: string) => mods[key])
-    .filter(
-      (mod: IMod) => mod.id === includeModId || getSafe(modState, [mod.id, "enabled"], false),
-    );
-
-  return sortMods(profile.gameId, unsorted, api).catch((unknownErr) => {
-    const err = unknownToError(unknownErr);
-    if (unknownErr instanceof CycleError) {
-      throw new ProcessCanceled(
-        "Deployment is not possible when you have cyclical mod rules. " + err.message,
-      );
-    }
-    throw unknownErr;
-  });
 }
 
 interface IMergeResultByType {
