@@ -23,7 +23,8 @@ export interface ITableRowClick {
 
 /**
  * The rows the user has selected, by id, and the ways to change them: checkboxes, which
- * add and remove a row each, and clicks on the rows, which follow Explorer.
+ * add and remove a row each, and clicks on the rows, which follow Explorer, except that a
+ * click on the only selected row deselects it.
  *
  * `rows` is every row as it's shown, in order, so a range runs down the screen: a row in
  * two groups is there twice, and a range runs from the place it was clicked in.
@@ -98,6 +99,12 @@ export const useTableSelection = (
         const span = rows.slice(Math.min(from, to), Math.max(from, to) + 1).map(({ id }) => id);
 
         setSelected(new Set(toggle ? [...selected, ...span] : span));
+        return;
+      }
+
+      if (!toggle && selected.size === 1 && selected.has(row.id)) {
+        anchorRef.current = undefined;
+        setSelected(new Set());
         return;
       }
 

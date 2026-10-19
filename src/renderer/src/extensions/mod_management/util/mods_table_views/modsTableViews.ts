@@ -101,7 +101,7 @@ const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompar
 const toRows = (mods: IModWithState[]): IModRow[] =>
   mods.map((mod) => ({ mod, name: modName(mod) })).sort(byName);
 
-// The mods a collection installed; collections themselves are the groups, not rows.
+// Every view's rows; a collection heads its group instead, so it's never one.
 const installedMods = (mods: { [id: string]: IModWithState }) =>
   toRows(Object.values(mods).filter((mod) => mod.type !== COLLECTION_TYPE));
 
@@ -204,7 +204,7 @@ const groupByColumn = (
   const byValue = new Map<string, IModRow[]>();
   const none: IModRow[] = [];
 
-  toRows(Object.values(mods)).forEach((row) => {
+  installedMods(mods).forEach((row) => {
     const value = column.groupBy(row).trim();
 
     if (!value) {
@@ -262,9 +262,8 @@ export const groupMods = (
   return undefined;
 };
 
-/** Every mod, collections included, by name: the rows of a view that doesn't group. */
-export const allModRows = (mods: { [id: string]: IModWithState }): IModRow[] =>
-  toRows(Object.values(mods));
+/** Every mod but the collections, which head groups rather than list as rows, by name. */
+export const allModRows = (mods: { [id: string]: IModWithState }): IModRow[] => installedMods(mods);
 
 export interface ISharedMods {
   /** The group's mods other collections have too. */

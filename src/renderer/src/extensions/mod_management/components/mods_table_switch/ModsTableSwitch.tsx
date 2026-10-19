@@ -34,10 +34,10 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { activeGameId } from "@/util/selectors";
 
-import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import { makeCollectionModsResolver } from "../../../collections/util/resolveCollectionMods/resolveCollectionMods";
 import { activeProfile } from "../../../profile_management/selectors";
+import { useCollectionGroupActions } from "../../hooks/use_collection_group_actions/useCollectionGroupActions.hook";
 import {
   INSTALLING_ACTIVITY,
   useInstallMods,
@@ -50,6 +50,7 @@ import {
 } from "../../hooks/use_mod_actions/useModActions.hook";
 import {
   MODS_TABLE_TOOLBARS,
+  modsTableGroupToolbar,
   useModsTableAnalytics,
 } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import {
@@ -57,6 +58,7 @@ import {
   useModsTableColumns,
 } from "../../hooks/use_mods_table_columns/useModsTableColumns.hook";
 import { useModsTableDataColumns } from "../../hooks/use_mods_table_data_columns/useModsTableDataColumns.hook";
+import { useModsTableFocusRequest } from "../../hooks/use_mods_table_focus_request/useModsTableFocusRequest.hook";
 import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
 import { UNINSTALLING_ACTIVITY } from "../../hooks/use_uninstall_mods/useUninstallMods.hook";
 import type { IModWithState } from "../../types/IModProps";
@@ -78,7 +80,7 @@ import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
 
 interface IModsTableSwitchProps {
-  /** The mods the table lists, collections among them. */
+  /** The mods, collections among them: the collections head their groups, never rows. */
   mods: { [id: string]: IModWithState };
   /** The table shown unless the user has switched to the beta view. */
   legacy: ReactNode;
@@ -104,10 +106,15 @@ const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
 
 const modIds = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
 
+/** A group's mods, and its collection's own, which no row switches. */
+const groupModIds = ({ collection, rows }: IModGroup) =>
+  collection ? [collection.id, ...modIds(rows)] : modIds(rows);
+
 const profileModState = (state: IState) => activeProfile(state)?.modState;
 
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
 
+/** The group the table is asked to show. */
 const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
 
 /** The archives the stored mods come from, worked out once each time the mods change. */
@@ -160,7 +167,6 @@ const searchFilter = (columns: IModsTableColumn[], search: string) => {
     columns.some((column) => column.searchText?.(row).toLocaleLowerCase().includes(query));
 };
 
-/** The Mods page's table: the classic one, or the new one while the user has the beta view on. */
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
 const nop = () => undefined;
@@ -318,6 +324,11 @@ const ModRowActions = memo(
   },
 );
 
+/**
+ * The Mods page's table: the classic one, or the new one while the user has the beta view on.
+ *
+ * The new table is asked to show a group; see useModsTableFocusRequest.
+ */
 export const ModsTableSwitch = ({
   mods,
   legacy,
@@ -386,7 +397,7 @@ export const ModsTableSwitch = ({
       const shared = sharedMods(group, memberships);
 
       if (enabled || shared.rows.length === 0) {
-        setEnabled(modIds(group.rows), enabled);
+        setEnabled(groupModIds(group), enabled);
         return;
       }
 
@@ -402,7 +413,7 @@ export const ModsTableSwitch = ({
 
     const keep = new Set(keepShared ? modIds(pendingDisable.shared.rows) : []);
     setEnabled(
-      modIds(pendingDisable.group.rows).filter((id) => !keep.has(id)),
+      groupModIds(pendingDisable.group).filter((id) => !keep.has(id)),
       false,
     );
     setPendingDisable(undefined);
@@ -422,6 +433,9 @@ export const ModsTableSwitch = ({
   const analytics = useModsTableAnalytics();
   const rowTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
   const selectionTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.selection);
+  const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
+
+  const collectionActions = useCollectionGroupActions(actionsFor);
 
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   // Those still listed, as a removed mod can't be acted on.
@@ -445,11 +459,7 @@ export const ModsTableSwitch = ({
         searchText: ({ name }) => name,
         cell: ({ mod, name }) => (
           <>
-            {mod.type === COLLECTION_TYPE ? (
-              <CollectionHoverCard className="mr-2.5 ml-4.5 h-5 rounded-sm" collection={mod} />
-            ) : (
-              <ModHoverCard className="ml-2 h-5 rounded-sm" mod={mod} name={name} />
-            )}
+            <ModHoverCard className="ml-2 h-5 rounded-sm" mod={mod} name={name} />
 
             <span className="ml-2 truncate">{name}</span>
           </>
@@ -503,25 +513,27 @@ export const ModsTableSwitch = ({
         cell: ({ mod, name }) => (
           <ModRowActions
             actions={actionsFor(mod.id)}
-            modState={mod.state}
             enabled={isEnabled(mod)}
             installLabel={t("Install {{name}}", { name })}
             isLoading={changing.has(mod.id)}
             label={t("{{name}} enabled", { name })}
             modId={mod.id}
+            modState={mod.state}
             switchOnly={multiSelected}
             width={actionsWidth(shownPins)}
             onInstall={mod.state === "downloaded" ? install : undefined}
             onSetEnabled={setEnabled}
           />
         ),
-        // Part on while only some of its mods are, as after keeping the shared ones.
+        /**
+         * Part on while only some of its mods are, as after keeping the shared ones; right-aligned
+         * before the "…" the table puts at the cell's end, so it lines up with its rows' switches.
+         */
         groupCell: (group) => {
           const enabled = group.rows.filter(({ mod }) => isEnabled(mod)).length;
 
-          // Against the end, past room for a menu, so it lines up with its rows' switches.
           return (
-            <div className="flex w-full items-center justify-end gap-x-2">
+            <div className="flex min-w-0 flex-1 items-center justify-end">
               <Switch
                 aria-label={t("{{name}} enabled", { name: group.label })}
                 checked={group.rows.length > 0 && enabled === group.rows.length}
@@ -529,8 +541,6 @@ export const ModsTableSwitch = ({
                 isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
                 onChange={(checked) => setGroupEnabled(group, checked)}
               />
-
-              <span aria-hidden className="w-7 shrink-0" />
             </div>
           );
         },
@@ -584,6 +594,8 @@ export const ModsTableSwitch = ({
     () => groupMods(mods, grouping, t, memberships, groupColumn),
     [mods, grouping, t, memberships, groupColumn],
   );
+
+  const { focusGroupId, onGroupFocused } = useModsTableFocusRequest({ groups, search, setSearch });
 
   // The columns shown, so a search finds only what's on screen.
   const searchColumns = useMemo(
@@ -669,6 +681,8 @@ export const ModsTableSwitch = ({
   ) : undefined;
 
   const tableProps = {
+    focusGroupId,
+    onGroupFocused,
     className: "mb-2 flex-1",
     toolbar: (
       <ModsTableToolbar
@@ -718,8 +732,14 @@ export const ModsTableSwitch = ({
           onSelect={close}
         />
       ),
+    groupMenu: ({ collection }: IModGroup) => {
+      if (!collection) {
+        return [];
+      }
+      return collectionActions(collection);
+    },
+    groupTracking,
     onMenuOpen: analytics.onMenuOpen,
-    onGroupMenuAction: analytics.onGroupMenuAction,
     defaultSort: BY_NAME,
     footer,
     empty: matches ? (

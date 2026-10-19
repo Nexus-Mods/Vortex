@@ -8,6 +8,8 @@ import {
   mdiMonitorArrowDown,
   mdiPaw,
   mdiPawOutline,
+  mdiPencilOutline,
+  mdiPlaylistCheck,
   mdiPuzzleOutline,
   mdiRefresh,
   mdiRotateRight,
@@ -95,6 +97,12 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       { title: "Remove related", label: "Remove related", iconPath: mdiDeleteOutline },
       { title: "Remove", label: "Remove", iconPath: mdiDeleteOutline },
       { title: "Check for Update", label: "Check for updates", iconPath: mdiRefresh },
+      {
+        title: "Apply Collection Rules",
+        label: "Apply collection rules",
+        iconPath: mdiPlaylistCheck,
+      },
+      { title: "Edit Collection", label: "Edit collection", iconPath: mdiPencilOutline },
     ],
   },
   {
