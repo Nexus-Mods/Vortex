@@ -7,7 +7,13 @@ import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 import type { ITierZeroGame } from "@/types/IState";
 import local from "@/util/local";
 
-import { epicAppNames, isTierZeroGame, makeTierZeroGame, unregisterTierZeroGame } from "./tierZero";
+import {
+  epicAppNames,
+  isTierZeroGame,
+  makeTierZeroGame,
+  synthesizePersistedTierZeroGames,
+  unregisterTierZeroGame,
+} from "./tierZero";
 
 const $ = local<{ gameModeManager: { gameStores: IGameStore[] } | undefined }>(
   "gamemode-management",
@@ -63,7 +69,7 @@ afterEach(() => {
 
 describe("makeTierZeroGame", () => {
   it("synthesizes the game shape for the entry", () => {
-    const game = makeTierZeroGame(makeEntry(), []);
+    const game = makeTierZeroGame(makeEntry());
     assert(game);
 
     expect(game.id).toBe("somegame");
@@ -73,32 +79,18 @@ describe("makeTierZeroGame", () => {
     expect(game.executable("C:\\Games\\SomeGame")).toBe("");
   });
 
-  it("skips game ids owned by a loaded extension game", () => {
-    const game = makeTierZeroGame(makeEntry({ gameId: GameId(2345) }), [makeKnownGame("somegame")]);
-    expect(game).toBeUndefined();
-    expect(isTierZeroGame(GameId(2345))).toBe(false);
-  });
-
-  it("skips domains owned via the extension's nexusPageId", () => {
-    const game = makeTierZeroGame(makeEntry({ gameId: GameId(3456) }), [
-      makeKnownGame("othergame", { details: { nexusPageId: "somegame" } }),
-    ]);
-    expect(game).toBeUndefined();
-    expect(isTierZeroGame(GameId(3456))).toBe(false);
-  });
-
   it("resolves the installed version to unknown, never rejecting", async () => {
-    const game = makeTierZeroGame(makeEntry(), []);
+    const game = makeTierZeroGame(makeEntry());
     await expect(game.getInstalledVersion({})).resolves.toBe("unknown");
   });
 
   it("resolves the game version override to unknown", async () => {
-    const game = makeTierZeroGame(makeEntry(), []);
+    const game = makeTierZeroGame(makeEntry());
     await expect(game.getGameVersion("C:\\Games\\SomeGame", "")).resolves.toBe("unknown");
   });
 
   it("toggles provenance via unregister", () => {
-    const game = makeTierZeroGame(makeEntry(), []);
+    const game = makeTierZeroGame(makeEntry());
     expect(game).toBeDefined();
     expect(isTierZeroGame(GameId(1234))).toBe(true);
     unregisterTierZeroGame(GameId(1234));
@@ -110,7 +102,6 @@ describe("makeTierZeroGame queryArgs", () => {
   it("passes steam and gog ids through", () => {
     const game = makeTierZeroGame(
       makeEntry({ storeIDs: { steam: ["638970"], gog: ["1207658"], epic: [] } }),
-      [],
     );
 
     expect(game.queryArgs).toEqual({
@@ -120,7 +111,7 @@ describe("makeTierZeroGame queryArgs", () => {
   });
 
   it("omits stores without ids", () => {
-    const game = makeTierZeroGame(makeEntry(), []);
+    const game = makeTierZeroGame(makeEntry());
     expect(game.queryArgs).toEqual({});
   });
 
@@ -139,7 +130,7 @@ describe("makeTierZeroGame queryArgs", () => {
     };
 
     const entry = makeEntry({ storeIDs: { steam: [], gog: [], epic: ["ns1:item1"] } });
-    const game = makeTierZeroGame(entry, []);
+    const game = makeTierZeroGame(entry);
 
     expect(game.queryArgs.epic).toEqual([{ id: "Ginger" }, { name: "Some Game" }]);
     expect(epicAppNames(entry)).toEqual(["Ginger"]);
@@ -154,7 +145,7 @@ describe("makeTierZeroGame queryArgs", () => {
       ],
     };
     const entry = makeEntry({ storeIDs: { steam: [], gog: [], epic: ["nsX:itemX"] } });
-    const game = makeTierZeroGame(entry, []);
+    const game = makeTierZeroGame(entry);
     expect(epicAppNames(entry)).toEqual(["Ginger"]);
     expect(game.queryArgs.epic).toEqual([{ id: "Ginger" }, { name: "Some Game" }]);
   });
@@ -162,7 +153,6 @@ describe("makeTierZeroGame queryArgs", () => {
   it("re-evaluates epic ids on every access", () => {
     const game = makeTierZeroGame(
       makeEntry({ storeIDs: { steam: [], gog: [], epic: ["ns1:item1"] } }),
-      [],
     );
     // snapshot not loaded yet: only the name fallback
     expect(game.queryArgs.epic).toEqual([{ name: "Some Game" }]);
@@ -188,7 +178,6 @@ describe("makeTierZeroGame requiresLauncher", () => {
   it("returns the steam payload for the recorded listing", async () => {
     const game = makeTierZeroGame(
       makeEntry({ storeIDs: { steam: ["638970"], gog: [], epic: [] } }),
-      [],
     );
 
     await expect(game.requiresLauncher("C:\\Games\\SomeGame", "steam")).resolves.toEqual({
@@ -200,7 +189,6 @@ describe("makeTierZeroGame requiresLauncher", () => {
   it("returns the gog payload for the recorded listing", async () => {
     const game = makeTierZeroGame(
       makeEntry({ storeIDs: { steam: [], gog: ["1207658"], epic: [] } }),
-      [],
     );
 
     await expect(game.requiresLauncher("C:\\Games\\SomeGame", "gog")).resolves.toEqual({
@@ -225,7 +213,6 @@ describe("makeTierZeroGame requiresLauncher", () => {
 
     const game = makeTierZeroGame(
       makeEntry({ storeIDs: { steam: [], gog: [], epic: ["ns1:item1"] } }),
-      [],
     );
 
     await expect(game.requiresLauncher("C:\\Games\\SomeGame", "epic")).resolves.toEqual({
@@ -246,7 +233,6 @@ describe("makeTierZeroGame requiresLauncher", () => {
 
     const game = makeTierZeroGame(
       makeEntry({ storeIDs: { steam: ["111", "222"], gog: [], epic: [] } }),
-      [],
     );
 
     await expect(game.requiresLauncher("C:\\Games\\EditionTwo\\", "steam")).resolves.toEqual({
@@ -256,8 +242,79 @@ describe("makeTierZeroGame requiresLauncher", () => {
   });
 
   it("resolves undefined for games not recorded through a supported store", async () => {
-    const game = makeTierZeroGame(makeEntry(), []);
+    const game = makeTierZeroGame(makeEntry());
     await expect(game.requiresLauncher("C:\\Games\\SomeGame", undefined)).resolves.toBeUndefined();
     await expect(game.requiresLauncher("C:\\Games\\SomeGame", "xbox")).resolves.toBeUndefined();
+  });
+});
+
+describe("synthesizePersistedTierZeroGames", () => {
+  afterEach(() => {
+    unregisterTierZeroGame(GameId(2345));
+    unregisterTierZeroGame(GameId(3456));
+  });
+
+  it("registers one game per entry in a single addGames call", () => {
+    const added: IGame[][] = [];
+    synthesizePersistedTierZeroGames(
+      {
+        [GameId(1234)]: makeEntry(),
+        [GameId(2345)]: makeEntry({ gameId: GameId(2345), domain: GameDomain("othergame") }),
+      },
+      [],
+      (games) => added.push(games),
+    );
+
+    expect(added).toHaveLength(1);
+    expect(added[0].map((game) => game.id)).toEqual(["somegame", "othergame"]);
+  });
+
+  it("skips domains owned by a loaded extension game", () => {
+    const added: IGame[][] = [];
+    synthesizePersistedTierZeroGames(
+      { [GameId(1234)]: makeEntry() },
+      [makeKnownGame("somegame")],
+      (games) => added.push(games),
+    );
+
+    expect(added).toHaveLength(0);
+    expect(isTierZeroGame(GameId(1234))).toBe(false);
+  });
+
+  it("skips domains owned via the extension's nexusPageId", () => {
+    const added: IGame[][] = [];
+    synthesizePersistedTierZeroGames(
+      { [GameId(1234)]: makeEntry() },
+      [makeKnownGame("othergame", { details: { nexusPageId: "somegame" } })],
+      (games) => added.push(games),
+    );
+
+    expect(added).toHaveLength(0);
+    expect(isTierZeroGame(GameId(1234))).toBe(false);
+  });
+
+  it("skips a second entry whose domain an earlier entry of the pass claimed", () => {
+    const added: IGame[][] = [];
+    synthesizePersistedTierZeroGames(
+      {
+        [GameId(1234)]: makeEntry(),
+        [GameId(2345)]: makeEntry({ gameId: GameId(2345) }),
+      },
+      [],
+      (games) => added.push(games),
+    );
+
+    expect(added).toHaveLength(1);
+    expect(added[0]).toHaveLength(1);
+    expect(added[0][0].id).toBe("somegame");
+    expect(isTierZeroGame(GameId(2345))).toBe(false);
+  });
+
+  it("does not call addGames for an empty map", () => {
+    let called = false;
+    synthesizePersistedTierZeroGames({}, [], () => {
+      called = true;
+    });
+    expect(called).toBe(false);
   });
 });

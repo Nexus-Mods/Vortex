@@ -58,7 +58,7 @@ describe("GameModeManager addGames", () => {
   it("re-dispatches the known games including the added one", () => {
     const { manager, dispatched } = makeManager([makeKnownGame("existing")]);
 
-    const game = makeTierZeroGame(makeTierZeroEntry("somegame"), [])!;
+    const game = makeTierZeroGame(makeTierZeroEntry("somegame"));
     manager.addGames([game]);
 
     const known = dispatchedKnownGames(dispatched);
