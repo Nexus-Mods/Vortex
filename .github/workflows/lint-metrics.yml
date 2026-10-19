@@ -46,3 +46,19 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.NEXUS_VORTEX_REPORTS_R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.NEXUS_VORTEX_REPORTS_R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: Nexus-Mods
+          repositories: vortex-code-metrics
+
+      - name: Trigger metrics pipeline
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api repos/Nexus-Mods/vortex-code-metrics/dispatches \
+            -f event_type=lint-metrics
