@@ -34,11 +34,6 @@ function getText(id: string, t: TFunction) {
           "Some parts of Vortex, such as the plugins list for Bethesda games, only reflect " +
           "changes once they have been applied.",
       );
-    case "autoapply":
-      return t(
-        "Automatically applies your changes whenever you enable or disable a mod. Turn this " +
-          "off to make multiple changes before applying them manually.",
-      );
     case "versionmatch":
       return t(
         "A dependency rule can accept multiple versions of the same mod. In that case any " +

@@ -41,7 +41,7 @@ const state = {
   settings: {
     mods: { activator: {}, confirmPurge: true, betaTable: false },
     downloads: { copyOnIFF: false },
-    automation: { install: false },
+    automation: { install: false, deploy: false },
   },
   session: { discovery: {} },
   persistent: { mods: {} },
@@ -65,8 +65,9 @@ vi.mock("react-redux", async () => {
   };
 });
 
-import { nxmExperiment } from "@/ui/icon-paths";
+import { nxmExperiment, nxmRuleSettings } from "@/ui/icon-paths";
 
+import { setAutoDeployment } from "../../settings_interface/actions/automation";
 import { setBetaModsTable } from "../actions/settings";
 import { useModToolbarActions } from "./useModToolbarActions.hook";
 
@@ -238,6 +239,55 @@ describe("useModToolbarActions brands", () => {
     brand.mockReturnValue(undefined);
 
     expect(byLabel([branded], "Manage Rules")?.brand).toBeUndefined();
+  });
+});
+
+describe("useModToolbarActions auto-apply", () => {
+  afterEach(() => {
+    state.settings.automation.deploy = false;
+    dispatch.mockClear();
+  });
+
+  const autoApply = () => actionsFor([]).find((action) => action.id === "auto-apply");
+
+  it("comes after Manage Rules and before Purge, unpinned", () => {
+    const ids = actionsFor([plain("Manage Rules")]).map((action) => action.id ?? action.label);
+
+    expect(ids.indexOf("auto-apply")).toBe(ids.indexOf("Manage Rules") + 1);
+    expect(ids.indexOf("purge")).toBe(ids.indexOf("auto-apply") + 1);
+    expect(autoApply()?.pinned).toBeFalsy();
+  });
+
+  it("shows the rule settings symbol", () => {
+    expect(autoApply()?.iconPath).toBe(nxmRuleSettings);
+  });
+
+  it("offers to turn auto-apply on while it's off", () => {
+    expect(autoApply()).toMatchObject({
+      label: "Enable auto-apply",
+      description: "Automatically apply changes as you make them.",
+      active: false,
+      trackingProperties: { autoApply: true },
+    });
+
+    autoApply()?.onClick?.();
+
+    expect(dispatch).toHaveBeenCalledWith(setAutoDeployment(true));
+  });
+
+  it("offers to turn auto-apply off, lit, while it's on", () => {
+    state.settings.automation.deploy = true;
+
+    expect(autoApply()).toMatchObject({
+      label: "Disable auto-apply",
+      description: "Mod changes will need to be applied manually.",
+      active: true,
+      trackingProperties: { autoApply: false },
+    });
+
+    autoApply()?.onClick?.();
+
+    expect(dispatch).toHaveBeenCalledWith(setAutoDeployment(false));
   });
 });
 

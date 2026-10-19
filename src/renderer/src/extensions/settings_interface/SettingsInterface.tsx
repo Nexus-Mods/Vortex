@@ -392,21 +392,18 @@ export function SettingsInterfaceForm(props: IFormProps) {
         <ControlLabel>{t("Automation")}</ControlLabel>
 
         <div>
-          <Toggle
-            checked={autoDeployment}
-            onToggle={(enabled) => dispatch(setAutoDeployment(enabled))}
-          >
-            {useModernLayout
-              ? t("Apply changes when mods are enabled")
-              : t("Deploy Mods when Enabled")}
-
-            <More
-              id="more-deploy-settings"
-              name={useModernLayout ? t("Applying changes") : t("Deployment")}
+          {!useModernLayout && (
+            <Toggle
+              checked={autoDeployment}
+              onToggle={(enabled) => dispatch(setAutoDeployment(enabled))}
             >
-              {getTextModManagement(useModernLayout ? "autoapply" : "deployment", t)}
-            </More>
-          </Toggle>
+              {t("Deploy Mods when Enabled")}
+
+              <More id="more-deploy-settings" name={t("Deployment")}>
+                {getTextModManagement("deployment", t)}
+              </More>
+            </Toggle>
+          )}
 
           <Toggle checked={autoInstall} onToggle={(enabled) => dispatch(setAutoInstall(enabled))}>
             {t("Install Mods when downloaded")}

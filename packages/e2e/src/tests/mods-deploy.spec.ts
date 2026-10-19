@@ -1,10 +1,11 @@
 /**
  * QA-112: Mods [9.5] — I can deploy mods from the Mods list.
  *
- * Checking that with auto-enable and auto-deploy turned off (auto-install
- * left on), a downloaded mod installs into the Mods list but stays Disabled
- * and undeployed. This exercises the manual path — enable the mod, then
- * apply it from the menu. Runs for both free and premium.
+ * Checking that with auto-enable turned off in settings and auto-apply turned
+ * off from the Mods toolbar (auto-install left on), a downloaded mod installs
+ * into the Mods list but stays Disabled and undeployed. This exercises the
+ * manual path — enable the mod, then apply it from the menu. Runs for both
+ * free and premium.
  *
  */
 import { SDV_MOD_URL } from "../constants";
@@ -50,14 +51,11 @@ test.describe("Mods - Deploy from mods list", () => {
           await expect(settings.interfaceTab).toBeEnabled();
         });
 
-        await test.step("Turn off auto-enable and auto-deploy (leave auto-install on)", async () => {
-          const settings = new SettingsPage(vortexWindow);
-          for (const label of [AUTOMATION_LABELS.enable, AUTOMATION_LABELS.deploy]) {
-            const toggle = settings.automationToggle(label);
-            await expect(toggle).toHaveClass(/toggle-on/);
-            await toggle.click();
-            await expect(toggle).toHaveClass(/toggle-off/);
-          }
+        await test.step("Turn off auto-enable (leave auto-install on)", async () => {
+          const toggle = new SettingsPage(vortexWindow).automationToggle(AUTOMATION_LABELS.enable);
+          await expect(toggle).toHaveClass(/toggle-on/);
+          await toggle.click();
+          await expect(toggle).toHaveClass(/toggle-off/);
         });
 
         await test.step("Download SMAPI and forward it to Vortex (auto-installs)", async () => {
@@ -75,6 +73,15 @@ test.describe("Mods - Deploy from mods list", () => {
           await expect(new ModsPage(vortexWindow).emptyState).toBeHidden({
             timeout: Timeouts.MOD_INSTALL,
           });
+        });
+
+        await test.step("Turn off auto-apply from the Mods toolbar", async () => {
+          const modsPage = new ModsPage(vortexWindow);
+          await modsPage.toolbarOverflow.click();
+          await modsPage.toolbarMenuItem("Disable auto-apply").click();
+          await modsPage.toolbarOverflow.click();
+          await expect(modsPage.toolbarMenuItem("Enable auto-apply")).toBeVisible();
+          await vortexWindow.keyboard.press("Escape");
         });
 
         await test.step("The mod is installed but Disabled", async () => {
