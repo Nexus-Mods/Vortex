@@ -1,3 +1,4 @@
+import type { GameDomain, GameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
 import type { ITierZeroGame } from "../../types/IState";
@@ -14,16 +15,16 @@ export const setGameInfo = createAction(
 );
 
 /**
- * record a game as managed without a game extension; keyed by nexus domain
+ * record a game as managed without a game extension, keyed by numeric nexus game id
  */
 export const setTierZeroGame = createAction(
   "SET_TIER_ZERO_GAME",
-  (domain: string, entry: ITierZeroGame) => ({ domain, entry }),
+  (gameId: GameId, entry: ITierZeroGame) => ({ gameId, entry }),
 );
 
 /**
  * forget a Tier 0 game (un-manage or extension takeover)
  */
-export const removeTierZeroGame = createAction("REMOVE_TIER_ZERO_GAME", (domain: string) => ({
-  domain,
+export const removeTierZeroGame = createAction("REMOVE_TIER_ZERO_GAME", (gameId: GameId) => ({
+  gameId,
 }));

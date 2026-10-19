@@ -37,13 +37,13 @@ export const persistentReducer = actionsToReducerSpec<IStateGameMode, typeof act
     },
     setTierZeroGame: (state, payload) => ({
       ...state,
-      tier0: { ...state.tier0, [payload.domain]: payload.entry },
+      tier0: { ...state.tier0, [payload.gameId]: payload.entry },
     }),
     removeTierZeroGame: (state, payload) => {
-      if (state.tier0[payload.domain] === undefined) {
+      if (state.tier0[payload.gameId] === undefined) {
         return state;
       }
-      const { [payload.domain]: _removed, ...rest } = state.tier0;
+      const { [payload.gameId]: _removed, ...rest } = state.tier0;
       return { ...state, tier0: rest };
     },
   },

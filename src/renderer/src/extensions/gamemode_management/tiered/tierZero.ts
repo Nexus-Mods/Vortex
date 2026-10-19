@@ -1,5 +1,6 @@
 import * as path from "node:path";
 
+import type { GameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 
 import type { IGame } from "@/types/IGame";
@@ -11,17 +12,17 @@ import { getGameStore } from "../util/getGame";
 
 const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
 
-/** ids of games managed without a game extension. Provenance is kept here and
- * not on IGame so nothing about the synthesized object gives it away. */
-const tierZeroIds = new Set<string>();
+/** game ids of games managed without a game extension. Provenance is kept here
+ * and not on IGame so nothing about the synthesized object gives it away. */
+const tierZeroGameIds = new Set<GameId>();
 
-export function isTierZeroGame(gameId: string): boolean {
-  return tierZeroIds.has(gameId);
+export function isTierZeroGame(gameId: GameId): boolean {
+  return tierZeroGameIds.has(gameId);
 }
 
 /** the game object was dropped from the registry again (un-manage) */
-export function unregisterTierZeroGame(gameId: string): void {
-  tierZeroIds.delete(gameId);
+export function unregisterTierZeroGame(gameId: GameId): void {
+  tierZeroGameIds.delete(gameId);
 }
 
 function snapshotEntries(storeId: string): IGameStoreEntry[] {
@@ -104,20 +105,17 @@ function launchId(entry: ITierZeroGame, store: string, gamePath: string): string
 }
 
 /**
- * synthesize the game for a persisted Tier 0 entry; the domain (= nexus domain)
- * is the map key the entry is persisted under. Returns undefined when a loaded
- * extension game already owns the domain, in which case the extension wins.
+ * synthesize the game for a persisted Tier 0 entry; the entry's nexus domain
+ * becomes the game's id. Returns undefined when a loaded extension game
+ * already owns the domain, in which case the extension wins.
  */
-export function makeTierZeroGame(
-  domain: string,
-  entry: ITierZeroGame,
-  knownGames: IGame[],
-): IGame | undefined {
+export function makeTierZeroGame(entry: ITierZeroGame, knownGames: IGame[]): IGame | undefined {
+  const { domain } = entry;
   if (knownGames.some((game) => game.id === domain || game.details?.nexusPageId === domain)) {
     return undefined;
   }
 
-  tierZeroIds.add(domain);
+  tierZeroGameIds.add(entry.gameId);
 
   return {
     id: domain,

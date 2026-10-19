@@ -1,5 +1,17 @@
 import { type Brand, type Brander, make, validateNonEmptyString } from "./brand";
 
+/** Numeric Nexus Mods game identifier. */
+export type GameId = Brand<number, "GameId">;
+
+/** Brands {@link GameId} */
+export const GameId: Brander<GameId> = make<GameId>();
+
+/** Nexus Mods game domain name. */
+export type GameDomain = Brand<string, "GameDomain">;
+
+/** Brands {@link GameDomain} */
+export const GameDomain: Brander<GameDomain> = make<GameDomain>(validateNonEmptyString);
+
 /**
  * The id Vortex gives an installed mod, the key of `persistent.mods[gameId]`. Not a Nexus Mods mod id, which
  * a mod carries as its `modId` attribute.
