@@ -361,12 +361,26 @@ export interface IGameInfoEntry {
   type?: string;
 }
 
+export interface ITierZeroGame {
+  /** numeric nexus game id */
+  gameId: number;
+  name: string;
+  storeIDs: {
+    steam: string[];
+    gog: string[];
+    epic: string[];
+  };
+}
+
 export interface IStateGameMode {
   gameInfo: {
     [gameId: string]: {
       [key: string]: IGameInfoEntry;
     };
   };
+
+  /** games managed without a game extension, keyed by nexus domain */
+  tier0: { [domain: string]: ITierZeroGame };
 }
 
 export interface IBrowserState {

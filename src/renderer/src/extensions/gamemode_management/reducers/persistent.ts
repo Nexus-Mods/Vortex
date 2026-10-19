@@ -1,11 +1,12 @@
 import { actionsToReducerSpec } from "@/reducers/builder";
-import type { IGameInfoEntry, IStateGameMode } from "@/types/IState";
+import type { IGameInfoEntry, ITierZeroGame, IStateGameMode } from "@/types/IState";
 
 import * as actions from "../actions/persistent";
 
 export const persistentReducer = actionsToReducerSpec<IStateGameMode, typeof actions>(
   {
     gameInfo: {},
+    tier0: {},
   },
   actions,
   {
@@ -33,6 +34,17 @@ export const persistentReducer = actionsToReducerSpec<IStateGameMode, typeof act
           },
         },
       };
+    },
+    setTierZeroGame: (state, payload) => ({
+      ...state,
+      tier0: { ...state.tier0, [payload.domain]: payload.entry },
+    }),
+    removeTierZeroGame: (state, payload) => {
+      if (state.tier0[payload.domain] === undefined) {
+        return state;
+      }
+      const { [payload.domain]: _removed, ...rest } = state.tier0;
+      return { ...state, tier0: rest };
     },
   },
 );
