@@ -72,6 +72,7 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
 
       <PageScroll className="space-y-6 p-6">
         <TabProvider
+          hasBorder
           tab={selectedTab}
           tabListId="design-system-demo-tabs"
           onSetSelectedTab={setSelectedTab}

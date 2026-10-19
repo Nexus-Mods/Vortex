@@ -180,7 +180,12 @@ export const GameSettings: FC<React.PropsWithChildren<{ active?: boolean; pageId
             text={t("Nothing to configure.")}
           />
         ) : (
-          <TabProvider tab={page ?? ""} tabListId="game-settings" onSetSelectedTab={setCurrentPage}>
+          <TabProvider
+            hasBorder
+            tab={page ?? ""}
+            tabListId="game-settings"
+            onSetSelectedTab={setCurrentPage}
+          >
             <TabBar>
               {visibleTabs.map((tabPage) => (
                 <TabButton key={tabPage.title} name={t(tabPage.title)} panelId={tabPage.title} />
