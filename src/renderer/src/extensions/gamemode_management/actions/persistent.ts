@@ -1,8 +1,6 @@
-import * as reduxAct from "redux-act";
+import { createAction } from "redux-act";
 
-import safeCreateAction from "../../../actions/safeCreateAction";
-
-export const setGameInfo = safeCreateAction(
+export const setGameInfo = createAction(
   "SET_GAME_INFO",
   (
     gameId: string,

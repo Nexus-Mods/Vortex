@@ -1,31 +1,38 @@
-import * as _ from "lodash";
+import { actionsToReducerSpec } from "@/reducers/builder";
+import type { IGameInfoEntry, IStateGameMode } from "@/types/IState";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/persistent";
 
-/**
- * reducer for changes to ephemeral session state
- */
-export const persistentReducer: IReducerSpec = {
-  reducers: {
-    [actions.setGameInfo as any]: (state, payload) => {
-      const { gameId, provider, priority, expires, values } = payload;
-      let temp = state;
-      values.forEach((val: { key: string; title: string; value: any; type: string }) => {
-        temp = setSafe(temp, ["gameInfo", gameId, val.key], {
-          provider,
-          expires,
-          priority,
-          title: val.title,
-          value: val.value,
-          type: val.type,
-        });
-      });
-      return temp;
-    },
-  },
-  defaults: {
+export const persistentReducer = actionsToReducerSpec<IStateGameMode, typeof actions>(
+  {
     gameInfo: {},
   },
-};
+  actions,
+  {
+    setGameInfo: (state, payload) => {
+      const { gameId, provider, priority, expires, values } = payload;
+      return {
+        ...state,
+        gameInfo: {
+          ...state.gameInfo,
+          [gameId]: {
+            ...state.gameInfo[gameId],
+            ...Object.fromEntries(
+              values.map((val) => [
+                val.key,
+                {
+                  key: val.key,
+                  provider,
+                  priority,
+                  expires,
+                  title: val.title,
+                  value: val.value,
+                } satisfies IGameInfoEntry,
+              ]),
+            ),
+          },
+        },
+      };
+    },
+  },
+);
