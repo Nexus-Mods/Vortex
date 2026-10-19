@@ -126,6 +126,7 @@ export function toToolDiscovery(tool: IEditStarterInfo): IDiscoveredTool {
     onStart: tool.onStart,
     defaultPrimary: tool.defaultPrimary,
     exclusive: tool.exclusive,
+    startWithGame: tool.startWithGame,
   };
 }
 
