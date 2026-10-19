@@ -238,6 +238,7 @@
     "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
+    "@nexusmods/mod-pipeline": "workspace:*",
     "@nexusmods/nexus-api": "catalog:",
     "@nexusmods/steam-kv-parser": "workspace:*",
     "@nosferatu500/react-sortable-tree": "catalog:",

@@ -1,0 +1,44 @@
+{
+  "name": "a mod from a website deploys its files as user generated",
+  "state": {
+    "persistent": {
+      "mods": {
+        "skyrimse": {
+          "WebsiteMod": { "attributes": { "source": "website" } }
+        }
+      },
+      "profiles": {
+        "profile-1": { "modState": { "WebsiteMod": { "enabled": true } } }
+      }
+    },
+    "settings": { "profiles": { "lastActiveProfile": { "skyrimse": "profile-1" } } }
+  },
+  "gameFacts": {
+    "gameMode": "skyrimse",
+    "gameId": "1704",
+    "gameVersion": "1.6.1170.0",
+    "storeId": "steam",
+    "sortedModIds": ["WebsiteMod"],
+    "stagedFiles": {
+      "WebsiteMod": [
+        {
+          "destinationPath": "/fixture-root/game/Data/WebsiteMod.esp",
+          "fileHash": "website-mod-esp-hash"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "version": 1,
+    "gameId": "1704",
+    "gameVersion": "1.6.1170.0",
+    "storeId": "steam",
+    "files": [
+      {
+        "source": "USER_GENERATED",
+        "fileHash": "website-mod-esp-hash",
+        "destinationPath": "/fixture-root/game/Data/WebsiteMod.esp"
+      }
+    ]
+  }
+}

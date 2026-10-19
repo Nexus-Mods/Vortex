@@ -1,0 +1,55 @@
+{
+  "name": "a single mod deploys each of its files",
+  "state": {
+    "persistent": {
+      "mods": {
+        "skyrimse": {
+          "SkyUI": {
+            "attributes": { "source": "nexus", "fileId": 35407 }
+          }
+        }
+      },
+      "profiles": {
+        "profile-1": { "modState": { "SkyUI": { "enabled": true } } }
+      }
+    },
+    "settings": { "profiles": { "lastActiveProfile": { "skyrimse": "profile-1" } } }
+  },
+  "gameFacts": {
+    "gameMode": "skyrimse",
+    "gameId": "1704",
+    "gameVersion": "1.6.1170.0",
+    "storeId": "steam",
+    "sortedModIds": ["SkyUI"],
+    "stagedFiles": {
+      "SkyUI": [
+        {
+          "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp",
+          "fileHash": "skyui-esp-hash"
+        },
+        {
+          "destinationPath": "/fixture-root/game/Data/interface/skyui/config.txt",
+          "fileHash": "skyui-config-hash"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "version": 1,
+    "gameId": "1704",
+    "gameVersion": "1.6.1170.0",
+    "storeId": "steam",
+    "files": [
+      {
+        "source": "NEXUS",
+        "fileId": "35407",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      },
+      {
+        "source": "NEXUS",
+        "fileId": "35407",
+        "destinationPath": "/fixture-root/game/Data/interface/skyui/config.txt"
+      }
+    ]
+  }
+}

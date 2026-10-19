@@ -1,0 +1,61 @@
+{
+  "name": "a mod disabled in the game's profile deploys nothing",
+  "state": {
+    "persistent": {
+      "mods": {
+        "skyrimse": {
+          "ModA": {
+            "attributes": { "source": "nexus", "fileId": 1001 }
+          },
+          "ModB": {
+            "attributes": { "source": "nexus", "fileId": 2002 }
+          }
+        }
+      },
+      "profiles": {
+        "profile-1": {
+          "modState": { "ModA": { "enabled": true }, "ModB": { "enabled": false } }
+        }
+      }
+    },
+    "settings": { "profiles": { "lastActiveProfile": { "skyrimse": "profile-1" } } }
+  },
+  "gameFacts": {
+    "gameMode": "skyrimse",
+    "gameId": "1704",
+    "gameVersion": "1.6.1170.0",
+    "storeId": "steam",
+    "sortedModIds": ["ModA", "ModB"],
+    "stagedFiles": {
+      "ModA": [
+        {
+          "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
+          "fileHash": "mod-a-sky-hash"
+        }
+      ],
+      "ModB": [
+        {
+          "destinationPath": "/fixture-root/game/Data/ModB.esp",
+          "fileHash": "mod-b-esp-hash"
+        },
+        {
+          "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
+          "fileHash": "mod-b-sky-hash"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "version": 1,
+    "gameId": "1704",
+    "gameVersion": "1.6.1170.0",
+    "storeId": "steam",
+    "files": [
+      {
+        "source": "NEXUS",
+        "fileId": "1001",
+        "destinationPath": "/fixture-root/game/Data/textures/sky.dds"
+      }
+    ]
+  }
+}
