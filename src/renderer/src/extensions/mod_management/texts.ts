@@ -18,6 +18,27 @@ function getText(id: string, t: TFunction) {
           "Please note that parts of Vortex (i.e. the list of plugins for TES games) will only " +
           'reflect the "deployed" state.',
       );
+    // The modern layout's wording for "deployment": the user applies, Vortex deploys.
+    case "deploymentmethod":
+      return t(
+        "When you install a mod through Vortex, its files are stored separately and don't " +
+          "immediately affect the game. Deployment is the process Vortex uses to make those " +
+          "files available in the game directory.\n\n" +
+          "Vortex supports different deployment methods and will usually choose the best one " +
+          "automatically based on the game and your system configuration. These methods are " +
+          "much faster than copying files and use little or no additional disk space.\n\n" +
+          "By default, Vortex applies your changes automatically when you enable or disable a " +
+          "mod. You can turn this automation off if you prefer to make several changes first " +
+          "and then select Apply. Applying your changes will run the required deployment " +
+          "process.\n\n" +
+          "Some parts of Vortex, such as the plugins list for Bethesda games, only reflect " +
+          "changes once they have been applied.",
+      );
+    case "autoapply":
+      return t(
+        "Automatically applies your changes whenever you enable or disable a mod. Turn this " +
+          "off to make multiple changes before applying them manually.",
+      );
     case "versionmatch":
       return t(
         "A dependency rule can accept multiple versions of the same mod. In that case any " +
