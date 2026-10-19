@@ -24,6 +24,10 @@ export class ModsPage {
   readonly emptyState: Locator;
   /** Transient "Mods deployed" notification shown after a successful deploy. */
   readonly deployedNotification: Locator;
+  /** The page's toolbar, told from the table's by its Install From File button. */
+  readonly toolbar: Locator;
+  /** The toolbar's "…", which opens a menu of the actions not pinned to the bar. */
+  readonly toolbarOverflow: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -34,6 +38,17 @@ export class ModsPage {
     this.statusButton = page.locator("#btn-mods-enabled").first();
     this.emptyState = page.getByText(/don't have any installed mods/i);
     this.deployedNotification = page.getByText(/mods deployed/i).first();
+    this.toolbar = page.getByRole("toolbar").filter({ has: this.installFromFileButton });
+    this.toolbarOverflow = this.toolbar.getByTestId("toolbar-overflow");
+  }
+
+  /**
+   * An action in the toolbar's "…" menu, by its label; open the menu first. Matched from the
+   * start of its name, which ends with its pin button's.
+   */
+  toolbarMenuItem(label: string): Locator {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return this.page.getByRole("menuitem", { name: new RegExp(`^${escaped}`) });
   }
 
   row(name: string | RegExp): Locator {
