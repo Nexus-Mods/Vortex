@@ -47,7 +47,7 @@ import {
   setGamePath,
   setGameSearchPaths,
 } from "./actions/settings";
-import type GameModeManager from "./GameModeManager";
+import { GameModeManager } from "./GameModeManager";
 import { type IGameStub } from "./GameModeManager";
 import { discoveryReducer } from "./reducers/discovery";
 import { persistentReducer } from "./reducers/persistent";
@@ -930,11 +930,9 @@ function init(context: IExtensionContext): boolean {
     const store: Redux.Store<IState> = context.api.store;
     const events = context.api.events;
 
-    const GameModeManagerImpl: typeof GameModeManager = require("./GameModeManager").default;
-
     context.api.ext["awaitProfileSwitch"] = () => awaitProfileSwitch(context.api);
 
-    const gameModeManager = new GameModeManagerImpl(
+    const gameModeManager = new GameModeManager(
       context.api,
       $.extensionGames,
       $.extensionStubs,

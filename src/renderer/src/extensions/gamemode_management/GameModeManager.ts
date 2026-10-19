@@ -56,7 +56,7 @@ export interface IGameStub {
  *
  * @class GameModeManager
  */
-class GameModeManager {
+export class GameModeManager {
   private mApi: IExtensionApi;
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
@@ -635,5 +635,3 @@ class GameModeManager {
     );
   };
 }
-
-export default GameModeManager;

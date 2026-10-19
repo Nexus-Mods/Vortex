@@ -1,7 +1,7 @@
 import type { GameDomain, GameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
-import type { ITierZeroGame } from "../../types/IState";
+import type { ITierZeroGame } from "@/types/IState";
 
 export const setGameInfo = createAction(
   "SET_GAME_INFO",

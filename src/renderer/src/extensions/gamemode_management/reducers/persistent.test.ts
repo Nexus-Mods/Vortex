@@ -1,7 +1,8 @@
 import { GameDomain, GameId } from "@vortex/shared";
 import { describe, it, expect } from "vitest";
 
-import type { ITierZeroGame, IStateGameMode } from "../../../../types/IState";
+import type { ITierZeroGame, IStateGameMode } from "@/types/IState";
+
 import { persistentReducer } from "./persistent";
 
 function makeEntry(overrides: Partial<ITierZeroGame> = {}): ITierZeroGame {
