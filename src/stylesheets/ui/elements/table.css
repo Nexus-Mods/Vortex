@@ -256,6 +256,7 @@
         height: var(--nxm-table-group-row-height);
         margin-top: var(--nxm-table-group-row-gap);
         border-top: 1px solid var(--color-stroke-weak);
+        box-shadow: var(--shadow-xs);
         --nxm-table-row-tint: var(--color-translucent-50);
         background:
             linear-gradient(90deg, var(--nxm-table-group-wash), var(--nxm-table-group-tint)),
