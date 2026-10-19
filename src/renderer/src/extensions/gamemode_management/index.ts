@@ -1002,11 +1002,20 @@ function init(context: IExtensionContext): boolean {
         const discoveredGames = new Set(
           Object.keys(discovered).filter((gameId) => discovered[gameId].path !== undefined),
         );
-        const detectedIds = () =>
-          listableDetectedIds(
-            store.getState().session.gameMode.detectedGames,
-            store.getState().session.gameMode.known,
+        // read after the scan, so it sees what the scan discovered
+        const detectedIds = () => {
+          const current = store.getState();
+          const addedGameIds = new Set(
+            Object.values(current.persistent.profiles).map((profile) => profile.gameId),
           );
+
+          return listableDetectedIds(
+            current.session.gameMode.detectedGames,
+            current.session.gameMode.known,
+            current.settings.gameMode.discovered,
+            addedGameIds,
+          );
+        };
 
         $.gameModeManager
           .startQuickDiscovery()

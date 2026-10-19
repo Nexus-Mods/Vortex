@@ -11,14 +11,13 @@ import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { isContributed } from "@/util/isContributed";
-import { getSafe } from "@/util/storeHelper";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId } from "../../../util/selectors";
-import { convertGameIdReverse, nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setShowHiddenGames } from "../actions/session";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
@@ -34,8 +33,10 @@ import {
 import type { IDetectedGame } from "../types/IDetectedGame";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
+import { detectedInternalId } from "../util/detected_games/detectedInternalId";
 import { detectedStore } from "../util/detected_games/detectedStore";
 import { isListableDetectedGame } from "../util/detected_games/listableDetectedIds";
+import { locallyDetectedGames } from "../util/detected_games/locallyDetectedGames";
 
 const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
   id,
@@ -244,9 +245,8 @@ const GamePicker = ({
   const supportedGameList: IGameStored[] = [];
 
   displayedGames.forEach((game: IGameStored) => {
-    if (getSafe(discoveredGames, [game.id, "path"], undefined) !== undefined) {
-      // games the user hasn't added come from the detected-games response now,
-      // so the disk scan no longer supplies this section's tiles
+    if (discoveredGames[game.id]?.path !== undefined) {
+      // games the user hasn't added go to the detected section, further down
       if (profileGames.has(game.id)) {
         managedGameList.push(game);
       }
@@ -281,10 +281,11 @@ const GamePicker = ({
   });
 
   // The detected section is fed by the detected-games response, which names the user's
-  // store-installed games. A game is listable when the endpoint returned an extension for
-  // it, or when Vortex already knows it because an extension is installed (the endpoint
-  // returns no extension for the ones bundled with Vortex). The nexus games list supplies
-  // the name plus the internal id the store's actions know.
+  // store-installed games, and then by discovery. A response game is listable when the
+  // endpoint returned an extension for it, or when Vortex already knows it because an
+  // extension is installed (the endpoint returns no extension for the ones bundled with
+  // Vortex). The nexus games list supplies the name plus the internal id the store's
+  // actions know.
   const nexusGameByNexusIdMap = nexusGameByNexusId(nexusGames);
   const favourites = new Set(favouriteGames);
   const favouriteGameIds: string[] = [];
@@ -297,8 +298,8 @@ const GamePicker = ({
         return undefined;
       }
       // profiles and actions know games by their internal id, which is usually the
-      // nexus domain but not always
-      const internalId = convertGameIdReverse(knownGames, nexusGame.domain_name);
+      // nexus domain but not always, and is the installed one where games share a domain
+      const internalId = detectedInternalId(knownGames, discoveredGames, nexusGame.domain_name);
       if (profileGames.has(internalId)) {
         return undefined;
       }
@@ -334,6 +335,17 @@ const GamePicker = ({
       };
     })
     .filter((game): game is IGameStored => game !== undefined);
+
+  // Discovery adds the games the response can't name: ones on stores it doesn't cover
+  // (Xbox, EA, Ubisoft), ones Nexus Mods doesn't list, such as an extension still in
+  // development, and every game while logged out.
+  detectedGameList.push(
+    ...locallyDetectedGames(knownGames, discoveredGames, {
+      addedGameIds: profileGames,
+      includeHidden: showHidden || !!currentFilterValue,
+      listedIds,
+    }),
+  );
 
   const filteredManaged = managedGameList.filter(applyGameFilter).sort(sortBy(sortManaged));
   // The section owns its own sort control, so the input is only filtered here.
