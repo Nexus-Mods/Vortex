@@ -250,11 +250,12 @@ describe("useModToolbarActions auto-apply", () => {
 
   const autoApply = () => actionsFor([]).find((action) => action.id === "auto-apply");
 
-  it("comes after Manage Rules and before Purge, unpinned", () => {
-    const ids = actionsFor([plain("Manage Rules")]).map((action) => action.id ?? action.label);
+  it("comes just before the view switch, unpinned, in a section of its own", () => {
+    const actions = actionsFor([plain("Manage Rules")]);
 
-    expect(ids.indexOf("auto-apply")).toBe(ids.indexOf("Manage Rules") + 1);
-    expect(ids.indexOf("purge")).toBe(ids.indexOf("auto-apply") + 1);
+    expect(actions.at(-2)).toMatchObject({ id: "auto-apply", section: "automation" });
+    expect(actions.at(-1)?.section).not.toBe("automation");
+    expect(actions.at(-3)?.section).not.toBe("automation");
     expect(autoApply()?.pinned).toBeFalsy();
   });
 

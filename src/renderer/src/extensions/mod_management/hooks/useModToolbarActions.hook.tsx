@@ -52,19 +52,19 @@ interface IPositionedAction {
  * fixed: pinning an action puts it back where it belongs rather than at the end.
  *
  * The order the bar reads in — Install From File, Open, History, Check for Updates,
- * Categories, Manage Rules, Auto-apply, Purge — comes from these and from the positions
- * passed to `registerAction` elsewhere, so a change here moves the action in the overflow
- * menu too. Auto-apply takes the place Deploy had; Purge keeps the position it had as a
- * component, which puts it at the end of the row. There's no Deploy: the menu's Apply
- * button does that.
+ * Categories, Manage Rules, Purge — comes from these and from the positions passed to
+ * `registerAction` elsewhere, so a change here moves the action in the overflow menu
+ * too. Purge keeps the position it had as a component, which puts it at the end of the
+ * row. There's no Deploy: the menu's Apply button does that. Auto-apply and the view
+ * switch come after everything else, each in a section of its own.
  */
 const POSITION = {
   installFromFile: 25,
   open: 30,
   checkVersions: 50,
-  autoApply: 105,
   purge: 110,
   import: 120,
+  autoApply: 990,
   betaTable: 1000,
 };
 
@@ -115,7 +115,8 @@ const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
 /**
  * Turns auto-apply on or off: whether enabling or disabling a mod applies the change at
- * once. Not pinned, and lit while on. Replaces the switch the modern layout's settings had.
+ * once. Not pinned, and lit while on. Next to last, in a section of its own above the view
+ * switch. Replaces the switch the modern layout's settings had.
  */
 const useAutoApplyAction = (t: TFunction): IPositionedAction => {
   const dispatch = useDispatch();
@@ -137,6 +138,7 @@ const useAutoApplyAction = (t: TFunction): IPositionedAction => {
             }),
         iconPath: nxmRuleSettings,
         active: autoApply,
+        section: "automation",
         testId: "auto-apply",
         // The state it switches to.
         trackingProperties: { autoApply: !autoApply },
