@@ -44,7 +44,7 @@ import type {
 import type { DialogType, IDialogResult } from "../types/IDialog";
 import type { IExtensionApi, IRunOptions } from "../types/IExtensionContext";
 import type { IHealthCheckResult } from "../types/IHealthCheck";
-import type { INotification } from "../types/INotification";
+import type { INotification, INotificationAction } from "../types/INotification";
 import type { IState } from "../types/IState";
 
 /** A dispatched redux-act action as the harness sees it. */
@@ -97,7 +97,12 @@ export interface IApiHarness {
   dialogCalls: Array<{ type: DialogType; title: string }>;
   // showErrorNotification calls, recorded in order. allowReport matters: a false here is what
   // keeps the Report button off a failure the user caused or can act on themselves
-  errorNotifications: Array<{ title: string; message: unknown; allowReport: boolean | undefined }>;
+  errorNotifications: Array<{
+    title: string;
+    message: unknown;
+    allowReport: boolean | undefined;
+    actions: INotificationAction[] | undefined;
+  }>;
   // sendNotification calls, recorded in order (full notification, so ids/actions are assertable)
   notifications: INotification[];
   // dismissNotification calls, the notification ids in order

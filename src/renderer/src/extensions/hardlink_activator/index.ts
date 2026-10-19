@@ -22,6 +22,7 @@ import type {
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
+import { outputDirectoryUnavailable } from "../mod_management/util/unavailableReason";
 
 export class FileFound extends Error {
   constructor(name: string) {
@@ -85,34 +86,30 @@ class DeploymentMethod extends LinkingDeployment {
 
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
-    } catch {
+    } catch (err) {
       log("info", "hardlink deployment not supported due to lack of write access", {
         typeId,
         path: modPaths[typeId],
       });
-      return {
-        description: (t) => t("Can't write to output directory."),
-        order: 3,
-        solution: (t) =>
-          t(
-            "To resolve this problem, the current user account needs to be given " +
-              'write permission to "{{modPath}}".',
-            {
-              replace: {
-                modPath: modPaths[typeId],
-              },
-            },
-          ),
-      };
+      return outputDirectoryUnavailable(err, modPaths[typeId]);
     }
 
     const installationPath = installPathForGame(state, gameId);
 
     try {
       if (fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev) {
-        // hard links work only on the same drive
+        // hard links work only on the same drive. A game that can't use symlinks has no
+        // other way to deploy, so moving the staging folder is the only fix
+        const noSymlinks =
+          game.details?.supportsSymlinks === false || game.compatible?.symlinks === false;
         return {
-          description: (t) => t("Works only if mods are installed on the same drive as the game."),
+          description: (t) =>
+            noSymlinks
+              ? t(
+                  "This game doesn't support symlink deployment, and hard links work only if " +
+                    "mods are installed on the same drive as the game.",
+                )
+              : t("Works only if mods are installed on the same drive as the game."),
           order: 5,
           solution: (t) => {
             let displayPath = modPaths[typeId];
@@ -125,7 +122,8 @@ class DeploymentMethod extends LinkingDeployment {
             }
             return t(
               "Please go to Settings->Mods and set the mod staging folder to be on " +
-                "the same drive as the game ({{gameVolume}}).",
+                'the same drive as the game ({{gameVolume}}). The "Suggest" button there ' +
+                "picks a folder on that drive.",
               {
                 replace: {
                   gameVolume: displayPath,
