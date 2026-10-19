@@ -32,7 +32,7 @@ import type { LootAsync, PluginInterface, PluginMetadata, Vertex } from "loot";
 import { applyMiddleware, createStore, type Middleware } from "redux";
 import { batch } from "redux-act";
 import thunkMiddleware from "redux-thunk";
-import { vi } from "vitest";
+import { onTestFinished, vi } from "vitest";
 
 import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import type { ICategory } from "../extensions/category_management/types/ICategoryDictionary";
@@ -65,6 +65,11 @@ import toPluginId from "../extensions/gamebryo_plugin_management/util/toPluginId
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
+import {
+  getModTypeExtensions,
+  registerModType,
+} from "../extensions/gamemode_management/util/modTypeExtensions";
+import type { IExtensionContextEx } from "../extensions/hardlink_activator";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type {
   HealthCheckId,
@@ -92,6 +97,10 @@ import type {
   IModReference,
   IModRule,
 } from "../extensions/mod_management/types/IMod";
+import {
+  getAllActivators,
+  registerDeploymentMethod,
+} from "../extensions/mod_management/util/deploymentMethods";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 import { accountReducer as nexusAccountReducer } from "../extensions/nexus_integration/reducers/account";
@@ -253,6 +262,55 @@ export function makeDeploymentMethod(
     postPurge: () => Promise.resolve(),
     ...overrides,
   } as IDeploymentMethod;
+}
+
+/** A game with no deploy skip patterns. */
+export function makeBlacklistGame(): IGame {
+  return { details: {} } as unknown as IGame;
+}
+
+/** The deployment method an extension's init registers, bound to the api. */
+export function makeRealDeploymentMethod(
+  api: IExtensionApi,
+  init: (context: IExtensionContextEx) => boolean,
+): IDeploymentMethod {
+  let method: IDeploymentMethod;
+  const context: Partial<IExtensionContextEx> = {
+    api,
+    registerDeploymentMethod: (registered: IDeploymentMethod) => {
+      method = registered;
+    },
+  };
+  init(context as IExtensionContextEx);
+  return method;
+}
+
+/** Removes `entry` from `registry` if present. */
+function unregister<T>(registry: T[], entry: T): void {
+  const index = registry.indexOf(entry);
+  if (index >= 0) {
+    registry.splice(index, 1);
+  }
+}
+
+/** Registers a deployment method for the current test. */
+export function registerTestDeploymentMethod(method: IDeploymentMethod): void {
+  registerDeploymentMethod(method);
+  onTestFinished(() => unregister(getAllActivators(), method));
+}
+
+/** Registers a mod type deploying to `deployPath` for the current test. */
+export function registerTestModType(typeId: string, deployPath: string): void {
+  registerModType(
+    typeId,
+    50,
+    () => true,
+    () => deployPath,
+    vi.fn(),
+  );
+  const registered = getModTypeExtensions();
+  const modType = registered[registered.length - 1];
+  onTestFinished(() => unregister(getModTypeExtensions(), modType));
 }
 
 /**

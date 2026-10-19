@@ -31,7 +31,10 @@ import type { HealthCheckRegistry } from "../extensions/health_check/core/Health
 import type { IHistoryEvent } from "../extensions/history_management/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
-import type { IDeployedFile } from "../extensions/mod_management/types/IDeploymentMethod";
+import type {
+  IDeployedFile,
+  IDeploymentMethod,
+} from "../extensions/mod_management/types/IDeploymentMethod";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
@@ -141,6 +144,8 @@ export interface IDeployedGameHarness extends IGameHarness {
   deployFile: (relPath: string, target?: string) => Promise<IDeployedFile>;
   // saves the default mod type's manifest as written by the given deployment method
   saveManifest: (files: IDeployedFile[], methodId: string) => PromiseLike<unknown>;
+  // installs and deploys one plugin per mod over the saved manifest
+  deployMods: (method: IDeploymentMethod, modIds: string[]) => Promise<void>;
   // the relPaths the default mod type's manifest lists
   recordedFiles: () => Promise<string[]>;
   isDeployed: (file: IDeployedFile) => boolean;
