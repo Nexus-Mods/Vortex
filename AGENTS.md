@@ -55,6 +55,15 @@ adding temporary logging, which tends to get committed by accident.
 
 **Linear**: don't create or transition issues unless asked.
 
+## Vocabulary: game ids
+
+`GameId` is the numeric Nexus Mods id (e.g. 1303), `GameDomain` the nexus
+domain slug (e.g. `stardewvalley`), and `VortexGameId` the id Vortex gives a
+game internally (the extension's game id, or the domain for extension-less
+games); all three are branded types in `src/shared/src/types/ids.ts`. They are
+different concepts even where their strings coincide, so don't interchange
+them.
+
 ## Which doc to read
 
 Read the doc for the area you're touching rather than the whole tree.
