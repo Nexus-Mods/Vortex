@@ -21,6 +21,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 
+import { makeRule } from "../../../test-utils/builders";
 import type { IMod, IModAttributes, IModReference, IModRule } from "../types/IMod";
 import { coerceToSemver } from "./coerceToSemver";
 import { isFuzzyVersion } from "./isFuzzyVersion";
@@ -30,6 +31,8 @@ import {
   modMatchesInstallSpec,
   ruleInstallSpec,
   findRuleByRef,
+  referenceEqual,
+  rulesByReference,
 } from "./testModReference";
 
 // Mock the log function to avoid console output during tests
@@ -1109,6 +1112,36 @@ describe("findRuleByRef", () => {
 
   it("returns undefined when there are no rules", () => {
     expect(findRuleByRef(undefined, mod)).toBeUndefined();
+  });
+});
+
+describe("rulesByReference", () => {
+  // plain references: makeReference adds a tag, which stops a reference being id-only
+  const rules: IModRule[] = [
+    makeRule({ reference: { tag: "tag-a", fileMD5: "md5-a" } }),
+    makeRule({ reference: { id: "id-only" } }),
+    makeRule({ reference: { logicalFileName: "untagged", id: "id-1" } }),
+    makeRule({ type: "recommends", reference: { tag: "tag-a", fileMD5: "md5-a" } }),
+    makeRule({ reference: { fileMD5: "md5-b" } }),
+  ];
+  const linearScan = (reference: IModReference) =>
+    rules.find((rule) => referenceEqual(rule.reference, reference));
+
+  it.each<[string, IModReference]>([
+    ["a tagged reference", { tag: "tag-a", fileMD5: "md5-a" }],
+    ["an id-only reference", { id: "id-only" }],
+    ["a full reference against an id-only rule", { id: "id-only", fileMD5: "md5-x" }],
+    ["an id-only reference against a full rule", { id: "id-1" }],
+    ["an untagged reference with another id", { logicalFileName: "untagged", id: "id-2" }],
+    ["an untagged md5 reference", { fileMD5: "md5-b" }],
+    ["a reference missing the rule's tag", { fileMD5: "md5-a" }],
+    ["a reference no rule has", { tag: "tag-z" }],
+  ])("finds the rule a linear scan finds for %s", (_description, reference) => {
+    expect(rulesByReference(rules)(reference)).toBe(linearScan(reference));
+  });
+
+  it("finds the first of several matching rules", () => {
+    expect(rulesByReference(rules)({ tag: "tag-a", fileMD5: "md5-a" })).toBe(rules[0]);
   });
 });
 

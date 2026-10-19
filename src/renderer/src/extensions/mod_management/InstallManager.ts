@@ -161,6 +161,7 @@ import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import { setModEnabled, setModsEnabled } from "../profile_management/actions/profiles";
 import {
   addModRule,
+  modRulesReplaced,
   removeModRule,
   setFileOverride,
   setINITweakEnabled,
@@ -213,6 +214,7 @@ import testModReference, {
   modMatchesInstallSpec,
   referenceEqual,
   ruleInstallSpec,
+  rulesByReference,
   testRefByIdentifiers,
 } from "./util/testModReference";
 
@@ -6755,35 +6757,6 @@ class InstallManager {
     return res;
   }
 
-  private updateModRule(
-    api: IExtensionApi,
-    gameId: string,
-    sourceModId: string,
-    dep: IDependency,
-    reference: IModReference,
-    recommended: boolean,
-  ): IModRule | undefined {
-    const state: IState = api.store.getState();
-    const rules: IModRule[] = getSafe(state.persistent.mods, [gameId, sourceModId, "rules"], []);
-    const oldRule = rules.find((iter) => referenceEqual(iter.reference, dep.reference));
-
-    const type = recommended ? "recommends" : "requires";
-
-    if (oldRule === undefined) {
-      return undefined;
-    }
-
-    if (oldRule.type === type && referenceEqual(oldRule.reference, reference)) {
-      return oldRule;
-    }
-
-    const updatedRule: IModRule = { ...oldRule, type, reference };
-
-    api.store.dispatch(removeModRule(gameId, sourceModId, oldRule));
-    api.store.dispatch(addModRule(gameId, sourceModId, updatedRule));
-    return updatedRule;
-  }
-
   private updateRules(
     api: IExtensionApi,
     gameId: string,
@@ -6791,11 +6764,26 @@ class InstallManager {
     dependencies: IDependency[],
     recommended: boolean,
   ): Promise<void> {
-    dependencies.forEach((dep) => {
-      const updatedRef: IModReference = { ...dep.reference };
-      updatedRef.idHint = dep.mod?.id;
-      this.updateModRule(api, gameId, sourceModId, dep, updatedRef, recommended);
+    const findRule = rulesByReference(
+      api.getState().persistent.mods[gameId]?.[sourceModId]?.rules ?? [],
+    );
+    const type = recommended ? "recommends" : "requires";
+
+    const replacements = dependencies.flatMap((dep) => {
+      const oldRule = findRule(dep.reference);
+      const reference: IModReference = { ...dep.reference, idHint: dep.mod?.id };
+      if (
+        oldRule === undefined ||
+        (oldRule.type === type && referenceEqual(oldRule.reference, reference))
+      ) {
+        return [];
+      }
+      const newRule: IModRule = { ...oldRule, type, reference };
+      return [{ oldRule, newRule }];
     });
+    if (replacements.length > 0) {
+      api.store.dispatch(modRulesReplaced(gameId, sourceModId, replacements));
+    }
     return Promise.resolve();
   }
 
