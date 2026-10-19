@@ -56,6 +56,34 @@ describe("sharedMods", () => {
   });
 });
 
+describe("groupMods by collection", () => {
+  const summary = (mods: typeof MODS) =>
+    groupMods(mods, "collection", t, collectionsByMod(mods)).map(({ id, rows }) => [
+      id,
+      rows.map((row) => row.mod.id),
+    ]);
+
+  it("groups the mods in no collection first, then each collection's mods, by name", () => {
+    expect(summary(MODS)).toEqual([
+      ["no-collection", ["a"]],
+      ["x", ["b", "c"]],
+      ["y", ["c"]],
+      ["z", ["c"]],
+    ]);
+  });
+
+  it("lists a mod once in a collection that requires it twice", () => {
+    expect(summary({ ...MODS, y: collection("y", "Yttrium", ["c", "c"]) })).toContainEqual([
+      "y",
+      ["c"],
+    ]);
+  });
+
+  it("leaves the mods ungrouped without a collection", () => {
+    expect(groupMods({ a: MODS.a }, "collection", t, {})).toBeUndefined();
+  });
+});
+
 describe("groupMods by a column", () => {
   const category = {
     id: "category",

@@ -105,6 +105,18 @@ const toRows = (mods: IModWithState[]): IModRow[] =>
 const installedMods = (mods: { [id: string]: IModWithState }) =>
   toRows(Object.values(mods).filter((mod) => mod.type !== COLLECTION_TYPE));
 
+// Pushes rather than copies, so a large group costs one pass, not a copy per row.
+const addRow = (groups: Map<string, IModRow[]>, key: string, row: IModRow) => {
+  const rows = groups.get(key);
+
+  if (!rows) {
+    groups.set(key, [row]);
+    return;
+  }
+
+  rows.push(row);
+};
+
 // A group for the mods that fit no other, first, when there are any.
 const ungroupedFirst = (id: string, label: string, rows: IModRow[]): IModGroup[] =>
   rows.length > 0 ? [{ id, label, rows }] : [];
@@ -118,7 +130,20 @@ const groupByCollection = (
   t: TFunction,
   memberships: { [modId: string]: IMod[] },
 ): IModGroup[] | undefined => {
-  const rows = installedMods(mods);
+  const byCollection = new Map<string, IModRow[]>();
+  const ungrouped: IModRow[] = [];
+
+  installedMods(mods).forEach((row) => {
+    const members = memberships[row.mod.id] ?? [];
+
+    if (members.length === 0) {
+      ungrouped.push(row);
+      return;
+    }
+
+    // A collection can list the same mod more than once, but it's one row in its group.
+    new Set(members.map((member) => member.id)).forEach((id) => addRow(byCollection, id, row));
+  });
 
   const collectionGroups = Object.values(mods)
     .filter((mod) => mod.type === COLLECTION_TYPE)
@@ -129,16 +154,12 @@ const groupByCollection = (
       label: name,
       collection,
       image: collection.attributes?.pictureUrl,
-      rows: rows.filter(({ mod }) =>
-        (memberships[mod.id] ?? []).some((member) => member.id === collection.id),
-      ),
+      rows: byCollection.get(collection.id) ?? [],
     }));
 
   if (collectionGroups.length === 0) {
     return undefined;
   }
-
-  const ungrouped = rows.filter(({ mod }) => (memberships[mod.id] ?? []).length === 0);
 
   return [...ungroupedFirst("no-collection", t("No collection"), ungrouped), ...collectionGroups];
 };
@@ -175,7 +196,7 @@ const groupByAuthor = (mods: { [id: string]: IModWithState }, t: TFunction): IMo
       return;
     }
 
-    byAuthor.set(author, [...(byAuthor.get(author) ?? []), row]);
+    addRow(byAuthor, author, row);
   });
 
   const authorGroups = Array.from(byAuthor, ([author, rows]) => {
@@ -212,7 +233,7 @@ const groupByColumn = (
       return;
     }
 
-    byValue.set(value, [...(byValue.get(value) ?? []), row]);
+    addRow(byValue, value, row);
   });
 
   const valueGroups = Array.from(byValue, ([value, rows]) => ({
