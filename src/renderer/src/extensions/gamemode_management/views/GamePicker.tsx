@@ -34,6 +34,7 @@ import {
 import type { IDetectedGame } from "../types/IDetectedGame";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
+import { detectedStore } from "../util/detected_games/detectedStore";
 import { isListableDetectedGame } from "../util/detected_games/listableDetectedIds";
 
 const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
@@ -287,6 +288,7 @@ const GamePicker = ({
   const nexusGameByNexusIdMap = nexusGameByNexusId(nexusGames);
   const favourites = new Set(favouriteGames);
   const favouriteGameIds: string[] = [];
+  const detectedStores: Record<string, string> = {};
   const listedIds = new Set<string>();
   const detectedGameList: IGameStored[] = detectedGames
     .map<IGameStored | undefined>((game) => {
@@ -315,6 +317,12 @@ const GamePicker = ({
       listedIds.add(internalId);
       if (favourites.has(game.gameId)) {
         favouriteGameIds.push(internalId);
+      }
+      // discovery names the store only once the game's extension is installed, so
+      // until then the tile takes it from the response
+      const store = detectedStore(game);
+      if (store !== undefined) {
+        detectedStores[internalId] = store;
       }
       return {
         id: internalId,
@@ -388,6 +396,7 @@ const GamePicker = ({
       <PageScroll isFullWidth ref={scrollAreaRef}>
         <DetectedGames
           count={getTabGameNumber(detectedGameList, filteredDetected)}
+          detectedStores={detectedStores}
           filtering={!!currentFilterValue}
           favourites={favouriteGameIds}
           games={filteredDetected}
