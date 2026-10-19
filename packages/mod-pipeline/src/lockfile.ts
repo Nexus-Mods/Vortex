@@ -11,7 +11,12 @@ export type FileSourceKind = (typeof FileSourceKind)[keyof typeof FileSourceKind
 
 /** A deployed file: its origin and absolute destination. */
 export type FileSource =
-  | { source: typeof FileSourceKind.Nexus; fileId: string; destinationPath: string }
+  | {
+      source: typeof FileSourceKind.Nexus;
+      fileId: string;
+      fileHash: string;
+      destinationPath: string;
+    }
   | { source: typeof FileSourceKind.VortexGenerated; fileHash: string; destinationPath: string }
   | { source: typeof FileSourceKind.UserGenerated; fileHash: string; destinationPath: string };
 
@@ -28,6 +33,7 @@ const fileSourceSchema = z.discriminatedUnion("source", [
   z.object({
     source: z.literal(FileSourceKind.Nexus),
     fileId: z.string(),
+    fileHash: z.string(),
     destinationPath: z.string(),
   }),
   z.object({

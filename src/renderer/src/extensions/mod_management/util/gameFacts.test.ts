@@ -97,13 +97,10 @@ test("the resolver deploys each file where today's deployment does, from the sam
       const destinationPath = toPortablePath(
         deployedFilePath(game.dataPath, file.target, file.relPath),
       );
+      const fileHash = await hashFile(path.join(game.stagingPath, file.source, file.relPath));
       return file.source === "ModA"
-        ? { source: FileSourceKind.Nexus, fileId: "1001", destinationPath }
-        : {
-            source: FileSourceKind.UserGenerated,
-            fileHash: await hashFile(path.join(game.stagingPath, file.source, file.relPath)),
-            destinationPath,
-          };
+        ? { source: FileSourceKind.Nexus, fileId: "1001", fileHash, destinationPath }
+        : { source: FileSourceKind.UserGenerated, fileHash, destinationPath };
     }),
   );
 

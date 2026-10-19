@@ -52,6 +52,7 @@
       {
         "source": "NEXUS",
         "fileId": "1001",
+        "fileHash": "mod-a-esp-hash",
         "destinationPath": "/fixture-root/game/Data/ModA.esp"
       },
       {

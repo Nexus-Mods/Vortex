@@ -54,6 +54,7 @@
       {
         "source": "NEXUS",
         "fileId": "1001",
+        "fileHash": "mod-a-sky-hash",
         "destinationPath": "/fixture-root/game/Data/textures/sky.dds"
       }
     ]

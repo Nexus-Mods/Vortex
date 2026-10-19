@@ -43,11 +43,13 @@
       {
         "source": "NEXUS",
         "fileId": "35407",
+        "fileHash": "skyui-esp-hash",
         "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
       },
       {
         "source": "NEXUS",
         "fileId": "35407",
+        "fileHash": "skyui-config-hash",
         "destinationPath": "/fixture-root/game/Data/interface/skyui/config.txt"
       }
     ]

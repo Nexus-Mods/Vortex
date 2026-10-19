@@ -59,16 +59,19 @@
       {
         "source": "NEXUS",
         "fileId": "1001",
+        "fileHash": "mod-a-esp-hash",
         "destinationPath": "/fixture-root/game/Data/ModA.esp"
       },
       {
         "source": "NEXUS",
         "fileId": "2002",
+        "fileHash": "mod-b-esp-hash",
         "destinationPath": "/fixture-root/game/Data/ModB.esp"
       },
       {
         "source": "NEXUS",
         "fileId": "1001",
+        "fileHash": "mod-a-sky-hash",
         "destinationPath": "/fixture-root/game/Data/textures/sky.dds"
       }
     ]

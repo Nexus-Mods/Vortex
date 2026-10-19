@@ -23,7 +23,7 @@ function toFileSource(mod: IMod, stagedFile: StagedFile): FileSource {
   const kind = fileSourceKindByModSource[mod.attributes?.source ?? ""];
   const fileId = mod.attributes?.fileId;
   if (kind === FileSourceKind.Nexus && fileId !== undefined) {
-    return { source: FileSourceKind.Nexus, fileId: String(fileId), destinationPath };
+    return { source: FileSourceKind.Nexus, fileId: String(fileId), fileHash, destinationPath };
   }
   return { source: FileSourceKind.UserGenerated, fileHash, destinationPath };
 }
