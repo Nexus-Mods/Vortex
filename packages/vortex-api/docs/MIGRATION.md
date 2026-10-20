@@ -2,6 +2,34 @@
 
 This guide covers the changes extension developers need to make when migrating from Vortex 1.16 to Vortex 2.0. The Vortex API surface is largely unchanged, so most extensions will not require source code modifications - the migration is primarily about build tooling and dependency management.
 
+## Moving to `@nexusmods/vortex-api`
+
+From Vortex 2.2 onward the API ships as the npm package [`@nexusmods/vortex-api`](https://www.npmjs.com/package/@nexusmods/vortex-api). The old [Nexus-Mods/vortex-api](https://github.com/Nexus-Mods/vortex-api) repository is archived and no longer updated. An extension that depends on it keeps working, so you only need to move if you're changing the extension and want the current API. Mentions of `vortex-api` in the rest of this guide mean the npm package.
+
+Replace the dependency in your `package.json`:
+
+```json
+// before
+"vortex-api": "Nexus-Mods/vortex-api"
+
+// after
+"@nexusmods/vortex-api": "^2.2.0"
+```
+
+Then update your imports to the scoped name:
+
+```ts
+import { types, util, selectors } from "@nexusmods/vortex-api";
+```
+
+If you'd rather not change your imports, alias it instead with `"vortex-api": "npm:@nexusmods/vortex-api@^2.2.0"`. Either works, but the scoped name keeps your dependencies matching your imports.
+
+Three things behave differently from the git dependency:
+
+- **TypeScript only finds the types with `"moduleResolution": "bundler"`** (with `"module": "esnext"` or `"preserve"`). With `"node"` or `"node10"` you get `Cannot find module '@nexusmods/vortex-api'`, and with `"node16"` or `"nodenext"` a CommonJS extension gets error TS1479. `bundler` suits extensions built with webpack or Rolldown, since the bundler produces the CommonJS output.
+- **`package.json` isn't exported**, so `require("@nexusmods/vortex-api/package.json")` throws `ERR_PACKAGE_PATH_NOT_EXPORTED`. The build config examples in [Step 3](#step-3-update-build-configuration) read it from disk instead.
+- **The webpack helper (`bin/webpack.js`) isn't included.** If your build uses it, switch to one of the configs in [Step 3](#step-3-update-build-configuration).
+
 ## Overview of Changes
 
 | Area                              | 1.16                                 | 2.0                                                                                                                |
@@ -144,7 +172,7 @@ You can **remove most Vortex runtime packages** from your `devDependencies`.
 ```json
 {
     "devDependencies": {
-        "vortex-api": "git+https://github.com/Nexus-Mods/vortex-api.git",
+        "@nexusmods/vortex-api": "^2.2.0",
         "@nexusmods/nexus-api": "git+https://github.com/Nexus-Mods/node-nexus-api#4192c0c9f34306c2167e258dd4fef773af406161",
         "typescript": "5.9.3"
     }
@@ -196,22 +224,32 @@ You only need to add the ones your extension actually imports. For example, if y
 
 ### Webpack (still works)
 
-If your extension uses the `vortex-api`-provided webpack helper (`api/bin/webpack.js`), no changes are needed - it handles externals automatically.
+If your extension still depends on the archived git repository and uses its webpack helper (`api/bin/webpack.js`), no changes are needed. It handles externals automatically. The npm package doesn't include the helper, so if you move to `@nexusmods/vortex-api` use a custom config like the one below.
 
-If you use a custom webpack config, you can simplify your externals by reading from `vortex-api`:
+With a custom webpack config, you can simplify your externals by reading the peer dependencies from the package. Its `package.json` isn't exported, so read the file from disk:
 
 ```js
 // webpack.config.js
-const { peerDependencies } = require("vortex-api/package.json");
+const fs = require("node:fs");
+const path = require("node:path");
+// If you aliased the package as "vortex-api", read node_modules/vortex-api/package.json instead.
+const { peerDependencies } = JSON.parse(
+    fs.readFileSync(
+        path.join(__dirname, "node_modules", "@nexusmods", "vortex-api", "package.json"),
+        "utf8",
+    ),
+);
 module.exports = {
     // ...
-    externals: [...Object.keys(peerDependencies || {}), "electron", "vortex-api"].reduce(
-        (acc, dep) => {
-            acc[dep] = `commonjs ${dep}`;
-            return acc;
-        },
-        {},
-    ),
+    externals: [
+        ...Object.keys(peerDependencies || {}),
+        "electron",
+        "vortex-api",
+        "@nexusmods/vortex-api",
+    ].reduce((acc, dep) => {
+        acc[dep] = `commonjs ${dep}`;
+        return acc;
+    }, {}),
 };
 ```
 
@@ -238,13 +276,25 @@ yarn remove webpack webpack-cli  # same as above
 
 ```js
 import { defineConfig } from "rolldown";
-import { builtinModules, createRequire } from "node:module";
-const require = createRequire(import.meta.url);
-const { peerDependencies } = require("vortex-api/package.json");
+import { readFileSync } from "node:fs";
+import { builtinModules } from "node:module";
+// If you aliased the package as "vortex-api", read node_modules/vortex-api/package.json instead.
+const { peerDependencies } = JSON.parse(
+    readFileSync(
+        new URL("./node_modules/@nexusmods/vortex-api/package.json", import.meta.url),
+        "utf8",
+    ),
+);
 function getExternals() {
     const builtins = builtinModules.filter((m) => !m.startsWith("_"));
     return [
-        ...new Set([...builtins, ...Object.keys(peerDependencies || {}), "electron", "vortex-api"]),
+        ...new Set([
+            ...builtins,
+            ...Object.keys(peerDependencies || {}),
+            "electron",
+            "vortex-api",
+            "@nexusmods/vortex-api",
+        ]),
     ];
 }
 export default defineConfig({
@@ -353,7 +403,7 @@ context.registerMainPage("savegame", "Save games", MySavegamePage, {
 
 - [ ] Remove registry runtime packages from `devDependencies` (now provided by `vortex-api` peer dependencies)
 - [ ] Add git-based packages your extension uses to `devDependencies` with correct commit hashes
-- [ ] If using a custom webpack config, simplify externals to read from `vortex-api/package.json` (or optionally migrate to Rolldown)
+- [ ] If using a custom webpack config, simplify externals to read the peer dependencies from the package's `package.json` (or optionally migrate to Rolldown)
 - [ ] Add local `collections` type declarations if needed
 - [ ] Replace `VORTEX_VERSION` imports with `state.app.appVersion`
 - [ ] Update `priority` for custom Load Order pages to `30` and Save pages to `50`

@@ -1,12 +1,12 @@
 # Vortex API
 
-Type definitions for the [Vortex](https://www.nexusmods.com/about/vortex/) extension API.
+Type definitions for the [Vortex](https://www.nexusmods.com/vortex) extension API.
 
 This package provides auto-generated typings that extensions can use to interact with Vortex - the mod manager by Nexus Mods.
 
 ## Documentation
 
-For packaging and distributing extensions, see [Packaging extensions for Vortex](https://wiki.nexusmods.com/index.php/Packaging_extensions_for_Vortex).
+For packaging and distributing extensions, see [How to package a game extension](https://github.com/Nexus-Mods/Vortex/wiki/How-to-package-a-game-extension).
 
 For API changes between versions, see the [Changelog](CHANGELOG.md).
 
@@ -17,10 +17,12 @@ For notable open-source extensions with advanced patterns, see the [Example Exte
 ## Installation
 
 ```
-npm install vortex-api
+npm install @nexusmods/vortex-api
 ```
 
-`vortex-api` declares Vortex runtime packages (React, Redux, Bluebird, etc.) as `peerDependencies`. With pnpm, npm 7+, or Yarn Berry these are installed automatically - you don't need to add them to your own `devDependencies`. For details on migrating from earlier versions, see the [Migration Guide](docs/MIGRATION.md).
+`@nexusmods/vortex-api` declares Vortex runtime packages (React, Redux, Bluebird, etc.) as `peerDependencies`. With pnpm, npm 7+, or Yarn Berry these are installed automatically - you don't need to add them to your own `devDependencies`. For details on migrating from earlier versions, see the [Migration Guide](docs/MIGRATION.md).
+
+The old [Nexus-Mods/vortex-api](https://github.com/Nexus-Mods/vortex-api) repository is archived and no longer updated. Extensions that depend on it keep working. To get the current API, replace `"vortex-api": "Nexus-Mods/vortex-api"` in your `package.json` with `"@nexusmods/vortex-api": "^2.2.0"` and import from `@nexusmods/vortex-api`. If you'd rather not change your imports, alias it instead: `"vortex-api": "npm:@nexusmods/vortex-api@^2.2.0"`. TypeScript needs `"moduleResolution": "bundler"` to find the package's types. The [Migration Guide](docs/MIGRATION.md#moving-to-nexusmodsvortex-api) covers this and the other differences from the git dependency.
 
 ## Extension structure
 
@@ -36,7 +38,7 @@ A Vortex extension is a JavaScript module that exports an `init` function. The f
 `index.js`
 
 - This is the main entry point of your extension.
-- Import Vortex API types using `import { types, util, selectors } from 'vortex-api'`
+- Import Vortex API types using `import { types, util, selectors } from '@nexusmods/vortex-api'`
 - Must export a `default` function (or named `init`) that receives `IExtensionContext`.
 - Must bundle all external dependencies into the output.
 
