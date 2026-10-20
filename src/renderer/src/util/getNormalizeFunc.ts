@@ -34,6 +34,8 @@ export interface INormalizeParameters {
   unicode?: boolean;
   // reduce "..", remove ".", remove redundant slashes
   relative?: boolean;
+  // treat paths as case-insensitive even on a case-sensitive file system
+  caseInsensitive?: boolean;
 }
 
 function isCaseSensitiveFailed(testPath: string, reason: string): PromiseBB<boolean> {
@@ -112,7 +114,10 @@ function getNormalizeFunc(
 
   return isCaseSensitive(testPath)
     .then((caseSensitive) => {
-      let funcOut = caseSensitive ? (input: string) => input : genNormalizeCase();
+      let funcOut =
+        caseSensitive && parameters.caseInsensitive !== true
+          ? (input: string) => input
+          : genNormalizeCase();
 
       if (parameters["separators"] !== false && process.platform === "win32") {
         funcOut = genNormalizeSeparator(funcOut);
@@ -131,7 +136,7 @@ function getNormalizeFunc(
         const parent = path.dirname(testPath);
         return parent === testPath
           ? PromiseBB.reject(restackErr(err, stackErr))
-          : getNormalizeFunc(parent);
+          : getNormalizeFunc(parent, parameters);
       } else {
         return PromiseBB.reject(restackErr(err, stackErr));
       }

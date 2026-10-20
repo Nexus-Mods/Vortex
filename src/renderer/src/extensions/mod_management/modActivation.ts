@@ -4,13 +4,14 @@ import { log } from "../../logging";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
-import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
+import type { Normalize } from "../../util/getNormalizeFunc";
 import { truthy } from "../../util/util";
 import { mergedSourceName } from "./modMerging";
 import type { IDeployedFile, IDeploymentMethod } from "./types/IDeploymentMethod";
 import type { IMod } from "./types/IMod";
 import type BlacklistSet from "./util/BlacklistSet";
 import { fileOverrideEntries } from "./util/BlacklistSet";
+import { getDeploymentNormalizeFunc } from "./util/deploymentNormalize";
 import renderModName from "./util/modName";
 
 async function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
@@ -70,7 +71,11 @@ async function deployMods(
 
   try {
     await ensureWritable(api, destinationPath);
-    const normalize: Normalize = await getNormalizeFunc(destinationPath);
+    const normalize: Normalize = await getDeploymentNormalizeFunc(
+      api.getState(),
+      gameId,
+      destinationPath,
+    );
     await method.prepare(destinationPath, true, lastActivation, normalize);
 
     for (let idx = 0; idx < mods.length; idx++) {

@@ -40,6 +40,8 @@ export interface IDeploymentHarness extends IApiHarness {
   deploy: (lastDeployment?: IDeployedFile[]) => Promise<IDeployedFile[]>;
   /** prepare + activate + finalize against one of the seeded mods */
   deployMod: (modName: string, lastDeployment?: IDeployedFile[]) => Promise<IDeployedFile[]>;
+  /** a full deployment, as deploying all mods does: later mods win conflicts */
+  deployAll: (modNames: string[], lastDeployment?: IDeployedFile[]) => Promise<IDeployedFile[]>;
   /** prepare + deactivate + finalize against the seeded mod, as removing it does */
   remove: (lastDeployment: IDeployedFile[]) => Promise<IDeployedFile[]>;
   modDir: (modName: string) => string;
@@ -139,6 +141,13 @@ export function makeDeploymentHarness(
     stagingDir,
     deploy: (lastDeployment: IDeployedFile[] = []) => deployMod(modName, lastDeployment),
     deployMod,
+    deployAll: async (modNames: string[], lastDeployment: IDeployedFile[] = []) => {
+      await method.prepare(gameDir, true, lastDeployment, normalize);
+      for (const name of modNames) {
+        await method.activate(modDir(name), name, subDir(name), blacklist);
+      }
+      return method.finalize(gameId, gameDir, stagingDir);
+    },
     remove: async (lastDeployment: IDeployedFile[]) => {
       await method.prepare(gameDir, false, lastDeployment, normalize);
       await method.deactivate(modDir(modName), subDir(modName), modName);

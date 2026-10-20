@@ -35,6 +35,12 @@ export interface IDeployment {
 //   code needs to know about these files when merging archives
 export const BACKUP_TAG = ".vortex_backup";
 
+const VARIANT_SEPARATOR = "\u0000";
+
+function outputRelPath(file: IDeployedFile): string {
+  return deployedFilePath("", file.target, file.relPath);
+}
+
 async function isAbsent(filePath: string): Promise<boolean> {
   try {
     await lstat(filePath);
@@ -171,6 +177,17 @@ abstract class LinkingActivator implements IDeploymentMethod {
           .filter((i) => i !== null)
           .join(path.sep);
         const key = this.mNormalize(outputPath);
+        const existing = this.mContext.previousDeployment[key];
+        if (existing !== undefined && outputRelPath(existing) !== outputRelPath(file)) {
+          // a case variant from a case-sensitive deployment. A full deployment removes it; a
+          // partial one can't tell which variant should win, so it leaves it in place
+          const variantKey = `${key}${VARIANT_SEPARATOR}${file.relPath}`;
+          this.mContext.previousDeployment[variantKey] = file;
+          if (!clean) {
+            this.mContext.newDeployment[variantKey] = file;
+          }
+          return;
+        }
         this.mContext.previousDeployment[key] = file;
         if (!clean) {
           this.mContext.newDeployment[key] = file;
