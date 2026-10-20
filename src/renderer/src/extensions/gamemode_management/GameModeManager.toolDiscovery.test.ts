@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../util/log", () => ({ log: vi.fn() }));
+vi.mock("@/logging", () => ({ log: vi.fn() }));
 
 // GameModeManager pulls in util/Steam, which constructs its singleton at import time. Off Windows
 // that constructor resolves a Steam install from the home directory via getVortexPath, and there is
@@ -57,7 +57,7 @@ import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
 import type { IState } from "../../types/IState";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 import starterReducer from "../starter_dashlet/reducers";
-import GameModeManager from "./GameModeManager";
+import { GameModeManager } from "./GameModeManager";
 import { settingsReducer } from "./reducers/settings/settings";
 
 const discoveredTools: IDiscoveredTool[] = [];
@@ -77,7 +77,7 @@ interface ISetupOpts {
   // a primary tool the user (or an earlier discovery) already settled on
   primaryTool?: string | null;
   // the tool record already in settings.gameMode.discovered, if any
-  existingTool?: { custom?: boolean; hidden?: boolean; defaultPrimary?: boolean };
+  existingTool?: Partial<IDiscoveredTool>;
   // further tool records already in settings.gameMode.discovered, in key order
   otherTools?: Record<string, Partial<IDiscoveredTool>>;
 }
@@ -265,9 +265,23 @@ describe("GameModeManager tool discovery", () => {
 
   it("doesn't overwrite a tool the user customised", async () => {
     discoveredTools.push(makeDiscoveredTool(SCRIPT_EXTENDER_TOOL));
-    const { harness, manager } = setup({ existingTool: { custom: true } });
+    const existingTool = {
+      custom: true,
+      path: "C:/custom/skse64_loader.exe",
+      workingDirectory: "C:/custom",
+      parameters: ["--custom"],
+      environment: { CUSTOM_SETTING: "preserved" },
+    };
+    const { harness, manager } = setup({ existingTool });
+    const before = structuredClone(
+      harness.api.getState().settings.gameMode.discovered[GAME].tools[SCRIPT_EXTENDER],
+    );
 
     await discover(manager);
+
+    expect(
+      harness.api.getState().settings.gameMode.discovered[GAME].tools[SCRIPT_EXTENDER],
+    ).toEqual(before);
 
     expect(
       harness.dispatched.filter((action) => action.type.includes("ADD_DISCOVERED_TOOL")),
