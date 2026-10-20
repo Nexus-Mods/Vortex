@@ -23,6 +23,8 @@ import type {
 import type Nexus from "@nexusmods/nexus-api";
 import { GraphError, NexusError, TimeoutError } from "@nexusmods/nexus-api";
 import {
+  GameDomain,
+  type GameId,
   getErrorCode,
   getErrorMessage,
   getErrorMessageOrDefault,
@@ -2184,6 +2186,8 @@ export function nexusGamesProm(): BluebirdPromise<IGameListEntry[]> {
   return cachePromise.then(() => nexusGamesCache);
 }
 
-export function numericGameIdToDomainName(gameId: number): string | undefined {
-  return nexusGamesCache.find((g) => g.id === gameId)?.domain_name;
+export function numericGameIdToDomainName(gameId: GameId): GameDomain | undefined {
+  const domain = nexusGamesCache.find((g) => g.id === gameId)?.domain_name;
+  if (domain === undefined) return undefined;
+  return GameDomain(domain);
 }

@@ -6,6 +6,8 @@ vi.mock("../../../nexus_integration/util", () => ({
     ({ 1704: "skyrimspecialedition", 102: "shadowrunreturns" })[id],
 }));
 
+import { GameId } from "@vortex/shared";
+
 import type { IGameStored } from "@/types/IState";
 
 import type { IDetectedGame } from "../../types/IDetectedGame";
@@ -13,7 +15,7 @@ import { isListableDetectedGame, listableDetectedIds } from "./listableDetectedI
 
 const detected = (gameId: number, withExtension: boolean): IDetectedGame => ({
   gameUid: `uid-${gameId}`,
-  gameId,
+  gameId: GameId(gameId),
   storeIDs: { steam: [], gog: [], epic: [] },
   extension: withExtension
     ? ({ name: "ext", modId: 1, fileId: 1 } as IDetectedGame["extension"])
