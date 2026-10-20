@@ -328,6 +328,13 @@ export interface IManagerInternals {
     recommended: boolean,
     silent: boolean,
   ) => Promise<unknown[]>;
+  updateRules: (
+    api: unknown,
+    gameId: string,
+    sourceModId: string,
+    dependencies: unknown[],
+    recommended: boolean,
+  ) => Promise<void>;
   withInstructions: (
     api: unknown,
     sourceName: string,
