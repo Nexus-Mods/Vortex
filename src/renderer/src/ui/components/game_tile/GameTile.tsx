@@ -26,7 +26,7 @@ const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice
 
 /** Known stores, keyed by the id `IDiscoveryResult.store` carries. */
 const STORES: Record<string, { iconPath: string; label: string }> = {
-  epic: { iconPath: nxmEpicGames, label: "Epic Games" },
+  epic: { iconPath: nxmEpicGames, label: "Epic" },
   gog: { iconPath: mdiGog, label: "GOG" },
   origin: { iconPath: nxmElectronicArts, label: "Origin" },
   steam: { iconPath: mdiSteam, label: "Steam" },

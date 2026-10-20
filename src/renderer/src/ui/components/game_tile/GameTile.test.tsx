@@ -71,7 +71,7 @@ describe("GameTile", () => {
   it.each([
     ["steam", "Steam"],
     ["gog", "GOG"],
-    ["epic", "Epic Games"],
+    ["epic", "Epic"],
     ["origin", "Origin"],
     ["uplay", "Ubisoft"],
     ["xbox", "Xbox"],
