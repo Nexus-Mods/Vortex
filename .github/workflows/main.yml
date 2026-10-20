@@ -4,7 +4,7 @@ on:
   push:
     branches: [master, release/*, integration/*]
   pull_request:
-    branches: [master, release/*, integration/*, task/laz-*, fix/laz-*]
+    branches: [master, release/*, integration/*, task/laz-*, fix/laz-*, task/mod-*, fix/mod-*, feat/mod-*]
   workflow_dispatch:
 
 concurrency:
