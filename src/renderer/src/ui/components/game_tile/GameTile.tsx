@@ -9,6 +9,7 @@ import {
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { Tier } from "@/extensions/gamemode_management/tiered/types";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Pill } from "@/ui/components/pill/Pill";
@@ -37,8 +38,8 @@ const STORES: Record<string, { iconPath: string; label: string }> = {
 export interface IGameTileProps {
   className?: string;
   highlighted?: boolean;
-  /** the game's support tier ("Tier 0", "Tier 1", ...), shown as a small pill */
-  supportTier?: string;
+  /** the game's support tier, shown as a small pill */
+  supportTier?: Tier;
   supportedBy?: string;
   imageUrl?: string;
   menu?: { actions: IMenuAction[][]; label: string };
