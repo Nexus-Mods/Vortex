@@ -71,6 +71,10 @@ type OnShowErrorFunc = (
   allowReport?: boolean,
 ) => void;
 
+// how long "start with game" tools wait after the game launch has started, so they come up after
+// the game rather than racing it
+const COMPANION_START_DELAY_MS = 2000;
+
 interface IDirectLaunchOptions {
   // ask to deploy pending changes first. Companion tools skip this, the launch they accompany
   // already asked.
@@ -324,8 +328,8 @@ class StarterInfo implements IStarterInfo {
   }
 
   /**
-   * Starts the game's "start with game" tools alongside a launch that runs the game. Resolves once
-   * each of them has spawned or failed to.
+   * Starts the game's "start with game" tools alongside a launch that runs the game, after a short
+   * delay. Resolves once each of them has spawned or failed to.
    */
   private static async startCompanionTools(
     info: IStarterInfo,
@@ -340,6 +344,7 @@ class StarterInfo implements IStarterInfo {
     if (companions.length === 0) {
       return;
     }
+    await new Promise<void>((resolve) => setTimeout(resolve, COMPANION_START_DELAY_MS));
     log("info", "starting tools with game", {
       gameId: info.gameId,
       tools: companions.map((tool) => tool.id),

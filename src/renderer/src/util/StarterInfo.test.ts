@@ -72,12 +72,20 @@ function harness(
 
 const launched = (h: IApiHarness) => h.runExecutableCalls.map((call) => call.executable);
 
+// flagged tools wait this long after the game launch before they're started
+const START_DELAY_MS = 2000;
+const pastStartDelay = () => vi.advanceTimersByTimeAsync(START_DELAY_MS);
+
 describe("start with game", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     registerHarnessGame(GAME_ID);
     quit.mockClear();
   });
-  afterEach(() => resetHarnessRegistries());
+  afterEach(() => {
+    resetHarnessRegistries();
+    vi.useRealTimers();
+  });
 
   it("starts flagged tools after the game, without a second deploy prompt", async () => {
     const h = harness([knownTool({ id: "remapper", startWithGame: true })], {
@@ -86,10 +94,24 @@ describe("start with game", () => {
     });
 
     await StarterInfo.run(makeStarterInfo({ exePath: GAME_EXE }), h.api, vi.fn());
+    await pastStartDelay();
 
     await vi.waitFor(() => expect(launched(h)).toEqual([GAME_EXE, COMPANION_EXE]));
     expect(h.runExecutableCalls[0].options.suggestDeploy).toBe(true);
     expect(h.runExecutableCalls[1].options.suggestDeploy).toBe(false);
+  });
+
+  it("waits two seconds after the game launch before starting flagged tools", async () => {
+    const h = harness([], {
+      remapper: discoveredTool("remapper", COMPANION_EXE, { startWithGame: true }),
+    });
+
+    await StarterInfo.run(makeStarterInfo({ exePath: GAME_EXE }), h.api, vi.fn());
+    await vi.advanceTimersByTimeAsync(START_DELAY_MS - 1);
+    expect(launched(h)).toEqual([GAME_EXE]);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await vi.waitFor(() => expect(launched(h)).toEqual([GAME_EXE, COMPANION_EXE]));
   });
 
   it("lets the user's setting override the extension default", async () => {
@@ -98,6 +120,7 @@ describe("start with game", () => {
     });
 
     await StarterInfo.run(makeStarterInfo({ exePath: GAME_EXE }), h.api, vi.fn());
+    await pastStartDelay();
 
     expect(launched(h)).toEqual([GAME_EXE]);
   });
@@ -113,6 +136,7 @@ describe("start with game", () => {
     });
 
     await StarterInfo.run(makeStarterInfo({ exePath: GAME_EXE }), h.api, vi.fn());
+    await pastStartDelay();
 
     expect(launched(h)).toEqual([GAME_EXE]);
   });
@@ -125,6 +149,7 @@ describe("start with game", () => {
     const tool = makeStarterInfo({ id: "other", isGame: false, exePath: OTHER_EXE });
 
     await StarterInfo.run(tool, h.api, vi.fn());
+    await pastStartDelay();
 
     expect(launched(h)).toEqual([OTHER_EXE]);
   });
@@ -142,6 +167,7 @@ describe("start with game", () => {
     const loader = makeStarterInfo({ id: "skse", isGame: false, exePath: LOADER_EXE });
 
     await StarterInfo.run(loader, h.api, vi.fn());
+    await pastStartDelay();
 
     // the flagged primary tool is the launch itself, it isn't started a second time
     await vi.waitFor(() => expect(launched(h)).toEqual([LOADER_EXE, COMPANION_EXE]));
@@ -156,6 +182,9 @@ describe("start with game", () => {
     });
 
     await StarterInfo.run(makeStarterInfo({ exePath: GAME_EXE, onStart: "close" }), h.api, vi.fn());
+    // closing waits for the flagged tool, so it can't happen before the start delay
+    expect(quit).not.toHaveBeenCalled();
+    await pastStartDelay();
 
     await vi.waitFor(() => expect(quit).toHaveBeenCalledTimes(1));
     expect(launched(h)).toEqual([GAME_EXE, COMPANION_EXE]);
@@ -176,6 +205,7 @@ describe("start with game", () => {
     const onShowError = vi.fn();
 
     await StarterInfo.run(makeStarterInfo({ exePath: GAME_EXE }), h.api, onShowError);
+    await pastStartDelay();
 
     await vi.waitFor(() => expect(onShowError).toHaveBeenCalledTimes(1));
     expect(onShowError.mock.calls[0][0]).toBe("Failed to run tool");
