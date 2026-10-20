@@ -37,6 +37,8 @@ const STORES: Record<string, { iconPath: string; label: string }> = {
 export interface IGameTileProps {
   className?: string;
   highlighted?: boolean;
+  /** the game's support tier ("Tier 0", "Tier 1", ...), shown as a small pill */
+  supportTier?: string;
   supportedBy?: string;
   imageUrl?: string;
   menu?: { actions: IMenuAction[][]; label: string };
@@ -56,6 +58,7 @@ export interface IGameTileProps {
 export const GameTile = ({
   className,
   highlighted,
+  supportTier,
   supportedBy,
   imageUrl,
   menu,
@@ -104,6 +107,12 @@ export const GameTile = ({
             data-menu-open={open || undefined}
           >
             <div className="flex gap-x-4">
+              {!!supportTier && (
+                <Pill appearance="scrim" brand="light">
+                  {supportTier}
+                </Pill>
+              )}
+
               {!!store && (
                 <Pill appearance="scrim" brand="light" iconPath={knownStore?.iconPath}>
                   {knownStore?.label ?? titleCase(store)}

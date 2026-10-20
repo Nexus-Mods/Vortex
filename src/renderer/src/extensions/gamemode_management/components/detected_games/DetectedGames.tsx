@@ -1,5 +1,5 @@
 import { mdiLoading, mdiRefresh, mdiWifiOff } from "@mdi/js";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 

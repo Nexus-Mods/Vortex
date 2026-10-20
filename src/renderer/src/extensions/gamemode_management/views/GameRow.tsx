@@ -16,6 +16,7 @@ import type { IActionDefinition } from "../../../types/IActionDefinition";
 import opn from "../../../util/opn";
 import type { IMod } from "../../mod_management/types/IMod";
 import { setGameAddOrigin } from "../actions/session";
+import { TierZeroRowBadge } from "../components/TierZeroIndicator";
 import type { GameSource } from "../types/GameSource";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
@@ -42,7 +43,7 @@ export interface IProps {
  */
 class GameRow extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, active, discovery, game, onRefreshGameInfo, type } = this.props;
+    const { source, t, active, discovery, game, onRefreshGameInfo, type } = this.props;
 
     if (game === undefined) {
       return null;
@@ -82,6 +83,8 @@ class GameRow extends ComponentEx<IProps, {}> {
 
           <Media.Body>
             <Media.Heading>{t(game.name.replace(/\t/g, " "))}</Media.Heading>
+
+            {source === "detected_list" && <TierZeroRowBadge gameId={game.id} />}
 
             {location !== null ? (
               <p>
