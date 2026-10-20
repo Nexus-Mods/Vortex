@@ -24,7 +24,7 @@ import type Nexus from "@nexusmods/nexus-api";
 import { GraphError, NexusError, TimeoutError } from "@nexusmods/nexus-api";
 import {
   GameDomain,
-  type GameId,
+  GameId,
   getErrorCode,
   getErrorMessage,
   getErrorMessageOrDefault,
@@ -2190,4 +2190,10 @@ export function numericGameIdToDomainName(gameId: GameId): GameDomain | undefine
   const domain = nexusGamesCache.find((g) => g.id === gameId)?.domain_name;
   if (domain === undefined) return undefined;
   return GameDomain(domain);
+}
+
+export function domainToNumericGameId(domain: GameDomain): GameId | undefined {
+  const lowered = domain.toLowerCase();
+  const id = nexusGamesCache.find((g) => g.domain_name.toLowerCase() === lowered)?.id;
+  return id === undefined ? undefined : GameId(id);
 }

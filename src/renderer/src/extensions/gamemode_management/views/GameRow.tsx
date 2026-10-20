@@ -43,7 +43,7 @@ export interface IProps {
  */
 class GameRow extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { source, t, active, discovery, game, onRefreshGameInfo, type } = this.props;
+    const { t, active, discovery, game, onRefreshGameInfo, type } = this.props;
 
     if (game === undefined) {
       return null;
@@ -84,7 +84,7 @@ class GameRow extends ComponentEx<IProps, {}> {
           <Media.Body>
             <Media.Heading>{t(game.name.replace(/\t/g, " "))}</Media.Heading>
 
-            {source === "detected_list" && <TierZeroRowBadge gameId={game.id} />}
+            <TierZeroRowBadge game={game} />
 
             {location !== null ? (
               <p>
