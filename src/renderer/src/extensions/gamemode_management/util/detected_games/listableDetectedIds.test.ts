@@ -6,7 +6,7 @@ vi.mock("../../../nexus_integration/util", () => ({
     ({ 1704: "skyrimspecialedition", 102: "shadowrunreturns" })[id],
 }));
 
-import { GameId } from "@vortex/shared";
+import { GameId, VortexGameId } from "@vortex/shared";
 
 import type { IGameStored } from "@/types/IState";
 
@@ -39,15 +39,48 @@ const known = [
 
 describe("isListableDetectedGame", () => {
   it("lists a game the endpoint returned an extension for", () => {
-    expect(isListableDetectedGame(detected(5, true), "unknowngame", [])).toBe(true);
+    expect(isListableDetectedGame(detected(5, true), VortexGameId("unknowngame"), [])).toBe(true);
   });
 
   it("lists a game with no extension when Vortex already knows it", () => {
-    expect(isListableDetectedGame(detected(102, false), "shadowrunreturns", known)).toBe(true);
+    expect(
+      isListableDetectedGame(detected(102, false), VortexGameId("shadowrunreturns"), known),
+    ).toBe(true);
   });
 
   it("hides a game with no extension that Vortex doesn't know", () => {
-    expect(isListableDetectedGame(detected(5, false), "unknowngame", known)).toBe(false);
+    expect(isListableDetectedGame(detected(5, false), VortexGameId("unknowngame"), known)).toBe(
+      false,
+    );
+  });
+});
+
+describe("isListableDetectedGame with the Tier 0 flag on", () => {
+  const allowTierZero = { allowTierZero: true };
+
+  it("lists an extension-less game no catalog extension provides support for", () => {
+    expect(
+      isListableDetectedGame(detected(5, false), VortexGameId("unknowngame"), known, allowTierZero),
+    ).toBe(true);
+  });
+
+  it("keeps a game the extension catalog provides support for out of the section", () => {
+    const coveredByCatalog = { allowTierZero: true, extensionGameIds: new Set([GameId(5)]) };
+
+    expect(
+      isListableDetectedGame(
+        detected(5, false),
+        VortexGameId("unknowngame"),
+        known,
+        coveredByCatalog,
+      ),
+    ).toBe(false);
+  });
+
+  it("changes nothing for games with an extension the endpoint knew of", () => {
+    expect(
+      isListableDetectedGame(detected(102, true), VortexGameId("unknowngame"), [], allowTierZero),
+    ).toBe(true);
   });
 });
 
@@ -68,6 +101,20 @@ describe("listableDetectedIds", () => {
 
   it("leaves out games with no extension without known games to check", () => {
     expect(listableDetectedIds([detected(102, false)])).toEqual([]);
+  });
+
+  it("includes extension-less games with the Tier 0 options on", () => {
+    expect(
+      listableDetectedIds([detected(5, false)], known, {}, new Set(), { allowTierZero: true }),
+    ).toEqual(["uid-5"]);
+  });
+
+  it("leaves Tier 0 candidates the extension catalog covers out", () => {
+    const coveredByCatalog = { allowTierZero: true, extensionGameIds: new Set([GameId(5)]) };
+
+    expect(
+      listableDetectedIds([detected(5, false)], known, {}, new Set(), coveredByCatalog),
+    ).toEqual([]);
   });
 });
 

@@ -4,7 +4,9 @@ import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
 import React, { type ComponentClass, useMemo, useRef, useState } from "react";
 import type { WithTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
+import { useFlag } from "@/contexts/FlagsContext";
 import type { IAvailableExtension } from "@/types/extensions";
 import type { IExtensionState } from "@/types/IState";
 import type { IState } from "@/types/IState";
@@ -31,6 +33,7 @@ import {
   DEFAULT_PICKER_LAYOUT,
   useDisplayOptionsAction,
 } from "../hooks/useDisplayOptionsAction.hook";
+import { catalogExtensionGameIds } from "../selectors";
 import type { IDetectedGame } from "../types/IDetectedGame";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
@@ -116,6 +119,15 @@ const GamePicker = ({
   onSetShowHidden,
 }: IProps) => {
   const [currentFilterValue, setCurrentFilterValue] = useState("");
+
+  // a game the endpoint gave no extension for is only listable when no extension in
+  // the catalog provides one, else the supported section keeps its download flow
+  const tierZeroAllowed = useFlag("vortex-tier-0-game-support") !== undefined;
+  const extensionGameIds = useSelector(catalogExtensionGameIds);
+  const detectedListOptions = useMemo(
+    () => ({ allowTierZero: tierZeroAllowed, extensionGameIds }),
+    [tierZeroAllowed, extensionGameIds],
+  );
 
   const nameLookupRef = useRef<{ [name: string]: string }>({});
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -309,7 +321,7 @@ const GamePicker = ({
         return undefined;
       }
       // an installed extension is the ground truth, whatever the endpoint returned
-      if (!isListableDetectedGame(game, internalId, knownGames)) {
+      if (!isListableDetectedGame(game, internalId, knownGames, detectedListOptions)) {
         return undefined;
       }
       // the same game can be reported more than once, e.g. by several stores

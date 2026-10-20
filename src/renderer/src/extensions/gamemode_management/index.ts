@@ -12,6 +12,7 @@ import { showDialog } from "../../actions/notifications";
 import { setDialogVisible } from "../../actions/session";
 import LazyComponent from "../../controls/LazyComponent";
 import OptionsFilter, { type ISelectOption } from "../../controls/table/OptionsFilter";
+import { FlagService } from "../../FlagService";
 import { log } from "../../logging";
 import ReduxProp from "../../ReduxProp";
 import type { IExtensionDownloadInfo } from "../../types/extensions";
@@ -54,6 +55,7 @@ import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings/settings";
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from "./selectors";
+import { catalogExtensionGameIds } from "./selectors";
 import { synthesizePersistedTierZeroGames } from "./tiered/tierZero";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
@@ -1022,6 +1024,13 @@ function init(context: IExtensionContext): boolean {
             current.session.gameMode.known,
             current.settings.gameMode.discovered,
             addedGameIds,
+            {
+              // same gating the detected section lists with, so a game doesn't
+              // get reported as "new" when the section doesn't show it
+              allowTierZero:
+                FlagService.instance?.getFlag("vortex-tier-0-game-support") !== undefined,
+              extensionGameIds: catalogExtensionGameIds(current),
+            },
           );
         };
 

@@ -1,9 +1,10 @@
 import { mdiLoading, mdiRefresh, mdiWifiOff } from "@mdi/js";
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { useMainContext } from "@/contexts";
+import { useFlag } from "@/contexts/FlagsContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -14,6 +15,7 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 import { activeGameId } from "@/util/selectors";
 
 import { setSortDetected } from "../../actions/settings";
+import { catalogExtensionGameIds } from "../../selectors";
 import type { IGameStored } from "../../types/IGameStored";
 import { listableDetectedIds } from "../../util/detected_games/listableDetectedIds";
 import { GamesGrid } from "../GamesGrid";
@@ -87,13 +89,21 @@ export const DetectedGames = ({
   const [scanFailed, setScanFailed] = useState(false);
   const scanIdRef = useRef(0);
 
+  // Must consult the flag and the extension catalog the same way GamePicker lists
+  // the section, so the scan's "found" set counts exactly what the section shows.
+  const tierZeroAllowed = useFlag("vortex-tier-0-game-support") !== undefined;
+  const extensionGameIds = useSelector(catalogExtensionGameIds);
+
   const scanning = (quickScanning || discoveryRunning || detectionRunning) && !filtering;
   const failed = scanFailed || detectionFailed;
 
   const handleScan = () => {
     const addedGameIds = new Set(Object.values(profiles).map((profile) => profile.gameId));
     const knownBefore = new Set(
-      listableDetectedIds(detectedGames ?? [], knownGames, discoveredGames, addedGameIds),
+      listableDetectedIds(detectedGames ?? [], knownGames, discoveredGames, addedGameIds, {
+        allowTierZero: tierZeroAllowed,
+        extensionGameIds,
+      }),
     );
     const comparable = detectionStatus === "success" || (detectedGames?.length ?? 0) > 0;
     const scanId = ++scanIdRef.current;
