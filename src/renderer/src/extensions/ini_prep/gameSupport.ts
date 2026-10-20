@@ -2,8 +2,8 @@ import * as path from "path";
 
 import format from "string-template";
 
-import getVortexPath from "../../util/getVortexPath";
 import { makeOverlayableDictionary } from "../../util/util";
+import { windowsUserPath } from "../../util/windowsUserPath";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 
 interface IGameSupport {
@@ -173,7 +173,7 @@ const gameSupport = makeOverlayableDictionary<string, IGameSupport>(
 );
 
 export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
-  const mygames = path.join(getVortexPath("documents"), "My Games");
+  const mygames = path.join(windowsUserPath("documents", gameMode, discovery), "My Games");
 
   let store = discovery?.store;
 

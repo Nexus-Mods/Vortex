@@ -258,11 +258,11 @@ const gameSupport = util.makeOverlayableDictionary<string, IGameSupport>(
   (gameId: string) => gameStoreForGame(gameId),
 );
 
-let gameStoreForGame: (gameId: string) => string = () => undefined;
+let discoveryForGame: (gameId: string) => types.IDiscoveryResult = () => undefined;
+const gameStoreForGame = (gameId: string) => discoveryForGame(gameId)?.store;
 
 export function initGameSupport(api: types.IExtensionApi) {
-  gameStoreForGame = (gameId: string) =>
-    selectors.discoveryByGame(api.store.getState(), gameId)?.store;
+  discoveryForGame = (gameId: string) => selectors.discoveryByGame(api.store.getState(), gameId);
 }
 
 export function isSupported(gameId: string): boolean {
@@ -287,7 +287,7 @@ export function bsaVersion(gameId: string): number {
 
 export function mygamesPath(gameMode: string): string {
   return path.join(
-    util.getVortexPath("documents"),
+    util.windowsUserPath("documents", gameMode, discoveryForGame(gameMode)),
     "My Games",
     gameSupport.get(gameMode, "mygamesPath"),
   );
