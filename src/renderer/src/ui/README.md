@@ -46,7 +46,8 @@ ui/
 │   ├── tabs/            - Tabbed interface with context-based state
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
 │   ├── tooltip/         - Rich, collision-aware tooltip (Floating UI)
-│   └── typography/      - Typography system (heading, title, body)
+│   ├── typography/      - Typography system (heading, title, body)
+│   └── view_picker/     - A list's views, built-in and the user's own, with a "+" to add one
 ├── lib/
 │   └── icon_paths/      - 34 custom Nexus Mods SVG icon paths
 ├── utils/
@@ -979,6 +980,36 @@ import { Bullet } from "../../ui/components/bullet/Bullet";
 
 // Override size and colour
 <Bullet className="size-1 bg-neutral-subdued" />
+```
+
+### ViewPicker
+
+The views of a list people can switch between and add their own to, like the Mods
+table's. Pass the `views` in order, built-in first; a view with `actions` is one of
+the user's own, gets a "…" menu, and the divider goes before the first of them.
+`onAddView` puts a "+" at the end. Views aren't tabs (no panels), so each is a
+`ViewButton`, a `<button aria-pressed>`.
+
+The views are one Tab stop, the open one or else the first; the arrow keys move
+focus between them, wrapping, Home and End go to either end, and Space or Enter
+opens one. A user's view opens its menu from its "…", a right-click, Shift+F10 or
+the Down arrow. The "+" keeps its own Tab stop.
+
+```tsx
+<ViewPicker
+    label={t("Views")}
+    selectedView={selected}
+    views={[
+        { id: "all", label: t("All mods") },
+        {
+            id: custom.id,
+            label: custom.label,
+            actions: [[{ label: t("Rename view"), onClick: rename }]],
+        },
+    ]}
+    onAddView={add}
+    onSelectView={setSelected}
+/>
 ```
 
 ## Adding New Components
