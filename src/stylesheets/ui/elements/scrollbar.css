@@ -2,20 +2,24 @@
     scrollbar-width: none;
 }
 
+@utility pr-scrollbar {
+    padding-right: var(--scrollbar-size);
+}
+
 /* Legacy browsers with `::-webkit-scrollbar-*` support */
 @supports selector(::-webkit-scrollbar) {
     .modern-layout {
         & ::-webkit-scrollbar {
-            width: calc(var(--spacing) * 2);
-            height: calc(var(--spacing) * 2);
+            width: var(--scrollbar-size);
+            height: var(--scrollbar-size);
         }
 
         & ::-webkit-scrollbar-thumb {
             border-radius: calc(infinity * 1px);
-            background-color: var(--color-surface-high);
+            background-color: var(--color-surface-translucent-low);
 
             &:hover {
-                background-color: var(--color-zinc-500);
+                background-color: var(--color-surface-translucent-mid);
             }
         }
 
