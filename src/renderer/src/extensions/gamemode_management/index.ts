@@ -47,13 +47,14 @@ import {
   setGamePath,
   setGameSearchPaths,
 } from "./actions/settings";
-import type GameModeManager from "./GameModeManager";
+import { GameModeManager } from "./GameModeManager";
 import { type IGameStub } from "./GameModeManager";
 import { discoveryReducer } from "./reducers/discovery";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings/settings";
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from "./selectors";
+import { synthesizePersistedTierZeroGames } from "./tiered/tierZero";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";
@@ -930,11 +931,9 @@ function init(context: IExtensionContext): boolean {
     const store: Redux.Store<IState> = context.api.store;
     const events = context.api.events;
 
-    const GameModeManagerImpl: typeof GameModeManager = require("./GameModeManager").default;
-
     context.api.ext["awaitProfileSwitch"] = () => awaitProfileSwitch(context.api);
 
-    const gameModeManager = new GameModeManagerImpl(
+    const gameModeManager = new GameModeManager(
       context.api,
       $.extensionGames,
       $.extensionStubs,
@@ -947,6 +946,15 @@ function init(context: IExtensionContext): boolean {
     // the extension API's GameStoreHelper is a dumb adapter; hand it the
     // manager's store list once the manager exists
     GameStoreHelperInstance.attach(() => gameModeManager.gameStores);
+    // synthesize the persisted Tier 0 games before the store attaches so
+    // getGame consumers never see a window without them. Deliberately not
+    // flag-gated: the flag only gates the management flows, the games
+    // themselves must reappear on every startup.
+    synthesizePersistedTierZeroGames(
+      store.getState().persistent.gameMode.tier0,
+      gameModeManager.games,
+      (games) => gameModeManager.addGames(games),
+    );
     $.gameModeManager.attachToStore(store);
     // kick the first store scan eagerly; store snapshots are then populated
     // independently of quick discovery (which triggers its own reload)

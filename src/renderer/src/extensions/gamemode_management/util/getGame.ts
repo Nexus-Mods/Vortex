@@ -6,7 +6,7 @@ import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
 import { log } from "../../../util/log";
 import type { IGameStub } from "../GameModeManager";
-import type GameModeManager from "../GameModeManager";
+import type { GameModeManager } from "../GameModeManager";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import { resolveGameVersion } from "./getGameVersion";
 import { getModTypeExtensions } from "./modTypeExtensions";

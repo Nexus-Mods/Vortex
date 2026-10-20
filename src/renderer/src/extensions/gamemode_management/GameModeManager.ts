@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import type { VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type * as Redux from "redux";
@@ -56,7 +57,7 @@ export interface IGameStub {
  *
  * @class GameModeManager
  */
-class GameModeManager {
+export class GameModeManager {
   private mApi: IExtensionApi;
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
@@ -99,14 +100,58 @@ class GameModeManager {
   public attachToStore(store: Redux.Store<IState>) {
     this.mStore = store;
 
-    const gamesStored: IGameStored[] = this.mKnownGames
-      .map(this.storeGame)
-      .filter(this.isValidGame);
-    store.dispatch(setKnownGames(gamesStored));
+    this.dispatchKnownGames();
     // we used to activate the game mode right here but there is another
     // call to do this in the "once" CB of gamemode_management so it's
     // redundant and the other call handles errors properly while this one
     // didn't
+  }
+
+  private dispatchKnownGames(): void {
+    if (this.mStore === null) {
+      return;
+    }
+    const gamesStored: IGameStored[] = this.mKnownGames
+      .map(this.storeGame)
+      .filter(this.isValidGame);
+    this.mStore.dispatch(setKnownGames(gamesStored));
+  }
+
+  /**
+   * register games with the manager at runtime, making them visible to every
+   * getGame consumer and the next discovery run
+   */
+  public addGames(games: IGame[]): void {
+    const added = games.filter((game) => !this.mKnownGames.some((iter) => iter.id === game.id));
+
+    if (added.length === 0) {
+      return;
+    }
+
+    // mKnownGames aliases $.extensionGames (see constructor): this one push
+    // registers the games for both getGame consumers and the manager
+    this.mKnownGames.push(...added);
+    this.dispatchKnownGames();
+  }
+
+  /**
+   * drop games from the manager and the game registry; unknown ids are ignored
+   */
+  public removeGames(ids: VortexGameId[]): void {
+    const remove = new Set<string>(ids);
+    if (!this.mKnownGames.some((game) => remove.has(game.id))) {
+      return;
+    }
+
+    // in place: mKnownGames aliases $.extensionGames, reassigning would
+    // desync the registry all getGame consumers read
+    for (let idx = this.mKnownGames.length - 1; idx >= 0; --idx) {
+      if (remove.has(this.mKnownGames[idx].id)) {
+        this.mKnownGames.splice(idx, 1);
+      }
+    }
+
+    this.dispatchKnownGames();
   }
 
   /**
@@ -635,5 +680,3 @@ class GameModeManager {
     );
   };
 }
-
-export default GameModeManager;

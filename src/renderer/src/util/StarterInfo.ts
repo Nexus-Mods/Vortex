@@ -175,8 +175,34 @@ class StarterInfo implements IStarterInfo {
       }
     };
 
+    // a game without an executable (Tier 0: launched through its store) has
+    // nothing to spawn directly, exePath is then just the game directory;
+    // degrade to the error dialog instead of attempting to run that
+    const hasExe = (() => {
+      try {
+        return game.executable(path.dirname(info.exePath)) !== "";
+      } catch {
+        // dynamic executable() needing discovery info we don't have: assume
+        // the direct fallback is viable, matching pre-Tier-0 behavior
+        return true;
+      }
+    })();
+    const runDirectlyFallback = async () => {
+      if (hasExe) {
+        await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+      }
+    };
+
     if (launcherResult === undefined) {
-      await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+      if (hasExe) {
+        await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+      } else {
+        onShowError(
+          "Failed to start game",
+          "Game was not discovered through a supported store and has no executable to run",
+          false,
+        );
+      }
       return;
     }
 
@@ -212,7 +238,7 @@ class StarterInfo implements IStarterInfo {
         const errorMsg = [err.message, err.storeName, err.existingGames].join(" - ");
         log("error", errorMsg);
         onShowError("Failed to start game through launcher", err, !game.contributed);
-        await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+        await runDirectlyFallback();
         return;
       }
 
@@ -222,12 +248,12 @@ class StarterInfo implements IStarterInfo {
           `Game store "${err.storeName}" not supported, is the extension disabled?`,
           false,
         );
-        await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+        await runDirectlyFallback();
         return;
       }
 
       onShowError("Failed to start game through launcher", err, true);
-      await StarterInfo.runDirectly(info, api, onShowError, onSpawned);
+      await runDirectlyFallback();
     }
   }
 
