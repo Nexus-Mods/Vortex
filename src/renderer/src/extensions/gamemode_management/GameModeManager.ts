@@ -17,9 +17,8 @@ import type { IState } from "@/types/IState";
 import type { ITool } from "@/types/ITool";
 import { GoGLauncher } from "@/util/GOGLauncher";
 import { OriginLauncher } from "@/util/OriginStore";
-import { getSafe } from "@/util/storeHelper";
 import { UPlayLauncher } from "@/util/UplayStore";
-import { batchDispatch, truthy } from "@/util/util";
+import { batchDispatch } from "@/util/util";
 import { XboxLauncher } from "@/util/xbox/XboxLauncher";
 
 import { setNextProfile } from "../../actions";
@@ -202,21 +201,7 @@ export class GameModeManager {
         if (currentProfile !== undefined && profileId === currentProfile.id) {
           log("info", "changed game mode", { oldMode, newMode });
           this.mOnGameModeActivated(newMode);
-          const { gameId } = currentProfile;
-          if (
-            getSafe(state, ["settings", "interface", "primaryTool", gameId], undefined) ===
-            undefined
-          ) {
-            const discovery = discoveryByGame(state, gameId);
-            if (truthy(discovery.tools)) {
-              const defaultPrimary = Object.keys(discovery.tools).find(
-                (toolId) => discovery.tools[toolId].defaultPrimary === true,
-              );
-              if (defaultPrimary !== undefined) {
-                this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
-              }
-            }
-          }
+          this.selectDefaultPrimaryTool(currentProfile.gameId);
         } else {
           log("info", "game prepared but it's no longer active");
         }
@@ -645,17 +630,35 @@ export class GameModeManager {
   }
 
   private onDiscoveredTool = (gameId: string, result: IDiscoveredTool) => {
-    const existing = getSafe(
-      this.mStore.getState(),
-      ["settings", "gameMode", "discovered", gameId, "tools", result.id],
-      undefined,
-    );
+    const existing =
+      this.mStore.getState().settings.gameMode.discovered[gameId]?.tools?.[result.id];
     // don't overwrite customised tools
     if (existing === undefined || !existing.custom) {
       delete result.executable;
       this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result, false));
     }
+    // tools are also discovered after deployment, e.g. a script extender a collection just installed
+    if (result.defaultPrimary && activeProfile(this.mStore.getState())?.gameId === gameId) {
+      this.selectDefaultPrimaryTool(gameId);
+    }
   };
+
+  /**
+   * point Play at the game's default tool unless the user already picked one or cleared it (null)
+   */
+  private selectDefaultPrimaryTool(gameId: string) {
+    const state = this.mStore.getState();
+    if (state.settings.interface.primaryTool?.[gameId] !== undefined) {
+      return;
+    }
+    const tools = discoveryByGame(state, gameId)?.tools ?? {};
+    const defaultPrimary = Object.keys(tools).find(
+      (toolId) => tools[toolId].defaultPrimary === true && !tools[toolId].hidden,
+    );
+    if (defaultPrimary !== undefined) {
+      this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
+    }
+  }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
     if (result === undefined) {
@@ -671,7 +674,7 @@ export class GameModeManager {
   };
 
   private onError = (title: string, message: string) => {
-    this.mStore.dispatch(
+    void this.mStore.dispatch?.(
       addNotification({
         type: "error",
         message,

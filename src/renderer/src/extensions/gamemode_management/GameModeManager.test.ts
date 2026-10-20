@@ -1,10 +1,14 @@
 import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
 import { describe, it, expect, vi } from "vitest";
 
+import type { IDiscoveredTool } from "@/types/IDiscoveredTool";
 import type { IGame } from "@/types/IGame";
 
+import { makeApiHarness, makeProfile } from "../../test-utils/builders";
+import interfaceSettingsReducer from "../starter_dashlet/reducers";
 import { setKnownGames } from "./actions/session";
 import { GameModeManager } from "./GameModeManager";
+import { settingsReducer as gameModeSettingsReducer } from "./reducers/settings/settings";
 import { makeTierZeroGame } from "./tiered/tierZero";
 import type { IGameStored } from "./types/IGameStored";
 
@@ -124,5 +128,88 @@ describe("GameModeManager removeGames", () => {
 
     expect(dispatched).toHaveLength(1);
     expect(manager.games).toHaveLength(1);
+  });
+});
+
+describe("GameModeManager default primary tool", () => {
+  const gameId = "skyrimse";
+
+  function makeTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
+    return {
+      id: "skse",
+      name: "SKSE",
+      executable: () => "skse64_loader.exe",
+      requiredFiles: [],
+      path: "C:/games/skyrimse/skse64_loader.exe",
+      hidden: false,
+      custom: false,
+      defaultPrimary: true,
+      ...overrides,
+    };
+  }
+
+  function setup(opts: { activeGameId?: string; tools?: Record<string, IDiscoveredTool> } = {}) {
+    const harness = makeApiHarness(
+      {
+        profiles: { "profile-1": makeProfile({ gameId: opts.activeGameId ?? gameId }) },
+        activeProfileId: "profile-1",
+        discovered: { [gameId]: { path: "C:/games/skyrimse" } },
+      },
+      [
+        { path: ["settings", "gameMode"], reducer: gameModeSettingsReducer },
+        { path: ["settings", "interface"], reducer: interfaceSettingsReducer },
+      ],
+    );
+    harness.setState((draft) => {
+      draft.settings.gameMode.discovered[gameId].tools = opts.tools ?? {};
+    });
+    const manager = new GameModeManager({} as any, [], [], () => undefined);
+    manager.attachToStore(harness.api.store as any);
+    const discover = (tool: IDiscoveredTool) => manager["onDiscoveredTool"](gameId, tool);
+    const primaryTool = () => harness.getState().settings.interface.primaryTool?.[gameId];
+    return { harness, discover, primaryTool };
+  }
+
+  it("selects a default tool discovered after the game was activated", () => {
+    const { discover, primaryTool } = setup();
+
+    discover(makeTool());
+
+    expect(primaryTool()).toBe("skse");
+  });
+
+  it.each([null, "other-tool"])("keeps the user's choice %s", (choice) => {
+    const { harness, discover, primaryTool } = setup();
+    harness.setState((draft) => {
+      draft.settings.interface.primaryTool = { [gameId]: choice };
+    });
+
+    discover(makeTool());
+
+    expect(primaryTool()).toBe(choice);
+  });
+
+  it("ignores tools discovered for a game that isn't active", () => {
+    const { discover, primaryTool } = setup({ activeGameId: "fallout4" });
+
+    discover(makeTool());
+
+    expect(primaryTool()).toBeUndefined();
+  });
+
+  it("doesn't select a default tool the user hid", () => {
+    const { discover, primaryTool } = setup({ tools: { skse: makeTool({ hidden: true }) } });
+
+    discover(makeTool());
+
+    expect(primaryTool()).toBeUndefined();
+  });
+
+  it("ignores tools that aren't a default", () => {
+    const { discover, primaryTool } = setup();
+
+    discover(makeTool({ defaultPrimary: false }));
+
+    expect(primaryTool()).toBeUndefined();
   });
 });
