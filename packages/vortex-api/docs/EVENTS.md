@@ -22,12 +22,15 @@ Register event handlers inside `context.once()` to ensure all extensions are loa
 
 ## Game mode & profile
 
-| Event                 | Args                  | Description                            |
-| --------------------- | --------------------- | -------------------------------------- |
-| `gamemode-activated`  | `(gameId: string)`    | User switched to a different game mode |
-| `activate-game`       | `(gameId: string)`    | Request to activate a game             |
-| `profile-did-change`  | `(profileId: string)` | Profile has been switched              |
-| `profile-will-change` | -                     | About to switch profiles               |
+| Event                  | Args                               | Description                                              |
+| ---------------------- | ---------------------------------- | -------------------------------------------------------- |
+| `gamemode-activated`   | `(gameId: string)`                 | User switched to a different game mode                   |
+| `activate-game`        | `(gameId: string)`                 | Request to activate a game                               |
+| `game-version-changed` | `(gameId, oldVersion, newVersion)` | Active game's installed version changed since last check |
+| `profile-did-change`   | `(profileId: string)`              | Profile has been switched                                |
+| `profile-will-change`  | -                                  | About to switch profiles                                 |
+
+`game-version-changed` is emitted by the game version check, which runs when a game is activated and after a mod is installed. It fires once per change, in either direction, and not on the first check after a game is discovered, since there is no earlier version to compare against.
 
 ## Game discovery
 
