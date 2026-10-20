@@ -29,7 +29,10 @@ export function findEpicDataPath(): string | undefined {
   let lastError: unknown;
   for (const key of LAUNCHER_KEYS) {
     try {
-      return winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "AppDataPath").value as string;
+      const { value } = winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "AppDataPath");
+      if (typeof value === "string") {
+        return value;
+      }
     } catch (err) {
       lastError = err;
     }
