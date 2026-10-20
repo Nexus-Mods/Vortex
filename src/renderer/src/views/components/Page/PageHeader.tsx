@@ -19,7 +19,8 @@ export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
  * Full-bleed header for a non-scrolling `Page`. The bar itself spans the full
  * width (so its background/shadow reach the viewport edges) and stays pinned
  * above the `PageScroll` sibling, while its content is centred and capped at
- * `max-w-8xl` so it lines up with the scrolled content. It trades its hairline
+ * `max-w-8xl` so it lines up with the scrolled content: it leaves
+ * `pr-scrollbar` on the right for the gutter `PageScroll` always keeps. It trades its hairline
  * for a shadow once that sibling is scrolled — unless `isFullWidth`, where
  * content reaches the bar itself, so the hairline stays and the shadow is
  * skipped.
@@ -48,7 +49,7 @@ export const PageHeader = ({
 
   return (
     <div
-      className={joinClasses(["relative z-10 w-full py-3 pb-3", className], {
+      className={joinClasses(["relative z-10 w-full py-3 pr-scrollbar pb-3", className], {
         "border-b border-stroke-weak": !scrolled || isFullWidth,
         "shadow-md": scrolled && !isFullWidth,
       })}
