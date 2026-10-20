@@ -4,6 +4,77 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0-beta.1] - 2026-10-20
+
+_First beta of the 2.10 release._
+
+### Added
+
+- Toggle auto-apply on and off from the Mods toolbar ([#24576](https://github.com/Nexus-Mods/Vortex/pull/24576))
+- `game-version-changed` event emitted when the game version check sees an update ([#24566](https://github.com/Nexus-Mods/Vortex/pull/24566))
+- Store labels on detected games before their extension is installed ([#24564](https://github.com/Nexus-Mods/Vortex/pull/24564))
+- Group headings that stick under the table header in the new Mods table ([#24554](https://github.com/Nexus-Mods/Vortex/pull/24554))
+- Mod size column in the new Mods table ([#24537](https://github.com/Nexus-Mods/Vortex/pull/24537))
+- Feedback button on the new Mods table ([#24535](https://github.com/Nexus-Mods/Vortex/pull/24535))
+- New Mods table: right-click menus ([#24527](https://github.com/Nexus-Mods/Vortex/pull/24527))
+- New Mods table: hover cards for mods and collections ([#24511](https://github.com/Nexus-Mods/Vortex/pull/24511))
+- New Mods table: views ([#24499](https://github.com/Nexus-Mods/Vortex/pull/24499))
+- New Mods table: install and uninstall mods ([#24497](https://github.com/Nexus-Mods/Vortex/pull/24497))
+- Toolbar toggle between the classic and beta Mods tables ([#24496](https://github.com/Nexus-Mods/Vortex/pull/24496))
+- Installed games shown in the Games page's Games detected section ([#24491](https://github.com/Nexus-Mods/Vortex/pull/24491))
+- New Mods table: Version column ([#24469](https://github.com/Nexus-Mods/Vortex/pull/24469))
+- New Mods table: search the table's rows ([#24466](https://github.com/Nexus-Mods/Vortex/pull/24466))
+- New Mods table: row selection and a bar for the selected mods ([#24464](https://github.com/Nexus-Mods/Vortex/pull/24464))
+- New Mods table: a menu of each mod's actions with pinning ([#24457](https://github.com/Nexus-Mods/Vortex/pull/24457))
+- New Mods table: grouping by any column from the display options ([#24445](https://github.com/Nexus-Mods/Vortex/pull/24445))
+- Warning before updating a mod that is part of an installed collection ([#24436](https://github.com/Nexus-Mods/Vortex/pull/24436))
+- New Mods table: pinned Status column and row selection ([#24434](https://github.com/Nexus-Mods/Vortex/pull/24434))
+- FBLO: tabs, collections and import/export for named load orders ([#24432](https://github.com/Nexus-Mods/Vortex/pull/24432))
+- New Mods table: choose the table's columns ([#24430](https://github.com/Nexus-Mods/Vortex/pull/24430))
+- New Mods table: sort by column ([#24421](https://github.com/Nexus-Mods/Vortex/pull/24421))
+- New Mods table: views, author groups, and enabling and disabling mods ([#24420](https://github.com/Nexus-Mods/Vortex/pull/24420))
+- New Mods table: a toolbar row in the sticky head ([#24419](https://github.com/Nexus-Mods/Vortex/pull/24419))
+- New Mods table: whole-group tints, and `Image` avatars and fallbacks ([#24418](https://github.com/Nexus-Mods/Vortex/pull/24418))
+- New Mods table: rows virtualised against the page scroller ([#24417](https://github.com/Nexus-Mods/Vortex/pull/24417))
+
+### Changed
+
+- Small shadow on group headers in the new Mods table ([#24581](https://github.com/Nexus-Mods/Vortex/pull/24581))
+- Faster grouping in the new Mods table ([#24575](https://github.com/Nexus-Mods/Vortex/pull/24575))
+- Collection rows hidden in the new Mods table, with their actions moved to the group heading ([#24548](https://github.com/Nexus-Mods/Vortex/pull/24548))
+- Medium weight for menu, buttons and page titles, and the page header title centred ([#24543](https://github.com/Nexus-Mods/Vortex/pull/24543))
+- Retry scan waits for game detection and shows when it fails ([#24534](https://github.com/Nexus-Mods/Vortex/pull/24534))
+- Experiment flask icon for the beta Mods table toggle ([#24533](https://github.com/Nexus-Mods/Vortex/pull/24533))
+- The whole Mods page is now a drop target for files ([#24515](https://github.com/Nexus-Mods/Vortex/pull/24515))
+- External changes dialog keeps mod files by default ([#24498](https://github.com/Nexus-Mods/Vortex/pull/24498))
+- Dialogs raised through `showDialog` drawn with the new modal component where possible ([#24472](https://github.com/Nexus-Mods/Vortex/pull/24472))
+- Updated the wording of the collection mod update warning ([#24467](https://github.com/Nexus-Mods/Vortex/pull/24467))
+- `IGameStore` APIs now return native `Promise`s instead of Bluebird ([#24429](https://github.com/Nexus-Mods/Vortex/pull/24429))
+- "Apply" rather than "Deploy" in the modern layout's settings, and the toolbar Deploy button removed ([#24351](https://github.com/Nexus-Mods/Vortex/pull/24351))
+
+### Fixed
+
+- Undeploy and purge attempts contending over the deployment manifest; they are now queued ([#24568](https://github.com/Nexus-Mods/Vortex/pull/24568))
+- Locally discovered games missing from Games detected when the endpoint didn't return them ([#24565](https://github.com/Nexus-Mods/Vortex/pull/24565))
+- "Mods can't be deployed" notification shown before a game's setup had returned ([#24563](https://github.com/Nexus-Mods/Vortex/pull/24563))
+- Double confirmation for breaking dependencies on mod update ([#24559](https://github.com/Nexus-Mods/Vortex/pull/24559))
+- Move deployment placeholders not found for mods deployed into their own folder ([#24551](https://github.com/Nexus-Mods/Vortex/pull/24551))
+- Purge not removing deployed files at their real path, or recording what it left behind ([#24542](https://github.com/Nexus-Mods/Vortex/pull/24542))
+- Detected games hidden when the game's extension isn't installed ([#24536](https://github.com/Nexus-Mods/Vortex/pull/24536))
+- Profile switch not cancelled when its deployment failed ([#24529](https://github.com/Nexus-Mods/Vortex/pull/24529))
+- Deployment fixes: a single mod's redeploy ignoring its rules, game file backups overwritten by a second mod type, and dot-prefixed junk not skipped ([#24528](https://github.com/Nexus-Mods/Vortex/pull/24528))
+- `mod-content-changed` and `check-file-override-redundancies` sent with the profile id instead of the game id ([#24498](https://github.com/Nexus-Mods/Vortex/pull/24498))
+- Deployment completing before its folder cleanup finished ([#24476](https://github.com/Nexus-Mods/Vortex/pull/24476))
+- Deployment not marked necessary when a mod's load order rules changed ([#24475](https://github.com/Nexus-Mods/Vortex/pull/24475))
+- Access token not updated after a refresh ([#24443](https://github.com/Nexus-Mods/Vortex/pull/24443))
+- UI lag while downloading and installing a large collection ([#24441](https://github.com/Nexus-Mods/Vortex/pull/24441))
+- Link Collection missing from the profile card, so a profile couldn't be linked to the collection it updates ([#24438](https://github.com/Nexus-Mods/Vortex/pull/24438))
+- Witcher 3 settings fragments excluded from deployment ([#24437](https://github.com/Nexus-Mods/Vortex/pull/24437))
+- Uplay double-join bug, and the Origin store not working ([#24429](https://github.com/Nexus-Mods/Vortex/pull/24429))
+- `nxm://` link handling toggle disabled on Linux ([#24387](https://github.com/Nexus-Mods/Vortex/pull/24387))
+- Backslash separators from installers not accepted on Linux ([#24378](https://github.com/Nexus-Mods/Vortex/pull/24378))
+- Volume paths not resolved on Linux for staging folder transfers ([#24375](https://github.com/Nexus-Mods/Vortex/pull/24375))
+
 ## [2.9.0] - 2026-10-19
 
 ### Fixed
@@ -2536,6 +2607,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.10.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.1
 [2.9.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0
 [2.9.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.4
 [2.9.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.3
