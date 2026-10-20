@@ -1083,18 +1083,18 @@ function init(context: IExtensionContext): boolean {
         .catch((err) => callback(unknownToError(err)));
     });
 
-    const changeGameMode = (
+    const prepareGameMode = (
       oldGameId: string,
       newGameId: string,
       currentProfileId: string,
-    ): PromiseBB<void> => {
+    ): Promise<void> => {
       if (newGameId === undefined) {
-        return PromiseBB.resolve();
+        return Promise.resolve();
       }
       log("debug", "change game mode", { oldGameId, newGameId });
 
       if (getGame(newGameId) === undefined) {
-        return PromiseBB.reject(new Error(`Attempt to switch to unknown game "${newGameId}"`));
+        return Promise.reject(new Error(`Attempt to switch to unknown game "${newGameId}"`));
       }
 
       const id = context.api.sendNotification({
@@ -1106,14 +1106,13 @@ function init(context: IExtensionContext): boolean {
       // Important: This happens after the profile has already been activated
       //   and while the ui is usable again so at this point the user can already
       //   switch the game/profile again. The code below has to be able to deal with that
-      return $.gameModeManager
-        .setupGameMode(newGameId)
+      return Promise.resolve($.gameModeManager.setupGameMode(newGameId))
         .then(() => {
           // only calling to check if it works, some game extensions might discover
           // a setup-error when trying to resolve the mod path
           const discovery = discoveryByGame(store.getState(), newGameId);
           if (discovery === undefined || discovery.path === undefined) {
-            return PromiseBB.reject(new ProcessCanceled("The game is no longer discovered"));
+            return Promise.reject(new ProcessCanceled("The game is no longer discovered"));
           }
           getGame(newGameId).getModPaths(discovery.path);
         })
@@ -1139,7 +1138,8 @@ function init(context: IExtensionContext): boolean {
               id: "failed-to-set-gamemode",
             });
           } else {
-            if (err.code === "ENOENT") {
+            const error = unknownToError(err);
+            if (getErrorCode(error) === "ENOENT") {
               context.api.sendNotification({
                 message: "Failed to set game mode",
                 type: "error",
@@ -1161,7 +1161,7 @@ function init(context: IExtensionContext): boolean {
                               "to enable modding capabilities" +
                               "[*]You may have to run the game at least once for certain folders to be created/unlocked" +
                               "[*]You might have installed an unrecognized game variant. Please inform the game extension developer[/list]",
-                            { replace: { errPath: err.path } },
+                            { replace: { errPath: (error as NodeJS.ErrnoException).path } },
                           ),
                         },
                         [{ label: "Close" }],
@@ -1171,8 +1171,8 @@ function init(context: IExtensionContext): boolean {
                 ],
               });
             } else {
-              err["attachLogOnReport"] = true;
-              showError(store.dispatch, "Failed to set game mode", err, {
+              error["attachLogOnReport"] = true;
+              showError(store.dispatch, "Failed to set game mode", error, {
                 message: newGameId,
                 id: "failed-to-set-gamemode",
               });
@@ -1184,6 +1184,23 @@ function init(context: IExtensionContext): boolean {
         .finally(() => {
           context.api.dismissNotification(id);
         });
+    };
+
+    // Switching profiles is itself a settings change, which queues the "settings-changed" checks.
+    // The deployment check fails until the game's setup has created the mod folders, so hold those
+    // checks until setup is done. They run once afterwards.
+    const changeGameMode = (
+      oldGameId: string,
+      newGameId: string,
+      currentProfileId: string,
+    ): Promise<void> => {
+      // async so a synchronous throw becomes a rejection, withSuppressedTests only releases its hold
+      // once the promise settles
+      const prepare = async () => prepareGameMode(oldGameId, newGameId, currentProfileId);
+      const { withSuppressedTests } = context.api.ext;
+      return withSuppressedTests !== undefined
+        ? withSuppressedTests(["settings-changed"], prepare)
+        : prepare();
     };
 
     context.api.onStateChange(
@@ -1201,7 +1218,7 @@ function init(context: IExtensionContext): boolean {
         const prom =
           oldGameId !== newGameId
             ? changeGameMode(oldGameId, newGameId, current)
-            : PromiseBB.resolve();
+            : Promise.resolve();
 
         prom.then(() => {
           const game = {

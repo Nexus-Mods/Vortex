@@ -193,6 +193,11 @@ function runChecks(api: IExtensionApi, event: string, delay?: number) {
   }
 
   triggerDelays[event] = setTimeout(() => {
+    // a suppression may have started after this run was queued
+    if (skipWhileSuppressed(event, () => runChecks(api, event, delay))) {
+      return;
+    }
+
     const eventChecks = getSafe(checks, [event], []);
     log("debug", "running checks", { event, count: eventChecks.length });
     PromiseBB.map(eventChecks, (par: ICheckEntry) => runCheck(api, par)).then(() => {
