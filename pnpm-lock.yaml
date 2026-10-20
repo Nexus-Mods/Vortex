@@ -2946,6 +2946,9 @@ importers:
       '@types/semver':
         specifier: 'catalog:'
         version: 7.7.1
+      '@vortex/shared':
+        specifier: workspace:*
+        version: link:../../src/shared
       bluebird:
         specifier: 'catalog:'
         version: 3.7.2
