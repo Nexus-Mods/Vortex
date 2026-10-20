@@ -27,10 +27,12 @@ export interface IExternalChangesHarness extends IGameHarness {
   stageFile: (modFolder: string, relPath: string) => Promise<void>;
   // the mod's subfolder, for games that don't merge mods (mergeMods off)
   deployFile: (relPath: string, target?: string) => Promise<void>;
-  // runs against the default mod type's last deployment (empty unless given)
+  // runs against one mod type's last deployment (empty unless given), the default mod type
+  // unless `modTypeId` is given; that mod type deploys to `gameDir` too
   dealWithExternalChanges: (
     recentChanges: Set<string> | undefined,
     lastDeployment?: IDeployedFile[],
+    modTypeId?: string,
   ) => Promise<IDeployedFile[][]>;
 }
 
@@ -86,14 +88,14 @@ async function makeExternalChangesHarness(
     dialogs,
     stageFile: (modFolder, relPath) => writeInto(path.join(stagingDir, modFolder), relPath),
     deployFile: (relPath, target) => writeInto(deployedFilePath(gameDir, target, ""), relPath),
-    dealWithExternalChanges: (recentChanges, lastDeployment = []) =>
+    dealWithExternalChanges: (recentChanges, lastDeployment = [], modTypeId = "") =>
       dealWithExternalChanges(
         harness.api,
         activator,
         VortexProfileId(harness.profileId),
         VortexStagingFolder(stagingDir),
-        { "": gameDir },
-        { "": lastDeployment },
+        { [modTypeId]: gameDir },
+        { [modTypeId]: lastDeployment },
         recentChanges,
       ),
   };
