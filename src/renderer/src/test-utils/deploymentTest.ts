@@ -2,7 +2,6 @@ import * as nodeFs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import type { IExtensionContextEx } from "../extensions/hardlink_activator";
 import hardlinkInit from "../extensions/hardlink_activator";
 import type {
   IDeployedFile,
@@ -13,7 +12,13 @@ import moveInit from "../extensions/move_activator";
 import symlinkInit from "../extensions/symlink_activator";
 import type { IGame } from "../types/IGame";
 import type { Normalize } from "../util/getNormalizeFunc";
-import { makeApiHarness, registerHarnessGame, type IHarnessReducerBinding } from "./builders";
+import {
+  makeApiHarness,
+  makeBlacklistGame,
+  makeRealDeploymentMethod,
+  registerHarnessGame,
+  type IHarnessReducerBinding,
+} from "./builders";
 import { test as harnessTest } from "./harnessTest";
 import type { IApiHarness, IDriverHarnessState } from "./harnessTypes";
 
@@ -101,14 +106,7 @@ export function makeDeploymentHarness(
     seedMod(name, files);
   }
 
-  let method: IDeploymentMethod;
-  const context: Partial<IExtensionContextEx> = {
-    api: base.api,
-    registerDeploymentMethod: (m: IDeploymentMethod) => {
-      method = m;
-    },
-  };
-  METHOD_INIT[options.method ?? "hardlink"](context as IExtensionContextEx);
+  const method = makeRealDeploymentMethod(base.api, METHOD_INIT[options.method ?? "hardlink"]);
 
   let busyAnswer: "cancel" | "retry" = "cancel";
   window.api = {
@@ -124,8 +122,7 @@ export function makeDeploymentHarness(
   };
 
   const normalize: Normalize = options.normalize ?? ((input: string) => input.toUpperCase());
-  // BlacklistSet only reads game.details?.ignoreDeploy
-  const game = { details: {} } as unknown as IGame;
+  const game = makeBlacklistGame();
   const blacklist = new BlacklistSet([], game, normalize);
 
   const deployMod = async (name: string, lastDeployment: IDeployedFile[] = []) => {
