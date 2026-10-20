@@ -75,7 +75,7 @@ import {
 } from "../profile_management/selectors";
 import type { IProfile, IProfileMod } from "../profile_management/types/IProfile";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
-import { setDeploymentNecessary } from "./actions/deployment";
+import { setDeploymentNecessary, setDeploymentPurged } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
 import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
@@ -924,6 +924,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
 
             const failures = reportRecordedFailures(api, game.id);
             api.store.dispatch(setDeploymentNecessary(game.id, failures.length > 0));
+            api.store.dispatch(setDeploymentPurged(game.id, false));
 
             emitModsDeployed(api, {
               gameId,

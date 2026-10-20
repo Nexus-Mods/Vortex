@@ -14,6 +14,8 @@ export const deploymentReducer: IReducerSpec = {
   reducers: {
     [actions.setDeploymentNecessary as any]: (state, payload) =>
       setSafe(state, ["needToDeploy", payload.gameId], payload.required),
+    [actions.setDeploymentPurged as any]: (state, payload) =>
+      setSafe(state, ["purged", payload.gameId], payload.purged),
     [incrementDeploymentCounter as any]: (state, payload) => {
       const current = state.deploymentCounter?.[payload.gameId] || 0;
       return setSafe(state, ["deploymentCounter", payload.gameId], current + 1);
@@ -21,6 +23,7 @@ export const deploymentReducer: IReducerSpec = {
   },
   defaults: {
     needToDeploy: {},
+    purged: {},
     deploymentCounter: {},
   },
 };

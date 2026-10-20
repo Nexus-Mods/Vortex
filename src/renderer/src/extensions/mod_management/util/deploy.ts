@@ -28,6 +28,7 @@ import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import type { IModType } from "../../gamemode_management/types/IModType";
 import { getGame } from "../../gamemode_management/util/getGame";
+import { setDeploymentPurged } from "../actions/deployment";
 import { mergedSourceName } from "../modMerging";
 import { installPath, installPathForGame } from "../selectors";
 import type { IMod } from "../types/IMod";
@@ -341,6 +342,7 @@ async function purgeModsImpl(
         onProgress(85, "Post purge events");
         await activator.postPurge();
         if (purgeSucceeded) {
+          api.store.dispatch(setDeploymentPurged(gameId, true));
           await api.emitAndAwait("did-purge", profile.id);
         }
       }
