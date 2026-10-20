@@ -24,6 +24,22 @@ export function findCommonRootDir(files: readonly string[]): string | undefined 
 }
 
 /**
+ * Converts backslash separators in an instruction's paths to forward slashes.
+ * Installers written for Windows emit backslashes, which other platforms treat
+ * as part of the file name.
+ */
+export function toPosixSeparators(instruction: IInstruction): IInstruction {
+  const result = { ...instruction };
+  if (result.source !== undefined) {
+    result.source = result.source.replace(/\\/g, "/");
+  }
+  if (result.destination !== undefined) {
+    result.destination = result.destination.replace(/\\/g, "/");
+  }
+  return result;
+}
+
+/**
  * Build a `copy` instruction for every non-directory entry. When
  * `stripCommonRoot` is true and the archive wraps everything in a single
  * top-level dir, that dir is stripped from destination paths so the mod stages
