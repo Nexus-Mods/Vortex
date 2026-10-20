@@ -1,4 +1,4 @@
-import type { FileSource, Lockfile } from "./lockfile";
+import { byDestinationPath, type FileSource, type Lockfile } from "./lockfile";
 import type { ResolverInput } from "./resolverInput";
 
 /** The lockfile for a game's mods, sorted by destination. */
@@ -16,9 +16,6 @@ export function resolve(input: ResolverInput): Lockfile {
     }
   }
 
-  // destinations are unique
-  const files = [...fileByDestination.values()].toSorted((lhs, rhs) =>
-    lhs.destinationPath < rhs.destinationPath ? -1 : 1,
-  );
+  const files = [...fileByDestination.values()].toSorted(byDestinationPath);
   return { version: 1, gameId, install, files };
 }

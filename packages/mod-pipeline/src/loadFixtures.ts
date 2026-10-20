@@ -6,7 +6,8 @@ import { ResolverFixtureSchema, type ResolverFixture } from "./resolverFixture";
 
 const FIXTURE_DIR = fileURLToPath(new URL("../fixtures/resolver/", import.meta.url));
 
-function loadFixture(fileName: string): ResolverFixture {
+/** One resolver fixture, by file name. */
+export function loadFixture(fileName: string): ResolverFixture {
   const parsed = ResolverFixtureSchema.safeParse(
     JSON.parse(readFileSync(path.join(FIXTURE_DIR, fileName), "utf8")),
   );

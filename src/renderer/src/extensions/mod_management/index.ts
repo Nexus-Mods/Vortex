@@ -147,7 +147,7 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import { registerResolveLockFile } from "./util/resolveLockFile";
+import { registerLockfileContribution, registerResolveLockFile } from "./util/resolveLockFile";
 import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
@@ -2034,6 +2034,8 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["persistent", "mods"], modsReducer);
   context.registerReducer(["persistent", "deployment"], deploymentReducer);
   context.registerReducer(["persistent", "transactions"], transactionsReducer);
+
+  context["registerLockfileContribution"] = registerLockfileContribution;
 
   const modsActivity = new ReduxProp(
     context.api,

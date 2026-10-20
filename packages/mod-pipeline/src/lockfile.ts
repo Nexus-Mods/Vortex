@@ -34,6 +34,16 @@ export interface StagedFile {
 /** A deployed file: its origin, its content's hash and its absolute destination. */
 export type FileSource = FileOrigin & StagedFile;
 
+/** A file Vortex or a game extension writes during a deployment. */
+export type GeneratedFileSource = Extract<
+  FileSource,
+  { source: typeof FileSourceKind.VortexGenerated }
+>;
+
+/** Orders lockfile files by destination; destinations are unique. */
+export const byDestinationPath = (lhs: FileSource, rhs: FileSource): number =>
+  lhs.destinationPath < rhs.destinationPath ? -1 : 1;
+
 /** The resolved files of one game, the Plan step's input. */
 export interface Lockfile {
   version: 1;
