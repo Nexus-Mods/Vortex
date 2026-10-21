@@ -9,16 +9,12 @@ const api = vi.hoisted(() => ({
   events: { emit: vi.fn() },
   getState: vi.fn(() => ({ persistent: { mods: {} } })),
 }));
-const confirm = vi.hoisted(() => vi.fn());
+// the warning confirms the update unless a test says the user cancelled it
+const confirm = vi.hoisted(() => vi.fn(() => Promise.resolve(true)));
 
 vi.mock("@/contexts", () => ({ useMainContext: () => ({ api }) }));
 vi.mock("../../util/collection_update_warning/collectionUpdateWarning", () => ({
   confirmCollectionModUpdate: confirm,
-}));
-// "a" is in a collection.
-vi.mock("../../util/collection_membership/collectionMembership", () => ({
-  collectionNamesByMod: (_mods: unknown, ids: string[]) =>
-    ids.includes("a") ? { a: ["Pack"] } : {},
 }));
 vi.mock("@/util/selectors", () => ({ activeGameId: () => "stardewvalley" }));
 // Nexus Mods identifies each file, so an installed mod from it needs its file id.
@@ -61,16 +57,15 @@ describe("ModUpdate", () => {
     await userEvent.click(screen.getByRole("button", { name: "Update to {{version}}" }));
 
     expect(api.events.emit).toHaveBeenCalledWith("mod-update", "stardewvalley", 12, 101, "nexus");
-    expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("asks first when a collection has the mod, as that pins its version", async () => {
-    confirm.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-    render(<ModUpdate mod={mod({ newestVersion: "1.1", newestFileId: 101 }, "installed", "a")} />);
+  it("updates only once the collection warning is confirmed", async () => {
+    confirm.mockResolvedValueOnce(false);
+    render(<ModUpdate mod={mod({ newestVersion: "1.1", newestFileId: 101 })} />);
     const button = screen.getByRole("button", { name: "Update to {{version}}" });
 
     await userEvent.click(button);
-    expect(confirm).toHaveBeenCalledWith(["Pack"]);
+    expect(confirm).toHaveBeenCalledWith(api, "stardewvalley", "b");
     expect(api.events.emit).not.toHaveBeenCalled();
 
     await userEvent.click(button);

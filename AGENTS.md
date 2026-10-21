@@ -55,6 +55,20 @@ adding temporary logging, which tends to get committed by accident.
 
 **Linear**: don't create or transition issues unless asked.
 
+## Game IDs
+
+`GameId` is the numeric Nexus Mods id (e.g. 1303), `GameDomain` the nexus
+domain slug (e.g. `stardewvalley`), and `VortexGameId` the id Vortex gives a
+game internally (the extension's game id, or the domain for extension-less
+games); all three are branded types in `src/shared/src/types/ids.ts`. They are
+different concepts even where their values coincide, so don't interchange
+them.
+
+- Don't accept or produce raw `string`/`number` where a branded type applies. Brand at the boundary from data that genuinely is that kindand keep the brand flowing.
+- Don't cast across brands (`GameDomain(someVortexGameId)`). A branded type says where the value came from; guessing the origin defeats it.
+- Comparisons between different brands are a type error **on purpose**. When you hit one, it means "find the real join", not "cast it", the type checker is pointing at data you don't actually have.
+- Don't write ad-hoc lookups over the games list for an id you already have a helper for; if a join is missing, add it next to the existing ones.
+
 ## Which doc to read
 
 Read the doc for the area you're touching rather than the whole tree.

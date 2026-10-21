@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { useMainContext } from "@/contexts";
+import { useFlag } from "@/contexts/FlagsContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -13,6 +14,7 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 import { activeGameId } from "@/util/selectors";
 
 import { setSortDetected } from "../../actions/settings";
+import { catalogExtensionGameIds } from "../../selectors";
 import type { IGameStored } from "../../types/IGameStored";
 import { listableDetectedIds } from "../../util/detected_games/listableDetectedIds";
 import { GamesGrid } from "../GamesGrid";
@@ -22,6 +24,8 @@ import { Section } from "../section/Section";
 interface IDetectedGamesProps {
   games: IGameStored[];
   count: string;
+  /** The store each game was detected on, by internal id, for its tile to name. */
+  detectedStores?: Record<string, string>;
   /** Internal ids of the caller's favourite games; they lead every sort. */
   favourites?: string[];
   filtering: boolean;
@@ -48,6 +52,7 @@ type ScanFailure = "discovery" | "detection";
  */
 export const DetectedGames = ({
   count,
+  detectedStores,
   favourites,
   filtering,
   games,
@@ -72,6 +77,7 @@ export const DetectedGames = ({
   );
   const detectedGames = useSelector((state: IState) => state.session.gameMode?.detectedGames);
   const knownGames = useSelector((state: IState) => state.session.gameMode?.known);
+  const profiles = useSelector((state: IState) => state.persistent.profiles);
   const detectionStatus = useSelector(
     (state: IState) => state.session.gameMode?.detectedGamesStatus,
   );
@@ -82,11 +88,22 @@ export const DetectedGames = ({
   const [scanFailed, setScanFailed] = useState(false);
   const scanIdRef = useRef(0);
 
+  // Must consult the flag and the extension catalog the same way GamePicker lists
+  // the section, so the scan's "found" set counts exactly what the section shows.
+  const tierZeroAllowed = useFlag("vortex-tier-0-game-support") !== undefined;
+  const extensionGameIds = useSelector(catalogExtensionGameIds);
+
   const scanning = (quickScanning || discoveryRunning || detectionRunning) && !filtering;
   const failed = scanFailed || detectionFailed;
 
   const handleScan = () => {
-    const knownBefore = new Set(listableDetectedIds(detectedGames ?? [], knownGames));
+    const addedGameIds = new Set(Object.values(profiles).map((profile) => profile.gameId));
+    const knownBefore = new Set(
+      listableDetectedIds(detectedGames ?? [], knownGames, discoveredGames, addedGameIds, {
+        allowTierZero: tierZeroAllowed,
+        extensionGameIds,
+      }),
+    );
     const comparable = detectionStatus === "success" || (detectedGames?.length ?? 0) > 0;
     const scanId = ++scanIdRef.current;
 
@@ -309,6 +326,7 @@ export const DetectedGames = ({
             />
           ) : (
             <GamesGrid
+              detectedStores={detectedStores}
               games={shownGames}
               section="detected"
               onRefreshGameInfo={onRefreshGameInfo}

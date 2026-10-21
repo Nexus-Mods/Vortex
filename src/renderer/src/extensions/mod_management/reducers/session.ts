@@ -16,6 +16,8 @@ export interface IModsSessionState {
   deploymentProblems: IDeploymentProblem[];
   /** keyed by gameId: files the last deployment of that game couldn't place */
   deploymentFailures: Record<string, IDeploymentFailure[]>;
+  /** a group the new Mods table is to open and scroll to, until it has */
+  focusedGroupId?: string;
 }
 
 declare module "@/types/IState" {
@@ -29,6 +31,10 @@ declare module "@/types/IState" {
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
+    [actions.focusModsTableGroup as any]: (state, payload) => ({
+      ...state,
+      focusedGroupId: payload,
+    }),
     [actions.setExternalChanges as any]: (state, payload) => setSafe(state, ["changes"], payload),
     [actions.setExternalChangeAction.getType()]: (
       state: IModsSessionState,

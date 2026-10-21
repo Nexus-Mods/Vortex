@@ -61,4 +61,18 @@ describe("game version sources", () => {
       readGameVersions(makeGame(), { path: undefined } as unknown as IDiscoveryResult),
     ).rejects.toThrow("Game is not discovered");
   });
+
+  it("prefers the game's own getInstalledVersion over the stock sources", async () => {
+    // a Tier 0 game: no executable to read, discovery would be rejected
+    const game = {
+      id: "somegame",
+      executable: () => "",
+      getInstalledVersion: () => Promise.resolve("unknown"),
+    } as unknown as IGame;
+
+    await expect(resolveGameVersion(game, discovery)).resolves.toBe("unknown");
+    await expect(
+      resolveGameVersion(game, { path: undefined } as unknown as IDiscoveryResult),
+    ).resolves.toBe("unknown");
+  });
 });

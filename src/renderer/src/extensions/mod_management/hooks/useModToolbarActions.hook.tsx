@@ -24,13 +24,14 @@ import { batchDispatch } from "@/util/util";
 import { getIcon } from "@/views/components/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
+import { setAutoDeployment } from "../../settings_interface/actions/automation";
 import { setBetaModsTable } from "../actions/settings";
 import { selectModsToUpdate } from "../util/collection_update_warning/collectionUpdateWarning";
 import { NoDeployment } from "../util/exceptions";
 import metaLookupMatch from "../util/metaLookupMatch";
 import updateState from "../util/modUpdateState";
 import type { IModWithState } from "../views/CheckModVersionsButton";
-import { useActivator, useDeployMods, useNoMethodWarning } from "./useDeployMods.hook";
+import { useActivator, useNoMethodWarning } from "./useDeployMods.hook";
 
 /**
  * A toolbar action plus where it sits in the row. The mods toolbar is assembled from
@@ -49,18 +50,19 @@ interface IPositionedAction {
  * fixed: pinning an action puts it back where it belongs rather than at the end.
  *
  * The order the bar reads in — Install From File, Open, History, Check for Updates,
- * Categories, Manage Rules, Deploy, Purge — comes from these and from the positions
- * passed to `registerAction` elsewhere, so a change here moves the action in the
- * overflow menu too. Deploy and Purge keep the positions they had as components, which
- * puts them at the end of the row.
+ * Categories, Manage Rules, Purge — comes from these and from the positions passed to
+ * `registerAction` elsewhere, so a change here moves the action in the overflow menu
+ * too. Purge keeps the position it had as a component, which puts it at the end of the
+ * row. There's no Deploy: the menu's Apply button does that. Auto-apply and the view
+ * switch come after everything else, each in a section of its own.
  */
 const POSITION = {
   installFromFile: 25,
   open: 30,
   checkVersions: 50,
-  deploy: 105,
   purge: 110,
   import: 120,
+  autoApply: 990,
   betaTable: 1000,
 };
 
@@ -109,24 +111,39 @@ const NO_ACTIONS: IPositionedAction[] = [];
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
-/** Deploy (Apply changes) — was `ActivationButton`. Neutral always; disabled while applying. */
-const useDeployAction = (t: TFunction): IPositionedAction => {
-  const { isDeploying, deploy } = useDeployMods();
+/**
+ * Turns auto-apply on or off: whether enabling or disabling a mod applies the change at
+ * once. Not pinned, and lit while on. Next to last, in a section of its own above the view
+ * switch. Replaces the switch the modern layout's settings had.
+ */
+const useAutoApplyAction = (t: TFunction): IPositionedAction => {
+  const dispatch = useDispatch();
+  const autoApply = useSelector((state: IState) => state.settings.automation.deploy === true);
 
   return useMemo(
     () => ({
-      position: POSITION.deploy,
+      position: POSITION.autoApply,
       action: {
-        id: "deploy",
-        label: isDeploying ? t("Applying mod changes…") : t("Deploy (Apply changes)"),
-        icon: getIcon("deploy"),
-        pinned: true,
-        testId: "deploy-mods",
-        disabled: isDeploying,
-        onClick: deploy,
+        id: "auto-apply",
+        ...(autoApply
+          ? {
+              label: t("Disable auto-apply"),
+              description: t("Mod changes will need to be applied manually."),
+            }
+          : {
+              label: t("Enable auto-apply"),
+              description: t("Automatically apply changes as you make them."),
+            }),
+        icon: "rule_settings",
+        active: autoApply,
+        section: "automation",
+        testId: "auto-apply",
+        // The state it switches to.
+        trackingProperties: { autoApply: !autoApply },
+        onClick: () => dispatch(setAutoDeployment(!autoApply)),
       },
     }),
-    [deploy, isDeploying, t],
+    [autoApply, dispatch, t],
   );
 };
 
@@ -426,7 +443,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         });
       }
 
-      const toUpdate = await selectModsToUpdate(mods, updateAble);
+      const toUpdate = await selectModsToUpdate(api, gameMode, updateAble);
       if (toUpdate.length > 0) {
         api.events.emit("mods-update", gameMode, toUpdate);
       }
@@ -649,8 +666,8 @@ export const useModToolbarActions = (
 ): IToolbarAction[] => {
   const installFromFile = useInstallFromFileAction(t);
   const checkVersions = useCheckVersionsAction(t);
-  const deploy = useDeployAction(t);
   const purge = usePurgeAction(t);
+  const autoApply = useAutoApplyAction(t);
   const betaTable = useBetaTableAction(t);
   const registered = useRegisteredActions("mod-icons");
 
@@ -670,10 +687,10 @@ export const useModToolbarActions = (
 
   return useMemo(
     () =>
-      [installFromFile, checkVersions, deploy, purge, open, importFrom, betaTable, ...ownRow]
+      [installFromFile, checkVersions, autoApply, purge, open, importFrom, betaTable, ...ownRow]
         .filter((entry): entry is IPositionedAction => entry !== undefined)
         .sort((lhs, rhs) => lhs.position - rhs.position)
         .map((entry) => entry.action),
-    [betaTable, checkVersions, deploy, importFrom, installFromFile, open, ownRow, purge],
+    [autoApply, betaTable, checkVersions, importFrom, installFromFile, open, ownRow, purge],
   );
 };

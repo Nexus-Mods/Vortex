@@ -55,7 +55,7 @@
     .nxm-table-head {
         position: sticky;
         top: 0;
-        z-index: 3;
+        z-index: 4;
         display: grid;
         grid-column: 1 / -1;
         grid-template-columns: subgrid;
@@ -223,51 +223,63 @@
         }
     }
 
+    /* A group's heading and rows, as tall as all of them, so the heading sticks only while they
+       pass and the next group's pushes it off. Tinted below its heading, over the table's own
+       background, in its picture's colour once that's known; its heading's wash and its sticky
+       cells take the same colour. */
+    .nxm-table-group {
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
+        --nxm-table-group-tint: color-mix(
+            in srgb,
+            var(--nxm-table-group-colour, transparent) 5%,
+            transparent
+        );
+        --nxm-table-group-wash: color-mix(
+            in srgb,
+            var(--nxm-table-group-colour, transparent) 15%,
+            transparent
+        );
+        background: linear-gradient(var(--nxm-table-group-tint), var(--nxm-table-group-tint)) bottom
+            / 100% calc(100% - var(--nxm-table-group-row-gap) - var(--nxm-table-group-row-height))
+            no-repeat;
+    }
+
+    /* Stuck under the head while its rows scroll past, over the rows and their sticky cells.
+       Solid in its tint, as a sticky cell is. */
     .nxm-table-group-row {
-        position: relative;
+        position: sticky;
+        top: var(--nxm-table-head-height);
+        z-index: 3;
         isolation: isolate;
         height: var(--nxm-table-group-row-height);
         margin-top: var(--nxm-table-group-row-gap);
         border-top: 1px solid var(--color-stroke-weak);
+        box-shadow: var(--shadow-xs);
         --nxm-table-row-tint: var(--color-translucent-50);
-        background-color: var(--nxm-table-row-tint);
+        background:
+            linear-gradient(90deg, var(--nxm-table-group-wash), var(--nxm-table-group-tint)),
+            linear-gradient(var(--nxm-table-row-tint), var(--nxm-table-row-tint)),
+            var(--color-surface-low);
         color: var(--color-translucent-strong);
         font-weight: var(--font-weight-semibold);
+        scroll-margin-top: var(--nxm-table-head-height);
     }
 
-    /* Focus scrolls a control into view clear of the sticky header. Its own margin, not the row's. */
+    /* Focus scrolls a control into view clear of the sticky header, and a row's clear of the
+       heading stuck under it too. Its own margin, not the row's. */
     :is(.nxm-table-row, .nxm-table-group-row) * {
         scroll-margin-top: var(--nxm-table-head-height);
+    }
+
+    .nxm-table[role="treegrid"] .nxm-table-row * {
+        scroll-margin-top: calc(var(--nxm-table-head-height) + var(--nxm-table-group-row-height));
     }
 
     /* Stands in for the rows out of view. */
     .nxm-table-spacer {
         grid-column: 1 / -1;
-    }
-
-    /* Positioned, so it takes no track; behind the cells, over the row's own background. */
-    .nxm-table-group-wash {
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        width: 100%;
-        height: 100%;
-        opacity: 0.15;
-        mask-image: linear-gradient(90deg, #000, rgb(0 0 0 / 0.33));
-        pointer-events: none;
-    }
-
-    /* Behind the rows, over the table's own background; the sticky header covers it. Across
-       every column, which can run wider than the table's box, as its containing block. */
-    .nxm-table-group-backdrop {
-        position: absolute;
-        grid-column: 1 / -1;
-        top: calc(var(--nxm-table-head-height) + var(--nxm-table-backdrop-top));
-        left: 0;
-        z-index: -1;
-        width: 100%;
-        opacity: 0.05;
-        pointer-events: none;
     }
 
     .nxm-table-group-toggle {
@@ -380,12 +392,6 @@
             background: var(--nxm-table-sticky-bg);
             mask-image: linear-gradient(to right, transparent, #000);
         }
-
-        .nxm-table-cell-tint {
-            left: 0;
-            width: calc(100% + var(--nxm-table-gutter) + var(--nxm-table-gap));
-            mask-image: none;
-        }
     }
 
     /* A sortable column's header: its label, in line with the column's content, and an arrow
@@ -453,6 +459,10 @@
         z-index: 2;
         align-self: stretch;
         --nxm-table-sticky-bg:
+            linear-gradient(
+                var(--nxm-table-group-tint, transparent),
+                var(--nxm-table-group-tint, transparent)
+            ),
             linear-gradient(var(--nxm-table-row-tint), var(--nxm-table-row-tint)),
             linear-gradient(var(--color-surface-low), var(--color-surface-low));
         background: var(--nxm-table-sticky-bg);
@@ -502,39 +512,19 @@
         background-position:
             0 0,
             0 100%,
+            0 100%,
             0 100%;
         background-size:
             100% 100%,
             100% calc(100% - var(--nxm-table-group-row-gap) - 1px),
+            100% calc(100% - var(--nxm-table-group-row-gap) - 1px),
             100% calc(100% - var(--nxm-table-group-row-gap) - 1px);
     }
 
-    /* A group's tint over a sticky cell's solid background and the gutter it covers, at the
-       opacity the group's backdrop and wash have there. */
-    .nxm-table-cell-tint {
-        position: absolute;
-        inset-block: 0;
-        left: 0;
-        z-index: -1;
-        width: calc(100% + var(--nxm-table-gutter) + var(--nxm-table-gap));
-        height: 100%;
-        opacity: 0.05;
-        pointer-events: none;
-    }
-
-    /* The fade, and the tint under it, only while the page's scroller has further to go right. */
+    /* The fade only while the page's scroller has further to go right. */
     @container scroll-state(scrollable: right) {
         .nxm-table-cell[data-sticky="end"]::before {
             opacity: 1;
-        }
-
-        .nxm-table-cell-tint {
-            left: calc(-1 * (var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid)));
-            width: calc(
-                100% + var(--nxm-table-gutter) + var(--nxm-table-gap) +
-                    var(--nxm-table-sticky-fade) + var(--nxm-table-sticky-solid)
-            );
-            mask-image: linear-gradient(to right, transparent, #000 var(--nxm-table-sticky-fade));
         }
 
         /* A row's pins sit clear of the shadow the column casts, on every row, so they don't
@@ -597,7 +587,7 @@
         position: sticky;
         top: calc(100% - var(--nxm-table-footer-height));
         bottom: 0;
-        z-index: 3;
+        z-index: 4;
         grid-column: 1 / -1;
         height: var(--nxm-table-footer-height);
     }

@@ -11,8 +11,6 @@ export type ModStatus = (typeof MOD_STATUS)[keyof typeof MOD_STATUS];
 export class ModsPage {
   readonly page: Page;
   readonly installFromFileButton: Locator;
-  /** Toolbar "Deploy (Apply changes)" button (highlighted when a deployment is pending). */
-  readonly deployButton: Locator;
   /** Toolbar Quick Launcher "Play" button that starts the managed game. */
   readonly playButton: Locator;
   /**
@@ -26,17 +24,31 @@ export class ModsPage {
   readonly emptyState: Locator;
   /** Transient "Mods deployed" notification shown after a successful deploy. */
   readonly deployedNotification: Locator;
+  /** The page's toolbar, told from the table's by its Install From File button. */
+  readonly toolbar: Locator;
+  /** The toolbar's "…", which opens a menu of the actions not pinned to the bar. */
+  readonly toolbarOverflow: Locator;
 
   constructor(page: Page) {
     this.page = page;
     // the new toolbar renders actions rather than components, so these carry a
     // data-testid instead of the id the old button components had
     this.installFromFileButton = page.locator('[data-testid="install-from-archive"]');
-    this.deployButton = page.locator('[data-testid="deploy-mods"]');
     this.playButton = page.locator("#btn-quicklaunch-play");
     this.statusButton = page.locator("#btn-mods-enabled").first();
     this.emptyState = page.getByText(/don't have any installed mods/i);
     this.deployedNotification = page.getByText(/mods deployed/i).first();
+    this.toolbar = page.getByRole("toolbar").filter({ has: this.installFromFileButton });
+    this.toolbarOverflow = this.toolbar.getByTestId("toolbar-overflow");
+  }
+
+  /**
+   * An action in the toolbar's "…" menu, by its label; open the menu first. Matched from the
+   * start of its name, which ends with its pin button's.
+   */
+  toolbarMenuItem(label: string): Locator {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return this.page.getByRole("menuitem", { name: new RegExp(`^${escaped}`) });
   }
 
   row(name: string | RegExp): Locator {

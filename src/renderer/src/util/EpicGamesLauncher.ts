@@ -16,6 +16,32 @@ const STORE_ID = "epic";
 const STORE_NAME = "Epic Games Launcher";
 const STORE_PRIORITY = 60;
 
+// The current launcher installs as 64-bit and writes its key to the native registry
+// view. Older installs were 32-bit, so their key was redirected under WOW6432Node.
+const LAUNCHER_KEYS = [
+  "SOFTWARE\\Epic Games\\EpicGamesLauncher",
+  "SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher",
+];
+
+/** The launcher's data folder, holding the Manifests folder, or undefined when no
+ * install is registered. */
+export function findEpicDataPath(): string | undefined {
+  let lastError: unknown;
+  for (const key of LAUNCHER_KEYS) {
+    try {
+      const { value } = winapi.RegGetValue("HKEY_LOCAL_MACHINE", key, "AppDataPath");
+      if (typeof value === "string") {
+        return value;
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  log("info", "Epic games launcher not found", lastError);
+  return undefined;
+}
+
 /**
  * Epic Store launcher seems to be holding game information inside
  *  .item manifest files which are stored inside the launchers Data folder
@@ -30,27 +56,9 @@ export class EpicGamesLauncher implements IGameStore {
   #launcherExecPath: string | undefined;
   #snapshot: IGameStoreSnapshot;
 
-  constructor() {
-    if (process.platform === "win32") {
-      try {
-        // We find the launcher's dataPath
-        const epicDataPath = winapi.RegGetValue(
-          "HKEY_LOCAL_MACHINE",
-          "SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher",
-          "AppDataPath",
-        );
-
-        this.#dataPath = epicDataPath.value as string;
-        this.#snapshot = { entries: [], isInstalled: true };
-      } catch (err) {
-        log("info", "Epic games launcher not found", err);
-        this.#dataPath = undefined;
-        this.#snapshot = { entries: [], isInstalled: false };
-      }
-    } else {
-      this.#dataPath = undefined;
-      this.#snapshot = { entries: [], isInstalled: false };
-    }
+  constructor(dataPath = process.platform === "win32" ? findEpicDataPath() : undefined) {
+    this.#dataPath = dataPath;
+    this.#snapshot = { entries: [], isInstalled: dataPath !== undefined };
   }
 
   public async launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
@@ -195,7 +203,7 @@ export class EpicGamesLauncher implements IGameStore {
         }
 
         try {
-          const result = manifestSchema.safeParse(data);
+          const result = manifestSchema.safeParse(JSON.parse(data));
           if (result.error) {
             log("warn", "Failed to parse EGS manifest", { entry, error: result.error });
             continue;

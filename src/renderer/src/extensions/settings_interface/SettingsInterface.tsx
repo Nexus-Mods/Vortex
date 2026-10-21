@@ -91,6 +91,7 @@ export function SettingsInterfaceForm(props: IFormProps) {
   const autoStart = useSelector((state: IState) => state.settings.automation.start);
   const startMinimized = useSelector((state: IState) => state.settings.automation.minimized);
   const customTitlebar = useSelector((state: IState) => state.settings.window.customTitlebar);
+  const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
   const suppressedNotifications = useSelector(
     (state: IState) => state.settings.notifications.suppress,
   );
@@ -391,16 +392,18 @@ export function SettingsInterfaceForm(props: IFormProps) {
         <ControlLabel>{t("Automation")}</ControlLabel>
 
         <div>
-          <Toggle
-            checked={autoDeployment}
-            onToggle={(enabled) => dispatch(setAutoDeployment(enabled))}
-          >
-            {t("Deploy Mods when Enabled")}
+          {!useModernLayout && (
+            <Toggle
+              checked={autoDeployment}
+              onToggle={(enabled) => dispatch(setAutoDeployment(enabled))}
+            >
+              {t("Deploy Mods when Enabled")}
 
-            <More id="more-deploy-settings" name={t("Deployment")}>
-              {getTextModManagement("deployment", t)}
-            </More>
-          </Toggle>
+              <More id="more-deploy-settings" name={t("Deployment")}>
+                {getTextModManagement("deployment", t)}
+              </More>
+            </Toggle>
+          )}
 
           <Toggle checked={autoInstall} onToggle={(enabled) => dispatch(setAutoInstall(enabled))}>
             {t("Install Mods when downloaded")}

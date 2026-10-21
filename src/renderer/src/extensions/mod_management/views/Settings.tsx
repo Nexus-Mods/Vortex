@@ -17,7 +17,6 @@ import {
 } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import * as winapi from "winapi-bindings";
 
 import { showDialog } from "../../../actions/notifications";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
@@ -48,6 +47,7 @@ import {
 import { withTrackedActivity } from "../../../util/errorHandling";
 import * as fs from "../../../util/fs";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
+import { getVolumePath } from "../../../util/getVolumePath";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
@@ -122,6 +122,16 @@ interface IComponentState {
 type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 const nop = () => undefined;
+
+/** The modern layout's descriptions for the built-in methods; others keep their own. */
+const modernActivatorDescriptions: Record<string, string> = {
+  hardlink_activator: "Uses hard links to deploy mod files to the game directory.",
+  symlink_activator: "Uses symlinks to deploy mod files to the game directory.",
+  symlink_activator_elevated:
+    "Uses symlinks to deploy mod files to the game directory. This runs as administrator " +
+    "and asks for your permission every time you apply changes.",
+  move_activator: "Moves mod files into the game directory to deploy them.",
+};
 
 class Settings extends ComponentEx<IProps, IComponentState> {
   private mLastFileUpdate: number = 0;
@@ -245,10 +255,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         <Panel key="deployment">
           <Panel.Body>
             <ControlLabel>
-              {t("Deployment Method")}
+              {this.props.useModernLayout ? t("Deployment method") : t("Deployment Method")}
 
               <More id="more-deploy" name={t("Deployment")}>
-                {getText("deployment", t)}
+                {getText(this.props.useModernLayout ? "deploymentmethod" : "deployment", t)}
               </More>
             </ControlLabel>
 
@@ -1044,8 +1054,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     try {
       // stat the volume root rather than the full mod path — the mod directory
       // may not exist yet (e.g. first-time setup), but we only need the device id
+      const volume = getVolumePath(modPaths[""]);
       const [modPathStats, userDataStats] = await Promise.all([
-        fs.statAsync(path.parse(modPaths[""]).root),
+        fs.statAsync(volume),
         window.api.app.getPath("userData").then((userDataPath) => fs.statAsync(userDataPath)),
       ]);
 
@@ -1053,7 +1064,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       if (modPathStats.dev === userDataStats.dev) {
         suggestion = path.join("{USERDATA}", "{game}", "mods");
       } else {
-        const volume = winapi.GetVolumePathName(modPaths[""]);
         suggestion = path.join(volume, suggestInstallPathDirectory, "{game}");
       }
       this.changePath(suggestion);
@@ -1138,7 +1148,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
         {activatorIdx !== -1 ? (
           <HelpBlock>
-            {t(activators[activatorIdx].description)}
+            {t(
+              (this.props.useModernLayout &&
+                modernActivatorDescriptions[activators[activatorIdx].id]) ||
+                activators[activatorIdx].description,
+            )}
 
             <More id="more-activator-detail" name={activators[activatorIdx].name}>
               {activators[activatorIdx].detailedDescription(t)}

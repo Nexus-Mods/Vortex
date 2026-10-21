@@ -84,6 +84,12 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       { title: "Remove related", label: "Remove related", icon: "delete" },
       { title: "Remove", label: "Remove", icon: "delete" },
       { title: "Check for Update", label: "Check for updates", icon: "refresh" },
+      {
+        title: "Apply Collection Rules",
+        label: "Apply collection rules",
+        icon: "playlist_add_check",
+      },
+      { title: "Edit Collection", label: "Edit collection", icon: "edit" },
     ],
   },
   {

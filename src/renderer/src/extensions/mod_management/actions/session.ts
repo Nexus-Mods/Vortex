@@ -91,3 +91,9 @@ export function confirmExternalChanges(changes: IFileEntry[], canceled: boolean)
     dispatch(setExternalChanges([]));
   };
 }
+
+/** Asks the new Mods table to open and scroll to a group, by id; undefined once it has. */
+export const focusModsTableGroup = safeCreateAction(
+  "FOCUS_MODS_TABLE_GROUP",
+  (groupId: string | undefined) => groupId,
+);

@@ -11,10 +11,12 @@ import type { IIconSource } from "@/ui/components/icon/Icon";
 import { activeGameId } from "@/util/selectors";
 
 import { useGameCardActions } from "../hooks/use_game_card_actions/useGameCardActions.hook";
+import { Tiers } from "../tiered/types";
 import type { GameSource } from "../types/GameSource";
 import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
 import { GameDetailsModal } from "./GameDetailsModal";
+import { useSupportTier } from "./TierZeroIndicator";
 
 /**
  * Which of the Games page's three sections the card sits in. One prop rather than a
@@ -23,6 +25,11 @@ import { GameDetailsModal } from "./GameDetailsModal";
 export type IGameSection = "added" | "detected" | "supported";
 
 export interface IGameCardProps {
+  /**
+   * The store the detected-games response matched the game on, named until discovery
+   * finds the game and names the store itself.
+   */
+  detectedStore?: string;
   game: IGameStored;
   section: IGameSection;
   onRefreshGameInfo?: (gameId: string) => PromiseLike<void>;
@@ -33,11 +40,12 @@ export interface IGameCardProps {
  * has to come out of the store — its art, which storefront it came from, the actions
  * extensions registered for it, and the details dialog its menu opens.
  */
-export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) => {
+export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IGameCardProps) => {
   const { t } = useTranslation();
   const { api } = useMainContext();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isActive = useSelector((state: IState) => activeGameId(state) === game.id);
+  const supportTier = useSupportTier(game);
 
   const showDetails = useCallback(() => setDetailsOpen(true), []);
   const closeDetails = useCallback(() => setDetailsOpen(false), []);
@@ -54,7 +62,12 @@ export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) =
     source,
   );
   const name = game.name.replace(/\t/g, " ");
-  const store = useSelector((state: IState) => state.settings.gameMode.discovered[game.id]?.store);
+  const discoveredStore = useSelector(
+    (state: IState) => state.settings.gameMode.discovered[game.id]?.store,
+  );
+  // Discovery's store is the copy Vortex will manage, so it wins. A game whose extension
+  // isn't installed hasn't been through discovery, which leaves the detected store.
+  const store = discoveredStore ?? detectedStore;
 
   const actions: Record<
     IGameSection,
@@ -77,6 +90,7 @@ export const GameCard = ({ game, onRefreshGameInfo, section }: IGameCardProps) =
       <GameTile
         highlighted={section === "detected"}
         imageUrl={gameArtURL(game)}
+        supportTier={supportTier === Tiers.tier0 ? supportTier : undefined}
         menu={{ actions: menu, label: t("Game options") }}
         name={name}
         primaryAction={

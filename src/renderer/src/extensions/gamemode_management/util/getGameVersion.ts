@@ -59,6 +59,12 @@ function assertDiscovered(game: IGame, discovery: IDiscoveryResult): void {
 }
 
 export const resolveGameVersion: GameVersionResolver = async (game, discovery) => {
+  // the game knows best when it provides its own resolver (Tier 0 games have
+  // no executable for the stock sources to read)
+  if (game.getInstalledVersion !== undefined) {
+    return game.getInstalledVersion(discovery);
+  }
+
   assertDiscovered(game, discovery);
   return (
     (await fromExtension(game, discovery)) ?? (await fromExecutable(game, discovery)) ?? "0.0.0"

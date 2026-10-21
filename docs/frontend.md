@@ -60,6 +60,8 @@ build/test/format loop.
 
 ## Imports
 
+Prefer `@/` imports over relative imports, especially for deeply nested files.
+
 - `oxfmt` owns import grouping and ordering (external, then `@/` alias, then
   relative, alphabetical within each group). Don't fight it; run
   `pnpm run format`.

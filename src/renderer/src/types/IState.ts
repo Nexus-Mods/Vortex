@@ -1,4 +1,5 @@
 import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
+import type { GameDomain, GameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -361,12 +362,29 @@ export interface IGameInfoEntry {
   type?: string;
 }
 
+export interface ITierZeroGame {
+  /** numeric Nexus Mods game id (e.g. 1303) */
+  gameId: GameId;
+  /** the nexus domain the game is managed under; the synthesized game's id */
+  domain: GameDomain;
+  name: string;
+  storeIDs: {
+    steam: string[];
+    gog: string[];
+    epic: string[];
+  };
+}
+
 export interface IStateGameMode {
   gameInfo: {
     [gameId: string]: {
       [key: string]: IGameInfoEntry;
     };
   };
+
+  /** games managed without a game extension, keyed by numeric nexus game id
+   * (immutable across domain renames; the entry also carries the domain) */
+  tier0: Record<GameId, ITierZeroGame>;
 }
 
 export interface IBrowserState {

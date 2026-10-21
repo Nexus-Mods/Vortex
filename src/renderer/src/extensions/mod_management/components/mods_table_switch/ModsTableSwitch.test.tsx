@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { Provider } from "react-redux";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   emit: vi.fn<(channel: string, event?: { eventName: string; properties: object }) => void>(),
@@ -23,6 +23,7 @@ vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOrigina
 import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
+import { focusModsTableGroup } from "../../actions/session";
 import type { IModWithState } from "../../types/IModProps";
 import { MODS_TABLE_FEEDBACK_URL } from "../mods_table_toolbar/ModsTableToolbar";
 import { ModsTableSwitch } from "./ModsTableSwitch";
@@ -78,7 +79,7 @@ const hoverRow = (row: HTMLElement) => userEvent.hover(row);
 const bodyRows = (table: HTMLElement) =>
   within(table)
     .getAllByRole("row")
-    .filter((row) => row.closest('[role="rowgroup"]') === null);
+    .filter((row) => row.closest(".nxm-table-head") === null);
 
 const cellText = (row: HTMLElement) => within(row).getAllByRole("gridcell")[0].textContent;
 
@@ -100,6 +101,20 @@ describe("ModsTableSwitch", () => {
       "aria-checked",
       "true",
     );
+  });
+
+  it("leaves a collection's own row out of the flat list", () => {
+    renderSwitch({ b: mod("b", "Beta", false), x: collection("x", "Xenon", ["b"]) });
+
+    expect(bodyRows(screen.getByRole("grid")).map(cellText)).toEqual(["Beta"]);
+  });
+
+  it("leaves a collection's own row out of a column's groups", async () => {
+    renderSwitch({ b: mod("b", "Beta", false), x: collection("x", "Xenon", ["b"]) });
+
+    await showView("Status");
+
+    expect(bodyRows(screen.getByRole("treegrid")).map(cellText)).toEqual(["Disabled1", "Beta"]);
   });
 
   // ModList rebuilds the mods only after a debounce, so a switch would lag behind its click.
@@ -643,7 +658,7 @@ describe("ModsTableSwitch", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Keep shared mods enabled" }));
 
-      expect(onSetModsEnabled).toHaveBeenCalledWith(["b"], false);
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b"], false);
       expect(screen.queryByRole("dialog")).toBeNull();
     });
 
@@ -654,7 +669,7 @@ describe("ModsTableSwitch", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Disable all mods" }));
 
-      expect(onSetModsEnabled).toHaveBeenCalledWith(["b", "c"], false);
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b", "c"], false);
     });
 
     it("changes nothing on cancel", async () => {
@@ -680,7 +695,31 @@ describe("ModsTableSwitch", () => {
       await userEvent.click(groupSwitch("Xenon"));
 
       expect(screen.queryByRole("dialog")).toBeNull();
-      expect(onSetModsEnabled).toHaveBeenCalledWith(["b", "c"], true);
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b", "c"], true);
+    });
+
+    it("turns a collection off with its mods, when none are shared", async () => {
+      const onSetModsEnabled = renderSwitch({
+        b: mod("b", "Beta", true),
+        x: collection("x", "Xenon", ["b"]),
+      });
+      await showView("Collections");
+
+      await userEvent.click(groupSwitch("Xenon"));
+
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b"], false);
+    });
+
+    it("turns a collection on with its mods", async () => {
+      const onSetModsEnabled = renderSwitch({
+        b: mod("b", "Beta", false),
+        x: collection("x", "Xenon", ["b"]),
+      });
+      await showView("Collections");
+
+      await userEvent.click(groupSwitch("Xenon"));
+
+      expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b"], true);
     });
   });
 
@@ -941,9 +980,13 @@ describe("ModsTableSwitch", () => {
   describe("selected mods", () => {
     const bar = () => screen.queryByRole("region", { name: "{{count}} selected" });
 
+    // Selects the first mod, unless it's the one selected already, as a click would deselect it.
     const selectWithCtrl = async (...names: string[]) => {
       const user = userEvent.setup();
-      await user.click(screen.getByText(names[0]));
+      const first = screen.getByText(names[0]).closest('[role="row"]');
+      if (first?.getAttribute("aria-selected") !== "true") {
+        await user.click(screen.getByText(names[0]));
+      }
       await user.keyboard("{Control>}");
       for (const name of names.slice(1)) {
         await user.click(screen.getByText(name));
@@ -1095,9 +1138,8 @@ describe("ModsTableSwitch", () => {
         pack: collection("pack", "Starter Pack", ["b"]),
       });
 
-      // Collection doesn't show in All mods, so only the collection's own row has its name.
       await searchFor("starter");
-      expect(names()).toEqual(["Starter Pack"]);
+      expect(screen.getByText("No mods match your search")).toBeInTheDocument();
 
       await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
       await userEvent.keyboard("gervig");
@@ -1262,15 +1304,278 @@ describe("ModsTableSwitch", () => {
       expect(card.querySelector(".nxm-hover-card-collection")).not.toBeNull();
       expect(card).toHaveTextContent("A starter pack.");
     });
+  });
 
-    it("shows on hovering its cover on its own row", async () => {
-      renderSwitch(withSummary());
+  describe("a collection's group heading", () => {
+    const withCollection = () => ({
+      a: mod("a", "Alpha", true),
+      b: mod("b", "Beta", false),
+      x: collection("x", "Xenon", ["b"]),
+    });
+    const groupRowOf = (name: string) =>
+      screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement;
+    const menuItems = () => screen.getAllByRole("menuitem").map((item) => item.textContent);
 
-      const row = screen.getByRole("row", { name: /Xenon/ });
-      await userEvent.hover(row.querySelector<HTMLElement>(".nxm-image-collection")!);
+    const rowActions = (): ITableRowAction[] => [
+      { title: "Reinstall", action: vi.fn() },
+      { title: "Check for Update", action: vi.fn() },
+    ];
+    const installed = { mods: { x: {} } };
+    const collectionItems = ["View collection", "Check for updates", "Remove"];
 
-      const card = await screen.findByRole("tooltip");
-      expect(card.querySelector(".nxm-hover-card-collection")).not.toBeNull();
+    it("offers only the collection's actions, after folding and selecting", async () => {
+      renderSwitch(withCollection(), rowActions(), installed);
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("Xenon"));
+
+      expect(menuItems()).toEqual([
+        "Collapse",
+        "Collapse all",
+        "Select all in group",
+        ...collectionItems,
+      ]);
+    });
+
+    it("removes the collection as its page does", async () => {
+      const reinstall = vi.fn();
+      renderSwitch(withCollection(), [{ title: "Reinstall", action: reinstall }]);
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("Xenon"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+      expect(mocks.emit).toHaveBeenCalledWith("remove-collection", "x");
+      expect(reinstall).not.toHaveBeenCalled();
+    });
+
+    it("opens the collection's page from View collection", async () => {
+      renderSwitch(withCollection());
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("Xenon"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "View collection" }));
+
+      expect(mocks.emit).toHaveBeenCalledWith("view-collection", "x");
+    });
+
+    it("offers exactly the context menu's items from the heading's …", async () => {
+      renderSwitch(withCollection(), rowActions(), installed);
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("Xenon"));
+      const contextItems = menuItems();
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(
+        within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
+      );
+
+      expect(menuItems()).toEqual(contextItems);
+      expect(contextItems).toEqual([
+        "Collapse",
+        "Collapse all",
+        "Select all in group",
+        ...collectionItems,
+      ]);
+    });
+
+    it("collapses the group from the heading's …", async () => {
+      renderSwitch(withCollection(), rowActions(), installed);
+      await showView("Collections");
+
+      await userEvent.click(
+        within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
+      );
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+      expect(screen.getByRole("button", { name: "Xenon" })).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+    });
+
+    describe("reports to the group toolbar", () => {
+      const sent = () =>
+        mocks.emit.mock.calls
+          .filter(
+            ([channel, event]) =>
+              channel === "analytics-track-mixpanel-event" &&
+              event.eventName === "app_toolbar_action_clicked",
+          )
+          .map(([, event]) => event.properties);
+
+      beforeEach(() => {
+        mocks.emit.mockReset();
+      });
+
+      it("an action from the heading's …, as overflow", async () => {
+        renderSwitch(withCollection());
+        await showView("Collections");
+
+        await userEvent.click(
+          within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
+        );
+        await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+        expect(sent()).toEqual([
+          expect.objectContaining({
+            toolbar: "mods-table-group-collection",
+            surface: "overflow",
+            action: "remove-collection",
+          }),
+        ]);
+      });
+
+      it("an action from the heading's context menu, as menu", async () => {
+        renderSwitch(withCollection());
+        await showView("Collections");
+
+        fireEvent.contextMenu(groupRowOf("Xenon"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+
+        expect(sent()).toEqual([
+          expect.objectContaining({
+            toolbar: "mods-table-group-collection",
+            surface: "menu",
+            action: "remove-collection",
+          }),
+        ]);
+      });
+
+      it("a built-in item from either, with the state it moves to", async () => {
+        renderSwitch(withCollection());
+        await showView("Collections");
+
+        await userEvent.click(
+          within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
+        );
+        await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+        fireEvent.contextMenu(groupRowOf("Xenon"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Expand" }));
+
+        expect(sent()).toEqual([
+          {
+            toolbar: "mods-table-group-collection",
+            surface: "overflow",
+            action: "collapse",
+            expanded: false,
+          },
+          {
+            toolbar: "mods-table-group-collection",
+            surface: "menu",
+            action: "collapse",
+            expanded: true,
+          },
+        ]);
+      });
+
+      it("View collection, by its id", async () => {
+        renderSwitch(withCollection());
+        await showView("Collections");
+
+        fireEvent.contextMenu(groupRowOf("Xenon"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "View collection" }));
+
+        expect(sent()).toEqual([
+          expect.objectContaining({
+            toolbar: "mods-table-group-collection",
+            surface: "menu",
+            action: "view-collection",
+          }),
+        ]);
+      });
+    });
+
+    it("gives the no-collection group only the built-in items, from either", async () => {
+      renderSwitch(withCollection(), [{ title: "Remove", action: vi.fn() }]);
+      await showView("Collections");
+
+      fireEvent.contextMenu(groupRowOf("No collection"));
+      expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(
+        within(groupRowOf("No collection")).getByRole("button", { name: "More actions" }),
+      );
+      expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+    });
+
+    describe("asked to show it", () => {
+      beforeEach(() => {
+        Element.prototype.scrollIntoView = vi.fn();
+      });
+
+      afterEach(() => {
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+      });
+
+      const renderAsked = () => {
+        const store = makeModsTableStore({
+          views: { selected: "collections", changes: {}, custom: [] },
+          focusedGroupId: "x",
+        });
+        render(
+          <Provider store={store}>
+            <ModsTableSwitch legacy={<div />} mods={withCollection()} onSetModsEnabled={vi.fn()} />
+          </Provider>,
+        );
+        return store;
+      };
+
+      it("opens its group and drops the request", async () => {
+        const store = renderAsked();
+
+        expect(screen.getByRole("button", { name: "Xenon" })).toHaveAttribute(
+          "aria-expanded",
+          "true",
+        );
+        await waitFor(() => expect(store.getState().session.mods.focusedGroupId).toBeUndefined());
+      });
+
+      it("drops a request no group answers, leaving the table as it was", async () => {
+        const store = makeModsTableStore({
+          views: { selected: "all", changes: {}, custom: [] },
+          focusedGroupId: "x",
+        });
+        render(
+          <Provider store={store}>
+            <ModsTableSwitch legacy={<div />} mods={withCollection()} onSetModsEnabled={vi.fn()} />
+          </Provider>,
+        );
+
+        await waitFor(() => expect(store.getState().session.mods.focusedGroupId).toBeUndefined());
+        expect(screen.queryByRole("button", { name: "Xenon" })).toBeNull();
+      });
+
+      it("lets the user search once the request is honoured", async () => {
+        renderAsked();
+        await userEvent.click(screen.getByRole("button", { name: "Search" }));
+        await userEvent.keyboard("Alpha");
+
+        expect(screen.getByRole("textbox", { name: "Search" })).toHaveValue("Alpha");
+      });
+
+      it("clears a search that would hide it", async () => {
+        const store = makeModsTableStore({
+          views: { selected: "collections", changes: {}, custom: [] },
+        });
+        render(
+          <Provider store={store}>
+            <ModsTableSwitch legacy={<div />} mods={withCollection()} onSetModsEnabled={vi.fn()} />
+          </Provider>,
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Search" }));
+        await userEvent.keyboard("Alpha");
+        expect(screen.queryByRole("button", { name: "Xenon" })).toBeNull();
+
+        act(() => {
+          store.dispatch(focusModsTableGroup("x"));
+        });
+
+        expect(await screen.findByRole("button", { name: "Xenon" })).toBeInTheDocument();
+        expect(screen.getByRole("textbox", { name: "Search" })).toHaveValue("");
+      });
     });
   });
 

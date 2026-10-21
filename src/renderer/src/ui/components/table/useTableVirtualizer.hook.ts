@@ -69,17 +69,23 @@ interface ITableVirtualizerOptions {
   getItemKey: (index: number) => string;
   /** A row's height, which the virtualiser takes as exact rather than measuring. */
   getItemSize: (index: number) => number;
+  /** The group headings' rows, in order; the one over the rows in view stays rendered. */
+  stickyIndexes?: number[];
 }
 
 /**
  * Virtualises the table's rows against the page's scroller, its nearest scrolling ancestor,
  * so the page scrolls rather than the table. Keeps the focused row rendered however far it
- * scrolls out of view, so focus and Tab order survive. With no scroller, every row renders.
+ * scrolls out of view, so focus and Tab order survive, and the heading of the group in view,
+ * which sticks over its rows. With no scroller, every row renders.
+ * `scrollToIndex` brings a row to the top: the virtualiser renders it, then the row scrolls
+ * into view, a group's row's scroll margin clearing the sticky head.
  */
 export const useTableVirtualizer = ({
   count,
   getItemKey,
   getItemSize,
+  stickyIndexes,
 }: ITableVirtualizerOptions) => {
   const tableRef = useRef<HTMLDivElement>(null);
   const startRef = useRef<HTMLDivElement>(null);
@@ -119,19 +125,14 @@ export const useTableVirtualizer = ({
 
   const rangeExtractor = useCallback(
     (range: Range) => {
-      const indexes = defaultRangeExtractor(range);
+      const kept = [
+        stickyIndexes?.findLast((index) => index <= range.startIndex),
+        focusedIndex,
+      ].filter((index) => index !== undefined && index < range.count);
 
-      if (
-        focusedIndex === undefined ||
-        focusedIndex >= range.count ||
-        indexes.includes(focusedIndex)
-      ) {
-        return indexes;
-      }
-
-      return [...indexes, focusedIndex].sort((a, b) => a - b);
+      return [...new Set([...defaultRangeExtractor(range), ...kept])].sort((a, b) => a - b);
     },
-    [focusedIndex],
+    [focusedIndex, stickyIndexes],
   );
 
   const virtualizer = useVirtualizer({
@@ -155,6 +156,21 @@ export const useTableVirtualizer = ({
       setFocusedIndex(undefined);
     }
   };
+
+  const scrollToIndex = useCallback(
+    (index: number) => {
+      if (scroller) {
+        virtualizer.scrollToIndex(index, { align: "start" });
+      }
+
+      requestAnimationFrame(() =>
+        tableRef.current
+          ?.querySelector<HTMLElement>(`[data-index="${index}"]`)
+          ?.scrollIntoView({ block: "start" }),
+      );
+    },
+    [scroller, virtualizer],
+  );
 
   const placeRows = (): IPlacedRow[] => {
     // Not looked for yet.
@@ -180,6 +196,8 @@ export const useTableVirtualizer = ({
     endGap: scroller ? virtualizer.getTotalSize() - renderedEnd : 0,
     onBlur,
     onFocus,
+    ready: scroller !== undefined,
+    scrollToIndex,
     startRef,
     tableRef,
   };

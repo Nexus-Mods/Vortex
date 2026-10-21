@@ -4,11 +4,13 @@ import type {
   CollectionSortField,
   SortDirection,
 } from "@nexusmods/nexus-api";
+import { VortexGameId } from "@vortex/shared";
 import numeral from "numeral";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { CollectionsDownloadClickedEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
+import { isTierZeroManagedGame } from "@/extensions/gamemode_management/tiered/tierZero";
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
 import { buildNXMCollectionUrl } from "@/extensions/nexus_integration/NXMUrl";
 import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
@@ -103,6 +105,11 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
   const [activeSearch, setActiveSearch] = useState<string>(""); // The search term actually being used
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedTab, setSelectedTab] = useState<string>("collections");
+
+  // games managed without an extension get no collection support on this page
+  const collectionsTabHidden = useSelector((state: IState) =>
+    gameId === undefined ? false : isTierZeroManagedGame(state, VortexGameId(gameId)),
+  );
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [searchValidationError, setSearchValidationError] = useState<string>("");
   const itemsPerPage = 20;
@@ -248,138 +255,142 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
     <MainPage id="browse-collections-page">
       <MainPage.Body className="h-full overflow-y-auto pt-6" ref={scrollRef}>
         <TabProvider
-          tab={selectedTab}
+          tab={collectionsTabHidden && selectedTab === "collections" ? "mods" : selectedTab}
           tabListId="browse-nexus-tabs"
           onSetSelectedTab={setSelectedTab}
         >
           <TabBar className="overflow-clip pl-6">
-            <TabButton
-              count={allCollectionsTotal}
-              name={t("collection:browse.tabs.collections")}
-              panelId="collections"
-            />
+            {!collectionsTabHidden && (
+              <TabButton
+                count={allCollectionsTotal}
+                name={t("collection:browse.tabs.collections")}
+                panelId="collections"
+              />
+            )}
 
             <TabButton name={t("collection:browse.tabs.mods")} panelId="mods" />
           </TabBar>
 
-          <TabPanel id="collections">
-            <div className="space-y-3 p-6">
-              <form
-                className="flex items-start gap-x-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSearch();
-                }}
-              >
-                <TextField
-                  errorMessage={searchValidationError || undefined}
-                  fieldClassName="max-w-60"
-                  hideLabel={true}
-                  label={t("collection:browse.searchPlaceholder")}
-                  placeholder={t("collection:browse.searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-
-                    // Clear validation error when user types
-                    if (searchValidationError) {
-                      setSearchValidationError("");
-                    }
+          {!collectionsTabHidden && (
+            <TabPanel id="collections">
+              <div className="space-y-3 p-6">
+                <form
+                  className="flex items-start gap-x-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSearch();
                   }}
-                />
+                >
+                  <TextField
+                    errorMessage={searchValidationError || undefined}
+                    fieldClassName="max-w-60"
+                    hideLabel={true}
+                    label={t("collection:browse.searchPlaceholder")}
+                    placeholder={t("collection:browse.searchPlaceholder")}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
 
-                <Button
-                  appearance="moderate"
-                  brand="neutral"
-                  leftIcon="search"
-                  title={t("common:actions.search")}
-                  type="submit"
-                />
-              </form>
+                      // Clear validation error when user types
+                      if (searchValidationError) {
+                        setSearchValidationError("");
+                      }
+                    }}
+                  />
 
-              <div className="flex justify-between">
-                <div className="flex items-center gap-x-2">
                   <Button
                     appearance="moderate"
                     brand="neutral"
-                    leftIcon="refresh"
-                    title={t("collection:browse.refresh")}
-                    onClick={handleRefresh}
+                    leftIcon="search"
+                    title={t("common:actions.search")}
+                    type="submit"
                   />
+                </form>
 
-                  <Typography
-                    appearance="moderate"
-                    brand="neutral-translucent"
-                    typographyType="body-sm"
-                  >
-                    {t("collection:browse.resultsCount", {
-                      total: numeral(totalCount).format("0,0"),
-                    })}
-                  </Typography>
+                <div className="flex justify-between">
+                  <div className="flex items-center gap-x-2">
+                    <Button
+                      appearance="moderate"
+                      brand="neutral"
+                      leftIcon="refresh"
+                      title={t("collection:browse.refresh")}
+                      onClick={handleRefresh}
+                    />
+
+                    <Typography
+                      appearance="moderate"
+                      brand="neutral-translucent"
+                      typographyType="body-sm"
+                    >
+                      {t("collection:browse.resultsCount", {
+                        total: numeral(totalCount).format("0,0"),
+                      })}
+                    </Typography>
+                  </div>
+
+                  <Picker
+                    options={SORT_OPTIONS.map((option) => ({
+                      label: option.label,
+                      value: option,
+                    }))}
+                    value={sortBy}
+                    onChange={(value) => {
+                      setSortBy(value);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
 
-                <Picker
-                  options={SORT_OPTIONS.map((option) => ({
-                    label: option.label,
-                    value: option,
-                  }))}
-                  value={sortBy}
-                  onChange={(value) => {
-                    setSortBy(value);
-                    setCurrentPage(1);
-                  }}
+                <Listing
+                  className="grid grid-cols-[repeat(auto-fit,minmax(26rem,1fr))] gap-4"
+                  entityCount={collections?.length}
+                  isError={!!error}
+                  isLoading={loading}
+                  noResultsChildren={
+                    <Button
+                      appearance="moderate"
+                      brand="neutral"
+                      leftIcon="open_in_new"
+                      onClick={() =>
+                        window.api.shell.openUrl(
+                          `https://www.nexusmods.com/games/${gameDomainName}/mods`,
+                        )
+                      }
+                    >
+                      {t("collection:browse.modsComingSoon.openWebsite")}
+                    </Button>
+                  }
+                  noResultsMessage={t("collection:browse.noCollections.message")}
+                  noResultsTitle={t("collection:browse.noCollections.title")}
+                  skeletonCount={12}
+                  SkeletonTile={CollectionTileSkeleton}
+                >
+                  {collections?.map((collection) => (
+                    <CollectionTile
+                      api={api}
+                      collection={collection}
+                      isLoggedIn={isLoggedIn}
+                      key={collection.id}
+                      onAddCollection={() => handleAddCollection(collection)}
+                      onViewPage={() =>
+                        window.api.shell.openUrl(
+                          `https://www.nexusmods.com/games/${collection.game.domainName}/collections/${collection.slug}`,
+                        )
+                      }
+                    />
+                  ))}
+                </Listing>
+
+                <Pagination
+                  currentPage={currentPage}
+                  recordsPerPage={itemsPerPage}
+                  scrollRef={scrollRef}
+                  totalRecords={totalCount}
+                  onPaginationUpdate={(newPage) => setCurrentPage(newPage)}
                 />
               </div>
-
-              <Listing
-                className="grid grid-cols-[repeat(auto-fit,minmax(26rem,1fr))] gap-4"
-                entityCount={collections?.length}
-                isError={!!error}
-                isLoading={loading}
-                noResultsChildren={
-                  <Button
-                    appearance="moderate"
-                    brand="neutral"
-                    leftIcon="open_in_new"
-                    onClick={() =>
-                      window.api.shell.openUrl(
-                        `https://www.nexusmods.com/games/${gameDomainName}/mods`,
-                      )
-                    }
-                  >
-                    {t("collection:browse.modsComingSoon.openWebsite")}
-                  </Button>
-                }
-                noResultsMessage={t("collection:browse.noCollections.message")}
-                noResultsTitle={t("collection:browse.noCollections.title")}
-                skeletonCount={12}
-                SkeletonTile={CollectionTileSkeleton}
-              >
-                {collections?.map((collection) => (
-                  <CollectionTile
-                    api={api}
-                    collection={collection}
-                    isLoggedIn={isLoggedIn}
-                    key={collection.id}
-                    onAddCollection={() => handleAddCollection(collection)}
-                    onViewPage={() =>
-                      window.api.shell.openUrl(
-                        `https://www.nexusmods.com/games/${collection.game.domainName}/collections/${collection.slug}`,
-                      )
-                    }
-                  />
-                ))}
-              </Listing>
-
-              <Pagination
-                currentPage={currentPage}
-                recordsPerPage={itemsPerPage}
-                scrollRef={scrollRef}
-                totalRecords={totalCount}
-                onPaginationUpdate={(newPage) => setCurrentPage(newPage)}
-              />
-            </div>
-          </TabPanel>
+            </TabPanel>
+          )}
 
           <TabPanel id="mods">
             <NoResults

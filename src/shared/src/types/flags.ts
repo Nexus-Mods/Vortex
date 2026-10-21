@@ -1,6 +1,7 @@
 import { z } from "../zodJitless";
 
 // NOTE(erri120): explicit casting with `as z.ZodType<>` required for `--isolatedDeclarations` to work
+// Prefix flags with "vortex-" to qualify it within the shared Unleash application; the name must match the toggle configured in Unleash.
 export const flagVariantSchemas = {
   "vortex-test-flag": {
     "variant-1": z.coerce.number() as z.ZodType<number>,
@@ -11,9 +12,9 @@ export const flagVariantSchemas = {
       .pipe(z.object({ foo: z.string() })) as z.ZodType<{ foo: string }>,
   },
   // On/off gate for the file-level requirements health check (no variants).
-  // Prefixed with "vortex-" to qualify it within the shared Unleash application;
-  // the name must match the toggle configured in Unleash.
   "vortex-file-requirements-health-check": {},
+  // On/off gate for Tier 0 game support (games managed without a game extension).
+  "vortex-tier-0-game-support": {},
 };
 
 type FlagVariantSchemas = typeof flagVariantSchemas;

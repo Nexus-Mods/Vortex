@@ -1,6 +1,7 @@
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { Tier } from "@/extensions/gamemode_management/tiered/types";
 import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Pill } from "@/ui/components/pill/Pill";
@@ -25,7 +26,7 @@ const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice
 
 /** Known stores, keyed by the id `IDiscoveryResult.store` carries. */
 const STORES: Record<string, { icon: IIconSource; label: string }> = {
-  epic: { icon: { path: nxmEpicGames }, label: "Epic Games" },
+  epic: { icon: { path: nxmEpicGames }, label: "Epic" },
   gog: { icon: { path: nxmGog }, label: "GOG" },
   origin: { icon: { path: nxmElectronicArts }, label: "Origin" },
   steam: { icon: { path: nxmSteam }, label: "Steam" },
@@ -36,6 +37,8 @@ const STORES: Record<string, { icon: IIconSource; label: string }> = {
 export interface IGameTileProps {
   className?: string;
   highlighted?: boolean;
+  /** the game's support tier, shown as a small pill */
+  supportTier?: Tier;
   supportedBy?: string;
   imageUrl?: string;
   menu?: { actions: IMenuAction[][]; label: string };
@@ -55,6 +58,7 @@ export interface IGameTileProps {
 export const GameTile = ({
   className,
   highlighted,
+  supportTier,
   supportedBy,
   imageUrl,
   menu,
@@ -103,6 +107,12 @@ export const GameTile = ({
             data-menu-open={open || undefined}
           >
             <div className="flex gap-x-4">
+              {!!supportTier && (
+                <Pill appearance="scrim" brand="light">
+                  {supportTier}
+                </Pill>
+              )}
+
               {!!store && (
                 <Pill appearance="scrim" brand="light" icon={knownStore?.icon}>
                   {knownStore?.label ?? titleCase(store)}

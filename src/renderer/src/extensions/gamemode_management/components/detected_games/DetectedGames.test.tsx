@@ -13,6 +13,7 @@ const { baseState, dispatch, emit, sendNotification, state } = vi.hoisted(() => 
     session: {
       discovery: { running: false },
       gameMode: {
+        known: [] as Array<{ id: string; name: string }>,
         detectedGames: [] as Array<{ gameUid: string; extension?: object }>,
         detectedGamesStatus: "success" as "running" | "failed" | "success" | undefined,
       },
@@ -52,10 +53,19 @@ vi.mock("react-redux", async () => {
 });
 
 // The tiles are the grid's concern and pull in the store; this file is about which of
-// the four empty states this section picks, so the lists are stubbed out.
+// the four empty states this section picks, so the lists are stubbed out. The grid's
+// stand-in also shows the detected stores it was handed.
 vi.mock("../GamesGrid", () => ({
-  GamesGrid: ({ games }: { games: IGameStored[] }) => (
-    <div data-testid="games-grid">{games.map((iter) => iter.name).join(",")}</div>
+  GamesGrid: ({
+    detectedStores,
+    games,
+  }: {
+    detectedStores?: Record<string, string>;
+    games: IGameStored[];
+  }) => (
+    <div data-stores={JSON.stringify(detectedStores)} data-testid="games-grid">
+      {games.map((iter) => iter.name).join(",")}
+    </div>
   ),
 }));
 
@@ -147,6 +157,15 @@ describe("DetectedGames", () => {
   it("hands its games to the grid", () => {
     renderComponent({ count: "1", games: [game("skyrim")] });
     expect(screen.getByTestId("games-grid")).toHaveTextContent("skyrim");
+  });
+
+  it("hands the grid the store each game was detected on", () => {
+    renderComponent({ count: "1", detectedStores: { skyrim: "steam" }, games: [game("skyrim")] });
+
+    expect(screen.getByTestId("games-grid")).toHaveAttribute(
+      "data-stores",
+      JSON.stringify({ skyrim: "steam" }),
+    );
   });
 
   it("hands them to the list when the layout says so", () => {
@@ -397,6 +416,23 @@ describe("DetectedGames", () => {
       await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
 
       expect(await screen.findByText("Games detected")).toBeInTheDocument();
+      expect(sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "No new games found", type: "info" }),
+      );
+    });
+
+    // Discovery lists games the response can't name, such as an extension still in
+    // development, so a scan that reports one of those again has found nothing new.
+    it("counts a game only discovery found as already detected", async () => {
+      state.current.session.gameMode.known = [{ id: "emberville", name: "Emberville" }];
+      state.current.settings.gameMode.discovered = {
+        emberville: { path: "C:/Games/Emberville" },
+      };
+      scanResolving(["emberville"]);
+      renderComponent({ count: "1", games: [game("emberville")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
       expect(sendNotification).toHaveBeenCalledWith(
         expect.objectContaining({ message: "No new games found", type: "info" }),
       );

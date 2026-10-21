@@ -101,9 +101,21 @@ const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompar
 const toRows = (mods: IModWithState[]): IModRow[] =>
   mods.map((mod) => ({ mod, name: modName(mod) })).sort(byName);
 
-// The mods a collection installed; collections themselves are the groups, not rows.
+// Every view's rows; a collection heads its group instead, so it's never one.
 const installedMods = (mods: { [id: string]: IModWithState }) =>
   toRows(Object.values(mods).filter((mod) => mod.type !== COLLECTION_TYPE));
+
+// Pushes rather than copies, so a large group costs one pass, not a copy per row.
+const addRow = (groups: Map<string, IModRow[]>, key: string, row: IModRow) => {
+  const rows = groups.get(key);
+
+  if (!rows) {
+    groups.set(key, [row]);
+    return;
+  }
+
+  rows.push(row);
+};
 
 // A group for the mods that fit no other, first, when there are any.
 const ungroupedFirst = (id: string, label: string, rows: IModRow[]): IModGroup[] =>
@@ -118,7 +130,20 @@ const groupByCollection = (
   t: TFunction,
   memberships: { [modId: string]: IMod[] },
 ): IModGroup[] | undefined => {
-  const rows = installedMods(mods);
+  const byCollection = new Map<string, IModRow[]>();
+  const ungrouped: IModRow[] = [];
+
+  installedMods(mods).forEach((row) => {
+    const members = memberships[row.mod.id] ?? [];
+
+    if (members.length === 0) {
+      ungrouped.push(row);
+      return;
+    }
+
+    // A collection can list the same mod more than once, but it's one row in its group.
+    new Set(members.map((member) => member.id)).forEach((id) => addRow(byCollection, id, row));
+  });
 
   const collectionGroups = Object.values(mods)
     .filter((mod) => mod.type === COLLECTION_TYPE)
@@ -129,16 +154,12 @@ const groupByCollection = (
       label: name,
       collection,
       image: collection.attributes?.pictureUrl,
-      rows: rows.filter(({ mod }) =>
-        (memberships[mod.id] ?? []).some((member) => member.id === collection.id),
-      ),
+      rows: byCollection.get(collection.id) ?? [],
     }));
 
   if (collectionGroups.length === 0) {
     return undefined;
   }
-
-  const ungrouped = rows.filter(({ mod }) => (memberships[mod.id] ?? []).length === 0);
 
   return [...ungroupedFirst("no-collection", t("No collection"), ungrouped), ...collectionGroups];
 };
@@ -175,7 +196,7 @@ const groupByAuthor = (mods: { [id: string]: IModWithState }, t: TFunction): IMo
       return;
     }
 
-    byAuthor.set(author, [...(byAuthor.get(author) ?? []), row]);
+    addRow(byAuthor, author, row);
   });
 
   const authorGroups = Array.from(byAuthor, ([author, rows]) => {
@@ -204,7 +225,7 @@ const groupByColumn = (
   const byValue = new Map<string, IModRow[]>();
   const none: IModRow[] = [];
 
-  toRows(Object.values(mods)).forEach((row) => {
+  installedMods(mods).forEach((row) => {
     const value = column.groupBy(row).trim();
 
     if (!value) {
@@ -212,7 +233,7 @@ const groupByColumn = (
       return;
     }
 
-    byValue.set(value, [...(byValue.get(value) ?? []), row]);
+    addRow(byValue, value, row);
   });
 
   const valueGroups = Array.from(byValue, ([value, rows]) => ({
@@ -262,9 +283,8 @@ export const groupMods = (
   return undefined;
 };
 
-/** Every mod, collections included, by name: the rows of a view that doesn't group. */
-export const allModRows = (mods: { [id: string]: IModWithState }): IModRow[] =>
-  toRows(Object.values(mods));
+/** Every mod but the collections, which head groups rather than list as rows, by name. */
+export const allModRows = (mods: { [id: string]: IModWithState }): IModRow[] => installedMods(mods);
 
 export interface ISharedMods {
   /** The group's mods other collections have too. */

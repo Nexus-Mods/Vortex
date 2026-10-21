@@ -29,7 +29,7 @@ import { showError } from "../../util/message";
 import { downloadPathForGame } from "../../util/selectors";
 import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
+import { batchDispatch, makeQueue, truthy } from "../../util/util";
 import { emitModRemoved } from "../analytics/mixpanel/modChangeAnalytics";
 import type { IDownload } from "../download_management/types/IDownload";
 import getDownloadGames from "../download_management/util/getDownloadGames";
@@ -678,7 +678,8 @@ async function undeploy(
   resetDeploymentFailures(api, gameMode);
 
   try {
-    await Promise.all(
+    // all mod types settle before the queue moves on
+    const typeResults = await Promise.allSettled(
       Object.keys(byModTypes).map(async (typeId) => {
         const subdir = genSubDirFunc(game, getModType(typeId));
         const deployPath = modPaths[typeId || ""];
@@ -724,6 +725,12 @@ async function undeploy(
         );
       }),
     );
+    const failed = typeResults.find(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
+    );
+    if (failed !== undefined) {
+      throw failed.reason;
+    }
     reportRecordedFailures(api, gameMode);
   } finally {
     log("debug", "done undeploying single mod", {
@@ -732,6 +739,9 @@ async function undeploy(
     });
   }
 }
+
+// undeploys rewrite the manifest they load, so they run one at a time
+const undeployQueue = makeQueue<void>();
 
 function undeployMods(
   api: IExtensionApi,
@@ -743,7 +753,7 @@ function undeployMods(
   // anyway)
   mods = mods.filter((mod) => mod.installationPath !== undefined);
 
-  return undeploy(api, activators, gameId, mods).catch((err) => {
+  return undeployQueue(() => undeploy(api, activators, gameId, mods), false).catch((err) => {
     if (!["ENOENT", "ENOTFOUND"].includes(getErrorCode(err))) {
       throw err;
     }

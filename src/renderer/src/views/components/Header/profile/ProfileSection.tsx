@@ -2,6 +2,7 @@ import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { setOpenMainPage } from "@/actions/session";
 import { useExtensionContext } from "@/ExtensionProvider";
 import {
   clearOAuthCredentials,
@@ -46,17 +47,24 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
   const label = userInfo?.name ?? t("Account");
 
   const sections: IMenuAction[][] = [
-    !userInfo
-      ? []
-      : [
-          {
-            icon: { name: "account_circle", filled: true },
-            label: t("View profile on web"),
-            onClick: () => {
-              opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
-            },
-          },
-        ],
+    [
+      ...(userInfo
+        ? [
+            {
+              icon: { name: "account_circle", filled: true },
+              label: t("View profile on web"),
+              onClick: () => {
+                opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
+              },
+            } satisfies IMenuAction,
+          ]
+        : []),
+      {
+        icon: "settings",
+        label: t("Settings"),
+        onClick: () => dispatch(setOpenMainPage("application_settings", false)),
+      },
+    ],
     [
       {
         icon: "refresh",

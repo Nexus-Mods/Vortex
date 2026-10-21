@@ -41,7 +41,7 @@ const state = {
   settings: {
     mods: { activator: {}, confirmPurge: true, betaTable: false },
     downloads: { copyOnIFF: false },
-    automation: { install: false },
+    automation: { install: false, deploy: false },
   },
   session: { discovery: {} },
   persistent: { mods: {} },
@@ -65,6 +65,7 @@ vi.mock("react-redux", async () => {
   };
 });
 
+import { setAutoDeployment } from "../../settings_interface/actions/automation";
 import { setBetaModsTable } from "../actions/settings";
 import { useModToolbarActions } from "./useModToolbarActions.hook";
 
@@ -239,51 +240,53 @@ describe("useModToolbarActions brands", () => {
   });
 });
 
-describe("useModToolbarActions deploy", () => {
-  const deployAction = () => actionsFor([]).find((action) => action.id === "deploy");
-
-  const setModActivity = (activity: string[] | undefined) => {
-    (state.session as { base?: unknown }).base =
-      activity === undefined ? undefined : { activity: { mods: activity } };
-  };
-
-  /** Gives the fixture an active game with changes waiting to deploy, or takes it away. */
-  const setPending = (pending: boolean) => {
-    const settings = state.settings as { profiles?: unknown };
-    const persistent = state.persistent as { profiles?: unknown; deployment?: unknown };
-    settings.profiles = pending ? { activeProfileId: "p1" } : undefined;
-    persistent.profiles = pending ? { p1: { id: "p1", gameId: "skyrimse" } } : undefined;
-    persistent.deployment = pending ? { needToDeploy: { skyrimse: true } } : undefined;
-  };
-
+describe("useModToolbarActions auto-apply", () => {
   afterEach(() => {
-    setModActivity(undefined);
-    setPending(false);
+    state.settings.automation.deploy = false;
+    dispatch.mockClear();
   });
 
-  it("says it applies changes", () => {
-    expect(deployAction()?.label).toBe("Deploy (Apply changes)");
+  const autoApply = () => actionsFor([]).find((action) => action.id === "auto-apply");
+
+  it("comes just before the view switch, unpinned, in a section of its own", () => {
+    const actions = actionsFor([plain("Manage Rules")]);
+
+    expect(actions.at(-2)).toMatchObject({ id: "auto-apply", section: "automation" });
+    expect(actions.at(-1)?.section).not.toBe("automation");
+    expect(actions.at(-3)?.section).not.toBe("automation");
+    expect(autoApply()?.pinned).toBeFalsy();
   });
 
-  it("is enabled while nothing is deploying", () => {
-    setModActivity([]);
-    expect(deployAction()?.disabled).toBe(false);
+  it("shows the rule settings symbol", () => {
+    expect(autoApply()?.icon).toBe("rule_settings");
   });
 
-  it("stays neutral while changes are waiting", () => {
-    setPending(true);
-    setModActivity([]);
-    expect(deployAction()?.brand).toBeUndefined();
+  it("offers to turn auto-apply on while it's off", () => {
+    expect(autoApply()).toMatchObject({
+      label: "Enable auto-apply",
+      description: "Automatically apply changes as you make them.",
+      active: false,
+      trackingProperties: { autoApply: true },
+    });
+
+    autoApply()?.onClick?.();
+
+    expect(dispatch).toHaveBeenCalledWith(setAutoDeployment(true));
   });
 
-  it.each(["deployment", "deployment_pending"])("is disabled and says so while %s", (activity) => {
-    setPending(true);
-    setModActivity([activity]);
+  it("offers to turn auto-apply off, lit, while it's on", () => {
+    state.settings.automation.deploy = true;
 
-    const action = deployAction();
+    expect(autoApply()).toMatchObject({
+      label: "Disable auto-apply",
+      description: "Mod changes will need to be applied manually.",
+      active: true,
+      trackingProperties: { autoApply: false },
+    });
 
-    expect(action?.disabled).toBe(true);
-    expect(action?.label).toBe("Applying mod changes…");
+    autoApply()?.onClick?.();
+
+    expect(dispatch).toHaveBeenCalledWith(setAutoDeployment(false));
   });
 });
 

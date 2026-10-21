@@ -1,4 +1,5 @@
 import { selectors, types, util } from "@nexusmods/vortex-api";
+import { VortexModId } from "@vortex/shared";
 import * as _ from "lodash";
 import { createSelector } from "reselect";
 
@@ -48,6 +49,11 @@ export const enabledModKeys = createSelector(
 
     return lastLookupInfo;
   },
+);
+
+export const enabledModIds = createSelector(
+  enabledModKeys,
+  (keys): ReadonlySet<VortexModId> => new Set(keys.map((key) => VortexModId(key.id))),
 );
 
 let lastOverrideLookup: types.IMod[];

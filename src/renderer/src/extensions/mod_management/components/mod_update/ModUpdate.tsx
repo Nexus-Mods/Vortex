@@ -13,7 +13,6 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { activeGameId } from "@/util/selectors";
 
 import type { IMod } from "../../types/IMod";
-import { collectionNamesByMod } from "../../util/collection_membership/collectionMembership";
 import { confirmCollectionModUpdate } from "../../util/collection_update_warning/collectionUpdateWarning";
 import { offersUpdate } from "../../util/mod_has_update/modHasUpdate";
 import type { UpdateState } from "../../util/modUpdateState";
@@ -62,10 +61,7 @@ export const modUpdateDetails = (mod: IMod): IModUpdateDetails => {
 
 /** Updates a mod to its newest file, asking first if a collection has it, as that pins its version. */
 const updateMod = async (api: IExtensionApi, mod: IMod, gameId: string) => {
-  const state = api.getState();
-  const mods = state.persistent.mods[activeGameId(state)] ?? {};
-  const collectionNames = collectionNamesByMod(mods, [mod.id])[mod.id];
-  if (collectionNames !== undefined && !(await confirmCollectionModUpdate(collectionNames))) {
+  if (!(await confirmCollectionModUpdate(api, activeGameId(api.getState()), mod.id))) {
     return;
   }
 

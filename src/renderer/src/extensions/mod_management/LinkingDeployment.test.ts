@@ -44,7 +44,10 @@ test("reports a file deleted from staging for each mod that deploys it into its 
 
   const changes = await h.method.externalChanges("skyrimse", h.stagingDir, h.gameDir, deployed);
 
-  expect(changes.map((change) => [change.changeType, change.target])).toEqual([
+  const reported = changes
+    .map((change) => [change.changeType, change.target])
+    .sort(([, lhs], [, rhs]) => lhs.localeCompare(rhs));
+  expect(reported).toEqual([
     ["srcdeleted", "AAA-mod-a"],
     ["srcdeleted", "AAB-mod-b"],
   ]);
