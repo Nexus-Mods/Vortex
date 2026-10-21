@@ -4,7 +4,9 @@ import * as path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { FileSourceKind, type FileSource, type Lockfile } from "./lockfile";
+import { GameStore } from "./gameInstall";
+import { NexusFileUid, NexusGameId, SteamAppId, SteamBuildId } from "./ids";
+import { FileSourceKind, HashType, type FileSource, type Lockfile } from "./lockfile";
 import { OperationKind, plan, type Operation } from "./plan";
 
 /** The game directory the lockfiles deploy into, a fresh temp directory per test. */
@@ -21,9 +23,13 @@ afterEach(async () => {
 function lockfile(files: FileSource[]): Lockfile {
   return {
     version: 1,
-    gameId: 1704,
-    gameVersion: "1.6.1170",
-    storeId: "steam",
+    gameId: NexusGameId(1704),
+    install: {
+      store: GameStore.Steam,
+      appId: SteamAppId(489830),
+      buildId: SteamBuildId(15218373),
+      depots: [],
+    },
     files,
   };
 }
@@ -31,8 +37,9 @@ function lockfile(files: FileSource[]): Lockfile {
 function makeFileSource(name: string, fileHash: string): FileSource {
   return {
     source: FileSourceKind.Nexus,
-    fileId: "100",
+    fileUid: NexusFileUid(((1704n << 32n) | 100n).toString()),
     fileHash,
+    hashType: HashType.Md5,
     destinationPath: path.join(gameDir, name),
   };
 }
