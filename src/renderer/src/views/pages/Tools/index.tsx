@@ -98,7 +98,7 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                 {/* Default launcher section */}
                 <Panel
                   heading={t("Default launcher")}
-                  icon={{ name: "bolt", filled: true }}
+                  icon="bolt"
                   tooltip={t("Runs instead of the game when you hit Play")}
                 >
                   {launcherTool ? (
@@ -128,7 +128,7 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                     count: pinnedCount,
                     max: MAX_PINNED_TOOLS,
                   })}
-                  icon={{ name: "keep", filled: true }}
+                  icon="keep"
                   tooltip={t("Pin shortcuts to your most used tools in the left menu")}
                 >
                   {otherPinnedTools.length > 0 ? (
@@ -174,7 +174,7 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                 />
               )}
               heading={t("Tools")}
-              icon={{ name: "build", filled: true }}
+              icon="build"
               tooltip={t("Use the + button to add a new tool")}
             >
               {unpinnedTools.length > 0 ? (

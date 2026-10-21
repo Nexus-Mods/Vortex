@@ -16,11 +16,11 @@ export interface IAlertProps extends HTMLAttributes<HTMLDivElement> {
   dismissLabel?: string;
 }
 
-const severityIcons: Record<AlertSeverity, { name: SymbolName; filled?: boolean }> = {
-  danger: { name: "report", filled: true },
-  info: { name: "info" },
-  success: { name: "check_circle" },
-  warning: { name: "warning" },
+const severityIcons: Record<AlertSeverity, SymbolName> = {
+  danger: "report",
+  info: "info",
+  success: "check_circle",
+  warning: "warning",
 };
 
 /**
@@ -58,7 +58,7 @@ export const Alert = ({
       {...props}
     >
       <div className="nxm-alert-message">
-        <Icon {...severityIcons[severity]} className="nxm-alert-icon" size="sm" />
+        <Icon className="nxm-alert-icon" name={severityIcons[severity]} size="sm" />
 
         <p className="nxm-alert-text">{children}</p>
       </div>
