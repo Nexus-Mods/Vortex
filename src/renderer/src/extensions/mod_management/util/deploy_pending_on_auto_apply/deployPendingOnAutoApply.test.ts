@@ -1,28 +1,29 @@
+import type { Action } from "redux";
 import { describe, expect, it, vi } from "vitest";
 
-import type { IExtensionApi } from "../../../../types/IExtensionContext";
+import type { IState } from "../../../../types/IState";
 import type Debouncer from "../../../../util/Debouncer";
 import { deployPendingOnAutoApply } from "./deployPendingOnAutoApply";
 
-const setup = (needToDeploy: Record<string, boolean>) => {
-  const dispatch = vi.fn();
-  const api = {
-    store: { dispatch },
-    getState: () => ({
-      settings: { profiles: { activeProfileId: "default" } },
-      persistent: {
-        profiles: { default: { id: "default", gameId: "skyrimse" } },
-        deployment: { needToDeploy },
-      },
-    }),
-  } as unknown as IExtensionApi;
-  const schedule = vi.fn();
-  const timer = { schedule } as unknown as Debouncer;
+type ActivityAction = Action & { payload: { group: string; activityId: string } };
 
-  return { onChange: deployPendingOnAutoApply(api, timer), dispatch, schedule };
+const setup = (needToDeploy: Record<string, boolean>, modsActivity: string[] = []) => {
+  const dispatch = vi.fn<(action: ActivityAction) => void>();
+  const state = {
+    settings: { profiles: { activeProfileId: "default" } },
+    session: { base: { activity: { mods: modsActivity } } },
+    persistent: {
+      profiles: { default: { id: "default", gameId: "skyrimse" } },
+      deployment: { needToDeploy },
+    },
+  } as unknown as IState;
+  const schedule = vi.fn<Debouncer["schedule"]>();
+  const api = { store: { dispatch }, getState: () => state };
+
+  return { onChange: deployPendingOnAutoApply(api, { schedule }), dispatch, schedule };
 };
 
-const activities = (dispatch: ReturnType<typeof vi.fn>) =>
+const activities = (dispatch: ReturnType<typeof setup>["dispatch"]) =>
   dispatch.mock.calls.map(([action]) => action.payload);
 
 describe("deployPendingOnAutoApply", () => {
@@ -38,7 +39,7 @@ describe("deployPendingOnAutoApply", () => {
       activityId: "deployment_pending",
     });
 
-    schedule.mock.calls[0][0]();
+    schedule.mock.calls[0][0]?.(null);
     expect(dispatch).toHaveBeenCalledTimes(2);
   });
 
@@ -57,6 +58,15 @@ describe("deployPendingOnAutoApply", () => {
     onChange(false, true);
 
     expect(schedule).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when a deploy is already under way", () => {
+    const { onChange, dispatch, schedule } = setup({ skyrimse: true }, ["deployment"]);
+
+    onChange(false, true);
+
+    expect(schedule).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("does nothing when auto-apply is turned off, or was already on", () => {
