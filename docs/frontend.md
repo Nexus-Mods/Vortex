@@ -274,8 +274,8 @@ label, so selecting a tab stopped working as soon as the label was translated.
   fails the typecheck.
 - A component's `icon` prop (`leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by
   name (`icon="star"`), a symbol with its axes (`icon={{ name: "star", fill: true }}`), an SVG
-  path for the custom `nxm*` icons the font lacks (`icon={{ path: nxmMod }}`), or a node. The type
-  is `IIconProp` (`IIconSource` where a node makes no sense), from `Icon.tsx`. Legacy icon names,
+  path for the custom `nxm*` icons the font lacks (`icon={{ path: nxmMod }}`), or an element. The type
+  is `IIconProp` (`IIconSource` where an element makes no sense), from `Icon.tsx`. Legacy icon names,
   which actions and extensions register with, resolve through `getIcon(name)` in
   `views/components/iconMap.ts`. Pages can pass a `menuIcon`; an extension's own `mdi` path
   still works.

@@ -3,7 +3,7 @@ import React, {
   type CSSProperties,
   type HTMLAttributes,
   isValidElement,
-  type ReactNode,
+  type ReactElement,
   type SVGAttributes,
 } from "react";
 
@@ -147,10 +147,10 @@ export type IIconSource =
   | Pick<ISymbolIconProps, "name" | "fill" | "weight" | "grade" | "opticalSize">
   | { path: string };
 
-/** What a component's `icon` prop takes: a source for `Icon` to draw, or a node to show as is. */
-export type IIconProp = ReactNode | IIconSource;
+/** What a component's `icon` prop takes: a source for `Icon` to draw, or an element as is. */
+export type IIconProp = ReactElement | IIconSource;
 
-/** Whether an `icon` prop is a source for `Icon` to draw, and not a node to show as it is. */
+/** Whether an `icon` prop is a source for `Icon` to draw, and not an element to show as it is. */
 export const isIconSource = (icon: IIconProp): icon is IIconSource =>
   typeof icon === "string" ||
   (typeof icon === "object" &&
@@ -164,7 +164,7 @@ export const iconSourceProps = (source: IIconSource): IIconProps =>
 
 /**
  * The icon a component shows for its `icon` prop: a source drawn by `Icon`, with the class and
- * size the component gives its icons, or a node in a box with that class. Nothing for no icon.
+ * size the component gives its icons, or an element in a box with that class. Nothing for no icon.
  */
 export const IconSlot = ({
   className,

@@ -149,7 +149,7 @@ import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
 
 **Axes:** with `name`, `fill`, `weight`, `grade` and `opticalSize` set the font's axes. Any Material Symbol works; the whole font ships.
 
-**In other components:** a component's `icon` (or `leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by name, a symbol with its axes, an SVG path, or a node. `IIconProp` is the type, from `Icon.tsx`.
+**In other components:** a component's `icon` (or `leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by name, a symbol with its axes, an SVG path, or an element; a bare string has to be a real symbol. `IIconProp` is the type, from `Icon.tsx`.
 
 ```tsx
 <Button leftIcon="add">Add</Button>

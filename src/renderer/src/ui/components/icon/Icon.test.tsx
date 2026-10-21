@@ -7,6 +7,7 @@ import {
   IconSlot,
   iconSourceProps,
   isIconSource,
+  type IIconProp,
   type IPathIconProps,
   type ISymbolIconProps,
 } from "./Icon";
@@ -193,12 +194,16 @@ describe("Icon", () => {
 
     it.each([
       ["an element", <span key="a" />],
-      ["a list of elements", [<span key="a" />]],
       ["nothing", undefined],
-      ["null", null],
-      ["false", false],
     ])("takes %s as a node, not a source", (_, icon) => {
       expect(isIconSource(icon)).toBe(false);
+    });
+
+    it("takes no name the font doesn't have", () => {
+      // @ts-expect-error a misspelled symbol is neither a source nor a node
+      const icon: IIconProp = "serach";
+
+      expect(icon).toBe("serach");
     });
   });
 
