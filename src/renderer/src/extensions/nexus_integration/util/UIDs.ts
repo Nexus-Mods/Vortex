@@ -49,6 +49,22 @@ export function makeFileUID(repoInfo: IModRepoId): string {
   return ((BigInt(gameIdNum) << BigInt(32)) | BigInt(fileId)).toString();
 }
 
+/**
+ * Resolve a Nexus file UID for a mod, or return undefined if not possible.
+ */
+export function resolveFileUID(
+  attributes: { fileId?: number | string; downloadGame?: string },
+  gameId: string,
+): string | undefined {
+  if (attributes.fileId === undefined) return undefined;
+  return (
+    makeFileUID({
+      gameId: attributes.downloadGame ?? gameId,
+      fileId: attributes.fileId.toString(),
+    }) ?? undefined
+  );
+}
+
 export function makeModUID(repoInfo: IModRepoId): string {
   // check if gameId is numeric and if not, use gameNum() to convert
   const gameIdNum = /^\d+$/.test(repoInfo.gameId)

@@ -1,3 +1,4 @@
+import { stat } from "node:fs/promises";
 import * as path from "node:path";
 
 import {
@@ -17,6 +18,12 @@ import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import { numericNexusGameId } from "../../analytics/mixpanel/numericGameId";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { getModType } from "../../gamemode_management/util/modTypeExtensions";
+import { createVortexNexusV3Client } from "../../nexus_integration/nexusV3Client";
+import { resolveFileUID } from "../../nexus_integration/util/UIDs";
+import {
+  fetchArchiveFiles,
+  type ArchiveFiles,
+} from "../../nexus_integration/util_v3/archiveManifests";
 import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
 import { mapWithConcurrency } from "../LinkingDeployment";
 import { installPathForGame } from "../selectors";
@@ -36,6 +43,13 @@ function modOrigin(mod: IMod): ResolverMod["origin"] {
   return mod.attributes?.source === "nexus" && fileId !== undefined
     ? { source: FileSourceKind.Nexus, fileId: String(fileId) }
     : { source: FileSourceKind.UserGenerated };
+}
+
+/** The Nexus file version a mod was installed from. */
+function nexusVersionId(mod: IMod, gameMode: string): string | undefined {
+  return modOrigin(mod).source === FileSourceKind.Nexus
+    ? resolveFileUID(mod.attributes, gameMode)
+    : undefined;
 }
 
 /** A mod's staged files, relative to its staging folder. */
@@ -84,13 +98,46 @@ interface IStagedSource {
   destinationPath: string;
   /** its mod's staged files */
   into: StagedFile[];
+  /** the Nexus file version its mod was installed from */
+  versionId?: string;
+  /** "/" separated, relative to its mod's staging folder */
+  portableRelPath: string;
 }
 
-/** The resolver input for a game's deploying mods. */
+/**
+ * The MD5 a staged file has in its archive: the entries at its path, or under a folder the installer
+ * stripped, that match its size must agree on one.
+ */
+async function archiveMd5(
+  source: IStagedSource,
+  archiveFiles: ArchiveFiles | undefined,
+): Promise<string | undefined> {
+  const { portableRelPath } = source;
+  const candidates = (archiveFiles?.get(path.posix.basename(portableRelPath)) ?? []).filter(
+    (archiveFile) =>
+      archiveFile.path === portableRelPath || archiveFile.path.endsWith(`/${portableRelPath}`),
+  );
+  if (candidates.length === 0) {
+    return undefined;
+  }
+  const { size } = await stat(source.stagedPath);
+  const md5s = new Set(
+    candidates.filter((archiveFile) => archiveFile.size === size).map(({ md5 }) => md5),
+  );
+  return md5s.size === 1 ? [...md5s][0] : undefined;
+}
+
+/**
+ * The resolver input for a game's deploying mods. A staged Nexus file takes its hash from its
+ * archive's manifest where that is unambiguous.
+ */
 export async function gatherResolverInput(
   api: IExtensionApi,
   gameMode: VortexGameId,
   hashFile: (filePath: string) => Promise<string> = fileMD5,
+  lookupArchiveFiles: (versionIds: string[]) => Promise<ReadonlyMap<string, ArchiveFiles>> = (
+    versionIds,
+  ) => fetchArchiveFiles(createVortexNexusV3Client(api), versionIds),
 ): Promise<ResolverInput> {
   const state: IState = api.getState();
   const game = getGame(gameMode);
@@ -115,6 +162,15 @@ export async function gatherResolverInput(
   const skipLists = await skipListsByType(game, modPaths);
   const stagingPath = installPathForGame(state, gameMode);
 
+  // the manifests download while the staging folders are walked
+  const pendingArchiveFiles = lookupArchiveFiles([
+    ...new Set(
+      sortedMods
+        .map((mod) => nexusVersionId(mod, gameMode))
+        .filter((versionId) => versionId !== undefined),
+    ),
+  ]);
+
   const mods: ResolverMod[] = [];
   const sources: IStagedSource[] = [];
   for (const mod of sortedMods) {
@@ -129,6 +185,7 @@ export async function gatherResolverInput(
       overriddenPaths: (mod.fileOverrides ?? []).map(toPortablePath),
     };
     mods.push(resolverMod);
+    const versionId = nexusVersionId(mod, gameMode);
     const subDir = genSubDirFunc(game, getModType(mod.type))(mod);
     const modPath = path.join(stagingPath, mod.installationPath);
     for (const relPath of await stagedRelPaths(modPath)) {
@@ -137,14 +194,21 @@ export async function gatherResolverInput(
           stagedPath: path.join(modPath, relPath),
           destinationPath: toPortablePath(deployedFilePath(modPaths[typeId], subDir, relPath)),
           into: resolverMod.stagedFiles,
+          versionId,
+          portableRelPath: toPortablePath(relPath),
         });
       }
     }
   }
 
+  const archiveFilesByVersion = await pendingArchiveFiles;
   const fileHashes = await mapWithConcurrency(
     sources,
-    (source) => hashFile(source.stagedPath),
+    async (source) => {
+      const archiveFiles =
+        source.versionId !== undefined ? archiveFilesByVersion.get(source.versionId) : undefined;
+      return (await archiveMd5(source, archiveFiles)) ?? hashFile(source.stagedPath);
+    },
     HASH_CONCURRENCY,
   );
   sources.forEach((source, index) => {

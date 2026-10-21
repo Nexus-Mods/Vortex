@@ -25,6 +25,7 @@ import * as path from "path";
 
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
+import type { components as V3Components } from "@vortex/nexus-api-v3";
 import { type VortexModId, VortexModStagingFolder, VortexProfileId } from "@vortex/shared";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
@@ -108,6 +109,7 @@ import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus
 import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
 import { MEMBERSHIP_ROLE, transformUserInfoFromApi } from "../extensions/nexus_integration/util";
+import type { ArchiveManifestFile } from "../extensions/nexus_integration/util_v3/archiveManifests";
 import { setNextProfile } from "../extensions/profile_management/actions/settings";
 import { settingsReducer as profileSettingsReducer } from "../extensions/profile_management/reducers/settings";
 import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
@@ -221,6 +223,34 @@ export function makeMod(overrides: Partial<IMod> = {}): IMod {
     type: "",
     installationPath: "mods/mod-1",
     attributes: {},
+    ...overrides,
+  };
+}
+
+/** A file version as the v3 mod-file-versions batch endpoint returns it. */
+export function makeModFileVersionDetail(
+  overrides: Partial<V3Components["schemas"]["ModFileVersionDetail"]> = {},
+): V3Components["schemas"]["ModFileVersionDetail"] {
+  return {
+    id: "7318624307791",
+    mod_id: "7318624284988",
+    mod_file_id: "4212580",
+    name: "SkyUI_5_2_SE",
+    version: "5.2SE",
+    position: "1.0",
+    manifest_url: "https://mod-file-manifests.test/10/91/b1/skyui",
+    ...overrides,
+  };
+}
+
+/** A file entry of a Nexus archive's manifest. */
+export function makeArchiveManifestFile(
+  overrides: Partial<ArchiveManifestFile> = {},
+): ArchiveManifestFile {
+  return {
+    file_path: "SkyUI_SE.esp",
+    file_size: 2388,
+    file_hashes: { MD5: "b65a92135fb46c4bf17b8faa2f80089c" },
     ...overrides,
   };
 }

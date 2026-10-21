@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import * as path from "node:path";
 
 import {
@@ -36,6 +36,7 @@ import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { getModType } from "../../gamemode_management/util/modTypeExtensions";
 import hardlinkInit from "../../hardlink_activator";
+import type { ArchiveFiles } from "../../nexus_integration/util_v3/archiveManifests";
 import deployMods from "../modActivation";
 import { sessionReducer } from "../reducers/session";
 import type { IMod } from "../types/IMod";
@@ -47,6 +48,7 @@ import { doSortMods } from "./sort";
 
 const hashFile = async (filePath: string) => checksum(await readFile(filePath));
 const toPortablePath = (filePath: string) => filePath.replaceAll("\\", "/");
+const noArchiveFiles = () => Promise.resolve(new Map<string, ArchiveFiles>());
 
 const MOD_A = VortexModId("ModA");
 const MOD_B = VortexModId("ModB");
@@ -127,7 +129,7 @@ async function deployedFiles(game: IDeployedGameHarness): Promise<StagedFile[]> 
 
 async function expectResolvedAsDeployed(game: IDeployedGameHarness): Promise<Lockfile> {
   const lockfile = resolve(
-    await gatherResolverInput(game.api, VortexGameId(game.gameId), hashFile),
+    await gatherResolverInput(game.api, VortexGameId(game.gameId), hashFile, noArchiveFiles),
   );
 
   const deployed = await deployedFiles(game);
@@ -226,4 +228,77 @@ test("the resolver deploys a second mod type into its own target, as today's dep
   ]);
 
   await expectResolvedAsDeployed(game);
+});
+
+test("a Nexus file takes its hash from the archive entries of its size at its path, or under a stripped folder, when they agree", async () => {
+  const game = await makeResolvableGame();
+  // a numeric download game resolves the file version without the Nexus game list
+  const modA = makeStagedMod(MOD_A, {
+    attributes: { source: "nexus", fileId: 1001, downloadGame: "1704" },
+  });
+  await installMods(game, [
+    {
+      mod: modA,
+      relPaths: [
+        "ModA.bsa",
+        "ModA.esp",
+        path.join("meshes", "rock.nif"),
+        path.join("textures", "sky.dds"),
+      ],
+    },
+  ]);
+  const modPath = path.join(game.stagingPath, modA.installationPath);
+  const sizeOf = async (relPath: string) => (await stat(path.join(modPath, relPath))).size;
+  const skySize = await sizeOf(path.join("textures", "sky.dds"));
+  const archiveFiles: ArchiveFiles = new Map([
+    ["ModA.bsa", [{ path: "ModA.bsa", size: await sizeOf("ModA.bsa"), md5: "archive-bsa-md5" }]],
+    [
+      "ModA.esp",
+      [{ path: "ModA Wrapper/ModA.esp", size: await sizeOf("ModA.esp"), md5: "archive-esp-md5" }],
+    ],
+    ["rock.nif", [{ path: "meshes/rock.nif", size: 1, md5: "archive-rock-md5" }]],
+    [
+      "sky.dds",
+      [
+        { path: "Option A/textures/sky.dds", size: skySize, md5: "archive-sky-a-md5" },
+        { path: "Option B/textures/sky.dds", size: skySize, md5: "archive-sky-b-md5" },
+      ],
+    ],
+  ]);
+  const lookupArchiveFiles = vi.fn((versionIds: string[]) =>
+    Promise.resolve(new Map(versionIds.map((versionId) => [versionId, archiveFiles]))),
+  );
+  const hashStagedFile = vi.fn(hashFile);
+
+  const lockfile = resolve(
+    await gatherResolverInput(
+      game.api,
+      VortexGameId(game.gameId),
+      hashStagedFile,
+      lookupArchiveFiles,
+    ),
+  );
+
+  expect(lookupArchiveFiles).toHaveBeenCalledWith([((1704n << 32n) | 1001n).toString()]);
+  expect(
+    lockfile.files.map(({ destinationPath, fileHash }) => ({ destinationPath, fileHash })),
+  ).toEqual([
+    {
+      destinationPath: toPortablePath(path.join(game.dataPath, "ModA.bsa")),
+      fileHash: "archive-bsa-md5",
+    },
+    {
+      destinationPath: toPortablePath(path.join(game.dataPath, "ModA.esp")),
+      fileHash: "archive-esp-md5",
+    },
+    {
+      destinationPath: toPortablePath(path.join(game.dataPath, "meshes", "rock.nif")),
+      fileHash: await hashFile(path.join(modPath, "meshes", "rock.nif")),
+    },
+    {
+      destinationPath: toPortablePath(path.join(game.dataPath, "textures", "sky.dds")),
+      fileHash: await hashFile(path.join(modPath, "textures", "sky.dds")),
+    },
+  ]);
+  expect(hashStagedFile).toHaveBeenCalledTimes(2);
 });
