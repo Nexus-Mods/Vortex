@@ -23,6 +23,7 @@ import { HoverCardDemo } from "@/ui/components/hover_card/HoverCard.demo";
 import { IconDemo } from "@/ui/components/icon/Icon.demo";
 import { ImageDemo } from "@/ui/components/image/Image.demo";
 import { ListingDemo } from "@/ui/components/listing/Listing.demo";
+import { MessageBoxDemo } from "@/ui/components/message_box/MessageBox.demo";
 import { PaginationDemo } from "@/ui/components/pagination/Pagination.demo";
 import { PickerDemo } from "@/ui/components/picker/Picker.demo";
 import { PillDemo } from "@/ui/components/pill/Pill.demo";
@@ -101,6 +102,7 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
             <TabButton name="Tooltip" panelId="tooltip" />
 
             <TabButton name="Alert" panelId="alert" />
+            <TabButton name="Message box" panelId="message-box" />
           </TabBar>
 
           <div className="mt-6">
@@ -318,6 +320,10 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
 
             <TabPanel id="alert">
               <AlertDemo />
+            </TabPanel>
+
+            <TabPanel id="message-box">
+              <MessageBoxDemo />
             </TabPanel>
           </div>
         </TabProvider>
