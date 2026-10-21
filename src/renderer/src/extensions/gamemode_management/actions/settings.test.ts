@@ -41,7 +41,7 @@ describe("setGameParameters", () => {
   it("creates the correct action", () => {
     const parameters = {
       workingDirectory: "E:",
-      icon: { path: "new icon" },
+      iconPath: "new icon",
       environment: { KEY: "value" },
       commandLine: "new line",
     };
