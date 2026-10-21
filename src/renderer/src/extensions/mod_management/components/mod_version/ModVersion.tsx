@@ -130,7 +130,7 @@ const ModVersionPicker = ({
               aria-haspopup="menu"
               brand="neutral"
               className="min-w-0 flex-1 justify-between px-1 [&>span]:truncate"
-              rightIcon="expand_more"
+              rightIcon="keyboard_arrow_down"
               size="sm"
             >
               {label}

@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
-import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { cp, mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join, basename, dirname } from "node:path";
 
 import { glob } from "glob";
-
-import { parseSymbolNames, subsetSymbols } from "./subset_symbols/subsetSymbols.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -82,24 +80,15 @@ for (const dir of ["fonts", "icons", "images", "pictograms"]) {
   await copy(join(WORKSPACE, "assets", dir), join(ASSETS, dir));
 }
 
-// The Material Symbols font, cut down to the symbols the Icon component lists. The font comes from
-// the renderer's deps, which own the component, and is some 4 MB whole.
+// The Material Symbols font, from the renderer's deps, which own the Icon component.
 const symbolsDir = dirname(
   createRequire(join(WORKSPACE, "src/renderer/package.json")).resolve(
     "material-symbols/package.json",
   ),
 );
-const symbolNames = parseSymbolNames(
-  await readFile(join(WORKSPACE, "src/renderer/src/ui/components/icon/symbols.ts"), "utf8"),
-);
-const symbolsFont = await subsetSymbols(
-  await readFile(join(symbolsDir, "material-symbols-outlined.woff2")),
-  symbolNames,
-);
-await mkdir(join(ASSETS, "fonts"), { recursive: true });
-await writeFile(join(ASSETS, "fonts/material-symbols-outlined.woff2"), symbolsFont);
-console.log(
-  `wrote ${symbolNames.length} symbols to material-symbols-outlined.woff2 (${symbolsFont.length} bytes)`,
+await copy(
+  join(symbolsDir, "material-symbols-outlined.woff2"),
+  join(ASSETS, "fonts/material-symbols-outlined.woff2"),
 );
 
 for (const file of await glob("assets/*.json", { cwd: WORKSPACE })) {

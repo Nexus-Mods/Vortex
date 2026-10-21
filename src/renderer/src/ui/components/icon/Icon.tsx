@@ -1,3 +1,4 @@
+import type { MaterialSymbol } from "material-symbols";
 import React, {
   type CSSProperties,
   type HTMLAttributes,
@@ -8,9 +9,8 @@ import React, {
 
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import type { SymbolName } from "./symbols";
-
-export type { SymbolName } from "./symbols";
+/** A Material Symbol's name. A name the font doesn't have fails the typecheck. */
+export type SymbolName = MaterialSymbol;
 
 export type IIconSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "none";
 
@@ -48,7 +48,7 @@ export type IPathIconProps = IIconBaseProps &
     name?: never;
   };
 
-/** An icon drawn from Material Symbols, the variable font, by the symbol's name from `symbols.ts`. */
+/** An icon drawn from Material Symbols, the variable font, by the symbol's name. */
 export type ISymbolIconProps = IIconBaseProps &
   Omit<HTMLAttributes<HTMLSpanElement>, "children" | "title"> & {
     name: SymbolName;

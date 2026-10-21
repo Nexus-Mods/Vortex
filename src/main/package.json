@@ -135,8 +135,6 @@
             "dependentTasksOutputFiles": "**/dist/**"
           },
           "{projectRoot}/copy-assets.mjs",
-          "{projectRoot}/subset_symbols/subsetSymbols.mjs",
-          "{workspaceRoot}/src/renderer/src/ui/components/icon/symbols.ts",
           "{workspaceRoot}/src/stylesheets/**/*.scss",
           "{workspaceRoot}/src/renderer/src/index.html",
           "{workspaceRoot}/src/renderer/src/splash.html",
@@ -400,11 +398,9 @@
     "electron": "catalog:",
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
-    "fontkit": "catalog:",
     "openapi-typescript": "catalog:",
     "react-refresh": "catalog:",
     "redux-freeze": "catalog:",
-    "subset-font": "catalog:",
     "vitest-fetch-mock": "catalog:"
   }
 }

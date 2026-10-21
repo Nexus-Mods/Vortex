@@ -659,7 +659,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Dropdown>
-        <UiDropdownButton rightIcon="expand_more">{label}</UiDropdownButton>
+        <UiDropdownButton rightIcon="keyboard_arrow_down">{label}</UiDropdownButton>
 
         <DropdownItems>
           {filtered.map((source) => (

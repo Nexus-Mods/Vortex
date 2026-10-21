@@ -124,7 +124,7 @@ import { Button } from "../../ui/components/button/Button";
 <Button isLoading>Processing...</Button>
 
 // Disclosure toggle: keeps aria-expanded, without the menu-trigger "open" highlight
-<Button aria-expanded={!collapsed} hasExpandedStyle={false} leftIcon="expand_less" />
+<Button aria-expanded={!collapsed} hasExpandedStyle={false} leftIcon="keyboard_arrow_up" />
 ```
 
 **Brands:** `primary`, `info`, `neutral`, `success`, `premium`, `danger`
@@ -147,7 +147,7 @@ import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
 
 **Sizes:** `xs` (12px), `sm` (16px), `md` (20px), `lg` (24px), `xl` (32px), `2xl` (48px), `none` (controlled via className)
 
-**Axes:** with `name`, `fill`, `weight`, `grade` and `opticalSize` set the font's axes. Only the symbols in `icon/symbols.ts` are in the shipped font; add one there to use it.
+**Axes:** with `name`, `fill`, `weight`, `grade` and `opticalSize` set the font's axes. Any Material Symbol works; the whole font ships.
 
 **In other components:** a component's `icon` (or `leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by name, a symbol with its axes, an SVG path, or a node. `IIconProp` is the type, from `Icon.tsx`.
 

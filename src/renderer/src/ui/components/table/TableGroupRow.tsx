@@ -64,7 +64,7 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
             type="button"
             onClick={onToggle}
           >
-            <Icon name={expanded ? "expand_more" : "chevron_right"} size="none" />
+            <Icon name={expanded ? "keyboard_arrow_down" : "chevron_right"} size="none" />
           </button>
         )}
 

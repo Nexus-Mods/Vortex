@@ -101,7 +101,7 @@ export default function CategoryListItem({
   const actions: IToolbarAction[] = [
     {
       label: "Edit",
-      icon: "drive_file_rename_outline",
+      icon: "edit",
       testId: "category-rename",
       onClick: () => setEditMode("name"),
     },
@@ -163,7 +163,7 @@ export default function CategoryListItem({
                 aria-label="Expand/Collapse"
                 brand="neutral"
                 data-testid="category-expand"
-                leftIcon={expanded ? "expand_more" : "chevron_right"}
+                leftIcon={expanded ? "keyboard_arrow_down" : "chevron_right"}
                 title="Expand/Collapse"
                 onClick={() => expand(categoryId)}
               />
