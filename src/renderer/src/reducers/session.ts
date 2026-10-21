@@ -44,7 +44,8 @@ export const defaultState: ISession = {
   overlayOpen: false,
   visibleDialog: undefined,
   networkConnected: true,
-  mainPage: "",
+  // the page open at startup
+  mainPage: "Games",
   secondaryPage: "",
   activity: {},
   progress: {},
