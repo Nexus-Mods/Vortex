@@ -280,6 +280,7 @@ async function purgeModsImpl(
 
       let lastDeployment: { [typeId: string]: IDeployedFile[] };
       let purgeSucceeded = true;
+      let purgeCanceled = false;
       api.store.dispatch(startActivity("mods", "purging"));
       // keyed by mod type
       const saveLeftovers = (deployments: Record<string, IDeployedFile[]>) =>
@@ -338,11 +339,14 @@ async function purgeModsImpl(
           purgeSucceeded = false;
           throw err;
         }
+        purgeCanceled = true;
       } finally {
         onProgress(85, "Post purge events");
         await activator.postPurge();
         if (purgeSucceeded) {
-          api.store.dispatch(setDeploymentPurged(gameId, true));
+          if (!purgeCanceled) {
+            api.store.dispatch(setDeploymentPurged(gameId, true));
+          }
           await api.emitAndAwait("did-purge", profile.id);
         }
       }

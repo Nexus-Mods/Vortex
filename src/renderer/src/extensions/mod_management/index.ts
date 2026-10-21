@@ -904,6 +904,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 newDeployment,
                 deployProgress,
               );
+              api.store.dispatch(setDeploymentPurged(gameId, false));
             });
 
             // at this point the deployment lock gets released so another deployment
@@ -924,7 +925,6 @@ function genUpdateModDeployment(installManager: InstallManager) {
 
             const failures = reportRecordedFailures(api, game.id);
             api.store.dispatch(setDeploymentNecessary(game.id, failures.length > 0));
-            api.store.dispatch(setDeploymentPurged(game.id, false));
 
             emitModsDeployed(api, {
               gameId,
