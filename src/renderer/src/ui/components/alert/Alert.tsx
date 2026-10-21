@@ -16,8 +16,8 @@ export interface IAlertProps extends HTMLAttributes<HTMLDivElement> {
   dismissLabel?: string;
 }
 
-const severityIcons: Record<AlertSeverity, { name: SymbolName; fill?: boolean }> = {
-  danger: { name: "report", fill: true },
+const severityIcons: Record<AlertSeverity, { name: SymbolName; filled?: boolean }> = {
+  danger: { name: "report", filled: true },
   info: { name: "info" },
   success: { name: "check_circle" },
   warning: { name: "warning" },

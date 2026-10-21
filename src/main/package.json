@@ -135,6 +135,11 @@
             "dependentTasksOutputFiles": "**/dist/**"
           },
           "{projectRoot}/copy-assets.mjs",
+          {
+            "externalDependencies": [
+              "material-symbols"
+            ]
+          },
           "{workspaceRoot}/src/stylesheets/**/*.scss",
           "{workspaceRoot}/src/renderer/src/index.html",
           "{workspaceRoot}/src/renderer/src/splash.html",

@@ -831,7 +831,7 @@ import { Picker } from "../../ui/components/picker/Picker";
 
 // Style the trigger via `button` — it forwards all Button props (+ showChevron)
 <Picker
-  button={{ size: "xs", leftIcon: { name: "grid_view", fill: true } }}
+  button={{ size: "xs", leftIcon: { name: "grid_view", filled: true } }}
   options={options}
   value={value}
   onChange={setValue}
@@ -862,8 +862,8 @@ import { Pill } from "../../ui/components/pill/Pill";
 <Pill appearance="none">Unstyled</Pill>
 
 // With an icon (path or custom node)
-<Pill icon={{ name: "sell", fill: true }}>Tagged</Pill>
-<Pill icon={<Icon name="sell" fill size="none" />}>Custom node</Pill>
+<Pill icon={{ name: "sell", filled: true }}>Tagged</Pill>
+<Pill icon={<Icon name="sell" filled size="none" />}>Custom node</Pill>
 
 // As an interactive button
 <Pill as="button" onClick={handleClick}>Clickable</Pill>

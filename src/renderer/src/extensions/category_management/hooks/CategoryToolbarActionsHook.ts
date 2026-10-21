@@ -46,7 +46,7 @@ export default function useCategoryToolbarActions(props: ICategoryToolbarActions
       },
       {
         label: showEmpty ? t("Hide Empty") : t("Show Empty"),
-        icon: { name: showEmpty ? "visibility_off" : "visibility", fill: true },
+        icon: { name: showEmpty ? "visibility_off" : "visibility", filled: true },
         showLabel: true,
         onClick: toggleEmpty,
       },
