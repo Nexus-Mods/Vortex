@@ -48,6 +48,15 @@ describe("canRenderWithModal", () => {
     ).toBe(true);
   });
 
+  it("leaves the updater's What's New on the legacy dialog", () => {
+    expect(
+      canRenderWithModal({
+        ...dialogWith({ htmlText: "<p>Notes</p>" }),
+        id: "new-update-changelog-dialog",
+      }),
+    ).toBe(false);
+  });
+
   it("rejects a field it has never heard of", () => {
     const content = { text: "t", somethingNew: true } as IDialogContent;
 
