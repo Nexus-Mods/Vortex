@@ -11,10 +11,12 @@ import { GameTile } from "@/ui/components/game_tile/GameTile";
 import { activeGameId } from "@/util/selectors";
 
 import { useGameCardActions } from "../hooks/use_game_card_actions/useGameCardActions.hook";
+import { Tiers } from "../tiered/types";
 import type { GameSource } from "../types/GameSource";
 import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
 import { GameDetailsModal } from "./GameDetailsModal";
+import { useSupportTier } from "./TierZeroIndicator";
 
 /**
  * Which of the Games page's three sections the card sits in. One prop rather than a
@@ -43,6 +45,7 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   const { api } = useMainContext();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isActive = useSelector((state: IState) => activeGameId(state) === game.id);
+  const supportTier = useSupportTier(game);
 
   const showDetails = useCallback(() => setDetailsOpen(true), []);
   const closeDetails = useCallback(() => setDetailsOpen(false), []);
@@ -87,6 +90,7 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
       <GameTile
         highlighted={section === "detected"}
         imageUrl={gameArtURL(game)}
+        supportTier={supportTier === Tiers.tier0 ? supportTier : undefined}
         menu={{ actions: menu, label: t("Game options") }}
         name={name}
         primaryAction={
