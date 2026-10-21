@@ -274,10 +274,6 @@ export const ModalLayer = () => {
     sections.push({ id: "md", node: <Markdown markdown={translateBody(content.md)} size="sm" /> });
   }
 
-  if (content.htmlText !== undefined) {
-    sections.push({ id: "htmlText", node: <Html html={content.htmlText} size="sm" /> });
-  }
-
   if (content.message !== undefined) {
     sections.push({
       id: "message",
@@ -297,6 +293,10 @@ export const ModalLayer = () => {
     });
   }
 
+  if (content.htmlText !== undefined) {
+    sections.push({ id: "htmlText", node: <Html html={content.htmlText} size="sm" /> });
+  }
+
   if (inputs.length > 0) {
     sections.push({
       id: "input",
@@ -308,7 +308,7 @@ export const ModalLayer = () => {
               errorMessage: errorFor(input.id) || undefined,
               // The old dialog showed no label for an input without one, so the title names it.
               hideLabel: !input.label,
-              label: translate(input.label ?? title),
+              label: translate(input.label || title),
               placeholder: input.placeholder,
               ref: index === 0 ? rememberFirstInput : undefined,
               value: valueOf(input) ?? "",

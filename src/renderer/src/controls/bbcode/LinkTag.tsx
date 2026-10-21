@@ -44,6 +44,10 @@ class LinkTag extends Tag {
     // Worked out now: the renderer's options are only set while it renders, not when React does.
     const href = this.href(linkUrl);
 
+    if (href === undefined) {
+      return this.getComponents();
+    }
+
     return (
       <ErrorContext.Consumer>
         {(context) => (
@@ -63,7 +67,7 @@ class LinkTag extends Tag {
     );
   }
 
-  /** The target the link points at. Subclasses can leave it off, to keep it from being followed. */
+  /** The target the link points at. Subclasses can leave it off, so the text is not a link. */
   protected href(linkUrl: string): string | undefined {
     return linkUrl;
   }

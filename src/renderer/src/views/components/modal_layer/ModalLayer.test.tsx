@@ -713,6 +713,19 @@ describe("ModalLayer", () => {
       await settleTransitions();
     });
 
+    it("comes after the message, as in the legacy dialog", async () => {
+      renderLayer([dialogWith("one", { htmlText: "<p>Notes</p>", message: "details" })]);
+
+      const notes = screen.getByText("Notes");
+      const message = screen.getByText("details");
+
+      expect(
+        message.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+
+      await settleTransitions();
+    });
+
     it("leaves out images, which the legacy dialog would have loaded", async () => {
       renderLayer([
         dialogWith("one", { htmlText: '<p>Notes</p><img src="https://example.com/a.png">' }),
@@ -934,15 +947,21 @@ describe("ModalLayer", () => {
   });
 
   describe("beyond the basics", () => {
-    it("names an input without a label after the dialog's title, without showing a label", async () => {
-      renderLayer([dialogWith("one", { text: "t", input: [{ id: "url", type: "url" }] })]);
+    it.each([
+      ["no label", undefined],
+      ["an empty label", ""],
+    ])(
+      "names an input with %s after the dialog's title, without showing a label",
+      async (_name, label) => {
+        renderLayer([dialogWith("one", { text: "t", input: [{ id: "url", type: "url", label }] })]);
 
-      expect(screen.getByRole("textbox", { name: "Title one" })).toBe(
-        screen.getByTestId("dialog-input-url"),
-      );
+        expect(screen.getByRole("textbox", { name: "Title one" })).toBe(
+          screen.getByTestId("dialog-input-url"),
+        );
 
-      await settleTransitions();
-    });
+        await settleTransitions();
+      },
+    );
 
     it("shows every button of a dialog with more than three", async () => {
       const dialog: IDialog = {

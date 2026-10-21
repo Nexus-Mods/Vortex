@@ -5,7 +5,7 @@ import LinkTag from "./LinkTag";
 /**
  * A link for bbcode we don't write ourselves. Its target is kept only if it opens a web page, runs
  * a callback the caller gave, or, if the caller allows local files, opens a local file. Any other
- * target is left off, so the text is not a link at all.
+ * target leaves the text as plain text, not a link.
  */
 class SafeLinkTag extends LinkTag {
   protected href(linkUrl: string): string | undefined {

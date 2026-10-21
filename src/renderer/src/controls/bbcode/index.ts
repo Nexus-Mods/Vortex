@@ -10,6 +10,7 @@ import LinkTag from "./LinkTag";
 import MoreTag from "./MoreTag";
 import OmittedTag from "./OmittedTag";
 import SafeLinkTag from "./SafeLinkTag";
+import SafeSizeTag from "./SafeSizeTag";
 import SafeStyleTag from "./SafeStyleTag";
 import SizeTag from "./SizeTag";
 import SpoilerTag from "./SpoilerTag";
@@ -41,7 +42,7 @@ export interface IBBCodeContext {
 const createFullParser = (safe: boolean) => {
   const parser = new bbcode.Parser();
 
-  parser.registerTag("size", SizeTag);
+  parser.registerTag("size", safe ? SafeSizeTag : SizeTag);
   parser.registerTag("br", BrTag);
   parser.registerTag("email", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("link", safe ? SafeLinkTag : LinkTag);

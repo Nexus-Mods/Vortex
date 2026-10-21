@@ -59,7 +59,8 @@ describe("BBCode", () => {
       render(<BBCode bbcode={`[url=${target}]open it[/url]`} />);
 
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
-      expect(screen.getByText("open it")).toBeInTheDocument();
+      expect(screen.getByText("open it").closest("a")).toBeNull();
+      expect(document.querySelector("[title]")).toBeNull();
     });
 
     it("keeps a link to a callback the caller gave, and runs it", async () => {
@@ -91,6 +92,18 @@ describe("BBCode", () => {
         "href",
         "file:///C:/notes.txt",
       );
+    });
+  });
+
+  describe("size", () => {
+    it.each([
+      ["keeps a size it may use", "[size=3]", "1.3rem"],
+      ["caps a size too big for the dialog", "[size=2000]", "1.6rem"],
+      ["raises a size too small to read", "[size=-20]", "1rem"],
+    ])("%s", (_name, tag, fontSize) => {
+      render(<BBCode bbcode={`${tag}Big[/size]`} />);
+
+      expect(screen.getByText("Big").style.fontSize).toBe(fontSize);
     });
   });
 
