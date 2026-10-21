@@ -7,7 +7,7 @@ import React from "react";
 
 import { Image } from "@/ui/components/image/Image";
 import { Typography } from "@/ui/components/typography/Typography";
-import { nxmCollection, nxmDiscord, nxmInstall, nxmMod, nxmVortex } from "@/ui/icon-paths";
+import { nxmCollection, nxmDiscord, nxmMod, nxmModOutline, nxmVortex } from "@/ui/icon-paths";
 
 import { Icon } from "./Icon";
 
@@ -22,8 +22,8 @@ const symbols = [
 
 const nxmIcons = [
   { path: nxmVortex, label: "nxmVortex" },
-  { path: nxmInstall, label: "nxmInstall" },
   { path: nxmMod, label: "nxmMod" },
+  { path: nxmModOutline, label: "nxmModOutline" },
   { path: nxmCollection, label: "nxmCollection" },
   { path: nxmDiscord, label: "nxmDiscord" },
 ];

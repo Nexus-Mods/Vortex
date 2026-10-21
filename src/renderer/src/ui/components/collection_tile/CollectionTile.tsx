@@ -24,7 +24,7 @@ import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
 import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Image } from "@/ui/components/image/Image";
 import { Typography } from "@/ui/components/typography/Typography";
-import { nxmFileSize, nxmMod } from "@/ui/icon-paths";
+import { nxmMod } from "@/ui/icon-paths";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import Debouncer from "@/util/Debouncer";
 import { isCollectionModPresent } from "@/util/selectors";
@@ -188,7 +188,9 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
               {numeral(collection.endorsements).format("0 a")}
             </Stat>
 
-            <Stat icon={{ path: nxmFileSize }}>{numeral(revision.totalSize).format("0.0 b")}</Stat>
+            <Stat icon={{ name: "hard_drive", filled: true }}>
+              {numeral(revision.totalSize).format("0.0 b")}
+            </Stat>
 
             <Stat icon={{ path: nxmMod }}>{numeral(revision.modCount).format("0,0")}</Stat>
           </div>

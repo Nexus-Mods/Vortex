@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 import * as React from "react";
 
 import { Icon as UiIcon } from "@/ui/components/icon/Icon";
-import { nxmCollections } from "@/ui/icon-paths";
+import { nxmCollection } from "@/ui/icon-paths";
 
 export interface IActiveModCountProps {
   t: TFunction;
@@ -19,7 +19,7 @@ function ActiveModCount(props: IActiveModCountProps): JSX.Element | null {
 
   const label = t("{{ count }} active mod", { count });
 
-  const icon = <UiIcon path={nxmCollections} size="sm" />;
+  const icon = <UiIcon path={nxmCollection} size="sm" />;
   return compact ? (
     <div className="flex items-center gap-x-1 text-sm" title={label}>
       {icon}
