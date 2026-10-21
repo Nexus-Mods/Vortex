@@ -1,22 +1,19 @@
-import { GameFactsSchema, type GameFacts } from "./gameFacts";
 import { LockfileSchema, type Lockfile } from "./lockfile";
-import { StateSchema, type IState } from "./state";
+import { ResolverInputSchema, type ResolverInput } from "./resolverInput";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
-/** Vortex state and game facts, and the lockfile they must resolve to. */
+/** A resolver input and the lockfile it must resolve to. */
 export interface ResolverFixture {
   /** the behaviour it proves; the test name */
   name: string;
-  state: IState;
-  gameFacts: GameFacts;
+  input: ResolverInput;
   expected: Lockfile;
 }
 
 const resolverFixtureSchema = z.object({
   name: z.string(),
-  state: StateSchema,
-  gameFacts: GameFactsSchema,
+  input: ResolverInputSchema,
   expected: LockfileSchema,
 });
 

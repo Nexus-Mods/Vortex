@@ -1,51 +1,39 @@
 {
   "name": "the later mod wins a file both mods deploy",
-  "state": {
-    "persistent": {
-      "mods": {
-        "skyrimse": {
-          "ModA": {
-            "attributes": { "source": "nexus", "fileId": 1001 }
-          },
-          "ModB": {}
-        }
-      },
-      "profiles": {
-        "profile-1": {
-          "modState": { "ModA": { "enabled": true }, "ModB": { "enabled": true } }
-        }
-      }
-    },
-    "settings": { "profiles": { "lastActiveProfile": { "skyrimse": "profile-1" } } }
-  },
-  "gameFacts": {
-    "gameMode": "skyrimse",
-    "gameId": "1704",
+  "input": {
+    "gameId": 1704,
     "gameVersion": "1.6.1170.0",
     "storeId": "steam",
-    "sortedModIds": ["ModA", "ModB"],
-    "stagedFiles": {
-      "ModA": [
-        {
-          "destinationPath": "/fixture-root/game/Data/ModA.esp",
-          "fileHash": "mod-a-esp-hash"
-        },
-        {
-          "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
-          "fileHash": "mod-a-sky-hash"
-        }
-      ],
-      "ModB": [
-        {
-          "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
-          "fileHash": "mod-b-sky-hash"
-        }
-      ]
-    }
+    "mods": [
+      {
+        "origin": { "source": "NEXUS", "fileId": "1001" },
+        "stagedFiles": [
+          {
+            "destinationPath": "/fixture-root/game/Data/ModA.esp",
+            "fileHash": "mod-a-esp-hash"
+          },
+          {
+            "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
+            "fileHash": "mod-a-sky-hash"
+          }
+        ],
+        "overriddenPaths": []
+      },
+      {
+        "origin": { "source": "USER_GENERATED" },
+        "stagedFiles": [
+          {
+            "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
+            "fileHash": "mod-b-sky-hash"
+          }
+        ],
+        "overriddenPaths": []
+      }
+    ]
   },
   "expected": {
     "version": 1,
-    "gameId": "1704",
+    "gameId": 1704,
     "gameVersion": "1.6.1170.0",
     "storeId": "steam",
     "files": [

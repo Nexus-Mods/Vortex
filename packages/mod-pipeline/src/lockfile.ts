@@ -1,7 +1,7 @@
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
-/** Where a deployed file comes from. */
+/** The kinds of origin a deployed file has. */
 export const FileSourceKind = {
   Nexus: "NEXUS",
   VortexGenerated: "VORTEX_GENERATED",
@@ -9,21 +9,20 @@ export const FileSourceKind = {
 } as const;
 export type FileSourceKind = (typeof FileSourceKind)[keyof typeof FileSourceKind];
 
+/** Where a deployed file comes from. */
+export type FileOrigin =
+  | { source: typeof FileSourceKind.Nexus; fileId: string }
+  | { source: typeof FileSourceKind.VortexGenerated }
+  | { source: typeof FileSourceKind.UserGenerated };
+
 /** A deployed file: its origin and absolute destination. */
-export type FileSource =
-  | {
-      source: typeof FileSourceKind.Nexus;
-      fileId: string;
-      fileHash: string;
-      destinationPath: string;
-    }
-  | { source: typeof FileSourceKind.VortexGenerated; fileHash: string; destinationPath: string }
-  | { source: typeof FileSourceKind.UserGenerated; fileHash: string; destinationPath: string };
+export type FileSource = FileOrigin & { fileHash: string; destinationPath: string };
 
 /** The resolved files of one game, the Plan step's input. */
 export interface Lockfile {
   version: number;
-  gameId: string;
+  /** Nexus Mods numeric game id */
+  gameId: number;
   gameVersion: string;
   storeId: string;
   files: FileSource[];
@@ -50,7 +49,7 @@ const fileSourceSchema = z.discriminatedUnion("source", [
 
 const lockfileSchema = z.object({
   version: z.number().int(),
-  gameId: z.string(),
+  gameId: z.number().int(),
   gameVersion: z.string(),
   storeId: z.string(),
   files: z.array(fileSourceSchema),

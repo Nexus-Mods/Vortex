@@ -1,7 +1,12 @@
 import * as path from "node:path";
 
-import type { GameFacts, StagedFile } from "@nexusmods/mod-pipeline";
-import { getErrorCode } from "@vortex/shared";
+import {
+  FileSourceKind,
+  type ResolverInput,
+  type ResolverMod,
+  type StagedFile,
+} from "@nexusmods/mod-pipeline";
+import { getErrorCode, type VortexGameId } from "@vortex/shared";
 import turbowalk from "turbowalk";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -15,12 +20,23 @@ import { getModType } from "../../gamemode_management/util/modTypeExtensions";
 import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
 import { mapWithConcurrency } from "../LinkingDeployment";
 import { installPathForGame } from "../selectors";
+import type { IMod } from "../types/IMod";
 import BlacklistSet from "./BlacklistSet";
 import { genSubDirFunc } from "./deploy";
 import { deployedFilePath } from "./deployedFilePath";
 import { doSortMods } from "./sort";
 
 const HASH_CONCURRENCY = 16;
+
+const toPortablePath = (filePath: string) => filePath.replaceAll("\\", "/");
+
+/** A mod's origin; a Nexus mod without a file id is user generated. */
+function modOrigin(mod: IMod): ResolverMod["origin"] {
+  const fileId = mod.attributes?.fileId;
+  return mod.attributes?.source === "nexus" && fileId !== undefined
+    ? { source: FileSourceKind.Nexus, fileId: String(fileId) }
+    : { source: FileSourceKind.UserGenerated };
+}
 
 /** A mod's staged files, relative to its staging folder. */
 async function stagedRelPaths(modPath: string): Promise<string[]> {
@@ -64,17 +80,18 @@ async function skipListsByType(
 }
 
 interface IStagedSource {
-  modId: string;
   stagedPath: string;
   destinationPath: string;
+  /** its mod's staged files */
+  into: StagedFile[];
 }
 
-/** What resolve() needs about a game beyond its state. */
-export async function gatherGameFacts(
+/** The resolver input for a game's deploying mods. */
+export async function gatherResolverInput(
   api: IExtensionApi,
-  gameMode: string,
+  gameMode: VortexGameId,
   hashFile: (filePath: string) => Promise<string> = fileMD5,
-): Promise<GameFacts> {
+): Promise<ResolverInput> {
   const state: IState = api.getState();
   const game = getGame(gameMode);
   const discovery = state.settings.gameMode.discovered[gameMode];
@@ -98,6 +115,7 @@ export async function gatherGameFacts(
   const skipLists = await skipListsByType(game, modPaths);
   const stagingPath = installPathForGame(state, gameMode);
 
+  const mods: ResolverMod[] = [];
   const sources: IStagedSource[] = [];
   for (const mod of sortedMods) {
     const typeId = mod.type ?? "";
@@ -105,17 +123,20 @@ export async function gatherGameFacts(
     if (skipList === undefined) {
       continue;
     }
+    const resolverMod: ResolverMod = {
+      origin: modOrigin(mod),
+      stagedFiles: [],
+      overriddenPaths: (mod.fileOverrides ?? []).map(toPortablePath),
+    };
+    mods.push(resolverMod);
     const subDir = genSubDirFunc(game, getModType(mod.type))(mod);
     const modPath = path.join(stagingPath, mod.installationPath);
     for (const relPath of await stagedRelPaths(modPath)) {
       if (!skipList.skipFiles.has(skipList.normalize(path.join(mod.installationPath, relPath)))) {
         sources.push({
-          modId: mod.id,
           stagedPath: path.join(modPath, relPath),
-          destinationPath: deployedFilePath(modPaths[typeId], subDir, relPath).replaceAll(
-            "\\",
-            "/",
-          ),
+          destinationPath: toPortablePath(deployedFilePath(modPaths[typeId], subDir, relPath)),
+          into: resolverMod.stagedFiles,
         });
       }
     }
@@ -126,20 +147,14 @@ export async function gatherGameFacts(
     (source) => hashFile(source.stagedPath),
     HASH_CONCURRENCY,
   );
-  const stagedFiles: Record<string, StagedFile[]> = {};
   sources.forEach((source, index) => {
-    (stagedFiles[source.modId] ??= []).push({
-      destinationPath: source.destinationPath,
-      fileHash: fileHashes[index],
-    });
+    source.into.push({ destinationPath: source.destinationPath, fileHash: fileHashes[index] });
   });
 
   return {
-    gameMode,
-    gameId: String(gameId),
+    gameId,
     gameVersion: await game.getInstalledVersion(discovery),
     storeId: discovery.store,
-    sortedModIds: sortedMods.map((mod) => mod.id),
-    stagedFiles,
+    mods,
   };
 }

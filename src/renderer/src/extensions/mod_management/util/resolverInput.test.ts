@@ -1,0 +1,229 @@
+import { readFile } from "node:fs/promises";
+import * as path from "node:path";
+
+import {
+  FileSourceKind,
+  LockfileSchema,
+  resolve,
+  type Lockfile,
+  type StagedFile,
+} from "@nexusmods/mod-pipeline";
+import { VortexGameId, VortexModId } from "@vortex/shared";
+import { expect, vi } from "vitest";
+
+import type * as NexusIntegrationUtil from "../../nexus_integration/util";
+
+// util/Steam reads paths at import time and there is no ApplicationData here
+vi.mock("../../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }));
+// the Nexus game list comes from the network
+vi.mock("../../nexus_integration/util", async (importOriginal) => ({
+  ...(await importOriginal<typeof NexusIntegrationUtil>()),
+  nexusGames: () => [{ domain_name: "skyrimspecialedition", id: 1704 }],
+}));
+
+import {
+  makeProfileMod,
+  makeRealDeploymentMethod,
+  makeStagedMod,
+  registerTestModType,
+} from "../../../test-utils/builders";
+import { makeDeployedGame } from "../../../test-utils/deployedGame";
+import { test } from "../../../test-utils/harnessTest";
+import type { IDeployedGameHarness } from "../../../test-utils/harnessTypes";
+import { writeInto } from "../../../test-utils/tempDir";
+import { checksum } from "../../../util/checksum";
+import getNormalizeFunc from "../../../util/getNormalizeFunc";
+import { getGame } from "../../gamemode_management/util/getGame";
+import { getModType } from "../../gamemode_management/util/modTypeExtensions";
+import hardlinkInit from "../../hardlink_activator";
+import deployMods from "../modActivation";
+import { sessionReducer } from "../reducers/session";
+import type { IMod } from "../types/IMod";
+import BlacklistSet from "./BlacklistSet";
+import { genSubDirFunc } from "./deploy";
+import { deployedFilePath } from "./deployedFilePath";
+import { gatherResolverInput } from "./resolverInput";
+import { doSortMods } from "./sort";
+
+const hashFile = async (filePath: string) => checksum(await readFile(filePath));
+const toPortablePath = (filePath: string) => filePath.replaceAll("\\", "/");
+
+const MOD_A = VortexModId("ModA");
+const MOD_B = VortexModId("ModB");
+const MOD_C = VortexModId("ModC");
+const SCRIPT_EXTENDER = VortexModId("ScriptExtender");
+
+async function makeResolvableGame(): Promise<IDeployedGameHarness> {
+  const game = await makeDeployedGame({
+    methodId: "hardlink_activator",
+    extraReducers: [{ path: ["session", "mods"], reducer: sessionReducer }],
+  });
+  game.setState((draft) => {
+    draft.settings.gameMode.discovered[game.gameId].store = "steam";
+  });
+  return game;
+}
+
+/** Stages and installs the mods in order, enabled unless listed. */
+async function installMods(
+  game: IDeployedGameHarness,
+  stagedMods: { mod: IMod; relPaths: string[] }[],
+  disabledModIds: VortexModId[] = [],
+): Promise<void> {
+  for (const { mod, relPaths } of stagedMods) {
+    for (const relPath of relPaths) {
+      await writeInto(game.stagingPath, path.join(mod.installationPath, relPath));
+    }
+  }
+  game.setState((draft) => {
+    draft.persistent.mods[game.gameId] = Object.fromEntries(
+      stagedMods.map(({ mod }) => [mod.id, mod]),
+    );
+    draft.persistent.profiles[game.profileId].modState = Object.fromEntries(
+      stagedMods.map(({ mod }) => [
+        mod.id,
+        makeProfileMod({ enabled: !disabledModIds.some((modId) => modId === mod.id) }),
+      ]),
+    );
+  });
+}
+
+/** Each file the hardlink deployment writes, and its hash. */
+async function deployedFiles(game: IDeployedGameHarness): Promise<StagedFile[]> {
+  const state = game.getState();
+  const sortedMods = await doSortMods(
+    game.api,
+    state.persistent.profiles[game.profileId],
+    state.persistent.mods[game.gameId],
+  );
+  const harnessGame = getGame(game.gameId);
+  const modPaths = harnessGame.getModPaths(state.settings.gameMode.discovered[game.gameId].path);
+  const method = makeRealDeploymentMethod(game.api, hardlinkInit);
+  const files: StagedFile[] = [];
+  for (const [typeId, target] of Object.entries(modPaths).filter(
+    ([, deployPath]) => deployPath !== "",
+  )) {
+    const deployed = await deployMods(
+      game.api,
+      game.gameId,
+      game.stagingPath,
+      target,
+      sortedMods.filter((mod) => (mod.type ?? "") === typeId),
+      method,
+      [],
+      typeId,
+      new BlacklistSet([], harnessGame, await getNormalizeFunc(target)),
+      genSubDirFunc(harnessGame, getModType(typeId)),
+    );
+    for (const file of deployed) {
+      files.push({
+        destinationPath: toPortablePath(deployedFilePath(target, file.target, file.relPath)),
+        fileHash: await hashFile(path.join(game.stagingPath, file.source, file.relPath)),
+      });
+    }
+  }
+  return files.toSorted((lhs, rhs) => (lhs.destinationPath < rhs.destinationPath ? -1 : 1));
+}
+
+async function expectResolvedAsDeployed(game: IDeployedGameHarness): Promise<Lockfile> {
+  const lockfile = resolve(
+    await gatherResolverInput(game.api, VortexGameId(game.gameId), hashFile),
+  );
+
+  const deployed = await deployedFiles(game);
+
+  expect(deployed.length).toBeGreaterThan(0);
+  expect(LockfileSchema.safeParse(lockfile).success).toBe(true);
+  expect(
+    lockfile.files.map(({ destinationPath, fileHash }) => ({ destinationPath, fileHash })),
+  ).toEqual(deployed);
+  return lockfile;
+}
+
+test("the resolver deploys each file where today's deployment does, from the same mod", async () => {
+  const game = await makeResolvableGame();
+  await installMods(game, [
+    {
+      mod: makeStagedMod(MOD_A, { attributes: { source: "nexus", fileId: 1001 } }),
+      relPaths: ["ModA.esp", path.join("textures", "sky.dds")],
+    },
+    {
+      mod: makeStagedMod(MOD_B, {
+        attributes: { source: "website" },
+        rules: [{ type: "after", reference: { id: MOD_A } }],
+      }),
+      relPaths: [path.join("textures", "sky.dds"), path.join("meshes", "rock.nif"), "meta.ini"],
+    },
+    {
+      mod: makeStagedMod(MOD_C, {
+        fileOverrides: [path.join(game.dataPath, "meshes", "rock.nif")],
+        rules: [{ type: "after", reference: { id: MOD_B } }],
+      }),
+      relPaths: [path.join("meshes", "rock.nif")],
+    },
+  ]);
+
+  const lockfile = await expectResolvedAsDeployed(game);
+
+  expect(lockfile.files.filter((file) => file.source !== FileSourceKind.UserGenerated)).toEqual([
+    expect.objectContaining({
+      fileId: "1001",
+      destinationPath: toPortablePath(path.join(game.dataPath, "ModA.esp")),
+    }),
+  ]);
+});
+
+test("the resolver gives a file two unordered mods ship to the mod today's deployment does", async () => {
+  const game = await makeResolvableGame();
+  await installMods(game, [
+    { mod: makeStagedMod(MOD_A), relPaths: ["shared.txt"] },
+    { mod: makeStagedMod(MOD_B), relPaths: ["shared.txt"] },
+  ]);
+
+  await expectResolvedAsDeployed(game);
+});
+
+test("the resolver skips the files today's deployment skips", async () => {
+  const game = await makeResolvableGame();
+  await installMods(game, [
+    {
+      mod: makeStagedMod(MOD_A),
+      relPaths: [
+        "meta.ini",
+        path.join("notes", ".gitignore"),
+        path.join("notes", ".hidden_note"),
+        path.join("notes", "visible.txt"),
+      ],
+    },
+  ]);
+
+  await expectResolvedAsDeployed(game);
+});
+
+test("the resolver leaves out a disabled mod, as today's deployment does", async () => {
+  const game = await makeResolvableGame();
+  await installMods(
+    game,
+    [
+      { mod: makeStagedMod(MOD_A), relPaths: ["shared.txt"] },
+      { mod: makeStagedMod(MOD_B), relPaths: ["shared.txt", "b_only.txt"] },
+    ],
+    [MOD_B],
+  );
+
+  await expectResolvedAsDeployed(game);
+});
+
+test("the resolver deploys a second mod type into its own target, as today's deployment does", async () => {
+  const game = await makeResolvableGame();
+  registerTestModType("dinput", path.dirname(game.dataPath));
+  await installMods(game, [
+    {
+      mod: makeStagedMod(SCRIPT_EXTENDER, { type: "dinput" }),
+      relPaths: ["loader.exe", path.join("src", "readme.txt")],
+    },
+    { mod: makeStagedMod(MOD_A), relPaths: ["ModA.esp"] },
+  ]);
+
+  await expectResolvedAsDeployed(game);
+});

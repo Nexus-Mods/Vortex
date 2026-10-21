@@ -25,7 +25,7 @@ import * as path from "path";
 
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import { VortexProfileId } from "@vortex/shared";
+import { type VortexModId, VortexModStagingFolder, VortexProfileId } from "@vortex/shared";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import type { LootAsync, PluginInterface, PluginMetadata, Vertex } from "loot";
@@ -223,6 +223,11 @@ export function makeMod(overrides: Partial<IMod> = {}): IMod {
     attributes: {},
     ...overrides,
   };
+}
+
+/** A mod staged in the folder Vortex names after its id. */
+export function makeStagedMod(modId: VortexModId, overrides: Partial<IMod> = {}): IMod {
+  return makeMod({ id: modId, installationPath: VortexModStagingFolder(modId), ...overrides });
 }
 
 /** A file change as a deployment method's externalChanges reports it. */

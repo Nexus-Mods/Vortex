@@ -3,17 +3,15 @@ import { expect, test } from "vitest";
 import { loadResolverFixtures } from "./loadFixtures";
 import { resolve } from "./resolve";
 
-const loaded = loadResolverFixtures();
+const fixtures = loadResolverFixtures();
 
 test("the resolver fixtures are present", () => {
-  expect(loaded.length).toBeGreaterThan(0);
+  expect(fixtures.length).toBeGreaterThan(0);
 });
 
-test.each(loaded.map(({ fixture }) => [fixture.name, fixture] as const))("%s", (_name, fixture) => {
-  const lockfile = resolve(fixture.state, fixture.gameFacts);
+test.each(fixtures)("$name", (fixture) => {
+  const lockfile = resolve(fixture.input);
 
-  expect(resolve(structuredClone(fixture.state), structuredClone(fixture.gameFacts))).toEqual(
-    lockfile,
-  );
+  expect(resolve(structuredClone(fixture.input))).toEqual(lockfile);
   expect(lockfile).toEqual(fixture.expected);
 });

@@ -1,7 +1,5 @@
-export { GameFactsSchema } from "./gameFacts";
-export type { GameFacts, StagedFile } from "./gameFacts";
 export { FileSourceKind, LockfileSchema } from "./lockfile";
-export type { FileSource, Lockfile } from "./lockfile";
+export type { FileOrigin, FileSource, Lockfile } from "./lockfile";
 export { resolve } from "./resolve";
-export { StateSchema } from "./state";
-export type { IMod, IProfile, IState } from "./state";
+export { ResolverInputSchema } from "./resolverInput";
+export type { ResolverInput, ResolverMod, StagedFile } from "./resolverInput";

@@ -1,22 +1,22 @@
 import { FileSourceKind, resolve } from "@nexusmods/mod-pipeline";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { fileMD5 } from "../../../util/checksum";
-import { gatherGameFacts } from "./gameFacts";
+import { gatherResolverInput } from "./resolverInput";
 
 /** The games whose lockfile is resolved after each plugin sort. */
 const RESOLVED_GAMES: ReadonlySet<string> = new Set(["skyrimse"]);
 
 async function logResolvedLockfile(
   api: IExtensionApi,
-  gameMode: string,
+  gameMode: VortexGameId,
   hashFile: (filePath: string) => Promise<string>,
 ): Promise<void> {
   const startedAt = Date.now();
   try {
-    const lockfile = resolve(api.getState(), await gatherGameFacts(api, gameMode, hashFile));
+    const lockfile = resolve(await gatherResolverInput(api, gameMode, hashFile));
     log("info", "resolved lockfile", {
       gameMode,
       files: lockfile.files.length,
@@ -38,7 +38,7 @@ export function registerResolveLockFile(
 ): void {
   api.events.on("did-sort-plugins", (gameId: string) => {
     if (RESOLVED_GAMES.has(gameId)) {
-      void logResolvedLockfile(api, gameId, hashFile);
+      void logResolvedLockfile(api, VortexGameId(gameId), hashFile);
     }
   });
 }
