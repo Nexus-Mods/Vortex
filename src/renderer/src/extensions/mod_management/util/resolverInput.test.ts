@@ -3,14 +3,17 @@ import * as path from "node:path";
 
 import {
   FileSourceKind,
+  GameStore,
+  HashType,
   LockfileSchema,
   resolve,
   type Lockfile,
   type StagedFile,
 } from "@nexusmods/mod-pipeline";
 import { VortexGameId, VortexModId } from "@vortex/shared";
-import { expect, vi } from "vitest";
+import { beforeEach, expect, vi } from "vitest";
 
+import type * as StoreGameVersionEvent from "../../analytics/utils/storeGameVersionEvent";
 import type * as NexusIntegrationUtil from "../../nexus_integration/util";
 
 // util/Steam reads paths at import time and there is no ApplicationData here
@@ -20,6 +23,14 @@ vi.mock("../../nexus_integration/util", async (importOriginal) => ({
   ...(await importOriginal<typeof NexusIntegrationUtil>()),
   nexusGames: () => [{ domain_name: "skyrimspecialedition", id: 1704 }],
 }));
+// the harness has no Steam library to scan
+vi.mock("../../analytics/utils/storeGameVersionEvent", async (importOriginal) => {
+  const { makeSteamInstallRecord } = await import("../../../test-utils/builders.js");
+  return {
+    ...(await importOriginal<typeof StoreGameVersionEvent>()),
+    scanInstall: () => Promise.resolve(makeSteamInstallRecord()),
+  };
+});
 
 import {
   makeProfileMod,
@@ -28,6 +39,7 @@ import {
   registerTestModType,
 } from "../../../test-utils/builders";
 import { makeDeployedGame } from "../../../test-utils/deployedGame";
+import { installDiskEnumeration } from "../../../test-utils/fsApi";
 import { test } from "../../../test-utils/harnessTest";
 import type { IDeployedGameHarness } from "../../../test-utils/harnessTypes";
 import { writeInto } from "../../../test-utils/tempDir";
@@ -54,6 +66,11 @@ const MOD_A = VortexModId("ModA");
 const MOD_B = VortexModId("ModB");
 const MOD_C = VortexModId("ModC");
 const SCRIPT_EXTENDER = VortexModId("ScriptExtender");
+// a numeric download game resolves the file version without the Nexus game list
+const NEXUS_ATTRIBUTES = { source: "nexus", fileId: 1001, downloadGame: "1704" };
+const NEXUS_FILE_UID = ((1704n << 32n) | 1001n).toString();
+
+beforeEach(() => installDiskEnumeration());
 
 async function makeResolvableGame(): Promise<IDeployedGameHarness> {
   const game = await makeDeployedGame({
@@ -121,6 +138,7 @@ async function deployedFiles(game: IDeployedGameHarness): Promise<StagedFile[]> 
       files.push({
         destinationPath: toPortablePath(deployedFilePath(target, file.target, file.relPath)),
         fileHash: await hashFile(path.join(game.stagingPath, file.source, file.relPath)),
+        hashType: HashType.Md5,
       });
     }
   }
@@ -137,7 +155,11 @@ async function expectResolvedAsDeployed(game: IDeployedGameHarness): Promise<Loc
   expect(deployed.length).toBeGreaterThan(0);
   expect(LockfileSchema.safeParse(lockfile).success).toBe(true);
   expect(
-    lockfile.files.map(({ destinationPath, fileHash }) => ({ destinationPath, fileHash })),
+    lockfile.files.map(({ destinationPath, fileHash, hashType }) => ({
+      destinationPath,
+      fileHash,
+      hashType,
+    })),
   ).toEqual(deployed);
   return lockfile;
 }
@@ -146,7 +168,7 @@ test("the resolver deploys each file where today's deployment does, from the sam
   const game = await makeResolvableGame();
   await installMods(game, [
     {
-      mod: makeStagedMod(MOD_A, { attributes: { source: "nexus", fileId: 1001 } }),
+      mod: makeStagedMod(MOD_A, { attributes: NEXUS_ATTRIBUTES }),
       relPaths: ["ModA.esp", path.join("textures", "sky.dds")],
     },
     {
@@ -169,10 +191,28 @@ test("the resolver deploys each file where today's deployment does, from the sam
 
   expect(lockfile.files.filter((file) => file.source !== FileSourceKind.UserGenerated)).toEqual([
     expect.objectContaining({
-      fileId: "1001",
+      fileUid: NEXUS_FILE_UID,
       destinationPath: toPortablePath(path.join(game.dataPath, "ModA.esp")),
     }),
   ]);
+});
+
+test("the lockfile identifies a Steam install by its app, build and depot manifests", async () => {
+  const game = await makeResolvableGame();
+
+  const input = await gatherResolverInput(
+    game.api,
+    VortexGameId(game.gameId),
+    hashFile,
+    noArchiveFiles,
+  );
+
+  expect(input.install).toEqual({
+    store: GameStore.Steam,
+    appId: 489830,
+    buildId: 15218373,
+    depots: [{ depotId: 489833, manifestId: "1914580699073641964" }],
+  });
 });
 
 test("the resolver gives a file two unordered mods ship to the mod today's deployment does", async () => {
@@ -232,10 +272,7 @@ test("the resolver deploys a second mod type into its own target, as today's dep
 
 test("a Nexus file takes its hash from the archive entries of its size at its path, or under a stripped folder, when they agree", async () => {
   const game = await makeResolvableGame();
-  // a numeric download game resolves the file version without the Nexus game list
-  const modA = makeStagedMod(MOD_A, {
-    attributes: { source: "nexus", fileId: 1001, downloadGame: "1704" },
-  });
+  const modA = makeStagedMod(MOD_A, { attributes: NEXUS_ATTRIBUTES });
   await installMods(game, [
     {
       mod: modA,
@@ -279,7 +316,7 @@ test("a Nexus file takes its hash from the archive entries of its size at its pa
     ),
   );
 
-  expect(lookupArchiveFiles).toHaveBeenCalledWith([((1704n << 32n) | 1001n).toString()]);
+  expect(lookupArchiveFiles).toHaveBeenCalledWith([NEXUS_FILE_UID]);
   expect(
     lockfile.files.map(({ destinationPath, fileHash }) => ({ destinationPath, fileHash })),
   ).toEqual([

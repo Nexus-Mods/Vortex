@@ -1,13 +1,8 @@
-import { FileSourceKind, type FileOrigin } from "./lockfile";
+import { GameInstallSchema, type GameInstall } from "./gameInstall";
+import { NexusFileUid, NexusGameId } from "./ids";
+import { FileSourceKind, StagedFileSchema, type FileOrigin, type StagedFile } from "./lockfile";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
-
-/** A file a mod deploys and its hash. */
-export interface StagedFile {
-  /** absolute, "/" separated */
-  destinationPath: string;
-  fileHash: string;
-}
 
 /** A mod that deploys, as the resolver reads it. */
 export interface ResolverMod {
@@ -20,25 +15,25 @@ export interface ResolverMod {
 
 /** A game's deploying mods and its lockfile details. */
 export interface ResolverInput {
-  /** Nexus Mods numeric game id */
-  gameId: number;
-  gameVersion: string;
-  storeId: string;
+  gameId: NexusGameId;
+  install: GameInstall;
   /** in deployment order */
   mods: ResolverMod[];
 }
 
 const resolverInputSchema = z.object({
-  gameId: z.number().int(),
-  gameVersion: z.string(),
-  storeId: z.string(),
+  gameId: z.number().int().transform(NexusGameId),
+  install: GameInstallSchema,
   mods: z.array(
     z.object({
       origin: z.discriminatedUnion("source", [
-        z.object({ source: z.literal(FileSourceKind.Nexus), fileId: z.string() }),
+        z.object({
+          source: z.literal(FileSourceKind.Nexus),
+          fileUid: z.string().transform(NexusFileUid),
+        }),
         z.object({ source: z.literal(FileSourceKind.UserGenerated) }),
       ]),
-      stagedFiles: z.array(z.object({ destinationPath: z.string(), fileHash: z.string() })),
+      stagedFiles: z.array(StagedFileSchema),
       overriddenPaths: z.array(z.string()),
     }),
   ),

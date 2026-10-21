@@ -2,19 +2,25 @@
   "name": "the later mod wins a file both mods deploy",
   "input": {
     "gameId": 1704,
-    "gameVersion": "1.6.1170.0",
-    "storeId": "steam",
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
     "mods": [
       {
-        "origin": { "source": "NEXUS", "fileId": "1001" },
+        "origin": { "source": "NEXUS", "fileUid": "7318624273385" },
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/ModA.esp",
-            "fileHash": "mod-a-esp-hash"
+            "fileHash": "mod-a-esp-hash",
+            "hashType": "md5"
           },
           {
             "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
-            "fileHash": "mod-a-sky-hash"
+            "fileHash": "mod-a-sky-hash",
+            "hashType": "md5"
           }
         ],
         "overriddenPaths": []
@@ -24,7 +30,8 @@
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
-            "fileHash": "mod-b-sky-hash"
+            "fileHash": "mod-b-sky-hash",
+            "hashType": "md5"
           }
         ],
         "overriddenPaths": []
@@ -34,18 +41,24 @@
   "expected": {
     "version": 1,
     "gameId": 1704,
-    "gameVersion": "1.6.1170.0",
-    "storeId": "steam",
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
     "files": [
       {
         "source": "NEXUS",
-        "fileId": "1001",
+        "fileUid": "7318624273385",
         "fileHash": "mod-a-esp-hash",
+        "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/ModA.esp"
       },
       {
         "source": "USER_GENERATED",
         "fileHash": "mod-b-sky-hash",
+        "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/textures/sky.dds"
       }
     ]

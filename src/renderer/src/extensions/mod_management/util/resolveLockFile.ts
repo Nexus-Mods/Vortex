@@ -14,14 +14,14 @@ async function logResolvedLockfile(
   gameMode: VortexGameId,
   hashFile: (filePath: string) => Promise<string>,
 ): Promise<void> {
-  const startedAt = Date.now();
+  const startedAt = Temporal.Now.instant();
   try {
     const lockfile = resolve(await gatherResolverInput(api, gameMode, hashFile));
     log("info", "resolved lockfile", {
       gameMode,
       files: lockfile.files.length,
       nexusFiles: lockfile.files.filter((file) => file.source === FileSourceKind.Nexus).length,
-      elapsedMs: Date.now() - startedAt,
+      elapsedMs: Temporal.Now.instant().since(startedAt).total("milliseconds"),
     });
   } catch (err) {
     log("warn", "failed to resolve lockfile", {

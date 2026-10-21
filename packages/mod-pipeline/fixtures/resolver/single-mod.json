@@ -2,19 +2,25 @@
   "name": "a single mod deploys each of its files",
   "input": {
     "gameId": 1704,
-    "gameVersion": "1.6.1170.0",
-    "storeId": "steam",
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
     "mods": [
       {
-        "origin": { "source": "NEXUS", "fileId": "35407" },
+        "origin": { "source": "NEXUS", "fileUid": "7318624307791" },
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp",
-            "fileHash": "skyui-esp-hash"
+            "fileHash": "skyui-esp-hash",
+            "hashType": "md5"
           },
           {
             "destinationPath": "/fixture-root/game/Data/interface/skyui/config.txt",
-            "fileHash": "skyui-config-hash"
+            "fileHash": "skyui-config-hash",
+            "hashType": "md5"
           }
         ],
         "overriddenPaths": []
@@ -24,19 +30,25 @@
   "expected": {
     "version": 1,
     "gameId": 1704,
-    "gameVersion": "1.6.1170.0",
-    "storeId": "steam",
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
     "files": [
       {
         "source": "NEXUS",
-        "fileId": "35407",
+        "fileUid": "7318624307791",
         "fileHash": "skyui-esp-hash",
+        "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
       },
       {
         "source": "NEXUS",
-        "fileId": "35407",
+        "fileUid": "7318624307791",
         "fileHash": "skyui-config-hash",
+        "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/interface/skyui/config.txt"
       }
     ]

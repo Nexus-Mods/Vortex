@@ -1,5 +1,17 @@
-export { FileSourceKind, LockfileSchema } from "./lockfile";
-export type { FileOrigin, FileSource, Lockfile } from "./lockfile";
+export { GameStore } from "./gameInstall";
+export type { GameInstall } from "./gameInstall";
+export {
+  GogBuildId,
+  GogProductId,
+  NexusFileUid,
+  NexusGameId,
+  SteamAppId,
+  SteamBuildId,
+  SteamDepotId,
+  SteamManifestId,
+} from "./ids";
+export { FileSourceKind, HashType, LockfileSchema } from "./lockfile";
+export type { FileOrigin, FileSource, Lockfile, StagedFile } from "./lockfile";
 export { resolve } from "./resolve";
 export { ResolverInputSchema } from "./resolverInput";
-export type { ResolverInput, ResolverMod, StagedFile } from "./resolverInput";
+export type { ResolverInput, ResolverMod } from "./resolverInput";

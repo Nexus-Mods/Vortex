@@ -36,6 +36,7 @@ import thunkMiddleware from "redux-thunk";
 import { onTestFinished, vi } from "vitest";
 
 import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
+import type { InstallRecord } from "../extensions/analytics/utils/storeGameVersionEvent";
 import type { ICategory } from "../extensions/category_management/types/ICategoryDictionary";
 import { MOD_TYPE } from "../extensions/collections/constants";
 import type { ICollectionItemRow } from "../extensions/collections/installSession/itemRows";
@@ -223,6 +224,26 @@ export function makeMod(overrides: Partial<IMod> = {}): IMod {
     type: "",
     installationPath: "mods/mod-1",
     attributes: {},
+    ...overrides,
+  };
+}
+
+/** Skyrim SE's Steam install as the store scan reads it. */
+export function makeSteamInstallRecord(overrides: Partial<InstallRecord> = {}): InstallRecord {
+  return {
+    storeId: "steam",
+    install: {
+      app_id: 489830,
+      build_id: 15218373,
+      branch: null,
+      language: "english",
+      mounted_language: "english",
+      state_flags: 4,
+      target_build_id: 15218373,
+      depots: [{ depot_id: 489833, manifest_id: "1914580699073641964", dlc_app_id: null }],
+      shared_depots: [],
+    },
+    failureReason: null,
     ...overrides,
   };
 }

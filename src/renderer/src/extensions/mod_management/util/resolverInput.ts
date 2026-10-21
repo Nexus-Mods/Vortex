@@ -3,12 +3,23 @@ import * as path from "node:path";
 
 import {
   FileSourceKind,
+  GameStore,
+  GogBuildId,
+  GogProductId,
+  HashType,
+  NexusFileUid,
+  NexusGameId,
+  SteamAppId,
+  SteamBuildId,
+  SteamDepotId,
+  SteamManifestId,
+  type GameInstall,
   type ResolverInput,
   type ResolverMod,
   type StagedFile,
 } from "@nexusmods/mod-pipeline";
-import { getErrorCode, type VortexGameId } from "@vortex/shared";
-import turbowalk from "turbowalk";
+import { parseError, type VortexGameId } from "@vortex/shared";
+import { QualifiedPath } from "@vortex/shared/filesystem";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
@@ -16,6 +27,8 @@ import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import { numericNexusGameId } from "../../analytics/mixpanel/numericGameId";
+import { scanInstall } from "../../analytics/utils/storeGameVersionEvent";
+import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { getModType } from "../../gamemode_management/util/modTypeExtensions";
 import { createVortexNexusV3Client } from "../../nexus_integration/nexusV3Client";
@@ -33,46 +46,69 @@ import { genSubDirFunc } from "./deploy";
 import { deployedFilePath } from "./deployedFilePath";
 import { doSortMods } from "./sort";
 
+// files hashed at once; keeps the main process's hash workers, at most 16, busy
 const HASH_CONCURRENCY = 16;
 
 const toPortablePath = (filePath: string) => filePath.replaceAll("\\", "/");
 
-/** A mod's origin; a Nexus mod without a file id is user generated. */
-function modOrigin(mod: IMod): ResolverMod["origin"] {
-  const fileId = mod.attributes?.fileId;
-  return mod.attributes?.source === "nexus" && fileId !== undefined
-    ? { source: FileSourceKind.Nexus, fileId: String(fileId) }
+/** A mod's origin; a Nexus mod whose file version is unknown is user generated. */
+function modOrigin(mod: IMod, gameMode: string): ResolverMod["origin"] {
+  const fileUid =
+    mod.attributes?.source === "nexus" ? resolveFileUID(mod.attributes, gameMode) : undefined;
+  return fileUid !== undefined
+    ? { source: FileSourceKind.Nexus, fileUid: NexusFileUid(fileUid) }
     : { source: FileSourceKind.UserGenerated };
 }
 
-/** The Nexus file version a mod was installed from. */
-function nexusVersionId(mod: IMod, gameMode: string): string | undefined {
-  return modOrigin(mod).source === FileSourceKind.Nexus
-    ? resolveFileUID(mod.attributes, gameMode)
-    : undefined;
-}
-
-/** A mod's staged files, relative to its staging folder. */
+/** A mod's staged files, relative to its staging folder and "/" separated. */
 async function stagedRelPaths(modPath: string): Promise<string[]> {
+  const root = QualifiedPath.fromNative(modPath);
+  const rootDepth = root.components().toArray().length;
   const relPaths: string[] = [];
   try {
-    await turbowalk(
-      modPath,
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isDirectory) {
-            relPaths.push(path.relative(modPath, entry.filePath));
-          }
-        }
-      },
-      { skipHidden: false },
-    );
+    const entries = await window.api.fs.enumerateDirectory(root, {
+      types: "files",
+      recursive: true,
+    });
+    for await (const entry of entries) {
+      relPaths.push(entry.components().drop(rootDepth).toArray().join("/"));
+    }
   } catch (err) {
-    if (!["ENOENT", "ENOTFOUND"].includes(getErrorCode(err))) {
+    if (parseError(err).data.kind !== "fs:not-found") {
       throw err;
     }
   }
   return relPaths;
+}
+
+/** The game's install, identified by its store's ids. */
+async function gameInstall(gameMode: string, discovery: IDiscoveryResult): Promise<GameInstall> {
+  const { store } = discovery;
+  if (store === GameStore.Epic || store === GameStore.Xbox) {
+    return { store };
+  }
+  if (store !== GameStore.Steam && store !== GameStore.Gog) {
+    throw new Error(`${gameMode} is installed from ${store}, which has no lockfile ids`);
+  }
+  const { install, failureReason } = await scanInstall(gameMode, discovery);
+  if (install === null) {
+    throw new Error(`${gameMode}'s ${store} install is unreadable: ${failureReason}`);
+  }
+  return "app_id" in install
+    ? {
+        store: GameStore.Steam,
+        appId: SteamAppId(install.app_id),
+        buildId: SteamBuildId(install.build_id),
+        depots: install.depots.map((depot) => ({
+          depotId: SteamDepotId(depot.depot_id),
+          manifestId: SteamManifestId(depot.manifest_id),
+        })),
+      }
+    : {
+        store: GameStore.Gog,
+        productId: GogProductId(install.product_id),
+        buildId: GogBuildId(install.build_id),
+      };
 }
 
 /** The skip list a mod type's deployment applies, keyed by mod type id. */
@@ -99,7 +135,7 @@ interface IStagedSource {
   /** its mod's staged files */
   into: StagedFile[];
   /** the Nexus file version its mod was installed from */
-  versionId?: string;
+  fileUid?: NexusFileUid;
   /** "/" separated, relative to its mod's staging folder */
   portableRelPath: string;
 }
@@ -162,30 +198,31 @@ export async function gatherResolverInput(
   const skipLists = await skipListsByType(game, modPaths);
   const stagingPath = installPathForGame(state, gameMode);
 
+  const modOrigins = sortedMods.map((mod) => ({ mod, origin: modOrigin(mod, gameMode) }));
   // the manifests download while the staging folders are walked
   const pendingArchiveFiles = lookupArchiveFiles([
     ...new Set(
-      sortedMods
-        .map((mod) => nexusVersionId(mod, gameMode))
-        .filter((versionId) => versionId !== undefined),
+      modOrigins.flatMap(({ origin }) =>
+        origin.source === FileSourceKind.Nexus ? [origin.fileUid] : [],
+      ),
     ),
   ]);
 
   const mods: ResolverMod[] = [];
   const sources: IStagedSource[] = [];
-  for (const mod of sortedMods) {
+  for (const { mod, origin } of modOrigins) {
     const typeId = mod.type ?? "";
     const skipList = skipLists.get(typeId);
     if (skipList === undefined) {
       continue;
     }
     const resolverMod: ResolverMod = {
-      origin: modOrigin(mod),
+      origin,
       stagedFiles: [],
       overriddenPaths: (mod.fileOverrides ?? []).map(toPortablePath),
     };
     mods.push(resolverMod);
-    const versionId = nexusVersionId(mod, gameMode);
+    const fileUid = origin.source === FileSourceKind.Nexus ? origin.fileUid : undefined;
     const subDir = genSubDirFunc(game, getModType(mod.type))(mod);
     const modPath = path.join(stagingPath, mod.installationPath);
     for (const relPath of await stagedRelPaths(modPath)) {
@@ -194,8 +231,8 @@ export async function gatherResolverInput(
           stagedPath: path.join(modPath, relPath),
           destinationPath: toPortablePath(deployedFilePath(modPaths[typeId], subDir, relPath)),
           into: resolverMod.stagedFiles,
-          versionId,
-          portableRelPath: toPortablePath(relPath),
+          fileUid,
+          portableRelPath: relPath,
         });
       }
     }
@@ -206,19 +243,22 @@ export async function gatherResolverInput(
     sources,
     async (source) => {
       const archiveFiles =
-        source.versionId !== undefined ? archiveFilesByVersion.get(source.versionId) : undefined;
+        source.fileUid !== undefined ? archiveFilesByVersion.get(source.fileUid) : undefined;
       return (await archiveMd5(source, archiveFiles)) ?? hashFile(source.stagedPath);
     },
     HASH_CONCURRENCY,
   );
   sources.forEach((source, index) => {
-    source.into.push({ destinationPath: source.destinationPath, fileHash: fileHashes[index] });
+    source.into.push({
+      destinationPath: source.destinationPath,
+      fileHash: fileHashes[index],
+      hashType: HashType.Md5,
+    });
   });
 
   return {
-    gameId,
-    gameVersion: await game.getInstalledVersion(discovery),
-    storeId: discovery.store,
+    gameId: NexusGameId(gameId),
+    install: await gameInstall(gameMode, discovery),
     mods,
   };
 }
