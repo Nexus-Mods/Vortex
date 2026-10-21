@@ -44,9 +44,9 @@ describe("Icon", () => {
       expect(el).toHaveAttribute("fill", "currentColor");
     });
 
-    it("always applies the shrink-0 base class", () => {
+    it("always applies the nxm-icon class", () => {
       renderComponent();
-      expect(screen.getByRole("presentation")).toHaveClass("shrink-0");
+      expect(screen.getByRole("presentation")).toHaveClass("nxm-icon");
     });
   });
 
@@ -91,7 +91,7 @@ describe("Icon", () => {
   describe("pass-through", () => {
     it("merges a custom className", () => {
       renderComponent({ className: "text-danger-strong" });
-      expect(screen.getByRole("presentation")).toHaveClass("shrink-0", "text-danger-strong");
+      expect(screen.getByRole("presentation")).toHaveClass("nxm-icon", "text-danger-strong");
     });
 
     it("forwards arbitrary svg attributes", () => {
@@ -104,7 +104,7 @@ describe("Icon", () => {
       const el = renderSymbol({ name: "settings" });
       expect(el).toHaveAttribute("data-symbol", "settings");
       expect(el).toBeEmptyDOMElement();
-      expect(el).toHaveClass("material-symbols-outlined", "shrink-0");
+      expect(el).toHaveClass("nxm-icon", "nxm-icon-symbol");
       expect(document.querySelector("svg")).not.toBeInTheDocument();
     });
 
@@ -179,7 +179,7 @@ describe("Icon", () => {
 
     it("merges a custom className and forwards other attributes", () => {
       const el = renderSymbol({ className: "text-danger-strong", id: "symbol" });
-      expect(el).toHaveClass("material-symbols-outlined", "text-danger-strong");
+      expect(el).toHaveClass("nxm-icon-symbol", "text-danger-strong");
       expect(el).toHaveAttribute("id", "symbol");
     });
   });
@@ -229,9 +229,9 @@ describe("Icon", () => {
       expect(container.querySelector("svg")).toHaveClass("slot");
     });
 
-    it("puts a node in a box with the class", () => {
+    it("puts an element in an icon box with the class", () => {
       render(<IconSlot className="slot" icon={<i data-testid="node" />} />);
-      expect(screen.getByTestId("node").parentElement).toHaveClass("slot", "flex");
+      expect(screen.getByTestId("node").parentElement).toHaveClass("nxm-icon", "slot");
     });
 
     it("draws nothing for no icon", () => {

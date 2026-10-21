@@ -76,7 +76,7 @@ const PathIcon = ({
   ...props
 }: Omit<IPathIconProps, "name">) => (
   <svg
-    className={joinClasses(["shrink-0", sizeMap[size], className])}
+    className={joinClasses(["nxm-icon", sizeMap[size], className])}
     role={title ? "img" : "presentation"}
     viewBox="0 0 24 24"
     {...props}
@@ -115,7 +115,7 @@ const SymbolIcon = ({
       aria-hidden={title ? undefined : true}
       aria-label={title}
       className={joinClasses([
-        "material-symbols-outlined shrink-0 overflow-hidden select-none",
+        "nxm-icon nxm-icon-symbol",
         sizeMap[size],
         symbolFontSizeMap[size],
         className,
@@ -179,7 +179,5 @@ export const IconSlot = ({
     return <Icon {...iconSourceProps(icon)} className={className} size={size} />;
   }
 
-  return icon ? (
-    <span className={joinClasses([className, "flex items-center justify-center"])}>{icon}</span>
-  ) : null;
+  return icon ? <span className={joinClasses(["nxm-icon", className])}>{icon}</span> : null;
 };

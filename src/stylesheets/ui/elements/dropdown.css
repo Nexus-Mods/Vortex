@@ -60,8 +60,7 @@
             background-color: var(--color-surface-translucent-high);
         }
 
-        > svg,
-        > .material-symbols-outlined {
+        > .nxm-icon {
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
             font-size: calc(var(--spacing) * 4);

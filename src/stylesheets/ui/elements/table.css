@@ -281,8 +281,7 @@
         border-radius: var(--radius-sm);
         color: var(--color-neutral-moderate);
 
-        > svg,
-        > .material-symbols-outlined {
+        > .nxm-icon {
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
             font-size: calc(var(--spacing) * 4);
