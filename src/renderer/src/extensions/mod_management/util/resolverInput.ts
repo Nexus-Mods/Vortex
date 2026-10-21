@@ -1,4 +1,3 @@
-import { stat } from "node:fs/promises";
 import * as path from "node:path";
 
 import {
@@ -60,25 +59,31 @@ function modOrigin(mod: IMod, gameMode: string): ResolverMod["origin"] {
     : { source: FileSourceKind.UserGenerated };
 }
 
-/** A mod's staged files, relative to its staging folder and "/" separated. */
-async function stagedRelPaths(modPath: string): Promise<string[]> {
+/** A mod's staged files with their sizes, relative to its staging folder and "/" separated. */
+async function stagedFiles(modPath: string): Promise<{ relPath: string; size: number }[]> {
   const root = QualifiedPath.fromNative(modPath);
   const rootDepth = root.components().toArray().length;
-  const relPaths: string[] = [];
+  const files: { relPath: string; size: number }[] = [];
   try {
     const entries = await window.api.fs.enumerateDirectory(root, {
       types: "files",
       recursive: true,
+      includeStatus: true,
     });
-    for await (const entry of entries) {
-      relPaths.push(entry.components().drop(rootDepth).toArray().join("/"));
+    for await (const [entry, status] of entries) {
+      if (status.isFile) {
+        files.push({
+          relPath: entry.components().drop(rootDepth).toArray().join("/"),
+          size: status.size,
+        });
+      }
     }
   } catch (err) {
     if (parseError(err).data.kind !== "fs:not-found") {
       throw err;
     }
   }
-  return relPaths;
+  return files;
 }
 
 /** The game's install, identified by its store's ids. */
@@ -138,27 +143,27 @@ interface IStagedSource {
   fileUid?: NexusFileUid;
   /** "/" separated, relative to its mod's staging folder */
   portableRelPath: string;
+  size: number;
 }
 
 /**
  * The MD5 a staged file has in its archive: the entries at its path, or under a folder the installer
  * stripped, that match its size must agree on one.
  */
-async function archiveMd5(
+function archiveMd5(
   source: IStagedSource,
   archiveFiles: ArchiveFiles | undefined,
-): Promise<string | undefined> {
-  const { portableRelPath } = source;
-  const candidates = (archiveFiles?.get(path.posix.basename(portableRelPath)) ?? []).filter(
-    (archiveFile) =>
-      archiveFile.path === portableRelPath || archiveFile.path.endsWith(`/${portableRelPath}`),
-  );
-  if (candidates.length === 0) {
-    return undefined;
-  }
-  const { size } = await stat(source.stagedPath);
+): string | undefined {
+  const { portableRelPath, size } = source;
   const md5s = new Set(
-    candidates.filter((archiveFile) => archiveFile.size === size).map(({ md5 }) => md5),
+    (archiveFiles?.get(path.posix.basename(portableRelPath)) ?? [])
+      .filter(
+        (archiveFile) =>
+          (archiveFile.path === portableRelPath ||
+            archiveFile.path.endsWith(`/${portableRelPath}`)) &&
+          archiveFile.size === size,
+      )
+      .map(({ md5 }) => md5),
   );
   return md5s.size === 1 ? [...md5s][0] : undefined;
 }
@@ -225,7 +230,7 @@ export async function gatherResolverInput(
     const fileUid = origin.source === FileSourceKind.Nexus ? origin.fileUid : undefined;
     const subDir = genSubDirFunc(game, getModType(mod.type))(mod);
     const modPath = path.join(stagingPath, mod.installationPath);
-    for (const relPath of await stagedRelPaths(modPath)) {
+    for (const { relPath, size } of await stagedFiles(modPath)) {
       if (!skipList.skipFiles.has(skipList.normalize(path.join(mod.installationPath, relPath)))) {
         sources.push({
           stagedPath: path.join(modPath, relPath),
@@ -233,6 +238,7 @@ export async function gatherResolverInput(
           into: resolverMod.stagedFiles,
           fileUid,
           portableRelPath: relPath,
+          size,
         });
       }
     }
@@ -241,10 +247,10 @@ export async function gatherResolverInput(
   const archiveFilesByVersion = await pendingArchiveFiles;
   const fileHashes = await mapWithConcurrency(
     sources,
-    async (source) => {
+    (source) => {
       const archiveFiles =
         source.fileUid !== undefined ? archiveFilesByVersion.get(source.fileUid) : undefined;
-      return (await archiveMd5(source, archiveFiles)) ?? hashFile(source.stagedPath);
+      return archiveMd5(source, archiveFiles) ?? hashFile(source.stagedPath);
     },
     HASH_CONCURRENCY,
   );

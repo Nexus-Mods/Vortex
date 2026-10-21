@@ -11,7 +11,8 @@ import {
   type StagedFile,
 } from "@nexusmods/mod-pipeline";
 import { VortexGameId, VortexModId } from "@vortex/shared";
-import { beforeEach, expect, vi } from "vitest";
+import { QualifiedPath } from "@vortex/shared/filesystem";
+import { expect, onTestFinished, vi } from "vitest";
 
 import type * as StoreGameVersionEvent from "../../analytics/utils/storeGameVersionEvent";
 import type * as NexusIntegrationUtil from "../../nexus_integration/util";
@@ -39,7 +40,7 @@ import {
   registerTestModType,
 } from "../../../test-utils/builders";
 import { makeDeployedGame } from "../../../test-utils/deployedGame";
-import { installDiskEnumeration } from "../../../test-utils/fsApi";
+import { installInMemoryFS } from "../../../test-utils/fsApi";
 import { test } from "../../../test-utils/harnessTest";
 import type { IDeployedGameHarness } from "../../../test-utils/harnessTypes";
 import { writeInto } from "../../../test-utils/tempDir";
@@ -70,8 +71,6 @@ const SCRIPT_EXTENDER = VortexModId("ScriptExtender");
 const NEXUS_ATTRIBUTES = { source: "nexus", fileId: 1001, downloadGame: "1704" };
 const NEXUS_FILE_UID = ((1704n << 32n) | 1001n).toString();
 
-beforeEach(() => installDiskEnumeration());
-
 async function makeResolvableGame(): Promise<IDeployedGameHarness> {
   const game = await makeDeployedGame({
     methodId: "hardlink_activator",
@@ -89,11 +88,22 @@ async function installMods(
   stagedMods: { mod: IMod; relPaths: string[] }[],
   disabledModIds: VortexModId[] = [],
 ): Promise<void> {
-  for (const { mod, relPaths } of stagedMods) {
-    for (const relPath of relPaths) {
-      await writeInto(game.stagingPath, path.join(mod.installationPath, relPath));
-    }
+  const pathsInStaging = stagedMods.flatMap(({ mod, relPaths }) =>
+    relPaths.map((relPath) => path.join(mod.installationPath, relPath)),
+  );
+  for (const pathInStaging of pathsInStaging) {
+    await writeInto(game.stagingPath, pathInStaging);
   }
+  // the resolver lists and sizes staging through window.api.fs; deployment and hashing read the disk
+  const { restore } = installInMemoryFS((builder) => {
+    for (const pathInStaging of pathsInStaging) {
+      builder.file(QualifiedPath.fromNative(path.join(game.stagingPath, pathInStaging)), {
+        type: "text",
+        data: pathInStaging,
+      });
+    }
+  });
+  onTestFinished(restore);
   game.setState((draft) => {
     draft.persistent.mods[game.gameId] = Object.fromEntries(
       stagedMods.map(({ mod }) => [mod.id, mod]),

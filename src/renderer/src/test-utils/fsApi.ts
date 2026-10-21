@@ -1,12 +1,4 @@
-import { opendir } from "node:fs/promises";
-import * as path from "node:path";
-
-import {
-  type FileSystem,
-  type InMemoryFS,
-  InMemoryFSBuilder,
-  QualifiedPath,
-} from "@vortex/shared/filesystem";
+import { type InMemoryFS, InMemoryFSBuilder } from "@vortex/shared/filesystem";
 
 export type InstalledInMemoryFS = {
   fs: InMemoryFS;
@@ -38,33 +30,5 @@ export function installInMemoryFS(
     restore: () => {
       window.api = previous;
     },
-  };
-}
-
-/** Lists a real directory's entries the way main's backend does, by path only. */
-async function enumerateDiskDirectory(
-  root: QualifiedPath,
-  options?: { types?: "all" | "files"; recursive?: boolean },
-): Promise<AsyncIterableIterator<QualifiedPath, undefined>> {
-  const dir = await opendir(root.path, { recursive: options?.recursive ?? false });
-  async function* entries(): AsyncGenerator<QualifiedPath, undefined> {
-    for await (const entry of dir) {
-      if (options?.types === "files" && !entry.isFile()) continue;
-      yield QualifiedPath.fromNative(path.join(entry.parentPath, entry.name));
-    }
-    return undefined;
-  }
-  return entries();
-}
-
-/** Points `window.api.fs.enumerateDirectory` at the real disk; returns the restore. */
-export function installDiskEnumeration(): () => void {
-  const previous = window.api;
-  const fs = new InMemoryFSBuilder().build();
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only the path-only overload is used
-  fs.enumerateDirectory = enumerateDiskDirectory as FileSystem["enumerateDirectory"];
-  window.api = { ...previous, fs };
-  return () => {
-    window.api = previous;
   };
 }
