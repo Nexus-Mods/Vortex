@@ -21,7 +21,7 @@ afterEach(async () => {
 function lockfile(files: FileSource[]): Lockfile {
   return {
     version: 1,
-    gameId: "1704",
+    gameId: 1704,
     gameVersion: "1.6.1170",
     storeId: "steam",
     files,
