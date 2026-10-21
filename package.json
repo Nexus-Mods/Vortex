@@ -20,10 +20,6 @@
       "onFail": "download"
     }
   },
-  "volta": {
-    "node": "24.20.0",
-    "yarn": "1.22.19"
-  },
   "scripts": {
     "prepare": "husky",
     "preinstall": "node ./scripts/create-env-file.mjs",
