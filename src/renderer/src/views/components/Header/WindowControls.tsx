@@ -1,7 +1,8 @@
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
 import { close, minimize, toggleMaximize, useIsMaximized } from "@/hooks";
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -27,7 +28,7 @@ const WindowControlButton: FC<React.PropsWithChildren<WindowControlButtonProps>>
       ])}
       {...props}
     >
-      <Icon {...iconSourceProps(icon)} size="sm" />
+      <Icon {...getIconProps(icon)} size="sm" />
     </button>
   </Tooltip>
 );

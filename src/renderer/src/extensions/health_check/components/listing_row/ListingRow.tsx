@@ -4,7 +4,8 @@ import {
   type Severity,
   severityStyleMap,
 } from "@/extensions/health_check/utils/shared/severityStyles";
-import { Icon, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -43,7 +44,7 @@ export const ListingRow = ({
       }}
     >
       <Icon
-        {...iconSourceProps(severityStyle.icon)}
+        {...getIconProps(severityStyle.icon)}
         className={joinClasses(["shrink-0", severityStyle.textClassName])}
       />
 

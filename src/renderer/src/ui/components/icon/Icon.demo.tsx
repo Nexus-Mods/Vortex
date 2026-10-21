@@ -69,7 +69,7 @@ export const IconDemo = () => (
 
         {` instead of a path to draw it from the variable font. The same sizes apply, and `}
 
-        <span className="font-semibold">fill</span>
+        <span className="font-semibold">filled</span>
 
         {`, `}
 
@@ -101,7 +101,7 @@ export const IconDemo = () => (
       <div className="flex flex-wrap items-end gap-6">
         {([false, true] as const).map((fill) => (
           <div className="flex flex-col items-center gap-2" key={String(fill)}>
-            <Icon fill={fill} name="star" size="xl" />
+            <Icon filled={fill} name="star" size="xl" />
 
             <Typography appearance="subdued" typographyType="body-xs">
               {fill ? "fill" : "outline"}

@@ -268,12 +268,12 @@ label, so selecting a tab stopped working as soon as the label was translated.
 ## Icons
 
 - `<Icon name="settings" />` draws a Material Symbol from the variable font, by the
-  symbol's name. `fill`, `weight`, `grade` and `opticalSize` set the font's axes; `size` keeps
+  symbol's name. `filled`, `weight`, `grade` and `opticalSize` set the font's axes; `size` keeps
   the same steps as for a path. `Icon` takes either `name` or `path`.
 - The whole font ships, so `name` takes any Material Symbol, and a name the font doesn't have
   fails the typecheck.
 - A component's `icon` prop (`leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by
-  name (`icon="star"`), a symbol with its axes (`icon={{ name: "star", fill: true }}`), an SVG
+  name (`icon="star"`), a symbol with its axes (`icon={{ name: "star", filled: true }}`), an SVG
   path for the custom `nxm*` icons the font lacks (`icon={{ path: nxmMod }}`), or an element. The type
   is `IIconProp` (`IIconSource` where an element makes no sense), from `Icon.tsx`. Legacy icon names,
   which actions and extensions register with, resolve through `getIcon(name)` in

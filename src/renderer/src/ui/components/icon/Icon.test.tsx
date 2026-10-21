@@ -2,15 +2,7 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { describe, it, expect } from "vitest";
 
-import {
-  Icon,
-  IconSlot,
-  iconSourceProps,
-  isIconSource,
-  type IIconProp,
-  type IPathIconProps,
-  type ISymbolIconProps,
-} from "./Icon";
+import { Icon, IconSlot, type IPathIconProps, type ISymbolIconProps } from "./Icon";
 
 // --- Helpers ---
 
@@ -148,12 +140,12 @@ describe("Icon", () => {
     });
 
     it("sets the fill axis", () => {
-      expect(renderSymbol({ fill: true }).style.fontVariationSettings).toBe('"FILL" 1');
-      expect(renderSymbol({ fill: false }).style.fontVariationSettings).toBe('"FILL" 0');
+      expect(renderSymbol({ filled: true }).style.fontVariationSettings).toBe('"FILL" 1');
+      expect(renderSymbol({ filled: false }).style.fontVariationSettings).toBe('"FILL" 0');
     });
 
     it("sets the grade axis alongside fill", () => {
-      expect(renderSymbol({ fill: true, grade: 200 }).style.fontVariationSettings).toBe(
+      expect(renderSymbol({ filled: true, grade: 200 }).style.fontVariationSettings).toBe(
         '"FILL" 1, "GRAD" 200',
       );
     });
@@ -163,7 +155,7 @@ describe("Icon", () => {
     });
 
     it("sets every axis it is given, in one declaration", () => {
-      const el = renderSymbol({ fill: true, grade: -25, opticalSize: 20 });
+      const el = renderSymbol({ filled: true, grade: -25, opticalSize: 20 });
       expect(el.style.fontVariationSettings).toBe('"FILL" 1, "GRAD" -25, "opsz" 20');
     });
 
@@ -172,7 +164,7 @@ describe("Icon", () => {
     });
 
     it("lets a style prop add to the axes", () => {
-      const el = renderSymbol({ fill: true, style: { opacity: 0.5 } });
+      const el = renderSymbol({ filled: true, style: { opacity: 0.5 } });
       expect(el.style.fontVariationSettings).toBe('"FILL" 1');
       expect(el.style.opacity).toBe("0.5");
     });
@@ -183,41 +175,6 @@ describe("Icon", () => {
       expect(el).toHaveAttribute("id", "symbol");
     });
   });
-  describe("isIconSource", () => {
-    it.each([
-      ["a symbol's name", "settings"],
-      ["a symbol with its axes", { name: "star", fill: true }],
-      ["an SVG path", { path: "M0 0h24v24H0z" }],
-    ] as const)("takes %s as a source", (_, icon) => {
-      expect(isIconSource(icon)).toBe(true);
-    });
-
-    it.each([
-      ["an element", <span key="a" />],
-      ["nothing", undefined],
-    ])("takes %s as a node, not a source", (_, icon) => {
-      expect(isIconSource(icon)).toBe(false);
-    });
-
-    it("takes no name the font doesn't have", () => {
-      // @ts-expect-error a misspelled symbol is neither a source nor a node
-      const icon: IIconProp = "serach";
-
-      expect(icon).toBe("serach");
-    });
-  });
-
-  describe("iconSourceProps", () => {
-    it("turns a name into the props that draw it", () => {
-      expect(iconSourceProps("settings")).toEqual({ name: "settings" });
-    });
-
-    it("passes an object on as it is", () => {
-      const source = { name: "star", fill: true } as const;
-      expect(iconSourceProps(source)).toBe(source);
-    });
-  });
-
   describe("IconSlot", () => {
     it("draws a symbol with the class and size it is given", () => {
       const { container } = render(<IconSlot className="slot" icon="settings" size="sm" />);

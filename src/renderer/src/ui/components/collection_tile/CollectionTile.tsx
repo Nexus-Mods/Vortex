@@ -1,10 +1,9 @@
+import { type ICollection } from "@nexusmods/nexus-api";
 /**
  * CollectionTile Component
  * Displays a collection card with image, metadata, and action buttons
  * Adapted from Figma design for collection browsing
  */
-
-import { type ICollection } from "@nexusmods/nexus-api";
 import numeral from "numeral";
 import React, {
   type ComponentType,
@@ -21,7 +20,8 @@ import {
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Button } from "@/ui/components/button/Button";
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Image } from "@/ui/components/image/Image";
 import { Typography } from "@/ui/components/typography/Typography";
 import { nxmFileSize, nxmMod } from "@/ui/icon-paths";
@@ -51,7 +51,7 @@ export interface ICollectionTileProps {
 
 const Stat = ({ children, icon }: PropsWithChildren<{ icon: IIconSource }>) => (
   <div className="flex items-center gap-x-1">
-    <Icon {...iconSourceProps(icon)} className="text-neutral-subdued" size="sm" />
+    <Icon {...getIconProps(icon)} className="text-neutral-subdued" size="sm" />
 
     <Typography appearance="moderate" typographyType="body-sm">
       {children}
@@ -135,7 +135,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
               className="absolute inset-x-0 bottom-0 z-2 flex h-7 items-center gap-x-1 bg-info-weak px-1.5 text-info-50"
               typographyType="title-xs"
             >
-              <Icon name="star" fill size="xs" />
+              <Icon name="star" filled size="xs" />
 
               <span title={easyInstallBadge.description}>{easyInstallBadge.name}</span>
             </Typography>
@@ -184,7 +184,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
           </div>
 
           <div className="flex items-center gap-x-5 border-t border-stroke-weak pt-1.5">
-            <Stat icon={{ name: "thumb_up", fill: true }}>
+            <Stat icon={{ name: "thumb_up", filled: true }}>
               {numeral(collection.endorsements).format("0 a")}
             </Stat>
 

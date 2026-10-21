@@ -16,10 +16,10 @@ const displayOptions = () => (
   <PopoverPanelGroup>
     <PopoverPanelGroupItem passive label="Display as">
       <Picker<string>
-        button={{ leftIcon: { name: "grid_view", fill: true }, size: "sm" }}
+        button={{ leftIcon: { name: "grid_view", filled: true }, size: "sm" }}
         options={[
-          { label: "Grid", value: "small", icon: { name: "grid_view", fill: true } },
-          { label: "List", value: "list", icon: { name: "view_list", fill: true } },
+          { label: "Grid", value: "small", icon: { name: "grid_view", filled: true } },
+          { label: "List", value: "list", icon: { name: "view_list", filled: true } },
         ]}
         value="small"
         onChange={() => {}}

@@ -1,7 +1,8 @@
 import React, { type ButtonHTMLAttributes, type ComponentType, type FC } from "react";
 
 import { useWindowContext } from "@/contexts";
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -32,7 +33,7 @@ export const MenuButton: FC<React.PropsWithChildren<MenuButtonProps>> = ({
         ])}
         {...props}
       >
-        <Icon {...iconSourceProps(icon)} className="shrink-0" size="sm" />
+        <Icon {...getIconProps(icon)} className="shrink-0" size="sm" />
 
         <Typography
           as="span"

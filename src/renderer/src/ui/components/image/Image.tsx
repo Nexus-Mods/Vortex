@@ -1,6 +1,7 @@
 import React, { useCallback, useState, type ImgHTMLAttributes } from "react";
 
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IImageProps extends Omit<
@@ -99,7 +100,7 @@ export const Image = ({
         />
       ) : (
         <Icon
-          {...iconSourceProps(fallbackIcon ?? "broken_image")}
+          {...getIconProps(fallbackIcon ?? "broken_image")}
           className="nxm-image-fallback"
           size="none"
           title={alt}

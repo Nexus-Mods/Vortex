@@ -1,6 +1,7 @@
 import React, { type KeyboardEvent, type SyntheticEvent } from "react";
 
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 /**
@@ -53,7 +54,7 @@ export const PopoverMenuItemControl = ({
         }
       }}
     >
-      <Icon {...iconSourceProps(icon)} size="none" />
+      <Icon {...getIconProps(icon)} size="none" />
     </span>
   );
 

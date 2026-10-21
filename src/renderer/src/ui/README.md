@@ -141,19 +141,19 @@ A button with no `children`/`customContent` but an icon renders icon-only (squar
 import { Icon } from "../../ui/components/icon/Icon";
 import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
 
-<Icon name="person" fill size="md" />
+<Icon name="person" filled size="md" />
 <Icon path={nxmVortex} size="lg" title="Vortex" />
 ```
 
 **Sizes:** `xs` (12px), `sm` (16px), `md` (20px), `lg` (24px), `xl` (32px), `2xl` (48px), `none` (controlled via className)
 
-**Axes:** with `name`, `fill`, `weight`, `grade` and `opticalSize` set the font's axes. Any Material Symbol works; the whole font ships.
+**Axes:** with `name`, `filled`, `weight`, `grade` and `opticalSize` set the font's axes. Any Material Symbol works; the whole font ships.
 
 **In other components:** a component's `icon` (or `leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by name, a symbol with its axes, an SVG path, or an element; a bare string has to be a real symbol. `IIconProp` is the type, from `Icon.tsx`.
 
 ```tsx
 <Button leftIcon="add">Add</Button>
-<Button leftIcon={{ name: "star", fill: true }}>Favourite</Button>
+<Button leftIcon={{ name: "star", filled: true }}>Favourite</Button>
 <Button leftIcon={{ path: nxmMod }}>Mod</Button>
 <Button leftIcon={<Logo />}>Custom</Button>
 ```

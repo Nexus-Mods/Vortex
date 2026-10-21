@@ -116,11 +116,11 @@ export const PillDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Pill icon={{ name: "sell", fill: true }}>Tagged</Pill>
+          <Pill icon={{ name: "sell", filled: true }}>Tagged</Pill>
 
           <Pill icon="check">Verified</Pill>
 
-          <Pill icon={<Icon name="star" fill size="none" />}>Custom icon node</Pill>
+          <Pill icon={<Icon name="star" filled size="none" />}>Custom icon node</Pill>
         </div>
       </div>
 

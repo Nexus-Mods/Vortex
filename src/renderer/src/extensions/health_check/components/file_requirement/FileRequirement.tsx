@@ -2,7 +2,8 @@ import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Bullet } from "@/ui/components/bullet/Bullet";
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
@@ -108,7 +109,7 @@ export function FileRequirement({
           className="flex min-w-0 items-center gap-x-1.5"
           typographyType="body-sm"
         >
-          <Icon {...iconSourceProps(fileIcon)} size="sm" />
+          <Icon {...getIconProps(fileIcon)} size="sm" />
 
           {onOpenFile ? (
             <TypographyLink

@@ -50,7 +50,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
       ? []
       : [
           {
-            icon: { name: "account_circle", fill: true },
+            icon: { name: "account_circle", filled: true },
             label: t("View profile on web"),
             onClick: () => {
               opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
@@ -97,7 +97,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
                     src={userInfo.profileUrl}
                   />
                 ) : (
-                  <Icon name="account_circle" fill />
+                  <Icon name="account_circle" filled />
                 )
               }
             />

@@ -2,12 +2,13 @@ import type { MaterialSymbol } from "material-symbols";
 import React, {
   type CSSProperties,
   type HTMLAttributes,
-  isValidElement,
   type ReactElement,
   type SVGAttributes,
 } from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
+
+import { getIconProps, isIconSource } from "./utils/icon_props/iconProps.util";
 
 /** A Material Symbol's name. A name the font doesn't have fails the typecheck. */
 export type SymbolName = MaterialSymbol;
@@ -37,32 +38,35 @@ const symbolFontSizeMap: { [key in IIconSize]: string | undefined } = {
 };
 
 interface IIconBaseProps {
+  /** Its size, from `xs` (12px) to `2xl` (48px); `none` leaves it to `className`. Default `md`. */
   size?: IIconSize;
+  /** Names it for screen readers; without one it's decorative and hidden from them. */
   title?: string;
 }
 
-/** An icon drawn from an SVG path in a 24x24 `viewBox`, for the custom `nxm*` icons the font lacks. */
+/** An icon drawn from an SVG path in a 24x24 `viewBox`, for the `nxm*` icons the font lacks. */
 export type IPathIconProps = IIconBaseProps &
   Omit<SVGAttributes<SVGSVGElement>, "size" | "path"> & {
+    /** The SVG path to draw. */
     path: string;
+    /** Not taken with `path`; a symbol takes `name` instead. */
     name?: never;
   };
 
 /** An icon drawn from Material Symbols, the variable font, by the symbol's name. */
 export type ISymbolIconProps = IIconBaseProps &
   Omit<HTMLAttributes<HTMLSpanElement>, "children" | "title"> & {
+    /** The symbol's name. */
     name: SymbolName;
+    /** Not taken with `name`; an SVG takes `path` instead. */
     path?: never;
     /** The solid form of the symbol, where it has one: the font's fill axis. */
-    fill?: boolean;
-    /** The font's weight axis. It is 400 when not given, whatever the text around it is. */
+    filled?: boolean;
+    /** The font's weight axis; 400 when not given, whatever the text around it is. */
     weight?: 100 | 200 | 300 | 400 | 500 | 600 | 700;
     /** The font's grade axis: a finer weight, thinner below 0 and bolder above it. */
     grade?: -25 | 0 | 200;
-    /**
-     * The font's optical size axis, from 20 to 48: the larger, the finer the strokes. It follows
-     * `size` when not given, and is for when an icon should be drawn for a size it isn't.
-     */
+    /** The font's optical size axis, 20 to 48; follows `size` unless drawn for another size. */
     opticalSize?: number;
   };
 
@@ -92,7 +96,7 @@ const SymbolIcon = ({
   size = "md",
   className,
   title,
-  fill,
+  filled,
   weight,
   grade,
   opticalSize,
@@ -101,9 +105,17 @@ const SymbolIcon = ({
 }: Omit<ISymbolIconProps, "path">) => {
   const axes: string[] = [];
 
-  if (fill !== undefined) axes.push(`"FILL" ${fill ? 1 : 0}`);
-  if (grade !== undefined) axes.push(`"GRAD" ${grade}`);
-  if (opticalSize !== undefined) axes.push(`"opsz" ${opticalSize}`);
+  if (filled !== undefined) {
+    axes.push(`"FILL" ${filled ? 1 : 0}`);
+  }
+
+  if (grade !== undefined) {
+    axes.push(`"GRAD" ${grade}`);
+  }
+
+  if (opticalSize !== undefined) {
+    axes.push(`"opsz" ${opticalSize}`);
+  }
 
   const axesStyle: CSSProperties = {
     ...(weight !== undefined && { fontWeight: weight }),
@@ -120,8 +132,8 @@ const SymbolIcon = ({
         symbolFontSizeMap[size],
         className,
       ])}
-      role={title ? "img" : undefined}
       data-symbol={name}
+      role={title ? "img" : undefined}
       style={{ ...axesStyle, ...style }}
       {...props}
     />
@@ -139,45 +151,38 @@ export const Icon = (props: IIconProps) =>
 
 /**
  * An icon as a component's `icon` prop takes it for `Icon` to draw: a Material Symbol by its
- * name, or by `{ name, fill, … }` with the font axes it is drawn with, or an SVG path as
+ * name, or by `{ name, filled, … }` with the font axes it is drawn with, or an SVG path as
  * `{ path }`.
  */
 export type IIconSource =
   | SymbolName
-  | Pick<ISymbolIconProps, "name" | "fill" | "weight" | "grade" | "opticalSize">
+  | Pick<ISymbolIconProps, "name" | "filled" | "weight" | "grade" | "opticalSize">
   | { path: string };
 
 /** What a component's `icon` prop takes: a source for `Icon` to draw, or an element as is. */
 export type IIconProp = ReactElement | IIconSource;
 
-/** Whether an `icon` prop is a source for `Icon` to draw, and not an element to show as it is. */
-export const isIconSource = (icon: IIconProp): icon is IIconSource =>
-  typeof icon === "string" ||
-  (typeof icon === "object" &&
-    icon !== null &&
-    !isValidElement(icon) &&
-    ("name" in icon || "path" in icon));
-
-/** The props that draw a source, for `<Icon {...iconSourceProps(source)} />`. */
-export const iconSourceProps = (source: IIconSource): IIconProps =>
-  typeof source === "string" ? { name: source } : source;
+interface IIconSlotProps {
+  /** The class the component gives its icons, on the icon or on the box around an element. */
+  className: string;
+  /** The component's `icon` prop, as given. */
+  icon?: IIconProp;
+  /** The size a source is drawn at. Default `none`, for the class to size it. */
+  size?: IIconSize;
+}
 
 /**
  * The icon a component shows for its `icon` prop: a source drawn by `Icon`, with the class and
  * size the component gives its icons, or an element in a box with that class. Nothing for no icon.
  */
-export const IconSlot = ({
-  className,
-  icon,
-  size = "none",
-}: {
-  className: string;
-  icon?: IIconProp;
-  size?: IIconSize;
-}) => {
-  if (isIconSource(icon)) {
-    return <Icon {...iconSourceProps(icon)} className={className} size={size} />;
+export const IconSlot = ({ className, icon, size = "none" }: IIconSlotProps) => {
+  if (!icon) {
+    return null;
   }
 
-  return icon ? <span className={joinClasses(["nxm-icon", className])}>{icon}</span> : null;
+  if (isIconSource(icon)) {
+    return <Icon {...getIconProps(icon)} className={className} size={size} />;
+  }
+
+  return <span className={joinClasses(["nxm-icon", className])}>{icon}</span>;
 };

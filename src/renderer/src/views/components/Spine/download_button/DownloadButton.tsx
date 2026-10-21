@@ -130,7 +130,7 @@ export const DownloadButton = () => {
         tooltipDisabled
         border={showProgress ? "none" : "visible"}
         className="group/download flex-col gap-y-0.5"
-        icon={showProgress ? undefined : { name: "download", fill: isActive }}
+        icon={showProgress ? undefined : { name: "download", filled: isActive }}
         isActive={isActive}
         title={LABEL}
         onClick={() => selectDownloads()}

@@ -1,6 +1,7 @@
 import React, { type ButtonHTMLAttributes, forwardRef, type PropsWithChildren } from "react";
 
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -63,7 +64,7 @@ export const SpineButton = forwardRef<HTMLButtonElement, PropsWithChildren<ISpin
         {...props}
         ref={ref}
       >
-        {!!icon && <Icon {...iconSourceProps(icon)} className="transition-colors" size="lg" />}
+        {!!icon && <Icon {...getIconProps(icon)} className="transition-colors" size="lg" />}
 
         {children}
       </button>

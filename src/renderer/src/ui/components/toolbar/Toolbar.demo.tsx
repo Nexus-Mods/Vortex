@@ -38,7 +38,7 @@ const manyActions: IToolbarAction[] = [
   ...generalActions,
   { label: "Combine", icon: "call_merge" },
   { label: "Highlight", icon: "visibility" },
-  { label: "Track", icon: { name: "pets", fill: true } },
+  { label: "Track", icon: { name: "pets", filled: true } },
   { label: "Untrack", icon: "pets" },
 ];
 

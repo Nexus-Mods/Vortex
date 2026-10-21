@@ -42,7 +42,7 @@ export const useHelpMenuSections = (): IMenuAction[][] => {
   return [
     globalIconActions
       .filter((action) => !(action.icon in builtInActionIcons))
-      .map((action) => asMenuAction(action, { name: "extension", fill: true })),
+      .map((action) => asMenuAction(action, { name: "extension", filled: true })),
 
     [
       {

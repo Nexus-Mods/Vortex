@@ -57,7 +57,7 @@ export const ButtonDemo = () => {
                     appearance={appearance}
                     aria-label={`${titleCase(brand)} ${titleCase(appearance)} icon only`}
                     brand={brand}
-                    leftIcon={{ name: "settings", fill: true }}
+                    leftIcon={{ name: "settings", filled: true }}
                   />
                 </React.Fragment>
               ))}
@@ -85,7 +85,7 @@ export const ButtonDemo = () => {
             appearance="scrim"
             aria-label="Scrim icon only"
             brand="neutral"
-            leftIcon={{ name: "settings", fill: true }}
+            leftIcon={{ name: "settings", filled: true }}
           />
 
           <Button appearance="scrim" brand="neutral" disabled={true}>
@@ -152,7 +152,7 @@ export const ButtonDemo = () => {
             Confirm
           </Button>
 
-          <Button brand="neutral" appearance="weak" leftIcon={{ name: "settings", fill: true }}>
+          <Button brand="neutral" appearance="weak" leftIcon={{ name: "settings", filled: true }}>
             Settings
           </Button>
         </div>
@@ -173,17 +173,17 @@ export const ButtonDemo = () => {
               appearance={appearance}
               aria-label={`Settings (${appearance})`}
               key={appearance}
-              leftIcon={{ name: "settings", fill: true }}
+              leftIcon={{ name: "settings", filled: true }}
             />
           ))}
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button aria-label="Settings (md)" leftIcon={{ name: "settings", fill: true }} />
+          <Button aria-label="Settings (md)" leftIcon={{ name: "settings", filled: true }} />
 
           <Button
             aria-label="Settings (sm)"
-            leftIcon={{ name: "settings", fill: true }}
+            leftIcon={{ name: "settings", filled: true }}
             size="sm"
           />
         </div>

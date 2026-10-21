@@ -10,7 +10,8 @@ import React, {
   type Ref,
 } from "react";
 
-import { Icon, type IIconProp, iconSourceProps, isIconSource } from "@/ui/components/icon/Icon";
+import { Icon, type IIconProp } from "@/ui/components/icon/Icon";
+import { getIconProps, isIconSource } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export type IButtonBrand = "primary" | "info" | "neutral" | "success" | "danger" | "premium";
@@ -77,7 +78,7 @@ const ButtonIcon = ({ icon, isLoading = false }: { icon?: IIconProp; isLoading?:
   }
 
   if (isIconSource(icon)) {
-    return <Icon {...iconSourceProps(icon)} className="nxm-button-icon" size="none" />;
+    return <Icon {...getIconProps(icon)} className="nxm-button-icon" size="none" />;
   }
 
   return null;

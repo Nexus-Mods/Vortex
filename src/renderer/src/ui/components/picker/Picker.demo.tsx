@@ -47,10 +47,10 @@ const languageOptions = [
 ] satisfies IListboxOption<string>[];
 
 const themeOptions = [
-  { label: "Default", value: "default", icon: { name: "palette", fill: true } },
-  { label: "Dark", value: "dark", icon: { name: "palette", fill: true } },
-  { label: "Light", value: "light", icon: { name: "palette", fill: true } },
-  { label: "High Contrast", value: "high-contrast", icon: { name: "palette", fill: true } },
+  { label: "Default", value: "default", icon: { name: "palette", filled: true } },
+  { label: "Dark", value: "dark", icon: { name: "palette", filled: true } },
+  { label: "Light", value: "light", icon: { name: "palette", filled: true } },
+  { label: "High Contrast", value: "high-contrast", icon: { name: "palette", filled: true } },
 ] satisfies IListboxOption<string>[];
 
 export const PickerDemo = () => {

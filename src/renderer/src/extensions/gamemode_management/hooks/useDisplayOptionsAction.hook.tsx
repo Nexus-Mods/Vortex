@@ -41,13 +41,13 @@ export const useDisplayOptionsAction = ({
               button={{
                 leftIcon: {
                   name: pickerLayout === "list" ? "view_list" : "grid_view",
-                  fill: true,
+                  filled: true,
                 },
                 size: "sm",
               }}
               options={[
-                { label: t("Grid"), value: "small", icon: { name: "grid_view", fill: true } },
-                { label: t("List"), value: "list", icon: { name: "view_list", fill: true } },
+                { label: t("Grid"), value: "small", icon: { name: "grid_view", filled: true } },
+                { label: t("List"), value: "list", icon: { name: "view_list", filled: true } },
               ]}
               value={pickerLayout}
               onChange={onSetPickerLayout}

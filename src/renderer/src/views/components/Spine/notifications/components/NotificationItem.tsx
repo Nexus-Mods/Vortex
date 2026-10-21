@@ -1,7 +1,8 @@
 import React, { useCallback } from "react";
 
 import type { INotification, NotificationType } from "@/types/INotification";
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { useNotificationTranslation } from "../hooks/useNotificationTranslation.hook";
@@ -79,7 +80,7 @@ export const NotificationItem = ({
     <div className="flex gap-x-3 border-stroke-weak p-2 not-last:border-b">
       <Icon
         className={joinClasses(["relative mt-0.5 shrink-0", status.className])}
-        {...iconSourceProps(status.icon)}
+        {...getIconProps(status.icon)}
         size="sm"
       />
 

@@ -113,7 +113,7 @@ export default function CategoryListItem({
     },
     {
       label: "Delete",
-      icon: { name: "delete", fill: true },
+      icon: { name: "delete", filled: true },
       testId: "category-delete",
       onClick: () => remove(categoryId),
     },

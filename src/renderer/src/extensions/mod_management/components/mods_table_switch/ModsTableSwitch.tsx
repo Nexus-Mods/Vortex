@@ -459,7 +459,7 @@ export const ModsTableSwitch = ({
               <Image
                 alt=""
                 className="ml-3.5 h-6 rounded-full"
-                fallbackIcon={{ name: "person", fill: true }}
+                fallbackIcon={{ name: "person", filled: true }}
                 fit="cover"
                 imageType="avatar"
                 src={avatar.src}

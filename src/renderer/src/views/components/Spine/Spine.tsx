@@ -69,7 +69,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
       data-testid="spine"
     >
       <SpineButton
-        icon={{ name: "home", fill: selection.type === "home" }}
+        icon={{ name: "home", filled: selection.type === "home" }}
         isActive={selection.type === "home"}
         title="Home"
         onClick={selectHome}

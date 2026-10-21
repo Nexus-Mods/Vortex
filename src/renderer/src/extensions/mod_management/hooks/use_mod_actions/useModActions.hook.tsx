@@ -119,7 +119,7 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
     items: [
       { title: "Combine", label: "Combine", icon: "call_merge" },
       { title: "Track", label: "Track", icon: "pets" },
-      { title: "Untrack", label: "Untrack", icon: { name: "pets", fill: true } },
+      { title: "Untrack", label: "Untrack", icon: { name: "pets", filled: true } },
     ],
   },
   {
@@ -130,7 +130,7 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       {
         title: "Create Report",
         label: "Generate mod report",
-        icon: { name: "bug_report", fill: true },
+        icon: { name: "bug_report", filled: true },
       },
     ],
   },

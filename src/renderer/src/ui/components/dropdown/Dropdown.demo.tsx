@@ -83,7 +83,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="danger"
-                leftIcon={{ name: "delete", fill: true }}
+                leftIcon={{ name: "delete", filled: true }}
                 onClick={() => handleClick("Delete")}
               >
                 Delete
@@ -152,7 +152,7 @@ export const DropdownDemo = () => {
 
               <DropdownItem
                 brand="danger"
-                leftIcon={{ name: "delete", fill: true }}
+                leftIcon={{ name: "delete", filled: true }}
                 onClick={() => handleClick("Delete")}
               >
                 Delete
@@ -191,7 +191,7 @@ export const DropdownDemo = () => {
               </DropdownItem>
 
               <DropdownItem
-                leftIcon={{ name: "delete", fill: true }}
+                leftIcon={{ name: "delete", filled: true }}
                 onClick={() => handleClick("Delete")}
               >
                 Delete

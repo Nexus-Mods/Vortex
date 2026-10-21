@@ -184,7 +184,7 @@ describe("Button", () => {
 
     it("renders icons on either side from a symbol, with the fill axis if given", () => {
       render(
-        <Button leftIcon="add" rightIcon={{ name: "star", fill: true }}>
+        <Button leftIcon="add" rightIcon={{ name: "star", filled: true }}>
           Click
         </Button>,
       );

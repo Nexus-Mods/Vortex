@@ -1,7 +1,8 @@
 import React, { type PropsWithChildren } from "react";
 
 import { Button } from "@/ui/components/button/Button";
-import { Icon, type IIconSource, iconSourceProps } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -38,7 +39,7 @@ export const NoResults = ({
     <div className="flex flex-col items-center gap-y-2">
       {(!!icon || isError) && (
         <Icon
-          {...iconSourceProps(icon ?? "error")}
+          {...getIconProps(icon ?? "error")}
           className={iconClassName ?? getIconClassName(appearance)}
           size="xl"
         />

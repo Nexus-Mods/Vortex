@@ -21,8 +21,8 @@ import { PopoverPanelGroup } from "./PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "./PopoverPanelGroupItem";
 
 const layoutOptions = [
-  { label: "Grid", value: "grid", icon: { name: "grid_view", fill: true } },
-  { label: "List", value: "list", icon: { name: "view_list", fill: true } },
+  { label: "Grid", value: "grid", icon: { name: "grid_view", filled: true } },
+  { label: "List", value: "list", icon: { name: "view_list", filled: true } },
 ] satisfies IListboxOption<string>[];
 
 const helpActions: IMenuAction[][] = [
@@ -41,7 +41,7 @@ const accountActions: IMenuAction[][] = [
   [
     {
       label: "View profile on web",
-      icon: { name: "account_circle", fill: true },
+      icon: { name: "account_circle", filled: true },
       onClick: () => {},
     },
   ],
@@ -160,7 +160,7 @@ export const PopoverDemo = () => {
                     button={{
                       leftIcon: {
                         name: layout === "list" ? "view_list" : "grid_view",
-                        fill: true,
+                        filled: true,
                       },
                       size: "sm",
                     }}
@@ -216,7 +216,7 @@ export const PopoverDemo = () => {
             <PopoverButton
               appearance="subdued"
               brand="neutral"
-              leftIcon={{ name: "account_circle", fill: true }}
+              leftIcon={{ name: "account_circle", filled: true }}
             />
 
             <PopoverPanel className="nxm-popover-panel-dropdown">
@@ -271,7 +271,7 @@ export const PopoverDemo = () => {
             <PopoverButton
               appearance="subdued"
               brand="neutral"
-              leftIcon={{ name: "palette", fill: true }}
+              leftIcon={{ name: "palette", filled: true }}
             />
 
             <PopoverPanel className="nxm-popover-panel-dropdown">

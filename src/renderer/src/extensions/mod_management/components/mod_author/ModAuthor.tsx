@@ -28,7 +28,7 @@ export const ModAuthor = ({ mod }: IModAuthorProps) => {
       <Image
         alt=""
         className="size-4 shrink-0 rounded-full"
-        fallbackIcon={{ name: "person", fill: true }}
+        fallbackIcon={{ name: "person", filled: true }}
         fit="cover"
         imageType="avatar"
         src={avatar}
