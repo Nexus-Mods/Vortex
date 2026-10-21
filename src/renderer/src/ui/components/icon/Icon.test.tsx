@@ -121,18 +121,18 @@ describe("Icon", () => {
     });
 
     it.each([
-      ["xs", "size-3", "text-[12px]"],
-      ["sm", "size-4", "text-[16px]"],
-      ["md", "size-5", "text-[20px]"],
-      ["lg", "size-6", "text-[24px]"],
-      ["xl", "size-8", "text-[32px]"],
-      ["2xl", "size-12", "text-[48px]"],
+      ["xs", "size-3", "text-[0.75rem]"],
+      ["sm", "size-4", "text-[1rem]"],
+      ["md", "size-5", "text-[1.25rem]"],
+      ["lg", "size-6", "text-[1.5rem]"],
+      ["xl", "size-8", "text-[2rem]"],
+      ["2xl", "size-12", "text-[3rem]"],
     ] as const)("sizes %s as %s with a %s font", (size, box, font) => {
       expect(renderSymbol({ size })).toHaveClass(box, font);
     });
 
     it("defaults to md", () => {
-      expect(renderSymbol()).toHaveClass("size-5", "text-[20px]");
+      expect(renderSymbol()).toHaveClass("size-5", "text-[1.25rem]");
     });
 
     it('takes the size of the text around it for size="none"', () => {

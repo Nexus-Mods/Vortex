@@ -5,6 +5,7 @@
 
 import React from "react";
 
+import { Image } from "@/ui/components/image/Image";
 import { Typography } from "@/ui/components/typography/Typography";
 import { nxmCollection, nxmDiscord, nxmInstall, nxmMod, nxmVortex } from "@/ui/icon-paths";
 
@@ -26,6 +27,8 @@ const nxmIcons = [
   { path: nxmCollection, label: "nxmCollection" },
   { path: nxmDiscord, label: "nxmDiscord" },
 ];
+
+const imageSizes = ["size-4", "size-5", "size-6", "size-8", "size-12"] as const;
 
 const colorIcons = [
   { name: "favorite", label: "Danger", className: "text-danger-strong" },
@@ -223,6 +226,33 @@ export const IconDemo = () => (
 
             <Typography appearance="subdued" typographyType="body-xs">
               {label}
+            </Typography>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <Typography as="h3" typographyType="heading-xs">
+        In an Image
+      </Typography>
+
+      <Typography appearance="subdued" typographyType="body-sm">
+        An image's fallback icon and spinner are drawn at 20px, or three quarters of the image's
+        height in a smaller one, so they fit it whatever its size.
+      </Typography>
+
+      <div className="flex flex-wrap items-end gap-6">
+        {imageSizes.map((size) => (
+          <div className="flex flex-col items-center gap-2" key={size}>
+            <div className="flex items-end gap-2">
+              <Image alt="" className={size} fallbackIcon="person" imageType="avatar" />
+
+              <Image alt="" className={size} imageType="avatar" isLoading />
+            </div>
+
+            <Typography appearance="subdued" typographyType="body-xs">
+              {size}
             </Typography>
           </div>
         ))}

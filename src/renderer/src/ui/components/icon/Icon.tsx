@@ -24,16 +24,16 @@ const sizeMap: { [key in IIconSize]: string | undefined } = {
   "2xl": "size-12",
 };
 
-// A symbol is one em square, so it takes its size from the font size. The same steps as
-// `sizeMap`, in pixels, as the font's optical size follows from them.
+// A symbol is one em square, so it takes its size from the font size: the same steps as `sizeMap`,
+// in rem, so it scales with the rest of the app. The font's optical size follows from it.
 const symbolFontSizeMap: { [key in IIconSize]: string | undefined } = {
   none: undefined,
-  xs: "text-[12px]",
-  sm: "text-[16px]",
-  md: "text-[20px]",
-  lg: "text-[24px]",
-  xl: "text-[32px]",
-  "2xl": "text-[48px]",
+  xs: "text-[0.75rem]",
+  sm: "text-[1rem]",
+  md: "text-[1.25rem]",
+  lg: "text-[1.5rem]",
+  xl: "text-[2rem]",
+  "2xl": "text-[3rem]",
 };
 
 interface IIconBaseProps {

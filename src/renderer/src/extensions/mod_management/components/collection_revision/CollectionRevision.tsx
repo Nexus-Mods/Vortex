@@ -65,12 +65,12 @@ const CollectionChangelog = ({ slug, revision }: { slug: string; revision: numbe
       return (
         <span
           aria-label={t("Loading changelog")}
-          className="relative size-4 animate-spin text-neutral-subdued"
+          className="relative flex size-4 animate-spin text-neutral-subdued"
           role="status"
         >
-          <Icon className="opacity-40" name="radio_button_unchecked" size="none" />
+          <Icon className="opacity-40" name="radio_button_unchecked" size="sm" />
 
-          <Icon className="absolute inset-0" name="progress_activity" size="none" />
+          <Icon className="absolute inset-0" name="progress_activity" size="sm" />
         </span>
       );
     case "failed":
