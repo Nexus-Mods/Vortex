@@ -541,6 +541,34 @@ describe("PluginPersistor", () => {
       });
     });
 
+    it("reads a plugins file spelled with different case", async () => {
+      paths.pluginDir = tmpDir("plugin-case-");
+      nodeFs.writeFileSync(
+        path.join(paths.pluginDir, "Plugins.txt"),
+        `${VORTEX_HEADER}\r\n*Upper.esp\r\n`,
+        { encoding: "latin1" },
+      );
+
+      const fresh = await makePersistor();
+
+      expect(fresh.entry("upper.esp").enabled).toBe(true);
+    });
+
+    it("writes into a plugins file spelled with different case instead of adding another", async () => {
+      paths.pluginDir = tmpDir("plugin-case-write-");
+      const upper = path.join(paths.pluginDir, "Plugins.txt");
+      nodeFs.writeFileSync(upper, `${VORTEX_HEADER}\r\n*Upper.esp\r\n`, { encoding: "latin1" });
+      const fresh = await makePersistor();
+
+      fresh.setKnownPlugins({ "upper.esp": "Upper.esp", "new.esp": "New.esp" });
+      await fresh.setItem(["new.esp"], JSON.stringify({ enabled: true, loadOrder: 1 }));
+
+      await vi.waitFor(() => {
+        expect(nodeFs.readFileSync(upper, "latin1")).toContain("*New.esp");
+      });
+      expect(nodeFs.readdirSync(paths.pluginDir).sort()).toEqual(["Plugins.txt", "loadorder.txt"]);
+    });
+
     it("keeps its state and recreates the file when plugins.txt is deleted externally", async () => {
       nodeFs.rmSync(path.join(paths.pluginDir, "plugins.txt"));
 

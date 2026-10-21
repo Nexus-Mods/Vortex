@@ -7,6 +7,15 @@ import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import { copyFileAtomic } from "../../util/fsAtomic";
 import { log } from "../../util/log";
+import { resolveFileCase } from "../../util/resolvePathCase";
+
+/**
+ * Wine lets the game file's case differ from the profile's
+ * copy, which must stay a single file rather than gain a twin.
+ */
+function profileCopyPath(profilePath: string, filePath: string): PromiseBB<string> {
+  return PromiseBB.resolve(resolveFileCase(profilePath, path.basename(filePath)));
+}
 
 export function syncToProfile(
   profilePath: string,
@@ -17,21 +26,22 @@ export function syncToProfile(
   return fs
     .ensureDirAsync(profilePath)
     .then(() =>
-      PromiseBB.map(sourceFiles, (filePath: string) => {
-        const destPath = path.join(profilePath, path.basename(filePath));
-        return copyFileAtomic(filePath, destPath)
-          .catch(UserCanceled, () => {
-            log("warn", "user canceled profile sync. That's not great...");
-          })
-          .catch((err) => {
-            log("warn", "failed to copy to profile", { filePath, destPath });
-            if (!["EBADF", "ENOENT"].includes(getErrorCode(err))) {
-              // both indicate the file doesn't exist, which isn't a problem,
-              // it's as if the file was empty
-              onError("failed to sync to profile: " + filePath, err);
-            }
-          });
-      }),
+      PromiseBB.map(sourceFiles, (filePath: string) =>
+        profileCopyPath(profilePath, filePath).then((destPath) =>
+          copyFileAtomic(filePath, destPath)
+            .catch(UserCanceled, () => {
+              log("warn", "user canceled profile sync. That's not great...");
+            })
+            .catch((err) => {
+              log("warn", "failed to copy to profile", { filePath, destPath });
+              if (!["EBADF", "ENOENT"].includes(getErrorCode(err))) {
+                // both indicate the file doesn't exist, which isn't a problem,
+                // it's as if the file was empty
+                onError("failed to sync to profile: " + filePath, err);
+              }
+            }),
+        ),
+      ),
     )
     .then(() => {
       log("debug", "sync to profile complete");
@@ -46,8 +56,8 @@ export function syncFromProfile(
 ): PromiseBB<void> {
   log("debug", "sync from profile", { profilePath, sourceFiles });
   return PromiseBB.map(sourceFiles, (filePath: string) => {
-    const srcPath = path.join(profilePath, path.basename(filePath));
-    return copyFileAtomic(srcPath, filePath)
+    return profileCopyPath(profilePath, filePath)
+      .then((srcPath) => copyFileAtomic(srcPath, filePath))
       .catch(UserCanceled, () => {
         log("warn", "user canceled profile sync. That's not great...");
       })
