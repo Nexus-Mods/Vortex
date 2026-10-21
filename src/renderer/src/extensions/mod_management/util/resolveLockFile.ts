@@ -1,4 +1,4 @@
-import { addGeneratedFiles, FileSourceKind, resolve, type Lockfile } from "@nexusmods/mod-pipeline";
+import { FileSourceKind, resolve, type Lockfile } from "@nexusmods/mod-pipeline";
 import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 
 import { log } from "../../../logging";
@@ -6,6 +6,7 @@ import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { fileMD5 } from "../../../util/checksum";
 import { lastActiveProfileForGame } from "../../profile_management/selectors";
+import { addGeneratedFiles } from "./generatedFiles";
 import {
   LockfileContributions,
   type LockfileContribution,

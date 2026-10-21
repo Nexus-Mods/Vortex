@@ -14,9 +14,9 @@ vi.mock("../../nexus_integration/util", async (importOriginal) => ({
   nexusGames: () => [{ domain_name: "skyrimspecialedition", id: 1704 }],
 }));
 
-import { makeGeneratedFileSource } from "../../../test-utils/builders";
 import { makeDeployedGame } from "../../../test-utils/deployedGame";
 import { test } from "../../../test-utils/harnessTest";
+import { makeGeneratedFileSource } from "../../../test-utils/lockfileBuilders";
 import { checksum } from "../../../util/checksum";
 import { sessionReducer } from "../reducers/session";
 import {

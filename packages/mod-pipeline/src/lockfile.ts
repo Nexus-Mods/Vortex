@@ -40,9 +40,17 @@ export type GeneratedFileSource = Extract<
   { source: typeof FileSourceKind.VortexGenerated }
 >;
 
-/** Orders lockfile files by destination; destinations are unique. */
-export const byDestinationPath = (lhs: FileSource, rhs: FileSource): number =>
-  lhs.destinationPath < rhs.destinationPath ? -1 : 1;
+/** A lockfile's files: one per destination, the later file winning, in destination order. */
+export function lockfileFiles(files: Iterable<FileSource>): FileSource[] {
+  const fileByDestination = new Map<string, FileSource>();
+  for (const file of files) {
+    fileByDestination.set(file.destinationPath, file);
+  }
+  // destinations are unique
+  return [...fileByDestination.values()].toSorted((lhs, rhs) =>
+    lhs.destinationPath < rhs.destinationPath ? -1 : 1,
+  );
+}
 
 /** The resolved files of one game, the Plan step's input. */
 export interface Lockfile {

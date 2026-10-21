@@ -3,11 +3,8 @@ import { expect, test, vi } from "vitest";
 vi.mock("../../../logging", () => ({ log: vi.fn() }));
 
 import { log } from "../../../logging";
-import {
-  makeApiHarness,
-  makeDeclaredFile,
-  makeGeneratedFileSource,
-} from "../../../test-utils/builders";
+import { makeApiHarness, makeDeclaredFile } from "../../../test-utils/builders";
+import { makeGeneratedFileSource } from "../../../test-utils/lockfileBuilders";
 import { checksum } from "../../../util/checksum";
 import {
   LockfileContributions,
