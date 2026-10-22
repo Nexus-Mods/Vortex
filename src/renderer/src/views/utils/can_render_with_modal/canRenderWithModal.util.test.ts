@@ -37,11 +37,24 @@ describe("canRenderWithModal", () => {
     expect(canRenderWithModal(dialogWith({ text: "t", bbcode: undefined }))).toBe(true);
   });
 
-  it.each<[string, IDialogContent["options"]]>([
-    ["order", { order: ["checkboxes", "text"] }],
-    ["bbcodeContext", { bbcodeContext: {} as never }],
-  ])("rejects the %s option, which ModalLayer does not follow", (_name, options) => {
-    expect(canRenderWithModal(dialogWith({ text: "t", options }))).toBe(false);
+  it("accepts html text, with or without other text", () => {
+    expect(canRenderWithModal(dialogWith({ htmlText: "<b>b</b>" }))).toBe(true);
+    expect(canRenderWithModal(dialogWith({ text: "t", htmlText: "<b>b</b>" }))).toBe(true);
+  });
+
+  it("accepts the order option, which ModalLayer follows", () => {
+    expect(
+      canRenderWithModal(dialogWith({ text: "t", options: { order: ["checkboxes", "text"] } })),
+    ).toBe(true);
+  });
+
+  it("leaves the updater's What's New on the legacy dialog", () => {
+    expect(
+      canRenderWithModal({
+        ...dialogWith({ htmlText: "<p>Notes</p>" }),
+        id: "new-update-changelog-dialog",
+      }),
+    ).toBe(false);
   });
 
   it("rejects a field it has never heard of", () => {
@@ -54,14 +67,34 @@ describe("canRenderWithModal", () => {
     expect(canRenderWithModal(dialogWith({}))).toBe(false);
   });
 
-  it.each<[string, IDialogContent]>([
-    ["bbcode", { text: "t", bbcode: "[b]b[/b]" }],
-    ["md", { text: "t", md: "# h" }],
-    ["htmlText", { text: "t", htmlText: "<b>b</b>" }],
-    ["htmlFile", { text: "t", htmlFile: "f.html" }],
-    ["choices", { text: "t", choices: [{ id: "a", value: true }] }],
-  ])("rejects a dialog with %s", (_name, content) => {
-    expect(canRenderWithModal(dialogWith(content))).toBe(false);
+  it.each<[string, IDialogContent]>([["htmlFile", { text: "t", htmlFile: "f.html" }]])(
+    "rejects a dialog with %s",
+    (_name, content) => {
+      expect(canRenderWithModal(dialogWith(content))).toBe(false);
+    },
+  );
+
+  describe("choices", () => {
+    it("accepts radio choices, with or without a hint, and with or without text", () => {
+      const choices = [
+        { id: "a", value: true, text: "A", subText: "More about A" },
+        { id: "b", value: false, text: "B" },
+      ];
+
+      expect(canRenderWithModal(dialogWith({ text: "t", choices }))).toBe(true);
+      expect(canRenderWithModal(dialogWith({ choices }))).toBe(true);
+    });
+
+    it.each<[string, ICheckbox]>([
+      ["no text", { id: "a", value: false }],
+      ["bbcode", { id: "a", value: false, text: "t", bbcode: "[b]b[/b]" }],
+      [
+        "a field it has never heard of",
+        { id: "a", value: false, text: "t", extra: 1 } as ICheckbox,
+      ],
+    ])("rejects a choice with %s", (_name, choice) => {
+      expect(canRenderWithModal(dialogWith({ text: "t", choices: [choice] }))).toBe(false);
+    });
   });
 
   it("accepts plain checkboxes", () => {
@@ -72,9 +105,16 @@ describe("canRenderWithModal", () => {
     ).toBe(true);
   });
 
+  it("accepts a checkbox named by its bbcode", () => {
+    expect(
+      canRenderWithModal(
+        dialogWith({ text: "t", checkboxes: [{ id: "a", value: false, bbcode: "[b]Agree[/b]" }] }),
+      ),
+    ).toBe(true);
+  });
+
   it.each<[string, ICheckbox]>([
-    ["no text", { id: "a", value: false }],
-    ["bbcode", { id: "a", value: false, text: "t", bbcode: "[b]b[/b]" }],
+    ["no text and no bbcode", { id: "a", value: false }],
     ["a sub-line", { id: "a", value: false, text: "t", subText: "more" }],
     ["a field it has never heard of", { id: "a", value: false, text: "t", extra: 1 } as ICheckbox],
   ])("rejects a checkbox with %s", (_name, checkbox) => {
@@ -86,6 +126,22 @@ describe("canRenderWithModal", () => {
       expect(
         canRenderWithModal(
           dialogWith({ text: "t", input: [{ id: "a", label: "A" }], condition: () => [] }),
+        ),
+      ).toBe(true);
+    });
+  });
+
+  describe("bbcode and markdown", () => {
+    it("accepts a bbcode or markdown body, with or without text", () => {
+      expect(canRenderWithModal(dialogWith({ text: "t", bbcode: "[b]b[/b]" }))).toBe(true);
+      expect(canRenderWithModal(dialogWith({ bbcode: "[b]b[/b]" }))).toBe(true);
+      expect(canRenderWithModal(dialogWith({ md: "# Heading" }))).toBe(true);
+    });
+
+    it("accepts the context bbcode tags are drawn in", () => {
+      expect(
+        canRenderWithModal(
+          dialogWith({ bbcode: "[b]b[/b]", options: { bbcodeContext: {} as never } }),
         ),
       ).toBe(true);
     });
@@ -111,9 +167,21 @@ describe("canRenderWithModal", () => {
       expect(canRenderWithModal(dialogWith({ input }))).toBe(true);
     });
 
+    it("accepts an input without a label, which the dialog's title names", () => {
+      expect(
+        canRenderWithModal(dialogWith({ text: "t", input: [{ id: "url", type: "url" }] })),
+      ).toBe(true);
+    });
+
+    it("accepts a multiline input", () => {
+      expect(
+        canRenderWithModal(
+          dialogWith({ text: "t", input: [{ id: "a", label: "A", type: "multiline" }] }),
+        ),
+      ).toBe(true);
+    });
+
     it.each<[string, IInput]>([
-      ["no label", { id: "a" }],
-      ["a multiline type", { id: "a", label: "A", type: "multiline" }],
       ["a field it has never heard of", { id: "a", label: "A", extra: 1 } as IInput],
     ])("rejects an input with %s", (_name, input) => {
       expect(canRenderWithModal(dialogWith({ text: "t", input: [input] }))).toBe(false);
@@ -148,13 +216,12 @@ describe("canRenderWithModal", () => {
     });
   });
 
-  it.each([1, 2, 3])("accepts %i actions", (count) => {
+  it.each([1, 2, 3, 4, 6])("accepts %i actions", (count) => {
     const actions = Array.from({ length: count }, (_v, i) => `Action ${i}`);
     expect(canRenderWithModal(dialogWith({ text: "t" }, actions))).toBe(true);
   });
 
-  it.each([0, 4])("rejects %i actions", (count) => {
-    const actions = Array.from({ length: count }, (_v, i) => `Action ${i}`);
-    expect(canRenderWithModal(dialogWith({ text: "t" }, actions))).toBe(false);
+  it("rejects a dialog with no actions", () => {
+    expect(canRenderWithModal(dialogWith({ text: "t" }, []))).toBe(false);
   });
 });
