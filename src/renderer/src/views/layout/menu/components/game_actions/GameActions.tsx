@@ -29,10 +29,11 @@ export const GameActions = () => {
     startTool,
     handlePlay,
   } = useToolsContext();
-  const { needToDeploy, autoDeploy, isDeploying, deployProgress, deployStep, deploy } =
+  const { needToDeploy, autoDeploy, isPurged, isDeploying, deployProgress, deployStep, deploy } =
     useDeployMods();
-  // With auto deploy on, changes deploy on their own, so Apply only shows its progress.
-  const showApply = isDeploying || (needToDeploy && !autoDeploy);
+  // With auto deploy on, changes deploy on their own, so Apply only shows its progress, or
+  // after a purge, which auto deploy leaves alone.
+  const showApply = isDeploying || isPurged || (needToDeploy && !autoDeploy);
 
   if (gameId === undefined || selection.type !== "game") {
     return null;
