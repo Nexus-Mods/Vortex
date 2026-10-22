@@ -38,36 +38,66 @@ type _OperationMatches = Assert<MutuallyAssignable<z.infer<typeof operationSchem
 
 export const OperationSchema: z.ZodType<Operation> = operationSchema;
 
+type DiskLetter = "x" | "?" | "A" | "B" | "C";
+
 /**
- * The operations each destination needs, keyed by its state written Disk, Previous, Current:
+ * Every reachable state of a destination. Each value is its code, written Disk, Previous, Current:
  * - `x`: nothing there
  * - `A`: the current file, or the previous one when the current lockfile has none
  * - `B`: the previous file, when its content or origin differs from the current one
  * - `C`: content neither lockfile has
  * - `?` (disk only): an entry the scan did not hash
- *
- * Every LINK lands on an empty destination: whatever is there is unlinked when it is ours, and
- * backed up otherwise, so Apply never writes through a hardlink into a staged file.
  */
-const ACTIONS: Readonly<Record<string, readonly OperationKind[]>> = {
-  xxA: [OperationKind.Link], // a new file
-  AxA: [OperationKind.Backup, OperationKind.Link], // the same content, but not ours to take over
-  BxA: [OperationKind.Backup, OperationKind.Link], // another file is in the way
-  "?xA": [OperationKind.Backup, OperationKind.Link], // an unknown file is in the way
-  xAA: [OperationKind.Link], // our file is gone
-  AAA: [], // nothing changed
-  BAA: [OperationKind.Backup, OperationKind.Link], // our file was changed outside the pipeline
-  "?AA": [], // trusted to be what we deployed
-  xBA: [OperationKind.Link], // the update's older file is gone
-  ABA: [OperationKind.Backup, OperationKind.Link], // the update's content, but not placed by us
-  BBA: [OperationKind.Unlink, OperationKind.Link], // an update over our older file
-  CBA: [OperationKind.Backup, OperationKind.Link], // our older file was changed outside the pipeline
-  "?BA": [OperationKind.Unlink, OperationKind.Link], // trusted to be our older file
-  xAx: [], // a removed file is already gone
-  AAx: [OperationKind.Unlink], // a removed file
-  BAx: [OperationKind.Backup], // a removed file was changed outside the pipeline
-  "?Ax": [OperationKind.Unlink], // trusted to be the removed file
-};
+const DestinationState = {
+  NewFile: "xxA",
+  NewOverIdentical: "AxA",
+  NewOverOther: "BxA",
+  NewOverUnhashed: "?xA",
+  DeployedMissing: "xAA",
+  Unchanged: "AAA",
+  DeployedEdited: "BAA",
+  DeployedUnhashed: "?AA",
+  UpdatedMissing: "xBA",
+  UpdatedOverIdentical: "ABA",
+  Updated: "BBA",
+  UpdatedOverEdited: "CBA",
+  UpdatedOverUnhashed: "?BA",
+  RemovedMissing: "xAx",
+  Removed: "AAx",
+  RemovedEdited: "BAx",
+  RemovedUnhashed: "?Ax",
+} as const satisfies Record<string, `${DiskLetter}${"x" | "A" | "B"}${"x" | "A"}`>;
+type DestinationState = (typeof DestinationState)[keyof typeof DestinationState];
+
+/**
+ * The operations each state needs; typecheck fails on a missing or extra row. Every
+ * LINK lands on an empty destination: whatever is there is unlinked when it is ours, and backed up
+ * otherwise, so Apply never writes through a hardlink into a staged file.
+ */
+const OPERATIONS_BY_STATE = {
+  [DestinationState.NewFile]: [OperationKind.Link],
+  // the same content, but not ours to take over
+  [DestinationState.NewOverIdentical]: [OperationKind.Backup, OperationKind.Link],
+  [DestinationState.NewOverOther]: [OperationKind.Backup, OperationKind.Link],
+  [DestinationState.NewOverUnhashed]: [OperationKind.Backup, OperationKind.Link],
+  [DestinationState.DeployedMissing]: [OperationKind.Link],
+  [DestinationState.Unchanged]: [],
+  [DestinationState.DeployedEdited]: [OperationKind.Backup, OperationKind.Link],
+  // trusted to be what we deployed
+  [DestinationState.DeployedUnhashed]: [],
+  [DestinationState.UpdatedMissing]: [OperationKind.Link],
+  // the update's content, but not placed by us
+  [DestinationState.UpdatedOverIdentical]: [OperationKind.Backup, OperationKind.Link],
+  [DestinationState.Updated]: [OperationKind.Unlink, OperationKind.Link],
+  [DestinationState.UpdatedOverEdited]: [OperationKind.Backup, OperationKind.Link],
+  // trusted to be our older file
+  [DestinationState.UpdatedOverUnhashed]: [OperationKind.Unlink, OperationKind.Link],
+  [DestinationState.RemovedMissing]: [],
+  [DestinationState.Removed]: [OperationKind.Unlink],
+  [DestinationState.RemovedEdited]: [OperationKind.Backup],
+  // trusted to be the removed file
+  [DestinationState.RemovedUnhashed]: [OperationKind.Unlink],
+} as const satisfies Record<DestinationState, readonly OperationKind[]>;
 
 const sameContent = (
   lhs: Pick<StagedFile, "fileHash" | "hashType">,
@@ -90,31 +120,52 @@ function sameOrigin(lhs: FileOrigin, rhs: FileOrigin): boolean {
 const sameFile = (lhs: FileSource, rhs: FileSource) =>
   sameContent(lhs, rhs) && sameOrigin(lhs, rhs);
 
-/** A destination's state, the key into ACTIONS. */
-function stateOf(
+/** The current and previous lockfile's file at one destination; at least one is there. */
+type LockfileFilesAt =
+  | { current: FileSource; previous: FileSource | undefined }
+  | { current: undefined; previous: FileSource };
+
+/** The disk entry's letter compared with `file`. */
+function diskLetterAgainst(
   entry: DiskEntry | undefined,
-  previous: FileSource | undefined,
-  current: FileSource | undefined,
-): string {
-  const currentLetter = current !== undefined ? "A" : "x";
-  let previousLetter = "x";
-  if (previous !== undefined) {
-    previousLetter = current === undefined || sameFile(previous, current) ? "A" : "B";
-  }
+  file: FileSource,
+): Exclude<DiskLetter, "C"> {
   if (entry === undefined) {
-    return `x${previousLetter}${currentLetter}`;
+    return "x";
   }
   if (entry.contentHash === undefined) {
-    return `?${previousLetter}${currentLetter}`;
+    return "?";
   }
-  // content matching our previous file counts as that file, so an origin change still relinks
-  if (previous !== undefined && sameContent(entry.contentHash, previous)) {
-    return `${previousLetter}${previousLetter}${currentLetter}`;
+  return sameContent(entry.contentHash, file) ? "A" : "B";
+}
+
+/** A destination's state; typecheck fails if it can produce one OPERATIONS_BY_STATE lacks. */
+function destinationStateOf(
+  entry: DiskEntry | undefined,
+  { current, previous }: LockfileFilesAt,
+): DestinationState {
+  if (current === undefined) {
+    return `${diskLetterAgainst(entry, previous)}Ax`;
   }
-  if (current !== undefined && sameContent(entry.contentHash, current)) {
-    return `A${previousLetter}${currentLetter}`;
+  if (previous === undefined) {
+    return `${diskLetterAgainst(entry, current)}xA`;
   }
-  return `${previousLetter === "B" ? "C" : "B"}${previousLetter}${currentLetter}`;
+  if (sameFile(previous, current)) {
+    return `${diskLetterAgainst(entry, current)}AA`;
+  }
+  if (entry === undefined) {
+    return DestinationState.UpdatedMissing;
+  }
+  if (entry.contentHash === undefined) {
+    return DestinationState.UpdatedOverUnhashed;
+  }
+  // content matching our older file counts as that file, so an origin change still relinks
+  if (sameContent(entry.contentHash, previous)) {
+    return DestinationState.Updated;
+  }
+  return sameContent(entry.contentHash, current)
+    ? DestinationState.UpdatedOverIdentical
+    : DestinationState.UpdatedOverEdited;
 }
 
 // an empty, "." or ".." segment, or a "\" or ":" anywhere
@@ -232,20 +283,25 @@ export function plan(
   }
   const currentByPath = filesByDestination(current.files);
   const previousByPath = filesByDestination(previous?.files ?? []);
-  const destinations = [...new Set([...currentByPath.keys(), ...previousByPath.keys()])].toSorted();
-  checkInputs(destinations, disk);
+  const filesByPath = new Map<string, LockfileFilesAt>();
+  for (const [path, previousFile] of previousByPath) {
+    filesByPath.set(path, { current: undefined, previous: previousFile });
+  }
+  for (const [path, currentFile] of currentByPath) {
+    filesByPath.set(path, { current: currentFile, previous: previousByPath.get(path) });
+  }
+  const destinations = [...filesByPath].toSorted(([lhs], [rhs]) => (lhs < rhs ? -1 : 1));
+  checkInputs(
+    destinations.map(([destinationPath]) => destinationPath),
+    disk,
+  );
   const diskByPath = new Map(disk.entries.map((entry) => [entry.path, entry]));
 
-  const operations = destinations.flatMap((destinationPath) => {
-    const currentFile = currentByPath.get(destinationPath);
-    const previousFile = previousByPath.get(destinationPath);
-    const state = stateOf(diskByPath.get(destinationPath), previousFile, currentFile);
-    const kinds = ACTIONS[state];
-    if (kinds === undefined) {
-      throw new Error(`no plan for ${destinationPath} in state ${state}`);
-    }
-    return kinds.map((kind) => operationOf(kind, destinationPath, currentFile, previousFile));
-  });
+  const operations = destinations.flatMap(([destinationPath, files]) =>
+    OPERATIONS_BY_STATE[destinationStateOf(diskByPath.get(destinationPath), files)].map((kind) =>
+      operationOf(kind, destinationPath, files.current, files.previous),
+    ),
+  );
   // a path no current file uses is empty once its operations ran
   const cleared = new Set(operations.map(destinationOf).filter((path) => !currentByPath.has(path)));
   checkFolders(currentByPath, new Set([...diskByPath.keys()].filter((path) => !cleared.has(path))));

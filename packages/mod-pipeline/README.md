@@ -35,7 +35,7 @@ one and not the other fails typecheck.
 
 `plan` is a three way merge per destination of the current lockfile, the previous
 lockfile (absent on a first run) and a `DiskScan` the caller takes beforehand; it
-never touches the disk. `ACTIONS` in `src/plan.ts` is the decision table and
+never touches the disk. `OPERATIONS_BY_STATE` in `src/plan.ts` is the decision table and
 documents each state. LINK and UNLINK name no method: Apply deploys with the
 game's deployment method (hardlink, symlink or move).
 
