@@ -2,6 +2,7 @@ import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSelector } from "react-redux";
 
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 import {
   discovered as discoveredGamesSelector,
@@ -76,11 +77,12 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
       />
 
       <div className="relative mt-2 mb-3 flex min-h-0 w-full grow">
-        {canScrollUp && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-6 bg-linear-to-b from-surface-base to-transparent" />
-        )}
-
-        <div className="min-h-0 w-full overflow-y-auto pt-1 pl-3" ref={scrollRef}>
+        <div
+          className={joinClasses(["min-h-0 w-full overflow-y-auto pt-1 pl-3 scroll-fade"], {
+            "scroll-fade-top": canScrollUp,
+          })}
+          ref={scrollRef}
+        >
           <div className="flex flex-col gap-y-3 pb-6">
             {managedGames.map((game) => {
               const { cacheKey, sources, preferred } = getGameImageUrls(
@@ -109,8 +111,6 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
             />
           </div>
         </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
       </div>
 
       <div className="flex flex-col items-center gap-y-3">

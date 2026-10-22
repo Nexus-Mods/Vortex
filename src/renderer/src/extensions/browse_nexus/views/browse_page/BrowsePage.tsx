@@ -56,7 +56,13 @@ export const BrowsePage = ({ active, api }: IBrowsePageProps) => {
         tabListId="browse-sections"
         onSetSelectedTab={setSection}
       >
-        <PageHeader isFullWidth pictogramName="nexus-mods" subtitle={subtitle} title={t("Browse")}>
+        <PageHeader
+          isFullWidth
+          className="bg-surface-low"
+          pictogramName="nexus-mods"
+          subtitle={subtitle}
+          title={t("Browse")}
+        >
           <TabBar>
             <TabButton count={1480} name={t("Mods")} panelId="mods" />
 
@@ -75,7 +81,7 @@ export const BrowsePage = ({ active, api }: IBrowsePageProps) => {
         </TabPanel>
 
         {!collectionsHidden && (
-          <TabPanel className="flex min-h-0 flex-1 flex-col" id="collections">
+          <TabPanel className="flex min-h-0 flex-1 flex-col bg-surface-low" id="collections">
             <BrowseCollections api={api} search={collections} />
           </TabPanel>
         )}

@@ -18,6 +18,7 @@ function init(context: IExtensionContext): boolean {
     }),
     menuIcon: "grid_view",
     newLayout: true,
+    isTranslucent: true,
   });
 
   return true;

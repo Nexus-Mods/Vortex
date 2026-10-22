@@ -6,6 +6,36 @@
     padding-right: var(--scrollbar-size);
 }
 
+/* Fades a scroll area's content out at its bottom edge, leaving its scrollbar whole: the fade
+   is one mask layer, and a solid one keeps the scrollbar's strip on the right. 1.5rem deep
+   unless `scroll-fade-<n>` gives a spacing step. */
+@utility scroll-fade {
+    mask-image:
+        linear-gradient(
+            to bottom,
+            transparent,
+            #000 var(--scroll-fade-top, 0px),
+            #000 calc(100% - var(--scroll-fade-size, calc(var(--spacing) * 6))),
+            transparent
+        ),
+        linear-gradient(#000, #000);
+    mask-size:
+        calc(100% - var(--scrollbar-size)) 100%,
+        var(--scrollbar-size) 100%;
+    mask-position: left, right;
+    mask-repeat: no-repeat;
+}
+
+/* With `scroll-fade`, fades the top edge too, for once the area has scrolled away from it. */
+@utility scroll-fade-top {
+    --scroll-fade-top: var(--scroll-fade-size, calc(var(--spacing) * 6));
+}
+
+/* With `scroll-fade`, how deep its fades are, as a spacing step. */
+@utility scroll-fade-* {
+    --scroll-fade-size: --spacing(--value(integer));
+}
+
 /* Legacy browsers with `::-webkit-scrollbar-*` support */
 @supports selector(::-webkit-scrollbar) {
     .modern-layout {

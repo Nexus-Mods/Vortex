@@ -11,15 +11,18 @@ import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { applyTheme, getTheme } from "@/util/theme";
 
+import { useGameArt } from "../game_art/GameArt.context";
+
 /**
- * Dev-only switches, from a button in the corner: the layout and the light theme. Render
- * it in development only.
+ * Dev-only switches, from a button in the corner: the layout, the light theme and the game
+ * art. Render it in development only.
  */
 export const DevToolsMenu = () => {
   const dispatch = useDispatch();
   const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
   // The theme lives on <html>, not in state, so the switch keeps its own copy.
   const [lightTheme, setLightTheme] = useState(() => getTheme() === "light");
+  const gameArt = useGameArt();
 
   return (
     <Popover className="fixed right-4 bottom-4 z-toast">
@@ -51,6 +54,15 @@ export const DevToolsMenu = () => {
                 applyTheme(checked ? "light" : "dark");
                 setLightTheme(checked);
               }}
+            />
+          </PopoverPanelGroupItem>
+
+          <PopoverPanelGroupItem label="Game art">
+            <Switch
+              aria-label="Game art"
+              checked={gameArt.isEnabled}
+              data-testid="dev-tools-game-art"
+              onChange={(checked: boolean) => gameArt.setIsEnabled(checked)}
             />
           </PopoverPanelGroupItem>
         </PopoverPanelGroup>
