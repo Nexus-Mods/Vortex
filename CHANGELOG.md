@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0-beta.2] - 2026-10-22
+
+### Changed
+
+- Open the Games page at startup ([#24610](https://github.com/Nexus-Mods/Vortex/pull/24610))
+
+### Fixed
+
+- Apply missing after a purge, leaving no way to deploy the mods again ([#24601](https://github.com/Nexus-Mods/Vortex/pull/24601))
+- Pending changes not applied when auto-apply was turned on ([#24600](https://github.com/Nexus-Mods/Vortex/pull/24600))
+
 ## [2.10.0-beta.1] - 2026-10-20
 
 _First beta of the 2.10 release._
@@ -2607,6 +2618,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.10.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.2
 [2.10.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.1
 [2.9.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0
 [2.9.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.4

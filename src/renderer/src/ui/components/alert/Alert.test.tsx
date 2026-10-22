@@ -63,14 +63,14 @@ describe("Alert", () => {
     });
 
     it("gives each severity a distinct icon", () => {
-      const paths = severities.map((severity) => {
+      const symbols = severities.map((severity) => {
         const { unmount } = render(<Alert severity={severity}>Heads up</Alert>);
-        const path = getIcon()?.querySelector("path")?.getAttribute("d");
+        const symbol = getIcon()?.getAttribute("data-symbol");
         unmount();
-        return path;
+        return symbol;
       });
 
-      expect(new Set(paths).size).toBe(severities.length);
+      expect(new Set(symbols).size).toBe(severities.length);
     });
 
     it("leaves the surface class untouched across severities", () => {

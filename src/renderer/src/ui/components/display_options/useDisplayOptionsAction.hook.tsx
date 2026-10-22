@@ -1,4 +1,3 @@
-import { mdiTune } from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -44,7 +43,7 @@ export const useDisplayOptionsAction = ({
   const { t } = useTranslation();
 
   return {
-    iconPath: mdiTune,
+    icon: "tune",
     label: label ?? t("Display options"),
     panel: () => (
       <>

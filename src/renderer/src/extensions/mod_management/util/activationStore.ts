@@ -4,6 +4,7 @@ import * as path from "path";
 
 import type msgpackT from "@msgpack/msgpack";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { VortexError } from "@vortex/shared/errors";
 import { sync as writeAtomicSync } from "write-file-atomic";
 
 import { showDialog } from "../../../actions/notifications";
@@ -94,7 +95,11 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
   try {
     parsed = typeof data === "string" ? JSON.parse(deBOM(data)) : msgpack.decode(data);
   } catch (err) {
-    const newErr = new Error(`Failed to parse manifest: "${getErrorMessageOrDefault(err)}"`);
+    const newErr = new VortexError(
+      `Failed to parse manifest: "${getErrorMessageOrDefault(err)}"`,
+      { kind: "data-invalid" },
+      { cause: err },
+    );
     // invalid input data, not a bug
     newErr["allowReport"] = false;
     throw newErr;
@@ -278,10 +283,7 @@ function getManifestImpl(
         return Promise.reject(errObj);
       }
 
-      if (
-        errObj.message.startsWith("Unexpected token") ||
-        errObj.message.startsWith("Unexpected end of JSON input")
-      ) {
+      if (err instanceof VortexError && err.data.kind === "data-invalid") {
         errObj.message =
           `The manifest file "${manifestPath}" is corrupted.\n` +
           'You should delete it, then immediately click the "Purge" button ' +
@@ -294,6 +296,10 @@ function getManifestImpl(
             return readManifestFile(backupPath);
           }
           throw inner;
+        })
+        .catch((backupErr: unknown) => {
+          errObj.message += "\nBackup couldn't be read: " + unknownToError(backupErr).message;
+          return Promise.reject(errObj);
         })
         .then((data) =>
           api
@@ -318,11 +324,7 @@ function getManifestImpl(
                 return Promise.resolve(data);
               }
             }),
-        )
-        .catch((backupErr: unknown) => {
-          errObj.message += "\nBackup couldn't be read: " + unknownToError(backupErr).message;
-          return Promise.reject(errObj);
-        });
+        );
     })
     .then((manifest) => (manifest !== undefined ? manifest : emptyManifest(instanceId)));
 }

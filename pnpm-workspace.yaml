@@ -34,7 +34,6 @@ catalog:
   "@headlessui/react": 2.2.10
   "@hot-updater/bsdiff": 0.30.6
   "@iarna/toml": 2.2.5
-  "@mdi/js": 7.4.47
   "@microsoft/api-extractor": 7.58.9
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.4
@@ -183,6 +182,7 @@ catalog:
   loot: github:Nexus-Mods/node-loot#44306bda0dd9c54e1e38c8ab217afedffd4510aa
   lru-cache: 11.2.7
   markdown-ast: 0.2.1
+  material-symbols: 0.48.0
   memoize-one: 5.2.1
   minimatch: 3.1.5
   minimist: 1.2.8

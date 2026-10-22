@@ -1,4 +1,3 @@
-import { mdiArrowDown, mdiArrowUp } from "@mdi/js";
 import React, { type ReactNode, type Ref } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -81,7 +80,7 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
                 {!!direction && (
                   <Icon
                     className="nxm-table-sort-icon"
-                    path={direction === "ascending" ? mdiArrowDown : mdiArrowUp}
+                    name={direction === "ascending" ? "arrow_downward" : "arrow_upward"}
                     size="none"
                   />
                 )}

@@ -90,7 +90,7 @@ describe("DownloadButton", () => {
     it("shows the download icon and no progress ring", () => {
       const { container, hasRing } = renderComponent();
       expect(hasRing()).toBe(false);
-      expect(container.querySelector("svg path")).toBeInTheDocument();
+      expect(container.querySelector("[data-symbol]")).toHaveAttribute("data-symbol", "download");
     });
 
     it("outlines itself when the downloads page is open", () => {

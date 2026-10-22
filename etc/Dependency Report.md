@@ -13,7 +13,6 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @floating-ui/react | 0.27.20 |
 | @headlessui/react | 2.2.10 |
 | @hot-updater/bsdiff | 0.30.6 |
-| @mdi/js | 7.4.47 |
 | @msgpack/msgpack | 2.8.0 |
 | @nexusmods/file-dependency-resolver | link:../../packages/file-dependency-resolver |
 | @nexusmods/fomod-installer-ipc | 0.13.4 |

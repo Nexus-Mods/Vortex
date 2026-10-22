@@ -1,4 +1,3 @@
-import { mdiAccount, mdiMagnify } from "@mdi/js";
 import React, { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -178,7 +177,7 @@ export const ModsTableSwitch = ({
               <Image
                 alt=""
                 className="ml-3.5 h-6 rounded-full"
-                fallbackIconPath={mdiAccount}
+                fallbackIcon={{ name: "person", filled: true }}
                 fit="cover"
                 imageType="avatar"
                 src={avatar.src}
@@ -418,9 +417,7 @@ export const ModsTableSwitch = ({
     onMenuOpen: analytics.onMenuOpen,
     defaultSort: BY_NAME,
     footer,
-    empty: isSearching && (
-      <NoResults iconPath={mdiMagnify} title={t("No mods match your search")} />
-    ),
+    empty: isSearching && <NoResults icon="search" title={t("No mods match your search")} />,
   };
 
   // A table takes rows or groups, never both; typed, so neither gains the other as undefined.

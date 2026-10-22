@@ -34,9 +34,14 @@ describe("NoResults", () => {
       expect(screen.queryByText(/contact our support team/i)).not.toBeInTheDocument();
     });
 
-    it("renders an icon when iconPath is provided", () => {
-      renderComponent({ iconPath: "M0 0h24v24H0z" });
+    it("renders an icon when given an SVG path", () => {
+      renderComponent({ icon: { path: "M0 0h24v24H0z" } });
       expect(screen.getByRole("presentation")).toBeInTheDocument();
+    });
+
+    it("renders a symbol when one is given", () => {
+      renderComponent({ icon: "zoom_out" });
+      expect(document.querySelector('[data-symbol="zoom_out"]')).toBeInTheDocument();
     });
 
     it("renders no icon by default", () => {
@@ -52,10 +57,10 @@ describe("NoResults", () => {
       expect(screen.getByText(/contact our support team/i)).toBeInTheDocument();
     });
 
-    it("shows an icon when isError even without an iconPath", () => {
-      // children suppress the default button (whose icon also has role=presentation)
+    it("shows an icon when isError even without an icon", () => {
+      // children suppress the default button, which has an icon of its own
       renderComponent({ children: <span />, isError: true, title: "" });
-      expect(screen.getByRole("presentation")).toBeInTheDocument();
+      expect(document.querySelector('[data-symbol="error"]')).toBeInTheDocument();
     });
 
     it("renders a Contact support button that opens the help URL", async () => {
@@ -82,12 +87,12 @@ describe("NoResults", () => {
 
   describe("appearance", () => {
     it("applies the subdued icon colour by default", () => {
-      renderComponent({ iconPath: "M0 0h24v24H0z" });
+      renderComponent({ icon: { path: "M0 0h24v24H0z" } });
       expect(screen.getByRole("presentation")).toHaveClass("text-neutral-subdued");
     });
 
     it('applies the success icon colour for appearance="success"', () => {
-      renderComponent({ appearance: "success", iconPath: "M0 0h24v24H0z" });
+      renderComponent({ appearance: "success", icon: { path: "M0 0h24v24H0z" } });
       expect(screen.getByRole("presentation")).toHaveClass("text-success-strong");
     });
 
@@ -96,7 +101,7 @@ describe("NoResults", () => {
     it("lets iconClassName take over from the appearance colour", () => {
       renderComponent({
         iconClassName: "animate-spin text-primary-strong",
-        iconPath: "M0 0h24v24H0z",
+        icon: { path: "M0 0h24v24H0z" },
       });
 
       const icon = screen.getByRole("presentation");

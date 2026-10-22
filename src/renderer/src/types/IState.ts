@@ -460,6 +460,8 @@ export interface IPersistentState {
   gameMode: IStateGameMode;
   deployment: {
     needToDeploy: { [gameId: string]: boolean };
+    /** Games whose mods were purged and haven't been deployed since. */
+    purged: { [gameId: string]: boolean };
     deploymentCounter: { [gameId: string]: number };
   };
   transactions: IStateTransactions;

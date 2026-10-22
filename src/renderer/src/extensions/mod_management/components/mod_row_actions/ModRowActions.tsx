@@ -1,4 +1,3 @@
-import { mdiPlus } from "@mdi/js";
 import React, { memo, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -172,7 +171,7 @@ export const ModRowActions = memo(
               aria-label={installLabel}
               brand="primary"
               isLoading={isLoading || busy !== undefined}
-              leftIconPath={mdiPlus}
+              leftIcon="add"
               size="sm"
               onClick={() => onInstall?.(modId)}
             />

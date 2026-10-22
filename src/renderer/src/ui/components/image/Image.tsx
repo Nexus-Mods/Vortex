@@ -1,7 +1,7 @@
-import { mdiCircleOutline, mdiImageBroken, mdiLoading } from "@mdi/js";
 import React, { useCallback, useState, type ImgHTMLAttributes } from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IImageProps extends Omit<
@@ -10,10 +10,10 @@ export interface IImageProps extends Omit<
 > {
   /** The picture's text alternative, which also names the fallback icon; "" if decorative. */
   alt: string;
-  /** Classes for the frame, which sets the size and corners. */
+  /** Classes for the frame's size and corners; an `other` frame collapses without a height. */
   className?: string;
   /** Replaces the broken-image icon; given one, a missing `src` shows it too. */
-  fallbackIconPath?: string;
+  fallbackIcon?: IIconSource;
   /** Fills the frame, cropping, or fits inside it whole. Default `contain`. */
   fit?: "cover" | "contain";
   /** Classes for the `img` itself. */
@@ -38,7 +38,7 @@ export const Image = ({
   alt,
   children,
   className,
-  fallbackIconPath,
+  fallbackIcon,
   fit = "contain",
   imageClassName,
   imageType = "other",
@@ -68,7 +68,7 @@ export const Image = ({
 
   // Only the caller knows a source is coming when there is no src; a failed one is settled.
   const showSpinner = !errored && (isLoading === true || (!!src && !loaded));
-  const showFallback = errored || (fallbackIconPath !== undefined && !src && isLoading !== true);
+  const showFallback = errored || (fallbackIcon !== undefined && !src && isLoading !== true);
 
   return (
     <div className={joinClasses(["nxm-image", imageTypeMap[imageType], className])}>
@@ -100,8 +100,8 @@ export const Image = ({
         />
       ) : (
         <Icon
+          {...getIconProps(fallbackIcon ?? "broken_image")}
           className="nxm-image-fallback"
-          path={fallbackIconPath ?? mdiImageBroken}
           size="none"
           title={alt}
         />
@@ -109,9 +109,9 @@ export const Image = ({
 
       {showSpinner && (
         <span className="nxm-image-spinner">
-          <Icon className="opacity-40" path={mdiCircleOutline} size="none" />
+          <Icon className="opacity-40" name="radio_button_unchecked" size="none" />
 
-          <Icon className="absolute inset-0" path={mdiLoading} size="none" />
+          <Icon className="absolute inset-0" name="progress_activity" size="none" />
         </span>
       )}
 

@@ -1,4 +1,3 @@
-import { mdiAccount } from "@mdi/js";
 import React from "react";
 
 import { Image } from "@/ui/components/image/Image";
@@ -29,7 +28,7 @@ export const ModAuthor = ({ mod }: IModAuthorProps) => {
       <Image
         alt=""
         className="size-4 shrink-0 rounded-full"
-        fallbackIconPath={mdiAccount}
+        fallbackIcon={{ name: "person", filled: true }}
         fit="cover"
         imageType="avatar"
         src={avatar}

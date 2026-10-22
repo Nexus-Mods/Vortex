@@ -3,9 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { setDialogVisible } from "../../actions/session";
 import type { IState } from "../../types/IState";
+import { ModalLayer } from "../components/modal_layer/ModalLayer";
 import { Dialog } from "../Dialog";
 import { DialogContainer } from "../DialogContainer";
-import { ModalLayer } from "../modal_layer/ModalLayer";
 import { OverlayContainer } from "../OverlayContainer";
 
 /**

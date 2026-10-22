@@ -489,7 +489,10 @@ describe("ModsTableSwitch", () => {
     expect(groupRow("Ann").querySelector("img")).toHaveAttribute("src", "ann.png");
     // Not knowing whose face, a person icon stands in.
     expect(groupRow("Bo").querySelector("img")).toBeNull();
-    expect(groupRow("Bo").querySelector(".nxm-image-avatar svg")).toBeInTheDocument();
+    expect(groupRow("Bo").querySelector(".nxm-image-avatar [data-symbol]")).toHaveAttribute(
+      "data-symbol",
+      "person",
+    );
   });
 
   it("builds an author's avatar from their member id when the mod doesn't carry one", async () => {

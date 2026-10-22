@@ -111,7 +111,7 @@ describe("useModRowActions", () => {
 
     const [add, remove] = result.current.actionsFor("a");
     expect(labels([add, remove])).toEqual(["Add to Collection", "Remove from Collection"]);
-    expect(remove.iconPath).toBe(nxmCollection);
+    expect(remove.icon).toEqual({ path: nxmCollection });
   });
 
   it("puts any action the design doesn't list last, by position", () => {

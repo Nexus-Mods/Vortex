@@ -233,7 +233,6 @@
     "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
     "@hot-updater/bsdiff": "catalog:",
-    "@mdi/js": "catalog:",
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",

@@ -30,11 +30,43 @@ describe("TypographyLink", () => {
 
     it("renders left and right icons from paths", () => {
       render(
-        <TypographyLink leftIconPath="mdi-left" rightIconPath="mdi-right">
+        <TypographyLink leftIcon={{ path: "mdi-left" }} rightIcon={{ path: "mdi-right" }}>
           link
         </TypographyLink>,
       );
       expect(screen.getAllByRole("presentation")).toHaveLength(2);
+    });
+
+    it("draws its icons at md unless given an iconSize", () => {
+      const { unmount } = render(
+        <TypographyLink leftIcon={{ path: "mdi-left" }}>link</TypographyLink>,
+      );
+      expect(screen.getByRole("presentation", { hidden: true })).toHaveClass("size-5");
+      unmount();
+
+      render(
+        <TypographyLink iconSize="sm" leftIcon={{ path: "mdi-left" }}>
+          link
+        </TypographyLink>,
+      );
+      expect(screen.getByRole("presentation", { hidden: true })).toHaveClass("size-4");
+    });
+  });
+
+  describe("symbols", () => {
+    it("renders left and right icons from symbols", () => {
+      render(
+        <TypographyLink leftIcon="search" rightIcon="open_in_new">
+          link
+        </TypographyLink>,
+      );
+      const symbols = [...document.querySelectorAll<HTMLElement>("[data-symbol]")];
+      expect(symbols.map((symbol) => symbol.dataset.symbol)).toEqual(["search", "open_in_new"]);
+    });
+
+    it("draws its symbols at md by default", () => {
+      render(<TypographyLink leftIcon="search">link</TypographyLink>);
+      expect(document.querySelector("[data-symbol]")).toHaveClass("text-[1.25rem]");
     });
   });
 
