@@ -15,8 +15,10 @@ import { CollectionTileDemo } from "@/ui/components/collection_tile/CollectionTi
 import { ContextMenuDemo } from "@/ui/components/context_menu/ContextMenu.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
 import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
+import { RadioGroupFieldDemo } from "@/ui/components/form/radio_group_field/RadioGroupField.demo";
 import { SelectFieldDemo } from "@/ui/components/form/select_field/SelectField.demo";
 import { SwitchFieldDemo } from "@/ui/components/form/switch_field/SwitchField.demo";
+import { TextAreaFieldDemo } from "@/ui/components/form/text_area_field/TextAreaField.demo";
 import { TextFieldDemo } from "@/ui/components/form/text_field/TextField.demo";
 import { GameTileDemo } from "@/ui/components/game_tile/GameTile.demo";
 import { HoverCardDemo } from "@/ui/components/hover_card/HoverCard.demo";
@@ -154,6 +156,10 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
                   <TabButton name="Checkbox field" panelId="checkbox-field" />
 
                   <TabButton name="Switch field" panelId="switch-field" />
+
+                  <TabButton name="Radio group field" panelId="radio-group-field" />
+
+                  <TabButton name="Text area field" panelId="text-area-field" />
                 </TabBar>
 
                 <div className="mt-6">
@@ -171,6 +177,14 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
 
                   <TabPanel id="switch-field">
                     <SwitchFieldDemo />
+                  </TabPanel>
+
+                  <TabPanel id="radio-group-field">
+                    <RadioGroupFieldDemo />
+                  </TabPanel>
+
+                  <TabPanel id="text-area-field">
+                    <TextAreaFieldDemo />
                   </TabPanel>
                 </div>
               </TabProvider>

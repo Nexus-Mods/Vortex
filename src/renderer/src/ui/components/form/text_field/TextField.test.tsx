@@ -50,6 +50,16 @@ describe("TextField", () => {
       expect(descriptions()).toEqual(["First", "Second"]);
     });
 
+    it("shows two identical hints, without a duplicate key", () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      renderField({ hints: ["Same", "Same"] });
+
+      expect(descriptions()).toEqual(["Same", "Same"]);
+      expect(consoleError).not.toHaveBeenCalled();
+
+      consoleError.mockRestore();
+    });
+
     it("marks the input invalid and describes it with the error first", () => {
       renderField({ errorMessage: "Too short", hints: "A hint" });
       expect(getInput()).toHaveAttribute("aria-invalid", "true");
