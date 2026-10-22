@@ -1,29 +1,17 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import * as path from "node:path";
+import { describe, expect, test } from "vitest";
 
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
-
+import { DiskEntryKind, type DiskEntry, type DiskScan } from "./diskScan";
 import { GameStore } from "./gameInstall";
 import { NexusFileUid, NexusGameId, SteamAppId, SteamBuildId } from "./ids";
 import { FileSourceKind, HashType, type FileSource, type Lockfile } from "./lockfile";
-import { OperationKind, plan, type Operation } from "./plan";
+import { plan } from "./plan";
 
-/** The game directory the lockfiles deploy into, a fresh temp directory per test. */
-let gameDir: string;
+const GAME_DIR = "/fixture-root/game";
 
-beforeEach(async () => {
-  gameDir = await mkdtemp(path.join(tmpdir(), "mod-pipeline-plan-"));
-});
-
-afterEach(async () => {
-  await rm(gameDir, { recursive: true, force: true });
-});
-
-function lockfile(files: FileSource[]): Lockfile {
+function lockfile(files: FileSource[], gameId = NexusGameId(1704)): Lockfile {
   return {
     version: 1,
-    gameId: NexusGameId(1704),
+    gameId,
     install: {
       store: GameStore.Steam,
       appId: SteamAppId(489830),
@@ -34,147 +22,99 @@ function lockfile(files: FileSource[]): Lockfile {
   };
 }
 
-function makeFileSource(name: string, fileHash: string): FileSource {
+function makeFileSource(name: string): FileSource {
   return {
     source: FileSourceKind.Nexus,
-    fileUid: NexusFileUid(((1704n << 32n) | 100n).toString()),
-    fileHash,
+    fileUid: NexusFileUid("7318624307791"),
+    fileHash: `${name}-hash`,
     hashType: HashType.Md5,
-    destinationPath: path.join(gameDir, name),
+    destinationPath: `${GAME_DIR}/${name}`,
   };
 }
 
-/** Puts a file on disk at each file's destination. */
-async function deploy(...files: FileSource[]): Promise<void> {
-  for (const { destinationPath } of files) {
-    await mkdir(path.dirname(destinationPath), { recursive: true });
-    await writeFile(destinationPath, path.basename(destinationPath));
-  }
+function diskEntry(name: string, kind: DiskEntryKind = DiskEntryKind.File): DiskEntry {
+  return { path: `${GAME_DIR}/${name}`, kind, size: 1024, mtimeMs: 1760000000000 };
 }
 
-/** The plan's operations in destination order, so tests don't depend on plan's ordering. */
-function planSorted(current: Lockfile, previous: Lockfile): Operation[] {
-  return plan(current, previous).sort((a, b) =>
-    a.destinationSource.destinationPath.localeCompare(b.destinationSource.destinationPath),
-  );
+function diskScan(...entries: DiskEntry[]): DiskScan {
+  return { takenAt: "2026-10-21T09:00:00Z", roots: [GAME_DIR], entries };
 }
 
 describe("plan", () => {
-  test("Copies one file. One file is in the current lockfile, no previous lockfile and disk state is empty", async () => {
-    const mod1 = makeFileSource("mod1.mod", "hash-1");
+  test.each(["../plugin.dll", "Data/../plugin.dll", "Data//plugin.dll", "C:/plugin.dll"])(
+    "rejects the destination %s",
+    (name) => {
+      expect(() => plan(lockfile([makeFileSource(name)]), undefined, diskScan())).toThrow(
+        "not a valid path under a scanned folder",
+      );
+    },
+  );
 
-    expect(planSorted(lockfile([mod1]), lockfile([]))).toEqual([
-      { kind: OperationKind.Copy, destinationSource: mod1 },
-    ]);
+  test("rejects a destination outside the scanned folders", () => {
+    const outside = {
+      ...makeFileSource("plugin.dll"),
+      destinationPath: "/fixture-root/other/plugin.dll",
+    };
+
+    expect(() => plan(lockfile([outside]), undefined, diskScan())).toThrow(
+      "not a valid path under a scanned folder",
+    );
   });
 
-  test("Deletes a file. Current lockfile is empty, previous has one file and disk state has one.", async () => {
-    const mod1 = makeFileSource("mod1.mod", "hash-1");
-    await deploy(mod1);
+  test("rejects a lockfile that lists a destination twice", () => {
+    const plugin = makeFileSource("plugin.dll");
 
-    expect(planSorted(lockfile([]), lockfile([mod1]))).toEqual([
-      { kind: OperationKind.Delete, destinationSource: mod1 },
-    ]);
+    expect(() => plan(lockfile([plugin, plugin]), undefined, diskScan())).toThrow(
+      "a lockfile lists a destination twice",
+    );
   });
 
-  test("Plans nothing when both lockfiles are empty", async () => {
-    expect(planSorted(lockfile([]), lockfile([]))).toEqual([]);
+  test("rejects lockfiles for different games", () => {
+    expect(() => plan(lockfile([]), lockfile([], NexusGameId(1100)), diskScan())).toThrow(
+      "the lockfiles are for games 1100 and 1704",
+    );
   });
 
-  test("Plans nothing when the lockfile is unchanged and its files are on disk", async () => {
-    const mod1 = makeFileSource("mod1.mod", "hash-1");
-    await deploy(mod1);
-
-    expect(planSorted(lockfile([mod1]), lockfile([mod1]))).toEqual([]);
+  test.each([
+    ["unsorted", ["b.esp", "a.esp"]],
+    ["duplicated", ["a.esp", "a.esp"]],
+  ])("rejects a disk scan with %s entries", (_, names) => {
+    expect(() =>
+      plan(lockfile([]), undefined, diskScan(...names.map((name) => diskEntry(name)))),
+    ).toThrow("the disk scan is not sorted by path");
   });
 
-  // TODO: Does this make sense?
-  test("Copies the new version of a file whose hash changed", async () => {
-    const previousMod1 = makeFileSource("mod1.mod", "hash-1");
-    const currentMod1 = makeFileSource("mod1.mod", "hash-2");
-    await deploy(previousMod1);
-
-    expect(planSorted(lockfile([currentMod1]), lockfile([previousMod1]))).toEqual([
-      { kind: OperationKind.Copy, destinationSource: currentMod1 },
-    ]);
-  });
-
-  test("Copies a file that is in both lockfiles but missing from disk", async () => {
-    const mod1 = makeFileSource("mod1.mod", "hash-1");
-
-    expect(planSorted(lockfile([mod1]), lockfile([mod1]))).toEqual([
-      { kind: OperationKind.Copy, destinationSource: mod1 },
-    ]);
-  });
-
-  test("Plans nothing if a file already exists on disk", async () => {
-    const mod1 = makeFileSource("mod1.mod", "hash-1");
-    await deploy(mod1);
-
-    expect(planSorted(lockfile([mod1]), lockfile([]))).toEqual([]);
-  });
-
-  test("Plans nothing for a removed file that is already gone from disk", async () => {
-    const mod1 = makeFileSource("mod1.mod", "hash-1");
-
-    expect(planSorted(lockfile([]), lockfile([mod1]))).toEqual([]);
-  });
-
-  test("Check subdirectory logic, should delete the file", async () => {
-    const mod = makeFileSource("SKSE/Plugins/plugin.dll", "hash-1");
-    await deploy(mod);
-
-    expect(planSorted(lockfile([]), lockfile([mod]))).toEqual([
-      { kind: OperationKind.Delete, destinationSource: mod },
-    ]);
-  });
-
-  // TODO: how do we do error handling
-  test("Do not allow level up in filenames", async () => {
-    const mod = makeFileSource("../plugin.dll", "hash-1");
-    await deploy(mod);
-
-    expect(planSorted(lockfile([mod]), lockfile([]))).toEqual([]);
-  });
-
-  //TODO: do we need more of these kind of tests?
-  test("Broken filenames, return nothing", async () => {
-    const mod = makeFileSource(":/mod.mod", "hash-1");
-
-    expect(planSorted(lockfile([mod]), lockfile([]))).toEqual([]);
-  });
-
-  test("Copies, deletes and keeps files in one plan", async () => {
-    const kept = makeFileSource("kept.mod", "hash-kept");
-    const added = makeFileSource("added.mod", "hash-added");
-    const removed = makeFileSource("removed.mod", "hash-removed");
-    const previousUpdated = makeFileSource("updated.mod", "hash-old");
-    const currentUpdated = makeFileSource("updated.mod", "hash-new");
-    await deploy(kept, removed, previousUpdated);
-
-    expect(
-      planSorted(
-        lockfile([kept, added, currentUpdated]),
-        lockfile([kept, removed, previousUpdated]),
+  test("rejects a destination that is a folder on disk", () => {
+    expect(() =>
+      plan(
+        lockfile([makeFileSource("Data/SKSE")]),
+        undefined,
+        diskScan(diskEntry("Data/SKSE/plugin.dll")),
       ),
-    ).toEqual([
-      { kind: OperationKind.Copy, destinationSource: added },
-      { kind: OperationKind.Delete, destinationSource: removed },
-      { kind: OperationKind.Copy, destinationSource: currentUpdated },
-    ]);
+    ).toThrow(`${GAME_DIR}/Data/SKSE is a folder on disk`);
   });
 
-  test("Only plans Copy and Delete", async () => {
-    const kept = makeFileSource("kept.mod", "hash-kept");
-    const added = makeFileSource("added.mod", "hash-added");
-    const removed = makeFileSource("removed.mod", "hash-removed");
-    await deploy(removed);
+  test.each([DiskEntryKind.File, DiskEntryKind.Link])(
+    "rejects a destination inside a folder that is a %s on disk",
+    (kind) => {
+      expect(() =>
+        plan(
+          lockfile([makeFileSource("Data/SKSE/plugin.dll")]),
+          undefined,
+          diskScan(diskEntry("Data/SKSE", kind)),
+        ),
+      ).toThrow(`${GAME_DIR}/Data/SKSE is a file or link on disk where a folder is needed`);
+    },
+  );
 
-    const kinds = plan(lockfile([kept, added]), lockfile([kept, removed])).map(({ kind }) => kind);
+  test("rejects a lockfile with a destination inside another", () => {
+    const lockfileWithNesting = lockfile([
+      makeFileSource("Data/SKSE"),
+      makeFileSource("Data/SKSE/plugin.dll"),
+    ]);
 
-    expect(kinds.length).toBeGreaterThan(0);
-    for (const kind of kinds) {
-      expect([OperationKind.Copy, OperationKind.Delete]).toContain(kind);
-    }
+    expect(() => plan(lockfileWithNesting, undefined, diskScan())).toThrow(
+      `${GAME_DIR}/Data/SKSE/plugin.dll is inside ${GAME_DIR}/Data/SKSE, another destination`,
+    );
   });
 });

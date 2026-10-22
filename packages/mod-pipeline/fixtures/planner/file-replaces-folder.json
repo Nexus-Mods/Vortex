@@ -1,0 +1,75 @@
+{
+  "name": "a file replacing a folder of ours is linked after the folder's files are unlinked",
+  "current": {
+    "version": 1,
+    "gameId": 1704,
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
+    "files": [
+      {
+        "source": "NEXUS",
+        "fileUid": "7318624307812",
+        "fileHash": "skyui-file-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI"
+      }
+    ]
+  },
+  "previous": {
+    "version": 1,
+    "gameId": 1704,
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
+    "files": [
+      {
+        "source": "NEXUS",
+        "fileUid": "7318624307811",
+        "fileHash": "skyui-config-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI/config.txt"
+      }
+    ]
+  },
+  "disk": {
+    "takenAt": "2026-10-21T09:00:00Z",
+    "roots": ["/fixture-root/game"],
+    "entries": [
+      {
+        "path": "/fixture-root/game/Data/SkyUI/config.txt",
+        "kind": "file",
+        "size": 64,
+        "mtimeMs": 1760000000000
+      }
+    ]
+  },
+  "expected": [
+    {
+      "kind": "UNLINK",
+      "file": {
+        "source": "NEXUS",
+        "fileUid": "7318624307811",
+        "fileHash": "skyui-config-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI/config.txt"
+      }
+    },
+    {
+      "kind": "LINK",
+      "file": {
+        "source": "NEXUS",
+        "fileUid": "7318624307812",
+        "fileHash": "skyui-file-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI"
+      }
+    }
+  ]
+}

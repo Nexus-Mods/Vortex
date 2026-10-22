@@ -78,6 +78,8 @@ const fileSourceSchema = z.discriminatedUnion("source", [
   z.object({ source: z.literal(FileSourceKind.UserGenerated), ...fileFields }),
 ]);
 
+export const FileSourceSchema: z.ZodType<FileSource> = fileSourceSchema;
+
 const lockfileSchema = z.object({
   version: z.literal(1),
   gameId: z.number().int().transform(NexusGameId),

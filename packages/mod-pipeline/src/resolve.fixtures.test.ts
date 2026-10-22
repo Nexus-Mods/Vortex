@@ -1,9 +1,10 @@
 import { expect, test } from "vitest";
 
-import { loadResolverFixtures } from "./loadFixtures";
+import { loadFixtures } from "./loadFixtures";
 import { resolve } from "./resolve";
+import { ResolverFixtureSchema } from "./resolverFixture";
 
-const fixtures = loadResolverFixtures();
+const fixtures = loadFixtures("resolver", ResolverFixtureSchema);
 
 test("the resolver fixtures are present", () => {
   expect(fixtures.length).toBeGreaterThan(0);

@@ -1,0 +1,58 @@
+{
+  "name": "a removed file is unlinked",
+  "current": {
+    "version": 1,
+    "gameId": 1704,
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
+    "files": []
+  },
+  "previous": {
+    "version": 1,
+    "gameId": 1704,
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
+    "files": [
+      {
+        "source": "NEXUS",
+        "fileUid": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    ]
+  },
+  "disk": {
+    "takenAt": "2026-10-21T09:00:00Z",
+    "roots": ["/fixture-root/game"],
+    "entries": [
+      {
+        "path": "/fixture-root/game/Data/SkyUI_SE.esp",
+        "kind": "file",
+        "size": 1024,
+        "mtimeMs": 1760000000000,
+        "contentHash": { "fileHash": "skyui-esp-v1-hash", "hashType": "md5" }
+      }
+    ]
+  },
+  "expected": [
+    {
+      "kind": "UNLINK",
+      "file": {
+        "source": "NEXUS",
+        "fileUid": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    }
+  ]
+}
