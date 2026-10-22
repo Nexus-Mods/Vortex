@@ -1,4 +1,3 @@
-import { mdiMagnify, mdiOpenInNew, mdiRefresh } from "@mdi/js";
 import numeral from "numeral";
 import React, { useRef } from "react";
 
@@ -79,7 +78,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
         <Button
           appearance="moderate"
           brand="neutral"
-          leftIconPath={mdiMagnify}
+          leftIcon="search"
           title={t("common:actions.search")}
           type="submit"
         />
@@ -90,7 +89,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
           <Button
             appearance="moderate"
             brand="neutral"
-            leftIconPath={mdiRefresh}
+            leftIcon="refresh"
             title={t("collection:browse.refresh")}
             onClick={handleRefresh}
           />
@@ -124,7 +123,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
           <Button
             appearance="moderate"
             brand="neutral"
-            leftIconPath={mdiOpenInNew}
+            leftIcon="open_in_new"
             onClick={() =>
               window.api.shell.openUrl(`https://www.nexusmods.com/games/${gameDomainName}/mods`)
             }

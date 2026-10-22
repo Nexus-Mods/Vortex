@@ -1,4 +1,3 @@
-import { mdiDeleteOutline, mdiDotsHorizontal, mdiFilterVariant, mdiPencil, mdiTune } from "@mdi/js";
 import { GameId } from "@vortex/shared";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,7 +8,7 @@ import { Picker } from "@/ui/components/picker/Picker";
 import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
-import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 import { type IViewPickerView, ViewPicker } from "@/ui/components/view_picker/ViewPicker";
 import { useGameArt } from "@/views/components/game_art/GameArt.context";
@@ -54,9 +53,9 @@ export const BrowseModsBar = () => {
       label: t("My custom view"),
       actions: [
         [
-          { label: t("Rename view"), iconPath: mdiPencil, onClick: () => undefined },
-          { label: t("Edit view options"), iconPath: mdiTune, onClick: () => undefined },
-          { label: t("Delete view"), iconPath: mdiDeleteOutline, onClick: () => undefined },
+          { label: t("Rename view"), icon: "edit", onClick: () => undefined },
+          { label: t("Edit view options"), icon: "tune", onClick: () => undefined },
+          { label: t("Delete view"), icon: "delete", onClick: () => undefined },
         ],
       ],
     },
@@ -83,10 +82,10 @@ export const BrowseModsBar = () => {
     onReset: () => setPreviewGame(undefined),
   });
 
-  const filter = {
+  const filter: IToolbarAction = {
     id: "filter",
     label: t("Filter"),
-    iconPath: mdiFilterVariant,
+    icon: "filter_list",
     onClick: () => undefined,
   };
 
@@ -113,12 +112,7 @@ export const BrowseModsBar = () => {
             <ToolbarGroup actions={showsGameArt ? [filter, displayOptions] : [filter]} />
           </Toolbar>
 
-          <Button
-            appearance="weak"
-            aria-label={t("More")}
-            brand="neutral"
-            leftIconPath={mdiDotsHorizontal}
-          />
+          <Button appearance="weak" aria-label={t("More")} brand="neutral" leftIcon="more_horiz" />
         </div>
       </PageContent>
     </div>
