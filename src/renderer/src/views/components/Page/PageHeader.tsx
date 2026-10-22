@@ -55,10 +55,13 @@ export const PageHeader = ({
       })}
       {...rest}
     >
-      <PageContent className="flex items-start gap-x-2 px-6" isFullWidth={isFullWidth}>
+      <PageContent className="flex items-center gap-x-2 px-6" isFullWidth={isFullWidth}>
         {!!pictogramName && (
           <Pictogram
-            className={joinClasses(["transition-[width,height]", compact ? "size-7" : "size-14"])}
+            className={joinClasses([
+              "transition-[width,height] duration-200 ease-out",
+              compact ? "size-7" : "size-14",
+            ])}
             name={pictogramName}
             size="none"
           />
@@ -68,7 +71,7 @@ export const PageHeader = ({
           <div className="flex items-center justify-between gap-x-6">
             <div
               className={joinClasses([
-                "min-w-0 transition-[margin]",
+                "min-w-0 transition-[margin] duration-200 ease-out",
                 !compact && !!pictogramName ? "mt-1" : "mt-0",
               ])}
             >
@@ -88,12 +91,17 @@ export const PageHeader = ({
           </div>
 
           {!!subtitle && (
-            <Typography
-              appearance="subdued"
-              className={joinClasses("truncate", { hidden: compact })}
+            <div
+              aria-hidden={compact || undefined}
+              className={joinClasses([
+                "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+                compact ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr]",
+              ])}
             >
-              {subtitle}
-            </Typography>
+              <Typography appearance="subdued" className="min-h-0 truncate">
+                {subtitle}
+              </Typography>
+            </div>
           )}
         </div>
       </PageContent>
