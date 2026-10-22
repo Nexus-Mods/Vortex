@@ -8,6 +8,7 @@ const context = vi.hoisted(() => ({
   menuIsCollapsed: false,
   needToDeploy: false,
   autoDeploy: false,
+  isPurged: false,
   isDeploying: false,
   deployProgress: 0,
   deployStep: undefined as string | undefined,
@@ -46,6 +47,7 @@ vi.mock("@/extensions/mod_management/hooks/useDeployMods.hook", () => ({
   useDeployMods: () => ({
     needToDeploy: context.needToDeploy,
     autoDeploy: context.autoDeploy,
+    isPurged: context.isPurged,
     isDeploying: context.isDeploying,
     deployProgress: context.isDeploying ? context.deployProgress : undefined,
     deployStep: context.isDeploying ? context.deployStep : undefined,
@@ -66,6 +68,7 @@ describe("GameActions", () => {
     context.menuIsCollapsed = false;
     context.needToDeploy = false;
     context.autoDeploy = false;
+    context.isPurged = false;
     context.isDeploying = false;
     context.deployStep = undefined;
     context.deploy = vi.fn();
@@ -138,6 +141,20 @@ describe("GameActions", () => {
       "analytics-track-mixpanel-event",
       expect.objectContaining({ eventName: "app_apply_clicked" }),
     );
+
+    await settleTransitions();
+  });
+
+  it("shows Apply after a purge, even with auto-apply on", async () => {
+    context.autoDeploy = true;
+    const { rerender } = render(<GameActions />);
+
+    expect(screen.queryByTestId("menu-apply")).toBeNull();
+
+    context.isPurged = true;
+    rerender(<GameActions />);
+
+    expect(screen.getByTestId("menu-apply")).toBeInTheDocument();
 
     await settleTransitions();
   });

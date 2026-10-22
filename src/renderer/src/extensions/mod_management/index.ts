@@ -75,7 +75,7 @@ import {
 } from "../profile_management/selectors";
 import type { IProfile, IProfileMod } from "../profile_management/types/IProfile";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
-import { setDeploymentNecessary } from "./actions/deployment";
+import { setDeploymentNecessary, setDeploymentPurged } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
 import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
@@ -904,6 +904,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 newDeployment,
                 deployProgress,
               );
+              api.store.dispatch(setDeploymentPurged(gameId, false));
             });
 
             // at this point the deployment lock gets released so another deployment
