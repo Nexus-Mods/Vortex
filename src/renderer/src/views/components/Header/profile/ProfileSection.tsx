@@ -105,7 +105,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
                     src={userInfo.profileUrl}
                   />
                 ) : (
-                  <Icon name="account_circle" filled />
+                  <Icon filled name="account_circle" />
                 )
               }
             />

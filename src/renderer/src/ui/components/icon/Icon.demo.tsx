@@ -248,7 +248,7 @@ export const IconDemo = () => (
             <div className="flex items-end gap-2">
               <Image alt="" className={size} fallbackIcon="person" imageType="avatar" />
 
-              <Image alt="" className={size} imageType="avatar" isLoading />
+              <Image isLoading alt="" className={size} imageType="avatar" />
             </div>
 
             <Typography appearance="subdued" typographyType="body-xs">

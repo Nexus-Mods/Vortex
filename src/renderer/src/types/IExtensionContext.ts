@@ -215,9 +215,12 @@ export interface IMainPageOptions {
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
   onReset?: () => void;
-  /** An SVG path for the page's icon in the menu, for an extension that brings its own. */
+  /**
+   * An SVG path for the page's icon in the menu, for an extension that brings its own.
+   * @deprecated Use `menuIcon: { path }` instead.
+   */
   mdi?: string;
-  /** The page's icon in the menu, a Material Symbol. */
+  /** The page's icon in the menu: a Material Symbol by name, or an SVG path as `{ path }`. */
   menuIcon?: IIconSource;
   /** Self-subscribing status badge shown on this page's left-menu item. */
   menuBadge?: React.ComponentType<React.PropsWithChildren<unknown>>;

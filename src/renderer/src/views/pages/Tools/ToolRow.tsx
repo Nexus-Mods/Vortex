@@ -147,7 +147,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
 
               <DropdownItem
                 disabled={!isPrimary && !isValid}
-                leftIcon={isPrimary ? "flash_off" : "bolt"}
+                leftIcon={isPrimary ? "flash_off" : "flash_on"}
                 onClick={() => onSetPrimary(starterInfo)}
               >
                 {isPrimary ? t("Remove default launcher") : t("Set as default launcher")}

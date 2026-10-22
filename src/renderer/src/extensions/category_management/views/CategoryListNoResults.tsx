@@ -29,7 +29,7 @@ const CustomNoCategoryResults = ({
         {t("Create Category")}
       </Button>
 
-      <Button appearance="subdued" brand="neutral" leftIcon="refresh" onClick={fetch}>
+      <Button appearance="subdued" brand="neutral" leftIcon="update" onClick={fetch}>
         {t("Sync with Nexus Mods")}
       </Button>
     </div>

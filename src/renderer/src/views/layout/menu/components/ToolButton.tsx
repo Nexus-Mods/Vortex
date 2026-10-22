@@ -97,7 +97,7 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
                 <Icon className="absolute inset-0" name="progress_activity" />
               </>
             ) : (
-              <Icon name="play_arrow" filled />
+              <Icon filled name="play_arrow" />
             )}
           </span>
         </span>

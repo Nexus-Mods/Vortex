@@ -154,7 +154,7 @@ export const GameTile = ({
                     placement="top"
                   >
                     <div className={joinClasses(["flex items-center gap-x-1", revealedWhenActive])}>
-                      <Icon className="text-primary-moderate" name="person" filled size="xs" />
+                      <Icon filled className="text-primary-moderate" name="person" size="xs" />
 
                       <Typography
                         appearance="moderate"

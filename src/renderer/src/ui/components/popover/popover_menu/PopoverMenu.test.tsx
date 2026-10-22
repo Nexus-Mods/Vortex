@@ -59,6 +59,16 @@ const submenuAction = (rows: IMenuAction[][], onDismissSpy?: () => void): IMenuA
 
 const helpRows: IMenuAction[][] = [[plainAction("Help centre"), plainAction("About")]];
 
+/** The symbol the pin's icon is currently drawing. */
+const pinSymbol = (name: string) =>
+  screen.getByRole("button", { name }).querySelector("[data-symbol]")?.getAttribute("data-symbol");
+
+/** Whether the row draws a chevron, the symbol pointing at the surface it opens. */
+const hasChevron = (row: HTMLElement) =>
+  [...row.querySelectorAll("[data-symbol]")].some(
+    (symbol) => symbol.getAttribute("data-symbol") === "chevron_right",
+  );
+
 // --- Tests ---
 
 describe("PopoverMenu", () => {
@@ -320,13 +330,6 @@ describe("PopoverMenu", () => {
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
     });
 
-    /** The symbol the pin's icon is currently drawing. */
-    const pinSymbol = (name: string) =>
-      screen
-        .getByRole("button", { name })
-        .querySelector("[data-symbol]")
-        ?.getAttribute("data-symbol");
-
     // The icon is an offer, not a report: it shows what the click does, matching the
     // label beside it, rather than the state the row is already in.
     it("offers a pin on a row that is not pinned", async () => {
@@ -434,12 +437,6 @@ describe("PopoverMenu", () => {
   });
 
   describe("nested menus", () => {
-    /** Whether the row draws a chevron, the symbol pointing at the surface it opens. */
-    const hasChevron = (row: HTMLElement) =>
-      [...row.querySelectorAll("[data-symbol]")].some(
-        (symbol) => symbol.getAttribute("data-symbol") === "chevron_right",
-      );
-
     /** The account menu open, with its Help row ready to fly out. */
     const openParent = async (onDismissSpy?: () => void) => {
       await openMenu([

@@ -17,7 +17,7 @@ const renderComponent = (props: Partial<IPathIconProps> = {}) => {
 const renderSymbol = (props: Partial<ISymbolIconProps> = {}) => {
   const { container } = render(<Icon name="home" {...props} />);
 
-  return container.querySelector("span") as HTMLSpanElement;
+  return container.querySelector("span");
 };
 
 // --- Tests ---
@@ -108,6 +108,12 @@ describe("Icon", () => {
 
     it('exposes role="img" and the title as its label when a title is given', () => {
       renderSymbol({ title: "Home" });
+      const el = screen.getByRole("img", { name: "Home" });
+      expect(el).not.toHaveAttribute("aria-hidden");
+    });
+
+    it('exposes role="img" when given an aria-label instead of a title', () => {
+      renderSymbol({ "aria-label": "Home" });
       const el = screen.getByRole("img", { name: "Home" });
       expect(el).not.toHaveAttribute("aria-hidden");
     });

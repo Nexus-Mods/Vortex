@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { TextField } from "@/ui/components/form/text_field/TextField";
-import { Icon as MdiIcon } from "@/ui/components/icon/Icon";
+import { Icon } from "@/ui/components/icon/Icon";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
@@ -50,7 +50,7 @@ export default function CategoryList() {
       </Toolbar>
 
       <div className="my-2 flex items-center gap-2">
-        <MdiIcon className="nxm-neutral" name="search" />
+        <Icon className="nxm-neutral" name="search" />
 
         <TextField
           hideLabel

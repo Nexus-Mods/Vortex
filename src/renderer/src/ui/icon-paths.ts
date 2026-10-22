@@ -5,7 +5,7 @@
  * Adapted from the web team's "next" project for use in Vortex.
  *
  * Usage:
- * - import { nxmVortex } from 'tailwind/lib/icon-paths';
+ * - import { nxmVortex } from '@/ui/icon-paths';
  * - In Icon component: <Icon path={nxmVortex} />
  * - In Button component: <Button leftIcon={{ path: nxmVortex }}>...</Button>
  *

@@ -119,7 +119,7 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
           className={joinClasses(["w-full transition-all", isCollapsed ? "h-10" : "h-12"])}
           customContent={
             <>
-              <Icon className="nxm-button-icon" name="play_arrow" filled size="lg" />
+              <Icon filled className="nxm-button-icon" name="play_arrow" size="lg" />
 
               {!isIconOnly && (
                 <Typography

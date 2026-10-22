@@ -135,7 +135,7 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
               className="absolute inset-x-0 bottom-0 z-2 flex h-7 items-center gap-x-1 bg-info-weak px-1.5 text-info-50"
               typographyType="title-xs"
             >
-              <Icon name="star" filled size="xs" />
+              <Icon filled name="star" size="xs" />
 
               <span title={easyInstallBadge.description}>{easyInstallBadge.name}</span>
             </Typography>

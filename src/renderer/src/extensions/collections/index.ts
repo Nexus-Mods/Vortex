@@ -829,7 +829,7 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
       pathTool,
     }),
     onReset: () => resetPageCB?.(),
-    mdi: nxmCollectionOutline,
+    menuIcon: { path: nxmCollectionOutline },
   } as any);
 
   context.registerModType(

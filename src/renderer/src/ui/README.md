@@ -43,8 +43,7 @@ ui/
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
 │   ├── tooltip/         - Rich, collision-aware tooltip (Floating UI)
 │   └── typography/      - Typography system (heading, title, body)
-├── lib/
-│   └── icon_paths/      - 34 custom Nexus Mods SVG icon paths
+├── icon-paths.ts        - 12 custom Nexus Mods SVG icon paths, for what Material Symbols lacks
 ├── utils/
 │   ├── join_classes/     - Joins class names with conditional support
 │   └── types.ts         - Shared types (XOr, ResponsiveScreenSizes)
@@ -73,7 +72,7 @@ import type { XOr, ResponsiveScreenSizes } from "../../ui/utils/types";
 ### Icon Paths
 
 ```tsx
-import { nxmVortex, nxmCollection } from "../../ui/lib/icon_paths/iconPaths";
+import { nxmVortex, nxmCollection } from "@/ui/icon-paths";
 ```
 
 ## CSS Convention
@@ -140,7 +139,7 @@ A button with no `children`/`customContent` but an icon renders icon-only (squar
 
 ```tsx
 import { Icon } from "../../ui/components/icon/Icon";
-import { nxmVortex } from "../../ui/lib/icon_paths/iconPaths";
+import { nxmVortex } from "@/ui/icon-paths";
 
 <Icon name="person" filled size="md" />
 <Icon path={nxmVortex} size="lg" title="Vortex" />

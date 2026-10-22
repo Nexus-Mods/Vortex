@@ -10,7 +10,7 @@ export interface IImageProps extends Omit<
 > {
   /** The picture's text alternative, which also names the fallback icon; "" if decorative. */
   alt: string;
-  /** Classes for the frame, which sets the size and corners. */
+  /** Classes for the frame's size and corners; an `other` frame collapses without a height. */
   className?: string;
   /** Replaces the broken-image icon; given one, a missing `src` shows it too. */
   fallbackIcon?: IIconSource;

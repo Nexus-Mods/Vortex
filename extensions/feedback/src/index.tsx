@@ -365,7 +365,7 @@ function init(context: types.IExtensionContext) {
       removeFiles,
     }),
     menuIcon: "comment",
-  } as any);
+  });
 
   context.registerAction(
     "global-icons",

@@ -24,7 +24,7 @@ const iconMap: Record<string, IIconSource> = {
   tools: "build",
   tune: "tune",
   // icon names used by toolbar actions registered through `registerAction`
-  browse: "folder_managed",
+  browse: "folder_open",
   categories: "sell",
   changelog: "article",
   delete: "delete",

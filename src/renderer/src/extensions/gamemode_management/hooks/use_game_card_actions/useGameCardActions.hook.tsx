@@ -9,7 +9,7 @@ import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
-import { getIcon } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/icon_map/iconMap";
 
 import { setGameAddOrigin } from "../../actions/session";
 import { setGameHidden } from "../../actions/settings";

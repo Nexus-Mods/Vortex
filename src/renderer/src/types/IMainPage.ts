@@ -14,9 +14,7 @@ import type { IIconSource } from "../ui/components/icon/Icon";
 export interface IMainPage {
   id: string;
   icon: string;
-  /** An SVG path for the page's icon in the menu, for an extension that brings its own. */
-  mdi?: string;
-  /** The page's icon in the menu, a Material Symbol. */
+  /** The page's icon in the menu: a Material Symbol by name, or an SVG path as `{ path }`. */
   menuIcon?: IIconSource;
   title: string;
   component: React.ComponentClass<any> | React.FunctionComponent<React.PropsWithChildren<any>>;

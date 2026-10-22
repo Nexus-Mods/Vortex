@@ -144,7 +144,7 @@ export const ButtonDemo = () => {
         <div className="flex flex-wrap items-center gap-4">
           <Button leftIcon="download">Download</Button>
 
-          <Button brand="neutral" appearance="subdued" rightIcon="chevron_right">
+          <Button appearance="subdued" brand="neutral" rightIcon="chevron_right">
             Next
           </Button>
 
@@ -152,7 +152,7 @@ export const ButtonDemo = () => {
             Confirm
           </Button>
 
-          <Button brand="neutral" appearance="weak" leftIcon={{ name: "settings", filled: true }}>
+          <Button appearance="weak" brand="neutral" leftIcon={{ name: "settings", filled: true }}>
             Settings
           </Button>
         </div>

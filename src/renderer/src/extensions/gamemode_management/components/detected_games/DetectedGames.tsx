@@ -308,8 +308,8 @@ export const DetectedGames = ({
         <Listing
           entityCount={shownGames.length}
           noResultsChildren={emptyState.children}
-          noResultsIconClassName={emptyState.iconClassName}
           noResultsIcon={emptyState.icon}
+          noResultsIconClassName={emptyState.iconClassName}
           noResultsMessage={emptyState.message}
           noResultsTitle={emptyState.title}
         >

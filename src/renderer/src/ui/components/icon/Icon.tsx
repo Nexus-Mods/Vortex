@@ -117,6 +117,8 @@ const SymbolIcon = ({
     axes.push(`"opsz" ${opticalSize}`);
   }
 
+  const isLabelled = !!title || !!props["aria-label"];
+
   const axesStyle: CSSProperties = {
     ...(weight !== undefined && { fontWeight: weight }),
     ...(axes.length > 0 && { fontVariationSettings: axes.join(", ") }),
@@ -124,7 +126,7 @@ const SymbolIcon = ({
 
   return (
     <span
-      aria-hidden={title ? undefined : true}
+      aria-hidden={isLabelled ? undefined : true}
       aria-label={title}
       className={joinClasses([
         "nxm-icon nxm-icon-symbol",
@@ -133,7 +135,7 @@ const SymbolIcon = ({
         className,
       ])}
       data-symbol={name}
-      role={title ? "img" : undefined}
+      role={isLabelled ? "img" : undefined}
       style={{ ...axesStyle, ...style }}
       {...props}
     />

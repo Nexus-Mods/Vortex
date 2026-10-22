@@ -21,7 +21,7 @@ import type { TFunction } from "@/util/i18n";
 import * as selectors from "@/util/selectors";
 import { getSafe } from "@/util/storeHelper";
 import { batchDispatch } from "@/util/util";
-import { getIcon } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/icon_map/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
 import { setAutoDeployment } from "../../settings_interface/actions/automation";

@@ -139,7 +139,7 @@ export function FileRequirement({
               <Pill icon="install_desktop">{t("detail::item::installed")}</Pill>
 
               {file.enabled ? (
-                <Pill icon="check_circle" brand="success">
+                <Pill brand="success" icon="check_circle">
                   {t("detail::item::enabled")}
                 </Pill>
               ) : (

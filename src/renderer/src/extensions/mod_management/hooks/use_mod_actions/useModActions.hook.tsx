@@ -13,7 +13,7 @@ import type { IIconProp } from "@/ui/components/icon/Icon";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { nxmCollection, nxmCollectionOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
-import { getIcon } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/icon_map/iconMap";
 
 import { calculateModSize } from "../../util/calculate_mod_size/calculateModSize.util";
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
@@ -132,7 +132,7 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
     section: "maintenance",
     items: [
       { title: "Refresh Content", label: "Refresh content", icon: "rotate_right" },
-      { title: "Fix missing IDs", label: "Fix missing IDs", icon: "manage_search" },
+      { title: "Fix missing IDs", label: "Fix missing IDs", icon: "data_alert" },
       {
         title: "Create Report",
         label: "Generate mod report",

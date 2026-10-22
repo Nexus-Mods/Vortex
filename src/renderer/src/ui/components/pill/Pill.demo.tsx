@@ -120,7 +120,7 @@ export const PillDemo = () => {
 
           <Pill icon="check">Verified</Pill>
 
-          <Pill icon={<Icon name="star" filled size="none" />}>Custom icon node</Pill>
+          <Pill icon={<Icon filled name="star" size="none" />}>Custom icon node</Pill>
         </div>
       </div>
 
