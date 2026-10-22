@@ -19,6 +19,8 @@ const config = defineConfig({
     if (id.startsWith(".")) return false;
     if (path.isAbsolute(id)) return false;
     if (id.startsWith("@vortex/shared")) return false;
+    // Extensions don't install it; the symbol names are inlined so `menuIcon` still checks them.
+    if (id === "material-symbols") return false;
 
     return true;
   },

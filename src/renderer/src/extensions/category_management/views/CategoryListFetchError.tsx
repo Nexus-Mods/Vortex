@@ -23,7 +23,7 @@ const CustomCategoryFetchError = ({ fetch, clear, error, t }: ICustomCategoryFet
 
   return (
     <div className="flex flex-col items-center gap-y-4 py-16">
-      <Icon name="info" size="lg" />
+      <Icon name="error" size="lg" />
 
       <Typography appearance="strong" brand="warning" typographyType="body-lg">
         {error.title}

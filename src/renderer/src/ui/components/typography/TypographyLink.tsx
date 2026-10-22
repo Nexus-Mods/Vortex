@@ -23,7 +23,7 @@ type ITypographyLinkTypeObject = ITypographyLinkTypeObjectDefault & {
 };
 
 export type ITypographyLinkProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  /** The size of both icons. */
+  /** The size of both icons. Default `md`. */
   iconSize?: IIconSize;
   /** An icon shown before the label. */
   leftIcon?: IIconProp;
@@ -81,7 +81,7 @@ export const TypographyLink = ({
   className,
   customContent,
   disabled,
-  iconSize,
+  iconSize = "md",
   leftIcon,
   ref,
   rightIcon,

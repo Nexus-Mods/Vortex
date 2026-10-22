@@ -172,7 +172,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
           brand="neutral"
           appearance="strong"
           disabled={!isValid}
-          leftIcon="play_arrow"
+          leftIcon={{ name: "play_arrow", filled: true }}
           title={t("Launch tool")}
           onClick={() => onRun(starterInfo)}
         />
