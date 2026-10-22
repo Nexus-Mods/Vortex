@@ -16,6 +16,7 @@ import { flushAsync } from "../../test-utils/async";
 import { makeFakeLoot, makeLootPluginInterface, makePlugin } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
 import type { IFakeLoot, ILootHarness } from "../../test-utils/harnessTypes";
+import type * as ErrorHandling from "../../util/errorHandling";
 import { setPluginList } from "./actions/plugins";
 import LootInterface from "./autosort";
 import { createLootMock, downloadMasterlistMock } from "./lootMocks";
@@ -41,7 +42,7 @@ vi.mock(
 );
 // the span a stray pipe connection is reported on
 vi.mock("../../util/errorHandling", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../util/errorHandling.js")>()),
+  ...(await importOriginal<typeof ErrorHandling>()),
   recordErrorSpan: vi.fn(),
 }));
 
