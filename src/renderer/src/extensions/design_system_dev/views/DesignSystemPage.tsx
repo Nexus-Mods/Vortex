@@ -40,6 +40,7 @@ import { ToolbarDemo } from "@/ui/components/toolbar/Toolbar.demo";
 import { TooltipDemo } from "@/ui/components/tooltip/Tooltip.demo";
 import { TypographyDemo } from "@/ui/components/typography/Typography.demo";
 import { TypographyLinkDemo } from "@/ui/components/typography/TypographyLink.demo";
+import { ViewPickerDemo } from "@/ui/components/view_picker/ViewPicker.demo";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
@@ -53,6 +54,7 @@ interface IDesignSystemPageProps {
 
 export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
   const [selectedTab, setSelectedTab] = useState("button");
+  const [selectedButtonTab, setSelectedButtonTab] = useState("buttons");
   const [selectedTypographyTab, setSelectedTypographyTab] = useState("typography");
   const [selectedIconTab, setSelectedIconTab] = useState("icon");
   const [selectedFormTab, setSelectedFormTab] = useState("text-field");
@@ -109,7 +111,28 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
 
           <div className="mt-6">
             <TabPanel id="button">
-              <ButtonDemo />
+              <TabProvider
+                tab={selectedButtonTab}
+                tabListId="button-demo-tabs"
+                tabType="secondary"
+                onSetSelectedTab={setSelectedButtonTab}
+              >
+                <TabBar>
+                  <TabButton name="Button" panelId="buttons" />
+
+                  <TabButton name="View picker" panelId="view-picker" />
+                </TabBar>
+
+                <div className="mt-6">
+                  <TabPanel id="buttons">
+                    <ButtonDemo />
+                  </TabPanel>
+
+                  <TabPanel id="view-picker">
+                    <ViewPickerDemo />
+                  </TabPanel>
+                </div>
+              </TabProvider>
             </TabPanel>
 
             <TabPanel id="pill">
