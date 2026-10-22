@@ -1,4 +1,3 @@
-import { mdiRecord, mdiDownload, mdiThumbUpOutline } from "@mdi/js";
 import numeral from "numeral";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -63,7 +62,7 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
         <span className="flex flex-col gap-y-1.5">
           <span className="-ml-0.5 flex flex-wrap gap-1">
             {mod.isAdult && (
-              <Pill brand="danger" iconPath={mdiRecord}>
+              <Pill brand="danger" icon={{ name: "fiber_manual_record", filled: true }}>
                 {t("Adult")}
               </Pill>
             )}
@@ -101,13 +100,13 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
 
           <span className="flex shrink-0 items-center gap-x-3">
             <span className="flex items-center gap-x-1">
-              <Icon path={mdiDownload} size="sm" />
+              <Icon name="download" size="sm" />
 
               {numeral(mod.downloads).format("0a")}
             </span>
 
             <span className="flex items-center gap-x-1">
-              <Icon path={mdiThumbUpOutline} size="sm" />
+              <Icon name="thumb_up" size="sm" />
 
               {numeral(mod.endorsements).format("0a")}
             </span>

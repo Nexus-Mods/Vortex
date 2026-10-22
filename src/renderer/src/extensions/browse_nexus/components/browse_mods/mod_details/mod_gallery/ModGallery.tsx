@@ -1,4 +1,3 @@
-import { mdiChevronLeft, mdiChevronRight } from "@mdi/js";
 import React, { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -149,7 +148,7 @@ export const ModGallery = ({ images, isAdult, onPick }: IModGalleryProps) => {
             appearance="scrim"
             brand="neutral"
             className="absolute left-1"
-            leftIconPath={mdiChevronLeft}
+            leftIcon="chevron_left"
             size="sm"
             title={t("Earlier images")}
             onClick={() => page(-1)}
@@ -161,7 +160,7 @@ export const ModGallery = ({ images, isAdult, onPick }: IModGalleryProps) => {
             appearance="scrim"
             brand="neutral"
             className="absolute right-1"
-            leftIconPath={mdiChevronRight}
+            leftIcon="chevron_right"
             size="sm"
             title={t("Later images")}
             onClick={() => page(1)}

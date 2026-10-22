@@ -1,4 +1,3 @@
-import { mdiCircleMedium, mdiDownload } from "@mdi/js";
 import numeral from "numeral";
 import React, { forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -69,7 +68,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                 <TabButton name={t("Comments")} panelId="comments" />
               </TabBar>
 
-              <Button leftIconPath={mdiDownload} size="sm">
+              <Button leftIcon="download" size="sm">
                 {t("1-click install")}
               </Button>
             </div>
@@ -97,7 +96,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
 
                   <div className="flex flex-wrap gap-1">
                     {mod.isAdult && (
-                      <Pill brand="danger" iconPath={mdiCircleMedium}>
+                      <Pill brand="danger" icon={{ name: "fiber_manual_record", filled: true }}>
                         {t("Adult")}
                       </Pill>
                     )}
