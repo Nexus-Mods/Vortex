@@ -130,6 +130,10 @@ import {
   purgeMods,
   purgeModsInPath,
 } from "./util/deploy";
+import {
+  deployPendingOnAutoApply,
+  scheduleAutoDeploy,
+} from "./util/deploy_pending_on_auto_apply/deployPendingOnAutoApply";
 import { reportRecordedFailures, resetDeploymentFailures } from "./util/deploymentFailures";
 import {
   getAllActivators,
@@ -1261,12 +1265,7 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
       }
     });
     if (state.settings.automation.deploy && options?.allowAutoDeploy !== false) {
-      // Lets the UI show the deploy as under way while the timer runs down.
-      store.dispatch(startActivity("mods", "deployment_pending"));
-      deploymentTimer.schedule(
-        () => store.dispatch(stopActivity("mods", "deployment_pending")),
-        false,
-      );
+      scheduleAutoDeploy(api, deploymentTimer);
     } else if (!state.persistent.deployment.needToDeploy[gameId]) {
       store.dispatch(setDeploymentNecessary(gameId, true));
     }
@@ -1665,6 +1664,11 @@ function once(api: IExtensionApi) {
 
   api.onStateChange(["persistent", "mods"], (previous, current) =>
     onModsChanged(api, previous, current),
+  );
+
+  api.onStateChange(
+    ["settings", "automation", "deploy"],
+    deployPendingOnAutoApply(api, deploymentTimer),
   );
 
   api.onStateChange(["persistent", "deployment", "needToDeploy"], (previous, current) => {
