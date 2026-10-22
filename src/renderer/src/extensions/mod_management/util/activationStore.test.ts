@@ -34,6 +34,22 @@ test("the fallback purge restores a damaged manifest from its staging backup", a
   expect(game.isDeployed(file)).toBe(false);
 });
 
+test("declining the staging backup reports the damaged manifest and how to recover", async () => {
+  const game = await makeDeployedGame();
+  const file = await game.deployFile("plugin.esp");
+  await game.saveManifest([file], HARDLINK_METHOD);
+  await writeFile(path.join(game.dataPath, "vortex.deployment.json"), '{"damaged');
+  game.setNextDialog({ action: "Cancel", input: {} });
+
+  const purge = fallbackPurge(game.api, game.gameId);
+
+  await expect(purge).rejects.toThrow(
+    'is corrupted.\nYou should delete it, then immediately click the "Purge" button',
+  );
+  await expect(purge).rejects.not.toThrow("Backup couldn't be read");
+  expect(game.isDeployed(file)).toBe(true);
+});
+
 test("the fallback purge removes files deployed into a mod's subfolder", async () => {
   const game = await makeDeployedGame();
   const file = await game.deployFile(path.join("Config", "test.xml"), "SomeMod");
