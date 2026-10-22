@@ -2,6 +2,7 @@ import React, { type FC } from "react";
 
 import { useSwitchingProfile } from "../../hooks";
 import { ModernContentPane } from "../components/ContentPane";
+import { GameArt } from "../components/game_art/GameArt";
 import { Header } from "../components/Header/Header";
 import { Spine } from "../components/Spine/Spine";
 import { SpineProvider } from "../components/Spine/SpineContext";
@@ -17,7 +18,9 @@ export const ModernLayout: FC<React.PropsWithChildren<unknown>> = () => {
 
   return (
     <SpineProvider>
-      <LayoutContainer className="flex h-full bg-surface-base">
+      <LayoutContainer className="relative isolate flex h-full overflow-hidden bg-surface-base">
+        <GameArt />
+
         <Spine />
 
         <div className="flex min-w-0 grow flex-col">

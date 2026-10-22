@@ -224,6 +224,12 @@ export interface IMainPageOptions {
   menuIcon?: IIconSource;
   /** Self-subscribing status badge shown on this page's left-menu item. */
   menuBadge?: React.ComponentType<React.PropsWithChildren<unknown>>;
+  /**
+   * While the page is open, its pane turns translucent and shows the game art behind the
+   * layout, for a page that paints its own solid parts.
+   * @alpha
+   */
+  isTranslucent?: boolean;
 }
 
 export type RegisterMainPage = (

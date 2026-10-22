@@ -1,0 +1,33 @@
+@layer components {
+    /* The open game's hero art, behind the layout: held in the bottom left, past the window's
+       left and bottom edges, and faded out by a mask of soft overlapping blobs, a dome over the
+       spine and menu and a lobe along the bottom into the page, so its edge reads organic. Each
+       blob is clear before the art's edges, or the art ends there in a straight line. */
+    .nxm-game-art {
+        position: absolute;
+        bottom: calc(var(--spacing) * -15);
+        left: calc(var(--spacing) * -175);
+        z-index: -1;
+        width: calc(var(--spacing) * 392);
+        aspect-ratio: 1920 / 620;
+        opacity: 0.14;
+        pointer-events: none;
+        mask-image:
+            radial-gradient(ellipse 30% 95% at 50% 100%, #000 35%, transparent),
+            radial-gradient(ellipse 42% 50% at 58% 100%, #000 30%, transparent),
+            radial-gradient(ellipse 18% 55% at 42% 75%, rgb(0 0 0 / 60%) 25%, transparent);
+        mask-composite: add;
+    }
+
+    .nxm-game-art-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+/* For a translucent page's part that shows the game art through it: blurred, and saturated
+   back up so its colour holds through the blur. */
+@utility game-art-backdrop {
+    backdrop-filter: blur(var(--blur-2xl)) saturate(1.75);
+}

@@ -13,6 +13,7 @@ import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 import { type IViewPickerView, ViewPicker } from "@/ui/components/view_picker/ViewPicker";
+import { useGameArt } from "@/views/components/game_art/GameArt.context";
 import { PageContent } from "@/views/components/Page/PageContent";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
@@ -21,7 +22,7 @@ import { ModCard } from "./mod_card/ModCard";
 import { ModDetails } from "./mod_details/ModDetails";
 import { STATIC_MODS } from "./staticMods";
 
-/** Games whose hero art can stand in for the active game's, so design can try it over each. */
+/** Games whose hero art can stand in for the open game's, so design can try it over each. */
 const HERO_GAMES = [
   { id: GameId(8969), name: "Crimson Desert" },
   { id: GameId(3474), name: "Baldur's Gate 3" },
@@ -37,12 +38,6 @@ const HERO_GAMES = [
   { id: GameId(952), name: "The Witcher 3: Wild Hunt" },
 ];
 
-const DEFAULT_HERO_GAME = HERO_GAMES[0].id;
-
-/** A game's hero art on the Nexus Mods image CDN. */
-const heroUrl = (gameId: GameId) =>
-  `https://images.nexusmods.com/images/games/v2/${gameId}/hero.jpg`;
-
 /** The results count the bar shows, for the pagination to page through. */
 const STATIC_RESULTS = 121867;
 
@@ -51,8 +46,8 @@ const STATIC_RESULTS = 121867;
  * are placeholders that say what they will be. Its own scroll region sits under the bar of
  * views, search and filters, so the bar stays put; like `PageHeader` it leaves `pr-scrollbar`
  * for the scroll region's gutter. Under the bar, the mods and `ModDetails` are halves that
- * scroll on their own; the mods scroll over a game's hero art, its feature held in their
- * bottom right corner and fading into the surface towards the top.
+ * scroll on their own; the mods scroll over the layout's `GameArt`, blurred, which the page's
+ * translucent pane lets through.
  */
 export const BrowseMods = () => {
   const { t } = useTranslation();
@@ -60,7 +55,7 @@ export const BrowseMods = () => {
   const [view, setView] = useState("trending");
   const [page, setPage] = useState(1);
   const [activeMod, setActiveMod] = useState(STATIC_MODS[0].name);
-  const [heroGame, setHeroGame] = useState(DEFAULT_HERO_GAME);
+  const { isEnabled: showsGameArt, previewGame, setPreviewGame } = useGameArt();
   const active = STATIC_MODS.find((mod) => mod.name === activeMod) ?? STATIC_MODS[0];
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -83,20 +78,23 @@ export const BrowseMods = () => {
 
   const displayOptions = useDisplayOptionsAction({
     label: t("View options"),
-    canReset: heroGame !== DEFAULT_HERO_GAME,
+    canReset: !!previewGame,
     children: (
       <PopoverPanelGroup>
         <PopoverPanelGroupItem passive label={t("Background art")}>
-          <Picker<GameId>
+          <Picker<GameId | undefined>
             button={{ size: "sm" }}
-            options={HERO_GAMES.map((game) => ({ label: game.name, value: game.id }))}
-            value={heroGame}
-            onChange={setHeroGame}
+            options={[
+              { label: t("This game"), value: undefined },
+              ...HERO_GAMES.map((game) => ({ label: game.name, value: game.id })),
+            ]}
+            value={previewGame}
+            onChange={setPreviewGame}
           />
         </PopoverPanelGroupItem>
       </PopoverPanelGroup>
     ),
-    onReset: () => setHeroGame(DEFAULT_HERO_GAME),
+    onReset: () => setPreviewGame(undefined),
   });
 
   const filter = {
@@ -108,7 +106,7 @@ export const BrowseMods = () => {
 
   return (
     <>
-      <div className="border-b border-stroke-weak pr-scrollbar">
+      <div className="border-b border-stroke-weak bg-surface-low pr-scrollbar">
         <PageContent isFullWidth className="flex items-center justify-between gap-x-3 px-6 py-2">
           <ViewPicker
             className="min-w-0 flex-1"
@@ -127,7 +125,7 @@ export const BrowseMods = () => {
             <Search placeholder={t("Search mods...")} value={search} onChange={setSearch} />
 
             <Toolbar>
-              <ToolbarGroup actions={[filter, displayOptions]} />
+              <ToolbarGroup actions={showsGameArt ? [filter, displayOptions] : [filter]} />
             </Toolbar>
 
             <Button
@@ -141,15 +139,7 @@ export const BrowseMods = () => {
       </div>
 
       <div className="flex min-h-0 flex-1">
-        <div className="relative isolate flex min-w-0 flex-1 flex-col">
-          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute bottom-0 -left-1/4 w-[200%]">
-              <img alt="" className="w-full" src={heroUrl(heroGame)} />
-
-              <div className="absolute inset-0 bg-linear-to-t from-surface-low/75 to-surface-low to-70%" />
-            </div>
-          </div>
-
+        <div className="flex min-w-0 flex-1 flex-col game-art-backdrop">
           <PageScroll isFullWidth className="flex flex-col gap-y-3.5 p-6" ref={scrollRef}>
             {STATIC_MODS.map((mod) => (
               <ModCard
