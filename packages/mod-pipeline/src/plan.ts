@@ -38,7 +38,7 @@ type _OperationMatches = Assert<MutuallyAssignable<z.infer<typeof operationSchem
 
 export const OperationSchema: z.ZodType<Operation> = operationSchema;
 
-type DiskLetter = "x" | "?" | "A" | "B" | "C";
+type DiskLetter = "x" | "A" | "B" | "C" | "D";
 
 /**
  * Every reachable state of a destination. Each value is its code, written Disk, Previous, Current:
@@ -46,26 +46,26 @@ type DiskLetter = "x" | "?" | "A" | "B" | "C";
  * - `A`: the current file, or the previous one when the current lockfile has none
  * - `B`: the previous file, when its content or origin differs from the current one
  * - `C`: content neither lockfile has
- * - `?` (disk only): an entry the scan did not hash
+ * - `D` (disk only): an entry the scan did not hash
  */
 const DestinationState = {
   NewFile: "xxA",
   NewOverIdentical: "AxA",
   NewOverOther: "BxA",
-  NewOverUnhashed: "?xA",
+  NewOverUnhashed: "DxA",
   DeployedMissing: "xAA",
   Unchanged: "AAA",
   DeployedEdited: "BAA",
-  DeployedUnhashed: "?AA",
+  DeployedUnhashed: "DAA",
   UpdatedMissing: "xBA",
   UpdatedOverIdentical: "ABA",
   Updated: "BBA",
   UpdatedOverEdited: "CBA",
-  UpdatedOverUnhashed: "?BA",
+  UpdatedOverUnhashed: "DBA",
   RemovedMissing: "xAx",
   Removed: "AAx",
   RemovedEdited: "BAx",
-  RemovedUnhashed: "?Ax",
+  RemovedUnhashed: "DAx",
 } as const satisfies Record<string, `${DiskLetter}${"x" | "A" | "B"}${"x" | "A"}`>;
 type DestinationState = (typeof DestinationState)[keyof typeof DestinationState];
 
@@ -134,7 +134,7 @@ function diskLetterAgainst(
     return "x";
   }
   if (entry.contentHash === undefined) {
-    return "?";
+    return "D";
   }
   return sameContent(entry.contentHash, file) ? "A" : "B";
 }

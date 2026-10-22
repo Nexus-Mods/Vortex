@@ -46,7 +46,7 @@ The rules the table encodes:
   content, so a game file we take over is never lost when the mod goes.
 - A file is the same only when both its content and its origin are, so the same
   bytes from another mod relink and a symlink never points into a removed mod.
-- An entry the scan did not hash (`?`) counts as what the previous lockfile
+- An entry the scan did not hash (`D`) counts as what the previous lockfile
   deployed there. The v1 scan hashes nothing, so in v1 an edit made outside
   Vortex is overwritten; the rows that compare disk content need a scan that
   hashes, and the fixtures cover them.
