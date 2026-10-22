@@ -46,7 +46,8 @@ ui/
 │   ├── tabs/            - Tabbed interface with context-based state
 │   ├── toolbar/         - Horizontal toolbar; groups collapse overflow into a kebab dropdown
 │   ├── tooltip/         - Rich, collision-aware tooltip (Floating UI)
-│   └── typography/      - Typography system (heading, title, body)
+│   ├── typography/      - Typography system (heading, title, body)
+│   └── view_picker/     - A list's views, built-in and the user's own, with a "+" to add one
 ├── icon-paths.ts        - 12 custom Nexus Mods SVG icon paths, for what Material Symbols lacks
 ├── utils/
 │   ├── join_classes/     - Joins class names with conditional support
@@ -982,6 +983,38 @@ import { Bullet } from "../../ui/components/bullet/Bullet";
 
 // Override size and colour
 <Bullet className="size-1 bg-neutral-subdued" />
+```
+
+### ViewPicker
+
+The views of a list people can switch between and add their own to, like the Mods
+table's. Pass the `views` in order, built-in first; a view with `actions` is one of
+the user's own, gets a "…" menu, and the divider goes before the first of them.
+`onAddView` puts a "+" at the end. Views aren't tabs (no panels), so each is a
+`ViewButton`, a `<button aria-pressed>`.
+
+The views are one Tab stop: the one last focused while focus is in the picker,
+else the open one, else the first. The arrow keys move focus between them,
+wrapping, Home and End go to either end, and Space or Enter opens one; with a
+modifier held they're left alone. A user's view opens its menu from its "…", a
+right-click, Shift+F10 or the Down arrow; the "…" sits beside the view's button,
+in the same pill, out of the Tab order. The "+" keeps its own Tab stop.
+
+```tsx
+<ViewPicker
+    label={t("Views")}
+    selectedView={selected}
+    views={[
+        { id: "all", label: t("All mods") },
+        {
+            id: custom.id,
+            label: custom.label,
+            actions: [[{ label: t("Rename view"), onClick: rename }]],
+        },
+    ]}
+    onAddView={add}
+    onSelectView={setSelected}
+/>
 ```
 
 ## Adding New Components
