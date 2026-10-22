@@ -46,6 +46,8 @@ own workspace glob):
 - `packages/nexus-api-v3/` - Typed HTTP client for the Nexus Mods OpenAPI v3 API
 - `packages/file-dependency-resolver/` - File-to-file dependency resolver behind
   the file-level requirements health check
+- `packages/mod-pipeline/` - The mod pipeline's lockfile contract and the
+  resolver that produces it
 - `packages/exe-version/` - Reads version info out of Windows executables
 - `packages/pe-resources/` - Portable Executable resource parsing
 - `packages/icon-extract/` - Extracts icons from executables
