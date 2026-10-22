@@ -279,8 +279,13 @@ label, so selecting a tab stopped working as soon as the label was translated.
   path for the custom `nxm*` icons the font lacks (`icon={{ path: nxmMod }}`), or an element. The type
   is `IIconProp` (`IIconSource` where an element makes no sense), from `Icon.tsx`. Legacy icon names,
   which actions and extensions register with, resolve through `getIcon(name)` in
-  `views/components/iconMap.ts`. Pages can pass a `menuIcon`; an extension's own `mdi` path
-  still works.
+  `views/components/icon_map/iconMap.ts`. Pages can pass a `menuIcon`, a symbol
+  or `{ path }`; an extension's own `mdi` path still works, but is deprecated in its favour.
+- An icon's `title` names it for screen readers; it isn't a tooltip. On a symbol it becomes the
+  `aria-label` and shows nothing on hover, by design. A path icon's SVG `<title>` happens to get
+  the browser's own hover text, but don't rely on that either. For text on hover, wrap the icon,
+  or the control it sits in, in `Tooltip` (`ui/components/tooltip/Tooltip.tsx`).
+  A decorative icon takes no `title`.
 - Custom SVGs must use the 24x24 viewBox the `Icon` component renders. To port a
   Material Symbols icon (`0 -960 960 960`): scale by 0.025 and offset absolute Y
   by +960. Keep it a single filled path with `fill="currentColor"`.

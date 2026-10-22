@@ -40,7 +40,7 @@ const symbolFontSizeMap: { [key in IIconSize]: string | undefined } = {
 interface IIconBaseProps {
   /** Its size, from `xs` (12px) to `2xl` (48px); `none` leaves it to `className`. Default `md`. */
   size?: IIconSize;
-  /** Names it for screen readers; without one it's decorative and hidden from them. */
+  /** Names it for screen readers, not a hover tooltip (use `Tooltip`); without one it's decorative. */
   title?: string;
 }
 
