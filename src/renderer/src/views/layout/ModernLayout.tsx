@@ -1,6 +1,7 @@
-import React, { type FC } from "react";
+import React, { type FC, useEffect } from "react";
 
 import { useSwitchingProfile } from "../../hooks";
+import { watchScrollActivity } from "../../ui/utils/scroll_activity/scrollActivity";
 import { ModernContentPane } from "../components/ContentPane";
 import { GameArt } from "../components/game_art/GameArt";
 import { Header } from "../components/Header/Header";
@@ -15,6 +16,8 @@ import { UIBlocker } from "./UIBlocker";
 
 export const ModernLayout: FC<React.PropsWithChildren<unknown>> = () => {
   const switchingProfile = useSwitchingProfile();
+
+  useEffect(() => watchScrollActivity(document), []);
 
   return (
     <SpineProvider>
