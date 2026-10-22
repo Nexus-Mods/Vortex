@@ -31,3 +31,24 @@
 @utility game-art-backdrop {
     backdrop-filter: blur(var(--blur-2xl)) saturate(1.75);
 }
+
+/* Fades an image behind a page's content out from its top right corner, for a picture spilling
+   from the details towards a list: an oblong radial fade to nothing, times a second ramp that
+   takes it from 60% strong in the middle to 10% at the fade's edge. */
+@utility backdrop-image-fade {
+    mask-image:
+        radial-gradient(ellipse 155% 180% at 95% 0%, #000, transparent 55%),
+        radial-gradient(ellipse 155% 180% at 95% 0%, rgb(0 0 0 / 60%), rgb(0 0 0 / 10%) 55%);
+    mask-composite: intersect;
+}
+
+/* Breaks up the banding a dark, gentle gradient shows on an 8-bit screen, as a layer of its
+   own over it: faint light and dark specks, about one level either way, so the gradient's steps
+   dissolve into grain too fine to see. Plain alpha rather than a blend mode, so it lands the same
+   over whatever is behind. Put it over the gradient's result, not inside a faded or translucent
+   layer, which would scale it away where the bands are. */
+@utility dither {
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0.05 0 0 0 -0.025'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.05 0 0 0 0.025'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
