@@ -18,6 +18,8 @@ interface IModCardProps {
   mod: IStaticMod;
   /** Whether it's the mod the details pane shows. */
   isActive: boolean;
+  /** Its place in the list's Tab order: 0 for the one Tab stop, the selected card, else -1. */
+  tabIndex: number;
   /** Shows the mod in the details pane. */
   onSelect: () => void;
 }
@@ -28,23 +30,22 @@ interface IModCardProps {
  * hover, and more so, with its picture dimmed, while pressed. Nothing else in it is
  * interactive, and its layout is spans, as a button's content has to be.
  */
-export const ModCard = ({ mod, isActive, onSelect }: IModCardProps) => {
+export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) => {
   const { t } = useTranslation();
   const updated = useRelativeTime(new Date(mod.updatedAt).getTime(), t);
   const detailAppearance = isActive ? "moderate" : "subdued";
 
   return (
     <button
+      data-mod-card
       aria-pressed={isActive}
-      className={joinClasses(
-        "flex items-center gap-x-4 overflow-hidden rounded-sm border py-2 pr-4 pl-2 text-left transition-colors",
-        {
-          "border-transparent hover:border-stroke-weak hover:bg-surface-translucent-low hover:backdrop-blur-[6.25rem]":
-            !isActive,
-          "border-stroke-subdued bg-surface-translucent-mid shadow-xs backdrop-blur-[6.25rem]":
-            isActive,
-        },
-      )}
+      className={joinClasses([
+        "flex items-center gap-x-4 overflow-hidden rounded-sm py-2 pr-4 pl-2 text-left transition-colors",
+        isActive
+          ? "bg-surface-translucent-mid inset-ring inset-ring-stroke-weak backdrop-blur-[6.25rem] backdrop-saturate-150"
+          : "hover:bg-surface-translucent-low hover:backdrop-blur-[6.25rem]",
+      ])}
+      tabIndex={tabIndex}
       type="button"
       onClick={onSelect}
     >

@@ -1,5 +1,10 @@
+import type { IGalleryImage } from "./mod_details/mod_gallery/ModGallery";
+
 /** Where Skyrim SE's mod art lives on Nexus Mods; `thumbnails/` before the path for the small one. */
 export const MOD_IMAGES = "https://staticdelivery.nexusmods.com/mods/1704/images";
+
+/** How many mods the wireframe claims to have found, for the pagination to page through. */
+export const STATIC_RESULTS = 121867;
 
 /** One of the design's mods, standing in until there's an API. */
 export interface IStaticMod {
@@ -239,4 +244,28 @@ export const STATIC_MODS: IStaticMod[] = [
     fileSize: 90665,
     updatedAt: "2026-07-22",
   },
+];
+
+/** Skyrim SE screenshots from Nexus Mods, standing in for the selected mod's gallery. */
+const STATIC_SCREENSHOTS = [
+  "250116957-1745777127.jpg",
+  "56492487-1564931448.png",
+  "180634026-1782633084.jpg",
+  "66238536-1776153857.jpg",
+  "66238536-1778202756.jpg",
+];
+
+const SCREENSHOTS = "https://staticdelivery.nexusmods.com/images/1704";
+
+/** A stand-in gallery: the mod's own picture, then screenshots and the other mods' pictures. */
+export const galleryFor = (mod: IStaticMod): IGalleryImage[] => [
+  { src: `${MOD_IMAGES}/${mod.image}`, thumbnail: `${MOD_IMAGES}/thumbnails/${mod.image}` },
+  ...STATIC_SCREENSHOTS.map((image) => ({
+    src: `${SCREENSHOTS}/${image}`,
+    thumbnail: `${SCREENSHOTS}/thumbnails/${image}`,
+  })),
+  ...STATIC_MODS.filter((other) => other.image !== mod.image).map((other) => ({
+    src: `${MOD_IMAGES}/${other.image}`,
+    thumbnail: `${MOD_IMAGES}/thumbnails/${other.image}`,
+  })),
 ];
