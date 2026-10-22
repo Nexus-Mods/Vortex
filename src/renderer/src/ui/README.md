@@ -990,10 +990,12 @@ the user's own, gets a "…" menu, and the divider goes before the first of them
 `onAddView` puts a "+" at the end. Views aren't tabs (no panels), so each is a
 `ViewButton`, a `<button aria-pressed>`.
 
-The views are one Tab stop, the open one or else the first; the arrow keys move
-focus between them, wrapping, Home and End go to either end, and Space or Enter
-opens one. A user's view opens its menu from its "…", a right-click, Shift+F10 or
-the Down arrow. The "+" keeps its own Tab stop.
+The views are one Tab stop: the one last focused while focus is in the picker,
+else the open one, else the first. The arrow keys move focus between them,
+wrapping, Home and End go to either end, and Space or Enter opens one; with a
+modifier held they're left alone. A user's view opens its menu from its "…", a
+right-click, Shift+F10 or the Down arrow; the "…" sits beside the view's button,
+in the same pill, out of the Tab order. The "+" keeps its own Tab stop.
 
 ```tsx
 <ViewPicker

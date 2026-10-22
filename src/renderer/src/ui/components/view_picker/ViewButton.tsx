@@ -1,8 +1,6 @@
-import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
 import { mdiDotsHorizontal } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type MouseEvent, useState } from "react";
 
-import { Button } from "@/ui/components/button/Button";
 import {
   ContextMenu,
   contextMenuPosition,
@@ -11,7 +9,9 @@ import {
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
+import { PopoverButton } from "@/ui/components/popover/PopoverButton";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
+import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 interface IViewButtonMenu {
@@ -34,10 +34,10 @@ export type IViewButtonProps = Omit<
 };
 
 /**
- * A view in a `ViewPicker`, lit while it's the open one. With a `menu`, a "…" nested inside it,
- * as a menu row's pin is, opens the menu without opening the view, and so does a right-click,
- * Shift+F10 or the Down arrow; the "…" is out of the Tab order, so the picker stays one Tab stop.
- * Without one, a right-click does nothing.
+ * A view in a `ViewPicker`, lit while it's the open one. With a `menu`, a "…" beside it in the
+ * same pill opens the menu without opening the view, and so does a right-click, Shift+F10 or the
+ * Down arrow; the "…" is out of the Tab order, so the picker stays one Tab stop. Without one, a
+ * right-click does nothing.
  */
 export const ViewButton = ({
   children,
@@ -53,22 +53,18 @@ export const ViewButton = ({
   const button = (
     <button
       {...rest}
-      aria-label={menu ? children : rest["aria-label"]}
       aria-pressed={isPressed}
-      className={joinClasses(["nxm-view-button", className], {
-        "nxm-view-button-menu": !!menu,
-      })}
+      className={joinClasses([menu ? "nxm-view-button-label" : "nxm-view-button", className])}
       type="button"
       onContextMenu={(event) => {
         onContextMenu?.(event);
-        event.preventDefault();
-        if (menu) {
-          setContextMenu(contextMenuPosition(event));
+        if (!menu) {
+          event.preventDefault();
         }
       }}
       onKeyDown={(event) => {
         onKeyDown?.(event);
-        if (!menu || event.key !== "ArrowDown") {
+        if (!menu || event.key !== "ArrowDown" || event.defaultPrevented || hasModifierKey(event)) {
           return;
         }
 
@@ -77,22 +73,7 @@ export const ViewButton = ({
         setContextMenu({ x: left, y: bottom, element: event.currentTarget });
       }}
     >
-      {menu ? <span>{children}</span> : children}
-
-      {!!menu && (
-        <HeadlessPopoverButton
-          nested
-          appearance="weak"
-          aria-haspopup="menu"
-          aria-label={menu.label}
-          as={Button}
-          brand="neutral"
-          leftIconPath={mdiDotsHorizontal}
-          size="sm"
-          tabIndex={-1}
-          onClick={(event: MouseEvent) => event.stopPropagation()}
-        />
-      )}
+      {children}
     </button>
   );
 
@@ -101,8 +82,28 @@ export const ViewButton = ({
   }
 
   return (
-    <Popover className="flex">
+    <Popover
+      className="nxm-view-button nxm-view-button-menu"
+      onContextMenu={(event: MouseEvent) => {
+        if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) {
+          return;
+        }
+
+        event.preventDefault();
+        setContextMenu(contextMenuPosition(event));
+      }}
+    >
       {button}
+
+      <PopoverButton
+        appearance="weak"
+        aria-haspopup="menu"
+        aria-label={menu.label}
+        brand="neutral"
+        leftIconPath={mdiDotsHorizontal}
+        size="sm"
+        tabIndex={-1}
+      />
 
       <PopoverPanel anchor={{ gap: 4, to: "bottom start" }} className="nxm-popover-panel-dropdown">
         {({ close }) => <PopoverMenu actions={menu.actions} label={menu.label} onSelect={close} />}
