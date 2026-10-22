@@ -212,9 +212,23 @@ export const useToolbarOverflow = ({
     // the widths only exist once the controls are in the DOM, so the pass that
     // renders them all has to hand what it measured to the pass that collapses
     // them. Runs at most once per distinct action list, before paint.
+    const metrics = measureGroup(groupRef.current);
     // eslint-disable-next-line @eslint-react/set-state-in-effect
-    setMeasurement({ metrics: measureGroup(groupRef.current), signature });
-  }, [isMeasuring, signature]);
+    setMeasurement({ metrics, signature });
+    // The row's width as it is now, with every control rendered, not as last recorded: a
+    // toolbar sized by its content was only as wide as its old action list, and fitting
+    // a longer list into that collapsed it, for good, as the collapsed row then measured
+    // as narrow.
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setAvailableWidth(
+      measureAvailableWidth(
+        groupRef.current,
+        row,
+        row?.clientWidth ?? null,
+        metrics.kebabWidth + metrics.padding,
+      ),
+    );
+  }, [isMeasuring, row, signature]);
 
   const minimumFootprint = measurement
     ? measurement.metrics.kebabWidth + measurement.metrics.padding
