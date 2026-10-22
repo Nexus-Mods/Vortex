@@ -1,10 +1,3 @@
-import {
-  mdiCheck,
-  mdiHelpCircleOutline,
-  mdiMonitorArrowDownVariant,
-  mdiOpenInNew,
-  mdiWeb,
-} from "@mdi/js";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -23,6 +16,7 @@ import type { IDetailViewProps } from "@/extensions/health_check/views/content/t
 import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import opn from "@/util/opn";
@@ -151,7 +145,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
       <div className="rounded-lg border border-stroke-weak">
         <div className="flex items-center justify-between gap-x-4 border-b border-stroke-weak p-3">
           <div className="flex min-w-0 items-center gap-x-2">
-            <Icon className={severityStyle.textClassName} path={severityStyle.iconPath} />
+            <Icon {...getIconProps(severityStyle.icon)} className={severityStyle.textClassName} />
 
             <Typography as="div" className="font-semibold">
               {t("shared::mod_may_be_required_for", { modName: mod.requiredBy.modName })}
@@ -183,7 +177,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                   <Button
                     appearance="moderate"
                     brand="neutral"
-                    leftIconPath={mdiOpenInNew}
+                    leftIcon="open_in_new"
                     onClick={openModPage}
                   >
                     {t("detail::item::open_external_mod_page")}
@@ -195,7 +189,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                     <Button
                       appearance="moderate"
                       brand="neutral"
-                      leftIconPath={mdiOpenInNew}
+                      leftIcon="open_in_new"
                       onClick={handleModPage}
                     >
                       {t("detail::item::install_via_mod_page")}
@@ -205,7 +199,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                   <Button
                     appearance="strong"
                     brand="neutral"
-                    leftIconPath={mdiMonitorArrowDownVariant}
+                    leftIcon="install_desktop"
                     rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
                     size="sm"
                     onClick={handleInstall}
@@ -226,7 +220,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                 : modToFileData(mod, mod.mainFile)
             }
             {...(mod.externalRequirement
-              ? { fileIconPath: mdiWeb, hideImage: true, onOpenFile: openModPage }
+              ? { fileIcon: "language", hideImage: true, onOpenFile: openModPage }
               : {})}
           />
 
@@ -247,7 +241,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
                 <Button
                   appearance="moderate"
                   brand="neutral"
-                  leftIconPath={mdiCheck}
+                  leftIcon="check"
                   onClick={handleConfirmInstall}
                 >
                   {t("detail::item::confirm_install")}
@@ -263,7 +257,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         as="div"
         className="flex gap-x-2 rounded-lg border border-stroke-weak px-4 py-3"
       >
-        <Icon className="mt-0.5" path={mdiHelpCircleOutline} size="sm" />
+        <Icon className="mt-0.5" name="help" size="sm" />
 
         <p>
           <Trans

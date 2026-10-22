@@ -1,4 +1,3 @@
-import { mdiFileDocumentOutline } from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -26,7 +25,7 @@ export const ChangelogButton = ({ children }: IChangelogButtonProps) => {
             as={PopoverButton}
             brand="info"
             label={t("View changelog")}
-            leftIconPath={mdiFileDocumentOutline}
+            leftIcon="description"
             size="sm"
             tooltipDisabled={open}
           />

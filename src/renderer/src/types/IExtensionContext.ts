@@ -29,6 +29,7 @@ import type {
 import type { INexusAPIExtension } from "../extensions/nexus_integration/types/INexusAPIExtension";
 import type ReduxProp from "../ReduxProp";
 import type { SanityCheck } from "../store/reduxSanity";
+import type { IIconSource } from "../ui/components/icon/Icon";
 import type { Archive } from "../util/archives";
 import type { i18n, TFunction } from "../util/i18n";
 import type {
@@ -214,7 +215,13 @@ export interface IMainPageOptions {
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
   onReset?: () => void;
+  /**
+   * An SVG path for the page's icon in the menu, for an extension that brings its own.
+   * @deprecated Use `menuIcon: { path }` instead.
+   */
   mdi?: string;
+  /** The page's icon in the menu: a Material Symbol by name, or an SVG path as `{ path }`. */
+  menuIcon?: IIconSource;
   /** Self-subscribing status badge shown on this page's left-menu item. */
   menuBadge?: React.ComponentType<React.PropsWithChildren<unknown>>;
 }

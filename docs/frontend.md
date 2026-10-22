@@ -269,8 +269,23 @@ label, so selecting a tab stopped working as soon as the label was translated.
 
 ## Icons
 
-- MDI paths from `@mdi/js`, mapped in `views/components/iconMap.ts` via
-  `getIconPath(name)`. Pages can pass an `mdi` path directly.
+- `<Icon name="settings" />` draws a Material Symbol from the variable font, by the
+  symbol's name. `filled`, `weight`, `grade` and `opticalSize` set the font's axes; `size` keeps
+  the same steps as for a path. `Icon` takes either `name` or `path`.
+- The whole font ships, so `name` takes any Material Symbol, and a name the font doesn't have
+  fails the typecheck.
+- A component's `icon` prop (`leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by
+  name (`icon="star"`), a symbol with its axes (`icon={{ name: "star", filled: true }}`), an SVG
+  path for the custom `nxm*` icons the font lacks (`icon={{ path: nxmMod }}`), or an element. The type
+  is `IIconProp` (`IIconSource` where an element makes no sense), from `Icon.tsx`. Legacy icon names,
+  which actions and extensions register with, resolve through `getIcon(name)` in
+  `views/components/icon_map/iconMap.ts`. Pages can pass a `menuIcon`, a symbol
+  or `{ path }`; an extension's own `mdi` path still works, but is deprecated in its favour.
+- An icon's `title` names it for screen readers; it isn't a tooltip. On a symbol it becomes the
+  `aria-label` and shows nothing on hover, by design. A path icon's SVG `<title>` happens to get
+  the browser's own hover text, but don't rely on that either. For text on hover, wrap the icon,
+  or the control it sits in, in `Tooltip` (`ui/components/tooltip/Tooltip.tsx`).
+  A decorative icon takes no `title`.
 - Custom SVGs must use the 24x24 viewBox the `Icon` component renders. To port a
   Material Symbols icon (`0 -960 960 960`): scale by 0.025 and offset absolute Y
   by +960. Keep it a single filled path with `fill="currentColor"`.

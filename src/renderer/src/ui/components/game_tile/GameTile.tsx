@@ -1,16 +1,8 @@
-import {
-  mdiAccount,
-  mdiDotsVertical,
-  mdiGog,
-  mdiMicrosoftXbox,
-  mdiSteam,
-  mdiUbisoft,
-} from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { Tier } from "@/extensions/gamemode_management/tiered/types";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
 import { Image } from "@/ui/components/image/Image";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Popover } from "@/ui/components/popover/Popover";
@@ -20,19 +12,26 @@ import { PopoverButton } from "@/ui/components/popover/PopoverButton";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
-import { nxmElectronicArts, nxmEpicGames } from "@/ui/icon-paths";
+import {
+  nxmElectronicArts,
+  nxmEpicGames,
+  nxmGog,
+  nxmSteam,
+  nxmUbisoft,
+  nxmXbox,
+} from "@/ui/icon-paths";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
 /** Known stores, keyed by the id `IDiscoveryResult.store` carries. */
-const STORES: Record<string, { iconPath: string; label: string }> = {
-  epic: { iconPath: nxmEpicGames, label: "Epic" },
-  gog: { iconPath: mdiGog, label: "GOG" },
-  origin: { iconPath: nxmElectronicArts, label: "Origin" },
-  steam: { iconPath: mdiSteam, label: "Steam" },
-  uplay: { iconPath: mdiUbisoft, label: "Ubisoft" },
-  xbox: { iconPath: mdiMicrosoftXbox, label: "Xbox" },
+const STORES: Record<string, { icon: IIconSource; label: string }> = {
+  epic: { icon: { path: nxmEpicGames }, label: "Epic" },
+  gog: { icon: { path: nxmGog }, label: "GOG" },
+  origin: { icon: { path: nxmElectronicArts }, label: "Origin" },
+  steam: { icon: { path: nxmSteam }, label: "Steam" },
+  uplay: { icon: { path: nxmUbisoft }, label: "Ubisoft" },
+  xbox: { icon: { path: nxmXbox }, label: "Xbox" },
 };
 
 export interface IGameTileProps {
@@ -115,7 +114,7 @@ export const GameTile = ({
               )}
 
               {!!store && (
-                <Pill appearance="scrim" brand="light" iconPath={knownStore?.iconPath}>
+                <Pill appearance="scrim" brand="light" icon={knownStore?.icon}>
                   {knownStore?.label ?? titleCase(store)}
                 </Pill>
               )}
@@ -129,7 +128,7 @@ export const GameTile = ({
                       aria-label={menu.label}
                       brand="neutral"
                       className={revealedWhenActive}
-                      leftIconPath={mdiDotsVertical}
+                      leftIcon="more_vert"
                       size="sm"
                     />
                   </Tooltip>
@@ -155,7 +154,7 @@ export const GameTile = ({
                     placement="top"
                   >
                     <div className={joinClasses(["flex items-center gap-x-1", revealedWhenActive])}>
-                      <Icon className="text-primary-moderate" path={mdiAccount} size="xs" />
+                      <Icon filled className="text-primary-moderate" name="person" size="xs" />
 
                       <Typography
                         appearance="moderate"

@@ -1,4 +1,3 @@
-import { mdiCheck, mdiChevronDown, mdiChevronUp, mdiContentCopy } from "@mdi/js";
 import React, { useEffect, useState } from "react";
 
 import { Button } from "@/ui/components/button/Button";
@@ -72,7 +71,7 @@ export const MessageBox = ({
         >
           {isOpen ? hideLabel : showLabel}
 
-          <Icon path={isOpen ? mdiChevronUp : mdiChevronDown} size="sm" />
+          <Icon name={isOpen ? "keyboard_arrow_up" : "keyboard_arrow_down"} size="sm" />
         </button>
       )}
 
@@ -93,7 +92,7 @@ export const MessageBox = ({
               brand="neutral"
               className="nxm-message-box-copy"
               data-testid="dialog-message-copy"
-              leftIconPath={hasCopied ? mdiCheck : mdiContentCopy}
+              leftIcon={hasCopied ? "check" : "content_copy"}
               size="sm"
               onClick={copy}
             />

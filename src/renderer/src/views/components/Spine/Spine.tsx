@@ -1,4 +1,3 @@
-import { mdiHome, mdiHomeOutline, mdiPlus } from "@mdi/js";
 import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -70,7 +69,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
       data-testid="spine"
     >
       <SpineButton
-        iconPath={selection.type === "home" ? mdiHome : mdiHomeOutline}
+        icon={{ name: "home", filled: selection.type === "home" }}
         isActive={selection.type === "home"}
         title="Home"
         onClick={selectHome}
@@ -104,7 +103,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
 
             <SpineButton
               border="hidden"
-              iconPath={mdiPlus}
+              icon="add"
               title="Games"
               onClick={() => handleGlobalPageClick("Games")}
             />

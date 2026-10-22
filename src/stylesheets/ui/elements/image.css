@@ -1,5 +1,6 @@
 @layer components {
     .nxm-image {
+        container-type: size;
         z-index: 0;
         display: flex;
         flex-shrink: 0;
@@ -54,21 +55,20 @@
         }
 
         & .nxm-image-fallback {
-            width: auto;
-            aspect-ratio: 1;
-            max-height: 75%;
+            width: 1em;
+            height: 1em;
             color: var(--color-neutral-subdued);
-            height: calc(var(--spacing) * 5);
+            font-size: min(calc(var(--spacing) * 5), 75cqh);
         }
 
         & .nxm-image-spinner {
-            width: auto;
+            display: flex;
+            width: 1em;
+            height: 1em;
             flex-shrink: 0;
-            aspect-ratio: 1;
-            max-height: 75%;
             position: relative;
             color: var(--color-neutral-subdued);
-            height: calc(var(--spacing) * 5);
+            font-size: min(calc(var(--spacing) * 5), 75cqh);
             animation: var(--animate-deferred-fade-in), var(--animate-spin);
         }
 

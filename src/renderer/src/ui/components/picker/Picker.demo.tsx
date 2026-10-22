@@ -3,7 +3,6 @@
  * Demonstrates the Picker component variants and features
  */
 
-import { mdiPalette, mdiTranslate } from "@mdi/js";
 import React, { useState } from "react";
 
 import { type IListboxOption } from "@/ui/components/listbox/ListboxOption";
@@ -40,18 +39,18 @@ const colorOptions = [
 ] satisfies IListboxOption<string>[];
 
 const languageOptions = [
-  { label: "English", value: "en", iconPath: mdiTranslate },
-  { label: "French", value: "fr", iconPath: mdiTranslate },
-  { label: "German", value: "de", iconPath: mdiTranslate },
-  { label: "Spanish", value: "es", iconPath: mdiTranslate },
-  { label: "Japanese", value: "ja", iconPath: mdiTranslate },
+  { label: "English", value: "en", icon: "translate" },
+  { label: "French", value: "fr", icon: "translate" },
+  { label: "German", value: "de", icon: "translate" },
+  { label: "Spanish", value: "es", icon: "translate" },
+  { label: "Japanese", value: "ja", icon: "translate" },
 ] satisfies IListboxOption<string>[];
 
 const themeOptions = [
-  { label: "Default", value: "default", iconPath: mdiPalette },
-  { label: "Dark", value: "dark", iconPath: mdiPalette },
-  { label: "Light", value: "light", iconPath: mdiPalette },
-  { label: "High Contrast", value: "high-contrast", iconPath: mdiPalette },
+  { label: "Default", value: "default", icon: { name: "palette", filled: true } },
+  { label: "Dark", value: "dark", icon: { name: "palette", filled: true } },
+  { label: "Light", value: "light", icon: { name: "palette", filled: true } },
+  { label: "High Contrast", value: "high-contrast", icon: { name: "palette", filled: true } },
 ] satisfies IListboxOption<string>[];
 
 export const PickerDemo = () => {
@@ -91,7 +90,7 @@ export const PickerDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Options can include icons via the iconPath prop. Multiple pickers can be used together for
+          Options can include icons via the icon prop. Multiple pickers can be used together for
           related selections.
         </Typography>
 
@@ -134,7 +133,7 @@ export const PickerDemo = () => {
 
           <li>A checkmark icon appears next to the currently selected option</li>
 
-          <li>Options can include icons via the iconPath or icon props</li>
+          <li>Options can include icons via the icon prop, a symbol, an SVG path or a node</li>
         </Typography>
       </div>
     </div>

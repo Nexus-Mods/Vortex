@@ -1,4 +1,3 @@
-import { mdiCheck, mdiContentCopy } from "@mdi/js";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -117,7 +116,7 @@ describe("MessageBox", () => {
 
       const button = screen.getByRole("button", { name: "Copy message" });
       expect(button).toHaveTextContent("");
-      expect(button.querySelector("svg")).toBeInTheDocument();
+      expect(button.querySelector(".nxm-icon")).toBeInTheDocument();
 
       await userEvent.hover(button);
 
@@ -136,19 +135,19 @@ describe("MessageBox", () => {
       renderBox();
 
       const copy = screen.getByTestId("dialog-message-copy");
-      const iconPath = () => copy.querySelector("path")?.getAttribute("d");
-      expect(iconPath()).toBe(mdiContentCopy);
+      const symbol = () => copy.querySelector("[data-symbol]")?.getAttribute("data-symbol");
+      expect(symbol()).toBe("content_copy");
 
       await userEvent.click(copy);
 
       expect(writeText).toHaveBeenCalledWith("first line\nsecond line");
-      await waitFor(() => expect(iconPath()).toBe(mdiCheck));
+      await waitFor(() => expect(symbol()).toBe("check"));
 
       await act(async () => {
         vi.advanceTimersByTime(2000);
       });
 
-      expect(iconPath()).toBe(mdiContentCopy);
+      expect(symbol()).toBe("content_copy");
     });
   });
 });

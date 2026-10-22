@@ -60,9 +60,10 @@
             background-color: var(--color-surface-translucent-high);
         }
 
-        > svg {
+        > .nxm-icon {
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
+            font-size: calc(var(--spacing) * 4);
         }
     }
 
@@ -134,6 +135,7 @@
             flex-shrink: 0;
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
+            font-size: calc(var(--spacing) * 4);
         }
 
         &.nxm-dropdown-item-primary .nxm-dropdown-item-icon:first-child {

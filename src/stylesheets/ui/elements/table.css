@@ -248,9 +248,10 @@
         border-radius: var(--radius-sm);
         color: var(--color-neutral-moderate);
 
-        > svg {
+        > .nxm-icon {
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
+            font-size: calc(var(--spacing) * 4);
         }
 
         &:hover {
@@ -390,6 +391,7 @@
         flex-shrink: 0;
         width: calc(var(--spacing) * 3);
         height: calc(var(--spacing) * 3);
+        font-size: calc(var(--spacing) * 3);
         color: var(--color-translucent-strong);
     }
 

@@ -1,14 +1,14 @@
-import { mdiDeleteOutline, mdiPencil } from "@mdi/js";
 import React, { useState } from "react";
 
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { type IViewPickerView, ViewPicker } from "./ViewPicker";
 
-const menuActions = [
+const menuActions: IMenuAction[][] = [
   [
-    { label: "Rename", iconPath: mdiPencil, onClick: () => undefined },
-    { label: "Delete", iconPath: mdiDeleteOutline, onClick: () => undefined },
+    { label: "Rename", icon: "edit", onClick: () => undefined },
+    { label: "Delete", icon: "delete", onClick: () => undefined },
   ],
 ];
 

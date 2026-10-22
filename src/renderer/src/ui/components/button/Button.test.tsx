@@ -157,29 +157,40 @@ describe("Button", () => {
 
     it("renders two icons (circle + spinner) when isLoading=true", () => {
       render(<Button isLoading={true}>Click</Button>);
-      // ButtonIcon in loading state renders two SVG icons
-      expect(screen.getAllByRole("presentation")).toHaveLength(2);
+      // ButtonIcon in loading state renders two symbols
+      expect(document.querySelectorAll("[data-symbol]")).toHaveLength(2);
     });
   });
 
   describe("icon-only", () => {
     it("applies icon-only class when no children or customContent", () => {
-      render(<Button aria-label="icon only" leftIconPath="some-path" />);
+      render(<Button aria-label="icon only" leftIcon={{ path: "some-path" }} />);
       expect(screen.getByRole("button", { name: /icon only/i })).toHaveClass(
         "nxm-button-icon-only",
       );
     });
 
     it("does not apply icon-only class when children are present", () => {
-      render(<Button leftIconPath="some-path">Click</Button>);
+      render(<Button leftIcon={{ path: "some-path" }}>Click</Button>);
       expect(getButton()).not.toHaveClass("nxm-button-icon-only");
     });
   });
 
   describe("icons", () => {
     it("renders left icon from path", () => {
-      render(<Button leftIconPath="mdi-home">Click</Button>);
+      render(<Button leftIcon={{ path: "mdi-home" }}>Click</Button>);
       expect(screen.getByRole("presentation")).toBeInTheDocument();
+    });
+
+    it("renders icons on either side from a symbol, with the fill axis if given", () => {
+      render(
+        <Button leftIcon="add" rightIcon={{ name: "star", filled: true }}>
+          Click
+        </Button>,
+      );
+      const symbols = [...document.querySelectorAll<HTMLElement>("[data-symbol]")];
+      expect(symbols.map((symbol) => symbol.dataset.symbol)).toEqual(["add", "star"]);
+      expect(symbols[1].style.fontVariationSettings).toBe('"FILL" 1');
     });
 
     it("renders left icon from ReactNode", () => {
@@ -188,7 +199,7 @@ describe("Button", () => {
     });
 
     it("renders right icon from path", () => {
-      render(<Button rightIconPath="mdi-arrow">Click</Button>);
+      render(<Button rightIcon={{ path: "mdi-arrow" }}>Click</Button>);
       expect(screen.getByRole("presentation")).toBeInTheDocument();
     });
 

@@ -266,9 +266,6 @@ catalogs:
     '@iarna/toml':
       specifier: 2.2.5
       version: 2.2.5
-    '@mdi/js':
-      specifier: 7.4.47
-      version: 7.4.47
     '@microsoft/api-extractor':
       specifier: 7.58.9
       version: 7.58.9
@@ -704,6 +701,9 @@ catalogs:
     markdown-ast:
       specifier: 0.2.1
       version: 0.2.1
+    material-symbols:
+      specifier: 0.48.0
+      version: 0.48.0
     memoize-one:
       specifier: 5.2.1
       version: 5.2.1
@@ -1363,9 +1363,6 @@ importers:
 
   extensions/feedback:
     devDependencies:
-      '@mdi/js':
-        specifier: 'catalog:'
-        version: 7.4.47
       '@nexusmods/vortex-api':
         specifier: workspace:*
         version: link:../../packages/vortex-api
@@ -4019,9 +4016,6 @@ importers:
       '@hot-updater/bsdiff':
         specifier: 'catalog:'
         version: 0.30.6
-      '@mdi/js':
-        specifier: 'catalog:'
-        version: 7.4.47
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
@@ -4570,9 +4564,6 @@ importers:
       '@hot-updater/bsdiff':
         specifier: 'catalog:'
         version: 0.30.6
-      '@mdi/js':
-        specifier: 'catalog:'
-        version: 7.4.47
       '@microsoft/api-extractor':
         specifier: 'catalog:'
         version: 7.58.9(@types/node@24.12.2)
@@ -4903,6 +4894,9 @@ importers:
       markdown-ast:
         specifier: 'catalog:'
         version: 0.2.1
+      material-symbols:
+        specifier: 'catalog:'
+        version: 0.48.0
       memoize-one:
         specifier: 'catalog:'
         version: 5.2.1
@@ -6247,9 +6241,6 @@ packages:
     resolution: {integrity: sha512-9QOtNffcOF/c1seMCDnjckb3R9WHcG34tky+FHpNKKCW0wc/scYLwMtO+ptyGUfMW0/b/n4qRiALlaFHc9Oj7Q==}
     engines: {node: '>= 10.0.0'}
 
-  '@mdi/js@7.4.47':
-    resolution: {integrity: sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==}
-
   '@microsoft/api-extractor-model@7.33.8':
     resolution: {integrity: sha512-aIcoQggPyer3B6Ze3usz0YWC/oBwUHfRH5ETUsr+oT2BRA6SfTJl7IKPcPZkX4UR+PohowzW4uMxsvjrn8vm+w==}
 
@@ -6612,6 +6603,7 @@ packages:
   '@opentelemetry/sdk-trace-base@2.8.0':
     resolution: {integrity: sha512-mhU4jp+vW0mGbFRd+GeXHvmfA4aDqWjBjLC3pE5XMpLs0IE2ryYb019Ts2AQrOq67gaTF25D91+fgvEHDZEnuQ==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
@@ -10625,6 +10617,9 @@ packages:
   material-colors@1.2.6:
     resolution: {integrity: sha512-6qE4B9deFBIa9YSpOc9O0Sgc43zTeVYbgDT5veRKSlB2+ZuHNoVVxA1L/ckMUayV9Ay9y7Z/SZCLcGteW9i7bg==}
 
+  material-symbols@0.48.0:
+    resolution: {integrity: sha512-onKVWr4wcIWRbm+u+vkICQkw68KLqR2NRNhI0eafWvkE1FnHXHsQ8yUuSpkmVeARhbgVB0G/5ItfMSresLsBFw==}
+
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
@@ -14359,8 +14354,6 @@ snapshots:
       tmp-promise: 3.0.3
     transitivePeerDependencies:
       - supports-color
-
-  '@mdi/js@7.4.47': {}
 
   '@microsoft/api-extractor-model@7.33.8(@types/node@24.12.2)':
     dependencies:
@@ -18766,6 +18759,8 @@ snapshots:
   markdown-ast@0.2.1: {}
 
   material-colors@1.2.6: {}
+
+  material-symbols@0.48.0: {}
 
   math-intrinsics@1.1.0: {}
 

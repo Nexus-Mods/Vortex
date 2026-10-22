@@ -65,8 +65,6 @@ vi.mock("react-redux", async () => {
   };
 });
 
-import { nxmExperiment, nxmRuleSettings } from "@/ui/icon-paths";
-
 import { setAutoDeployment } from "../../settings_interface/actions/automation";
 import { setBetaModsTable } from "../actions/settings";
 import { useModToolbarActions } from "./useModToolbarActions.hook";
@@ -260,7 +258,7 @@ describe("useModToolbarActions auto-apply", () => {
   });
 
   it("shows the rule settings symbol", () => {
-    expect(autoApply()?.iconPath).toBe(nxmRuleSettings);
+    expect(autoApply()?.icon).toBe("rule_settings");
   });
 
   it("offers to turn auto-apply on while it's off", () => {
@@ -307,7 +305,7 @@ describe("useModToolbarActions beta table", () => {
   });
 
   it("shows the experiment flask", () => {
-    expect(betaTable()?.iconPath).toBe(nxmExperiment);
+    expect(betaTable()?.icon).toBe("experiment");
   });
 
   it("offers the beta view while the classic one shows", () => {

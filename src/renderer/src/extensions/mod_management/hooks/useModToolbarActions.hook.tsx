@@ -1,4 +1,3 @@
-import { mdiPlusCircleOutline, mdiPuzzleOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import _ from "lodash";
 import React, { useCallback, useMemo } from "react";
@@ -15,7 +14,6 @@ import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { trackedActions } from "@/ui/components/toolbar/ToolbarGroup";
-import { nxmExperiment, nxmRuleSettings } from "@/ui/icon-paths";
 import { fileMD5 } from "@/util/checksum";
 import { TemporaryError, UserCanceled } from "@/util/CustomErrors";
 import * as fs from "@/util/fs";
@@ -23,7 +21,7 @@ import type { TFunction } from "@/util/i18n";
 import * as selectors from "@/util/selectors";
 import { getSafe } from "@/util/storeHelper";
 import { batchDispatch } from "@/util/util";
-import { getIconPath } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/icon_map/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
 import { setAutoDeployment } from "../../settings_interface/actions/automation";
@@ -136,7 +134,7 @@ const useAutoApplyAction = (t: TFunction): IPositionedAction => {
               label: t("Enable auto-apply"),
               description: t("Automatically apply changes as you make them."),
             }),
-        iconPath: nxmRuleSettings,
+        icon: "rule_settings",
         active: autoApply,
         section: "automation",
         testId: "auto-apply",
@@ -171,7 +169,7 @@ const useBetaTableAction = (t: TFunction): IPositionedAction => {
               label: t("Switch to beta view"),
               description: t("Try the new mod list. Some features aren't supported yet."),
             }),
-        iconPath: nxmExperiment,
+        icon: "experiment",
         active: betaTable,
         pinned: true,
         section: "view",
@@ -300,7 +298,7 @@ const usePurgeAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "purge",
         label: t("Purge Mods"),
-        iconPath: getIconPath("purge"),
+        icon: getIcon("purge"),
         pinned: true,
         testId: "purge-mods",
         onClick: activator !== undefined ? purge : noMethod,
@@ -381,7 +379,7 @@ const useInstallFromFileAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "install-from-file",
         label: t("Install From File"),
-        iconPath: mdiPlusCircleOutline,
+        icon: "add_circle",
         pinned: true,
         testId: "install-from-archive",
         onClick: install,
@@ -507,7 +505,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         ? {
             id: "check-versions",
             label: t("Checking for mod updates"),
-            iconPath: getIconPath("refresh"),
+            icon: getIcon("refresh"),
             pinned: true,
             disabled: true,
             isLoading: true,
@@ -515,7 +513,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         : {
             id: "check-versions",
             label: t("Check for Updates"),
-            iconPath: getIconPath("refresh"),
+            icon: getIcon("refresh"),
             pinned: true,
             testId: "check-mod-updates-button",
             onClick: check,
@@ -588,7 +586,7 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
         id: definition.title,
         label: !notice ? definition.title : `${definition.title} (${notice})`,
         brand: brands[index],
-        iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
+        icon: getIcon(definition.icon, "extension"),
         pinned: definition.options?.pinned ?? false,
         disabled: typeof condition === "string",
         extension: definition.options?.namespace,
@@ -644,7 +642,7 @@ const useActionMenu = (
       action: {
         id: menu.id,
         label: `${label}...`,
-        iconPath: getIconPath(menu.icon),
+        icon: getIcon(menu.icon),
         pinned: menu.pinned,
         panelRole: "menu",
         panel: ({ dismiss }) => (

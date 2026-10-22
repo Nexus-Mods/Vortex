@@ -1,18 +1,6 @@
 import { pathToFileURL } from "url";
 
 import { MenuButton } from "@headlessui/react";
-import {
-  mdiArrowDown,
-  mdiArrowUp,
-  mdiDelete,
-  mdiDotsVertical,
-  mdiPencil,
-  mdiPin,
-  mdiPinOff,
-  mdiPlay,
-  mdiFlash,
-  mdiFlashOff,
-} from "@mdi/js";
 import React, { type FC } from "react";
 import { Image } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
@@ -106,7 +94,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
                 brand="neutral"
                 appearance="weak"
                 disabled={isFirst}
-                leftIconPath={mdiArrowUp}
+                leftIcon="arrow_upward"
                 title={isFirst ? t("Already at the top") : t("Move up")}
                 onClick={() => onMoveUp?.(starter)}
               />
@@ -115,7 +103,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
                 brand="neutral"
                 appearance="weak"
                 disabled={isLast}
-                leftIconPath={mdiArrowDown}
+                leftIcon="arrow_downward"
                 title={isLast ? t("Already at the bottom") : t("Move down")}
                 onClick={() => onMoveDown?.(starter)}
               />
@@ -131,7 +119,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
               brand="neutral"
               appearance="weak"
               disabled={!isPinned && pinDisabled}
-              leftIconPath={isPinned ? mdiPinOff : mdiPin}
+              leftIcon={isPinned ? "keep_off" : "keep"}
               title={
                 !isPinned && pinDisabled
                   ? pinDisabledReason
@@ -148,18 +136,18 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
               as={Button}
               brand="neutral"
               appearance="weak"
-              leftIconPath={mdiDotsVertical}
+              leftIcon="more_vert"
               size="sm"
             />
 
             <DropdownItems>
-              <DropdownItem leftIconPath={mdiPencil} onClick={() => onEdit(starterInfo)}>
+              <DropdownItem leftIcon="edit" onClick={() => onEdit(starterInfo)}>
                 {t("Edit")}
               </DropdownItem>
 
               <DropdownItem
                 disabled={!isPrimary && !isValid}
-                leftIconPath={isPrimary ? mdiFlashOff : mdiFlash}
+                leftIcon={isPrimary ? "flash_off" : "flash_on"}
                 onClick={() => onSetPrimary(starterInfo)}
               >
                 {isPrimary ? t("Remove default launcher") : t("Set as default launcher")}
@@ -168,7 +156,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
               {!starter.isGame && (
                 <DropdownItem
                   brand="danger"
-                  leftIconPath={mdiDelete}
+                  leftIcon="delete"
                   onClick={() => onRemove(starterInfo)}
                 >
                   {t("Delete")}
@@ -184,7 +172,7 @@ export const ToolRow: FC<React.PropsWithChildren<ToolRowProps>> = ({
           brand="neutral"
           appearance="strong"
           disabled={!isValid}
-          leftIconPath={mdiPlay}
+          leftIcon={{ name: "play_arrow", filled: true }}
           title={t("Launch tool")}
           onClick={() => onRun(starterInfo)}
         />

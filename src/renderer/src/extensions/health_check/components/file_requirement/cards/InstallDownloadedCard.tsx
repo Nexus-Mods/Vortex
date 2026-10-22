@@ -1,4 +1,3 @@
-import { mdiCheck, mdiSwapHorizontal } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -65,7 +64,7 @@ export const InstallDownloadedCard = ({
           <Button
             appearance="subdued"
             brand="neutral"
-            leftIconPath={nxmModOutline}
+            leftIcon={{ path: nxmModOutline }}
             onClick={handleViewInMods}
           >
             {t("detail::item::view_in_mods")}
@@ -75,7 +74,7 @@ export const InstallDownloadedCard = ({
             appearance="strong"
             brand="neutral"
             isLoading={isLoading}
-            leftIconPath={isSwitch ? mdiSwapHorizontal : mdiCheck}
+            leftIcon={isSwitch ? "swap_horiz" : "check"}
             onClick={handleInstall}
           >
             {isLoading

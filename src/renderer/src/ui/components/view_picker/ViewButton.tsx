@@ -1,4 +1,3 @@
-import { mdiDotsHorizontal } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type MouseEvent, useState } from "react";
 
 import {
@@ -100,7 +99,7 @@ export const ViewButton = ({
         aria-haspopup="menu"
         aria-label={menu.label}
         brand="neutral"
-        leftIconPath={mdiDotsHorizontal}
+        leftIcon="more_horiz"
         size="sm"
         tabIndex={-1}
       />

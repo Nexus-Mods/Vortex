@@ -20,7 +20,7 @@ const registerMainPage = (
   return {
     id: options.id || title,
     icon,
-    mdi: options.mdi,
+    menuIcon: options.menuIcon ?? (options.mdi ? { path: options.mdi } : undefined),
     title,
     component,
     propsFunc: options.props || emptyFunc,

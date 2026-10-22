@@ -1,4 +1,3 @@
-import { mdiDeleteOutline, mdiMessageStarOutline, mdiPencil, mdiTune } from "@mdi/js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -70,7 +69,7 @@ export const ModsTableToolbar = ({
       {
         id: "feedback",
         label: t("Give feedback"),
-        iconPath: mdiMessageStarOutline,
+        icon: "rate_review",
         onClick: () => window.api.shell.openUrl(MODS_TABLE_FEEDBACK_URL),
       },
       { ...displayOptions, id: "view-options", panelHandle: optionsPanel },
@@ -100,13 +99,13 @@ export const ModsTableToolbar = ({
       label: view.label,
       actions: [
         [
-          { label: t("Rename view"), iconPath: mdiPencil, onClick: () => setNaming(view) },
+          { label: t("Rename view"), icon: "edit", onClick: () => setNaming(view) },
           {
             label: t("Edit view options"),
-            iconPath: mdiTune,
+            icon: "tune",
             onClick: () => editOptions(view.id),
           },
-          { label: t("Delete view"), iconPath: mdiDeleteOutline, onClick: () => setDeleting(view) },
+          { label: t("Delete view"), icon: "delete", onClick: () => setDeleting(view) },
         ],
       ],
     };

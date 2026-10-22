@@ -2179,7 +2179,7 @@ function init(context: IExtensionContext): boolean {
         modSources: getModSources(),
         onDropNonArchiveFiles,
       }),
-      mdi: nxmModOutline,
+      menuIcon: { path: nxmModOutline },
     },
   );
 

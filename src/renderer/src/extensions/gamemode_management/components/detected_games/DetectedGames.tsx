@@ -1,4 +1,3 @@
-import { mdiLoading, mdiRefresh, mdiWifiOff } from "@mdi/js";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -182,7 +181,7 @@ export const DetectedGames = ({
           </Button>
         ),
         iconClassName: "animate-spin text-primary-strong",
-        iconPath: mdiLoading,
+        icon: "progress_activity" as const,
         message: t("We'll show detected games here as we find them."),
         title: t("Scanning for installed games..."),
       };
@@ -198,7 +197,7 @@ export const DetectedGames = ({
     if (failed) {
       return {
         children: retryButton,
-        iconPath: mdiWifiOff,
+        icon: "wifi_off" as const,
         message: t(
           "We're having trouble connecting. Check your internet connection and try again.",
         ),
@@ -259,7 +258,11 @@ export const DetectedGames = ({
           <div className="flex items-center gap-x-2">
             {scanning ? (
               <>
-                <Icon className="animate-spin text-primary-strong" path={mdiLoading} size="sm" />
+                <Icon
+                  className="animate-spin text-primary-strong"
+                  name="progress_activity"
+                  size="sm"
+                />
 
                 <Button appearance="moderate" brand="neutral" size="sm" onClick={handleCancelScan}>
                   {t("Cancel scan")}
@@ -271,7 +274,7 @@ export const DetectedGames = ({
                   appearance="subdued"
                   aria-label={t("Refresh scan")}
                   brand="neutral"
-                  leftIconPath={mdiRefresh}
+                  leftIcon="refresh"
                   size="sm"
                   onClick={handleScan}
                 />
@@ -305,8 +308,8 @@ export const DetectedGames = ({
         <Listing
           entityCount={shownGames.length}
           noResultsChildren={emptyState.children}
+          noResultsIcon={emptyState.icon}
           noResultsIconClassName={emptyState.iconClassName}
-          noResultsIconPath={emptyState.iconPath}
           noResultsMessage={emptyState.message}
           noResultsTitle={emptyState.title}
         >

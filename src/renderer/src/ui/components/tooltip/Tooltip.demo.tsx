@@ -3,19 +3,10 @@
  * Demonstrates rich content, collision handling near the window edges, and delay grouping
  */
 
-import {
-  mdiAlertCircleOutline,
-  mdiCheckCircleOutline,
-  mdiFolderOpenOutline,
-  mdiHistory,
-  mdiOpenInNew,
-  mdiRefresh,
-  mdiTune,
-} from "@mdi/js";
 import React, { useState } from "react";
 
 import { Button } from "@/ui/components/button/Button";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
@@ -23,11 +14,11 @@ import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { Tooltip } from "./Tooltip";
 import { TooltipDelayGroup } from "./TooltipDelayGroup";
 
-const toolbarActions = [
-  { iconPath: mdiFolderOpenOutline, label: "Open mods folder" },
-  { iconPath: mdiHistory, label: "Deployment history" },
-  { iconPath: mdiRefresh, label: "Rescan mods" },
-  { iconPath: mdiTune, label: "Display options" },
+const toolbarActions: Array<{ icon: IIconSource; label: string }> = [
+  { icon: "folder_open", label: "Open mods folder" },
+  { icon: "history", label: "Deployment history" },
+  { icon: "refresh", label: "Rescan mods" },
+  { icon: "tune", label: "Display options" },
 ];
 
 /** Rich body: a heading, supporting copy, and a status list. */
@@ -43,13 +34,13 @@ const ModHealthContent = () => (
 
     <div className="space-y-1">
       <div className="flex items-center gap-x-2">
-        <Icon className="text-success-strong" path={mdiCheckCircleOutline} size="xs" />
+        <Icon className="text-success-strong" name="check_circle" size="xs" />
 
         <Typography typographyType="body-sm">SKSE64 detected</Typography>
       </div>
 
       <div className="flex items-center gap-x-2">
-        <Icon className="text-warning-strong" path={mdiAlertCircleOutline} size="xs" />
+        <Icon className="text-warning-strong" name="error" size="xs" />
 
         <Typography typographyType="body-sm">Load order not yet sorted</Typography>
       </div>
@@ -165,7 +156,7 @@ export const TooltipDemo = () => (
       <div className="flex flex-wrap items-center gap-4">
         <Tooltip content="Two of this mod's requirements are not installed yet" placement="right">
           <span className="inline-flex">
-            <Icon className="text-warning-strong" path={mdiAlertCircleOutline} size="sm" />
+            <Icon className="text-warning-strong" name="error" size="sm" />
           </span>
         </Tooltip>
 
@@ -297,7 +288,7 @@ export const TooltipDemo = () => (
               appearance="weak"
               aria-label={action.label}
               brand="neutral"
-              leftIconPath={action.iconPath}
+              leftIcon={action.icon}
             />
           </Tooltip>
         ))}
@@ -310,7 +301,7 @@ export const TooltipDemo = () => (
               appearance="weak"
               aria-label={action.label}
               brand="neutral"
-              leftIconPath={action.iconPath}
+              leftIcon={action.icon}
             />
           </Tooltip>
         ))}
@@ -338,7 +329,7 @@ export const TooltipDemo = () => (
 
               <TypographyLink
                 brand="primary"
-                rightIconPath={mdiOpenInNew}
+                rightIcon="open_in_new"
                 typographyType="body-xs"
                 onClick={() => undefined}
               >

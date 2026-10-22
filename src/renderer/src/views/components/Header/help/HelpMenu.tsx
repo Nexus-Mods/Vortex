@@ -1,4 +1,3 @@
-import { mdiDotsHorizontal } from "@mdi/js";
 import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -31,7 +30,7 @@ export const HelpMenu: FC<React.PropsWithChildren<unknown>> = () => {
               aria-haspopup="menu"
               aria-label={label}
               brand="neutral"
-              leftIconPath={mdiDotsHorizontal}
+              leftIcon="more_horiz"
             />
           </Tooltip>
 

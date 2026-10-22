@@ -1,4 +1,3 @@
-import { mdiClockOutline, mdiMagnify, mdiOpenInNew, mdiRefresh } from "@mdi/js";
 import type {
   ICollection,
   ICollectionSearchOptions,
@@ -302,7 +301,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                   <Button
                     appearance="moderate"
                     brand="neutral"
-                    leftIconPath={mdiMagnify}
+                    leftIcon="search"
                     title={t("common:actions.search")}
                     type="submit"
                   />
@@ -313,7 +312,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     <Button
                       appearance="moderate"
                       brand="neutral"
-                      leftIconPath={mdiRefresh}
+                      leftIcon="refresh"
                       title={t("collection:browse.refresh")}
                       onClick={handleRefresh}
                     />
@@ -351,7 +350,7 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
                     <Button
                       appearance="moderate"
                       brand="neutral"
-                      leftIconPath={mdiOpenInNew}
+                      leftIcon="open_in_new"
                       onClick={() =>
                         window.api.shell.openUrl(
                           `https://www.nexusmods.com/games/${gameDomainName}/mods`,
@@ -396,14 +395,14 @@ function BrowseNexusPage(props: IBrowseNexusPageProps) {
           <TabPanel id="mods">
             <NoResults
               className="py-16"
-              iconPath={mdiClockOutline}
+              icon="schedule"
               message={t("collection:browse.modsComingSoon.description")}
               title={t("collection:browse.modsComingSoon.title")}
             >
               <Button
                 appearance="moderate"
                 brand="neutral"
-                leftIconPath={mdiOpenInNew}
+                leftIcon="open_in_new"
                 onClick={() =>
                   window.api.shell.openUrl(`https://www.nexusmods.com/games/${gameDomainName}/mods`)
                 }

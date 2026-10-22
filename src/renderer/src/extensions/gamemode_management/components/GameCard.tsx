@@ -1,4 +1,3 @@
-import { mdiPlus } from "@mdi/js";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -8,6 +7,7 @@ import type { IState } from "@/types/IState";
 import type { IButtonBrand } from "@/ui/components/button/Button";
 import { Button } from "@/ui/components/button/Button";
 import { GameTile } from "@/ui/components/game_tile/GameTile";
+import type { IIconSource } from "@/ui/components/icon/Icon";
 import { activeGameId } from "@/util/selectors";
 
 import { useGameCardActions } from "../hooks/use_game_card_actions/useGameCardActions.hook";
@@ -71,11 +71,11 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
 
   const actions: Record<
     IGameSection,
-    { brand: IButtonBrand; iconPath?: string; label: string; reveal: boolean }
+    { brand: IButtonBrand; icon?: IIconSource; label: string; reveal: boolean }
   > = {
     added: { brand: "neutral", label: t("Open"), reveal: true },
-    detected: { brand: "primary", iconPath: mdiPlus, label: t("Add game"), reveal: false },
-    supported: { brand: "neutral", iconPath: mdiPlus, label: t("Manual add"), reveal: true },
+    detected: { brand: "primary", icon: "add", label: t("Add game"), reveal: false },
+    supported: { brand: "neutral", icon: "add", label: t("Manual add"), reveal: true },
   };
 
   const action = actions[section];
@@ -99,7 +99,7 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
               appearance="strong"
               brand={action.brand}
               className="w-full"
-              leftIconPath={action.iconPath}
+              leftIcon={action.icon}
               onClick={onPrimary}
             >
               {action.label}

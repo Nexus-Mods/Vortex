@@ -1,6 +1,5 @@
 import { pathToFileURL } from "url";
 
-import { mdiCircleOutline, mdiLoading, mdiPlay } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC, useMemo } from "react";
 
 import { useWindowContext } from "@/contexts";
@@ -93,12 +92,12 @@ export const ToolButton: FC<React.PropsWithChildren<ToolButtonProps>> = ({
           >
             {isRunning ? (
               <>
-                <Icon className="opacity-40" path={mdiCircleOutline} />
+                <Icon className="opacity-40" name="radio_button_unchecked" />
 
-                <Icon className="absolute inset-0" path={mdiLoading} />
+                <Icon className="absolute inset-0" name="progress_activity" />
               </>
             ) : (
-              <Icon path={mdiPlay} />
+              <Icon filled name="play_arrow" />
             )}
           </span>
         </span>

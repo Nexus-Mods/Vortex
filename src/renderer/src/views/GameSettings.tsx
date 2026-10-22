@@ -1,4 +1,3 @@
-import { mdiArrowRight } from "@mdi/js";
 import React, { useCallback, useRef, type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -165,7 +164,7 @@ export const GameSettings: FC<React.PropsWithChildren<{ active?: boolean; pageId
         <Button
           appearance="weak"
           brand="neutral"
-          rightIconPath={mdiArrowRight}
+          rightIcon="arrow_forward"
           onClick={openVortexSettings}
         >
           {t("Vortex settings")}

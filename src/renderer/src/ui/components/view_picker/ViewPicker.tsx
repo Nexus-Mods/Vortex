@@ -1,4 +1,3 @@
-import { mdiPlus } from "@mdi/js";
 import React, { type FocusEvent, Fragment, type KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -142,7 +141,7 @@ export const ViewPicker = ({
             appearance="weak"
             aria-label={t("Add view")}
             brand="neutral"
-            leftIconPath={mdiPlus}
+            leftIcon="add"
             onClick={onAddView}
           />
         </Tooltip>
