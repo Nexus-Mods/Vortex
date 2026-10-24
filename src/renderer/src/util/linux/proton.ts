@@ -106,6 +106,21 @@ function folderMatchesKeyword(folderName: string, keyword: string): boolean {
 }
 
 /**
+ * Steam also loads compatibility tools installed system-wide by distro packages.
+ */
+function compatToolDirs(steamPath: string): string[] {
+  const extraDirs = (process.env.STEAM_EXTRA_COMPAT_TOOLS_PATHS ?? "")
+    .split(path.delimiter)
+    .filter((dir) => dir.length > 0);
+  return [
+    path.join(steamPath, "compatibilitytools.d"),
+    ...extraDirs,
+    "/usr/local/share/steam/compatibilitytools.d",
+    "/usr/share/steam/compatibilitytools.d",
+  ];
+}
+
+/**
  * Resolve a Proton config name to its installation path.
  *
  * Steam stores the configured Proton version in config.vdf using internal names
@@ -119,8 +134,8 @@ function folderMatchesKeyword(folderName: string, keyword: string): boolean {
  * use matching names, but official Proton versions do not.
  *
  * Resolution strategy (no hardcoded mappings):
- * 1. Custom tools: Check compatibilitytools.d/{name} - custom Proton builds
- *    use their config name as the folder name directly.
+ * 1. Custom tools: Check {dir}/{name} in each compatibilitytools.d Steam searches;
+ *    custom Proton builds use their config name as the folder name directly.
  * 2. Exact match: Check steamapps/common/{name} - in case config name matches.
  * 3. Fuzzy match: Scan steamapps/common/Proton* folders and match by keyword.
  *    Extract the keyword after "proton_" and find a folder containing it.
@@ -132,11 +147,13 @@ export async function resolveProtonPath(
   steamPath: string,
   protonName: string,
 ): Promise<string | undefined> {
-  // 1. Check custom compatibility tools directory (GE-Proton, etc.)
+  // 1. Check custom compatibility tools directories (GE-Proton, etc.)
   // Custom tools use their config name as the folder name directly
-  const customToolPath = path.join(steamPath, "compatibilitytools.d", protonName);
-  if (await pathExists(customToolPath)) {
-    return customToolPath;
+  for (const toolsDir of compatToolDirs(steamPath)) {
+    const customToolPath = path.join(toolsDir, protonName);
+    if (await pathExists(customToolPath)) {
+      return customToolPath;
+    }
   }
 
   const commonPath = path.join(steamPath, "steamapps", "common");
