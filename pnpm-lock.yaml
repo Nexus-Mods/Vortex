@@ -981,6 +981,9 @@ overrides:
   '@types/node': 24.12.2
   react-dnd: 14.0.5
 
+patchedDependencies:
+  vortex-parse-ini@0.4.0: 83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95
+
 importers:
 
   .:
@@ -1554,7 +1557,7 @@ importers:
         version: 2.4.2(redux@4.2.1)
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
 
   extensions/gamebryo-archive-support:
     devDependencies:
@@ -1657,7 +1660,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
 
   extensions/gamebryo-test-settings:
     devDependencies:
@@ -1699,7 +1702,7 @@ importers:
         version: 1.8.0
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
 
   extensions/games/game-7daystodie:
     devDependencies:
@@ -2590,7 +2593,7 @@ importers:
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
       winapi-bindings:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
@@ -2738,7 +2741,7 @@ importers:
         version: 1.8.0
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
 
   extensions/meta-editor:
     devDependencies:
@@ -2858,7 +2861,7 @@ importers:
         version: 2.2.17
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
 
   extensions/mod-content:
     devDependencies:
@@ -3129,7 +3132,7 @@ importers:
         version: 7.7.4
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
 
   extensions/modtype-dazip:
     devDependencies:
@@ -3313,7 +3316,7 @@ importers:
         version: 6.0.3
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
 
   extensions/mtframework-arc-support:
     devDependencies:
@@ -3653,7 +3656,7 @@ importers:
         version: 2.4.2(redux@4.2.1)
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
 
   extensions/test-setup:
     devDependencies:
@@ -4366,7 +4369,7 @@ importers:
         version: 3.4.0
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
       wholocks:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af
@@ -5052,7 +5055,7 @@ importers:
         version: 3.4.0
       vortex-parse-ini:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
+        version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95)
       wholocks:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af
@@ -20979,7 +20982,7 @@ snapshots:
 
   void-elements@3.1.0: {}
 
-  vortex-parse-ini@https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d:
+  vortex-parse-ini@https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d(patch_hash=83accded472ea48f59f5156905e88002652341e19e468ce455e4329cf16e0b95):
     dependencies:
       lodash: 4.17.23
       winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1

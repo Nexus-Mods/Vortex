@@ -127,6 +127,7 @@ behavior), run `pnpm package:nosign` from the repo root; the output lands in
 - [Windows packaging]: commands, the version placeholder, what the pipeline
   does, and the traps
 - [Flatpak packaging]
+- [Arch Linux packaging]
 
 ## FAQ
 
@@ -141,6 +142,7 @@ information.
 - [Debugging]
 
 [All documentation]: ./docs/README.md
+[Arch Linux packaging]: ./docs/packaging/archlinux.md
 [Arch-based setup]: ./docs/install-instructions/archlinux.md
 [CLI]: https://git-scm.com/
 [Debian-based setup]: ./docs/install-instructions/debian-based.md
