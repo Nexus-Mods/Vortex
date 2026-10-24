@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { getErrorCode, unknownToError } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import { setToolRunning, setToolStopped } from "../actions";
 import { ApplicationData } from "../applicationData";
@@ -11,10 +11,12 @@ import type { IGameStored } from "../extensions/gamemode_management/types/IGameS
 import type { IToolStored } from "../extensions/gamemode_management/types/IToolStored";
 import { getGame, getGameStoresSafe } from "../extensions/gamemode_management/util/getGame";
 import { log } from "../logging";
+import { isExeRunning } from "../reducers/session";
 import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { IGame } from "../types/IGame";
 import { GameEntryNotFound, GameStoreNotFound } from "../types/IGameStore";
+import type { IState } from "../types/IState";
 import { getApplication } from "./application";
 import {
   MissingDependency,
@@ -22,7 +24,7 @@ import {
   ProcessCanceled,
   UserCanceled,
 } from "./CustomErrors";
-import { emitGameLaunched, recordLaunchExit } from "./gameLaunchAnalytics";
+import { emitGameLaunched, launchRunsGame, recordLaunchExit } from "./gameLaunchAnalytics";
 import getVortexPath from "./getVortexPath";
 import { isWindowsExecutable } from "./linux/proton";
 import type { Steam, ISteamEntry } from "./Steam";
@@ -57,6 +59,7 @@ export interface IStarterInfo {
   onStart?: "hide" | "hide_recover" | "close";
   environment: { [key: string]: string };
   defaultPrimary?: boolean;
+  startWithGame?: boolean;
 
   extensionPath: string;
   logoName: string;
@@ -67,6 +70,64 @@ type OnShowErrorFunc = (
   details?: string | Error | any,
   allowReport?: boolean,
 ) => void;
+
+// how long "start with game" tools wait after the game launch has started, so they come up after
+// the game rather than racing it
+const COMPANION_START_DELAY_MS = 2000;
+
+interface IDirectLaunchOptions {
+  // ask to deploy pending changes first. Companion tools skip this, the launch they accompany
+  // already asked.
+  suggestDeploy: boolean;
+  // called once the process has started, on every platform (onSpawned isn't called for Proton)
+  onLaunched?: () => void;
+}
+
+/**
+ * The game's tools flagged to start with it. Leaves out tools that would launch the game
+ * themselves (the primary tool, defaultPrimary launchers), so starting a companion never starts
+ * more companions, and tools that are hidden, not configured or already running.
+ */
+function companionStarters(state: IState, info: IStarterInfo): StarterInfo[] {
+  const game = (state.session.gameMode.known ?? []).find((known) => known.id === info.gameId);
+  const discovery = state.settings.gameMode.discovered?.[info.gameId];
+  if (game === undefined || discovery?.path === undefined) {
+    return [];
+  }
+
+  const knownTools = game.supportedTools ?? [];
+  const discoveredTools = discovery.tools ?? {};
+  const toolIds = new Set([...knownTools.map((tool) => tool.id), ...Object.keys(discoveredTools)]);
+  const toolsRunning = state.session.base?.toolsRunning ?? {};
+
+  const result: StarterInfo[] = [];
+  for (const toolId of toolIds) {
+    if (toolId === info.id || toolId === info.gameId || discoveredTools[toolId]?.hidden) {
+      continue;
+    }
+    let starter: StarterInfo;
+    try {
+      starter = new StarterInfo(
+        game,
+        discovery,
+        knownTools.find((tool) => tool.id === toolId),
+        discoveredTools[toolId],
+      );
+    } catch (err) {
+      log("warn", "invalid tool", { toolId, error: getErrorMessageOrDefault(err) });
+      continue;
+    }
+    if (
+      starter.startWithGame &&
+      starter.exePath &&
+      !launchRunsGame(starter, state) &&
+      !isExeRunning(toolsRunning, starter.exePath)
+    ) {
+      result.push(starter);
+    }
+  }
+  return result;
+}
 
 /**
  * Check if a game or tool should run through Proton on Linux.
@@ -159,21 +220,7 @@ class StarterInfo implements IStarterInfo {
       }
     }
 
-    const onSpawned = () => {
-      api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
-      emitGameLaunched(api, info);
-      if (info.isGame) {
-        void emitModListSnapshot(api, info.gameId);
-      }
-
-      // Flatpak can't reliably observe host game exit for now, so emulate stop after a short delay
-      // for now. We'll come up with a better solution/design in the future.
-      if (process.platform === "linux" && process.env.IS_FLATPAK === "true") {
-        setTimeout(() => {
-          api.store.dispatch(setToolStopped(info.exePath));
-        }, 2000);
-      }
-    };
+    const onSpawned = StarterInfo.makeOnSpawned(info, api);
 
     // a game without an executable (Tier 0: launched through its store) has
     // nothing to spawn directly, exePath is then just the game directory;
@@ -224,11 +271,7 @@ class StarterInfo implements IStarterInfo {
       if (!isLinuxSteamLauncher || process.env.IS_FLATPAK === "true") {
         onSpawned();
       }
-      if (["hide", "hide_recover"].includes(info.onStart)) {
-        void hideWindow();
-      } else if (info.onStart === "close") {
-        getApplication().quit();
-      }
+      StarterInfo.afterLaunch(info, api, onShowError);
     } catch (err) {
       if (err instanceof UserCanceled) {
         return;
@@ -274,19 +317,110 @@ class StarterInfo implements IStarterInfo {
     return info["__iconCache"];
   }
 
+  private static makeOnSpawned(info: IStarterInfo, api: IExtensionApi): () => void {
+    return () => {
+      api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
+      emitGameLaunched(api, info);
+      if (info.isGame) {
+        void emitModListSnapshot(api, info.gameId);
+      }
+
+      // Flatpak can't reliably observe host game exit for now, so emulate stop after a short delay
+      // for now. We'll come up with a better solution/design in the future.
+      if (process.platform === "linux" && process.env.IS_FLATPAK === "true") {
+        setTimeout(() => {
+          api.store.dispatch(setToolStopped(info.exePath));
+        }, 2000);
+      }
+    };
+  }
+
+  /**
+   * Runs once a launch has started: starts the game's "start with game" tools if this launch runs
+   * the game, then applies the launched starter's onStart behavior. Closing Vortex waits until the
+   * companion tools have spawned, quitting first would prevent them from starting.
+   */
+  private static afterLaunch(
+    info: IStarterInfo,
+    api: IExtensionApi,
+    onShowError: OnShowErrorFunc,
+  ): void {
+    const companions = StarterInfo.startCompanionTools(info, api, onShowError);
+    if (["hide", "hide_recover"].includes(info.onStart)) {
+      void hideWindow();
+    } else if (info.onStart === "close") {
+      void companions.then(() => getApplication().quit());
+    }
+  }
+
+  /**
+   * Starts the game's "start with game" tools alongside a launch that runs the game, after a short
+   * delay. Resolves once each of them has spawned or failed to.
+   */
+  private static async startCompanionTools(
+    info: IStarterInfo,
+    api: IExtensionApi,
+    onShowError: OnShowErrorFunc,
+  ): Promise<void> {
+    const state: IState = api.getState();
+    if (!launchRunsGame(info, state)) {
+      return;
+    }
+    const companions = companionStarters(state, info);
+    if (companions.length === 0) {
+      return;
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, COMPANION_START_DELAY_MS));
+    log("info", "starting tools with game", {
+      gameId: info.gameId,
+      tools: companions.map((tool) => tool.id),
+    });
+    // a companion must outlive Vortex if the launch is about to close it
+    const keepAfterQuit = info.onStart === "close";
+    await Promise.all(
+      companions.map((tool) => StarterInfo.startCompanion(tool, api, onShowError, keepAfterQuit)),
+    );
+  }
+
+  private static startCompanion(
+    tool: IStarterInfo,
+    api: IExtensionApi,
+    onShowError: OnShowErrorFunc,
+    keepAfterQuit: boolean,
+  ): Promise<void> {
+    // hiding or closing Vortex is up to the launch the companion accompanies, not the companion
+    const companion: IStarterInfo = {
+      ...tool,
+      onStart: undefined,
+      detach: tool.detach || keepAfterQuit,
+    };
+    return new Promise<void>((resolve) => {
+      StarterInfo.runDirectly(
+        companion,
+        api,
+        onShowError,
+        StarterInfo.makeOnSpawned(companion, api),
+        {
+          suggestDeploy: false,
+          onLaunched: resolve,
+        },
+      )
+        .catch((err) => onShowError("Failed to start tool with game", err))
+        .finally(resolve);
+    });
+  }
+
   private static async runDirectly(
     info: IStarterInfo,
     api: IExtensionApi,
     onShowError: OnShowErrorFunc,
     onSpawned: () => void,
+    launch: IDirectLaunchOptions = { suggestDeploy: true },
   ): Promise<void> {
     const spawned = () => {
       onSpawned();
-      if (["hide", "hide_recover"].includes(info.onStart)) {
-        void hideWindow();
-      } else if (info.onStart === "close") {
-        getApplication().quit();
-      }
+      launch.onLaunched?.();
+      StarterInfo.afterLaunch(info, api, onShowError);
     };
 
     // Check if game/tool should run through Proton on Linux
@@ -295,6 +429,8 @@ class StarterInfo implements IStarterInfo {
       // On Linux with Proton, we can't track when the process exits (ProcessMonitor
       // only works on Windows), so don't set tool as running to avoid stuck spinner
       const protonSpawned = () => {
+        launch.onLaunched?.();
+        void StarterInfo.startCompanionTools(info, api, onShowError);
         if (["hide", "hide_recover"].includes(info.onStart)) {
           hideWindow();
         } else if (info.onStart === "close") {
@@ -310,7 +446,7 @@ class StarterInfo implements IStarterInfo {
         {
           cwd: info.workingDirectory || path.dirname(info.exePath),
           env: info.environment,
-          suggestDeploy: true,
+          suggestDeploy: launch.suggestDeploy,
           shell: info.shell,
           detach: info.detach || info.onStart === "close",
           onSpawned: protonSpawned,
@@ -323,7 +459,7 @@ class StarterInfo implements IStarterInfo {
       .runExecutable(info.exePath, info.commandLine, {
         cwd: info.workingDirectory || path.dirname(info.exePath),
         env: info.environment,
-        suggestDeploy: true,
+        suggestDeploy: launch.suggestDeploy,
         shell: info.shell,
         detach: info.detach || info.onStart === "close",
         onSpawned: spawned,
@@ -481,6 +617,7 @@ class StarterInfo implements IStarterInfo {
   public detach: boolean;
   public onStart?: "hide" | "hide_recover" | "close";
   public defaultPrimary: boolean;
+  public startWithGame: boolean;
   public extensionPath: string;
   public logoName: string;
   public timestamp: number;
@@ -499,6 +636,11 @@ class StarterInfo implements IStarterInfo {
     this.store = gameDiscovery.store;
     this.detach = getSafe(toolDiscovery, ["detach"], getSafe(tool, ["detach"], true));
     this.onStart = getSafe(toolDiscovery, ["onStart"], getSafe(tool, ["onStart"], undefined));
+    this.startWithGame = getSafe(
+      toolDiscovery,
+      ["startWithGame"],
+      getSafe(tool, ["startWithGame"], false),
+    );
 
     if (tool === undefined && toolDiscovery === undefined) {
       this.id = this.gameId;
