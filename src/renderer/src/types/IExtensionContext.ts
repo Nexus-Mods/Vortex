@@ -15,6 +15,7 @@ import type {
   IDeploymentMethod,
   IFileChange,
 } from "../extensions/mod_management/types/IDeploymentMethod";
+import type { FileAction } from "../extensions/mod_management/types/IFileEntry";
 import type {
   IInstallResult,
   IInstruction,
@@ -60,6 +61,7 @@ export type {
   IInstruction,
   IDeployedFile,
   IDeploymentMethod,
+  FileAction,
   IFileChange,
   ILookupResult,
   IModInfo,
@@ -1019,6 +1021,43 @@ export interface IModTypeOptions {
   // that some features might not work but continue otherwise.
   deploymentEssential?: boolean;
   noConflicts?: boolean;
+  /**
+   * If set, called for each external change to a deployed file of this mod type before the
+   * external changes dialog opens. Return the action to apply without asking the user, or
+   * undefined to show the change in the dialog as usual. Useful for files the game itself
+   * rewrites, like save games.
+   *
+   * The action has to be one the dialog offers for the change type:
+   *   refchange: "drop" (use staging file), "import" (use deployed file) or "newest"
+   *   valchange: "nop"
+   *   deleted: "restore" or "delete"
+   *   srcdeleted: "import" (restore file) or "drop" (delete file)
+   * Any other action, or an exception, shows the change in the dialog.
+   *
+   * @example
+   * ```js
+   * // a save game mod type: keep what the game writes, ask about anything else
+   * context.registerModType("mygame-save", 60, isSupported, getSavePath, testSave, {
+   *   name: "Save Game",
+   *   resolveExternalChange: (change, gameId) => {
+   *     if (gameId !== GAME_ID || path.extname(change.filePath).toLowerCase() !== ".sav") {
+   *       return undefined;
+   *     }
+   *     switch (change.changeType) {
+   *       case "refchange":
+   *         return "import"; // game rewrote the save: keep the game's copy
+   *       case "valchange":
+   *         return "nop"; // save edited in place: keep it
+   *       case "deleted":
+   *         return "delete"; // player deleted the save in game: accept it
+   *       default:
+   *         return undefined; // srcdeleted: not the game's doing, ask the user
+   *     }
+   *   },
+   * });
+   * ```
+   */
+  resolveExternalChange?: (change: IFileChange, gameId: string) => FileAction | undefined;
 }
 
 /**
