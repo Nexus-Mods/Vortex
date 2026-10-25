@@ -28,11 +28,23 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import os from "os";
 
-import { DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
+import { APP_NAME, DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
 import { app, crashReporter, dialog } from "electron";
 import i18next from "i18next";
 import * as sourceMapSupport from "source-map-support";
 import winapi from "winapi-bindings";
+
+// mkeiitmods: use our own name and data folder so we never touch the data of an
+// installed Vortex (%APPDATA%\Vortex). Has to happen before anything reads
+// app.getPath("userData"). E2E isolation below still overrides this.
+app.setName(APP_NAME);
+app.setPath(
+  "userData",
+  dataRootPath({
+    appData: app.getPath("appData"),
+    development: process.env.NODE_ENV === "development",
+  }),
+);
 
 // E2E test isolation: redirect userData and appData to temp directories so
 // parallel test workers share no data and don't conflict with the real install.
@@ -47,6 +59,7 @@ if (process.env.VORTEX_E2E === "1") {
 
 import { NativePathResolver } from "@vortex/shared/filesystem";
 
+import { dataRootPath } from "./appIdentity";
 import Application from "./Application";
 import { parseCommandline } from "./cli";
 import { init as initDownloadIpc } from "./downloading/ipc";
