@@ -40,6 +40,8 @@ export interface INexusAPIExtension {
   nexusSearchCollections?: (
     options: ICollectionSearchOptions,
   ) => PromiseLike<ICollectionSearchResult>;
+  /** mkeiitmods: a hand-written GraphQL query through the shared client (see rawGraphQuery). */
+  nexusQueryGraph?: <T>(query: string, variables: Record<string, unknown>) => PromiseLike<T>;
   nexusGetMyCollections?: (
     gameId: string,
     count?: number,

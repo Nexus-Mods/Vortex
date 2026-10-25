@@ -3055,6 +3055,8 @@ class ExtensionManager {
       instructions_overlay: () => require("./extensions/instructions_overlay/index.ts"),
       mod_load_order: () => require("./extensions/mod_load_order/index.ts"),
       mod_management: () => require("./extensions/mod_management/index.ts"),
+      // mkeiitmods: the mod catalog
+      mod_catalog: () => require("./extensions/mod_catalog/index.ts"),
       move_activator: () => require("./extensions/move_activator/index.ts"),
       news_dashlet: () => require("./extensions/news_dashlet/index.ts"),
       nexus_integration: () => require("./extensions/nexus_integration/index.tsx"),

@@ -115,6 +115,7 @@ import { checkModVersion } from "./util/checkModsVersion";
 import { nexusGameId } from "./util/convertGameId";
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from "./util/guessModID";
 import { isStoragePathName } from "./util/healStoragePathNames";
+import { queryGraph } from "./util/rawGraphQuery";
 import retrieveCategoryList from "./util/retrieveCategories";
 import Tracking from "./util/tracking";
 import { makeFileUID } from "./util/UIDs";
@@ -926,6 +927,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusGetCollection: eh.onGetNexusCollection(api, nexus),
     nexusGetCollections: eh.onGetNexusCollections(api, nexus),
     nexusSearchCollections: eh.onSearchCollections(api, nexus),
+    nexusQueryGraph: (query, variables) => queryGraph(nexus, query, variables),
     nexusGetMyCollections: eh.onGetMyCollections(api, nexus),
     nexusResolveCollectionUrl: eh.onResolveCollectionUrl(api, nexus),
     nexusGetCollectionRevision: eh.onGetNexusCollectionRevision(api, nexus),
