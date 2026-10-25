@@ -3,20 +3,20 @@
  * a time; its result is kept in memory for the session and only a forced start runs it again.
  * See docs/superpowers/specs/2026-10-25-steam-game-folder-check-poc-design.md.
  */
-import type { FolderCheckInput, FolderCheckStatus } from "@vortex/shared/ipc";
+import type { FolderCheckInput, FolderCheckMode, FolderCheckStatus } from "@vortex/shared/ipc";
 
 import { betterIpcMain } from "../ipc";
 import { log } from "../logging";
 import { FolderCheckUnavailable, runFolderCheck } from "./scan";
 
 export function createFolderCheckService(run = runFolderCheck): {
-  start(input: FolderCheckInput, force: boolean): void;
+  start(input: FolderCheckInput, force: boolean, mode: FolderCheckMode): void;
   status(appId: number): FolderCheckStatus;
 } {
   const statuses = new Map<number, FolderCheckStatus>();
 
   return {
-    start(input, force) {
+    start(input, force, mode) {
       const current = statuses.get(input.appId);
       if (current?.state === "running" || (current?.state === "done" && !force)) {
         return;
@@ -27,7 +27,7 @@ export function createFolderCheckService(run = runFolderCheck): {
         bytesDone: 0,
         bytesTotal: 0,
       });
-      run(input, (progress) => statuses.set(input.appId, progress)).then(
+      run(input, (progress) => statuses.set(input.appId, progress), mode).then(
         (result) => statuses.set(input.appId, { state: "done", result }),
         (err: unknown) => {
           if (err instanceof FolderCheckUnavailable) {
@@ -53,8 +53,8 @@ export function initPocFolderCheck(): void {
 
   log("info", "Steam folder check PoC enabled");
   const service = createFolderCheckService();
-  betterIpcMain.handle("poc:folder-check-start", (_, input, force) => {
-    service.start(input, force);
+  betterIpcMain.handle("poc:folder-check-start", (_, input, force, mode) => {
+    service.start(input, force, mode);
     return Promise.resolve();
   });
   betterIpcMain.handle("poc:folder-check-status", (_, appId) =>

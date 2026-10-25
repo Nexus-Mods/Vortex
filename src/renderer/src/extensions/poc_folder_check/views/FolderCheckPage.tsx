@@ -6,6 +6,7 @@
 import type {
   FolderCheckFile,
   FolderCheckInput,
+  FolderCheckMode,
   FolderCheckResult,
   FolderCheckStatus,
 } from "@vortex/shared/ipc";
@@ -52,7 +53,7 @@ async function loadCheckInput(
 
 /**
  * Starts or restarts the check and follows its status until it stops running. Only while the page
- * is showing: pages stay mounted when hidden, and a check hashes the whole game folder.
+ * is showing: pages stay mounted when hidden, and a check reads from every base game file.
  */
 function useFolderCheck(input: FolderCheckInput | undefined, active: boolean) {
   const [status, setStatus] = useState<FolderCheckStatus>({ state: "idle" });
@@ -65,7 +66,7 @@ function useFolderCheck(input: FolderCheckInput | undefined, active: boolean) {
   const generationRef = useRef(0);
 
   const run = useCallback(
-    (force: boolean) => {
+    (force: boolean, mode: FolderCheckMode) => {
       if (input === undefined) return;
       clearTimeout(timerRef.current);
       const current = ++generationRef.current;
@@ -77,21 +78,24 @@ function useFolderCheck(input: FolderCheckInput | undefined, active: boolean) {
           timerRef.current = setTimeout(() => void poll(), POLL_INTERVAL_MS);
         }
       };
-      void window.api.poc.startFolderCheck(input, force).then(poll);
+      void window.api.poc.startFolderCheck(input, force, mode).then(poll);
     },
     [input],
   );
 
   useEffect(() => {
     if (!active) return undefined;
-    run(false);
+    run(false, "quick");
     return () => {
       generationRef.current++;
       clearTimeout(timerRef.current);
     };
   }, [run, active]);
 
-  return { status, recheck: () => run(true) };
+  return {
+    status,
+    recheck: (mode: FolderCheckMode) => run(true, mode),
+  };
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -414,7 +418,7 @@ export const FolderCheckPage = ({ active = true }: { active?: boolean }) => {
           "Steam",
           `build ${input.buildId}`,
           `depots ${input.depots.map((depot) => depot.depotId).join(", ")}`,
-          ...(checked !== undefined ? [`checked ${checked}`] : []),
+          ...(checked !== undefined ? [`${result?.mode} check ${checked}`] : []),
         ].join(" · ")
       : undefined;
 
@@ -422,9 +426,24 @@ export const FolderCheckPage = ({ active = true }: { active?: boolean }) => {
     <Page active={active} scrollable={false}>
       <PageHeader subtitle={subtitle} title="Game folder">
         {input !== undefined && (
-          <Button disabled={status.state === "running"} size="sm" onClick={recheck}>
-            Re-check
-          </Button>
+          <>
+            <Button
+              disabled={status.state === "running"}
+              size="sm"
+              onClick={() => recheck("quick")}
+            >
+              Re-check
+            </Button>
+
+            <Button
+              disabled={status.state === "running"}
+              size="sm"
+              title="Hash every base game file whole instead of four 1 MB chunks each"
+              onClick={() => recheck("full")}
+            >
+              Full check
+            </Button>
+          </>
         )}
       </PageHeader>
 

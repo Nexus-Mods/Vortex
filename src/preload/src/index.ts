@@ -5,6 +5,7 @@ import type {
   AppInitMetadata,
   EnumerateEntryWire,
   FolderCheckInput,
+  FolderCheckMode,
   Serializable,
   TemporalWire,
 } from "@vortex/shared/ipc";
@@ -85,8 +86,8 @@ try {
     },
 
     poc: {
-      startFolderCheck: (input: FolderCheckInput, force: boolean) =>
-        betterIpcRenderer.invoke("poc:folder-check-start", input, force),
+      startFolderCheck: (input: FolderCheckInput, force: boolean, mode: FolderCheckMode) =>
+        betterIpcRenderer.invoke("poc:folder-check-start", input, force, mode),
       getFolderCheckStatus: (appId: number) =>
         betterIpcRenderer.invoke("poc:folder-check-status", appId),
     },

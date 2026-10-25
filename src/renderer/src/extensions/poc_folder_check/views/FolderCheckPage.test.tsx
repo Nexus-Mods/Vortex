@@ -55,6 +55,7 @@ const file = (relPath: string, extra: Partial<FolderCheckFile> = {}): FolderChec
 const result = (extra: Partial<FolderCheckResult> = {}): FolderCheckResult => ({
   checkedAt: Date.now(),
   input,
+  mode: "quick",
   files: [
     file("Cyberpunk2077.exe", { bucket: "game" }),
     file("archive\\pc\\content\\basegame_1.archive", { bucket: "game" }),
@@ -158,7 +159,7 @@ describe("FolderCheckPage", () => {
     expect(screen.getByText("2. Remove the empty folders left behind")).toBeTruthy();
     expect(screen.getByText(/^3. Restore 0 modified or missing game files/)).toBeTruthy();
     expect(screen.getByText(/plus 1 Vortex files changed since deployed/)).toBeTruthy();
-    expect(mocks.start).toHaveBeenCalledWith(input, false);
+    expect(mocks.start).toHaveBeenCalledWith(input, false, "quick");
     expect(mocks.status).toHaveBeenCalledWith(1091500);
   });
 
@@ -172,6 +173,16 @@ describe("FolderCheckPage", () => {
     render(<FolderCheckPage />);
     await screen.findByText(/Move 3 unknown files/);
     fireEvent.click(screen.getByText("Re-check"));
-    await waitFor(() => expect(mocks.start).toHaveBeenCalledWith(input, true));
+    await waitFor(() => expect(mocks.start).toHaveBeenCalledWith(input, true, "quick"));
+  });
+
+  it("Full check hashes every file and says so", async () => {
+    render(<FolderCheckPage />);
+    await screen.findByText(/Move 3 unknown files/);
+    expect(screen.getByText(/quick check/)).toBeTruthy();
+    mocks.status.mockResolvedValue(done(result({ mode: "full" })));
+    fireEvent.click(screen.getByText("Full check"));
+    await waitFor(() => expect(mocks.start).toHaveBeenCalledWith(input, true, "full"));
+    expect(await screen.findByText(/full check/)).toBeTruthy();
   });
 });

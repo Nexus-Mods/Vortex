@@ -18,6 +18,7 @@ const input: FolderCheckInput = {
 const result: FolderCheckResult = {
   checkedAt: 1,
   input,
+  mode: "quick",
   files: [],
   missing: [],
   unreadable: [],
@@ -31,9 +32,9 @@ describe("createFolderCheckService", () => {
     const run = vi.fn().mockResolvedValue(result);
     const service = createFolderCheckService(run);
     expect(service.status(489830)).toEqual({ state: "idle" });
-    service.start(input, false);
+    service.start(input, false, "quick");
     await settle();
-    service.start(input, false);
+    service.start(input, false, "quick");
     await settle();
     expect(run).toHaveBeenCalledTimes(1);
     expect(service.status(489830)).toEqual({ state: "done", result });
@@ -42,11 +43,19 @@ describe("createFolderCheckService", () => {
   it("reruns on force", async () => {
     const run = vi.fn().mockResolvedValue(result);
     const service = createFolderCheckService(run);
-    service.start(input, false);
+    service.start(input, false, "quick");
     await settle();
-    service.start(input, true);
+    service.start(input, true, "quick");
     await settle();
     expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it("runs the requested mode", async () => {
+    const run = vi.fn().mockResolvedValue(result);
+    const service = createFolderCheckService(run);
+    service.start(input, true, "full");
+    await settle();
+    expect(run).toHaveBeenCalledWith(input, expect.any(Function), "full");
   });
 
   it("ignores start while running", async () => {
@@ -55,8 +64,8 @@ describe("createFolderCheckService", () => {
       .fn()
       .mockReturnValue(new Promise<FolderCheckResult>((resolve) => (finish = resolve)));
     const service = createFolderCheckService(run);
-    service.start(input, false);
-    service.start(input, true);
+    service.start(input, false, "quick");
+    service.start(input, true, "quick");
     expect(run).toHaveBeenCalledTimes(1);
     expect(service.status(489830).state).toBe("running");
     finish(result);
@@ -75,7 +84,7 @@ describe("createFolderCheckService", () => {
       },
     );
     const service = createFolderCheckService(run);
-    service.start(input, false);
+    service.start(input, false, "quick");
     expect(service.status(489830)).toEqual({
       state: "running",
       phase: "hashing",
@@ -87,7 +96,7 @@ describe("createFolderCheckService", () => {
   it("reports unavailable reasons", async () => {
     const run = vi.fn().mockRejectedValue(new FolderCheckUnavailable("x"));
     const service = createFolderCheckService(run);
-    service.start(input, false);
+    service.start(input, false, "quick");
     await settle();
     expect(service.status(489830)).toEqual({ state: "unavailable", reason: "x" });
   });
@@ -95,7 +104,7 @@ describe("createFolderCheckService", () => {
   it("reports other errors", async () => {
     const run = vi.fn().mockRejectedValue(new Error("boom"));
     const service = createFolderCheckService(run);
-    service.start(input, false);
+    service.start(input, false, "quick");
     await settle();
     expect(service.status(489830)).toEqual({ state: "error", message: "boom" });
   });

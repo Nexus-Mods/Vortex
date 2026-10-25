@@ -171,7 +171,7 @@ A game-scoped page called "Game folder", registered next to Mods and Collections
 - Exact page layout and styling within the modern layout. The classic layout doesn't matter.
 - Tests: unit tests for the manifest reader (a real small manifest such as `489833_4886117324142477814.manifest`, 1.6 KB, makes a good fixture) and for bucketing.
 
-## Follow-up: faster hashing (agreed 2026-10-25, not built)
+## Follow-up: faster hashing (agreed and built 2026-10-25)
 
 Full hashing reads every base file: 16 GB for Skyrim SE, 81 GB for Cyberpunk 2077. Simon asked whether we could hash only what changed. The data available:
 
@@ -182,3 +182,13 @@ Full hashing reads every base file: 16 GB for Skyrim SE, 81 GB for Cyberpunk 207
 Modified dates aren't a safe filter. On Cyberpunk every base file was older than `lastupdated`. On Skyrim, 10 of 46 were newer (Creation Club files the game touched) and 17 were dated 2008. Explorer copies and most archive extractors keep the source's date, so a file dropped in by hand often looks older than Steam's update.
 
 The agreed direction: by default, hash a few chunks per file (first, last and two from the middle) and compare with the chunk SHA1s, about 4 MB read per file. Hash `.exe` and `.dll` files in full, since those are what byte patches target. Keep a "full check" for the thorough version. Optionally remember hashes against path, size and date so Re-check only rehashes what changed.
+
+Built as the "quick" mode, now the default; "Full check" on the page runs the old whole-file hash. Files of four chunks or fewer, and files the manifest gives no chunks for, are hashed whole. The hash cache isn't built. Measured on Simon's machine (NVMe, 64 GB RAM, files likely in the disk cache) with a standalone script using the same rules:
+
+|                         | Skyrim SE (46 files, 15 GiB) | Cyberpunk 2077 (182 files, 76 GiB) |
+| ----------------------- | ---------------------------- | ---------------------------------- |
+| Size and existence only | 5 ms                         | 9 ms                               |
+| Quick                   | 0.1 s, 137 MiB read          | 0.4 s, 619 MiB read                |
+| Full                    | 8 s                          | 40 s                               |
+
+Most of Cyberpunk's quick read is its `.exe` and `.dll` files (about 427 MiB). A quick check misses an edit that keeps the size and only touches chunks it didn't read.

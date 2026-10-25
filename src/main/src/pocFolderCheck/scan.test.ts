@@ -19,6 +19,19 @@ import { buildManifest, type ITestFile } from "./testManifest";
 const sha1Of = async (content: string) =>
   (await import("node:crypto")).createHash("sha1").update(content).digest("hex");
 
+/** Manifest chunks of `size` bytes for the given content, as Steam lists them. */
+const chunksOf = async (content: string, size: number) => {
+  const result: { sha1: string; offset: number; size: number }[] = [];
+  for (let offset = 0; offset < content.length; offset += size) {
+    const part = content.slice(offset, offset + size);
+    result.push({ sha1: await sha1Of(part), offset, size: part.length });
+  }
+  return result;
+};
+
+// ten bytes in five chunks; a quick check reads chunks 0, 1, 3 and 4
+const ORIGINAL = "aabbccddee";
+
 /** A Steam folder with a depotcache and a game folder holding the given files. */
 function makeTree(gameFiles: Record<string, string>, depotFiles: ITestFile[]) {
   const root = mkdtempSync(path.join(tmpdir(), "foldercheck-"));
@@ -151,7 +164,7 @@ describe("runFolderCheck", () => {
     ]);
     const hash = (p: string) =>
       p.endsWith("b.exe") ? Promise.reject(new Error("EBUSY")) : sha1Of("hello");
-    const result = await runFolderCheck(input, () => undefined, hash);
+    const result = await runFolderCheck(input, () => undefined, "quick", hash);
     expect(result.unreadable).toEqual(["b.exe"]);
     expect(result.files.find((f) => f.relPath === "b.exe")?.modified).toBeUndefined();
   });
@@ -168,5 +181,54 @@ describe("runFolderCheck", () => {
     expect(last?.phase).toBe("hashing");
     expect(last?.bytesTotal).toBe(11);
     expect(last?.bytesDone).toBe(11);
+  });
+
+  it("quick check compares sampled chunks and misses edits between them", async () => {
+    const chunks = await chunksOf(ORIGINAL, 2);
+    const { input } = makeTree({ "first.bsa": "XXbbccddee", "middle.bsa": "aabbXXddee" }, [
+      { name: "first.bsa", size: 10, sha1: await sha1Of(ORIGINAL), chunks },
+      { name: "middle.bsa", size: 10, sha1: await sha1Of(ORIGINAL), chunks },
+    ]);
+    const quick = await runFolderCheck(input, () => undefined);
+    expect(quick.mode).toBe("quick");
+    expect(quick.files.find((f) => f.relPath === "first.bsa")?.modified).toBe(true);
+    expect(quick.files.find((f) => f.relPath === "middle.bsa")?.modified).toBeUndefined();
+
+    const full = await runFolderCheck(input, () => undefined, "full");
+    expect(full.mode).toBe("full");
+    expect(full.files.find((f) => f.relPath === "middle.bsa")?.modified).toBe(true);
+  });
+
+  it("quick check hashes executables and libraries whole", async () => {
+    const chunks = await chunksOf(ORIGINAL, 2);
+    const { input } = makeTree({ "game.exe": "aabbXXddee", "engine.dll": "aabbXXddee" }, [
+      { name: "game.exe", size: 10, sha1: await sha1Of(ORIGINAL), chunks },
+      { name: "engine.dll", size: 10, sha1: await sha1Of(ORIGINAL), chunks },
+    ]);
+    const result = await runFolderCheck(input, () => undefined);
+    expect(result.files.every((f) => f.modified === true)).toBe(true);
+  });
+
+  it("quick check hashes files whole when the manifest has no chunks", async () => {
+    const { input } = makeTree({ "a.bsa": "aabbXXddee" }, [
+      { name: "a.bsa", size: 10, sha1: await sha1Of(ORIGINAL) },
+    ]);
+    const result = await runFolderCheck(input, () => undefined);
+    expect(result.files[0]?.modified).toBe(true);
+  });
+
+  it("counts only the bytes a quick check reads", async () => {
+    const { input } = makeTree({ "a.bsa": ORIGINAL, "b.exe": "hello" }, [
+      {
+        name: "a.bsa",
+        size: 10,
+        sha1: await sha1Of(ORIGINAL),
+        chunks: await chunksOf(ORIGINAL, 2),
+      },
+      { name: "b.exe", size: 5, sha1: await sha1Of("hello") },
+    ]);
+    let last = { bytesDone: 0, bytesTotal: 0 };
+    await runFolderCheck(input, (s) => (last = s));
+    expect(last).toMatchObject({ bytesDone: 13, bytesTotal: 13 });
   });
 });

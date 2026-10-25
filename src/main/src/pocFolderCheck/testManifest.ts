@@ -46,6 +46,7 @@ export interface ITestFile {
   flags?: number;
   sha1?: string;
   linkTarget?: string;
+  chunks?: { sha1: string; offset: number; size: number }[];
 }
 
 /** A whole manifest: payload, metadata, end. */
@@ -64,6 +65,16 @@ export function buildManifest(
           field(2, BigInt(f.size)),
           field(3, BigInt(f.flags ?? 0)),
           ...(f.sha1 !== undefined ? [field(5, Buffer.from(f.sha1, "hex"))] : []),
+          ...(f.chunks ?? []).map((c) =>
+            field(
+              6,
+              Buffer.concat([
+                field(1, Buffer.from(c.sha1, "hex")),
+                field(3, BigInt(c.offset)),
+                field(4, BigInt(c.size)),
+              ]),
+            ),
+          ),
           ...(f.linkTarget !== undefined ? [field(7, f.linkTarget)] : []),
         ]),
       ),

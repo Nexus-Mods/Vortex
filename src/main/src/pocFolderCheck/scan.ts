@@ -1,18 +1,35 @@
 /**
  * Dev-only PoC: the disk side of the Steam game folder check. Reads Steam's depot manifests and
- * Vortex's deployment manifests, walks the game folder and hashes base game files. Never writes.
+ * Vortex's deployment manifests, walks the game folder and hashes base game files, sampled or
+ * whole (see FolderCheckMode). Never writes.
  * See docs/superpowers/specs/2026-10-25-steam-game-folder-check-poc-design.md.
  */
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { lstat, readdir, readFile } from "node:fs/promises";
+import { lstat, open, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { FolderCheckInput, FolderCheckResult, FolderCheckStatus } from "@vortex/shared/ipc";
+import type {
+  FolderCheckInput,
+  FolderCheckMode,
+  FolderCheckResult,
+  FolderCheckStatus,
+} from "@vortex/shared/ipc";
 
 import { log } from "../logging";
-import { classify, type IDeployedEntry, type IDiskFile, mergeDepotFiles } from "./classify";
-import { type IDepotFile, type IDepotManifest, readDepotManifest } from "./depotManifest";
+import {
+  classify,
+  type IClassified,
+  type IDeployedEntry,
+  type IDiskFile,
+  mergeDepotFiles,
+} from "./classify";
+import {
+  type IDepotChunk,
+  type IDepotFile,
+  type IDepotManifest,
+  readDepotManifest,
+} from "./depotManifest";
 
 type RunningStatus = Extract<FolderCheckStatus, { state: "running" }>;
 
@@ -20,6 +37,9 @@ type RunningStatus = Extract<FolderCheckStatus, { state: "running" }>;
 export class FolderCheckUnavailable extends Error {}
 
 const HASH_CONCURRENCY = 4;
+// byte patches target these, anywhere in the file, so a sample isn't enough
+const HASH_WHOLE = /\.(exe|dll)$/i;
+const SAMPLED_CHUNKS = 4;
 const DEPLOYMENT_MANIFEST = /^vortex\.deployment.*\.json$/i;
 
 export function depotManifestPath(steamPath: string, depotId: number, manifestId: string): string {
@@ -129,9 +149,42 @@ export function sha1File(filePath: string): Promise<string> {
   });
 }
 
+type HashItem = IClassified["toHash"][number];
+
+/**
+ * The chunks a quick check reads: first, last and two between, or none when the file should be
+ * hashed whole. Four chunks finds a replaced file, which almost always differs from its first
+ * chunk, at a few MB per file instead of the whole game.
+ */
+export function sampleChunks(item: HashItem, mode: FolderCheckMode): IDepotChunk[] {
+  const { chunks } = item;
+  if (mode === "full" || HASH_WHOLE.test(item.relPath) || chunks.length <= SAMPLED_CHUNKS) {
+    return [];
+  }
+  const count = chunks.length;
+  const picks = new Set([0, Math.floor(count / 3), Math.floor((2 * count) / 3), count - 1]);
+  return [...picks].flatMap((index) => chunks[index] ?? []);
+}
+
+/** True when every chunk's bytes on disk match its SHA1 */
+async function chunksMatch(filePath: string, chunks: IDepotChunk[]): Promise<boolean> {
+  const handle = await open(filePath, "r");
+  try {
+    for (const chunk of chunks) {
+      const buffer = Buffer.alloc(chunk.size);
+      await handle.read(buffer, 0, chunk.size, chunk.offset);
+      if (createHash("sha1").update(buffer).digest("hex") !== chunk.sha1) return false;
+    }
+    return true;
+  } finally {
+    await handle.close();
+  }
+}
+
 export async function runFolderCheck(
   input: FolderCheckInput,
   onProgress: (status: RunningStatus) => void,
+  mode: FolderCheckMode = "quick",
   hash: (filePath: string) => Promise<string> = sha1File,
 ): Promise<FolderCheckResult> {
   onProgress({ state: "running", phase: "listing", bytesDone: 0, bytesTotal: 0 });
@@ -142,21 +195,30 @@ export async function runFolderCheck(
 
   const byRelPath = new Map(classified.files.map((file) => [file.relPath, file]));
   const unreadable: string[] = [];
-  const bytesTotal = classified.toHash.reduce((sum, item) => sum + item.size, 0);
+  const queue = classified.toHash.map((item) => {
+    const chunks = sampleChunks(item, mode);
+    const bytes = chunks.length > 0 ? chunks.reduce((sum, c) => sum + c.size, 0) : item.size;
+    return { item, chunks, bytes };
+  });
+  const bytesTotal = queue.reduce((sum, entry) => sum + entry.bytes, 0);
   let bytesDone = 0;
   onProgress({ state: "running", phase: "hashing", bytesDone, bytesTotal });
 
-  const queue = [...classified.toHash];
   const worker = async (): Promise<void> => {
-    for (let item = queue.shift(); item !== undefined; item = queue.shift()) {
+    for (let entry = queue.shift(); entry !== undefined; entry = queue.shift()) {
+      const { item, chunks, bytes } = entry;
+      const filePath = path.join(input.gamePath, item.relPath);
       try {
-        const actual = await hash(path.join(input.gamePath, item.relPath));
+        const matches =
+          chunks.length > 0
+            ? await chunksMatch(filePath, chunks)
+            : (await hash(filePath)) === item.sha1;
         const file = byRelPath.get(item.relPath);
-        if (actual !== item.sha1 && file !== undefined) file.modified = true;
+        if (!matches && file !== undefined) file.modified = true;
       } catch {
         unreadable.push(item.relPath);
       }
-      bytesDone += item.size;
+      bytesDone += bytes;
       onProgress({ state: "running", phase: "hashing", bytesDone, bytesTotal });
     }
   };
@@ -165,6 +227,7 @@ export async function runFolderCheck(
   return {
     checkedAt: Date.now(),
     input,
+    mode,
     files: classified.files,
     missing: classified.missing,
     unreadable,

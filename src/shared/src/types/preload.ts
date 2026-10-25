@@ -23,6 +23,7 @@ import type {
   DiffOperation,
   AppInitMetadata,
   FolderCheckInput,
+  FolderCheckMode,
   FolderCheckStatus,
   HashAlgorithm,
   Serializable,
@@ -132,7 +133,7 @@ export interface Api {
 /** Dev-only PoC: Steam game folder check, answered by main only in development */
 export interface PocApi {
   /** Starts a check for the app unless one is running, or done and not forced */
-  startFolderCheck(input: FolderCheckInput, force: boolean): Promise<void>;
+  startFolderCheck(input: FolderCheckInput, force: boolean, mode: FolderCheckMode): Promise<void>;
   /** The app's check state: progress while running, then the result */
   getFolderCheckStatus(appId: number): Promise<FolderCheckStatus>;
 }

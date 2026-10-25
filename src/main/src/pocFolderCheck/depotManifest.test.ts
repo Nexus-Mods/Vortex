@@ -24,7 +24,38 @@ describe("readDepotManifest", () => {
       Buffer.concat([section(MAGIC.payload, field(1, mapping)), metadata(0n), end()]),
     );
     expect(result.files).toEqual([
-      { name: "SkyrimSE.exe", size: 37910440, flags: 0, sha1: EXE_SHA1, linkTarget: "" },
+      {
+        name: "SkyrimSE.exe",
+        size: 37910440,
+        flags: 0,
+        sha1: EXE_SHA1,
+        linkTarget: "",
+        chunks: [{ sha1: "", offset: 0, size: 0 }],
+      },
+    ]);
+  });
+
+  it("reads chunks in file order", () => {
+    // Steam doesn't list chunks by offset
+    const chunk = (sha1: string, offset: bigint, size: bigint) =>
+      field(
+        6,
+        Buffer.concat([field(1, Buffer.from(sha1, "hex")), field(3, offset), field(4, size)]),
+      );
+    const mapping = Buffer.concat([
+      field(1, "Data\\Skyrim - Textures1.bsa"),
+      field(2, 3145728n),
+      chunk("bb".repeat(20), 1048576n, 1048576n),
+      chunk("cc".repeat(20), 2097152n, 1048576n),
+      chunk("aa".repeat(20), 0n, 1048576n),
+    ]);
+    const result = readDepotManifest(
+      Buffer.concat([section(MAGIC.payload, field(1, mapping)), metadata(0n), end()]),
+    );
+    expect(result.files[0]?.chunks).toEqual([
+      { sha1: "aa".repeat(20), offset: 0, size: 1048576 },
+      { sha1: "bb".repeat(20), offset: 1048576, size: 1048576 },
+      { sha1: "cc".repeat(20), offset: 2097152, size: 1048576 },
     ]);
   });
 

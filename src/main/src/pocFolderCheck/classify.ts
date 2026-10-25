@@ -5,7 +5,12 @@
  */
 import type { FolderCheckFile } from "@vortex/shared/ipc";
 
-import { DEPOT_FLAG, type IDepotFile, type IDepotManifest } from "./depotManifest";
+import {
+  DEPOT_FLAG,
+  type IDepotChunk,
+  type IDepotFile,
+  type IDepotManifest,
+} from "./depotManifest";
 
 export interface IDiskFile {
   /** Relative to the game folder */
@@ -26,7 +31,7 @@ export interface IClassified {
   files: FolderCheckFile[];
   missing: { relPath: string; size: number }[];
   /** Base game files whose size matches, still to be compared by SHA1 */
-  toHash: { relPath: string; sha1: string; size: number }[];
+  toHash: { relPath: string; sha1: string; size: number; chunks: IDepotChunk[] }[];
   baseFilesWithBackup: number;
 }
 
@@ -95,7 +100,12 @@ export function classify(
       if (compared && baseEntry.size !== file.size) {
         entry.modified = true;
       } else if (compared && baseEntry.sha1 !== "") {
-        result.toHash.push({ relPath: file.relPath, sha1: baseEntry.sha1, size: file.size });
+        result.toHash.push({
+          relPath: file.relPath,
+          sha1: baseEntry.sha1,
+          size: file.size,
+          chunks: baseEntry.chunks,
+        });
       }
     }
 

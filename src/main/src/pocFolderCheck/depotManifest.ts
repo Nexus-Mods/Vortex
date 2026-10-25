@@ -1,9 +1,17 @@
 /**
  * Dev-only PoC: reads a Steam depot manifest (`<steam>/depotcache/<depot>_<manifest>.manifest`),
- * the per-depot list of files Steam installed with their sizes and SHA1s. The format is a run of
+ * the per-depot list of files Steam installed with their sizes and SHA1s, whole and per chunk. The format is a run of
  * sections, each a uint32le magic, a uint32le length and a protobuf body. See
  * docs/superpowers/specs/2026-10-25-steam-game-folder-check-poc-design.md.
  */
+
+/** One piece of a file as Steam downloads it, usually 1 MB */
+export interface IDepotChunk {
+  /** SHA1 of the uncompressed bytes, lowercase hex */
+  sha1: string;
+  offset: number;
+  size: number;
+}
 
 export interface IDepotFile {
   /** Path relative to the game folder, with Steam's spelling and Windows separators */
@@ -13,6 +21,8 @@ export interface IDepotFile {
   /** Lowercase hex, or "" when the manifest has none */
   sha1: string;
   linkTarget: string;
+  /** Sorted by offset */
+  chunks: IDepotChunk[];
 }
 
 export interface IDepotManifest {
@@ -91,8 +101,18 @@ const asBigInt = (value: FieldValue): bigint => (typeof value === "bigint" ? val
 const asBuffer = (value: FieldValue): Buffer =>
   typeof value === "bigint" ? Buffer.alloc(0) : value;
 
+function readChunk(data: Buffer): IDepotChunk {
+  const chunk: IDepotChunk = { sha1: "", offset: 0, size: 0 };
+  for (const [fieldNumber, value] of fields(data)) {
+    if (fieldNumber === 1) chunk.sha1 = asBuffer(value).toString("hex");
+    else if (fieldNumber === 3) chunk.offset = Number(asBigInt(value));
+    else if (fieldNumber === 4) chunk.size = Number(asBigInt(value));
+  }
+  return chunk;
+}
+
 function readFileMapping(data: Buffer): IDepotFile {
-  const file: IDepotFile = { name: "", size: 0, flags: 0, sha1: "", linkTarget: "" };
+  const file: IDepotFile = { name: "", size: 0, flags: 0, sha1: "", linkTarget: "", chunks: [] };
   for (const [fieldNumber, value] of fields(data)) {
     switch (fieldNumber) {
       case 1:
@@ -107,11 +127,16 @@ function readFileMapping(data: Buffer): IDepotFile {
       case 5:
         file.sha1 = asBuffer(value).toString("hex");
         break;
+      case 6:
+        file.chunks.push(readChunk(asBuffer(value)));
+        break;
       case 7:
         file.linkTarget = asBuffer(value).toString("utf8");
         break;
     }
   }
+  // Steam doesn't list chunks in file order
+  file.chunks.sort((a, b) => a.offset - b.offset);
   return file;
 }
 

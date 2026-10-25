@@ -383,6 +383,12 @@ export interface FolderCheckInput {
   depots: { depotId: number; manifestId: string }[];
 }
 
+/**
+ * Dev-only PoC: how hard to look at base game files whose size matches. "quick" reads four of
+ * Steam's 1 MB chunks per file and hashes .exe and .dll whole; "full" hashes every file whole.
+ */
+export type FolderCheckMode = "quick" | "full";
+
 /** Dev-only PoC: who a file in a Steam game folder belongs to (see FolderCheckInput). */
 export type FolderCheckBucket = "game" | "vortex" | "unknown";
 
@@ -402,6 +408,7 @@ export interface FolderCheckFile {
 export interface FolderCheckResult {
   checkedAt: number;
   input: FolderCheckInput;
+  mode: FolderCheckMode;
   files: FolderCheckFile[];
   missing: { relPath: string; size: number }[];
   /** Base game files that couldn't be read to hash */
@@ -426,7 +433,11 @@ export interface InvokeChannels {
   "example:ping": () => Promise<string>;
 
   // Dev-only PoC: Steam game folder check
-  "poc:folder-check-start": (input: FolderCheckInput, force: boolean) => Promise<void>;
+  "poc:folder-check-start": (
+    input: FolderCheckInput,
+    force: boolean,
+    mode: FolderCheckMode,
+  ) => Promise<void>;
   "poc:folder-check-status": (appId: number) => Promise<FolderCheckStatus>;
 
   // bsdiff binary patching, run on a main-process worker_thread (only paths cross IPC)

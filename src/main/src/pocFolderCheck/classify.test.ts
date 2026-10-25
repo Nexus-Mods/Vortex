@@ -24,6 +24,7 @@ const baseFile = (
   flags,
   sha1,
   linkTarget,
+  chunks: [],
 });
 
 const baseOf = (...files: IDepotFile[]) =>
@@ -87,7 +88,7 @@ describe("classify", () => {
   it("queues same-size base files for hashing", () => {
     const result = classify([disk("SkyrimSE.exe", 10)], baseOf(baseFile("SkyrimSE.exe", 10)), []);
     expect(result.files[0]?.modified).toBeUndefined();
-    expect(result.toHash).toEqual([{ relPath: "SkyrimSE.exe", sha1: SHA1, size: 10 }]);
+    expect(result.toHash).toEqual([{ relPath: "SkyrimSE.exe", sha1: SHA1, size: 10, chunks: [] }]);
   });
 
   it("never marks user config files modified", () => {
