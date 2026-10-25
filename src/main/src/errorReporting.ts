@@ -10,6 +10,7 @@ import {
   getErrorCode,
   getErrorMessageOrDefault,
   sanitizeFramePath,
+  TELEMETRY_ENABLED,
 } from "@vortex/shared";
 import type { CrashType, ReportableError } from "@vortex/shared/errors";
 import { recordErrorOnSpan, SanitizingSpanExporter } from "@vortex/shared/telemetry";
@@ -33,7 +34,7 @@ export function disableErrorReporting(): void {
 }
 
 export function isErrorReportingDisabled(): boolean {
-  return errorReportingDisabled;
+  return !TELEMETRY_ENABLED || errorReportingDisabled;
 }
 
 // Object props (e.g. VortexError.data) render as JSON; template
@@ -423,6 +424,11 @@ export async function reportCrash(
   consentGiven = false,
   attributes?: Record<string, string | number | boolean>,
 ): Promise<void> {
+  // mkeiitmods: crash reports would go to the Vortex collector at Nexus Mods
+  if (!TELEMETRY_ENABLED) {
+    log("info", "crash reporting is off, not sending report", { type });
+    return;
+  }
   const resource = createVortexResource("report");
 
   const exporter = new SanitizingSpanExporter(

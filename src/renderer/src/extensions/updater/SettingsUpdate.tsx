@@ -83,6 +83,13 @@ class SettingsUpdate extends ComponentEx<IProps, ISettingsUpdateState> {
 
     const { checkUpdateButtonDisabled } = this.state;
 
+    // mkeiitmods: the updater is switched off (see UPDATER_ENABLED)
+    if (!updaterActive && process.env.NODE_ENV !== "development") {
+      return this.renderCallout(
+        t("Automatic updates are turned off. Download new versions of mkeiitmods manually."),
+      );
+    }
+
     // managed or development
     if (installType === "managed") {
       // managed and not development

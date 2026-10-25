@@ -3,7 +3,7 @@
  * Handles auto-update functionality in the main process
  */
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, UPDATER_ENABLED } from "@vortex/shared";
 
 import { log } from "../logging";
 import { setupAutoUpdater } from "./autoupdater";
@@ -17,6 +17,10 @@ import { setupAutoUpdater } from "./autoupdater";
  * rather than working it out, since only NODE_ENV is inlined into its bundle.
  */
 export function isUpdaterActive(installType: string): boolean {
+  // mkeiitmods: the update feed is the official Vortex one, so the updater must never run
+  if (!UPDATER_ENABLED) {
+    return false;
+  }
   // A build run from source has no uninstaller beside it, so identifyInstallType always calls it
   // "managed". The install type therefore says nothing in development and the opt-in decides on
   // its own; outside development it is the only thing that decides.

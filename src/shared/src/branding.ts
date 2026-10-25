@@ -19,6 +19,21 @@ export const APP_STATE_DIR: string = "mkeiitmods";
 /** Folder (under appData) holding the persistent state of a development build. */
 export const APP_STATE_DIR_DEVEL: string = "mkeiitmods_devel";
 
+/**
+ * The built-in updater resolves releases from the official Vortex GitHub
+ * repository and would replace mkeiitmods with Vortex. It stays off until
+ * mkeiitmods has its own release feed.
+ */
+export const UPDATER_ENABLED: boolean = false;
+
+/**
+ * Usage analytics (Mixpanel), error/crash reports and traces (OpenTelemetry
+ * collector) and remote feature flags (Unleash) all go to Nexus Mods services
+ * that belong to Vortex. mkeiitmods sends none of it. While this is false no
+ * setting or consent can turn them back on.
+ */
+export const TELEMETRY_ENABLED: boolean = false;
+
 /** Where the upstream project lives, for "based on Vortex" credits. */
 export const UPSTREAM_NAME: string = "Vortex (Nexus Mods)";
 

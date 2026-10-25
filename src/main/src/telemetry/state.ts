@@ -1,5 +1,6 @@
 import type { Attributes } from "@opentelemetry/api";
 import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { TELEMETRY_ENABLED } from "@vortex/shared";
 
 /** Process-level singleton reference to the span processor. */
 let processorSingleton: SpanProcessor | undefined;
@@ -20,7 +21,7 @@ export const setTelemetryEnabled = (enabled: boolean): void => {
 };
 
 export const isTelemetryEnabled = (): boolean => {
-  return telemetryExportEnabled;
+  return TELEMETRY_ENABLED && telemetryExportEnabled;
 };
 
 /**
@@ -35,7 +36,7 @@ export const setUnconsentedReportingEnabled = (enabled: boolean): void => {
 };
 
 export const isUnconsentedReportingEnabled = (): boolean => {
-  return unconsentedReportingEnabled;
+  return TELEMETRY_ENABLED && unconsentedReportingEnabled;
 };
 
 // the install's persisted instance id

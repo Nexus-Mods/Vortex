@@ -19,6 +19,12 @@ vi.mock("electron", () => ({
   app: { getPath: telemetry.getPath, getVersion: telemetry.getVersion },
 }));
 vi.mock("./logging", () => ({ log: vi.fn() }));
+// mkeiitmods ships with crash reporting off (see telemetry.mkeiitmods.test.ts); these
+// upstream tests cover the reporting logic behind that switch
+vi.mock("@vortex/shared", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  TELEMETRY_ENABLED: true,
+}));
 vi.mock("./telemetry/setup", () => ({ COLLECTOR_URL: "http://localhost", OTLP_HEADERS: {} }));
 vi.mock("./telemetry/state", () => ({ isTelemetryEnabled: () => false }));
 vi.mock("@vortex/shared/telemetry", () => ({

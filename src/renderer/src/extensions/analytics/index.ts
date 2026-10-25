@@ -1,6 +1,6 @@
 import * as os from "os";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, TELEMETRY_ENABLED } from "@vortex/shared";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
 import { toUpdateChannel } from "@/types/IState";
@@ -27,6 +27,13 @@ let ignoreNextAnalyticsStateChange = false;
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "analytics"], settingsReducer);
   context.registerReducer(["persistent", "analyticsTelemetry"], telemetryReducer);
+
+  // mkeiitmods: analytics would be sent to the Vortex Mixpanel project at Nexus Mods.
+  // Keep the reducers so stored state stays readable, but never ask for consent or send.
+  if (!TELEMETRY_ENABLED) {
+    return true;
+  }
+
   context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
 
   context.once(() => {

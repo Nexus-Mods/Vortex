@@ -4,6 +4,12 @@ const { setupAutoUpdaterMock } = vi.hoisted(() => ({ setupAutoUpdaterMock: vi.fn
 
 vi.mock("./autoupdater", () => ({ setupAutoUpdater: setupAutoUpdaterMock }));
 vi.mock("../logging", () => ({ log: vi.fn() }));
+// mkeiitmods ships with the updater off (see updater.mkeiitmods.test.ts); these
+// upstream tests cover the logic behind that switch
+vi.mock("@vortex/shared", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  UPDATER_ENABLED: true,
+}));
 
 import { initUpdater, isUpdaterActive } from "./updater";
 
