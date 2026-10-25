@@ -31,6 +31,12 @@ describe("rebrandText", () => {
     expect(rebrandText(input)).toBe(input);
   });
 
+  it("points help texts at our data folder", () => {
+    expect(rebrandText('"C:\\Users\\Mike\\AppData\\Roaming\\Vortex\\Downloads\\"')).toBe(
+      '"C:\\Users\\Mike\\AppData\\Roaming\\mkeiitmods\\Downloads\\"',
+    );
+  });
+
   it("leaves text without the name alone", () => {
     expect(rebrandText("Install mods")).toBe("Install mods");
     expect(rebrandText("")).toBe("");

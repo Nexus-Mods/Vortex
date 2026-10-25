@@ -1,4 +1,4 @@
-import { APP_DISPLAY_NAME } from "./branding";
+import { APP_DISPLAY_NAME, APP_STATE_DIR } from "./branding";
 
 /**
  * Replaces the name "Vortex" with the mkeiitmods name in text shown to the user.
@@ -42,6 +42,8 @@ export function rebrandText(text: string): string {
   }
 
   result = result.replace(NAME, APP_DISPLAY_NAME);
+  // help texts show the data folder, which is ours now: AppData\Roaming\Vortex\...
+  result = result.replace(/(AppData\\+Roaming\\+)Vortex(?=\\)/gi, `$1${APP_STATE_DIR}`);
 
   return result.replace(
     new RegExp(`${PLACEHOLDER}(\\d+)${PLACEHOLDER}`, "g"),
