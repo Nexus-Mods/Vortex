@@ -515,7 +515,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private openIssues = () => {
-    util.opn("https://github.com/Nexus-Mods/Vortex/issues").catch(() => null);
+    util.opn("https://github.com/LIDFC/mkeiitmods/issues").catch(() => null);
   };
 
   private openSupportForum = () => {

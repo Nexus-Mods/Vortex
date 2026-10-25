@@ -16,9 +16,10 @@ import { sessionReducer } from "./reducers/session";
 import { IFeedbackFile } from "./types/IFeedbackFile";
 import FeedbackView from "./views/FeedbackView";
 
-const FEEDBACK_GOOGLE_FORM = "https://forms.gle/YF9ED2Xe4ef9jKf99";
+// mkeiitmods: bug reports and feedback go to our repository, not to the Vortex team
+const FEEDBACK_GOOGLE_FORM = "https://github.com/LIDFC/mkeiitmods/issues";
 
-const VORTEX_ISSUE_TRACKER = "https://github.com/Nexus-Mods/Vortex/issues";
+const VORTEX_ISSUE_TRACKER = "https://github.com/LIDFC/mkeiitmods/issues";
 
 const WHITESCREEN_THREAD =
   "https://forums.nexusmods.com/index.php?/topic/7151166-whitescreen-reasons/";

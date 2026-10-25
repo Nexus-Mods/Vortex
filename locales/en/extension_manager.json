@@ -1,8 +1,8 @@
 {
   "_comment": "Extension manager strings - to be populated during migration",
   "linkDialog": {
-    "title": "Vortex extension updates available",
-    "intro": "Vortex found extensions installed without a known source and identified possible replacements on Nexus Mods.",
+    "title": "Extension updates available",
+    "intro": "mkeiitmods found extensions installed without a known source and identified possible replacements on Nexus Mods.",
     "select": "Select which extensions you'd like to replace. Unselected extensions will remain unchanged, and you won't be asked about them again.",
     "replaceWith": "Replace with",
     "buttons": {

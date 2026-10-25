@@ -2,7 +2,13 @@ import { mkdirSync, statSync } from "node:fs";
 import { readFile, writeFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
-import { getErrorCode, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  parseError,
+  unknownToError,
+  APP_DISPLAY_NAME,
+} from "@vortex/shared";
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
 import {
   DataInvalid,
@@ -632,7 +638,8 @@ class Application {
      */
 
     try {
-      await stat(path.join(getVortexPath("application"), "Uninstall Vortex.exe"));
+      // mkeiitmods: the uninstaller is named after productName
+      await stat(path.join(getVortexPath("application"), `Uninstall ${APP_DISPLAY_NAME}.exe`));
       // Collect metadata - renderer will dispatch the action
       this.mAppMetadata!.installType = "regular";
     } catch {

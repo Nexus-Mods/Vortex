@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { APP_DISPLAY_NAME } from "@vortex/shared";
 import { shell } from "electron";
 import update from "immutability-helper";
 import * as React from "react";
@@ -228,11 +229,13 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const desktopLocation = getVortexPath("desktop");
     const shortcutPath = path.join(
       desktopLocation,
-      `Start Vortex Profile_${profileId}(${profile.gameId}).lnk`,
+      `Start ${APP_DISPLAY_NAME} Profile_${profileId}(${profile.gameId}).lnk`,
     );
 
-    // In development, electron.exe needs the app directory as first argument
-    const target = isDevelopment ? exePath : path.join(path.dirname(exePath), "Vortex.exe");
+    // mkeiitmods: point at the running executable. Upstream hard-coded Vortex.exe, which
+    // would start the original Vortex. In development, electron.exe needs the app
+    // directory as first argument (see args below).
+    const target = exePath;
 
     const args = isDevelopment
       ? `"${getVortexPath("package")}" --profile ${profileId}`

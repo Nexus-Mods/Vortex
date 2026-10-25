@@ -44,6 +44,7 @@ import winapi from "winapi-bindings";
 // installed Vortex (%APPDATA%\Vortex). Has to happen before anything reads
 // app.getPath("userData"). E2E isolation below still overrides this.
 app.setName(APP_NAME);
+installDialogRebranding(dialog);
 app.setPath(
   "userData",
   dataRootPath({
@@ -85,6 +86,7 @@ import { PathResolverRegistryImpl } from "./filesystem/path-resolver-registry";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
+import { installDialogRebranding } from "./rebrandDialogs";
 import StylesheetCompiler from "./stylesheetCompiler";
 import { initTelemetryIpcHandler } from "./telemetry/ipcHandler";
 import { createMainTelemetryProvider } from "./telemetry/setup";

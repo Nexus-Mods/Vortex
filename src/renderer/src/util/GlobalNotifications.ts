@@ -1,5 +1,7 @@
 import * as path from "path";
 
+import { rebrandText } from "@vortex/shared";
+
 import type { IExtensionApi } from "../types/IExtensionContext";
 import type { INotification } from "../types/INotification";
 import type { IState } from "../types/IState";
@@ -77,10 +79,10 @@ class GlobalNotifications {
   private showNotification(notification: INotification): void {
     this.mCurrentId = notification.id;
     try {
-      this.mCurrentNotification = new Notification(notification.title!, {
+      this.mCurrentNotification = new Notification(rebrandText(notification.title!), {
         tag: notification.id,
         icon: notification.icon || path.resolve(getVortexPath("assets"), "images", "vortex.ico"),
-        body: notification.message,
+        body: notification.message !== undefined ? rebrandText(notification.message) : undefined,
         requireInteraction: true,
         silent: true,
       });

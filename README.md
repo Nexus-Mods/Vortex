@@ -1,3 +1,29 @@
+# mkeiitmods
+
+**mkeiitmods основан на Vortex (Nexus Mods), GPL-3.0.**
+
+mkeiitmods — менеджер модов, форк [Vortex](https://github.com/Nexus-Mods/Vortex)
+от Nexus Mods (Black Tree Gaming Ltd.). Распространяется на тех же условиях —
+GNU General Public License v3.0, см. [LICENSE.md](LICENSE.md). Копирайты
+оригинальных авторов сохранены.
+
+Чем отличается от Vortex:
+
+- своё название и своя папка данных (`%APPDATA%\mkeiitmods`) — можно ставить рядом
+  с Vortex, он не затрагивается;
+- не обновляется автоматически и не отправляет телеметрию и отчёты об ошибках
+  в Nexus Mods;
+- ссылки `nxm://` перехватывает только после включения в настройках.
+
+Что нового — [CHANGELOG.mkeiitmods.md](CHANGELOG.mkeiitmods.md). Журнал
+разработки — [progress.md](progress.md). mkeiitmods не связан с Nexus Mods и не
+поддерживается ими: с вопросами по mkeiitmods — в
+[issues этого репозитория](https://github.com/LIDFC/mkeiitmods/issues).
+
+---
+
+_Ниже — исходный README проекта Vortex._
+
 <p align="center">
   <img src=".github/assets/github_readme_title.png" alt="Vortex Mod Manager title banner"/>
 </p>

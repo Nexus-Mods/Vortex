@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { APP_NAME } from "@vortex/shared";
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
 import program from "commander";
 import { app, BrowserWindow } from "electron";
@@ -200,7 +201,7 @@ export function parseCommandline(argv: string[], electronIsShitHack: boolean): I
   }
 
   const commandLine = program
-    .command("Vortex")
+    .command(APP_NAME)
     .version(version)
     .option(
       "-d, --download <url>",

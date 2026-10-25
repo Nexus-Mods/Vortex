@@ -6,7 +6,12 @@ type BOMLicense = NonNullable<BOMComponent["licenses"]>[number];
 import * as fs from "fs";
 import * as path from "path";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import {
+  APP_DISPLAY_NAME,
+  APP_VERSION,
+  getErrorMessageOrDefault,
+  UPDATER_ENABLED,
+} from "@vortex/shared";
 import I18next from "i18next";
 import * as React from "react";
 import { Image, Media, Panel } from "react-bootstrap";
@@ -105,6 +110,11 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.mMounted = true;
 
+    // mkeiitmods: the release list belongs to Vortex, so it says nothing about this build
+    if (!UPDATER_ENABLED) {
+      return;
+    }
+
     // no longer have to ignore if development now that we have tag information as part of the package.json version
     // this code hasn't changed, but we only show the date now next to version and not the changelog or tag
 
@@ -168,11 +178,16 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
               </Media.Left>
               <Media.Body>
                 <h2 className="media-heading">
-                  Vortex {this.mVersion}{" "}
+                  {APP_DISPLAY_NAME} {APP_VERSION}{" "}
                   {releaseDate !== undefined
                     ? `(${releaseDate.toLocaleDateString(I18next.language)})`
                     : ""}
                 </h2>
+                <p>
+                  {t("Based on Vortex {{version}} by Nexus Mods", {
+                    replace: { version: this.mVersion },
+                  })}
+                </p>
                 <p>&#169;2026 Black Tree Gaming Ltd.</p>
                 <p>
                   {t("Released under")} <a onClick={this.showOwnLicense}>GPL-3</a> {t("License")}

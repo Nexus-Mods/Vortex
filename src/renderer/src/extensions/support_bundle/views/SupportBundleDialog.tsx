@@ -16,9 +16,8 @@ export interface ISupportBundleDialogProps {
   onHide: () => void;
 }
 
-/** Where a user can hand the archive to the team. Same forum the feedback extension points at. */
-export const SUPPORT_FORUM_URL =
-  "https://forums.nexusmods.com/index.php?/forum/4306-vortex-support";
+/** Where a user can hand the archive over. mkeiitmods: our issue tracker, not the Vortex forum. */
+export const SUPPORT_FORUM_URL = "https://github.com/LIDFC/mkeiitmods/issues";
 /** The #vortex-support channel in the Nexus Mods server. */
 export const SUPPORT_DISCORD_URL =
   "https://discord.com/channels/215154001799413770/1481578064478736537";

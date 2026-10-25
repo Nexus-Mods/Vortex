@@ -68,7 +68,9 @@ async function main() {
   const json = await readFile(MAIN_PACKAGE_PATH, "utf8");
   const mainPkg = JSON.parse(json);
 
-  mainPkg["name"] = "Vortex";
+  // mkeiitmods: the package name becomes the app name and the default data folder
+  mainPkg["name"] = "mkeiitmods";
+  mainPkg["productName"] = "mkeiitmods";
   mainPkg["main"] = mainPkg.main.replace(/^build\//, "");
 
   // NOTE(erri120): this is the minimal amount of bullshit required to get the piece of shit software called "electron-builder" to work with PNPM.

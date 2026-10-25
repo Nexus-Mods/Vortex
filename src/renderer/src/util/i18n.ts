@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import { rebrandText } from "@vortex/shared";
 import type { TOptions, i18n, BackendModule, PostProcessorModule, Services } from "i18next";
 import I18next from "i18next";
 import FSBackend from "i18next-fs-backend";
@@ -17,8 +18,8 @@ export type { i18n };
 export type TFunction = typeof I18next.t;
 
 export const fallbackTFunc: TFunction = (str: string | string[]) => {
-  if (Array.isArray(str)) return String(str[0]);
-  return String(str);
+  if (Array.isArray(str)) return rebrandText(String(str[0]));
+  return rebrandText(String(str));
 };
 
 let debugging = false;
@@ -121,6 +122,19 @@ class MultiBackend implements BackendModule<BackendOptions> {
   }
 }
 
+/**
+ * mkeiitmods: shows our name wherever a translated string says "Vortex".
+ * See rebrandText in @vortex/shared for why this happens at display time.
+ */
+export class RebrandPP implements PostProcessorModule {
+  name: string = "RebrandPP";
+
+  static type = "postProcessor" as const;
+  type: "postProcessor" = "postProcessor" as const;
+
+  process: PostProcessorModule["process"] = (value) => rebrandText(value);
+}
+
 class HighlightPP implements PostProcessorModule {
   name: string = "HighlightPP";
 
@@ -155,6 +169,7 @@ export async function init(
     i18nObj.use(new HighlightPP());
   }
 
+  i18nObj.use(new RebrandPP());
   i18nObj.use(MultiBackend).use(initReactI18next);
 
   try {
@@ -187,7 +202,8 @@ export async function init(
       keySeparator: "::",
 
       debug: false,
-      postProcess: process.env.HIGHLIGHT_I18N === "true" ? "HighlightPP" : false,
+      postProcess:
+        process.env.HIGHLIGHT_I18N === "true" ? ["RebrandPP", "HighlightPP"] : ["RebrandPP"],
 
       react: {
         // afaict this is simply broken at this time. With this enabled the React.Suspense will

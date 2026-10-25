@@ -2,7 +2,7 @@ import { appendFileSync } from "node:fs";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, APP_DISPLAY_NAME } from "@vortex/shared";
 import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
@@ -426,7 +426,7 @@ class MainWindow {
       autoHideMenuBar: windowMetrics?.customTitlebar ?? true,
       frame: !(windowMetrics?.customTitlebar ?? true),
       show: false,
-      title: "Vortex",
+      title: APP_DISPLAY_NAME,
       titleBarStyle: windowMetrics?.customTitlebar === true ? "hidden" : "default",
       webPreferences: {
         preload: path.join(getVortexPath("base"), "preload.cjs"),
