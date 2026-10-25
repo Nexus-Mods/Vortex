@@ -373,12 +373,61 @@ export interface FlagMetricsBucket {
 /** Hash algorithms the app requests over `hash:compute`. Closed set; extend as callers need. */
 export type HashAlgorithm = "md5";
 
+/** Dev-only PoC: what main needs to check a Steam game folder (docs/superpowers/specs/2026-10-25-steam-game-folder-check-poc-design.md). */
+export interface FolderCheckInput {
+  appId: number;
+  buildId: number;
+  /** Steam's install folder, holding `depotcache` */
+  steamPath: string;
+  gamePath: string;
+  depots: { depotId: number; manifestId: string }[];
+}
+
+/** Dev-only PoC: who a file in a Steam game folder belongs to (see FolderCheckInput). */
+export type FolderCheckBucket = "game" | "vortex" | "unknown";
+
+/** Dev-only PoC: one file found in a Steam game folder (see FolderCheckInput). */
+export interface FolderCheckFile {
+  relPath: string;
+  size: number;
+  mtimeMs: number;
+  bucket: FolderCheckBucket;
+  /** A base game file whose size or SHA1 differs from Steam's */
+  modified?: true;
+  /** A Vortex-deployed file rewritten since deployment, which purge leaves behind */
+  changedSinceDeployed?: true;
+}
+
+/** Dev-only PoC: the outcome of checking a Steam game folder (see FolderCheckInput). */
+export interface FolderCheckResult {
+  checkedAt: number;
+  input: FolderCheckInput;
+  files: FolderCheckFile[];
+  missing: { relPath: string; size: number }[];
+  /** Base game files that couldn't be read to hash */
+  unreadable: string[];
+  /** Base game files Vortex has deployed over, keeping the original as `.vortex_backup` */
+  baseFilesWithBackup: number;
+}
+
+/** Dev-only PoC: the state of a Steam game folder check for one app (see FolderCheckInput). */
+export type FolderCheckStatus =
+  | { state: "idle" }
+  | { state: "running"; phase: "listing" | "hashing"; bytesDone: number; bytesTotal: number }
+  | { state: "done"; result: FolderCheckResult }
+  | { state: "unavailable"; reason: string }
+  | { state: "error"; message: string };
+
 /** Type containing all known channels used by renderer processes to send to and receive messages from the main process */
 export interface InvokeChannels {
   // NOTE(erri120): Parameters must be serializable and return values must be Promises resolving serializable content.
 
   // Examples:
   "example:ping": () => Promise<string>;
+
+  // Dev-only PoC: Steam game folder check
+  "poc:folder-check-start": (input: FolderCheckInput, force: boolean) => Promise<void>;
+  "poc:folder-check-status": (appId: number) => Promise<FolderCheckStatus>;
 
   // bsdiff binary patching, run on a main-process worker_thread (only paths cross IPC)
   "bsdiff:create": (oldPath: string, newPath: string, patchPath: string) => Promise<void>;

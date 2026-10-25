@@ -61,9 +61,9 @@ describe("readDepotManifest", () => {
     const result = readDepotManifest(
       Buffer.concat([section(MAGIC.payload, field(1, mapping)), metadata(0n), end()]),
     );
-    expect(result.files[0].name).toBe("Data\\Skyrim.esm");
-    expect(result.files[0].linkTarget).toBe("target.bin");
-    expect(result.files[0].sha1).toBe("");
+    expect(result.files[0]?.name).toBe("Data\\Skyrim.esm");
+    expect(result.files[0]?.linkTarget).toBe("target.bin");
+    expect(result.files[0]?.sha1).toBe("");
   });
 
   it("throws on an unknown magic", () => {

@@ -49,7 +49,7 @@ function* fields(data: Buffer): Generator<[number, FieldValue]> {
     let shift = 0n;
     for (;;) {
       if (offset >= data.length) throw invalid("varint runs past the end");
-      const byte = data[offset++];
+      const byte = data.readUInt8(offset++);
       result |= BigInt(byte & 0x7f) << shift;
       if ((byte & 0x80) === 0) return result;
       shift += 7n;
