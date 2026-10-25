@@ -22,6 +22,8 @@ import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
   AppInitMetadata,
+  FolderCheckInput,
+  FolderCheckStatus,
   HashAlgorithm,
   Serializable,
   UpdaterStatusResponse,
@@ -66,6 +68,9 @@ export interface Api {
 
   /** Updater API - for querying update status from main process */
   updater: UpdaterApi;
+
+  /** Dev-only PoC: Steam game folder check served by main */
+  poc: PocApi;
   /** Dialog APIs */
   dialog: Dialog;
 
@@ -122,6 +127,14 @@ export interface Api {
 
   /** Filesystem API */
   fs: FileSystem;
+}
+
+/** Dev-only PoC: Steam game folder check, answered by main only in development */
+export interface PocApi {
+  /** Starts a check for the app unless one is running, or done and not forced */
+  startFolderCheck(input: FolderCheckInput, force: boolean): Promise<void>;
+  /** The app's check state: progress while running, then the result */
+  getFolderCheckStatus(appId: number): Promise<FolderCheckStatus>;
 }
 
 export interface Example {

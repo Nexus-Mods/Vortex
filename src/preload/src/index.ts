@@ -4,6 +4,7 @@ import { QualifiedPath } from "@vortex/shared/filesystem";
 import type {
   AppInitMetadata,
   EnumerateEntryWire,
+  FolderCheckInput,
   Serializable,
   TemporalWire,
 } from "@vortex/shared/ipc";
@@ -81,6 +82,13 @@ try {
         betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
       detectVersion: (source: { type: string; path: { value: string }; regex?: string }) =>
         betterIpcRenderer.invoke("adaptors:detect-version", source),
+    },
+
+    poc: {
+      startFolderCheck: (input: FolderCheckInput, force: boolean) =>
+        betterIpcRenderer.invoke("poc:folder-check-start", input, force),
+      getFolderCheckStatus: (appId: number) =>
+        betterIpcRenderer.invoke("poc:folder-check-status", appId),
     },
 
     updater: {
