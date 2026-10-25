@@ -187,6 +187,7 @@ export async function runFolderCheck(
   mode: FolderCheckMode = "quick",
   hash: (filePath: string) => Promise<string> = sha1File,
 ): Promise<FolderCheckResult> {
+  const startedAt = Date.now();
   onProgress({ state: "running", phase: "listing", bytesDone: 0, bytesTotal: 0 });
   const base = await loadBaseFiles(input);
   const disk = await walkFolder(input.gamePath);
@@ -224,8 +225,10 @@ export async function runFolderCheck(
   };
   await Promise.all(Array.from({ length: HASH_CONCURRENCY }, worker));
 
+  const checkedAt = Date.now();
   return {
-    checkedAt: Date.now(),
+    checkedAt,
+    durationMs: checkedAt - startedAt,
     input,
     mode,
     files: classified.files,

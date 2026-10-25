@@ -98,6 +98,13 @@ function useFolderCheck(input: FolderCheckInput | undefined, active: boolean) {
   };
 }
 
+/** "0.4 s" under ten seconds, "40 s" under a minute, then "2 min 5 s" */
+function formatDuration(ms: number): string {
+  if (ms < 10_000) return `${(ms / 1000).toFixed(1)} s`;
+  const seconds = Math.round(ms / 1000);
+  return seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`;
+}
+
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 const SWATCH = {
@@ -418,7 +425,9 @@ export const FolderCheckPage = ({ active = true }: { active?: boolean }) => {
           "Steam",
           `build ${input.buildId}`,
           `depots ${input.depots.map((depot) => depot.depotId).join(", ")}`,
-          ...(checked !== undefined ? [`${result?.mode} check ${checked}`] : []),
+          ...(checked !== undefined && result !== undefined
+            ? [`${result.mode} check ${checked} in ${formatDuration(result.durationMs)}`]
+            : []),
         ].join(" · ")
       : undefined;
 

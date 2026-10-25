@@ -17,6 +17,7 @@ const file = (
 
 const resultWith = (files: FolderCheckFile[], missing = 0): FolderCheckResult => ({
   checkedAt: 0,
+  durationMs: 0,
   mode: "quick",
   input: { appId: 1, buildId: 1, steamPath: "", gamePath: "", depots: [] },
   files,

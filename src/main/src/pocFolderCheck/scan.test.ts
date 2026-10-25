@@ -199,6 +199,17 @@ describe("runFolderCheck", () => {
     expect(full.files.find((f) => f.relPath === "middle.bsa")?.modified).toBe(true);
   });
 
+  it("records how long the check took", async () => {
+    const { input } = makeTree({ "a.exe": "hello" }, [
+      { name: "a.exe", size: 5, sha1: await sha1Of("hello") },
+    ]);
+    const now = vi.spyOn(Date, "now");
+    now.mockReturnValueOnce(1000).mockReturnValue(1400);
+    const result = await runFolderCheck(input, () => undefined);
+    now.mockRestore();
+    expect(result.durationMs).toBe(400);
+  });
+
   it("quick check hashes executables and libraries whole", async () => {
     const chunks = await chunksOf(ORIGINAL, 2);
     const { input } = makeTree({ "game.exe": "aabbXXddee", "engine.dll": "aabbXXddee" }, [

@@ -54,6 +54,7 @@ const file = (relPath: string, extra: Partial<FolderCheckFile> = {}): FolderChec
 
 const result = (extra: Partial<FolderCheckResult> = {}): FolderCheckResult => ({
   checkedAt: Date.now(),
+  durationMs: 400,
   input,
   mode: "quick",
   files: [
@@ -174,6 +175,17 @@ describe("FolderCheckPage", () => {
     await screen.findByText(/Move 3 unknown files/);
     fireEvent.click(screen.getByText("Re-check"));
     await waitFor(() => expect(mocks.start).toHaveBeenCalledWith(input, true, "quick"));
+  });
+
+  it("shows how long the check took", async () => {
+    mocks.status.mockResolvedValueOnce(done(result({ durationMs: 400 })));
+    const { unmount } = render(<FolderCheckPage />);
+    expect(await screen.findByText(/quick check .* in 0\.4 s/)).toBeTruthy();
+    unmount();
+
+    mocks.status.mockResolvedValueOnce(done(result({ durationMs: 39_584 })));
+    render(<FolderCheckPage />);
+    expect(await screen.findByText(/in 40 s/)).toBeTruthy();
   });
 
   it("Full check hashes every file and says so", async () => {

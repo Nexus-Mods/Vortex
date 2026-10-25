@@ -17,6 +17,7 @@ const input: FolderCheckInput = {
 
 const result: FolderCheckResult = {
   checkedAt: 1,
+  durationMs: 1,
   input,
   mode: "quick",
   files: [],

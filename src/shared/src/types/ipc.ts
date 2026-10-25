@@ -407,6 +407,8 @@ export interface FolderCheckFile {
 /** Dev-only PoC: the outcome of checking a Steam game folder (see FolderCheckInput). */
 export interface FolderCheckResult {
   checkedAt: number;
+  /** From the start of the check to the end, listing and hashing */
+  durationMs: number;
   input: FolderCheckInput;
   mode: FolderCheckMode;
   files: FolderCheckFile[];
