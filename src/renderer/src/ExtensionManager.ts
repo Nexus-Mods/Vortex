@@ -3060,6 +3060,7 @@ class ExtensionManager {
       nexus_integration: () => require("./extensions/nexus_integration/index.tsx"),
       null_activator: () => require("./extensions/null_activator/index.ts"),
       onboarding_dashlet: () => require("./extensions/onboarding_dashlet/index.ts"),
+      poc_folder_check: () => require("./extensions/poc_folder_check/index.ts"),
       profile_management: () => require("./extensions/profile_management/index.ts"),
       // NOTE: intentionally placed after its dependencies (mod_management,
       // download_management, gamemode_management, profile_management,

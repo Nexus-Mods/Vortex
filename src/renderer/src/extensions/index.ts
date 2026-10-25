@@ -33,6 +33,7 @@ import {} from "./news_dashlet";
 import {} from "./nexus_integration";
 import {} from "./null_activator";
 import {} from "./onboarding_dashlet";
+import {} from "./poc_folder_check";
 import {} from "./profile_management";
 import {} from "./recovery";
 import {} from "./settings_application";

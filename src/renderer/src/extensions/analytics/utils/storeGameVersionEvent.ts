@@ -79,7 +79,7 @@ interface InstallRecord {
 }
 
 /** Windows and POSIX disagree about separators and case; matches either way. */
-const normPath = (value: string): string =>
+export const normPath = (value: string): string =>
   value
     .replace(/[/\\]+/g, "/")
     .replace(/\/$/, "")
