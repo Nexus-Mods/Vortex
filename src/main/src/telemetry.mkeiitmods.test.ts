@@ -68,7 +68,9 @@ describe("mkeiitmods telemetry", () => {
     const client = { start: mocks.clientStart } as unknown as UnleashClient;
     synchronizeFeatureFlags(client);
     expect(mocks.clientStart).not.toHaveBeenCalled();
-    const getCurrent = mocks.handle.mock.calls.find(([name]) => name === "flags:get-current");
+    const getCurrent = mocks.handle.mock.calls.find(([name]) => name === "flags:get-current") as
+      | [string, () => unknown]
+      | undefined;
     expect(getCurrent?.[1]()).toEqual([]);
   });
 });

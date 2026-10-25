@@ -6,7 +6,7 @@ import { installDialogRebranding, resetDialogRebrandingForTests } from "./rebran
 function makeDialog() {
   const calls = {
     errorBox: vi.fn(),
-    messageBox: vi.fn(async () => ({ response: 0, checkboxChecked: false })),
+    messageBox: vi.fn(() => Promise.resolve({ response: 0, checkboxChecked: false })),
     messageBoxSync: vi.fn(() => 0),
   };
   const dialog = {

@@ -44,18 +44,18 @@ export function installDialogRebranding(dialog: Dialog): void {
   const showMessageBox = dialog.showMessageBox.bind(dialog) as (
     ...args: unknown[]
   ) => ReturnType<Dialog["showMessageBox"]>;
-  dialog.showMessageBox = ((...args: unknown[]) => {
+  dialog.showMessageBox = (...args: unknown[]) => {
     const [rest, options] = splitArgs(args);
     return showMessageBox(...rest, rebrandBoxOptions(options));
-  }) as Dialog["showMessageBox"];
+  };
 
   const showMessageBoxSync = dialog.showMessageBoxSync.bind(dialog) as (
     ...args: unknown[]
   ) => number;
-  dialog.showMessageBoxSync = ((...args: unknown[]) => {
+  dialog.showMessageBoxSync = (...args: unknown[]) => {
     const [rest, options] = splitArgs(args);
     return showMessageBoxSync(...rest, rebrandBoxOptions(options));
-  }) as Dialog["showMessageBoxSync"];
+  };
 }
 
 /** For tests only. */
