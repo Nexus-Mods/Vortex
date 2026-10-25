@@ -52,20 +52,20 @@ async function loadCheckInput(
 /** Starts or restarts the check and follows its status until it stops running. */
 function useFolderCheck(input: FolderCheckInput | undefined) {
   const [status, setStatus] = useState<FolderCheckStatus>({ state: "idle" });
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const generation = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const generationRef = useRef(0);
 
   const run = useCallback(
     (force: boolean) => {
       if (input === undefined) return;
-      clearTimeout(timer.current);
-      const current = ++generation.current;
+      clearTimeout(timerRef.current);
+      const current = ++generationRef.current;
       const poll = async () => {
         const next = await window.api.poc.getFolderCheckStatus(input.appId);
-        if (current !== generation.current) return;
+        if (current !== generationRef.current) return;
         setStatus(next);
         if (next.state === "running") {
-          timer.current = setTimeout(() => void poll(), POLL_INTERVAL_MS);
+          timerRef.current = setTimeout(() => void poll(), POLL_INTERVAL_MS);
         }
       };
       void window.api.poc.startFolderCheck(input, force).then(poll);
@@ -76,8 +76,8 @@ function useFolderCheck(input: FolderCheckInput | undefined) {
   useEffect(() => {
     run(false);
     return () => {
-      generation.current++;
-      clearTimeout(timer.current);
+      generationRef.current++;
+      clearTimeout(timerRef.current);
     };
   }, [run]);
 
@@ -104,15 +104,20 @@ const SummaryBar = ({ summary }: { summary: IFolderSummary }) => {
           />
         ))}
       </div>
+
       <Typography as="div" className="flex flex-wrap gap-x-4 gap-y-1" typographyType="body-sm">
         {segments.map((segment) => (
           <span className="flex items-center gap-1" key={segment.key}>
             <span className={`inline-block size-2.5 rounded-xs ${segment.className}`} />
+
             {`${segment.label} ${segment.files} · ${bytesToString(segment.bytes)}`}
           </span>
         ))}
+
         <span>{`Modified ${summary.modified}`}</span>
+
         <span>{`Missing ${summary.missing}`}</span>
+
         <span>{`Changed since deployed ${summary.changedSinceDeployed.files}`}</span>
       </Typography>
     </div>
@@ -133,30 +138,39 @@ const CleanSteps = ({
       <Typography className="font-semibold" typographyType="title-sm">
         To make it clean
       </Typography>
-      <Typography as="ol" className="list-inside list-decimal space-y-2" typographyType="body-sm">
-        <li className="flex items-center justify-between gap-4">
+
+      {/* numbered in the text: a flex row hides list markers */}
+      <Typography as="div" className="space-y-2" typographyType="body-sm">
+        <div className="flex items-center justify-between gap-4">
           <span>
-            {`Move ${plural(summary.counts.unknown.files, "unknown file")} (${bytesToString(summary.counts.unknown.bytes)}) out of the game folder`}
+            {`1. Move ${plural(summary.counts.unknown.files, "unknown file")} (${bytesToString(summary.counts.unknown.bytes)}) out of the game folder`}
+
             {changed.files > 0 ? `, plus ${changed.files} Vortex files changed since deployed` : ""}
           </span>
+
           <Button disabled size="sm">
             Archive (later)
           </Button>
-        </li>
-        <li>Remove the empty folders left behind</li>
-        <li className="flex items-center justify-between gap-4">
-          <span>{`Restore ${restore} modified or missing game files with Steam's verify`}</span>
+        </div>
+
+        <p>2. Remove the empty folders left behind</p>
+
+        <div className="flex items-center justify-between gap-4">
+          <span>{`3. Restore ${restore} modified or missing game files with Steam's verify`}</span>
+
           <Button disabled size="sm">
             Verify in Steam
           </Button>
-        </li>
+        </div>
+
         {result.baseFilesWithBackup > 0 && (
-          <li className="list-none">
+          <p>
             {`Purge in Vortex first: Steam's verify would overwrite ${result.baseFilesWithBackup} files Vortex has deployed over game files.`}
-          </li>
+          </p>
         )}
+
         {result.unreadable.length > 0 && (
-          <li className="list-none">{`${result.unreadable.length} files couldn't be read and weren't compared.`}</li>
+          <p>{`${result.unreadable.length} files couldn't be read and weren't compared.`}</p>
         )}
       </Typography>
     </div>
@@ -181,12 +195,15 @@ const FileGroup = ({
         onClick={() => setOpen(!open)}
       >
         <span>{`${open ? "▾" : "▸"} ${title}`}</span>
+
         <span className="shrink-0">{`${files.length} · ${bytesToString(bytes)}`}</span>
       </button>
+
       {open &&
         files.map((file) => (
           <div className="flex justify-between gap-4 py-1 pr-2 pl-8" key={file.relPath}>
             <span className="truncate">{file.relPath}</span>
+
             <span className="shrink-0">
               {`${new Date(file.mtimeMs).toLocaleDateString()} · ${bytesToString(file.size)}`}
             </span>
@@ -204,6 +221,7 @@ const FileLists = ({ result, summary }: { result: FolderCheckResult; summary: IF
       <Typography className="mb-1 font-semibold" typographyType="inherit">
         {`Unknown files · ${summary.counts.unknown.files}`}
       </Typography>
+
       {summary.unknownGroups.map((group) => (
         <FileGroup
           bytes={group.bytes}
@@ -212,7 +230,9 @@ const FileLists = ({ result, summary }: { result: FolderCheckResult; summary: IF
           title={group.folder}
         />
       ))}
+
       <FileGroup bytes={summary.counts.game.bytes} files={byBucket("game")} title="Game files" />
+
       <FileGroup
         bytes={summary.counts.vortex.bytes}
         files={byBucket("vortex")}
@@ -284,21 +304,28 @@ export const FolderCheckPage = () => {
           </Button>
         )}
       </PageHeader>
+
       <PageScroll className="space-y-4 py-4">
         {resolved?.ok === false && <Typography>{resolved.reason}</Typography>}
+
         {resolved?.ok === true && (
           <Typography as="div" className="space-y-1" typographyType="body-sm">
             <p className="font-semibold">{resolved.input.gamePath}</p>
+
             {normPath(resolved.discoveryPath) !== normPath(resolved.input.gamePath) && (
               <p>{`Vortex manages this game at ${resolved.discoveryPath}`}</p>
             )}
           </Typography>
         )}
+
         <StatusMessage status={status} />
+
         {result !== undefined && summary !== undefined && (
           <>
             <SummaryBar summary={summary} />
+
             <CleanSteps result={result} summary={summary} />
+
             <FileLists result={result} summary={summary} />
           </>
         )}

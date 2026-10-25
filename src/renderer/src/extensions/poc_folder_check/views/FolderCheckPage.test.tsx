@@ -92,7 +92,9 @@ describe("FolderCheckPage", () => {
 
   it("starts a check and renders the summary", async () => {
     render(<FolderCheckPage />);
-    expect(await screen.findByText(/Move 3 unknown files/)).toBeTruthy();
+    expect(await screen.findByText(/^1. Move 3 unknown files/)).toBeTruthy();
+    expect(screen.getByText("2. Remove the empty folders left behind")).toBeTruthy();
+    expect(screen.getByText(/^3. Restore 0 modified or missing game files/)).toBeTruthy();
     expect(screen.getByText(/plus 1 Vortex files changed since deployed/)).toBeTruthy();
     expect(mocks.start).toHaveBeenCalledWith(input, false);
     expect(mocks.status).toHaveBeenCalledWith(1091500);

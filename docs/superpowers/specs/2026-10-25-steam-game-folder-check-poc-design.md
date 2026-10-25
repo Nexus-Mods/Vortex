@@ -170,3 +170,15 @@ A game-scoped page called "Game folder", registered next to Mods and Collections
 - Concurrency of hashing and how progress is reported.
 - Exact page layout and styling within the modern layout. The classic layout doesn't matter.
 - Tests: unit tests for the manifest reader (a real small manifest such as `489833_4886117324142477814.manifest`, 1.6 KB, makes a good fixture) and for bucketing.
+
+## Follow-up: faster hashing (agreed 2026-10-25, not built)
+
+Full hashing reads every base file: 16 GB for Skyrim SE, 81 GB for Cyberpunk 2077. Simon asked whether we could hash only what changed. The data available:
+
+- On disk: size and modified date.
+- In the ACF: `lastupdated` and the build ID.
+- In the depot manifest: each file's size and SHA1, plus a SHA1 for every chunk of the file (field 6: chunk SHA1, CRC, offset, original size, compressed size). Chunks are 1 MB. Chunk SHA1s were checked against the bytes on disk for `SkyrimSE.exe` and `Skyrim - Textures1.bsa`, first and last chunk, and matched.
+
+Modified dates aren't a safe filter. On Cyberpunk every base file was older than `lastupdated`. On Skyrim, 10 of 46 were newer (Creation Club files the game touched) and 17 were dated 2008. Explorer copies and most archive extractors keep the source's date, so a file dropped in by hand often looks older than Steam's update.
+
+The agreed direction: by default, hash a few chunks per file (first, last and two from the middle) and compare with the chunk SHA1s, about 4 MB read per file. Hash `.exe` and `.dll` files in full, since those are what byte patches target. Keep a "full check" for the thorough version. Optionally remember hashes against path, size and date so Re-check only rehashes what changed.
