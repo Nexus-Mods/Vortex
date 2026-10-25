@@ -1,8 +1,7 @@
 import type { IGameInfo, IModCategory } from "@nexusmods/nexus-api";
+import { NEXUS_APP_NAME, NEXUS_APP_VERSION } from "@vortex/shared";
 
 import { log } from "@/logging";
-
-import { getApplication } from "../../../util/application";
 
 const GameV1URL = (domainName: string) => `https://api.nexusmods.com/v1/games/${domainName}.json`;
 
@@ -15,8 +14,8 @@ export default async function getGameCategories(
     const url = GameV1URL(domainName);
     const headers = {
       Accept: "application/json",
-      "Application-Name": "Vortex",
-      "Application-Version": getApplication().version,
+      "Application-Name": NEXUS_APP_NAME,
+      "Application-Version": NEXUS_APP_VERSION,
       Authorization: `Bearer ${token}`,
     };
     const res = await fetch(url, { headers });

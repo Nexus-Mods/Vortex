@@ -2,6 +2,7 @@ import type { IncomingMessage } from "http";
 import { get } from "https";
 import * as url from "url";
 
+import { USER_AGENT } from "@vortex/shared";
 import FeedParser from "feedparser";
 
 export interface IEnclosure {
@@ -41,7 +42,7 @@ function retrieve(rssUrl: string): Promise<IFeedMessage[]> {
         hostname: parsedUrl.hostname,
         port: parsedUrl.port,
         path: parsedUrl.pathname + parsedUrl.search,
-        headers: { "User-Agent": "Vortex", Cookie: "rd=true" },
+        headers: { "User-Agent": USER_AGENT, Cookie: "rd=true" },
       } as any,
       (res: IncomingMessage) => {
         const { statusCode } = res;

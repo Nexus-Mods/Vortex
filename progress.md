@@ -16,7 +16,7 @@
 | 1   | `progress.md`, `CHANGELOG.mkeiitmods.md`                       | сделано                          |
 | 2   | Своя папка данных                                              | сделано                          |
 | 3   | Автообновление, телеметрия, отчёты об ошибках — выключить      | сделано                          |
-| 4   | Заголовки API Nexus, протокол `nxm://`, анализ входа (OAuth)   | не начато                        |
+| 4   | Заголовки API Nexus, протокол `nxm://`, анализ входа (OAuth)   | сделано (вход — см. блокеры)     |
 | 5   | Переименование в интерфейсе, локализациях, установщике; иконки | не начато                        |
 | 6   | Раздел каталога модов                                          | не начато                        |
 | 7   | Раздел «Для редизайна», финальная проверка                     | не начато                        |
@@ -93,10 +93,75 @@ false` → `isUpdaterActive()` всегда `false` (`src/main/src/extensions/up
   (`vortex-tier-0-game-support`, проверка файловых требований).
 - **Отправка отзывов в Nexus Mods** (`submit-feedback`): возвращает ошибку.
 
+Ещё два канала вне расширения analytics тоже закрыты: событие «найденные
+игры» и «снимок списка модов» (внутренний API v3 Nexus) — селектор
+`isTelemetryEnabled` в renderer учитывает выключатель, а
+`createVortexNexusV3InternalClient` бросает ошибку. Обработчик `send-metric`
+ничего не отправляет.
+
 Тесты: `src/main/src/telemetry.mkeiitmods.test.ts`,
 `src/main/src/extensions/updater.mkeiitmods.test.ts`. В тестах upstream
 (`updater.test.ts`, `nativeCrashReporting.test.ts`) выключатель подменяется на
 `true`, чтобы они по-прежнему проверяли логику Vortex.
+
+### Заголовки к API Nexus (п. 4)
+
+`Application-Name: mkeiitmods`, `Application-Version: 0.1.0` (константы
+`NEXUS_APP_NAME`/`NEXUS_APP_VERSION`), `User-Agent: mkeiitmods/0.1.0`
+(`USER_AGENT`). Где задаются:
+
+- клиент `@nexusmods/nexus-api` (REST v1 и GraphQL v2) —
+  `nexus_integration/index.tsx`, `new Nexus(NEXUS_APP_NAME, NEXUS_APP_VERSION, …)`;
+- клиент v3 (`packages/nexus-api-v3`) — `nexus_integration/nexusV3Client.ts`;
+- прямой запрос категорий — `category_management/util/getCategoriesFromNexusMods.ts`;
+- `util/network.ts`, лента новостей (`news_dashlet/rss.ts`), `util/github.ts`,
+  загрузки файлов в main (`main.ts`, `UploadManager`).
+
+Версия приложения Electron (`app.getVersion()`) осталась версией Vortex:
+расширения игр проверяют по ней совместимость. Наша версия — отдельная
+константа `APP_VERSION` в `branding.ts`. Тесты: `src/shared/src/branding.test.ts`,
+`getCategoriesFromNexusMods.test.ts`.
+
+Важно: клиент `@nexusmods/nexus-api` сам ставит свой `User-Agent`
+(`NexusApiClient/…`), это библиотека Nexus — не меняли.
+
+### Протокол `nxm://` (п. 4)
+
+Vortex при первом запуске сам делал себя обработчиком `nxm://`. Теперь
+mkeiitmods регистрируется в системе только когда пользователь включил
+«Handle Nexus Links» в настройках (Settings → Downloads). Логика —
+`nexus_integration/nxmAssociation.ts` (+ тест). Внутри окна программы ссылки
+`nxm://` по-прежнему работают. Установщик протокол не регистрирует.
+Отключение настройки снимает регистрацию только если обработчик — сам
+mkeiitmods (так работает `removeAsDefaultProtocolClient` в Electron на
+Windows), настоящий Vortex не затрагивается. Не проверено вживую.
+
+На Linux имена `.desktop`-файлов остались `com.nexusmods.vortex*`
+(`util/protocolRegistration/linux/nxm.ts`) — для Windows не важно, но при
+сборке под Linux их нужно переименовать, иначе форк перезапишет файл Vortex.
+
+### Вход в Nexus (п. 4) — анализ
+
+- Сейчас вход — OAuth 2 (PKCE, редирект на `http://127.0.0.1:<порт>`),
+  клиент `OAUTH_CLIENT_ID = "vortex_loopback"`
+  (`nexus_integration/constants.ts`). Работает, не трогали. Клиент
+  зарегистрирован на Vortex, поэтому **для публичного релиза это блокер**.
+- Вариант 1 — **личный API-ключ** (nexusmods.com → Site preferences → API
+  Keys; для личного использования разрешено). Что есть в коде:
+    - хранение `confidential.account.nexus.APIKey`, действие `setUserAPIKey`,
+      `isLoggedIn()` считает ключ входом, клиент проверяет ключ через
+      `/v1/users/validate` (`nexus.setKey`);
+    - **чего нет**: поля ввода ключа в интерфейсе (поле в окне входа — это
+      вставка OAuth-кода, а не ключа); при перезапуске ключ не применяется к
+      клиенту (`//updateKey(api, nexus, apiKey)` закомментирован в
+      `nexus_integration/index.tsx`); после проверки ключа не заполняется
+      профиль пользователя (`updateUserInfo` закомментирован в `util.ts`
+      `updateKey`). То есть вход по ключу сейчас **не поддерживается**, но
+      доделывается небольшим изменением (поле ввода + 2 закомментированных
+      вызова). Предлагаю сделать это следующим шагом, если нужен вход без OAuth.
+- Вариант 2 — **свой OAuth client ID**: написать на `support@nexusmods.com`,
+  попросить регистрацию OAuth-клиента для mkeiitmods с loopback-редиректом
+  (`http://127.0.0.1`). После получения — заменить `OAUTH_CLIENT_ID`.
 
 ## Проверено
 
@@ -115,8 +180,10 @@ _(заполняется по ходу работы)_
 
 ## Блокеры и вопросы
 
-_(заполняется по ходу работы)_
+- **Публичный релиз**: нужен свой OAuth client ID от Nexus Mods (или вход
+  только по личному API-ключу, который ещё надо доделать). Для разработки и
+  личного использования не мешает.
 
 ## Следующий шаг
 
-Пункт 4 — заголовки API Nexus, протокол `nxm://`, анализ входа.
+Пункт 5 — переименование в интерфейсе, локализациях и установщике.

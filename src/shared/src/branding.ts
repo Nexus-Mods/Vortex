@@ -13,6 +13,22 @@ export const APP_DISPLAY_NAME: string = "mkeiitmods";
 /** Electron app name; also the name of the per-user data folder. */
 export const APP_NAME: string = "mkeiitmods";
 
+/**
+ * mkeiitmods' own version, sent to the Nexus Mods API and shown to the user.
+ *
+ * The Electron app version stays the Vortex version this fork is based on:
+ * extensions declare which Vortex versions they support and check against it.
+ */
+export const APP_VERSION: string = "0.1.0";
+
+/**
+ * How mkeiitmods identifies itself to Nexus Mods. Their API Acceptable Use
+ * Policy forbids posing as another application, so this must never say Vortex.
+ */
+export const NEXUS_APP_NAME: string = APP_NAME;
+export const NEXUS_APP_VERSION: string = APP_VERSION;
+export const USER_AGENT: string = `${APP_NAME}/${APP_VERSION}`;
+
 /** Folder (under appData) holding the persistent state of a production build. */
 export const APP_STATE_DIR: string = "mkeiitmods";
 

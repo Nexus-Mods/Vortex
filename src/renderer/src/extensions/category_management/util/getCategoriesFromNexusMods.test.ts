@@ -24,6 +24,14 @@ describe("getCategoriesFromNexusMods", () => {
     expect(res).toEqual(categories);
   });
 
+  it("identifies itself as mkeiitmods, not Vortex", async () => {
+    (globalThis.fetch as Mock).mockResolvedValue({ ok: true, json: async () => ({}) });
+    await getGameCategories("domain", "token");
+    const { headers } = (globalThis.fetch as Mock).mock.calls[0][1];
+    expect(headers["Application-Name"]).toBe("mkeiitmods");
+    expect(headers["Application-Version"]).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
   it("throws on non-ok response", async () => {
     (globalThis.fetch as Mock).mockResolvedValue({ ok: false, status: 500 });
     await expect(getGameCategories("domain", "token")).rejects.toThrow(

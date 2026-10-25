@@ -6,9 +6,9 @@ import {
   type NexusV3InternalClient,
   type NexusV3Middleware,
 } from "@vortex/nexus-api-v3";
+import { NEXUS_APP_NAME, NEXUS_APP_VERSION, TELEMETRY_ENABLED, USER_AGENT } from "@vortex/shared";
 
 import type { IExtensionApi } from "../../types/IExtensionContext";
-import { getApplication } from "../../util/application";
 import { NEXUS_API_URL } from "./constants";
 import { hasConfidentialWithNexus } from "./guards";
 import { getOAuthTokenFromState } from "./util";
@@ -78,7 +78,7 @@ function vortexV3Options(
     ...options,
     middleware: [oauthMiddleware(api), ...(options.middleware ?? [])],
     baseUrl: NEXUS_V3_API_URL,
-    userAgent: `Vortex/${getApplication().version}`,
+    userAgent: USER_AGENT,
   };
 }
 
@@ -98,10 +98,14 @@ export function createVortexNexusV3InternalClient(
   api: IExtensionApi,
   options: VortexNexusV3ClientOptions = {},
 ): NexusV3InternalClient {
+  // mkeiitmods: the internal endpoints only ingest Vortex telemetry
+  if (!TELEMETRY_ENABLED) {
+    throw new Error("telemetry is turned off in mkeiitmods");
+  }
   return createNexusV3InternalClient({
     ...vortexV3Options(api, options),
-    clientName: "vortex",
-    clientVersion: getApplication().version,
+    clientName: NEXUS_APP_NAME,
+    clientVersion: NEXUS_APP_VERSION,
     // the anonymous install id the telemetry batch carries; empty before the
     // instance id is assigned, so it's omitted rather than failing the schema
     instanceId: api.getState().app.instanceId || undefined,

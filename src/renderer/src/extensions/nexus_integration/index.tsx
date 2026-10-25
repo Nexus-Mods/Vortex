@@ -14,7 +14,12 @@ import type {
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { TimeoutError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+  NEXUS_APP_NAME,
+  NEXUS_APP_VERSION,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as fuzz from "fuzzball";
 import type { TFunction } from "i18next";
@@ -35,7 +40,6 @@ import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionCon
 import type { IModLookupResult } from "../../types/IModLookupResult";
 import type { IState } from "../../types/IState";
 import { Pictogram } from "../../ui/components/pictogram/Pictogram";
-import { getApplication } from "../../util/application";
 import { ProcessCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
@@ -63,7 +67,6 @@ import { getGame } from "../gamemode_management/util/getGame";
 import type { IMod, IModRepoId } from "../mod_management/types/IMod";
 import { isDownloadIdValid, isIdValid } from "../mod_management/util/modUpdateState";
 import { setNewestVersion } from "./actions/persistent";
-import { setAssociatedWithNXMURLs } from "./actions/settings";
 import {
   genCollectionIdAttribute,
   genEndorsedAttribute,
@@ -84,6 +87,7 @@ import {
   scheduleMembershipRefresh,
   trackMembershipReads,
 } from "./membership";
+import { shouldClaimNxmLinks } from "./nxmAssociation";
 import { NxmProtocol } from "./nxmProtocol";
 import { buildNXMModUrl } from "./NXMUrl";
 import { accountReducer } from "./reducers/account";
@@ -951,23 +955,22 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
 
 function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   const registerFunc = async (def?: boolean) => {
-    if (def === undefined) {
-      api.store.dispatch(setAssociatedWithNXMURLs(true));
-    }
-
-    // main entry point for nxm protocol links to be handled
-    // registerProtocol resolves to `true` only when Vortex was not already the
+    // mkeiitmods: Vortex claims nxm:// links on first start. We don't: an installed Vortex
+    // may own them, so we only become the system handler once the user turns on
+    // "Handle Nexus Links" in the settings (def === true). The in-app handler is always set.
+    //
+    // registerProtocol resolves to `true` only when we were not already the
     // default handler and we just registered it — only then do we want to
     // notify the user about the change.
     const didRegister: boolean = await api.registerProtocol(
       "nxm",
-      def !== false,
+      shouldClaimNxmLinks(def),
       nxmProtocol.handleLink,
     );
     if (didRegister) {
       api.sendNotification({
         type: "info",
-        message: "Vortex will now handle Nexus Download links",
+        message: "mkeiitmods will now handle Nexus Download links",
         actions: [
           {
             title: "More",
@@ -978,7 +981,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
                 {
                   text:
                     'Only one application can be set up to handle Nexus "Mod Manager Download" ' +
-                    "links, Vortex is now registered to do that.\n\n" +
+                    "links, mkeiitmods is now registered to do that.\n\n" +
                     "To use a different application for these links, please go to " +
                     'Settings->Downloads, disable the "Handle Nexus Links" option, then go to ' +
                     "the application you do want to handle the links and enable the corresponding " +
@@ -1013,7 +1016,7 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
     const disableable = new Disableable(api);
     nexus = new Proxy(
       new Proxy(
-        new Nexus("Vortex", getApplication().version, nexusGameId(getGame(gameMode)), 30000),
+        new Nexus(NEXUS_APP_NAME, NEXUS_APP_VERSION, nexusGameId(getGame(gameMode)), 30000),
         disableable,
       ),
       requestLog,

@@ -1391,6 +1391,10 @@ export function sendMetric(api: IExtensionApi, nexus: Nexus) {
     metadata: Record<string, any>,
     clientString?: string,
   ) => {
+    // mkeiitmods: metrics are Vortex telemetry
+    if (!TELEMETRY_ENABLED) {
+      return;
+    }
     try {
       await nexus.sendMetric(eventType, entityType, entityId, metadata, clientString);
     } catch {

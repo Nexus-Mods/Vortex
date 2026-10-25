@@ -1,6 +1,7 @@
 import * as https from "https";
 import * as url from "url";
 
+import { USER_AGENT } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as semver from "semver";
@@ -81,7 +82,7 @@ export class RateLimitExceeded extends Error {
 class GitHub {
   // oldest release to be returned when retrieving releases
   private static RELEASE_CUTOFF = "0.12.7";
-  private static USER_AGENT = "Vortex";
+  private static USER_AGENT = USER_AGENT;
   private static CONFIG_BRANCH = "announcements";
 
   private static REPO = "Vortex";

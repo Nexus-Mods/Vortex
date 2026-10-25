@@ -28,7 +28,13 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import os from "os";
 
-import { APP_NAME, DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
+import {
+  APP_NAME,
+  DEBUG_PORT,
+  getErrorMessageOrDefault,
+  HTTP_HEADER_SIZE,
+  USER_AGENT,
+} from "@vortex/shared";
 import { app, crashReporter, dialog } from "electron";
 import i18next from "i18next";
 import * as sourceMapSupport from "source-map-support";
@@ -321,7 +327,7 @@ async function main(): Promise<void> {
   process.on("unhandledRejection", handleError);
 
   const downloadManager = new DownloadManager({ concurrency: 1 });
-  const uploadManager = new UploadManager({ userAgent: `Vortex/${app.getVersion()}` });
+  const uploadManager = new UploadManager({ userAgent: USER_AGENT });
 
   // The registry holds exactly one resolver for the universal `native`
   // scheme. Path providers are owned by the app, never by the registry.

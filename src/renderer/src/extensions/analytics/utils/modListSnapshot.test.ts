@@ -12,6 +12,12 @@ import {
   type ModListSnapshotMeta,
 } from "./modListSnapshot";
 
+// mkeiitmods ships with telemetry off (see telemetry.mkeiitmods.test.ts); these
+// upstream tests cover the logic behind that switch
+vi.mock("@vortex/shared", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  TELEMETRY_ENABLED: true,
+}));
 vi.mock("../mixpanel/numericGameId", () => ({ numericNexusGameId: vi.fn() }));
 vi.mock("../../nexus_integration/nexusV3Client", () => ({
   createVortexNexusV3InternalClient: vi.fn(),

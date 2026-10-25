@@ -4,6 +4,8 @@ import { get as getHTTPS, request as requestHTTPS } from "https";
 import type { Readable } from "stream";
 import * as url from "url";
 
+import { USER_AGENT } from "@vortex/shared";
+
 import { DataInvalid, TemporaryError } from "./CustomErrors";
 import { log } from "./log";
 
@@ -26,7 +28,7 @@ export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<s
         hostname: parsed.hostname,
         port: parsed.port,
         path: parsed.pathname + parsed.search,
-        headers: { "User-Agent": "Vortex" },
+        headers: { "User-Agent": USER_AGENT },
       } as any,
       (res: IncomingMessage) => {
         const { statusCode } = res;
@@ -103,7 +105,7 @@ export function request(
       port: parsed.port,
       path: parsed.pathname + parsed.search,
       method,
-      headers: { "User-Agent": "Vortex", ...headers },
+      headers: { "User-Agent": USER_AGENT, ...headers },
     },
     cb,
   );
