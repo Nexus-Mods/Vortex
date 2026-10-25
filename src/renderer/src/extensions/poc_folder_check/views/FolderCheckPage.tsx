@@ -9,13 +9,14 @@ import type {
   FolderCheckResult,
   FolderCheckStatus,
 } from "@vortex/shared/ipc";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
 import type { ISteamEntry } from "@/util/Steam";
 import { useRelativeTime } from "@/util/useRelativeTime";
 import { bytesToString } from "@/util/util";
@@ -49,9 +50,17 @@ async function loadCheckInput(
   });
 }
 
-/** Starts or restarts the check and follows its status until it stops running. */
-function useFolderCheck(input: FolderCheckInput | undefined) {
+/**
+ * Starts or restarts the check and follows its status until it stops running. Only while the page
+ * is showing: pages stay mounted when hidden, and a check hashes the whole game folder.
+ */
+function useFolderCheck(input: FolderCheckInput | undefined, active: boolean) {
   const [status, setStatus] = useState<FolderCheckStatus>({ state: "idle" });
+
+  // never show one game's result under another's
+  useEffect(() => {
+    setStatus({ state: "idle" });
+  }, [input]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const generationRef = useRef(0);
 
@@ -74,33 +83,54 @@ function useFolderCheck(input: FolderCheckInput | undefined) {
   );
 
   useEffect(() => {
+    if (!active) return undefined;
     run(false);
     return () => {
       generationRef.current++;
       clearTimeout(timerRef.current);
     };
-  }, [run]);
+  }, [run, active]);
 
   return { status, recheck: () => run(true) };
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+const SWATCH = {
+  game: "bg-success-moderate",
+  vortex: "bg-info-moderate",
+  unknown: "bg-warning-moderate",
+  modified: "bg-danger-moderate",
+  missing: "bg-premium-moderate",
+  changed: "bg-info-strong",
+} as const;
+
+const Swatch = ({ className }: { className: string }) => (
+  <span className={joinClasses(["inline-block size-2.5 shrink-0 rounded-xs", className])} />
+);
+
 const SummaryBar = ({ summary }: { summary: IFolderSummary }) => {
   const { counts } = summary;
   const segments = [
-    { key: "game", label: "Game", className: "bg-success-moderate", ...counts.game },
-    { key: "vortex", label: "Vortex", className: "bg-info-moderate", ...counts.vortex },
-    { key: "unknown", label: "Unknown", className: "bg-warning-moderate", ...counts.unknown },
-  ];
+    { key: "game", label: "Game", ...counts.game },
+    { key: "vortex", label: "Vortex", ...counts.vortex },
+    { key: "unknown", label: "Unknown", ...counts.unknown },
+  ] as const;
+  const flags = [
+    { key: "modified", label: "Modified", files: summary.modified },
+    { key: "missing", label: "Missing", files: summary.missing },
+    { key: "changed", label: "Changed since deployed", files: summary.changedSinceDeployed.files },
+  ] as const;
   return (
     <div className="space-y-2">
+      {/* by bytes: a game is a few huge files, a mod setup many small ones */}
       <div className="flex h-4 overflow-hidden rounded-sm">
         {segments.map((segment) => (
           <div
-            className={segment.className}
+            className={SWATCH[segment.key]}
+            data-testid={`folder-bar-${segment.key}`}
             key={segment.key}
-            style={{ flexGrow: segment.files }}
+            style={{ flexGrow: segment.bytes }}
           />
         ))}
       </div>
@@ -108,17 +138,19 @@ const SummaryBar = ({ summary }: { summary: IFolderSummary }) => {
       <Typography as="div" className="flex flex-wrap gap-x-4 gap-y-1" typographyType="body-sm">
         {segments.map((segment) => (
           <span className="flex items-center gap-1" key={segment.key}>
-            <span className={`inline-block size-2.5 rounded-xs ${segment.className}`} />
+            <Swatch className={SWATCH[segment.key]} />
 
             {`${segment.label} ${segment.files} · ${bytesToString(segment.bytes)}`}
           </span>
         ))}
 
-        <span>{`Modified ${summary.modified}`}</span>
+        {flags.map((flag) => (
+          <span className="flex items-center gap-1" key={flag.key}>
+            <Swatch className={SWATCH[flag.key]} />
 
-        <span>{`Missing ${summary.missing}`}</span>
-
-        <span>{`Changed since deployed ${summary.changedSinceDeployed.files}`}</span>
+            {`${flag.label} ${flag.files}`}
+          </span>
+        ))}
       </Typography>
     </div>
   );
@@ -177,67 +209,158 @@ const CleanSteps = ({
   );
 };
 
-const FileGroup = ({
-  title,
-  files,
+interface IListedFile {
+  relPath: string;
+  size: number;
+  /** Absent for missing files */
+  mtimeMs?: number;
+}
+
+const sumSize = (files: IListedFile[]) => files.reduce((sum, file) => sum + file.size, 0);
+
+/** A collapsible row: a bucket at the top level, or a folder inside the Unknown bucket. */
+const Section = ({
   bytes,
+  children,
+  count,
+  defaultOpen = false,
+  nested = false,
+  swatch,
+  title,
 }: {
-  title: string;
-  files: FolderCheckFile[];
   bytes: number;
+  children: ReactNode;
+  count: number;
+  defaultOpen?: boolean;
+  nested?: boolean;
+  swatch?: string;
+  title: string;
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-b border-stroke-weak">
+    <div className={joinClasses({ "border-b border-stroke-weak": !nested })}>
       <button
-        className="flex w-full justify-between gap-4 px-2 py-1.5 text-left hover:bg-translucent-weak"
+        className={joinClasses(
+          [
+            "flex w-full items-center justify-between gap-4 py-1.5 pr-2 text-left hover:bg-translucent-weak",
+          ],
+          { "pl-2": !nested, "pl-7": nested },
+        )}
         type="button"
         onClick={() => setOpen(!open)}
       >
-        <span>{`${open ? "▾" : "▸"} ${title}`}</span>
+        <span className="flex items-center gap-2">
+          <span>{open ? "▾" : "▸"}</span>
 
-        <span className="shrink-0">{`${files.length} · ${bytesToString(bytes)}`}</span>
+          {swatch !== undefined && <Swatch className={swatch} />}
+
+          <span className={joinClasses({ "font-semibold": !nested })}>{title}</span>
+        </span>
+
+        <span className="shrink-0">{`${count} · ${bytesToString(bytes)}`}</span>
       </button>
 
-      {open &&
-        files.map((file) => (
-          <div className="flex justify-between gap-4 py-1 pr-2 pl-8" key={file.relPath}>
-            <span className="truncate">{file.relPath}</span>
-
-            <span className="shrink-0">
-              {`${new Date(file.mtimeMs).toLocaleDateString()} · ${bytesToString(file.size)}`}
-            </span>
-          </div>
-        ))}
+      {open && children}
     </div>
   );
 };
 
+const FileRows = ({ files, nested = false }: { files: IListedFile[]; nested?: boolean }) =>
+  files.map((file) => (
+    <div
+      className={joinClasses(["flex justify-between gap-4 py-1 pr-2"], {
+        "pl-8": !nested,
+        "pl-14": nested,
+      })}
+      key={file.relPath}
+    >
+      <span className="truncate">{file.relPath}</span>
+
+      <span className="shrink-0">
+        {file.mtimeMs !== undefined
+          ? `${new Date(file.mtimeMs).toLocaleDateString()} · ${bytesToString(file.size)}`
+          : bytesToString(file.size)}
+      </span>
+    </div>
+  ));
+
 const FileLists = ({ result, summary }: { result: FolderCheckResult; summary: IFolderSummary }) => {
   const byBucket = (bucket: FolderCheckFile["bucket"]) =>
     result.files.filter((file) => file.bucket === bucket);
+  const modified = result.files.filter((file) => file.modified);
+  const changed = result.files.filter((file) => file.changedSinceDeployed);
   return (
     <Typography as="div" typographyType="body-sm">
-      <Typography className="mb-1 font-semibold" typographyType="inherit">
-        {`Unknown files · ${summary.counts.unknown.files}`}
-      </Typography>
+      <Section
+        defaultOpen
+        bytes={summary.counts.unknown.bytes}
+        count={summary.counts.unknown.files}
+        swatch={SWATCH.unknown}
+        title="Unknown files"
+      >
+        {summary.unknownGroups.map((group) => (
+          <Section
+            nested
+            bytes={group.bytes}
+            count={group.files.length}
+            key={group.folder}
+            title={group.folder}
+          >
+            <FileRows nested files={group.files} />
+          </Section>
+        ))}
+      </Section>
 
-      {summary.unknownGroups.map((group) => (
-        <FileGroup
-          bytes={group.bytes}
-          files={group.files}
-          key={group.folder}
-          title={group.folder}
-        />
-      ))}
+      {modified.length > 0 && (
+        <Section
+          bytes={sumSize(modified)}
+          count={modified.length}
+          swatch={SWATCH.modified}
+          title="Modified game files"
+        >
+          <FileRows files={modified} />
+        </Section>
+      )}
 
-      <FileGroup bytes={summary.counts.game.bytes} files={byBucket("game")} title="Game files" />
+      {result.missing.length > 0 && (
+        <Section
+          bytes={sumSize(result.missing)}
+          count={result.missing.length}
+          swatch={SWATCH.missing}
+          title="Missing game files"
+        >
+          <FileRows files={result.missing} />
+        </Section>
+      )}
 
-      <FileGroup
+      {changed.length > 0 && (
+        <Section
+          bytes={sumSize(changed)}
+          count={changed.length}
+          swatch={SWATCH.changed}
+          title="Changed since deployed"
+        >
+          <FileRows files={changed} />
+        </Section>
+      )}
+
+      <Section
+        bytes={summary.counts.game.bytes}
+        count={summary.counts.game.files}
+        swatch={SWATCH.game}
+        title="Game files"
+      >
+        <FileRows files={byBucket("game")} />
+      </Section>
+
+      <Section
         bytes={summary.counts.vortex.bytes}
-        files={byBucket("vortex")}
+        count={summary.counts.vortex.files}
+        swatch={SWATCH.vortex}
         title="Vortex files"
-      />
+      >
+        <FileRows files={byBucket("vortex")} />
+      </Section>
     </Typography>
   );
 };
@@ -262,7 +385,7 @@ const StatusMessage = ({ status }: { status: FolderCheckStatus }) => {
   }
 };
 
-export const FolderCheckPage = () => {
+export const FolderCheckPage = ({ active = true }: { active?: boolean }) => {
   const { t } = useTranslation();
   const gameId = useSelector((state: IState) => activeGameId(state));
   const discoveryPath = useSelector((state: IState) => discoveryByGame(state, gameId)?.path);
@@ -280,7 +403,7 @@ export const FolderCheckPage = () => {
   }, [gameId, discoveryPath]);
 
   const input = resolved?.ok ? resolved.input : undefined;
-  const { status, recheck } = useFolderCheck(input);
+  const { status, recheck } = useFolderCheck(input, active);
   const result = status.state === "done" ? status.result : undefined;
   const summary = useMemo(() => (result !== undefined ? summarise(result) : undefined), [result]);
   const checked = useRelativeTime(result?.checkedAt, t);
@@ -296,7 +419,7 @@ export const FolderCheckPage = () => {
       : undefined;
 
   return (
-    <Page scrollable={false}>
+    <Page active={active} scrollable={false}>
       <PageHeader subtitle={subtitle} title="Game folder">
         {input !== undefined && (
           <Button disabled={status.state === "running"} size="sm" onClick={recheck}>
@@ -305,7 +428,7 @@ export const FolderCheckPage = () => {
         )}
       </PageHeader>
 
-      <PageScroll className="space-y-4 py-4">
+      <PageScroll className="space-y-6 p-6">
         {resolved?.ok === false && <Typography>{resolved.reason}</Typography>}
 
         {resolved?.ok === true && (

@@ -12,12 +12,13 @@ const mocks = vi.hoisted(() => ({
   resolve: vi.fn(),
   start: vi.fn(),
   status: vi.fn(),
+  gameId: "cyberpunk2077",
 }));
 
 vi.mock("react-redux", () => ({
   useSelector: (selector: (state: object) => unknown) => selector({ settings: { interface: {} } }),
 }));
-vi.mock("../../profile_management/selectors", () => ({ activeGameId: () => "cyberpunk2077" }));
+vi.mock("../../profile_management/selectors", () => ({ activeGameId: () => mocks.gameId }));
 vi.mock("../../gamemode_management/selectors", () => ({
   discoveryByGame: () => ({ path: "D:\\SteamLibrary\\steamapps\\common\\Cyberpunk 2077" }),
 }));
@@ -75,9 +76,70 @@ describe("FolderCheckPage", () => {
     mocks.resolve.mockReset().mockReturnValue({ ok: true, input, discoveryPath: input.gamePath });
     mocks.start.mockReset().mockResolvedValue(undefined);
     mocks.status.mockReset().mockResolvedValue(done(result()));
+    mocks.gameId = "cyberpunk2077";
     Object.assign(window.api, {
       poc: { startFolderCheck: mocks.start, getFolderCheckStatus: mocks.status },
     });
+  });
+
+  it("doesn't start a check while the page is hidden", async () => {
+    render(<FolderCheckPage active={false} />);
+    await waitFor(() => expect(mocks.resolve).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(mocks.start).not.toHaveBeenCalled();
+  });
+
+  it("clears the previous game's result when the game changes", async () => {
+    const { rerender } = render(<FolderCheckPage active />);
+    await screen.findByText(/Move 3 unknown files/);
+    mocks.gameId = "witcher3";
+    mocks.resolve.mockReturnValue({
+      ok: false,
+      reason: "This check only works for Steam games so far.",
+    });
+    rerender(<FolderCheckPage active />);
+    expect(await screen.findByText("This check only works for Steam games so far.")).toBeTruthy();
+    expect(screen.queryByText(/Move 3 unknown files/)).toBeNull();
+  });
+
+  it("sizes the bar by bytes, not file count", async () => {
+    mocks.status.mockResolvedValue(
+      done(
+        result({
+          files: [
+            file("Data\\Skyrim - Textures1.bsa", { bucket: "game", size: 9000 }),
+            file("a.dll", { bucket: "vortex", size: 10 }),
+            file("b.dll", { bucket: "vortex", size: 10 }),
+            file("c.dll", { bucket: "vortex", size: 10 }),
+          ],
+        }),
+      ),
+    );
+    render(<FolderCheckPage active />);
+    const game = await screen.findByTestId("folder-bar-game");
+    expect(game.style.flexGrow).toBe("9000");
+    expect(screen.getByTestId("folder-bar-vortex").style.flexGrow).toBe("30");
+  });
+
+  it("lists modified, missing and changed files", async () => {
+    mocks.status.mockResolvedValue(
+      done(
+        result({
+          files: [
+            file("Cyberpunk2077.exe", { bucket: "game", modified: true }),
+            file("red4ext\\config.ini", { bucket: "vortex", changedSinceDeployed: true }),
+          ],
+          missing: [{ relPath: "archive\\pc\\content\\basegame_2.archive", size: 2048 }],
+        }),
+      ),
+    );
+    render(<FolderCheckPage active />);
+    fireEvent.click(await screen.findByText(/Modified game files/));
+    expect(screen.getByText("Cyberpunk2077.exe")).toBeTruthy();
+    fireEvent.click(screen.getByText(/Missing game files/));
+    expect(screen.getByText("archive\\pc\\content\\basegame_2.archive")).toBeTruthy();
+    fireEvent.click(screen.getByText("Changed since deployed"));
+    expect(screen.getByText("red4ext\\config.ini")).toBeTruthy();
   });
 
   it("shows the reason when the game can't be checked", async () => {

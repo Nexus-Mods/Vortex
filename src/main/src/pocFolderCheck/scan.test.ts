@@ -93,6 +93,36 @@ describe("readDeployments", () => {
       path.join("sub", "x.dll"),
     ]);
   });
+
+  it("falls back to the manifest's own folder when its target path is elsewhere", async () => {
+    // Vortex may manage the game through a junction or subst path
+    const gamePath = mkdtempSync(path.join(tmpdir(), "foldercheck-"));
+    mkdirSync(path.join(gamePath, "Data"));
+    writeFileSync(
+      path.join(gamePath, "Data", "vortex.deployment.json"),
+      JSON.stringify({
+        targetPath: "X:\\Games\\Skyrim\\Data",
+        files: [{ relPath: "SKSE\\a.bin", source: "m", target: "", time: 1 }],
+      }),
+    );
+    const entries = await readDeployments(gamePath, await walkFolder(gamePath));
+    expect(entries.map((e) => e.relPath)).toEqual([path.join("Data", "SKSE", "a.bin")]);
+  });
+
+  it("skips a deployment manifest it can't read", async () => {
+    const gamePath = mkdtempSync(path.join(tmpdir(), "foldercheck-"));
+    mkdirSync(path.join(gamePath, "Data"));
+    writeFileSync(path.join(gamePath, "Data", "vortex.deployment.json"), "{ not json");
+    writeFileSync(
+      path.join(gamePath, "vortex.deployment.dinput.json"),
+      JSON.stringify({
+        targetPath: gamePath,
+        files: [{ relPath: "dinput8.dll", time: 2 }, { time: 3 }],
+      }),
+    );
+    const entries = await readDeployments(gamePath, await walkFolder(gamePath));
+    expect(entries.map((e) => e.relPath)).toEqual(["dinput8.dll"]);
+  });
 });
 
 describe("runFolderCheck", () => {

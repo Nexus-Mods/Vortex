@@ -10,6 +10,7 @@ import path from "node:path";
 
 import type { FolderCheckInput, FolderCheckResult, FolderCheckStatus } from "@vortex/shared/ipc";
 
+import { log } from "../logging";
 import { classify, type IDeployedEntry, type IDiskFile, mergeDepotFiles } from "./classify";
 import { type IDepotFile, type IDepotManifest, readDepotManifest } from "./depotManifest";
 
@@ -74,24 +75,45 @@ export async function walkFolder(root: string): Promise<IDiskFile[]> {
 
 interface IDeploymentManifestFile {
   targetPath?: string;
-  files?: { relPath: string; target?: string; time: number }[];
+  files?: { relPath?: unknown; target?: string; time: number }[];
 }
 
 function asDeploymentManifest(value: unknown): IDeploymentManifestFile {
   return typeof value === "object" && value !== null ? value : {};
 }
 
+const insideRoot = (root: string, target: string): boolean => {
+  const relPath = path.relative(root, target);
+  return !relPath.startsWith("..") && !path.isAbsolute(relPath);
+};
+
 export async function readDeployments(root: string, disk: IDiskFile[]): Promise<IDeployedEntry[]> {
   const result: IDeployedEntry[] = [];
   for (const file of disk) {
     if (!DEPLOYMENT_MANIFEST.test(path.basename(file.relPath))) continue;
     const jsonPath = path.join(root, file.relPath);
-    const manifest = asDeploymentManifest(JSON.parse(await readFile(jsonPath, "utf8")));
-    const targetPath = manifest.targetPath ?? path.dirname(jsonPath);
+    let manifest: IDeploymentManifestFile;
+    try {
+      manifest = asDeploymentManifest(JSON.parse(await readFile(jsonPath, "utf8")));
+    } catch (err) {
+      // one bad manifest shouldn't fail the check; its files show up as unknown
+      log("warn", "Steam folder check skipped a deployment manifest", {
+        jsonPath,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      continue;
+    }
+    // the manifest sits in its own target folder, so fall back to that when targetPath
+    // names the same folder by another route (a junction or subst drive)
+    const targetPath =
+      manifest.targetPath !== undefined && insideRoot(root, manifest.targetPath)
+        ? manifest.targetPath
+        : path.dirname(jsonPath);
     for (const entry of manifest.files ?? []) {
-      const relPath = path.relative(root, path.join(targetPath, entry.target ?? "", entry.relPath));
-      if (relPath.startsWith("..") || path.isAbsolute(relPath)) continue;
-      result.push({ relPath, time: entry.time });
+      if (typeof entry.relPath !== "string") continue;
+      const full = path.join(targetPath, entry.target ?? "", entry.relPath);
+      if (!insideRoot(root, full)) continue;
+      result.push({ relPath: path.relative(root, full), time: entry.time });
     }
   }
   return result;
