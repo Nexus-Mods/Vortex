@@ -41,7 +41,10 @@ function invalid(reason: string): Error {
   return new Error(`invalid depot manifest: ${reason}`);
 }
 
-/** Splits a protobuf message into (field number, value) pairs. */
+/**
+ * Splits a protobuf message into its fields.
+ * @yields Each field as a (field number, value) pair
+ */
 function* fields(data: Buffer): Generator<[number, FieldValue]> {
   let offset = 0;
   const varint = (): bigint => {
