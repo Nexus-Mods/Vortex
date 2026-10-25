@@ -1,4 +1,4 @@
-import type { FolderCheckInput, FolderCheckResult } from "@vortex/shared/ipc";
+import type { FolderCheckInput, FolderCheckResult, FolderCheckStatus } from "@vortex/shared/ipc";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../ipc", () => ({ betterIpcMain: { handle: vi.fn() } }));
@@ -64,11 +64,16 @@ describe("createFolderCheckService", () => {
     expect(service.status(489830).state).toBe("done");
   });
 
-  it("reports progress while running", async () => {
-    const run = vi.fn((_input, onProgress) => {
-      onProgress({ state: "running", phase: "hashing", bytesDone: 5, bytesTotal: 10 });
-      return new Promise<FolderCheckResult>(() => undefined);
-    });
+  it("reports progress while running", () => {
+    const run = vi.fn(
+      (
+        _input: FolderCheckInput,
+        onProgress: (status: Extract<FolderCheckStatus, { state: "running" }>) => void,
+      ) => {
+        onProgress({ state: "running", phase: "hashing", bytesDone: 5, bytesTotal: 10 });
+        return new Promise<FolderCheckResult>(() => undefined);
+      },
+    );
     const service = createFolderCheckService(run);
     service.start(input, false);
     expect(service.status(489830)).toEqual({

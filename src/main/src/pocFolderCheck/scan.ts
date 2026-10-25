@@ -77,12 +77,16 @@ interface IDeploymentManifestFile {
   files?: { relPath: string; target?: string; time: number }[];
 }
 
+function asDeploymentManifest(value: unknown): IDeploymentManifestFile {
+  return typeof value === "object" && value !== null ? value : {};
+}
+
 export async function readDeployments(root: string, disk: IDiskFile[]): Promise<IDeployedEntry[]> {
   const result: IDeployedEntry[] = [];
   for (const file of disk) {
     if (!DEPLOYMENT_MANIFEST.test(path.basename(file.relPath))) continue;
     const jsonPath = path.join(root, file.relPath);
-    const manifest: IDeploymentManifestFile = JSON.parse(await readFile(jsonPath, "utf8"));
+    const manifest = asDeploymentManifest(JSON.parse(await readFile(jsonPath, "utf8")));
     const targetPath = manifest.targetPath ?? path.dirname(jsonPath);
     for (const entry of manifest.files ?? []) {
       const relPath = path.relative(root, path.join(targetPath, entry.target ?? "", entry.relPath));
