@@ -81,28 +81,28 @@
         "path": "/fixture-root/game/Data/SKSE/Plugins/plugin.dll",
         "kind": "file",
         "size": 2048,
-        "mtimeMs": 1760000000000,
+        "modifiedTime": "2025-10-09T08:53:20Z",
         "contentHash": { "fileHash": "skse-plugin-hash", "hashType": "md5" }
       },
       {
         "path": "/fixture-root/game/Data/kept.esp",
         "kind": "file",
         "size": 1024,
-        "mtimeMs": 1760000000000,
+        "modifiedTime": "2025-10-09T08:53:20Z",
         "contentHash": { "fileHash": "kept-esp-hash", "hashType": "md5" }
       },
       {
         "path": "/fixture-root/game/Data/removed.esp",
         "kind": "file",
         "size": 1024,
-        "mtimeMs": 1760000000000,
+        "modifiedTime": "2025-10-09T08:53:20Z",
         "contentHash": { "fileHash": "removed-esp-hash", "hashType": "md5" }
       },
       {
         "path": "/fixture-root/game/Data/updated.esp",
         "kind": "file",
         "size": 1024,
-        "mtimeMs": 1760000000000,
+        "modifiedTime": "2025-10-09T08:53:20Z",
         "contentHash": { "fileHash": "updated-esp-v1-hash", "hashType": "md5" }
       }
     ]

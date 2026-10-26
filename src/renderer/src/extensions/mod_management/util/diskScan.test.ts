@@ -54,17 +54,28 @@ describe("scanDeploymentTargets", () => {
     ]);
   });
 
-  test("records a file's size and identity", async () => {
+  test("records a file and a link with the status the file system reports for them", async () => {
     installed = seedGame();
+    const { fs } = installed;
+    const bsa = qualified(STAGING_DIR, "SkyUI", "SkyUI_SE.bsa");
+    const link = qualified(GAME_DIR, "Data", "SkyUI_SE.bsa");
+    await fs.createLink(bsa, link, "symlink");
+    const esp = qualified(GAME_DIR, "Data", "SkyUI_SE.esp");
+    const statusOf = async (target: QualifiedPath) => {
+      const result = await fs.stat(target);
+      if (!result.exists || !result.isFile) {
+        throw new Error(`no file at ${target.path}`);
+      }
+      const { size, modifiedTime, id, deviceId, hardlinkCount } = result;
+      return { size, modifiedTime, id, deviceId, hardlinkCount };
+    };
 
     const scan = await scanDeploymentTargets([path.join(GAME_DIR, "Data")], []);
 
-    expect(scan.entries[0]).toMatchObject({
-      path: portable(GAME_DIR, "Data", "SkyUI_SE.esp"),
-      size: "plugin".length,
-      nlink: 1,
-    });
-    expect(scan.entries[0]?.inode).toEqual(expect.any(String));
+    expect(scan.entries.slice(0, 2)).toEqual([
+      { path: link.path, kind: DiskEntryKind.Link, ...(await statusOf(bsa)) },
+      { path: esp.path, kind: DiskEntryKind.File, ...(await statusOf(esp)) },
+    ]);
   });
 
   test("walks a target inside another target once", async () => {

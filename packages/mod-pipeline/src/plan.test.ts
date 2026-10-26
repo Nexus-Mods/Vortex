@@ -33,11 +33,16 @@ function makeFileSource(name: string): FileSource {
 }
 
 function diskEntry(name: string, kind: DiskEntryKind = DiskEntryKind.File): DiskEntry {
-  return { path: `${GAME_DIR}/${name}`, kind, size: 1024, mtimeMs: 1760000000000 };
+  return {
+    path: `${GAME_DIR}/${name}`,
+    kind,
+    size: 1024,
+    modifiedTime: Temporal.Instant.from("2025-10-09T08:53:20Z"),
+  };
 }
 
 function diskScan(...entries: DiskEntry[]): DiskScan {
-  return { takenAt: "2026-10-21T09:00:00Z", roots: [GAME_DIR], entries };
+  return { takenAt: Temporal.Instant.from("2026-10-21T09:00:00Z"), roots: [GAME_DIR], entries };
 }
 
 describe("plan", () => {

@@ -18,6 +18,9 @@ backend. Two rules keep it that way:
 
 Paths are absolute and use `/` separators.
 
+The host provides a global `Temporal`; Node 24 has none, so the package's tests
+install `temporal-polyfill`.
+
 zod is imported only through `src/zodJitless.ts`. zod 4 compiles parsers with
 `new Function`, which the renderer's CSP forbids, and it decides per schema when
 the schema is built. The wrapper sets `jitless` before any schema here exists, so
@@ -30,6 +33,10 @@ Each contract is a hand-written type plus a zod schema annotated with that type.
 schema module also asserts at compile time that the schema's inferred type and the
 hand-written type are mutually assignable (`src/typeChecks.ts`). A field added to
 one and not the other fails typecheck.
+
+`DiskScanSchema` parses the JSON form of a scan: times as ISO instants, file ids
+as decimal strings. `z.encode(DiskScanSchema, scan)` gives that form back, since
+`JSON.stringify` throws on a `bigint`.
 
 ## Planner
 

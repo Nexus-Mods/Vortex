@@ -34,30 +34,24 @@ function scanRoots(modPaths: Iterable<string>, destinationPaths: Iterable<string
 /** Adds the files and links under a root; a missing root adds nothing. */
 async function addEntriesUnder(root: string, entries: DiskEntry[]): Promise<void> {
   try {
-    // "symlink" reports a link as itself; a link whose target is gone is not listed
+    // "symlink" lists a link as an entry with its target's status; a link whose target is gone is not listed
     const listing = await window.api.fs.enumerateDirectory(QualifiedPath.fromNative(root), {
       recursive: true,
       includeStatus: "symlink",
     });
     for await (const [entryPath, status] of listing) {
-      if (status.isSymLink) {
-        entries.push({
-          path: entryPath.path,
-          kind: DiskEntryKind.Link,
-          // the target's size; the link's own times
-          size: status.isFile ? status.size : 0,
-          mtimeMs: status.symLinkData.modifiedTime.epochMilliseconds,
-        });
-      } else if (status.isFile) {
-        entries.push({
-          path: entryPath.path,
-          kind: DiskEntryKind.File,
-          size: status.size,
-          mtimeMs: status.modifiedTime.epochMilliseconds,
-          inode: status.id.toString(),
-          nlink: status.hardlinkCount,
-        });
+      if (!status.isSymLink && !status.isFile) {
+        continue;
       }
+      entries.push({
+        path: entryPath.path,
+        kind: status.isSymLink ? DiskEntryKind.Link : DiskEntryKind.File,
+        size: status.isFile ? status.size : 0,
+        modifiedTime: status.modifiedTime,
+        id: status.id,
+        deviceId: status.deviceId,
+        hardlinkCount: status.hardlinkCount,
+      });
     }
   } catch (err) {
     if (parseError(err).data.kind !== "fs:not-found") {
@@ -66,12 +60,12 @@ async function addEntriesUnder(root: string, entries: DiskEntry[]): Promise<void
   }
 }
 
-/** The files and links under the deployment targets, read without following links. */
+/** The files and links under the deployment targets; links are listed, not walked into. */
 export async function scanDeploymentTargets(
   modPaths: Iterable<string>,
   destinationPaths: Iterable<string>,
 ): Promise<DiskScan> {
-  const takenAt = Temporal.Now.instant().toString();
+  const takenAt = Temporal.Now.instant();
   const roots = scanRoots(modPaths, destinationPaths);
   const entries: DiskEntry[] = [];
   for (const root of roots) {
