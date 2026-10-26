@@ -10,7 +10,7 @@
     },
     "mods": [
       {
-        "origin": { "source": "NEXUS", "fileId": "7318624273385" },
+        "origin": { "source": "NEXUS", "nexusFileId": "7318624273385" },
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
@@ -21,7 +21,7 @@
         "overriddenPaths": []
       },
       {
-        "origin": { "source": "NEXUS", "fileId": "7318624274386" },
+        "origin": { "source": "NEXUS", "nexusFileId": "7318624274386" },
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/Textures/sky.dds",
@@ -45,7 +45,7 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileId": "7318624273385",
+        "nexusFileId": "7318624273385",
         "fileHash": "mod-a-sky-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/textures/sky.dds"

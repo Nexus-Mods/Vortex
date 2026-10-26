@@ -108,7 +108,7 @@ const sameContent = (
 function sameOrigin(lhs: FileOrigin, rhs: FileOrigin): boolean {
   switch (lhs.source) {
     case FileSourceKind.Nexus:
-      return rhs.source === FileSourceKind.Nexus && lhs.fileId === rhs.fileId;
+      return rhs.source === FileSourceKind.Nexus && lhs.nexusFileId === rhs.nexusFileId;
     case FileSourceKind.VortexGenerated:
     case FileSourceKind.UserGenerated:
       return rhs.source === lhs.source;

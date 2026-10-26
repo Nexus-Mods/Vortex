@@ -20,7 +20,7 @@ export type HashType = (typeof HashType)[keyof typeof HashType];
 
 /** Where a deployed file comes from. */
 export type FileOrigin =
-  | { source: typeof FileSourceKind.Nexus; fileId: NexusFileId }
+  | { source: typeof FileSourceKind.Nexus; nexusFileId: NexusFileId }
   | { source: typeof FileSourceKind.VortexGenerated }
   | { source: typeof FileSourceKind.UserGenerated };
 
@@ -80,7 +80,7 @@ export const FileEntrySchema: z.ZodType<FileEntry> = z.object(fileFields);
 const fileSourceSchema = z.discriminatedUnion("source", [
   z.object({
     source: z.literal(FileSourceKind.Nexus),
-    fileId: z.string().transform(NexusFileId),
+    nexusFileId: z.string().transform(NexusFileId),
     ...fileFields,
   }),
   z.object({ source: z.literal(FileSourceKind.VortexGenerated), ...fileFields }),

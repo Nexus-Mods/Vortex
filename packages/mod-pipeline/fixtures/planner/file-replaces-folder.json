@@ -12,7 +12,7 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileId": "7318624307812",
+        "nexusFileId": "7318624307812",
         "fileHash": "skyui-file-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SkyUI"
@@ -31,7 +31,7 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileId": "7318624307811",
+        "nexusFileId": "7318624307811",
         "fileHash": "skyui-config-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SkyUI/config.txt"
@@ -55,7 +55,7 @@
       "kind": "UNLINK",
       "file": {
         "source": "NEXUS",
-        "fileId": "7318624307811",
+        "nexusFileId": "7318624307811",
         "fileHash": "skyui-config-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SkyUI/config.txt"
@@ -65,7 +65,7 @@
       "kind": "LINK",
       "file": {
         "source": "NEXUS",
-        "fileId": "7318624307812",
+        "nexusFileId": "7318624307812",
         "fileHash": "skyui-file-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SkyUI"

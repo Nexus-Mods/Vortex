@@ -25,7 +25,7 @@ function lockfile(files: FileSource[], gameId = NexusGameId(1704)): Lockfile {
 function makeFileSource(name: string): FileSource {
   return {
     source: FileSourceKind.Nexus,
-    fileId: NexusFileId("7318624307791"),
+    nexusFileId: NexusFileId("7318624307791"),
     fileHash: `${name}-hash`,
     hashType: HashType.Md5,
     destinationPath: `${GAME_DIR}/${name}`,

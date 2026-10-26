@@ -10,7 +10,7 @@
     },
     "mods": [
       {
-        "origin": { "source": "NEXUS", "fileId": "7318624273385" },
+        "origin": { "source": "NEXUS", "nexusFileId": "7318624273385" },
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/GRASS/Tamriel.cgid",
@@ -21,7 +21,7 @@
         "overriddenPaths": []
       },
       {
-        "origin": { "source": "NEXUS", "fileId": "7318624274386" },
+        "origin": { "source": "NEXUS", "nexusFileId": "7318624274386" },
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/Grass/Tamriel.cgid",
@@ -45,7 +45,7 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileId": "7318624274386",
+        "nexusFileId": "7318624274386",
         "fileHash": "mod-b-grass-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/GRASS/Tamriel.cgid"

@@ -29,7 +29,7 @@ const resolverInputSchema = z.object({
       origin: z.discriminatedUnion("source", [
         z.object({
           source: z.literal(FileSourceKind.Nexus),
-          fileId: z.string().transform(NexusFileId),
+          nexusFileId: z.string().transform(NexusFileId),
         }),
         z.object({ source: z.literal(FileSourceKind.UserGenerated) }),
       ]),
