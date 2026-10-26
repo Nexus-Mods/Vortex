@@ -1,6 +1,7 @@
 import * as path from "node:path";
 
 import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
+import { GameId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
@@ -185,7 +186,7 @@ describe("emitStoreGameVersionEvent", () => {
     vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
       telemetryEvent,
     } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
-    vi.mocked(numericNexusGameId).mockReturnValue(1704);
+    vi.mocked(numericNexusGameId).mockReturnValue(GameId(1704));
     vi.mocked(getGame).mockReturnValue({
       details: { steamAppId: 489830 },
     } as unknown as ReturnType<typeof getGame>);
@@ -438,7 +439,8 @@ describe("emitStoreGameVersions", () => {
     } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
     vi.mocked(numericNexusGameId).mockImplementation((gameId) => {
       const ids: Record<string, number> = { skyrimse: 1704, witcher3: 1720, skyrimvr: 1705 };
-      return ids[gameId] ?? null;
+      const numeric = ids[gameId];
+      return numeric === undefined ? null : GameId(numeric);
     });
 
     restoreFs = installInMemoryFS((builder) => {
@@ -540,7 +542,7 @@ describe("emitStoreGameVersions", () => {
 
     vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
     vi.mocked(numericNexusGameId).mockImplementation((gameId) =>
-      gameId === "witcher3" ? null : 1704,
+      gameId === "witcher3" ? null : GameId(1704),
     );
 
     await emitStoreGameVersions(harness.api);

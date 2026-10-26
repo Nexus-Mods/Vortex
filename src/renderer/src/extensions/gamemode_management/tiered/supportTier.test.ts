@@ -86,7 +86,7 @@ describe("supportTier", () => {
     expect(supportTier(state({ catalog: [{ gameId: 4242 }] }), GameId(4242))).toBe(Tiers.tier2);
   });
 
-  it("is undefined for a game nothing supports", () => {
-    expect(supportTier(state({}), GameId(4242))).toBeUndefined();
+  it("is Tier 0 for a game nothing supports", () => {
+    expect(supportTier(state({}), GameId(4242))).toBe(Tiers.tier0);
   });
 });
