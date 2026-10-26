@@ -7,6 +7,7 @@ import {
   type Lockfile,
   type StagedFile,
 } from "./lockfile";
+import { pathKeyOf } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -125,6 +126,10 @@ type LockfileFilesAt =
   | { current: FileSource; previous: FileSource | undefined }
   | { current: undefined; previous: FileSource };
 
+// operations keep the lockfile's own spelling of a path
+const destinationPathOf = (files: LockfileFilesAt) =>
+  files.current !== undefined ? files.current.destinationPath : files.previous.destinationPath;
+
 /** The disk entry's letter compared with `file`. */
 function diskLetterAgainst(
   entry: DiskEntry | undefined,
@@ -171,26 +176,26 @@ function destinationStateOf(
 // an empty, "." or ".." segment, or a "\" or ":" anywhere
 const INVALID_RELATIVE_PATH = /(^|\/)\.{0,2}(\/|$)|[\\:]/;
 
-/** A lockfile's files by destination; throws when it lists one twice. */
-function filesByDestination(files: readonly FileSource[]): Map<string, FileSource> {
-  const fileByDestination = new Map(files.map((file) => [file.destinationPath, file]));
-  if (fileByDestination.size !== files.length) {
+/** A lockfile's files by path key; throws when it lists one destination twice. */
+function filesByKey(files: readonly FileSource[]): Map<string, FileSource> {
+  const fileByKey = new Map(files.map((file) => [pathKeyOf(file.destinationPath), file]));
+  if (fileByKey.size !== files.length) {
     throw new Error("a lockfile lists a destination twice");
   }
-  return fileByDestination;
+  return fileByKey;
 }
 
 /** Throws on a destination outside the scanned folders and on an unsorted scan. */
-function checkInputs(destinations: readonly string[], disk: DiskScan): void {
-  const rootPrefixes = disk.roots.map((root) => (root.endsWith("/") ? root : `${root}/`));
-  for (const destinationPath of destinations) {
+function checkInputs(destinations: ReadonlyArray<[string, LockfileFilesAt]>, disk: DiskScan): void {
+  const rootPrefixes = disk.roots.map((root) => pathKeyOf(root.endsWith("/") ? root : `${root}/`));
+  for (const [destinationKey, files] of destinations) {
     const covered = rootPrefixes.some(
       (prefix) =>
-        destinationPath.startsWith(prefix) &&
-        !INVALID_RELATIVE_PATH.test(destinationPath.slice(prefix.length)),
+        destinationKey.startsWith(prefix) &&
+        !INVALID_RELATIVE_PATH.test(destinationKey.slice(prefix.length)),
     );
     if (!covered) {
-      throw new Error(`${destinationPath} is not a valid path under a scanned folder`);
+      throw new Error(`${destinationPathOf(files)} is not a valid path under a scanned folder`);
     }
   }
   disk.entries.forEach((entry, index) => {
@@ -213,25 +218,26 @@ function parentFolders(path: string): string[] {
 /**
  * Throws where a current file and something else need the same path as a file and as a folder:
  * another destination, an entry on disk, or a link that would take Apply outside the scanned
- * folders. `leftOnDisk` holds the disk paths the plan does not clear first.
+ * folders. Both maps are keyed by path key; `leftOnDisk` is what the plan leaves on disk. Paths
+ * are reported as the lockfile or the disk spells them.
  */
 function checkFolders(
-  currentByPath: ReadonlyMap<string, FileSource>,
-  leftOnDisk: ReadonlySet<string>,
+  currentByKey: ReadonlyMap<string, FileSource>,
+  leftOnDisk: ReadonlyMap<string, DiskEntry>,
 ): void {
-  for (const destinationPath of currentByPath.keys()) {
+  for (const { destinationPath } of currentByKey.values()) {
     for (const folder of parentFolders(destinationPath)) {
-      if (currentByPath.has(folder)) {
+      if (currentByKey.has(pathKeyOf(folder))) {
         throw new Error(`${destinationPath} is inside ${folder}, another destination`);
       }
-      if (leftOnDisk.has(folder)) {
+      if (leftOnDisk.has(pathKeyOf(folder))) {
         throw new Error(`${folder} is a file or link on disk where a folder is needed`);
       }
     }
   }
-  for (const path of leftOnDisk) {
-    for (const folder of parentFolders(path)) {
-      if (currentByPath.has(folder)) {
+  for (const entry of leftOnDisk.values()) {
+    for (const folder of parentFolders(entry.path)) {
+      if (currentByKey.has(pathKeyOf(folder))) {
         throw new Error(`${folder} is a folder on disk`);
       }
     }
@@ -281,30 +287,31 @@ export function plan(
   if (previous !== undefined && previous.gameId !== current.gameId) {
     throw new Error(`the lockfiles are for games ${previous.gameId} and ${current.gameId}`);
   }
-  const currentByPath = filesByDestination(current.files);
-  const previousByPath = filesByDestination(previous?.files ?? []);
-  const filesByPath = new Map<string, LockfileFilesAt>();
-  for (const [path, previousFile] of previousByPath) {
-    filesByPath.set(path, { current: undefined, previous: previousFile });
+  const currentByKey = filesByKey(current.files);
+  const previousByKey = filesByKey(previous?.files ?? []);
+  const filesByDestinationKey = new Map<string, LockfileFilesAt>();
+  for (const [key, previousFile] of previousByKey) {
+    filesByDestinationKey.set(key, { current: undefined, previous: previousFile });
   }
-  for (const [path, currentFile] of currentByPath) {
-    filesByPath.set(path, { current: currentFile, previous: previousByPath.get(path) });
+  for (const [key, currentFile] of currentByKey) {
+    filesByDestinationKey.set(key, { current: currentFile, previous: previousByKey.get(key) });
   }
-  const destinations = [...filesByPath].toSorted(([lhs], [rhs]) => (lhs < rhs ? -1 : 1));
-  checkInputs(
-    destinations.map(([destinationPath]) => destinationPath),
-    disk,
-  );
-  const diskByPath = new Map(disk.entries.map((entry) => [entry.path, entry]));
+  const destinations = [...filesByDestinationKey].toSorted(([lhs], [rhs]) => (lhs < rhs ? -1 : 1));
+  checkInputs(destinations, disk);
+  const diskByKey = new Map(disk.entries.map((entry) => [pathKeyOf(entry.path), entry]));
 
-  const operations = destinations.flatMap(([destinationPath, files]) =>
-    OPERATIONS_BY_STATE[destinationStateOf(diskByPath.get(destinationPath), files)].map((kind) =>
-      operationOf(kind, destinationPath, files.current, files.previous),
+  const operations = destinations.flatMap(([key, files]) =>
+    OPERATIONS_BY_STATE[destinationStateOf(diskByKey.get(key), files)].map((kind) =>
+      operationOf(kind, destinationPathOf(files), files.current, files.previous),
     ),
   );
   // a path no current file uses is empty once its operations ran
-  const cleared = new Set(operations.map(destinationOf).filter((path) => !currentByPath.has(path)));
-  checkFolders(currentByPath, new Set([...diskByPath.keys()].filter((path) => !cleared.has(path))));
+  const cleared = new Set(
+    operations
+      .map((operation) => pathKeyOf(destinationOf(operation)))
+      .filter((key) => !currentByKey.has(key)),
+  );
+  checkFolders(currentByKey, new Map([...diskByKey].filter(([key]) => !cleared.has(key))));
   return [
     ...operations.filter((operation) => operation.kind !== OperationKind.Link),
     ...operations.filter((operation) => operation.kind === OperationKind.Link),

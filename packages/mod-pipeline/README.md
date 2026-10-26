@@ -53,6 +53,8 @@ The rules the table encodes:
 - BACKUP and UNLINK run before every LINK, so each LINK lands on an empty path
   and a file and a folder of ours can swap places.
 - Files on disk that neither lockfile lists are left alone.
+- Paths match ignoring letter case, as on Windows. A destination keeps the first
+  spelling the resolver saw, and operations keep the lockfile's spelling.
 
 Backups are taken, never restored.
 

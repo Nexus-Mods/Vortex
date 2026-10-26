@@ -112,20 +112,20 @@
       "kind": "UNLINK",
       "file": {
         "source": "NEXUS",
-        "fileUid": "7318624307806",
-        "fileHash": "skse-plugin-hash",
+        "fileUid": "7318624307803",
+        "fileHash": "removed-esp-hash",
         "hashType": "md5",
-        "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/plugin.dll"
+        "destinationPath": "/fixture-root/game/Data/removed.esp"
       }
     },
     {
       "kind": "UNLINK",
       "file": {
         "source": "NEXUS",
-        "fileUid": "7318624307803",
-        "fileHash": "removed-esp-hash",
+        "fileUid": "7318624307806",
+        "fileHash": "skse-plugin-hash",
         "hashType": "md5",
-        "destinationPath": "/fixture-root/game/Data/removed.esp"
+        "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/plugin.dll"
       }
     },
     {

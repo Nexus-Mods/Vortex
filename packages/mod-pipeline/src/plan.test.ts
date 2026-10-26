@@ -69,6 +69,17 @@ describe("plan", () => {
     );
   });
 
+  test("rejects a lockfile with destinations that differ only in case", () => {
+    const lockfileWithCaseTwins = lockfile([
+      makeFileSource("Data/Textures/sky.dds"),
+      makeFileSource("Data/textures/sky.dds"),
+    ]);
+
+    expect(() => plan(lockfileWithCaseTwins, undefined, diskScan())).toThrow(
+      "a lockfile lists a destination twice",
+    );
+  });
+
   test("rejects lockfiles for different games", () => {
     expect(() => plan(lockfile([]), lockfile([], NexusGameId(1100)), diskScan())).toThrow(
       "the lockfiles are for games 1100 and 1704",

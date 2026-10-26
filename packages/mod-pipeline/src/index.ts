@@ -14,6 +14,7 @@ export {
 } from "./ids";
 export { FileSourceKind, HashType, LockfileSchema, lockfileFiles } from "./lockfile";
 export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, StagedFile } from "./lockfile";
+export { pathKeyOf } from "./pathKey";
 export { OperationKind, OperationSchema, plan } from "./plan";
 export type { Operation } from "./plan";
 export { resolve } from "./resolve";
