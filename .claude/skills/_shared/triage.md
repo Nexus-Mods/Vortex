@@ -2,7 +2,7 @@
 
 Shared triage policy and workflow rules for [`/triage-issues`](../triage-issues/SKILL.md) (starts from Linear) and [`/triage-telemetry`](../triage-telemetry/SKILL.md) (starts from ClickStack).
 
-Telemetry schemas and query recipes live in [`mixpanel.md`](mixpanel.md) (active-user baselines) and [`clickstack.md`](clickstack.md) (ClickHouse schema and landscape queries).
+Telemetry schemas and query recipes live in [`mixpanel.md`](mixpanel.md) (active-user baselines) and [`clickstack.md`](clickstack.md) (ClickHouse schema and landscape queries). GitHub report rules and recipes live in [`github.md`](github.md).
 
 ---
 
@@ -143,7 +143,7 @@ A handful of causes drive most user pain. The 80/20 cut is an **ordering signal 
 The unit of measurement is a single **cause** (`error.title` + normalised message), never a broad error title or subsystem area. Broad titles like _"Failed to install dependency"_ bundle network drops, full disks, and genuine bugs together; grouping by title is fine for initial navigation, but not for ranking.
 
 1. **Find the release threshold:** Run the [cause landscape query](clickstack.md#cause-landscape-with-8020-cut-used-for-priority-ordering) across the _entire version_ (separately for stable and beta—never scoped to just the batch being triaged). Find the fewest causes that together account for ~80% of summed cause-installs. The **threshold** is the install count of the smallest cause in that top 80% (e.g. on 2.9.0 day one: 31 of 329 causes covered 80%, with a threshold of 665 installs).
-2. **Score each issue:** Count distinct installs across _only_ the specific causes that issue covers (an issue may span multiple related causes, such as LOOT init failure and worker start failure). Never borrow reach from unrelated causes under the same broad error title.
+2. **Score each issue:** Count distinct installs across _only_ the specific causes that issue covers. Causes combine into one score only when the code investigation shows they share a root cause, so that one fix removes all of them (e.g. LOOT init failure and worker start failure). Otherwise score each cause on its own and give the issue the largest. Never borrow reach from unrelated causes under the same broad error title.
 3. **Assign a reach label** from the `Vortex Triage Reach` group against the stable cut (or the beta cut for a beta-only bug):
 
 | Label           | Meaning                                                                          |
@@ -212,9 +212,10 @@ Nothing in Linear changes until the user approves. Present the proposal in this 
     - Verdict or Linear match (`tracked` ID, `regressed`, or `untracked`)
     - `Current → Proposed` priority and reasoning
     - `Open to Community Contributions` (where applicable)
+    - GitHub reports (issue numbers)
 4. **Skill-specific sections:**
     - `/triage-issues`: Close / duplicate / relabel list and cross-cutting notes.
-    - `/triage-telemetry`: 1-line summary per environmental, community-extension, and noise item, followed by full draft issues for untracked/regressed bugs.
+    - `/triage-telemetry`: 1-line summary per environmental, community-extension, and noise item, followed by full draft issues for untracked/regressed bugs. List the GitHub reports skipped as unusable by number only.
 5. **Draft triage comments:** Show the full two-paragraph draft comment for every **Urgent** issue, **High** issue, **S1 candidate**, and any issue `/triage-telemetry` proposes to create or change. Remaining lower-priority issues follow the same pattern without being drafted one by one in the proposal.
 
 #### 2. Recording in Linear After Approval
@@ -226,7 +227,8 @@ Once the user approves, update every open `Bug` issue in Linear with both labels
     - **One `Vortex Triage Reach` label:** `R1 Widespread`, `R2 Isolated`, or `R3 Unknown`.
     - **`Open to Community Contributions`** when eligible.
     - _Exception:_ Issues closed (fixed, duplicate, stale) or relabelled away from `Bug` get a comment explaining why, **without** a severity label.
-2. **Triage comment:** Two short paragraphs in plain prose for teammates—no raw SQL output, timestamps, or install-ID hashes. Technical details, stack traces, and SQL queries belong in the issue's **description**, never in the comment. Post even if severity and priority didn't change; on re-triage, add a new comment rather than editing the old one.
+2. **GitHub reports:** Append the URLs of matched GitHub reports to the issue's description, with the reproduction steps or log context they add. GitHub itself stays untouched.
+3. **Triage comment:** Two short paragraphs in plain prose for teammates—no raw SQL output, timestamps, or install-ID hashes. Technical details, stack traces, and SQL queries belong in the issue's **description**, never in the comment. Post even if severity and priority didn't change; on re-triage, add a new comment rather than editing the old one.
     - **Paragraph 1 — Severity:** Tier; what happens to the user; why it isn't the tier above when non-obvious (e.g. S3 vs. S1: _"nothing is written to disk; a restart clears it"_); what would confirm or rule out an unconfirmed S1; and on re-triage, the previous tier and what changed.
     - **Paragraph 2 — Priority:** Priority and where the fix ships; reach in user terms (approximate users on which version + daily rate against the affected audience, or _"no telemetry for this"_); whether it's new in this version or inherited; whether it sits in the 80/20 head; any override applied; and what would change the call.
 

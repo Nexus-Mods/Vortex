@@ -1,6 +1,6 @@
 ---
 name: triage-issues
-description: Triage open Vortex bug issues in Linear (both community CMTY reports and internal issues). Checks each issue against the codebase and git history, sizes its reach from ClickHouse telemetry and Mixpanel baselines, and proposes priorities under the shared Vortex triage policy. Read-only until the user approves.
+description: Triage open Vortex bug issues in Linear (both community CMTY reports and internal issues). Checks each issue against the codebase and git history, pulls extra context from matching GitHub reports, sizes its reach from ClickHouse telemetry and Mixpanel baselines, and proposes priorities under the shared Vortex triage policy. Read-only until the user approves.
 when_to_use: When the user asks to triage Linear bugs or issues for Vortex, re-prioritise a bug backlog, decide what goes into a stable hotfix or the next beta, or check whether a set of issues is still valid, fixed, or duplicated. Not for discovering untracked problems in telemetry — use /triage-telemetry for that.
 user-invocable: true
 ---
@@ -14,6 +14,7 @@ Read these shared references before running:
 - [`../_shared/triage.md`](../_shared/triage.md) — priority matrix, severity tiers (`S1`–`S5`), reach labels (`R1`–`R3`), daily rate math, shared workflow steps, and Linear recording format.
 - [`../_shared/mixpanel.md`](../_shared/mixpanel.md) — active-user baseline queries.
 - [`../_shared/clickstack.md`](../_shared/clickstack.md) — ClickHouse schema and landscape queries.
+- [`../_shared/github.md`](../_shared/github.md) — which GitHub reports are usable, and search recipes.
 
 ## Arguments (`$ARGUMENTS`)
 
@@ -48,9 +49,9 @@ Report how many issues were skipped as already triaged.
 
 Resolve `stable`, `beta`, `master`, and new beta features per [Release State in `triage.md`](../_shared/triage.md#release-state).
 
-### 3. Check Code and Git History
+### 3. Check Code, Git History, and GitHub
 
-Follow [Parallel Code Investigation in `triage.md`](../_shared/triage.md#parallel-code-investigation) using the prompt in [`reference.md`](reference.md#agent-prompt). While the background subagents run, proceed to Step 4.
+Follow [Parallel Code Investigation in `triage.md`](../_shared/triage.md#parallel-code-investigation) using the prompt in [`reference.md`](reference.md#agent-prompt). Each subagent also searches GitHub for other users hitting the same bug and pulls in the context they add (versions, games, reproduction steps, logs, workarounds), using only [usable reports](../_shared/github.md#usable-reports). While the background subagents run, proceed to Step 4.
 
 ### 4. Measure Reach and Daily Rate
 
@@ -62,11 +63,11 @@ Follow [Sizing Reach and Daily Rate in `triage.md`](../_shared/triage.md#sizing-
 
 ### 5. Decide Triage Outcomes
 
-For each issue, combine the code check and telemetry to determine:
+For each issue, combine the code check, GitHub context, and telemetry to determine:
 
 - **Verdict:** `valid`, `fixed-in`, `duplicate-of`, `needs-info`, `stale-close`, `relabel`, or `not-a-bug`.
 - **Severity tier (`S1`–`S5`)**, **reach label (`R1`–`R3`)**, **daily rate**, **priority (`current → proposed`)**, and **`Open to Community Contributions` eligibility** per the [shared policy](../_shared/triage.md#priority-policy).
-- **Recommended action.**
+- **Recommended action.** A `needs-info` issue whose missing details a GitHub report supplies is no longer `needs-info`.
 
 ### 6. Present Proposal, Then Apply on Approval
 

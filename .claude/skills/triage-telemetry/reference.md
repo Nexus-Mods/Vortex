@@ -134,12 +134,12 @@ Fill in the `<…>` placeholders and launch one read-only subagent per subsystem
 ```text
 You are investigating Vortex error telemetry (repo at <repo root>).
 READ-ONLY: do NOT modify any Linear issue or file, and do not commit.
-Load Linear tools via ToolSearch (list_issues, get_issue) if you need to read related issues.
+Load Linear tools via ToolSearch (list_issues, get_issue) if you need to read related issues. Use the `gh` CLI for GitHub; never comment on or change GitHub issues.
 
-Read `.claude/skills/_shared/triage.md` (specifically the "Severity Tiers" section) for the exact definitions and edge-case rules for S1–S5.
+Read `.claude/skills/_shared/triage.md` (specifically the "Severity Tiers" section) for the exact definitions and edge-case rules for S1–S5, and `.claude/skills/_shared/github.md` for which GitHub reports are usable.
 
-Error groups (area: <area>), each with message, sample stack, reach, and shape:
-<per item: title, message, stack sample, installs, events/install, new or inherited, games, linked Linear issue if any>
+Items (area: <area>), each with message, sample stack, reach, and shape, or a GitHub report:
+<per item: title, message, stack sample, installs, events/install, new or inherited, games, linked Linear issue if any, GitHub report numbers with the context they add>
 
 Context:
 - Stable: <stable tag> (<release branch>)
@@ -148,7 +148,7 @@ Context:
 - Inspect `origin/master` and both release branches.
 
 For EACH item:
-1. Map the stack trace and message to the exact code that throws or reports it.
+1. Map the stack trace and message to the exact code that throws or reports it. For a GitHub report, use its logs and reproduction steps; if it has neither, try to trace the described behaviour to code yourself, and mark it "not reproducible" if you can't.
 2. Identify the root cause and classify it as one of:
    - Vortex bug
    - Environmental condition mistakenly reported as a bug
