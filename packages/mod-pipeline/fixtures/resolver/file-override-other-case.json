@@ -1,0 +1,55 @@
+{
+  "name": "a file override in another case leaves the file to the earlier mod",
+  "input": {
+    "gameId": 1704,
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
+    "mods": [
+      {
+        "origin": { "source": "NEXUS", "fileUid": "7318624273385" },
+        "stagedFiles": [
+          {
+            "destinationPath": "/fixture-root/game/Data/textures/sky.dds",
+            "fileHash": "mod-a-sky-hash",
+            "hashType": "md5"
+          }
+        ],
+        "overriddenPaths": []
+      },
+      {
+        "origin": { "source": "NEXUS", "fileUid": "7318624274386" },
+        "stagedFiles": [
+          {
+            "destinationPath": "/fixture-root/game/Data/Textures/sky.dds",
+            "fileHash": "mod-b-sky-hash",
+            "hashType": "md5"
+          }
+        ],
+        "overriddenPaths": ["/fixture-root/game/Data/TEXTURES/SKY.DDS"]
+      }
+    ]
+  },
+  "expected": {
+    "version": 1,
+    "gameId": 1704,
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
+    "files": [
+      {
+        "source": "NEXUS",
+        "fileUid": "7318624273385",
+        "fileHash": "mod-a-sky-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/textures/sky.dds"
+      }
+    ]
+  }
+}

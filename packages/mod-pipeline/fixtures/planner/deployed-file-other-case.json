@@ -1,0 +1,54 @@
+{
+  "name": "a deployed file the disk spells in another case is left in place",
+  "current": {
+    "version": 1,
+    "gameId": 1704,
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
+    "files": [
+      {
+        "source": "NEXUS",
+        "fileUid": "7318624307821",
+        "fileHash": "sky-texture-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/textures/sky.dds"
+      }
+    ]
+  },
+  "previous": {
+    "version": 1,
+    "gameId": 1704,
+    "install": {
+      "store": "steam",
+      "appId": 489830,
+      "buildId": 15218373,
+      "depots": [{ "depotId": 489833, "manifestId": "1914580699073641964" }]
+    },
+    "files": [
+      {
+        "source": "NEXUS",
+        "fileUid": "7318624307821",
+        "fileHash": "sky-texture-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/textures/sky.dds"
+      }
+    ]
+  },
+  "disk": {
+    "takenAt": "2026-10-21T09:00:00Z",
+    "roots": ["/fixture-root/game"],
+    "entries": [
+      {
+        "path": "/fixture-root/game/Data/Textures/sky.dds",
+        "kind": "file",
+        "size": 4096,
+        "mtimeMs": 1760000000000
+      }
+    ]
+  },
+  "expected": []
+}

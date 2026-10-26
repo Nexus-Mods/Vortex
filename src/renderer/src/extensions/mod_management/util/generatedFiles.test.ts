@@ -17,3 +17,16 @@ test("a generated file replaces a mod file at the same destination", () => {
 
   expect(addGeneratedFiles(lockfile, [generated]).files).toEqual([generated, otherModFile]);
 });
+
+test("a generated file replaces a mod file spelt in another case, at the mod file's spelling", () => {
+  const lockfile = makeLockfile();
+  const [modFile, otherModFile] = lockfile.files;
+  const generated = makeGeneratedFileSource({
+    destinationPath: modFile.destinationPath.toUpperCase(),
+  });
+
+  expect(addGeneratedFiles(lockfile, [generated]).files).toEqual([
+    { ...generated, destinationPath: modFile.destinationPath },
+    otherModFile,
+  ]);
+});

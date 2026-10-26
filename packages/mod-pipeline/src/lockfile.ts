@@ -1,5 +1,6 @@
 import { GameInstallSchema, type GameInstall } from "./gameInstall";
 import { NexusFileUid, NexusGameId } from "./ids";
+import { pathKeyOf } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -40,11 +41,19 @@ export type GeneratedFileSource = Extract<
   { source: typeof FileSourceKind.VortexGenerated }
 >;
 
-/** A lockfile's files: one per destination, the later file winning, in destination order. */
+/**
+ * A lockfile's files: one per destination key, in destination order. The later file wins, at the
+ * destination's first spelling, which is the folder case the disk keeps.
+ */
 export function lockfileFiles(files: Iterable<FileSource>): FileSource[] {
   const fileByDestination = new Map<string, FileSource>();
   for (const file of files) {
-    fileByDestination.set(file.destinationPath, file);
+    const key = pathKeyOf(file.destinationPath);
+    const earlier = fileByDestination.get(key);
+    fileByDestination.set(
+      key,
+      earlier !== undefined ? { ...file, destinationPath: earlier.destinationPath } : file,
+    );
   }
   // destinations are unique
   return [...fileByDestination.values()].toSorted((lhs, rhs) =>
@@ -77,6 +86,8 @@ const fileSourceSchema = z.discriminatedUnion("source", [
   z.object({ source: z.literal(FileSourceKind.VortexGenerated), ...fileFields }),
   z.object({ source: z.literal(FileSourceKind.UserGenerated), ...fileFields }),
 ]);
+
+export const FileSourceSchema: z.ZodType<FileSource> = fileSourceSchema;
 
 const lockfileSchema = z.object({
   version: z.literal(1),
