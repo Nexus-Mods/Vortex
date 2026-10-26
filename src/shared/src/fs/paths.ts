@@ -1,4 +1,5 @@
 import { VortexError } from "../errors/base";
+import { make, type Brand } from "../types/brand";
 import { parseNativePath } from "./native";
 import type { ILinuxPathProvider } from "./paths.linux";
 import type { IWindowsPathProvider } from "./paths.windows";
@@ -32,8 +33,6 @@ export type QualifiedPathWire = {
   root: string;
 };
 
-declare const RelativePathBrand: unique symbol;
-
 /**
  * Forward-slash-separated relative path. Guaranteed to have no leading
  * slash, no drive-letter prefix, and no `..` segments. Values are only
@@ -41,7 +40,9 @@ declare const RelativePathBrand: unique symbol;
  * normalizes the input.
  *
  * @public */
-export type RelativePath = string & { readonly [RelativePathBrand]: true };
+export type RelativePath = Brand<string, "RelativePath">;
+
+const RelativePath = make<RelativePath>();
 
 /**
  * Constructs a {@link RelativePath} after validation and normalization.
@@ -89,8 +90,7 @@ export function relativePath(raw: string): RelativePath {
     });
   }
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return segments.join("/") as RelativePath;
+  return RelativePath(segments.join("/"));
 }
 
 /**
@@ -471,6 +471,48 @@ export class QualifiedPath {
     return new QualifiedPath(this.scheme, this.data, joinedPath, this.root);
   }
 
+  /**
+   * Returns this path's location relative to {@link base}, which must be a
+   * directory prefix of it.
+   *
+   * Comparisons (including the prefix itself) are case-insensitive, matching
+   * {@link QualifiedPath.compare}; the result keeps this path's casing.
+   * `base` must be a prefix at a component boundary, so `a/b` is not
+   * relative to base `a/f` even though the raw strings share a prefix.
+   * Equal paths (and trailing-separator variants of them, like `a/b/` vs
+   * `a/b`) yield an empty relative path, and since identity here is the
+   * whole {@link value},
+   * {@link base.join | base.join(path.relativeTo(base))} round-trips.
+   *
+   * @throws {@link VortexError} when {@link base} is not a directory prefix
+   *   of this path (siblings, deeper base, any mismatched part).
+   *
+   * @example
+   * ```ts @import.meta.vitest
+   * const bar = QualifiedPath.fromNative("/foo/bar");
+   * const foo = QualifiedPath.fromNative("/foo");
+   * assert(bar.relativeTo(foo) === "bar");
+   * ```
+   *
+   * @public
+   */
+  relativeTo(base: QualifiedPath): RelativePath {
+    const lower = this.value.toLowerCase();
+    const baseLower = base.value.toLowerCase();
+    // rooted base paths already end in '/', so don't double the boundary
+    const prefix = baseLower.endsWith("/") ? baseLower : `${baseLower}/`;
+    if (lower !== baseLower && !lower.startsWith(prefix)) {
+      throw new VortexError(`Path "${this.value}" is not relative to "${base.value}"`, {
+        kind: "fs:invalid-path",
+        path: this.value,
+      });
+    }
+    // equal paths, or "a/b/" vs "a/b" (same directory), fold to ""
+    const rest =
+      lower === baseLower ? "" : this.value.slice(base.value.length).replace(/^\/|\/$/g, "");
+    return relativePath(rest);
+  }
+
   with(change: { extension?: string; basename?: string; dirname?: string }): QualifiedPath {
     if (
       change.extension === undefined &&
@@ -515,12 +557,14 @@ export class QualifiedPath {
           // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           return { done: true, value: undefined as never };
         }
+
         const end = path.indexOf("/", pos);
         if (end === -1) {
           const value = path.slice(pos);
           pos = path.length;
           return { done: false, value };
         }
+
         const value = path.slice(pos, end);
         pos = end + 1;
         return { done: false, value };

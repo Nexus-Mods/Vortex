@@ -403,3 +403,56 @@ describe("relativePath", () => {
     expect(() => relativePath(input)).toThrow(VortexError);
   });
 });
+
+describe("relativeTo", () => {
+  it("returns the suffix below the base", () => {
+    const base = QualifiedPath.fromNative("/foo");
+    expect(QualifiedPath.fromNative("/foo/bar").relativeTo(base)).toBe("bar");
+  });
+
+  it.each([
+    ["C:/Users/alice/file.txt", "alice/file.txt"],
+    ["C:/Users", ""],
+  ])('"%s" relative to "C:/Users" → "%s"', (input, expected) => {
+    expect(QualifiedPath.fromNative(input).relativeTo(QualifiedPath.fromNative("C:/Users"))).toBe(
+      expected,
+    );
+  });
+
+  it("is case-insensitive on the base, keeping the target's casing", () => {
+    const base = QualifiedPath.fromNative("c:/users");
+    expect(QualifiedPath.fromNative("C:/Users/Alice").relativeTo(base)).toBe("Alice");
+  });
+
+  it("folds trailing-separator variants to the empty path", () => {
+    const base = QualifiedPath.of({ scheme: "foo", data: "", path: "a/b", root: "" });
+    expect(
+      QualifiedPath.of({ scheme: "foo", data: "", path: "a/b/", root: "" }).relativeTo(base),
+    ).toBe("");
+  });
+
+  it.each([
+    ["C:/Users", "C:/Users/alice", "deeper base"],
+    ["C:/a/c", "C:/Users", "sibling"],
+    ["C:/UsersFoo", "C:/Users", "prefix without component boundary"],
+    ["D:/Users/alice", "C:/Users", "different root"],
+  ])('"%s" relative to "%s" throws (%s)', (input, base) => {
+    expect(() =>
+      QualifiedPath.fromNative(input).relativeTo(QualifiedPath.fromNative(base)),
+    ).toThrow(VortexError);
+  });
+
+  it("rejects mismatched schemes", () => {
+    expect(() =>
+      QualifiedPath.of({ scheme: "steam", data: "", path: "C:/Users", root: "C:/" }).relativeTo(
+        QualifiedPath.fromNative("C:/Users"),
+      ),
+    ).toThrow(VortexError);
+  });
+
+  it("round-trips through join", () => {
+    const base = QualifiedPath.fromNative("/foo");
+    const path = QualifiedPath.fromNative("/foo/bar/baz.txt");
+    expect(base.join(path.relativeTo(base)).value).toBe(path.value);
+  });
+});
