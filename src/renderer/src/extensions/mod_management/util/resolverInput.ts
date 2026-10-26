@@ -6,7 +6,7 @@ import {
   GogBuildId,
   GogProductId,
   HashType,
-  NexusFileUid,
+  NexusFileId,
   NexusGameId,
   SteamAppId,
   SteamBuildId,
@@ -15,7 +15,7 @@ import {
   type GameInstall,
   type ResolverInput,
   type ResolverMod,
-  type StagedFile,
+  type FileEntry,
 } from "@nexusmods/mod-pipeline";
 import { parseError, type VortexGameId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
@@ -53,10 +53,10 @@ export const toPortablePath = (filePath: string) => filePath.replaceAll("\\", "/
 
 /** A mod's origin; a Nexus mod whose file version is unknown is user generated. */
 function modOrigin(mod: IMod, gameMode: string): ResolverMod["origin"] {
-  const fileUid =
+  const nexusFileId =
     mod.attributes?.source === "nexus" ? resolveFileUID(mod.attributes, gameMode) : undefined;
-  return fileUid !== undefined
-    ? { source: FileSourceKind.Nexus, fileUid: NexusFileUid(fileUid) }
+  return nexusFileId !== undefined
+    ? { source: FileSourceKind.Nexus, nexusFileId: NexusFileId(nexusFileId) }
     : { source: FileSourceKind.UserGenerated };
 }
 
@@ -139,9 +139,9 @@ interface IStagedSource {
   stagedPath: string;
   destinationPath: string;
   /** its mod's staged files */
-  into: StagedFile[];
+  into: FileEntry[];
   /** the Nexus file version its mod was installed from */
-  fileUid?: NexusFileUid;
+  nexusFileId?: NexusFileId;
   /** "/" separated, relative to its mod's staging folder */
   portableRelPath: string;
   size: number;
@@ -209,7 +209,7 @@ export async function gatherResolverInput(
   const pendingArchiveFiles = lookupArchiveFiles([
     ...new Set(
       modOrigins.flatMap(({ origin }) =>
-        origin.source === FileSourceKind.Nexus ? [origin.fileUid] : [],
+        origin.source === FileSourceKind.Nexus ? [origin.nexusFileId] : [],
       ),
     ),
   ]);
@@ -228,7 +228,7 @@ export async function gatherResolverInput(
       overriddenPaths: (mod.fileOverrides ?? []).map(toPortablePath),
     };
     mods.push(resolverMod);
-    const fileUid = origin.source === FileSourceKind.Nexus ? origin.fileUid : undefined;
+    const nexusFileId = origin.source === FileSourceKind.Nexus ? origin.nexusFileId : undefined;
     const subDir = genSubDirFunc(game, getModType(mod.type))(mod);
     const modPath = path.join(stagingPath, mod.installationPath);
     for (const { relPath, size } of await stagedFiles(modPath)) {
@@ -237,7 +237,7 @@ export async function gatherResolverInput(
           stagedPath: path.join(modPath, relPath),
           destinationPath: toPortablePath(deployedFilePath(modPaths[typeId], subDir, relPath)),
           into: resolverMod.stagedFiles,
-          fileUid,
+          nexusFileId,
           portableRelPath: relPath,
           size,
         });
@@ -250,7 +250,9 @@ export async function gatherResolverInput(
     sources,
     (source) => {
       const archiveFiles =
-        source.fileUid !== undefined ? archiveFilesByVersion.get(source.fileUid) : undefined;
+        source.nexusFileId !== undefined
+          ? archiveFilesByVersion.get(source.nexusFileId)
+          : undefined;
       return archiveMd5(source, archiveFiles) ?? hashFile(source.stagedPath);
     },
     HASH_CONCURRENCY,

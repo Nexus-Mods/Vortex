@@ -8,7 +8,7 @@ import {
   LockfileSchema,
   resolve,
   type Lockfile,
-  type StagedFile,
+  type FileEntry,
 } from "@nexusmods/mod-pipeline";
 import { VortexGameId, VortexModId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
@@ -118,7 +118,7 @@ async function installMods(
 }
 
 /** Each file the hardlink deployment writes, and its hash. */
-async function deployedFiles(game: IDeployedGameHarness): Promise<StagedFile[]> {
+async function deployedFiles(game: IDeployedGameHarness): Promise<FileEntry[]> {
   const state = game.getState();
   const sortedMods = await doSortMods(
     game.api,
@@ -128,7 +128,7 @@ async function deployedFiles(game: IDeployedGameHarness): Promise<StagedFile[]> 
   const harnessGame = getGame(game.gameId);
   const modPaths = harnessGame.getModPaths(state.settings.gameMode.discovered[game.gameId].path);
   const method = makeRealDeploymentMethod(game.api, hardlinkInit);
-  const files: StagedFile[] = [];
+  const files: FileEntry[] = [];
   for (const [typeId, target] of Object.entries(modPaths).filter(
     ([, deployPath]) => deployPath !== "",
   )) {
@@ -201,7 +201,7 @@ test("the resolver deploys each file where today's deployment does, from the sam
 
   expect(lockfile.files.filter((file) => file.source !== FileSourceKind.UserGenerated)).toEqual([
     expect.objectContaining({
-      fileUid: NEXUS_FILE_UID,
+      nexusFileId: NEXUS_FILE_UID,
       destinationPath: toPortablePath(path.join(game.dataPath, "ModA.esp")),
     }),
   ]);

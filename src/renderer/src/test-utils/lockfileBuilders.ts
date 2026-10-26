@@ -2,7 +2,7 @@ import {
   FileSourceKind,
   GameStore,
   HashType,
-  NexusFileUid,
+  NexusFileId,
   NexusGameId,
   SteamAppId,
   SteamBuildId,
@@ -32,7 +32,7 @@ type NexusFileSource = Extract<FileSource, { source: typeof FileSourceKind.Nexus
 export function makeNexusFileSource(overrides: Partial<NexusFileSource> = {}): NexusFileSource {
   return {
     source: FileSourceKind.Nexus,
-    fileUid: NexusFileUid("7318624307791"),
+    nexusFileId: NexusFileId("7318624307791"),
     fileHash: "skyui-esp-hash",
     hashType: HashType.Md5,
     destinationPath: "/fixture-root/game/Data/SkyUI_SE.esp",
