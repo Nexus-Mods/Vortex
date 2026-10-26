@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
-import { RadioGroupField } from "@/ui/components/form/radio_group_field/RadioGroupField";
 import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 
@@ -10,6 +9,7 @@ import type {
   IRequirementLink,
   RequirementLinkChoice,
 } from "../../utils/requirementLinks/requirementLinks";
+import { type IToggleButtonOption, ToggleButtonGroup } from "./ToggleButtonGroup";
 
 export interface IRequirementLinksModalProps {
   visible: boolean;
@@ -56,7 +56,7 @@ export const RequirementLinksModal = ({
   const choiceOf = (link: IRequirementLink) => choices.get(link.key) ?? "requires";
   const linkCount = links.filter((link) => choiceOf(link) !== "skip").length;
 
-  const options = [
+  const options: IToggleButtonOption<RequirementLinkChoice>[] = [
     { value: "requires", label: t("requirement_links_modal::choices::requires") },
     { value: "recommends", label: t("requirement_links_modal::choices::recommends") },
     { value: "skip", label: t("requirement_links_modal::choices::skip") },
@@ -90,7 +90,7 @@ export const RequirementLinksModal = ({
 
               <ul className="mt-2 divide-y divide-stroke-weak">
                 {group.links.map((link) => (
-                  <li className="flex items-start justify-between gap-4 py-2" key={link.key}>
+                  <li className="flex items-center justify-between gap-4 py-2" key={link.key}>
                     <Typography appearance="subdued" as="div" typographyType="body-sm">
                       <span className="block text-neutral-moderate">{link.targetName}</span>
 
@@ -99,17 +99,12 @@ export const RequirementLinksModal = ({
                       )}
                     </Typography>
 
-                    <RadioGroupField
-                      className="flex shrink-0 gap-4"
+                    <ToggleButtonGroup
                       data-testid="requirement-link-choice"
                       label={link.targetName}
                       options={options}
                       value={choiceOf(link)}
-                      onChange={(value) =>
-                        setChoices((prev) =>
-                          new Map(prev).set(link.key, value as RequirementLinkChoice),
-                        )
-                      }
+                      onChange={(value) => setChoices((prev) => new Map(prev).set(link.key, value))}
                     />
                   </li>
                 ))}
