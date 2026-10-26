@@ -11,7 +11,6 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import opn from "@/util/opn";
 import { sanitizeCSSId } from "@/util/util";
 
-import { filePageUrl, nexusModPageUrl } from "../file_page_url/filePageUrl";
 import { trackedInstall } from "../shared/installTracking";
 import type { IssueAnalyticsIdentity } from "../shared/tracking";
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
@@ -38,7 +37,7 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
   // modUID is empty when the source data lacked a mod id; decode only when present.
   const mod = ref.modUID ? decodeUID(ref.modUID) : undefined;
   const domain = mod ? nexusDomain(mod.gameId) : undefined;
-  return mod && domain ? nexusModPageUrl(domain, mod.id) : undefined;
+  return mod && domain ? `https://www.nexusmods.com/${domain}/mods/${mod.id}` : undefined;
 }
 
 /**
@@ -262,7 +261,10 @@ export function openFilePage(_api: IExtensionApi, ref: INexusFileRef): void {
     log("warn", "cannot open file page: unresolved mod or file id", { fileUID: ref.fileUID });
     return;
   }
-  opn(filePageUrl(base, file.id)).catch(() => undefined);
+  // `file_id` can reach hidden mods and archived files. An alternative form is
+  //   `${base}?tab=files&show_file=${file.id}`
+  // but `show_file` cannot open hidden mods or archived files (it could be updated to).
+  opn(`${base}?tab=files&file_id=${file.id}&nmm=1`).catch(() => undefined);
 }
 
 /**

@@ -1,15 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { openFilePage as openNexusFilePage } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequirements/onDownloadRequirement";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
+import { makeModAndFileUIDs } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import opn from "@/util/opn";
 
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
 import type { IModRequirementExt } from "../types";
-import { filePageUrl, nexusModPageUrl } from "../utils/file_page_url/filePageUrl";
 import type { IssueAnalyticsIdentity } from "../utils/shared/tracking";
 
 /**
@@ -47,13 +48,16 @@ export function useModRequirementActions(
   // the slow or fast download. Falls back to the mod page when there's no single file.
   const openFilePage = useCallback(() => {
     if (mod.mainFile) {
-      opn(filePageUrl(nexusModPageUrl(mod.gameId, mod.modId), mod.mainFile.fileId)).catch(
-        () => undefined,
+      const { modUID, fileUID } = makeModAndFileUIDs(
+        mod.gameId,
+        String(mod.modId),
+        String(mod.mainFile.fileId),
       );
+      openNexusFilePage(api, { modUID, fileUID });
     } else {
       openModPage();
     }
-  }, [mod.gameId, mod.modId, mod.mainFile, openModPage]);
+  }, [api, mod.gameId, mod.modId, mod.mainFile, openModPage]);
 
   // 1-click install is a Premium feature; free users get the upgrade prompt
   // (which routes them to the file page) instead of an in-app download.
