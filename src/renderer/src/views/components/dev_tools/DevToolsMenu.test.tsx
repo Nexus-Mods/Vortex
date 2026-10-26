@@ -11,6 +11,14 @@ vi.mock("react-redux", () => ({
     selector({ settings: { window: { useModernLayout: mocks.useModernLayout } } }),
 }));
 
+vi.mock("./QueryDevtools", () => ({
+  QueryDevtools: ({ onClose }: { onClose: () => void }) => (
+    <button type="button" onClick={onClose}>
+      Close query devtools
+    </button>
+  ),
+}));
+
 import { setUseModernLayout } from "@/actions/window";
 import { getTheme } from "@/util/theme";
 
@@ -58,5 +66,22 @@ describe("DevToolsMenu", () => {
     await userEvent.click(gameArt);
 
     expect(gameArt).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("opens the query devtools, and closes them from their own close button", async () => {
+    await open();
+    const queryDevtools = screen.getByTestId("dev-tools-query-devtools");
+
+    await userEvent.click(queryDevtools);
+
+    expect(queryDevtools).toHaveAttribute("aria-checked", "true");
+
+    await userEvent.click(screen.getByText("Close query devtools"));
+
+    expect(screen.queryByText("Close query devtools")).toBeNull();
+
+    await userEvent.click(screen.getByTestId("dev-tools-trigger"));
+
+    expect(screen.getByTestId("dev-tools-query-devtools")).toHaveAttribute("aria-checked", "false");
   });
 });
