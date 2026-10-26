@@ -105,6 +105,11 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
         label: "Install recommendations",
         icon: "install_desktop",
       },
+      {
+        title: "Link Nexus Requirements",
+        label: "Link Nexus requirements",
+        icon: getIcon("connection"),
+      },
     ],
   },
   {

@@ -55,6 +55,30 @@ const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 const modRequirementsCache: KeyedCache<Partial<IModRequirements>> = createKeyedCache(CACHE_TTL_MS);
 
 /**
+ * The Nexus requirements of the given mod UIDs, through the timed session cache, fetching only
+ * the misses. `onFetched` hears how many were fetched rather than read from the cache.
+ */
+export async function resolveModRequirements(
+  api: IExtensionApi,
+  uids: string[],
+  onFetched?: (count: number) => void,
+): Promise<Map<string, Partial<IModRequirements>>> {
+  const nexusGetModRequirements = api.ext.nexusGetModRequirements as
+    | ((uids: string[]) => Promise<{ [uid: string]: Partial<IModRequirements> }>)
+    | undefined;
+
+  return resolveCached(uids, modRequirementsCache, async (missingUids) => {
+    if (!nexusGetModRequirements) {
+      throw new Error("Nexus API not available");
+    }
+    const fetched = await nexusGetModRequirements(missingUids);
+    const byUid = new Map<string, Partial<IModRequirements>>(Object.entries(fetched ?? {}));
+    onFetched?.(byUid.size);
+    return byUid;
+  });
+}
+
+/**
  * Create a result object for the mod requirements check
  */
 function createResult(
@@ -174,7 +198,7 @@ export function resolveRequirementTarget(
  * Resolve a mod's Nexus mod UID (the game id + game-scoped mod id composite)
  * Returns undefined when the mod has no usable Nexus mod id.
  */
-function resolveModUID(mod: IMod, gameId: string): string | undefined {
+export function resolveModUID(mod: IMod, gameId: string): string | undefined {
   const modId = mod.attributes?.modId;
   if (modId === undefined) {
     return undefined;
@@ -286,10 +310,6 @@ export async function checkModRequirements(
       errors: [],
     };
 
-    const nexusGetModRequirements = api.ext.nexusGetModRequirements as
-      | ((uids: string[]) => Promise<{ [uid: string]: Partial<IModRequirements> }>)
-      | undefined;
-
     // Resolve requirements through the timed session cache, fetching only the misses.
     const requirementsMap: {
       [uid: string]: Partial<IModRequirements> | undefined;
@@ -298,19 +318,9 @@ export async function checkModRequirements(
     signal?.throwIfAborted();
 
     try {
-      const resolved = await resolveCached(
-        [...checkedModsByUid.keys()],
-        modRequirementsCache,
-        async (missingUids): Promise<Map<string, Partial<IModRequirements>>> => {
-          if (!nexusGetModRequirements) {
-            throw new Error("Nexus API not available");
-          }
-          const fetched = await nexusGetModRequirements(missingUids);
-          const byUid = new Map<string, Partial<IModRequirements>>(Object.entries(fetched ?? {}));
-          metadata.modsFetched += byUid.size;
-          return byUid;
-        },
-      );
+      const resolved = await resolveModRequirements(api, [...checkedModsByUid.keys()], (count) => {
+        metadata.modsFetched += count;
+      });
 
       for (const [uid, requirements] of resolved) {
         requirementsMap[uid] = requirements;

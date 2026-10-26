@@ -27,6 +27,7 @@ const iconMap: Record<string, IIconSource> = {
   browse: "folder_open",
   categories: "sell",
   changelog: "article",
+  connection: "device_hub",
   delete: "delete",
   deploy: "rocket_launch",
   hide: "visibility_off",

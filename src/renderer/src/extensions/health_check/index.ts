@@ -23,6 +23,7 @@ import { LegacyTestAdapter } from "./core/LegacyTestAdapter";
 import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import type { IHealthCheckApi } from "./types";
+import { registerRequirementLinks } from "./utils/requirementLinks/registerRequirementLinks";
 import HealthCheckPage from "./views/HealthCheckPage";
 import SettingsHealthCheck from "./views/SettingsHealthCheck";
 
@@ -73,6 +74,8 @@ function init(context: IExtensionContext): boolean {
     }),
     onReset: () => resetHealthCheckPage?.(),
   });
+
+  registerRequirementLinks(context);
 
   context.once(() => {
     legacyAdapter = new LegacyTestAdapter(registry, context.api);
