@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   game: undefined as { name: string } | undefined,
   tierZero: false,
+  isModsEnabled: true,
 }));
 
 vi.mock("react-redux", () => ({
@@ -18,6 +19,10 @@ vi.mock("../../../gamemode_management/selectors", () => ({
 
 vi.mock("@/util/selectors", () => ({
   activeGameId: () => "skyrimse",
+}));
+
+vi.mock("@/contexts/FlagsContext", () => ({
+  useFlag: (name: string) => (mocks.isModsEnabled ? { name } : undefined),
 }));
 
 vi.mock("@/extensions/gamemode_management/tiered/tierZero", () => ({
@@ -35,7 +40,7 @@ vi.mock("react-i18next", async (importOriginal) => ({
 }));
 
 vi.mock("../../hooks/use_collection_search/useCollectionSearch.hook", () => ({
-  useCollectionSearch: () => ({ allCollectionsTotal: 126 }),
+  useCollectionSearch: () => ({ allCollectionsTotal: 126, gameDomainName: "skyrimspecialedition" }),
 }));
 
 vi.mock("../../components/browse_collections/BrowseCollections", () => ({
@@ -44,6 +49,12 @@ vi.mock("../../components/browse_collections/BrowseCollections", () => ({
 
 vi.mock("../../components/browse_mods/BrowseMods", () => ({
   BrowseMods: () => <div>Mods panel</div>,
+}));
+
+vi.mock("../../components/mods_coming_soon/ModsComingSoon", () => ({
+  ModsComingSoon: ({ gameDomainName }: { gameDomainName: string }) => (
+    <div>Mods coming soon for {gameDomainName}</div>
+  ),
 }));
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -56,6 +67,7 @@ describe("BrowsePage", () => {
   beforeEach(() => {
     mocks.game = { name: "Skyrim Special Edition" };
     mocks.tierZero = false;
+    mocks.isModsEnabled = true;
   });
 
   it("names the page and the game it browses", () => {
@@ -100,5 +112,33 @@ describe("BrowsePage", () => {
 
     expect(screen.queryByRole("tab", { name: /Collections/ })).toBeNull();
     expect(screen.getByText("Mods panel")).toBeTruthy();
+  });
+
+  it("says mods are coming soon, with no count, while browsing mods is flagged off", () => {
+    mocks.isModsEnabled = false;
+
+    render(<BrowsePage active api={api} />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Mods" }));
+
+    expect(screen.getByText("Mods coming soon for skyrimspecialedition")).toBeTruthy();
+    expect(screen.queryByText("Mods panel")).toBeNull();
+  });
+
+  it("opens on the collections while browsing mods is flagged off", () => {
+    mocks.isModsEnabled = false;
+
+    render(<BrowsePage active api={api} />);
+
+    expect(screen.getByText("Collections panel")).toBeTruthy();
+  });
+
+  it("opens on the mods while browsing mods is flagged off, for a game with no collections tab", () => {
+    mocks.isModsEnabled = false;
+    mocks.tierZero = true;
+
+    render(<BrowsePage active api={api} />);
+
+    expect(screen.getByText("Mods coming soon for skyrimspecialedition")).toBeTruthy();
   });
 });
