@@ -59,7 +59,7 @@ export const PageHeader = ({
         {!!pictogramName && (
           <Pictogram
             className={joinClasses([
-              "transition-[width,height] duration-200 ease-out",
+              "transition-[width,height] ease-out",
               compact ? "size-7" : "size-14",
             ])}
             name={pictogramName}
@@ -71,7 +71,7 @@ export const PageHeader = ({
           <div className="flex items-center justify-between gap-x-6">
             <div
               className={joinClasses([
-                "min-w-0 transition-[margin] duration-200 ease-out",
+                "min-w-0 transition-[margin] ease-out",
                 !compact && !!pictogramName ? "mt-1" : "mt-0",
               ])}
             >
@@ -94,7 +94,7 @@ export const PageHeader = ({
             <div
               aria-hidden={compact || undefined}
               className={joinClasses([
-                "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+                "grid transition-[grid-template-rows,opacity] ease-out",
                 compact ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr]",
               ])}
             >
