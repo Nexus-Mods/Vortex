@@ -10,7 +10,7 @@
     },
     "mods": [
       {
-        "origin": { "source": "NEXUS", "fileUid": "7318624273385" },
+        "origin": { "source": "NEXUS", "fileId": "7318624273385" },
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/ModA.esp",
@@ -50,7 +50,7 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileUid": "7318624273385",
+        "fileId": "7318624273385",
         "fileHash": "mod-a-esp-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/ModA.esp"

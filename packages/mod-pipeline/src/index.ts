@@ -5,7 +5,7 @@ export type { GameInstall } from "./gameInstall";
 export {
   GogBuildId,
   GogProductId,
-  NexusModUid,
+  NexusFileId,
   NexusGameId,
   SteamAppId,
   SteamBuildId,

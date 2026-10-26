@@ -1,5 +1,5 @@
 import { GameInstallSchema, type GameInstall } from "./gameInstall";
-import { NexusModUid, NexusGameId } from "./ids";
+import { NexusFileId, NexusGameId } from "./ids";
 import { pathKeyOf } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
@@ -20,7 +20,7 @@ export type HashType = (typeof HashType)[keyof typeof HashType];
 
 /** Where a deployed file comes from. */
 export type FileOrigin =
-  | { source: typeof FileSourceKind.Nexus; fileUid: NexusModUid }
+  | { source: typeof FileSourceKind.Nexus; fileId: NexusFileId }
   | { source: typeof FileSourceKind.VortexGenerated }
   | { source: typeof FileSourceKind.UserGenerated };
 
@@ -80,7 +80,7 @@ export const FileEntrySchema: z.ZodType<FileEntry> = z.object(fileFields);
 const fileSourceSchema = z.discriminatedUnion("source", [
   z.object({
     source: z.literal(FileSourceKind.Nexus),
-    fileUid: z.string().transform(NexusModUid),
+    fileId: z.string().transform(NexusFileId),
     ...fileFields,
   }),
   z.object({ source: z.literal(FileSourceKind.VortexGenerated), ...fileFields }),

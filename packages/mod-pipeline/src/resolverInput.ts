@@ -1,5 +1,5 @@
 import { GameInstallSchema, type GameInstall } from "./gameInstall";
-import { NexusModUid, NexusGameId } from "./ids";
+import { NexusFileId, NexusGameId } from "./ids";
 import { FileSourceKind, FileEntrySchema, type FileOrigin, type FileEntry } from "./lockfile";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
@@ -29,7 +29,7 @@ const resolverInputSchema = z.object({
       origin: z.discriminatedUnion("source", [
         z.object({
           source: z.literal(FileSourceKind.Nexus),
-          fileUid: z.string().transform(NexusModUid),
+          fileId: z.string().transform(NexusFileId),
         }),
         z.object({ source: z.literal(FileSourceKind.UserGenerated) }),
       ]),
