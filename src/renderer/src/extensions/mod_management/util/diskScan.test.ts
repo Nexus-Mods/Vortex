@@ -78,6 +78,23 @@ describe("scanDeploymentTargets", () => {
     ]);
   });
 
+  test("lists a hardlinked file as a file with its staged file's id", async () => {
+    installed = seedGame();
+    const staged = qualified(STAGING_DIR, "SkyUI", "SkyUI_SE.bsa");
+    const deployed = qualified(GAME_DIR, "Data", "SkyUI_SE.bsa");
+    await installed.fs.createLink(staged, deployed, "hardlink");
+
+    const scan = await scanDeploymentTargets([path.join(GAME_DIR, "Data"), STAGING_DIR], []);
+    const entryAt = (target: QualifiedPath) =>
+      scan.entries.find((entry) => entry.path === target.path);
+
+    expect(entryAt(deployed)?.kind).toBe(DiskEntryKind.File);
+    expect(entryAt(deployed)?.id).toBe(entryAt(staged)?.id);
+    expect(entryAt(deployed)?.id).not.toBe(
+      entryAt(qualified(GAME_DIR, "Data", "SkyUI_SE.esp"))?.id,
+    );
+  });
+
   test("walks a target inside another target once", async () => {
     installed = seedGame();
 
