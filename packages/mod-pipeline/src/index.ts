@@ -5,7 +5,7 @@ export type { GameInstall } from "./gameInstall";
 export {
   GogBuildId,
   GogProductId,
-  NexusFileUid,
+  NexusModUid,
   NexusGameId,
   SteamAppId,
   SteamBuildId,
@@ -13,7 +13,7 @@ export {
   SteamManifestId,
 } from "./ids";
 export { FileSourceKind, HashType, LockfileSchema, lockfileFiles } from "./lockfile";
-export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, StagedFile } from "./lockfile";
+export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, FileEntry } from "./lockfile";
 export { pathKeyOf } from "./pathKey";
 export { OperationKind, OperationSchema, plan } from "./plan";
 export type { Operation } from "./plan";

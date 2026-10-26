@@ -5,7 +5,7 @@ import {
   type FileOrigin,
   type FileSource,
   type Lockfile,
-  type StagedFile,
+  type FileEntry,
 } from "./lockfile";
 import { pathKeyOf } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
@@ -101,8 +101,8 @@ const OPERATIONS_BY_STATE = {
 } as const satisfies Record<DestinationState, readonly OperationKind[]>;
 
 const sameContent = (
-  lhs: Pick<StagedFile, "fileHash" | "hashType">,
-  rhs: Pick<StagedFile, "fileHash" | "hashType">,
+  lhs: Pick<FileEntry, "fileHash" | "hashType">,
+  rhs: Pick<FileEntry, "fileHash" | "hashType">,
 ) => lhs.hashType === rhs.hashType && lhs.fileHash === rhs.fileHash;
 
 function sameOrigin(lhs: FileOrigin, rhs: FileOrigin): boolean {
