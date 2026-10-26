@@ -11,6 +11,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import opn from "@/util/opn";
 import { sanitizeCSSId } from "@/util/util";
 
+import { filePageUrl, nexusModPageUrl } from "../file_page_url/filePageUrl";
 import { trackedInstall } from "../shared/installTracking";
 import type { IssueAnalyticsIdentity } from "../shared/tracking";
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
@@ -37,14 +38,14 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
   // modUID is empty when the source data lacked a mod id; decode only when present.
   const mod = ref.modUID ? decodeUID(ref.modUID) : undefined;
   const domain = mod ? nexusDomain(mod.gameId) : undefined;
-  return mod && domain ? `https://www.nexusmods.com/${domain}/mods/${mod.id}` : undefined;
+  return mod && domain ? nexusModPageUrl(domain, mod.id) : undefined;
 }
 
 /**
  * Download and install a missing / wrong-version file, then make it the active version,
  * disabling `enabledFile` when the download replaces a wrong version of the same chain.
- * Free users can't 1-click install, so open the file page instead (website download); the
- * premium upsell is out of MVP scope.
+ * Free users can't 1-click install, so open the file page instead (website download). The
+ * UI raises the premium upsell before getting here; this is the fallback if it doesn't.
  */
 export async function downloadFileRequirement(
   api: IExtensionApi,
@@ -261,10 +262,7 @@ export function openFilePage(_api: IExtensionApi, ref: INexusFileRef): void {
     log("warn", "cannot open file page: unresolved mod or file id", { fileUID: ref.fileUID });
     return;
   }
-  // `file_id` can reach hidden mods and archived files. An alternative form is
-  //   `${base}?tab=files&show_file=${file.id}`
-  // but `show_file` cannot open hidden mods or archived files (it could be updated to).
-  opn(`${base}?tab=files&file_id=${file.id}&nmm=1`).catch(() => undefined);
+  opn(filePageUrl(base, file.id)).catch(() => undefined);
 }
 
 /**

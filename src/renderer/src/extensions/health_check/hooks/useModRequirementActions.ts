@@ -9,6 +9,7 @@ import opn from "@/util/opn";
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
 import type { IModRequirementExt } from "../types";
+import { filePageUrl, nexusModPageUrl } from "../utils/file_page_url/filePageUrl";
 import type { IssueAnalyticsIdentity } from "../utils/shared/tracking";
 
 /**
@@ -42,8 +43,20 @@ export function useModRequirementActions(
     }
   }, [mod.modUrl]);
 
+  // The upgrade prompt's free option: straight to the file's page, where free users pick
+  // the slow or fast download. Falls back to the mod page when there's no single file.
+  const openFilePage = useCallback(() => {
+    if (mod.mainFile) {
+      opn(filePageUrl(nexusModPageUrl(mod.gameId, mod.modId), mod.mainFile.fileId)).catch(
+        () => undefined,
+      );
+    } else {
+      openModPage();
+    }
+  }, [mod.gameId, mod.modId, mod.mainFile, openModPage]);
+
   // 1-click install is a Premium feature; free users get the upgrade prompt
-  // (which routes them to the mod page) instead of an in-app download.
+  // (which routes them to the file page) instead of an in-app download.
   // onDownloadRequirement reports its own failures and never rejects, so the
   // fire-and-forget call sites have nothing to catch; a failed install leaves the
   // detail page open rather than navigating away from the issue.
@@ -69,6 +82,7 @@ export function useModRequirementActions(
     showPremiumModal,
     setShowPremiumModal,
     openModPage,
+    openFilePage,
     installInApp,
     markFeedback,
   };
