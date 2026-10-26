@@ -1,6 +1,6 @@
 import { GameInstallSchema, type GameInstall } from "./gameInstall";
-import { NexusFileUid, NexusGameId } from "./ids";
-import { FileSourceKind, StagedFileSchema, type FileOrigin, type StagedFile } from "./lockfile";
+import { NexusFileId, NexusGameId } from "./ids";
+import { FileSourceKind, FileEntrySchema, type FileOrigin, type FileEntry } from "./lockfile";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -8,7 +8,7 @@ import { z } from "./zodJitless";
 export interface ResolverMod {
   /** never Vortex generated */
   origin: Exclude<FileOrigin, { source: typeof FileSourceKind.VortexGenerated }>;
-  stagedFiles: StagedFile[];
+  stagedFiles: FileEntry[];
   /** destinations this mod leaves to earlier mods; absolute, "/" separated */
   overriddenPaths: string[];
 }
@@ -29,11 +29,11 @@ const resolverInputSchema = z.object({
       origin: z.discriminatedUnion("source", [
         z.object({
           source: z.literal(FileSourceKind.Nexus),
-          fileUid: z.string().transform(NexusFileUid),
+          nexusFileId: z.string().transform(NexusFileId),
         }),
         z.object({ source: z.literal(FileSourceKind.UserGenerated) }),
       ]),
-      stagedFiles: z.array(StagedFileSchema),
+      stagedFiles: z.array(FileEntrySchema),
       overriddenPaths: z.array(z.string()),
     }),
   ),

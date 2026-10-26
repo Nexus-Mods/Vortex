@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import { DiskEntryKind, type DiskEntry, type DiskScan } from "./diskScan";
 import { GameStore } from "./gameInstall";
-import { NexusFileUid, NexusGameId, SteamAppId, SteamBuildId } from "./ids";
+import { NexusFileId, NexusGameId, SteamAppId, SteamBuildId } from "./ids";
 import { FileSourceKind, HashType, type FileSource, type Lockfile } from "./lockfile";
 import { plan } from "./plan";
 
@@ -25,7 +25,7 @@ function lockfile(files: FileSource[], gameId = NexusGameId(1704)): Lockfile {
 function makeFileSource(name: string): FileSource {
   return {
     source: FileSourceKind.Nexus,
-    fileUid: NexusFileUid("7318624307791"),
+    nexusFileId: NexusFileId("7318624307791"),
     fileHash: `${name}-hash`,
     hashType: HashType.Md5,
     destinationPath: `${GAME_DIR}/${name}`,

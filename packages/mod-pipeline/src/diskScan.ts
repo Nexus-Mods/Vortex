@@ -1,4 +1,4 @@
-import { HashType, type StagedFile } from "./lockfile";
+import { HashType, type FileEntry } from "./lockfile";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -26,7 +26,7 @@ export interface DiskEntry {
    * the content, a link's being its target's, hashed with the lockfile's hash type; an entry
    * without one counts as the file the previous lockfile deployed there
    */
-  contentHash?: Pick<StagedFile, "fileHash" | "hashType">;
+  contentHash?: Pick<FileEntry, "fileHash" | "hashType">;
 }
 
 /** The files under the deployment targets, taken before planning. */

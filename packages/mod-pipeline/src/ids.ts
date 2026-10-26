@@ -17,8 +17,8 @@ export type NexusGameId = Brand<number, "NexusGameId">;
 export const NexusGameId: (value: number) => NexusGameId = brander<NexusGameId>();
 
 /** Nexus Mods file version uid: the game id in the high 32 bits, the file id in the low. */
-export type NexusFileUid = Brand<string, "NexusFileUid">;
-export const NexusFileUid: (value: string) => NexusFileUid = brander<NexusFileUid>();
+export type NexusFileId = Brand<string, "NexusFileId">;
+export const NexusFileId: (value: string) => NexusFileId = brander<NexusFileId>();
 
 /** Steam app id. */
 export type SteamAppId = Brand<number, "SteamAppId">;

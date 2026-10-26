@@ -12,21 +12,21 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileUid": "7318624307801",
+        "nexusFileId": "7318624307801",
         "fileHash": "added-esp-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/added.esp"
       },
       {
         "source": "NEXUS",
-        "fileUid": "7318624307802",
+        "nexusFileId": "7318624307802",
         "fileHash": "kept-esp-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/kept.esp"
       },
       {
         "source": "NEXUS",
-        "fileUid": "7318624307805",
+        "nexusFileId": "7318624307805",
         "fileHash": "updated-esp-v2-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/updated.esp"
@@ -45,28 +45,28 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileUid": "7318624307806",
+        "nexusFileId": "7318624307806",
         "fileHash": "skse-plugin-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/plugin.dll"
       },
       {
         "source": "NEXUS",
-        "fileUid": "7318624307802",
+        "nexusFileId": "7318624307802",
         "fileHash": "kept-esp-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/kept.esp"
       },
       {
         "source": "NEXUS",
-        "fileUid": "7318624307803",
+        "nexusFileId": "7318624307803",
         "fileHash": "removed-esp-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/removed.esp"
       },
       {
         "source": "NEXUS",
-        "fileUid": "7318624307804",
+        "nexusFileId": "7318624307804",
         "fileHash": "updated-esp-v1-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/updated.esp"
@@ -112,7 +112,7 @@
       "kind": "UNLINK",
       "file": {
         "source": "NEXUS",
-        "fileUid": "7318624307803",
+        "nexusFileId": "7318624307803",
         "fileHash": "removed-esp-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/removed.esp"
@@ -122,7 +122,7 @@
       "kind": "UNLINK",
       "file": {
         "source": "NEXUS",
-        "fileUid": "7318624307806",
+        "nexusFileId": "7318624307806",
         "fileHash": "skse-plugin-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/plugin.dll"
@@ -132,7 +132,7 @@
       "kind": "UNLINK",
       "file": {
         "source": "NEXUS",
-        "fileUid": "7318624307804",
+        "nexusFileId": "7318624307804",
         "fileHash": "updated-esp-v1-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/updated.esp"
@@ -142,7 +142,7 @@
       "kind": "LINK",
       "file": {
         "source": "NEXUS",
-        "fileUid": "7318624307801",
+        "nexusFileId": "7318624307801",
         "fileHash": "added-esp-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/added.esp"
@@ -152,7 +152,7 @@
       "kind": "LINK",
       "file": {
         "source": "NEXUS",
-        "fileUid": "7318624307805",
+        "nexusFileId": "7318624307805",
         "fileHash": "updated-esp-v2-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/updated.esp"

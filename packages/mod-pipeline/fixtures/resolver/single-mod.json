@@ -10,7 +10,7 @@
     },
     "mods": [
       {
-        "origin": { "source": "NEXUS", "fileUid": "7318624307791" },
+        "origin": { "source": "NEXUS", "nexusFileId": "7318624307791" },
         "stagedFiles": [
           {
             "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp",
@@ -39,14 +39,14 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileUid": "7318624307791",
+        "nexusFileId": "7318624307791",
         "fileHash": "skyui-esp-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
       },
       {
         "source": "NEXUS",
-        "fileUid": "7318624307791",
+        "nexusFileId": "7318624307791",
         "fileHash": "skyui-config-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/interface/skyui/config.txt"

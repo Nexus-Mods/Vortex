@@ -12,7 +12,7 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileUid": "7318624307791",
+        "nexusFileId": "7318624307791",
         "fileHash": "skyui-esp-v1-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
@@ -31,7 +31,7 @@
     "files": [
       {
         "source": "NEXUS",
-        "fileUid": "7318624307791",
+        "nexusFileId": "7318624307791",
         "fileHash": "skyui-esp-v1-hash",
         "hashType": "md5",
         "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
