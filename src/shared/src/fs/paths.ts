@@ -471,6 +471,48 @@ export class QualifiedPath {
     return new QualifiedPath(this.scheme, this.data, joinedPath, this.root);
   }
 
+  /**
+   * Returns this path's location relative to {@link base}, which must be a
+   * directory prefix of it.
+   *
+   * Comparisons (including the prefix itself) are case-insensitive, matching
+   * {@link QualifiedPath.compare}; the result keeps this path's casing.
+   * `base` must be a prefix at a component boundary, so `a/b` is not
+   * relative to base `a/f` even though the raw strings share a prefix.
+   * Equal paths (and trailing-separator variants of them, like `a/b/` vs
+   * `a/b`) yield an empty relative path, and since identity here is the
+   * whole {@link value},
+   * {@link base.join | base.join(path.relativeTo(base))} round-trips.
+   *
+   * @throws {@link VortexError} when {@link base} is not a directory prefix
+   *   of this path (siblings, deeper base, any mismatched part).
+   *
+   * @example
+   * ```ts @import.meta.vitest
+   * const bar = QualifiedPath.fromNative("/foo/bar");
+   * const foo = QualifiedPath.fromNative("/foo");
+   * assert(bar.relativeTo(foo) === "bar");
+   * ```
+   *
+   * @public
+   */
+  relativeTo(base: QualifiedPath): RelativePath {
+    const lower = this.value.toLowerCase();
+    const baseLower = base.value.toLowerCase();
+    // rooted base paths already end in '/', so don't double the boundary
+    const prefix = baseLower.endsWith("/") ? baseLower : `${baseLower}/`;
+    if (lower !== baseLower && !lower.startsWith(prefix)) {
+      throw new VortexError(`Path "${this.value}" is not relative to "${base.value}"`, {
+        kind: "fs:invalid-path",
+        path: this.value,
+      });
+    }
+    // equal paths, or "a/b/" vs "a/b" (same directory), fold to ""
+    const rest =
+      lower === baseLower ? "" : this.value.slice(base.value.length).replace(/^\/|\/$/g, "");
+    return relativePath(rest);
+  }
+
   with(change: { extension?: string; basename?: string; dirname?: string }): QualifiedPath {
     if (
       change.extension === undefined &&
