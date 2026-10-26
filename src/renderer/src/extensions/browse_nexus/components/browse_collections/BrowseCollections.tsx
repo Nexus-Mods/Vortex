@@ -3,8 +3,6 @@ import React, { useRef } from "react";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
-import { CollectionTile } from "@/ui/components/collection_tile/CollectionTile";
-import { CollectionTileSkeleton } from "@/ui/components/collection_tile/CollectionTile.skeleton";
 import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Pagination } from "@/ui/components/pagination/Pagination";
@@ -18,6 +16,8 @@ import {
   type ICollectionSearch,
   SORT_OPTIONS,
 } from "../../hooks/use_collection_search/useCollectionSearch.hook";
+import { CollectionTile } from "./collection_tile/CollectionTile";
+import { CollectionTileSkeleton } from "./collection_tile/CollectionTile.skeleton";
 
 interface IBrowseCollectionsProps {
   api: IExtensionApi;

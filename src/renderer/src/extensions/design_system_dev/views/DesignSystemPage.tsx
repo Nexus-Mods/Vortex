@@ -6,12 +6,10 @@
 
 import React, { useState } from "react";
 
-import type { IExtensionApi } from "@/types/IExtensionContext";
 import { AlertDemo } from "@/ui/components/alert/Alert.demo";
 import { BadgesDemo } from "@/ui/components/badges/Badges.demo";
 import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
-import { CollectionTileDemo } from "@/ui/components/collection_tile/CollectionTile.demo";
 import { ContextMenuDemo } from "@/ui/components/context_menu/ContextMenu.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
 import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
@@ -48,18 +46,15 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 interface IDesignSystemPageProps {
   /** Whether the page is the one showing, which its `Page` needs. */
   active?: boolean;
-  /** The extension API, for the demos that use it. */
-  api: IExtensionApi;
 }
 
-export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
+export const DesignSystemPage = ({ active }: IDesignSystemPageProps) => {
   const [selectedTab, setSelectedTab] = useState("button");
   const [selectedButtonTab, setSelectedButtonTab] = useState("buttons");
   const [selectedTypographyTab, setSelectedTypographyTab] = useState("typography");
   const [selectedIconTab, setSelectedIconTab] = useState("icon");
   const [selectedFormTab, setSelectedFormTab] = useState("text-field");
   const [selectedDropdownTab, setSelectedDropdownTab] = useState("dropdown");
-  const [selectedTileTab, setSelectedTileTab] = useState("game-tile");
   const [selectedTooltipTab, setSelectedTooltipTab] = useState("tooltip-basic");
 
   return (
@@ -303,28 +298,7 @@ export const DesignSystemPage = ({ active, api }: IDesignSystemPageProps) => {
             </TabPanel>
 
             <TabPanel id="tile">
-              <TabProvider
-                tab={selectedTileTab}
-                tabListId="tile-demo-tabs"
-                tabType="secondary"
-                onSetSelectedTab={setSelectedTileTab}
-              >
-                <TabBar>
-                  <TabButton name="Game" panelId="game-tile" />
-
-                  <TabButton name="Collection" panelId="collection-tile" />
-                </TabBar>
-
-                <div className="mt-6">
-                  <TabPanel id="game-tile">
-                    <GameTileDemo />
-                  </TabPanel>
-
-                  <TabPanel id="collection-tile">
-                    <CollectionTileDemo api={api} />
-                  </TabPanel>
-                </div>
-              </TabProvider>
+              <GameTileDemo />
             </TabPanel>
 
             <TabPanel id="toolbar">
