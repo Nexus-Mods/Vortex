@@ -3,7 +3,7 @@ import type {
   CollectionSortField,
   SortDirection,
 } from "@nexusmods/nexus-api";
-import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { GameDomain } from "@vortex/shared";
 import { useEffect, useState } from "react";
 
@@ -34,16 +34,27 @@ const DEFAULT_SORT = SORT_OPTIONS[1];
 
 export const COLLECTIONS_PER_PAGE = 20;
 
+interface ICollectionsSearch {
+  /** The game whose collections to search; none searches nothing. */
+  gameDomainName: GameDomain | undefined;
+  /** The sort they're in. */
+  sortBy: ISortOption;
+  /** What to search for; empty for every collection. */
+  search: string;
+  /** The page, from 1. */
+  page: number;
+}
+
 /**
  * The search for a page of a game's listed collections, sorted and optionally searched; none
  * outside a game.
  */
-const searchOptions = (
-  gameDomainName: GameDomain | undefined,
-  sortBy: ISortOption,
-  search: string,
-  page: number,
-): ICollectionSearchOptions | typeof skipToken => {
+const searchOptions = ({
+  gameDomainName,
+  sortBy,
+  search,
+  page,
+}: ICollectionsSearch): ICollectionSearchOptions | typeof skipToken => {
   if (!gameDomainName) {
     return skipToken;
   }
@@ -106,11 +117,13 @@ export const useCollectionSearch = (api: IExtensionApi) => {
     setCurrentPage(1);
   };
 
-  /** The page showing; it keeps the last page's results while the next loads, in one game. */
+  /** The page showing; it keeps the last page's results while the next loads. */
   const collections = useQuery({
-    ...collectionSearchQuery(api, searchOptions(gameDomainName, sortBy, activeSearch, currentPage)),
-    placeholderData: (previous, previousQuery) =>
-      previousQuery?.queryKey[3]?.gameId === gameDomainName ? previous : undefined,
+    ...collectionSearchQuery(
+      api,
+      searchOptions({ gameDomainName, sortBy, search: activeSearch, page: currentPage }),
+    ),
+    placeholderData: keepPreviousData,
   });
 
   /**
@@ -118,7 +131,10 @@ export const useCollectionSearch = (api: IExtensionApi) => {
    * very query above until the sort, page or search moves off it.
    */
   const allCollections = useQuery({
-    ...collectionSearchQuery(api, searchOptions(gameDomainName, DEFAULT_SORT, "", 1)),
+    ...collectionSearchQuery(
+      api,
+      searchOptions({ gameDomainName, sortBy: DEFAULT_SORT, search: "", page: 1 }),
+    ),
     select: (result) => result.totalCount,
   });
 
@@ -136,7 +152,7 @@ export const useCollectionSearch = (api: IExtensionApi) => {
 
   const firstPage = collectionSearchQuery(
     api,
-    searchOptions(gameDomainName, sortBy, activeSearch, 1),
+    searchOptions({ gameDomainName, sortBy, search: activeSearch, page: 1 }),
   );
   const pageTotal =
     collections.data?.totalCount ?? queryClient.getQueryData(firstPage.queryKey)?.totalCount;

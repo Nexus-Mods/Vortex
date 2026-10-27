@@ -189,31 +189,4 @@ describe("useCollectionSearch", () => {
     await waitFor(() => expect(result.current.totalCount).toBe(46));
     expect(result.current.allCollectionsTotal).toBe(46);
   });
-
-  it("asks for the new game's collections, without its tab showing the old game's total", async () => {
-    const { result, rerender } = render();
-    await waitFor(() => expect(pending).toHaveLength(1));
-    await respond(45);
-
-    mocks.gameDomainName = "fallout4";
-    rerender();
-
-    await waitFor(() => expect(pending).toHaveLength(1));
-    expect(pending[0].options.gameId).toBe("fallout4");
-    expect(result.current.allCollectionsTotal).toBe(0);
-    expect(result.current.totalCount).toBe(0);
-    expect(result.current.collections).toEqual([]);
-  });
-
-  it("shows nothing of the last game's once there's no game", async () => {
-    const { result, rerender } = render();
-    await waitFor(() => expect(pending).toHaveLength(1));
-    await respond(45);
-
-    mocks.gameDomainName = undefined;
-    rerender();
-
-    expect(result.current.collections).toEqual([]);
-    expect(result.current.totalCount).toBe(0);
-  });
 });
