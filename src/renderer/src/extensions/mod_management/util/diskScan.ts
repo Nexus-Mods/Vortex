@@ -10,8 +10,8 @@ import {
 import { parseError } from "@vortex/shared";
 import { QualifiedPath, type Status } from "@vortex/shared/filesystem";
 
-/** The folders to walk: the mod paths and the folder of any destination outside them, none nested. */
-function scanRoots(
+/** Combine the folders of mods and folders destination paths. The mod paths and the folder of any destination outside them, none nested. */
+function combineRootsFromPaths(
   modPaths: Iterable<string | null | undefined>,
   destinationPaths: Iterable<string>,
 ): string[] {
@@ -42,9 +42,8 @@ function scanRoots(
 const folderIdOf = (status: Status) => `${status.deviceId}:${status.id}`;
 
 /**
- * Adds the files and links under a folder, walking into links to folders; a missing folder adds
- * nothing. `chain` holds the ids of the folders the walk is inside, so a link back to one of them
- * is not walked.
+ * Recursively adds all files to entries parameter under a folder. Also walking into links to folders;
+ * a missing folder adds nothing, links that point back to added entries are skipped.
  */
 async function addEntriesUnder(
   folder: string,
@@ -71,7 +70,10 @@ async function addEntriesUnder(
     for await (const [entryPath, status] of listing) {
       if (!status.isFile) {
         if (status.isSymLink) {
-          linkedFolders.push({ linkPath: entryPath.path, folderId: folderIdOf(status) });
+          linkedFolders.push({
+            linkPath: entryPath.path,
+            folderId: folderIdOf(status),
+          });
         } else {
           folderIdByKey.set(pathKeyOf(entryPath.path), folderIdOf(status));
         }
@@ -116,13 +118,15 @@ async function chainAt(root: string): Promise<ReadonlySet<string>> {
   return new Set(status.exists ? [folderIdOf(status)] : []);
 }
 
-/** The files and links under the deployment targets; links to folders are walked into, links to files listed. */
+/** Scans and returns all files in folder the mod and destination paths. Called
+ * from resolveLockFile.ts to do a disk scan for a mod type
+ */
 export async function scanDeploymentTargets(
   modPaths: Iterable<string | null | undefined>,
   destinationPaths: Iterable<string>,
 ): Promise<DiskScan> {
   const takenAt = Temporal.Now.instant();
-  const roots = scanRoots(modPaths, destinationPaths);
+  const roots = combineRootsFromPaths(modPaths, destinationPaths);
   const entries: DiskEntry[] = [];
   for (const root of roots) {
     await addEntriesUnder(root, await chainAt(root), entries);
