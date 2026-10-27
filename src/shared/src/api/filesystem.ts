@@ -26,7 +26,7 @@ export type {
   PathResolver,
   PathResolverRegistry,
 } from "../fs/paths";
-export { OSPath, PathProviderError, PathResolverError } from "../fs/paths";
+export { OSPath, PathProviderError, PathResolverError, fromWire, toWire } from "../fs/paths";
 export type { QualifiedPathWire } from "../fs/paths";
 
 export { NativePathResolver } from "../fs/native-resolver";

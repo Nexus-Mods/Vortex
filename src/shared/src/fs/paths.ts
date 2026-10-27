@@ -6,7 +6,7 @@ import type { IWindowsPathProvider } from "./paths.windows";
 /**
  * Plain-object shape of a {@link QualifiedPath} for transfer across
  * boundaries that cannot carry class instances (IPC, structured clone).
- * Rebuild the instance with {@link QualifiedPath.of}.
+ * Rebuild the instance with {@link fromWire}.
  *
  * @public */
 export type QualifiedPathWire = {
@@ -15,6 +15,24 @@ export type QualifiedPathWire = {
   path: string;
   root: string;
 };
+
+/**
+ * Converts a {@link QualifiedPath} to its plain-object wire form. Call this
+ * where a path crosses an IPC boundary.
+ *
+ * @public */
+export function toWire(path: QualifiedPath): QualifiedPathWire {
+  return { scheme: path.scheme, data: path.data, path: path.path, root: path.root };
+}
+
+/**
+ * Rebuilds a {@link QualifiedPath} from its wire form, validating it.
+ *
+ * @throws {@link PathError} when the wire value is not a valid path.
+ * @public */
+export function fromWire(wire: QualifiedPathWire): QualifiedPath {
+  return QualifiedPath.of(wire);
+}
 
 /**
  * Resolves {@link QualifiedPath} to {@link ResolvedPath}.
