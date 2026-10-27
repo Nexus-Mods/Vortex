@@ -90,6 +90,11 @@ import {
   onStartInstallDownload,
 } from "./eventHandlers";
 import InstallManager from "./InstallManager";
+import {
+  createManualInstaller,
+  MANUAL_INSTALLER_ID,
+  MANUAL_INSTALLER_PRIORITY,
+} from "./manualInstaller";
 import deployMods from "./modActivation";
 import { deriveModInstallName } from "./modIdManager";
 import mergeMods, { mergedSourceName } from "./modMerging";
@@ -2369,6 +2374,14 @@ function init(context: IExtensionContext): boolean {
 
   registerAttributeExtractor(150, attributeExtractor);
   registerAttributeExtractor(10, upgradeExtractor);
+
+  const manualInstaller = createManualInstaller(context.api);
+  registerInstaller(
+    MANUAL_INSTALLER_ID,
+    MANUAL_INSTALLER_PRIORITY,
+    manualInstaller.testSupported,
+    manualInstaller.install,
+  );
 
   registerInstaller("fallback", 1000, basicInstaller.testSupported, basicInstaller.install);
 
