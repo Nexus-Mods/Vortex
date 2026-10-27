@@ -164,8 +164,12 @@ function seed(
   });
 }
 
-const steamEntry = (installData?: ISteamInstallData, gamePath = "C:\\Games\\Skyrim"): unknown => ({
-  appid: "489830",
+const steamEntry = (
+  installData?: ISteamInstallData,
+  gamePath = "C:\\Games\\Skyrim",
+  appid = "489830",
+): unknown => ({
+  appid,
   name: "Skyrim",
   gamePath,
   gameStoreId: "steam",
@@ -245,6 +249,55 @@ describe("emitStoreGameVersionEvent", () => {
     expect(telemetryEvent).toHaveBeenCalledTimes(2);
     expect(telemetryEvent.mock.calls[1][2].payload.steam.build_id).toBe(16659741);
     expect(versionSpy).toHaveBeenCalledTimes(2);
+  });
+
+  test("reports the game, not a tool sharing its folder", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness, { discovered: { skyrimse: { path: "C:\\Games\\Skyrim", store: "steam" } } });
+    // the Creation Kit sorts first, as appmanifest_1946180.acf does on NTFS
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      withEntries(
+        steamEntry({ ...INSTALL_DATA, appId: 1946180 }, "C:\\Games\\Skyrim", "1946180"),
+        steamEntry(INSTALL_DATA),
+      ) as never,
+    );
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    expect(telemetryEvent.mock.calls[0][2].payload.steam.app_id).toBe(489830);
+  });
+
+  test("reports the edition a game with several steam ids has installed", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness, { discovered: { skyrimse: { path: "C:\\Games\\Skyrim", store: "steam" } } });
+    vi.mocked(getGame).mockReturnValue({
+      queryArgs: { steam: [{ id: "22300" }, { id: "22370" }] },
+    } as unknown as ReturnType<typeof getGame>);
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      withEntries(
+        steamEntry({ ...INSTALL_DATA, appId: 1946180 }, "C:\\Games\\Skyrim", "1946180"),
+        steamEntry({ ...INSTALL_DATA, appId: 22370 }, "C:\\Games\\Skyrim", "22370"),
+      ) as never,
+    );
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    expect(telemetryEvent.mock.calls[0][2].payload.steam.app_id).toBe(22370);
+  });
+
+  test("falls back to the path match for a game declaring no steam ids", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness, { discovered: { skyrimse: { path: "C:\\Games\\Skyrim", store: "steam" } } });
+    vi.mocked(getGame).mockReturnValue({} as unknown as ReturnType<typeof getGame>);
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      withEntries(
+        steamEntry({ ...INSTALL_DATA, appId: 22490 }, "C:\\Games\\Skyrim", "22490"),
+      ) as never,
+    );
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    expect(telemetryEvent.mock.calls[0][2].payload.steam.app_id).toBe(22490);
   });
 
   test("volatile-only changes refresh the gate without a send", async ({ makeApi }) => {
