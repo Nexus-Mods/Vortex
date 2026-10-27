@@ -2,6 +2,7 @@ import numeral from "numeral";
 import React, { forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { Author } from "@/ui/components/author/Author";
 import { Button } from "@/ui/components/button/Button";
 import { Pill } from "@/ui/components/pill/Pill";
@@ -12,15 +13,14 @@ import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { Typography } from "@/ui/components/typography/Typography";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
-import type { IStaticMod } from "../staticMods";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 
-const placeholderClass =
-  "flex items-center justify-center rounded-sm border border-dashed border-stroke-moderate p-4 text-center";
+// const placeholderClass =
+//   "flex items-center justify-center rounded-sm border border-dashed border-stroke-moderate p-4 text-center";
 
 interface IModDetailsProps {
   /** The mod picked in the list. */
-  mod: IStaticMod;
+  mod: ModSummary;
   /** The mod's pictures, the first shown large to begin with. */
   gallery: IGalleryImage[];
   /** Told the picture now shown large, whenever another is picked. */
@@ -28,26 +28,26 @@ interface IModDetailsProps {
 }
 
 /**
- * The selected mod's details, files and comments, a static wireframe (LAZ-1346) showing
- * the mod picked in the list; its gallery, "+10 more" tag and unique downloads are stand-ins.
- * It fills the right half of the page and scrolls on its own, so the list beside it keeps its
- * place; what scrolls fades out into its bottom padding. It has no background of its own: the
- * picture picked in its gallery lies behind the page's body, which blurs it.
+ * The selected mod's details (LAZ-1346), for the mod picked in the list. Its files and comments
+ * tabs are commented out until there's an API for them, and its tags until the mod search
+ * returns them. It fills the right half of the page and scrolls on its own, so the list beside
+ * it keeps its place; what scrolls fades out into its bottom padding. It has no background of
+ * its own: the picture picked in its gallery lies behind the page's body, which blurs it.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
   ({ mod, gallery, onPick }, ref) => {
     const { t } = useTranslation();
     const [tab, setTab] = useState("details");
-    const updated = useRelativeTime(new Date(mod.updatedAt).getTime(), t);
-    const created = useRelativeTime(new Date(mod.createdAt).getTime(), t);
+    const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
+    const created = useRelativeTime(new Date(mod.created_at).getTime(), t);
 
     const stats = [
       { label: t("Endorsements"), value: numeral(mod.endorsements).format("0a") },
-      { label: t("Unique DLs"), value: "—" },
+      { label: t("Unique DLs"), value: numeral(mod.unique_downloads).format("0a") },
       { label: t("Total DLs"), value: numeral(mod.downloads).format("0a") },
       { label: t("Updated"), value: updated },
       { label: t("Created"), value: created },
-      { label: t("File size"), value: numeral(mod.fileSize * 1024).format("0.0b") },
+      { label: t("File size"), value: numeral(mod.file_size_kilobytes * 1024).format("0.0b") },
     ];
 
     return (
@@ -63,9 +63,9 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
               <TabBar className="min-w-0 flex-1">
                 <TabButton name={t("Details")} panelId="details" />
 
-                <TabButton name={t("Files")} panelId="files" />
+                {/* <TabButton name={t("Files")} panelId="files" /> */}
 
-                <TabButton name={t("Comments")} panelId="comments" />
+                {/* <TabButton name={t("Comments")} panelId="comments" /> */}
               </TabBar>
 
               <Button leftIcon="download" size="sm">
@@ -75,12 +75,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
 
             <TabPanel id="details">
               <div className="flex flex-col gap-y-3">
-                <ModGallery
-                  images={gallery}
-                  isAdult={!!mod.isAdult}
-                  key={mod.name}
-                  onPick={onPick}
-                />
+                <ModGallery images={gallery} isAdult={mod.adult} key={mod.id} onPick={onPick} />
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Typography
@@ -89,21 +84,21 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                     brand="neutral-translucent"
                     typographyType="body-sm"
                   >
-                    <Author name={mod.author} />
+                    <Author name={mod.author.name} />
                   </Typography>
 
                   <span aria-hidden className="h-5.5 w-px bg-stroke-weak" />
 
                   <div className="flex flex-wrap gap-1">
-                    {mod.isAdult && (
+                    {mod.adult && (
                       <Pill brand="danger" icon={{ name: "fiber_manual_record", filled: true }}>
                         {t("Adult")}
                       </Pill>
                     )}
 
-                    <Pill>{mod.category}</Pill>
+                    {!!mod.category && <Pill>{mod.category.name}</Pill>}
 
-                    <Pill>{t("+10 more")}</Pill>
+                    {/* <Pill>{t("+10 more")}</Pill> */}
                   </div>
                 </div>
 
@@ -140,13 +135,13 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
               </div>
             </TabPanel>
 
-            <TabPanel id="files">
+            {/* <TabPanel id="files">
               <div className={placeholderClass}>{t("The mod's files will go here")}</div>
-            </TabPanel>
+            </TabPanel> */}
 
-            <TabPanel id="comments">
+            {/* <TabPanel id="comments">
               <div className={placeholderClass}>{t("The mod's comments will go here")}</div>
-            </TabPanel>
+            </TabPanel> */}
           </div>
         </TabProvider>
       </div>

@@ -2,6 +2,7 @@ import numeral from "numeral";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
+import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { Author } from "@/ui/components/author/Author";
 import { Icon } from "@/ui/components/icon/Icon";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
@@ -10,11 +11,9 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
-import { type IStaticMod, MOD_IMAGES } from "../staticMods";
-
 interface IModCardProps {
   /** The mod it shows. */
-  mod: IStaticMod;
+  mod: ModSummary;
   /** Whether it's the mod the details pane shows. */
   isActive: boolean;
   /** Its place in the list's Tab order: 0 for the one Tab stop, the selected card, else -1. */
@@ -31,7 +30,7 @@ interface IModCardProps {
  */
 export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) => {
   const { t } = useTranslation();
-  const updated = useRelativeTime(new Date(mod.updatedAt).getTime(), t);
+  const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
   const detailAppearance = isActive ? "moderate" : "subdued";
 
   return (
@@ -52,8 +51,8 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
         alt=""
         className="h-30 rounded-sm"
         imageType="mod"
-        isAdult={!!mod.isAdult}
-        src={`${MOD_IMAGES}/thumbnails/${mod.image}`}
+        isAdult={mod.adult}
+        src={mod.thumbnail_url ?? undefined}
       >
         {isActive && <span className="absolute inset-0 z-5 bg-translucent-dark-300" />}
       </AdultAwareImage>
@@ -61,13 +60,13 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
       <span className="flex min-w-0 flex-1 flex-col justify-between self-stretch py-0.5">
         <span className="flex flex-col gap-y-1.5">
           <span className="-ml-0.5 flex flex-wrap gap-1">
-            {mod.isAdult && (
+            {mod.adult && (
               <Pill brand="danger" icon={{ name: "fiber_manual_record", filled: true }}>
                 {t("Adult")}
               </Pill>
             )}
 
-            <Pill>{mod.category}</Pill>
+            {!!mod.category && <Pill>{mod.category.name}</Pill>}
           </span>
 
           <span className="flex flex-col gap-y-0.5">
@@ -96,7 +95,7 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
           className="flex items-center justify-between gap-x-3"
           typographyType="body-sm"
         >
-          <Author className="min-w-0" name={mod.author} />
+          <Author className="min-w-0" name={mod.author.name} />
 
           <span className="flex shrink-0 items-center gap-x-3">
             <span className="flex items-center gap-x-1">

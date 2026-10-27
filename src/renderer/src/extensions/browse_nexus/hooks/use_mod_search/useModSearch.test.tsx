@@ -37,17 +37,24 @@ import { MODS_PER_PAGE, useModSearch } from "./useModSearch.hook";
 
 const api = {} as IExtensionApi;
 
-/** Answers the oldest request still waiting, with one mod to show. */
-const respond = (totalCount: number) =>
-  act(async () =>
-    mocks.pending
-      .shift()!
-      .resolve({ mods: [{ id: `${totalCount}` }], meta: { total_count: totalCount } }),
-  );
+/** Answers the request still waiting for a preset's mods, with one mod to show. */
+const respond = (sort: string, totalCount: number) =>
+  act(async () => {
+    const index = mocks.pending.findIndex((request) => request.search.sort.field === sort);
+    const [request] = mocks.pending.splice(index, 1);
+    request.resolve({ mods: [{ id: `${totalCount}` }], meta: { total_count: totalCount } });
+  });
 
 /** Fails the oldest request still waiting. */
 const fail = (message: string) =>
   act(async () => mocks.pending.shift()!.reject(new Error(message)));
+
+/** Answers the first two requests: the trending page showing, and the all-time one counted. */
+const respondToStart = async (trending: number, allTime: number) => {
+  await waitFor(() => expect(mocks.pending).toHaveLength(2));
+  await respond("trending", trending);
+  await respond("new", allTime);
+};
 
 /** Renders the hook against a fresh cache with the app's defaults, kept across rerenders. */
 const render = (isEnabled = true) => {
@@ -68,25 +75,78 @@ describe("useModSearch", () => {
 
   it("asks for the game's trending mods, a page at a time", async () => {
     const { result } = render();
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
 
-    expect(mocks.pending[0].search).toEqual({
-      filters: { games: ["skyrimspecialedition"] },
+    expect(mocks.pending.map((request) => request.search)).toContainEqual({
+      filters: { games: ["skyrimspecialedition"], time_range: "7" },
       sort: { field: "trending", direction: "desc" },
       pagination: { page: 1, page_size: MODS_PER_PAGE },
     });
 
-    await respond(45);
+    await respondToStart(45, 900);
 
     await waitFor(() => expect(result.current.mods).toEqual([{ id: "45" }]));
     expect(result.current.totalCount).toBe(45);
-    expect(result.current.allModsTotal).toBe(45);
+  });
+
+  it("counts the tab from every mod, over all time, whatever the preset", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+
+    await waitFor(() => expect(result.current.allModsTotal).toBe(900));
+    act(() => result.current.setPreset("popular"));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("popular", 12);
+
+    await waitFor(() => expect(result.current.totalCount).toBe(12));
+    expect(result.current.allModsTotal).toBe(900);
+  });
+
+  it("sorts the open preset another way from the first page, keeping the tab's total", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setCurrentPage(2));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("trending", 45);
+
+    act(() => result.current.setSort({ field: "endorsements", timeRange: "28" }));
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(mocks.pending[0].search).toMatchObject({
+      filters: { time_range: "28" },
+      sort: { field: "endorsements", direction: "desc" },
+      pagination: { page: 1 },
+    });
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.canResetSort).toBe(true);
+    await respond("endorsements", 30);
+    await waitFor(() => expect(result.current.totalCount).toBe(30));
+    expect(result.current.allModsTotal).toBe(900);
+  });
+
+  it("keeps each preset's sort to itself, until it's reset to how it came", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setSort({ direction: "asc" }));
+
+    act(() => result.current.setPreset("popular"));
+
+    expect(result.current.sort).toEqual({ field: "popular", direction: "desc", timeRange: "7" });
+    expect(result.current.canResetSort).toBe(false);
+
+    act(() => result.current.setPreset("trending"));
+
+    expect(result.current.sort.direction).toBe("asc");
+
+    act(() => result.current.resetSort());
+
+    expect(result.current.sort).toEqual({ field: "trending", direction: "desc", timeRange: "7" });
+    expect(result.current.canResetSort).toBe(false);
   });
 
   it("keeps the last total while the next page loads", async () => {
     const { result } = render();
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond(45);
+    await respondToStart(45, 900);
 
     act(() => result.current.setCurrentPage(2));
 
@@ -95,30 +155,24 @@ describe("useModSearch", () => {
     expect(result.current.totalCount).toBe(45);
   });
 
-  it("asks for another preset's sort from the first page, keeping the tab's total", async () => {
+  it("shows another preset from the first page, from the count's request when it's all-time", async () => {
     const { result } = render();
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond(45);
+    await respondToStart(45, 900);
     act(() => result.current.setCurrentPage(2));
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond(45);
+    await respond("trending", 45);
 
     act(() => result.current.setPreset("new"));
 
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    expect(mocks.pending[0].search.sort.field).toBe("new");
-    expect(mocks.pending[0].search.pagination.page).toBe(1);
-    expect(result.current.currentPage).toBe(1);
-    await respond(900);
     await waitFor(() => expect(result.current.totalCount).toBe(900));
-    expect(result.current.allModsTotal).toBe(45);
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.mods).toEqual([{ id: "900" }]);
     expect(mocks.requestCount).toBe(3);
   });
 
   it("shows a failed page's error at once, keeping its total, without retrying it", async () => {
     const { result } = render();
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond(45);
+    await respondToStart(45, 900);
     act(() => result.current.setCurrentPage(2));
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
 
@@ -127,7 +181,7 @@ describe("useModSearch", () => {
     // Within waitFor's second: a retry would hold the error back for its first second's delay.
     await waitFor(() => expect(result.current.error?.message).toBe("Network down"));
     expect(result.current.totalCount).toBe(45);
-    expect(mocks.requestCount).toBe(2);
+    expect(mocks.requestCount).toBe(3);
   });
 
   it("asks for nothing outside a game", async () => {
