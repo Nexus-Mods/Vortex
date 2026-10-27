@@ -32,6 +32,10 @@ function seedGame(): InstalledInMemoryFS {
       type: "text",
       data: "archive",
     });
+    builder.file(qualified(STAGING_DIR, "moved", "textures", "sky.dds"), {
+      type: "text",
+      data: "texture",
+    });
   });
 }
 
@@ -117,6 +121,59 @@ describe("scanDeploymentTargets", () => {
     expect(entryAt(deployed)?.id).not.toBe(
       entryAt(qualified(GAME_DIR, "Data", "SkyUI_SE.esp"))?.id,
     );
+  });
+
+  test("walks through a link to a folder, listing its files under the link's path", async () => {
+    installed = seedGame();
+    await installed.fs.createLink(
+      qualified(STAGING_DIR, "moved", "textures"),
+      qualified(GAME_DIR, "Data", "textures"),
+      "symlink",
+    );
+
+    const scan = await scanDeploymentTargets([path.join(GAME_DIR, "Data")], []);
+
+    expect(scan.entries.map(({ path: entryPath, kind }) => [entryPath, kind])).toContainEqual([
+      portable(GAME_DIR, "Data", "textures", "sky.dds"),
+      DiskEntryKind.File,
+    ]);
+    expect(scan.entries.map(({ path: entryPath }) => entryPath)).not.toContain(
+      portable(GAME_DIR, "Data", "textures"),
+    );
+  });
+
+  test("lists a folder reached by two paths under both", async () => {
+    installed = seedGame();
+    await installed.fs.createLink(
+      qualified(GAME_DIR, "Data", "meshes"),
+      qualified(GAME_DIR, "Data", "alias"),
+      "symlink",
+    );
+
+    const scan = await scanDeploymentTargets([path.join(GAME_DIR, "Data")], []);
+
+    expect(scan.entries.map(({ path: entryPath }) => entryPath)).toEqual(
+      expect.arrayContaining([
+        portable(GAME_DIR, "Data", "alias", "sword.nif"),
+        portable(GAME_DIR, "Data", "meshes", "sword.nif"),
+      ]),
+    );
+  });
+
+  test.each([
+    ["the folder it links from", [path.join(GAME_DIR, "Data")]],
+    ["a folder above it", [GAME_DIR]],
+  ])("stops at a link back to a folder it is inside, scanning %s", async (_root, modPaths) => {
+    installed = seedGame();
+    await installed.fs.createLink(
+      qualified(GAME_DIR, "Data"),
+      qualified(GAME_DIR, "Data", "meshes", "loop"),
+      "symlink",
+    );
+
+    const scan = await scanDeploymentTargets(modPaths, []);
+
+    expect(scan.entries.filter(({ path: entryPath }) => entryPath.includes("/loop"))).toEqual([]);
   });
 
   test("walks a target inside another target once", async () => {
