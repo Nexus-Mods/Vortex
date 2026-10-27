@@ -45,6 +45,10 @@ vi.mock("../../hooks/use_collection_search/useCollectionSearch.hook", () => ({
   useCollectionSearch: () => ({ allCollectionsTotal: 126 }),
 }));
 
+vi.mock("../../hooks/use_mod_search/useModSearch.hook", () => ({
+  useModSearch: () => ({ allModsTotal: 1480 }),
+}));
+
 vi.mock("../../components/browse_collections/BrowseCollections", () => ({
   BrowseCollections: () => {
     React.useEffect(() => {
