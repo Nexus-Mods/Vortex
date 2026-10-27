@@ -10,27 +10,23 @@ export type {
   SymLinkStatus,
 } from "../fs/filesystem";
 
-export type { Pattern } from "../fs/matcher";
-export { matches } from "../fs/matcher";
+export type {
+  Extension,
+  Pattern,
+  PathComponent,
+  RelativePath,
+  ResolvedPath,
+} from "@nexusmods/paths";
+export { matches, QualifiedPath, relativePath } from "@nexusmods/paths";
 
 export type {
-  ResolvedPath,
-  Extension,
-  PathComponent,
+  IOSPathProvider,
+  OSPathBase,
   PathProvider,
   PathResolver,
   PathResolverRegistry,
-  IOSPathProvider,
-  OSPathBase,
-  RelativePath,
 } from "../fs/paths";
-export {
-  QualifiedPath,
-  OSPath,
-  PathProviderError,
-  PathResolverError,
-  relativePath,
-} from "../fs/paths";
+export { OSPath, PathProviderError, PathResolverError } from "../fs/paths";
 export type { QualifiedPathWire } from "../fs/paths";
 
 export { NativePathResolver } from "../fs/native-resolver";

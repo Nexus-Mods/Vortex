@@ -3894,6 +3894,8 @@ importers:
         specifier: 'catalog:'
         version: 0.4.5(vitest@4.1.9)
 
+  packages/paths: {}
+
   packages/pe-resources: {}
 
   packages/steam-kv-parser:
@@ -5084,6 +5086,9 @@ importers:
 
   src/shared:
     dependencies:
+      '@nexusmods/paths':
+        specifier: workspace:*
+        version: link:../../packages/paths
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.1
