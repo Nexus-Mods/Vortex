@@ -1043,3 +1043,29 @@ describe("click tracking", () => {
     });
   });
 });
+
+describe("ToolbarGroup descriptions", () => {
+  it("titles a described action's tooltip, with what it means under it", async () => {
+    render(
+      <ToolbarGroup
+        actions={[
+          {
+            label: "Manual apply",
+            description: "Apply mods, even when no changes are detected.",
+            iconPath: "mdi-test",
+            onClick: () => undefined,
+          },
+        ]}
+      />,
+    );
+    const button = screen.getByRole("button", { name: "Manual apply" });
+
+    expect(button).toHaveAccessibleDescription("Apply mods, even when no changes are detected.");
+
+    await userEvent.hover(button);
+
+    const tooltip = await screen.findByRole("tooltip");
+    expect(within(tooltip).getByText("Manual apply")).toHaveClass("font-semibold");
+    expect(tooltip).toHaveTextContent("Apply mods, even when no changes are detected.");
+  });
+});

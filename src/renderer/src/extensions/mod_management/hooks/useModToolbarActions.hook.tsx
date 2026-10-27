@@ -1,4 +1,4 @@
-import { mdiPlusCircleOutline, mdiPuzzleOutline } from "@mdi/js";
+import { mdiAutorenew, mdiPlusCircleOutline, mdiPuzzleOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import _ from "lodash";
 import React, { useCallback, useMemo } from "react";
@@ -48,10 +48,10 @@ interface IPositionedAction {
  * fixed: pinning an action puts it back where it belongs rather than at the end.
  *
  * The order the bar reads in — Install From File, Open, History, Check for Updates,
- * Categories, Manage Rules, Deploy, Purge — comes from these and from the positions
- * passed to `registerAction` elsewhere, so a change here moves the action in the
- * overflow menu too. Deploy and Purge keep the positions they had as components, which
- * puts them at the end of the row.
+ * Categories, Manage Rules, Manual apply, Purge — comes from these and from the positions
+ * passed to `registerAction` elsewhere, so a change here moves the action in the overflow
+ * menu too. Manual apply and Purge keep the positions they had as components, which puts
+ * them at the end of the row.
  */
 const POSITION = {
   installFromFile: 25,
@@ -107,25 +107,34 @@ const NO_ACTIONS: IPositionedAction[] = [];
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
-/** Deploy (Apply changes) — was `ActivationButton`. Disabled and unbranded while applying. */
+/**
+ * Manual apply: deploys whether or not changes were detected, for the cases the menu's Apply
+ * button can't see. Not pinned, never branded, and disabled while applying.
+ */
 const useDeployAction = (t: TFunction): IPositionedAction => {
-  const { needToDeploy, isDeploying, deploy } = useDeployMods();
+  const { isDeploying, deploy } = useDeployMods();
 
   return useMemo(
     () => ({
       position: POSITION.deploy,
-      action: {
-        id: "deploy",
-        label: isDeploying ? t("Applying mod changes…") : t("Deploy (Apply changes)"),
-        iconPath: getIconPath("deploy"),
-        pinned: true,
-        testId: "deploy-mods",
-        brand: needToDeploy && !isDeploying ? "primary" : "neutral",
-        disabled: isDeploying,
-        onClick: deploy,
-      },
+      action: isDeploying
+        ? {
+            id: "deploy",
+            label: t("Applying mod changes…"),
+            iconPath: mdiAutorenew,
+            testId: "deploy-mods",
+            disabled: true,
+          }
+        : {
+            id: "deploy",
+            label: t("Manual apply (Deploy)"),
+            description: t("Apply mods, even when no changes are detected."),
+            iconPath: mdiAutorenew,
+            testId: "deploy-mods",
+            onClick: deploy,
+          },
     }),
-    [deploy, isDeploying, needToDeploy, t],
+    [deploy, isDeploying, t],
   );
 };
 

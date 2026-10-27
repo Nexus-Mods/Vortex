@@ -23,6 +23,8 @@ export type IToolbarPanel = IPopoverPanel;
  */
 export type IToolbarAction = IMenuAction & {
   showLabel?: boolean;
+  /** Said under the label in its tooltip on the bar, where there's more to say than its name. */
+  description?: string;
   testId?: string;
   /**
    * What a decision to pin this action is stored against, so it must not change with
@@ -68,6 +70,7 @@ const controlProps = (action: IToolbarAction) => ({
   appearance: "weak" as const,
   brand: action.brand ?? "neutral",
   "data-testid": action.testId,
+  description: action.description,
   disabled: action.disabled,
   isLoading: action.isLoading,
   label: action.label,
