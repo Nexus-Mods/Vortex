@@ -1,3 +1,4 @@
+import { mdiAutorenew } from "@mdi/js";
 import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import React from "react";
 import type * as ReactReduxTypes from "react-redux";
@@ -239,6 +240,63 @@ describe("useModToolbarActions brands", () => {
     brand.mockReturnValue(undefined);
 
     expect(byLabel([branded], "Manage Rules")?.brand).toBeUndefined();
+  });
+});
+
+describe("useModToolbarActions manual apply", () => {
+  const deployAction = () => actionsFor([]).find((action) => action.id === "deploy");
+
+  const setModActivity = (activity: string[] | undefined) => {
+    (state.session as { base?: unknown }).base =
+      activity === undefined ? undefined : { activity: { mods: activity } };
+  };
+
+  /** Gives the fixture an active game with changes waiting to deploy, or takes it away. */
+  const setPending = (pending: boolean) => {
+    const settings = state.settings as { profiles?: unknown };
+    const persistent = state.persistent as { profiles?: unknown; deployment?: unknown };
+    settings.profiles = pending ? { activeProfileId: "p1" } : undefined;
+    persistent.profiles = pending ? { p1: { id: "p1", gameId: "skyrimse" } } : undefined;
+    persistent.deployment = pending ? { needToDeploy: { skyrimse: true } } : undefined;
+  };
+
+  afterEach(() => {
+    setModActivity(undefined);
+    setPending(false);
+  });
+
+  it("is unpinned and shows the Apply button's symbol", () => {
+    expect(deployAction()?.pinned).toBeFalsy();
+    expect(deployAction()?.iconPath).toBe(mdiAutorenew);
+  });
+
+  it("says it applies even without detected changes", () => {
+    setModActivity([]);
+
+    const action = deployAction();
+
+    expect(action).toMatchObject({
+      label: "Manual apply (Deploy)",
+      description: "Apply mods, even when no changes are detected.",
+    });
+    expect(action?.disabled).toBeFalsy();
+  });
+
+  it("stays neutral while changes are waiting", () => {
+    setPending(true);
+    setModActivity([]);
+    expect(deployAction()?.brand).toBeUndefined();
+  });
+
+  it.each(["deployment", "deployment_pending"])("is disabled and says so while %s", (activity) => {
+    setPending(true);
+    setModActivity([activity]);
+
+    const action = deployAction();
+
+    expect(action).toMatchObject({ disabled: true, label: "Applying mod changes…" });
+    expect(action?.description).toBeUndefined();
+    expect(action?.brand).toBeUndefined();
   });
 });
 
