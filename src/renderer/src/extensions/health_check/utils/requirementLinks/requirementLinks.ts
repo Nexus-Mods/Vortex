@@ -10,8 +10,21 @@ import {
 /** A Nexus requirement, as the mod requirements query returns it. */
 export type INexusRequirementNode = IModRequirements["nexusRequirements"]["nodes"][number];
 
-/** How a requirement is to be linked: as a rule of either type, or not at all. */
-export type RequirementLinkChoice = "requires" | "recommends" | "skip";
+/** How a requirement is linked: by a rule of either type, or ignored, so not linked. */
+export type RequirementLinkChoice = "requires" | "recommends" | "ignore";
+
+/**
+ * The mod attribute listing the Nexus UIDs of the mods it requires that the user chose to ignore,
+ * so the choice is shown again rather than the requirement offered as new. It isn't kept as a rule
+ * marked ignored, as enabling the mod would still offer to enable those.
+ */
+export const IGNORED_REQUIREMENTS_ATTRIBUTE = "ignoredNexusRequirements";
+
+/** The Nexus UIDs of the mods the mod requires that the user ignores. */
+export const ignoredRequirementsOf = (mod: IMod): string[] => {
+  const ignored: unknown = mod.attributes?.[IGNORED_REQUIREMENTS_ATTRIBUTE];
+  return Array.isArray(ignored) ? ignored.filter((uid) => typeof uid === "string") : [];
+};
 
 /** A Nexus requirement of one installed mod that another installed mod satisfies. */
 export interface IRequirementLink {
@@ -26,6 +39,44 @@ export interface IRequirementLink {
   targetUid: string;
   /** The author's note on the requirement, if they left one. */
   notes?: string;
+  /** How it's linked now, or undefined while it's new: neither linked nor ignored. */
+  current?: RequirementLinkChoice;
+  /** The rule that links it now, which a change replaces or removes. */
+  rule?: IModRule;
+}
+
+/** A Nexus requirement of one installed mod that nothing installed satisfies. */
+export interface IMissingRequirement {
+  /** Unique per requiring mod and required Nexus mod, as a link's is. */
+  key: string;
+  sourceModId: string;
+  sourceName: string;
+  /** The mod that would satisfy it, or for a requirement with alternatives, each that would. */
+  options: IMissingRequirementOption[];
+  /** The author's note on the requirement, if they left one. */
+  notes?: string;
+}
+
+export interface IMissingRequirementOption {
+  /** Unknown only when Nexus couldn't be asked for it. */
+  modName?: string;
+  /** For a file-level requirement: the newest acceptable file's name. */
+  fileName?: string;
+  /** For a file-level requirement: the versions it accepts, oldest and newest. */
+  versions?: { oldest: string; newest: string };
+}
+
+/** One file version that satisfies a file-level requirement. */
+export interface IRequirementFile {
+  fileUid: string;
+  /** The Nexus UID of the mod it's a file of. */
+  modUid: string;
+  /** Its place among the versions of its file, higher being newer. */
+  position: number;
+  /** Filled in only for a requirement nothing installed satisfies, as it's then shown. */
+  fileName?: string;
+  version?: string;
+  modName?: string;
 }
 
 /**
@@ -34,7 +85,7 @@ export interface IRequirementLink {
  */
 export interface IFileRequirementDefinition {
   definitionId: string;
-  fileUids: string[];
+  files: IRequirementFile[];
 }
 
 export interface IFindRequirementLinksInput {
@@ -92,17 +143,17 @@ function indexInstalled(input: IFindRequirementLinksInput): IInstalled {
   return { byUid, byFileUid };
 }
 
-/** Whether the mod already has a requires or recommends rule that one of the targets fulfils. */
-const hasDependencyRule = (mod: IMod, targets: IMod[]): boolean =>
-  (mod.rules ?? []).some(
+/** The mod's requires or recommends rule that one of the targets fulfils, if it has one. */
+const dependencyRuleFor = (mod: IMod, targets: IMod[]): IModRule | undefined =>
+  (mod.rules ?? []).find(
     (rule) =>
       isDependencyRule(rule) && targets.some((target) => testModReference(target, rule.reference)),
   );
 
 /**
- * The requirements of the source mods that installed mods satisfy and that aren't linked yet:
+ * The requirements of the source mods that installed mods satisfy, and how each is linked now:
  * those listed on the mod page, then the file-level ones of its installed file. A mod required by
- * both is linked once, with the mod page's note. External requirements and those of
+ * both is listed once, with the mod page's note. External requirements and those of
  * collection-managed mods are left out.
  */
 export function findRequirementLinks(input: IFindRequirementLinksInput): IRequirementLink[] {
@@ -159,25 +210,30 @@ function fileLinkFor(
   source: IMod,
   definition: IFileRequirementDefinition,
 ): IRequirementLink | undefined {
-  const targets = definition.fileUids
-    .map((fileUid) => installed.byFileUid.get(fileUid))
+  const targets = definition.files
+    .map((file) => installed.byFileUid.get(file.fileUid))
     .filter((mod): mod is IMod => mod !== undefined && mod.id !== source.id)
     .sort(enabledFirst(input));
   const targetUid = targets.length > 0 ? input.uidOf(targets[0]) : undefined;
   return targetUid === undefined ? undefined : linkTo(source, targets, targetUid, undefined);
 }
 
-/** The link to the first of the targets, unless one of them is linked already. */
+/**
+ * The link to the first of the targets, and how it's linked now: by the rule one of them
+ * fulfils, if there's one, or else as ignored, if the user chose that.
+ */
 function linkTo(
   source: IMod,
   targets: IMod[],
   targetUid: string,
   notes: string | undefined,
 ): IRequirementLink | undefined {
-  if (targets.length === 0 || hasDependencyRule(source, targets)) {
+  if (targets.length === 0) {
     return undefined;
   }
   const target = targets[0];
+  const rule = dependencyRuleFor(source, targets);
+  const ignored = ignoredRequirementsOf(source).includes(targetUid);
   return {
     key: `${source.id}:${targetUid}`,
     sourceModId: source.id,
@@ -186,6 +242,84 @@ function linkTo(
     targetName: renderModName(target),
     targetUid,
     notes,
+    ...(rule !== undefined
+      ? { current: rule.type as RequirementLinkChoice, rule }
+      : ignored
+        ? { current: "ignore" as const }
+        : {}),
+  };
+}
+
+/**
+ * The requirements of the source mods that nothing installed satisfies, as the mod page and the
+ * installed file list them. A mod required both ways is listed once, with the mod page's note and
+ * the file's versions. A file-level requirement of a mod that is installed, only not in an
+ * acceptable version, isn't missing, so isn't listed.
+ */
+export function findMissingRequirements(input: IFindRequirementLinksInput): IMissingRequirement[] {
+  const installed = indexInstalled(input);
+  const missing: IMissingRequirement[] = [];
+
+  for (const sourceModId of new Set(input.sourceModIds)) {
+    const source = input.mods[sourceModId];
+    if (!isNexusMod(source) || input.isCollectionManaged(source)) {
+      continue;
+    }
+    const sourceName = renderModName(source);
+    const keyOf = (uid: string) => `${source.id}:${uid}`;
+    const isInstalled = (uid: string) =>
+      (installed.byUid.get(uid) ?? []).some((mod) => mod.id !== source.id);
+
+    const nodes = input.requirements.get(input.uidOf(source))?.nexusRequirements?.nodes ?? [];
+    const sourceGameId = source.attributes.downloadGame ?? input.gameId;
+    for (const req of nodes) {
+      const uid = req.externalRequirement ? undefined : input.requirementUidOf(req, sourceGameId);
+      if (uid === undefined || isInstalled(uid) || missing.some((m) => m.key === keyOf(uid))) {
+        continue;
+      }
+      missing.push({
+        key: keyOf(uid),
+        sourceModId: source.id,
+        sourceName,
+        options: [{ modName: req.modName }],
+        notes: req.notes?.trim() || undefined,
+      });
+    }
+
+    for (const definition of input.fileRequirements.get(source.id) ?? []) {
+      const uids = [...new Set(definition.files.map((file) => file.modUid))];
+      const satisfied = definition.files.some((file) => installed.byFileUid.has(file.fileUid));
+      if (satisfied || uids.some(isInstalled)) {
+        continue;
+      }
+      const options = uids.map((uid) =>
+        missingOption(definition.files.filter((file) => file.modUid === uid)),
+      );
+      // the mod page may list it too: its note stays, the file's versions are added
+      const listed = missing.find((m) => uids.some((uid) => m.key === keyOf(uid)));
+      if (listed !== undefined) {
+        listed.options = options;
+      } else {
+        missing.push({ key: keyOf(uids[0]), sourceModId: source.id, sourceName, options });
+      }
+    }
+  }
+
+  return missing;
+}
+
+/** What to show of one mod's acceptable files: its name, the newest file and the version range. */
+function missingOption(files: IRequirementFile[]): IMissingRequirementOption {
+  const ordered = [...files].sort((lhs, rhs) => lhs.position - rhs.position);
+  const oldest = ordered[0];
+  const newest = ordered[ordered.length - 1];
+  return {
+    modName: files.find((file) => file.modName !== undefined)?.modName,
+    fileName: newest?.fileName,
+    versions:
+      oldest?.version !== undefined && newest?.version !== undefined
+        ? { oldest: oldest.version, newest: newest.version }
+        : undefined,
   };
 }
 
@@ -196,7 +330,7 @@ function linkTo(
 export function makeRequirementRule(
   link: IRequirementLink,
   target: IMod,
-  type: Exclude<RequirementLinkChoice, "skip">,
+  type: Exclude<RequirementLinkChoice, "ignore">,
 ): IModRule {
   return {
     type,

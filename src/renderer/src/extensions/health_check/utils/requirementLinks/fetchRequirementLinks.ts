@@ -21,8 +21,12 @@ import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import {
+  findMissingRequirements,
   findRequirementLinks,
   type IFileRequirementDefinition,
+  type IFindRequirementLinksInput,
+  type IMissingRequirement,
+  type IRequirementFile,
   type IRequirementLink,
 } from "./requirementLinks";
 
@@ -59,39 +63,89 @@ async function fetchFileRequirements(
   }
 
   // the acceptable files of each requirement of each mod
-  const byMod = new Map<string, Map<string, string[]>>();
+  const byMod = new Map<string, Map<string, IRequirementFile[]>>();
   for (const row of rows) {
     const modId = modIdByFileUid.get(row.sourceFileVersionUid);
     if (modId === undefined) {
       continue;
     }
-    const definitions = byMod.get(modId) ?? new Map<string, string[]>();
-    definitions.set(row.definitionId, [
-      ...(definitions.get(row.definitionId) ?? []),
-      row.fileVersionUid,
-    ]);
+    const definitions = byMod.get(modId) ?? new Map<string, IRequirementFile[]>();
+    const file = {
+      fileUid: row.fileVersionUid,
+      modUid: row.modUid,
+      position: Number(row.position),
+    };
+    definitions.set(row.definitionId, [...(definitions.get(row.definitionId) ?? []), file]);
     byMod.set(modId, definitions);
   }
 
-  return new Map(
-    [...byMod].map(([modId, definitions]) => [
+  const result = new Map(
+    [...byMod].map(([modId, definitions]): [string, IFileRequirementDefinition[]] => [
       modId,
-      [...definitions].map(([definitionId, fileUids]) => ({ definitionId, fileUids })),
+      [...definitions].map(([definitionId, files]) => ({ definitionId, files })),
     ]),
   );
+  await describeUnmetFiles(api, result, mods, fileUidOf);
+  return result;
+}
+
+/**
+ * Fills in the names and versions of the acceptable files of the requirements nothing installed
+ * satisfies, which are shown as not installed; those of the rest aren't needed. Display data only,
+ * so a failed lookup leaves them out.
+ */
+async function describeUnmetFiles(
+  api: IExtensionApi,
+  fileRequirements: Map<string, IFileRequirementDefinition[]>,
+  mods: { [modId: string]: IMod },
+  fileUidOf: (mod: IMod) => string | undefined,
+): Promise<void> {
+  const installed = new Set(Object.values(mods).map(fileUidOf));
+  const unmet = [...fileRequirements.values()]
+    .flat()
+    .filter((definition) => !definition.files.some((file) => installed.has(file.fileUid)))
+    .flatMap((definition) => definition.files);
+  if (unmet.length === 0) {
+    return;
+  }
+
+  try {
+    const ports = createResolverPorts(api);
+    const [details, modDetails] = await Promise.all([
+      ports.fetchFileVersionDetails([...new Set(unmet.map((file) => file.fileUid))]),
+      ports.fetchModDetails([...new Set(unmet.map((file) => file.modUid))]),
+    ]);
+    const detailOf = new Map(details.map((detail) => [detail.fileVersionUid, detail]));
+    const modNameOf = new Map(modDetails.map((detail) => [detail.modUid, detail.name]));
+    for (const file of unmet) {
+      file.fileName = detailOf.get(file.fileUid)?.name;
+      file.version = detailOf.get(file.fileUid)?.version;
+      file.modName = modNameOf.get(file.modUid);
+    }
+  } catch (err) {
+    log("warn", "failed to look up the files of missing requirements", {
+      error: getErrorMessage(unknownToError(err)),
+    });
+  }
 }
 
 /** Why there's nothing to link, when it isn't that every requirement is linked already. */
 export type RequirementLinksUnavailable = "no-profile" | "logged-out";
 
+/** The given mods' Nexus requirements: those to link, and those nothing installed satisfies. */
+export interface IRequirementLinksOffer {
+  links: IRequirementLink[];
+  missing: IMissingRequirement[];
+}
+
 /**
- * The unlinked Nexus requirements of the given mods that installed mods satisfy, read through
- * the requirements health check's cache.
+ * The unlinked Nexus requirements of the given mods that installed mods satisfy, and those that
+ * nothing installed does, read through the requirements health checks' caches.
  */
 export async function fetchRequirementLinks(
   api: IExtensionApi,
   modIds: string[],
-): Promise<IRequirementLink[] | RequirementLinksUnavailable> {
+): Promise<IRequirementLinksOffer | RequirementLinksUnavailable> {
   const state = api.getState();
   const profile = activeProfile(state);
   if (profile?.gameId === undefined) {
@@ -121,7 +175,7 @@ export async function fetchRequirementLinks(
   ]);
   const collectionTags = collectionManagedTags(mods, profile);
 
-  return findRequirementLinks({
+  const input: IFindRequirementLinksInput = {
     mods,
     sourceModIds: modIds,
     requirements,
@@ -132,5 +186,6 @@ export async function fetchRequirementLinks(
     isCollectionManaged: (mod) => isCollectionManaged(mod, collectionTags),
     isEnabled: (modId) => profile.modState?.[modId]?.enabled === true,
     gameId,
-  });
+  };
+  return { links: findRequirementLinks(input), missing: findMissingRequirements(input) };
 }

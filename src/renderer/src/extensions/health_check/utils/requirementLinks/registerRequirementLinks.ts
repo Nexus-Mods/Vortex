@@ -1,7 +1,11 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import { setDialogVisible } from "@/actions/session";
-import { addModRule } from "@/extensions/mod_management/actions/mods";
+import {
+  addModRule,
+  removeModRule,
+  setModAttribute,
+} from "@/extensions/mod_management/actions/mods";
 import type { IExtensionApi, IExtensionContext } from "@/types/IExtensionContext";
 import { activeGameId } from "@/util/selectors";
 import { batchDispatch } from "@/util/util";
@@ -10,8 +14,10 @@ import {
   type IRequirementLinksModalProps,
   RequirementLinksModal,
 } from "../../components/requirement_links_modal/RequirementLinksModal";
-import { fetchRequirementLinks } from "./fetchRequirementLinks";
+import { fetchRequirementLinks, type IRequirementLinksOffer } from "./fetchRequirementLinks";
 import {
+  IGNORED_REQUIREMENTS_ATTRIBUTE,
+  ignoredRequirementsOf,
   type IRequirementLink,
   makeRequirementRule,
   type RequirementLinkChoice,
@@ -20,14 +26,16 @@ import {
 /** The action's registered title, which the Mods table's menus place it by. */
 export const LINK_REQUIREMENTS_TITLE = "Link Nexus Requirements";
 
+/** What saving the choices dispatches: rules added and removed, and the ignores kept. */
+type LinkAction = ReturnType<typeof addModRule> | ReturnType<typeof setModAttribute>;
+
 const DIALOG_ID = "link-nexus-requirements";
 const NOTIFICATION_ID = "link-nexus-requirements";
 
 /** What the dialog shows, and what its answer does. */
-let offer: {
-  links: IRequirementLink[];
+let offer: IRequirementLinksOffer & {
   answer: (choices: Map<string, RequirementLinkChoice> | undefined) => void;
-} = { links: [], answer: () => undefined };
+} = { links: [], missing: [], answer: () => undefined };
 
 const toArray = (instanceIds: string | string[]) =>
   Array.isArray(instanceIds) ? instanceIds : [instanceIds];
@@ -39,7 +47,11 @@ function anyFromNexus(api: IExtensionApi, modIds: string[]): boolean {
   return modIds.some((modId) => mods[modId]?.attributes?.source === "nexus");
 }
 
-/** Adds the rules the user chose, each to the mod that requires its target. */
+/**
+ * Saves what the user changed, on the mod that requires each target: a requirement linked gains
+ * its rule, one moved between required and optional has its rule replaced, and one ignored loses
+ * its rule, the choice being kept on the mod.
+ */
 function applyChoices(
   api: IExtensionApi,
   links: IRequirementLink[],
@@ -49,22 +61,43 @@ function applyChoices(
   const gameId = activeGameId(state);
   const mods = state.persistent.mods[gameId] ?? {};
 
-  const actions = links.flatMap((link) => {
+  const actions: LinkAction[] = [];
+  const ignoredBySource = new Map<string, Set<string>>();
+  let changed = 0;
+  for (const link of links) {
     const choice = choices.get(link.key);
+    const source = mods[link.sourceModId];
     const target = mods[link.targetModId];
-    if (choice === undefined || choice === "skip" || target === undefined) {
-      return [];
+    if (choice === undefined || choice === link.current || !source || !target) {
+      continue;
     }
-    return [addModRule(gameId, link.sourceModId, makeRequirementRule(link, target, choice))];
-  });
+    changed += 1;
+    if (link.rule !== undefined) {
+      actions.push(removeModRule(gameId, source.id, link.rule));
+    }
+    if (choice !== "ignore") {
+      actions.push(addModRule(gameId, source.id, makeRequirementRule(link, target, choice)));
+    }
+    const ignored = ignoredBySource.get(source.id) ?? new Set(ignoredRequirementsOf(source));
+    if (choice === "ignore") {
+      ignored.add(link.targetUid);
+    } else {
+      ignored.delete(link.targetUid);
+    }
+    ignoredBySource.set(source.id, ignored);
+  }
+  for (const [modId, ignored] of ignoredBySource) {
+    const value = ignored.size > 0 ? [...ignored] : undefined;
+    actions.push(setModAttribute(gameId, modId, IGNORED_REQUIREMENTS_ATTRIBUTE, value));
+  }
 
   batchDispatch(api.store, actions);
-  if (actions.length > 0) {
+  if (changed > 0) {
     api.sendNotification({
       id: NOTIFICATION_ID,
       type: "success",
-      message: "Linked {{count}} requirement(s)",
-      replace: { count: actions.length },
+      // the toasts don't fill in `replace`, so the count goes in here
+      message: `Saved ${changed} ${changed === 1 ? "change" : "changes"} to requirement links`,
       displayMS: 3000,
     });
   }
@@ -74,7 +107,7 @@ function notifyNothingToLink(api: IExtensionApi, reason: string) {
   api.sendNotification({
     id: NOTIFICATION_ID,
     type: "info",
-    title: "No requirements to link",
+    title: "No requirements to show",
     message: reason,
     displayMS: 5000,
   });
@@ -96,19 +129,16 @@ async function linkRequirements(api: IExtensionApi, modIds: string[]) {
       notifyNothingToLink(api, "Log in to Nexus Mods to look up mod requirements.");
     } else if (result === "no-profile") {
       notifyNothingToLink(api, "No game is being managed.");
-    } else if (result.length === 0) {
-      notifyNothingToLink(
-        api,
-        "None of the requirements these mods list on Nexus Mods are installed and unlinked.",
-      );
+    } else if (result.links.length === 0 && result.missing.length === 0) {
+      notifyNothingToLink(api, "These mods list no requirements on Nexus Mods.");
     } else {
       offer = {
-        links: result,
+        ...result,
         answer: (choices) => {
           // the dialog can close more than once, the offer is answered once
           offer = { ...offer, answer: () => undefined };
           if (choices !== undefined) {
-            applyChoices(api, result, choices);
+            applyChoices(api, result.links, choices);
           }
         },
       };
@@ -138,6 +168,7 @@ export function registerRequirementLinks(context: IExtensionContext) {
     () =>
       ({
         links: offer.links,
+        missing: offer.missing,
         onAnswer: (choices) => offer.answer(choices),
       }) satisfies Partial<IRequirementLinksModalProps>,
   );

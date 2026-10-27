@@ -134,16 +134,22 @@
   },
   "requirement_links_modal": {
     "title": "Link Nexus requirements",
-    "description": "These mods list requirements on Nexus Mods that you already have installed. Linking them adds a dependency rule, so enabling a mod offers to enable what it needs. Optional links only take part when you choose to include recommended mods.",
+    "description": "These mods list requirements on Nexus Mods. Linking the ones you have installed adds a dependency rule, so enabling a mod offers to enable what it needs. Optional links only take part when you choose to include recommended mods; ignoring a requirement removes its link. Requirements you don't have are listed too, but can't be linked.",
     "choices": {
       "requires": "Required",
       "recommends": "Optional",
-      "skip": "Skip"
+      "ignore": "Ignore"
     },
+    "not_installed": "Not installed",
+    "unknown_mod": "Unknown mod",
+    "or": " or ",
+    "version": "Version {{version}}",
+    "versions": "Versions {{oldest}} to {{newest}}",
     "buttons": {
       "cancel": "Cancel",
-      "link": "Link {{count}} requirement",
-      "link_plural": "Link {{count}} requirements"
+      "close": "Close",
+      "save": "Save {{count}} change",
+      "save_plural": "Save {{count}} changes"
     }
   },
   "settings": {

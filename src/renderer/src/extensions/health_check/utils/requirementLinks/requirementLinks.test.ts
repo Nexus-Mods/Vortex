@@ -5,9 +5,12 @@ import type { IMod, IModRule } from "@/extensions/mod_management/types/IMod";
 import { testModReference } from "@/extensions/mod_management/util/testModReference";
 
 import {
+  findMissingRequirements,
   findRequirementLinks,
+  IGNORED_REQUIREMENTS_ATTRIBUTE,
   type IFindRequirementLinksInput,
   type INexusRequirementNode,
+  type IRequirementFile,
   makeRequirementRule,
 } from "./requirementLinks";
 
@@ -109,20 +112,42 @@ describe("findRequirementLinks", () => {
     expect(links).toEqual([]);
   });
 
-  it("leaves out a requirement already linked by a requires or recommends rule", () => {
+  it("starts a new requirement as neither linked nor ignored", () => {
+    const [link] = findRequirementLinks(setup());
+
+    expect(link.current).toBeUndefined();
+    expect(link.rule).toBeUndefined();
+  });
+
+  it("shows a requirement already linked as linked, with the rule that links it", () => {
     const input = setup();
     const rule = makeRequirementRule(findRequirementLinks(input)[0], input.mods.cet, "recommends");
     input.mods.settings = { ...input.mods.settings, rules: [rule] };
 
-    expect(findRequirementLinks(input)).toEqual([]);
+    expect(findRequirementLinks(input)).toEqual([
+      expect.objectContaining({ current: "recommends", rule }),
+    ]);
   });
 
-  it("still links a requirement that only has an ordering rule", () => {
+  it("shows a requirement the user ignored as ignored", () => {
+    const input = setup();
+    input.mods.settings = {
+      ...input.mods.settings,
+      attributes: {
+        ...input.mods.settings.attributes,
+        [IGNORED_REQUIREMENTS_ATTRIBUTE]: ["uid-107"],
+      },
+    };
+
+    expect(findRequirementLinks(input)[0].current).toBe("ignore");
+  });
+
+  it("takes a requirement with only an ordering rule as new", () => {
     const input = setup();
     const after: IModRule = { type: "after", reference: { id: "cet" } };
     input.mods.settings = { ...input.mods.settings, rules: [after] };
 
-    expect(findRequirementLinks(input)).toHaveLength(1);
+    expect(findRequirementLinks(input)[0].current).toBeUndefined();
   });
 
   it("skips collection-managed and non-Nexus mods", () => {
@@ -156,18 +181,39 @@ describe("findRequirementLinks", () => {
   });
 });
 
-describe("findRequirementLinks, for file-level requirements", () => {
-  /** NativeSettings' file requires one of the given files, and lists nothing on its mod page. */
-  const requiringFiles = (
-    fileUids: string[],
-    overrides: Partial<IFindRequirementLinksInput> = {},
-  ) =>
-    setup({
-      requirements: withRequirements([]),
-      fileRequirements: new Map([["settings", [{ definitionId: "def-1", fileUids }]]]),
-      ...overrides,
-    });
+/** An acceptable file, by the UID `fileUidOf` gives: a mod's file id is ten times its mod id. */
+const requiredFile = (
+  fileUid: string,
+  extra: Partial<IRequirementFile> = {},
+): IRequirementFile => ({
+  fileUid,
+  modUid: `uid-${Number(fileUid.replace("file-", "")) / 10}`,
+  position: 0,
+  ...extra,
+});
 
+/** NativeSettings' file requires one of the given files, and lists nothing on its mod page. */
+const requiringFiles = (
+  files: Array<string | IRequirementFile>,
+  overrides: Partial<IFindRequirementLinksInput> = {},
+) =>
+  setup({
+    requirements: withRequirements([]),
+    fileRequirements: new Map([
+      [
+        "settings",
+        [
+          {
+            definitionId: "def-1",
+            files: files.map((file) => (typeof file === "string" ? requiredFile(file) : file)),
+          },
+        ],
+      ],
+    ]),
+    ...overrides,
+  });
+
+describe("findRequirementLinks, for file-level requirements", () => {
   it("links a requirement that an installed file satisfies", () => {
     const links = findRequirementLinks(requiringFiles(["file-1070"]));
 
@@ -205,12 +251,101 @@ describe("findRequirementLinks, for file-level requirements", () => {
     expect(links[0].notes).toBe("Needed for UI");
   });
 
-  it("leaves out a requirement already linked", () => {
+  it("shows a requirement already linked as linked", () => {
     const input = requiringFiles(["file-1070"]);
     const rule = makeRequirementRule(findRequirementLinks(input)[0], input.mods.cet, "requires");
     input.mods.settings = { ...input.mods.settings, rules: [rule] };
 
-    expect(findRequirementLinks(input)).toEqual([]);
+    expect(findRequirementLinks(input)).toEqual([
+      expect.objectContaining({ current: "requires", rule }),
+    ]);
+  });
+});
+
+describe("findMissingRequirements", () => {
+  it("lists a mod page requirement that nothing installed satisfies, with its note", () => {
+    const missing = findMissingRequirements(
+      setup({ requirements: withRequirements([requirement(999, { notes: " Needed " })]) }),
+    );
+
+    expect(missing).toEqual([
+      expect.objectContaining({
+        sourceModId: "settings",
+        options: [{ modName: "Nexus mod 999" }],
+        notes: "Needed",
+      }),
+    ]);
+  });
+
+  it("leaves out installed and external requirements", () => {
+    const missing = findMissingRequirements(
+      setup({
+        requirements: withRequirements([
+          requirement(107),
+          requirement(999, { externalRequirement: true }),
+        ]),
+      }),
+    );
+
+    expect(missing).toEqual([]);
+  });
+
+  it("lists a file-level requirement with its newest file and the versions it accepts", () => {
+    const missing = findMissingRequirements(
+      requiringFiles([
+        requiredFile("file-9990", {
+          position: 2,
+          fileName: "Tool 1.2",
+          version: "1.2",
+          modName: "Tool",
+        }),
+        // an older version of the same file
+        requiredFile("file-9991", {
+          modUid: "uid-999",
+          position: 1,
+          version: "1.1",
+          modName: "Tool",
+        }),
+      ]),
+    );
+
+    expect(missing).toEqual([
+      expect.objectContaining({
+        options: [
+          { modName: "Tool", fileName: "Tool 1.2", versions: { oldest: "1.1", newest: "1.2" } },
+        ],
+      }),
+    ]);
+  });
+
+  it("lists each alternative of a file-level requirement", () => {
+    const missing = findMissingRequirements(
+      requiringFiles([
+        requiredFile("file-9990", { modName: "Tool" }),
+        requiredFile("file-8880", { modName: "Other tool" }),
+      ]),
+    );
+
+    expect(missing[0].options.map((option) => option.modName)).toEqual(["Tool", "Other tool"]);
+  });
+
+  it("leaves out a file-level requirement whose mod is installed in another version", () => {
+    expect(
+      findMissingRequirements(requiringFiles([requiredFile("file-5", { modUid: "uid-107" })])),
+    ).toEqual([]);
+  });
+
+  it("lists a mod required both ways once, with the page's note and the file's versions", () => {
+    const missing = findMissingRequirements(
+      requiringFiles(
+        [requiredFile("file-9990", { version: "1.0", modName: "Tool", fileName: "Tool 1.0" })],
+        { requirements: withRequirements([requirement(999, { notes: "Needed" })]) },
+      ),
+    );
+
+    expect(missing).toHaveLength(1);
+    expect(missing[0].notes).toBe("Needed");
+    expect(missing[0].options[0].fileName).toBe("Tool 1.0");
   });
 });
 
