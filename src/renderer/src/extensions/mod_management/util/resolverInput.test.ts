@@ -1,4 +1,4 @@
-import { readFile, stat } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
 import {
@@ -34,6 +34,7 @@ vi.mock("../../analytics/utils/storeGameVersionEvent", async (importOriginal) =>
 });
 
 import {
+  makeDeployedFile,
   makeProfileMod,
   makeRealDeploymentMethod,
   makeStagedMod,
@@ -52,11 +53,13 @@ import hardlinkInit from "../../hardlink_activator";
 import type { ArchiveFiles } from "../../nexus_integration/util_v3/archiveManifests";
 import deployMods from "../modActivation";
 import { sessionReducer } from "../reducers/session";
+import type { IDeployedFile } from "../types/IDeploymentMethod";
 import type { IMod } from "../types/IMod";
+import { saveActivation } from "./activationStore";
 import BlacklistSet from "./BlacklistSet";
 import { genSubDirFunc } from "./deploy";
 import { deployedFilePath } from "./deployedFilePath";
-import { gatherResolverInput } from "./resolverInput";
+import { gatherDeployedInput, gatherResolverInput } from "./resolverInput";
 import { doSortMods } from "./sort";
 
 const hashFile = async (filePath: string) => checksum(await readFile(filePath));
@@ -117,8 +120,14 @@ async function installMods(
   });
 }
 
-/** Each file the hardlink deployment writes, and its hash. */
-async function deployedFiles(game: IDeployedGameHarness): Promise<FileEntry[]> {
+interface TypeDeployment {
+  typeId: string;
+  target: string;
+  deployed: IDeployedFile[];
+}
+
+/** Deploys each mod type with the hardlink deployment, returning what each type deployed. */
+async function deployEachType(game: IDeployedGameHarness): Promise<TypeDeployment[]> {
   const state = game.getState();
   const sortedMods = await doSortMods(
     game.api,
@@ -128,7 +137,7 @@ async function deployedFiles(game: IDeployedGameHarness): Promise<FileEntry[]> {
   const harnessGame = getGame(game.gameId);
   const modPaths = harnessGame.getModPaths(state.settings.gameMode.discovered[game.gameId].path);
   const method = makeRealDeploymentMethod(game.api, hardlinkInit);
-  const files: FileEntry[] = [];
+  const deployments: TypeDeployment[] = [];
   for (const [typeId, target] of Object.entries(modPaths).filter(
     ([, deployPath]) => deployPath !== "",
   )) {
@@ -144,6 +153,35 @@ async function deployedFiles(game: IDeployedGameHarness): Promise<FileEntry[]> {
       new BlacklistSet([], harnessGame, await getNormalizeFunc(target)),
       genSubDirFunc(harnessGame, getModType(typeId)),
     );
+    deployments.push({ typeId, target, deployed });
+  }
+  return deployments;
+}
+
+/** Writes a mod type's manifest as a deployment by the given instance does. */
+async function recordManifest(
+  game: IDeployedGameHarness,
+  typeId: string,
+  target: string,
+  deployed: IDeployedFile[],
+  instanceId: string = game.getState().app.instanceId,
+): Promise<void> {
+  await mkdir(target, { recursive: true });
+  await saveActivation(
+    game.gameId,
+    typeId,
+    instanceId,
+    target,
+    game.stagingPath,
+    deployed,
+    "hardlink_activator",
+  );
+}
+
+/** Each file the hardlink deployment writes, and its hash. */
+async function deployedFiles(game: IDeployedGameHarness): Promise<FileEntry[]> {
+  const files: FileEntry[] = [];
+  for (const { target, deployed } of await deployEachType(game)) {
     for (const file of deployed) {
       files.push({
         destinationPath: toPortablePath(deployedFilePath(target, file.target, file.relPath)),
@@ -348,4 +386,148 @@ test("a Nexus file takes its hash from the archive entries of its size at its pa
     },
   ]);
   expect(hashStagedFile).toHaveBeenCalledTimes(2);
+});
+
+const seededFrom = async (game: IDeployedGameHarness) =>
+  gatherDeployedInput(game.api, VortexGameId(game.gameId), hashFile, noArchiveFiles);
+
+test("an unchanged deployment seeds the lockfile the resolver gives", async () => {
+  const game = await makeResolvableGame();
+  registerTestModType("dinput", path.dirname(game.dataPath));
+  await installMods(game, [
+    {
+      mod: makeStagedMod(MOD_A, { attributes: NEXUS_ATTRIBUTES }),
+      relPaths: ["ModA.esp", path.join("textures", "sky.dds")],
+    },
+    {
+      mod: makeStagedMod(MOD_B, { rules: [{ type: "after", reference: { id: MOD_A } }] }),
+      relPaths: [path.join("textures", "sky.dds"), "meta.ini"],
+    },
+    { mod: makeStagedMod(SCRIPT_EXTENDER, { type: "dinput" }), relPaths: ["loader.exe"] },
+  ]);
+  for (const { typeId, target, deployed } of await deployEachType(game)) {
+    await recordManifest(game, typeId, target, deployed);
+  }
+
+  const { input, notes } = await seededFrom(game);
+
+  expect(notes).toEqual([]);
+  expect(resolve(input)).toEqual(
+    resolve(
+      await gatherResolverInput(game.api, VortexGameId(game.gameId), hashFile, noArchiveFiles),
+    ),
+  );
+});
+
+/**
+ * A default-type mod and a game-root mod whose manifests both list the default type's shared.txt;
+ * the default type deploys after every other.
+ */
+async function seedSharedFile({ defaultModOverridesIt = false } = {}) {
+  const game = await makeResolvableGame();
+  const gameRoot = path.dirname(game.dataPath);
+  registerTestModType("dinput", gameRoot);
+  const sharedInGameRoot = path.join(path.basename(game.dataPath), "shared.txt");
+  const fileOverrides = defaultModOverridesIt ? [path.join(game.dataPath, "shared.txt")] : [];
+  await installMods(game, [
+    { mod: makeStagedMod(MOD_A, { fileOverrides }), relPaths: ["shared.txt"] },
+    { mod: makeStagedMod(SCRIPT_EXTENDER, { type: "dinput" }), relPaths: [sharedInGameRoot] },
+  ]);
+  await recordManifest(game, "dinput", gameRoot, [
+    makeDeployedFile({ relPath: sharedInGameRoot, source: SCRIPT_EXTENDER }),
+  ]);
+  await recordManifest(game, "", game.dataPath, [
+    makeDeployedFile({ relPath: "shared.txt", source: MOD_A }),
+  ]);
+  const { input, notes } = await seededFrom(game);
+  return { game, lockfile: resolve(input), notes, sharedInGameRoot };
+}
+
+test("of two mod types whose manifests list one path, the type deployed later keeps it", async () => {
+  const { game, lockfile, notes } = await seedSharedFile();
+
+  expect(lockfile.files).toEqual([
+    expect.objectContaining({
+      destinationPath: toPortablePath(path.join(game.dataPath, "shared.txt")),
+      fileHash: await hashFile(path.join(game.stagingPath, MOD_A, "shared.txt")),
+    }),
+  ]);
+  expect(notes).toEqual([
+    `${toPortablePath(path.join(game.dataPath, "shared.txt"))} is listed by 2 mod types' manifests; "${MOD_A}" keeps it`,
+  ]);
+});
+
+test("of two mod types whose manifests list one path, the mod that does not override it keeps it", async () => {
+  const { game, lockfile, sharedInGameRoot } = await seedSharedFile({
+    defaultModOverridesIt: true,
+  });
+
+  expect(lockfile.files).toEqual([
+    expect.objectContaining({
+      destinationPath: toPortablePath(path.join(game.dataPath, "shared.txt")),
+      fileHash: await hashFile(path.join(game.stagingPath, SCRIPT_EXTENDER, sharedInGameRoot)),
+    }),
+  ]);
+});
+
+test("a file deployed into its mod's own folder is seeded under that folder", async () => {
+  const game = await makeResolvableGame();
+  await installMods(game, [{ mod: makeStagedMod(MOD_A), relPaths: ["ModA.esp"] }]);
+  await recordManifest(game, "", game.dataPath, [
+    makeDeployedFile({ relPath: "ModA.esp", source: MOD_A, target: MOD_A }),
+  ]);
+
+  const lockfile = resolve((await seededFrom(game)).input);
+
+  expect(lockfile.files.map(({ destinationPath }) => destinationPath)).toEqual([
+    toPortablePath(path.join(game.dataPath, MOD_A, "ModA.esp")),
+  ]);
+});
+
+test.each([
+  [
+    "another Vortex instance's manifest",
+    (game: IDeployedGameHarness) =>
+      recordManifest(
+        game,
+        "",
+        game.dataPath,
+        [makeDeployedFile({ relPath: "ModA.esp", source: MOD_A })],
+        "other-instance",
+      ),
+    'the "" mod type\'s manifest was written by another Vortex instance',
+  ],
+  [
+    "a damaged manifest",
+    async (game: IDeployedGameHarness) => {
+      await mkdir(game.dataPath, { recursive: true });
+      await writeFile(path.join(game.dataPath, "vortex.deployment.json"), "{ not json");
+    },
+    'the "" mod type\'s manifest is damaged',
+  ],
+  [
+    "an entry whose mod is not installed",
+    (game: IDeployedGameHarness) =>
+      recordManifest(game, "", game.dataPath, [
+        makeDeployedFile({ relPath: "Gone.esp", source: "Removed" }),
+      ]),
+    'Gone.esp came from "Removed", which is not an installed mod',
+  ],
+  [
+    "an entry whose file is not staged",
+    (game: IDeployedGameHarness) =>
+      recordManifest(game, "", game.dataPath, [
+        makeDeployedFile({ relPath: "Unstaged.esp", source: MOD_A }),
+      ]),
+    `Unstaged.esp is not staged in "${MOD_A}"`,
+  ],
+])("the seed leaves out %s and notes it", async (_case, record, note) => {
+  const game = await makeResolvableGame();
+  await installMods(game, [{ mod: makeStagedMod(MOD_A), relPaths: ["ModA.esp"] }]);
+  await record(game);
+
+  const { input, notes } = await seededFrom(game);
+
+  expect(resolve(input).files).toEqual([]);
+  expect(notes).toEqual([note]);
 });

@@ -11,6 +11,7 @@ import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 import { log } from "../../../logging";
 import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
 import Debouncer from "../../../util/Debouncer";
 import { getGame } from "../../gamemode_management/util/getGame";
@@ -22,7 +23,7 @@ import {
   type LockfileContribution,
   type LockfileContributionCondition,
 } from "./lockfileContributions";
-import { gatherResolverInput } from "./resolverInput";
+import { gatherDeployedInput, gatherResolverInput } from "./resolverInput";
 
 /** The games whose lockfile is resolved after each plugin sort. */
 const RESOLVED_GAMES: ReadonlySet<string> = new Set(["skyrimse"]);
@@ -47,6 +48,21 @@ export function registerLockfileContribution(
   registeredContributions.register(contributorOf(extensionPath, extInfo), condition, generate);
 }
 
+/** Adds the files contributions declare for the state the lockfile was resolved from. */
+async function withGeneratedFiles(
+  state: IState,
+  gameMode: VortexGameId,
+  contributions: LockfileContributions,
+  lockfile: Lockfile,
+): Promise<Lockfile> {
+  const generatedFiles = await contributions.generatedFiles(
+    state,
+    gameMode,
+    lastActiveProfileForGame(state, gameMode),
+  );
+  return addGeneratedFiles(lockfile, generatedFiles);
+}
+
 /** The game's lockfile: its enabled mods' files, then the files contributions declare. */
 export async function resolveLockfile(
   api: IExtensionApi,
@@ -56,12 +72,7 @@ export async function resolveLockfile(
 ): Promise<Lockfile> {
   const state = api.getState();
   const input = await gatherResolverInput(api, gameMode, hashFile);
-  const generatedFiles = await contributions.generatedFiles(
-    state,
-    gameMode,
-    lastActiveProfileForGame(state, gameMode),
-  );
-  return addGeneratedFiles(resolve(input), generatedFiles);
+  return withGeneratedFiles(state, gameMode, contributions, resolve(input));
 }
 
 // the lockfile planned last in this session per game, the next plan's previous lockfile
@@ -70,19 +81,53 @@ const lastPlannedLockfiles = new Map<VortexGameId, Lockfile>();
 const elapsedMsSince = (startedAt: Temporal.Instant) =>
   Temporal.Now.instant().since(startedAt).total("milliseconds");
 
-/** Scans the game's deployment targets and logs the plan from the last lockfile planned. */
-async function logPlan(api: IExtensionApi, gameMode: VortexGameId, lockfile: Lockfile) {
+/** The lockfile planned last for a game, else one seeded from its deployment manifests. */
+async function previousLockfile(
+  api: IExtensionApi,
+  gameMode: VortexGameId,
+  hashFile: (filePath: string) => Promise<string>,
+): Promise<{ lockfile: Lockfile; seeded: boolean }> {
+  const planned = lastPlannedLockfiles.get(gameMode);
+  if (planned !== undefined) {
+    return { lockfile: planned, seeded: false };
+  }
+  const startedAt = Temporal.Now.instant();
+  const state = api.getState();
+  const { input, notes } = await gatherDeployedInput(api, gameMode, hashFile);
+  const lockfile = await withGeneratedFiles(
+    state,
+    gameMode,
+    registeredContributions,
+    resolve(input),
+  );
+  log("info", "seeded previous lockfile", {
+    gameMode,
+    files: lockfile.files.length,
+    notes: notes.length,
+    firstNotes: notes.slice(0, 5),
+    elapsedMs: elapsedMsSince(startedAt),
+  });
+  return { lockfile, seeded: true };
+}
+
+/** Scans the game's deployment targets and logs the plan from the previous lockfile. */
+async function logPlan(
+  api: IExtensionApi,
+  gameMode: VortexGameId,
+  lockfile: Lockfile,
+  hashFile: (filePath: string) => Promise<string>,
+) {
   const game = getGame(gameMode);
   const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
   if (game === undefined || gamePath === undefined) {
     return;
   }
   try {
-    const previous = lastPlannedLockfiles.get(gameMode);
+    const { lockfile: previous, seeded } = await previousLockfile(api, gameMode, hashFile);
     const scanStartedAt = Temporal.Now.instant();
     const disk = await scanDeploymentTargets(
       Object.values(game.getModPaths(gamePath)),
-      [...lockfile.files, ...(previous?.files ?? [])].map(({ destinationPath }) => destinationPath),
+      [...lockfile.files, ...previous.files].map(({ destinationPath }) => destinationPath),
     );
     const scanMs = elapsedMsSince(scanStartedAt);
     const planStartedAt = Temporal.Now.instant();
@@ -92,7 +137,7 @@ async function logPlan(api: IExtensionApi, gameMode: VortexGameId, lockfile: Loc
 
     log("info", "planned lockfile", {
       gameMode,
-      firstRun: previous === undefined,
+      seededPrevious: seeded,
       roots: disk.roots.length,
       diskEntries: disk.entries.length,
       diskLinks: disk.entries.filter((entry) => entry.kind === DiskEntryKind.Link).length,
@@ -132,7 +177,7 @@ async function logResolvedLockfile(
     });
     return;
   }
-  await logPlan(api, gameMode, lockfile);
+  await logPlan(api, gameMode, lockfile, hashFile);
 }
 
 /**

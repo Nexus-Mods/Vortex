@@ -90,7 +90,7 @@ test("sorts during a lockfile run plan once more after it, against the lockfile 
     vi
       .mocked(window.api)
       .log.mock.calls.filter((call) => call[1] === "planned lockfile")
-      .map((call) => JSON.parse(String(call[2])) as { firstRun: boolean });
+      .map((call) => JSON.parse(String(call[2])) as { seededPrevious: boolean });
   const sortPlugins = () => game.api.events.emit("did-sort-plugins", game.gameId);
   let sortedDuringRun = false;
   vi.mocked(window.api).log.mockImplementation((_level, message) => {
@@ -106,7 +106,7 @@ test("sorts during a lockfile run plan once more after it, against the lockfile 
     sortPlugins();
 
     await vi.waitFor(() => expect(plannedRuns()).toHaveLength(2));
-    expect(plannedRuns().map(({ firstRun }) => firstRun)).toEqual([true, false]);
+    expect(plannedRuns().map(({ seededPrevious }) => seededPrevious)).toEqual([true, false]);
   } finally {
     vi.mocked(window.api).log.mockImplementation(() => undefined);
     disk.restore();
