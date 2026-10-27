@@ -26,22 +26,21 @@ import type { SpineSelection } from "../Spine/spine_selection/spineSelection.uti
 import { GameArt } from "./GameArt";
 import { GameArtProvider, useGameArt } from "./GameArt.context";
 
-/** Sets the art up from inside the provider, as the dev tools and Browse's picker do. */
-const Setup = ({ isEnabled, preview }: { isEnabled: boolean; preview?: GameId }) => {
-  const { setIsEnabled, setPreviewGame } = useGameArt();
+/** Sets the art up from inside the provider, as the dev tools do. */
+const Setup = ({ isEnabled }: { isEnabled: boolean }) => {
+  const { setIsEnabled } = useGameArt();
   useEffect(() => {
     setIsEnabled(isEnabled);
-    setPreviewGame(preview);
-  }, [isEnabled, preview, setIsEnabled, setPreviewGame]);
+  }, [isEnabled, setIsEnabled]);
   return null;
 };
 
-const renderArt = ({ isEnabled = true, preview }: { isEnabled?: boolean; preview?: GameId } = {}) =>
+const renderArt = ({ isEnabled = true }: { isEnabled?: boolean } = {}) =>
   render(
     <GameArtProvider>
       <GameArt />
 
-      <Setup isEnabled={isEnabled} preview={preview} />
+      <Setup isEnabled={isEnabled} />
     </GameArtProvider>,
   );
 
@@ -74,12 +73,5 @@ describe("GameArt", () => {
     games.hasHero = false;
     const { container } = renderArt();
     expect(container.querySelector(".nxm-game-art")).toBeNull();
-  });
-
-  it("draws the preview game's art in place of the open game's", () => {
-    spine.selection = { type: "game", gameId: "skyrimse" };
-    games.hasHero = true;
-    const { container } = renderArt({ preview: GameId(3474) });
-    expect(artSrc(container)).toBe("https://images.nexusmods.com/images/games/v2/3474/hero.jpg");
   });
 });

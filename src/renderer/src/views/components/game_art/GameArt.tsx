@@ -18,7 +18,7 @@ import { useGameArt } from "./GameArt.context";
  */
 export const GameArt = () => {
   const { selection } = useSpineContext();
-  const { isEnabled, previewGame } = useGameArt();
+  const { isEnabled } = useGameArt();
   const game = useSelector((state: IState) =>
     selection.type === "game" ? gameById(state, selection.gameId) : undefined,
   );
@@ -27,7 +27,7 @@ export const GameArt = () => {
     return null;
   }
 
-  const gameId = previewGame ?? (game && nexusGameIdForGame(game));
+  const gameId = game && nexusGameIdForGame(game);
 
   if (!gameId) {
     return null;
