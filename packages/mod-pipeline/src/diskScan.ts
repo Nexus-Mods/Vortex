@@ -19,13 +19,11 @@ export interface DiskEntry {
   kind: DiskEntryKind;
   size: number;
   modifiedTime: Temporal.Instant;
-  /** with deviceId, identifies hardlinks to the same file */
+  /** with deviceId, identifies the file, so a hardlink and a symlink share their target's */
   id?: bigint;
   deviceId?: bigint;
   /** above 1 when the file is hardlinked elsewhere */
   hardlinkCount?: number;
-  /** where a link points, even when that is gone */
-  linkTarget?: string;
   /**
    * the content, a link's being its target's, hashed with the lockfile's hash type; an entry
    * without one counts as the file the previous lockfile deployed there
@@ -66,7 +64,6 @@ const diskScanSchema = z.object({
       id: bigintSchema.optional(),
       deviceId: bigintSchema.optional(),
       hardlinkCount: z.number().int().optional(),
-      linkTarget: z.string().optional(),
       contentHash: z.object({ fileHash: z.string(), hashType: z.enum(HashType) }).optional(),
     }),
   ),

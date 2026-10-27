@@ -39,7 +39,6 @@
         "kind": "link",
         "size": 0,
         "modifiedTime": "2025-10-09T08:53:20Z",
-        "linkTarget": "/fixture-root/staging/SkyUI/SkyUI_SE.esp",
         "contentHash": { "fileHash": "skyui-esp-v1-hash", "hashType": "md5" }
       }
     ]
