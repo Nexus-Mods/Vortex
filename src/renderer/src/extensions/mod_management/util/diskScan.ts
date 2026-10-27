@@ -2,14 +2,17 @@ import * as path from "node:path";
 
 import { DiskEntryKind, pathKeyOf, type DiskEntry, type DiskScan } from "@nexusmods/mod-pipeline";
 import { parseError } from "@vortex/shared";
-import { QualifiedPath } from "@vortex/shared/filesystem";
+import { QualifiedPath, type Status } from "@vortex/shared/filesystem";
 
 const prefixKeyOf = (folder: string) => pathKeyOf(folder.endsWith("/") ? folder : `${folder}/`);
 
 /** The folders to walk: the mod paths and the folder of any destination outside them, none nested. */
-function scanRoots(modPaths: Iterable<string>, destinationPaths: Iterable<string>): string[] {
+function scanRoots(
+  modPaths: Iterable<string | null | undefined>,
+  destinationPaths: Iterable<string>,
+): string[] {
   const modRoots = [...modPaths]
-    .filter((modPath) => modPath !== "")
+    .filter((modPath) => modPath !== null && modPath !== undefined && modPath !== "")
     .map((modPath) => QualifiedPath.fromNative(modPath).path);
   const modRootPrefixes = modRoots.map(prefixKeyOf);
   const outsideFolders = new Set<string>();
@@ -33,12 +36,20 @@ function scanRoots(modPaths: Iterable<string>, destinationPaths: Iterable<string
 
 /** Adds the files and links under a root; a missing root adds nothing. */
 async function addEntriesUnder(root: string, entries: DiskEntry[]): Promise<void> {
+  let listing: AsyncIterableIterator<[QualifiedPath, Status], undefined>;
   try {
     // "symlink" lists a link as an entry with its target's status; a link whose target is gone is not listed
-    const listing = await window.api.fs.enumerateDirectory(QualifiedPath.fromNative(root), {
+    listing = await window.api.fs.enumerateDirectory(QualifiedPath.fromNative(root), {
       recursive: true,
       includeStatus: "symlink",
     });
+  } catch (err) {
+    if (parseError(err).data.kind === "fs:not-found") {
+      return;
+    }
+    throw err;
+  }
+  try {
     for await (const [entryPath, status] of listing) {
       if (!status.isSymLink && !status.isFile) {
         continue;
@@ -54,15 +65,15 @@ async function addEntriesUnder(root: string, entries: DiskEntry[]): Promise<void
       });
     }
   } catch (err) {
-    if (parseError(err).data.kind !== "fs:not-found") {
-      throw err;
-    }
+    // for await does not close a listing whose next() rejected
+    await listing.return?.();
+    throw err;
   }
 }
 
 /** The files and links under the deployment targets; links are listed, not walked into. */
 export async function scanDeploymentTargets(
-  modPaths: Iterable<string>,
+  modPaths: Iterable<string | null | undefined>,
   destinationPaths: Iterable<string>,
 ): Promise<DiskScan> {
   const takenAt = Temporal.Now.instant();
