@@ -1,13 +1,16 @@
 import type {
-  ICollection,
   ICollectionSearchOptions,
   CollectionSortField,
   SortDirection,
 } from "@nexusmods/nexus-api";
-import { queryOptions, skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { GameDomain } from "@vortex/shared";
 import { useEffect, useState } from "react";
 
+import {
+  collectionSearchKeys,
+  collectionSearchQuery,
+} from "@/extensions/nexus_integration/queries/collection_search/collectionSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import { collectionT } from "../../util/collectionT";
@@ -31,56 +34,30 @@ const DEFAULT_SORT = SORT_OPTIONS[1];
 
 export const COLLECTIONS_PER_PAGE = 20;
 
-/** The keys of the collections queries. */
-const collectionKeys = {
-  /** All of a game's collection queries, which refreshing invalidates. */
-  all: (gameDomainName: GameDomain | undefined) =>
-    ["nexus", "collections", gameDomainName] as const,
-  /** One page of them, sorted and optionally searched. */
-  page: (
-    gameDomainName: GameDomain | undefined,
-    filters: { sort: CollectionSortField; direction: SortDirection; search: string; page: number },
-  ) => [...collectionKeys.all(gameDomainName), filters] as const,
-};
-
 /**
- * A page of a game's listed collections, sorted and optionally searched. Its nodes are typed
- * whole, as the search's GraphQL query selects every field a tile reads.
+ * The search for a page of a game's listed collections, sorted and optionally searched; none
+ * outside a game.
  */
-const collectionsQuery = (
-  api: IExtensionApi,
+const searchOptions = (
   gameDomainName: GameDomain | undefined,
   sortBy: ISortOption,
   search: string,
   page: number,
-) =>
-  queryOptions({
-    queryKey: collectionKeys.page(gameDomainName, {
-      sort: sortBy.field,
-      direction: sortBy.direction,
-      search,
-      page,
-    }),
-    queryFn: gameDomainName
-      ? async (): Promise<{ nodes: ICollection[]; totalCount: number }> => {
-          const options: ICollectionSearchOptions = {
-            gameId: gameDomainName,
-            count: COLLECTIONS_PER_PAGE,
-            offset: (page - 1) * COLLECTIONS_PER_PAGE,
-            sort: { field: sortBy.field, direction: sortBy.direction },
-            search: search || undefined,
-            categoryName: [{ op: "NOT_EQUALS", value: "Wabbajack Mod List" }],
-            collectionStatuses: ["listed"],
-          };
+): ICollectionSearchOptions | typeof skipToken => {
+  if (!gameDomainName) {
+    return skipToken;
+  }
 
-          const result = await api.ext.nexusSearchCollections(options);
-          return {
-            nodes: (result.nodes ?? []) as ICollection[],
-            totalCount: result.totalCount ?? 0,
-          };
-        }
-      : skipToken,
-  });
+  return {
+    gameId: gameDomainName,
+    count: COLLECTIONS_PER_PAGE,
+    offset: (page - 1) * COLLECTIONS_PER_PAGE,
+    sort: { field: sortBy.field, direction: sortBy.direction },
+    search: search || undefined,
+    categoryName: [{ op: "NOT_EQUALS", value: "Wabbajack Mod List" }],
+    collectionStatuses: ["listed"],
+  };
+};
 
 /** Whether the API turned a search down for a term too short to match on. */
 const isSearchTooShortError = (error: Error | null) =>
@@ -131,9 +108,9 @@ export const useCollectionSearch = (api: IExtensionApi) => {
 
   /** The page showing; it keeps the last page's results while the next loads, in one game. */
   const collections = useQuery({
-    ...collectionsQuery(api, gameDomainName, sortBy, activeSearch, currentPage),
+    ...collectionSearchQuery(api, searchOptions(gameDomainName, sortBy, activeSearch, currentPage)),
     placeholderData: (previous, previousQuery) =>
-      previousQuery?.queryKey[2] === gameDomainName ? previous : undefined,
+      previousQuery?.queryKey[3]?.gameId === gameDomainName ? previous : undefined,
   });
 
   /**
@@ -141,12 +118,12 @@ export const useCollectionSearch = (api: IExtensionApi) => {
    * very query above until the sort, page or search moves off it.
    */
   const allCollections = useQuery({
-    ...collectionsQuery(api, gameDomainName, DEFAULT_SORT, "", 1),
+    ...collectionSearchQuery(api, searchOptions(gameDomainName, DEFAULT_SORT, "", 1)),
     select: (result) => result.totalCount,
   });
 
   const handleRefresh = () =>
-    void queryClient.invalidateQueries({ queryKey: collectionKeys.all(gameDomainName) });
+    void queryClient.invalidateQueries({ queryKey: collectionSearchKeys.all });
 
   const isSearchRejected = isSearchTooShortError(collections.error);
 
@@ -157,7 +134,10 @@ export const useCollectionSearch = (api: IExtensionApi) => {
     }
   }, [isSearchRejected]);
 
-  const firstPage = collectionsQuery(api, gameDomainName, sortBy, activeSearch, 1);
+  const firstPage = collectionSearchQuery(
+    api,
+    searchOptions(gameDomainName, sortBy, activeSearch, 1),
+  );
   const pageTotal =
     collections.data?.totalCount ?? queryClient.getQueryData(firstPage.queryKey)?.totalCount;
 
