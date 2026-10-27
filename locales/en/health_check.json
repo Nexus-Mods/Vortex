@@ -135,7 +135,6 @@
   "requirement_links_modal": {
     "title": "Link Nexus requirements",
     "description": "These mods list requirements on Nexus Mods that you already have installed. Linking them adds a dependency rule, so enabling a mod offers to enable what it needs. Optional links only take part when you choose to include recommended mods.",
-    "requires": "{{name}} requires:",
     "choices": {
       "requires": "Required",
       "recommends": "Optional",
@@ -143,7 +142,8 @@
     },
     "buttons": {
       "cancel": "Cancel",
-      "link": "Link ({{count}})"
+      "link": "Link {{count}} requirement",
+      "link_plural": "Link {{count}} requirements"
     }
   },
   "settings": {

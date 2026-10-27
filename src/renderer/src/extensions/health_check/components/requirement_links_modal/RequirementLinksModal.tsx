@@ -9,6 +9,7 @@ import type {
   IRequirementLink,
   RequirementLinkChoice,
 } from "../../utils/requirementLinks/requirementLinks";
+import { RequirementNote } from "./RequirementNote";
 import { type IToggleButtonOption, ToggleButtonGroup } from "./ToggleButtonGroup";
 
 export interface IRequirementLinksModalProps {
@@ -79,25 +80,23 @@ export const RequirementLinksModal = ({
           {t("requirement_links_modal::description")}
         </Typography>
 
-        <div className="max-h-96 space-y-4 overflow-y-auto rounded-lg border border-stroke-weak bg-translucent-dark-200 p-4">
+        {/* Each selected mod is a block, set apart by space, with what it requires indented under
+            it; the requirements need no lines, their notes being dimmer than their names. */}
+        <div className="max-h-96 overflow-y-auto rounded-lg border border-stroke-weak bg-translucent-dark-200 px-4">
           {groups.map((group) => (
-            <section key={group.links[0].sourceModId}>
+            <section className="py-3" key={group.links[0].sourceModId}>
               <Typography className="font-semibold" typographyType="body-sm">
-                {t("requirement_links_modal::requires", {
-                  replace: { name: group.sourceName },
-                })}
+                {group.sourceName}
               </Typography>
 
-              <ul className="mt-2 divide-y divide-stroke-weak">
+              <ul className="mt-2 space-y-2 border-l border-stroke-weak pl-3">
                 {group.links.map((link) => (
-                  <li className="flex items-center justify-between gap-4 py-2" key={link.key}>
-                    <Typography appearance="subdued" as="div" typographyType="body-sm">
-                      <span className="block text-neutral-moderate">{link.targetName}</span>
+                  <li className="flex items-start justify-between gap-4" key={link.key}>
+                    <div className="min-w-0">
+                      <Typography typographyType="body-sm">{link.targetName}</Typography>
 
-                      {link.notes !== undefined && (
-                        <span className="block whitespace-pre-line">{link.notes}</span>
-                      )}
-                    </Typography>
+                      {link.notes !== undefined && <RequirementNote notes={link.notes} />}
+                    </div>
 
                     <ToggleButtonGroup
                       data-testid="requirement-link-choice"
@@ -114,11 +113,11 @@ export const RequirementLinksModal = ({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-x-2">
+      {/* laid out as the app's other dialogs lay out their buttons */}
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
         <Button
           appearance="moderate"
           brand="neutral"
-          className="w-full"
           data-testid="requirement-links-cancel"
           onClick={() => answer(undefined)}
         >
@@ -126,7 +125,6 @@ export const RequirementLinksModal = ({
         </Button>
 
         <Button
-          className="w-full"
           data-testid="requirement-links-apply"
           disabled={linkCount === 0}
           onClick={() => answer(new Map(links.map((link) => [link.key, choiceOf(link)])))}
