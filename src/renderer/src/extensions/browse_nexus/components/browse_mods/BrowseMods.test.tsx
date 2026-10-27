@@ -11,6 +11,9 @@ import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 // The list, bar, backdrop and details are stood in for: these test which mod the details show.
 vi.mock("./browse_mods_bar/BrowseModsBar", () => ({ BrowseModsBar: () => null }));
 vi.mock("./mod_backdrop/ModBackdrop", () => ({ ModBackdrop: () => null }));
+vi.mock("@/ui/components/resizable_split/useSavedSplit.hook", () => ({
+  useSavedSplit: () => [0.5, vi.fn()],
+}));
 vi.mock("./mod_details/ModDetails", () => ({
   ModDetails: React.forwardRef<HTMLParagraphElement, { mod: ModSummary }>(({ mod }, ref) => (
     <p data-testid="details" ref={ref}>
