@@ -230,6 +230,48 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       return Array.from(data.data.mods);
     },
 
+    /** Fetch one mod's details, its description and tags among them, by its composite mod UID. */
+    async getModById(id: string): Promise<components["schemas"]["Mod"]> {
+      const { data, error, response } = await client.GET("/mods/{id}", {
+        params: { path: { id } },
+      });
+      if (error) throw toV3Error(error, response);
+      return { ...data.data, tags: Array.from(data.data.tags) };
+    },
+
+    /**
+     * Issue signed download links for a mod file version, best CDN location first, and record
+     * the download, so it's only for a download the user asked for. Premium users need no `key`
+     * and `expires`; anyone else needs the pair the website generates. Links expire in hours.
+     */
+    async getModFileVersionDownloadLink(
+      gameDomain: string,
+      fileVersionId: string,
+      download: {
+        key?: string;
+        expires?: number;
+        collectionId?: number;
+        applicationName?: string;
+      } = {},
+    ) {
+      const { data, error, response } = await client.GET(
+        "/games/{game_domain}/mod-file-versions/{game_scoped_id}/download-link",
+        {
+          params: {
+            path: { game_domain: gameDomain, game_scoped_id: fileVersionId },
+            query: {
+              key: download.key,
+              expires: download.expires,
+              collection_id: download.collectionId,
+            },
+            header: { "Application-Name": download.applicationName },
+          },
+        },
+      );
+      if (error) throw toV3Error(error, response);
+      return data.data;
+    },
+
     /**
      * Search published mods, sorted, filtered and a page at a time. Every field of the search
      * is optional; the API defaults to trending, page 1 of 20.

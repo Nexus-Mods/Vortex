@@ -226,6 +226,76 @@ describe("editCollection", () => {
   });
 });
 
+describe("getModById", () => {
+  it("GETs /mods/{id} with the id interpolated, and returns the mod", async () => {
+    mockData({ id: "7318624273618", name: "SkyUI", tags: [{ id: "1", name: "Interface" }] });
+
+    const result = await makeClient().getModById("7318624273618");
+
+    expect(lastRequest().method).toBe("GET");
+    expect(lastRequest().url).toBe(`${BASE_URL}/mods/7318624273618`);
+    expect(result).toEqual({
+      id: "7318624273618",
+      name: "SkyUI",
+      tags: [{ id: "1", name: "Interface" }],
+    });
+  });
+
+  it("throws V3ApiError on an error response", async () => {
+    fetchMocker.mockResponseOnce(
+      JSON.stringify({ type: "about:blank", title: "Not Found", status: 404 }),
+      { status: 404, headers: { "content-type": "application/problem+json" } },
+    );
+
+    await expect(makeClient().getModById("1")).rejects.toThrow(V3ApiError);
+  });
+});
+
+describe("getModFileVersionDownloadLink", () => {
+  const links = {
+    links: [{ name: "Nexus CDN", short_name: "Nexus", url: "https://cdn/file.7z?sig" }],
+    expires_at: "2026-10-27T20:00:00Z",
+  };
+
+  it("GETs a file version's download links, and returns them", async () => {
+    mockData(links);
+
+    const result = await makeClient().getModFileVersionDownloadLink(
+      "skyrimspecialedition",
+      "345678",
+    );
+
+    expect(lastRequest().method).toBe("GET");
+    expect(lastRequest().url).toBe(
+      `${BASE_URL}/games/skyrimspecialedition/mod-file-versions/345678/download-link`,
+    );
+    expect(result).toEqual(links);
+  });
+
+  it("sends the collection and the application it's for", async () => {
+    mockData(links);
+
+    await makeClient().getModFileVersionDownloadLink("skyrimspecialedition", "345678", {
+      collectionId: 42,
+      applicationName: "Vortex",
+    });
+
+    expect(new URL(lastRequest().url).searchParams.get("collection_id")).toBe("42");
+    expect(lastRequest().headers.get("Application-Name")).toBe("Vortex");
+  });
+
+  it("throws V3ApiError on an error response", async () => {
+    fetchMocker.mockResponseOnce(
+      JSON.stringify({ type: "about:blank", title: "Forbidden", status: 403 }),
+      { status: 403, headers: { "content-type": "application/problem+json" } },
+    );
+
+    await expect(
+      makeClient().getModFileVersionDownloadLink("skyrimspecialedition", "345678"),
+    ).rejects.toThrow(V3ApiError);
+  });
+});
+
 describe("searchMods", () => {
   // Every field with a default is required in the generated type, so the search is given whole.
   const search = {
