@@ -8,6 +8,7 @@ import { FlagService } from "../../FlagService";
 import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
 import { UserCanceled } from "../../util/CustomErrors";
 import { isTierZeroManagedGame } from "../gamemode_management/tiered/tierZero";
+import { createManualInstallerTracker, manualInstallerUIDs } from "./manualInstallerTracker";
 import type { IInstruction } from "./types/IInstallResult";
 import type { ICommonModAttributes } from "./types/IMod";
 import type { InstallFunc } from "./types/InstallFunc";
@@ -61,7 +62,12 @@ export function createManualInstaller(api: IExtensionApi): {
     return Promise.resolve({ supported, requiredFiles: [] });
   };
 
-  const queryDestination = async (): Promise<string> => {
+  const tracker = createManualInstallerTracker(api);
+
+  const queryDestination = async (uids: {
+    mod_uid?: string;
+    file_uid?: string;
+  }): Promise<string> => {
     const result = await api.showDialog?.(
       "question",
       "Tier 0 Manual Installer",
@@ -94,8 +100,10 @@ export function createManualInstaller(api: IExtensionApi): {
     );
 
     if (result === undefined || result.action === "Cancel") {
+      tracker.trackClosed({ outcome: "cancelled", ...uids });
       throw new UserCanceled();
     }
+    tracker.trackClosed({ outcome: "completed", ...uids });
     // the condition keeps invalid input from reaching this point
     return normalizeDestination(result.input.folder ?? "") ?? "";
   };
@@ -103,6 +111,7 @@ export function createManualInstaller(api: IExtensionApi): {
   const resolveDestination = async (
     unattended: boolean | undefined,
     previous: string | undefined,
+    uids: { mod_uid?: string; file_uid?: string },
   ): Promise<string> => {
     if (unattended === true || getCollectionActiveSession(api.getState()) !== undefined) {
       return "";
@@ -111,13 +120,13 @@ export function createManualInstaller(api: IExtensionApi): {
     if (typeof previous === "string") {
       return previous;
     }
-    return queryDestination();
+    return queryDestination(uids);
   };
 
   const install: InstallFunc = async (
     files,
     _destinationPath,
-    _vortexGameId,
+    vortexGameId,
     _progress,
     _choices,
     unattended,
@@ -127,6 +136,7 @@ export function createManualInstaller(api: IExtensionApi): {
     const destination = await resolveDestination(
       unattended,
       options?.previousAttributes?.[INSTALL_DESTINATION_ATTRIBUTE],
+      manualInstallerUIDs(vortexGameId, options?.modReference),
     );
     const copy: IInstruction[] = files
       .filter((name) => !name.endsWith(path.sep))

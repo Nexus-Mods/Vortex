@@ -13,32 +13,43 @@ import {
   INSTALL_DESTINATION_ATTRIBUTE,
   normalizeDestination,
 } from "./manualInstaller";
+import type { IModReference } from "./types/IMod";
 
 vi.mock("../../FlagService", () => ({ FlagService: { instance: { getFlag: vi.fn() } } }));
 vi.mock("../gamemode_management/tiered/tierZero", () => ({ isTierZeroManagedGame: vi.fn() }));
 vi.mock("../../util/collectionInstallSessionSelectors", () => ({
   getCollectionActiveSession: vi.fn(),
 }));
+vi.mock("../nexus_integration/util/UIDs", () => ({
+  makeModAndFileUIDs: (game: string, mod: string, file: string) =>
+    Number.isNaN(parseInt(mod, 10))
+      ? { modUID: undefined, fileUID: undefined }
+      : { modUID: `${game}:${mod}`, fileUID: `${game}:${file}` },
+}));
 
 const files = ["readme.txt", "sub" + path.sep, path.join("sub", "a.dll")];
 
 const makeApi = (dialogResult?: { action: string; input: Record<string, string> }) => {
   const showDialog = vi.fn().mockResolvedValue(dialogResult);
+  const emit = vi.fn();
   const api = {
     getState: () => ({}),
     showDialog,
     translate: (text: string) => text,
+    events: { emit },
   } as unknown as IExtensionApi;
-  return { api, showDialog };
+  return { api, showDialog, emit };
 };
 
 const install = (
   installer: ReturnType<typeof createManualInstaller>,
   unattended?: boolean,
   previousAttributes?: Record<string, unknown>,
+  modReference?: IModReference,
 ) =>
   installer.install(files, "", "game", () => undefined, undefined, unattended, undefined, {
     previousAttributes,
+    modReference,
   });
 
 const destinationOf = (result: Awaited<ReturnType<ReturnType<typeof install>["then"]>>) =>
@@ -162,5 +173,59 @@ describe("install", () => {
     const { api } = makeApi({ action: "Cancel", input: {} });
 
     await expect(install(createManualInstaller(api))).rejects.toBeInstanceOf(UserCanceled);
+  });
+});
+
+describe("analytics", () => {
+  const reference = {
+    repo: { repository: "nexus", modId: "518", fileId: "138454" },
+  } as IModReference;
+
+  test("a confirmed dialog reports completed with the uids", async () => {
+    const { api, emit } = makeApi({ action: "Install", input: { folder: "Foo" } });
+    await install(createManualInstaller(api), false, undefined, reference);
+
+    expect(emit).toHaveBeenCalledExactlyOnceWith("analytics-track-mixpanel-event", {
+      eventName: "app_manual_installer_closed",
+      properties: { outcome: "completed", mod_uid: "game:518", file_uid: "game:138454" },
+    });
+  });
+
+  test("a cancelled dialog reports cancelled", async () => {
+    const { api, emit } = makeApi({ action: "Cancel", input: {} });
+    await expect(
+      install(createManualInstaller(api), false, undefined, reference),
+    ).rejects.toBeInstanceOf(UserCanceled);
+
+    expect(emit).toHaveBeenCalledExactlyOnceWith("analytics-track-mixpanel-event", {
+      eventName: "app_manual_installer_closed",
+      properties: { outcome: "cancelled", mod_uid: "game:518", file_uid: "game:138454" },
+    });
+  });
+
+  test("ids are omitted when the archive has none", async () => {
+    const { api, emit } = makeApi({ action: "Install", input: { folder: "" } });
+    await install(createManualInstaller(api));
+
+    expect(emit.mock.calls[0][1].properties).toEqual({ outcome: "completed" });
+  });
+
+  test("a file uid is never sent without a mod uid", async () => {
+    const { api, emit } = makeApi({ action: "Install", input: { folder: "" } });
+    await install(createManualInstaller(api), false, undefined, {
+      repo: { repository: "nexus", modId: "x", fileId: "1" },
+    } as IModReference);
+
+    expect(emit.mock.calls[0][1].properties).toEqual({ outcome: "completed" });
+  });
+
+  test.each([
+    ["unattended", true, undefined],
+    ["reused destination", false, { [INSTALL_DESTINATION_ATTRIBUTE]: "Foo" }],
+  ])("nothing is sent when the dialog isn't shown (%s)", async (_, unattended, previous) => {
+    const { api, emit } = makeApi();
+    await install(createManualInstaller(api), unattended, previous, reference);
+
+    expect(emit).not.toHaveBeenCalled();
   });
 });
