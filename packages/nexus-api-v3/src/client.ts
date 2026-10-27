@@ -229,6 +229,19 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       if (error) throw toV3Error(error, response);
       return Array.from(data.data.mods);
     },
+
+    /**
+     * Search published mods, sorted, filtered and a page at a time. Every field of the search
+     * is optional; the API defaults to trending, page 1 of 20.
+     */
+    async searchMods(search: components["schemas"]["ModsSearchRequest"]): Promise<{
+      mods: components["schemas"]["ModSummary"][];
+      meta: components["schemas"]["PaginationMeta"];
+    }> {
+      const { data, error, response } = await client.POST("/mods/search", { body: search });
+      if (error) throw toV3Error(error, response);
+      return { mods: Array.from(data.data.mods), meta: data.meta };
+    },
   };
 }
 
