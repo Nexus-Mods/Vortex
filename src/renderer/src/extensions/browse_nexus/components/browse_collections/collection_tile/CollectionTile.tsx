@@ -18,6 +18,7 @@ import {
   scheduleMembershipRefresh,
 } from "@/extensions/nexus_integration/membership";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { Author } from "@/ui/components/author/Author";
 import { Bullet } from "@/ui/components/bullet/Bullet";
 import { Button } from "@/ui/components/button/Button";
 import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
@@ -148,22 +149,8 @@ export const CollectionTile: ComponentType<React.PropsWithChildren<ICollectionTi
               {collection.name}
             </Typography>
 
-            <Typography
-              appearance="moderate"
-              className="flex items-center gap-x-1"
-              typographyType="body-sm"
-            >
-              <span className="size-4 overflow-hidden rounded-full bg-surface-translucent-low">
-                {!!collection.user?.avatar && (
-                  <img
-                    alt={collection.user?.name}
-                    className="size-4 shrink-0"
-                    src={collection.user.avatar}
-                  />
-                )}
-              </span>
-
-              {collection.user?.name}
+            <Typography appearance="moderate" as="div" typographyType="body-sm">
+              <Author avatar={collection.user?.avatar} name={collection.user?.name ?? ""} />
             </Typography>
           </div>
 

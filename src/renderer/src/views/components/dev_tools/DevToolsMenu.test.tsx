@@ -14,10 +14,15 @@ vi.mock("react-redux", () => ({
 import { setUseModernLayout } from "@/actions/window";
 import { getTheme } from "@/util/theme";
 
+import { GameArtProvider } from "../game_art/GameArt.context";
 import { DevToolsMenu } from "./DevToolsMenu";
 
 const open = async () => {
-  render(<DevToolsMenu />);
+  render(
+    <GameArtProvider>
+      <DevToolsMenu />
+    </GameArtProvider>,
+  );
   await userEvent.click(screen.getByTestId("dev-tools-trigger"));
 };
 
@@ -43,5 +48,15 @@ describe("DevToolsMenu", () => {
 
     expect(getTheme()).toBe("light");
     expect(screen.getByTestId("dev-tools-light-theme")).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("turns the game art on, from off", async () => {
+    await open();
+    const gameArt = screen.getByTestId("dev-tools-game-art");
+    expect(gameArt).toHaveAttribute("aria-checked", "false");
+
+    await userEvent.click(gameArt);
+
+    expect(gameArt).toHaveAttribute("aria-checked", "true");
   });
 });
