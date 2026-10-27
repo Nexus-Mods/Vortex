@@ -59,7 +59,9 @@ const setup = (overrides: Partial<IFindRequirementLinksInput> = {}): IFindRequir
     mods,
     sourceModIds: ["settings"],
     requirements: withRequirements([requirement(107)]),
+    fileRequirements: new Map(),
     uidOf: (mod) => `uid-${mod.attributes.modId}`,
+    fileUidOf: (mod) => `file-${mod.attributes.fileId}`,
     requirementUidOf: (req) => `uid-${req.modId}`,
     isCollectionManaged: () => false,
     isEnabled: () => true,
@@ -151,6 +153,64 @@ describe("findRequirementLinks", () => {
     );
 
     expect(links).toHaveLength(1);
+  });
+});
+
+describe("findRequirementLinks, for file-level requirements", () => {
+  /** NativeSettings' file requires one of the given files, and lists nothing on its mod page. */
+  const requiringFiles = (
+    fileUids: string[],
+    overrides: Partial<IFindRequirementLinksInput> = {},
+  ) =>
+    setup({
+      requirements: withRequirements([]),
+      fileRequirements: new Map([["settings", [{ definitionId: "def-1", fileUids }]]]),
+      ...overrides,
+    });
+
+  it("links a requirement that an installed file satisfies", () => {
+    const links = findRequirementLinks(requiringFiles(["file-1070"]));
+
+    expect(links).toEqual([
+      expect.objectContaining({
+        sourceModId: "settings",
+        targetModId: "cet",
+        targetUid: "uid-107",
+      }),
+    ]);
+    expect(links[0].notes).toBeUndefined();
+  });
+
+  it("leaves out a requirement none of whose files are installed", () => {
+    expect(findRequirementLinks(requiringFiles(["file-5", "file-6"]))).toEqual([]);
+  });
+
+  it("links whichever alternative is installed, an enabled one first", () => {
+    const input = requiringFiles(["file-1070", "file-23800"], {
+      isEnabled: (modId) => modId === "red4ext",
+    });
+    input.mods = { ...input.mods, red4ext: nexusMod("red4ext", 2380) };
+
+    expect(findRequirementLinks(input).map((link) => link.targetModId)).toEqual(["red4ext"]);
+  });
+
+  it("links a mod required both ways once, with its mod page note", () => {
+    const links = findRequirementLinks(
+      requiringFiles(["file-1070"], {
+        requirements: withRequirements([requirement(107, { notes: "Needed for UI" })]),
+      }),
+    );
+
+    expect(links).toHaveLength(1);
+    expect(links[0].notes).toBe("Needed for UI");
+  });
+
+  it("leaves out a requirement already linked", () => {
+    const input = requiringFiles(["file-1070"]);
+    const rule = makeRequirementRule(findRequirementLinks(input)[0], input.mods.cet, "requires");
+    input.mods.settings = { ...input.mods.settings, rules: [rule] };
+
+    expect(findRequirementLinks(input)).toEqual([]);
   });
 });
 

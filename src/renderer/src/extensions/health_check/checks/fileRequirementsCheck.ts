@@ -30,6 +30,13 @@ export const FILE_REQUIREMENTS_CHECK_ID = "check-file-level-requirements";
 export const FILE_REQUIREMENTS_FLAG: KnownFlagName = "vortex-file-requirements-health-check";
 
 /**
+ * Whether file-level requirements are available to the user, as the Unleash flag says. Reading
+ * the flag through FlagService reports an evaluation metric to the server.
+ */
+export const isFileRequirementsAvailable = (): boolean =>
+  FlagService.instance?.getFlag(FILE_REQUIREMENTS_FLAG) !== undefined;
+
+/**
  * Create a result object for the file requirements check
  */
 function createResult(
@@ -145,9 +152,7 @@ export const fileRequirementsHealthCheck: IHealthCheck = {
     HealthCheckTrigger.LoginChanged,
   ],
   check: async (api: IExtensionApi, signal?: AbortSignal): Promise<IHealthCheckResult> => {
-    // Reading the flag through FlagService reports an evaluation metric to the server.
-    const flagEnabled = FlagService.instance?.getFlag(FILE_REQUIREMENTS_FLAG) !== undefined;
-    if (!flagEnabled || !isFileRequirementsUserEnabled(api.getState())) {
+    if (!isFileRequirementsAvailable() || !isFileRequirementsUserEnabled(api.getState())) {
       return {
         checkId: FILE_REQUIREMENTS_CHECK_ID,
         status: "passed",

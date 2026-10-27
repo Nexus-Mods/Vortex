@@ -28,14 +28,27 @@ export interface IRequirementLink {
   notes?: string;
 }
 
+/**
+ * A file-level requirement of a mod's installed file: the file versions, across its alternatives,
+ * any one of which satisfies it.
+ */
+export interface IFileRequirementDefinition {
+  definitionId: string;
+  fileUids: string[];
+}
+
 export interface IFindRequirementLinksInput {
   mods: { [modId: string]: IMod };
   /** The mods whose own requirements are linked. */
   sourceModIds: string[];
   /** Nexus requirements, keyed by the requiring mod's UID. */
   requirements: Map<string, Partial<IModRequirements>>;
+  /** File-level requirements, keyed by the requiring mod's id; none while they're unavailable. */
+  fileRequirements: Map<string, IFileRequirementDefinition[]>;
   /** An installed mod's Nexus UID, or undefined for one that isn't from Nexus. */
   uidOf: (mod: IMod) => string | undefined;
+  /** An installed mod's Nexus file UID, or undefined for one without a known file. */
+  fileUidOf: (mod: IMod) => string | undefined;
   /** A requirement's Nexus UID, or undefined for one that can't be linked. */
   requirementUidOf: (req: INexusRequirementNode, sourceGameId: string) => string | undefined;
   /** Collection-managed mods have their requirements vetted by the collection, so are skipped. */
@@ -50,19 +63,33 @@ const isNexusMod = (mod: IMod | undefined): mod is IMod =>
   mod.attributes?.source === "nexus" &&
   !!mod.attributes?.modId;
 
-/** Installed Nexus mods by UID, enabled ones first. */
-function installedByUid(input: IFindRequirementLinksInput): Map<string, IMod[]> {
+/** Installed Nexus mods, by mod UID and by file UID. */
+interface IInstalled {
+  /** Enabled ones first. */
+  byUid: Map<string, IMod[]>;
+  byFileUid: Map<string, IMod>;
+}
+
+const enabledFirst = (input: IFindRequirementLinksInput) => (lhs: IMod, rhs: IMod) =>
+  Number(input.isEnabled(rhs.id)) - Number(input.isEnabled(lhs.id));
+
+function indexInstalled(input: IFindRequirementLinksInput): IInstalled {
   const byUid = new Map<string, IMod[]>();
+  const byFileUid = new Map<string, IMod>();
   for (const mod of Object.values(input.mods).filter(isNexusMod)) {
     const uid = input.uidOf(mod);
     if (uid !== undefined) {
       byUid.set(uid, [...(byUid.get(uid) ?? []), mod]);
     }
+    const fileUid = input.fileUidOf(mod);
+    if (fileUid !== undefined) {
+      byFileUid.set(fileUid, mod);
+    }
   }
   for (const list of byUid.values()) {
-    list.sort((lhs, rhs) => Number(input.isEnabled(rhs.id)) - Number(input.isEnabled(lhs.id)));
+    list.sort(enabledFirst(input));
   }
-  return byUid;
+  return { byUid, byFileUid };
 }
 
 /** Whether the mod already has a requires or recommends rule that one of the targets fulfils. */
@@ -73,12 +100,19 @@ const hasDependencyRule = (mod: IMod, targets: IMod[]): boolean =>
   );
 
 /**
- * The requirements of the source mods that installed mods satisfy and that aren't linked yet.
- * External requirements and those of collection-managed mods are left out.
+ * The requirements of the source mods that installed mods satisfy and that aren't linked yet:
+ * those listed on the mod page, then the file-level ones of its installed file. A mod required by
+ * both is linked once, with the mod page's note. External requirements and those of
+ * collection-managed mods are left out.
  */
 export function findRequirementLinks(input: IFindRequirementLinksInput): IRequirementLink[] {
-  const installed = installedByUid(input);
+  const installed = indexInstalled(input);
   const links: IRequirementLink[] = [];
+  const add = (link: IRequirementLink | undefined) => {
+    if (link !== undefined && !links.some((existing) => existing.key === link.key)) {
+      links.push(link);
+    }
+  };
 
   for (const sourceModId of new Set(input.sourceModIds)) {
     const source = input.mods[sourceModId];
@@ -90,10 +124,10 @@ export function findRequirementLinks(input: IFindRequirementLinksInput): IRequir
     const sourceGameId = source.attributes.downloadGame ?? input.gameId;
 
     for (const req of nodes) {
-      const link = linkFor(input, installed, source, req, sourceGameId);
-      if (link !== undefined && !links.some((existing) => existing.key === link.key)) {
-        links.push(link);
-      }
+      add(linkFor(input, installed, source, req, sourceGameId));
+    }
+    for (const definition of input.fileRequirements.get(source.id) ?? []) {
+      add(fileLinkFor(input, installed, source, definition));
     }
   }
 
@@ -102,7 +136,7 @@ export function findRequirementLinks(input: IFindRequirementLinksInput): IRequir
 
 function linkFor(
   input: IFindRequirementLinksInput,
-  installed: Map<string, IMod[]>,
+  installed: IInstalled,
   source: IMod,
   req: INexusRequirementNode,
   sourceGameId: string,
@@ -114,13 +148,36 @@ function linkFor(
   if (targetUid === undefined) {
     return undefined;
   }
-  const targets = (installed.get(targetUid) ?? []).filter((mod) => mod.id !== source.id);
+  const targets = (installed.byUid.get(targetUid) ?? []).filter((mod) => mod.id !== source.id);
+  return linkTo(source, targets, targetUid, req.notes?.trim() || undefined);
+}
+
+/** A file-level requirement's link, to whichever acceptable file is installed, enabled first. */
+function fileLinkFor(
+  input: IFindRequirementLinksInput,
+  installed: IInstalled,
+  source: IMod,
+  definition: IFileRequirementDefinition,
+): IRequirementLink | undefined {
+  const targets = definition.fileUids
+    .map((fileUid) => installed.byFileUid.get(fileUid))
+    .filter((mod): mod is IMod => mod !== undefined && mod.id !== source.id)
+    .sort(enabledFirst(input));
+  const targetUid = targets.length > 0 ? input.uidOf(targets[0]) : undefined;
+  return targetUid === undefined ? undefined : linkTo(source, targets, targetUid, undefined);
+}
+
+/** The link to the first of the targets, unless one of them is linked already. */
+function linkTo(
+  source: IMod,
+  targets: IMod[],
+  targetUid: string,
+  notes: string | undefined,
+): IRequirementLink | undefined {
   if (targets.length === 0 || hasDependencyRule(source, targets)) {
     return undefined;
   }
-
   const target = targets[0];
-  const notes = req.notes?.trim();
   return {
     key: `${source.id}:${targetUid}`,
     sourceModId: source.id,
@@ -128,7 +185,7 @@ function linkFor(
     targetModId: target.id,
     targetName: renderModName(target),
     targetUid,
-    notes: notes || undefined,
+    notes,
   };
 }
 

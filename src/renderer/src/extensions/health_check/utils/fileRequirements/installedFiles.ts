@@ -98,7 +98,10 @@ export interface IInstalledFileRef {
  * Resolve a Nexus file UID for a mod, or return undefined if not possible.
  * Shared by both gather functions below.
  */
-function resolveFileUID(attributes: IInstalledModAttributes, gameId: string): string | undefined {
+export function resolveFileUID(
+  attributes: IInstalledModAttributes,
+  gameId: string,
+): string | undefined {
   if (attributes.fileId === undefined) return undefined;
   return (
     makeFileUID({
