@@ -15,6 +15,7 @@ vi.mock("../../nexus_integration/util", async (importOriginal) => ({
 }));
 
 import { makeDeployedGame } from "../../../test-utils/deployedGame";
+import { installInMemoryFS } from "../../../test-utils/fsApi";
 import { test } from "../../../test-utils/harnessTest";
 import { makeGeneratedFileSource } from "../../../test-utils/lockfileBuilders";
 import { checksum } from "../../../util/checksum";
@@ -25,7 +26,7 @@ import {
   type LockfileContribution,
   type LockfileContributionCondition,
 } from "./lockfileContributions";
-import { contributorOf, resolveLockfile } from "./resolveLockFile";
+import { contributorOf, registerResolveLockFile, resolveLockfile } from "./resolveLockFile";
 import { toPortablePath } from "./resolverInput";
 
 const hashFile = async (filePath: string) => checksum(await readFile(filePath));
@@ -79,6 +80,37 @@ test("a contribution is asked for the game and profile being resolved", async ()
 
   expect(condition).toHaveBeenCalledWith(expect.anything(), game.gameId);
   expect(generate).toHaveBeenCalledWith(expect.anything(), game.gameId, game.profileId);
+});
+
+test("sorts during a lockfile run plan once more after it, against the lockfile it planned", async () => {
+  const game = await makeResolvableGame();
+  const disk = installInMemoryFS();
+  vi.mocked(window.api).log.mockClear();
+  const plannedRuns = () =>
+    vi
+      .mocked(window.api)
+      .log.mock.calls.filter((call) => call[1] === "planned lockfile")
+      .map((call) => JSON.parse(String(call[2])) as { firstRun: boolean });
+  const sortPlugins = () => game.api.events.emit("did-sort-plugins", game.gameId);
+  let sortedDuringRun = false;
+  vi.mocked(window.api).log.mockImplementation((_level, message) => {
+    if (message === "resolved lockfile" && !sortedDuringRun) {
+      sortedDuringRun = true;
+      sortPlugins();
+      sortPlugins();
+    }
+  });
+  try {
+    registerResolveLockFile(game.api, hashFile);
+
+    sortPlugins();
+
+    await vi.waitFor(() => expect(plannedRuns()).toHaveLength(2));
+    expect(plannedRuns().map(({ firstRun }) => firstRun)).toEqual([true, false]);
+  } finally {
+    vi.mocked(window.api).log.mockImplementation(() => undefined);
+    disk.restore();
+  }
 });
 
 test("a contribution is named after the extension that registered it", () => {

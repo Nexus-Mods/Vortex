@@ -12,6 +12,7 @@ import { log } from "../../../logging";
 import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { fileMD5 } from "../../../util/checksum";
+import Debouncer from "../../../util/Debouncer";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { lastActiveProfileForGame } from "../../profile_management/selectors";
 import { scanDeploymentTargets } from "./diskScan";
@@ -134,14 +135,25 @@ async function logResolvedLockfile(
   await logPlan(api, gameMode, lockfile);
 }
 
-/** Resolves and logs the lockfile once a plugin sort has run after a deployment. */
+/**
+ * Resolves and logs the lockfile once a plugin sort has run after a deployment. Runs for a game
+ * never overlap: sorts during a run lead to one more run after it.
+ */
 export function registerResolveLockFile(
   api: IExtensionApi,
   hashFile: (filePath: string) => Promise<string> = fileMD5,
 ): void {
+  const runsByGame = new Map<VortexGameId, Debouncer>();
   api.events.on("did-sort-plugins", (gameId: string) => {
-    if (RESOLVED_GAMES.has(gameId)) {
-      void logResolvedLockfile(api, VortexGameId(gameId), hashFile);
+    if (!RESOLVED_GAMES.has(gameId)) {
+      return;
     }
+    const gameMode = VortexGameId(gameId);
+    let runs = runsByGame.get(gameMode);
+    if (runs === undefined) {
+      runs = new Debouncer(() => logResolvedLockfile(api, gameMode, hashFile), 0, false);
+      runsByGame.set(gameMode, runs);
+    }
+    runs.schedule();
   });
 }
