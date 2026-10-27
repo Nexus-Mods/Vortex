@@ -45,7 +45,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
   const views: IViewPickerView[] = [
     { id: "trending", label: t("Trending") },
     { id: "popular", label: t("Most popular") },
-    { id: "new", label: t("New") },
+    { id: "new", label: t("New releases") },
     // {
     //   id: "custom",
     //   label: t("My custom view"),
