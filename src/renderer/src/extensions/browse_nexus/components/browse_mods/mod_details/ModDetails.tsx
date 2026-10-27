@@ -2,6 +2,7 @@ import numeral from "numeral";
 import React, { forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { Author } from "@/ui/components/author/Author";
 import { Button } from "@/ui/components/button/Button";
@@ -10,6 +11,7 @@ import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
@@ -28,10 +30,10 @@ interface IModDetailsProps {
 }
 
 /**
- * The selected mod's details (LAZ-1346), for the mod picked in the list. Its files and comments
- * tabs are commented out until there's an API for them, and its tags until the mod search
- * returns them. It fills the right half of the page and scrolls on its own, so the list beside
- * it keeps its place; what scrolls fades out into its bottom padding. It has no background of
+ * The selected mod's details (LAZ-1346), for the mod picked in the list, with a button that opens
+ * its page on Nexus Mods. Its files and comments tabs are commented out until there's an API for
+ * them, its tags until the mod search returns them, and 1-click install until it can install.
+ * It fills its side of the page and scrolls on its own, so the list beside it keeps its place; what scrolls fades out into its bottom padding. It has no background of
  * its own: the picture picked in its gallery lies behind the page's body, which blurs it.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
@@ -68,9 +70,23 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                 {/* <TabButton name={t("Comments")} panelId="comments" /> */}
               </TabBar>
 
-              <Button leftIcon="download" size="sm">
+              {/* <Button leftIcon="download" size="sm">
                 {t("1-click install")}
-              </Button>
+              </Button> */}
+
+              <Tooltip content={t("Open mod page")}>
+                <Button
+                  appearance="moderate"
+                  aria-label={t("Open mod page")}
+                  brand="neutral"
+                  leftIcon="open_in_new"
+                  onClick={() =>
+                    window.api.shell.openUrl(
+                      [NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/"),
+                    )
+                  }
+                />
+              </Tooltip>
             </div>
 
             <TabPanel id="details">
@@ -102,18 +118,14 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-y-1">
-                  <Typography
-                    appearance="moderate"
-                    as="h3"
-                    className="font-medium"
-                    typographyType="body-xl"
-                  >
-                    {mod.name}
-                  </Typography>
-
-                  <Typography appearance="subdued">{mod.summary}</Typography>
-                </div>
+                <Typography
+                  appearance="moderate"
+                  as="h3"
+                  className="font-medium"
+                  typographyType="body-xl"
+                >
+                  {mod.name}
+                </Typography>
 
                 <div className="flex flex-wrap gap-2 border-t border-stroke-weak pt-4 pb-2">
                   {stats.map(({ label, value }) => (
