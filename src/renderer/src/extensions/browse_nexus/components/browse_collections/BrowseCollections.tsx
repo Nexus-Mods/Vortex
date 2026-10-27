@@ -1,6 +1,8 @@
 import numeral from "numeral";
 import React, { useRef } from "react";
+import { useSelector } from "react-redux";
 
+import { isLoggedIn } from "@/extensions/nexus_integration/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { TextField } from "@/ui/components/form/text_field/TextField";
@@ -10,12 +12,14 @@ import { Picker } from "@/ui/components/picker/Picker";
 import { Typography } from "@/ui/components/typography/Typography";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
+import { useAddCollection } from "../../hooks/use_add_collection/useAddCollection.hook";
 import {
   COLLECTIONS_PER_PAGE,
-  collectionT,
   type ICollectionSearch,
   SORT_OPTIONS,
 } from "../../hooks/use_collection_search/useCollectionSearch.hook";
+import { useGameDomainName } from "../../hooks/use_game_domain_name/useGameDomainName.hook";
+import { collectionT } from "../../util/collectionT";
 import { CollectionTile } from "./collection_tile/CollectionTile";
 import { CollectionTileSkeleton } from "./collection_tile/CollectionTile.skeleton";
 
@@ -29,24 +33,23 @@ interface IBrowseCollectionsProps {
 export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
   const t = collectionT(api);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const gameDomainName = useGameDomainName();
+  const handleAddCollection = useAddCollection(api);
+  const isLoggedInNexus = useSelector(isLoggedIn);
   const {
-    gameDomainName,
-    isLoggedIn,
     collections,
     totalCount,
     loading,
     error,
     sortBy,
-    setSortBy,
     searchQuery,
-    setSearchQuery,
     currentPage,
     setCurrentPage,
     searchValidationError,
-    setSearchValidationError,
     handleSearch,
+    handleSearchQueryChange,
+    handleSortChange,
     handleRefresh,
-    handleAddCollection,
   } = search;
 
   return (
@@ -65,14 +68,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
           label={t("collection:browse.searchPlaceholder")}
           placeholder={t("collection:browse.searchPlaceholder")}
           value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-
-            // Clear validation error when user types
-            if (searchValidationError) {
-              setSearchValidationError("");
-            }
-          }}
+          onChange={(e) => handleSearchQueryChange(e.target.value)}
         />
 
         <Button
@@ -104,18 +100,15 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
         <Picker
           options={SORT_OPTIONS.map((option) => ({
             label: option.label,
-            value: option,
+            value: option.field,
           }))}
-          value={sortBy}
-          onChange={(value) => {
-            setSortBy(value);
-            setCurrentPage(1);
-          }}
+          value={sortBy.field}
+          onChange={handleSortChange}
         />
       </div>
 
       <Listing
-        className="grid grid-cols-[repeat(auto-fit,minmax(26rem,1fr))] gap-4"
+        className="grid grid-cols-[repeat(auto-fill,minmax(26rem,1fr))] gap-4"
         entityCount={collections?.length}
         isError={!!error}
         isLoading={loading}
@@ -140,7 +133,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
           <CollectionTile
             api={api}
             collection={collection}
-            isLoggedIn={isLoggedIn}
+            isLoggedIn={isLoggedInNexus}
             key={collection.id}
             onAddCollection={() => handleAddCollection(collection)}
             onViewPage={() =>

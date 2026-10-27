@@ -90,11 +90,7 @@ export const BrowsePage = ({ active, api }: IBrowsePageProps) => {
           ])}
           id="mods"
         >
-          {isModsEnabled ? (
-            <BrowseMods />
-          ) : (
-            <ModsComingSoon api={api} gameDomainName={collections.gameDomainName} />
-          )}
+          {isModsEnabled ? <BrowseMods /> : <ModsComingSoon api={api} />}
         </TabPanel>
 
         {!collectionsHidden && (

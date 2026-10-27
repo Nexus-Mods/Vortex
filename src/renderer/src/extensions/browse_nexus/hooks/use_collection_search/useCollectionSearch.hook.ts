@@ -4,17 +4,14 @@ import type {
   CollectionSortField,
   SortDirection,
 } from "@nexusmods/nexus-api";
+import { queryOptions, skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { GameDomain } from "@vortex/shared";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 
-import { CollectionsDownloadClickedEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
-import { getGame } from "@/extensions/gamemode_management/util/getGame";
-import { buildNXMCollectionUrl } from "@/extensions/nexus_integration/NXMUrl";
-import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import type { IState } from "@/types/IState";
-import { UserCanceled } from "@/util/api";
-import { activeGameId } from "@/util/selectors";
+
+import { collectionT } from "../../util/collectionT";
+import { useGameDomainName } from "../use_game_domain_name/useGameDomainName.hook";
 
 export interface ISortOption {
   field: CollectionSortField;
@@ -29,215 +26,156 @@ export const SORT_OPTIONS: ISortOption[] = [
   { field: "downloads", direction: "DESC", label: "Most Downloaded" },
 ];
 
+/** The sort the search starts on, and the one the tab's total is counted with. */
+const DEFAULT_SORT = SORT_OPTIONS[1];
+
 export const COLLECTIONS_PER_PAGE = 20;
 
-async function adultContentDialog(
-  api: IExtensionApi,
-  collection: ICollection,
-  adultContent: boolean,
-): Promise<boolean> {
-  try {
-    const result = await api.showDialog(
-      "question",
-      "Adult content warning",
-      {
-        bbcode: api.translate(
-          `The collection "[b]{{collectionName}}[/b]" has been classified as adult content because it contains: nudity, sexualisation, extreme violence and gore, or excessive profanity.<br/><br/>` +
-            `Your site preferences are set to hide adult content, you can update your preferences on the Nexus Mods website.`,
-          { replace: { collectionName: collection.name } },
-        ),
-      },
-      [{ label: api.translate("Cancel") }, { label: api.translate("Open site preferences") }],
-    );
-    return result.action === "Cancel" ? false : true;
-  } catch {
-    return adultContent;
-  }
-}
-
-/** Translates in the collection namespace, as the collections browser always has. */
-export const collectionT =
-  (api: IExtensionApi) => (input: string, options?: Record<string, unknown>) =>
-    api.translate(input, {
-      isNamespaceKey: true,
-      ns: ["collection", "common"],
-      ...options,
-    });
+/** The keys of the collections queries. */
+const collectionKeys = {
+  /** All of a game's collection queries, which refreshing invalidates. */
+  all: (gameDomainName: GameDomain | undefined) =>
+    ["nexus", "collections", gameDomainName] as const,
+  /** One page of them, sorted and optionally searched. */
+  page: (
+    gameDomainName: GameDomain | undefined,
+    filters: { sort: CollectionSortField; direction: SortDirection; search: string; page: number },
+  ) => [...collectionKeys.all(gameDomainName), filters] as const,
+};
 
 /**
- * The active game's listed collections, searched, sorted and a page at a time, and adding
- * one. Kept above the Browse page's tabs, so the Collections tab's count and its search
- * outlive switching to Mods and back.
+ * A page of a game's listed collections, sorted and optionally searched. Its nodes are typed
+ * whole, as the search's GraphQL query selects every field a tile reads.
+ */
+const collectionsQuery = (
+  api: IExtensionApi,
+  gameDomainName: GameDomain | undefined,
+  sortBy: ISortOption,
+  search: string,
+  page: number,
+) =>
+  queryOptions({
+    queryKey: collectionKeys.page(gameDomainName, {
+      sort: sortBy.field,
+      direction: sortBy.direction,
+      search,
+      page,
+    }),
+    queryFn: gameDomainName
+      ? async (): Promise<{ nodes: ICollection[]; totalCount: number }> => {
+          const options: ICollectionSearchOptions = {
+            gameId: gameDomainName,
+            count: COLLECTIONS_PER_PAGE,
+            offset: (page - 1) * COLLECTIONS_PER_PAGE,
+            sort: { field: sortBy.field, direction: sortBy.direction },
+            search: search || undefined,
+            categoryName: [{ op: "NOT_EQUALS", value: "Wabbajack Mod List" }],
+            collectionStatuses: ["listed"],
+          };
+
+          const result = await api.ext.nexusSearchCollections(options);
+          return {
+            nodes: (result.nodes ?? []) as ICollection[],
+            totalCount: result.totalCount ?? 0,
+          };
+        }
+      : skipToken,
+  });
+
+/** Whether the API turned a search down for a term too short to match on. */
+const isSearchTooShortError = (error: Error | null) =>
+  !!error?.message?.includes("Wildcard value must have 2 or more characters");
+
+/**
+ * The active game's listed collections, searched, sorted and a page at a time. Kept above
+ * the Browse page's tabs, so the Collections tab's count and its search outlive switching to
+ * Mods and back. A search the API turns down as too short is dropped for the full list, and
+ * the box says why until what's typed changes. A failed page keeps its search's total, from
+ * its cached first page, so the pages stay to move off it.
  */
 export const useCollectionSearch = (api: IExtensionApi) => {
   const t = collectionT(api);
 
-  const gameId = useSelector((state: IState) => activeGameId(state));
-  const gameDomainName = nexusGameId(getGame(gameId), gameId);
-
-  const isLoggedIn = useSelector((state: IState) => {
-    const nexus = state.confidential?.account?.["nexus"];
-    return !!(nexus?.APIKey || nexus?.OAuthCredentials);
-  });
-  const adultContentFilter = useSelector(
-    (state: IState) => state.persistent["nexus"]?.userInfo?.adult,
-  );
-  const [collections, setCollections] = useState<ICollection[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [allCollectionsTotal, setAllCollectionsTotal] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [sortBy, setSortBy] = useState<ISortOption>(SORT_OPTIONS[1]); // Default to "Most Endorsed"
+  const gameDomainName = useGameDomainName();
+  const [sortField, setSortField] = useState<CollectionSortField>(DEFAULT_SORT.field);
+  const sortBy = SORT_OPTIONS.find((option) => option.field === sortField) ?? DEFAULT_SORT;
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeSearch, setActiveSearch] = useState<string>(""); // The search term actually being used
+  const [activeSearch, setActiveSearch] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  const [searchValidationError, setSearchValidationError] = useState<string>("");
+  const [isSearchTooShort, setIsSearchTooShort] = useState(false);
+  const queryClient = useQueryClient();
 
+  /** Searches for what's typed from the first page, or clears the search when it's empty. */
   const handleSearch = () => {
-    // Clear any previous validation errors
-    setSearchValidationError("");
-
-    // If search query is too short (1 character), show validation error
     if (searchQuery.length === 1) {
-      setSearchValidationError(t("collection:browse.searchTooShort"));
+      setIsSearchTooShort(true);
       return;
     }
 
-    // If search query is empty, clear the search
-    // If search query is 2+ characters, perform the search
+    setIsSearchTooShort(false);
     setActiveSearch(searchQuery);
     setCurrentPage(1);
   };
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setError(null);
-    setRefreshTrigger((prev) => prev + 1);
+  /** Takes what's typed, clearing the last search's validation error. */
+  const handleSearchQueryChange = (value: string) => {
+    setSearchQuery(value);
+    setIsSearchTooShort(false);
   };
 
-  const handleAddCollection = (collection: ICollection) => {
-    const revisionNumber = collection.latestPublishedRevision?.revisionNumber || "latest";
-    // Use the game domain name from the collection data (already converted)
-    const nxmUrl = buildNXMCollectionUrl(
-      collection.game.domainName,
-      collection.slug,
-      revisionNumber,
-    );
-
-    // Track the download click event
-    api.events.emit(
-      "analytics-track-mixpanel-event",
-      new CollectionsDownloadClickedEvent(collection.slug, collection.game.id),
-    );
-
-    if (adultContentFilter === false && collection.latestPublishedRevision?.adultContent) {
-      void adultContentDialog(api, collection, false).then((proceed) => {
-        if (proceed) {
-          window.api.shell.openUrl("https://next.nexusmods.com/settings/content-blocking");
-        }
-      });
-    } else {
-      // Use the Vortex API to handle the NXM link.
-      // Populate modInfo.nexus.ids so the persisted download is recognised as
-      // a collection by `nexusIdsFromDownloadId` — without these fields the
-      // download-completed analytics in DownloadObserver can't tell it apart
-      // from a non-Nexus download and silently skips the event.
-      api.events.emit(
-        "start-download",
-        [nxmUrl],
-        {
-          game: gameId,
-          source: "nexus",
-          name: collection.name,
-          nexus: {
-            ids: {
-              gameId: collection.game.domainName,
-              collectionId: collection.id,
-              revisionId: collection.latestPublishedRevision?.id,
-              collectionSlug: collection.slug,
-              revisionNumber: collection.latestPublishedRevision?.revisionNumber,
-            },
-          },
-        },
-        undefined,
-        (err: Error) => {
-          if (err && !(err instanceof UserCanceled)) {
-            api.showErrorNotification("Failed to add collection", err);
-          }
-        },
-        undefined,
-        { allowInstall: "force" },
-      );
-    }
+  /** Sorts by another option, by its field, from the first page. */
+  const handleSortChange = (field: CollectionSortField) => {
+    setSortField(field);
+    setCurrentPage(1);
   };
+
+  /** The page showing; it keeps the last page's results while the next loads, in one game. */
+  const collections = useQuery({
+    ...collectionsQuery(api, gameDomainName, sortBy, activeSearch, currentPage),
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[2] === gameDomainName ? previous : undefined,
+  });
+
+  /**
+   * The tab's total, which doesn't depend on the sort: always the default sort's first page, the
+   * very query above until the sort, page or search moves off it.
+   */
+  const allCollections = useQuery({
+    ...collectionsQuery(api, gameDomainName, DEFAULT_SORT, "", 1),
+    select: (result) => result.totalCount,
+  });
+
+  const handleRefresh = () =>
+    void queryClient.invalidateQueries({ queryKey: collectionKeys.all(gameDomainName) });
+
+  const isSearchRejected = isSearchTooShortError(collections.error);
 
   useEffect(() => {
-    if (!gameId) {
-      setLoading(false);
-      return;
+    if (isSearchRejected) {
+      setIsSearchTooShort(true);
+      setActiveSearch("");
     }
+  }, [isSearchRejected]);
 
-    setLoading(true);
-    setError(null);
-
-    const options: ICollectionSearchOptions = {
-      gameId: gameDomainName,
-      count: 20,
-      offset: (currentPage - 1) * COLLECTIONS_PER_PAGE,
-      sort: {
-        field: sortBy.field,
-        direction: sortBy.direction,
-      },
-      search: activeSearch || undefined,
-      categoryName: [{ op: "NOT_EQUALS", value: "Wabbajack Mod List" }],
-      collectionStatuses: ["listed"],
-    };
-
-    // Fetch collections using the new search API with sorting and search
-    Promise.resolve(api.ext.nexusSearchCollections(options))
-      .then((result: { nodes: ICollection[]; totalCount: number }) => {
-        setCollections(result.nodes || []);
-        setTotalCount(result.totalCount || 0);
-        // Store unfiltered total when no search is active
-        if (!activeSearch) {
-          setAllCollectionsTotal(result.totalCount || 0);
-        }
-        setLoading(false);
-      })
-      .catch((err: Error) => {
-        // Provide user-friendly error message for wildcard search requirement
-        if (err.message && err.message.includes("Wildcard value must have 2 or more characters")) {
-          const friendlyError = new Error(t("collection:browse.searchTooShort"));
-          setError(friendlyError);
-          // Also clear the invalid search so user can try again
-          setActiveSearch("");
-        } else {
-          setError(err);
-        }
-        setLoading(false);
-      });
-  }, [gameId, sortBy, activeSearch, currentPage, api, refreshTrigger]);
+  const firstPage = collectionsQuery(api, gameDomainName, sortBy, activeSearch, 1);
+  const pageTotal =
+    collections.data?.totalCount ?? queryClient.getQueryData(firstPage.queryKey)?.totalCount;
 
   return {
-    gameDomainName,
-    isLoggedIn,
-    collections,
-    totalCount,
-    allCollectionsTotal,
-    loading,
-    error,
+    collections: collections.data?.nodes ?? [],
+    totalCount: (isSearchRejected ? allCollections.data : pageTotal) ?? 0,
+    allCollectionsTotal: allCollections.data ?? 0,
+    loading: collections.isFetching || isSearchRejected,
+    error: isSearchRejected ? null : collections.error,
     sortBy,
-    setSortBy,
     searchQuery,
-    setSearchQuery,
     currentPage,
     setCurrentPage,
-    searchValidationError,
-    setSearchValidationError,
+    searchValidationError: isSearchTooShort ? t("collection:browse.searchTooShort") : "",
     handleSearch,
+    handleSearchQueryChange,
+    handleSortChange,
     handleRefresh,
-    handleAddCollection,
   };
 };
 

@@ -40,7 +40,7 @@ vi.mock("react-i18next", async (importOriginal) => ({
 }));
 
 vi.mock("../../hooks/use_collection_search/useCollectionSearch.hook", () => ({
-  useCollectionSearch: () => ({ allCollectionsTotal: 126, gameDomainName: "skyrimspecialedition" }),
+  useCollectionSearch: () => ({ allCollectionsTotal: 126 }),
 }));
 
 vi.mock("../../components/browse_collections/BrowseCollections", () => ({
@@ -52,9 +52,7 @@ vi.mock("../../components/browse_mods/BrowseMods", () => ({
 }));
 
 vi.mock("../../components/mods_coming_soon/ModsComingSoon", () => ({
-  ModsComingSoon: ({ gameDomainName }: { gameDomainName: string }) => (
-    <div>Mods coming soon for {gameDomainName}</div>
-  ),
+  ModsComingSoon: () => <div>Mods coming soon</div>,
 }));
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -121,7 +119,7 @@ describe("BrowsePage", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Mods" }));
 
-    expect(screen.getByText("Mods coming soon for skyrimspecialedition")).toBeTruthy();
+    expect(screen.getByText("Mods coming soon")).toBeTruthy();
     expect(screen.queryByText("Mods panel")).toBeNull();
   });
 
@@ -139,6 +137,6 @@ describe("BrowsePage", () => {
 
     render(<BrowsePage active api={api} />);
 
-    expect(screen.getByText("Mods coming soon for skyrimspecialedition")).toBeTruthy();
+    expect(screen.getByText("Mods coming soon")).toBeTruthy();
   });
 });

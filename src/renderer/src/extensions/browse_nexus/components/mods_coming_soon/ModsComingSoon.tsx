@@ -4,17 +4,17 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 
-import { collectionT } from "../../hooks/use_collection_search/useCollectionSearch.hook";
+import { useGameDomainName } from "../../hooks/use_game_domain_name/useGameDomainName.hook";
+import { collectionT } from "../../util/collectionT";
 
 interface IModsComingSoonProps {
   api: IExtensionApi;
-  /** The game's Nexus Mods domain, for its mods on the website. */
-  gameDomainName: string;
 }
 
 /** The Mods tab while `laz-vortex-browse-mods` is off: mods are coming, and the website has them. */
-export const ModsComingSoon = ({ api, gameDomainName }: IModsComingSoonProps) => {
+export const ModsComingSoon = ({ api }: IModsComingSoonProps) => {
   const t = collectionT(api);
+  const gameDomainName = useGameDomainName();
 
   return (
     <NoResults
