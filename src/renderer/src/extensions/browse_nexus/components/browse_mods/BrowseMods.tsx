@@ -82,6 +82,7 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
       <ModDetails
         api={api}
         gallery={gallery}
+        key={activeMod.id}
         mod={activeMod}
         ref={detailsRef}
         onFocusList={focusList}

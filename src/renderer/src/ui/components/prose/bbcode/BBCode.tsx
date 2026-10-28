@@ -3,9 +3,9 @@ import React from "react";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { renderSafeBBCode, type IBBCodeContext } from "../../../../controls/bbcode";
-import type { IProseProps } from "../Prose.types";
+import type { IProseWithImagesProps } from "../Prose.types";
 
-interface IBBCodeProps extends IProseProps {
+interface IBBCodeProps extends IProseWithImagesProps {
   /** The bbcode to render, such as a description written with `[b]` and `[url]` tags. */
   bbcode: string;
   /**
@@ -16,15 +16,21 @@ interface IBBCodeProps extends IProseProps {
 }
 
 /**
- * Bbcode, such as a description from a site or an extension, in the prose styles `Markdown`,
- * `Html` and `PlainText` render theirs in, so it needs no `Typography` around it. The tags are
- * drawn by the app's bbcode renderer. As `Html` does, it leaves out images and videos, and a link
- * is kept only if it goes to a web page, to a callback in `context`, or to a local file `context`
- * allows. Any other link is text. A `[style]` keeps only the classes our dialogs use to colour
- * text.
+ * Bbcode we don't write ourselves, such as a mod's description, in the app's prose styles. Images
+ * show only if they're from Nexus Mods, and links open only where `context` allows.
  */
-export const BBCode = ({ bbcode, context, size = "md", className }: IBBCodeProps) => (
-  <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
-    {renderSafeBBCode(bbcode, context)}
+export const BBCode = ({
+  bbcode,
+  context,
+  size = "md",
+  className,
+  isFromAdultContent,
+}: IBBCodeProps) => (
+  <div
+    className={joinClasses(["nxm-prose nxm-prose-bbcode", className], {
+      "nxm-prose-sm": size === "sm",
+    })}
+  >
+    {renderSafeBBCode(bbcode, { ...context, isFromAdultContent })}
   </div>
 );

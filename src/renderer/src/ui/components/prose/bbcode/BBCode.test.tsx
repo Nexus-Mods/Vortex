@@ -5,6 +5,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { BBCode } from "./BBCode";
 
+// The user's adult content setting is unknown, so adult images blur, as they do logged out.
+vi.mock("react-redux", () => ({ useSelector: () => undefined }));
+vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
+
 describe("BBCode", () => {
   it("renders the tags in the app's prose styles", () => {
     const { container } = render(<BBCode bbcode="A [b]bold[/b] and [i]slanted[/i] word" />);
@@ -29,13 +33,140 @@ describe("BBCode", () => {
   });
 
   describe("media", () => {
-    it("leaves out images and videos, so nothing loads from elsewhere", () => {
+    it("shows images from Nexus Mods, blurred for an adult mod", () => {
       const { container } = render(
-        <BBCode bbcode="Hi [img]https://example.com/a.png[/img] [youtube]abc123[/youtube] there" />,
+        <BBCode
+          isFromAdultContent
+          bbcode="Hi [img]https://staticdelivery.nexusmods.com/mods/1704/images/a.png[/img] there"
+        />,
       );
 
-      expect(container.querySelector("img, iframe")).toBeNull();
+      expect(container.querySelector("img")).toHaveAttribute(
+        "src",
+        "https://staticdelivery.nexusmods.com/mods/1704/images/a.png",
+      );
+      expect(container.querySelector("img")).toHaveClass("nxm-image-media-blurred");
+    });
+
+    it("leaves out images from elsewhere", () => {
+      const { container } = render(
+        <BBCode bbcode="Hi [img]https://example.com/a.png[/img] there" />,
+      );
+
+      expect(container.querySelector("img")).toBeNull();
       expect(container).toHaveTextContent("Hi there");
+    });
+
+    it.each([
+      ["[img=right]", "[/img]"],
+      ["[img align=right]", "[/img]"],
+      ["[aimg=right]", "[/aimg]"],
+    ])("puts an image on the side %s asks for", (open, close) => {
+      const { container } = render(
+        <BBCode
+          bbcode={`${open}https://staticdelivery.nexusmods.com/mods/1704/images/a.png${close}`}
+        />,
+      );
+
+      expect(container.querySelector("img")!.closest(".text-right")).not.toBeNull();
+    });
+
+    it.each([
+      ["[img width=300,height=200]", "300px", `${300 / 200}`],
+      ["[img width=300]", "300px", ""],
+    ])("sizes an image as %s asks", (open, width, ratio) => {
+      const { container } = render(
+        <BBCode
+          bbcode={`${open}https://staticdelivery.nexusmods.com/mods/1704/images/a.png[/img]`}
+        />,
+      );
+
+      const wrapper = container.querySelector("img")!.closest<HTMLElement>("[style]")!;
+      expect(wrapper.style.getPropertyValue("--prose-image-width")).toBe(width);
+      expect(wrapper.style.getPropertyValue("--prose-image-ratio")).toBe(ratio);
+    });
+
+    it("shows both images of a comparison", () => {
+      const { container } = render(
+        <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
+      );
+
+      expect([...container.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual([
+        "https://staticdelivery.nexusmods.com/mods/1704/images/before.png",
+        "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
+      ]);
+    });
+  });
+
+  describe("embeds", () => {
+    it.each([
+      ["[youtube]abc123[/youtube]", "https://www.youtube.com/watch?v=abc123"],
+      ["[video]abc123[/video]", "https://www.youtube.com/watch?v=abc123"],
+      ["[soundcloud]https://soundcloud.com/a/b[/soundcloud]", "https://soundcloud.com/a/b"],
+    ])("links %s instead of playing it", (bbcode, href) => {
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(screen.getByRole("link", { name: href })).toHaveAttribute("href", href);
+      expect(container.querySelector("iframe")).toBeNull();
+    });
+
+    it("links a twitter handle", () => {
+      render(<BBCode bbcode="[twitter]NexusSites[/twitter]" />);
+
+      expect(screen.getByRole("link", { name: "@NexusSites" })).toHaveAttribute(
+        "href",
+        "https://twitter.com/NexusSites",
+      );
+    });
+
+    it("leaves an embed that isn't a web page as text", () => {
+      render(<BBCode bbcode="[soundcloud]file:///C:/a.mp3[/soundcloud]" />);
+
+      expect(screen.queryByRole("link")).toBeNull();
+      expect(screen.getByText("file:///C:/a.mp3")).toBeInTheDocument();
+    });
+  });
+
+  describe("spoiler", () => {
+    it("hides its text behind a button, labelled as the tag says", async () => {
+      render(<BBCode bbcode='[spoiler label="Show detailed error"]Stack trace[/spoiler]' />);
+
+      expect(screen.queryByText("Stack trace")).toBeNull();
+
+      await userEvent.click(screen.getByRole("button", { name: "Show detailed error" }));
+
+      expect(screen.getByText("Stack trace")).toBeInTheDocument();
+    });
+
+    it("opens on its text, not the blank lines it starts with", async () => {
+      render(<BBCode bbcode={"[spoiler]\n<br />\n<br />Hidden<br />text[/spoiler]"} />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Spoiler" }));
+
+      const content = screen.getByText(/Hidden/);
+      expect(content.firstChild).toHaveTextContent("Hidden");
+      expect(content.querySelectorAll("br")).toHaveLength(1);
+    });
+  });
+
+  describe("layout", () => {
+    it("aligns [left] text, rather than showing the tag", () => {
+      const { container } = render(<BBCode bbcode="[left]Hi[/left]" />);
+
+      expect(screen.getByText("Hi")).toHaveStyle({ textAlign: "left" });
+      expect(container).not.toHaveTextContent("[left]");
+    });
+
+    it.each([
+      ["[ol][*]a[*]b[/ol]", "ol"],
+      ["[ul][*]a[*]b[/ul]", "ul"],
+    ])("draws the legacy list %s as a list", (bbcode, list) => {
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(
+        [...container.querySelectorAll(`${list} > li`)].map((item) => item.textContent),
+      ).toEqual(["a", "b"]);
+      expect(container).not.toHaveTextContent(/\[\/?[ou]l\]/);
     });
   });
 
@@ -97,9 +228,12 @@ describe("BBCode", () => {
 
   describe("size", () => {
     it.each([
-      ["keeps a size it may use", "[size=3]", "1.3rem"],
-      ["caps a size too big for the dialog", "[size=2000]", "1.6rem"],
-      ["raises a size too small to read", "[size=-20]", "1rem"],
+      ["draws size 3 as the text's own", "[size=3]", "1em"],
+      ["draws size 6 as the site does", "[size=6]", "2em"],
+      ["draws size 1 as the site does", "[size=1]", "0.625em"],
+      ["draws an older percentage as the size it stands for", "[size=150]", "1.125em"],
+      ["leaves a size the site doesn't have at the text's own", "[size=2000]", "1em"],
+      ["leaves a negative size at the text's own", "[size=-20]", "1em"],
     ])("%s", (_name, tag, fontSize) => {
       render(<BBCode bbcode={`${tag}Big[/size]`} />);
 

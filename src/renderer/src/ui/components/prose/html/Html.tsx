@@ -4,10 +4,11 @@ import React from "react";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { webHref } from "@/ui/utils/webHref";
 
-import type { IProseProps } from "../Prose.types";
+import type { IProseWithImagesProps } from "../Prose.types";
+import { ProseImage } from "../prose_image/ProseImage";
 
-/** Elements that load media, which go entirely, as an attribute such as `srcset` could load it. */
-const MEDIA = new Set(["img", "picture", "source", "video", "audio", "track"]);
+/** Elements that load media other than an image, which go entirely. */
+const MEDIA = new Set(["picture", "source", "video", "audio", "track"]);
 
 /** The media that can be allowed: what a GitHub release's notes embed. The rest always goes. */
 const ALLOWED_MEDIA = new Set(["img", "source", "video"]);
@@ -23,15 +24,20 @@ const keepLinkTargetsToWebPages = (name: string, node: HTMLElement) => {
 };
 
 /**
- * Leaves out media, so HTML we don't write can't load from elsewhere, and any link's target
- * that isn't a web page, so it can't open a file or app.
+ * Leaves out media other than images, which `ProseImage` checks, and any link's target that
+ * isn't a web page, so HTML we don't write can't load from elsewhere or open a file or app.
  */
 const leaveOutUntrusted = (name: string, node: HTMLElement) => {
   if (MEDIA.has(name)) {
     return null;
   }
 
-  node.removeAttribute("src");
+  node.removeAttribute("srcset");
+
+  if (name !== "img") {
+    node.removeAttribute("src");
+  }
+
   keepLinkTargetsToWebPages(name, node);
 
   return node;
@@ -76,7 +82,24 @@ const unwrapDetails = (html: string) => {
   return document.body.innerHTML;
 };
 
-interface IHtmlProps extends IProseProps {
+/** An `img` as a `ProseImage`; anything else is left as it is. */
+const imageFrom = (node: HTMLElement, isFromAdultContent: boolean | undefined) => {
+  if (node.tagName !== "IMG") {
+    return undefined;
+  }
+
+  return (
+    <ProseImage
+      alt={node.getAttribute("alt") ?? ""}
+      height={Number(node.getAttribute("height")) || undefined}
+      isFromAdultContent={isFromAdultContent}
+      src={node.getAttribute("src") ?? undefined}
+      width={Number(node.getAttribute("width")) || undefined}
+    />
+  );
+};
+
+interface IHtmlProps extends IProseWithImagesProps {
   /** The HTML to render, such as a mod's changelog from Nexus Mods. */
   html: string;
   /**
@@ -87,17 +110,23 @@ interface IHtmlProps extends IProseProps {
 }
 
 /**
- * HTML we don't write ourselves, such as a mod's changelog, sanitised and rendered in the
- * app's prose styles, as `Markdown` renders markdown. Its links to web pages open in the
- * browser, as the window sends any navigation there; other links are text, and media is left out
- * unless `allowMedia` is set.
+ * HTML we don't write ourselves, such as a mod's changelog, sanitised, in the app's prose styles.
+ * Links open only if they go to a web page, and images show only if they're from Nexus Mods,
+ * unless `allowMedia` is set, when images and video from any web address are kept.
  */
-export const Html = ({ html, size = "md", className, allowMedia = false }: IHtmlProps) => (
+export const Html = ({
+  html,
+  size = "md",
+  className,
+  isFromAdultContent,
+  allowMedia = false,
+}: IHtmlProps) => (
   <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
     <Interweave
       noWrap
       content={allowMedia ? unwrapDetails(html) : html}
       filters={allowMedia ? FILTERS_KEEPING_MEDIA : FILTERS}
+      transform={allowMedia ? undefined : (node) => imageFrom(node, isFromAdultContent)}
     />
   </div>
 );

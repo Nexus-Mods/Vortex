@@ -178,7 +178,13 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                     </Typography>
                   )}
 
-                  {!!details.data?.description && <BBCode bbcode={details.data.description} />}
+                  {!!details.data?.description && (
+                    <BBCode
+                      bbcode={details.data.description}
+                      className="text-neutral-strong"
+                      isFromAdultContent={mod.adult}
+                    />
+                  )}
                 </div>
               </div>
             </TabPanel>

@@ -114,6 +114,22 @@
         }
     }
 
+    /* Bbcode, which spaces itself with line breaks, so it has no gaps between its blocks. As the
+       site does, a line break straight after an aligned block or before a list item is dropped,
+       as the block or item already starts a line, and so is an aligned block left empty. */
+    .nxm-prose-bbcode {
+        & > :where(* + *),
+        & :where(section, div) > :where(* + *) {
+            margin-top: 0;
+        }
+
+        & :where(div):empty,
+        & :where(div) + br,
+        & :where(ul, ol) > br:has(+ li) {
+            display: none;
+        }
+    }
+
     /* Small prose, as in a popover. Where a size's headings should stand apart by size too,
        that's set here, per size. */
     .nxm-prose-sm {

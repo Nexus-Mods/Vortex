@@ -1,8 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Markdown } from "./Markdown";
+
+// The user's adult content setting is unknown, so adult images blur, as they do logged out.
+vi.mock("react-redux", () => ({ useSelector: () => undefined }));
+vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
 
 describe("Markdown", () => {
   it("renders the markdown in the app's prose styles", () => {
@@ -50,7 +54,22 @@ describe("Markdown", () => {
     expect(screen.getByText("file")).toBeInTheDocument();
   });
 
-  it("leaves out images, so nothing loads from elsewhere", () => {
+  it("shows images from Nexus Mods, blurred for an adult mod", () => {
+    const { container } = render(
+      <Markdown
+        isFromAdultContent
+        markdown={"Hi ![a](https://staticdelivery.nexusmods.com/mods/1704/images/a.png)"}
+      />,
+    );
+
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src",
+      "https://staticdelivery.nexusmods.com/mods/1704/images/a.png",
+    );
+    expect(container.querySelector("img")).toHaveClass("nxm-image-media-blurred");
+  });
+
+  it("leaves out images from elsewhere", () => {
     const { container } = render(<Markdown markdown={"Hi ![a](https://example.com/a.png)"} />);
 
     expect(container.querySelector("img")).toBeNull();

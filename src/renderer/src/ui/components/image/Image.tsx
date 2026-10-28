@@ -24,6 +24,8 @@ export interface IImageProps extends Omit<
   isBlurred?: boolean;
   /** Shows the spinner, for a picture the caller knows is coming before it has a `src`. */
   isLoading?: boolean;
+  /** Gives the frame its background and border. Default `true`. */
+  isStyled?: boolean;
 }
 
 const imageTypeMap: Record<NonNullable<IImageProps["imageType"]>, string> = {
@@ -44,6 +46,7 @@ export const Image = ({
   imageType = "other",
   isBlurred,
   isLoading,
+  isStyled = true,
   onError,
   onLoad,
   src,
@@ -71,7 +74,11 @@ export const Image = ({
   const showFallback = errored || (fallbackIcon !== undefined && !src && isLoading !== true);
 
   return (
-    <div className={joinClasses(["nxm-image", imageTypeMap[imageType], className])}>
+    <span
+      className={joinClasses(["nxm-image", imageTypeMap[imageType], className], {
+        "nxm-image-styled": isStyled,
+      })}
+    >
       {!showFallback ? (
         <img
           {...rest}
@@ -117,7 +124,7 @@ export const Image = ({
 
       {children}
 
-      <div className="nxm-image-frame" />
-    </div>
+      {isStyled && <span className="nxm-image-frame" />}
+    </span>
   );
 };

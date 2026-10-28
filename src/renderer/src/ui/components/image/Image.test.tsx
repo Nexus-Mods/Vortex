@@ -35,6 +35,16 @@ describe("Image", () => {
       renderComponent({ children: <span data-testid="badge" /> });
       expect(screen.getByTestId("badge")).toBeInTheDocument();
     });
+
+    it("frames the picture, unless it's told not to style it", () => {
+      const { rerender } = renderComponent();
+      expect(document.querySelector(".nxm-image-frame")).toBeInTheDocument();
+      expect(getContainer()).toHaveClass("nxm-image-styled");
+
+      rerender(<Image alt="A mod" isStyled={false} src="mod.png" />);
+      expect(document.querySelector(".nxm-image-frame")).toBeNull();
+      expect(getContainer()).not.toHaveClass("nxm-image-styled");
+    });
   });
 
   describe("loading", () => {
