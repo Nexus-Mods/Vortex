@@ -134,7 +134,7 @@
   },
   "requirement_links_modal": {
     "title": "Link Nexus requirements",
-    "description": "These mods list requirements on Nexus Mods. Linking the ones you have installed adds a dependency rule, so enabling a mod offers to enable what it needs. Optional links only take part when you choose to include recommended mods; ignoring a requirement removes its link. Requirements you don't have are listed too, but can't be linked.",
+    "description": "Link requirements so that enabling a mod also offers to enable the mods it needs.",
     "choices": {
       "requires": "Required",
       "recommends": "Optional",
