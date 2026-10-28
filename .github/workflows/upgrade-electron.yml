@@ -53,17 +53,17 @@ jobs:
 
       - name: Upgrade Electron
         id: upgrade
-        run: node scripts/upgrade-electron.mjs
+        uses: ./.github/actions/upgrade-electron
 
       - name: Open a PR
         if: steps.upgrade.outputs.updated == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           BASE: ${{ github.ref_name }}
-          ELECTRON_OLD: ${{ steps.upgrade.outputs.electron_old }}
-          ELECTRON_NEW: ${{ steps.upgrade.outputs.electron_new }}
-          NODE_OLD: ${{ steps.upgrade.outputs.node_old }}
-          NODE_NEW: ${{ steps.upgrade.outputs.node_new }}
-          NODE_ABI_OLD: ${{ steps.upgrade.outputs.node_abi_old }}
-          NODE_ABI_NEW: ${{ steps.upgrade.outputs.node_abi_new }}
+          ELECTRON_OLD: ${{ steps.upgrade.outputs.electron-old }}
+          ELECTRON_NEW: ${{ steps.upgrade.outputs.electron-new }}
+          NODE_OLD: ${{ steps.upgrade.outputs.node-old }}
+          NODE_NEW: ${{ steps.upgrade.outputs.node-new }}
+          NODE_ABI_OLD: ${{ steps.upgrade.outputs.node-abi-old }}
+          NODE_ABI_NEW: ${{ steps.upgrade.outputs.node-abi-new }}
         run: bash .github/scripts/open-electron-upgrade-pr.sh
