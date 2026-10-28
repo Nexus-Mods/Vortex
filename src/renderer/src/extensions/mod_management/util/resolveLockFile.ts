@@ -1,11 +1,21 @@
-import { FileSourceKind, resolve, type Lockfile } from "@nexusmods/mod-pipeline";
+import {
+  DiskEntryKind,
+  FileSourceKind,
+  OperationKind,
+  plan,
+  resolve,
+  type Lockfile,
+} from "@nexusmods/mod-pipeline";
 import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { fileMD5 } from "../../../util/checksum";
+import Debouncer from "../../../util/Debouncer";
+import { getGame } from "../../gamemode_management/util/getGame";
 import { lastActiveProfileForGame } from "../../profile_management/selectors";
+import { scanDeploymentTargets } from "./diskScan";
 import { addGeneratedFiles } from "./generatedFiles";
 import {
   LockfileContributions,
@@ -54,14 +64,58 @@ export async function resolveLockfile(
   return addGeneratedFiles(resolve(input), generatedFiles);
 }
 
+// the lockfile planned last in this session per game, the next plan's previous lockfile
+const lastPlannedLockfiles = new Map<VortexGameId, Lockfile>();
+
+const elapsedMsSince = (startedAt: Temporal.Instant) =>
+  Temporal.Now.instant().since(startedAt).total("milliseconds");
+
+/** Scans the game's deployment targets and logs the plan from the last lockfile planned. */
+async function logPlan(api: IExtensionApi, gameMode: VortexGameId, lockfile: Lockfile) {
+  const game = getGame(gameMode);
+  const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
+  if (game === undefined || gamePath === undefined) {
+    return;
+  }
+  try {
+    const previous = lastPlannedLockfiles.get(gameMode);
+    const scanStartedAt = Temporal.Now.instant();
+    const disk = await scanDeploymentTargets(
+      Object.values(game.getModPaths(gamePath)),
+      [...lockfile.files, ...(previous?.files ?? [])].map(({ destinationPath }) => destinationPath),
+    );
+    const scanMs = elapsedMsSince(scanStartedAt);
+    const planStartedAt = Temporal.Now.instant();
+    const operations = plan(lockfile, previous, disk);
+    const planMs = elapsedMsSince(planStartedAt);
+    lastPlannedLockfiles.set(gameMode, lockfile);
+
+    log("info", "planned lockfile", {
+      gameMode,
+      firstRun: previous === undefined,
+      roots: disk.roots.length,
+      diskEntries: disk.entries.length,
+      diskLinks: disk.entries.filter((entry) => entry.kind === DiskEntryKind.Link).length,
+      backups: operations.filter((operation) => operation.kind === OperationKind.Backup).length,
+      unlinks: operations.filter((operation) => operation.kind === OperationKind.Unlink).length,
+      links: operations.filter((operation) => operation.kind === OperationKind.Link).length,
+      scanMs,
+      planMs,
+    });
+  } catch (err) {
+    log("warn", "failed to plan lockfile", { gameMode, error: getErrorMessageOrDefault(err) });
+  }
+}
+
 async function logResolvedLockfile(
   api: IExtensionApi,
   gameMode: VortexGameId,
   hashFile: (filePath: string) => Promise<string>,
 ): Promise<void> {
   const startedAt = Temporal.Now.instant();
+  let lockfile: Lockfile;
   try {
-    const lockfile = await resolveLockfile(api, gameMode, registeredContributions, hashFile);
+    lockfile = await resolveLockfile(api, gameMode, registeredContributions, hashFile);
     log("info", "resolved lockfile", {
       gameMode,
       files: lockfile.files.length,
@@ -69,24 +123,37 @@ async function logResolvedLockfile(
       generatedFiles: lockfile.files.filter(
         (file) => file.source === FileSourceKind.VortexGenerated,
       ).length,
-      elapsedMs: Temporal.Now.instant().since(startedAt).total("milliseconds"),
+      elapsedMs: elapsedMsSince(startedAt),
     });
   } catch (err) {
     log("warn", "failed to resolve lockfile", {
       gameMode,
       error: getErrorMessageOrDefault(err),
     });
+    return;
   }
+  await logPlan(api, gameMode, lockfile);
 }
 
-/** Resolves and logs the lockfile once a plugin sort has run after a deployment. */
+/**
+ * Resolves and logs the lockfile once a plugin sort has run after a deployment. Runs for a game
+ * never overlap: sorts during a run lead to one more run after it.
+ */
 export function registerResolveLockFile(
   api: IExtensionApi,
   hashFile: (filePath: string) => Promise<string> = fileMD5,
 ): void {
+  const runsByGame = new Map<VortexGameId, Debouncer>();
   api.events.on("did-sort-plugins", (gameId: string) => {
-    if (RESOLVED_GAMES.has(gameId)) {
-      void logResolvedLockfile(api, VortexGameId(gameId), hashFile);
+    if (!RESOLVED_GAMES.has(gameId)) {
+      return;
     }
+    const gameMode = VortexGameId(gameId);
+    let runs = runsByGame.get(gameMode);
+    if (runs === undefined) {
+      runs = new Debouncer(() => logResolvedLockfile(api, gameMode, hashFile), 0, false);
+      runsByGame.set(gameMode, runs);
+    }
+    runs.schedule();
   });
 }

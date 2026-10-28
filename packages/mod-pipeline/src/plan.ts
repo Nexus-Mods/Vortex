@@ -7,7 +7,7 @@ import {
   type Lockfile,
   type FileEntry,
 } from "./lockfile";
-import { pathKeyOf } from "./pathKey";
+import { folderKeyOf, pathKeyOf } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -187,7 +187,7 @@ function filesByKey(files: readonly FileSource[]): Map<string, FileSource> {
 
 /** Throws on a destination outside the scanned folders and on an unsorted scan. */
 function checkInputs(destinations: ReadonlyArray<[string, LockfileFilesAt]>, disk: DiskScan): void {
-  const rootPrefixes = disk.roots.map((root) => pathKeyOf(root.endsWith("/") ? root : `${root}/`));
+  const rootPrefixes = disk.roots.map(folderKeyOf);
   for (const [destinationKey, files] of destinations) {
     const covered = rootPrefixes.some(
       (prefix) =>

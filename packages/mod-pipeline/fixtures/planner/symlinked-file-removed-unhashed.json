@@ -38,8 +38,7 @@
         "path": "/fixture-root/game/Data/SkyUI_SE.esp",
         "kind": "link",
         "size": 0,
-        "mtimeMs": 1760000000000,
-        "linkTarget": "/fixture-root/staging/SkyUI/SkyUI_SE.esp"
+        "modifiedTime": "2025-10-09T08:53:20Z"
       }
     ]
   },

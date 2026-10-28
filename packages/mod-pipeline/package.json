@@ -34,5 +34,8 @@
   },
   "dependencies": {
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "temporal-polyfill": "catalog:"
   }
 }
