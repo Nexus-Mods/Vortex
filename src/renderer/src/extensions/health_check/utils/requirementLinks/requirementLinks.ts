@@ -43,6 +43,21 @@ export interface IRequirementLink {
   current?: RequirementLinkChoice;
   /** The rule that links it now, which a change replaces or removes. */
   rule?: IModRule;
+  /** For a file-level requirement: set when the mod is installed, but in no version it accepts. */
+  wrongVersion?: IWrongVersion;
+}
+
+/** How the installed copy of a required mod falls short of a file-level requirement. */
+export interface IWrongVersion {
+  /** The installed copy's version, if it has one. */
+  installed?: string;
+  /** What the requirement accepts of that mod. */
+  wanted: IMissingRequirementOption;
+  /**
+   * The installed version is one it accepts, of another file of the mod: an optional file, say,
+   * where the main one is needed. Not older or newer, so the version alone wouldn't explain it.
+   */
+  differentFile: boolean;
 }
 
 /** A Nexus requirement of one installed mod that nothing installed satisfies. */
@@ -153,15 +168,21 @@ const dependencyRuleFor = (mod: IMod, targets: IMod[]): IModRule | undefined =>
 /**
  * The requirements of the source mods that installed mods satisfy, and how each is linked now:
  * those listed on the mod page, then the file-level ones of its installed file. A mod required by
- * both is listed once, with the mod page's note. External requirements and those of
- * collection-managed mods are left out.
+ * both is listed once, with the mod page's note and the file's version warning. External
+ * requirements and those of collection-managed mods are left out.
  */
 export function findRequirementLinks(input: IFindRequirementLinksInput): IRequirementLink[] {
   const installed = indexInstalled(input);
   const links: IRequirementLink[] = [];
   const add = (link: IRequirementLink | undefined) => {
-    if (link !== undefined && !links.some((existing) => existing.key === link.key)) {
+    if (link === undefined) {
+      return;
+    }
+    const existing = links.find((other) => other.key === link.key);
+    if (existing === undefined) {
       links.push(link);
+    } else {
+      existing.wrongVersion ??= link.wrongVersion;
     }
   };
 
@@ -203,19 +224,49 @@ function linkFor(
   return linkTo(source, targets, targetUid, req.notes?.trim() || undefined);
 }
 
-/** A file-level requirement's link, to whichever acceptable file is installed, enabled first. */
+/**
+ * A file-level requirement's link, to whichever acceptable file is installed, enabled first. With
+ * none installed, to the mod installed in another version, with a warning: the link's rule takes
+ * any version, so it's right once the mod is updated.
+ */
 function fileLinkFor(
   input: IFindRequirementLinksInput,
   installed: IInstalled,
   source: IMod,
   definition: IFileRequirementDefinition,
 ): IRequirementLink | undefined {
-  const targets = definition.files
+  const notSource = (mod: IMod | undefined): mod is IMod =>
+    mod !== undefined && mod.id !== source.id;
+  const accepted = definition.files
     .map((file) => installed.byFileUid.get(file.fileUid))
-    .filter((mod): mod is IMod => mod !== undefined && mod.id !== source.id)
+    .filter(notSource)
     .sort(enabledFirst(input));
-  const targetUid = targets.length > 0 ? input.uidOf(targets[0]) : undefined;
-  return targetUid === undefined ? undefined : linkTo(source, targets, targetUid, undefined);
+  if (accepted.length > 0) {
+    const targetUid = input.uidOf(accepted[0]);
+    return targetUid === undefined ? undefined : linkTo(source, accepted, targetUid, undefined);
+  }
+
+  const others = [...new Set(definition.files.map((file) => file.modUid))]
+    .flatMap((uid) => installed.byUid.get(uid) ?? [])
+    .filter(notSource)
+    .sort(enabledFirst(input));
+  const targetUid = others.length > 0 ? input.uidOf(others[0]) : undefined;
+  if (targetUid === undefined) {
+    return undefined;
+  }
+  const link = linkTo(source, others, targetUid, undefined);
+  const wanted = definition.files.filter((file) => file.modUid === targetUid);
+  const version: string | undefined = others[0].attributes?.version || undefined;
+  return link === undefined
+    ? undefined
+    : {
+        ...link,
+        wrongVersion: {
+          installed: version,
+          wanted: missingOption(wanted),
+          differentFile: version !== undefined && wanted.some((file) => file.version === version),
+        },
+      };
 }
 
 /**
@@ -254,7 +305,7 @@ function linkTo(
  * The requirements of the source mods that nothing installed satisfies, as the mod page and the
  * installed file list them. A mod required both ways is listed once, with the mod page's note and
  * the file's versions. A file-level requirement of a mod that is installed, only not in an
- * acceptable version, isn't missing, so isn't listed.
+ * acceptable version, isn't missing: it's linked, with a warning.
  */
 export function findMissingRequirements(input: IFindRequirementLinksInput): IMissingRequirement[] {
   const installed = indexInstalled(input);

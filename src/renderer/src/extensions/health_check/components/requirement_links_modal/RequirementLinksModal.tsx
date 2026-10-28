@@ -13,6 +13,7 @@ import type {
 import { MissingRequirementRow } from "./MissingRequirementRow";
 import { RequirementNote } from "./RequirementNote";
 import { type IToggleButtonOption, ToggleButtonGroup } from "./ToggleButtonGroup";
+import { wrongVersionLine } from "./wrongVersionLine";
 
 export interface IRequirementLinksModalProps {
   visible: boolean;
@@ -117,6 +118,18 @@ export const RequirementLinksModal = ({
                   <li className="flex items-start justify-between gap-4" key={link.key}>
                     <div className="min-w-0">
                       <Typography typographyType="body-sm">{link.targetName}</Typography>
+
+                      {link.wrongVersion !== undefined && (
+                        <Typography
+                          appearance="moderate"
+                          as="div"
+                          brand="warning"
+                          data-testid="requirement-wrong-version"
+                          typographyType="body-xs"
+                        >
+                          {wrongVersionLine(link.wrongVersion, t)}
+                        </Typography>
+                      )}
 
                       {link.notes !== undefined && <RequirementNote notes={link.notes} />}
                     </div>

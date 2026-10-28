@@ -260,6 +260,88 @@ describe("findRequirementLinks, for file-level requirements", () => {
       expect.objectContaining({ current: "requires", rule }),
     ]);
   });
+
+  it("gives no version warning when an acceptable file is installed", () => {
+    expect(findRequirementLinks(requiringFiles(["file-1070"]))[0].wrongVersion).toBeUndefined();
+  });
+});
+
+describe("findRequirementLinks, for a mod installed in a version a file requires none of", () => {
+  // CET (107) is installed as file 1070, version 1.0.0
+  const newerCet = [
+    requiredFile("file-1090", {
+      modUid: "uid-107",
+      position: 2,
+      version: "1.3",
+      fileName: "CET 1.3",
+      modName: "CET",
+    }),
+    requiredFile("file-1080", { modUid: "uid-107", position: 1, version: "1.2", modName: "CET" }),
+  ];
+
+  it("links the installed mod, warning with its version and the versions needed", () => {
+    expect(findRequirementLinks(requiringFiles(newerCet))).toEqual([
+      expect.objectContaining({
+        targetModId: "cet",
+        targetUid: "uid-107",
+        wrongVersion: {
+          installed: "1.0.0",
+          wanted: {
+            modName: "CET",
+            fileName: "CET 1.3",
+            versions: { oldest: "1.2", newest: "1.3" },
+          },
+          differentFile: false,
+        },
+      }),
+    ]);
+  });
+
+  it("tells a different file of the mod in an accepted version from a wrong version", () => {
+    const otherFile = requiredFile("file-1080", { modUid: "uid-107", version: "1.0.0" });
+
+    expect(findRequirementLinks(requiringFiles([otherFile]))[0].wrongVersion?.differentFile).toBe(
+      true,
+    );
+  });
+
+  it("links an acceptable file over another version of the mod, even a disabled one", () => {
+    const input = requiringFiles([requiredFile("file-1080", { modUid: "uid-107" })], {
+      isEnabled: (modId) => modId === "cet",
+    });
+    const accepted = nexusMod("cet-new", 107);
+    accepted.attributes = { ...accepted.attributes, fileId: 1080 };
+    input.mods = { ...input.mods, "cet-new": accepted };
+
+    const links = findRequirementLinks(input);
+
+    expect(links).toEqual([expect.objectContaining({ targetModId: "cet-new" })]);
+    expect(links[0].wrongVersion).toBeUndefined();
+  });
+
+  it("warns on a mod required both ways, keeping the mod page's note", () => {
+    const links = findRequirementLinks(
+      requiringFiles(newerCet, {
+        requirements: withRequirements([requirement(107, { notes: "Needed for UI" })]),
+      }),
+    );
+
+    expect(links).toHaveLength(1);
+    expect(links[0].notes).toBe("Needed for UI");
+    expect(links[0].wrongVersion?.installed).toBe("1.0.0");
+  });
+
+  it("shows how it's linked now", () => {
+    const input = requiringFiles(newerCet);
+    const rule = makeRequirementRule(findRequirementLinks(input)[0], input.mods.cet, "requires");
+    input.mods.settings = { ...input.mods.settings, rules: [rule] };
+
+    expect(findRequirementLinks(input)[0].current).toBe("requires");
+  });
+
+  it("isn't listed as missing", () => {
+    expect(findMissingRequirements(requiringFiles(newerCet))).toEqual([]);
+  });
 });
 
 describe("findMissingRequirements", () => {

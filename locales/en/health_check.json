@@ -145,6 +145,14 @@
     "or": " or ",
     "version": "Version {{version}}",
     "versions": "Versions {{oldest}} to {{newest}}",
+    "wrong_version": {
+      "installed": "Version {{installed}} installed · needs {{needed}}",
+      "needs": "Needs version {{needed}}",
+      "range": "{{oldest}} to {{newest}}",
+      "unknown": "The installed version isn't one it accepts",
+      "different_file": "A different file of this mod is installed",
+      "different_file_named": "A different file of this mod is installed · needs {{fileName}}"
+    },
     "buttons": {
       "cancel": "Cancel",
       "close": "Close",

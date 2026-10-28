@@ -91,8 +91,8 @@ async function fetchFileRequirements(
 
 /**
  * Fills in the names and versions of the acceptable files of the requirements nothing installed
- * satisfies, which are shown as not installed; those of the rest aren't needed. Display data only,
- * so a failed lookup leaves them out.
+ * satisfies, which are shown as not installed or as the wrong version; those of the rest aren't
+ * needed. Display data only, so a failed lookup leaves them out.
  */
 async function describeUnmetFiles(
   api: IExtensionApi,
