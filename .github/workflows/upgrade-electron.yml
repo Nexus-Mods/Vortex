@@ -1,0 +1,69 @@
+name: Upgrade Electron
+
+# Upgrades Electron within its current major and keeps the pinned Node.js equal
+# to the Node.js that Electron bundles (see scripts/upgrade-electron.mjs).
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+
+permissions:
+  contents: read
+
+env:
+  # The upgrade never loads Electron, so skip the native rebuild the app needs.
+  VORTEX_ELECTRON_REBUILD: "skip"
+
+jobs:
+  upgrade-electron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Configure Git
+        run: |
+          git config user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+
+      - name: Install pnpm
+        uses: ./.github/actions/setup-pnpm
+
+      # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
+      - name: Install fontconfig
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+
+      - name: Upgrade Electron
+        id: upgrade
+        uses: ./.github/actions/upgrade-electron
+
+      - name: Open a PR
+        if: steps.upgrade.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BASE: ${{ github.ref_name }}
+          ELECTRON_OLD: ${{ steps.upgrade.outputs.electron-old }}
+          ELECTRON_NEW: ${{ steps.upgrade.outputs.electron-new }}
+          NODE_OLD: ${{ steps.upgrade.outputs.node-old }}
+          NODE_NEW: ${{ steps.upgrade.outputs.node-new }}
+          NODE_ABI_OLD: ${{ steps.upgrade.outputs.node-abi-old }}
+          NODE_ABI_NEW: ${{ steps.upgrade.outputs.node-abi-new }}
+        run: bash .github/scripts/open-electron-upgrade-pr.sh
