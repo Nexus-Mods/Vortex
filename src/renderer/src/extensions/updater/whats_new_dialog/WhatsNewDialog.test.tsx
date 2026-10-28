@@ -83,6 +83,18 @@ describe("WhatsNewDialog", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it("makes Close the strong button when it is alone", () => {
+    renderDialog({ version: "2.7.0", notes: "<p>Notes</p>" });
+
+    expect(screen.getByRole("button", { name: "Close" })).toHaveClass("nxm-button-strong");
+  });
+
+  it("makes Close the quieter button beside the update's", () => {
+    renderDialog({ version: "2.7.0", notes: "<p>Notes</p>", action: "download" });
+
+    expect(screen.getByRole("button", { name: "Close" })).toHaveClass("nxm-button-moderate");
+  });
+
   it("says so when there are no notes", () => {
     renderDialog({ version: "2.7.0" });
     expect(screen.getByRole("dialog")).toHaveTextContent(
