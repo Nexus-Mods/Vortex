@@ -1,3 +1,5 @@
+import { PathError } from "@nexusmods/paths";
+
 import { z } from "../zodJitless";
 import { VortexError, type VortexErrorKindMap } from "./base";
 
@@ -22,6 +24,10 @@ export function parseError(
     }
 
     return new VortexError(`Unknown error thrown as string: '${cause}'`, { kind: "unknown" });
+  }
+
+  if (cause instanceof PathError) {
+    return new VortexError(cause.message, { kind: "fs:invalid-path", path: cause.path }, { cause });
   }
 
   const parsedSystemError = parseNodeSystemError(cause, context);

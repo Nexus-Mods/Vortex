@@ -71,6 +71,7 @@
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
+    "@nexusmods/paths": "workspace:*",
     "@nexusmods/steam-kv-parser": "workspace:*",
     "@nosferatu500/react-sortable-tree": "catalog:",
     "@opentelemetry/api": "catalog:",
