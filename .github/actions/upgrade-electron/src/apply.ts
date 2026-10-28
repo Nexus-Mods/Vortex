@@ -27,13 +27,12 @@ const edit = (io: ApplyIo, file: string, transform: (text: string) => string): v
 };
 
 /**
- * Applies the plan to the working tree. Installing with a frozen lockfile
- * first means a stale lockfile fails before anything is changed, and each
- * edit is followed by an install so pnpm-lock.yaml tracks it.
+ * Applies the plan to the working tree. Each edit is followed by an install so
+ * pnpm-lock.yaml tracks it. The caller must already have installed with a
+ * frozen lockfile, which both proves the lockfile is current before anything is
+ * changed and provides the installed node-abi the plan was checked against.
  */
 export const applyPlan = async (plan: Plan, io: ApplyIo): Promise<void> => {
-  await io.install({ frozen: true });
-
   if (plan.nodeAbi !== undefined) {
     const { from, to } = plan.nodeAbi;
     edit(io, WORKSPACE_YAML, (text) => setNodeAbi(text, from, to));
