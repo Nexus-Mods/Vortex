@@ -11,7 +11,9 @@ const execFileAsync = promisify(execFile);
 /** Runs `pnpm install` in `cwd`, streaming its output to the log. */
 const pnpmInstall = (cwd: string, frozen: boolean): Promise<void> =>
   new Promise((resolve, reject) => {
-    const args = frozen ? ["install", "--frozen-lockfile"] : ["install"];
+    // Explicit both ways: with CI=true pnpm freezes the lockfile by default, which would make
+    // the installs that are meant to update it fail.
+    const args = ["install", frozen ? "--frozen-lockfile" : "--no-frozen-lockfile"];
     console.log(`> pnpm ${args.join(" ")}`);
     const child = spawn("pnpm", args, {
       cwd,
