@@ -22,7 +22,7 @@ export const ModDetailsSkeleton = () => (
     <div className="@container border-y border-stroke-weak py-4">
       <div className="grid grid-cols-3 gap-2 @2xl:grid-cols-6">
         {Array.from({ length: STATS }, (_, index) => (
-          <div className="flex animate-pulse flex-col gap-y-1.5" key={index}>
+          <div className="flex animate-pulse flex-col gap-y-1.5 justify-self-center" key={index}>
             <div className="h-3 w-16 rounded-sm bg-surface-translucent-mid" />
 
             <div className="h-4 w-12 rounded-sm bg-surface-translucent-mid" />

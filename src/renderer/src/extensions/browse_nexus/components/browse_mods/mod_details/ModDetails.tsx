@@ -92,7 +92,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
         >
           <div
             aria-label={t("Mod details")}
-            className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col gap-y-3 overflow-y-auto scroll-fade p-6 pb-9 scroll-fade-9 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-subdued"
+            className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col gap-y-3 overflow-y-auto scroll-fade p-6 pb-9 backdrop-dim-source scroll-fade-9 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-subdued"
             ref={ref}
             role="region"
             tabIndex={-1}
@@ -132,7 +132,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                 <div className="@container border-y border-stroke-weak py-4">
                   <div className="grid grid-cols-3 gap-2 @2xl:grid-cols-6">
                     {stats.map(({ label, value }) => (
-                      <div className="min-w-0" key={label}>
+                      <div className="min-w-0 justify-self-center" key={label}>
                         <Typography
                           appearance="subdued"
                           brand="neutral-translucent"

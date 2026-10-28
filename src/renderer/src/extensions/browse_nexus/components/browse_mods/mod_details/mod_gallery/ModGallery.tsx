@@ -98,7 +98,6 @@ export const ModGallery = ({ images, isAdult, onPick }: IModGalleryProps) => {
       <AdultAwareImage
         alt=""
         className="w-full rounded-sm"
-        fit="cover"
         imageType="mod"
         isAdult={isAdult}
         src={shown.src}
@@ -135,7 +134,6 @@ export const ModGallery = ({ images, isAdult, onPick }: IModGalleryProps) => {
                   className={joinClasses(["w-full rounded-xs"], {
                     "[&_.nxm-image-frame]:border-neutral-strong": index === picked,
                   })}
-                  fit="cover"
                   imageType="mod"
                   isAdult={isAdult}
                   src={image.thumbnail}
