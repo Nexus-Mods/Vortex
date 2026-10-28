@@ -107,7 +107,7 @@
             text-align: left;
         }
 
-        & :where(img) {
+        & :where(img, video) {
             max-width: 100%;
         }
     }

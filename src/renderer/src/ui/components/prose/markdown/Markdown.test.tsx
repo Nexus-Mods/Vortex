@@ -56,4 +56,26 @@ describe("Markdown", () => {
     expect(container.querySelector("img")).toBeNull();
     expect(container.innerHTML).not.toContain("example.com");
   });
+
+  describe("with media allowed", () => {
+    it("keeps images from a secure web address", () => {
+      render(<Markdown allowMedia markdown={"![shot](https://example.com/a.png)"} />);
+
+      expect(screen.getByRole("img", { name: "shot" })).toHaveAttribute(
+        "src",
+        "https://example.com/a.png",
+      );
+    });
+
+    it("still leaves out images from anywhere else", () => {
+      const { container } = render(
+        <Markdown
+          allowMedia
+          markdown={"![a](http://example.com/a.png) ![b](file:///C:/b.png) ![c](c.png)"}
+        />,
+      );
+
+      expect(container.querySelector("img")).toBeNull();
+    });
+  });
 });
