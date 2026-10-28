@@ -3,6 +3,7 @@ export class PathError extends Error {
 
   constructor(message: string, path: string) {
     super(message);
+    this.name = this.constructor.name;
     this.path = path;
   }
 }
