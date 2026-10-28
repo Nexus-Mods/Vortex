@@ -4,8 +4,10 @@ import * as _ from "lodash";
 import minimatch from "minimatch";
 import * as semver from "semver";
 
+import type { IModLookupData } from "../../../types/IModLookupResult";
 import { truthy } from "../../../util/util";
 import type { IDownload } from "../../download_management/types/IDownload";
+import NXMUrl from "../../nexus_integration/NXMUrl";
 import type {
   IChoiceType,
   IMod,
@@ -270,6 +272,59 @@ export function downloadToModRef(download: IDownload): IModReference {
     logicalFileName: download.modInfo?.meta?.logicalFileName ?? download.localPath,
   };
   return ref;
+}
+
+/**
+ * Converts the result of a mod meta lookup (by md5) to an IModReference object, for archives
+ * that have no download to take the reference from, such as a local file installed directly.
+ * The ids come from the lookup details, or else from the source uri if that is an nxm link.
+ *
+ * @param value - The lookup result to convert
+ * @param fileMD5 - The md5 hash of the archive the lookup was made for
+ * @param gameId - The game the archive is being installed for
+ */
+export function lookupToModRef(
+  value: IModLookupData,
+  fileMD5: string,
+  gameId: string,
+): IModReference {
+  let modId = value.details?.modId;
+  let fileId = value.details?.fileId;
+  if ((modId === undefined || fileId === undefined) && typeof value.sourceURI === "string") {
+    try {
+      const nxmUrl = new NXMUrl(value.sourceURI);
+      modId ??= nxmUrl.modId?.toString();
+      fileId ??= nxmUrl.fileId?.toString();
+    } catch {
+      // not an nxm link, there is nothing to take the ids from
+    }
+  }
+
+  return {
+    repo: value.source ? { repository: value.source, modId, fileId } : undefined,
+    fileMD5,
+    gameId,
+    logicalFileName: value.logicalFileName ?? value.fileName,
+  };
+}
+
+/**
+ * Completes a mod reference with what a lookup found. A reference that already identifies the
+ * repository entry or the file (the rule that pulled the archive in, or a download that was
+ * enriched) is never overwritten, only the missing parts are filled in.
+ */
+export function completeModRef(
+  existing: IModReference | undefined,
+  found: IModReference,
+): IModReference {
+  if (existing === undefined) {
+    return found;
+  }
+  return {
+    ...existing,
+    repo: existing.repo ?? found.repo,
+    fileMD5: existing.fileMD5 ?? found.fileMD5,
+  };
 }
 
 export function sanitizeExpression(fileName: string): string {
