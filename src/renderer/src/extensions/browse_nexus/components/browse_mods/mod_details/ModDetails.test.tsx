@@ -57,11 +57,17 @@ const respond = (mod: Mod) => act(async () => mocks.pending.shift()!.resolve(mod
 /** Fails the waiting mod query. */
 const fail = () => act(async () => mocks.pending.shift()!.reject(new Error("offline")));
 
-const renderComponent = (mod = summary) => {
+const renderComponent = (mod = summary, onFocusList = vi.fn()) => {
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
   render(
     <QueryClientProvider client={client}>
-      <ModDetails api={{} as IExtensionApi} gallery={[]} mod={mod} onPick={vi.fn()} />
+      <ModDetails
+        api={{} as IExtensionApi}
+        gallery={[]}
+        mod={mod}
+        onFocusList={onFocusList}
+        onPick={vi.fn()}
+      />
     </QueryClientProvider>,
   );
   return client;
@@ -165,5 +171,46 @@ describe("ModDetails", () => {
 
     expect(await screen.findByText("better")).toBeInTheDocument();
     expect(screen.queryByText("The mod's description couldn't be loaded.")).not.toBeInTheDocument();
+  });
+
+  it("asks to move focus back to the list on Left", async () => {
+    const onFocusList = vi.fn();
+    renderComponent(summary, onFocusList);
+    act(() => screen.getByRole("button", { name: "Open mod page" }).focus());
+
+    await userEvent.keyboard("{ArrowLeft}");
+
+    expect(onFocusList).toHaveBeenCalled();
+  });
+
+  it("asks to move focus back to the list on Left from the pane itself", async () => {
+    const onFocusList = vi.fn();
+    renderComponent(summary, onFocusList);
+    act(() => screen.getByRole("region", { name: "Mod details" }).focus());
+
+    await userEvent.keyboard("{ArrowLeft}");
+
+    expect(onFocusList).toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "from the tabs, which use it",
+      "{ArrowLeft}",
+      () => screen.getByRole("tab", { name: "Details" }),
+    ],
+    [
+      "with a modifier held",
+      "{Shift>}{ArrowLeft}{/Shift}",
+      () => screen.getByRole("button", { name: "Open mod page" }),
+    ],
+  ])("keeps focus on Left %s", async (_name, keys, focused) => {
+    const onFocusList = vi.fn();
+    renderComponent(summary, onFocusList);
+    act(() => focused().focus());
+
+    await userEvent.keyboard(keys);
+
+    expect(onFocusList).not.toHaveBeenCalled();
   });
 });

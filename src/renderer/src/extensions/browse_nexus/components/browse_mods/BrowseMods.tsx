@@ -45,6 +45,7 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
   const [pickedImage, setPickedImage] = useState<IGalleryImage>();
   const backdrop = pickedImage && gallery.includes(pickedImage) ? pickedImage : gallery[0];
   const detailsRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [split, setSplit] = useSavedSplit("browse-mods");
 
   /** Opens another mod's details; its gallery starts over at its first picture, and so does this. */
@@ -56,6 +57,10 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
     setActiveMod(mods.find((mod) => mod.id === id));
     setPickedImage(undefined);
   };
+
+  /** Moves focus to the list's Tab stop, for the details' Left, as Right moves it into them. */
+  const focusList = () =>
+    listRef.current?.querySelector<HTMLElement>('[data-mod-card][tabindex="0"]')?.focus();
 
   /** The details' pane: the active mod's, or with none, pulsing while the list loads or saying so. */
   const details = () => {
@@ -79,6 +84,7 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
         gallery={gallery}
         mod={activeMod}
         ref={detailsRef}
+        onFocusList={focusList}
         onPick={setPickedImage}
       />
     );
@@ -106,6 +112,7 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
               activeModId={activeMod?.id}
               currentPage={search.currentPage}
               detailsRef={detailsRef}
+              listRef={listRef}
               isError={!!search.error}
               isLoading={search.loading}
               mods={mods}

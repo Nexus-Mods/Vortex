@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import numeral from "numeral";
-import React, { forwardRef, useState } from "react";
+import React, { forwardRef, type KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
@@ -16,6 +16,7 @@ import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
+import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
@@ -33,20 +34,44 @@ interface IModDetailsProps {
   gallery: IGalleryImage[];
   /** Told the picture now shown large, whenever another is picked. */
   onPick: (image: IGalleryImage) => void;
+  /** Asked to move focus back to the list, on Left. */
+  onFocusList?: () => void;
 }
+
+/** What uses Left itself in the details, so it doesn't leave them there. */
+const OWNS_LEFT = 'input, textarea, select, [contenteditable="true"], [role="tablist"]';
 
 /**
  * The picked mod's details: gallery, stats, author, pills and description. Shows the
  * search's result at once, and the tags and description once the mod's own query has them.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
-  ({ api, mod, gallery, onPick }, ref) => {
+  ({ api, mod, gallery, onPick, onFocusList }, ref) => {
     const { t } = useTranslation();
     const details = useQuery(modQuery(api, mod.id));
     const tags = details.data?.tags ?? [];
     const [tab, setTab] = useState("details");
     const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
     const created = useRelativeTime(new Date(mod.created_at).getTime(), t);
+
+    /**
+     * Left leaves the details for the list, unless what's focused has used the key or uses Left
+     * itself, as the tabs and text fields do.
+     */
+    const leaveOnLeft = (event: KeyboardEvent<HTMLDivElement>) => {
+      const target = event.target instanceof Element ? event.target : undefined;
+
+      if (event.key !== "ArrowLeft" || event.defaultPrevented || hasModifierKey(event)) {
+        return;
+      }
+
+      if (!onFocusList || target?.closest(OWNS_LEFT)) {
+        return;
+      }
+
+      event.preventDefault();
+      onFocusList();
+    };
 
     const stats = [
       { label: t("Endorsements"), value: numeral(mod.endorsements).format("0a") },
@@ -58,14 +83,20 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     ];
 
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col" ref={ref}>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={leaveOnLeft}>
         <TabProvider
           tab={tab}
           tabListId="browse-mod-details-tabs"
           tabType="secondary"
           onSetSelectedTab={setTab}
         >
-          <div className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col gap-y-3 overflow-y-auto scroll-fade p-6 pb-9 scroll-fade-9">
+          <div
+            aria-label={t("Mod details")}
+            className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col gap-y-3 overflow-y-auto scroll-fade p-6 pb-9 scroll-fade-9 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-subdued"
+            ref={ref}
+            role="region"
+            tabIndex={-1}
+          >
             <div className="flex items-start gap-x-4">
               <TabBar className="min-w-0 flex-1">
                 <TabButton name={t("Details")} panelId="details" />

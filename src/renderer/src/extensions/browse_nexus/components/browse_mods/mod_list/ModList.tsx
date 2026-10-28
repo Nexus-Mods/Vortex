@@ -12,10 +12,6 @@ import { MAX_PAGES, MODS_PER_PAGE } from "../../../hooks/use_mod_search/useModSe
 import { ModCard } from "../mod_card/ModCard";
 import { ModCardSkeleton } from "../mod_card/ModCard.skeleton";
 
-/** The tabbable controls a details pane can take focus at, first in order. */
-const TABBABLE =
-  'button:not([disabled]):not([tabindex="-1"]), [href], [tabindex]:not([tabindex="-1"])';
-
 interface IModListProps {
   /** The page's mods, in order. */
   mods: ModSummary[];
@@ -35,20 +31,32 @@ interface IModListProps {
   isError: boolean;
   /** Asks for the page again, after it failed. */
   onRetry: () => void;
-  /** The details pane, for Right to move focus into. */
+  /** The details pane, for Right to move focus to. */
   detailsRef: RefObject<HTMLDivElement>;
+  /** The list itself, for the details pane's Left to move focus back to. */
+  listRef?: RefObject<HTMLDivElement>;
 }
+
+/** Which mod each key picks from the list itself, rather than from a mod. */
+const FROM_LIST: Partial<Record<string, "first" | "last">> = {
+  ArrowDown: "first",
+  Home: "first",
+  ArrowUp: "last",
+  End: "last",
+};
 
 /**
  * Browse's list of mods, with pagination that stays through a failed page, which offers to try
  * again. One Tab stop, the open mod or else the first; Up, Down, Home and End pick a mod, and
- * Right moves focus into the details.
+ * Right moves focus into the details. A change of page focuses the list itself, picking nothing
+ * until Down or Up picks its first or last mod.
  */
 export const ModList = ({
   mods,
   activeModId,
   onSelectMod,
   detailsRef,
+  listRef,
   currentPage,
   onPageChange,
   totalCount,
@@ -60,6 +68,27 @@ export const ModList = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const tabStop = mods.some((mod) => mod.id === activeModId) ? activeModId : mods[0]?.id;
 
+  /** Picks the list's first or last mod, as the key asks, and focuses it. */
+  const pickFromList = (event: KeyboardEvent<HTMLDivElement>) => {
+    const end = FROM_LIST[event.key];
+    const cards = [...event.currentTarget.querySelectorAll<HTMLElement>("[data-mod-card]")];
+    const index = end === "last" ? cards.length - 1 : 0;
+
+    if (!end || !cards[index]) {
+      return;
+    }
+
+    event.preventDefault();
+    onSelectMod(mods[index].id);
+    cards[index].focus();
+  };
+
+  /** Moves to another page, focusing the list, which picks no mod until asked. */
+  const changePage = (page: number) => {
+    onPageChange(page);
+    scrollRef.current?.focus();
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const isOnCard = rovingFocus(event, {
       orientation: "vertical",
@@ -67,26 +96,41 @@ export const ModList = ({
       onMove: (index) => onSelectMod(mods[index].id),
     });
 
-    if (isOnCard || event.key !== "ArrowRight" || hasModifierKey(event)) {
+    if (isOnCard || hasModifierKey(event)) {
+      return;
+    }
+
+    if (event.target === event.currentTarget) {
+      pickFromList(event);
+      return;
+    }
+
+    if (event.key !== "ArrowRight") {
       return;
     }
 
     const fromCard =
       event.target instanceof HTMLElement && !!event.target.closest("[data-mod-card]");
-    const target = detailsRef.current?.querySelector<HTMLElement>(TABBABLE);
+    const details = detailsRef.current;
 
-    if (fromCard && target) {
+    if (fromCard && details) {
       event.preventDefault();
-      target.focus();
+      details.focus();
     }
   };
 
   return (
-    <div className="scrollbar-inset-6 mr-1 flex min-w-0 flex-1 flex-col">
+    <div
+      className="scrollbar-inset-6 mr-1 flex min-w-0 flex-1 flex-col has-[>:focus-visible]:outline-2 has-[>:focus-visible]:-outline-offset-2 has-[>:focus-visible]:outline-focus-subdued"
+      ref={listRef}
+    >
       <PageScroll
         isFullWidth
+        aria-label={t("Mods")}
         className="flex flex-col gap-y-3.5 py-6 pr-5 pl-6"
         ref={scrollRef}
+        role="region"
+        tabIndex={-1}
         onKeyDown={onKeyDown}
       >
         <Listing
@@ -117,7 +161,7 @@ export const ModList = ({
           recordsPerPage={MODS_PER_PAGE}
           scrollRef={scrollRef}
           totalRecords={Math.min(totalCount, MAX_PAGES * MODS_PER_PAGE)}
-          onPaginationUpdate={onPageChange}
+          onPaginationUpdate={changePage}
         />
       </PageScroll>
     </div>
