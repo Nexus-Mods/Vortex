@@ -14,7 +14,7 @@ export interface ApplyIo {
   readText(file: string): string;
   /** Writes a file relative to the repository root. */
   writeText(file: string, text: string): void;
-  /** Runs `pnpm install`, optionally with `--frozen-lockfile`. */
+  /** Runs `pnpm install` with `--frozen-lockfile` or `--no-frozen-lockfile`. */
   install(options: { frozen: boolean }): Promise<void>;
   /** Paths (relative to the repository root) that differ from HEAD. */
   changedFiles(): Promise<string[]>;
