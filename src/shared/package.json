@@ -68,13 +68,13 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@nexusmods/paths": "workspace:*",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/resources": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
     "zod": "catalog:"
   },
   "peerDependencies": {
+    "@nexusmods/paths": "workspace:*",
     "@opentelemetry/api": "catalog:"
   },
   "devDependencies": {
