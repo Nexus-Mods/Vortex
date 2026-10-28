@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   game: undefined as { name: string } | undefined,
   tierZero: false,
   isModsEnabled: true,
+  gameId: "skyrimse",
+  collectionsMounts: 0,
 }));
 
 vi.mock("react-redux", () => ({
@@ -18,7 +20,7 @@ vi.mock("../../../gamemode_management/selectors", () => ({
 }));
 
 vi.mock("@/util/selectors", () => ({
-  activeGameId: () => "skyrimse",
+  activeGameId: () => mocks.gameId,
 }));
 
 vi.mock("@/contexts/FlagsContext", () => ({
@@ -40,11 +42,16 @@ vi.mock("react-i18next", async (importOriginal) => ({
 }));
 
 vi.mock("../../hooks/use_collection_search/useCollectionSearch.hook", () => ({
-  useCollectionSearch: () => ({ allCollectionsTotal: 126, gameDomainName: "skyrimspecialedition" }),
+  useCollectionSearch: () => ({ allCollectionsTotal: 126 }),
 }));
 
 vi.mock("../../components/browse_collections/BrowseCollections", () => ({
-  BrowseCollections: () => <div>Collections panel</div>,
+  BrowseCollections: () => {
+    React.useEffect(() => {
+      mocks.collectionsMounts += 1;
+    }, []);
+    return <div>Collections panel</div>;
+  },
 }));
 
 vi.mock("../../components/browse_mods/BrowseMods", () => ({
@@ -52,9 +59,7 @@ vi.mock("../../components/browse_mods/BrowseMods", () => ({
 }));
 
 vi.mock("../../components/mods_coming_soon/ModsComingSoon", () => ({
-  ModsComingSoon: ({ gameDomainName }: { gameDomainName: string }) => (
-    <div>Mods coming soon for {gameDomainName}</div>
-  ),
+  ModsComingSoon: () => <div>Mods coming soon</div>,
 }));
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -68,6 +73,8 @@ describe("BrowsePage", () => {
     mocks.game = { name: "Skyrim Special Edition" };
     mocks.tierZero = false;
     mocks.isModsEnabled = true;
+    mocks.gameId = "skyrimse";
+    mocks.collectionsMounts = 0;
   });
 
   it("names the page and the game it browses", () => {
@@ -121,7 +128,7 @@ describe("BrowsePage", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Mods" }));
 
-    expect(screen.getByText("Mods coming soon for skyrimspecialedition")).toBeTruthy();
+    expect(screen.getByText("Mods coming soon")).toBeTruthy();
     expect(screen.queryByText("Mods panel")).toBeNull();
   });
 
@@ -139,6 +146,17 @@ describe("BrowsePage", () => {
 
     render(<BrowsePage active api={api} />);
 
-    expect(screen.getByText("Mods coming soon for skyrimspecialedition")).toBeTruthy();
+    expect(screen.getByText("Mods coming soon")).toBeTruthy();
+  });
+
+  it("keeps the tab picked when the game changes, starting what's under it over", () => {
+    const { rerender } = render(<BrowsePage active api={api} />);
+    fireEvent.click(screen.getByRole("tab", { name: /Collections/ }));
+
+    mocks.gameId = "fallout4";
+    rerender(<BrowsePage active api={api} />);
+
+    expect(screen.getByText("Collections panel")).toBeTruthy();
+    expect(mocks.collectionsMounts).toBe(2);
   });
 });
