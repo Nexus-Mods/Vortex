@@ -29,5 +29,4 @@ export const modFileDownloadLinkMutation = (api: IExtensionApi) =>
         collectionId,
         applicationName: "Vortex",
       }),
-    retry: false,
   });

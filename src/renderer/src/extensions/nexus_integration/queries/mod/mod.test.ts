@@ -21,7 +21,7 @@ describe("modQuery", () => {
     const mod = { id: "7318624273618", name: "SkyUI" };
     mocks.getModById.mockResolvedValue(mod);
 
-    const result = await client().fetchQuery(modQuery(api, "7318624273618"));
+    const result = await client().query(modQuery(api, "7318624273618"));
 
     expect(mocks.getModById).toHaveBeenCalledWith("7318624273618");
     expect(result).toEqual(mod);

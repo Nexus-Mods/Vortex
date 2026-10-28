@@ -27,7 +27,7 @@ describe("modSearchQuery", () => {
     const response = { mods: [{ id: "1" }], meta: { page: 1, page_size: 20, total_count: 45 } };
     mocks.searchMods.mockResolvedValue(response);
 
-    const result = await client().fetchQuery(modSearchQuery(api, search));
+    const result = await client().query(modSearchQuery(api, search));
 
     expect(mocks.searchMods).toHaveBeenCalledWith(search);
     expect(result).toEqual(response);
