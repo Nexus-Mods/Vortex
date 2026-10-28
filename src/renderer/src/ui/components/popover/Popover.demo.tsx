@@ -4,24 +4,6 @@
  * nested submenus — one row, and two adjacent ones to hover between
  */
 
-import {
-  mdiAccountCircle,
-  mdiBroom,
-  mdiCheckCircleOutline,
-  mdiDeleteOutline,
-  mdiFilterOutline,
-  mdiHelpCircleOutline,
-  mdiInformationOutline,
-  mdiLogout,
-  mdiPalette,
-  mdiRefresh,
-  mdiRocketLaunchOutline,
-  mdiSortVariant,
-  mdiStarOutline,
-  mdiTune,
-  mdiViewGrid,
-  mdiViewList,
-} from "@mdi/js";
 import React, { useState } from "react";
 
 import { Button } from "@/ui/components/button/Button";
@@ -39,14 +21,14 @@ import { PopoverPanelGroup } from "./PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "./PopoverPanelGroupItem";
 
 const layoutOptions = [
-  { label: "Grid", value: "grid", iconPath: mdiViewGrid },
-  { label: "List", value: "list", iconPath: mdiViewList },
+  { label: "Grid", value: "grid", icon: { name: "grid_view", filled: true } },
+  { label: "List", value: "list", icon: { name: "view_list", filled: true } },
 ] satisfies IListboxOption<string>[];
 
 const helpActions: IMenuAction[][] = [
   [
-    { label: "Help centre", iconPath: mdiHelpCircleOutline, onClick: () => {} },
-    { label: "About", iconPath: mdiInformationOutline, onClick: () => {} },
+    { label: "Help centre", icon: "help", onClick: () => {} },
+    { label: "About", icon: "info", onClick: () => {} },
   ],
 ];
 
@@ -56,19 +38,25 @@ const helpActions: IMenuAction[][] = [
  * opened from goes away with it.
  */
 const accountActions: IMenuAction[][] = [
-  [{ label: "View profile on web", iconPath: mdiAccountCircle, onClick: () => {} }],
   [
-    { label: "Refresh user info", iconPath: mdiRefresh, onClick: () => {} },
+    {
+      label: "View profile on web",
+      icon: { name: "account_circle", filled: true },
+      onClick: () => {},
+    },
+  ],
+  [
+    { label: "Refresh user info", icon: "refresh", onClick: () => {} },
     {
       label: "Help",
-      iconPath: mdiHelpCircleOutline,
+      icon: "help",
       panelRole: "menu",
       panel: ({ close, dismiss }) => (
         <PopoverMenu actions={helpActions} label="Help" onClose={close} onSelect={dismiss} />
       ),
     },
   ],
-  [{ label: "Logout", iconPath: mdiLogout, onClick: () => {} }],
+  [{ label: "Logout", icon: "logout", onClick: () => {} }],
 ];
 
 const sortRows: IMenuAction[][] = [
@@ -96,7 +84,7 @@ const twoSubmenuActions: IMenuAction[][] = [
   [
     {
       label: "Sort by",
-      iconPath: mdiSortVariant,
+      icon: "sort",
       panelRole: "menu",
       panel: ({ close, dismiss }) => (
         <PopoverMenu actions={sortRows} label="Sort by" onClose={close} onSelect={dismiss} />
@@ -104,14 +92,14 @@ const twoSubmenuActions: IMenuAction[][] = [
     },
     {
       label: "Filter",
-      iconPath: mdiFilterOutline,
+      icon: "filter_alt",
       panelRole: "menu",
       panel: ({ close, dismiss }) => (
         <PopoverMenu actions={filterRows} label="Filter" onClose={close} onSelect={dismiss} />
       ),
     },
   ],
-  [{ label: "Refresh", iconPath: mdiRefresh, onClick: () => {} }],
+  [{ label: "Refresh", icon: "refresh", onClick: () => {} }],
 ];
 
 /**
@@ -121,13 +109,13 @@ const twoSubmenuActions: IMenuAction[][] = [
  */
 const brandedActions: IMenuAction[][] = [
   [
-    { label: "Deploy Mods", iconPath: mdiRocketLaunchOutline, brand: "primary", onClick: () => {} },
-    { label: "Check for Updates", iconPath: mdiRefresh, brand: "info", onClick: () => {} },
-    { label: "Verified", iconPath: mdiCheckCircleOutline, brand: "success", onClick: () => {} },
-    { label: "Go Premium", iconPath: mdiStarOutline, brand: "premium", onClick: () => {} },
-    { label: "Purge Mods", iconPath: mdiBroom, brand: "neutral", onClick: () => {} },
+    { label: "Deploy Mods", icon: "rocket_launch", brand: "primary", onClick: () => {} },
+    { label: "Check for Updates", icon: "refresh", brand: "info", onClick: () => {} },
+    { label: "Verified", icon: "check_circle", brand: "success", onClick: () => {} },
+    { label: "Go Premium", icon: "star", brand: "premium", onClick: () => {} },
+    { label: "Purge Mods", icon: "cleaning_services", brand: "neutral", onClick: () => {} },
   ],
-  [{ label: "Remove Mod", iconPath: mdiDeleteOutline, brand: "danger", onClick: () => {} }],
+  [{ label: "Remove Mod", icon: "delete", brand: "danger", onClick: () => {} }],
 ];
 
 export const PopoverDemo = () => {
@@ -163,14 +151,17 @@ export const PopoverDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Popover>
-            <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiTune} />
+            <PopoverButton appearance="subdued" brand="neutral" leftIcon="tune" />
 
             <PopoverPanel className="nxm-popover-panel-controls">
               <PopoverPanelGroup>
                 <PopoverPanelGroupItem passive label="Display as">
                   <Picker
                     button={{
-                      leftIconPath: layout === "list" ? mdiViewList : mdiViewGrid,
+                      leftIcon: {
+                        name: layout === "list" ? "view_list" : "grid_view",
+                        filled: true,
+                      },
                       size: "sm",
                     }}
                     options={layoutOptions}
@@ -222,7 +213,11 @@ export const PopoverDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Popover>
-            <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiAccountCircle} />
+            <PopoverButton
+              appearance="subdued"
+              brand="neutral"
+              leftIcon={{ name: "account_circle", filled: true }}
+            />
 
             <PopoverPanel className="nxm-popover-panel-dropdown">
               {({ close }) => (
@@ -247,7 +242,7 @@ export const PopoverDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Popover>
-            <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiSortVariant} />
+            <PopoverButton appearance="subdued" brand="neutral" leftIcon="sort" />
 
             <PopoverPanel className="nxm-popover-panel-dropdown">
               {({ close }) => (
@@ -273,7 +268,11 @@ export const PopoverDemo = () => {
 
         <div className="flex flex-wrap gap-4">
           <Popover>
-            <PopoverButton appearance="subdued" brand="neutral" leftIconPath={mdiPalette} />
+            <PopoverButton
+              appearance="subdued"
+              brand="neutral"
+              leftIcon={{ name: "palette", filled: true }}
+            />
 
             <PopoverPanel className="nxm-popover-panel-dropdown">
               {({ close }) => (

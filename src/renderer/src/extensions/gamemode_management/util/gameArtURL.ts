@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as url from "url";
 
-import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameTileImageURL";
+import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameImageURLs";
 
 import type { IGameStored } from "../types/IGameStored";
 

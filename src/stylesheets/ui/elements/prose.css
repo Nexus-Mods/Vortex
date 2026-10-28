@@ -51,13 +51,6 @@
             }
         }
 
-        /* Bootstrap's layer gives every link its colour and a hover underline; past it, one
-           without a target is plain text. */
-        & :where(a:not([href])) {
-            color: inherit;
-            text-decoration-line: none;
-        }
-
         & :where(ul, ol) {
             padding-left: calc(var(--spacing) * 5);
         }

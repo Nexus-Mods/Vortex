@@ -3,7 +3,6 @@
  * Demonstrates the Button component variants and features
  */
 
-import { mdiCheck, mdiChevronRight, mdiCog, mdiDownload } from "@mdi/js";
 import React, { useState } from "react";
 
 import { Typography } from "@/ui/components/typography/Typography";
@@ -58,7 +57,7 @@ export const ButtonDemo = () => {
                     appearance={appearance}
                     aria-label={`${titleCase(brand)} ${titleCase(appearance)} icon only`}
                     brand={brand}
-                    leftIconPath={mdiCog}
+                    leftIcon={{ name: "settings", filled: true }}
                   />
                 </React.Fragment>
               ))}
@@ -86,7 +85,7 @@ export const ButtonDemo = () => {
             appearance="scrim"
             aria-label="Scrim icon only"
             brand="neutral"
-            leftIconPath={mdiCog}
+            leftIcon={{ name: "settings", filled: true }}
           />
 
           <Button appearance="scrim" brand="neutral" disabled={true}>
@@ -143,17 +142,17 @@ export const ButtonDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button leftIconPath={mdiDownload}>Download</Button>
+          <Button leftIcon="download">Download</Button>
 
-          <Button brand="neutral" appearance="subdued" rightIconPath={mdiChevronRight}>
+          <Button appearance="subdued" brand="neutral" rightIcon="chevron_right">
             Next
           </Button>
 
-          <Button brand="success" leftIconPath={mdiCheck}>
+          <Button brand="success" leftIcon="check">
             Confirm
           </Button>
 
-          <Button brand="neutral" appearance="weak" leftIconPath={mdiCog}>
+          <Button appearance="weak" brand="neutral" leftIcon={{ name: "settings", filled: true }}>
             Settings
           </Button>
         </div>
@@ -174,15 +173,19 @@ export const ButtonDemo = () => {
               appearance={appearance}
               aria-label={`Settings (${appearance})`}
               key={appearance}
-              leftIconPath={mdiCog}
+              leftIcon={{ name: "settings", filled: true }}
             />
           ))}
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button aria-label="Settings (md)" leftIconPath={mdiCog} />
+          <Button aria-label="Settings (md)" leftIcon={{ name: "settings", filled: true }} />
 
-          <Button aria-label="Settings (sm)" leftIconPath={mdiCog} size="sm" />
+          <Button
+            aria-label="Settings (sm)"
+            leftIcon={{ name: "settings", filled: true }}
+            size="sm"
+          />
         </div>
       </div>
     </div>

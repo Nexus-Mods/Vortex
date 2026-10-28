@@ -9,7 +9,7 @@ import { GameTile } from "./GameTile";
 
 const menu = {
   label: "Game options",
-  actions: [[{ iconPath: "mdi-test", label: "Game details", onClick: () => undefined }]],
+  actions: [[{ icon: { path: "mdi-test" }, label: "Game details", onClick: () => undefined }]],
 };
 
 describe("GameTile", () => {
@@ -71,7 +71,7 @@ describe("GameTile", () => {
   it.each([
     ["steam", "Steam"],
     ["gog", "GOG"],
-    ["epic", "Epic Games"],
+    ["epic", "Epic"],
     ["origin", "Origin"],
     ["uplay", "Ubisoft"],
     ["xbox", "Xbox"],

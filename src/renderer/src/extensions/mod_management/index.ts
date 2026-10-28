@@ -75,7 +75,7 @@ import {
 } from "../profile_management/selectors";
 import type { IProfile } from "../profile_management/types/IProfile";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
-import { setDeploymentNecessary } from "./actions/deployment";
+import { setDeploymentNecessary, setDeploymentPurged } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
 import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
@@ -90,6 +90,11 @@ import {
   onStartInstallDownload,
 } from "./eventHandlers";
 import InstallManager from "./InstallManager";
+import {
+  createManualInstaller,
+  MANUAL_INSTALLER_ID,
+  MANUAL_INSTALLER_PRIORITY,
+} from "./manualInstaller";
 import deployMods from "./modActivation";
 import { deriveModInstallName } from "./modIdManager";
 import mergeMods, { mergedSourceName } from "./modMerging";
@@ -130,6 +135,10 @@ import {
   purgeMods,
   purgeModsInPath,
 } from "./util/deploy";
+import {
+  deployPendingOnAutoApply,
+  scheduleAutoDeploy,
+} from "./util/deploy_pending_on_auto_apply/deployPendingOnAutoApply";
 import { reportRecordedFailures, resetDeploymentFailures } from "./util/deploymentFailures";
 import {
   getAllActivators,
@@ -880,6 +889,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 newDeployment,
                 deployProgress,
               );
+              api.store.dispatch(setDeploymentPurged(gameId, false));
             });
 
             // at this point the deployment lock gets released so another deployment
@@ -1236,12 +1246,7 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
       }
     });
     if (state.settings.automation.deploy && options?.allowAutoDeploy !== false) {
-      // Lets the UI show the deploy as under way while the timer runs down.
-      store.dispatch(startActivity("mods", "deployment_pending"));
-      deploymentTimer.schedule(
-        () => store.dispatch(stopActivity("mods", "deployment_pending")),
-        false,
-      );
+      scheduleAutoDeploy(api, deploymentTimer);
     } else if (!state.persistent.deployment.needToDeploy[gameId]) {
       store.dispatch(setDeploymentNecessary(gameId, true));
     }
@@ -1640,6 +1645,11 @@ function once(api: IExtensionApi) {
 
   api.onStateChange(["persistent", "mods"], (previous, current) =>
     onModsChanged(api, previous, current),
+  );
+
+  api.onStateChange(
+    ["settings", "automation", "deploy"],
+    deployPendingOnAutoApply(api, deploymentTimer),
   );
 
   api.onStateChange(["persistent", "deployment", "needToDeploy"], (previous, current) => {
@@ -2157,7 +2167,7 @@ function init(context: IExtensionContext): boolean {
         modSources: getModSources(),
         onDropNonArchiveFiles,
       }),
-      mdi: nxmModOutline,
+      menuIcon: { path: nxmModOutline },
     },
   );
 
@@ -2347,6 +2357,14 @@ function init(context: IExtensionContext): boolean {
 
   registerAttributeExtractor(150, attributeExtractor);
   registerAttributeExtractor(10, upgradeExtractor);
+
+  const manualInstaller = createManualInstaller(context.api);
+  registerInstaller(
+    MANUAL_INSTALLER_ID,
+    MANUAL_INSTALLER_PRIORITY,
+    manualInstaller.testSupported,
+    manualInstaller.install,
+  );
 
   registerInstaller("fallback", 1000, basicInstaller.testSupported, basicInstaller.install);
 

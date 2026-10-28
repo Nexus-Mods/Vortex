@@ -1,4 +1,3 @@
-import { mdiDownload } from "@mdi/js";
 import React, { type FC, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -122,7 +121,7 @@ export const DownloadsMenuContent: FC<React.PropsWithChildren<unknown>> = () => 
   return (
     <>
       <MenuButton
-        iconPath={mdiDownload}
+        icon="download"
         isActive={downloadGameFilter === null}
         onClick={() => setDownloadGameFilter(null)}
       >

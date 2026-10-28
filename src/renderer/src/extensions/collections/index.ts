@@ -3,7 +3,12 @@ import { pathToFileURL } from "url";
 
 import type * as nexusApi from "@nexusmods/nexus-api";
 import type { IRevision } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError, VortexProfileId } from "@vortex/shared";
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+  VortexGameId,
+  VortexProfileId,
+} from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import memoize from "memoize-one";
@@ -31,6 +36,7 @@ import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, toPromise } from "../../util/util";
 import type { IDownload } from "../download_management/types/IDownload";
+import { isTierZeroManagedGame } from "../gamemode_management/tiered/tierZero";
 import { getGame } from "../gamemode_management/util/getGame";
 import type { IMod, IModRule } from "../mod_management/types/IMod";
 import { findDownloadByRef } from "../mod_management/util/dependencies";
@@ -805,7 +811,11 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
     priority: 10,
     hotkey: "C",
     group: "per-game",
-    visible: () => selectors.activeGameId(context.api.getState()) !== undefined,
+    visible: () => {
+      const state = context.api.getState();
+      const activeId = selectors.activeGameId(state);
+      return activeId !== undefined && !isTierZeroManagedGame(state, VortexGameId(activeId));
+    },
     props: () => ({
       driver,
       localState,
@@ -819,7 +829,7 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
       pathTool,
     }),
     onReset: () => resetPageCB?.(),
-    mdi: nxmCollectionOutline,
+    menuIcon: { path: nxmCollectionOutline },
   } as any);
 
   context.registerModType(

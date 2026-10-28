@@ -1,4 +1,4 @@
-import { ChaosFS, InMemoryFSBuilder, QualifiedPath } from "@vortex/shared/filesystem";
+import { ChaosFS, InMemoryFSBuilder, QualifiedPath, toWire } from "@vortex/shared/filesystem";
 import { describe, expect, it, vi } from "vitest";
 
 const { handlers } = vi.hoisted(() => ({
@@ -35,7 +35,7 @@ describe("fs:enumerate-next", () => {
       ]),
     );
     const sender = { once: vi.fn(), removeListener: vi.fn() };
-    const handle = await handler("fs:enumerate-open")({ sender }, folder.toWire(), {});
+    const handle = await handler("fs:enumerate-open")({ sender }, toWire(folder), {});
 
     await expect(handler("fs:enumerate-next")({ sender }, handle, 10)).rejects.toThrow();
 

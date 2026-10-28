@@ -1,3 +1,4 @@
+import type { Tier } from "../../gamemode_management/tiered/types";
 import type { GameSource } from "../../gamemode_management/types/GameSource";
 import type { ExtensionInstallSource } from "./extensionInstallAnalytics";
 
@@ -325,6 +326,9 @@ export interface GameManagedProps {
   // The Games page list the user picked the game from, null when the add started
   // elsewhere (command line, extension install flows).
   game_source: GameSource | null;
+  // From supportTier. Omitted only when the numeric Nexus id couldn't be resolved
+  // (game_id is null then).
+  support_tier?: Tier;
 }
 
 /**
@@ -345,7 +349,7 @@ export class AppGameManagedEvent implements MixpanelEvent {
 export class AppGameUnmanagedEvent implements MixpanelEvent {
   readonly eventName = "app_game_unmanage";
   readonly properties: Record<string, unknown>;
-  constructor(props: { game_id: number | null }) {
+  constructor(props: { game_id: number | null; support_tier?: Tier }) {
     this.properties = { ...props };
   }
 }
@@ -362,6 +366,7 @@ export interface GameLaunchedProps {
   launch_method: GameLaunchMethod;
   enabled_mod_count: number;
   launch_session_id: string;
+  support_tier?: Tier;
 }
 
 export class AppGameLaunchedEvent implements MixpanelEvent {
@@ -385,6 +390,8 @@ export interface GameExitedProps {
   duration_reliable: boolean;
   // Process exit code, when Vortex launched the process itself; null for store launches.
   exit_code: number | null;
+  // Captured at launch like the other paired fields.
+  support_tier?: Tier;
 }
 
 /**
@@ -870,6 +877,7 @@ export interface ModsDeployedProps {
   manual: boolean;
   is_collection_postprocess: boolean;
   duration_ms: number;
+  support_tier?: Tier;
 }
 
 /**

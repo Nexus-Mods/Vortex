@@ -1,3 +1,6 @@
+import type { GameDomain } from "@vortex/shared";
+import { VortexGameId } from "@vortex/shared";
+
 import type { IGameStored } from "@/types/IState";
 
 import { convertGameIdReverse } from "../../../nexus_integration/util/convertGameId";
@@ -12,19 +15,19 @@ import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
  */
 export function detectedInternalId(
   knownGames: IGameStored[],
-  discovered: { [gameId: string]: IDiscoveryResult },
-  domain: string,
-): string {
+  discovered: Record<VortexGameId, IDiscoveryResult>,
+  domain: GameDomain,
+): VortexGameId {
   const lowered = domain.toLowerCase();
   const installed = knownGames.filter(
     (game) =>
       (game.id === lowered || game.details?.nexusPageId === domain) &&
-      discovered[game.id]?.path !== undefined,
+      discovered[VortexGameId(game.id)]?.path !== undefined,
   );
 
-  return (
+  return VortexGameId(
     installed.find((game) => game.id === lowered)?.id ??
-    installed[0]?.id ??
-    convertGameIdReverse(knownGames, domain)
+      installed[0]?.id ??
+      convertGameIdReverse(knownGames, domain),
   );
 }

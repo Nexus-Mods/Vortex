@@ -1,4 +1,3 @@
-import { mdiDiamondStone } from "@mdi/js";
 import React from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -11,6 +10,6 @@ export const PremiumBadge = ({ className }: { className?: string }) => (
       className,
     ])}
   >
-    <Icon path={mdiDiamondStone} size="sm" />
+    <Icon name="diamond" size="sm" />
   </span>
 );

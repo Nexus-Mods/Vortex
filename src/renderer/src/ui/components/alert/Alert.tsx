@@ -1,15 +1,8 @@
-import {
-  mdiAlertOctagon,
-  mdiAlertOutline,
-  mdiCheckCircleOutline,
-  mdiClose,
-  mdiInformationOutline,
-} from "@mdi/js";
 import React, { type HTMLAttributes, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type SymbolName } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 export type AlertSeverity = "info" | "success" | "warning" | "danger";
@@ -23,11 +16,11 @@ export interface IAlertProps extends HTMLAttributes<HTMLDivElement> {
   dismissLabel?: string;
 }
 
-const severityIcons: Record<AlertSeverity, string> = {
-  danger: mdiAlertOctagon,
-  info: mdiInformationOutline,
-  success: mdiCheckCircleOutline,
-  warning: mdiAlertOutline,
+const severityIcons: Record<AlertSeverity, SymbolName> = {
+  danger: "report",
+  info: "info",
+  success: "check_circle",
+  warning: "warning",
 };
 
 /**
@@ -65,7 +58,7 @@ export const Alert = ({
       {...props}
     >
       <div className="nxm-alert-message">
-        <Icon className="nxm-alert-icon" path={severityIcons[severity]} size="sm" />
+        <Icon className="nxm-alert-icon" name={severityIcons[severity]} size="sm" />
 
         <p className="nxm-alert-text">{children}</p>
       </div>
@@ -78,7 +71,7 @@ export const Alert = ({
           aria-label={dismissLabel ?? t("Dismiss")}
           brand="neutral"
           className="nxm-alert-dismiss"
-          leftIconPath={mdiClose}
+          leftIcon="close"
           size="sm"
           onClick={dismiss}
         />

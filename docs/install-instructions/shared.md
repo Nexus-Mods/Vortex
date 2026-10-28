@@ -87,8 +87,8 @@ which is not necessarily the one on your `PATH`.
 
 ## Notes
 
-- Volta, Corepack, `npm` and a global `node.js` are not required. The `node.js`
-  version is pinned by `devEngines.runtime` in `package.json` and by the `node`
+- Corepack, `npm` and a global `node.js` are not required. The `node.js` version
+  is pinned by `devEngines.runtime` in `package.json` and by the `node`
   runtime entry in the `pnpm-workspace.yaml` catalog.
 - `nx` is a dev dependency of the repository. Always run it as `pnpm nx <target>`;
   do not install it globally.
@@ -96,8 +96,6 @@ which is not necessarily the one on your `PATH`.
   separately. It will not conflict, because repository scripts resolve `node` from
   `node_modules/.bin` first.
 - Yarn 1 is only used by the Flatpak packaging flow. See [Flatpak maintenance].
-- CI provisions `node.js` through Volta. That is a CI-only path and is not needed
-  for local development.
 
 [Generic Installation Instructions]: ./generic.md
 [Flatpak maintenance]: ../flatpak/maintenance.md

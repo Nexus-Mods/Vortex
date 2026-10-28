@@ -1,7 +1,6 @@
-import { mdiAccount } from "@mdi/js";
 import React from "react";
 
-import { Image } from "@/ui/components/image/Image";
+import { Author } from "@/ui/components/author/Author";
 
 import type { IMod } from "../../types/IMod";
 import { uploaderAvatar } from "../../util/uploaderAvatar";
@@ -24,18 +23,5 @@ export const ModAuthor = ({ mod }: IModAuthorProps) => {
   const author = modAuthor(mod);
   const avatar = author === mod.attributes?.uploader ? uploaderAvatar(mod.attributes) : undefined;
 
-  return (
-    <span className="flex min-w-0 flex-1 items-center gap-x-1.5">
-      <Image
-        alt=""
-        className="size-4 shrink-0 rounded-full"
-        fallbackIconPath={mdiAccount}
-        fit="cover"
-        imageType="avatar"
-        src={avatar}
-      />
-
-      <span className="truncate">{author}</span>
-    </span>
-  );
+  return <Author avatar={avatar} className="flex-1" name={author ?? ""} />;
 };

@@ -1,4 +1,3 @@
-import { mdiCircleOutline, mdiLoading } from "@mdi/js";
 import React, {
   type ButtonHTMLAttributes,
   type HTMLAttributes,
@@ -11,9 +10,9 @@ import React, {
   type Ref,
 } from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconProp } from "@/ui/components/icon/Icon";
+import { getIconProps, isIconSource } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { joinClasses } from "@/ui/utils/joinClasses";
-import type { XOr } from "@/ui/utils/types";
 
 export type IButtonBrand = "primary" | "info" | "neutral" | "success" | "danger" | "premium";
 export type IButtonAppearance = "weak" | "subdued" | "moderate" | "strong";
@@ -52,43 +51,20 @@ export type IButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   href?: never;
   /** Not a link: links have their own component. */
   isExternal?: never;
-} & IButtonColour &
-  XOr<
-    {
-      /** The icon before its label, as an SVG path. */
-      leftIconPath?: string;
-    },
-    {
-      /** Drawn in place of `leftIconPath`, for an icon a single path can't draw. */
-      leftIcon?: ReactNode;
-    }
-  > &
-  XOr<
-    {
-      /** The icon after its label, as an SVG path. */
-      rightIconPath?: string;
-    },
-    {
-      /** Drawn in place of `rightIconPath`, for an icon a single path can't draw. */
-      rightIcon?: ReactNode;
-    }
-  >;
+} & IButtonColour & {
+    /** The icon before its label: a symbol or SVG path for `Icon` to draw, or a node to show as is. */
+    leftIcon?: IIconProp;
+    /** The icon after its label, as `leftIcon`. */
+    rightIcon?: IIconProp;
+  };
 
-const ButtonIcon = ({
-  icon,
-  isLoading = false,
-  path,
-}: {
-  icon?: ReactNode;
-  isLoading?: boolean;
-  path?: string;
-}) => {
+const ButtonIcon = ({ icon, isLoading = false }: { icon?: IIconProp; isLoading?: boolean }) => {
   if (isLoading) {
     return (
       <span className="nxm-button-icon relative animate-spin">
-        <Icon className="opacity-40" path={mdiCircleOutline} size="none" />
+        <Icon className="opacity-40" name="radio_button_unchecked" size="none" />
 
-        <Icon className="absolute inset-0" path={mdiLoading} size="none" />
+        <Icon className="absolute inset-0" name="progress_activity" size="none" />
       </span>
     );
   }
@@ -101,8 +77,8 @@ const ButtonIcon = ({
     });
   }
 
-  if (path) {
-    return <Icon className="nxm-button-icon" path={path} size="none" />;
+  if (isIconSource(icon)) {
+    return <Icon {...getIconProps(icon)} className="nxm-button-icon" size="none" />;
   }
 
   return null;
@@ -122,10 +98,8 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
       isExternal,
       isLoading = false,
       leftIcon,
-      leftIconPath,
       nested = false,
       rightIcon,
-      rightIconPath,
       size = "md",
       type,
       ...props
@@ -147,11 +121,11 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
 
     const content = customContent ?? (
       <>
-        <ButtonIcon icon={leftIcon} isLoading={isLoading} path={leftIconPath} />
+        <ButtonIcon icon={leftIcon} isLoading={isLoading} />
 
         {!!children && <span>{children}</span>}
 
-        <ButtonIcon icon={rightIcon} path={rightIconPath} />
+        <ButtonIcon icon={rightIcon} />
       </>
     );
 

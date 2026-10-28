@@ -8,8 +8,10 @@ import type { IStoreGameVersionCacheEntry } from "@/extensions/analytics/types/t
 
 import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IGame } from "../../../types/IGame";
 import { log } from "../../../util/log";
 import type { ISteamEntry } from "../../../util/Steam";
+import { normalizeStoreQuery } from "../../../util/storeQuery";
 import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
@@ -99,6 +101,20 @@ const asPayload = (
     ? { ...base, store: "steam", steam: install as SteamInstallBlock }
     : { ...base, store: "gog", gog: install as GogInstallBlock };
 
+/** The Steam app ids the game's extension declares, empty when it declares none. */
+function gameSteamAppIds(game: IGame | undefined): Set<string> {
+  const ids = new Set<string>();
+  if (game?.details?.steamAppId !== undefined) {
+    ids.add(String(game.details.steamAppId));
+  }
+  for (const query of normalizeStoreQuery(game?.queryArgs?.steam)) {
+    if (query.id !== undefined) {
+      ids.add(query.id);
+    }
+  }
+  return ids;
+}
+
 /** Collect the store install identity for one game, from data that is cheap to
     read per deploy: store snapshots, manifest install data, GOG .info files. */
 export async function scanInstall(
@@ -111,14 +127,17 @@ export async function scanInstall(
     getGameStoresSafe()
       .find((store) => store.id === storeId)
       ?.snapshot().entries ?? [];
+  const ownIds = storeId === "steam" ? gameSteamAppIds(game) : new Set<string>();
+  const atPath = entries.filter(
+    (iter) => iter.gamePath !== undefined && normPath(iter.gamePath) === normPath(discovery.path),
+  );
+  // tools like the Creation Kit install into the game's own folder, so the path alone
+  // can match several manifests: the game's own app id decides between them
   const entry =
-    entries.find(
-      (iter) => iter.gamePath !== undefined && normPath(iter.gamePath) === normPath(discovery.path),
-    ) ??
+    atPath.find((iter) => ownIds.has(iter.appid)) ??
+    atPath[0] ??
     // the game variant Steam runs may deploy from a path different from its manifest's
-    (game?.details?.steamAppId !== undefined
-      ? entries.find((iter) => iter.appid === String(game?.details?.steamAppId))
-      : undefined);
+    entries.find((iter) => ownIds.has(iter.appid));
 
   if (entry === undefined) {
     return {

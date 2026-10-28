@@ -1,21 +1,21 @@
-import { mdiWindowClose, mdiWindowMaximize, mdiWindowMinimize, mdiWindowRestore } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
 import { close, minimize, toggleMaximize, useIsMaximized } from "@/hooks";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 interface WindowControlButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
-  iconPath: string;
+  icon: IIconSource;
   title: string;
 }
 
 const WindowControlButton: FC<React.PropsWithChildren<WindowControlButtonProps>> = ({
   className,
-  iconPath,
+  icon,
   title,
   ...props
 }) => (
@@ -28,7 +28,7 @@ const WindowControlButton: FC<React.PropsWithChildren<WindowControlButtonProps>>
       ])}
       {...props}
     >
-      <Icon path={iconPath} size="sm" />
+      <Icon {...getIconProps(icon)} size="sm" />
     </button>
   </Tooltip>
 );
@@ -40,21 +40,21 @@ export const WindowControls: FC<React.PropsWithChildren<unknown>> = () => {
     <TooltipDelayGroup as="div" className="flex">
       <WindowControlButton
         className="hover:bg-surface-mid"
-        iconPath={mdiWindowMinimize}
+        icon="minimize"
         title="Minimize"
         onClick={minimize}
       />
 
       <WindowControlButton
         className="hover:bg-surface-mid"
-        iconPath={isMaximized ? mdiWindowRestore : mdiWindowMaximize}
+        icon={isMaximized ? "select_window_2" : "crop_square"}
         title={isMaximized ? "Restore" : "Maximize"}
         onClick={toggleMaximize}
       />
 
       <WindowControlButton
         className="w-9 hover:bg-danger-subdued"
-        iconPath={mdiWindowClose}
+        icon="close"
         title="Close"
         onClick={close}
       />

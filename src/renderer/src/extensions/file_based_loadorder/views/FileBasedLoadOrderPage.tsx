@@ -201,6 +201,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, Record<string, never>> 
     return (
       <div className="fblo-load-order-tabs">
         <TabProvider
+          hasBorder
           tab={resolveActiveLoadOrderId(entries, this.props.activeLoadOrderId)}
           tabListId="fblo-load-orders"
           onSetSelectedTab={(loadOrderId) => this.props.onSelectTab(profile.id, loadOrderId)}

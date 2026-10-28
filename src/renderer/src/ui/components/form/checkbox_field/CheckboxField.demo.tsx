@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 
+import { renderSafeBBCode } from "@/controls/bbcode";
 import { Checkbox } from "@/ui/components/form/checkbox/Checkbox";
 import { Description } from "@/ui/components/form/field/Description";
 import { Field } from "@/ui/components/form/field/Field";
@@ -15,6 +16,9 @@ const CHILD_LABELS = ["Textures", "Meshes", "Scripts"];
 
 export const CheckboxFieldDemo = () => {
   const [children, setChildren] = useState<boolean[]>([true, false, false]);
+  const [linkClicks, setLinkClicks] = useState(0);
+
+  const bbcodeContext = { callbacks: { terms: () => setLinkClicks((clicks) => clicks + 1) } };
 
   const allOn = children.every(Boolean);
   const noneOn = !children.some(Boolean);
@@ -100,6 +104,26 @@ export const CheckboxFieldDemo = () => {
             ))}
           </div>
         </div>
+      </Section>
+
+      <Section
+        description={`A label can be bbcode, as dialogs render it. Clicking a link runs it and leaves the checkbox alone, however the link's text is styled; a link whose target isn't allowed is plain text. Link clicks: ${linkClicks}.`}
+        title="Links in labels"
+      >
+        <CheckboxField
+          label={renderSafeBBCode("I accept the [url=cb://terms]terms[/url]", bbcodeContext)}
+        />
+
+        <CheckboxField
+          label={renderSafeBBCode("I accept the [url=cb://terms][b]terms[/b][/url]", bbcodeContext)}
+        />
+
+        <CheckboxField
+          label={renderSafeBBCode(
+            "Open [url=file:///C:/Windows]a local folder[/url]",
+            bbcodeContext,
+          )}
+        />
       </Section>
 
       <Section

@@ -543,7 +543,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
 
   private openCollections = () => {
     this.context.api.events.emit("analytics-track-click-event", "Collections", "Discover more");
-    this.context.api.store?.dispatch(actions.setOpenMainPage("Browse Nexus Mods", false));
+    this.context.api.store?.dispatch(actions.setOpenMainPage("Browse", false));
   };
 
   private openMyCollectionsPage = () => {
