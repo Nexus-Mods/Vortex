@@ -23,7 +23,7 @@ describe("collectionSearchQuery", () => {
   it("asks for the search as given, and returns its collections and total", async () => {
     const { api, nexusSearchCollections } = apiSearching({ nodes: [{ id: 1 }], totalCount: 45 });
 
-    const result = await client().fetchQuery(collectionSearchQuery(api, options));
+    const result = await client().query(collectionSearchQuery(api, options));
 
     expect(nexusSearchCollections).toHaveBeenCalledWith(options);
     expect(result).toEqual({ nodes: [{ id: 1 }], totalCount: 45 });
@@ -32,7 +32,7 @@ describe("collectionSearchQuery", () => {
   it("returns no collections and no total for a result without them", async () => {
     const { api } = apiSearching({});
 
-    const result = await client().fetchQuery(collectionSearchQuery(api, options));
+    const result = await client().query(collectionSearchQuery(api, options));
 
     expect(result).toEqual({ nodes: [], totalCount: 0 });
   });

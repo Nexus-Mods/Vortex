@@ -255,6 +255,16 @@ The answer is published as `data-reduce-motion="true"` on `<html>`
 - For writing reducers, registering them and the deprecated `storeHelper`
   path helpers, see [state.md](state.md).
 
+## API data (TanStack Query)
+
+Nexus Mods API data goes through TanStack Query, not Redux. The client's
+defaults are in `src/renderer/src/util/queryClient.ts`.
+
+- Queries are `queryOptions` factories, one directory each under
+  `src/renderer/src/extensions/nexus_integration/queries/`.
+- Pass `skipToken` rather than `enabled: false` while a query's inputs aren't
+  ready, so its function never runs with them missing.
+
 ## i18n
 
 Localize with `useTranslation(["ns", "common"])`. For namespaces and key format,
