@@ -260,8 +260,15 @@ The answer is published as `data-reduce-motion="true"` on `<html>`
 Nexus Mods API data goes through TanStack Query, not Redux. The client's
 defaults are in `src/renderer/src/util/queryClient.ts`.
 
-- Queries are `queryOptions` factories, one directory each under
-  `src/renderer/src/extensions/nexus_integration/queries/`.
+- Queries and mutations are `queryOptions` and `mutationOptions` factories,
+  one directory each under
+  `src/renderer/src/extensions/nexus_integration/queries/` and `mutations/`.
+- A call with a side effect is a mutation, not a query, so it runs only when
+  called and is never cached. Asking for a download link records a download,
+  so it's a mutation.
+- Mutations aren't retried, which is TanStack's default: one that reached the
+  server before failing would run twice. Only set `retry` on one that's safe
+  to repeat.
 - Pass `skipToken` rather than `enabled: false` while a query's inputs aren't
   ready, so its function never runs with them missing.
 
