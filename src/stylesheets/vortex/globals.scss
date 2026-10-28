@@ -12,14 +12,16 @@ body {
     text-rendering: optimizeLegibility;
 
     // in custom-titlebar-mode, the toolbar region allows dragging the
-    // main window around.
-    // This rule should ensure everything that is clickable
-    // on this region remains clickable
-    a,
-    button,
-    .btn,
-    .Select {
-        -webkit-app-region: no-drag;
+    // main window around. Only what's clickable inside it is left out:
+    // Electron counts every element's region, even one scrolled out of
+    // view, so a page's buttons would otherwise cut holes in the title bar.
+    .toolbar-app-region {
+        a,
+        button,
+        .btn,
+        .Select {
+            -webkit-app-region: no-drag;
+        }
     }
 }
 

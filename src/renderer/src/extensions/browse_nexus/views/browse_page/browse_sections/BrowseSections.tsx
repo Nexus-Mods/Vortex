@@ -15,6 +15,7 @@ import { BrowseCollections } from "../../../components/browse_collections/Browse
 import { BrowseMods } from "../../../components/browse_mods/BrowseMods";
 import { ModsComingSoon } from "../../../components/mods_coming_soon/ModsComingSoon";
 import { useCollectionSearch } from "../../../hooks/use_collection_search/useCollectionSearch.hook";
+import { useModSearch } from "../../../hooks/use_mod_search/useModSearch.hook";
 
 /** What the page is for, naming the game when there is one. */
 const pageSubtitle = (t: TFunction, gameName: string | undefined) => {
@@ -46,6 +47,7 @@ export const BrowseSections = ({
   const { t } = useTranslation();
   const subtitle = pageSubtitle(t, useSelector(currentGame)?.name);
   const collections = useCollectionSearch(api);
+  const mods = useModSearch(api, { isEnabled: isModsEnabled });
 
   return (
     <>
@@ -57,7 +59,11 @@ export const BrowseSections = ({
         title={t("Browse")}
       >
         <TabBar>
-          <TabButton count={isModsEnabled ? 1480 : undefined} name={t("Mods")} panelId="mods" />
+          <TabButton
+            count={isModsEnabled ? mods.allModsTotal : undefined}
+            name={t("Mods")}
+            panelId="mods"
+          />
 
           {supportsCollections && (
             <TabButton
@@ -76,7 +82,7 @@ export const BrowseSections = ({
         ])}
         id="mods"
       >
-        {isModsEnabled ? <BrowseMods /> : <ModsComingSoon api={api} />}
+        {isModsEnabled ? <BrowseMods api={api} search={mods} /> : <ModsComingSoon api={api} />}
       </TabPanel>
 
       {supportsCollections && (

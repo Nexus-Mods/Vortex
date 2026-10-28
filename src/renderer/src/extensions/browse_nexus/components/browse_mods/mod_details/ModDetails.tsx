@@ -1,26 +1,34 @@
+import { useQuery } from "@tanstack/react-query";
 import numeral from "numeral";
 import React, { forwardRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
+import { modQuery } from "@/extensions/nexus_integration/queries/mod/mod.query";
+import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Author } from "@/ui/components/author/Author";
 import { Button } from "@/ui/components/button/Button";
-import { Pill } from "@/ui/components/pill/Pill";
+import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
 import { TabProvider } from "@/ui/components/tabs/Tabs.context";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
-import type { IStaticMod } from "../staticMods";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
+import { ModTags } from "./mod_tags/ModTags";
+import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton";
 
-const placeholderClass =
-  "flex items-center justify-center rounded-sm border border-dashed border-stroke-moderate p-4 text-center";
+// const placeholderClass =
+//   "flex items-center justify-center rounded-sm border border-dashed border-stroke-moderate p-4 text-center";
 
 interface IModDetailsProps {
+  api: IExtensionApi;
   /** The mod picked in the list. */
-  mod: IStaticMod;
+  mod: ModSummary;
   /** The mod's pictures, the first shown large to begin with. */
   gallery: IGalleryImage[];
   /** Told the picture now shown large, whenever another is picked. */
@@ -28,26 +36,25 @@ interface IModDetailsProps {
 }
 
 /**
- * The selected mod's details, files and comments, a static wireframe (LAZ-1346) showing
- * the mod picked in the list; its gallery, "+10 more" tag and unique downloads are stand-ins.
- * It fills the right half of the page and scrolls on its own, so the list beside it keeps its
- * place; what scrolls fades out into its bottom padding. It has no background of its own: the
- * picture picked in its gallery lies behind the page's body, which blurs it.
+ * The picked mod's details: gallery, stats, author, pills and description. Shows the
+ * search's result at once, and the tags and description once the mod's own query has them.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
-  ({ mod, gallery, onPick }, ref) => {
+  ({ api, mod, gallery, onPick }, ref) => {
     const { t } = useTranslation();
+    const details = useQuery(modQuery(api, mod.id));
+    const tags = details.data?.tags ?? [];
     const [tab, setTab] = useState("details");
-    const updated = useRelativeTime(new Date(mod.updatedAt).getTime(), t);
-    const created = useRelativeTime(new Date(mod.createdAt).getTime(), t);
+    const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
+    const created = useRelativeTime(new Date(mod.created_at).getTime(), t);
 
     const stats = [
       { label: t("Endorsements"), value: numeral(mod.endorsements).format("0a") },
-      { label: t("Unique DLs"), value: "—" },
+      { label: t("Unique DLs"), value: numeral(mod.unique_downloads).format("0a") },
       { label: t("Total DLs"), value: numeral(mod.downloads).format("0a") },
       { label: t("Updated"), value: updated },
       { label: t("Created"), value: created },
-      { label: t("File size"), value: numeral(mod.fileSize * 1024).format("0.0b") },
+      { label: t("File size"), value: numeral(mod.file_size_kilobytes * 1024).format("0.0b") },
     ];
 
     return (
@@ -63,90 +70,95 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
               <TabBar className="min-w-0 flex-1">
                 <TabButton name={t("Details")} panelId="details" />
 
-                <TabButton name={t("Files")} panelId="files" />
+                {/* <TabButton name={t("Files")} panelId="files" /> */}
 
-                <TabButton name={t("Comments")} panelId="comments" />
+                {/* <TabButton name={t("Comments")} panelId="comments" /> */}
               </TabBar>
 
-              <Button leftIcon="download" size="sm">
+              {/* <Button leftIcon="download" size="sm">
                 {t("1-click install")}
-              </Button>
+              </Button> */}
+
+              <Tooltip content={t("Open mod page")}>
+                <Button
+                  appearance="moderate"
+                  aria-label={t("Open mod page")}
+                  brand="neutral"
+                  leftIcon="open_in_new"
+                  onClick={() =>
+                    window.api.shell.openUrl(
+                      [NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/"),
+                    )
+                  }
+                />
+              </Tooltip>
             </div>
 
             <TabPanel id="details">
               <div className="flex flex-col gap-y-3">
-                <ModGallery
-                  images={gallery}
-                  isAdult={!!mod.isAdult}
-                  key={mod.name}
-                  onPick={onPick}
-                />
+                <ModGallery images={gallery} isAdult={mod.adult} key={mod.id} onPick={onPick} />
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="@container border-y border-stroke-weak py-4">
+                  <div className="grid grid-cols-3 gap-2 @2xl:grid-cols-6">
+                    {stats.map(({ label, value }) => (
+                      <div className="min-w-0" key={label}>
+                        <Typography
+                          appearance="subdued"
+                          brand="neutral-translucent"
+                          typographyType="body-sm"
+                        >
+                          {label}
+                        </Typography>
+
+                        <Typography appearance="moderate" className="font-medium">
+                          {value}
+                        </Typography>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-1 gap-y-2">
                   <Typography
                     appearance="moderate"
                     as="div"
                     brand="neutral-translucent"
                     typographyType="body-sm"
                   >
-                    <Author name={mod.author} />
+                    <Author name={mod.author.name} />
                   </Typography>
 
-                  <span aria-hidden className="h-5.5 w-px bg-stroke-weak" />
+                  <span aria-hidden className="mx-1 h-5.5 w-px bg-stroke-weak" />
 
-                  <div className="flex flex-wrap gap-1">
-                    {mod.isAdult && (
-                      <Pill brand="danger" icon={{ name: "fiber_manual_record", filled: true }}>
-                        {t("Adult")}
-                      </Pill>
-                    )}
-
-                    <Pill>{mod.category}</Pill>
-
-                    <Pill>{t("+10 more")}</Pill>
-                  </div>
+                  <ModTags
+                    category={mod.category?.name}
+                    isAdult={mod.adult}
+                    isLoading={details.isPending}
+                    tags={tags}
+                  />
                 </div>
 
-                <div className="flex flex-col gap-y-1">
-                  <Typography
-                    appearance="moderate"
-                    as="h3"
-                    className="font-medium"
-                    typographyType="body-xl"
-                  >
-                    {mod.name}
-                  </Typography>
+                <div className="pt-6">
+                  {details.isPending && <ModDetailsDescriptionSkeleton />}
 
-                  <Typography appearance="subdued">{mod.summary}</Typography>
-                </div>
+                  {details.isError && !details.data && (
+                    <Typography appearance="subdued" brand="neutral-translucent">
+                      {t("The mod's description couldn't be loaded.")}
+                    </Typography>
+                  )}
 
-                <div className="flex flex-wrap gap-2 border-t border-stroke-weak pt-4 pb-2">
-                  {stats.map(({ label, value }) => (
-                    <div className="min-w-24 flex-1" key={label}>
-                      <Typography appearance="moderate" className="font-medium">
-                        {value}
-                      </Typography>
-
-                      <Typography
-                        appearance="subdued"
-                        brand="neutral-translucent"
-                        typographyType="body-sm"
-                      >
-                        {label}
-                      </Typography>
-                    </div>
-                  ))}
+                  {!!details.data?.description && <BBCode bbcode={details.data.description} />}
                 </div>
               </div>
             </TabPanel>
 
-            <TabPanel id="files">
+            {/* <TabPanel id="files">
               <div className={placeholderClass}>{t("The mod's files will go here")}</div>
-            </TabPanel>
+            </TabPanel> */}
 
-            <TabPanel id="comments">
+            {/* <TabPanel id="comments">
               <div className={placeholderClass}>{t("The mod's comments will go here")}</div>
-            </TabPanel>
+            </TabPanel> */}
           </div>
         </TabProvider>
       </div>

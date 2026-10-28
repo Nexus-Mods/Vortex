@@ -25,7 +25,7 @@ interface IModGalleryProps {
 /**
  * A mod's pictures: the picked one large, over a strip of them all that scrolls sideways, with
  * arrows at its ends while there's more to see. Clicking a thumbnail, or the arrow keys on the
- * strip, picks it.
+ * strip, picks it. With only one picture there's nothing to pick, so no strip.
  */
 export const ModGallery = ({ images, isAdult, onPick }: IModGalleryProps) => {
   const { t } = useTranslation();
@@ -104,69 +104,71 @@ export const ModGallery = ({ images, isAdult, onPick }: IModGalleryProps) => {
         src={shown.src}
       />
 
-      <div className="relative flex items-center">
-        <div
-          aria-label={t("Images")}
-          className="-m-1 flex min-w-0 flex-1 snap-x scroll-px-1 [scrollbar-width:none] gap-x-1.5 overflow-x-auto p-1"
-          ref={stripRef}
-          role="toolbar"
-          onKeyDown={pickByKey}
-          onScroll={updateCanScroll}
-        >
-          {images.map((image, index) => (
-            <button
-              aria-label={t("Image {{index}} of {{count}}", {
-                index: index + 1,
-                count: images.length,
-              })}
-              aria-pressed={index === picked}
-              className="w-[calc((100%-4*0.375rem)/5)] shrink-0 snap-start rounded-xs"
-              key={image.thumbnail}
-              ref={(element) => {
-                thumbnailRefs.current[index] = element;
-              }}
-              tabIndex={index === picked ? 0 : -1}
-              type="button"
-              onClick={() => pick(index)}
-            >
-              <AdultAwareImage
-                alt=""
-                className={joinClasses(["w-full rounded-xs"], {
-                  "[&_.nxm-image-frame]:border-neutral-strong": index === picked,
+      {images.length > 1 && (
+        <div className="relative flex items-center">
+          <div
+            aria-label={t("Images")}
+            className="-m-1 flex min-w-0 flex-1 snap-x scroll-px-1 [scrollbar-width:none] gap-x-1.5 overflow-x-auto p-1"
+            ref={stripRef}
+            role="toolbar"
+            onKeyDown={pickByKey}
+            onScroll={updateCanScroll}
+          >
+            {images.map((image, index) => (
+              <button
+                aria-label={t("Image {{index}} of {{count}}", {
+                  index: index + 1,
+                  count: images.length,
                 })}
-                fit="cover"
-                imageType="mod"
-                isAdult={isAdult}
-                src={image.thumbnail}
-              />
-            </button>
-          ))}
+                aria-pressed={index === picked}
+                className="w-[calc((100%-4*0.375rem)/5)] shrink-0 snap-start rounded-xs"
+                key={image.thumbnail}
+                ref={(element) => {
+                  thumbnailRefs.current[index] = element;
+                }}
+                tabIndex={index === picked ? 0 : -1}
+                type="button"
+                onClick={() => pick(index)}
+              >
+                <AdultAwareImage
+                  alt=""
+                  className={joinClasses(["w-full rounded-xs"], {
+                    "[&_.nxm-image-frame]:border-neutral-strong": index === picked,
+                  })}
+                  fit="cover"
+                  imageType="mod"
+                  isAdult={isAdult}
+                  src={image.thumbnail}
+                />
+              </button>
+            ))}
+          </div>
+
+          {canScroll.back && (
+            <Button
+              appearance="scrim"
+              brand="neutral"
+              className="absolute left-1"
+              leftIcon="chevron_left"
+              size="sm"
+              title={t("Earlier images")}
+              onClick={() => page(-1)}
+            />
+          )}
+
+          {canScroll.forward && (
+            <Button
+              appearance="scrim"
+              brand="neutral"
+              className="absolute right-1"
+              leftIcon="chevron_right"
+              size="sm"
+              title={t("Later images")}
+              onClick={() => page(1)}
+            />
+          )}
         </div>
-
-        {canScroll.back && (
-          <Button
-            appearance="scrim"
-            brand="neutral"
-            className="absolute left-1"
-            leftIcon="chevron_left"
-            size="sm"
-            title={t("Earlier images")}
-            onClick={() => page(-1)}
-          />
-        )}
-
-        {canScroll.forward && (
-          <Button
-            appearance="scrim"
-            brand="neutral"
-            className="absolute right-1"
-            leftIcon="chevron_right"
-            size="sm"
-            title={t("Later images")}
-            onClick={() => page(1)}
-          />
-        )}
-      </div>
+      )}
     </div>
   );
 };

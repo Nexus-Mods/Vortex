@@ -1,47 +1,70 @@
-import React, { type KeyboardEvent, type RefObject, useRef, useState } from "react";
+import React, { type KeyboardEvent, type RefObject, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Pagination } from "@/ui/components/pagination/Pagination";
 import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { rovingFocus } from "@/ui/utils/roving_focus/rovingFocus";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
+import { MAX_PAGES, MODS_PER_PAGE } from "../../../hooks/use_mod_search/useModSearch.hook";
 import { ModCard } from "../mod_card/ModCard";
-import { type IStaticMod, STATIC_RESULTS } from "../staticMods";
+import { ModCardSkeleton } from "../mod_card/ModCard.skeleton";
 
 /** The tabbable controls a details pane can take focus at, first in order. */
 const TABBABLE =
   'button:not([disabled]):not([tabindex="-1"]), [href], [tabindex]:not([tabindex="-1"])';
 
 interface IModListProps {
-  /** The mods, in order. */
-  mods: IStaticMod[];
-  /** The name of the mod the details pane shows. */
-  activeMod: string;
-  /** Shows another mod in the details pane, by name. */
-  onSelectMod: (name: string) => void;
+  /** The page's mods, in order. */
+  mods: ModSummary[];
+  /** The id of the mod the details pane shows, which may be on another page. */
+  activeModId: string | undefined;
+  /** Shows another mod in the details pane, by id. */
+  onSelectMod: (id: string) => void;
+  /** The page showing, from 1. */
+  currentPage: number;
+  /** Moves to another page. */
+  onPageChange: (page: number) => void;
+  /** How many mods the search found, over every page. */
+  totalCount: number;
+  /** Whether a page is loading. */
+  isLoading: boolean;
+  /** Whether the page failed to load. */
+  isError: boolean;
+  /** Asks for the page again, after it failed. */
+  onRetry: () => void;
   /** The details pane, for Right to move focus into. */
   detailsRef: RefObject<HTMLDivElement>;
 }
 
 /**
- * Browse's list of mods, a static wireframe (LAZ-1346), in its own scroll region with the
- * pagination after it. One Tab stop, the open mod: Up and Down open the mod before or after it,
- * stopping at the ends, and Home and End the first and last, focus going with them; Right moves
- * focus into the details. Tab keeps its own order, the list, then the pagination, then the
- * details. Its scrollbar stops where the rule beside it does.
+ * Browse's list of mods, with pagination that stays through a failed page, which offers to try
+ * again. One Tab stop, the open mod or else the first; Up, Down, Home and End pick a mod, and
+ * Right moves focus into the details.
  */
-export const ModList = ({ mods, activeMod, onSelectMod, detailsRef }: IModListProps) => {
+export const ModList = ({
+  mods,
+  activeModId,
+  onSelectMod,
+  detailsRef,
+  currentPage,
+  onPageChange,
+  totalCount,
+  isLoading,
+  isError,
+  onRetry,
+}: IModListProps) => {
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tabStop = mods.some((mod) => mod.id === activeModId) ? activeModId : mods[0]?.id;
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const isOnCard = rovingFocus(event, {
       orientation: "vertical",
       itemSelector: "[data-mod-card]",
-      onMove: (index) => onSelectMod(mods[index].name),
+      onMove: (index) => onSelectMod(mods[index].id),
     });
 
     if (isOnCard || event.key !== "ArrowRight" || hasModifierKey(event)) {
@@ -67,29 +90,35 @@ export const ModList = ({ mods, activeMod, onSelectMod, detailsRef }: IModListPr
         onKeyDown={onKeyDown}
       >
         <Listing
-          additionalContent={
-            <Pagination
-              currentPage={page}
-              recordsPerPage={mods.length}
-              scrollRef={scrollRef}
-              totalRecords={STATIC_RESULTS}
-              onPaginationUpdate={setPage}
-            />
-          }
           className="flex flex-col gap-y-3.5"
+          errorMessage={t("The mods couldn't be loaded. Try again, or go to another page.")}
+          errorTitle={t("Something went wrong")}
           entityCount={mods.length}
+          isError={isError}
+          isLoading={isLoading}
           noResultsTitle={t("No mods found")}
+          onRetry={onRetry}
+          skeletonCount={6}
+          SkeletonTile={ModCardSkeleton}
         >
           {mods.map((mod) => (
             <ModCard
-              isActive={mod.name === activeMod}
-              key={mod.name}
+              isActive={mod.id === activeModId}
+              key={mod.id}
               mod={mod}
-              tabIndex={mod.name === activeMod ? 0 : -1}
-              onSelect={() => onSelectMod(mod.name)}
+              tabIndex={mod.id === tabStop ? 0 : -1}
+              onSelect={() => onSelectMod(mod.id)}
             />
           ))}
         </Listing>
+
+        <Pagination
+          currentPage={currentPage}
+          recordsPerPage={MODS_PER_PAGE}
+          scrollRef={scrollRef}
+          totalRecords={Math.min(totalCount, MAX_PAGES * MODS_PER_PAGE)}
+          onPaginationUpdate={onPageChange}
+        />
       </PageScroll>
     </div>
   );
