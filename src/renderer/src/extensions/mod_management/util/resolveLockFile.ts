@@ -124,6 +124,7 @@ async function logPlan(
   }
   try {
     const { lockfile: previous, seeded } = await previousLockfile(api, gameMode, hashFile);
+
     const scanStartedAt = Temporal.Now.instant();
     const disk = await scanDeploymentTargets(
       Object.values(game.getModPaths(gamePath)),
@@ -135,7 +136,7 @@ async function logPlan(
     const planMs = elapsedMsSince(planStartedAt);
     lastPlannedLockfiles.set(gameMode, lockfile);
 
-    log("info", "planned lockfile", {
+    const summary = {
       gameMode,
       seededPrevious: seeded,
       roots: disk.roots.length,
@@ -146,9 +147,21 @@ async function logPlan(
       links: operations.filter((operation) => operation.kind === OperationKind.Link).length,
       scanMs,
       planMs,
+    };
+    log("info", "planned lockfile", summary);
+    log("debug", "planned lockfile operations", {
+      ...summary,
+      operations: operations.map((operation) =>
+        operation.kind === OperationKind.Backup
+          ? `${operation.kind} ${operation.destinationPath}`
+          : `${operation.kind} ${operation.file.destinationPath}`,
+      ),
     });
   } catch (err) {
-    log("warn", "failed to plan lockfile", { gameMode, error: getErrorMessageOrDefault(err) });
+    log("warn", "failed to plan lockfile", {
+      gameMode,
+      error: getErrorMessageOrDefault(err),
+    });
   }
 }
 
@@ -161,6 +174,7 @@ async function logResolvedLockfile(
   let lockfile: Lockfile;
   try {
     lockfile = await resolveLockfile(api, gameMode, registeredContributions, hashFile);
+
     log("info", "resolved lockfile", {
       gameMode,
       files: lockfile.files.length,
@@ -169,6 +183,10 @@ async function logResolvedLockfile(
         (file) => file.source === FileSourceKind.VortexGenerated,
       ).length,
       elapsedMs: elapsedMsSince(startedAt),
+    });
+    log("debug", "resolved lockfile files", {
+      gameMode,
+      files: lockfile.files.map((file) => file.destinationPath),
     });
   } catch (err) {
     log("warn", "failed to resolve lockfile", {
