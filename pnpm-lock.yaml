@@ -699,8 +699,8 @@ catalogs:
       specifier: 4.17.23
       version: 4.17.23
     loot:
-      specifier: github:Nexus-Mods/node-loot#44306bda0dd9c54e1e38c8ab217afedffd4510aa
-      version: 7.0.1
+      specifier: github:Nexus-Mods/node-loot#fd1ccf136f38281ce5039d31f664a27a3ba14f45
+      version: 7.0.2
     lru-cache:
       specifier: 11.2.7
       version: 11.2.7
@@ -5106,7 +5106,7 @@ importers:
     optionalDependencies:
       loot:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa
+        version: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/fd1ccf136f38281ce5039d31f664a27a3ba14f45
 
   src/shared:
     dependencies:
@@ -10711,9 +10711,9 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa:
-    resolution: {gitHosted: true, integrity: sha512-Rg/vyTt218kmIg3qAunng5DQVCXPqMjMo2wkHLZ3VHeKpiQEJ5Pn7z1I3B8VHhLvRrLLp8VuUhMpZkZyxZIU1Q==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa}
-    version: 7.0.1
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/fd1ccf136f38281ce5039d31f664a27a3ba14f45:
+    resolution: {gitHosted: true, integrity: sha512-c6ptJ8T+1LmGhYhmSXXLa9G6sqaWJ1U+RxJJZKaCfyFmJDaxyptrzz1v7su28oIRRcLd5QER2X+hvlh6bZ3XKg==, tarball: https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/fd1ccf136f38281ce5039d31f664a27a3ba14f45}
+    version: 7.0.2
 
   lowercase-keys@3.0.0:
     resolution: {integrity: sha512-ozCC6gdQ+glXOQsveKD0YsDy8DSQFjDTz4zyzEHNV5+JP5D62LmfDZ6o1cycFx9ouG940M5dE8C8CTewdj2YWQ==}
@@ -19031,7 +19031,7 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/44306bda0dd9c54e1e38c8ab217afedffd4510aa:
+  loot@https://codeload.github.com/Nexus-Mods/node-loot/tar.gz/fd1ccf136f38281ce5039d31f664a27a3ba14f45:
     dependencies:
       autogypi: 0.2.2
       lodash: 4.17.23
