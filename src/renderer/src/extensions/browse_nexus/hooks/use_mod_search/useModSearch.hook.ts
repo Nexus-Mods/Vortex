@@ -149,6 +149,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
     allModsTotal: allMods.data ?? 0,
     loading: mods.isFetching,
     error: mods.error,
+    retry: () => void mods.refetch(),
     preset,
     selectPreset,
     sort,

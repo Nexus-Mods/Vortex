@@ -33,13 +33,16 @@ interface IModListProps {
   isLoading: boolean;
   /** Whether the page failed to load. */
   isError: boolean;
+  /** Asks for the page again, after it failed. */
+  onRetry: () => void;
   /** The details pane, for Right to move focus into. */
   detailsRef: RefObject<HTMLDivElement>;
 }
 
 /**
- * Browse's list of mods, with pagination. One Tab stop, the open mod or else the first;
- * Up, Down, Home and End pick a mod, and Right moves focus into the details.
+ * Browse's list of mods, with pagination that stays through a failed page, which offers to try
+ * again. One Tab stop, the open mod or else the first; Up, Down, Home and End pick a mod, and
+ * Right moves focus into the details.
  */
 export const ModList = ({
   mods,
@@ -51,6 +54,7 @@ export const ModList = ({
   totalCount,
   isLoading,
   isError,
+  onRetry,
 }: IModListProps) => {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -86,20 +90,14 @@ export const ModList = ({
         onKeyDown={onKeyDown}
       >
         <Listing
-          additionalContent={
-            <Pagination
-              currentPage={currentPage}
-              recordsPerPage={MODS_PER_PAGE}
-              scrollRef={scrollRef}
-              totalRecords={Math.min(totalCount, MAX_PAGES * MODS_PER_PAGE)}
-              onPaginationUpdate={onPageChange}
-            />
-          }
           className="flex flex-col gap-y-3.5"
+          errorMessage={t("The mods couldn't be loaded. Try again, or go to another page.")}
+          errorTitle={t("Something went wrong")}
           entityCount={mods.length}
           isError={isError}
           isLoading={isLoading}
           noResultsTitle={t("No mods found")}
+          onRetry={onRetry}
           skeletonCount={6}
           SkeletonTile={ModCardSkeleton}
         >
@@ -113,6 +111,14 @@ export const ModList = ({
             />
           ))}
         </Listing>
+
+        <Pagination
+          currentPage={currentPage}
+          recordsPerPage={MODS_PER_PAGE}
+          scrollRef={scrollRef}
+          totalRecords={Math.min(totalCount, MAX_PAGES * MODS_PER_PAGE)}
+          onPaginationUpdate={onPageChange}
+        />
       </PageScroll>
     </div>
   );

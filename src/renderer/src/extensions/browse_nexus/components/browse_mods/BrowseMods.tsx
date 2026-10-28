@@ -96,6 +96,7 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
           mods={mods}
           totalCount={search.totalCount}
           onPageChange={search.setCurrentPage}
+          onRetry={search.retry}
           onSelectMod={selectMod}
         />
 

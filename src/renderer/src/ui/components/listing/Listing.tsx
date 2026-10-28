@@ -23,6 +23,7 @@ export const Listing = ({
   noResultsChildren,
   noResultsMessage = "Try adjusting your filters or search terms.",
   noResultsTitle = "No items found",
+  onRetry,
   skeletonCount = 4,
   SkeletonTile,
 }: PropsWithChildren<{
@@ -44,6 +45,7 @@ export const Listing = ({
   noResultsIconClassName?: string;
   noResultsMessage?: string;
   noResultsTitle?: string;
+  onRetry?: () => void;
   skeletonCount?: number;
 }>) => {
   if (isLoading || !!entityCount) {
@@ -74,6 +76,7 @@ export const Listing = ({
             isError={true}
             message={errorMessage}
             title={errorTitle}
+            onRetry={onRetry}
           />
         )}
       </>

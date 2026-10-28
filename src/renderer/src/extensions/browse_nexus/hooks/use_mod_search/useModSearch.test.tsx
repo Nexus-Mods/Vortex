@@ -184,6 +184,23 @@ describe("useModSearch", () => {
     expect(mocks.requestCount).toBe(3);
   });
 
+  it("asks for a failed page again when retried, and shows it once it comes", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setCurrentPage(2));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await fail("Network down");
+    await waitFor(() => expect(result.current.error).toBeTruthy());
+
+    act(() => result.current.retry());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(mocks.pending[0].search.pagination.page).toBe(2);
+    await respond("trending", 45);
+
+    await waitFor(() => expect(result.current.error).toBeNull());
+    expect(result.current.mods).toEqual([{ id: "45" }]);
+  });
+
   it("asks for nothing outside a game", async () => {
     mocks.gameDomainName = undefined;
 
