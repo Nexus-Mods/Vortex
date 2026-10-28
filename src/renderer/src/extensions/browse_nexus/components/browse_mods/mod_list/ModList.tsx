@@ -19,7 +19,7 @@ const TABBABLE =
 interface IModListProps {
   /** The page's mods, in order. */
   mods: ModSummary[];
-  /** The id of the mod the details pane shows. */
+  /** The id of the mod the details pane shows, which may be on another page. */
   activeModId: string | undefined;
   /** Shows another mod in the details pane, by id. */
   onSelectMod: (id: string) => void;
@@ -38,11 +38,8 @@ interface IModListProps {
 }
 
 /**
- * Browse's list of mods (LAZ-1346), in its own scroll region with the pagination after it, which
- * goes no further than the search's last page. One Tab stop, the open mod: Up and Down open the mod before or after it,
- * stopping at the ends, and Home and End the first and last, focus going with them; Right moves
- * focus into the details. Tab keeps its own order, the list, then the pagination, then the
- * details. Its scrollbar stops where the rule beside it does.
+ * Browse's list of mods, with pagination. One Tab stop, the open mod or else the first;
+ * Up, Down, Home and End pick a mod, and Right moves focus into the details.
  */
 export const ModList = ({
   mods,
@@ -57,6 +54,7 @@ export const ModList = ({
 }: IModListProps) => {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tabStop = mods.some((mod) => mod.id === activeModId) ? activeModId : mods[0]?.id;
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const isOnCard = rovingFocus(event, {
@@ -110,7 +108,7 @@ export const ModList = ({
               isActive={mod.id === activeModId}
               key={mod.id}
               mod={mod}
-              tabIndex={mod.id === activeModId ? 0 : -1}
+              tabIndex={mod.id === tabStop ? 0 : -1}
               onSelect={() => onSelectMod(mod.id)}
             />
           ))}

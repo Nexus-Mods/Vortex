@@ -24,7 +24,7 @@ interface IBrowseModsBarProps {
 }
 
 /**
- * The bar over Browse's mods (LAZ-1346): its views, then the results count, search, filter and
+ * The bar over Browse's mods: its views, then the results count, search, filter and
  * view options. Picking a view sorts the mods by its preset, and the view options change how
  * the open one sorts, as the mods table's do its views. The custom view and adding one are
  * commented out until views can be saved, search until the mod search takes a term, and the

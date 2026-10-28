@@ -82,7 +82,7 @@ export const BrowseSections = ({
         ])}
         id="mods"
       >
-        {isModsEnabled ? <BrowseMods search={mods} /> : <ModsComingSoon api={api} />}
+        {isModsEnabled ? <BrowseMods api={api} search={mods} /> : <ModsComingSoon api={api} />}
       </TabPanel>
 
       {supportsCollections && (

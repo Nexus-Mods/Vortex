@@ -1,47 +1,83 @@
 import React, { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import { NoResults } from "@/ui/components/no_results/NoResults";
 
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
 import type { IGalleryImage } from "./mod_details/mod_gallery/ModGallery";
 import { ModDetails } from "./mod_details/ModDetails";
+import { ModDetailsSkeleton } from "./mod_details/ModDetails.skeleton";
 import { ModList } from "./mod_list/ModList";
 
 interface IBrowseModsProps {
+  api: IExtensionApi;
   /** The active game's mod search, kept above the tabs. */
   search: IModSearch;
 }
 
 /**
- * The active game's mods (LAZ-1346): the `BrowseModsBar` over a body that holds the `ModList` and
- * `ModDetails` side by side, half each, each scrolling on its own, with a rule over the seam inset
- * from top and bottom. The details keep their half while there's no mod to show, so the list
- * stays its width. The body blurs the layout's `GameArt` behind it, which the page's translucent
- * pane lets through; the `ModBackdrop` lies inside it, under them. Holds what they share: the mod
- * the details show, the page's first until another's picked, and the picture picked in its
- * gallery, which has only the mod's thumbnail, the one picture the mod search returns.
+ * The active game's mods: the bar over the list and details, side by side. The details keep the
+ * picked mod, the first until another's picked, through changes of page or sort.
  */
-export const BrowseMods = ({ search }: IBrowseModsProps) => {
+export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
+  const { t } = useTranslation();
   const { mods } = search;
-  const [activeModId, setActiveModId] = useState<string>();
-  const active = mods.find((mod) => mod.id === activeModId) ?? mods[0];
+  const [activeMod, setActiveMod] = useState<ModSummary>();
+
+  if (!activeMod && mods[0]) {
+    setActiveMod(mods[0]);
+  }
+
   const gallery = useMemo<IGalleryImage[]>(
     () =>
-      active?.thumbnail_url ? [{ src: active.thumbnail_url, thumbnail: active.thumbnail_url }] : [],
-    [active],
+      activeMod?.thumbnail_url
+        ? [{ src: activeMod.thumbnail_url, thumbnail: activeMod.thumbnail_url }]
+        : [],
+    [activeMod],
   );
-  const [picked, setPicked] = useState<IGalleryImage>();
-  const backdrop = picked && gallery.includes(picked) ? picked : gallery[0];
+  const [pickedImage, setPickedImage] = useState<IGalleryImage>();
+  const backdrop = pickedImage && gallery.includes(pickedImage) ? pickedImage : gallery[0];
   const detailsRef = useRef<HTMLDivElement>(null);
 
   /** Opens another mod's details; its gallery starts over at its first picture, and so does this. */
   const selectMod = (id: string) => {
-    if (id === active?.id) {
+    if (id === activeMod?.id) {
       return;
     }
 
-    setActiveModId(id);
-    setPicked(undefined);
+    setActiveMod(mods.find((mod) => mod.id === id));
+    setPickedImage(undefined);
+  };
+
+  /** The details' half: the active mod's, or with none, pulsing while the list loads or saying so. */
+  const details = () => {
+    if (!activeMod && search.loading) {
+      return <ModDetailsSkeleton />;
+    }
+
+    if (!activeMod) {
+      return (
+        <NoResults
+          className="self-center p-6"
+          message={t("Pick a mod from the list to see its details.")}
+          title={t("No mod to show")}
+        />
+      );
+    }
+
+    return (
+      <ModDetails
+        api={api}
+        gallery={gallery}
+        mod={activeMod}
+        ref={detailsRef}
+        onPick={setPickedImage}
+      />
+    );
   };
 
   return (
@@ -52,7 +88,7 @@ export const BrowseMods = ({ search }: IBrowseModsProps) => {
         <ModBackdrop src={backdrop?.src} />
 
         <ModList
-          activeModId={active?.id}
+          activeModId={activeMod?.id}
           currentPage={search.currentPage}
           detailsRef={detailsRef}
           isError={!!search.error}
@@ -63,9 +99,7 @@ export const BrowseMods = ({ search }: IBrowseModsProps) => {
           onSelectMod={selectMod}
         />
 
-        {!!active && (
-          <ModDetails gallery={gallery} mod={active} ref={detailsRef} onPick={setPicked} />
-        )}
+        {details()}
 
         <div aria-hidden className="absolute inset-y-6 left-1/2 w-px bg-stroke-weak" />
       </div>

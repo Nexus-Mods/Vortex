@@ -18,7 +18,7 @@ interface IBrowsePageProps {
 }
 
 /**
- * Browsing a game's mods and collections, a tab each in the header (LAZ-1346). The mods are
+ * Browsing a game's mods and collections, a tab each in the header. The mods are
  * behind the
  * `laz-vortex-browse-mods` flag, and say they're coming soon while it's off, when the page opens
  * on the collections instead. The tab picked outlasts changing game; everything under it starts
