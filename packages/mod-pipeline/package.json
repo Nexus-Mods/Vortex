@@ -33,6 +33,7 @@
     }
   },
   "dependencies": {
+    "@nexusmods/paths": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

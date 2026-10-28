@@ -17,8 +17,8 @@ import {
   type ResolverMod,
   type FileEntry,
 } from "@nexusmods/mod-pipeline";
+import { QualifiedPath } from "@nexusmods/paths";
 import { parseError, type VortexGameId } from "@vortex/shared";
-import { QualifiedPath } from "@vortex/shared/filesystem";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
@@ -48,8 +48,8 @@ import { doSortMods } from "./sort";
 // files hashed at once; keeps the main process's hash workers, at most 16, busy
 const HASH_CONCURRENCY = 16;
 
-/** A path with "/" separators, as lockfile destinations have. */
-export const toPortablePath = (filePath: string) => filePath.replaceAll("\\", "/");
+/** An absolute path in the sanitized, "/" separated form lockfile destinations and scan roots share. */
+export const toPortablePath = (filePath: string) => QualifiedPath.fromNative(filePath).path;
 
 /** A mod's origin; a Nexus mod whose file version is unknown is user generated. */
 function modOrigin(mod: IMod, gameMode: string): ResolverMod["origin"] {

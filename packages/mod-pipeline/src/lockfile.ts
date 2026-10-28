@@ -1,6 +1,6 @@
 import { GameInstallSchema, type GameInstall } from "./gameInstall";
 import { NexusFileId, NexusGameId } from "./ids";
-import { pathKeyOf } from "./pathKey";
+import { AbsolutePathSchema, pathKeyOf } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -72,7 +72,7 @@ export interface Lockfile {
 const fileFields = {
   fileHash: z.string(),
   hashType: z.enum(HashType),
-  destinationPath: z.string(),
+  destinationPath: AbsolutePathSchema,
 };
 
 export const FileEntrySchema: z.ZodType<FileEntry> = z.object(fileFields);

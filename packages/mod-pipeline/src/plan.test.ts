@@ -85,6 +85,18 @@ describe("plan", () => {
     );
   });
 
+  test("rejects a lockfile with destinations that differ only in how an accent is encoded", () => {
+    const lockfileWithCompositionTwins = lockfile([
+      // precomposed "é", then "e" followed by a combining acute accent
+      makeFileSource("Data/Café.esp"),
+      makeFileSource("Data/Café.esp"),
+    ]);
+
+    expect(() => plan(lockfileWithCompositionTwins, undefined, diskScan())).toThrow(
+      "a lockfile lists a destination twice",
+    );
+  });
+
   test("rejects lockfiles for different games", () => {
     expect(() => plan(lockfile([]), lockfile([], NexusGameId(1100)), diskScan())).toThrow(
       "the lockfiles are for games 1100 and 1704",
