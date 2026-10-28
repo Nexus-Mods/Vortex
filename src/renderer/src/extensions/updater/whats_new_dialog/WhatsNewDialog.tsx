@@ -37,8 +37,6 @@ export const WhatsNewDialog = ({ visible, onHide, onConfirm }: IProps) => {
     onConfirm();
   };
 
-  // Alone, Close is the way out and so the strong neutral button; beside an update's button it is
-  // the quieter alternative.
   return (
     <Modal
       isOpen={visible}
@@ -64,6 +62,8 @@ export const WhatsNewDialog = ({ visible, onHide, onConfirm }: IProps) => {
 
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <Button
+          // Alone, Close is the way out and so the strong neutral button; beside an update's
+          // button it is the quieter alternative.
           appearance={action === undefined ? "strong" : "moderate"}
           brand="neutral"
           data-testid="whats-new-close"

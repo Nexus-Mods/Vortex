@@ -65,7 +65,7 @@ describe("Html", () => {
   });
 
   describe("with media allowed", () => {
-    it("keeps images and video from a secure web address", () => {
+    it("keeps images and video from a web address", () => {
       const { container } = render(
         <Html
           allowMedia
@@ -107,7 +107,7 @@ describe("Html", () => {
         <Html
           allowMedia
           html={
-            '<img src="http://example.com/a.png"><img src="file:///C:/b.png"><img src="c.png">' +
+            '<img src="//example.com/a.png"><img src="file:///C:/b.png"><img src="c.png">' +
             '<img src="https://example.com/d.png" srcset="https://example.com/e.png 2x">' +
             '<video src="steam://run/1" poster="file:///C:/p.png"></video>' +
             '<picture><source srcset="https://example.com/f.png"></picture>' +

@@ -12,13 +12,10 @@ const MEDIA = new Set(["img", "picture", "source", "video", "audio", "track"]);
 /** The media that can be allowed: what a GitHub release's notes embed. The rest always goes. */
 const ALLOWED_MEDIA = new Set(["img", "source", "video"]);
 
-/** Attributes that name a file to load; only a secure web address is kept. */
+/** Attributes that name a file to load; only a web address is kept. */
 const MEDIA_SOURCES = ["src", "poster"];
 
-const isSecureUrl = (url: string | null) =>
-  url !== null && URL.canParse(url) && new URL(url).protocol === "https:";
-
-/** Applies to links and, with media allowed, to the sources of media. */
+/** Leaves a link's target only if it's a web page, so it can't open a file or app. */
 const keepLinkTargetsToWebPages = (name: string, node: HTMLElement) => {
   if (name === "a" && webHref(node.getAttribute("href") ?? undefined) === undefined) {
     node.removeAttribute("href");
@@ -41,7 +38,7 @@ const leaveOutUntrusted = (name: string, node: HTMLElement) => {
 };
 
 /**
- * As `leaveOutUntrusted`, but images and video stay, loading only from a secure web address. An
+ * As `leaveOutUntrusted`, but images and video stay, loading only from a web address. An
  * image with no such address goes, and `srcset` always does, as it can name more than one file.
  */
 const leaveOutUntrustedKeepingMedia = (name: string, node: HTMLElement) => {
@@ -52,7 +49,7 @@ const leaveOutUntrustedKeepingMedia = (name: string, node: HTMLElement) => {
   node.removeAttribute("srcset");
 
   for (const attribute of MEDIA_SOURCES) {
-    if (!isSecureUrl(node.getAttribute(attribute))) {
+    if (webHref(node.getAttribute(attribute) ?? undefined) === undefined) {
       node.removeAttribute(attribute);
     }
   }
@@ -83,7 +80,7 @@ interface IHtmlProps extends IProseProps {
   /** The HTML to render, such as a mod's changelog from Nexus Mods. */
   html: string;
   /**
-   * Keeps images and video, loaded from secure web addresses only, such as a release's
+   * Keeps images and video, loaded from web addresses only, such as a release's
    * screenshots. Only for HTML we write ourselves or trust; others' keeps it left out.
    */
   allowMedia?: boolean;

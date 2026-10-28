@@ -10,7 +10,7 @@ interface IMarkdownProps extends IProseProps {
   /** The markdown to render, such as a changelog. */
   markdown: string;
   /**
-   * Keeps images, loaded from secure web addresses only. Only for markdown we write ourselves or
+   * Keeps images, loaded from web addresses only. Only for markdown we write ourselves or
    * trust; others' keeps them left out.
    */
   allowMedia?: boolean;
@@ -21,14 +21,13 @@ const WebLink = ({ href, children }: { href?: string; children?: ReactNode }) =>
   <a href={webHref(href)}>{children}</a>
 );
 
-/** An image, kept only if it loads from a secure web address. */
+/** An image, kept only if it loads from a web address. */
 const SecureImage = ({ src, alt }: { src?: string; alt?: string }) =>
-  src !== undefined && URL.canParse(src) && new URL(src).protocol === "https:" ? (
-    <img alt={alt} src={src} />
-  ) : null;
+  webHref(src) === undefined ? null : <img alt={alt} src={src} />;
 
 const COMPONENTS = { a: WebLink };
 const COMPONENTS_WITH_MEDIA = { a: WebLink, img: SecureImage };
+const NO_DISALLOWED: string[] = [];
 
 /** Images are left out, so markdown we don't write can't load from elsewhere. */
 const DISALLOWED = ["img"];
@@ -48,7 +47,7 @@ export const Markdown = ({
   <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
     <ReactMarkdown
       components={allowMedia ? COMPONENTS_WITH_MEDIA : COMPONENTS}
-      disallowedElements={allowMedia ? [] : DISALLOWED}
+      disallowedElements={allowMedia ? NO_DISALLOWED : DISALLOWED}
     >
       {markdown}
     </ReactMarkdown>

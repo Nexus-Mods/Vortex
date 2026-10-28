@@ -58,7 +58,7 @@ describe("Markdown", () => {
   });
 
   describe("with media allowed", () => {
-    it("keeps images from a secure web address", () => {
+    it("keeps images from a web address", () => {
       render(<Markdown allowMedia markdown={"![shot](https://example.com/a.png)"} />);
 
       expect(screen.getByRole("img", { name: "shot" })).toHaveAttribute(
@@ -71,7 +71,7 @@ describe("Markdown", () => {
       const { container } = render(
         <Markdown
           allowMedia
-          markdown={"![a](http://example.com/a.png) ![b](file:///C:/b.png) ![c](c.png)"}
+          markdown={"![a](//example.com/a.png) ![b](file:///C:/b.png) ![c](c.png)"}
         />,
       );
 

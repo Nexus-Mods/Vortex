@@ -594,10 +594,11 @@ describe("What's New dialog", () => {
   const confirmOf = (registerDialog: ReturnType<typeof vi.fn>) =>
     (registerDialog.mock.calls[0]![2] as () => { onConfirm: () => void })().onConfirm;
 
-  it("registers the dialog under the id the legacy one had", async () => {
+  it("registers the dialog with a button that acts on the update", async () => {
     const { registerDialog } = await setup();
 
     expect(registerDialog.mock.calls[0]![0]).toBe("new-update-changelog-dialog");
+    expect(typeof confirmOf(registerDialog)).toBe("function");
   });
 
   it("shows the notes of an update on offer with a Download button", async () => {
