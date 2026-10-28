@@ -1,4 +1,3 @@
-import { mdiChevronDown, mdiChevronUp } from "@mdi/js";
 import React, { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -48,7 +47,7 @@ export const IssueSection = ({
             aria-label={t(collapsed ? "listing::section::expand" : "listing::section::collapse")}
             brand="neutral"
             hasExpandedStyle={false}
-            leftIconPath={collapsed ? mdiChevronDown : mdiChevronUp}
+            leftIcon={collapsed ? "keyboard_arrow_down" : "keyboard_arrow_up"}
             size="sm"
             onClick={() => setCollapsed((value) => !value)}
           />

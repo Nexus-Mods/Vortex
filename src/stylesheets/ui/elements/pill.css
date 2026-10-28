@@ -69,6 +69,7 @@
             flex-shrink: 0;
             width: calc(var(--spacing) * 3.5);
             height: calc(var(--spacing) * 3.5);
+            font-size: calc(var(--spacing) * 3.5);
         }
     }
 

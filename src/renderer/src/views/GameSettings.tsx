@@ -2,12 +2,14 @@ import React, { useCallback, useRef, type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { setSettingsPage } from "@/actions/session";
+import { setOpenMainPage, setSettingsPage } from "@/actions/session";
 import EmptyPlaceholder from "@/controls/EmptyPlaceholder";
 import { useExtensionObjects } from "@/ExtensionProvider";
+import { currentGame } from "@/extensions/gamemode_management/selectors";
 import type { IBaseProps } from "@/extensions/settings_interface/SettingsInterface";
 import type { PropsCallbackTyped } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
+import { Button } from "@/ui/components/button/Button";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
@@ -17,6 +19,7 @@ import startupSettings from "@/util/startupSettings";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
+import { formatGameDisplayName } from "@/views/components/Spine/utils";
 
 interface ISettingsPage {
   title: string;
@@ -54,6 +57,7 @@ export const GameSettings: FC<React.PropsWithChildren<{ active?: boolean; pageId
   const settingsPages = useExtensionObjects<ISettingsPage>(registerSettings);
 
   const settingsPage = useSelector((state: IState) => state.session.base.settingsPage || undefined);
+  const gameName = useSelector(currentGame)?.name;
 
   const startupSettingsRef = useRef(makeReactive(startupSettings));
 
@@ -142,13 +146,30 @@ export const GameSettings: FC<React.PropsWithChildren<{ active?: boolean; pageId
     [dispatch],
   );
 
+  const openVortexSettings = useCallback(() => {
+    dispatch(setOpenMainPage("application_settings", false));
+  }, [dispatch]);
+
   return (
     <Page active={active} pageId={pageId} scrollable={false}>
       <PageHeader
         pictogramName="settings"
-        subtitle={t("Settings specific to the game you are managing.")}
+        subtitle={
+          gameName
+            ? t("Settings for {{game}}.", { replace: { game: formatGameDisplayName(gameName) } })
+            : t("Settings specific to the game you are managing.")
+        }
         title={t("Game settings")}
-      />
+      >
+        <Button
+          appearance="weak"
+          brand="neutral"
+          rightIcon="arrow_forward"
+          onClick={openVortexSettings}
+        >
+          {t("Vortex settings")}
+        </Button>
+      </PageHeader>
 
       <PageScroll className="space-y-6 p-6">
         {visibleTabs.length === 0 ? (
@@ -159,7 +180,12 @@ export const GameSettings: FC<React.PropsWithChildren<{ active?: boolean; pageId
             text={t("Nothing to configure.")}
           />
         ) : (
-          <TabProvider tab={page ?? ""} tabListId="game-settings" onSetSelectedTab={setCurrentPage}>
+          <TabProvider
+            hasBorder
+            tab={page ?? ""}
+            tabListId="game-settings"
+            onSetSelectedTab={setCurrentPage}
+          >
             <TabBar>
               {visibleTabs.map((tabPage) => (
                 <TabButton key={tabPage.title} name={t(tabPage.title)} panelId={tabPage.title} />

@@ -1,5 +1,3 @@
-import { mdiInformationOutline } from "@mdi/js";
-
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import AboutPage from "./views/AboutPage";
 
@@ -10,7 +8,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerMainPage("", "About", AboutPage, {
     group: "hidden",
-    mdi: mdiInformationOutline,
+    menuIcon: "info",
   });
 
   return true;

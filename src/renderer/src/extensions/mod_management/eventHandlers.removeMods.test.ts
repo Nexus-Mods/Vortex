@@ -99,9 +99,10 @@ test("a removal failing for one mod type holds the next removal until its other 
   const next = removeMods(game, ["Next"]);
   await vi.waitFor(() => expect(finalizedPaths).toContain(secondTypePath));
   await settle(100);
-  const preparedBeforeRelease = [...preparedPaths];
+  // mod types prepare concurrently, so their order is not fixed
+  const preparedBeforeRelease = [...preparedPaths].sort();
   releaseSlow();
   await Promise.all([failing, next]);
 
-  expect(preparedBeforeRelease).toEqual([game.dataPath, secondTypePath]);
+  expect(preparedBeforeRelease).toEqual([game.dataPath, secondTypePath].sort());
 });

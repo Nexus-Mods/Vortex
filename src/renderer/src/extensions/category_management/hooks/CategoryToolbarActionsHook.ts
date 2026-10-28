@@ -1,12 +1,3 @@
-import {
-  mdiCollapseAll,
-  mdiExpandAll,
-  mdiEye,
-  mdiEyeOff,
-  mdiFolderPlus,
-  mdiSortAlphabeticalAscending,
-  mdiSync,
-} from "@mdi/js";
 import { useMemo } from "react";
 
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
@@ -48,30 +39,30 @@ export default function useCategoryToolbarActions(props: ICategoryToolbarActions
     () => [
       {
         label: expanded.size === 0 ? t("Expand All") : t("Collapse All"),
-        iconPath: expanded.size === 0 ? mdiExpandAll : mdiCollapseAll,
+        icon: expanded.size === 0 ? "expand_all" : "collapse_all",
         showLabel: true,
         onClick: () =>
           expanded.size === 0 ? expandAll(flattenTreeToIDs(treeData)) : collapseAll(),
       },
       {
         label: showEmpty ? t("Hide Empty") : t("Show Empty"),
-        iconPath: showEmpty ? mdiEyeOff : mdiEye,
+        icon: { name: showEmpty ? "visibility_off" : "visibility", filled: true },
         showLabel: true,
         onClick: toggleEmpty,
       },
       {
         label: t("Add Top Level"),
-        iconPath: mdiFolderPlus,
+        icon: "create_new_folder",
         onClick: () => setAddParentVisible(!addParentVisible),
       },
       {
         label: t("Sort A-Z"),
-        iconPath: mdiSortAlphabeticalAscending,
+        icon: "sort_by_alpha",
         onClick: sortAlphabetically,
       },
       {
         label: t("Fetch from Nexus Mods"),
-        iconPath: mdiSync,
+        icon: "sync",
         onClick: () => {
           void importCategoriesFromNexusMods(false);
         },

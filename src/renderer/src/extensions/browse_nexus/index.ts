@@ -3,23 +3,22 @@
  * Provides browsing functionality for Nexus Mods collections and mods
  */
 
-import { mdiMagnify } from "@mdi/js";
-
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import { activeGameId } from "../../util/selectors";
-import BrowseNexusPage from "./views/BrowseNexusPage";
+import BrowsePage from "./views/browse_page/BrowsePage";
 
 function init(context: IExtensionContext): boolean {
-  // Register the Browse page
-  context.registerMainPage("search", "Browse Nexus Mods", BrowseNexusPage, {
-    priority: 20,
+  context.registerMainPage("search", "Browse", BrowsePage, {
+    priority: 0,
     hotkey: "B",
     group: "per-game",
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
     props: () => ({
       api: context.api,
     }),
-    mdi: mdiMagnify,
+    menuIcon: "grid_view",
+    newLayout: true,
+    isTranslucent: true,
   });
 
   return true;

@@ -1,4 +1,3 @@
-import { mdiFolderPlus, mdiUpdate } from "@mdi/js";
 import React from "react";
 import type { TFunction } from "react-i18next";
 
@@ -26,11 +25,11 @@ const CustomNoCategoryResults = ({
         {!!searchTerm && t(`No categories matching "{{searchTerm}}"`, { searchTerm })}
       </Typography>
 
-      <Button appearance="subdued" brand="neutral" leftIconPath={mdiFolderPlus} onClick={create}>
+      <Button appearance="subdued" brand="neutral" leftIcon="create_new_folder" onClick={create}>
         {t("Create Category")}
       </Button>
 
-      <Button appearance="subdued" brand="neutral" leftIconPath={mdiUpdate} onClick={fetch}>
+      <Button appearance="subdued" brand="neutral" leftIcon="update" onClick={fetch}>
         {t("Sync with Nexus Mods")}
       </Button>
     </div>

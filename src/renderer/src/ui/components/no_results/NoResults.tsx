@@ -1,8 +1,8 @@
-import { mdiAlertCircleOutline, mdiOpenInNew } from "@mdi/js";
 import React, { type PropsWithChildren } from "react";
 
 import { Button } from "@/ui/components/button/Button";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -21,26 +21,26 @@ export const NoResults = ({
   appearance = "default",
   children,
   className,
+  icon,
   iconClassName,
-  iconPath,
   isError,
   message,
   title,
 }: PropsWithChildren<{
   appearance?: IAppearance;
   className?: string;
+  icon?: IIconSource;
   iconClassName?: string;
-  iconPath?: string;
   isError?: boolean;
   message?: string;
   title: string;
 }>) => (
   <div className={joinClasses(["mx-auto flex max-w-md flex-col items-center gap-y-4", className])}>
     <div className="flex flex-col items-center gap-y-2">
-      {(!!iconPath || isError) && (
+      {(!!icon || isError) && (
         <Icon
+          {...getIconProps(icon ?? "error")}
           className={iconClassName ?? getIconClassName(appearance)}
-          path={iconPath ?? mdiAlertCircleOutline}
           size="xl"
         />
       )}
@@ -60,7 +60,7 @@ export const NoResults = ({
           <Button
             appearance="moderate"
             brand="neutral"
-            leftIconPath={mdiOpenInNew}
+            leftIcon="open_in_new"
             onClick={() =>
               window.api.shell.openUrl("https://help.nexusmods.com/article/125-contact-us")
             }

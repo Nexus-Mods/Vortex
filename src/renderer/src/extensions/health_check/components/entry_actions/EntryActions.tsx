@@ -1,4 +1,3 @@
-import { mdiEyeOutline, mdiEyeOffOutline, mdiThumbDownOutline, mdiThumbUpOutline } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -70,7 +69,7 @@ export function EntryActions({
             brand="neutral"
             data-testid="health-check-feedback-helpful"
             disabled={givenFeedback}
-            leftIconPath={mdiThumbUpOutline}
+            leftIcon="thumb_up"
             onClick={handle(() => {
               trackFeedbackHelpful({ issue_type: issueType, resolution_type: resolutionType });
               onHelpful();
@@ -85,7 +84,7 @@ export function EntryActions({
             brand="neutral"
             data-testid="health-check-feedback-not-helpful"
             disabled={givenFeedback}
-            leftIconPath={mdiThumbDownOutline}
+            leftIcon="thumb_down"
             onClick={handle(() => setShowFeedbackModal(true))}
           />
         </Tooltip>
@@ -98,7 +97,7 @@ export function EntryActions({
             aria-label={isHidden ? t("common:::unhide") : t("common:::hide")}
             brand="neutral"
             data-testid="health-check-entry-hide"
-            leftIconPath={isHidden ? mdiEyeOutline : mdiEyeOffOutline}
+            leftIcon={isHidden ? "visibility" : "visibility_off"}
             onClick={handle(onToggleHide)}
           />
         </Tooltip>

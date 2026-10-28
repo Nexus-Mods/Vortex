@@ -1,9 +1,3 @@
-import {
-  mdiCheckboxBlankOutline,
-  mdiCheckboxMarkedOutline,
-  mdiUnfoldLessHorizontal,
-  mdiUnfoldMoreHorizontal,
-} from "@mdi/js";
 import type { TFunction } from "i18next";
 
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
@@ -50,14 +44,14 @@ export const tableGroupMenuSections = ({
       id: "collapse",
       ...reporting({ expanded: !expanded }),
       label: expanded ? t("Collapse") : t("Expand"),
-      iconPath: expanded ? mdiUnfoldLessHorizontal : mdiUnfoldMoreHorizontal,
+      icon: expanded ? "unfold_less" : "unfold_more",
       onClick: onToggle,
     },
     {
       id: "collapse-all",
       ...reporting({ expanded: !expanded }),
       label: expanded ? t("Collapse all") : t("Expand all"),
-      iconPath: expanded ? mdiUnfoldLessHorizontal : mdiUnfoldMoreHorizontal,
+      icon: expanded ? "unfold_less" : "unfold_more",
       onClick: () => onSetAllExpanded(!expanded),
     },
   ];
@@ -68,7 +62,7 @@ export const tableGroupMenuSections = ({
       id: "select-all",
       ...reporting({ selected: false }),
       label: t("Deselect all in group"),
-      iconPath: mdiCheckboxBlankOutline,
+      icon: "check_box_outline_blank",
       onClick: onDeselectAll,
     });
   } else if (onSelectAll) {
@@ -76,7 +70,7 @@ export const tableGroupMenuSections = ({
       id: "select-all",
       ...reporting({ selected: true }),
       label: t("Select all in group"),
-      iconPath: mdiCheckboxMarkedOutline,
+      icon: "check_box",
       onClick: onSelectAll,
     });
   }

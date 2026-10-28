@@ -520,6 +520,7 @@ export function makeFakeLoot(overrides: Partial<IFakeLoot> = {}): IFakeLoot {
     sortPlugins: vi.fn<LootAsync["sortPlugins"]>((pluginNames) =>
       Promise.resolve([...pluginNames]),
     ),
+    strayConnections: 0,
     ...overrides,
   };
 }

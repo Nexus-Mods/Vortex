@@ -1,4 +1,3 @@
-import { mdiClose } from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -33,7 +32,7 @@ export const TableSelectionBar = ({ count, onClear, children }: ITableSelectionB
           appearance="weak"
           aria-label={t("Deselect all")}
           brand="neutral"
-          leftIconPath={mdiClose}
+          leftIcon="close"
           onClick={onClear}
         >
           {t("{{count}} selected", { count })}

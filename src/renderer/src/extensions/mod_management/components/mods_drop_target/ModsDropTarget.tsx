@@ -1,4 +1,3 @@
-import { mdiFolderDownloadOutline } from "@mdi/js";
 import { webUtils } from "electron";
 import React, {
   type DragEvent,
@@ -149,7 +148,7 @@ export const ModsDropTarget = ({ onDropFiles, children }: IModsDropTargetProps) 
         >
           <div className="w-full max-w-md rounded-lg border border-surface-translucent-low bg-surface-low p-3 shadow-xl">
             <div className="flex flex-col items-center gap-y-2 rounded-md border-2 border-dashed border-primary-moderate px-6 py-10 text-center">
-              <Icon className="text-primary-moderate" path={mdiFolderDownloadOutline} size="2xl" />
+              <Icon className="text-primary-moderate" name="move_to_inbox" size="2xl" />
 
               <Typography typographyType="heading-xs">{t("Drop files to add mods")}</Typography>
 

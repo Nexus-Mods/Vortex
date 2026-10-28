@@ -132,6 +132,56 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
 }
 
 /**
+ * Reference positions by tag, and by id for id-only references. It reads each reference when
+ * added, so build one per use.
+ */
+export function referenceIndex() {
+  const byTag = new Map<string | undefined, number[]>();
+  const byId = new Map<string, number[]>();
+  const indexInto = <TKey>(map: Map<TKey, number[]>, key: TKey, position: number) => {
+    const positions = map.get(key);
+    if (positions === undefined) {
+      map.set(key, [position]);
+    } else {
+      positions.push(position);
+    }
+  };
+
+  return {
+    add: (position: number, reference: IModReference | undefined) => {
+      indexInto(byTag, reference?.tag, position);
+      if (reference?.id !== undefined) {
+        indexInto(byId, reference.id, position);
+      }
+    },
+    /** the positions of references with this tag */
+    withTag: (tag: string | undefined): number[] => byTag.get(tag) ?? [],
+    /** the positions of references referenceEqual could match to this one, in order */
+    candidates: (reference: IModReference | undefined): number[] => {
+      const sameId = reference?.id !== undefined ? (byId.get(reference.id) ?? []) : [];
+      return idOnlyRef(reference)
+        ? sameId
+        : [...(byTag.get(reference?.tag) ?? []), ...sameId].sort((lhs, rhs) => lhs - rhs);
+    },
+  };
+}
+
+/** Finds the first rule whose reference referenceEqual matches. Build it per use. */
+export function rulesByReference(
+  rules: IModRule[],
+): (reference: IModReference) => IModRule | undefined {
+  const index = referenceIndex();
+  rules.forEach((rule, ruleIndex) => index.add(ruleIndex, rule.reference));
+
+  return (reference) => {
+    const ruleIndex = index
+      .candidates(reference)
+      .find((candidate) => referenceEqual(rules[candidate].reference, reference));
+    return ruleIndex === undefined ? undefined : rules[ruleIndex];
+  };
+}
+
+/**
  * Check whether an installed mod matches a requested install spec: the same installer
  * choices, file list, and binary patches. This is deliberately separate from
  * testModReference / findModByRef, which match a mod by IDENTITY only (which mod,

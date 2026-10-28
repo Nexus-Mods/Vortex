@@ -32,6 +32,7 @@ vi.mock("../../../util/selectors", () => ({
 const pages = vi.hoisted(() =>
   [
     ["Dashboard", "dashboard"],
+    ["Games", "global"],
     ["application_settings", "global"],
     ["Mods", "per-game"],
     ["health", "per-game"],
@@ -52,6 +53,7 @@ vi.mock("../../../contexts", () => ({
 
 import { setOpenMainPage } from "../../../actions/session";
 import { setNextProfile } from "../../../extensions/profile_management/actions/settings";
+import { defaultState as sessionDefaultState } from "../../../reducers/session";
 import { SpineProvider, useSpineContext } from "./SpineContext";
 
 let spine: ReturnType<typeof useSpineContext>;
@@ -109,6 +111,17 @@ describe("SpineProvider", () => {
 
     expect(screen.getByTestId("selection")).toHaveTextContent("skyrim");
     expect(store.dispatch).toHaveBeenCalledWith(setOpenMainPage("Mods", false));
+  });
+
+  it("starts on the Games page when no game is active", () => {
+    store.state.mainPage = sessionDefaultState.mainPage;
+    store.state.activeGameId = undefined;
+    store.state.activeProfileId = undefined;
+    renderSpine();
+
+    expect(sessionDefaultState.mainPage).toBe("Games");
+    expect(screen.getByTestId("selection")).toHaveTextContent("home");
+    expect(store.dispatch).not.toHaveBeenCalled();
   });
 
   it("selects Home when a global page is opened by any route, game or not", () => {

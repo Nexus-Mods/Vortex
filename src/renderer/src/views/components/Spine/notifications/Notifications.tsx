@@ -1,5 +1,4 @@
 import { Popover, PopoverButton } from "@headlessui/react";
-import { mdiBell, mdiBellOutline } from "@mdi/js";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -144,7 +143,7 @@ const NotificationsContent = ({ close, popoverOpen }: INotificationsContentProps
         as={SpineButton}
         border="hidden"
         disabled={!visibleCount}
-        iconPath={popoverOpen ? mdiBell : mdiBellOutline}
+        icon={{ name: "notifications", filled: popoverOpen }}
         isActive={popoverOpen}
         ref={buttonRef}
         title="Notifications"

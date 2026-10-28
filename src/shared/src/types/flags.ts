@@ -15,6 +15,8 @@ export const flagVariantSchemas = {
   "vortex-file-requirements-health-check": {},
   // On/off gate for Tier 0 game support (games managed without a game extension).
   "vortex-tier-0-game-support": {},
+  // On/off gate for browsing mods on the Browse page; off shows a coming-soon panel instead.
+  "laz-vortex-browse-mods": {},
 };
 
 type FlagVariantSchemas = typeof flagVariantSchemas;

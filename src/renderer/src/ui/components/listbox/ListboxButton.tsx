@@ -1,5 +1,4 @@
 import { ListboxButton as HeadlessListboxButton } from "@headlessui/react";
-import { mdiUnfoldMoreHorizontal } from "@mdi/js";
 import React from "react";
 
 import { Button, type IButtonProps } from "@/ui/components/button/Button";
@@ -13,7 +12,7 @@ export const ListboxButton = ({ showChevron = true, ...props }: IListboxButtonPr
     appearance="moderate"
     as={Button}
     brand="neutral"
-    rightIconPath={showChevron ? mdiUnfoldMoreHorizontal : undefined}
+    rightIcon={showChevron ? "unfold_more" : undefined}
     size="sm"
     {...props}
   />

@@ -1,4 +1,3 @@
-import { mdiChevronDown, mdiMinusCircleOutline } from "@mdi/js";
 import type { TFunction } from "i18next";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -105,7 +104,7 @@ const ModVersionPicker = ({
           ? undefined
           : {
               label: t("Remove version"),
-              iconPath: mdiMinusCircleOutline,
+              icon: "do_not_disturb_on",
               onClick: () => onRemove(alternative.id),
             },
     }),
@@ -131,7 +130,7 @@ const ModVersionPicker = ({
               aria-haspopup="menu"
               brand="neutral"
               className="min-w-0 flex-1 justify-between px-1 [&>span]:truncate"
-              rightIconPath={mdiChevronDown}
+              rightIcon="keyboard_arrow_down"
               size="sm"
             >
               {label}

@@ -14,7 +14,7 @@ describe("PremiumBadge", () => {
   it("renders an icon inside a badge span", () => {
     render(<PremiumBadge />);
     expect(getBadge()).toBeInTheDocument();
-    expect(screen.getByRole("presentation").tagName).toBe("svg");
+    expect(document.querySelector("[data-symbol]")).toBeInTheDocument();
   });
 
   it("applies the premium background base classes", () => {

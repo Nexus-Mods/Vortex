@@ -1,4 +1,3 @@
-import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from "@mdi/js";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -1354,13 +1353,13 @@ describe("tableGroupMenuSections", () => {
     })[0];
 
   it("gives Collapse all Collapse's icon, and Expand all Expand's", () => {
-    expect(folding(true).map(({ label, iconPath }) => [label, iconPath])).toEqual([
-      ["Collapse", mdiUnfoldLessHorizontal],
-      ["Collapse all", mdiUnfoldLessHorizontal],
+    expect(folding(true).map(({ label, icon }) => [label, icon])).toEqual([
+      ["Collapse", "unfold_less"],
+      ["Collapse all", "unfold_less"],
     ]);
-    expect(folding(false).map(({ label, iconPath }) => [label, iconPath])).toEqual([
-      ["Expand", mdiUnfoldMoreHorizontal],
-      ["Expand all", mdiUnfoldMoreHorizontal],
+    expect(folding(false).map(({ label, icon }) => [label, icon])).toEqual([
+      ["Expand", "unfold_more"],
+      ["Expand all", "unfold_more"],
     ]);
   });
 

@@ -1,4 +1,3 @@
-import { mdiCircleOutline, mdiLoading, mdiTrayArrowDown } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -40,7 +39,7 @@ export const CollectionRevision = ({ collection }: ICollectionRevisionProps) => 
             brand="info"
             isLoading={updating}
             label={t("Update to {{revision}}", { revision: newest })}
-            leftIconPath={mdiTrayArrowDown}
+            leftIcon="download"
             size="sm"
             onClick={() => void update()}
           />
@@ -66,12 +65,12 @@ const CollectionChangelog = ({ slug, revision }: { slug: string; revision: numbe
       return (
         <span
           aria-label={t("Loading changelog")}
-          className="relative size-4 animate-spin text-neutral-subdued"
+          className="relative flex size-4 animate-spin text-neutral-subdued"
           role="status"
         >
-          <Icon className="opacity-40" path={mdiCircleOutline} size="none" />
+          <Icon className="opacity-40" name="radio_button_unchecked" size="sm" />
 
-          <Icon className="absolute inset-0" path={mdiLoading} size="none" />
+          <Icon className="absolute inset-0" name="progress_activity" size="sm" />
         </span>
       );
     case "failed":

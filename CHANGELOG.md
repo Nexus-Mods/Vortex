@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0-beta.3] - 2026-10-27
+
+### Changed
+
+- Support bundles created as `.zip` instead of `.7z` so they can be attached to GitHub issues ([#24658](https://github.com/Nexus-Mods/Vortex/pull/24658))
+- `Manual apply (Deploy)` button returned to the Mods page toolbar ([#24652](https://github.com/Nexus-Mods/Vortex/pull/24652))
+
+### Fixed
+
+- LOOT startup issue caused by more than one connection to LOOT being open ([#24624](https://github.com/Nexus-Mods/Vortex/pull/24624))
+
+## [2.10.0-beta.2] - 2026-10-22
+
+### Changed
+
+- Open the Games page at startup ([#24610](https://github.com/Nexus-Mods/Vortex/pull/24610))
+
+### Fixed
+
+- Apply missing after a purge, leaving no way to deploy the mods again ([#24601](https://github.com/Nexus-Mods/Vortex/pull/24601))
+- Pending changes not applied when auto-apply was turned on ([#24600](https://github.com/Nexus-Mods/Vortex/pull/24600))
+
 ## [2.10.0-beta.1] - 2026-10-20
 
 _First beta of the 2.10 release._
@@ -74,6 +96,16 @@ _First beta of the 2.10 release._
 - `nxm://` link handling toggle disabled on Linux ([#24387](https://github.com/Nexus-Mods/Vortex/pull/24387))
 - Backslash separators from installers not accepted on Linux ([#24378](https://github.com/Nexus-Mods/Vortex/pull/24378))
 - Volume paths not resolved on Linux for staging folder transfers ([#24375](https://github.com/Nexus-Mods/Vortex/pull/24375))
+
+## [2.9.1] - 2026-10-27
+
+### Changed
+
+- Restored the `Manual apply (Deploy)` button in the Mods page toolbar ([#24654](https://github.com/Nexus-Mods/Vortex/pull/24654))
+
+### Fixed
+
+- Create support bundles as zip so they can go on GitHub issues ([#24660](https://github.com/Nexus-Mods/Vortex/pull/24660))
 
 ## [2.9.0] - 2026-10-19
 
@@ -2607,7 +2639,10 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.10.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.3
+[2.10.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.2
 [2.10.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.1
+[2.9.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.1
 [2.9.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0
 [2.9.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.4
 [2.9.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.9.0-beta.3
