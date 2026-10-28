@@ -1,5 +1,6 @@
+import type { QualifiedPath } from "@nexusmods/paths";
+
 import type { StatusTime } from "./filesystem";
-import type { QualifiedPath } from "./paths";
 
 export type NodeBase = {
   readonly id: bigint;

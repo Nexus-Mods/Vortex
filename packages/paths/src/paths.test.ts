@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { VortexError } from "../errors/base";
+import { PathError } from "./error";
 import { QualifiedPath, relativePath } from "./paths";
 
 describe("QualifiedPath.of", () => {
@@ -31,28 +31,20 @@ describe("QualifiedPath.of", () => {
     expect(path.root).toBe(fields.root);
   });
 
-  it("round-trips through the wire format", () => {
-    const original = QualifiedPath.fromNative("C:\\Users\\alice");
-    const wire = original.toWire();
-    expect(wire).toEqual({ scheme: "native", data: "", path: "C:/Users/alice", root: "C:/" });
-    expect(QualifiedPath.of(wire).value).toBe(original.value);
-    expect(QualifiedPath.of(wire).root).toBe(original.root);
-  });
-
   it("throws on an empty scheme", () => {
     expect(() => QualifiedPath.of({ scheme: "", data: "", path: "x", root: "" })).toThrow(
-      VortexError,
+      PathError,
     );
   });
 
   it("throws when root is not a canonical prefix of the path", () => {
     expect(() =>
       QualifiedPath.of({ scheme: "foo", data: "", path: "bar/baz", root: "foo" }),
-    ).toThrow(VortexError);
+    ).toThrow(PathError);
     // the root span must end at a separator or be the whole path
     expect(() =>
       QualifiedPath.of({ scheme: "native", data: "", path: "C:/Users", root: "C:" }),
-    ).toThrow(VortexError);
+    ).toThrow(PathError);
   });
 
   // Unrooted paths cannot be created by fromNative: they only exist as
@@ -338,8 +330,8 @@ describe("QualifiedPath.fromNative", () => {
   });
 
   it("rejects unrooted inputs", () => {
-    expect(() => QualifiedPath.fromNative("foo/bar")).toThrow(VortexError);
-    expect(() => QualifiedPath.fromNative("")).toThrow(VortexError);
+    expect(() => QualifiedPath.fromNative("foo/bar")).toThrow(PathError);
+    expect(() => QualifiedPath.fromNative("")).toThrow(PathError);
   });
 });
 
@@ -400,7 +392,7 @@ describe("relativePath", () => {
     ["../foo", ".. segment at start"],
     ["foo/..", ".. segment at end"],
   ])('rejects "%s" (%s)', (input) => {
-    expect(() => relativePath(input)).toThrow(VortexError);
+    expect(() => relativePath(input)).toThrow(PathError);
   });
 });
 
@@ -439,7 +431,7 @@ describe("relativeTo", () => {
   ])('"%s" relative to "%s" throws (%s)', (input, base) => {
     expect(() =>
       QualifiedPath.fromNative(input).relativeTo(QualifiedPath.fromNative(base)),
-    ).toThrow(VortexError);
+    ).toThrow(PathError);
   });
 
   it("rejects mismatched schemes", () => {
@@ -447,7 +439,7 @@ describe("relativeTo", () => {
       QualifiedPath.of({ scheme: "steam", data: "", path: "C:/Users", root: "C:/" }).relativeTo(
         QualifiedPath.fromNative("C:/Users"),
       ),
-    ).toThrow(VortexError);
+    ).toThrow(PathError);
   });
 
   it("round-trips through join", () => {

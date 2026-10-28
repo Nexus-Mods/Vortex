@@ -9,8 +9,10 @@ import path from "node:path";
 
 import { VortexError } from "@vortex/shared";
 import {
-  QualifiedPath,
+  fromWire,
+  toWire,
   type FileSystem,
+  type QualifiedPath,
   type StatResult,
   type Status,
   type StatusTime,
@@ -675,37 +677,35 @@ export function init(fs: FileSystem) {
 
   // FS
   betterIpcMain.handle("fs:copy", (_event, source, target, options) =>
-    fs.copy(QualifiedPath.of(source), QualifiedPath.of(target), options),
+    fs.copy(fromWire(source), fromWire(target), options),
   );
 
   betterIpcMain.handle("fs:createDirectory", (_event, dirPath) =>
-    fs.createDirectory(QualifiedPath.of(dirPath)),
+    fs.createDirectory(fromWire(dirPath)),
   );
 
   betterIpcMain.handle("fs:createLink", (_event, from, to, type) =>
-    fs.createLink(QualifiedPath.of(from), QualifiedPath.of(to), type),
+    fs.createLink(fromWire(from), fromWire(to), type),
   );
 
-  betterIpcMain.handle("fs:delete", (_event, inputPath) => fs.delete(QualifiedPath.of(inputPath)));
+  betterIpcMain.handle("fs:delete", (_event, inputPath) => fs.delete(fromWire(inputPath)));
 
   betterIpcMain.handle("fs:deleteRecursive", (_event, inputPath) =>
-    fs.deleteRecursive(QualifiedPath.of(inputPath)),
+    fs.deleteRecursive(fromWire(inputPath)),
   );
 
   betterIpcMain.handle("fs:writeFile", (_event, inputPath, contents) =>
-    fs.writeFile(QualifiedPath.of(inputPath), contents),
+    fs.writeFile(fromWire(inputPath), contents),
   );
 
-  betterIpcMain.handle("fs:readFile", (_event, inputPath) =>
-    fs.readFile(QualifiedPath.of(inputPath)),
-  );
+  betterIpcMain.handle("fs:readFile", (_event, inputPath) => fs.readFile(fromWire(inputPath)));
 
   betterIpcMain.handle("fs:move", (_event, source, target, options) =>
-    fs.move(QualifiedPath.of(source), QualifiedPath.of(target), options),
+    fs.move(fromWire(source), fromWire(target), options),
   );
 
   betterIpcMain.handle("fs:stat", async (_event, inputPath, options) => {
-    const result = await fs.stat(QualifiedPath.of(inputPath), options);
+    const result = await fs.stat(fromWire(inputPath), options);
     return statToWire(result);
   });
 
@@ -737,7 +737,7 @@ export function init(fs: FileSystem) {
   };
 
   betterIpcMain.handle("fs:enumerate-open", async (event, inputPath, options) => {
-    const iterator = await fs.enumerateDirectory(QualifiedPath.of(inputPath), options);
+    const iterator = await fs.enumerateDirectory(fromWire(inputPath), options);
     const handle = nextEnumerationHandle++;
     const sender = event.sender;
 
@@ -837,11 +837,11 @@ export function init(fs: FileSystem) {
     const onDestroyed = () => evictStream(handle);
 
     if (mode === "r") {
-      const stream = await fs.createStream(QualifiedPath.of(inputPath), "r", options);
+      const stream = await fs.createStream(fromWire(inputPath), "r", options);
       sender.once("destroyed", onDestroyed);
       streams.set(handle, { kind: "read", reader: stream.getReader(), sender, onDestroyed });
     } else {
-      const stream = await fs.createStream(QualifiedPath.of(inputPath), "w", {
+      const stream = await fs.createStream(fromWire(inputPath), "w", {
         start: options?.start,
       });
       sender.once("destroyed", onDestroyed);
@@ -941,10 +941,10 @@ function enumerationEntryToWire(
 ): EnumerateEntryWire {
   if (Array.isArray(value)) {
     const [qualifiedPath, status] = value;
-    return [qualifiedPath.toWire(), statusToWire(status)];
+    return [toWire(qualifiedPath), statusToWire(status)];
   }
 
-  return value.toWire();
+  return toWire(value);
 }
 
 function statToWire(result: StatResult): TemporalWire<StatResult> {

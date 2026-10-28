@@ -1,9 +1,10 @@
+import type { QualifiedPath } from "@nexusmods/paths";
+
 import { VortexError } from "../errors/base";
 import type { StatusTime } from "./filesystem";
 import { InMemoryFS } from "./in-memory";
 import type { FileNode, WalkFailure } from "./in-memory-store";
 import { DEFAULT_INSTANT, InMemoryStore } from "./in-memory-store";
-import type { QualifiedPath } from "./paths";
 
 /** Seed contents accepted by {@link Builder.file}. */
 export type FileContents =

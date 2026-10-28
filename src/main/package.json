@@ -238,6 +238,7 @@
     "@nexusmods/fomod-installer-ipc": "catalog:",
     "@nexusmods/fomod-installer-native": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
+    "@nexusmods/paths": "workspace:*",
     "@nexusmods/steam-kv-parser": "workspace:*",
     "@nosferatu500/react-sortable-tree": "catalog:",
     "@nosferatu500/theme-file-explorer": "catalog:",
@@ -249,6 +250,7 @@
     "@opentelemetry/sdk-trace-base": "catalog:",
     "@opentelemetry/semantic-conventions": "catalog:",
     "@tailwindcss/cli": "catalog:",
+    "@tanstack/react-query": "catalog:",
     "@tanstack/react-virtual": "catalog:",
     "@types/bluebird": "catalog:",
     "@types/uuid": "catalog:",
@@ -362,6 +364,7 @@
   "devDependencies": {
     "@electron/rebuild": "catalog:",
     "@pmmmwh/react-refresh-webpack-plugin": "catalog:",
+    "@tanstack/react-query-devtools": "catalog:",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/content-disposition": "catalog:",

@@ -20,6 +20,8 @@ declare module "@vortex/shared/errors" {
     "loot:process-died": { call?: string; code?: string };
     /** The worker answered with something that is not a message. */
     "loot:invalid-response": { call?: string; frameBytes?: number };
+    /** Another process opened the worker's pipe, this many times, and the worker still started. */
+    "loot:stray-connection": { count: number };
     /** The worker rejected the arguments a call gave it, which is this side's mistake. */
     "loot:api-misuse": { detail: string };
     /** A libloot call that failed for no recognised reason or did not answer. */
