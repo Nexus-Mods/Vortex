@@ -3909,6 +3909,9 @@ importers:
 
   packages/mod-pipeline:
     dependencies:
+      '@nexusmods/paths':
+        specifier: workspace:*
+        version: link:../paths
       zod:
         specifier: 'catalog:'
         version: 4.4.3
