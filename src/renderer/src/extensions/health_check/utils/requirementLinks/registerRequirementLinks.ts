@@ -23,8 +23,8 @@ import {
   type RequirementLinkChoice,
 } from "./requirementLinks";
 
-/** The action's registered title, which the Mods table's menus place it by. */
-export const LINK_REQUIREMENTS_TITLE = "Link Nexus Requirements";
+/** The Mods table's row menu places the action by this title: keep it in step with its ROW_MENU. */
+const LINK_REQUIREMENTS_TITLE = "Link Nexus Requirements";
 
 /** What saving the choices dispatches: rules added and removed, and the ignores kept. */
 type LinkAction = ReturnType<typeof addModRule> | ReturnType<typeof setModAttribute>;

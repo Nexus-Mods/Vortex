@@ -51,12 +51,11 @@ const bySource = (links: IRequirementLink[], missing: IMissingRequirement[]) => 
 };
 
 /**
- * Marks a requirement that saving would change, in the save button's colour, saying why on hover.
- * The space is kept on every row, marked or not, so the link choices line up.
+ * Marks a requirement that saving would change, saying why on hover. Every row keeps its space,
+ * marked or not, so the link choices line up.
  */
 const ChangeMark = ({ reason }: { reason: string | undefined }) => (
-  // a slot as tall as the buttons, the mark centred in it; all of it shows the tooltip, the mark
-  // alone being small to point at
+  // the whole slot takes the hover, as the mark alone is too small to point at
   <Tooltip content={reason ?? ""} disabled={reason === undefined}>
     <div className="flex h-6 w-2 items-center justify-center">
       {reason !== undefined && (
@@ -72,9 +71,8 @@ const ChangeMark = ({ reason }: { reason: string | undefined }) => (
 );
 
 /**
- * Lists the Nexus requirements of the selected mods that installed mods satisfy, and asks how
- * each is to be linked: as required, as optional, or not at all. All start as required. Those
- * nothing installed satisfies are listed with them, as not installed.
+ * Lists the Nexus requirements of the selected mods, under the mod that requires each, and asks
+ * how each one installed is to be linked: as required, as optional, or not at all.
  */
 export const RequirementLinksModal = ({
   visible,
@@ -86,7 +84,7 @@ export const RequirementLinksModal = ({
   const { t } = useTranslation("health_check");
   const [choices, setChoices] = useState<ReadonlyMap<string, RequirementLinkChoice>>(new Map());
 
-  // All required on each open; reset during render so the opening frame already shows it.
+  // reset during render, not in an effect, so the opening frame doesn't show the last choices
   const [wasVisible, setWasVisible] = useState(visible);
   if (visible !== wasVisible) {
     setWasVisible(visible);
@@ -96,7 +94,6 @@ export const RequirementLinksModal = ({
   }
 
   const groups = useMemo(() => bySource(links, missing), [links, missing]);
-  // each starts as it's linked now, a new one as required
   const choiceOf = (link: IRequirementLink) => choices.get(link.key) ?? link.current ?? "requires";
   const options: IToggleButtonOption<RequirementLinkChoice>[] = [
     { value: "requires", label: t("requirement_links_modal::choices::requires") },
@@ -104,8 +101,7 @@ export const RequirementLinksModal = ({
     { value: "ignore", label: t("requirement_links_modal::choices::ignore") },
   ];
 
-  // what saving would change of a link, if anything: a new one is a change whatever's chosen, as
-  // it's linked or its ignoring is kept
+  // a new requirement is a change even if left as it is: saving links it, or records the ignore
   const changeReason = (link: IRequirementLink): string | undefined => {
     if (link.current === undefined) {
       return t("requirement_links_modal::change_mark::new");
@@ -135,8 +131,6 @@ export const RequirementLinksModal = ({
           {t("requirement_links_modal::description")}
         </Typography>
 
-        {/* Each selected mod is a block, set apart by space, with what it requires indented under
-            it; the requirements need no lines, their notes being dimmer than their names. */}
         <div className="max-h-96 overflow-y-auto rounded-lg border border-stroke-weak bg-translucent-dark-200 px-4">
           {groups.map((group) => (
             <section className="py-3" key={group.sourceModId}>
@@ -190,10 +184,10 @@ export const RequirementLinksModal = ({
         </div>
       </div>
 
-      {/* laid out as the app's other dialogs lay out their buttons */}
+      {/* the button layout of ModalLayer's dialogs */}
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         {links.length === 0 ? (
-          // only missing requirements to show: nothing to answer, so a lone Close, as elsewhere
+          // only requirements that aren't installed: nothing to save
           <Button
             appearance="strong"
             brand="neutral"

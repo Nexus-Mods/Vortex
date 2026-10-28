@@ -23,9 +23,8 @@ const fileLine = (option: IMissingRequirementOption, t: TFunction): string | und
 };
 
 /**
- * A requirement nothing installed satisfies, among the ones to link: the mod it needs, or each of
- * its alternatives, with the file and versions for a file-level one, and "Not installed" in place
- * of the link choice. It's shown, not linked, as which file to link to can't be told for sure.
+ * A requirement nothing installed satisfies: the mod it needs, or each of its alternatives, with
+ * the file and versions for a file-level one, and "Not installed" in place of the link choice.
  */
 export const MissingRequirementRow = ({ requirement }: { requirement: IMissingRequirement }) => {
   const { t } = useTranslation("health_check");

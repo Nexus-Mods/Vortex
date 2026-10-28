@@ -32,9 +32,8 @@ export interface IToggleButtonGroupProps<T extends string> {
 }
 
 /**
- * A row of buttons sharing one outline, one chosen at a time: a radio group drawn as buttons, the
- * chosen one filled. It's as tall as a small button, so lines up with one. Each option keeps its place in the row and the buttons share a width, so a column of
- * groups reads at a glance. The arrow keys move between options, as in any radio group.
+ * A radio group drawn as a row of small buttons sharing one outline, the chosen one filled. The
+ * buttons share a width, so groups stacked in a column line up.
  */
 export const ToggleButtonGroup = <T extends string>({
   className,
@@ -47,8 +46,8 @@ export const ToggleButtonGroup = <T extends string>({
 }: IToggleButtonGroupProps<T>) => (
   <RadioGroup
     aria-label={label}
-    // The outline is the group's own, drawn under its buttons in their box, as a subdued button's
-    // is in its own: so the group is a button's height, and a disabled option doesn't fade it.
+    // The group draws the outline under its buttons rather than each button bordering itself, so
+    // it adds no height and a disabled option doesn't fade its part of it.
     className={joinClasses([
       "relative isolate inline-grid shrink-0 auto-cols-fr grid-flow-col before:pointer-events-none before:absolute before:inset-0 before:rounded-sm before:border before:border-stroke-weak",
       className,

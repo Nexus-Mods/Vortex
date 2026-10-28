@@ -26,13 +26,13 @@ export const ignoredRequirementsOf = (mod: IMod): string[] => {
   return Array.isArray(ignored) ? ignored.filter((uid) => typeof uid === "string") : [];
 };
 
-/** A Nexus requirement of one installed mod that another installed mod satisfies. */
+/** A Nexus requirement of one installed mod that another installed mod can be linked to. */
 export interface IRequirementLink {
   /** Unique per requiring mod and required Nexus mod. */
   key: string;
   sourceModId: string;
   sourceName: string;
-  /** The installed mod that satisfies the requirement, preferring an enabled one. */
+  /** The installed mod linked to, preferring one in an accepted version, then an enabled one. */
   targetModId: string;
   targetName: string;
   /** The required mod's Nexus UID, which every installed file of it shares. */

@@ -129,7 +129,7 @@ async function describeUnmetFiles(
   }
 }
 
-/** Why there's nothing to link, when it isn't that every requirement is linked already. */
+/** Why the requirements couldn't be looked up. */
 export type RequirementLinksUnavailable = "no-profile" | "logged-out";
 
 /** The given mods' Nexus requirements: those to link, and those nothing installed satisfies. */
@@ -139,8 +139,8 @@ export interface IRequirementLinksOffer {
 }
 
 /**
- * The unlinked Nexus requirements of the given mods that installed mods satisfy, and those that
- * nothing installed does, read through the requirements health checks' caches.
+ * The Nexus requirements of the given mods: those installed mods satisfy, linked or not, and those
+ * nothing installed does. Read through the requirements health checks' caches.
  */
 export async function fetchRequirementLinks(
   api: IExtensionApi,
