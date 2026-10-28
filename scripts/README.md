@@ -48,6 +48,13 @@ Scripts wired into `package.json` can also be called with `pnpm run <name>`.
 - `create-env-file.mjs` -- writes `.local.env` with `NX_PARALLEL` set to the
   number of CPU cores. Runs automatically on `pnpm install`.
 
+- `upgrade-electron.mjs` -- upgrades Electron within its current major and
+  keeps the pinned Node.js (`package.json`, `pnpm-workspace.yaml`
+  `allowBuilds`, lockfile) equal to the Node.js that Electron bundles,
+  bumping `node-abi` when it doesn't know the new Electron yet. Run
+  daily by `.github/workflows/upgrade-electron.yml`, which opens the PR. Pass
+  `--check` to report without changing anything.
+
 - `generate-query-types.ts` -- generates TypeScript interfaces from SQL query
   definitions in `src/queries/`. Run via `pnpm run generate:query-types`.
 

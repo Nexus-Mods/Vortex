@@ -5,16 +5,3 @@ updates:
     directory: "/"
     schedule:
       interval: daily
-
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: daily
-    cooldown:
-      default-days: 1 # matching pnpm-workspace minimumReleaseAge
-    allow:
-      - dependency-name: "electron"
-    ignore:
-      - dependency-name: "electron"
-        update-types:
-          - "version-update:semver-major"
