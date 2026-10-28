@@ -66,33 +66,27 @@ async function addEntriesUnder(
   // the folders inside this one by path key, and the links to folders, walked once the listing ends
   const folderIdByKey = new Map<string, string>();
   const linkedFolders: Array<{ linkPath: string; folderId: string }> = [];
-  try {
-    for await (const [entryPath, status] of listing) {
-      if (!status.isFile) {
-        if (status.isSymLink) {
-          linkedFolders.push({
-            linkPath: entryPath.path,
-            folderId: folderIdOf(status),
-          });
-        } else {
-          folderIdByKey.set(pathKeyOf(entryPath.path), folderIdOf(status));
-        }
-        continue;
+  for await (const [entryPath, status] of listing) {
+    if (!status.isFile) {
+      if (status.isSymLink) {
+        linkedFolders.push({
+          linkPath: entryPath.path,
+          folderId: folderIdOf(status),
+        });
+      } else {
+        folderIdByKey.set(pathKeyOf(entryPath.path), folderIdOf(status));
       }
-      entries.push({
-        path: entryPath.path,
-        kind: status.isSymLink ? DiskEntryKind.Link : DiskEntryKind.File,
-        size: status.isFile ? status.size : 0,
-        modifiedTime: status.modifiedTime,
-        id: status.id,
-        deviceId: status.deviceId,
-        hardlinkCount: status.hardlinkCount,
-      });
+      continue;
     }
-  } catch (err) {
-    // for await does not close a listing whose next() rejected
-    await listing.return?.();
-    throw err;
+    entries.push({
+      path: entryPath.path,
+      kind: status.isSymLink ? DiskEntryKind.Link : DiskEntryKind.File,
+      size: status.isFile ? status.size : 0,
+      modifiedTime: status.modifiedTime,
+      id: status.id,
+      deviceId: status.deviceId,
+      hardlinkCount: status.hardlinkCount,
+    });
   }
   for (const { linkPath, folderId } of linkedFolders) {
     const linkChain = new Set(chain);

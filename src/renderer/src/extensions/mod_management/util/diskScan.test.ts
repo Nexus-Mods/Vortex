@@ -1,8 +1,8 @@
 import * as path from "node:path";
 
 import { DiskEntryKind } from "@nexusmods/mod-pipeline";
-import { ChaosFS, QualifiedPath, type ChaosRule } from "@vortex/shared/filesystem";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { ChaosFS, QualifiedPath } from "@vortex/shared/filesystem";
+import { afterEach, describe, expect, test } from "vitest";
 
 import { installInMemoryFS, type InstalledInMemoryFS } from "../../../test-utils/fsApi";
 import { scanDeploymentTargets } from "./diskScan";
@@ -37,30 +37,6 @@ function seedGame(): InstalledInMemoryFS {
       data: "texture",
     });
   });
-}
-
-/** Makes the installed FS's listings fail as the rules say, counting the listings closed early. */
-function failListings(fs: InstalledInMemoryFS["fs"], rules: ChaosRule[]): { closed: number } {
-  const chaos = new ChaosFS(fs, rules);
-  const tracking = new ChaosFS(chaos, []);
-  const listings = { closed: 0 };
-  vi.spyOn(tracking, "enumerateDirectory").mockImplementation(async (target: QualifiedPath) => {
-    const listing = await chaos.enumerateDirectory(target, {
-      recursive: true,
-      includeStatus: "symlink",
-    });
-    const tracked: typeof listing = {
-      [Symbol.asyncIterator]: () => tracked,
-      next: () => listing.next(),
-      return: async () => {
-        listings.closed += 1;
-        return (await listing.return?.()) ?? { done: true, value: undefined };
-      },
-    };
-    return tracked;
-  });
-  window.api = { ...window.api, fs: tracking };
-  return listings;
 }
 
 describe("scanDeploymentTargets", () => {
@@ -214,25 +190,14 @@ describe("scanDeploymentTargets", () => {
 
   test("fails the scan when a folder goes missing partway through the walk", async () => {
     installed = seedGame();
-    failListings(installed.fs, [
-      { op: "enumerateDirectory", fault: { kind: "fs:not-found" }, failAfter: 1 },
-    ]);
+    window.api = {
+      ...window.api,
+      fs: new ChaosFS(installed.fs, [
+        { op: "enumerateDirectory", fault: { kind: "fs:not-found" }, failAfter: 1 },
+      ]),
+    };
 
     await expect(scanDeploymentTargets([path.join(GAME_DIR, "Data")], [])).rejects.toThrow();
-  });
-
-  test("closes the listing when the walk fails", async () => {
-    installed = seedGame();
-    const listings = failListings(installed.fs, [
-      {
-        op: "enumerateDirectory",
-        fault: { kind: "os:generic", originalCode: "EACCES" },
-        failAfter: 1,
-      },
-    ]);
-
-    await expect(scanDeploymentTargets([path.join(GAME_DIR, "Data")], [])).rejects.toThrow();
-    expect(listings.closed).toBe(1);
   });
 
   test("leaves out a mod type without a path", async () => {
