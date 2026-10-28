@@ -12,6 +12,10 @@ const run = async (): Promise<void> => {
   const root = process.cwd();
   const io = realIo(root);
 
+  // Planning asks the installed node-abi about the target Electron, so dependencies must be
+  // installed first. Frozen, so a stale lockfile fails here, before anything is changed.
+  await io.install({ frozen: true });
+
   const pins = readPins(io.readText(WORKSPACE_YAML), io.readText(PACKAGE_JSON));
   core.info(`Current: electron ${pins.electron}, node ${pins.node}, node-abi ${pins.nodeAbi}`);
 
