@@ -11,6 +11,9 @@ export interface IInstallationDetails {
   // already be removed from the state by the time the installer runs, so this is the only
   // reliable way to read what the previous install decided.
   previousAttributes?: IModAttributes;
+  // id of the download being installed, the key of its "install-mod" batch context. Not set when
+  // the install doesn't come from a download.
+  archiveId?: string;
   hasXmlConfigXML?: boolean;
   hasCSScripts?: boolean;
   isTrusted?: boolean;

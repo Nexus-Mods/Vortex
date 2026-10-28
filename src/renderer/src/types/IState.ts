@@ -373,6 +373,15 @@ export interface ITierZeroGame {
     gog: string[];
     epic: string[];
   };
+  manualInstallerPreferences?: IManualInstallerPreferences;
+}
+
+/** the user's Manual Installer preferences for one game */
+export interface IManualInstallerPreferences {
+  /** folder, relative to the game root, mods are installed to by default */
+  defaultFolder?: string;
+  /** skip the destination dialog when a default folder is set */
+  dontAskAgain?: boolean;
 }
 
 export interface IStateGameMode {
