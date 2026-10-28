@@ -398,8 +398,7 @@ function genOnProfileChange(
 
         if (profile !== undefined) {
           const { gameId } = profile;
-          const game = getGame(gameId);
-          if (game === undefined) {
+          if (!isGameRegistered(gameId)) {
             showError(
               store.dispatch,
               "Game no longer supported, please install the game extension",

@@ -61,7 +61,7 @@ import type { IModType } from "./types/IModType";
 import { requestDetectedGames, resetDetectedGamesHash } from "./util/detected_games/detectedGames";
 import { listableDetectedIds } from "./util/detected_games/listableDetectedIds";
 import getDriveList from "./util/getDriveList";
-import { getGame, getGameStore, getGameStores } from "./util/getGame";
+import { getGame, getGameStore, getGameStores, isGameRegistered } from "./util/getGame";
 import { identifyStore } from "./util/identifyStore";
 import { getModType, getModTypeExtensions, registerModType } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
@@ -1300,18 +1300,14 @@ function init(context: IExtensionContext): boolean {
       ) {
         const gameMode = profile.gameId;
         const discovery = store.getState().settings.gameMode.discovered[gameMode];
-        if (
-          discovery !== undefined &&
-          discovery.path !== undefined &&
-          getGame(gameMode) !== undefined
-        ) {
+        if (discovery !== undefined && discovery.path !== undefined && isGameRegistered(gameMode)) {
           changeGameMode(undefined, gameMode, profile.id).then(() => null);
-        } else if (getGame(gameMode) !== undefined) {
+        } else if (isGameRegistered(gameMode)) {
           // Game extension is loaded but the game is no longer discovered
           // (e.g. uninstalled) — clear the active profile
           store.dispatch(setNextProfile(undefined));
         }
-        // If getGame returns undefined the extension may not be installed yet
+        // If the game isn't registered the extension may not be installed yet
         // (e.g. community extension pending install). Don't clear the profile —
         // removeDisappearedGames/stubs will handle offering to install it.
       }
