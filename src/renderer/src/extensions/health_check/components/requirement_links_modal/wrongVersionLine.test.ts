@@ -1,29 +1,15 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
-import i18next, { type TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import { beforeAll, describe, expect, it } from "vitest";
+
+import { createTestI18n } from "@/test-utils/i18n";
 
 import type { IWrongVersion } from "../../utils/requirementLinks/requirementLinks";
 import { wrongVersionLine } from "./wrongVersionLine";
 
 let t: TFunction;
 
-// the app's English strings, set up as the app sets i18next up
 beforeAll(async () => {
-  const strings: unknown = JSON.parse(
-    readFileSync(path.join(__dirname, "../../../../../../../locales/en/health_check.json"), "utf8"),
-  );
-  const instance = i18next.createInstance();
-  t = await instance.init({
-    lng: "en",
-    compatibilityJSON: "v3",
-    keySeparator: "::",
-    nsSeparator: ":::",
-    defaultNS: "health_check",
-    interpolation: { escapeValue: false },
-    resources: { en: { health_check: strings as Record<string, unknown> } },
-  });
+  t = (await createTestI18n("health_check")).t;
 });
 
 const wrong = (extra: Partial<IWrongVersion> = {}): IWrongVersion => ({
