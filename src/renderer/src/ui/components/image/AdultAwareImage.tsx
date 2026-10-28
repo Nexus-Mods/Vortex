@@ -1,9 +1,7 @@
 import React from "react";
-import { useSelector } from "react-redux";
-
-import { userInfo as selectUserInfo } from "@/extensions/nexus_integration/selectors";
 
 import { Image, type IImageProps } from "./Image";
+import { useIsAdultBlurred } from "./useIsAdultBlurred.hook";
 
 export interface IAdultAwareImageProps extends IImageProps {
   /**
@@ -21,11 +19,11 @@ export interface IAdultAwareImageProps extends IImageProps {
  * is blurred by default, so adult content is never shown to a user who has not
  * opted into seeing it.
  *
- * The base `Image` primitive stays presentational; this wrapper owns the
- * adult-content policy so it lives in exactly one place.
+ * The base `Image` primitive stays presentational; the policy itself is
+ * `useIsAdultBlurred`, so anything drawing Nexus imagery another way follows it too.
  */
 export const AdultAwareImage = ({ isAdult, ...props }: IAdultAwareImageProps) => {
-  const blurAdultContent = useSelector(selectUserInfo)?.adultBlurImages ?? true;
+  const isBlurred = useIsAdultBlurred(isAdult);
 
-  return <Image {...props} isBlurred={isAdult && blurAdultContent} />;
+  return <Image {...props} isBlurred={isBlurred} />;
 };

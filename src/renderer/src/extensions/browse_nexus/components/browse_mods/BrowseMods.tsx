@@ -85,7 +85,11 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
       <BrowseModsBar search={search} />
 
       <div className="relative grid min-h-0 flex-1 grid-cols-2 grid-rows-1 overflow-hidden game-art-backdrop">
-        <ModBackdrop src={backdrop?.src} />
+        <ModBackdrop
+          blurredSrc={activeMod?.blurred_thumbnail_url ?? undefined}
+          isAdult={!!activeMod?.adult}
+          src={backdrop?.src}
+        />
 
         <ModList
           activeModId={activeMod?.id}
