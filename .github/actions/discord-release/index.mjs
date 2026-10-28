@@ -45,12 +45,13 @@ const date = new Date(release.published_at).toLocaleDateString("en-GB", {
 // A blank line before a heading stacks with the heading's own margin in Discord.
 let notes = (release.body ?? "").replace(/\r\n/g, "\n").replace(/^#+ .*Spot a Bug[\s\S]*/im, "");
 
-// Discord renders neither HTML nor inline images, so they move to a gallery.
-const images = [];
+// Discord renders neither HTML nor inline media, so images and videos move to a
+// gallery. GitHub writes an uploaded video as a bare attachment URL on its own line.
+const media = [];
 notes = notes.replace(
-  /<img\b[^>]*\bsrc="([^"]+)"[^>]*>|!\[[^\]]*\]\(([^)\s]+)[^)]*\)/g,
-  (_, src, md) => {
-    images.push(src ?? md);
+  /<(?:img|video)\b[^>]*\bsrc="([^"]+)"[^>]*>(?:<\/video>)?|!\[[^\]]*\]\(([^)\s]+)[^)]*\)|^[ \t]*(https:\/\/github\.com\/user-attachments\/assets\/\S+|https?:\/\/\S+\.(?:mp4|webm|mov))[ \t]*$/gm,
+  (_, tag, md, bare) => {
+    media.push(tag ?? md ?? bare);
     return "";
   },
 );
@@ -115,8 +116,8 @@ const payload = {
         header,
         { type: 14, divider: true, spacing: 1 },
         { type: 10, content: notes || "*No release notes.*" },
-        ...(images.length
-          ? [{ type: 12, items: images.slice(0, 10).map((url) => ({ media: { url } })) }]
+        ...(media.length
+          ? [{ type: 12, items: media.slice(0, 10).map((url) => ({ media: { url } })) }]
           : []),
         { type: 14, divider: true, spacing: 1 },
         { type: 1, components: buttons },
