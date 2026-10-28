@@ -140,6 +140,10 @@
       "recommends": "Optional",
       "ignore": "Ignore"
     },
+    "change_mark": {
+      "new": "New requirement",
+      "changed": "Changed from {{was}}"
+    },
     "not_installed": "Not installed",
     "unknown_mod": "Unknown mod",
     "or": " or ",

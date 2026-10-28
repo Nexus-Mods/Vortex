@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
 import { Modal } from "@/ui/components/modal/Modal";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import type {
@@ -50,6 +51,27 @@ const bySource = (links: IRequirementLink[], missing: IMissingRequirement[]) => 
 };
 
 /**
+ * Marks a requirement that saving would change, in the save button's colour, saying why on hover.
+ * The space is kept on every row, marked or not, so the link choices line up.
+ */
+const ChangeMark = ({ reason }: { reason: string | undefined }) => (
+  // a slot as tall as the buttons, the mark centred in it; all of it shows the tooltip, the mark
+  // alone being small to point at
+  <Tooltip content={reason ?? ""} disabled={reason === undefined}>
+    <div className="flex h-6 w-2 items-center justify-center">
+      {reason !== undefined && (
+        <span
+          aria-label={reason}
+          className="size-1.5 rounded-full bg-primary-moderate"
+          data-testid="requirement-change-mark"
+          role="img"
+        />
+      )}
+    </div>
+  </Tooltip>
+);
+
+/**
  * Lists the Nexus requirements of the selected mods that installed mods satisfy, and asks how
  * each is to be linked: as required, as optional, or not at all. All start as required. Those
  * nothing installed satisfies are listed with them, as not installed.
@@ -76,16 +98,25 @@ export const RequirementLinksModal = ({
   const groups = useMemo(() => bySource(links, missing), [links, missing]);
   // each starts as it's linked now, a new one as required
   const choiceOf = (link: IRequirementLink) => choices.get(link.key) ?? link.current ?? "requires";
-  // a new one is a change whatever's chosen: it's linked, or its ignoring is kept
-  const changeCount = links.filter(
-    (link) => link.current === undefined || choiceOf(link) !== link.current,
-  ).length;
-
   const options: IToggleButtonOption<RequirementLinkChoice>[] = [
     { value: "requires", label: t("requirement_links_modal::choices::requires") },
     { value: "recommends", label: t("requirement_links_modal::choices::recommends") },
     { value: "ignore", label: t("requirement_links_modal::choices::ignore") },
   ];
+
+  // what saving would change of a link, if anything: a new one is a change whatever's chosen, as
+  // it's linked or its ignoring is kept
+  const changeReason = (link: IRequirementLink): string | undefined => {
+    if (link.current === undefined) {
+      return t("requirement_links_modal::change_mark::new");
+    }
+    if (choiceOf(link) === link.current) {
+      return undefined;
+    }
+    const was = options.find((option) => option.value === link.current)?.label;
+    return t("requirement_links_modal::change_mark::changed", { was });
+  };
+  const changeCount = links.filter((link) => changeReason(link) !== undefined).length;
 
   const answer = (result: Map<string, RequirementLinkChoice> | undefined) => {
     onAnswer(result);
@@ -134,13 +165,19 @@ export const RequirementLinksModal = ({
                       {link.notes !== undefined && <RequirementNote notes={link.notes} />}
                     </div>
 
-                    <ToggleButtonGroup
-                      data-testid="requirement-link-choice"
-                      label={link.targetName}
-                      options={options}
-                      value={choiceOf(link)}
-                      onChange={(value) => setChoices((prev) => new Map(prev).set(link.key, value))}
-                    />
+                    <div className="flex shrink-0 items-start gap-2">
+                      <ChangeMark reason={changeReason(link)} />
+
+                      <ToggleButtonGroup
+                        data-testid="requirement-link-choice"
+                        label={link.targetName}
+                        options={options}
+                        value={choiceOf(link)}
+                        onChange={(value) =>
+                          setChoices((prev) => new Map(prev).set(link.key, value))
+                        }
+                      />
+                    </div>
                   </li>
                 ))}
 
