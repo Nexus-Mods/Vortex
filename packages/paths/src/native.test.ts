@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { VortexError } from "../errors/base";
+import { PathError } from "./error";
 import {
   getRootLength,
   getPathRoot,
@@ -52,7 +52,7 @@ describe("getPathRoot", () => {
     ["//./Volume{bad}/foo", "Path is not a valid DOS Device Volume path"],
     ["//./Foo{b75e2c83-0000-0000-0000-602f00000000}/foo", "missing DOS Device Volume prefix"],
   ])('throws on "%s" (%s)', (input, expectedMessage) => {
-    expect(() => getPathRoot(input)).toThrow(VortexError);
+    expect(() => getPathRoot(input)).toThrow(PathError);
     expect(() => getPathRoot(input)).toThrow(new RegExp(expectedMessage));
   });
 });
@@ -134,13 +134,13 @@ describe("isPathSanitized", () => {
 
   it("throws when the path cannot be parsed as a root", () => {
     // "//Server" is a malformed UNC root
-    expect(() => isPathSanitized("//Server")).toThrow(VortexError);
+    expect(() => isPathSanitized("//Server")).toThrow(PathError);
   });
 
   it("throws on invalid characters", () => {
-    expect(() => isPathSanitized("\uFFFD")).toThrow(VortexError);
-    expect(() => isPathSanitized("foo\uFFFEbar")).toThrow(VortexError);
-    expect(() => isPathSanitized("foo\uFFFFbar")).toThrow(VortexError);
+    expect(() => isPathSanitized("\uFFFD")).toThrow(PathError);
+    expect(() => isPathSanitized("foo\uFFFEbar")).toThrow(PathError);
+    expect(() => isPathSanitized("foo\uFFFFbar")).toThrow(PathError);
   });
 });
 
@@ -228,6 +228,6 @@ describe("parseNativePath", () => {
   });
 
   it("throws on invalid input", () => {
-    expect(() => parseNativePath("1:/foo")).toThrow(VortexError);
+    expect(() => parseNativePath("1:/foo")).toThrow(PathError);
   });
 });

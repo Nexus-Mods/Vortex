@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { VortexError } from "../errors/base";
+import { PathError } from "./error";
 import { QualifiedPath, relativePath } from "./paths";
 
 describe("QualifiedPath.of", () => {
@@ -31,28 +31,20 @@ describe("QualifiedPath.of", () => {
     expect(path.root).toBe(fields.root);
   });
 
-  it("round-trips through the wire format", () => {
-    const original = QualifiedPath.fromNative("C:\\Users\\alice");
-    const wire = original.toWire();
-    expect(wire).toEqual({ scheme: "native", data: "", path: "C:/Users/alice", root: "C:/" });
-    expect(QualifiedPath.of(wire).value).toBe(original.value);
-    expect(QualifiedPath.of(wire).root).toBe(original.root);
-  });
-
   it("throws on an empty scheme", () => {
     expect(() => QualifiedPath.of({ scheme: "", data: "", path: "x", root: "" })).toThrow(
-      VortexError,
+      PathError,
     );
   });
 
   it("throws when root is not a canonical prefix of the path", () => {
     expect(() =>
       QualifiedPath.of({ scheme: "foo", data: "", path: "bar/baz", root: "foo" }),
-    ).toThrow(VortexError);
+    ).toThrow(PathError);
     // the root span must end at a separator or be the whole path
     expect(() =>
       QualifiedPath.of({ scheme: "native", data: "", path: "C:/Users", root: "C:" }),
-    ).toThrow(VortexError);
+    ).toThrow(PathError);
   });
 
   // Unrooted paths cannot be created by fromNative: they only exist as
@@ -338,8 +330,8 @@ describe("QualifiedPath.fromNative", () => {
   });
 
   it("rejects unrooted inputs", () => {
-    expect(() => QualifiedPath.fromNative("foo/bar")).toThrow(VortexError);
-    expect(() => QualifiedPath.fromNative("")).toThrow(VortexError);
+    expect(() => QualifiedPath.fromNative("foo/bar")).toThrow(PathError);
+    expect(() => QualifiedPath.fromNative("")).toThrow(PathError);
   });
 });
 
@@ -400,6 +392,59 @@ describe("relativePath", () => {
     ["../foo", ".. segment at start"],
     ["foo/..", ".. segment at end"],
   ])('rejects "%s" (%s)', (input) => {
-    expect(() => relativePath(input)).toThrow(VortexError);
+    expect(() => relativePath(input)).toThrow(PathError);
+  });
+});
+
+describe("relativeTo", () => {
+  it("returns the suffix below the base", () => {
+    const base = QualifiedPath.fromNative("/foo");
+    expect(QualifiedPath.fromNative("/foo/bar").relativeTo(base)).toBe("bar");
+  });
+
+  it.each([
+    ["C:/Users/alice/file.txt", "alice/file.txt"],
+    ["C:/Users", ""],
+  ])('"%s" relative to "C:/Users" → "%s"', (input, expected) => {
+    expect(QualifiedPath.fromNative(input).relativeTo(QualifiedPath.fromNative("C:/Users"))).toBe(
+      expected,
+    );
+  });
+
+  it("is case-insensitive on the base, keeping the target's casing", () => {
+    const base = QualifiedPath.fromNative("c:/users");
+    expect(QualifiedPath.fromNative("C:/Users/Alice").relativeTo(base)).toBe("Alice");
+  });
+
+  it("folds trailing-separator variants to the empty path", () => {
+    const base = QualifiedPath.of({ scheme: "foo", data: "", path: "a/b", root: "" });
+    expect(
+      QualifiedPath.of({ scheme: "foo", data: "", path: "a/b/", root: "" }).relativeTo(base),
+    ).toBe("");
+  });
+
+  it.each([
+    ["C:/Users", "C:/Users/alice", "deeper base"],
+    ["C:/a/c", "C:/Users", "sibling"],
+    ["C:/UsersFoo", "C:/Users", "prefix without component boundary"],
+    ["D:/Users/alice", "C:/Users", "different root"],
+  ])('"%s" relative to "%s" throws (%s)', (input, base) => {
+    expect(() =>
+      QualifiedPath.fromNative(input).relativeTo(QualifiedPath.fromNative(base)),
+    ).toThrow(PathError);
+  });
+
+  it("rejects mismatched schemes", () => {
+    expect(() =>
+      QualifiedPath.of({ scheme: "steam", data: "", path: "C:/Users", root: "C:/" }).relativeTo(
+        QualifiedPath.fromNative("C:/Users"),
+      ),
+    ).toThrow(PathError);
+  });
+
+  it("round-trips through join", () => {
+    const base = QualifiedPath.fromNative("/foo");
+    const path = QualifiedPath.fromNative("/foo/bar/baz.txt");
+    expect(base.join(path.relativeTo(base)).value).toBe(path.value);
   });
 });

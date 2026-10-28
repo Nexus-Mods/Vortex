@@ -15,7 +15,7 @@
  *
  * @public */
 
-import { VortexError } from "../errors/base";
+import { PathError } from "./error";
 
 /** Directory separator character used by all sanitized paths. @public */
 export const DIRECTORY_SEPARATOR = "/";
@@ -103,7 +103,7 @@ export function isWindowsRootType(type: PathRootType): boolean {
 /**
  * Returns the root part of a sanitized path and its type.
  *
- * @throws {@link VortexError} for invalid paths
+ * @throws {@link PathError} for invalid paths
  *
  * @example
  * ```ts @import.meta.vitest
@@ -125,9 +125,9 @@ export function getPathRoot(path: string): PathRoot {
 
     const drive = path[0];
     if (!isValidWindowsDriveChar(drive)) {
-      throw new VortexError(
+      throw new PathError(
         `Path contains invalid windows drive character: "${path}" ("${drive}")`,
-        { kind: "fs:invalid-path", path },
+        path,
       );
     }
 
@@ -140,10 +140,7 @@ export function getPathRoot(path: string): PathRoot {
   if (path[1] !== DIRECTORY_SEPARATOR) return { span: path.slice(0, 1), type: "Unix" };
 
   if (path.length < MIN_UNC_ROOT_LENGTH) {
-    throw new VortexError(`Path is too small to be a valid rooted path: "${path}"`, {
-      kind: "fs:invalid-path",
-      path,
-    });
+    throw new PathError(`Path is too small to be a valid rooted path: "${path}"`, path);
   }
 
   const deviceChar = path[2];
@@ -157,18 +154,12 @@ export function getPathRoot(path: string): PathRoot {
     const rest = path.slice(2);
     const shareSeparatorIndex = rest.indexOf(DIRECTORY_SEPARATOR);
     if (shareSeparatorIndex === -1) {
-      throw new VortexError(`Invalid UNC path, missing share: "${path}"`, {
-        kind: "fs:invalid-path",
-        path,
-      });
+      throw new PathError(`Invalid UNC path, missing share: "${path}"`, path);
     }
 
     const afterServer = rest.slice(shareSeparatorIndex + 1);
     if (afterServer.length === 0) {
-      throw new VortexError(`Invalid UNC path, missing share: "${path}"`, {
-        kind: "fs:invalid-path",
-        path,
-      });
+      throw new PathError(`Invalid UNC path, missing share: "${path}"`, path);
     }
 
     const shareEndIndex = afterServer.indexOf(DIRECTORY_SEPARATOR);
@@ -187,9 +178,9 @@ export function getPathRoot(path: string): PathRoot {
   if (path[5] === ":" && path[6] === DIRECTORY_SEPARATOR) {
     const drive = path[4];
     if (!isValidWindowsDriveChar(drive)) {
-      throw new VortexError(
+      throw new PathError(
         `Path contains invalid windows drive character: "${path}" ("${drive}")`,
-        { kind: "fs:invalid-path", path },
+        path,
       );
     }
 
@@ -198,10 +189,7 @@ export function getPathRoot(path: string): PathRoot {
 
   // DOS device volume: `//./Volume{guid}/`
   if (path.length < DOS_DEVICE_VOLUME_ROOT_LENGTH) {
-    throw new VortexError(`Path is not a valid DOS Device Volume path: "${path}"`, {
-      kind: "fs:invalid-path",
-      path,
-    });
+    throw new PathError(`Path is not a valid DOS Device Volume path: "${path}"`, path);
   }
 
   if (
@@ -210,16 +198,13 @@ export function getPathRoot(path: string): PathRoot {
       DOS_DEVICE_PREFIX_LENGTH + DOS_DEVICE_VOLUME_PREFIX.length,
     ) !== DOS_DEVICE_VOLUME_PREFIX
   ) {
-    throw new VortexError(`Path is missing DOS Device Volume prefix: "${path}"`, {
-      kind: "fs:invalid-path",
-      path,
-    });
+    throw new PathError(`Path is missing DOS Device Volume prefix: "${path}"`, path);
   }
 
   if (path.charAt(DOS_DEVICE_VOLUME_ROOT_LENGTH - 2) !== "}") {
-    throw new VortexError(
+    throw new PathError(
       `Invalid DOS Device Volume path, missing directory separator: "${path}"`,
-      { kind: "fs:invalid-path", path },
+      path,
     );
   }
 
@@ -259,9 +244,9 @@ export function isPathSanitized(input: string): boolean {
   if (input.length === 0) return true;
   for (const invalid of INVALID_CHARACTERS) {
     if (input.includes(invalid)) {
-      throw new VortexError(
+      throw new PathError(
         `Input contains invalid characters: "${input}" (length=${input.length})`,
-        { kind: "fs:invalid-path", path: input },
+        input,
       );
     }
   }

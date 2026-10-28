@@ -11,50 +11,77 @@ import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { applyTheme, getTheme } from "@/util/theme";
 
+import { useGameArt } from "../game_art/GameArt.context";
+import { QueryDevtools } from "./QueryDevtools";
+
 /**
- * Dev-only switches, from a button in the corner: the layout and the light theme. Render
- * it in development only.
+ * Dev-only switches, from a button in the corner: the layout, the light theme, the game art
+ * and TanStack Query's devtools. Render it in development only.
  */
 export const DevToolsMenu = () => {
   const dispatch = useDispatch();
   const useModernLayout = useSelector((state: IState) => state.settings.window.useModernLayout);
   // The theme lives on <html>, not in state, so the switch keeps its own copy.
   const [lightTheme, setLightTheme] = useState(() => getTheme() === "light");
+  const gameArt = useGameArt();
+  const [isQueryDevtoolsOpen, setIsQueryDevtoolsOpen] = useState(false);
 
   return (
-    <Popover className="fixed right-4 bottom-4 z-toast">
-      <PopoverButton
-        aria-label="Dev tools"
-        brand="primary"
-        data-testid="dev-tools-trigger"
-        leftIcon="build"
-        title="Dev tools"
-      />
+    <>
+      {isQueryDevtoolsOpen && <QueryDevtools onClose={() => setIsQueryDevtoolsOpen(false)} />}
 
-      <PopoverPanel anchor={{ gap: 4, to: "top end" }}>
-        <PopoverPanelGroup>
-          <PopoverPanelGroupItem label="Modern layout">
-            <Switch
-              aria-label="Modern layout"
-              checked={useModernLayout}
-              data-testid="dev-tools-modern-layout"
-              onChange={(checked: boolean) => dispatch(setUseModernLayout(checked))}
-            />
-          </PopoverPanelGroupItem>
+      <Popover className="fixed right-4 bottom-4 z-toast">
+        <PopoverButton
+          aria-label="Dev tools"
+          brand="primary"
+          data-testid="dev-tools-trigger"
+          leftIcon="build"
+          title="Dev tools"
+        />
 
-          <PopoverPanelGroupItem label="Light theme">
-            <Switch
-              aria-label="Light theme"
-              checked={lightTheme}
-              data-testid="dev-tools-light-theme"
-              onChange={(checked: boolean) => {
-                applyTheme(checked ? "light" : "dark");
-                setLightTheme(checked);
-              }}
-            />
-          </PopoverPanelGroupItem>
-        </PopoverPanelGroup>
-      </PopoverPanel>
-    </Popover>
+        <PopoverPanel anchor={{ gap: 4, to: "top end" }}>
+          <PopoverPanelGroup>
+            <PopoverPanelGroupItem label="Modern layout">
+              <Switch
+                aria-label="Modern layout"
+                checked={useModernLayout}
+                data-testid="dev-tools-modern-layout"
+                onChange={(checked: boolean) => dispatch(setUseModernLayout(checked))}
+              />
+            </PopoverPanelGroupItem>
+
+            <PopoverPanelGroupItem label="Light theme">
+              <Switch
+                aria-label="Light theme"
+                checked={lightTheme}
+                data-testid="dev-tools-light-theme"
+                onChange={(checked: boolean) => {
+                  applyTheme(checked ? "light" : "dark");
+                  setLightTheme(checked);
+                }}
+              />
+            </PopoverPanelGroupItem>
+
+            <PopoverPanelGroupItem label="Game art">
+              <Switch
+                aria-label="Game art"
+                checked={gameArt.isEnabled}
+                data-testid="dev-tools-game-art"
+                onChange={(checked: boolean) => gameArt.setIsEnabled(checked)}
+              />
+            </PopoverPanelGroupItem>
+
+            <PopoverPanelGroupItem label="Query devtools">
+              <Switch
+                aria-label="Query devtools"
+                checked={isQueryDevtoolsOpen}
+                data-testid="dev-tools-query-devtools"
+                onChange={setIsQueryDevtoolsOpen}
+              />
+            </PopoverPanelGroupItem>
+          </PopoverPanelGroup>
+        </PopoverPanel>
+      </Popover>
+    </>
   );
 };

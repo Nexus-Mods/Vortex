@@ -34,7 +34,8 @@
         }
     }
 
-    .nxm-tab-bar-primary {
+    /* A rule under primary tabs, from TabProvider's hasBorder, where nothing else divides them off. */
+    .nxm-tab-bar-primary.nxm-tab-bar-border {
         position: relative;
 
         &::after {
@@ -47,7 +48,9 @@
             inset-inline: calc(var(--spacing) * 1);
             background-color: var(--color-stroke-subdued);
         }
+    }
 
+    .nxm-tab-bar-primary {
         & .nxm-tab-bar-scroller {
             column-gap: calc(var(--spacing) * 6);
         }

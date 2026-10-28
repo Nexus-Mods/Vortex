@@ -18,6 +18,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | @nexusmods/fomod-installer-ipc | 0.13.4 |
 | @nexusmods/fomod-installer-native | 0.13.4 |
 | @nexusmods/nexus-api | 1.7.3 |
+| @nexusmods/steam-kv-parser | link:../../packages/steam-kv-parser |
 | @nosferatu500/react-sortable-tree | 4.4.0 |
 | @nosferatu500/theme-file-explorer | 3.0.21 |
 | @opentelemetry/api | 1.9.1 |

@@ -1,9 +1,10 @@
+import { matches, type Pattern } from "@nexusmods/paths";
+import type { QualifiedPath } from "@nexusmods/paths";
+
 import { VortexError } from "../errors/base";
 import type { DirectoryStatus, FileStatus, FileSystem, StatResult, Status } from "./filesystem";
 import type { Node, DirNode, FileNode, SymlinkNode, WalkFailure } from "./in-memory-store";
 import { DEFAULT_TIMES, InMemoryStore, MAX_SYMLINK_DEPTH } from "./in-memory-store";
-import { matches, type Pattern } from "./matcher";
-import type { QualifiedPath } from "./paths";
 
 export class InMemoryFS implements FileSystem {
   readonly #store: InMemoryStore;

@@ -3076,6 +3076,7 @@ class ExtensionManager {
       settings_application: () => require("./extensions/settings_application/index.ts"),
       settings_interface: () => require("./extensions/settings_interface/index.ts"),
       settings_metaserver: () => require("./extensions/settings_metaserver/index.ts"),
+      vortex_benchmarks: () => require("./extensions/vortex_benchmarks/index.ts"),
       starter_dashlet: () => require("./extensions/starter_dashlet/index.ts"),
       sticky_mods: () => require("./extensions/sticky_mods/index.ts"),
       support_bundle: () => require("./extensions/support_bundle/index.ts"),

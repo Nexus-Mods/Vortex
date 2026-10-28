@@ -8,12 +8,12 @@ import { catalogExtensionGameIds } from "../selectors";
 import { Tiers, type Tier } from "./types";
 
 /**
- * What tier of support the game has. Tier 2 is a game a (normal) extension provides
+ * What tier of support the game has. Tier 2 is a game an extension provides
  * for; Tier 0 is a game managed without an extension, either already opted in or an
  * extension-less detected game no catalog extension covers, where Manage means the
- * opt-in. undefined when nothing supports the game.
+ * opt-in.
  */
-export function supportTier(state: IState, gameId: GameId): Tier | undefined {
+export function supportTier(state: IState, gameId: GameId): Tier {
   if (state.persistent.gameMode?.tier0[gameId] !== undefined) {
     return Tiers.tier0;
   }
@@ -29,12 +29,13 @@ export function supportTier(state: IState, gameId: GameId): Tier | undefined {
     const detected = (state.session.gameMode?.detectedGames ?? []).find(
       (iter) => iter.gameId === gameId,
     );
+
     if (detected !== undefined) {
       return detected.extension !== undefined ? Tiers.tier2 : Tiers.tier0;
     }
   }
 
   // no detected entry: catalog coverage is the normal kind of support, everything
-  // else is unsupported
-  return catalogExtensionGameIds(state).has(gameId) ? Tiers.tier2 : undefined;
+  // else is tier zero.
+  return catalogExtensionGameIds(state).has(gameId) ? Tiers.tier2 : Tiers.tier0;
 }

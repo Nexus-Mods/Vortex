@@ -38,6 +38,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     showPremiumModal,
     setShowPremiumModal,
     openModPage,
+    openFilePage,
     installInApp,
     markFeedback,
   } = useModRequirementActions(api, mod, identity, onBack);
@@ -285,7 +286,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         onClose={() => setShowPremiumModal(false)}
         onDownload={() => {
           setShowPremiumModal(false);
-          openModPage();
+          openFilePage();
         }}
         onPremiumUnlocked={() => void installInApp()}
       />
