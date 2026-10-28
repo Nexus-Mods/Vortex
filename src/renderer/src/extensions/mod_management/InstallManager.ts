@@ -206,12 +206,14 @@ import { reconcileOrphanedArchive } from "./util/reconcileOrphanedArchive";
 import { selectRequeueCandidates } from "./util/requeueCandidates";
 import { OPTIONAL_PHASE, rulePhase } from "./util/rulePhase";
 import testModReference, {
+  completeModRef,
   downloadHasReferenceTag,
   downloadReferenceTags,
   downloadToModRef,
   idOnlyRef,
   isDependencyRule,
   isRequiredRule,
+  lookupToModRef,
   modMatchesInstallSpec,
   referenceEqual,
   ruleInstallSpec,
@@ -1455,6 +1457,12 @@ class InstallManager {
                   const match = metaLookupMatch(modInfo, path.basename(archivePath), installGameId);
                   if (match !== undefined) {
                     fullInfo.meta = match.value;
+                    // the installers only get the details, make them aware of what the lookup
+                    // found. Archives without a download (local files) have no other source.
+                    details.modReference = completeModRef(
+                      details.modReference,
+                      lookupToModRef(match.value, archiveMD5, installGameId),
+                    );
                   }
 
                   modId = this.deriveInstallName(baseName, fullInfo);
