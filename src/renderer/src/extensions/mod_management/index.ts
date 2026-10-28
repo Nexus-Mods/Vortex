@@ -95,11 +95,13 @@ import {
   MANUAL_INSTALLER_ID,
   MANUAL_INSTALLER_PRIORITY,
 } from "./manualInstaller";
+import { answerManualInstallerRequest, MANUAL_INSTALLER_DIALOG_ID } from "./manualInstallerQueue";
 import deployMods from "./modActivation";
 import { deriveModInstallName } from "./modIdManager";
 import mergeMods, { mergedSourceName } from "./modMerging";
 import preStartDeployHook from "./preStartDeployHook";
 import { deploymentReducer } from "./reducers/deployment";
+import { manualInstallerReducer } from "./reducers/manualInstaller";
 import { modsReducer } from "./reducers/mods";
 import { modsTableViewsReducer } from "./reducers/modsTableViews";
 import { sessionReducer } from "./reducers/session";
@@ -163,6 +165,10 @@ import DeactivationButton from "./views/DeactivationButton";
 import type { IDuplicatesMap, IRemoveDuplicateMap } from "./views/DuplicatesDialog";
 import {} from "./views/ExternalChangeDialog";
 import {} from "./views/FixDeploymentDialog";
+import {
+  ManualInstallerDialog,
+  type IManualInstallerDialogProps,
+} from "./views/ManualInstallerDialog";
 import {} from "./views/ModList";
 import {} from "./views/Settings";
 import URLInput from "./views/URLInput";
@@ -2058,6 +2064,7 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["session", "mods"], sessionReducer);
+  context.registerReducer(["session", "manualInstaller"], manualInstallerReducer);
   context.registerReducer(["settings", "mods"], settingsReducer);
   context.registerReducer(["settings", "modsTableViews"], modsTableViewsReducer);
   context.registerReducer(["persistent", "mods"], modsReducer);
@@ -2276,6 +2283,17 @@ function init(context: IExtensionContext): boolean {
   context.registerSettings("Workarounds", Workarounds, undefined, undefined, 1000);
 
   context.registerDialog("collection-update-warning", CollectionUpdateWarning);
+
+  context.registerDialog(
+    MANUAL_INSTALLER_DIALOG_ID,
+    ManualInstallerDialog,
+    () =>
+      ({
+        request: context.api.getState().session.manualInstaller.pending[0],
+        onAnswer: (requestId, answer) =>
+          answerManualInstallerRequest(context.api, requestId, answer),
+      }) satisfies Partial<IManualInstallerDialogProps>,
+  );
 
   context.registerDialog(
     "external-changes",

@@ -1716,6 +1716,7 @@ class InstallManager {
                   installContext.setInstallPathCB(modId, destinationPath);
                   tempPath = destinationPath + ".installing";
                   details.previousAttributes = fullInfo.previous;
+                  details.archiveId = archiveId ?? undefined;
                   return this.installInner(
                     api,
                     archivePath,
@@ -4100,6 +4101,7 @@ class InstallManager {
           hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
           modReference: details?.modReference,
           previousAttributes: details?.previousAttributes,
+          archiveId: details?.archiveId,
           hasCSScripts: supportedInstaller?.hasCSScripts,
           hasXmlConfigXML: supportedInstaller?.hasXmlConfigXML,
         };
