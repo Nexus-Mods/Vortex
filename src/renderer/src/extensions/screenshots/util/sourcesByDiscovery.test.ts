@@ -1,0 +1,111 @@
+/* eslint-disable @typescript-eslint/require-await */
+import { expect, it, describe, vi, beforeEach } from "vitest";
+
+import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
+import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
+
+import { getSteamMedia } from "../sources/steam";
+import sourcesByDiscovery from "./sourcesByDiscovery";
+
+vi.mock("../sources/steam", () => ({
+  getSteamMedia: vi.fn(async () => ({ "steam-screenshots-1": { path: "steam" } })),
+}));
+
+const exampleGame: IGameStored = {
+  id: "test",
+  name: "testGame",
+  requiredFiles: [],
+  executable: "game.exe",
+  details: {
+    mediaFolders: {
+      gameMediaSource: {
+        name: "Example media",
+        path: "/tmp/etc",
+      },
+    },
+  },
+};
+
+const exampleDiscovery: IDiscoveryResult = {
+  id: "test",
+  path: "/tmp/game",
+  store: "steam",
+};
+
+describe("sourcesByDiscovery", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("includes media sources declared by the game extension", async () => {
+    const game = { ...exampleGame };
+
+    const discovery = { ...exampleDiscovery };
+
+    const result = await sourcesByDiscovery(game, discovery, {});
+
+    expect(result["gameMediaSource"]).toBeDefined();
+  });
+
+  it("includes media sources declared by the getKnownFolders method", async () => {
+    const game = { ...exampleGame, id: "starfield" };
+
+    const discovery = { ...exampleDiscovery, id: "starfield" };
+
+    const result = await sourcesByDiscovery(game, discovery, {});
+
+    expect(result["starfield-mygames"]).toBeDefined();
+  });
+
+  it("includes Steam sources for Steam installs", async () => {
+    const game = { ...exampleGame };
+    const steamDiscovery = { ...exampleDiscovery, store: "steam" };
+    const nonSteamDiscovery = { ...exampleDiscovery, store: "other" };
+
+    const steamResult = await sourcesByDiscovery(game, steamDiscovery, {});
+    const nonSteamResult = await sourcesByDiscovery(game, nonSteamDiscovery, {});
+
+    expect(getSteamMedia).toHaveBeenCalledOnce();
+    expect(steamResult["steam-screenshots-1"]).toBeDefined();
+    expect(nonSteamResult["steam-screenshots-1"]).not.toBeDefined();
+  });
+
+  it("includes Xbox sources for Xbox installs", async () => {
+    const game = { ...exampleGame };
+    const xboxDiscovery = { ...exampleDiscovery, store: "xbox" };
+    const nonXboxDiscovery = { ...exampleDiscovery, store: "other" };
+
+    const xboxResult = await sourcesByDiscovery(game, xboxDiscovery, {});
+    const nonXboxResult = await sourcesByDiscovery(game, nonXboxDiscovery, {});
+
+    expect(xboxResult["xbox-default-captures"]).toBeDefined();
+    expect(nonXboxResult["xbox-default-captures"]).not.toBeDefined();
+  });
+
+  it("resolves a source with an async function for the path", async () => {
+    const game = {
+      ...exampleGame,
+      details: {
+        mediaFolders: {
+          asyncSource: {
+            name: "Async source",
+            path: () =>
+              new Promise<string>((resolve) => setTimeout(() => resolve("resolvedPath"), 500)),
+          },
+        },
+      },
+    };
+
+    const result = await sourcesByDiscovery(game, exampleDiscovery, {});
+
+    expect(result["asyncSource"].path).toBe("resolvedPath");
+  });
+
+  it("empty discovery returns no sources", async () => {
+    const game = { ...exampleGame, details: { mediaFolders: {} } };
+    const result = await sourcesByDiscovery(game, {}, {});
+
+    expect(result).toEqual({});
+    expect(Object.keys(result).length).toEqual(0);
+  });
+});
