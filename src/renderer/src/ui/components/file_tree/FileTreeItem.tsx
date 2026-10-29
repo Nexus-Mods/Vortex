@@ -1,5 +1,5 @@
 import type { RelativePath } from "@nexusmods/paths";
-import React, { type ReactNode } from "react";
+import React, { type CSSProperties, type ReactNode } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -79,22 +79,14 @@ export const FileTreeItem = ({
       data-path={node.path}
       ref={(element) => itemRef(node.path, element)}
       role="treeitem"
-      style={{ paddingInlineStart: `${level - 0.5}rem` }}
+      className={joinClasses(["nxm-file-tree-item", className])}
+      style={{ "--nxm-file-tree-level": level } as CSSProperties}
       tabIndex={isTabStop ? 0 : -1}
-      className={joinClasses(
-        [
-          "flex cursor-default items-center gap-x-1 rounded-sm py-1 pe-2 text-neutral-moderate",
-          "outline-none hover:bg-surface-high focus-visible:outline-2 focus-visible:-outline-offset-2",
-          "focus-visible:outline-primary-strong",
-          className,
-        ],
-        { "bg-surface-high text-neutral-strong": !!isSelected },
-      )}
       onClick={() => onClick(node)}
       onFocus={() => onFocus(node)}
     >
       <span
-        className="flex size-4 shrink-0 items-center justify-center"
+        className="nxm-file-tree-toggle"
         data-testid={canExpand ? "file-tree-toggle" : undefined}
         onClick={
           canExpand

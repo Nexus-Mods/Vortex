@@ -222,7 +222,7 @@ export const FileTree = ({
 
   return (
     <ul
-      className={joinClasses(["flex flex-col", className])}
+      className={joinClasses(["nxm-file-tree", className])}
       role="tree"
       {...props}
       onKeyDown={handleKeyDown}
