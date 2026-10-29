@@ -23,6 +23,7 @@ import type {
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
+import { outputDirectoryUnavailable } from "../mod_management/util/unavailableReason";
 
 const LNK_EXT = ".vortex_lnk";
 
@@ -92,20 +93,7 @@ class DeploymentMethod extends LinkingDeployment {
         typeId,
         path: modPaths[typeId],
       });
-      return {
-        description: (t) => t("Can't write to output directory"),
-        order: 3,
-        solution: (t) =>
-          t(
-            "To resolve this problem, the current user account needs to " +
-              'be given write permission to "{{modPath}}".',
-            {
-              replace: {
-                modPath: modPaths[typeId],
-              },
-            },
-          ),
-      };
+      return outputDirectoryUnavailable(err, modPaths[typeId]);
     }
 
     try {

@@ -160,6 +160,7 @@ import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
 import sortMods from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
+import { unavailableReasonActions, unavailableReasonText } from "./util/unavailableReason";
 import ActivationButton from "./views/ActivationButton";
 import DeactivationButton from "./views/DeactivationButton";
 import type { IDuplicatesMap, IRemoveDuplicateMap } from "./views/DuplicatesDialog";
@@ -748,12 +749,13 @@ function genUpdateModDeployment(installManager: InstallManager) {
             t('Deployment method "{{method}}" not available because: {{reason}}', {
               replace: {
                 method: selectedActivator.name,
-                reason: err.errors[0].description(t),
+                reason: unavailableReasonText(t, err.errors[0]),
               },
             }),
             {
               id: "deployment-not-possible",
               allowReport: false,
+              actions: unavailableReasonActions(api, err.errors[0]),
             },
           );
         } else if (err.warnings.length > 0) {

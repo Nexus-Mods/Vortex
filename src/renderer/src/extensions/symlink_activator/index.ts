@@ -19,6 +19,7 @@ import type {
   IDeploymentMethod,
   IUnavailableReason,
 } from "../mod_management/types/IDeploymentMethod";
+import { outputDirectoryUnavailable } from "../mod_management/util/unavailableReason";
 
 class DeploymendMethod extends LinkingDeployment {
   public compatible: string[] = ["symlink_activator_elevated"];
@@ -93,7 +94,7 @@ class DeploymendMethod extends LinkingDeployment {
         return { description: (t) => t("Requires admin rights on windows.") };
       }
     } catch (err) {
-      return { description: (t) => getErrorMessageOrDefault(err) };
+      return outputDirectoryUnavailable(err, modPaths[typeId]);
     }
 
     const canary = path.join(modPaths[typeId], "__vortex_canary.tmp");
