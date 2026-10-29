@@ -10,6 +10,8 @@ function makeRequest(id: string): IManualInstallerRequest {
     modName: `mod ${id}`,
     remaining: 0,
     previewFiles: [],
+    files: [],
+    ownStagingFolders: [],
   };
 }
 

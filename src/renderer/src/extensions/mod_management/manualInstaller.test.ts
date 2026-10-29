@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import { GameId } from "@vortex/shared";
+import { GameId, VortexModStagingFolder } from "@vortex/shared";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -13,6 +13,7 @@ import { UserCanceled } from "../../util/CustomErrors";
 import { setManualInstallerPreferences } from "../gamemode_management/actions/persistent";
 import { isTierZeroManagedGame, tierZeroGameFor } from "../gamemode_management/tiered/tierZero";
 import {
+  commonTopFolder,
   createManualInstaller,
   INSTALL_DESTINATION_ATTRIBUTE,
   INSTALL_SKIP_TOP_FOLDER_ATTRIBUTE,
@@ -89,6 +90,8 @@ interface IInstallOptions {
   modReference?: IModReference;
   archiveId?: string;
   files?: string[];
+  stagingFolder?: VortexModStagingFolder;
+  previousStagingFolder?: VortexModStagingFolder;
 }
 
 const install = (installer: ReturnType<typeof createManualInstaller>, opts: IInstallOptions = {}) =>
@@ -104,6 +107,8 @@ const install = (installer: ReturnType<typeof createManualInstaller>, opts: IIns
       previousAttributes: opts.previousAttributes,
       modReference: opts.modReference,
       archiveId: opts.archiveId,
+      stagingFolder: opts.stagingFolder,
+      previousStagingFolder: opts.previousStagingFolder,
     },
   );
 
@@ -144,6 +149,27 @@ describe("normalizeDestination", () => {
     expect(normalizeDestination("/etc")).toBeUndefined();
     expect(normalizeDestination("\\Windows")).toBeUndefined();
     expect(normalizeDestination("C:\\Windows")).toBeUndefined();
+  });
+});
+
+describe("commonTopFolder", () => {
+  test("is the folder every entry is in", () => {
+    expect(commonTopFolder([`Top${path.sep}`, path.join("Top", "a.dll")])).toBe("Top");
+    expect(commonTopFolder([path.join("Top", "a.dll"), path.join("Top", "b", "c.dll")])).toBe(
+      "Top",
+    );
+  });
+
+  test("is undefined when a file is at the archive root", () => {
+    expect(commonTopFolder([path.join("Top", "a.dll"), "readme.txt"])).toBeUndefined();
+  });
+
+  test("is undefined when the entries are in different folders", () => {
+    expect(commonTopFolder([path.join("A", "a.dll"), path.join("B", "b.dll")])).toBeUndefined();
+  });
+
+  test("is undefined for no entries", () => {
+    expect(commonTopFolder([])).toBeUndefined();
   });
 });
 
@@ -288,6 +314,53 @@ describe("per-game preferences", () => {
         topFolder: "Top",
         previewFiles: [path.join("Top", "a.dll"), path.join("Top", "b", "c.dll")],
       }),
+    );
+  });
+
+  test("the dialog gets every entry of the archive, directories included", async () => {
+    const entries = [`Top${path.sep}`, path.join("Top", "a.dll"), path.join("Top", "b", "c.dll")];
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api), { files: entries });
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ files: entries }),
+    );
+  });
+
+  test("the dialog gets the staging folders of the mod and of the one it replaces", async () => {
+    const stagingFolder = VortexModStagingFolder("new-mod");
+    const previousStagingFolder = VortexModStagingFolder("old-mod");
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api), { stagingFolder, previousStagingFolder });
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ ownStagingFolders: [stagingFolder, previousStagingFolder] }),
+    );
+  });
+
+  test("the dialog gets a staging folder once when the mod reuses its previous one", async () => {
+    const stagingFolder = VortexModStagingFolder("same-mod");
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api), {
+      stagingFolder,
+      previousStagingFolder: stagingFolder,
+    });
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ ownStagingFolders: [stagingFolder] }),
+    );
+  });
+
+  test("the dialog gets no staging folders when the installer isn't told any", async () => {
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api));
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ ownStagingFolders: [] }),
     );
   });
 

@@ -1,4 +1,4 @@
-import type { VortexGameId } from "@vortex/shared";
+import type { VortexGameId, VortexModStagingFolder } from "@vortex/shared";
 
 import { actionsToReducerSpec } from "@/reducers/builder";
 
@@ -16,6 +16,13 @@ export interface IManualInstallerRequest {
   defaultFolder?: string;
   /** the first few files of the archive, for the preview of the final paths */
   previewFiles: string[];
+  /** every entry of the archive, directories included as names ending in a path separator */
+  files: string[];
+  /**
+   * the staging folders of the mod being installed, and of the mod it replaces, if any. Files
+   * deployed from them don't count as another mod's.
+   */
+  ownStagingFolders: VortexModStagingFolder[];
   /** the single folder all files of the archive are in, if there is one */
   topFolder?: string;
 }

@@ -12,7 +12,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { parseError } from "@vortex/shared";
+import { parseError, VortexModStagingFolder } from "@vortex/shared";
 import { AlreadyDownloaded, InsufficientDiskSpace } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
@@ -1724,6 +1724,11 @@ class InstallManager {
                   installContext.setInstallPathCB(modId, destinationPath);
                   tempPath = destinationPath + ".installing";
                   details.previousAttributes = fullInfo.previous;
+                  details.stagingFolder = VortexModStagingFolder(modId);
+                  details.previousStagingFolder =
+                    existingMod !== undefined
+                      ? VortexModStagingFolder(existingMod.installationPath)
+                      : undefined;
                   details.archiveId = archiveId ?? undefined;
                   return this.installInner(
                     api,
@@ -4109,6 +4114,8 @@ class InstallManager {
           hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
           modReference: details?.modReference,
           previousAttributes: details?.previousAttributes,
+          stagingFolder: details?.stagingFolder,
+          previousStagingFolder: details?.previousStagingFolder,
           archiveId: details?.archiveId,
           hasCSScripts: supportedInstaller?.hasCSScripts,
           hasXmlConfigXML: supportedInstaller?.hasXmlConfigXML,
