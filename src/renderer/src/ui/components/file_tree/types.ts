@@ -10,6 +10,10 @@ export interface IFileTreeNode {
   children?: IFileTreeNode[];
 }
 
+/** A directory known to hold nothing; one that isn't loaded yet isn't known to. */
+export const isEmptyDirectory = (node: IFileTreeNode): boolean =>
+  node.kind === "directory" && node.children?.length === 0;
+
 /** The last segment of a node's path. */
 export const fileTreeNodeName = (node: IFileTreeNode): string =>
   node.path.slice(node.path.lastIndexOf("/") + 1);
