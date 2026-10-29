@@ -685,7 +685,7 @@ class LootInterface {
     }
     try {
       await loot.loadPlugins(
-        deployed.filter((id) => !invalid.has(id)).map((name) => toPluginId(name)),
+        deployed.filter((id) => !invalid.has(id)).map((id) => pluginList[id].filePath),
         false,
       );
       pluginsLoaded = true;

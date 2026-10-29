@@ -23,6 +23,7 @@ import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
 import opn from "../../util/opn";
+import type { DirEntryCache } from "../../util/resolvePathCase";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, delay, setdefault } from "../../util/util";
 import { discoveryByGame } from "../gamemode_management/selectors";
@@ -83,6 +84,7 @@ import PluginHistory from "./util/PluginHistory";
 import { makeSetPluginLight } from "./util/pluginLight";
 import PluginPersistor from "./util/PluginPersistor";
 import { copyIgnoringMissing, swapUserlistForProfile, userlistPaths } from "./util/profileUserlist";
+import { requirementExists } from "./util/requirementExists";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
 import { SpanAttribute } from "./util/spanAttributes";
 import { makeUpdatePluginList } from "./util/updatePluginList";
@@ -982,13 +984,9 @@ function testRulesUnfulfilled(api: IExtensionApi): Bluebird<ITestResult> {
   // checks.
 
   const dataPath = gameDataPath(gameMode);
+  const dirCache: DirEntryCache = new Map();
   const exists = (id: string): Bluebird<boolean> =>
-    [".esp", ".esl", ".esm"].includes(path.extname(id))
-      ? Bluebird.resolve(pluginsSet.has(id))
-      : fs
-          .statAsync(path.resolve(dataPath, id))
-          .then(() => true)
-          .catch((err) => false);
+    Bluebird.resolve(requirementExists(dataPath, id, pluginsSet, dirCache));
 
   return Bluebird.map(Object.keys(reqCheck), (reqId) =>
     exists(reqId).then((existsRes) => {
