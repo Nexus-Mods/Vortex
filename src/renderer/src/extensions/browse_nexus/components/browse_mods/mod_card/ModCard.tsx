@@ -50,10 +50,11 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
     >
       <AdultAwareImage
         alt=""
+        blurredSrc={mod.blurred_thumbnail_url}
         className="w-full shrink-0 rounded-sm @md:w-2/5 @md:max-w-60.5"
         imageType="mod"
         isAdult={mod.adult}
-        src={mod.thumbnail_url ?? undefined}
+        src={mod.thumbnail_url}
       >
         {isActive && <span className="absolute inset-0 z-5 bg-translucent-dark-300" />}
       </AdultAwareImage>

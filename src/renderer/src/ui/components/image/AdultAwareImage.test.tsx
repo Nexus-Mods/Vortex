@@ -52,4 +52,29 @@ describe("AdultAwareImage", () => {
     renderComponent();
     expect(getImg()).toHaveClass("nxm-image-media-blurred");
   });
+
+  describe("with a version the server blurred", () => {
+    it("shows that instead, without blurring it again, filling the frame as a blur does", () => {
+      mockUserInfo({ adultBlurImages: true });
+      renderComponent({ blurredSrc: "x-blurred.png" });
+
+      expect(getImg()).toHaveAttribute("src", "x-blurred.png");
+      expect(getImg()).not.toHaveClass("nxm-image-media-blurred");
+      expect(getImg()).toHaveClass("nxm-image-media-cover");
+    });
+
+    it("shows the picture itself when the user opts out of blurring", () => {
+      mockUserInfo({ adultBlurImages: false });
+      renderComponent({ blurredSrc: "x-blurred.png" });
+
+      expect(getImg()).toHaveAttribute("src", "x.png");
+    });
+
+    it("shows the picture itself for content that isn't adult", () => {
+      mockUserInfo({ adultBlurImages: true });
+      renderComponent({ isAdult: false, blurredSrc: "x-blurred.png" });
+
+      expect(getImg()).toHaveAttribute("src", "x.png");
+    });
+  });
 });

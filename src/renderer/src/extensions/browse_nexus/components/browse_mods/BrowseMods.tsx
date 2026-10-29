@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -7,10 +7,10 @@ import { NoResults } from "@/ui/components/no_results/NoResults";
 import { ResizableSplit } from "@/ui/components/resizable_split/ResizableSplit";
 import { useSavedSplit } from "@/ui/components/resizable_split/useSavedSplit.hook";
 
+import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
-import type { IGalleryImage } from "./mod_details/mod_gallery/ModGallery";
 import { ModDetails } from "./mod_details/ModDetails";
 import { ModDetailsSkeleton } from "./mod_details/ModDetails.skeleton";
 import { ModList } from "./mod_list/ModList";
@@ -35,27 +35,18 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
     setActiveMod(mods[0]);
   }
 
-  const gallery = useMemo<IGalleryImage[]>(
-    () =>
-      activeMod?.thumbnail_url
-        ? [{ src: activeMod.thumbnail_url, thumbnail: activeMod.thumbnail_url }]
-        : [],
-    [activeMod],
-  );
-  const [pickedImage, setPickedImage] = useState<IGalleryImage>();
-  const backdrop = pickedImage && gallery.includes(pickedImage) ? pickedImage : gallery[0];
+  const { gallery, backdrop, setBackdrop } = useModGallery(api, activeMod);
   const detailsRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [split, setSplit] = useSavedSplit("browse-mods");
 
-  /** Opens another mod's details; its gallery starts over at its first picture, and so does this. */
+  /** Opens another mod's details. */
   const selectMod = (id: string) => {
     if (id === activeMod?.id) {
       return;
     }
 
     setActiveMod(mods.find((mod) => mod.id === id));
-    setPickedImage(undefined);
   };
 
   /** Moves focus to the list's Tab stop, for the details' Left, as Right moves it into them. */
@@ -86,7 +77,7 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
         mod={activeMod}
         ref={detailsRef}
         onFocusList={focusList}
-        onPick={setPickedImage}
+        onPick={setBackdrop}
       />
     );
   };
@@ -97,25 +88,24 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden game-art-backdrop backdrop-dim-scope">
         <ModBackdrop
-          blurredSrc={activeMod?.blurred_thumbnail_url ?? undefined}
+          blurredSrc={backdrop?.blurred_large_thumbnail_url}
           isAdult={!!activeMod?.adult}
-          src={backdrop?.src}
+          src={backdrop?.large_thumbnail_url}
         />
 
         <ResizableSplit
           className="min-w-0 flex-1"
           end={details()}
           label={t("Resize the list and details")}
-          valueText={(percent) => t("List {{percent}}%", { percent })}
           split={split}
           start={
             <ModList
               activeModId={activeMod?.id}
               currentPage={search.currentPage}
               detailsRef={detailsRef}
-              listRef={listRef}
               isError={!!search.error}
               isLoading={search.loading}
+              listRef={listRef}
               mods={mods}
               totalCount={search.totalCount}
               onPageChange={search.setCurrentPage}
@@ -123,6 +113,7 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
               onSelectMod={selectMod}
             />
           }
+          valueText={(percent) => t("List {{percent}}%", { percent })}
           onSplitChange={setSplit}
         />
       </div>

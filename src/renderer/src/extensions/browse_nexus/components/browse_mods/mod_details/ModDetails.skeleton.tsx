@@ -5,9 +5,12 @@ import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton"
 /** The skeleton's stats, one block each, as many as `ModDetails` shows. */
 const STATS = 6;
 
+/** The skeleton's thumbnails, as many as the gallery's strip always holds. */
+const THUMBNAILS = 5;
+
 /**
- * `ModDetails` while the list's mods load: its tab and button, picture, stats, author and pills,
- * and description, pulsing. Each pulses on its own, as the description's skeleton does.
+ * `ModDetails` while the list's mods load: its tab and button, picture and thumbnails, stats,
+ * author and pills, and description, pulsing. Each pulses on its own, as the description's skeleton does.
  */
 export const ModDetailsSkeleton = () => (
   <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-y-3 overflow-hidden p-6">
@@ -17,7 +20,15 @@ export const ModDetailsSkeleton = () => (
       <div className="size-8 rounded-sm bg-surface-translucent-mid" />
     </div>
 
-    <div className="aspect-video w-full animate-pulse rounded-sm bg-surface-translucent-mid" />
+    <div className="flex animate-pulse flex-col gap-y-2">
+      <div className="aspect-mod w-full rounded-sm bg-surface-translucent-mid" />
+
+      <div className="flex gap-x-1.5">
+        {Array.from({ length: THUMBNAILS }, (_, index) => (
+          <div className="aspect-mod flex-1 rounded-xs bg-surface-translucent-mid" key={index} />
+        ))}
+      </div>
+    </div>
 
     <div className="@container border-y border-stroke-weak py-4">
       <div className="grid grid-cols-3 gap-2 @2xl:grid-cols-6">

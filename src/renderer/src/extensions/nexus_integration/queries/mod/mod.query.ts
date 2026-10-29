@@ -8,6 +8,9 @@ import { createVortexNexusV3Client } from "../../nexusV3Client";
 /** A mod's details, as the v3 API returns them. */
 export type Mod = components["schemas"]["Mod"];
 
+/** One of a mod's images in each size, as the v3 API returns it. */
+export type ModImage = components["schemas"]["ModImage"];
+
 /** The keys of the mod queries. */
 export const modKeys = {
   /** Every mod. */

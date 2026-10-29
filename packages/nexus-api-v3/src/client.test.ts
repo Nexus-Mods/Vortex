@@ -228,7 +228,13 @@ describe("editCollection", () => {
 
 describe("getModById", () => {
   it("GETs /mods/{id} with the id interpolated, and returns the mod", async () => {
-    mockData({ id: "7318624273618", name: "SkyUI", tags: [{ id: "1", name: "Interface" }] });
+    const gallery_images = [{ id: "9", title: "", url: "a.png", thumbnail_url: "a-thumb.png" }];
+    mockData({
+      id: "7318624273618",
+      name: "SkyUI",
+      tags: [{ id: "1", name: "Interface" }],
+      gallery_images,
+    });
 
     const result = await makeClient().getModById("7318624273618");
 
@@ -238,6 +244,7 @@ describe("getModById", () => {
       id: "7318624273618",
       name: "SkyUI",
       tags: [{ id: "1", name: "Interface" }],
+      gallery_images,
     });
   });
 

@@ -6,8 +6,10 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IImageProps extends Omit<
   ImgHTMLAttributes<HTMLImageElement>,
-  "className" | "alt"
+  "className" | "alt" | "src"
 > {
+  /** Where the picture is; `null`, as an API sends for a picture it hasn't got, means none. */
+  src?: string | null;
   /** The picture's text alternative, which also names the fallback icon; "" if decorative. */
   alt: string;
   /** Classes for the frame's size and corners; an `other` frame collapses without a height. */
@@ -95,7 +97,7 @@ export const Image = ({
             },
           )}
           ref={settleIfComplete}
-          src={src}
+          src={src ?? undefined}
           onError={(event) => {
             setErrored(true);
             onError?.(event);

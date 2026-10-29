@@ -236,7 +236,11 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
         params: { path: { id } },
       });
       if (error) throw toV3Error(error, response);
-      return { ...data.data, tags: Array.from(data.data.tags) };
+      return {
+        ...data.data,
+        tags: Array.from(data.data.tags),
+        gallery_images: Array.from(data.data.gallery_images),
+      };
     },
 
     /**
