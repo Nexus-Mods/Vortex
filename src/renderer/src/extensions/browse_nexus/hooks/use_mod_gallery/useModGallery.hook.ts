@@ -9,34 +9,32 @@ import type { IGalleryImage } from "../../components/browse_mods/mod_details/mod
 
 /**
  * A mod's images in the authors' order, led by its primary image when they don't include it, or
- * the search's thumbnail until the mod's own query has them. For a user who blurs adult images,
- * the API sends only the primary image, blurred.
+ * the search's thumbnail until the mod's own query has them, standing in for every size.
  */
 const getGalleryImages = (summary: ModSummary, mod?: Mod): IGalleryImage[] => {
   if (!mod) {
-    return summary.thumbnail_url
-      ? [{ src: summary.thumbnail_url, thumbnail: summary.thumbnail_url }]
-      : [];
+    if (!summary.thumbnail_url) {
+      return [];
+    }
+
+    return [
+      {
+        url: summary.thumbnail_url,
+        thumbnail_url: summary.thumbnail_url,
+        large_thumbnail_url: summary.thumbnail_url,
+        blurred_thumbnail_url: summary.blurred_thumbnail_url,
+        blurred_large_thumbnail_url: summary.blurred_thumbnail_url,
+      },
+    ];
   }
 
-  const gallery = mod.gallery_images.map(({ url, thumbnail_url, title }) => ({
-    src: url,
-    thumbnail: thumbnail_url,
-    title,
-  }));
   const primary = mod.primary_image;
 
-  if (!primary || gallery.some(({ src }) => src === primary.url)) {
-    return gallery;
+  if (!primary || mod.gallery_images.some(({ url }) => url === primary.url)) {
+    return [...mod.gallery_images];
   }
 
-  return [
-    {
-      src: primary.url ?? primary.blurred_large_thumbnail_url,
-      thumbnail: primary.thumbnail_url ?? primary.blurred_thumbnail_url,
-    },
-    ...gallery,
-  ];
+  return [primary, ...mod.gallery_images];
 };
 
 /**

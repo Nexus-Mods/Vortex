@@ -19,14 +19,11 @@ vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
 import { useModGallery } from "./useModGallery.hook";
 
 const summary = (id: string, thumbnail_url: string | null = "thumb.png") =>
-  ({ id, thumbnail_url }) as ModSummary;
-
-const image = (name: string, title = "") => ({
-  id: name,
-  title,
-  url: `${name}.png`,
-  thumbnail_url: `${name}-thumb.png`,
-});
+  ({
+    id,
+    thumbnail_url,
+    blurred_thumbnail_url: thumbnail_url && thumbnail_url.replace(".png", "-blurred.png"),
+  }) as ModSummary;
 
 const primary = (name: string) => ({
   url: `${name}.png`,
@@ -35,6 +32,8 @@ const primary = (name: string) => ({
   blurred_thumbnail_url: `${name}-blurred.png`,
   blurred_large_thumbnail_url: `${name}-blurred-large.png`,
 });
+
+const image = (name: string, title = "") => ({ ...primary(name), id: name, title });
 
 const renderGallery = (mod?: ModSummary) => {
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
@@ -53,7 +52,9 @@ const renderGallery = (mod?: ModSummary) => {
 /** Renders the mod's gallery and waits for its own images to arrive. */
 const loadedGallery = async (mod: ModSummary) => {
   const view = renderGallery(mod);
-  await waitFor(() => expect(view.result.current.gallery[0]?.src).not.toBe("thumb.png"));
+  await waitFor(() =>
+    expect(view.result.current.gallery[0]?.large_thumbnail_url).not.toBe("thumb.png"),
+  );
   return view;
 };
 
@@ -71,12 +72,18 @@ describe("useModGallery", () => {
 
   it("shows the search's thumbnail until the mod's own images arrive", () => {
     expect(renderGallery(summary("1")).result.current.gallery).toEqual([
-      { src: "thumb.png", thumbnail: "thumb.png" },
+      {
+        url: "thumb.png",
+        thumbnail_url: "thumb.png",
+        large_thumbnail_url: "thumb.png",
+        blurred_thumbnail_url: "thumb-blurred.png",
+        blurred_large_thumbnail_url: "thumb-blurred.png",
+      },
     ]);
     expect(renderGallery(summary("1", null)).result.current.gallery).toEqual([]);
   });
 
-  it("shows the gallery in the authors' order, titled, with the first as the backdrop", async () => {
+  it("shows the gallery in the authors' order, titled, with the first behind", async () => {
     mocks.mods["1"] = {
       primary_image: primary("a"),
       gallery_images: [image("a", "Front"), image("b")],
@@ -84,10 +91,7 @@ describe("useModGallery", () => {
 
     const { result } = await loadedGallery(summary("1"));
 
-    expect(result.current.gallery).toEqual([
-      { src: "a.png", thumbnail: "a-thumb.png", title: "Front" },
-      { src: "b.png", thumbnail: "b-thumb.png", title: "" },
-    ]);
+    expect(result.current.gallery).toEqual([image("a", "Front"), image("b")]);
     expect(result.current.backdrop).toBe(result.current.gallery[0]);
   });
 
@@ -96,20 +100,7 @@ describe("useModGallery", () => {
 
     const { result } = await loadedGallery(summary("1"));
 
-    expect(result.current.gallery.map(({ src }) => src)).toEqual(["p.png", "a.png"]);
-  });
-
-  it("shows the primary image blurred when the user has chosen to blur adult images", async () => {
-    mocks.mods["1"] = {
-      primary_image: { ...primary("p"), url: null, thumbnail_url: null, large_thumbnail_url: null },
-      gallery_images: [],
-    };
-
-    const { result } = await loadedGallery(summary("1"));
-
-    expect(result.current.gallery).toEqual([
-      { src: "p-blurred-large.png", thumbnail: "p-blurred.png" },
-    ]);
+    expect(result.current.gallery).toEqual([primary("p"), image("a")]);
   });
 
   it("shows nothing for a mod with no images", async () => {
@@ -127,9 +118,9 @@ describe("useModGallery", () => {
     const { result, rerender } = await loadedGallery(summary("1"));
 
     act(() => result.current.setBackdrop(result.current.gallery[1]));
-    expect(result.current.backdrop?.src).toBe("b.png");
+    expect(result.current.backdrop?.url).toBe("b.png");
 
     rerender({ mod: summary("2") });
-    await waitFor(() => expect(result.current.backdrop?.src).toBe("c.png"));
+    await waitFor(() => expect(result.current.backdrop?.url).toBe("c.png"));
   });
 });

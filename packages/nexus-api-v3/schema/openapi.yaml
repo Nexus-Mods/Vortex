@@ -334,6 +334,13 @@ paths:
           description: The client making the request, recorded against the download.
           schema:
             type: string
+        - name: Application-Version
+          in: header
+          required: false
+          description: The version of the client making the request, recorded against
+            the download.
+          schema:
+            type: string
       responses:
         "200":
           description: Signed download links, one per available CDN location.
@@ -1606,6 +1613,13 @@ paths:
           description: The client making the request, recorded against the download.
           schema:
             type: string
+        - name: Application-Version
+          in: header
+          required: false
+          description: The version of the client making the request, recorded against
+            the download.
+          schema:
+            type: string
       responses:
         "200":
           description: A link to the repacked archive.
@@ -2459,7 +2473,7 @@ components:
           "$ref": "#/components/schemas/ModStatus"
         primary_image:
           allOf:
-            - "$ref": "#/components/schemas/ModPrimaryImage"
+            - "$ref": "#/components/schemas/ModImage"
           nullable: true
           description: The mod's primary image, or null if the mod has none or is
             under moderation or removed by staff.
@@ -2467,7 +2481,7 @@ components:
           type: array
           description: |
             The mod's gallery, in the order the authors arranged it. Empty when the mod is under
-            moderation or removed by staff, or when it is an adult mod and the user has chosen to blur adult images.
+            moderation or removed by staff.
           items:
             "$ref": "#/components/schemas/ModGalleryImage"
     ModUploader:
@@ -2531,11 +2545,11 @@ components:
         name:
           type: string
           description: The tag name.
-    ModPrimaryImage:
+    ModImage:
       type: object
       description: |
-        The mod's primary image in each available size. For an adult mod, the unblurred URLs are null
-        when the user has chosen to blur adult images.
+        An image in each available size. For an adult mod, show the blurred versions when the user has
+        chosen to blur adult images. There is no blurred full-size image.
       required:
         - url
         - thumbnail_url
@@ -2545,17 +2559,13 @@ components:
       properties:
         url:
           type: string
-          nullable: true
-          description: The full-size image. Null when the image must be shown blurred.
+          description: The full-size image.
         thumbnail_url:
           type: string
-          nullable: true
-          description: A small thumbnail. Null when the image must be shown blurred.
+          description: A small thumbnail.
         large_thumbnail_url:
           type: string
-          nullable: true
-          description: A large thumbnail, sized for previews. Null when the image
-            must be shown blurred.
+          description: A large thumbnail, sized for previews.
         blurred_thumbnail_url:
           type: string
           description: Blurred version of the small thumbnail.
@@ -2563,26 +2573,20 @@ components:
           type: string
           description: Blurred version of the large thumbnail.
     ModGalleryImage:
-      type: object
       description: An image from the mod's gallery, as uploaded by the mod's authors.
-      required:
-        - id
-        - title
-        - url
-        - thumbnail_url
-      properties:
-        id:
-          type: string
-          description: The unique identifier for the image within its game.
-        title:
-          type: string
-          description: The image title. Empty string when the image has none.
-        url:
-          type: string
-          description: The full-size image.
-        thumbnail_url:
-          type: string
-          description: A small thumbnail of the image.
+      allOf:
+        - "$ref": "#/components/schemas/ModImage"
+        - type: object
+          required:
+            - id
+            - title
+          properties:
+            id:
+              type: string
+              description: The unique identifier for the image within its game.
+            title:
+              type: string
+              description: The image title. Empty string when the image has none.
     ModFile:
       type: object
       description: A mod file - the persistent, updatable file on a mod page. Its

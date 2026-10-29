@@ -88,9 +88,9 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden game-art-backdrop backdrop-dim-scope">
         <ModBackdrop
-          blurredSrc={activeMod?.blurred_thumbnail_url ?? undefined}
+          blurredSrc={backdrop?.blurred_large_thumbnail_url}
           isAdult={!!activeMod?.adult}
-          src={backdrop?.src}
+          src={backdrop?.large_thumbnail_url}
         />
 
         <ResizableSplit

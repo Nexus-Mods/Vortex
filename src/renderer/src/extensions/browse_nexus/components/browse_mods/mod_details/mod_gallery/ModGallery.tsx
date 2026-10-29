@@ -1,19 +1,13 @@
 import React, { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { ModImage } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import { Button } from "@/ui/components/button/Button";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-/** One picture in a mod's gallery. */
-export interface IGalleryImage {
-  /** The full-size picture, shown large. */
-  src: string;
-  /** The small one, for the strip. */
-  thumbnail: string;
-  /** What it shows, for screen readers; empty or absent when its author gave none. */
-  title?: string;
-}
+/** One picture in a mod's gallery, as the API sends it, with its title where it has one. */
+export type IGalleryImage = ModImage & { title?: string };
 
 /** How many thumbnails the strip fits; fewer pictures are made up with placeholders. */
 const STRIP_LENGTH = 5;
@@ -40,8 +34,9 @@ interface IModGalleryProps {
  * arrows at its ends while there's more to see. Clicking a thumbnail, or the arrow keys on the
  * strip, picks it. The strip always holds at least five slots, each a placeholder until its
  * thumbnail fades in over it, one after another; the empty ones pulse while more pictures load.
- * The large picture is never a scroll anchor: a new one sits higher or lower in its 16:9 frame,
- * and the browser would scroll the details to follow it.
+ * For a user who blurs adult content, an adult mod's pictures are the server's blurred ones,
+ * through `AdultAwareImage`, so the unblurred ones are never fetched. The large picture is never a scroll anchor: a new one
+ * sits higher or lower in its 16:9 frame, and the browser would scroll the details to follow it.
  */
 export const ModGallery = ({ images, isAdult, isLoading, onPick }: IModGalleryProps) => {
   const { t } = useTranslation();
@@ -114,11 +109,12 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick }: IModGalleryPr
       {shown ? (
         <AdultAwareImage
           alt={shown.title ?? ""}
+          blurredSrc={isLoading ? undefined : shown.blurred_large_thumbnail_url}
           className="w-full rounded-sm [overflow-anchor:none]"
           imageType="mod"
           isAdult={isAdult}
           isLoading={isLoading}
-          src={isLoading ? undefined : shown.src}
+          src={isLoading ? undefined : shown.url}
         />
       ) : (
         <div
@@ -173,12 +169,13 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick }: IModGalleryPr
                   >
                     <AdultAwareImage
                       alt=""
+                      blurredSrc={image.blurred_thumbnail_url}
                       className={joinClasses(["w-full rounded-xs bg-transparent"], {
                         "[&_.nxm-image-frame]:border-neutral-strong": index === picked,
                       })}
                       imageType="mod"
                       isAdult={isAdult}
-                      src={image.thumbnail}
+                      src={image.thumbnail_url}
                     />
                   </button>
                 )}

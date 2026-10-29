@@ -13,7 +13,11 @@ import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 
 // The list, bar, backdrop and details are stood in for: these test which mod the details show.
 vi.mock("./browse_mods_bar/BrowseModsBar", () => ({ BrowseModsBar: () => null }));
-vi.mock("./mod_backdrop/ModBackdrop", () => ({ ModBackdrop: () => null }));
+vi.mock("./mod_backdrop/ModBackdrop", () => ({
+  ModBackdrop: ({ src, blurredSrc }: { src?: string; blurredSrc?: string }) => (
+    <p data-testid="backdrop">{`${src} ${blurredSrc}`}</p>
+  ),
+}));
 vi.mock("@/ui/components/resizable_split/useSavedSplit.hook", () => ({
   useSavedSplit: () => [0.5, vi.fn()],
 }));
@@ -30,7 +34,7 @@ vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
 vi.mock("./mod_details/ModDetails", () => ({
   ModDetails: React.forwardRef<
     HTMLDivElement,
-    { mod: ModSummary; gallery: Array<{ src: string }>; onFocusList: () => void }
+    { mod: ModSummary; gallery: Array<{ large_thumbnail_url: string }>; onFocusList: () => void }
   >(({ mod, gallery, onFocusList }, ref) => {
     React.useEffect(() => {
       mounts.push(mod.id);
@@ -39,9 +43,9 @@ vi.mock("./mod_details/ModDetails", () => ({
     return (
       <div ref={ref}>
         <p data-testid="details">{mod.name}</p>
-        {gallery.map(({ src }) => (
-          <p data-testid="gallery-image" key={src}>
-            {src}
+        {gallery.map(({ large_thumbnail_url }) => (
+          <p data-testid="gallery-image" key={large_thumbnail_url}>
+            {large_thumbnail_url}
           </p>
         ))}
         <button onClick={onFocusList}>Back to the list</button>
@@ -80,6 +84,17 @@ vi.mock("./mod_list/ModList", () => ({
 }));
 
 import { BrowseMods } from "./BrowseMods";
+
+/** One of a mod's images in each size, as the API sends it. */
+const image = (name: string) => ({
+  id: name,
+  title: "",
+  url: `${name}.png`,
+  thumbnail_url: `${name}-thumb.png`,
+  large_thumbnail_url: `${name}-large.png`,
+  blurred_thumbnail_url: `${name}-blurred.png`,
+  blurred_large_thumbnail_url: `${name}-blurred-large.png`,
+});
 
 const mod = (id: string, thumbnail_url: string | null = null) =>
   ({ id, name: `Mod ${id}`, thumbnail_url }) as ModSummary;
@@ -147,10 +162,7 @@ describe("BrowseMods", () => {
     mocks.mods = {
       "1": {
         primary_image: null,
-        gallery_images: [
-          { id: "a", title: "", url: "a.png", thumbnail_url: "a-thumb.png" },
-          { id: "b", title: "", url: "b.png", thumbnail_url: "b-thumb.png" },
-        ],
+        gallery_images: [image("a"), image("b")],
       } as unknown as Mod,
     };
     renderComponent(search([mod("1", "thumb.png")]));
@@ -158,11 +170,21 @@ describe("BrowseMods", () => {
     expect(screen.getAllByTestId("gallery-image").map((image) => image.textContent)).toEqual([
       "thumb.png",
     ]);
-    expect(await screen.findByText("b.png")).toBeInTheDocument();
+    expect(await screen.findByText("b-large.png")).toBeInTheDocument();
     expect(screen.getAllByTestId("gallery-image").map((image) => image.textContent)).toEqual([
-      "a.png",
-      "b.png",
+      "a-large.png",
+      "b-large.png",
     ]);
+  });
+
+  it("puts the picked picture behind, with its blurred version for adult content", async () => {
+    mocks.mods = {
+      "1": { primary_image: null, gallery_images: [image("a")] } as unknown as Mod,
+    };
+    renderComponent(search([mod("1", "thumb.png")]));
+
+    expect(await screen.findByText("a-large.png")).toBeInTheDocument();
+    expect(screen.getByTestId("backdrop")).toHaveTextContent("a-large.png a-blurred-large.png");
   });
 
   it("moves focus to the open mod in the list when the details ask", async () => {

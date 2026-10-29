@@ -80,6 +80,12 @@ describe("Image", () => {
       expect(getSpinner()).not.toBeInTheDocument();
     });
 
+    it("takes a null src, as an API sends for a picture it hasn't got, as none", () => {
+      renderComponent({ src: null });
+      expect(getImg()).not.toHaveAttribute("src");
+      expect(getSpinner()).not.toBeInTheDocument();
+    });
+
     it("drops the spinner when the image fails instead of spinning forever", () => {
       renderComponent({ src: "bad.png" });
       fireEvent.error(getImg() as Element);

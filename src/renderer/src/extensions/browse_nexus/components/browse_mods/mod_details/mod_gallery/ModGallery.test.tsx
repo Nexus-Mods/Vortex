@@ -2,17 +2,25 @@ import { render } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { ModGallery } from "./ModGallery";
+import { type IGalleryImage, ModGallery } from "./ModGallery";
 
 // The user's adult content setting isn't needed here.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
 
+/** A picture in each size the API sends, named for `name`. */
+const picture = (name: string, title?: string): IGalleryImage => ({
+  url: `${name}.png`,
+  large_thumbnail_url: `${name}-large.png`,
+  thumbnail_url: `${name}-thumb.png`,
+  blurred_large_thumbnail_url: `${name}-blurred-large.png`,
+  blurred_thumbnail_url: `${name}-blurred.png`,
+  title,
+});
+
 describe("ModGallery", () => {
   it("shows its picture whole in a 16:9 frame, as the list's cards do", () => {
-    const { container } = render(
-      <ModGallery images={[{ src: "tall.png", thumbnail: "tall.png" }]} isAdult={false} />,
-    );
+    const { container } = render(<ModGallery images={[picture("tall")]} isAdult={false} />);
     const img = container.querySelector("img")!;
 
     expect(img.closest(".nxm-image")).toHaveClass("nxm-image-mod");
@@ -20,22 +28,14 @@ describe("ModGallery", () => {
   });
 
   it("shows the strip of thumbnails even with only one picture", () => {
-    const { getByRole } = render(
-      <ModGallery images={[{ src: "farm.png", thumbnail: "farm.png" }]} isAdult={false} />,
-    );
+    const { getByRole } = render(<ModGallery images={[picture("farm")]} isAdult={false} />);
 
     expect(getByRole("toolbar", { name: "Images" })).toBeInTheDocument();
   });
 
   it("fills the strip to five with still placeholders when the mod has fewer pictures", () => {
     const { container } = render(
-      <ModGallery
-        images={[
-          { src: "a.png", thumbnail: "a.png" },
-          { src: "b.png", thumbnail: "b.png" },
-        ]}
-        isAdult={false}
-      />,
+      <ModGallery images={[picture("a"), picture("b")]} isAdult={false} />,
     );
     const placeholders = container.querySelectorAll("[data-gallery-placeholder]");
 
@@ -44,9 +44,7 @@ describe("ModGallery", () => {
   });
 
   it("pulses the placeholders while the mod's pictures load", () => {
-    const { container } = render(
-      <ModGallery images={[{ src: "a.png", thumbnail: "a.png" }]} isAdult={false} isLoading />,
-    );
+    const { container } = render(<ModGallery images={[picture("a")]} isAdult={false} isLoading />);
     const placeholders = container.querySelectorAll("[data-gallery-placeholder]");
 
     expect(placeholders).toHaveLength(4);
@@ -60,7 +58,7 @@ describe("ModGallery", () => {
   });
 
   it("spins in the picture's place while the mod's pictures load, then shows it", () => {
-    const images = [{ src: "farm.png", thumbnail: "farm-thumb.png" }];
+    const images = [picture("farm")];
     const { container, rerender } = render(
       <ModGallery images={images} isAdult={false} isLoading />,
     );
@@ -74,13 +72,13 @@ describe("ModGallery", () => {
   });
 
   it("fills a placeholder's slot in place when its picture arrives, so it stays under the tile", () => {
-    const thumb = { src: "a.png", thumbnail: "a.png" };
+    const thumb = picture("a");
     const { container, rerender } = render(
       <ModGallery images={[thumb]} isAdult={false} isLoading />,
     );
     const slot = container.querySelectorAll("[data-gallery-placeholder]")[0];
 
-    rerender(<ModGallery images={[thumb, { src: "b.png", thumbnail: "b.png" }]} isAdult={false} />);
+    rerender(<ModGallery images={[thumb, picture("b")]} isAdult={false} />);
 
     expect(slot.isConnected).toBe(true);
     expect(slot.querySelector("button")).toBeInTheDocument();
@@ -88,9 +86,7 @@ describe("ModGallery", () => {
   });
 
   it("frames each thumbnail over its slot's background, rather than adding its own", () => {
-    const { getByRole } = render(
-      <ModGallery images={[{ src: "a.png", thumbnail: "a.png" }]} isAdult={false} />,
-    );
+    const { getByRole } = render(<ModGallery images={[picture("a")]} isAdult={false} />);
     const frame = getByRole("button", { name: /^Image/ }).querySelector(".nxm-image");
 
     expect(frame).toHaveClass("bg-transparent");
@@ -98,10 +94,7 @@ describe("ModGallery", () => {
   });
 
   it("fades the thumbnails in one after another, those past the strip with the last", () => {
-    const images = Array.from({ length: 7 }, (_, index) => ({
-      src: `${index}.png`,
-      thumbnail: `${index}-thumb.png`,
-    }));
+    const images = Array.from({ length: 7 }, (_, index) => picture(`${index}`));
     const { getAllByRole } = render(<ModGallery images={images} isAdult={false} />);
     const thumbnails = getAllByRole("button", { name: /^Image/ });
 
@@ -117,12 +110,23 @@ describe("ModGallery", () => {
     ]);
   });
 
+  it("shows the server's blurred pictures for an adult mod, blurring them no further", () => {
+    const images = [picture("a"), picture("b")];
+    const { container, rerender } = render(<ModGallery isAdult images={images} />);
+    const sources = () =>
+      [...container.querySelectorAll("img")].map((img) => img.getAttribute("src"));
+
+    expect(sources()).toEqual(["a-blurred-large.png", "a-blurred.png", "b-blurred.png"]);
+    expect(container.querySelector(".nxm-image-media-blurred")).not.toBeInTheDocument();
+
+    rerender(<ModGallery images={images} isAdult={false} />);
+
+    expect(sources()).toEqual(["a.png", "a-thumb.png", "b-thumb.png"]);
+  });
+
   it("names its picture by the title its author gave it", () => {
     const { container } = render(
-      <ModGallery
-        images={[{ src: "farm.png", thumbnail: "farm.png", title: "The farm in spring" }]}
-        isAdult={false}
-      />,
+      <ModGallery images={[picture("farm", "The farm in spring")]} isAdult={false} />,
     );
 
     expect(container.querySelector("img")).toHaveAttribute("alt", "The farm in spring");

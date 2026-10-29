@@ -10,6 +10,11 @@ export interface IAdultAwareImageProps extends IImageProps {
    * a blur decision.
    */
   isAdult: boolean;
+  /**
+   * The same picture blurred by the server, shown in its place when it's to be blurred, so the
+   * unblurred one is never fetched and isn't blurred twice. Without one, `src` is blurred here.
+   */
+  blurredSrc?: string | null;
 }
 
 /**
@@ -21,9 +26,17 @@ export interface IAdultAwareImageProps extends IImageProps {
  *
  * The base `Image` primitive stays presentational; the policy itself is
  * `useIsAdultBlurred`, so anything drawing Nexus imagery another way follows it too.
+ *
+ * Where the API sends a version it blurred itself, as v3 does, `blurredSrc` is shown instead,
+ * filling the frame as a blurred picture does; where it doesn't, as the older APIs and the images
+ * in descriptions don't, `src` is blurred here.
  */
-export const AdultAwareImage = ({ isAdult, ...props }: IAdultAwareImageProps) => {
+export const AdultAwareImage = ({ isAdult, blurredSrc, ...props }: IAdultAwareImageProps) => {
   const isBlurred = useIsAdultBlurred(isAdult);
+
+  if (isBlurred && blurredSrc) {
+    return <Image {...props} fit="cover" src={blurredSrc} />;
+  }
 
   return <Image {...props} isBlurred={isBlurred} />;
 };
