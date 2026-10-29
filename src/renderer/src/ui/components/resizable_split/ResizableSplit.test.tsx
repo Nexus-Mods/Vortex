@@ -53,15 +53,32 @@ describe("ResizableSplit", () => {
     ).toBeTruthy();
   });
 
-  it("follows the pointer while the handle is dragged, and stops when it's let go", () => {
-    const { handle, onSplitChange } = renderSplit();
+  it("follows the pointer while the handle is dragged, and hands over the split once it's let go", () => {
+    const { container, handle, onSplitChange } = renderSplit();
 
     fireEvent.pointerDown(handle, { pointerId: 1, clientX: 600 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 650 });
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 700 });
+
+    expect(onSplitChange).not.toHaveBeenCalled();
+    expect(
+      (container.firstElementChild as HTMLElement).style.getPropertyValue("--nxm-resizable-split"),
+    ).toBe("0.6");
+    expect(handle.getAttribute("aria-valuenow")).toBe("60");
+
     fireEvent.pointerUp(handle, { pointerId: 1, clientX: 700 });
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 400 });
 
     expect(onSplitChange.mock.calls).toEqual([[0.6]]);
+  });
+
+  it("hands over nothing when the handle is let go where it was picked up", () => {
+    const { handle, onSplitChange } = renderSplit();
+
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 600 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 600 });
+
+    expect(onSplitChange).not.toHaveBeenCalled();
   });
 
   it("keeps the split between its bounds", () => {
@@ -69,7 +86,10 @@ describe("ResizableSplit", () => {
 
     fireEvent.pointerDown(handle, { pointerId: 1, clientX: 600 });
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 150 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 150 });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 600 });
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 1050 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 1050 });
 
     expect(onSplitChange.mock.calls).toEqual([[0.3], [0.7]]);
   });

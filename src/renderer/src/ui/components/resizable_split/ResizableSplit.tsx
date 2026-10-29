@@ -23,7 +23,7 @@ interface IResizableSplitProps {
   end: ReactNode;
   /** The left pane's share of the width, from 0 to 1. */
   split: number;
-  /** Told a new split, whenever the handle moves it. */
+  /** Told a new split when the handle moves it: once a drag lets go, or on each key. */
   onSplitChange: (split: number) => void;
   /** Names the handle for screen readers. */
   label: string;
@@ -38,13 +38,9 @@ interface IResizableSplitProps {
 }
 
 /**
- * Two panes side by side, with a handle over the seam that resizes them: dragged, or, once it
- * has focus, moved in steps with Left and Right and to either bound with Home and End. A
- * double-click or Enter puts it back even. The handle comes between the panes in the Tab order,
- * and draws an inset rule, brighter while it's hovered or dragged, that turns into the focus ring
- * while it has keyboard focus. The split is the caller's to keep, so it can outlive the component. Its
- * styles are the `nxm-resizable-split` classes, laid out from the `--nxm-resizable-split` it
- * sets, so a page can restyle it.
+ * Two panes side by side with a handle between them that resizes them, by dragging or with the
+ * arrow keys, Home and End. Double-click or Enter evens it out. The caller keeps the split; a
+ * drag hands it over once let go. Styled by the `nxm-resizable-split` classes.
  */
 export const ResizableSplit = ({
   start,
@@ -58,8 +54,9 @@ export const ResizableSplit = ({
   className,
 }: IResizableSplitProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const dragSplitRef = useRef<number>(undefined);
+  const [dragSplit, setDragSplit] = useState<number>();
+  const visibleSplit = dragSplit ?? split;
 
   /** Keeps a split between the bounds, to the hundredth. */
   const clamp = (value: number) => Math.round(Math.min(max, Math.max(min, value)) * 100) / 100;
@@ -68,24 +65,30 @@ export const ResizableSplit = ({
     event.preventDefault();
     event.currentTarget.focus();
     event.currentTarget.setPointerCapture(event.pointerId);
-    isDraggingRef.current = true;
-    setIsDragging(true);
+    dragSplitRef.current = split;
+    setDragSplit(split);
   };
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const rect = containerRef.current?.getBoundingClientRect();
 
-    if (!isDraggingRef.current || !rect?.width) {
+    if (dragSplitRef.current === undefined || !rect?.width) {
       return;
     }
 
-    onSplitChange(clamp((event.clientX - rect.left) / rect.width));
+    dragSplitRef.current = clamp((event.clientX - rect.left) / rect.width);
+    setDragSplit(dragSplitRef.current);
   };
 
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     event.currentTarget.releasePointerCapture(event.pointerId);
-    isDraggingRef.current = false;
-    setIsDragging(false);
+    const finalSplit = dragSplitRef.current;
+    dragSplitRef.current = undefined;
+    setDragSplit(undefined);
+
+    if (finalSplit !== undefined && finalSplit !== split) {
+      onSplitChange(finalSplit);
+    }
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -109,7 +112,7 @@ export const ResizableSplit = ({
     <div
       className={joinClasses(["nxm-resizable-split", className])}
       ref={containerRef}
-      style={{ "--nxm-resizable-split": split } as CSSProperties}
+      style={{ "--nxm-resizable-split": visibleSplit } as CSSProperties}
     >
       {start}
 
@@ -118,10 +121,10 @@ export const ResizableSplit = ({
         aria-orientation="vertical"
         aria-valuemax={Math.round(max * 100)}
         aria-valuemin={Math.round(min * 100)}
-        aria-valuenow={Math.round(split * 100)}
-        aria-valuetext={valueText?.(Math.round(split * 100))}
+        aria-valuenow={Math.round(visibleSplit * 100)}
+        aria-valuetext={valueText?.(Math.round(visibleSplit * 100))}
         className="nxm-resizable-split-handle"
-        data-dragging={isDragging || undefined}
+        data-dragging={dragSplit !== undefined || undefined}
         role="separator"
         tabIndex={0}
         onDoubleClick={() => onSplitChange(EVEN)}
