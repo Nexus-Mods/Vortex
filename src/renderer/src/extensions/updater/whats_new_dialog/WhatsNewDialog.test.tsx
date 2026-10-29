@@ -11,7 +11,7 @@ const renderDialog = (whatsNew: IWhatsNew | undefined, visible = true) => {
   const onHide = vi.fn();
   const onConfirm = vi.fn();
   const store = {
-    getState: () => ({ session: { updater: { whatsNew } } }),
+    getState: () => ({ session: { updater: { whatsNew } }, persistent: {} }),
     subscribe: () => () => undefined,
     dispatch: vi.fn(),
   };

@@ -4,9 +4,10 @@ import ReactMarkdown from "react-markdown";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { webHref } from "@/ui/utils/webHref";
 
-import type { IProseProps } from "../Prose.types";
+import type { IProseWithImagesProps } from "../Prose.types";
+import { ProseImage } from "../prose_image/ProseImage";
 
-interface IMarkdownProps extends IProseProps {
+interface IMarkdownProps extends IProseWithImagesProps {
   /** The markdown to render, such as a changelog. */
   markdown: string;
   /**
@@ -21,33 +22,31 @@ const WebLink = ({ href, children }: { href?: string; children?: ReactNode }) =>
   <a href={webHref(href)}>{children}</a>
 );
 
-/** An image, kept only if it loads from a web address. */
-const SecureImage = ({ src, alt }: { src?: string; alt?: string }) =>
-  webHref(src) === undefined ? null : <img alt={alt} src={src} />;
-
-const COMPONENTS = { a: WebLink };
-const COMPONENTS_WITH_MEDIA = { a: WebLink, img: SecureImage };
-const NO_DISALLOWED: string[] = [];
-
-/** Images are left out, so markdown we don't write can't load from elsewhere. */
-const DISALLOWED = ["img"];
-
 /**
- * Markdown we don't write ourselves, such as a changelog, rendered in the app's prose
- * styles: its own type, so it needs no `Typography` around it. Its links to web pages open
- * in the browser, as the window sends any navigation there; other links are text, and images
- * are left out unless `allowMedia` is set.
+ * Markdown we don't write ourselves, such as a changelog, in the app's prose styles. Links open
+ * only if they go to a web page, and images show only if they're from Nexus Mods, unless
+ * `allowMedia` is set, when https images from any site are kept.
  */
 export const Markdown = ({
   markdown,
   size = "md",
   className,
+  isFromAdultContent,
   allowMedia = false,
 }: IMarkdownProps) => (
   <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
     <ReactMarkdown
-      components={allowMedia ? COMPONENTS_WITH_MEDIA : COMPONENTS}
-      disallowedElements={allowMedia ? NO_DISALLOWED : DISALLOWED}
+      components={{
+        a: WebLink,
+        img: ({ src, alt }) => (
+          <ProseImage
+            allowAnyDomain={allowMedia}
+            alt={alt}
+            isFromAdultContent={isFromAdultContent}
+            src={src}
+          />
+        ),
+      }}
     >
       {markdown}
     </ReactMarkdown>

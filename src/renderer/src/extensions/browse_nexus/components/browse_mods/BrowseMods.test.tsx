@@ -14,14 +14,22 @@ vi.mock("./mod_backdrop/ModBackdrop", () => ({ ModBackdrop: () => null }));
 vi.mock("@/ui/components/resizable_split/useSavedSplit.hook", () => ({
   useSavedSplit: () => [0.5, vi.fn()],
 }));
+const mounts = vi.hoisted(() => [] as string[]);
+
 vi.mock("./mod_details/ModDetails", () => ({
   ModDetails: React.forwardRef<HTMLDivElement, { mod: ModSummary; onFocusList: () => void }>(
-    ({ mod, onFocusList }, ref) => (
-      <div ref={ref}>
-        <p data-testid="details">{mod.name}</p>
-        <button onClick={onFocusList}>Back to the list</button>
-      </div>
-    ),
+    ({ mod, onFocusList }, ref) => {
+      React.useEffect(() => {
+        mounts.push(mod.id);
+      }, []);
+
+      return (
+        <div ref={ref}>
+          <p data-testid="details">{mod.name}</p>
+          <button onClick={onFocusList}>Back to the list</button>
+        </div>
+      );
+    },
   ),
 }));
 vi.mock("./mod_details/ModDetails.skeleton", () => ({
@@ -73,6 +81,15 @@ describe("BrowseMods", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
     expect(screen.getByTestId("details")).toHaveTextContent("Mod 2");
+  });
+
+  it("opens another mod's details afresh, from the top", async () => {
+    mounts.length = 0;
+    renderComponent(search([mod("1"), mod("2")]));
+
+    await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+
+    expect(mounts).toEqual(["1", "2"]);
   });
 
   it("keeps the picked mod through a change of page", async () => {
