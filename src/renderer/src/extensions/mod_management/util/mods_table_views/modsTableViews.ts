@@ -96,10 +96,16 @@ export const MODS_TABLE_VIEWS: IBuiltInModsTableView[] = [
 export const availableViews = (mods: { [id: string]: IModWithState }): IModsTableView[] =>
   MODS_TABLE_VIEWS.filter((view) => view.isAvailable?.(mods) ?? true);
 
+/**
+ * The name the table shows for a mod. One with no name, like a finished download that
+ * isn't installed or a collection without attributes, goes by its id.
+ */
+export const displayName = (mod: IMod): string => modName(mod) ?? mod.id;
+
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
 
 const toRows = (mods: IModWithState[]): IModRow[] =>
-  mods.map((mod) => ({ mod, name: modName(mod) })).sort(byName);
+  mods.map((mod) => ({ mod, name: displayName(mod) })).sort(byName);
 
 // Every view's rows; a collection heads its group instead, so it's never one.
 const installedMods = (mods: { [id: string]: IModWithState }) =>
@@ -147,7 +153,7 @@ const groupByCollection = (
 
   const collectionGroups = Object.values(mods)
     .filter((mod) => mod.type === COLLECTION_TYPE)
-    .map((collection) => ({ collection, name: modName(collection) }))
+    .map((collection) => ({ collection, name: displayName(collection) }))
     .sort(byName)
     .map(({ collection, name }) => ({
       id: collection.id,
@@ -307,7 +313,7 @@ export const sharedMods = (
     const others = (memberships[mod.id] ?? []).filter(
       (collection) => collection.id !== group.collection?.id,
     );
-    others.forEach((collection) => collections.set(collection.id, modName(collection)));
+    others.forEach((collection) => collections.set(collection.id, displayName(collection)));
     return others.length > 0;
   });
 

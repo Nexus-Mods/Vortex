@@ -117,6 +117,13 @@ describe("useModsTableDataColumns", () => {
     expect(cellText(columnById(columns, "collection"), row({}))).toBe("Beta, Zeta");
   });
 
+  it("names a collection with no name by its id", () => {
+    const nameless = { id: "coll-1", attributes: {} } as unknown as IMod;
+    const columns = renderColumns({ a: [collection("Zeta"), nameless] });
+
+    expect(cellText(columnById(columns, "collection"), row({}))).toBe("coll-1, Zeta");
+  });
+
   it("sorts times oldest first, with unknown times before any", () => {
     const sort = columnById(renderColumns(), "enabledTime").sort!;
     const rows = [row({ enabledTime: 2000 }), row({}), row({ enabledTime: 1000 })];
