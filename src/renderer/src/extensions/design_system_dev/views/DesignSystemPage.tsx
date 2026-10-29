@@ -12,6 +12,7 @@ import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { ContextMenuDemo } from "@/ui/components/context_menu/ContextMenu.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
+import { FileTreeDemo } from "@/ui/components/file_tree/FileTree.demo";
 import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
 import { RadioGroupFieldDemo } from "@/ui/components/form/radio_group_field/RadioGroupField.demo";
 import { SelectFieldDemo } from "@/ui/components/form/select_field/SelectField.demo";
@@ -89,6 +90,8 @@ export const DesignSystemPage = ({ active }: IDesignSystemPageProps) => {
             <TabButton name="Image" panelId="image" />
 
             <TabButton name="Dropdown" panelId="dropdown" />
+
+            <TabButton name="File tree" panelId="file-tree" />
 
             <TabButton name="Listing" panelId="listing" />
 
@@ -294,6 +297,10 @@ export const DesignSystemPage = ({ active }: IDesignSystemPageProps) => {
 
             <TabPanel id="listing">
               <ListingDemo />
+            </TabPanel>
+
+            <TabPanel id="file-tree">
+              <FileTreeDemo />
             </TabPanel>
 
             <TabPanel id="pagination">
