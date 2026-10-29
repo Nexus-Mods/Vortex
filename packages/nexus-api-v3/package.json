@@ -20,12 +20,7 @@
           "^build"
         ],
         "inputs": [
-          "default",
-          "typescript",
-          "!{projectRoot}/src/**/*.test.{ts,tsx}",
-          {
-            "dependentTasksOutputFiles": "**/dist/**"
-          },
+          "...",
           {
             "dependentTasksOutputFiles": "**/generated/nexus-api-v3*.d.ts"
           }
@@ -37,8 +32,7 @@
           "^build"
         ],
         "inputs": [
-          "default",
-          "typescript",
+          "...",
           {
             "dependentTasksOutputFiles": "**/generated/nexus-api-v3*.d.ts"
           }
@@ -50,10 +44,7 @@
           "^build"
         ],
         "inputs": [
-          "default",
-          "typescript",
-          "eslint",
-          "oxlint",
+          "...",
           {
             "dependentTasksOutputFiles": "**/generated/nexus-api-v3*.d.ts"
           }
@@ -65,10 +56,7 @@
           "^build"
         ],
         "inputs": [
-          "default",
-          "typescript",
-          "eslint",
-          "oxlint",
+          "...",
           {
             "dependentTasksOutputFiles": "**/generated/nexus-api-v3*.d.ts"
           }
