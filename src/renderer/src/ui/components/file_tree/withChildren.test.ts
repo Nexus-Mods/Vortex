@@ -1,4 +1,5 @@
-import { PathError, relativePath } from "@nexusmods/paths";
+import { relativePath } from "@nexusmods/paths";
+import { VortexError } from "@vortex/shared";
 import { assert, describe, expect, it } from "vitest";
 
 import type { FileTreeEntry } from "./buildTree";
@@ -53,22 +54,22 @@ describe("childNodes", () => {
   });
 
   it("throws for an entry that is deeper than a direct child", () => {
-    expect(() => childNodes(relativePath("a"), [file("a/b/c.txt")])).toThrow(PathError);
-    expect(() => childNodes(root, [file("a/b.txt")])).toThrow(PathError);
+    expect(() => childNodes(relativePath("a"), [file("a/b/c.txt")])).toThrow(VortexError);
+    expect(() => childNodes(root, [file("a/b.txt")])).toThrow(VortexError);
   });
 
   it("throws for an entry outside the parent", () => {
-    expect(() => childNodes(relativePath("a"), [file("b/c.txt")])).toThrow(PathError);
-    expect(() => childNodes(relativePath("a"), [file("ab.txt")])).toThrow(PathError);
+    expect(() => childNodes(relativePath("a"), [file("b/c.txt")])).toThrow(VortexError);
+    expect(() => childNodes(relativePath("a"), [file("ab.txt")])).toThrow(VortexError);
   });
 
   it("throws for the parent itself", () => {
-    expect(() => childNodes(relativePath("a"), [directory("a")])).toThrow(PathError);
+    expect(() => childNodes(relativePath("a"), [directory("a")])).toThrow(VortexError);
   });
 
   it("throws for an entry listed twice", () => {
     expect(() => childNodes(relativePath("a"), [file("a/b.txt"), file("a/b.txt")])).toThrow(
-      PathError,
+      VortexError,
     );
   });
 });
@@ -151,21 +152,23 @@ describe("withChildren", () => {
   });
 
   it("throws when the parent isn't in the tree", () => {
-    expect(() => withChildren(unloaded, relativePath("missing"), [])).toThrow(PathError);
+    expect(() => withChildren(unloaded, relativePath("missing"), [])).toThrow(VortexError);
   });
 
   it("throws when the parent is inside a directory that isn't loaded", () => {
-    expect(() => withChildren(unloaded, relativePath("dir/sub"), [])).toThrow(PathError);
+    expect(() => withChildren(unloaded, relativePath("dir/sub"), [])).toThrow(VortexError);
   });
 
   it("throws when the parent is a file", () => {
-    expect(() => withChildren(unloaded, relativePath("root.txt"), [])).toThrow(PathError);
+    expect(() => withChildren(unloaded, relativePath("root.txt"), [])).toThrow(VortexError);
   });
 
   it("throws for entries that aren't directly inside the parent, leaving nothing changed", () => {
     const tree = [loaded("dir", [])];
 
-    expect(() => withChildren(tree, relativePath("dir"), [file("other/a.txt")])).toThrow(PathError);
+    expect(() => withChildren(tree, relativePath("dir"), [file("other/a.txt")])).toThrow(
+      VortexError,
+    );
     expect(tree[0]?.children).toEqual([]);
   });
 });
