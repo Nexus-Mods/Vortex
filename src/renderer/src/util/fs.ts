@@ -42,6 +42,7 @@ import type { TFunction } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
+import { isSameFile, statBigIntAsync } from "./sameFile";
 import { restackErr, truthy } from "./util";
 
 const permission: typeof permissionT = lazyRequire(() => require("permissions"));
@@ -683,13 +684,13 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
 
 function selfCopyCheck(src: string, dest: string) {
   return PromiseBB.all([
-    (fs.stat as any)(src, { bigint: true }),
-    (fs.stat as any)(dest, { bigint: true }).catch((err) =>
-      getErrorCode(err) === "ENOENT" ? Promise.resolve({}) : Promise.reject(err),
+    statBigIntAsync(src),
+    statBigIntAsync(dest).catch((err) =>
+      getErrorCode(err) === "ENOENT" ? PromiseBB.resolve(undefined) : PromiseBB.reject(err),
     ),
-  ]).then((stats: fs.BigIntStats[]) =>
-    stats[0].ino === stats[1].ino
-      ? PromiseBB.reject(new SelfCopyCheckError(src, dest, stats[0].ino))
+  ]).then(([srcStats, destStats]) =>
+    destStats !== undefined && isSameFile(srcStats, destStats)
+      ? PromiseBB.reject(new SelfCopyCheckError(src, dest, srcStats.ino))
       : PromiseBB.resolve(),
   );
 }

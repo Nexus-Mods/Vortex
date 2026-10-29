@@ -13,6 +13,7 @@ import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import { log } from "../../../util/log";
+import { isSameFile, statBigIntAsync } from "../../../util/sameFile";
 import { batchDispatch, truthy } from "../../../util/util";
 import { setCompatibleGames, setDownloadFilePath } from "../actions/state";
 import { downloadPath, downloadPathForGame } from "../selectors";
@@ -108,11 +109,11 @@ async function moveDownload(
   }
   await fs.ensureDirWritableAsync(newPath);
   try {
-    const oStat = await fs
-      .statAsync(oldPath)
-      .catch((err) => (err.code === "ENOENT" ? Promise.resolve(undefined) : Promise.reject(err)));
-    const nStat = await fs.statAsync(newPath);
-    if (!!oStat && oStat.ino === nStat.ino) {
+    const oStat = await statBigIntAsync(oldPath).catch((err) =>
+      err.code === "ENOENT" ? Promise.resolve(undefined) : Promise.reject(err),
+    );
+    const nStat = await statBigIntAsync(newPath);
+    if (!!oStat && isSameFile(oStat, nStat)) {
       const err = new ProcessCanceled("source same as destination");
       err["oldPath"] = oldPath;
       err["newPath"] = newPath;

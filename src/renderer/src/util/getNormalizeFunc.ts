@@ -1,3 +1,5 @@
+import type { BigIntStats } from "node:fs";
+import { stat as statPromise } from "node:fs/promises";
 import * as path from "path";
 
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
@@ -63,12 +65,13 @@ function isCaseSensitive(testPath: string): PromiseBB<boolean> {
       }
 
       // to find out if case sensitive, stat the file itself and the upper and lower case variants.
-      // if they are all the same file, it's case insensitive
+      // if they are all the same file, it's case insensitive. BigInt stats: ReFS file ids exceed
+      // 2^53, where neighbouring files get the same plain-number ino
       return PromiseBB.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()], (file) =>
-        PromiseBB.resolve(fsOrig.stat(path.join(testPath, file))).reflect(),
+        PromiseBB.resolve(statPromise(path.join(testPath, file), { bigint: true })).reflect(),
       );
     })
-    .then((stats: Array<PromiseBB.Inspection<fsOrig.Stats>>) => {
+    .then((stats: Array<PromiseBB.Inspection<BigIntStats>>) => {
       if (stats === null) {
         return isCaseSensitiveFailed(testPath, "Not found");
       }
