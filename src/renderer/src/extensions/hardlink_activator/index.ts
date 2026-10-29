@@ -14,7 +14,6 @@ import type { IGame } from "../../types/IGame";
 import type { IState } from "../../types/IState";
 import * as fs from "../../util/fs";
 import { getVolumePath } from "../../util/getVolumePath";
-import { isSameFile } from "../../util/sameFile";
 import { installPathForGame } from "../../util/selectors";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -328,7 +327,7 @@ class DeploymentMethod extends LinkingDeployment {
       if (linkStats.nlink <= 1n) {
         return false;
       }
-      return isSameFile(linkStats, await lstat(sourcePath, { bigint: true }));
+      return linkStats.ino === (await lstat(sourcePath, { bigint: true })).ino;
     } catch (err) {
       if (getErrorCode(err) === "ENOENT") {
         return false;

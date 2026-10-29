@@ -52,7 +52,6 @@ import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
 import opn from "../../../util/opn";
-import { isSameFile } from "../../../util/sameFile";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { cleanFailedTransfer, testPathTransfer, transferPath } from "../../../util/transferPath";
@@ -435,7 +434,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     try {
       const statNew = fs.statSync(newInstallPath, { bigint: true });
       const statOld = fs.statSync(oldInstallPath, { bigint: true });
-      if (isSameFile(statNew, statOld)) {
+      if (statNew.ino === statOld.ino) {
         return onShowDialog(
           "error",
           "Invalid path selected",

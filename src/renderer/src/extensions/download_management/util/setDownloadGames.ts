@@ -8,13 +8,14 @@
 import { stat } from "node:fs/promises";
 import path from "path";
 
+import { getErrorCode } from "@vortex/shared";
+
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
 import * as fs from "../../../util/fs";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import { log } from "../../../util/log";
-import { isSameFile } from "../../../util/sameFile";
 import { batchDispatch, truthy } from "../../../util/util";
 import { setCompatibleGames, setDownloadFilePath } from "../actions/state";
 import { downloadPath, downloadPathForGame } from "../selectors";
@@ -111,10 +112,10 @@ async function moveDownload(
   await fs.ensureDirWritableAsync(newPath);
   try {
     const oStat = await stat(oldPath, { bigint: true }).catch((err) =>
-      err.code === "ENOENT" ? Promise.resolve(undefined) : Promise.reject(err),
+      getErrorCode(err) === "ENOENT" ? Promise.resolve(undefined) : Promise.reject(err),
     );
     const nStat = await stat(newPath, { bigint: true });
-    if (!!oStat && isSameFile(oStat, nStat)) {
+    if (!!oStat && oStat.ino === nStat.ino) {
       const err = new ProcessCanceled("source same as destination");
       err["oldPath"] = oldPath;
       err["newPath"] = newPath;
