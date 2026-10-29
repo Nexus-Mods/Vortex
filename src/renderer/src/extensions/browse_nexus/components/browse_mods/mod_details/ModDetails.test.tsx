@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -85,6 +85,18 @@ describe("ModDetails", () => {
     expect(screen.getByText("User Interface")).toBeInTheDocument();
     expect(screen.getByText("1k")).toBeInTheDocument();
     expect(screen.queryByText("better")).not.toBeInTheDocument();
+  });
+
+  it("holds the gallery's place, pulsing, until the mod's pictures load", async () => {
+    renderComponent();
+    const placeholders = () => document.querySelectorAll("[data-gallery-placeholder]");
+
+    expect(placeholders()).toHaveLength(6);
+    expect(placeholders()[0]).toHaveClass("animate-pulse");
+
+    await respond(makeMod());
+
+    await waitFor(() => expect(placeholders()).toHaveLength(0));
   });
 
   it("shows the mod's description and tags once it loads", async () => {

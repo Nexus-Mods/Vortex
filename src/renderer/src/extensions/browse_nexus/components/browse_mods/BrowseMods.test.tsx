@@ -1,10 +1,13 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { Mod } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { queryClient } from "@/util/queryClient";
 
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 
@@ -15,22 +18,36 @@ vi.mock("@/ui/components/resizable_split/useSavedSplit.hook", () => ({
   useSavedSplit: () => [0.5, vi.fn()],
 }));
 const mounts = vi.hoisted(() => [] as string[]);
+const mocks = vi.hoisted(() => ({ mods: {} as Record<string, unknown> }));
+
+vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
+  createVortexNexusV3Client: () => ({
+    getModById: (id: string) =>
+      id in mocks.mods ? Promise.resolve(mocks.mods[id]) : new Promise(() => undefined),
+  }),
+}));
 
 vi.mock("./mod_details/ModDetails", () => ({
-  ModDetails: React.forwardRef<HTMLDivElement, { mod: ModSummary; onFocusList: () => void }>(
-    ({ mod, onFocusList }, ref) => {
-      React.useEffect(() => {
-        mounts.push(mod.id);
-      }, []);
+  ModDetails: React.forwardRef<
+    HTMLDivElement,
+    { mod: ModSummary; gallery: Array<{ src: string }>; onFocusList: () => void }
+  >(({ mod, gallery, onFocusList }, ref) => {
+    React.useEffect(() => {
+      mounts.push(mod.id);
+    }, []);
 
-      return (
-        <div ref={ref}>
-          <p data-testid="details">{mod.name}</p>
-          <button onClick={onFocusList}>Back to the list</button>
-        </div>
-      );
-    },
-  ),
+    return (
+      <div ref={ref}>
+        <p data-testid="details">{mod.name}</p>
+        {gallery.map(({ src }) => (
+          <p data-testid="gallery-image" key={src}>
+            {src}
+          </p>
+        ))}
+        <button onClick={onFocusList}>Back to the list</button>
+      </div>
+    );
+  }),
 }));
 vi.mock("./mod_details/ModDetails.skeleton", () => ({
   ModDetailsSkeleton: () => <p data-testid="details-skeleton" />,
@@ -64,14 +81,21 @@ vi.mock("./mod_list/ModList", () => ({
 
 import { BrowseMods } from "./BrowseMods";
 
-const mod = (id: string) => ({ id, name: `Mod ${id}`, thumbnail_url: null }) as ModSummary;
+const mod = (id: string, thumbnail_url: string | null = null) =>
+  ({ id, name: `Mod ${id}`, thumbnail_url }) as ModSummary;
 
 const search = (mods: ModSummary[], loading = false) => ({ mods, loading }) as IModSearch;
 
 const renderComponent = (initial: IModSearch) => {
   const api = {} as IExtensionApi;
-  const { rerender } = render(<BrowseMods api={api} search={initial} />);
-  return { rerender: (next: IModSearch) => rerender(<BrowseMods api={api} search={next} />) };
+  const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
+  const wrap = (search: IModSearch) => (
+    <QueryClientProvider client={client}>
+      <BrowseMods api={api} search={search} />
+    </QueryClientProvider>
+  );
+  const { rerender } = render(wrap(initial));
+  return { rerender: (next: IModSearch) => rerender(wrap(next)) };
 };
 
 describe("BrowseMods", () => {
@@ -117,6 +141,28 @@ describe("BrowseMods", () => {
 
     rerender(search([]));
     expect(screen.getByText("No mod to show")).toBeInTheDocument();
+  });
+
+  it("shows the search's thumbnail in the details' gallery until the mod's own images arrive", async () => {
+    mocks.mods = {
+      "1": {
+        primary_image: null,
+        gallery_images: [
+          { id: "a", title: "", url: "a.png", thumbnail_url: "a-thumb.png" },
+          { id: "b", title: "", url: "b.png", thumbnail_url: "b-thumb.png" },
+        ],
+      } as unknown as Mod,
+    };
+    renderComponent(search([mod("1", "thumb.png")]));
+
+    expect(screen.getAllByTestId("gallery-image").map((image) => image.textContent)).toEqual([
+      "thumb.png",
+    ]);
+    expect(await screen.findByText("b.png")).toBeInTheDocument();
+    expect(screen.getAllByTestId("gallery-image").map((image) => image.textContent)).toEqual([
+      "a.png",
+      "b.png",
+    ]);
   });
 
   it("moves focus to the open mod in the list when the details ask", async () => {

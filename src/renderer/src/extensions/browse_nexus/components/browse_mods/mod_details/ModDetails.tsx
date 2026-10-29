@@ -127,7 +127,13 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
 
             <TabPanel id="details">
               <div className="flex flex-col gap-y-3">
-                <ModGallery images={gallery} isAdult={mod.adult} key={mod.id} onPick={onPick} />
+                <ModGallery
+                  images={gallery}
+                  isAdult={mod.adult}
+                  isLoading={details.isPending}
+                  key={mod.id}
+                  onPick={onPick}
+                />
 
                 <div className="@container border-y border-stroke-weak py-4">
                   <div className="grid grid-cols-3 gap-2 @2xl:grid-cols-6">

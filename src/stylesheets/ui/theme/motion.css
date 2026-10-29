@@ -12,7 +12,8 @@
 
 @layer utilities {
     [data-reduce-motion="true"] {
-        .animate-pulse {
+        .animate-pulse,
+        .animate-fade-in {
             animation: none;
         }
     }
