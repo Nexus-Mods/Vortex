@@ -375,14 +375,34 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
 
     const dir = await opendir(path, { recursive });
 
+    let isClosed = false;
+
+    const closeDir = async () => {
+      if (isClosed) return;
+      isClosed = true;
+
+      try {
+        await dir.close();
+      } catch {
+        // ignored
+      }
+    };
+
     const iterator: AsyncIterableIterator<ResolvedPath | [ResolvedPath, Status], undefined> = {
       [Symbol.asyncIterator]() {
         return iterator;
       },
       next: async () => {
+        if (isClosed) return { done: true, value: undefined };
+
         while (true) {
           const entry = await dir.read();
-          if (entry === null) return { done: true, value: undefined };
+          if (entry === null) {
+            // `for await` doesn't call return() once an iterator reports done, and
+            // `Dir.read()` doesn't close the directory at the end, so release it here.
+            await closeDir();
+            return { done: true, value: undefined };
+          }
 
           if (types === "files" && !entry.isFile()) continue;
           if (types === "directories" && !entry.isDirectory()) continue;
@@ -402,11 +422,7 @@ export class NodeFileSystemBackendImpl implements NodeFileSystemBackend {
         }
       },
       return: async () => {
-        try {
-          await dir.close();
-        } catch {
-          // ignored
-        }
+        await closeDir();
 
         return { done: true, value: undefined };
       },
