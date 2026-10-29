@@ -1,0 +1,38 @@
+name: Discord release announcement
+description: >-
+  Posts a release announcement card for a Vortex release tag to a Discord
+  webhook. Stable and beta releases get different accents, intro lines and
+  download buttons.
+
+inputs:
+  tag:
+    description: "The release tag to announce (e.g. v2.6.0-beta.1)."
+    required: true
+  webhook-url:
+    description: "Discord webhook URL. Not needed for a dry run."
+    required: false
+    default: ""
+  dry-run:
+    description: "'true' prints the payload instead of posting it."
+    required: false
+    default: "false"
+  github-token:
+    description: "GITHUB_TOKEN for fetching the release."
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Post announcement
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        DISCORD_WEBHOOK_URL: ${{ inputs.webhook-url }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        set -euo pipefail
+        args=("$TAG")
+        [ "$DRY_RUN" = "true" ] && args+=(--dry-run)
+        node "$GITHUB_ACTION_PATH/index.mjs" "${args[@]}"
