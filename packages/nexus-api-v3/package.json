@@ -18,24 +18,48 @@
         "dependsOn": [
           "codegen",
           "^build"
+        ],
+        "inputs": [
+          "...",
+          {
+            "dependentTasksOutputFiles": "**/generated/nexus-api-v3*.d.ts"
+          }
         ]
       },
       "typecheck": {
         "dependsOn": [
           "codegen",
           "^build"
+        ],
+        "inputs": [
+          "...",
+          {
+            "dependentTasksOutputFiles": "**/generated/nexus-api-v3*.d.ts"
+          }
         ]
       },
       "lint": {
         "dependsOn": [
           "codegen",
           "^build"
+        ],
+        "inputs": [
+          "...",
+          {
+            "dependentTasksOutputFiles": "**/generated/nexus-api-v3*.d.ts"
+          }
         ]
       },
       "lint:verbose": {
         "dependsOn": [
           "codegen",
           "^build"
+        ],
+        "inputs": [
+          "...",
+          {
+            "dependentTasksOutputFiles": "**/generated/nexus-api-v3*.d.ts"
+          }
         ]
       },
       "codegen": {

@@ -196,7 +196,7 @@ catalog:
   node-abi: 4.35.0
   normalize-url: 6.1.0
   numeral: 2.0.6
-  nx: 23.0.1
+  nx: 23.3.1
   octokit: 5.0.5
   openapi-fetch: 0.17.0
   openapi-typescript: 7.13.0
@@ -322,6 +322,10 @@ overrides:
   # dependency; force the host copy so a single react-dnd instance (and
   # DndContext) is shared. Keep in sync with the react-dnd catalog entry.
   react-dnd: 14.0.5
+  # wholocks asks for winapi-bindings by repo alone, with no commit, so any install
+  # that writes the lockfile re-resolves its copy to the repo's latest commit, a
+  # second, unbuilt native module. Pin it to the catalog's, as everything else uses.
+  winapi-bindings: "catalog:"
 
 allowBuilds:
   "@nexusmods/fomod-installer-native": true
