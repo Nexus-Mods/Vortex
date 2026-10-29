@@ -62,7 +62,7 @@ function launchMethod(info: IStarterInfo): GameLaunchMethod {
  * SMAPI), or a tool the user has bound as the game's primary launcher. A utility tool run from the
  * tools dashlet is none of these, so its session stays tied to its own process.
  */
-function launchRunsGame(info: IStarterInfo, state: IState): boolean {
+export function launchRunsGame(info: IStarterInfo, state: IState): boolean {
   if (info.isGame || (info.defaultPrimary ?? false)) {
     return true;
   }
