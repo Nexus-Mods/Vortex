@@ -1,14 +1,13 @@
-import type { Dir } from "node:fs";
 import * as nodeFs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, assert, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
 import { NodeFileSystemBackendImpl } from "./backend";
 
-// Every directory the backend opens, with `close` spied on so the tests can see when it's released.
-const opened = vi.hoisted(() => [] as Dir[]);
+// The `close` of every directory the backend opens, so the tests can see when it's released.
+const closeSpies = vi.hoisted(() => [] as MockInstance[]);
 
 vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof nodeFs>();
@@ -17,8 +16,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
     ...actual,
     opendir: async (...args: Parameters<typeof actual.opendir>) => {
       const dir = await actual.opendir(...args);
-      vi.spyOn(dir, "close");
-      opened.push(dir);
+      closeSpies.push(vi.spyOn(dir, "close"));
       return dir;
     },
   };
@@ -29,7 +27,7 @@ describe("NodeFileSystemBackendImpl.enumerateDirectory", () => {
   let backend: NodeFileSystemBackendImpl;
 
   beforeEach(async () => {
-    opened.length = 0;
+    closeSpies.length = 0;
     root = await nodeFs.mkdtemp(join(tmpdir(), "node-fs-backend-"));
     backend = new NodeFileSystemBackendImpl();
   });
@@ -48,8 +46,12 @@ describe("NodeFileSystemBackendImpl.enumerateDirectory", () => {
       // drained without calling return()
     }
 
-    expect(opened).toHaveLength(1);
-    expect(opened[0].close).toHaveBeenCalledTimes(1);
+    expect(closeSpies).toHaveLength(1);
+
+    const [close] = closeSpies;
+    assert(close !== undefined);
+
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it("closes the directory when every entry was filtered out", async () => {
@@ -60,7 +62,10 @@ describe("NodeFileSystemBackendImpl.enumerateDirectory", () => {
       // all filtered out
     }
 
-    expect(opened[0].close).toHaveBeenCalledTimes(1);
+    const [close] = closeSpies;
+    assert(close !== undefined);
+
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it("doesn't leave the directory open while there are entries left", async () => {
@@ -71,11 +76,14 @@ describe("NodeFileSystemBackendImpl.enumerateDirectory", () => {
     const iterator = await backend.enumerateDirectory(root);
     await iterator.next();
 
-    expect(opened[0].close).not.toHaveBeenCalled();
+    const [close] = closeSpies;
+    assert(close !== undefined);
+
+    expect(close).not.toHaveBeenCalled();
 
     await iterator.return?.(undefined);
 
-    expect(opened[0].close).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it("lets return() be called after the listing is exhausted", async () => {
