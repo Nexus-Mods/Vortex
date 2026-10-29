@@ -1,3 +1,4 @@
+import { lstat } from "node:fs/promises";
 import * as path from "path";
 import * as util from "util";
 
@@ -311,16 +312,23 @@ class DeploymentMethod extends LinkingDeployment {
     linkStatsIn: fs.Stats,
     sourceStatsIn: fs.Stats,
   ): PromiseBB<boolean> {
-    if (linkStatsIn !== undefined && sourceStatsIn !== undefined) {
+    // ids past 2^53 (ReFS) aren't exact as numbers; those are compared on disk below
+    if (
+      linkStatsIn !== undefined &&
+      sourceStatsIn !== undefined &&
+      Number.isSafeInteger(linkStatsIn.ino) &&
+      Number.isSafeInteger(sourceStatsIn.ino)
+    ) {
       return PromiseBB.resolve(linkStatsIn.nlink > 1 && linkStatsIn.ino === sourceStatsIn.ino);
     }
 
-    return fs
-      .lstatAsync(linkPath)
+    return PromiseBB.resolve(lstat(linkPath, { bigint: true }))
       .then((linkStats) =>
-        linkStats.nlink === 1
+        linkStats.nlink === 1n
           ? PromiseBB.resolve(false)
-          : fs.lstatAsync(sourcePath).then((sourceStats) => linkStats.ino === sourceStats.ino),
+          : PromiseBB.resolve(lstat(sourcePath, { bigint: true })).then(
+              (sourceStats) => linkStats.ino === sourceStats.ino,
+            ),
       )
       .catch((err) =>
         getErrorCode(err) === "ENOENT"
