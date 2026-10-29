@@ -182,7 +182,7 @@ describe("resolveUpdate fetching", () => {
     // the What's New dialog groups by these; without them the bodies of every
     // release the update spans run together as one blob
     expect(notes).toContain(
-      '<h4 class="changelog-release-version">2.6.0-beta.1<span class="changelog-release-date">',
+      '<h4 class="changelog-release-version">2.6.0-beta.1 <span class="changelog-release-date">',
     );
     expect(notes).toContain(
       '<div class="changelog-release-body"><p>2.6.0-beta.1: new collections workflow</p></div>',

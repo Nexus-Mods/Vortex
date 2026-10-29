@@ -17,7 +17,9 @@
             margin: 0;
         }
 
-        & > :where(* + *) {
+        /* Also inside a wrapper, as HTML from elsewhere often nests its blocks in sections and divs. */
+        & > :where(* + *),
+        & :where(section, div) > :where(* + *) {
             margin-top: calc(var(--spacing) * 2);
         }
 
@@ -107,7 +109,7 @@
             text-align: left;
         }
 
-        & :where(img) {
+        & :where(img, video) {
             max-width: 100%;
         }
     }

@@ -18,9 +18,6 @@ const SUPPORTED_CONTENT = new Set<keyof IDialogContent>([
   "options",
 ]);
 
-// Dialogs that wait for a design of their own: the updater's What's New (LAZ-1466).
-const LEGACY_DIALOG_IDS = new Set(["new-update-changelog-dialog"]);
-
 // The options ModalLayer follows: how the text is read, how the message box behaves, how links
 // look, the context bbcode tags are drawn in, and the order the parts of the dialog come in.
 const SUPPORTED_OPTIONS = new Set([
@@ -91,7 +88,6 @@ export const canRenderWithModal = (dialog: IDialog): boolean => {
   const { actions, content } = dialog;
 
   return (
-    !LEGACY_DIALOG_IDS.has(dialog.id) &&
     // Something to show besides the buttons.
     (!!content.text ||
       !!content.bbcode ||

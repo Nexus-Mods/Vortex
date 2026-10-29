@@ -307,6 +307,15 @@ label, so selecting a tab stopped working as soon as the label was translated.
   Material Symbols icon (`0 -960 960 960`): scale by 0.025 and offset absolute Y
   by +960. Keep it a single filled path with `fill="currentColor"`.
 
+## Modal buttons
+
+- The primary action is the default `Button`. A destructive one is `brand="danger"`.
+- Next to a primary action, a secondary one such as "Close" or "Cancel" is
+  `appearance="moderate" brand="neutral"`.
+- A secondary action that is the only button, such as "Close", is
+  `appearance="strong" brand="neutral"`, so it reads as the way out and not a dim
+  afterthought. `ModalLayer` does this for the dialogs it draws.
+
 ## Pages and extensions
 
 - Register with `context.registerMainPage(icon, title, Component, options)`.
