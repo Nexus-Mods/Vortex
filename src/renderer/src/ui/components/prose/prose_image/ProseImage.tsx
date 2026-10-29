@@ -19,6 +19,8 @@ const pixels = (size: number | undefined) => {
 interface IProseImageProps {
   /** Where the image is; drawn only if `webImageSrc` keeps it. */
   src: string | undefined;
+  /** Draws an https image from any site, not only Nexus Mods, for content we write or trust. */
+  allowAnyDomain?: boolean;
   /** Its text alternative. */
   alt?: string;
   /** Which side it sits on, on a line of its own; otherwise it sits in the text. */
@@ -32,9 +34,10 @@ interface IProseImageProps {
 }
 
 /**
- * An image in prose, only from Nexus Mods, as its author drew it: at its own size or the one it's
- * given, never wider than the text, and unframed. It sits on the text's line, a little clear of
- * the next, as the site's do. It's 16:9 until it loads and its size is known.
+ * An image in prose, only from Nexus Mods unless any domain is allowed, as its author drew
+ * it: at its own size or the one it's given, never wider than the text, and unframed. It sits on
+ * the text's line, a little clear of the next, as the site's do. It's 16:9 until it loads and its
+ * size is known.
  */
 export const ProseImage = ({
   src,
@@ -43,9 +46,10 @@ export const ProseImage = ({
   width,
   height,
   isFromAdultContent = false,
+  allowAnyDomain = false,
 }: IProseImageProps) => {
   const [natural, setNatural] = useState<{ width: number; height: number }>();
-  const safeSrc = webImageSrc(src);
+  const safeSrc = webImageSrc(src, { allowAnyDomain });
   const givenWidth = pixels(width);
   const givenHeight = pixels(height);
 

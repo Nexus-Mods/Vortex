@@ -22,16 +22,10 @@ const WebLink = ({ href, children }: { href?: string; children?: ReactNode }) =>
   <a href={webHref(href)}>{children}</a>
 );
 
-/** An image, kept only if it loads from a web address, for markdown we trust. */
-const SecureImage = ({ src, alt }: { src?: string; alt?: string }) =>
-  webHref(src) === undefined ? null : <img alt={alt} src={src} />;
-
-const COMPONENTS_WITH_MEDIA = { a: WebLink, img: SecureImage };
-
 /**
  * Markdown we don't write ourselves, such as a changelog, in the app's prose styles. Links open
  * only if they go to a web page, and images show only if they're from Nexus Mods, unless
- * `allowMedia` is set, when images from any web address are kept.
+ * `allowMedia` is set, when https images from any site are kept.
  */
 export const Markdown = ({
   markdown,
@@ -42,16 +36,17 @@ export const Markdown = ({
 }: IMarkdownProps) => (
   <div className={joinClasses(["nxm-prose", className], { "nxm-prose-sm": size === "sm" })}>
     <ReactMarkdown
-      components={
-        allowMedia
-          ? COMPONENTS_WITH_MEDIA
-          : {
-              a: WebLink,
-              img: ({ src, alt }) => (
-                <ProseImage alt={alt} isFromAdultContent={isFromAdultContent} src={src} />
-              ),
-            }
-      }
+      components={{
+        a: WebLink,
+        img: ({ src, alt }) => (
+          <ProseImage
+            allowAnyDomain={allowMedia}
+            alt={alt}
+            isFromAdultContent={isFromAdultContent}
+            src={src}
+          />
+        ),
+      }}
     >
       {markdown}
     </ReactMarkdown>

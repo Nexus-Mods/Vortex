@@ -86,6 +86,14 @@ describe("Markdown", () => {
       );
     });
 
+    it("draws its images as prose images, lazily and without a referrer", () => {
+      render(<Markdown allowMedia markdown={"![shot](https://example.com/a.png)"} />);
+      const image = screen.getByRole("img", { name: "shot" });
+
+      expect(image).toHaveAttribute("loading", "lazy");
+      expect(image).toHaveAttribute("referrerpolicy", "no-referrer");
+    });
+
     it("still leaves out images from anywhere else", () => {
       const { container } = render(
         <Markdown

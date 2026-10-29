@@ -83,13 +83,18 @@ const unwrapDetails = (html: string) => {
 };
 
 /** An `img` as a `ProseImage`; anything else is left as it is. */
-const imageFrom = (node: HTMLElement, isFromAdultContent: boolean | undefined) => {
+const imageFrom = (
+  node: HTMLElement,
+  isFromAdultContent: boolean | undefined,
+  allowAnyDomain: boolean,
+) => {
   if (node.tagName !== "IMG") {
     return undefined;
   }
 
   return (
     <ProseImage
+      allowAnyDomain={allowAnyDomain}
       alt={node.getAttribute("alt") ?? ""}
       height={Number(node.getAttribute("height")) || undefined}
       isFromAdultContent={isFromAdultContent}
@@ -112,7 +117,8 @@ interface IHtmlProps extends IProseWithImagesProps {
 /**
  * HTML we don't write ourselves, such as a mod's changelog, sanitised, in the app's prose styles.
  * Links open only if they go to a web page, and images show only if they're from Nexus Mods,
- * unless `allowMedia` is set, when images and video from any web address are kept.
+ * unless `allowMedia` is set, when https images from any site, and video from any web address,
+ * are kept.
  */
 export const Html = ({
   html,
@@ -126,7 +132,7 @@ export const Html = ({
       noWrap
       content={allowMedia ? unwrapDetails(html) : html}
       filters={allowMedia ? FILTERS_KEEPING_MEDIA : FILTERS}
-      transform={allowMedia ? undefined : (node) => imageFrom(node, isFromAdultContent)}
+      transform={(node) => imageFrom(node, isFromAdultContent, allowMedia)}
     />
   </div>
 );

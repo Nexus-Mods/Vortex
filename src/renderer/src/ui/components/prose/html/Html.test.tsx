@@ -109,6 +109,17 @@ describe("Html", () => {
       );
     });
 
+    it("draws its images as prose images, sized, lazily and without a referrer", () => {
+      render(
+        <Html allowMedia html={'<img src="https://example.com/a.png" alt="shot" width="400">'} />,
+      );
+      const image = screen.getByRole("img", { name: "shot" });
+
+      expect(image).toHaveAttribute("loading", "lazy");
+      expect(image).toHaveAttribute("referrerpolicy", "no-referrer");
+      expect(image.closest("[style]")).toHaveStyle("--prose-image-width: 400px");
+    });
+
     it("keeps a video GitHub wraps in details, without the summary", () => {
       const { container } = render(
         <Html

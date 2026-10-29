@@ -27,6 +27,23 @@ describe("webImageSrc", () => {
     expect(webImageSrc(src)).toBeUndefined();
   });
 
+  describe("with any domain allowed", () => {
+    it("keeps an https image from another site", () => {
+      const src = "https://github.com/user-attachments/assets/a.png";
+
+      expect(webImageSrc(src, { allowAnyDomain: true })).toBe(src);
+    });
+
+    it.each([
+      ["plain http", "http://example.com/a.png"],
+      ["a file", "file:///C:/Users/me/a.png"],
+      ["a network path", "\\\\example.com\\share\\a.png"],
+      ["data", "data:image/png;base64,iVBORw0KGgo="],
+    ])("still drops %s", (_, src) => {
+      expect(webImageSrc(src, { allowAnyDomain: true })).toBeUndefined();
+    });
+  });
+
   it("drops nothing", () => {
     expect(webImageSrc(undefined)).toBeUndefined();
     expect(webImageSrc("")).toBeUndefined();

@@ -30,6 +30,26 @@ describe("ProseImage", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it("shows an https image from any site when allowed, as for content we trust", () => {
+    const github = "https://github.com/user-attachments/assets/a.png";
+    const { container } = render(<ProseImage allowAnyDomain src={github} />);
+
+    expect(image(container)).toHaveAttribute("src", github);
+    expect(image(container)).toHaveAttribute("loading", "lazy");
+  });
+
+  it("still shows nothing for an http image, when any domain is allowed", () => {
+    const { container } = render(<ProseImage allowAnyDomain src="http://example.com/a.png" />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("still shows nothing for an image that isn't on the web, when any domain is allowed", () => {
+    const { container } = render(<ProseImage allowAnyDomain src="file:///C:/a.png" />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it("blurs an adult image", () => {
     const { container } = render(<ProseImage isFromAdultContent src={NEXUS} />);
 
