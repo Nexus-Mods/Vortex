@@ -54,6 +54,12 @@ describe("sharedMods", () => {
   it("finds none for the mods in no collection", () => {
     expect(sharedMods(group("no-collection"), collectionsByMod(MODS)).rows).toEqual([]);
   });
+
+  it("names a collection with no name by its id", () => {
+    const mods = { ...MODS, y: collection("y", "", ["c"]) };
+
+    expect(sharedMods(group("x"), collectionsByMod(mods)).collections).toEqual(["y", "Zinc"]);
+  });
 });
 
 describe("groupMods by collection", () => {
@@ -77,6 +83,13 @@ describe("groupMods by collection", () => {
       "y",
       ["c"],
     ]);
+  });
+
+  it("labels a collection with no name by its id, sorted among the others", () => {
+    const mods = { ...MODS, y: collection("y", "", ["c"]) };
+    const groups = groupMods(mods, "collection", t, collectionsByMod(mods));
+
+    expect(groups.map(({ label }) => label)).toEqual(["No collection", "Xenon", "y", "Zinc"]);
   });
 
   it("leaves the mods ungrouped without a collection", () => {
