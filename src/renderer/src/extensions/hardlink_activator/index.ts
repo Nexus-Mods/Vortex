@@ -306,34 +306,35 @@ class DeploymentMethod extends LinkingDeployment {
     return fs.unlinkAsync(linkPath);
   }
 
-  protected async isLink(
+  protected isLink(
     linkPath: string,
     sourcePath: string,
     linkStatsIn: fs.Stats,
     sourceStatsIn: fs.Stats,
-  ): Promise<boolean> {
-    if (linkStatsIn !== undefined && sourceStatsIn !== undefined) {
-      if (linkStatsIn.nlink <= 1) {
-        return false;
-      }
-      // ids past 2^53 (ReFS) aren't exact as numbers; those are compared on disk below
-      if (Number.isSafeInteger(linkStatsIn.ino) && Number.isSafeInteger(sourceStatsIn.ino)) {
-        return linkStatsIn.ino === sourceStatsIn.ino;
-      }
+  ): PromiseBB<boolean> {
+    // ids past 2^53 (ReFS) aren't exact as numbers; those are compared on disk below
+    if (
+      linkStatsIn !== undefined &&
+      sourceStatsIn !== undefined &&
+      Number.isSafeInteger(linkStatsIn.ino) &&
+      Number.isSafeInteger(sourceStatsIn.ino)
+    ) {
+      return PromiseBB.resolve(linkStatsIn.nlink > 1 && linkStatsIn.ino === sourceStatsIn.ino);
     }
 
-    try {
-      const linkStats = await lstat(linkPath, { bigint: true });
-      if (linkStats.nlink <= 1n) {
-        return false;
-      }
-      return linkStats.ino === (await lstat(sourcePath, { bigint: true })).ino;
-    } catch (err) {
-      if (getErrorCode(err) === "ENOENT") {
-        return false;
-      }
-      throw unknownToError(err);
-    }
+    return PromiseBB.resolve(lstat(linkPath, { bigint: true }))
+      .then((linkStats) =>
+        linkStats.nlink === 1n
+          ? PromiseBB.resolve(false)
+          : PromiseBB.resolve(lstat(sourcePath, { bigint: true })).then(
+              (sourceStats) => linkStats.ino === sourceStats.ino,
+            ),
+      )
+      .catch((err) =>
+        getErrorCode(err) === "ENOENT"
+          ? PromiseBB.resolve(false)
+          : PromiseBB.reject(unknownToError(err)),
+      );
   }
 
   protected canRestore(): boolean {
