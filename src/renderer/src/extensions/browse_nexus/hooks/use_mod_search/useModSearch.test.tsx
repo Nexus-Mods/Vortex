@@ -109,11 +109,11 @@ describe("useModSearch", () => {
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     await respond("trending", 45);
 
-    act(() => result.current.setSort({ field: "endorsements", timeRange: "28" }));
+    act(() => result.current.setSort({ field: "endorsements" }));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search).toMatchObject({
-      filters: { time_range: "28" },
+      filters: { time_range: "7" },
       sort: { field: "endorsements", direction: "desc" },
       pagination: { page: 1 },
     });
@@ -131,7 +131,7 @@ describe("useModSearch", () => {
 
     act(() => result.current.selectPreset("popular"));
 
-    expect(result.current.sort).toEqual({ field: "popular", direction: "desc", timeRange: "7" });
+    expect(result.current.sort).toEqual({ field: "popular", direction: "desc" });
     expect(result.current.canResetSort).toBe(false);
 
     act(() => result.current.selectPreset("trending"));
@@ -140,8 +140,84 @@ describe("useModSearch", () => {
 
     act(() => result.current.resetSort());
 
-    expect(result.current.sort).toEqual({ field: "trending", direction: "desc", timeRange: "7" });
+    expect(result.current.sort).toEqual({ field: "trending", direction: "desc" });
     expect(result.current.canResetSort).toBe(false);
+  });
+
+  it("filters the open preset by time from the first page, as a filter rather than its sort", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setCurrentPage(2));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("trending", 45);
+
+    act(() => result.current.setFilters({ timeRange: "28" }));
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(mocks.pending[0].search).toMatchObject({
+      filters: { time_range: "28" },
+      sort: { field: "trending", direction: "desc" },
+      pagination: { page: 1 },
+    });
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.filters).toEqual({ timeRange: "28" });
+    expect(result.current.canResetSort).toBe(false);
+  });
+
+  it("counts a time range as a filter, and none over all time", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+
+    expect(result.current.activeFilterCount).toBe(1);
+
+    act(() => result.current.selectPreset("new"));
+
+    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.activeFilterCount).toBe(0);
+  });
+
+  it("clears every filter of the open preset to all time, leaving its sort", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setSort({ direction: "asc" }));
+
+    act(() => result.current.resetFilters());
+
+    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.activeFilterCount).toBe(0);
+    expect(result.current.sort.direction).toBe("asc");
+  });
+
+  it("resets the open preset's sort without touching its filters", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setFilters({ timeRange: "365" }));
+    act(() => result.current.setSort({ direction: "asc" }));
+
+    act(() => result.current.resetSort());
+
+    expect(result.current.sort.direction).toBe("desc");
+    expect(result.current.filters).toEqual({ timeRange: "365" });
+  });
+
+  it("puts a preset's own time range back whenever it's picked, even the one open", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setFilters({ timeRange: "1" }));
+
+    act(() => result.current.selectPreset("new"));
+
+    expect(result.current.filters).toEqual({ timeRange: "all" });
+
+    act(() => result.current.setFilters({ timeRange: "28" }));
+    act(() => result.current.selectPreset("trending"));
+
+    expect(result.current.filters).toEqual({ timeRange: "7" });
+
+    act(() => result.current.resetFilters());
+    act(() => result.current.selectPreset("trending"));
+
+    expect(result.current.filters).toEqual({ timeRange: "7" });
   });
 
   it("keeps the last total while the next page loads", async () => {

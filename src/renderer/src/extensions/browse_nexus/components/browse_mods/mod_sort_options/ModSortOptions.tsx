@@ -9,11 +9,7 @@ import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
-import type {
-  IModSort,
-  ModSortField,
-  ModTimeRange,
-} from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { IModSort, ModSortField } from "../../../hooks/use_mod_search/useModSearch.hook";
 
 interface IModSortOptionsProps {
   /** How the open preset sorts the mods. */
@@ -35,10 +31,10 @@ const orderLabel = (t: TFunction, { field, direction }: IModSort) => {
 };
 
 /**
- * The display options' section for how Browse's mods are sorted: by what, which way, and since
- * when. Which way is a button beside what they're sorted by that turns the order round, its
- * tooltip saying how they're ordered now and its list arrow pointing down for descending and up
- * for ascending. The font has only the down one, so the up one is it flipped.
+ * The display options' section for how Browse's mods are sorted: by what and which way. Which
+ * way is a button beside what they're sorted by that turns the order round, its tooltip saying
+ * how they're ordered now and its list arrow pointing down for descending and up for ascending.
+ * The font has only the down one, so the up one is it flipped.
  */
 export const ModSortOptions = ({ sort, onChange }: IModSortOptionsProps) => {
   const { t } = useTranslation();
@@ -75,22 +71,6 @@ export const ModSortOptions = ({ sort, onChange }: IModSortOptionsProps) => {
             onChange={(field) => onChange({ field })}
           />
         </div>
-      </PopoverPanelGroupItem>
-
-      <PopoverPanelGroupItem passive label={t("From")}>
-        <Picker<ModTimeRange>
-          button={{ size: "sm" }}
-          options={[
-            { label: t("Last 24 hours"), value: "1" },
-            { label: t("Last 7 days"), value: "7" },
-            { label: t("Last 14 days"), value: "14" },
-            { label: t("Last 28 days"), value: "28" },
-            { label: t("Last year"), value: "365" },
-            { label: t("All time"), value: "all" },
-          ]}
-          value={sort.timeRange}
-          onChange={(timeRange) => onChange({ timeRange })}
-        />
       </PopoverPanelGroupItem>
     </PopoverPanelGroup>
   );
