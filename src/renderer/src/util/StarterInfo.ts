@@ -28,6 +28,7 @@ import { isWindowsExecutable } from "./linux/proton";
 import type { Steam, ISteamEntry } from "./Steam";
 import { getSafe } from "./storeHelper";
 import * as storeLookup from "./storeLookup";
+import { isChildPath } from "./util";
 
 async function hideWindow(): Promise<void> {
   await window.api.window.hide(ApplicationData.instance.windowId);
@@ -68,6 +69,14 @@ type OnShowErrorFunc = (
   allowReport?: boolean,
 ) => void;
 
+async function resolveSymlinks(filePath: string): Promise<string> {
+  try {
+    return await fs.promises.realpath(filePath);
+  } catch {
+    return filePath;
+  }
+}
+
 /**
  * Check if a game or tool should run through Proton on Linux.
  * Returns the matching Steam game entry if Proton should be used, undefined otherwise.
@@ -94,11 +103,16 @@ async function shouldRunWithProton(
     const steamStore = storeLookup.getGameStore(getGameStoresSafe(), "steam") as Steam;
     const games = await steamStore.allGames();
 
-    // Find the game entry that matches this executable's location
-    return games.find(
-      (g) =>
-        info.workingDirectory?.toLowerCase().startsWith(g.gamePath.toLowerCase()) ||
-        info.exePath.toLowerCase().startsWith(g.gamePath.toLowerCase()),
+    /**
+     * Paths can reach the library through a symlink like ~/.steam/steam. Resolve
+     * the exe's folder, not the exe, as a symlink-deployed exe points into staging.
+     */
+    const toolPaths = await Promise.all(
+      [path.dirname(info.exePath), info.workingDirectory].filter((p) => !!p).map(resolveSymlinks),
+    );
+    const gamePaths = await Promise.all(games.map((g) => resolveSymlinks(g.gamePath)));
+    return games.find((_g, idx) =>
+      toolPaths.some((p) => p === gamePaths[idx] || isChildPath(p, gamePaths[idx])),
     );
   } catch (err: any) {
     log("debug", "Could not check for Proton execution", {
