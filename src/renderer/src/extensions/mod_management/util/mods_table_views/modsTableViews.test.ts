@@ -7,7 +7,7 @@ vi.mock("../modSource", () => ({
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import type { IModWithState } from "../../types/IModProps";
-import { availableViews, groupMods, sharedMods } from "./modsTableViews";
+import { allModRows, availableViews, groupMods, sharedMods } from "./modsTableViews";
 
 const t = ((key: string) => key) as Parameters<typeof groupMods>[2];
 
@@ -160,5 +160,21 @@ describe("availableViews", () => {
     });
 
     expect(offersUpdates({ x })).toBe(true);
+  });
+});
+
+describe("allModRows", () => {
+  it("sorts a mod with no attributes by its id instead of throwing", () => {
+    const nameless = { id: "dl-1", enabled: false } as unknown as IModWithState;
+
+    const rows = allModRows({ b: mod("b", "Beta"), n: nameless, a: mod("a", "Alpha") });
+
+    expect(rows.map(({ name }) => name)).toEqual(["Alpha", "Beta", "dl-1"]);
+  });
+
+  it("sorts a mod with every name field empty and no install path by its id", () => {
+    const rows = allModRows({ n: mod("n", ""), a: mod("a", "Alpha") });
+
+    expect(rows.map(({ name }) => name)).toEqual(["Alpha", "n"]);
   });
 });

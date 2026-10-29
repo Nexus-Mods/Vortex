@@ -99,7 +99,8 @@ export const availableViews = (mods: { [id: string]: IModWithState }): IModsTabl
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
 
 const toRows = (mods: IModWithState[]): IModRow[] =>
-  mods.map((mod) => ({ mod, name: modName(mod) })).sort(byName);
+  // A mod with no name to show, like a finished download that isn't installed, goes by its id.
+  mods.map((mod) => ({ mod, name: modName(mod) ?? mod.id })).sort(byName);
 
 // Every view's rows; a collection heads its group instead, so it's never one.
 const installedMods = (mods: { [id: string]: IModWithState }) =>

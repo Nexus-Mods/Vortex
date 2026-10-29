@@ -119,7 +119,8 @@ export const ModsTableSwitch = ({
     renameView,
     removeView,
   } = useModsTableView(mods);
-  const rows = useMemo(() => allModRows(mods), [mods]);
+  // The legacy table builds its own rows, so don't build these for it.
+  const rows = useMemo(() => (newTable ? allModRows(mods) : []), [newTable, mods]);
   const memberships = useCollectionMemberships(mods);
   const { changing, setEnabled, isEnabled } = useModsEnabled(onSetModsEnabled);
 
