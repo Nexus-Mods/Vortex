@@ -10,7 +10,8 @@ type MutableNode = {
   children: Map<RelativePath, MutableNode>;
 };
 
-const compareNodes = (a: IFileTreeNode, b: IFileTreeNode): number => {
+/** Directories first, then by name. */
+export const compareNodes = (a: IFileTreeNode, b: IFileTreeNode): number => {
   if (a.kind !== b.kind) {
     return a.kind === "directory" ? -1 : 1;
   }
