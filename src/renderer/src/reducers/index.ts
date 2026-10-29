@@ -28,6 +28,7 @@ import { loReducer } from "./loadOrder";
 import { notificationsReducer } from "./notifications";
 import { notificationSettingsReducer } from "./notificationSettings";
 import { sessionReducer } from "./session";
+import { splitReducer } from "./splits";
 import { tableReducer } from "./tables";
 import { toolbarReducer } from "./toolbars";
 import { userReducer } from "./user";
@@ -267,6 +268,7 @@ export function buildReducerTree(extensionReducers: IExtensionReducer[]): Reduce
       window: windowReducer,
       tables: tableReducer,
       toolbars: toolbarReducer,
+      splits: splitReducer,
       notifications: notificationSettingsReducer,
     },
   };

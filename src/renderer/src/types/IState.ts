@@ -209,6 +209,11 @@ export interface IToolbarStates {
   [toolbarId: string]: IToolbarState;
 }
 
+/** Where the user left each resizable split, keyed by split id: the first pane's share, 0 to 1. */
+export interface ISplitStates {
+  [splitId: string]: number;
+}
+
 export interface IStateDownloads {
   speed: number;
   speedHistory: number[];
@@ -337,6 +342,7 @@ export interface ISettings {
   notifications: ISettingsNotification;
   tables: ITableStates;
   toolbars: IToolbarStates;
+  splits: ISplitStates;
   update: ISettingsUpdate;
   workarounds: ISettingsWorkarounds;
 }

@@ -42,6 +42,27 @@
     mask-composite: intersect;
 }
 
+/* Dims a backdrop image to 30% over its pane's first 240px of scroll, so text stays readable. */
+@utility backdrop-dim-source {
+    scroll-timeline: --backdrop-dim y;
+}
+
+@utility backdrop-dim-scope {
+    timeline-scope: --backdrop-dim;
+}
+
+@utility backdrop-image-dim {
+    animation: backdrop-image-dim linear both;
+    animation-timeline: --backdrop-dim;
+    animation-range: 0 240px;
+}
+
+@keyframes backdrop-image-dim {
+    to {
+        opacity: 0.3;
+    }
+}
+
 /* Breaks up the banding a dark, gentle gradient shows on an 8-bit screen, as a layer of its
    own over it: faint light and dark specks, about one level either way, so the gradient's steps
    dissolve into grain too fine to see. Plain alpha rather than a blend mode, so it lands the same

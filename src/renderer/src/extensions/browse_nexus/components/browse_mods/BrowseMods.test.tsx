@@ -11,25 +11,46 @@ import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 // The list, bar, backdrop and details are stood in for: these test which mod the details show.
 vi.mock("./browse_mods_bar/BrowseModsBar", () => ({ BrowseModsBar: () => null }));
 vi.mock("./mod_backdrop/ModBackdrop", () => ({ ModBackdrop: () => null }));
+vi.mock("@/ui/components/resizable_split/useSavedSplit.hook", () => ({
+  useSavedSplit: () => [0.5, vi.fn()],
+}));
 vi.mock("./mod_details/ModDetails", () => ({
-  ModDetails: React.forwardRef<HTMLParagraphElement, { mod: ModSummary }>(({ mod }, ref) => (
-    <p data-testid="details" ref={ref}>
-      {mod.name}
-    </p>
-  )),
+  ModDetails: React.forwardRef<HTMLDivElement, { mod: ModSummary; onFocusList: () => void }>(
+    ({ mod, onFocusList }, ref) => (
+      <div ref={ref}>
+        <p data-testid="details">{mod.name}</p>
+        <button onClick={onFocusList}>Back to the list</button>
+      </div>
+    ),
+  ),
 }));
 vi.mock("./mod_details/ModDetails.skeleton", () => ({
   ModDetailsSkeleton: () => <p data-testid="details-skeleton" />,
 }));
 vi.mock("./mod_list/ModList", () => ({
-  ModList: ({ mods, onSelectMod }: { mods: ModSummary[]; onSelectMod: (id: string) => void }) => (
-    <ul>
+  ModList: ({
+    mods,
+    activeModId,
+    listRef,
+    onSelectMod,
+  }: {
+    mods: ModSummary[];
+    activeModId: string;
+    listRef: React.RefObject<HTMLDivElement>;
+    onSelectMod: (id: string) => void;
+  }) => (
+    <div ref={listRef}>
       {mods.map((mod) => (
-        <li key={mod.id}>
-          <button onClick={() => onSelectMod(mod.id)}>{mod.name}</button>
-        </li>
+        <button
+          data-mod-card
+          key={mod.id}
+          tabIndex={mod.id === activeModId ? 0 : -1}
+          onClick={() => onSelectMod(mod.id)}
+        >
+          {mod.name}
+        </button>
       ))}
-    </ul>
+    </div>
   ),
 }));
 
@@ -79,5 +100,14 @@ describe("BrowseMods", () => {
 
     rerender(search([]));
     expect(screen.getByText("No mod to show")).toBeInTheDocument();
+  });
+
+  it("moves focus to the open mod in the list when the details ask", async () => {
+    renderComponent(search([mod("1"), mod("2")]));
+    await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "Back to the list" }));
+
+    expect(screen.getByRole("button", { name: "Mod 2" })).toHaveFocus();
   });
 });

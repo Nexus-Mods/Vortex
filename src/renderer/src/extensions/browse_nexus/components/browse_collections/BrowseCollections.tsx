@@ -126,6 +126,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
         }
         noResultsMessage={t("collection:browse.noCollections.message")}
         noResultsTitle={t("collection:browse.noCollections.title")}
+        onRetry={handleRefresh}
         skeletonCount={12}
         SkeletonTile={CollectionTileSkeleton}
       >
