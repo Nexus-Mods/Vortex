@@ -1,3 +1,4 @@
+import { lstat } from "node:fs/promises";
 import * as path from "path";
 import * as util from "util";
 
@@ -13,7 +14,7 @@ import type { IGame } from "../../types/IGame";
 import type { IState } from "../../types/IState";
 import * as fs from "../../util/fs";
 import { getVolumePath } from "../../util/getVolumePath";
-import { isSameFile, lstatBigIntAsync } from "../../util/sameFile";
+import { isSameFile } from "../../util/sameFile";
 import { installPathForGame } from "../../util/selectors";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -306,33 +307,34 @@ class DeploymentMethod extends LinkingDeployment {
     return fs.unlinkAsync(linkPath);
   }
 
-  protected isLink(
+  protected async isLink(
     linkPath: string,
     sourcePath: string,
     linkStatsIn: fs.Stats,
     sourceStatsIn: fs.Stats,
-  ): PromiseBB<boolean> {
+  ): Promise<boolean> {
     if (linkStatsIn !== undefined && sourceStatsIn !== undefined) {
       if (linkStatsIn.nlink <= 1) {
-        return PromiseBB.resolve(false);
+        return false;
       }
       // ids past 2^53 (ReFS) aren't exact as numbers; those are compared on disk below
       if (Number.isSafeInteger(linkStatsIn.ino) && Number.isSafeInteger(sourceStatsIn.ino)) {
-        return PromiseBB.resolve(linkStatsIn.ino === sourceStatsIn.ino);
+        return linkStatsIn.ino === sourceStatsIn.ino;
       }
     }
 
-    return lstatBigIntAsync(linkPath)
-      .then((linkStats) =>
-        linkStats.nlink <= 1n
-          ? PromiseBB.resolve(false)
-          : lstatBigIntAsync(sourcePath).then((sourceStats) => isSameFile(linkStats, sourceStats)),
-      )
-      .catch((err) =>
-        getErrorCode(err) === "ENOENT"
-          ? PromiseBB.resolve(false)
-          : PromiseBB.reject(unknownToError(err)),
-      );
+    try {
+      const linkStats = await lstat(linkPath, { bigint: true });
+      if (linkStats.nlink <= 1n) {
+        return false;
+      }
+      return isSameFile(linkStats, await lstat(sourcePath, { bigint: true }));
+    } catch (err) {
+      if (getErrorCode(err) === "ENOENT") {
+        return false;
+      }
+      throw unknownToError(err);
+    }
   }
 
   protected canRestore(): boolean {

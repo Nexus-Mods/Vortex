@@ -14,6 +14,7 @@
  */
 
 import * as net from "net";
+import { stat as statNative } from "node:fs/promises";
 import * as path from "path";
 
 import {
@@ -42,7 +43,7 @@ import type { TFunction } from "./i18n";
 import lazyRequire from "./lazyRequire";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
-import { isSameFile, statBigIntAsync } from "./sameFile";
+import { isSameFile } from "./sameFile";
 import { restackErr, truthy } from "./util";
 
 const permission: typeof permissionT = lazyRequire(() => require("permissions"));
@@ -682,17 +683,17 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
   );
 }
 
-function selfCopyCheck(src: string, dest: string) {
-  return PromiseBB.all([
-    statBigIntAsync(src),
-    statBigIntAsync(dest).catch((err) =>
-      getErrorCode(err) === "ENOENT" ? PromiseBB.resolve(undefined) : PromiseBB.reject(err),
-    ),
-  ]).then(([srcStats, destStats]) =>
-    destStats !== undefined && isSameFile(srcStats, destStats)
-      ? PromiseBB.reject(new SelfCopyCheckError(src, dest, srcStats.ino))
-      : PromiseBB.resolve(),
-  );
+async function selfCopyCheck(src: string, dest: string): Promise<void> {
+  const [srcStats, destStats] = await Promise.all([
+    statNative(src, { bigint: true }),
+    statNative(dest, { bigint: true }).catch((err: unknown) => {
+      if (getErrorCode(err) === "ENOENT") return undefined;
+      throw err;
+    }),
+  ]);
+  if (destStats !== undefined && isSameFile(srcStats, destStats)) {
+    throw new SelfCopyCheckError(src, dest, srcStats.ino);
+  }
 }
 
 function nextName(input: string): string {
@@ -735,7 +736,7 @@ export function copyAsync(
 ): PromiseBB<void> {
   const stackErr = new Error();
   // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
-  const check = options?.noSelfCopy ? PromiseBB.resolve() : selfCopyCheck(src, dest);
+  const check = PromiseBB.resolve(options?.noSelfCopy ? undefined : selfCopyCheck(src, dest));
   return check
     .then(() => copyInt(src, dest, options || undefined, stackErr, NUM_RETRIES))
     .catch((err) => PromiseBB.reject(restackErr(err, stackErr)));
