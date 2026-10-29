@@ -104,6 +104,21 @@ describe("LootInterface libloot lifecycle", () => {
     expect(harness.errorNotifications).toEqual([]);
   });
 
+  // the persisted discovery is only cleared once discovery notices the game is gone
+  test("leaves LOOT unstarted for a game whose folder is gone", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.setState((draft) => {
+      draft.settings.gameMode.discovered.skyrimse.path = path.join(harness.dataDir, "gone");
+    });
+
+    harness.restartHelpers();
+    await flushAsync();
+    await harness.lootInterface.wait();
+
+    expect(createLootMock).not.toHaveBeenCalled();
+    expect(harness.errorNotifications).toEqual([]);
+  });
+
   // a details request carries the game that was active when it was made
   test("answers no plugin details for a game other than the active one", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);

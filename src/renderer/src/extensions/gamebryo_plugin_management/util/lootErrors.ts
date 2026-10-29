@@ -11,6 +11,8 @@ const MASTER_NOT_LOADED = /^The plugin "([^"]+)" has not been loaded/i;
 const API_MISUSE = /^parameter \d+ expected to be/i;
 const MISSING_GROUP = /The group "([^"]*)" does not exist/;
 const CONDITION_EXECUTABLE = /Failed to evaluate condition ".*version\("([^"]*\.exe)",.*/;
+// ERROR_SYSTEM_INTEGRITY_POLICY_VIOLATION from dlopen, as a number where Windows has no message
+const APPLICATION_CONTROL = /Application Control policy has blocked|^error: 4551\b/i;
 
 const asString = (value: unknown): string | undefined =>
   typeof value === "string" && value.length > 0 ? value : undefined;
@@ -27,6 +29,15 @@ export function toLootError(raw: unknown): VortexError {
   };
   const wrap = (data: VortexErrorData) => new VortexError(err.message, data, { cause: raw });
 
+  // node sets the code whatever language Windows phrased the failure in
+  if (err.code === "ERR_DLOPEN_FAILED") {
+    return wrap({
+      kind: "loot:library-failed",
+      // the message ends in the library's path, after a line break or straight after the number
+      reason: err.message.split(/\r?\n|\\\\\?\\/)[0].trim() || err.message,
+      blocked: APPLICATION_CONTROL.test(err.message),
+    });
+  }
   if (err.message.startsWith("Cyclic interaction")) {
     const cycle = Array.isArray(err.cycle) ? (err.cycle as ICycleEdge[]) : [];
     return wrap({ kind: "loot:cyclic-interaction", cycle });
@@ -115,6 +126,22 @@ export function describeLootError(
       return {
         severity: "error",
         message: translate("Vortex asked LOOT for something it could not accept", options),
+      };
+    case "loot:library-failed":
+      return {
+        severity: "error",
+        message: err.data.blocked
+          ? translate(
+              "Windows blocked LOOT's library (node-loot.node) with an Application Control " +
+                "policy, such as Smart App Control. Plugins can't be sorted until that policy " +
+                "allows it.",
+              options,
+            )
+          : translate(
+              "Vortex couldn't load LOOT's library (node-loot.node): {{reason}}. " +
+                "Reinstalling Vortex usually fixes this.",
+              { replace: { reason: err.data.reason.replace(/\.$/, "") }, ...options },
+            ),
       };
     default:
       return {
