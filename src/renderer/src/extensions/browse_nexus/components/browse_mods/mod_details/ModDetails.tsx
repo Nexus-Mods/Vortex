@@ -83,48 +83,51 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     ];
 
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={leaveOnLeft}>
+      <div
+        aria-label={t("Mod details")}
+        className="flex min-h-0 min-w-0 flex-1 flex-col has-[>:focus-visible]:outline-2 has-[>:focus-visible]:-outline-offset-2 has-[>:focus-visible]:outline-focus-subdued"
+        role="region"
+        onKeyDown={leaveOnLeft}
+      >
         <TabProvider
           tab={tab}
           tabListId="browse-mod-details-tabs"
           tabType="secondary"
           onSetSelectedTab={setTab}
         >
-          <div
-            aria-label={t("Mod details")}
-            className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col gap-y-3 overflow-y-auto scroll-fade p-6 pb-9 backdrop-dim-source scroll-fade-9 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-subdued"
-            ref={ref}
-            role="region"
-            tabIndex={-1}
-          >
-            <div className="flex items-start gap-x-4">
-              <TabBar className="min-w-0 flex-1">
-                <TabButton name={t("Details")} panelId="details" />
+          <div className="flex scrollbar-gutter-stable items-start gap-x-4 overflow-hidden px-6 pt-6 pb-3">
+            <TabBar className="min-w-0 flex-1">
+              <TabButton name={t("Details")} panelId="details" />
 
-                {/* <TabButton name={t("Files")} panelId="files" /> */}
+              {/* <TabButton name={t("Files")} panelId="files" /> */}
 
-                {/* <TabButton name={t("Comments")} panelId="comments" /> */}
-              </TabBar>
+              {/* <TabButton name={t("Comments")} panelId="comments" /> */}
+            </TabBar>
 
-              {/* <Button leftIcon="download" size="sm">
+            {/* <Button leftIcon="download" size="sm">
                 {t("1-click install")}
               </Button> */}
 
-              <Tooltip content={t("Open mod page")}>
-                <Button
-                  appearance="moderate"
-                  aria-label={t("Open mod page")}
-                  brand="neutral"
-                  leftIcon="open_in_new"
-                  onClick={() =>
-                    window.api.shell.openUrl(
-                      [NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/"),
-                    )
-                  }
-                />
-              </Tooltip>
-            </div>
+            <Tooltip content={t("Open mod page")}>
+              <Button
+                appearance="moderate"
+                aria-label={t("Open mod page")}
+                brand="neutral"
+                leftIcon="open_in_new"
+                onClick={() =>
+                  window.api.shell.openUrl(
+                    [NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/"),
+                  )
+                }
+              />
+            </Tooltip>
+          </div>
 
+          <div
+            className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col overflow-y-auto scroll-fade px-6 pb-9 backdrop-dim-source scroll-fade-9 focus-visible:outline-none"
+            ref={ref}
+            tabIndex={-1}
+          >
             <TabPanel id="details">
               <div className="flex flex-col gap-y-3">
                 <ModGallery

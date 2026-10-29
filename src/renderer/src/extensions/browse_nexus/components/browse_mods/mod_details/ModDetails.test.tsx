@@ -195,10 +195,26 @@ describe("ModDetails", () => {
     expect(onFocusList).toHaveBeenCalled();
   });
 
+  it("keeps its tabs and buttons above the part that scrolls, so they stay put", () => {
+    renderComponent();
+    const scrollArea = screen
+      .getByRole("region", { name: "Mod details" })
+      .querySelector<HTMLElement>('[tabindex="-1"]');
+
+    expect(scrollArea).toHaveClass("overflow-y-auto");
+    expect(scrollArea).not.toContainElement(screen.getByRole("tab", { name: "Details" }));
+    expect(scrollArea).not.toContainElement(screen.getByRole("button", { name: "Open mod page" }));
+  });
+
   it("asks to move focus back to the list on Left from the pane itself", async () => {
     const onFocusList = vi.fn();
     renderComponent(summary, onFocusList);
-    act(() => screen.getByRole("region", { name: "Mod details" }).focus());
+    act(() =>
+      screen
+        .getByRole("region", { name: "Mod details" })
+        .querySelector<HTMLElement>('[tabindex="-1"]')!
+        .focus(),
+    );
 
     await userEvent.keyboard("{ArrowLeft}");
 

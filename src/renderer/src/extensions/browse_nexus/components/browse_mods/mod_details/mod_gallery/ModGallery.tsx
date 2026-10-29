@@ -40,6 +40,8 @@ interface IModGalleryProps {
  * arrows at its ends while there's more to see. Clicking a thumbnail, or the arrow keys on the
  * strip, picks it. The strip always holds at least five slots, each a placeholder until its
  * thumbnail fades in over it, one after another; the empty ones pulse while more pictures load.
+ * The large picture is never a scroll anchor: a new one sits higher or lower in its 16:9 frame,
+ * and the browser would scroll the details to follow it.
  */
 export const ModGallery = ({ images, isAdult, isLoading, onPick }: IModGalleryProps) => {
   const { t } = useTranslation();
@@ -112,7 +114,7 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick }: IModGalleryPr
       {shown ? (
         <AdultAwareImage
           alt={shown.title ?? ""}
-          className="w-full rounded-sm"
+          className="w-full rounded-sm [overflow-anchor:none]"
           imageType="mod"
           isAdult={isAdult}
           isLoading={isLoading}
