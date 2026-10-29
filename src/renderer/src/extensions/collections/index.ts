@@ -3,12 +3,7 @@ import { pathToFileURL } from "url";
 
 import type * as nexusApi from "@nexusmods/nexus-api";
 import type { IRevision } from "@nexusmods/nexus-api";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-  VortexGameId,
-  VortexProfileId,
-} from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError, VortexProfileId } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import memoize from "memoize-one";
@@ -814,7 +809,7 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
     visible: () => {
       const state = context.api.getState();
       const activeId = selectors.activeGameId(state);
-      return activeId !== undefined && !isTierZeroManagedGame(state, VortexGameId(activeId));
+      return activeId !== undefined && !isTierZeroManagedGame(state, activeId);
     },
     props: () => ({
       driver,

@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain } from "@vortex/shared";
+import { GameDomain, VortexGameId } from "@vortex/shared";
 import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
 import React, { type ComponentClass, useMemo, useRef, useState } from "react";
@@ -42,7 +42,7 @@ import { detectedStore } from "../util/detected_games/detectedStore";
 import { isListableDetectedGame } from "../util/detected_games/listableDetectedIds";
 import { locallyDetectedGames } from "../util/detected_games/locallyDetectedGames";
 
-const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
+const gameFromDiscovery = (id: VortexGameId, discovered: IDiscoveryResult): IGameStored => ({
   id,
   name: discovered.name ?? id,
   shortName: discovered.shortName,
@@ -271,7 +271,8 @@ const GamePicker = ({
   supportedGameList.push(
     ...extensionsUninstalled
       .map((ext) => ({
-        id: ext.gameDomain || ext.name,
+        // not installed, so the extension's own game id is unknown: stand in with what we have
+        id: VortexGameId(ext.gameDomain || ext.name),
         name: ext.gameName || ext.name,
         extensionPath: undefined,
         imageURL: ext.image,
@@ -288,7 +289,7 @@ const GamePicker = ({
         return;
       }
       if (profileGames.has(gameId)) {
-        managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
+        managedGameList.push(gameFromDiscovery(VortexGameId(gameId), discoveredGames[gameId]));
       }
     }
   });

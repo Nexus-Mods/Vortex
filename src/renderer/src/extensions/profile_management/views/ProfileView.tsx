@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import type { VortexGameId } from "@vortex/shared";
 import { shell } from "electron";
 import update from "immutability-helper";
 import * as React from "react";
@@ -33,7 +34,7 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
-  gameId: string;
+  gameId: VortexGameId;
   currentProfile: string;
   profiles: { [id: string]: IProfile };
   language: string;

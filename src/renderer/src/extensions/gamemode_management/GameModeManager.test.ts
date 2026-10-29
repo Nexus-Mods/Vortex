@@ -1,7 +1,7 @@
 import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
 import { describe, it, expect, vi } from "vitest";
 
-import type { IGame } from "@/types/IGame";
+import type { IRegisteredGame } from "@/types/IGame";
 
 import { setKnownGames } from "./actions/session";
 import { GameModeManager } from "./GameModeManager";
@@ -11,15 +11,15 @@ import type { IGameStored } from "./types/IGameStored";
 // util/Steam reads paths at import time and there is no ApplicationData here
 vi.mock("../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }));
 
-function makeKnownGame(id: string, overrides: Partial<IGame> = {}): IGame {
+function makeKnownGame(id: string, overrides: Partial<IRegisteredGame> = {}): IRegisteredGame {
   return {
-    id,
+    id: VortexGameId(id),
     name: `Game ${id}`,
     queryModPath: () => ".",
     executable: () => "game.exe",
     requiredFiles: [],
     ...overrides,
-  } satisfies IGame;
+  } satisfies IRegisteredGame;
 }
 
 function makeTierZeroEntry(domain: string) {
@@ -31,7 +31,10 @@ function makeTierZeroEntry(domain: string) {
   };
 }
 
-function makeManager(extensionGames: IGame[]): { manager: GameModeManager; dispatched: any[] } {
+function makeManager(extensionGames: IRegisteredGame[]): {
+  manager: GameModeManager;
+  dispatched: any[];
+} {
   const dispatched: any[] = [];
   const manager = new GameModeManager({} as any, extensionGames, [], () => undefined);
   manager.attachToStore({ dispatch: (action: any) => dispatched.push(action) } as any);
@@ -45,7 +48,7 @@ function dispatchedKnownGames(dispatched: any[]): IGameStored[] {
 
 describe("GameModeManager addGames", () => {
   it("makes the game visible in the registry and the manager snapshot", () => {
-    const registry: IGame[] = [makeKnownGame("existing")];
+    const registry: IRegisteredGame[] = [makeKnownGame("existing")];
     const { manager } = makeManager(registry);
 
     const game = makeKnownGame("added");
@@ -69,7 +72,7 @@ describe("GameModeManager addGames", () => {
   });
 
   it("ignores games whose id is already known", () => {
-    const registry: IGame[] = [makeKnownGame("existing")];
+    const registry: IRegisteredGame[] = [makeKnownGame("existing")];
     const { manager, dispatched } = makeManager(registry);
 
     manager.addGames([makeKnownGame("existing", { name: "Different Object" })]);
@@ -97,7 +100,7 @@ describe("GameModeManager addGames", () => {
 describe("GameModeManager removeGames", () => {
   it("removes the game from the registry and the manager snapshot", () => {
     const game = makeKnownGame("removable");
-    const registry: IGame[] = [makeKnownGame("existing"), game];
+    const registry: IRegisteredGame[] = [makeKnownGame("existing"), game];
     const { manager } = makeManager(registry);
 
     manager.removeGames([VortexGameId("removable")]);

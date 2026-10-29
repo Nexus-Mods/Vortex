@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -85,7 +86,7 @@ describe("nxm link callback", () => {
     const arrangeSite = (makeNxm: INxmFixtures["makeNxm"]) =>
       arrangeLink(
         makeNxm({
-          knownGames: [makeGameStored({ id: SITE_ID, details: undefined })],
+          knownGames: [makeGameStored({ id: VortexGameId(SITE_ID), details: undefined })],
           availableExtensions: [{ modId: 100 }],
         }),
       );
@@ -122,7 +123,9 @@ describe("nxm link callback", () => {
       makeNxm,
     }) => {
       const { harness, handleLink } = arrangeLink(
-        makeNxm({ knownGames: [makeGameStored({ id: SITE_ID, details: undefined })] }),
+        makeNxm({
+          knownGames: [makeGameStored({ id: VortexGameId(SITE_ID), details: undefined })],
+        }),
       );
       let catalogFetched: () => void = () => undefined;
       const emitAndAwait = vi

@@ -1,6 +1,6 @@
 import { inspect } from "util";
 
-import { GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
+import { GameDomain, getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 
 import { log } from "@/logging";
 
@@ -60,8 +60,9 @@ export function nexusGameId(
 /**
  * get our internal game id for a nexus page id
  */
-export function convertGameIdReverse(knownGames: IGameStored[], input: string): string {
-  if (input?.toLowerCase === undefined) {
+export function convertGameIdReverse(knownGames: IGameStored[], input: string): VortexGameId {
+  // an empty string is no game id either, and branding one would throw
+  if (input?.toLowerCase === undefined || input === "") {
     return undefined;
   }
 
@@ -82,13 +83,22 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
     return validGames[0].id;
   }
 
-  return (
+  // no known game matches: for a game managed without an extension the domain is the id
+  return VortexGameId(
     {
       skyrimspecialedition: "skyrimse",
       newvegas: "falloutnv",
       elderscrollsonline: "teso",
-    }[input.toLowerCase()] || input.toLowerCase()
+    }[input.toLowerCase()] || input.toLowerCase(),
   );
+}
+
+/**
+ * the id Vortex gives a game it manages without an extension (a Tier 0 game): its nexus domain.
+ * Only for games known to have no extension, for any other use {@link convertGameIdReverse}
+ */
+export function extensionlessGameId(domain: GameDomain): VortexGameId {
+  return VortexGameId(domain);
 }
 
 /**
@@ -103,8 +113,8 @@ export function nxmPageId(state: IState, nxmGameId: string): string {
 /**
  * get our internal game id for a nxm link id
  */
-export function convertNXMIdReverse(knownGames: IGameStored[], input: string): string {
-  if (input === undefined) {
+export function convertNXMIdReverse(knownGames: IGameStored[], input: string): VortexGameId {
+  if (input === undefined || input === "") {
     return undefined;
   }
 
@@ -123,7 +133,7 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): s
     return game.id;
   }
 
-  return input.toLowerCase();
+  return VortexGameId(input.toLowerCase());
 }
 
 /**

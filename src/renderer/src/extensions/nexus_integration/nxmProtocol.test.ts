@@ -1,4 +1,5 @@
 import { HTTPError as NexusHTTPError, NexusError, RateLimitError } from "@nexusmods/nexus-api";
+import { VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
@@ -219,7 +220,7 @@ describe("nxm protocol resolver", () => {
     test("still uses the premium path for a site (extension) download", async ({ makeNxm }) => {
       const { harness, resolve } = makeNxm({
         userInfo: FREE,
-        knownGames: [makeGameStored({ id: SITE_ID, details: undefined })],
+        knownGames: [makeGameStored({ id: VortexGameId(SITE_ID), details: undefined })],
       });
       harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/ext.7z"));
 

@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 
 import type { IModType } from "../extensions/gamemode_management/types/IModType";
@@ -241,4 +242,13 @@ export interface IGame extends ITool {
    * if the user enabled a mod while this promise is pending, that mod will be deployed.
    */
   deploymentGate?: () => PromiseBB<void>;
+}
+
+/**
+ * a game as Vortex holds it once registered: the {@link IGame} an extension passed to
+ * registerGame, with its plain-string id branded as a {@link VortexGameId}. Extensions keep
+ * writing {@link IGame}, everything Vortex hands back out is one of these
+ */
+export interface IRegisteredGame extends IGame {
+  id: VortexGameId;
 }

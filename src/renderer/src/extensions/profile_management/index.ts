@@ -567,7 +567,7 @@ function genOnProfileChange(
   };
 }
 
-function manageGameDiscovered(api: IExtensionApi, gameId: string) {
+function manageGameDiscovered(api: IExtensionApi, gameId: VortexGameId) {
   const profileId = shortid();
   // initialize the staging directory.
   // It's not great that this is here, the code would better fit into mod_management
@@ -598,7 +598,7 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
     });
 }
 
-function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<void> {
+function manageGameUndiscovered(api: IExtensionApi, gameId: VortexGameId): PromiseBB<void> {
   let state: IState = api.store.getState();
   const knownGames = state.session.gameMode.known;
   const gameStored = knownGames.find((game) => game.id === gameId);
@@ -715,7 +715,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<v
     });
 }
 
-function manageGame(api: IExtensionApi, gameId: string): PromiseLike<void> {
+function manageGame(api: IExtensionApi, gameId: VortexGameId): PromiseLike<void> {
   const state = api.store.getState() as IState;
   const profiles = state.persistent.profiles || {};
 
@@ -949,7 +949,7 @@ function init(context: IExtensionContext): boolean {
     },
     "Manage",
     (instanceIds: string[]) => {
-      const gameId = instanceIds[0];
+      const gameId = VortexGameId(instanceIds[0]);
 
       context.api.events.emit("analytics-track-event", "Games", "Start managing", gameId);
 
@@ -958,7 +958,7 @@ function init(context: IExtensionContext): boolean {
       // synthesized game's queryArgs. Any other Manage behaves exactly as before.
       const tierZero =
         FlagService.instance?.getFlag("vortex-tier-0-game-support") !== undefined
-          ? tierZeroEntry(context.api.getState(), VortexGameId(gameId))
+          ? tierZeroEntry(context.api.getState(), gameId)
           : undefined;
 
       const registerStep =

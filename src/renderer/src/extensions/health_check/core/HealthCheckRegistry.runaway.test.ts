@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { afterEach, describe, expect, vi } from "vitest";
 
 import { makeHealthCheckResult } from "../../../test-utils/builders";
@@ -168,7 +169,7 @@ describe("HealthCheckRegistry game gating", () => {
     expect(harness.resultFor(id)).toBeDefined();
 
     harness.setState((draft) => {
-      draft.persistent.profiles["profile-1"].gameId = "skyrimse";
+      draft.persistent.profiles["profile-1"].gameId = VortexGameId("skyrimse");
     });
     await harness.run(id);
 
@@ -184,7 +185,7 @@ describe("HealthCheckRegistry game gating", () => {
     // catch it; only the check made before the result is stored.
     vi.spyOn(perModRunner, "runPerModCheck").mockImplementation(async () => {
       harness.setState((draft) => {
-        draft.persistent.profiles["profile-1"].gameId = "skyrimse";
+        draft.persistent.profiles["profile-1"].gameId = VortexGameId("skyrimse");
       });
       return makeHealthCheckResult({ checkId: id });
     });

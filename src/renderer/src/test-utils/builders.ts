@@ -25,7 +25,7 @@ import * as path from "path";
 
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import { VortexProfileId } from "@vortex/shared";
+import { VortexGameId, VortexProfileId } from "@vortex/shared";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import type { LootAsync, PluginInterface, PluginMetadata, Vertex } from "loot";
@@ -130,7 +130,7 @@ import type {
   IRunOptions,
   IStateVerifier,
 } from "../types/IExtensionContext";
-import type { IGame } from "../types/IGame";
+import type { IRegisteredGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
   HealthCheckCategory,
@@ -265,8 +265,8 @@ export function makeDeploymentMethod(
 }
 
 /** A game with no deploy skip patterns. */
-export function makeBlacklistGame(): IGame {
-  return { details: {} } as unknown as IGame;
+export function makeBlacklistGame(): IRegisteredGame {
+  return { details: {} } as unknown as IRegisteredGame;
 }
 
 /** The deployment method an extension's init registers, bound to the api. */
@@ -577,7 +577,7 @@ export function makeProfileMod(overrides: Partial<IProfileMod> = {}): IProfileMo
 export function makeProfile(overrides: Partial<IProfile> = {}): IProfile {
   return {
     id: "profile-1",
-    gameId: "skyrimse",
+    gameId: VortexGameId("skyrimse"),
     name: "Profile",
     modState: {},
     lastActivated: 0,
@@ -625,7 +625,7 @@ export function makeStarterInfo(overrides: Partial<IStarterInfo> = {}): IStarter
 // than its hardcoded fallback.
 export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStored {
   return {
-    id: "skyrimse",
+    id: VortexGameId("skyrimse"),
     name: "Skyrim Special Edition",
     requiredFiles: [],
     executable: "SkyrimSE.exe",
@@ -924,7 +924,7 @@ export function registerHarnessGame(gameId: string): void {
   harnessGames.add(gameId);
   const gameReg = local<{
     gameModeManager: unknown;
-    extensionGames: IGame[];
+    extensionGames: IRegisteredGame[];
     extensionStubs: unknown[];
   }>("gamemode-management", {
     gameModeManager: undefined,
@@ -933,7 +933,7 @@ export function registerHarnessGame(gameId: string): void {
   });
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
     gameReg.extensionGames.push({
-      id: gameId,
+      id: VortexGameId(gameId),
       name: gameId,
       queryModPath: () => "mods",
       // resolveGameVersion validates the game (executable) and tries
@@ -941,7 +941,7 @@ export function registerHarnessGame(gameId: string): void {
       // exe-version probing of a nonexistent binary
       executable: () => `${gameId}.exe`,
       getGameVersion: () => Promise.resolve("1.0.0"),
-    } as unknown as IGame);
+    } as unknown as IRegisteredGame);
   }
 }
 
@@ -953,7 +953,7 @@ export function registerHarnessGame(gameId: string): void {
 export function resetHarnessRegistries(): void {
   const gameReg = local<{
     gameModeManager: unknown;
-    extensionGames: IGame[];
+    extensionGames: IRegisteredGame[];
     extensionStubs: unknown[];
   }>("gamemode-management", {
     gameModeManager: undefined,
@@ -1199,7 +1199,7 @@ export function makeGameHarness(
   opts: IGameHarnessOpts = {},
   extraReducers: IHarnessReducerBinding[] = [],
 ): IGameHarness {
-  const gameId = opts.gameId ?? "skyrimse";
+  const gameId = VortexGameId(opts.gameId ?? "skyrimse");
   const profileId = opts.profileId ?? "profile-1";
   const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
   const gamePath = opts.gamePath;
@@ -1447,7 +1447,7 @@ export function makeInstallContextHarness(
   overrides: Partial<IDriverHarnessState> = {},
   opts: { gameId?: string; silent?: boolean } = {},
 ): IInstallContextHarness {
-  const gameId = opts.gameId ?? "skyrimse";
+  const gameId = VortexGameId(opts.gameId ?? "skyrimse");
   const base = makeApiHarness(overrides);
   const mixpanelEvents = collectMixpanelEvents(base.api);
   const ctx = new ContextCtor(gameId, base.api, opts.silent ?? false);
@@ -1487,7 +1487,7 @@ export function makeHealthCheckHarness(
   RegistryCtor: new (api: IExtensionApi) => HealthCheckRegistry,
   opts: IHealthCheckHarnessOpts = {},
 ): IHealthCheckHarness {
-  const gameId = opts.gameId ?? "skyrimse";
+  const gameId = VortexGameId(opts.gameId ?? "skyrimse");
   const profileId = opts.profileId ?? "profile-1";
   const base = makeApiHarness({
     profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },

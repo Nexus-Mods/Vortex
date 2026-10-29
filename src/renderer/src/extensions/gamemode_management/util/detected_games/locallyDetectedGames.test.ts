@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { IGameStored } from "@/types/IState";
@@ -6,7 +7,7 @@ import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 import { locallyDetectedGames } from "./locallyDetectedGames";
 
 const game = (id: string): IGameStored => ({
-  id,
+  id: VortexGameId(id),
   name: id,
   executable: undefined,
   extensionPath: undefined,

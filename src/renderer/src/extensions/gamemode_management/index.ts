@@ -26,7 +26,7 @@ import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import type { IGame } from "../../types/IGame";
+import type { IGame, IRegisteredGame } from "../../types/IGame";
 import type { NotificationDismiss } from "../../types/INotification";
 import type { IProfile, IRunningTool, IState, ITierZeroGame } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
@@ -44,6 +44,7 @@ import { setModType } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { isLoggedIn } from "../nexus_integration/selectors";
 import { nexusGames } from "../nexus_integration/util";
+import { extensionlessGameId } from "../nexus_integration/util/convertGameId";
 import { setNextProfile } from "../profile_management/actions/settings";
 import { removeTierZeroGame, setGameInfo, setTierZeroGame } from "./actions/persistent";
 import { clearFavouriteGames, setDetectedGamesStatus } from "./actions/session";
@@ -86,7 +87,7 @@ import RecentlyManagedDashlet from "./views/RecentlyManagedDashlet";
 
 const $ = local<{
   gameModeManager: GameModeManager;
-  extensionGames: IGame[];
+  extensionGames: IRegisteredGame[];
   extensionStubs: IGameStub[];
 }>("gamemode-management", {
   gameModeManager: undefined,
@@ -743,8 +744,10 @@ function init(context: IExtensionContext): boolean {
 
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
-  context.registerGame = ((game: IGame, extensionPath: string) => {
+  context.registerGame = ((registration: IGame, extensionPath: string) => {
     try {
+      // brands in place rather than copying, the extension may hand us a class instance
+      const game = Object.assign(registration, { id: VortexGameId(registration.id) });
       game.extensionPath = extensionPath;
       const infoPath = path.join(extensionPath, "info.json");
       if (fsExtra.existsSync(infoPath)) {
@@ -766,12 +769,13 @@ function init(context: IExtensionContext): boolean {
     } catch (err) {
       context.api.showErrorNotification("Game Extension not loaded", err, {
         allowReport: false,
-        message: game.name,
+        message: registration.name,
       });
     }
   }) as any;
 
-  context.registerGameStub = (game: IGame, ext: IExtensionDownloadInfo) => {
+  context.registerGameStub = (registration: IGame, ext: IExtensionDownloadInfo) => {
+    const game = Object.assign(registration, { id: VortexGameId(registration.id) });
     // If a full game extension (e.g. from the adaptor bridge) already
     // registered this game ID, skip the stub so it doesn't trigger the
     // "game extension no longer included" dialog.
@@ -986,7 +990,7 @@ function init(context: IExtensionContext): boolean {
       if (entry === undefined) return Promise.resolve();
 
       store.dispatch(removeTierZeroGame(gameId));
-      gameModeManager.removeGames([VortexGameId(entry.domain)]);
+      gameModeManager.removeGames([extensionlessGameId(entry.domain)]);
       unregisterTierZeroGame(gameId);
       return Promise.resolve();
     });

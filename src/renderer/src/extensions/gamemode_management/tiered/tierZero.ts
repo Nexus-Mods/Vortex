@@ -3,13 +3,13 @@ import * as path from "node:path";
 import { GameDomain, type GameId, type VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 
-import type { IGame } from "@/types/IGame";
+import type { IGame, IRegisteredGame } from "@/types/IGame";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 import type { IState, ITierZeroGame } from "@/types/IState";
 import type { IQueryArgEntry } from "@/util/storeQuery";
 
 import { domainToNumericGameId } from "../../nexus_integration/util";
-import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { extensionlessGameId, nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { getGameStore } from "../util/getGame";
 
 const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
@@ -136,11 +136,11 @@ function launchId(entry: ITierZeroGame, store: string, gamePath: string): string
  * becomes the game's id. Pure factory: deciding whether the entry should
  * become a game at all (an extension may own the domain) is the caller's job.
  */
-export function makeTierZeroGame(entry: ITierZeroGame): IGame {
+export function makeTierZeroGame(entry: ITierZeroGame): IRegisteredGame {
   tierZeroGameIds.add(entry.gameId);
 
   return {
-    id: entry.domain,
+    id: extensionlessGameId(entry.domain),
     name: entry.name,
     // mods install to the game root
     queryModPath: () => ".",
@@ -168,7 +168,7 @@ export function makeTierZeroGame(entry: ITierZeroGame): IGame {
 
       return PromiseBB.resolve(undefined);
     },
-  } satisfies IGame;
+  } satisfies IRegisteredGame;
 }
 
 /**
@@ -179,13 +179,15 @@ export function makeTierZeroGame(entry: ITierZeroGame): IGame {
  */
 export function synthesizePersistedTierZeroGames(
   tier0: Record<GameId, ITierZeroGame>,
-  knownGames: IGame[],
-  addGames: (games: IGame[]) => void,
+  knownGames: IRegisteredGame[],
+  addGames: (games: IRegisteredGame[]) => void,
 ): void {
-  const ownsDomain = (domain: GameDomain, games: IGame[]) =>
-    games.some((game) => game.id === domain || game.details?.nexusPageId === domain);
+  const ownsDomain = (domain: GameDomain, games: IRegisteredGame[]) =>
+    games.some(
+      (game) => game.id === extensionlessGameId(domain) || game.details?.nexusPageId === domain,
+    );
 
-  const synthesized: IGame[] = [];
+  const synthesized: IRegisteredGame[] = [];
   for (const entry of Object.values(tier0)) {
     // two entries can share a domain; also compare against what this pass
     // has already synthesized, not just the extension games

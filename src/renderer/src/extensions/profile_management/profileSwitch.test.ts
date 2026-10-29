@@ -1,4 +1,4 @@
-import { VortexProfileId } from "@vortex/shared";
+import { VortexProfileId, VortexGameId } from "@vortex/shared";
 import { UserCanceled } from "@vortex/shared/errors";
 import { describe, expect } from "vitest";
 
@@ -37,9 +37,9 @@ const switchBack = async (harness: IProfileSwitchHarness) => {
 };
 
 const profiles = [
-  makeProfile({ id: "skyrim1", gameId: "skyrimse" }),
-  makeProfile({ id: "skyrim2", gameId: "skyrimse" }),
-  makeProfile({ id: "stardew1", gameId: "stardewvalley" }),
+  makeProfile({ id: "skyrim1", gameId: VortexGameId("skyrimse") }),
+  makeProfile({ id: "skyrim2", gameId: VortexGameId("skyrimse") }),
+  makeProfile({ id: "stardew1", gameId: VortexGameId("stardewvalley") }),
 ];
 const lastActive = { skyrimse: "skyrim1", stardewvalley: "stardew1" };
 const skyrimPending = { profiles, lastActive, needToDeploy: { skyrimse: true } };

@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
 import { describe, expect, it, vi } from "vitest";
 
@@ -17,7 +18,7 @@ vi.mock("./util/getVortexPath", () => ({ default: () => "/vortex-userdata" }));
 
 function game(id: string, compatibleDownloads?: string[]): IGameStored {
   return {
-    id,
+    id: VortexGameId(id),
     name: id,
     requiredFiles: [],
     executable: `${id}.exe`,

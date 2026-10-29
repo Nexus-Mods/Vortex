@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { VortexGameId } from "@vortex/shared";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -14,7 +15,7 @@ vi.mock("./GameCard", () => ({
 import { GamesGrid } from "./GamesGrid";
 
 const game = (id: string): IGameStored => ({
-  id,
+  id: VortexGameId(id),
   name: id,
   executable: undefined,
   extensionPath: undefined,
