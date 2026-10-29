@@ -24,6 +24,19 @@
         transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
 
+        /* A dot in the top left corner, such as on a filter button while a filter is on. */
+        &.nxm-button-pip::before {
+            content: "";
+            position: absolute;
+            top: calc(var(--spacing) * 0.75);
+            left: calc(var(--spacing) * 0.75);
+            width: var(--spacing);
+            height: var(--spacing);
+            border-radius: 9999px;
+            background-color: var(--color-info-moderate);
+            pointer-events: none;
+        }
+
         &:disabled,
         &.nxm-button-disabled {
             opacity: 0.4;
