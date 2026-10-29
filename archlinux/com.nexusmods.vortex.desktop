@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Vortex
+GenericName=Mod Manager
+Comment=Mod manager for PC games from Nexus Mods
+Exec=/usr/bin/vortex %u
+Icon=com.nexusmods.vortex
+Terminal=false
+Type=Application
+Categories=Game;
+MimeType=x-scheme-handler/nxm;
+StartupWMClass=Vortex
+StartupNotify=true
+Keywords=mod;mods;modding;nexus;games;skyrim;fallout;

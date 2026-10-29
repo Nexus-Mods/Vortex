@@ -62,6 +62,7 @@ own workspace glob):
 - `locales/` - Translations
 - `eslint-rules/` - Custom ESLint rules
 - `flatpak/` - Flatpak manifest and build scripts
+- `archlinux/` - Arch Linux PKGBUILD, launcher and desktop entry
 - `etc/` - Generated API report (`vortex.api.md`) and dependency report
 
 ## Start here
