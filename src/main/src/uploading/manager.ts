@@ -1,10 +1,9 @@
 import { VortexError } from "@vortex/shared";
-import type { WireS3MultipartRequest, WireUploadRequest } from "@vortex/shared/ipc";
+import type { WireS3MultipartRequest } from "@vortex/shared/ipc";
 
 import { isCancellation } from "../transfer/cancellation";
 import { uploadS3Multipart } from "./s3Multipart";
 import type { UploadHeaders } from "./transport";
-import { uploadFile } from "./transport";
 
 export type UploadProgress = {
   transferred: number;
@@ -32,14 +31,6 @@ export class UploadManager {
 
   constructor(options: UploadManagerOptions = {}) {
     this.#userAgent = options.userAgent;
-  }
-
-  /** PUTs the whole file to a single URL. Rejects if canceled. */
-  async upload(request: WireUploadRequest): Promise<void> {
-    const { url, filePath, fileSize, uploadId, headers } = request;
-    await this.#run(uploadId, fileSize, headers, (options) =>
-      uploadFile(url, filePath, fileSize, options),
-    );
   }
 
   /** Uploads the file as S3 multipart parts. Rejects if canceled. */

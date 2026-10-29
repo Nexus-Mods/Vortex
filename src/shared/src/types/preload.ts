@@ -31,7 +31,6 @@ import type {
   WireResolvedResource,
   WireS3MultipartRequest,
   WireUploadProgress,
-  WireUploadRequest,
 } from "./ipc";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -550,12 +549,6 @@ export interface DownloaderApi {
 }
 
 export interface UploaderApi {
-  /**
-   * PUTs the whole file to a URL that already grants the write. Transient
-   * failures are retried in main with backoff; a rejection is terminal.
-   */
-  file(request: WireUploadRequest): Promise<void>;
-
   /**
    * Uploads the file as a sequence of parts and closes the session, following
    * the Amazon S3 multipart specification (per-part ETags collected into a

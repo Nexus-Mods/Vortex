@@ -8,7 +8,7 @@ import { assert, describe, it, expect, beforeAll, afterAll, beforeEach } from "v
 
 import { defaultRetryStrategy } from "../transfer/retry";
 import { createTestServer, type TestServer } from "./test-server";
-import { uploadFile, type UploadOptions } from "./transport";
+import { createSession, putFile, type UploadOptions } from "./transport";
 
 let server: TestServer;
 let tmpDir: string;
@@ -35,12 +35,23 @@ async function writeTempFile(contents: Buffer): Promise<string> {
   return filePath;
 }
 
-describe("uploadFile", () => {
+/** PUTs the whole file to one URL, as a single-part transfer would. */
+async function putWholeFile(
+  url: string,
+  filePath: string,
+  fileSize: number,
+  options?: UploadOptions,
+): Promise<void> {
+  const session = createSession(options);
+  await putFile(session, url, filePath, fileSize, "whole file", undefined, options?.onProgress);
+}
+
+describe("putFile", () => {
   it("PUTs the whole file with a declared content-length", async () => {
     const contents = randomBytes(64 * 1024);
     const filePath = await writeTempFile(contents);
 
-    await uploadFile(`${server.baseUrl}/single`, filePath, contents.length, fastRetry);
+    await putWholeFile(`${server.baseUrl}/single`, filePath, contents.length, fastRetry);
 
     expect(server.requests).toHaveLength(1);
     const request = server.requests[0]!;
@@ -62,7 +73,7 @@ describe("uploadFile", () => {
       res.end();
     });
 
-    await uploadFile(`${server.baseUrl}/retry`, filePath, contents.length, fastRetry);
+    await putWholeFile(`${server.baseUrl}/retry`, filePath, contents.length, fastRetry);
 
     expect(server.requests).toHaveLength(2);
     // The stream is recreated per attempt, so the retry carries every byte.
@@ -77,7 +88,7 @@ describe("uploadFile", () => {
       res.end();
     });
 
-    const err = await uploadFile(`${server.baseUrl}/denied`, filePath, 128, fastRetry).catch(
+    const err = await putWholeFile(`${server.baseUrl}/denied`, filePath, 128, fastRetry).catch(
       (e: unknown) => e,
     );
 
@@ -90,7 +101,7 @@ describe("uploadFile", () => {
     const contents = randomBytes(128);
     const filePath = await writeTempFile(contents);
 
-    await uploadFile(`${server.baseUrl}/signed`, filePath, contents.length, {
+    await putWholeFile(`${server.baseUrl}/signed`, filePath, contents.length, {
       ...fastRetry,
       headers: {
         contentType: "application/octet-stream",
@@ -106,7 +117,7 @@ describe("uploadFile", () => {
   it("omits content-disposition when the caller supplies none", async () => {
     const filePath = await writeTempFile(randomBytes(64));
 
-    await uploadFile(`${server.baseUrl}/plain`, filePath, 64, fastRetry);
+    await putWholeFile(`${server.baseUrl}/plain`, filePath, 64, fastRetry);
 
     expect(server.requests[0]!.headers["content-disposition"]).toBeUndefined();
     // The default stays, for a URL whose signature does not cover it.
@@ -124,7 +135,7 @@ describe("uploadFile", () => {
       );
     });
 
-    const err = await uploadFile(`${server.baseUrl}/denied`, filePath, 128, fastRetry).catch(
+    const err = await putWholeFile(`${server.baseUrl}/denied`, filePath, 128, fastRetry).catch(
       (e: unknown) => e,
     );
 
@@ -142,7 +153,7 @@ describe("uploadFile", () => {
       res.end();
     });
 
-    const err = await uploadFile(
+    const err = await putWholeFile(
       `${server.baseUrl}/denied?X-Amz-Signature=secret`,
       filePath,
       128,
@@ -159,7 +170,7 @@ describe("uploadFile", () => {
     const filePath = await writeTempFile(contents);
 
     const transferred: number[] = [];
-    await uploadFile(`${server.baseUrl}/progress`, filePath, contents.length, {
+    await putWholeFile(`${server.baseUrl}/progress`, filePath, contents.length, {
       ...fastRetry,
       onProgress: (bytes) => transferred.push(bytes),
     });
@@ -182,7 +193,7 @@ describe("uploadFile", () => {
     });
 
     const transferred: number[] = [];
-    await uploadFile(`${server.baseUrl}/progress-retry`, filePath, contents.length, {
+    await putWholeFile(`${server.baseUrl}/progress-retry`, filePath, contents.length, {
       ...fastRetry,
       onProgress: (bytes) => transferred.push(bytes),
     });
@@ -208,7 +219,7 @@ describe("uploadFile", () => {
     });
 
     await expect(
-      uploadFile(`${server.baseUrl}/aborted`, filePath, 128, {
+      putWholeFile(`${server.baseUrl}/aborted`, filePath, 128, {
         ...fastRetry,
         abortSignal: controller.signal,
       }),

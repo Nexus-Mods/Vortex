@@ -2,18 +2,21 @@ import { VortexError } from "@vortex/shared";
 import { AbortError } from "got";
 import { assert, describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("./transport", () => ({ uploadFile: vi.fn() }));
 vi.mock("./s3Multipart", () => ({ uploadS3Multipart: vi.fn() }));
 
 import { UploadManager } from "./manager";
 import { uploadS3Multipart } from "./s3Multipart";
-import { uploadFile } from "./transport";
 
-const mockUploadFile = vi.mocked(uploadFile);
 const mockUploadMultipart = vi.mocked(uploadS3Multipart);
 
+const LAYOUT = {
+  partSizeBytes: 4096,
+  partPresignedUrls: ["https://s3.example.com/part1"],
+  completePresignedUrl: "https://s3.example.com/complete",
+};
+
 const request = (uploadId: number, fileSize = 4096) => ({
-  url: "https://s3.example.com/upload",
+  layout: LAYOUT,
   filePath: "/tmp/collection.7z",
   fileSize,
   uploadId,
@@ -26,9 +29,9 @@ const request = (uploadId: number, fileSize = 4096) => ({
 /** Holds the transfer open so the upload can be observed mid-flight. */
 function pendingTransfer() {
   let settle!: (err?: Error) => void;
-  let captured!: Parameters<typeof uploadFile>[3];
-  mockUploadFile.mockImplementation(
-    (_url, _filePath, _fileSize, options) =>
+  let captured!: Parameters<typeof uploadS3Multipart>[3];
+  mockUploadMultipart.mockImplementation(
+    (_layout, _filePath, _fileSize, options) =>
       new Promise<void>((resolve, reject) => {
         captured = options;
         settle = (err) => (err === undefined ? resolve() : reject(err));
@@ -46,14 +49,13 @@ describe("UploadManager", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     manager = new UploadManager({ userAgent: "Vortex/1.2.3" });
-    mockUploadFile.mockResolvedValue(undefined);
     mockUploadMultipart.mockResolvedValue(undefined);
   });
 
   describe("progress", () => {
     it("reports zero bytes for an upload that has just started", async () => {
       const transfer = pendingTransfer();
-      const promise = manager.upload(request(1));
+      const promise = manager.uploadMultipart(request(1));
 
       expect(manager.getProgress(1)).toEqual({ transferred: 0, total: 4096 });
 
@@ -63,7 +65,7 @@ describe("UploadManager", () => {
 
     it("reports the bytes the transfer records", async () => {
       const transfer = pendingTransfer();
-      const promise = manager.upload(request(1));
+      const promise = manager.uploadMultipart(request(1));
 
       transfer.options()?.onProgress?.(1024);
       expect(manager.getProgress(1)).toEqual({ transferred: 1024, total: 4096 });
@@ -74,7 +76,7 @@ describe("UploadManager", () => {
 
     it("accepts a count lower than the last, as a retried transfer produces", async () => {
       const transfer = pendingTransfer();
-      const promise = manager.upload(request(1));
+      const promise = manager.uploadMultipart(request(1));
 
       transfer.options()?.onProgress?.(3000);
       transfer.options()?.onProgress?.(0);
@@ -86,7 +88,7 @@ describe("UploadManager", () => {
 
     it("hands out a copy, so a later report cannot mutate a reading", async () => {
       const transfer = pendingTransfer();
-      const promise = manager.upload(request(1));
+      const promise = manager.uploadMultipart(request(1));
 
       const reading = manager.getProgress(1);
       transfer.options()?.onProgress?.(2048);
@@ -98,15 +100,15 @@ describe("UploadManager", () => {
     });
 
     it("reports nothing once the upload has settled", async () => {
-      await manager.upload(request(1));
+      await manager.uploadMultipart(request(1));
 
       expect(manager.getProgress(1)).toBeUndefined();
     });
 
     it("reports nothing once a failed upload has settled", async () => {
-      mockUploadFile.mockRejectedValue(new Error("Server returned 403"));
+      mockUploadMultipart.mockRejectedValue(new Error("Server returned 403"));
 
-      await expect(manager.upload(request(1))).rejects.toThrow();
+      await expect(manager.uploadMultipart(request(1))).rejects.toThrow();
       expect(manager.getProgress(1)).toBeUndefined();
     });
   });
@@ -114,7 +116,7 @@ describe("UploadManager", () => {
   describe("cancellation", () => {
     it("aborts the signal the transfer is listening on", async () => {
       const transfer = pendingTransfer();
-      const promise = manager.upload(request(1));
+      const promise = manager.uploadMultipart(request(1));
 
       const { abortSignal } = transfer.options() ?? {};
       expect(abortSignal?.aborted).toBe(false);
@@ -129,7 +131,7 @@ describe("UploadManager", () => {
 
     it("reports a canceled upload as such, not as a network failure", async () => {
       const transfer = pendingTransfer();
-      const promise = manager.upload(request(1));
+      const promise = manager.uploadMultipart(request(1));
 
       manager.cancel(1);
       transfer.settle()(new AbortError({ options: {} } as never));
@@ -144,9 +146,9 @@ describe("UploadManager", () => {
         url: "https://s3.example.com/upload",
         statusCode: 403,
       });
-      mockUploadFile.mockRejectedValue(failure);
+      mockUploadMultipart.mockRejectedValue(failure);
 
-      await expect(manager.upload(request(1))).rejects.toBe(failure);
+      await expect(manager.uploadMultipart(request(1))).rejects.toBe(failure);
     });
 
     it("ignores a cancel for an upload that is not running", () => {
@@ -156,12 +158,12 @@ describe("UploadManager", () => {
 
   it("keeps concurrent uploads apart", async () => {
     const first = pendingTransfer();
-    const promiseA = manager.upload(request(1, 100));
+    const promiseA = manager.uploadMultipart(request(1, 100));
     const optionsA = first.options();
     const settleA = first.settle();
 
     const second = pendingTransfer();
-    const promiseB = manager.upload(request(2, 200));
+    const promiseB = manager.uploadMultipart(request(2, 200));
 
     optionsA?.onProgress?.(10);
     second.options()?.onProgress?.(20);
@@ -181,10 +183,10 @@ describe("UploadManager", () => {
   });
 
   it("passes the user agent and signed headers to the transfer", async () => {
-    await manager.upload(request(1));
+    await manager.uploadMultipart(request(1));
 
-    expect(mockUploadFile).toHaveBeenCalledWith(
-      "https://s3.example.com/upload",
+    expect(mockUploadMultipart).toHaveBeenCalledWith(
+      LAYOUT,
       "/tmp/collection.7z",
       4096,
       expect.objectContaining({
@@ -195,27 +197,5 @@ describe("UploadManager", () => {
         },
       }),
     );
-  });
-
-  it("tracks a multipart upload the same way", async () => {
-    await manager.uploadMultipart({
-      layout: {
-        partSizeBytes: 100,
-        partPresignedUrls: ["https://s3.example.com/part1"],
-        completePresignedUrl: "https://s3.example.com/complete",
-      },
-      filePath: "/tmp/big.7z",
-      fileSize: 100,
-      uploadId: 5,
-      headers: undefined,
-    });
-
-    expect(mockUploadMultipart).toHaveBeenCalledWith(
-      expect.objectContaining({ partSizeBytes: 100 }),
-      "/tmp/big.7z",
-      100,
-      expect.objectContaining({ userAgent: "Vortex/1.2.3" }),
-    );
-    expect(manager.getProgress(5)).toBeUndefined();
   });
 });

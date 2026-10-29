@@ -48,7 +48,7 @@ beforeEach(() => {
 describe("auth headers", () => {
   it("sends the apikey header when apiKey is provided", async () => {
     mockData({ id: "upload-1" });
-    await makeClient({ apiKey: "my-api-key" }).createUpload(1024, "file.zip");
+    await makeClient({ apiKey: "my-api-key" }).createMultipartUpload(1024, "file.zip");
 
     expect(lastRequest().headers.get("apikey")).toBe("my-api-key");
     expect(lastRequest().headers.get("authorization")).toBeNull();
@@ -56,14 +56,17 @@ describe("auth headers", () => {
 
   it("sends the Authorization header when bearerToken is provided", async () => {
     mockData({ id: "upload-1" });
-    await makeClient({ apiKey: undefined, bearerToken: "my-jwt" }).createUpload(1024, "file.zip");
+    await makeClient({ apiKey: undefined, bearerToken: "my-jwt" }).createMultipartUpload(
+      1024,
+      "file.zip",
+    );
 
     expect(lastRequest().headers.get("authorization")).toBe("Bearer my-jwt");
   });
 
   it("prefers bearerToken over apiKey", async () => {
     mockData({ id: "upload-1" });
-    await makeClient({ apiKey: "my-api-key", bearerToken: "my-jwt" }).createUpload(
+    await makeClient({ apiKey: "my-api-key", bearerToken: "my-jwt" }).createMultipartUpload(
       1024,
       "file.zip",
     );
@@ -74,38 +77,9 @@ describe("auth headers", () => {
 
   it("sends the user agent from options", async () => {
     mockData({ id: "upload-1" });
-    await makeClient({ userAgent: "Vortex/1.2.3" }).createUpload(1024, "file.zip");
+    await makeClient({ userAgent: "Vortex/1.2.3" }).createMultipartUpload(1024, "file.zip");
 
     expect(lastRequest().headers.get("user-agent")).toBe("Vortex/1.2.3");
-  });
-});
-
-describe("createUpload", () => {
-  it("POSTs size and filename to /uploads and returns the unwrapped data", async () => {
-    mockData({ id: "upload-1", presigned_url: "https://s3/upload" });
-
-    const result = await makeClient().createUpload(1024, "file.zip");
-
-    expect(lastRequest().method).toBe("POST");
-    expect(lastRequest().url).toBe(`${BASE_URL}/uploads`);
-    expect(await lastBody()).toEqual({ size_bytes: 1024, filename: "file.zip" });
-    expect(result.id).toBe("upload-1");
-    expect(result.presigned_url).toBe("https://s3/upload");
-  });
-
-  it("throws V3ApiError on an error response", async () => {
-    fetchMocker.mockResponseOnce(
-      JSON.stringify({
-        type: "about:blank",
-        title: "Bad Request",
-        status: 400,
-        detail: "Invalid size",
-        instance: "/uploads",
-      }),
-      { status: 400, headers: { "content-type": "application/problem+json" } },
-    );
-
-    await expect(makeClient().createUpload(-1, "file.zip")).rejects.toThrow(V3ApiError);
   });
 });
 
@@ -119,6 +93,21 @@ describe("createMultipartUpload", () => {
     expect(lastRequest().url).toBe(`${BASE_URL}/uploads/multipart`);
     expect(await lastBody()).toEqual({ size_bytes: 8_000_000, filename: "big.zip" });
     expect(result.id).toBe("upload-2");
+  });
+
+  it("throws V3ApiError on an error response", async () => {
+    fetchMocker.mockResponseOnce(
+      JSON.stringify({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid size",
+        instance: "/uploads/multipart",
+      }),
+      { status: 400, headers: { "content-type": "application/problem+json" } },
+    );
+
+    await expect(makeClient().createMultipartUpload(-1, "file.zip")).rejects.toThrow(V3ApiError);
   });
 });
 
@@ -337,7 +326,7 @@ describe("error fallback", () => {
   it("builds a V3ApiError from the HTTP response when the body is not problem+json", async () => {
     fetchMocker.mockResponseOnce("<html>502 Bad Gateway</html>", { status: 502 });
 
-    const promise = makeClient().createUpload(1024, "file.zip");
+    const promise = makeClient().createMultipartUpload(1024, "file.zip");
 
     await expect(promise).rejects.toBeInstanceOf(V3ApiError);
     await expect(promise).rejects.toMatchObject({
