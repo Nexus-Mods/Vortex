@@ -28,6 +28,7 @@ import { PaginationDemo } from "@/ui/components/pagination/Pagination.demo";
 import { PickerDemo } from "@/ui/components/picker/Picker.demo";
 import { PillDemo } from "@/ui/components/pill/Pill.demo";
 import { PopoverDemo } from "@/ui/components/popover/Popover.demo";
+import { SplitButtonDemo } from "@/ui/components/split_button/SplitButton.demo";
 import { TableDemo } from "@/ui/components/table/Table.demo";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
@@ -116,12 +117,18 @@ export const DesignSystemPage = ({ active }: IDesignSystemPageProps) => {
                 <TabBar>
                   <TabButton name="Button" panelId="buttons" />
 
+                  <TabButton name="Split button" panelId="split-button" />
+
                   <TabButton name="View picker" panelId="view-picker" />
                 </TabBar>
 
                 <div className="mt-6">
                   <TabPanel id="buttons">
                     <ButtonDemo />
+                  </TabPanel>
+
+                  <TabPanel id="split-button">
+                    <SplitButtonDemo />
                   </TabPanel>
 
                   <TabPanel id="view-picker">
