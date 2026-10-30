@@ -185,6 +185,11 @@ declare module "../../types/IExtensionContext" {
     "will-remove-mod": (gameId: string, modId: string, options?: IRemoveModOptions) => void;
     // every deployments map below is keyed by mod type id
     "will-purge": (profileId: string, deployments: Record<string, IDeployedFile[]>) => void;
+    "will-deploy": (
+      profileId: string,
+      deployments: Record<string, IDeployedFile[]>,
+      options?: IDeployOptions,
+    ) => void;
     "did-purge": (profileId: string) => void;
     "did-deploy": (
       profileId: string,
