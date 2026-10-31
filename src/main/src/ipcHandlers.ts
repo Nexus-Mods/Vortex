@@ -11,6 +11,7 @@ import { VortexError } from "@vortex/shared";
 import {
   fromWire,
   toWire,
+  XDG,
   type FileSystem,
   type QualifiedPath,
   type StatResult,
@@ -48,9 +49,11 @@ import {
 
 import { diffFiles as bsdiffDiff, patchFiles as bsdiffPatch } from "./bsdiff/host";
 import { relaunch } from "./cli";
+import { LinuxPathProvider } from "./filesystem/paths.linux";
 import { getVortexPath } from "./getVortexPath";
 import { hashFile } from "./hash/host";
 import { betterIpcMain } from "./ipc";
+import { setLinuxAutoStart } from "./linuxAutoStart";
 import { openUrl, openFile, showItemInFolder } from "./open";
 import { extraWebViews } from "./webview";
 
@@ -576,7 +579,18 @@ export function init(fs: FileSystem) {
 
   betterIpcMain.handle(
     "app:setLoginItemSettings",
-    (_event: IpcMainInvokeEvent, settings: Settings) => {
+    async (_event: IpcMainInvokeEvent, settings: Settings) => {
+      if (process.platform === "linux") {
+        // Electron login items only exist on Windows/macOS
+        const command = [
+          process.env.APPIMAGE ?? process.execPath,
+          ...(process.defaultApp ? [app.getAppPath()] : []),
+          ...(settings.args ?? []),
+        ];
+        const configHome = await new LinuxPathProvider().fromBase(XDG.config);
+        await setLinuxAutoStart(fs, configHome, settings.openAtLogin ?? false, command);
+        return;
+      }
       app.setLoginItemSettings(settings);
     },
   );
