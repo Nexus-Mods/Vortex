@@ -1,5 +1,6 @@
 export * from "./constants";
 export * from "./Debouncer";
+export * from "./desktopFileEscaping";
 export * from "./errors";
 export * from "./types/ids";
 export * from "./types/stagingFolders";

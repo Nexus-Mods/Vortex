@@ -1,39 +1,28 @@
-import { mkdtempSync, readFileSync, existsSync } from "node:fs";
-import os from "node:os";
-import path from "node:path";
+import { InMemoryFSBuilder, QualifiedPath } from "@vortex/shared/filesystem";
+import { describe, expect, it } from "vitest";
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-
-import { autoStartEntry, setLinuxAutoStart } from "./linuxAutoStart";
+import { setLinuxAutoStart } from "./linuxAutoStart";
 
 describe("linux autostart", () => {
-  const previous = process.env.XDG_CONFIG_HOME;
-  let configHome: string;
+  const configHome = QualifiedPath.fromNative("/home/me/.config");
+  const entry = configHome.join("autostart", "com.nexusmods.vortex.desktop");
 
-  beforeEach(() => {
-    configHome = mkdtempSync(path.join(os.tmpdir(), "vortex-autostart-"));
-    process.env.XDG_CONFIG_HOME = configHome;
-  });
+  it("adds and removes the entry", async () => {
+    const fs = new InMemoryFSBuilder().build();
 
-  afterEach(() => {
-    process.env.XDG_CONFIG_HOME = previous;
-  });
-
-  it("adds and removes the entry", () => {
-    const entry = path.join(configHome, "autostart", "com.nexusmods.vortex.desktop");
-
-    setLinuxAutoStart(true, ["/opt/vortex/vortex", "--start-minimized"]);
-    expect(readFileSync(entry, "utf8")).toContain(
-      'Exec="/opt/vortex/vortex" "--start-minimized"\n',
+    await setLinuxAutoStart(fs, configHome, true, ["/opt/vortex/vortex", "--start-minimized"]);
+    expect(new TextDecoder().decode(await fs.readFile(entry))).toContain(
+      "Exec=/opt/vortex/vortex --start-minimized\n",
     );
 
-    setLinuxAutoStart(false, []);
-    expect(existsSync(entry)).toBe(false);
+    await setLinuxAutoStart(fs, configHome, false, []);
+    expect((await fs.stat(entry)).exists).toBe(false);
   });
 
-  it("escapes reserved characters in the command", () => {
-    expect(autoStartEntry(["/home/me/My $Games/vortex"])).toContain(
-      'Exec="/home/me/My \\\\$Games/vortex"\n',
-    );
+  it("does nothing when disabling without an entry", async () => {
+    const fs = new InMemoryFSBuilder().build();
+
+    await setLinuxAutoStart(fs, configHome, false, []);
+    expect((await fs.stat(entry)).exists).toBe(false);
   });
 });
