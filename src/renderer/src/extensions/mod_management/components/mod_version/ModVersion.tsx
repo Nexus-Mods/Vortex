@@ -28,9 +28,14 @@ interface IModVersionProps {
   onRemove?: (alternativeId: string) => void;
 }
 
-/** A version and its variant, as the legacy table named each option; an empty variant is none. */
+/**
+ * A version and its variant, as the legacy table named each option; an empty variant is none.
+ * Names its namespace, as callers pass their own `t`.
+ */
 const versionLabel = (mod: IMod, t: TFunction) =>
-  `${mod.attributes?.version ?? ""} (${mod.attributes?.variant || t("default")})`;
+  `${mod.attributes?.version ?? ""} (${
+    mod.attributes?.variant || t("modsTable::version::defaultVariant", { ns: "mod_management" })
+  })`;
 
 /** What the cell shows, as text: the version, with its variant while there's a choice. */
 export const modVersionText = (mod: IMod, alternatives: IMod[] | undefined, t: TFunction) =>
@@ -90,7 +95,7 @@ const ModVersionPicker = ({
   onSelect,
   onRemove,
 }: IModVersionProps & { alternatives: IMod[] }) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const label = versionLabel(mod, t);
 
   // One of a choice each, the one in use checked; each removable, the one in use too.
@@ -103,7 +108,7 @@ const ModVersionPicker = ({
         onRemove === undefined
           ? undefined
           : {
-              label: t("Remove version"),
+              label: t("modsTable::version::removeVersion"),
               icon: "do_not_disturb_on",
               onClick: () => onRemove(alternative.id),
             },
@@ -120,7 +125,7 @@ const ModVersionPicker = ({
               <div className="nxm-tooltip-content space-y-0.5">
                 <p>{label}</p>
 
-                <p className="text-neutral-subdued">{t("Switch version or variant")}</p>
+                <p className="text-neutral-subdued">{t("modsTable::version::switchVersion")}</p>
               </div>
             }
             disabled={open}
@@ -130,6 +135,7 @@ const ModVersionPicker = ({
               aria-haspopup="menu"
               brand="neutral"
               className="min-w-0 flex-1 justify-between px-1 [&>span]:truncate"
+              data-testid="mod-version-picker"
               rightIcon="keyboard_arrow_down"
               size="sm"
             >
@@ -142,7 +148,11 @@ const ModVersionPicker = ({
             className="nxm-popover-panel-dropdown"
           >
             {({ close }) => (
-              <PopoverMenu actions={[options]} label={t("Versions")} onSelect={close} />
+              <PopoverMenu
+                actions={[options]}
+                label={t("modsTable::version::versions")}
+                onSelect={close}
+              />
             )}
           </PopoverPanel>
         </>

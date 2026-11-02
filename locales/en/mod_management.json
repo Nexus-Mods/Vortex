@@ -36,5 +36,45 @@
     "useForAll_other": "Use this folder for all remaining mods ({{count}} more)",
     "cancel": "Cancel",
     "install": "Install"
+  },
+  "modsTable": {
+    "version": {
+      "defaultVariant": "default",
+      "switchVersion": "Switch version or variant",
+      "versions": "Versions",
+      "removeVersion": "Remove version"
+    },
+    "update": {
+      "updateTo": "Update to {{version}}",
+      "sourceUnknown": {
+        "title": "Mod source unknown",
+        "body": "Vortex doesn't know where this mod came from, so it can't check for updates."
+      },
+      "notIdentified": {
+        "title": "Mod not identified",
+        "body": "Vortex can't identify this mod, so some features, including checking for updates and adding it to Collections, won't work."
+      },
+      "chooseFile": {
+        "title": "Choose update file",
+        "body": "Vortex can't determine the correct update automatically."
+      }
+    },
+    "collectionRevision": {
+      "updateTo": "Update to {{revision}}"
+    },
+    "changelog": {
+      "view": "View changelog",
+      "title": "Changelog",
+      "newestVersion": "Newest Version",
+      "loading": "Loading changelog",
+      "loadFailed": "Couldn't load the changelog",
+      "noneForRevision": "No changelog for this revision"
+    },
+    "rowActions": {
+      "install": "Install",
+      "installDescription": "Installs the mod into your game, where it can be enabled or disabled.",
+      "installing": "Installing…",
+      "uninstalling": "Uninstalling…"
+    }
   }
 }
