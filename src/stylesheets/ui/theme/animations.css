@@ -1,7 +1,8 @@
 @theme {
     --animate-deferred-fade-in: deferred-fade-in var(--default-transition-duration) linear 250ms
         both;
-    --animate-fade-in: fade-in var(--default-transition-duration) ease-out both;
+    /* Slower than a transition, so a fade reads as one; reduced motion turns it off (motion.css). */
+    --animate-fade-in: fade-in 300ms ease-out both;
 
     @keyframes fade-in {
         from {

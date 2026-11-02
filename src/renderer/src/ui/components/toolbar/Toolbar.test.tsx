@@ -204,6 +204,20 @@ describe("ToolbarGroup", () => {
       expect(screen.getByRole("button", { name: "Plain" })).toHaveClass("nxm-button-neutral");
     });
 
+    it("marks an action's button with a pip when asked, as for a filter that's on", () => {
+      render(
+        <ToolbarGroup
+          actions={[
+            { label: "Filter", icon: { path: "mdi-test" }, hasPip: true },
+            { label: "Plain", icon: { path: "mdi-test" } },
+          ]}
+        />,
+      );
+
+      expect(screen.getByRole("button", { name: "Filter" })).toHaveClass("nxm-button-pip");
+      expect(screen.getByRole("button", { name: "Plain" })).not.toHaveClass("nxm-button-pip");
+    });
+
     it("applies a custom brand", () => {
       render(
         <ToolbarGroup actions={[{ label: "Info", icon: { path: "mdi-test" }, brand: "info" }]} />,

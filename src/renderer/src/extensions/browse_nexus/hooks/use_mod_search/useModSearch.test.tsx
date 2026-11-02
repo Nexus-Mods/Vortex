@@ -52,7 +52,7 @@ const fail = (message: string) =>
 /** Answers the first two requests: the trending page showing, and the all-time one counted. */
 const respondToStart = async (trending: number, allTime: number) => {
   await waitFor(() => expect(mocks.pending).toHaveLength(2));
-  await respond("trending", trending);
+  await respond("endorsements", trending);
   await respond("new", allTime);
 };
 
@@ -79,7 +79,7 @@ describe("useModSearch", () => {
 
     expect(mocks.pending.map((request) => request.search)).toContainEqual({
       filters: { games: ["skyrimspecialedition"], time_range: "7" },
-      sort: { field: "trending", direction: "desc" },
+      sort: { field: "endorsements", direction: "desc" },
       pagination: { page: 1, page_size: MODS_PER_PAGE },
     });
 
@@ -107,19 +107,19 @@ describe("useModSearch", () => {
     await respondToStart(45, 900);
     act(() => result.current.setCurrentPage(2));
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond("trending", 45);
+    await respond("endorsements", 45);
 
-    act(() => result.current.setSort({ field: "endorsements", timeRange: "28" }));
+    act(() => result.current.setSort({ field: "popular" }));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search).toMatchObject({
-      filters: { time_range: "28" },
-      sort: { field: "endorsements", direction: "desc" },
+      filters: { time_range: "7" },
+      sort: { field: "popular", direction: "desc" },
       pagination: { page: 1 },
     });
     expect(result.current.currentPage).toBe(1);
     expect(result.current.canResetSort).toBe(true);
-    await respond("endorsements", 30);
+    await respond("popular", 30);
     await waitFor(() => expect(result.current.totalCount).toBe(30));
     expect(result.current.allModsTotal).toBe(900);
   });
@@ -131,7 +131,7 @@ describe("useModSearch", () => {
 
     act(() => result.current.selectPreset("popular"));
 
-    expect(result.current.sort).toEqual({ field: "popular", direction: "desc", timeRange: "7" });
+    expect(result.current.sort).toEqual({ field: "popular", direction: "desc" });
     expect(result.current.canResetSort).toBe(false);
 
     act(() => result.current.selectPreset("trending"));
@@ -140,8 +140,100 @@ describe("useModSearch", () => {
 
     act(() => result.current.resetSort());
 
-    expect(result.current.sort).toEqual({ field: "trending", direction: "desc", timeRange: "7" });
+    expect(result.current.sort).toEqual({ field: "endorsements", direction: "desc" });
     expect(result.current.canResetSort).toBe(false);
+  });
+
+  it("filters the open preset by time from the first page, as a filter rather than its sort", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setCurrentPage(2));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("endorsements", 45);
+
+    act(() => result.current.setFilters({ timeRange: "28" }));
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(mocks.pending[0].search).toMatchObject({
+      filters: { time_range: "28" },
+      sort: { field: "endorsements", direction: "desc" },
+      pagination: { page: 1 },
+    });
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.filters).toEqual({ timeRange: "28" });
+    expect(result.current.canResetSort).toBe(false);
+  });
+
+  it("counts a time range as a filter, and none over all time", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+
+    expect(result.current.activeFilterCount).toBe(1);
+
+    act(() => result.current.selectPreset("new"));
+
+    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.activeFilterCount).toBe(0);
+  });
+
+  it("counts only the filters that differ from the open preset's own", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+
+    expect(result.current.changedFilterCount).toBe(0);
+
+    act(() => result.current.setFilters({ timeRange: "all" }));
+
+    expect(result.current.changedFilterCount).toBe(1);
+
+    act(() => result.current.selectPreset("new"));
+
+    expect(result.current.changedFilterCount).toBe(0);
+  });
+
+  it("puts the open preset's filters back as they came, leaving its sort", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setSort({ direction: "asc" }));
+    act(() => result.current.setFilters({ timeRange: "365" }));
+
+    act(() => result.current.resetFilters());
+
+    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.changedFilterCount).toBe(0);
+    expect(result.current.sort.direction).toBe("asc");
+  });
+
+  it("resets the open preset's sort without touching its filters", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setFilters({ timeRange: "365" }));
+    act(() => result.current.setSort({ direction: "asc" }));
+
+    act(() => result.current.resetSort());
+
+    expect(result.current.sort.direction).toBe("desc");
+    expect(result.current.filters).toEqual({ timeRange: "365" });
+  });
+
+  it("puts a preset's own time range back whenever it's picked, even the one open", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setFilters({ timeRange: "1" }));
+
+    act(() => result.current.selectPreset("new"));
+
+    expect(result.current.filters).toEqual({ timeRange: "all" });
+
+    act(() => result.current.setFilters({ timeRange: "28" }));
+    act(() => result.current.selectPreset("trending"));
+
+    expect(result.current.filters).toEqual({ timeRange: "7" });
+
+    act(() => result.current.resetFilters());
+    act(() => result.current.selectPreset("trending"));
+
+    expect(result.current.filters).toEqual({ timeRange: "7" });
   });
 
   it("keeps the last total while the next page loads", async () => {
@@ -160,7 +252,7 @@ describe("useModSearch", () => {
     await respondToStart(45, 900);
     act(() => result.current.setCurrentPage(2));
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond("trending", 45);
+    await respond("endorsements", 45);
 
     act(() => result.current.selectPreset("new"));
 
@@ -195,7 +287,7 @@ describe("useModSearch", () => {
     act(() => result.current.retry());
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search.pagination.page).toBe(2);
-    await respond("trending", 45);
+    await respond("endorsements", 45);
 
     await waitFor(() => expect(result.current.error).toBeNull());
     expect(result.current.mods).toEqual([{ id: "45" }]);

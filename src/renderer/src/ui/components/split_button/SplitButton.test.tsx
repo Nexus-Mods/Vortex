@@ -88,6 +88,40 @@ describe("SplitButton", () => {
     expect(onRename).toHaveBeenCalled();
   });
 
+  it("opens a panel from the main part, leaving the second part to run on its own", async () => {
+    const onRemove = vi.fn();
+    const onPick = vi.fn();
+    render(
+      <SplitButton
+        action={remove(onRemove)}
+        panel={({ close }) => (
+          <PopoverMenu
+            actions={[[{ label: "7 days", onClick: onPick }]]}
+            label="Dates"
+            onSelect={close}
+          />
+        )}
+        panelRole="menu"
+      >
+        Date added
+      </SplitButton>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove filter" }));
+
+    expect(onRemove).toHaveBeenCalled();
+    expect(screen.queryByRole("menu")).toBeNull();
+
+    const main = screen.getByRole("button", { name: "Date added" });
+    expect(main).toHaveAttribute("aria-haspopup", "menu");
+
+    await userEvent.click(main);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "7 days" }));
+
+    expect(onPick).toHaveBeenCalled();
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
   it("gives both parts the brand, appearance and size it's given, as their own buttons", () => {
     const { container } = render(
       <SplitButton

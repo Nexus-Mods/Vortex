@@ -79,7 +79,10 @@ const widthSignature = (actions: IToolbarAction[]): string =>
 const controlProps = (action: IToolbarAction) => ({
   appearance: "weak" as const,
   brand: action.brand ?? "neutral",
-  className: action.active ? "nxm-button-active" : undefined,
+  className: joinClasses({
+    "nxm-button-active": action.active,
+    "nxm-button-pip": action.hasPip,
+  }),
   "data-testid": action.testId,
   description: action.description,
   disabled: action.disabled,
