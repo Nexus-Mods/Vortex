@@ -33,8 +33,6 @@ export type IToolbarAction = IMenuAction & {
   showLabel?: boolean;
   /** Said under the label in its tooltip on the bar, where there's more to say than its name. */
   description?: string;
-  /** Marks its button on the bar with a dot, such as while a filter it opens is on. */
-  hasPip?: boolean;
   /** A `data-testid` for its control on the bar. */
   testId?: string;
   /** For a panel action: filled with a way to open its panel, while it's on the bar. */

@@ -7,8 +7,8 @@ import type { IMenuAction } from "./PopoverMenu.types";
 import { PopoverMenuItemControl } from "./PopoverMenuItemControl";
 
 /**
- * What a row shows, either kind: its icon and label, then its control and pin, its check
- * while it's one of a choice, and its chevron, or the room for one.
+ * What a row shows, either kind: its icon, with a pip when asked, and label, then its control and
+ * pin, its check while it's one of a choice, and its chevron, or the room for one.
  */
 export const PopoverMenuItemContent = ({
   action,
@@ -24,7 +24,7 @@ export const PopoverMenuItemContent = ({
   onSelect: () => void;
 }) => (
   <>
-    <IconSlot className="nxm-dropdown-item-icon" icon={action.icon} />
+    <IconSlot className="nxm-dropdown-item-icon" hasPip={action.hasPip} icon={action.icon} />
 
     <span className="nxm-dropdown-item-label">{action.label}</span>
 

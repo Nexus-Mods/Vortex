@@ -197,6 +197,13 @@ describe("Icon", () => {
       expect(screen.getByTestId("node").parentElement).toHaveClass("nxm-icon", "slot");
     });
 
+    it("puts a pip on a box around the icon when asked", () => {
+      const { container } = render(<IconSlot hasPip className="slot" icon="settings" />);
+      expect(container.querySelector("[data-symbol='settings']")?.parentElement).toHaveClass(
+        "nxm-icon-pip",
+      );
+    });
+
     it("draws nothing for no icon", () => {
       const { container } = render(<IconSlot className="slot" />);
       expect(container).toBeEmptyDOMElement();

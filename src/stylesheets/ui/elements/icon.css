@@ -10,6 +10,26 @@
 }
 
 @layer components {
+    /* Around an icon, a dot off its top left, where a button's pip sits from its icon. On a box
+       around it, as an icon clips what overflows it and a symbol draws its glyph in `::before`. */
+    .nxm-icon-pip {
+        position: relative;
+        display: flex;
+        flex-shrink: 0;
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: calc(var(--spacing) * -0.75);
+            left: calc(var(--spacing) * -0.75);
+            width: var(--spacing);
+            height: var(--spacing);
+            border-radius: 9999px;
+            background-color: var(--color-info-moderate);
+            pointer-events: none;
+        }
+    }
+
     /* An icon: a symbol from the font, an SVG path, or an element in an icon's place. */
     .nxm-icon {
         display: inline-flex;

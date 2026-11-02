@@ -75,9 +75,9 @@ interface IModFiltersProps {
 }
 
 /**
- * The filter button's menu for Browse's mods: Dates, opening a submenu of time ranges with the
- * one on checked, a note that more are coming, and, while any differs from the view's own, a
- * reset that puts them back.
+ * The filter button's menu for Browse's mods: Dates, with a pip while a time range is on, opening
+ * a submenu of time ranges with the one on checked, a note that more are coming, and, while any
+ * differs from the view's own, a reset that puts them back.
  */
 export const ModFilters = ({
   filters,
@@ -96,6 +96,7 @@ export const ModFilters = ({
             {
               label: t("Dates"),
               icon: "calendar_today",
+              hasPip: filters.timeRange !== "all",
               panelRole: "menu",
               panel: ({ close, dismiss }) => (
                 <ModTimeRangeMenu

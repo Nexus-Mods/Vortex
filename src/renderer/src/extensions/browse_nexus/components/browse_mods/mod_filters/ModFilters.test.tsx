@@ -93,4 +93,20 @@ describe("ModFilters", () => {
 
     expect(screen.queryByRole("button", { name: /^Reset/ })).not.toBeInTheDocument();
   });
+
+  it("marks Dates with a pip while a time range is on", async () => {
+    await openFilters({ timeRange: "7" }, 0);
+
+    expect(
+      screen.getByRole("menuitem", { name: "Dates" }).querySelector(".nxm-icon-pip"),
+    ).toBeInTheDocument();
+  });
+
+  it("leaves Dates unmarked over all time", async () => {
+    await openFilters({ timeRange: "all" }, 0);
+
+    expect(
+      screen.getByRole("menuitem", { name: "Dates" }).querySelector(".nxm-icon-pip"),
+    ).not.toBeInTheDocument();
+  });
 });
