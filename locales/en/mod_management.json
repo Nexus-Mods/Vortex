@@ -140,6 +140,67 @@
       "installMod": "Install {{name}}",
       "enabled": "{{name}} enabled",
       "menu": "{{name}} actions"
+    },
+    "cancel": "Cancel",
+    "actions": {
+      "addToCollection": "Add to Collection",
+      "removeFromCollection": "Remove from Collection",
+      "install": "Install",
+      "unpack": "Unpack (as-is)",
+      "reinstall": "Reinstall",
+      "uninstall": "Uninstall",
+      "removeRelated": "Remove related",
+      "remove": "Remove",
+      "checkForUpdates": "Check for updates",
+      "applyCollectionRules": "Apply collection rules",
+      "editCollection": "Edit collection",
+      "manageFileConflicts": "Manage file conflicts",
+      "installRecommendations": "Install recommendations",
+      "openInFileManager": "Open in file manager",
+      "openArchive": "Open archive",
+      "openOnNexusMods": "Open on Nexus Mods",
+      "combine": "Combine",
+      "track": "Track",
+      "untrack": "Untrack",
+      "refreshContent": "Refresh content",
+      "fixMissingIds": "Fix missing IDs",
+      "generateModReport": "Generate mod report"
+    },
+    "collectionGroup": {
+      "view": "View collection",
+      "remove": "Remove"
+    },
+    "collectionHoverCard": {
+      "modCount": "{{count}} mod",
+      "modCount_plural": "{{count}} mods"
+    },
+    "disableShared": {
+      "title": "Disable mods?",
+      "shared": "{{count}} mod is shared with: {{collections}}",
+      "shared_plural": "{{count}} mods are shared with: {{collections}}",
+      "caution": "Disabling them may affect those collections. Keep the shared mods enabled to avoid issues.",
+      "keepShared": "Keep shared mods enabled",
+      "disableAll": "Disable all mods"
+    },
+    "deleteView": {
+      "title": "Delete view",
+      "body": "Are you sure you want to delete \"{{name}}\"? This won't delete any mods, but the view and its customisations will be permanently removed.",
+      "confirm": "Delete view"
+    },
+    "viewName": {
+      "createTitle": "Create a new view",
+      "renameTitle": "Rename view",
+      "createIntro": "Give your view a name. You can customise its columns, grouping and filters after creating it.",
+      "renameIntro": "Give your view a new name. Your columns, grouping and filters won't change.",
+      "label": "Name view",
+      "placeholder": "e.g. Author view",
+      "create": "Create view",
+      "rename": "Rename view"
     }
+  },
+  "modsDropTarget": {
+    "title": "Drop files to add mods",
+    "archives": "Archives (.zip, .rar, .7z) are added as mods to your list.",
+    "files": "Individual files and folders are packaged into mods before being added."
   }
 }
