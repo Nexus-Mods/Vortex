@@ -35,8 +35,9 @@ interface IModGalleryProps {
  * strip, picks it. The strip always holds at least five slots, each a placeholder until its
  * thumbnail fades in over it, one after another; the empty ones pulse while more pictures load.
  * For a user who blurs adult content, an adult mod's pictures are the server's blurred ones,
- * through `AdultAwareImage`, so the unblurred ones are never fetched. The large picture is never a scroll anchor: a new one
- * sits higher or lower in its 16:9 frame, and the browser would scroll the details to follow it.
+ * through `AdultAwareImage`, so the unblurred ones are never fetched. The large picture is never a
+ * scroll anchor: a new one sits higher or lower in its 16:9 frame, and the browser would scroll
+ * the details to follow it.
  */
 export const ModGallery = ({ images, isAdult, isLoading, onPick }: IModGalleryProps) => {
   const { t } = useTranslation();

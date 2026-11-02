@@ -21,7 +21,7 @@ interface IModSortOptionsProps {
 /** The sorts by a date, ordered by age rather than size. */
 const DATE_FIELDS: readonly ModSortField[] = ["new", "updated"];
 
-/** How the mods are ordered, in words for what they're sorted by: by age for dates, else by size. */
+/** How the mods are ordered, in words: by age for dates, else by size. */
 const orderLabel = (t: TFunction, { field, direction }: IModSort) => {
   if (DATE_FIELDS.includes(field)) {
     return direction === "asc" ? t("Oldest first") : t("Newest first");
