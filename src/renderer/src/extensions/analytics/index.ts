@@ -12,6 +12,7 @@ import { nexusGamesProm } from "../nexus_integration/util";
 import { zoomFromState } from "../settings_interface/utils/zoom";
 import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
+import { initGameFolderCheck, registerGameFolderCheckAction } from "./gameFolderCheck";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
 import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
@@ -28,8 +29,11 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "analytics"], settingsReducer);
   context.registerReducer(["persistent", "analyticsTelemetry"], telemetryReducer);
   context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
+  registerGameFolderCheckAction(context);
 
   context.once(() => {
+    initGameFolderCheck(context.api);
+
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
     const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
     // `?? true` because state persisted before the setting existed has no value for it.

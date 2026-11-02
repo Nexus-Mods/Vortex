@@ -275,6 +275,16 @@ try {
         betterIpcRenderer.invoke("hash:compute", algorithm, filePath),
     },
 
+    gameFolderCheck: {
+      start: (input) => betterIpcRenderer.invoke("game-folder-check:start", input),
+      cancel: (gameId) => betterIpcRenderer.send("game-folder-check:cancel", gameId),
+      onSubmit: (handler) =>
+        betterIpcRenderer.callback("game-folder-check:submit", (_collationId, result) =>
+          handler(result),
+        ),
+      runManual: (input) => betterIpcRenderer.invoke("game-folder-check:run-manual", input),
+    },
+
     diag: {
       // Raw ipcRenderer because betterIpcRenderer has no sendSync helper.
       fatal: (message: string) => {

@@ -19,6 +19,7 @@ import { readGameVersions } from "../../gamemode_management/util/getGameVersion"
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
+import { normPath } from "./normPath";
 
 /**
  * The gog install block from the raw goggame-<productId>.info content. The fields
@@ -79,13 +80,6 @@ interface InstallRecord {
   install: InstallBlock | null;
   failureReason: string | null;
 }
-
-/** Windows and POSIX disagree about separators and case; matches either way. */
-const normPath = (value: string): string =>
-  value
-    .replace(/[/\\]+/g, "/")
-    .replace(/\/$/, "")
-    .toLowerCase();
 
 const asPayload = (
   base: {
