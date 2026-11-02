@@ -19,11 +19,7 @@ const byKey = <Destination extends { destinationPath: string }>(
 ) =>
   new Map(destinations.map((destination) => [pathKeyOf(destination.destinationPath), destination]));
 
-/**
- * Compares the resolver's lockfile with what a deployment's manifests say it wrote, by destination
- * and origin. Contents are not compared, and the lockfile's generated files are left out: the
- * manifests list mod files only.
- */
+/** Counts how the lockfile's mod files differ from a deployment's, by destination and origin. */
 export function compareWithDeployment(
   lockfile: Lockfile,
   deployed: readonly DeployedOrigin[],

@@ -70,10 +70,7 @@ export type EventPlannerPlan = {
   payload: PlannerPlanPayload;
 };
 
-/**
- * contracts/telemetry/planner_plan/v1.schema.json. Counts, durations and kinds only, never a path
- * or a name; null is a figure the run did not measure.
- */
+/** contracts/telemetry/planner_plan/v1.schema.json; null is a figure the run did not measure. */
 export type PlannerPlanPayload = {
   game_id: string;
   mods: number | null;
@@ -104,7 +101,7 @@ export type ManifestDiffReason =
   | "missing-from-deploy"
   | "different-winner";
 
-/** The lockfile against what the deployment wrote: mismatch counts by reason code. */
+/** How the lockfile differs from what the deployment wrote, counted by reason code. */
 export type ManifestDiff = {
   verdict: "pass" | "fail";
   counts: Record<ManifestDiffReason, number>;

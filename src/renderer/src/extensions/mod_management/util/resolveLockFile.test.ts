@@ -15,7 +15,6 @@ vi.mock("../../nexus_integration/util", async (importOriginal) => ({
   ...(await importOriginal<typeof NexusIntegrationUtil>()),
   nexusGames: () => [{ domain_name: "skyrimspecialedition", id: 1704 }],
 }));
-// whether and how a report is sent is the sender's own tests' concern; these check what the hook reports
 vi.mock("../../analytics/utils/plannerPlanEvent", async (importOriginal) => ({
   ...(await importOriginal<typeof PlannerPlanEvent>()),
   emitPlannerPlanEvent: vi.fn(() => Promise.resolve()),

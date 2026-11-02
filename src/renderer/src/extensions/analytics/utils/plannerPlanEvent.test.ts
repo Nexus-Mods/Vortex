@@ -16,7 +16,7 @@ vi.mock("../../nexus_integration/nexusV3Client", () => ({
 }));
 vi.mock("../mixpanel/numericGameId", () => ({ numericNexusGameId: vi.fn() }));
 
-// the harness starts logged in; analytics consent comes from its own settings reducer
+// analytics consent; the harness starts logged in
 const ANALYTICS_BINDING: IHarnessReducerBinding = {
   path: ["settings", "analytics"],
   reducer: analyticsSettingsReducer,

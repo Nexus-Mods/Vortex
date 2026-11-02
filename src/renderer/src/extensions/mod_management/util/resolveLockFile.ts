@@ -138,7 +138,7 @@ function planAndLogOperations(
   return { planMs, counts };
 }
 
-/** Compares the lockfile with what the deployment's manifests say it wrote, and logs the result. */
+/** Compares the lockfile with the deployment's manifests and logs the result. */
 async function compareWithManifests(
   api: IExtensionApi,
   gameId: string,

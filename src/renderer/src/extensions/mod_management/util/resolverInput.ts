@@ -349,10 +349,7 @@ interface ListedEntry {
   deployPath: string;
 }
 
-/**
- * The entries of a game's deployment manifests that trace to an installed mod, in deploy order.
- * An unreadable manifest, or an entry of no installed mod, is left out with a note.
- */
+/** A game's manifest entries of installed mods, in deploy order; the rest are noted. */
 async function listManifestEntries(
   api: IExtensionApi,
   gameMode: VortexGameId,
@@ -397,10 +394,7 @@ async function listManifestEntries(
 /** A destination a deployment wrote, and where its file comes from. */
 export type DeployedOrigin = FileOrigin & { destinationPath: string };
 
-/**
- * Where each destination a game's deployment manifests list comes from, one per destination as
- * the seed keeps it. Nothing is hashed or looked up in staging.
- */
+/** The origin of each destination a game's deployment manifests list, one per destination. */
 export async function gatherDeployedOrigins(
   api: IExtensionApi,
   gameMode: VortexGameId,

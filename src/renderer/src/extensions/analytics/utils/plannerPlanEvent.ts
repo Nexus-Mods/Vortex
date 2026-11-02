@@ -9,10 +9,10 @@ import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexus
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
 
-/** The figures one plan run measured; the payload sends any it did not as null. */
+/** The figures a plan run measured. */
 export type PlannerPlanFigures = Partial<Omit<PlannerPlanPayload, "game_id">>;
 
-/** The planner_plan payload for a game's plan run. */
+/** The planner_plan payload for a plan run; figures it did not measure are null. */
 export function plannerPlanPayload(
   nexusGameId: string,
   figures: PlannerPlanFigures,
@@ -36,15 +36,12 @@ export function plannerPlanPayload(
   };
 }
 
-// the games each session has reported a plan run for; one api serves one session
+// the games reported per session; one api serves one session
 const reportedGames = new WeakMap<IExtensionApi, Set<string>>();
 
 /**
- * Submits the planner_plan telemetry event for a game's first plan run of the session. A no-op
- * unless the user consented to analytics and is logged in, the game is a Nexus game and the
- * planner telemetry flag is on; `figuresOf` runs only for a run that is sent. Fire and forget:
- * failures and rejections are logged, never thrown, so the plan this reports never depends on
- * telemetry.
+ * Sends a game's first plan run of the session, with consent, a login, a Nexus game id and the
+ * planner telemetry flag on; `figuresOf` runs only for a run that is sent. Failures are logged.
  */
 export async function emitPlannerPlanEvent(
   api: IExtensionApi,
@@ -58,7 +55,7 @@ export async function emitPlannerPlanEvent(
 
   const nexusGameId = numericNexusGameId(internalGameId);
   const reported = reportedGames.get(api) ?? new Set<string>();
-  // the flag comes last: each read reports an evaluation
+  // each flag read reports an evaluation
   if (
     nexusGameId === null ||
     reported.has(internalGameId) ||
