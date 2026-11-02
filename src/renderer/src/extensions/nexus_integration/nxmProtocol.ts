@@ -503,7 +503,14 @@ export class NxmProtocol {
 
   async #modDownload(url: NXMUrl, pageId: string): Promise<IFoundDownload> {
     return {
-      urls: await this.#nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId),
+      urls: await this.#nexus.getDownloadURLs(
+        url.modId,
+        url.fileId,
+        url.key,
+        url.expires,
+        pageId,
+        url.source,
+      ),
       ids: { modId: url.modId, fileId: url.fileId },
     };
   }
