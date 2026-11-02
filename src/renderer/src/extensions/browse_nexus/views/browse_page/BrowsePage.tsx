@@ -23,24 +23,17 @@ interface IBrowsePageProps {
 
 /**
  * Browsing a game's mods and collections, a tab each in the header. The open tab is session
- * state, so a link from elsewhere, such as Discover more collections, can pick it, and it goes
- * back to the default whenever the page is left, so the page opens on the mods each time. The
- * mods are behind the `laz-vortex-browse-mods` flag, and say they're coming soon while it's off,
- * when the page opens on the collections instead. The tab picked outlasts changing game;
- * everything under it starts over. Counts the mods coming into view, whether by opening the page
- * on them or switching tab.
+ * state, so it's kept while the page is left and a link from elsewhere, such as Discover more
+ * collections, can pick it. The mods are behind the `laz-vortex-browse-mods` flag, and say
+ * they're coming soon while it's off, when the page opens on the collections instead. The tab
+ * picked outlasts changing game; everything under it starts over. Counts the mods coming into
+ * view, whether by opening the page on them or switching tab.
  */
 export const BrowsePage = ({ active, api }: IBrowsePageProps) => {
   const gameId = useSelector(activeGameId);
   const isModsEnabled = !!useFlag("laz-vortex-browse-mods");
   const section = useSelector((state: IState) => state.session.browse.section);
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (!active) {
-      dispatch(setBrowseSection(undefined));
-    }
-  }, [active, dispatch]);
 
   const supportsCollections = useSelector(
     (state: IState) => !gameId || !isTierZeroManagedGame(state, VortexGameId(gameId)),

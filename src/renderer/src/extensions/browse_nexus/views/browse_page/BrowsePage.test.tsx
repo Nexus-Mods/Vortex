@@ -225,7 +225,7 @@ describe("BrowsePage", () => {
     expect(tracked()).toEqual([]);
   });
 
-  it("opens on the section another page asked for, and goes back to the mods once left", () => {
+  it("opens on the section another page asked for, and keeps it when left", () => {
     store.dispatch(setBrowseSection("collections"));
 
     const { rerender } = render(<BrowsePage active api={api} />, { wrapper });
@@ -233,12 +233,9 @@ describe("BrowsePage", () => {
     expect(screen.getByText("Collections panel")).toBeTruthy();
 
     rerender(<BrowsePage active={false} api={api} />);
-
-    expect(store.getState().session.browse.section).toBeUndefined();
-
     rerender(<BrowsePage active api={api} />);
 
-    expect(screen.getByText("Mods panel")).toBeTruthy();
+    expect(screen.getByText("Collections panel")).toBeTruthy();
   });
 
   it("opens on the section asked for while it was away", () => {
@@ -252,20 +249,9 @@ describe("BrowsePage", () => {
     expect(screen.getByText("Collections panel")).toBeTruthy();
   });
 
-  it("opens on the mods each time, whichever tab was picked last", () => {
+  it("reopens on the tab picked last", () => {
     const { rerender } = render(<BrowsePage active api={api} />, { wrapper });
     fireEvent.click(screen.getByRole("tab", { name: /Collections/ }));
-
-    rerender(<BrowsePage active={false} api={api} />);
-    rerender(<BrowsePage active api={api} />);
-
-    expect(screen.getByText("Mods panel")).toBeTruthy();
-  });
-
-  it("opens on the collections each time while browsing mods is flagged off", () => {
-    mocks.isModsEnabled = false;
-    const { rerender } = render(<BrowsePage active api={api} />, { wrapper });
-    fireEvent.click(screen.getByRole("tab", { name: "Mods" }));
 
     rerender(<BrowsePage active={false} api={api} />);
     rerender(<BrowsePage active api={api} />);
