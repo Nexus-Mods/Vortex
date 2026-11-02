@@ -19,6 +19,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
+import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModTags } from "./mod_tags/ModTags";
 import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton";
@@ -44,6 +45,7 @@ const OWNS_LEFT = 'input, textarea, select, [contenteditable="true"], [role="tab
 /**
  * The picked mod's details: gallery, stats, author, pills and description. Shows the
  * search's result at once, and the tags and description once the mod's own query has them.
+ * Counts opening the mod page, and the gallery's picks and paging.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
   ({ api, mod, gallery, onPick, onFocusList }, ref) => {
@@ -53,6 +55,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const [tab, setTab] = useState("details");
     const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
     const created = useRelativeTime(new Date(mod.created_at).getTime(), t);
+    const tracker = useBrowseModsTracker();
 
     /**
      * Left leaves the details for the list, unless what's focused has used the key or uses Left
@@ -114,11 +117,12 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                 aria-label={t("Open mod page")}
                 brand="neutral"
                 leftIcon="open_in_new"
-                onClick={() =>
+                onClick={() => {
                   window.api.shell.openUrl(
                     [NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/"),
-                  )
-                }
+                  );
+                  tracker.trackModPageOpened({ mod_uid: mod.id });
+                }}
               />
             </Tooltip>
           </div>
@@ -135,7 +139,16 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                   isAdult={mod.adult}
                   isLoading={details.isPending}
                   key={mod.id}
-                  onPick={onPick}
+                  onPage={(direction) => tracker.trackGalleryPaged({ mod_uid: mod.id, direction })}
+                  onPick={(image, index, input) => {
+                    onPick(image);
+                    tracker.trackGalleryImageSelected({
+                      mod_uid: mod.id,
+                      image_index: index + 1,
+                      image_count: gallery.length,
+                      input,
+                    });
+                  }}
                 />
 
                 <div className="@container border-y border-stroke-weak py-4">

@@ -30,6 +30,8 @@ interface IBrowseSectionsProps {
   api: IExtensionApi;
   /** Whether the mods are browsable, or only say they're coming soon. */
   isModsEnabled: boolean;
+  /** Whether the mods are on screen: the page open on their tab. */
+  isModsShown: boolean;
   /** Whether Vortex can handle collections for the game, and so gives them a tab. */
   supportsCollections: boolean;
 }
@@ -42,6 +44,7 @@ interface IBrowseSectionsProps {
 export const BrowseSections = ({
   api,
   isModsEnabled,
+  isModsShown,
   supportsCollections,
 }: IBrowseSectionsProps) => {
   const { t } = useTranslation();
@@ -82,7 +85,11 @@ export const BrowseSections = ({
         ])}
         id="mods"
       >
-        {isModsEnabled ? <BrowseMods api={api} search={mods} /> : <ModsComingSoon api={api} />}
+        {isModsEnabled ? (
+          <BrowseMods api={api} isShown={isModsShown} search={mods} />
+        ) : (
+          <ModsComingSoon api={api} />
+        )}
       </TabPanel>
 
       {supportsCollections && (

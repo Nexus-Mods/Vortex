@@ -6,12 +6,20 @@ import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisp
 import { SplitButton, SplitButtonAction } from "@/ui/components/split_button/SplitButton";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
 import { Typography } from "@/ui/components/typography/Typography";
 import { type IViewPickerView, ViewPicker } from "@/ui/components/view_picker/ViewPicker";
 import { PageContent } from "@/views/components/Page/PageContent";
 
 // import { Search } from "../../../../gamemode_management/components/search/Search";
-import type { IModSearch, ModPreset } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { TimeRangeSource } from "../../../hooks/browse_mods_tracking/browseModsTracker";
+import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
+import {
+  type IModFilters,
+  type IModSearch,
+  type ModPreset,
+  PRESET_SORTS,
+} from "../../../hooks/use_mod_search/useModSearch.hook";
 import { ModFilters, ModTimeRangeMenu, timeRanges } from "../mod_filters/ModFilters";
 import { ModSortOptions } from "../mod_sort_options/ModSortOptions";
 
@@ -29,15 +37,44 @@ interface IBrowseModsBarProps {
  * The bar over Browse's mods: views, results count, the time range while one is on, then filter
  * and view options. The time range's label opens the time ranges and its ✕ clears it. Custom
  * views and search are commented out until views can be saved and the search takes a term.
+ * Counts each change, and the toolbar's clicks.
  */
 export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
   const { t } = useTranslation();
   // const [search, setSearch] = useState("");
+  const tracker = useBrowseModsTracker();
+  const toolbarTracking = useToolbarAnalytics("browse_mods");
+  const view = search.preset;
 
   /** Picks a view, sorting the mods by its preset. */
   const selectView = (id: string) => {
     if (isPreset(id)) {
       search.selectPreset(id);
+      tracker.trackViewSelected({ view: id, previous_view: view });
+    }
+  };
+
+  /** Changes some filters, from wherever they were changed; any already as asked are left be. */
+  const changeFilters = (change: Partial<IModFilters>, source: TimeRangeSource) => {
+    const changed: Partial<IModFilters> = Object.fromEntries(
+      Object.entries(change).filter(
+        ([key, value]) => value !== search.filters[key as keyof IModFilters],
+      ),
+    );
+
+    if (!Object.keys(changed).length) {
+      return;
+    }
+
+    search.setFilters(changed);
+
+    if (changed.timeRange) {
+      tracker.trackTimeRangeChanged({
+        view,
+        time_range: changed.timeRange,
+        previous_time_range: search.filters.timeRange,
+        source,
+      });
     }
   };
 
@@ -59,6 +96,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
   ];
 
   const filter: IToolbarAction = {
+    id: "filter",
     label: t("Filter"),
     icon: "filter_list",
     hasPip: !!search.activeFilterCount,
@@ -67,8 +105,11 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
       <ModFilters
         changedCount={search.changedFilterCount}
         filters={search.filters}
-        onChange={search.setFilters}
-        onReset={search.resetFilters}
+        onChange={(change) => changeFilters(change, "filter_menu")}
+        onReset={() => {
+          search.resetFilters();
+          tracker.trackFiltersReset({ view, filter_count: search.changedFilterCount });
+        }}
         onSelect={dismiss}
       />
     ),
@@ -79,8 +120,35 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
   const displayOptions = useDisplayOptionsAction({
     label: t("View options"),
     canReset: search.canResetSort,
-    children: <ModSortOptions sort={search.sort} onChange={search.setSort} />,
-    onReset: search.resetSort,
+    children: (
+      <ModSortOptions
+        sort={search.sort}
+        onChange={(change) => {
+          const sort = { ...search.sort, ...change };
+
+          if (sort.field === search.sort.field && sort.direction === search.sort.direction) {
+            return;
+          }
+
+          search.setSort(change);
+          tracker.trackSortChanged({
+            view,
+            sort_field: sort.field,
+            sort_direction: sort.direction,
+            is_reset: false,
+          });
+        }}
+      />
+    ),
+    onReset: () => {
+      search.resetSort();
+      tracker.trackSortChanged({
+        view,
+        sort_field: PRESET_SORTS[view].field,
+        sort_direction: PRESET_SORTS[view].direction,
+        is_reset: true,
+      });
+    },
   });
 
   return (
@@ -109,7 +177,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
                 <SplitButtonAction
                   icon="close"
                   label={t("Remove time range filter")}
-                  onClick={() => search.setFilters({ timeRange: "all" })}
+                  onClick={() => changeFilters({ timeRange: "all" }, "applied_filter_clear")}
                 />
               }
               appearance="subdued"
@@ -118,7 +186,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
               panel={({ close }) => (
                 <ModTimeRangeMenu
                   timeRange={search.filters.timeRange}
-                  onChange={search.setFilters}
+                  onChange={(timeRange) => changeFilters({ timeRange }, "applied_filter")}
                   onSelect={close}
                 />
               )}
@@ -131,8 +199,8 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
 
           {/* <Search placeholder={t("Search mods...")} value={search} onChange={setSearch} /> */}
 
-          <Toolbar>
-            <ToolbarGroup actions={[filter, displayOptions]} />
+          <Toolbar tracking={toolbarTracking}>
+            <ToolbarGroup actions={[filter, { ...displayOptions, id: "view-options" }]} />
           </Toolbar>
         </div>
       </PageContent>

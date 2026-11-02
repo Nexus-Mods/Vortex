@@ -25,8 +25,8 @@ export const timeRanges = (
 interface IModTimeRangeMenuProps {
   /** The time range that's on, which the menu checks. */
   timeRange: ModTimeRange;
-  /** Changes the filters to the time range picked. */
-  onChange: (change: Partial<IModFilters>) => void;
+  /** Told the time range picked. */
+  onChange: (timeRange: ModTimeRange) => void;
   /** Dismisses the menu, and whatever opened it, once a time range has been picked. */
   onSelect: () => void;
   /** Goes back to the menu this one opened from, for a submenu. */
@@ -51,7 +51,7 @@ export const ModTimeRangeMenu = ({
         timeRanges(t).map(({ value, label }) => ({
           label,
           checked: timeRange === value,
-          onClick: () => onChange({ timeRange: value }),
+          onClick: () => onChange(value),
         })),
       ]}
       label={t("Dates")}
@@ -101,7 +101,7 @@ export const ModFilters = ({
               panel: ({ close, dismiss }) => (
                 <ModTimeRangeMenu
                   timeRange={filters.timeRange}
-                  onChange={onChange}
+                  onChange={(timeRange) => onChange({ timeRange })}
                   onClose={close}
                   onSelect={dismiss}
                 />

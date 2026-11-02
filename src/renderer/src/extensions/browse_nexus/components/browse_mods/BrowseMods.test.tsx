@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { Mod } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
+import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
@@ -61,20 +62,25 @@ vi.mock("./mod_list/ModList", () => ({
     mods,
     activeModId,
     listRef,
+    isError,
+    onRetry,
     onSelectMod,
   }: {
     mods: ModSummary[];
     activeModId: string;
     listRef: React.RefObject<HTMLDivElement>;
-    onSelectMod: (id: string) => void;
+    isError: boolean;
+    onRetry: () => void;
+    onSelectMod: (id: string, input: string) => void;
   }) => (
     <div ref={listRef}>
+      {isError && <button onClick={onRetry}>Retry</button>}
       {mods.map((mod) => (
         <button
           data-mod-card
           key={mod.id}
           tabIndex={mod.id === activeModId ? 0 : -1}
-          onClick={() => onSelectMod(mod.id)}
+          onClick={() => onSelectMod(mod.id, "pointer")}
         >
           {mod.name}
         </button>
@@ -99,18 +105,42 @@ const image = (name: string) => ({
 const mod = (id: string, thumbnail_url: string | null = null) =>
   ({ id, name: `Mod ${id}`, thumbnail_url }) as ModSummary;
 
-const search = (mods: ModSummary[], loading = false) => ({ mods, loading }) as IModSearch;
+const search = (mods: ModSummary[], loading = false, overrides: Partial<IModSearch> = {}) =>
+  ({
+    mods,
+    loading,
+    error: null,
+    retry: vi.fn(),
+    preset: "trending",
+    sort: { field: "endorsements", direction: "desc" },
+    filters: { timeRange: "7" },
+    currentPage: 1,
+    ...overrides,
+  }) as unknown as IModSearch;
 
-const renderComponent = (initial: IModSearch) => {
+/** What the search's events say it was. */
+const searched = {
+  view: "trending",
+  sort_field: "endorsements",
+  sort_direction: "desc",
+  time_range: "7",
+};
+
+const renderComponent = (initial: IModSearch, isInitiallyShown = true) => {
   const api = {} as IExtensionApi;
+  const tracking = browseModsTracking();
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
-  const wrap = (search: IModSearch) => (
+  const wrap = (search: IModSearch, isShown: boolean) => (
     <QueryClientProvider client={client}>
-      <BrowseMods api={api} search={search} />
+      <BrowseMods api={api} isShown={isShown} search={search} />
     </QueryClientProvider>
   );
-  const { rerender } = render(wrap(initial));
-  return { rerender: (next: IModSearch) => rerender(wrap(next)) };
+  const { rerender } = render(wrap(initial, isInitiallyShown), { wrapper: tracking.wrapper });
+  return {
+    rerender: (next: IModSearch, isShown = true) => rerender(wrap(next, isShown)),
+    propertiesOf: (eventName: string) =>
+      tracking.tracked(eventName).map(({ properties }) => properties),
+  };
 };
 
 describe("BrowseMods", () => {
@@ -194,5 +224,49 @@ describe("BrowseMods", () => {
     await userEvent.click(screen.getByRole("button", { name: "Back to the list" }));
 
     expect(screen.getByRole("button", { name: "Mod 2" })).toHaveFocus();
+  });
+
+  it("counts picking a mod, with its place across the pages", async () => {
+    const { propertiesOf } = renderComponent(
+      search([mod("1"), mod("2")], false, { currentPage: 2 }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+
+    expect(propertiesOf("browse_mods_mod_selected")).toEqual([
+      { mod_uid: "2", view: "trending", position: 22, input: "pointer" },
+    ]);
+  });
+
+  it("counts a search that comes back empty once, not while it loads", () => {
+    const { rerender, propertiesOf } = renderComponent(search([], true));
+    expect(propertiesOf("browse_mods_no_results")).toEqual([]);
+
+    rerender(search([]));
+    rerender(search([]));
+
+    expect(propertiesOf("browse_mods_no_results")).toEqual([searched]);
+  });
+
+  it("counts retrying a search that failed", async () => {
+    const failed = search([], false, { error: new Error("offline") });
+    const { propertiesOf } = renderComponent(failed);
+
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(failed.retry).toHaveBeenCalled();
+    expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, page: 1 }]);
+    expect(propertiesOf("browse_mods_no_results")).toEqual([]);
+  });
+
+  it("counts an empty search only once the user can see it", () => {
+    const { rerender, propertiesOf } = renderComponent(search([]), false);
+
+    expect(propertiesOf("browse_mods_no_results")).toEqual([]);
+
+    rerender(search([]), true);
+
+    expect(propertiesOf("browse_mods_no_results")).toEqual([searched]);
   });
 });

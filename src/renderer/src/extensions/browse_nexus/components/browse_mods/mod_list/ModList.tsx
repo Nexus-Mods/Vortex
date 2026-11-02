@@ -8,6 +8,7 @@ import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { rovingFocus } from "@/ui/utils/roving_focus/rovingFocus";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
+import type { SelectionInput } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { MAX_PAGES, MODS_PER_PAGE } from "../../../hooks/use_mod_search/useModSearch.hook";
 import { ModCard } from "../mod_card/ModCard";
 import { ModCardSkeleton } from "../mod_card/ModCard.skeleton";
@@ -17,8 +18,8 @@ interface IModListProps {
   mods: ModSummary[];
   /** The id of the mod the details pane shows, which may be on another page. */
   activeModId: string | undefined;
-  /** Shows another mod in the details pane, by id. */
-  onSelectMod: (id: string) => void;
+  /** Shows another mod in the details pane, by id, told how it was picked. */
+  onSelectMod: (id: string, input: SelectionInput) => void;
   /** The page showing, from 1. */
   currentPage: number;
   /** Moves to another page. */
@@ -79,7 +80,7 @@ export const ModList = ({
     }
 
     event.preventDefault();
-    onSelectMod(mods[index].id);
+    onSelectMod(mods[index].id, "keyboard");
     cards[index].focus();
   };
 
@@ -93,7 +94,7 @@ export const ModList = ({
     const isOnCard = rovingFocus(event, {
       orientation: "vertical",
       itemSelector: "[data-mod-card]",
-      onMove: (index) => onSelectMod(mods[index].id),
+      onMove: (index) => onSelectMod(mods[index].id, "keyboard"),
     });
 
     if (isOnCard || hasModifierKey(event)) {
@@ -151,7 +152,7 @@ export const ModList = ({
               key={mod.id}
               mod={mod}
               tabIndex={mod.id === tabStop ? 0 : -1}
-              onSelect={() => onSelectMod(mod.id)}
+              onSelect={() => onSelectMod(mod.id, "pointer")}
             />
           ))}
         </Listing>

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Mod } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
+import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
@@ -21,6 +22,7 @@ vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
   }),
 }));
 
+import type { IGalleryImage } from "./mod_gallery/ModGallery";
 import { ModDetails } from "./ModDetails";
 
 const summary = {
@@ -57,18 +59,37 @@ const respond = (mod: Mod) => act(async () => mocks.pending.shift()!.resolve(mod
 /** Fails the waiting mod query. */
 const fail = () => act(async () => mocks.pending.shift()!.reject(new Error("offline")));
 
-const renderComponent = (mod = summary, onFocusList = vi.fn()) => {
+/** One of a mod's pictures, in each size. */
+const image = (name: string) =>
+  ({
+    id: name,
+    url: `${name}.png`,
+    thumbnail_url: `${name}-thumb.png`,
+    large_thumbnail_url: `${name}-large.png`,
+    blurred_thumbnail_url: `${name}-blurred.png`,
+    blurred_large_thumbnail_url: `${name}-blurred-large.png`,
+  }) as unknown as IGalleryImage;
+
+let tracking: ReturnType<typeof browseModsTracking>;
+
+/** The properties of the events of one name. */
+const propertiesOf = (eventName: string) =>
+  tracking.tracked(eventName).map(({ properties }) => properties);
+
+const renderComponent = (mod = summary, onFocusList = vi.fn(), gallery: IGalleryImage[] = []) => {
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
+  tracking = browseModsTracking();
   render(
     <QueryClientProvider client={client}>
       <ModDetails
         api={{} as IExtensionApi}
-        gallery={[]}
+        gallery={gallery}
         mod={mod}
         onFocusList={onFocusList}
         onPick={vi.fn()}
       />
     </QueryClientProvider>,
+    { wrapper: tracking.wrapper },
   );
   return client;
 };
@@ -240,5 +261,71 @@ describe("ModDetails", () => {
     await userEvent.keyboard(keys);
 
     expect(onFocusList).not.toHaveBeenCalled();
+  });
+
+  it("counts opening the mod page", async () => {
+    const openUrl = vi.fn();
+    vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+    renderComponent();
+
+    await userEvent.click(screen.getByRole("button", { name: "Open mod page" }));
+
+    expect(openUrl).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/1");
+    expect(propertiesOf("browse_mods_mod_page_opened")).toEqual([{ mod_uid: "1704-1" }]);
+    vi.unstubAllGlobals();
+  });
+
+  it("counts picking a picture in the gallery", async () => {
+    renderComponent(summary, vi.fn(), [image("a"), image("b")]);
+
+    await userEvent.click(screen.getAllByRole("button", { name: /^Image/ })[1]);
+
+    expect(propertiesOf("browse_mods_gallery_image_selected")).toEqual([
+      { mod_uid: "1704-1", image_index: 2, image_count: 2, input: "pointer" },
+    ]);
+  });
+
+  it("counts picking a picture with the keys as the keyboard", async () => {
+    renderComponent(summary, vi.fn(), [image("a"), image("b")]);
+    act(() => screen.getAllByRole("button", { name: /^Image/ })[0].focus());
+
+    await userEvent.keyboard("{ArrowRight}");
+
+    expect(propertiesOf("browse_mods_gallery_image_selected")).toEqual([
+      { mod_uid: "1704-1", image_index: 2, image_count: 2, input: "keyboard" },
+    ]);
+  });
+
+  it("counts paging the gallery's strip, and which way", async () => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(private readonly onResize: () => void) {}
+        observe = () => this.onResize();
+        disconnect = () => undefined;
+      },
+    );
+    const sizes = { scrollWidth: 1000, clientWidth: 200 };
+    const restore = Object.entries(sizes).map(([key, value]) => {
+      const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, key);
+      Object.defineProperty(HTMLElement.prototype, key, { configurable: true, get: () => value });
+      return () => original && Object.defineProperty(HTMLElement.prototype, key, original);
+    });
+    const { scrollBy } = HTMLElement.prototype;
+    HTMLElement.prototype.scrollBy = vi.fn();
+
+    try {
+      renderComponent(summary, vi.fn(), ["a", "b", "c", "d", "e", "f"].map(image));
+
+      await userEvent.click(await screen.findByRole("button", { name: "Later images" }));
+
+      expect(propertiesOf("browse_mods_gallery_paged")).toEqual([
+        { mod_uid: "1704-1", direction: "forward" },
+      ]);
+    } finally {
+      restore.forEach((undo) => undo());
+      HTMLElement.prototype.scrollBy = scrollBy;
+      vi.unstubAllGlobals();
+    }
   });
 });
