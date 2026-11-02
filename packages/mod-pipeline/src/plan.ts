@@ -1,3 +1,5 @@
+import { QualifiedPath } from "@nexusmods/paths";
+
 import type { DiskEntry, DiskScan } from "./diskScan";
 import {
   FileSourceKind,
@@ -7,7 +9,7 @@ import {
   type Lockfile,
   type FileEntry,
 } from "./lockfile";
-import { folderKeyOf, pathKeyOf } from "./pathKey";
+import { AbsolutePathSchema, folderKeyOf, INVALID_RELATIVE_PATH, pathKeyOf } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -29,7 +31,7 @@ export type Operation =
   | { kind: typeof OperationKind.Unlink; file: FileSource };
 
 const operationSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal(OperationKind.Backup), destinationPath: z.string() }),
+  z.object({ kind: z.literal(OperationKind.Backup), destinationPath: AbsolutePathSchema }),
   z.object({ kind: z.literal(OperationKind.Link), file: FileSourceSchema }),
   z.object({ kind: z.literal(OperationKind.Unlink), file: FileSourceSchema }),
 ]);
@@ -173,9 +175,6 @@ function destinationStateOf(
     : DestinationState.UpdatedOverEdited;
 }
 
-// an empty, "." or ".." segment, or a "\" or ":" anywhere
-const INVALID_RELATIVE_PATH = /(^|\/)\.{0,2}(\/|$)|[\\:]/;
-
 /** A lockfile's files by path key; throws when it lists one destination twice. */
 function filesByKey(files: readonly FileSource[]): Map<string, FileSource> {
   const fileByKey = new Map(files.map((file) => [pathKeyOf(file.destinationPath), file]));
@@ -206,13 +205,16 @@ function checkInputs(destinations: ReadonlyArray<[string, LockfileFilesAt]>, dis
   });
 }
 
-/** Each folder above a path, nearest first. */
-function parentFolders(path: string): string[] {
-  const folders: string[] = [];
-  for (let end = path.lastIndexOf("/"); end > 0; end = path.lastIndexOf("/", end - 1)) {
-    folders.push(path.slice(0, end));
+/**
+ * The folders above a path, nearest first.
+ * @yields each folder, up to and not including the root
+ */
+function* parentFolders(path: string): Generator<string> {
+  let folder = QualifiedPath.fromNative(path).parent();
+  while (folder.path !== folder.root) {
+    yield folder.path;
+    folder = folder.parent();
   }
-  return folders;
 }
 
 /**
@@ -225,18 +227,29 @@ function checkFolders(
   currentByKey: ReadonlyMap<string, FileSource>,
   leftOnDisk: ReadonlyMap<string, DiskEntry>,
 ): void {
+  // each folder is checked once; the folders above it were checked with it
+  const checkedFolders = new Set<string>();
   for (const { destinationPath } of currentByKey.values()) {
     for (const folder of parentFolders(destinationPath)) {
-      if (currentByKey.has(pathKeyOf(folder))) {
+      if (checkedFolders.has(folder)) {
+        break;
+      }
+      checkedFolders.add(folder);
+      const folderKey = pathKeyOf(folder);
+      if (currentByKey.has(folderKey)) {
         throw new Error(`${destinationPath} is inside ${folder}, another destination`);
       }
-      if (leftOnDisk.has(pathKeyOf(folder))) {
+      if (leftOnDisk.has(folderKey)) {
         throw new Error(`${folder} is a file or link on disk where a folder is needed`);
       }
     }
   }
   for (const entry of leftOnDisk.values()) {
     for (const folder of parentFolders(entry.path)) {
+      if (checkedFolders.has(folder)) {
+        break;
+      }
+      checkedFolders.add(folder);
       if (currentByKey.has(pathKeyOf(folder))) {
         throw new Error(`${folder} is a folder on disk`);
       }

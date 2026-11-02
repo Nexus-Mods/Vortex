@@ -1,4 +1,5 @@
 import { HashType, type FileEntry } from "./lockfile";
+import { AbsolutePathSchema } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -54,10 +55,10 @@ const bigintSchema = z.codec(z.string().regex(/^\d+$/), z.bigint(), {
 
 const diskScanSchema = z.object({
   takenAt: instantSchema,
-  roots: z.array(z.string()),
+  roots: z.array(AbsolutePathSchema),
   entries: z.array(
     z.object({
-      path: z.string(),
+      path: AbsolutePathSchema,
       kind: z.enum(DiskEntryKind),
       size: z.number(),
       modifiedTime: instantSchema,
