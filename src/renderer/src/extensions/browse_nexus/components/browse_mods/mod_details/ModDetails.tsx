@@ -22,6 +22,7 @@ import { useRelativeTime } from "@/util/useRelativeTime";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useDescriptionImagePlaceholders } from "../../../hooks/use_description_image_placeholders/useDescriptionImagePlaceholders.hook";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
+import { ModInstallButton } from "./mod_install_button/ModInstallButton";
 import { ModTags } from "./mod_tags/ModTags";
 import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton";
 
@@ -45,14 +46,16 @@ const OWNS_LEFT = 'input, textarea, select, [contenteditable="true"], [role="tab
 
 /**
  * The picked mod's details: gallery, stats, author, pills and description. Shows the
- * search's result at once, and the tags and description once the mod's own query has them.
- * Counts opening the mod page, and the gallery's picks and paging.
+ * search's result at once, and the tags and description once the mod's own query has them, with
+ * 1-click install of its primary file beside the mod page link. Counts opening the mod page, and
+ * the gallery's picks and paging.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
   ({ api, mod, gallery, onPick, onFocusList }, ref) => {
     const { t } = useTranslation();
     const details = useQuery(modQuery(api, mod.id));
     const tags = details.data?.tags ?? [];
+    const hasFailed = details.isError && !details.data;
     const [tab, setTab] = useState("details");
     const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
     const created = useRelativeTime(new Date(mod.created_at).getTime(), t);
@@ -113,22 +116,27 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
               {/* <TabButton name={t("Comments")} panelId="comments" /> */}
             </TabBar>
 
-            {/* <Button leftIcon="download" size="sm">
-                {t("1-click install")}
-              </Button> */}
+            <div className="flex items-center gap-x-2">
+              <Tooltip content={t("Open mod page")}>
+                <Button
+                  appearance="moderate"
+                  aria-label={t("Open mod page")}
+                  brand="neutral"
+                  leftIcon="open_in_new"
+                  onClick={() => {
+                    window.api.shell.openUrl(modPageUrl);
+                    tracker.trackModPageOpened({ mod_uid: mod.id });
+                  }}
+                />
+              </Tooltip>
 
-            <Tooltip content={t("Open mod page")}>
-              <Button
-                appearance="moderate"
-                aria-label={t("Open mod page")}
-                brand="neutral"
-                leftIcon="open_in_new"
-                onClick={() => {
-                  window.api.shell.openUrl(modPageUrl);
-                  tracker.trackModPageOpened({ mod_uid: mod.id });
-                }}
+              <ModInstallButton
+                api={api}
+                mod={mod}
+                isError={hasFailed}
+                primaryFile={details.data?.primary_file_version}
               />
-            </Tooltip>
+            </div>
           </div>
 
           <div
@@ -198,7 +206,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                 <div className="pt-6">
                   {details.isPending && <ModDetailsDescriptionSkeleton />}
 
-                  {details.isError && !details.data && (
+                  {hasFailed && (
                     <Typography appearance="subdued" brand="neutral-translucent">
                       {t("The mod's description couldn't be loaded.")}
                     </Typography>

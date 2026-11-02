@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { downloadAndInstallNexusFile } from "./downloadAndInstall";
+import { downloadAndInstallNexusFile, downloadNexusFile } from "./downloadAndInstall";
 
 const file = {
   gameDomain: GameDomain("skyrimspecialedition"),
@@ -66,5 +66,22 @@ describe("downloadAndInstallNexusFile", () => {
     const { api } = apiAnswering([null, "download-1"], [error]);
 
     await expect(downloadAndInstallNexusFile(api, file)).rejects.toBe(error);
+  });
+
+  it("only downloads the file, when asked to, resolving to the download", async () => {
+    const { emit, api } = apiAnswering([null, "download-1"], [null, "SkyUI-3863"]);
+
+    await expect(downloadNexusFile(api, file)).resolves.toBe("download-1");
+
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith(
+      "start-download",
+      ["nxm://skyrimspecialedition/mods/3863/files/1000172397"],
+      expect.anything(),
+      undefined,
+      expect.any(Function),
+      undefined,
+      { allowInstall: false },
+    );
   });
 });

@@ -83,6 +83,15 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       input: SelectionInput;
     }) => track("browse_mods_mod_selected", props),
 
+    // 1-click download, offered to Premium users; `action` says whether it installs too, as the
+    // user's settings say. The download and install themselves are mods_download_* and
+    // mods_installation_*.
+    trackOneClickClicked: (props: {
+      mod_uid: string;
+      file_uid: string;
+      action: "install" | "download";
+    }) => track("browse_mods_one_click_clicked", props),
+
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
 
     // `image_index` counts from 1, as `position` does; the keys on the strip pick too, counted as
