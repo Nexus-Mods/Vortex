@@ -75,12 +75,24 @@ const CollectionChangelog = ({ slug, revision }: { slug: string; revision: numbe
         </span>
       );
     case "failed":
-      return <PlainText size="sm" text={t("modsTable::changelog::loadFailed")} />;
+      return (
+        <PlainText
+          data-testid="changelog-load-failed"
+          size="sm"
+          text={t("modsTable::changelog::loadFailed")}
+        />
+      );
     case "loaded":
       if (changelog.changelog) {
         return <Markdown markdown={changelog.changelog} size="sm" />;
       }
 
-      return <PlainText size="sm" text={t("modsTable::changelog::noneForRevision")} />;
+      return (
+        <PlainText
+          data-testid="changelog-none"
+          size="sm"
+          text={t("modsTable::changelog::noneForRevision")}
+        />
+      );
   }
 };
