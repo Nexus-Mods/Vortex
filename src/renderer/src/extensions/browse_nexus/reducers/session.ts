@@ -1,0 +1,16 @@
+import { actionsToReducerSpec } from "@/reducers/builder";
+
+import * as actions from "../actions/session";
+import type { BrowseSection } from "../util/browseSection";
+
+/** session.browse: Browse's open section, while it's open. */
+export interface IBrowseSessionState {
+  /** The open section; none for Browse's default. */
+  section?: BrowseSection;
+}
+
+export const sessionReducer = actionsToReducerSpec<IBrowseSessionState, typeof actions>(
+  {},
+  actions,
+  { setBrowseSection: (state, payload) => ({ ...state, section: payload }) },
+);

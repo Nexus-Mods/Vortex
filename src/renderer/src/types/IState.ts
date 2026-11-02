@@ -3,6 +3,7 @@ import type { GameDomain, GameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
+import type { IBrowseSessionState } from "@/extensions/browse_nexus/reducers/session";
 import type { ICategoryDictionary } from "@/extensions/category_management/types/ICategoryDictionary";
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
 import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
@@ -464,6 +465,7 @@ export interface ISessionState {
   overlays: IOverlaysState;
   healthCheck: IHealthCheckSessionState;
   updater: IUpdaterSessionState;
+  browse: IBrowseSessionState;
 }
 
 export interface IPersistentState {
