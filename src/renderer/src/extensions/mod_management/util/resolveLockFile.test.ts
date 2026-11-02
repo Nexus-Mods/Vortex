@@ -5,6 +5,7 @@ import { VortexGameId, VortexModId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { expect, vi } from "vitest";
 
+import type * as PlannerPlanEvent from "../../analytics/utils/plannerPlanEvent";
 import type * as NexusIntegrationUtil from "../../nexus_integration/util";
 
 // util/Steam reads paths at import time and there is no ApplicationData here
@@ -14,14 +15,21 @@ vi.mock("../../nexus_integration/util", async (importOriginal) => ({
   ...(await importOriginal<typeof NexusIntegrationUtil>()),
   nexusGames: () => [{ domain_name: "skyrimspecialedition", id: 1704 }],
 }));
+// whether and how a report is sent is the sender's own tests' concern; these check what the hook reports
+vi.mock("../../analytics/utils/plannerPlanEvent", async (importOriginal) => ({
+  ...(await importOriginal<typeof PlannerPlanEvent>()),
+  emitPlannerPlanEvent: vi.fn(() => Promise.resolve()),
+}));
 
 import { makeProfileMod, makeStagedMod } from "../../../test-utils/builders";
 import { makeDeployedGame } from "../../../test-utils/deployedGame";
 import { installInMemoryFS } from "../../../test-utils/fsApi";
 import { test } from "../../../test-utils/harnessTest";
+import type { IDeployedGameHarness } from "../../../test-utils/harnessTypes";
 import { makeGeneratedFileSource } from "../../../test-utils/lockfileBuilders";
 import { writeInto } from "../../../test-utils/tempDir";
 import { checksum } from "../../../util/checksum";
+import { emitPlannerPlanEvent } from "../../analytics/utils/plannerPlanEvent";
 import { sessionReducer } from "../reducers/session";
 import {
   LockfileContributions,
@@ -237,6 +245,61 @@ test("a sort before the deployment leaves pending changes to the deployment's pl
       operation: "UNLINK",
       path: toPortablePath(deployedPath),
     });
+  } finally {
+    disk.restore();
+  }
+});
+
+/** Deploys as a deployment does, up to the plugin sort that follows it. */
+async function deploy(game: IDeployedGameHarness) {
+  await game.emitAndAwait("will-deploy", game.profileId);
+  await game.emitAndAwait("did-deploy", game.profileId, {});
+}
+
+test("a plan run reports its figures for its game, without paths", async () => {
+  const { game, disk, deployedPath } = await makeGameWithStagedMod(true);
+  vi.mocked(emitPlannerPlanEvent).mockClear();
+  try {
+    registerResolveLockFile(game.api, hashFile);
+    await deploy(game);
+    await game.emitAndAwait("did-sort-plugins", game.gameId);
+
+    const [, gameId, figuresOf] = vi.mocked(emitPlannerPlanEvent).mock.calls[0];
+    expect(gameId).toBe(game.gameId);
+    const figures = figuresOf();
+    expect(figures).toMatchObject({
+      lockfile_files: 1,
+      generated_files: 0,
+      disk_entries: 1,
+      scan_roots: 1,
+      operations: { backup: 1, link: 1, unlink: 0 },
+    });
+    expect(figures.resolve_ms).toBeDefined();
+    const sent = JSON.stringify(figures);
+    expect(sent).not.toMatch(/[\\/]/);
+    expect(sent).not.toContain(QualifiedPath.fromNative(deployedPath).basename);
+  } finally {
+    disk.restore();
+  }
+});
+
+test("a failed plan run reports the kind of its error", async () => {
+  const { game, disk } = await makeGameWithStagedMod(true);
+  vi.mocked(emitPlannerPlanEvent).mockClear();
+  try {
+    registerResolveLockFile(game.api, hashFile);
+    await deploy(game);
+    // the resolver needs the store the game was discovered from
+    game.setState((draft) => {
+      delete draft.settings.gameMode.discovered[game.gameId].store;
+    });
+    await game.emitAndAwait("did-sort-plugins", game.gameId);
+
+    const figures = vi.mocked(emitPlannerPlanEvent).mock.calls[0][2]();
+    expect(figures).toMatchObject({ disk_entries: 1 });
+    expect(figures.resolve_ms).toBeUndefined();
+    expect(figures.operations).toBeUndefined();
+    expect(figures.error_kind).toBeDefined();
   } finally {
     disk.restore();
   }

@@ -1,19 +1,20 @@
 import {
   DiskEntryKind,
-  type Operation,
+  FileSourceKind,
   OperationKind,
   plan,
   resolve,
   type DiskScan,
   type Lockfile,
 } from "@nexusmods/mod-pipeline";
-import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
+import { getErrorMessageOrDefault, parseError, VortexGameId } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
+import { emitPlannerPlanEvent } from "../../analytics/utils/plannerPlanEvent";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
 import { scanDeploymentTargets } from "./diskScan";
@@ -81,6 +82,14 @@ export async function resolveLockfile(
   return withGeneratedFiles(state, gameMode, contributions, resolve(input));
 }
 
+// the key each kind of operation is counted under
+const COUNT_KEY_BY_KIND = {
+  [OperationKind.Backup]: "backup",
+  [OperationKind.Link]: "link",
+  [OperationKind.Unlink]: "unlink",
+} as const satisfies Record<OperationKind, string>;
+type OperationCountKey = (typeof COUNT_KEY_BY_KIND)[OperationKind];
+
 const elapsedMsSince = (startedAt: Temporal.Instant) =>
   Temporal.Now.instant().since(startedAt).total("milliseconds");
 
@@ -90,7 +99,7 @@ function planAndLogOperations(
   previousLockfile: Lockfile,
   diskScan: DiskScan,
   scanMs: number,
-): Operation[] {
+): { planMs: number; counts: Record<OperationCountKey, number> } {
   // Debug log
   diskScan.entries.forEach((d) => log("debug", "disk scan", d.path));
 
@@ -98,15 +107,19 @@ function planAndLogOperations(
   const planStartedAt = Temporal.Now.instant();
   const operations = plan(currentLockfile, previousLockfile, diskScan);
   const planMs = elapsedMsSince(planStartedAt);
+  const counts: Record<OperationCountKey, number> = { backup: 0, link: 0, unlink: 0 };
+  for (const operation of operations) {
+    counts[COUNT_KEY_BY_KIND[operation.kind]] += 1;
+  }
 
   log("info", "planner operations", {
     gameMode,
     roots: diskScan.roots.length,
     diskEntries: diskScan.entries.length,
     diskLinks: diskScan.entries.filter((entry) => entry.kind === DiskEntryKind.Link).length,
-    backups: operations.filter((operation) => operation.kind === OperationKind.Backup).length,
-    unlinks: operations.filter((operation) => operation.kind === OperationKind.Unlink).length,
-    links: operations.filter((operation) => operation.kind === OperationKind.Link).length,
+    backups: counts.backup,
+    unlinks: counts.unlink,
+    links: counts.link,
     scanMs,
     planMs,
   });
@@ -121,7 +134,7 @@ function planAndLogOperations(
     }),
   );
 
-  return operations;
+  return { planMs, counts };
 }
 
 /**
@@ -174,6 +187,7 @@ export function registerResolveLockFile(
         gameId,
         error: getErrorMessageOrDefault(err),
       });
+      void emitPlannerPlanEvent(api, gameId, () => ({ error_kind: parseError(err).data.kind }));
     }
   };
 
@@ -201,20 +215,47 @@ export function registerResolveLockFile(
     }
     const { diskScan, scanMs } = scanBeforeDeployment;
     scanBeforeDeployment = undefined;
+    const scanFigures = {
+      disk_entries: diskScan.entries.length,
+      scan_roots: diskScan.roots.length,
+      scan_ms: scanMs,
+    };
     try {
       // Create the current lockfile from state
+      const resolveStartedAt = Temporal.Now.instant();
       const currentLockfile = await resolveLockfile(
         api,
         VortexGameId(gameId),
         registeredContributions,
         hashFile,
       );
+      const resolveMs = elapsedMsSince(resolveStartedAt);
       currentLockfile.files.forEach((f) => log("debug", "current lockfile", f.destinationPath));
-      planAndLogOperations(gameId, currentLockfile, previousLockfile, diskScan, scanMs);
+      const { planMs, counts } = planAndLogOperations(
+        gameId,
+        currentLockfile,
+        previousLockfile,
+        diskScan,
+        scanMs,
+      );
 
       previousLockfile = currentLockfile;
+      void emitPlannerPlanEvent(api, gameId, () => ({
+        ...scanFigures,
+        resolve_ms: resolveMs,
+        lockfile_files: currentLockfile.files.length,
+        generated_files: currentLockfile.files.filter(
+          (file) => file.source === FileSourceKind.VortexGenerated,
+        ).length,
+        plan_ms: planMs,
+        operations: counts,
+      }));
     } catch (err) {
       log("warn", "failed to plan lockfile", { gameId, error: getErrorMessageOrDefault(err) });
+      void emitPlannerPlanEvent(api, gameId, () => ({
+        ...scanFigures,
+        error_kind: parseError(err).data.kind,
+      }));
     }
   });
 }

@@ -1,4 +1,4 @@
-export type TelemetryEvent = EventDetectedGame | EventStoreGameVersion;
+export type TelemetryEvent = EventDetectedGame | EventStoreGameVersion | EventPlannerPlan;
 
 // https://github.com/Nexus-Mods/flamework/tree/master/contracts/telemetry
 export type EventDetectedGame = {
@@ -61,4 +61,33 @@ export type GogInstall = {
   product_id: string;
   build_id: string;
   install_language: string;
+};
+
+export type EventPlannerPlan = {
+  type: "planner_plan";
+  version: 1;
+
+  payload: PlannerPlanPayload;
+};
+
+/**
+ * Draft until contracts/telemetry/planner_plan/v1.schema.json is agreed. Counts, durations and
+ * kinds only, never a path or a name; null is a figure the run did not measure.
+ */
+export type PlannerPlanPayload = {
+  game_id: string;
+  mods: number | null;
+  lockfile_files: number | null;
+  generated_files: number | null;
+  disk_entries: number | null;
+  scan_roots: number | null;
+  first_run: boolean | null;
+  resolve_ms: number | null;
+  scan_ms: number | null;
+  plan_ms: number | null;
+  operations: { backup: number; link: number; unlink: number } | null;
+  destination_states: Record<string, number> | null;
+  case_mismatches: number | null;
+  manifest_diff: boolean | null;
+  error_kind: string | null;
 };
