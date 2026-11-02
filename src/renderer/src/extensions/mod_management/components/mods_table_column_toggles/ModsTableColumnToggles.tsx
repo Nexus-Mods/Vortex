@@ -16,7 +16,7 @@ interface IModsTableColumnTogglesProps {
 
 /** The display options' section for choosing the table's columns, one toggle button each. */
 export const ModsTableColumnToggles = ({ toggles, onToggle }: IModsTableColumnTogglesProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const titleId = useId();
 
   if (toggles.length === 0) {
@@ -32,7 +32,7 @@ export const ModsTableColumnToggles = ({ toggles, onToggle }: IModsTableColumnTo
         id={titleId}
         typographyType="body-sm"
       >
-        {t("Toggle columns")}
+        {t("modsTable::displayOptions::toggleColumns")}
       </Typography>
 
       <div aria-labelledby={titleId} className="flex flex-wrap gap-1 px-4 pb-2" role="group">

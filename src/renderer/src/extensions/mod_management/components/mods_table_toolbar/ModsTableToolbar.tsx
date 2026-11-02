@@ -55,7 +55,7 @@ export const ModsTableToolbar = ({
   search,
   onSearchChange,
 }: IModsTableToolbarProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   // "new" while making a view, the view while renaming one, and unset otherwise.
   const [naming, setNaming] = useState<IModsTableView | "new">();
   const [deleting, setDeleting] = useState<IModsTableView>();
@@ -68,7 +68,7 @@ export const ModsTableToolbar = ({
     () => [
       {
         id: "feedback",
-        label: t("Give feedback"),
+        label: t("modsTable::toolbar::giveFeedback"),
         icon: "rate_review",
         onClick: () => window.api.shell.openUrl(MODS_TABLE_FEEDBACK_URL),
       },
@@ -99,13 +99,21 @@ export const ModsTableToolbar = ({
       label: view.label,
       actions: [
         [
-          { label: t("Rename view"), icon: "edit", onClick: () => setNaming(view) },
           {
-            label: t("Edit view options"),
+            label: t("modsTable::toolbar::renameView"),
+            icon: "edit",
+            onClick: () => setNaming(view),
+          },
+          {
+            label: t("modsTable::toolbar::editViewOptions"),
             icon: "tune",
             onClick: () => editOptions(view.id),
           },
-          { label: t("Delete view"), icon: "delete", onClick: () => setDeleting(view) },
+          {
+            label: t("modsTable::toolbar::deleteView"),
+            icon: "delete",
+            onClick: () => setDeleting(view),
+          },
         ],
       ],
     };
@@ -115,7 +123,7 @@ export const ModsTableToolbar = ({
     <>
       <ViewPicker
         className="min-w-0 flex-1"
-        label={t("Views")}
+        label={t("modsTable::toolbar::views")}
         selectedView={selectedView}
         views={pickerViews}
         onAddView={() => setNaming("new")}
@@ -125,7 +133,11 @@ export const ModsTableToolbar = ({
       <Toolbar className="shrink-0 justify-end" tracking={tracking}>
         <ToolbarGroup actions={actions} />
 
-        <ToolbarSearch label={t("Search")} value={search} onChange={onSearchChange} />
+        <ToolbarSearch
+          label={t("modsTable::toolbar::search")}
+          value={search}
+          onChange={onSearchChange}
+        />
       </Toolbar>
 
       <DeleteModsTableViewModal

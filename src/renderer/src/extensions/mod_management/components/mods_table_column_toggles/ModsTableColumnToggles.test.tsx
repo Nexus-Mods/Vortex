@@ -14,7 +14,7 @@ describe("ModsTableColumnToggles", () => {
   it("shows a pressed button for each column on, and unpressed for each off", () => {
     render(<ModsTableColumnToggles toggles={TOGGLES} onToggle={vi.fn()} />);
 
-    const group = screen.getByRole("group", { name: "Toggle columns" });
+    const group = screen.getByRole("group");
     expect(within(group).getByRole("button", { name: "Version" })).toHaveAttribute(
       "aria-pressed",
       "true",

@@ -52,7 +52,7 @@ const textColumn = (
 export const useModsTableDataColumns = (memberships: {
   [modId: string]: IMod[];
 }): IModsTableColumn[] => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const downloads = useSelector(downloadFiles);
   const categories = useSelector(gameCategories);
 
@@ -91,11 +91,11 @@ export const useModsTableDataColumns = (memberships: {
       mod.state === "installed" ? mod.attributes?.modSize : downloads[mod.archiveId]?.size;
     const sizeText = (row: IModRow) => {
       const bytes = size(row);
-      return bytes === undefined ? t("Unknown") : bytesToString(bytes);
+      return bytes === undefined ? t("modsTable::values::unknown") : bytesToString(bytes);
     };
     const sizeColumn: IModsTableColumn = {
       id: "modSize",
-      header: t("Mod size"),
+      header: t("modsTable::columns::modSize"),
       width: "100px",
       isToggleable: true,
       sort: (a, b) => (size(a) ?? -1) - (size(b) ?? -1),
@@ -107,13 +107,18 @@ export const useModsTableDataColumns = (memberships: {
       // Version (`version`, 40): its update and changelog buttons, and the other versions
       // of the mod, which the legacy table groups under it.
       {
-        ...textColumn("author", t("Author"), "160px", ({ mod }) => mod.attributes?.author ?? ""),
+        ...textColumn(
+          "author",
+          t("modsTable::columns::author"),
+          "160px",
+          ({ mod }) => mod.attributes?.author ?? "",
+        ),
         position: 50,
       },
       {
         ...textColumn(
           "archiveName",
-          t("Archive name"),
+          t("modsTable::columns::archiveName"),
           "200px",
           ({ mod }) => downloads[mod.archiveId]?.localPath ?? "",
         ),
@@ -125,19 +130,19 @@ export const useModsTableDataColumns = (memberships: {
       },
       // The other extensions' columns have no position, so they take 100 and come in the
       // order the extensions load, after ModList's own.
-      textColumn("category", t("Category"), "160px", ({ mod }) => {
+      textColumn("category", t("modsTable::columns::category"), "160px", ({ mod }) => {
         const id = categoryId(mod.attributes?.category);
         return (id !== undefined ? categories?.[id]?.name : undefined) ?? "";
       }),
       textColumn(
         "modType",
-        t("Mod type"),
+        t("modsTable::columns::modType"),
         "120px",
         ({ mod }) => getModType(mod.type)?.options.name || mod.type,
       ),
       textColumn(
         "modSource",
-        t("Source"),
+        t("modsTable::columns::source"),
         "120px",
         ({ mod }) =>
           getModSources().find((source) => source.id === mod.attributes?.source)?.name ?? "",
@@ -147,7 +152,7 @@ export const useModsTableDataColumns = (memberships: {
       // Tracking (`tracked`, nexus_integration): the mods a user tracks are fetched from
       // Nexus and kept outside the store.
       {
-        ...textColumn("collection", t("Collection"), "180px", ({ mod }) =>
+        ...textColumn("collection", t("modsTable::columns::collection"), "180px", ({ mod }) =>
           (memberships[mod.id] ?? [])
             .map((collection) => modName(collection))
             .sort((a, b) => a.localeCompare(b))
@@ -168,27 +173,27 @@ export const useModsTableDataColumns = (memberships: {
       {
         ...timeColumn(
           "installTime",
-          t("Installation time"),
+          t("modsTable::columns::installTime"),
           ({ mod }) => timeOf(mod.attributes?.installTime),
-          t("Not installed"),
+          t("modsTable::values::notInstalled"),
         ),
         position: 110,
       },
       {
         ...timeColumn(
           "enabledTime",
-          t("Enabled time"),
+          t("modsTable::columns::enabledTime"),
           ({ mod }) => timeOf(mod.enabledTime),
-          t("Never"),
+          t("modsTable::values::never"),
         ),
         position: 120,
       },
       {
         ...timeColumn(
           "downloadTime",
-          t("Downloaded time"),
+          t("modsTable::columns::downloadTime"),
           ({ mod }) => timeOf(downloads[mod.archiveId]?.fileTime),
-          t("Unknown"),
+          t("modsTable::values::unknown"),
         ),
         position: 130,
       },

@@ -43,12 +43,15 @@ export const modVersionText = (mod: IMod, alternatives: IMod[] | undefined, t: T
     ? versionLabel(mod, t)
     : (mod.attributes?.version ?? "");
 
+/** The groups the Version column puts rows in, updates first; ids, not names. */
+export const MOD_VERSION_GROUPS = ["update-available", "up-to-date"] as const;
+
 /**
- * The group a row falls in by version, as the classic table named them: by whether its cell
- * offers an update, a collection's by its revision.
+ * The group a row falls in by version, as the classic table grouped them: by whether its
+ * cell offers an update, a collection's by its revision.
  */
-export const modVersionGroup = (mod: IMod, t: TFunction) =>
-  modHasUpdate(mod) ? t("Update available") : t("Up-to-date");
+export const modVersionGroup = (mod: IMod): (typeof MOD_VERSION_GROUPS)[number] =>
+  modHasUpdate(mod) ? "update-available" : "up-to-date";
 
 /**
  * A mod's version and what it says about updating, or a collection's revision with its
