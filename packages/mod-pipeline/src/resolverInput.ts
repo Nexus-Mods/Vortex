@@ -1,6 +1,7 @@
 import { GameInstallSchema, type GameInstall } from "./gameInstall";
 import { NexusFileId, NexusGameId } from "./ids";
 import { FileSourceKind, FileEntrySchema, type FileOrigin, type FileEntry } from "./lockfile";
+import { AbsolutePathSchema } from "./pathKey";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -34,7 +35,7 @@ const resolverInputSchema = z.object({
         z.object({ source: z.literal(FileSourceKind.UserGenerated) }),
       ]),
       stagedFiles: z.array(FileEntrySchema),
-      overriddenPaths: z.array(z.string()),
+      overriddenPaths: z.array(AbsolutePathSchema),
     }),
   ),
 });
