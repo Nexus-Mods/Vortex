@@ -57,7 +57,12 @@ import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
 import { ModHoverCard } from "../mod_hover_card/ModHoverCard";
 import { actionsWidth, ModRowActions, PINNED_ACTION_WIDTH } from "../mod_row_actions/ModRowActions";
-import { ModVersion, modVersionGroup, modVersionText } from "../mod_version/ModVersion";
+import {
+  MOD_VERSION_GROUPS,
+  ModVersion,
+  modVersionGroup,
+  modVersionText,
+} from "../mod_version/ModVersion";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
 import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
@@ -83,6 +88,15 @@ const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
 
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
 
+/** The groups the Status column puts rows in, in order; ids, not names. */
+const STATUS_GROUPS = [
+  "never-installed",
+  "uninstalled",
+  "installing",
+  "enabled",
+  "disabled",
+] as const;
+
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
 const nop = () => undefined;
@@ -101,7 +115,7 @@ export const ModsTableSwitch = ({
   onSelectVersion = nop,
   onRemoveVersion,
 }: IModsTableSwitchProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const newTable = useSelector(betaTable);
 
   const {
@@ -157,11 +171,22 @@ export const ModsTableSwitch = ({
   const multiSelected = selectedIds.length > 1;
   const shownPins = multiSelected ? 0 : pinnedCount;
 
-  const columns = useMemo<IModsTableColumn[]>(
-    () => [
+  const columns = useMemo<IModsTableColumn[]>(() => {
+    const groupNames: { [value: string]: string } = {
+      "never-installed": t("modsTable::groups::neverInstalled"),
+      uninstalled: t("modsTable::groups::uninstalled"),
+      installing: t("modsTable::groups::installing"),
+      enabled: t("modsTable::groups::enabled"),
+      disabled: t("modsTable::groups::disabled"),
+      "update-available": t("modsTable::groups::updateAvailable"),
+      "up-to-date": t("modsTable::groups::upToDate"),
+    };
+    const groupValueLabel = (value: string) => groupNames[value] ?? value;
+
+    return [
       {
         id: "name",
-        header: t("Name"),
+        header: t("modsTable::columns::name"),
         sort: (a, b) => a.name.localeCompare(b.name),
         searchText: ({ name }) => name,
         cell: ({ mod, name }) => (
@@ -196,34 +221,29 @@ export const ModsTableSwitch = ({
       },
       {
         id: "status",
-        header: t("Actions"),
-        groupLabel: t("Status"),
+        header: t("modsTable::columns::actions"),
+        groupLabel: t("modsTable::columns::status"),
         width: actionsWidth(0),
         revealWidth: shownPins ? `${PINNED_ACTION_WIDTH * shownPins}px` : undefined,
         sticky: "end",
         groupBy: ({ mod }) => {
           if (mod.state === "downloaded") {
-            return mod.attributes?.wasInstalled ? t("Uninstalled") : t("Never installed");
+            return mod.attributes?.wasInstalled ? "uninstalled" : "never-installed";
           }
           if (mod.state === "installing") {
-            return t("Installing");
+            return "installing";
           }
-          return isEnabled(mod) ? t("Enabled") : t("Disabled");
+          return isEnabled(mod) ? "enabled" : "disabled";
         },
-        groupOrder: [
-          t("Never installed"),
-          t("Uninstalled"),
-          t("Installing"),
-          t("Enabled"),
-          t("Disabled"),
-        ],
+        groupOrder: STATUS_GROUPS,
+        groupValueLabel,
         cell: ({ mod, name }) => (
           <ModRowActions
             actions={actionsFor(mod.id)}
             enabled={isEnabled(mod)}
-            installLabel={t("Install {{name}}", { name })}
+            installLabel={t("modsTable::rowActions::installMod", { name })}
             isLoading={changing.has(mod.id)}
-            label={t("{{name}} enabled", { name })}
+            label={t("modsTable::rowActions::enabled", { name })}
             modId={mod.id}
             modState={mod.state}
             switchOnly={multiSelected}
@@ -242,7 +262,7 @@ export const ModsTableSwitch = ({
           return (
             <div className="flex min-w-0 flex-1 items-center justify-end">
               <Switch
-                aria-label={t("{{name}} enabled", { name: group.label })}
+                aria-label={t("modsTable::rowActions::enabled", { name: group.label })}
                 checked={group.rows.length > 0 && enabled === group.rows.length}
                 indeterminate={enabled > 0 && enabled < group.rows.length}
                 isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
@@ -255,13 +275,14 @@ export const ModsTableSwitch = ({
       // The legacy table's, sharing its choice to show it and its place.
       {
         id: "version",
-        header: t("Version"),
+        header: t("modsTable::columns::version"),
         width: "160px",
         isToggleable: true,
         position: 40,
         searchText: ({ mod }) => modVersionText(mod, alternatives[mod.id], t),
-        groupBy: ({ mod }) => modVersionGroup(mod, t),
-        groupOrder: [t("Update available"), t("Up-to-date")],
+        groupBy: ({ mod }) => modVersionGroup(mod),
+        groupOrder: MOD_VERSION_GROUPS,
+        groupValueLabel,
         cell: ({ mod }) => (
           <ModVersion
             alternatives={alternatives[mod.id]}
@@ -275,23 +296,22 @@ export const ModsTableSwitch = ({
           collection === undefined ? null : <CollectionRevision collection={collection} />,
       },
       ...dataColumns,
-    ],
-    [
-      actionsFor,
-      alternatives,
-      changing,
-      dataColumns,
-      install,
-      isEnabled,
-      multiSelected,
-      onRemoveVersion,
-      onSelectVersion,
-      setEnabled,
-      setGroupEnabled,
-      shownPins,
-      t,
-    ],
-  );
+    ];
+  }, [
+    actionsFor,
+    alternatives,
+    changing,
+    dataColumns,
+    install,
+    isEnabled,
+    multiSelected,
+    onRemoveVersion,
+    onSelectVersion,
+    setEnabled,
+    setGroupEnabled,
+    shownPins,
+    t,
+  ]);
 
   const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
 
@@ -310,7 +330,7 @@ export const ModsTableSwitch = ({
   const { focusGroupId, onGroupFocused } = useModsTableFocusRequest({ groups, search, setSearch });
 
   const displayOptions = useDisplayOptionsAction({
-    label: t("View options"),
+    label: t("modsTable::toolbar::viewOptions"),
     canReset,
     children: (
       <>
@@ -343,7 +363,7 @@ export const ModsTableSwitch = ({
           actions={selectionActions}
           beforeOverflow={
             <Switch
-              aria-label={t("Selected mods enabled")}
+              aria-label={t("modsTable::selection::enabled")}
               checked={selectedEnabled === selectedIds.length}
               indeterminate={selectedEnabled > 0 && selectedEnabled < selectedIds.length}
               isLoading={selectedIds.some((id) => changing.has(id))}
@@ -374,7 +394,7 @@ export const ModsTableSwitch = ({
     ),
     columns: visibleColumns,
     getRowId: ({ mod }: IModRow) => mod.id,
-    label: t("Mods"),
+    label: t("modsTable::label"),
     selectable: true,
     getRowLabel: ({ name }: IModRow) => name,
     selectedIds: selected,
@@ -384,7 +404,7 @@ export const ModsTableSwitch = ({
         <>
           <DropdownBlock>
             <Typography appearance="subdued" typographyType="body-sm">
-              {t("{{count}} items selected", { count: selectedIds.length })}
+              {t("modsTable::selection::count", { count: selectedIds.length })}
             </Typography>
           </DropdownBlock>
 
@@ -392,7 +412,7 @@ export const ModsTableSwitch = ({
 
           <ToolbarMenu
             actions={selectionActions}
-            label={t("Selected mods actions")}
+            label={t("modsTable::selection::actions")}
             tracking={selectionTracking}
             onSelect={close}
           />
@@ -400,7 +420,7 @@ export const ModsTableSwitch = ({
       ) : (
         <ToolbarMenu
           actions={actionsFor(mod.id)}
-          label={t("{{name}} actions", { name })}
+          label={t("modsTable::rowActions::menu", { name })}
           pinningId={MOD_ROW_PINNING_ID}
           pinTarget="row"
           tracking={rowTracking}
@@ -417,7 +437,7 @@ export const ModsTableSwitch = ({
     onMenuOpen: analytics.onMenuOpen,
     defaultSort: BY_NAME,
     footer,
-    empty: isSearching && <NoResults icon="search" title={t("No mods match your search")} />,
+    empty: isSearching && <NoResults icon="search" title={t("modsTable::noResults")} />,
   };
 
   // A table takes rows or groups, never both; typed, so neither gains the other as undefined.

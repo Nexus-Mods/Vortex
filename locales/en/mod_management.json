@@ -38,6 +38,68 @@
     "install": "Install"
   },
   "modsTable": {
+    "label": "Mods",
+    "noResults": "No mods match your search",
+    "columns": {
+      "name": "Name",
+      "actions": "Actions",
+      "status": "Status",
+      "version": "Version",
+      "author": "Author",
+      "archiveName": "Archive name",
+      "modSize": "Mod size",
+      "category": "Category",
+      "modType": "Mod type",
+      "source": "Source",
+      "collection": "Collection",
+      "installTime": "Installation time",
+      "enabledTime": "Enabled time",
+      "downloadTime": "Downloaded time"
+    },
+    "values": {
+      "unknown": "Unknown",
+      "notInstalled": "Not installed",
+      "never": "Never"
+    },
+    "groups": {
+      "neverInstalled": "Never installed",
+      "uninstalled": "Uninstalled",
+      "installing": "Installing",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "updateAvailable": "Update available",
+      "upToDate": "Up-to-date",
+      "noCollection": "No collection",
+      "noAuthor": "No author",
+      "noValue": "No {{column}}"
+    },
+    "views": {
+      "all": "All mods",
+      "status": "Status",
+      "updates": "Updates",
+      "categories": "Categories",
+      "collections": "Collections"
+    },
+    "toolbar": {
+      "views": "Views",
+      "giveFeedback": "Give feedback",
+      "viewOptions": "View options",
+      "search": "Search",
+      "renameView": "Rename view",
+      "editViewOptions": "Edit view options",
+      "deleteView": "Delete view"
+    },
+    "displayOptions": {
+      "groupBy": "Group by",
+      "noGrouping": "None",
+      "toggleColumns": "Toggle columns"
+    },
+    "selection": {
+      "count": "{{count}} item selected",
+      "count_plural": "{{count}} items selected",
+      "enabled": "Selected mods enabled",
+      "actions": "Selected mods actions"
+    },
     "version": {
       "defaultVariant": "default",
       "switchVersion": "Switch version or variant",
@@ -74,7 +136,10 @@
       "install": "Install",
       "installDescription": "Installs the mod into your game, where it can be enabled or disabled.",
       "installing": "Installing…",
-      "uninstalling": "Uninstalling…"
+      "uninstalling": "Uninstalling…",
+      "installMod": "Install {{name}}",
+      "enabled": "{{name}} enabled",
+      "menu": "{{name}} actions"
     }
   }
 }

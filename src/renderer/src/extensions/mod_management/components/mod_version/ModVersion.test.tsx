@@ -162,19 +162,19 @@ describe("modVersionGroup", () => {
     ({ id: "a", attributes: { source: "nexus", version, newestVersion } }) as unknown as IMod;
 
   it("groups a mod with no newer version as up to date, as the classic table did", () => {
-    expect(modVersionGroup(withNewest("1.0.0"), t)).toBe("Up-to-date");
-    expect(modVersionGroup(withNewest("1.0.0", "1.0.0"), t)).toBe("Up-to-date");
+    expect(modVersionGroup(withNewest("1.0.0"))).toBe("up-to-date");
+    expect(modVersionGroup(withNewest("1.0.0", "1.0.0"))).toBe("up-to-date");
   });
 
   it("groups a mod with a newer version as having an update", () => {
-    expect(modVersionGroup(withNewest("1.0.0", "1.1.0"), t)).toBe("Update available");
+    expect(modVersionGroup(withNewest("1.0.0", "1.1.0"))).toBe("update-available");
   });
 
   it("groups a collection by its revisions, as its cell offers the update", () => {
     const revisions = (version: string, newestVersion: string) =>
       ({ id: "c", type: "collection", attributes: { version, newestVersion } }) as unknown as IMod;
 
-    expect(modVersionGroup(revisions("10", "11"), t)).toBe("Update available");
-    expect(modVersionGroup(revisions("11", "10"), t)).toBe("Up-to-date");
+    expect(modVersionGroup(revisions("10", "11"))).toBe("update-available");
+    expect(modVersionGroup(revisions("11", "10"))).toBe("up-to-date");
   });
 });

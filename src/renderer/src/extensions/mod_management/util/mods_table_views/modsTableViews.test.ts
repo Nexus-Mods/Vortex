@@ -102,7 +102,7 @@ describe("groupMods by a column", () => {
     const groups = groupMods(CATEGORISED, "category", t, {}, category);
 
     expect(groups.map(({ id, label, rows }) => [id, label, rows.map((row) => row.name)])).toEqual([
-      ["no-category", "No {{column}}", ["Delta"]],
+      ["no-category", "modsTable::groups::noValue", ["Delta"]],
       ["category:Armour", "Armour", ["Beta"]],
       ["category:Weapons", "Weapons", ["Alpha", "Gamma"]],
     ]);
@@ -120,7 +120,37 @@ describe("groupMods by a column", () => {
       },
     );
 
-    expect(groups.map(({ label }) => label)).toEqual(["No {{column}}", "Weapons", "Armour"]);
+    expect(groups.map(({ label }) => label)).toEqual([
+      "modsTable::groups::noValue",
+      "Weapons",
+      "Armour",
+    ]);
+  });
+
+  it("keys and orders a column's groups by its values, each showing the name it gives", () => {
+    // Values that are ids, as Status's are, named in the language the table is shown in.
+    const names: { [value: string]: string } = { on: "Zuerst", off: "Aus" };
+    const groups = groupMods(
+      {
+        a: mod("a", "Alpha", { enabled: true }),
+        b: mod("b", "Beta", { enabled: false }),
+      },
+      "enabled",
+      t,
+      {},
+      {
+        id: "enabled",
+        header: "Enabled",
+        groupBy: ({ mod }) => (mod.enabled ? "on" : "off"),
+        groupOrder: ["on", "off"],
+        groupValueLabel: (value) => names[value],
+      },
+    );
+
+    expect(groups.map(({ id, label }) => [id, label])).toEqual([
+      ["enabled:on", "Zuerst"],
+      ["enabled:off", "Aus"],
+    ]);
   });
 
   it("leaves the mods ungrouped without the column it names", () => {
