@@ -18,7 +18,7 @@ import {
   type ResolverMod,
   type FileEntry,
 } from "@nexusmods/mod-pipeline";
-import { QualifiedPath } from "@nexusmods/paths";
+import { QualifiedPath, relativePath } from "@nexusmods/paths";
 import { parseError, type VortexGameId } from "@vortex/shared";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -397,7 +397,7 @@ export async function gatherDeployedInput(
       );
       sizesByFolder.set(mod.installationPath, sizes);
     }
-    const portableRelPath = toPortablePath(file.relPath);
+    const portableRelPath = relativePath(file.relPath);
     const size = sizes.get(portableRelPath);
     if (size === undefined) {
       notes.push(`${file.relPath} is not staged in "${mod.installationPath}"`);
