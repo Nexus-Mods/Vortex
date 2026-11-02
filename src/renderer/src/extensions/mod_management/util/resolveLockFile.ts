@@ -101,8 +101,8 @@ function planAndLogOperations(
   diskScan: DiskScan,
   scanMs: number,
 ): { planMs: number; counts: PlannerOperationCounts } {
-  // Debug log
-  diskScan.entries.forEach((d) => log("debug", "disk scan", d.path));
+  // expensive: a line per disk entry, hundreds of thousands on a large setup
+  // diskScan.entries.forEach((d) => log("debug", "disk scan", d.path));
 
   // Now that we have both previous lockfile, current lockfile and the disk state do the actual planning
   const planStartedAt = Temporal.Now.instant();
@@ -186,7 +186,8 @@ export function registerResolveLockFile(
           registeredContributions,
           resolve(input),
         );
-        previousLockfile.files.forEach((f) => log("debug", "previous lockfile", f.destinationPath));
+        // expensive: a line per file, hundreds of thousands on a large setup
+        // previousLockfile.files.forEach((f) => log("debug", "previous lockfile", f.destinationPath));
         log("info", "seeded previous lockfile from manifest", {
           gameMode,
           files: previousLockfile.files.length,
@@ -253,7 +254,8 @@ export function registerResolveLockFile(
         hashFile,
       );
       const resolveMs = elapsedMsSince(resolveStartedAt);
-      currentLockfile.files.forEach((f) => log("debug", "current lockfile", f.destinationPath));
+      // expensive: a line per file, hundreds of thousands on a large setup
+      // currentLockfile.files.forEach((f) => log("debug", "current lockfile", f.destinationPath));
       const { planMs, counts } = planAndLogOperations(
         gameId,
         currentLockfile,
