@@ -52,7 +52,7 @@ const fail = (message: string) =>
 /** Answers the first two requests: the trending page showing, and the all-time one counted. */
 const respondToStart = async (trending: number, allTime: number) => {
   await waitFor(() => expect(mocks.pending).toHaveLength(2));
-  await respond("trending", trending);
+  await respond("endorsements", trending);
   await respond("new", allTime);
 };
 
@@ -79,7 +79,7 @@ describe("useModSearch", () => {
 
     expect(mocks.pending.map((request) => request.search)).toContainEqual({
       filters: { games: ["skyrimspecialedition"], time_range: "7" },
-      sort: { field: "trending", direction: "desc" },
+      sort: { field: "endorsements", direction: "desc" },
       pagination: { page: 1, page_size: MODS_PER_PAGE },
     });
 
@@ -107,19 +107,19 @@ describe("useModSearch", () => {
     await respondToStart(45, 900);
     act(() => result.current.setCurrentPage(2));
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond("trending", 45);
+    await respond("endorsements", 45);
 
-    act(() => result.current.setSort({ field: "endorsements" }));
+    act(() => result.current.setSort({ field: "popular" }));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search).toMatchObject({
       filters: { time_range: "7" },
-      sort: { field: "endorsements", direction: "desc" },
+      sort: { field: "popular", direction: "desc" },
       pagination: { page: 1 },
     });
     expect(result.current.currentPage).toBe(1);
     expect(result.current.canResetSort).toBe(true);
-    await respond("endorsements", 30);
+    await respond("popular", 30);
     await waitFor(() => expect(result.current.totalCount).toBe(30));
     expect(result.current.allModsTotal).toBe(900);
   });
@@ -140,7 +140,7 @@ describe("useModSearch", () => {
 
     act(() => result.current.resetSort());
 
-    expect(result.current.sort).toEqual({ field: "trending", direction: "desc" });
+    expect(result.current.sort).toEqual({ field: "endorsements", direction: "desc" });
     expect(result.current.canResetSort).toBe(false);
   });
 
@@ -149,14 +149,14 @@ describe("useModSearch", () => {
     await respondToStart(45, 900);
     act(() => result.current.setCurrentPage(2));
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond("trending", 45);
+    await respond("endorsements", 45);
 
     act(() => result.current.setFilters({ timeRange: "28" }));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search).toMatchObject({
       filters: { time_range: "28" },
-      sort: { field: "trending", direction: "desc" },
+      sort: { field: "endorsements", direction: "desc" },
       pagination: { page: 1 },
     });
     expect(result.current.currentPage).toBe(1);
@@ -252,7 +252,7 @@ describe("useModSearch", () => {
     await respondToStart(45, 900);
     act(() => result.current.setCurrentPage(2));
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond("trending", 45);
+    await respond("endorsements", 45);
 
     act(() => result.current.selectPreset("new"));
 
@@ -287,7 +287,7 @@ describe("useModSearch", () => {
     act(() => result.current.retry());
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search.pagination.page).toBe(2);
-    await respond("trending", 45);
+    await respond("endorsements", 45);
 
     await waitFor(() => expect(result.current.error).toBeNull());
     expect(result.current.mods).toEqual([{ id: "45" }]);

@@ -10,7 +10,7 @@ import { BrowseModsBar } from "./BrowseModsBar";
 const searchWith = (filters: IModFilters, activeFilterCount: number, changedFilterCount = 0) =>
   ({
     preset: "trending",
-    sort: { field: "trending", direction: "desc" },
+    sort: { field: "endorsements", direction: "desc" },
     filters,
     activeFilterCount,
     changedFilterCount,

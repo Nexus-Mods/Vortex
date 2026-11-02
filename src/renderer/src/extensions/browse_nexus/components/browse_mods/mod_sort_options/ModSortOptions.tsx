@@ -61,7 +61,6 @@ export const ModSortOptions = ({ sort, onChange }: IModSortOptionsProps) => {
           <Picker<ModSortField>
             button={{ size: "sm" }}
             options={[
-              { label: t("Trending"), value: "trending" },
               { label: t("Downloads"), value: "popular" },
               { label: t("Endorsements"), value: "endorsements" },
               { label: t("Date added"), value: "new" },

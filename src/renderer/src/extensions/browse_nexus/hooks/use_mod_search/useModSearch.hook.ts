@@ -36,9 +36,12 @@ export interface IModFilters {
   timeRange: ModTimeRange;
 }
 
-/** Each preset's sort as it comes, which resetting the sort goes back to. */
+/**
+ * Each preset's sort as it comes, which resetting the sort goes back to. Trending is endorsements
+ * over its 7 days, which is all the API's own `trending` sort is.
+ */
 export const PRESET_SORTS: Record<ModPreset, IModSort> = {
-  trending: { field: "trending", direction: "desc" },
+  trending: { field: "endorsements", direction: "desc" },
   popular: { field: "popular", direction: "desc" },
   new: { field: "new", direction: "desc" },
 };
