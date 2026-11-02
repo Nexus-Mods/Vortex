@@ -43,15 +43,12 @@ export const PRESET_SORTS: Record<ModPreset, IModSort> = {
   new: { field: "new", direction: "desc" },
 };
 
-/** Each preset's filters, which picking it puts back. */
+/** Each preset's filters, which picking it or resetting its filters puts back. */
 export const PRESET_FILTERS: Record<ModPreset, IModFilters> = {
   trending: { timeRange: "7" },
   popular: { timeRange: "7" },
   new: { timeRange: "all" },
 };
-
-/** No filters at all, which resetting the filters goes back to. */
-const NO_FILTERS: IModFilters = { timeRange: "all" };
 
 /** The preset the search starts on. */
 const DEFAULT_PRESET: ModPreset = "trending";
@@ -103,6 +100,10 @@ const isSameSort = (lhs: IModSort, rhs: IModSort) =>
 /** How many filters narrow the mods: a time range, unless it's all time. */
 const countFilters = ({ timeRange }: IModFilters) => (timeRange === "all" ? 0 : 1);
 
+/** How many filters differ from a preset's own. */
+const countChangedFilters = (filters: IModFilters, preset: ModPreset) =>
+  filters.timeRange === PRESET_FILTERS[preset].timeRange ? 0 : 1;
+
 interface IModSearchOptions {
   /** Whether to search at all; off, it asks for nothing. */
   isEnabled: boolean;
@@ -111,8 +112,9 @@ interface IModSearchOptions {
 /**
  * The active game's mods, sorted and filtered by a preset and a page at a time. Each preset keeps
  * its own sort, which resets to how it came, as the mods table's views keep their options. Its
- * filters are put back as they come whenever it's picked, and reset to none. Kept above the Browse page's tabs, so the Mods tab's count, presets
- * and page outlive switching to Collections and back. Asks for nothing while it isn't enabled.
+ * filters are put back as they come whenever it's picked or they're reset. Kept above the Browse
+ * page's tabs, so the Mods tab's count, presets and page outlive switching to Collections and
+ * back. Asks for nothing while it isn't enabled.
  * A failed page keeps its sort's total, from its cached first page, so the pages stay to move
  * off it.
  */
@@ -148,8 +150,8 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
     setCurrentPage(1);
   };
 
-  /** Clears every filter, from the first page. */
-  const resetFilters = () => setFilters(NO_FILTERS);
+  /** Puts the open preset's filters back as they came, from the first page. */
+  const resetFilters = () => setFilters(PRESET_FILTERS[preset]);
 
   /** The page showing; it keeps the last page's results while the next loads. */
   const mods = useQuery({
@@ -201,6 +203,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
     filters,
     setFilters,
     activeFilterCount: countFilters(filters),
+    changedFilterCount: countChangedFilters(filters, preset),
     resetFilters,
     currentPage,
     setCurrentPage,

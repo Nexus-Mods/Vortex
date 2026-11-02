@@ -65,7 +65,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
     panelRole: "menu",
     panel: ({ dismiss }) => (
       <ModFilters
-        activeCount={search.activeFilterCount}
+        changedCount={search.changedFilterCount}
         filters={search.filters}
         onChange={search.setFilters}
         onReset={search.resetFilters}

@@ -11,7 +11,7 @@ import type { IModFilters } from "../../../hooks/use_mod_search/useModSearch.hoo
 import { ModFilters } from "./ModFilters";
 
 /** The filters, hung off a trigger as the bar's filter button hangs them, and opened. */
-const openFilters = async (filters: IModFilters, activeCount: number) => {
+const openFilters = async (filters: IModFilters, changedCount: number) => {
   const onChange = vi.fn();
   const onReset = vi.fn();
 
@@ -22,7 +22,7 @@ const openFilters = async (filters: IModFilters, activeCount: number) => {
       <PopoverPanel className="nxm-popover-panel-dropdown">
         {({ close }) => (
           <ModFilters
-            activeCount={activeCount}
+            changedCount={changedCount}
             filters={filters}
             onChange={onChange}
             onReset={onReset}
@@ -72,7 +72,7 @@ describe("ModFilters", () => {
     expect(screen.getByText("More filters coming soon...")).toBeInTheDocument();
   });
 
-  it("offers to reset the filter while one is on", async () => {
+  it("offers to reset the filter while one differs from the view's", async () => {
     const { onReset } = await openFilters({ timeRange: "7" }, 1);
 
     await userEvent.click(screen.getByRole("button", { name: "Reset 1 filter to default" }));
@@ -80,7 +80,7 @@ describe("ModFilters", () => {
     expect(onReset).toHaveBeenCalled();
   });
 
-  it("counts the filters it resets while more than one is on", async () => {
+  it("counts the filters it resets while more than one differs", async () => {
     await openFilters({ timeRange: "7" }, 2);
 
     expect(
@@ -88,7 +88,7 @@ describe("ModFilters", () => {
     ).toBeInTheDocument();
   });
 
-  it("offers no reset while no filter is on", async () => {
+  it("offers no reset while the filters are the view's", async () => {
     await openFilters({ timeRange: "all" }, 0);
 
     expect(screen.queryByRole("button", { name: /^Reset/ })).not.toBeInTheDocument();

@@ -64,11 +64,11 @@ export const ModTimeRangeMenu = ({
 interface IModFiltersProps {
   /** Which mods the open view shows. */
   filters: IModFilters;
-  /** How many of them narrow the mods, which the reset counts. */
-  activeCount: number;
+  /** How many of them differ from the view's own, which the reset counts. */
+  changedCount: number;
   /** Changes some of them. */
   onChange: (change: Partial<IModFilters>) => void;
-  /** Clears every one. */
+  /** Puts them back as the view has them. */
   onReset: () => void;
   /** Dismisses the filters once one's been picked. */
   onSelect: () => void;
@@ -76,12 +76,12 @@ interface IModFiltersProps {
 
 /**
  * The filter button's menu for Browse's mods: Dates, opening a submenu of time ranges with the
- * one on checked, a note that more are coming, and, while any filter is on, a reset that clears
- * them all.
+ * one on checked, a note that more are coming, and, while any differs from the view's own, a
+ * reset that puts them back.
  */
 export const ModFilters = ({
   filters,
-  activeCount,
+  changedCount,
   onChange,
   onReset,
   onSelect,
@@ -120,7 +120,7 @@ export const ModFilters = ({
         {t("More filters coming soon...")}
       </Typography>
 
-      {!!activeCount && (
+      {!!changedCount && (
         <>
           <DropdownDivider className="mt-1" />
 
@@ -131,9 +131,9 @@ export const ModFilters = ({
               variant="secondary"
               onClick={onReset}
             >
-              {activeCount === 1
+              {changedCount === 1
                 ? t("Reset 1 filter to default")
-                : t("Reset {{count}} filters to default", { count: activeCount })}
+                : t("Reset {{count}} filters to default", { count: changedCount })}
             </TypographyLink>
           </PopoverPanelGroupItem>
         </>

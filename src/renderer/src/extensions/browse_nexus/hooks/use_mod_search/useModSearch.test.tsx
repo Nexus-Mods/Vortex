@@ -176,15 +176,31 @@ describe("useModSearch", () => {
     expect(result.current.activeFilterCount).toBe(0);
   });
 
-  it("clears every filter of the open preset to all time, leaving its sort", async () => {
+  it("counts only the filters that differ from the open preset's own", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+
+    expect(result.current.changedFilterCount).toBe(0);
+
+    act(() => result.current.setFilters({ timeRange: "all" }));
+
+    expect(result.current.changedFilterCount).toBe(1);
+
+    act(() => result.current.selectPreset("new"));
+
+    expect(result.current.changedFilterCount).toBe(0);
+  });
+
+  it("puts the open preset's filters back as they came, leaving its sort", async () => {
     const { result } = render();
     await respondToStart(45, 900);
     act(() => result.current.setSort({ direction: "asc" }));
+    act(() => result.current.setFilters({ timeRange: "365" }));
 
     act(() => result.current.resetFilters());
 
-    expect(result.current.filters).toEqual({ timeRange: "all" });
-    expect(result.current.activeFilterCount).toBe(0);
+    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.changedFilterCount).toBe(0);
     expect(result.current.sort.direction).toBe("asc");
   });
 

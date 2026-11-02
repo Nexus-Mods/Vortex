@@ -7,12 +7,13 @@ import type { IModFilters, IModSearch } from "../../../hooks/use_mod_search/useM
 import { BrowseModsBar } from "./BrowseModsBar";
 
 /** The search the bar shows, with its filters and how many of them are on. */
-const searchWith = (filters: IModFilters, activeFilterCount: number) =>
+const searchWith = (filters: IModFilters, activeFilterCount: number, changedFilterCount = 0) =>
   ({
     preset: "trending",
     sort: { field: "trending", direction: "desc" },
     filters,
     activeFilterCount,
+    changedFilterCount,
     totalCount: 172,
     canResetSort: false,
     selectPreset: vi.fn(),
@@ -65,5 +66,18 @@ describe("BrowseModsBar", () => {
     rerender(<BrowseModsBar search={searchWith({ timeRange: "all" }, 0)} />);
 
     expect(screen.getByRole("button", { name: "Filter" })).not.toHaveClass("nxm-button-pip");
+  });
+
+  it("offers to reset the filters only once they differ from the view's own", async () => {
+    const { unmount } = render(<BrowseModsBar search={searchWith({ timeRange: "7" }, 1)} />);
+    await userEvent.click(screen.getByRole("button", { name: "Filter" }));
+
+    expect(screen.queryByText(/^Reset/)).not.toBeInTheDocument();
+
+    unmount();
+    render(<BrowseModsBar search={searchWith({ timeRange: "all" }, 0, 1)} />);
+    await userEvent.click(screen.getByRole("button", { name: "Filter" }));
+
+    expect(await screen.findByText("Reset 1 filter to default")).toBeInTheDocument();
   });
 });
