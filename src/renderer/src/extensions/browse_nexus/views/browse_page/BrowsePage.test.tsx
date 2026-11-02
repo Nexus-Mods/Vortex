@@ -70,7 +70,14 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import { BrowsePage } from "./BrowsePage";
 
-const api = {} as IExtensionApi;
+const emit = vi.fn();
+const api = { events: { emit } } as unknown as IExtensionApi;
+
+/** The names of the analytics events sent. */
+const tracked = () =>
+  emit.mock.calls
+    .filter(([bus]) => bus === "analytics-track-mixpanel-event")
+    .map(([, event]) => (event as { eventName: string }).eventName);
 
 describe("BrowsePage", () => {
   beforeEach(() => {
@@ -79,6 +86,7 @@ describe("BrowsePage", () => {
     mocks.isModsEnabled = true;
     mocks.gameId = "skyrimse";
     mocks.collectionsMounts = 0;
+    emit.mockClear();
   });
 
   it("names the page and the game it browses", () => {
@@ -162,5 +170,26 @@ describe("BrowsePage", () => {
 
     expect(screen.getByText("Collections panel")).toBeTruthy();
     expect(mocks.collectionsMounts).toBe(2);
+  });
+
+  it("counts the mods coming into view, opening on them or switching back to them", () => {
+    render(<BrowsePage active api={api} />);
+
+    expect(tracked()).toEqual(["browse_mods_viewed"]);
+
+    fireEvent.click(screen.getByRole("tab", { name: /Collections/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Mods/ }));
+
+    expect(tracked()).toEqual(["browse_mods_viewed", "browse_mods_viewed"]);
+  });
+
+  it("counts no view while the page is hidden or browsing mods is flagged off", () => {
+    const { rerender } = render(<BrowsePage active={false} api={api} />);
+
+    mocks.isModsEnabled = false;
+    mocks.tierZero = true;
+    rerender(<BrowsePage active api={api} />);
+
+    expect(tracked()).toEqual([]);
   });
 });

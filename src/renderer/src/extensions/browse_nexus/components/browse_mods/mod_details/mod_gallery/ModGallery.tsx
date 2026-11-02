@@ -27,6 +27,8 @@ interface IModGalleryProps {
   isLoading?: boolean;
   /** Told the picture now shown large, whenever another is picked. */
   onPick?: (image: IGalleryImage) => void;
+  /** Told which way the strip's arrows paged it. */
+  onPage?: (direction: "back" | "forward") => void;
 }
 
 /**
@@ -39,7 +41,7 @@ interface IModGalleryProps {
  * scroll anchor: a new one sits higher or lower in its 16:9 frame, and the browser would scroll
  * the details to follow it.
  */
-export const ModGallery = ({ images, isAdult, isLoading, onPick }: IModGalleryProps) => {
+export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModGalleryProps) => {
   const { t } = useTranslation();
   const stripRef = useRef<HTMLDivElement>(null);
   const thumbnailsRef = useRef<Array<HTMLButtonElement | null>>([]);
@@ -93,11 +95,13 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick }: IModGalleryPr
     pick(next);
   };
 
-  const page = (direction: 1 | -1) =>
+  const page = (direction: 1 | -1) => {
     stripRef.current?.scrollBy({
       left: direction * stripRef.current.clientWidth,
       behavior: "smooth",
     });
+    onPage?.(direction === 1 ? "forward" : "back");
+  };
 
   const shown = images[picked] ?? images[0];
 

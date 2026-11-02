@@ -6,12 +6,21 @@ import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisp
 import { SplitButton, SplitButtonAction } from "@/ui/components/split_button/SplitButton";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
 import { Typography } from "@/ui/components/typography/Typography";
 import { type IViewPickerView, ViewPicker } from "@/ui/components/view_picker/ViewPicker";
 import { PageContent } from "@/views/components/Page/PageContent";
 
 // import { Search } from "../../../../gamemode_management/components/search/Search";
-import type { IModSearch, ModPreset } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { TimeRangeSource } from "../../../hooks/browse_mods_tracking/browseModsTracker";
+import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
+import {
+  type IModSearch,
+  type IModSort,
+  type ModPreset,
+  type ModTimeRange,
+  PRESET_SORTS,
+} from "../../../hooks/use_mod_search/useModSearch.hook";
 import { ModFilters, ModTimeRangeMenu, timeRanges } from "../mod_filters/ModFilters";
 import { ModSortOptions } from "../mod_sort_options/ModSortOptions";
 
@@ -29,16 +38,50 @@ interface IBrowseModsBarProps {
  * The bar over Browse's mods: views, results count, the time range while one is on, then filter
  * and view options. The time range's label opens the time ranges and its ✕ clears it. Custom
  * views and search are commented out until views can be saved and the search takes a term.
+ * Counts each change, and the toolbar's clicks.
  */
 export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
   const { t } = useTranslation();
   // const [search, setSearch] = useState("");
+  const tracker = useBrowseModsTracker();
+  const toolbarTracking = useToolbarAnalytics("browse_mods");
+  const view = search.preset;
 
   /** Picks a view, sorting the mods by its preset. */
   const selectView = (id: string) => {
     if (isPreset(id)) {
       search.selectPreset(id);
+      tracker.trackViewSelected({ view: id, previous_view: view });
     }
+  };
+
+  /** Changes the open view's sort, or puts it back as it came. */
+  const changeSort = (change: Partial<IModSort>, isReset = false) => {
+    const sort = { ...search.sort, ...change };
+
+    if (isReset) {
+      search.resetSort();
+    } else {
+      search.setSort(change);
+    }
+
+    tracker.trackSortChanged({
+      view,
+      sort_field: sort.field,
+      sort_direction: sort.direction,
+      is_reset: isReset,
+    });
+  };
+
+  /** Changes the time range, from wherever it was changed. */
+  const changeTimeRange = (timeRange: ModTimeRange, source: TimeRangeSource) => {
+    search.setFilters({ timeRange });
+    tracker.trackTimeRangeChanged({
+      view,
+      time_range: timeRange,
+      previous_time_range: search.filters.timeRange,
+      source,
+    });
   };
 
   const views: IViewPickerView[] = [
@@ -59,6 +102,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
   ];
 
   const filter: IToolbarAction = {
+    id: "filter",
     label: t("Filter"),
     icon: "filter_list",
     hasPip: !!search.activeFilterCount,
@@ -67,8 +111,15 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
       <ModFilters
         changedCount={search.changedFilterCount}
         filters={search.filters}
-        onChange={search.setFilters}
-        onReset={search.resetFilters}
+        onChange={({ timeRange }) => {
+          if (timeRange) {
+            changeTimeRange(timeRange, "filter_menu");
+          }
+        }}
+        onReset={() => {
+          search.resetFilters();
+          tracker.trackFiltersReset({ view, filter_count: search.changedFilterCount });
+        }}
         onSelect={dismiss}
       />
     ),
@@ -79,8 +130,8 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
   const displayOptions = useDisplayOptionsAction({
     label: t("View options"),
     canReset: search.canResetSort,
-    children: <ModSortOptions sort={search.sort} onChange={search.setSort} />,
-    onReset: search.resetSort,
+    children: <ModSortOptions sort={search.sort} onChange={changeSort} />,
+    onReset: () => changeSort(PRESET_SORTS[view], true),
   });
 
   return (
@@ -109,7 +160,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
                 <SplitButtonAction
                   icon="close"
                   label={t("Remove time range filter")}
-                  onClick={() => search.setFilters({ timeRange: "all" })}
+                  onClick={() => changeTimeRange("all", "applied_filter_clear")}
                 />
               }
               appearance="subdued"
@@ -118,7 +169,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
               panel={({ close }) => (
                 <ModTimeRangeMenu
                   timeRange={search.filters.timeRange}
-                  onChange={search.setFilters}
+                  onChange={(timeRange) => changeTimeRange(timeRange, "applied_filter")}
                   onSelect={close}
                 />
               )}
@@ -131,8 +182,8 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
 
           {/* <Search placeholder={t("Search mods...")} value={search} onChange={setSearch} /> */}
 
-          <Toolbar>
-            <ToolbarGroup actions={[filter, displayOptions]} />
+          <Toolbar tracking={toolbarTracking}>
+            <ToolbarGroup actions={[filter, { ...displayOptions, id: "view-options" }]} />
           </Toolbar>
         </div>
       </PageContent>
