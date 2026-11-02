@@ -190,6 +190,7 @@ declare module "../../types/IExtensionContext" {
       deployments: Record<string, IDeployedFile[]>,
       options?: IDeployOptions,
     ) => void;
+    "will-deploy-single-mod": (gameId: string, modId: string, enable?: boolean) => void;
     "did-purge": (profileId: string) => void;
     "did-deploy": (
       profileId: string,
@@ -198,6 +199,7 @@ declare module "../../types/IExtensionContext" {
       options?: IDeployOptions,
     ) => void;
     "mods-did-deploy": (profileId: string, deployments: Record<string, IDeployedFile[]>) => void;
+    "did-deploy-single-mod": (gameId: string, modId: string, enable?: boolean) => void;
   }
 }
 
@@ -1296,6 +1298,7 @@ function onDeploySingleMod(api: IExtensionApi) {
     }
 
     const subdir = genSubDirFunc(game, getModType(mod.type));
+    let deployed = false;
     await withActivationLock(async () => {
       try {
         const normalize = await getNormalizeFunc(dataPath);
@@ -1307,6 +1310,7 @@ function onDeploySingleMod(api: IExtensionApi) {
           stagingPath,
           activator,
         );
+        await api.emitAndAwait("will-deploy-single-mod", gameId, modId, enable);
         resetDeploymentFailures(api, gameId);
         if (enable !== false) {
           const profile = profileById(state, lastActiveProfileForGame(state, gameId));
@@ -1340,6 +1344,7 @@ function onDeploySingleMod(api: IExtensionApi) {
           activator.id,
         );
         reportRecordedFailures(api, gameId);
+        deployed = true;
       } catch (unknownErr) {
         if (activator.cancel !== undefined) {
           activator.cancel(gameId, dataPath, stagingPath);
@@ -1360,6 +1365,10 @@ function onDeploySingleMod(api: IExtensionApi) {
         }
       }
     });
+    // outside the activation lock, so a listener can deploy again
+    if (deployed) {
+      await api.emitAndAwait("did-deploy-single-mod", gameId, modId, enable);
+    }
   };
 }
 

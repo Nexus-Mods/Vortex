@@ -1,12 +1,13 @@
 import {
   DiskEntryKind,
-  Operation,
+  type Operation,
   OperationKind,
   plan,
   resolve,
+  type DiskScan,
   type Lockfile,
 } from "@nexusmods/mod-pipeline";
-import { VortexGameId } from "@vortex/shared";
+import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type { IRegisteredExtension } from "../../../types/extensions";
@@ -29,6 +30,9 @@ const RESOLVED_GAMES: ReadonlySet<string> = new Set(["skyrimse"]);
 
 /** Prevoius lockfile, empty on first run */
 let previousLockfile: Lockfile;
+
+/** The disk as it was before the first deployment since the last plan, and whether a deployment has run since */
+let scanBeforeDeployment: { diskScan: DiskScan; scanMs: number; deployed: boolean } | undefined;
 
 const registeredContributions = new LockfileContributions();
 
@@ -80,31 +84,13 @@ export async function resolveLockfile(
 const elapsedMsSince = (startedAt: Temporal.Instant) =>
   Temporal.Now.instant().since(startedAt).total("milliseconds");
 
-async function planAndLogOperations(
-  api: IExtensionApi,
+function planAndLogOperations(
   gameMode: string,
   currentLockfile: Lockfile,
   previousLockfile: Lockfile,
-): Promise<Operation[]> {
-  // We need all paths, previous and current since some paths can be removed from the new lockfile contributions
-  // we need to do a disk scan also for old files.
-  let paths: string[] = [];
-  if (previousLockfile === undefined) {
-    paths = currentLockfile.files.map(({ destinationPath }) => destinationPath);
-  } else {
-    paths = [
-      ...currentLockfile.files.map(({ destinationPath }) => destinationPath),
-      ...previousLockfile.files.map(({ destinationPath }) => destinationPath),
-    ];
-  }
-
-  // Get the disk state
-  const game = getGame(gameMode);
-  const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
-  const scanStartedAt = Temporal.Now.instant();
-  const diskScan = await scanDeploymentTargets(Object.values(game.getModPaths(gamePath)), paths);
-  const scanMs = elapsedMsSince(scanStartedAt);
-
+  diskScan: DiskScan,
+  scanMs: number,
+): Operation[] {
   // Debug log
   diskScan.entries.forEach((d) => log("debug", "disk scan", d.path));
 
@@ -139,28 +125,19 @@ async function planAndLogOperations(
 }
 
 /**
- * Resolves and logs the lockfile once a plugin sort has run after a deployment. Runs for a game
- * never overlap: sorts during a run lead to one more run after it.
+ * Scans the deployment targets before a deployment, then resolves and plans the lockfile once a
+ * plugin sort has run after it.
  */
 export function registerResolveLockFile(
   api: IExtensionApi,
   hashFile: (filePath: string) => Promise<string> = fileMD5,
 ): void {
-  api.onAsync<"will-deploy">("will-deploy", async (profileId) => {});
-
-  api.events.on("did-sort-plugins", async (gameId: string) => {});
-
-  api.onAsync(
-    "did-enable-mods",
-    async (res: void, profileId: string, modIds: string[], enable: boolean) => {
-      const gameId = profileById(api.getState(), profileId)?.gameId;
-      if (!RESOLVED_GAMES.has(gameId)) {
-        return;
-      }
-
-      log("debug", "registerResolveLockfile on did-enable-mods");
-      log("debug", "registerResolveLockFile", profileId);
-
+  const scanBeforeDiskChange = async (gameId: string | undefined) => {
+    // disk changes before the next plan, as a collection install makes, keep the first scan
+    if (!RESOLVED_GAMES.has(gameId) || scanBeforeDeployment !== undefined) {
+      return;
+    }
+    try {
       const gameMode = VortexGameId(gameId);
 
       if (previousLockfile === undefined) {
@@ -183,12 +160,61 @@ export function registerResolveLockFile(
         });
       }
 
+      // Get the disk state before the deployment changes it
+      const game = getGame(gameMode);
+      const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
+      const scanStartedAt = Temporal.Now.instant();
+      const diskScan = await scanDeploymentTargets(
+        Object.values(game.getModPaths(gamePath)),
+        previousLockfile.files.map(({ destinationPath }) => destinationPath),
+      );
+      scanBeforeDeployment = { diskScan, scanMs: elapsedMsSince(scanStartedAt), deployed: false };
+    } catch (err) {
+      log("warn", "failed to scan before deployment", {
+        gameId,
+        error: getErrorMessageOrDefault(err),
+      });
+    }
+  };
+
+  api.onAsync<"will-deploy">("will-deploy", (profileId) =>
+    scanBeforeDiskChange(profileById(api.getState(), profileId)?.gameId),
+  );
+  // removing mods and deploying a single mod change the disk outside a deployment
+  api.onAsync<"will-remove-mods">("will-remove-mods", scanBeforeDiskChange);
+  api.onAsync<"will-deploy-single-mod">("will-deploy-single-mod", scanBeforeDiskChange);
+
+  api.onAsync<"did-deploy">("did-deploy", (profileId) => {
+    if (
+      scanBeforeDeployment &&
+      RESOLVED_GAMES.has(profileById(api.getState(), profileId)?.gameId)
+    ) {
+      scanBeforeDeployment.deployed = true;
+    }
+    return Promise.resolve();
+  });
+
+  api.events.on("did-sort-plugins", async (gameId: string) => {
+    // only a sort after a deployment plans; changes not deployed yet stay for the next one
+    if (!RESOLVED_GAMES.has(gameId) || scanBeforeDeployment?.deployed !== true) {
+      return;
+    }
+    const { diskScan, scanMs } = scanBeforeDeployment;
+    scanBeforeDeployment = undefined;
+    try {
       // Create the current lockfile from state
-      let currentLockfile = await resolveLockfile(api, gameMode, registeredContributions, hashFile);
+      const currentLockfile = await resolveLockfile(
+        api,
+        VortexGameId(gameId),
+        registeredContributions,
+        hashFile,
+      );
       currentLockfile.files.forEach((f) => log("debug", "current lockfile", f.destinationPath));
-      await planAndLogOperations(api, gameId, currentLockfile, previousLockfile);
+      planAndLogOperations(gameId, currentLockfile, previousLockfile, diskScan, scanMs);
 
       previousLockfile = currentLockfile;
-    },
-  );
+    } catch (err) {
+      log("warn", "failed to plan lockfile", { gameId, error: getErrorMessageOrDefault(err) });
+    }
+  });
 }
