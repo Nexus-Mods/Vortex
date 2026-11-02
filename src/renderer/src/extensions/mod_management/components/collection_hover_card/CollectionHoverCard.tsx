@@ -50,7 +50,9 @@ const CollectionStats = ({ collection }: { collection: IMod }) => {
 
   return (
     <span className="flex shrink-0 items-center gap-x-2">
-      <span>{t("modsTable::collectionHoverCard::modCount", { count })}</span>
+      <span data-testid="collection-hover-card-mod-count">
+        {t("modsTable::collectionHoverCard::modCount", { count })}
+      </span>
 
       {!!size && (
         <>

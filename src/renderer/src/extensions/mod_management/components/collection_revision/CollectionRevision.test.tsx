@@ -89,8 +89,7 @@ describe("CollectionRevision", () => {
     revision.changelog = { status: "loaded", changelog: "" };
     rerender(<CollectionRevision collection={COLLECTION} />);
     expect(screen.queryByRole("status")).toBeNull();
-    // By key, as PlainText takes no test id; the test `t` hands keys back.
-    expect(screen.getByText("modsTable::changelog::noneForRevision")).toBeInTheDocument();
+    expect(screen.getByTestId("changelog-none")).toBeInTheDocument();
   });
 
   it("says when it couldn't load the changelog, rather than that there's none", async () => {
@@ -100,7 +99,7 @@ describe("CollectionRevision", () => {
 
     await userEvent.click(screen.getByTestId("changelog-button"));
 
-    expect(screen.getByText("modsTable::changelog::loadFailed")).toBeInTheDocument();
-    expect(screen.queryByText("modsTable::changelog::noneForRevision")).toBeNull();
+    expect(screen.getByTestId("changelog-load-failed")).toBeInTheDocument();
+    expect(screen.queryByTestId("changelog-none")).toBeNull();
   });
 });
