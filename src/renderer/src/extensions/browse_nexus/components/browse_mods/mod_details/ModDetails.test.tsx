@@ -281,7 +281,51 @@ describe("ModDetails", () => {
     await userEvent.click(screen.getAllByRole("button", { name: /^Image/ })[1]);
 
     expect(propertiesOf("browse_mods_gallery_image_selected")).toEqual([
-      { mod_uid: "1704-1", image_index: 1, image_count: 2 },
+      { mod_uid: "1704-1", image_index: 2, image_count: 2, input: "pointer" },
     ]);
+  });
+
+  it("counts picking a picture with the keys as the keyboard", async () => {
+    renderComponent(summary, vi.fn(), [image("a"), image("b")]);
+    act(() => screen.getAllByRole("button", { name: /^Image/ })[0].focus());
+
+    await userEvent.keyboard("{ArrowRight}");
+
+    expect(propertiesOf("browse_mods_gallery_image_selected")).toEqual([
+      { mod_uid: "1704-1", image_index: 2, image_count: 2, input: "keyboard" },
+    ]);
+  });
+
+  it("counts paging the gallery's strip, and which way", async () => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(private readonly onResize: () => void) {}
+        observe = () => this.onResize();
+        disconnect = () => undefined;
+      },
+    );
+    const sizes = { scrollWidth: 1000, clientWidth: 200 };
+    const restore = Object.entries(sizes).map(([key, value]) => {
+      const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, key);
+      Object.defineProperty(HTMLElement.prototype, key, { configurable: true, get: () => value });
+      return () => original && Object.defineProperty(HTMLElement.prototype, key, original);
+    });
+    const { scrollBy } = HTMLElement.prototype;
+    HTMLElement.prototype.scrollBy = vi.fn();
+
+    try {
+      renderComponent(summary, vi.fn(), ["a", "b", "c", "d", "e", "f"].map(image));
+
+      await userEvent.click(await screen.findByRole("button", { name: "Later images" }));
+
+      expect(propertiesOf("browse_mods_gallery_paged")).toEqual([
+        { mod_uid: "1704-1", direction: "forward" },
+      ]);
+    } finally {
+      restore.forEach((undo) => undo());
+      HTMLElement.prototype.scrollBy = scrollBy;
+      vi.unstubAllGlobals();
+    }
   });
 });

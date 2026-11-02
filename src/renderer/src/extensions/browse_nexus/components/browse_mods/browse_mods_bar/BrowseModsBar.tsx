@@ -15,10 +15,9 @@ import { PageContent } from "@/views/components/Page/PageContent";
 import type { TimeRangeSource } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import {
+  type IModFilters,
   type IModSearch,
-  type IModSort,
   type ModPreset,
-  type ModTimeRange,
   PRESET_SORTS,
 } from "../../../hooks/use_mod_search/useModSearch.hook";
 import { ModFilters, ModTimeRangeMenu, timeRanges } from "../mod_filters/ModFilters";
@@ -55,33 +54,28 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
     }
   };
 
-  /** Changes the open view's sort, or puts it back as it came. */
-  const changeSort = (change: Partial<IModSort>, isReset = false) => {
-    const sort = { ...search.sort, ...change };
+  /** Changes some filters, from wherever they were changed; any already as asked are left be. */
+  const changeFilters = (change: Partial<IModFilters>, source: TimeRangeSource) => {
+    const changed: Partial<IModFilters> = Object.fromEntries(
+      Object.entries(change).filter(
+        ([key, value]) => value !== search.filters[key as keyof IModFilters],
+      ),
+    );
 
-    if (isReset) {
-      search.resetSort();
-    } else {
-      search.setSort(change);
+    if (!Object.keys(changed).length) {
+      return;
     }
 
-    tracker.trackSortChanged({
-      view,
-      sort_field: sort.field,
-      sort_direction: sort.direction,
-      is_reset: isReset,
-    });
-  };
+    search.setFilters(changed);
 
-  /** Changes the time range, from wherever it was changed. */
-  const changeTimeRange = (timeRange: ModTimeRange, source: TimeRangeSource) => {
-    search.setFilters({ timeRange });
-    tracker.trackTimeRangeChanged({
-      view,
-      time_range: timeRange,
-      previous_time_range: search.filters.timeRange,
-      source,
-    });
+    if (changed.timeRange) {
+      tracker.trackTimeRangeChanged({
+        view,
+        time_range: changed.timeRange,
+        previous_time_range: search.filters.timeRange,
+        source,
+      });
+    }
   };
 
   const views: IViewPickerView[] = [
@@ -111,11 +105,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
       <ModFilters
         changedCount={search.changedFilterCount}
         filters={search.filters}
-        onChange={({ timeRange }) => {
-          if (timeRange) {
-            changeTimeRange(timeRange, "filter_menu");
-          }
-        }}
+        onChange={(change) => changeFilters(change, "filter_menu")}
         onReset={() => {
           search.resetFilters();
           tracker.trackFiltersReset({ view, filter_count: search.changedFilterCount });
@@ -130,8 +120,35 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
   const displayOptions = useDisplayOptionsAction({
     label: t("View options"),
     canReset: search.canResetSort,
-    children: <ModSortOptions sort={search.sort} onChange={changeSort} />,
-    onReset: () => changeSort(PRESET_SORTS[view], true),
+    children: (
+      <ModSortOptions
+        sort={search.sort}
+        onChange={(change) => {
+          const sort = { ...search.sort, ...change };
+
+          if (sort.field === search.sort.field && sort.direction === search.sort.direction) {
+            return;
+          }
+
+          search.setSort(change);
+          tracker.trackSortChanged({
+            view,
+            sort_field: sort.field,
+            sort_direction: sort.direction,
+            is_reset: false,
+          });
+        }}
+      />
+    ),
+    onReset: () => {
+      search.resetSort();
+      tracker.trackSortChanged({
+        view,
+        sort_field: PRESET_SORTS[view].field,
+        sort_direction: PRESET_SORTS[view].direction,
+        is_reset: true,
+      });
+    },
   });
 
   return (
@@ -160,7 +177,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
                 <SplitButtonAction
                   icon="close"
                   label={t("Remove time range filter")}
-                  onClick={() => changeTimeRange("all", "applied_filter_clear")}
+                  onClick={() => changeFilters({ timeRange: "all" }, "applied_filter_clear")}
                 />
               }
               appearance="subdued"
@@ -169,7 +186,7 @@ export const BrowseModsBar = ({ search }: IBrowseModsBarProps) => {
               panel={({ close }) => (
                 <ModTimeRangeMenu
                   timeRange={search.filters.timeRange}
-                  onChange={(timeRange) => changeTimeRange(timeRange, "applied_filter")}
+                  onChange={(timeRange) => changeFilters({ timeRange }, "applied_filter")}
                   onSelect={close}
                 />
               )}

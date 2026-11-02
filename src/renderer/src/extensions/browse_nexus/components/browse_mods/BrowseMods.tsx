@@ -7,6 +7,7 @@ import { NoResults } from "@/ui/components/no_results/NoResults";
 import { ResizableSplit } from "@/ui/components/resizable_split/ResizableSplit";
 import { useSavedSplit } from "@/ui/components/resizable_split/useSavedSplit.hook";
 
+import type { SelectionInput } from "../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
 import { type IModSearch, MODS_PER_PAGE } from "../../hooks/use_mod_search/useModSearch.hook";
@@ -20,14 +21,17 @@ interface IBrowseModsProps {
   api: IExtensionApi;
   /** The active game's mod search, kept above the tabs. */
   search: IModSearch;
+  /** Whether they're on screen; the page stays mounted, searching, while it's left. */
+  isShown: boolean;
 }
 
 /**
  * The active game's mods: the bar over the list and details, in a split the user can resize and
  * that's saved. The details keep the picked mod, the first until another's picked, through
- * changes of page or sort. Counts picking a mod, a search that comes back empty, and retrying one that failed.
+ * changes of page or sort. Counts picking a mod, a search the user sees come back empty, and
+ * retrying one that failed.
  */
-export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
+export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   const { t } = useTranslation();
   const { mods } = search;
   const [activeMod, setActiveMod] = useState<ModSummary>();
@@ -53,13 +57,13 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
   });
 
   useEffect(() => {
-    if (isEmpty) {
+    if (isEmpty && isShown) {
       tracker.trackNoResults(searched());
     }
-  }, [isEmpty, preset, sort.field, sort.direction, filters.timeRange, tracker]);
+  }, [isEmpty, isShown, preset, sort.field, sort.direction, filters.timeRange, tracker]);
 
   /** Opens another mod's details. */
-  const selectMod = (id: string) => {
+  const selectMod = (id: string, input: SelectionInput) => {
     if (id === activeMod?.id) {
       return;
     }
@@ -72,6 +76,7 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
         mod_uid: id,
         view: preset,
         position: (currentPage - 1) * MODS_PER_PAGE + index + 1,
+        input,
       });
     }
   };
@@ -80,7 +85,9 @@ export const BrowseMods = ({ api, search }: IBrowseModsProps) => {
   const focusList = () =>
     listRef.current?.querySelector<HTMLElement>('[data-mod-card][tabindex="0"]')?.focus();
 
-  /** The details' pane: the active mod's, or with none, pulsing while the list loads or saying so. */
+  /**
+   * The details' pane: the active mod's, or with none, pulsing while the list loads or saying so.
+   */
   const details = () => {
     if (!activeMod && search.loading) {
       return <ModDetailsSkeleton />;

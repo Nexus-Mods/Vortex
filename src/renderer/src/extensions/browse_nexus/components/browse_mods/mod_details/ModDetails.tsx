@@ -140,12 +140,13 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                   isLoading={details.isPending}
                   key={mod.id}
                   onPage={(direction) => tracker.trackGalleryPaged({ mod_uid: mod.id, direction })}
-                  onPick={(image) => {
+                  onPick={(image, index, input) => {
                     onPick(image);
                     tracker.trackGalleryImageSelected({
                       mod_uid: mod.id,
-                      image_index: gallery.indexOf(image),
+                      image_index: index + 1,
                       image_count: gallery.length,
+                      input,
                     });
                   }}
                 />

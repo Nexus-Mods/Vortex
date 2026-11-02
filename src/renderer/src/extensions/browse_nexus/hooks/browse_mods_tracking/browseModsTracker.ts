@@ -11,6 +11,9 @@ import type {
 /** Where a time range was changed from. */
 export type TimeRangeSource = "filter_menu" | "applied_filter" | "applied_filter_clear";
 
+/** How a mod or picture was picked: clicked, or moved to with the keys. */
+export type SelectionInput = "pointer" | "keyboard";
+
 /** Which way the gallery's strip was paged. */
 export type GalleryDirection = "back" | "forward";
 
@@ -72,17 +75,23 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       track("browse_mods_filters_reset", props),
 
     // `position` counts from 1 across pages, so the 3rd mod on page 2 of 20 is 23. Moving
-    // through the list with the arrow keys picks each mod it passes, and is counted.
-    trackModSelected: (props: { mod_uid: string; view: ModPreset; position: number }) =>
-      track("browse_mods_mod_selected", props),
+    // through the list with the keys picks each mod it passes, each counted as `keyboard`.
+    trackModSelected: (props: {
+      mod_uid: string;
+      view: ModPreset;
+      position: number;
+      input: SelectionInput;
+    }) => track("browse_mods_mod_selected", props),
 
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
 
-    // `image_index` counts from 0; the arrow keys on the strip pick too.
+    // `image_index` counts from 1, as `position` does; the keys on the strip pick too, counted as
+    // `keyboard`.
     trackGalleryImageSelected: (props: {
       mod_uid: string;
       image_index: number;
       image_count: number;
+      input: SelectionInput;
     }) => track("browse_mods_gallery_image_selected", props),
 
     trackGalleryPaged: (props: { mod_uid: string; direction: GalleryDirection }) =>

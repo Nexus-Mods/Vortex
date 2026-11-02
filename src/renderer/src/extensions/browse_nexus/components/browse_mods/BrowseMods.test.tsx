@@ -71,7 +71,7 @@ vi.mock("./mod_list/ModList", () => ({
     listRef: React.RefObject<HTMLDivElement>;
     isError: boolean;
     onRetry: () => void;
-    onSelectMod: (id: string) => void;
+    onSelectMod: (id: string, input: string) => void;
   }) => (
     <div ref={listRef}>
       {isError && <button onClick={onRetry}>Retry</button>}
@@ -80,7 +80,7 @@ vi.mock("./mod_list/ModList", () => ({
           data-mod-card
           key={mod.id}
           tabIndex={mod.id === activeModId ? 0 : -1}
-          onClick={() => onSelectMod(mod.id)}
+          onClick={() => onSelectMod(mod.id, "pointer")}
         >
           {mod.name}
         </button>
@@ -126,18 +126,18 @@ const searched = {
   time_range: "7",
 };
 
-const renderComponent = (initial: IModSearch) => {
+const renderComponent = (initial: IModSearch, isInitiallyShown = true) => {
   const api = {} as IExtensionApi;
   const tracking = browseModsTracking();
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
-  const wrap = (search: IModSearch) => (
+  const wrap = (search: IModSearch, isShown: boolean) => (
     <QueryClientProvider client={client}>
-      <BrowseMods api={api} search={search} />
+      <BrowseMods api={api} isShown={isShown} search={search} />
     </QueryClientProvider>
   );
-  const { rerender } = render(wrap(initial), { wrapper: tracking.wrapper });
+  const { rerender } = render(wrap(initial, isInitiallyShown), { wrapper: tracking.wrapper });
   return {
-    rerender: (next: IModSearch) => rerender(wrap(next)),
+    rerender: (next: IModSearch, isShown = true) => rerender(wrap(next, isShown)),
     propertiesOf: (eventName: string) =>
       tracking.tracked(eventName).map(({ properties }) => properties),
   };
@@ -235,7 +235,7 @@ describe("BrowseMods", () => {
     await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
 
     expect(propertiesOf("browse_mods_mod_selected")).toEqual([
-      { mod_uid: "2", view: "trending", position: 22 },
+      { mod_uid: "2", view: "trending", position: 22, input: "pointer" },
     ]);
   });
 
@@ -258,5 +258,15 @@ describe("BrowseMods", () => {
     expect(failed.retry).toHaveBeenCalled();
     expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, page: 1 }]);
     expect(propertiesOf("browse_mods_no_results")).toEqual([]);
+  });
+
+  it("counts an empty search only once the user can see it", () => {
+    const { rerender, propertiesOf } = renderComponent(search([]), false);
+
+    expect(propertiesOf("browse_mods_no_results")).toEqual([]);
+
+    rerender(search([]), true);
+
+    expect(propertiesOf("browse_mods_no_results")).toEqual([searched]);
   });
 });

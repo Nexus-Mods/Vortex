@@ -6,6 +6,11 @@ import { Button } from "@/ui/components/button/Button";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
+import type {
+  GalleryDirection,
+  SelectionInput,
+} from "../../../../hooks/browse_mods_tracking/browseModsTracker";
+
 /** One picture in a mod's gallery, as the API sends it, with its title where it has one. */
 export type IGalleryImage = ModImage & { title?: string };
 
@@ -25,10 +30,10 @@ interface IModGalleryProps {
   isAdult: boolean;
   /** Pulses the placeholders, while more pictures are coming. */
   isLoading?: boolean;
-  /** Told the picture now shown large, whenever another is picked. */
-  onPick?: (image: IGalleryImage) => void;
+  /** Told the picture now shown large, its index and how it was picked, as another is picked. */
+  onPick?: (image: IGalleryImage, index: number, input: SelectionInput) => void;
   /** Told which way the strip's arrows paged it. */
-  onPage?: (direction: "back" | "forward") => void;
+  onPage?: (direction: GalleryDirection) => void;
 }
 
 /**
@@ -75,9 +80,9 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
     return () => observer.disconnect();
   }, [images]);
 
-  const pick = (index: number) => {
+  const pick = (index: number, input: SelectionInput) => {
     setPicked(index);
-    onPick?.(images[index]);
+    onPick?.(images[index], index, input);
     thumbnailsRef.current[index]?.focus();
     thumbnailsRef.current[index]?.scrollIntoView({ block: "nearest", inline: "nearest" });
   };
@@ -92,7 +97,7 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
     }
 
     event.preventDefault();
-    pick(next);
+    pick(next, "keyboard");
   };
 
   const page = (direction: 1 | -1) => {
@@ -170,7 +175,7 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
                     }}
                     tabIndex={index === picked ? 0 : -1}
                     type="button"
-                    onClick={() => pick(index)}
+                    onClick={() => pick(index, "pointer")}
                   >
                     <AdultAwareImage
                       alt=""

@@ -52,6 +52,7 @@ export const BrowsePage = ({ active, api }: IBrowsePageProps) => {
             api={api}
             supportsCollections={supportsCollections}
             isModsEnabled={isModsEnabled}
+            isModsShown={isModsShown}
             key={gameId}
           />
         </TabProvider>

@@ -102,7 +102,15 @@ describe("ModList", () => {
 
     await userEvent.keyboard(key);
 
-    expect(onSelectMod).toHaveBeenCalledWith(id);
+    expect(onSelectMod).toHaveBeenCalledWith(id, "keyboard");
     expect(screen.getByRole("button", { name: new RegExp(`Mod ${id}`) })).toHaveFocus();
+  });
+
+  it("picks a mod clicked, saying it was the pointer", async () => {
+    const { onSelectMod } = renderComponent({ mods: [mod("1"), mod("2")] });
+
+    await userEvent.click(screen.getByRole("button", { name: /Mod 2/ }));
+
+    expect(onSelectMod).toHaveBeenCalledWith("2", "pointer");
   });
 });

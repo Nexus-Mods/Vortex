@@ -162,4 +162,47 @@ describe("BrowseModsBar", () => {
       expect.objectContaining({ action: "filter", toolbar: "browse_mods" }),
     ]);
   });
+
+  it("does nothing, and counts nothing, when the time range or sort picked is the one on", async () => {
+    const search = searchWith({ timeRange: "7" }, 1);
+    const { tracked } = renderBar(search);
+
+    await userEvent.click(screen.getByRole("button", { name: "7 days" }));
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: "Last 7 days" }));
+    await userEvent.click(screen.getByRole("button", { name: "View options" }));
+    await userEvent.click(await screen.findByRole("button", { name: /Endorsements/ }));
+    await userEvent.click(await screen.findByRole("option", { name: "Endorsements" }));
+
+    expect(search.setFilters).not.toHaveBeenCalled();
+    expect(search.setSort).not.toHaveBeenCalled();
+    expect(tracked("browse_mods_time_range_changed")).toEqual([]);
+    expect(tracked("browse_mods_sort_changed")).toEqual([]);
+  });
+
+  it("counts resetting the sort, with the sort it goes back to", async () => {
+    const search = {
+      ...searchWith({ timeRange: "7" }, 1),
+      sort: { field: "popular", direction: "asc" },
+      canResetSort: true,
+    } as IModSearch;
+    const { tracked } = renderBar(search);
+
+    await userEvent.click(screen.getByRole("button", { name: "View options" }));
+    await userEvent.click(await screen.findByText("Reset to default"));
+
+    expect(search.resetSort).toHaveBeenCalled();
+    expect(propertiesOf(tracked, "browse_mods_sort_changed")).toEqual([
+      { view: "trending", sort_field: "endorsements", sort_direction: "desc", is_reset: true },
+    ]);
+  });
+
+  it("counts the view options' clicks as Browse mods' too", async () => {
+    const { tracked } = renderBar(searchWith({ timeRange: "all" }, 0));
+
+    await userEvent.click(screen.getByRole("button", { name: "View options" }));
+
+    expect(propertiesOf(tracked, "app_toolbar_action_clicked")).toEqual([
+      expect.objectContaining({ action: "view-options", toolbar: "browse_mods" }),
+    ]);
+  });
 });
