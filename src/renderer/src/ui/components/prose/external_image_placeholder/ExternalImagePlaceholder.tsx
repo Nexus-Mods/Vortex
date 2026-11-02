@@ -187,7 +187,12 @@ export const ExternalImagePlaceholder = ({
 
           <span className="flex flex-wrap gap-x-3 gap-y-1">
             {links.map(({ href, label }) => (
-              <Tooltip className="break-all" content={href} key={href}>
+              <Tooltip
+                className="break-all"
+                content={href}
+                delay={{ open: 0, close: 50 }}
+                key={href}
+              >
                 <span className="inline-flex">
                   <TypographyLink
                     appearance="moderate"
