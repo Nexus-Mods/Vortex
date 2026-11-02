@@ -32,8 +32,8 @@
     "preview": "Files will be installed to:",
     "useAsDefault": "Use this folder for future mods for this game",
     "dontAskAgain": "Don't ask again",
-    "useForAll_one": "Use this folder for all remaining mods ({{count}} more)",
-    "useForAll_other": "Use this folder for all remaining mods ({{count}} more)",
+    "useForAll": "Use this folder for the remaining mod ({{count}} more)",
+    "useForAll_plural": "Use this folder for all remaining mods ({{count}} more)",
     "cancel": "Cancel",
     "install": "Install"
   },
