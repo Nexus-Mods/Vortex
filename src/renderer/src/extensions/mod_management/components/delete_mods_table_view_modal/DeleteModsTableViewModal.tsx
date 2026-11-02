@@ -20,24 +20,26 @@ export const DeleteModsTableViewModal = ({
   onDelete,
   onClose,
 }: IDeleteModsTableViewModalProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
 
   return (
-    <Modal isOpen={name !== undefined} size="sm" title={t("Delete view")} onClose={onClose}>
+    <Modal
+      isOpen={name !== undefined}
+      size="sm"
+      title={t("modsTable::deleteView::title")}
+      onClose={onClose}
+    >
       <Typography appearance="subdued" typographyType="body-sm">
-        {t(
-          'Are you sure you want to delete "{{name}}"? This won\'t delete any mods, but the view and its customisations will be permanently removed.',
-          { name },
-        )}
+        {t("modsTable::deleteView::body", { name })}
       </Typography>
 
       <div className="mt-4 flex gap-2">
         <Button appearance="moderate" brand="neutral" className="flex-1" onClick={onClose}>
-          {t("Cancel")}
+          {t("modsTable::cancel")}
         </Button>
 
         <Button brand="danger" className="flex-1" onClick={onDelete}>
-          {t("Delete view")}
+          {t("modsTable::deleteView::confirm")}
         </Button>
       </div>
     </Modal>

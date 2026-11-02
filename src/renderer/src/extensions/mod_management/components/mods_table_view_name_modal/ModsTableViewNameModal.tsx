@@ -29,7 +29,7 @@ const ViewNameForm = ({
 }: Omit<IModsTableViewNameModalProps, "isOpen"> & {
   inputRef: RefObject<HTMLInputElement | null>;
 }) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const [name, setName] = useState(renaming ?? "");
   const trimmed = name.trim();
 
@@ -45,27 +45,31 @@ const ViewNameForm = ({
     <form onSubmit={submit}>
       <Typography appearance="subdued" className="mb-4" typographyType="body-sm">
         {renaming === undefined
-          ? t(
-              "Give your view a name. You can customise its columns, grouping and filters after creating it.",
-            )
-          : t("Give your view a new name. Your columns, grouping and filters won't change.")}
+          ? t("modsTable::viewName::createIntro")
+          : t("modsTable::viewName::renameIntro")}
       </Typography>
 
       <TextField
-        label={t("Name view")}
-        placeholder={t("e.g. Author view")}
+        label={t("modsTable::viewName::label")}
+        placeholder={t("modsTable::viewName::placeholder")}
         ref={inputRef}
         value={name}
         onChange={(event) => setName(event.target.value)}
       />
 
       <div className="mt-4 flex gap-2">
-        <Button appearance="moderate" brand="neutral" className="flex-1" onClick={onClose}>
-          {t("Cancel")}
+        <Button
+          appearance="moderate"
+          brand="neutral"
+          className="flex-1"
+          data-testid="view-name-cancel"
+          onClick={onClose}
+        >
+          {t("modsTable::cancel")}
         </Button>
 
-        <Button className="flex-1" disabled={!trimmed} type="submit">
-          {!renaming ? t("Create view") : t("Rename view")}
+        <Button className="flex-1" data-testid="view-name-submit" disabled={!trimmed} type="submit">
+          {!renaming ? t("modsTable::viewName::create") : t("modsTable::viewName::rename")}
         </Button>
       </div>
     </form>
@@ -79,7 +83,7 @@ export const ModsTableViewNameModal = ({
   onSubmit,
   onClose,
 }: IModsTableViewNameModalProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -87,7 +91,9 @@ export const ModsTableViewNameModal = ({
       initialFocusRef={inputRef}
       isOpen={isOpen}
       size="sm"
-      title={!renaming ? t("Create a new view") : t("Rename view")}
+      title={
+        !renaming ? t("modsTable::viewName::createTitle") : t("modsTable::viewName::renameTitle")
+      }
       onClose={onClose}
     >
       <ViewNameForm inputRef={inputRef} renaming={renaming} onClose={onClose} onSubmit={onSubmit} />

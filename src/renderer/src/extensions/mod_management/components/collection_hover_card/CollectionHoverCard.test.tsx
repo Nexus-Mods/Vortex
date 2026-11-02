@@ -68,8 +68,8 @@ describe("CollectionHoverCard", () => {
     const card = await openCard();
 
     expect(within(card).getByText("canliberk")).toBeInTheDocument();
-    // the test `t` leaves the count uninterpolated
-    expect(within(card).getByText("{{count}} mods")).toBeInTheDocument();
+    // the test `t` hands back the key, uninterpolated
+    expect(within(card).getByText("modsTable::collectionHoverCard::modCount")).toBeInTheDocument();
     expect(within(card).getByText("3.00 GB")).toBeInTheDocument();
   });
 

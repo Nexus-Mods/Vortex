@@ -227,8 +227,11 @@ describe("ModsTableSwitch", () => {
   describe("a view of the user's own", () => {
     const createView = async (name: string) => {
       await userEvent.click(screen.getByRole("button", { name: "Add view" }));
-      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), name);
-      await userEvent.click(screen.getByRole("button", { name: "Create view" }));
+      await userEvent.type(
+        screen.getByRole("textbox", { name: "modsTable::viewName::label" }),
+        name,
+      );
+      await userEvent.click(screen.getByRole("button", { name: "modsTable::viewName::create" }));
     };
 
     it("is made from Add view, after the built-in ones, and opens", async () => {
@@ -250,11 +253,14 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
       await userEvent.click(screen.getByRole("button", { name: "Add view" }));
-      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), "Half-typed");
-      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      await userEvent.type(
+        screen.getByRole("textbox", { name: "modsTable::viewName::label" }),
+        "Half-typed",
+      );
+      await userEvent.click(screen.getByRole("button", { name: "modsTable::cancel" }));
       await userEvent.click(screen.getByRole("button", { name: "Add view" }));
 
-      expect(screen.getByRole("textbox", { name: "Name view" })).toHaveValue("");
+      expect(screen.getByRole("textbox", { name: "modsTable::viewName::label" })).toHaveValue("");
     });
 
     it("starts ungrouped, with the version and installation time columns", async () => {
@@ -330,7 +336,7 @@ describe("ModsTableSwitch", () => {
       await userEvent.click(
         screen.getByRole("menuitem", { name: "modsTable::toolbar::deleteView" }),
       );
-      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      await userEvent.click(screen.getByRole("button", { name: "modsTable::cancel" }));
 
       expect(viewButtons().map((view) => view.textContent)).toContain("Mine");
     });
@@ -350,7 +356,7 @@ describe("ModsTableSwitch", () => {
         await userEvent.click(
           screen.getByRole("menuitem", { name: "modsTable::toolbar::renameView" }),
         );
-        const field = screen.getByRole("textbox", { name: "Name view" });
+        const field = screen.getByRole("textbox", { name: "modsTable::viewName::label" });
         expect(field).toHaveValue("Mine");
         await userEvent.clear(field);
         await userEvent.type(field, "Theirs{Enter}");
@@ -366,10 +372,12 @@ describe("ModsTableSwitch", () => {
         await userEvent.click(
           screen.getByRole("menuitem", { name: "modsTable::toolbar::deleteView" }),
         );
-        expect(screen.getByRole("dialog", { name: "Delete view" })).toHaveTextContent(
-          "Are you sure you want to delete",
+        expect(
+          screen.getByRole("dialog", { name: "modsTable::deleteView::title" }),
+        ).toHaveTextContent("modsTable::deleteView::body");
+        await userEvent.click(
+          screen.getByRole("button", { name: "modsTable::deleteView::confirm" }),
         );
-        await userEvent.click(screen.getByRole("button", { name: "Delete view" }));
 
         expect(viewButtons().map((view) => view.textContent)).toEqual([
           "modsTable::views::all",
@@ -406,7 +414,10 @@ describe("ModsTableSwitch", () => {
       await userEvent.click(
         screen.getByRole("menuitem", { name: "modsTable::toolbar::renameView" }),
       );
-      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), "s{Enter}");
+      await userEvent.type(
+        screen.getByRole("textbox", { name: "modsTable::viewName::label" }),
+        "s{Enter}",
+      );
 
       await waitFor(() => expect(screen.getByRole("button", { name: "Mines" })).toHaveFocus());
     });
@@ -680,7 +691,7 @@ describe("ModsTableSwitch", () => {
       // The test t() doesn't interpolate, so this reads the source string; the names are
       // sharedMods's to work out, and tested there.
       expect(
-        within(screen.getByRole("dialog")).getByText("1 mod is shared with: {{collections}}"),
+        within(screen.getByRole("dialog")).getByText("modsTable::disableShared::shared"),
       ).toBeInTheDocument();
     });
 
@@ -689,7 +700,9 @@ describe("ModsTableSwitch", () => {
       await showView("modsTable::views::collections");
       await userEvent.click(groupSwitch("Xenon"));
 
-      await userEvent.click(screen.getByRole("button", { name: "Keep shared mods enabled" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "modsTable::disableShared::keepShared" }),
+      );
 
       expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b"], false);
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -700,7 +713,9 @@ describe("ModsTableSwitch", () => {
       await showView("modsTable::views::collections");
       await userEvent.click(groupSwitch("Xenon"));
 
-      await userEvent.click(screen.getByRole("button", { name: "Disable all mods" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "modsTable::disableShared::disableAll" }),
+      );
 
       expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b", "c"], false);
     });
@@ -710,7 +725,7 @@ describe("ModsTableSwitch", () => {
       await showView("modsTable::views::collections");
       await userEvent.click(groupSwitch("Xenon"));
 
-      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      await userEvent.click(screen.getByRole("button", { name: "modsTable::cancel" }));
 
       expect(onSetModsEnabled).not.toHaveBeenCalled();
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -1014,7 +1029,7 @@ describe("ModsTableSwitch", () => {
       ]);
 
       await openMenu("Beta");
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
 
       expect(remove).toHaveBeenCalledWith(["b"]);
     });
@@ -1027,14 +1042,20 @@ describe("ModsTableSwitch", () => {
       await openMenu("Alpha");
       // reached through its menu row, as the test `t` leaves every pin's label alike
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
+          "button",
+        ),
       );
       await userEvent.keyboard("{Escape}");
 
-      expect(within(rowOf("Alpha")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+      expect(
+        within(rowOf("Alpha")).getByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeInTheDocument();
 
       await hoverRow(rowOf("Beta"));
-      expect(within(rowOf("Beta")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+      expect(
+        within(rowOf("Beta")).getByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeInTheDocument();
     });
 
     it("shows a pinned action before the switch, and the menu after it", async () => {
@@ -1042,7 +1063,9 @@ describe("ModsTableSwitch", () => {
 
       await openMenu("Alpha");
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
+          "button",
+        ),
       );
       await userEvent.keyboard("{Escape}");
 
@@ -1051,7 +1074,11 @@ describe("ModsTableSwitch", () => {
         actionsCell.querySelectorAll<HTMLElement>('button, [role="checkbox"]'),
       ).map((control) => control.getAttribute("aria-label"));
       // the switch by its untranslated label, which `t` leaves uninterpolated here
-      expect(controls).toEqual(["Remove", "modsTable::rowActions::enabled", "More actions"]);
+      expect(controls).toEqual([
+        "modsTable::actions::remove",
+        "modsTable::rowActions::enabled",
+        "More actions",
+      ]);
     });
   });
 
@@ -1100,7 +1127,9 @@ describe("ModsTableSwitch", () => {
 
       const menu = screen.getByRole("menu", { name: "modsTable::selection::actions" });
       expect(screen.getByText("modsTable::selection::count")).toBeInTheDocument();
-      expect(within(menu).getByRole("menuitem", { name: /Combine/ })).toBeInTheDocument();
+      expect(
+        within(menu).getByRole("menuitem", { name: /^modsTable::actions::combine\b/ }),
+      ).toBeInTheDocument();
       expect(within(menu).queryAllByRole("button", { name: /Pin|Unpin/ })).toHaveLength(0);
       // Still both selected, the bar hidden behind the menu, which holds focus.
       expect(
@@ -1121,20 +1150,30 @@ describe("ModsTableSwitch", () => {
       const toolbar = within(bar()!).getByRole("toolbar");
 
       // Kept, disabled, for mods that aren't installed, so its button keeps its place.
-      expect(within(toolbar).getByRole("button", { name: "Check for updates" })).toBeDisabled();
-      expect(within(toolbar).getByRole("button", { name: "Uninstall" })).toBeDisabled();
-      expect(within(toolbar).getByRole("button", { name: "Reinstall" })).toBeInTheDocument();
-      expect(within(toolbar).getByRole("button", { name: "Remove" })).toBeInTheDocument();
-      expect(within(toolbar).queryByRole("button", { name: "Combine" })).toBeNull();
+      expect(
+        within(toolbar).getByRole("button", { name: "modsTable::actions::checkForUpdates" }),
+      ).toBeDisabled();
+      expect(
+        within(toolbar).getByRole("button", { name: "modsTable::actions::uninstall" }),
+      ).toBeDisabled();
+      expect(
+        within(toolbar).getByRole("button", { name: "modsTable::actions::reinstall" }),
+      ).toBeInTheDocument();
+      expect(
+        within(toolbar).getByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeInTheDocument();
+      expect(
+        within(toolbar).queryByRole("button", { name: "modsTable::actions::combine" }),
+      ).toBeNull();
 
       await userEvent.click(within(toolbar).getByRole("button", { name: "More actions" }));
       // Enable is the switch's to do, and Remove related is for one mod.
       expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
-        "Check for updates",
-        "Reinstall",
-        "Uninstall",
-        "Remove",
-        "Combine",
+        "modsTable::actions::checkForUpdates",
+        "modsTable::actions::reinstall",
+        "modsTable::actions::uninstall",
+        "modsTable::actions::remove",
+        "modsTable::actions::combine",
       ]);
     });
 
@@ -1146,7 +1185,9 @@ describe("ModsTableSwitch", () => {
       );
 
       await selectWithCtrl("Alpha", "Gamma");
-      await userEvent.click(within(bar()!).getByRole("button", { name: "Remove" }));
+      await userEvent.click(
+        within(bar()!).getByRole("button", { name: "modsTable::actions::remove" }),
+      );
 
       expect(remove).toHaveBeenCalledWith(["a", "c"]);
     });
@@ -1174,15 +1215,21 @@ describe("ModsTableSwitch", () => {
       await hoverRow(rowOf("Alpha"));
       await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
+          "button",
+        ),
       );
       await userEvent.keyboard("{Escape}");
 
       await userEvent.click(screen.getByText("Alpha"));
-      expect(within(rowOf("Alpha")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+      expect(
+        within(rowOf("Alpha")).getByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeInTheDocument();
 
       await selectWithCtrl("Alpha", "Beta");
-      expect(within(rowOf("Alpha")).queryByRole("button", { name: "Remove" })).toBeNull();
+      expect(
+        within(rowOf("Alpha")).queryByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeNull();
       expect(within(rowOf("Alpha")).queryByRole("button", { name: "More actions" })).toBeNull();
       expect(
         within(rowOf("Alpha")).getByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
@@ -1406,7 +1453,11 @@ describe("ModsTableSwitch", () => {
       { title: "Check for Update", action: vi.fn() },
     ];
     const installed = { mods: { x: {} } };
-    const collectionItems = ["View collection", "Check for updates", "Remove"];
+    const collectionItems = [
+      "modsTable::collectionGroup::view",
+      "modsTable::actions::checkForUpdates",
+      "modsTable::collectionGroup::remove",
+    ];
 
     it("offers only the collection's actions, after folding and selecting", async () => {
       renderSwitch(withCollection(), rowActions(), installed);
@@ -1428,7 +1479,9 @@ describe("ModsTableSwitch", () => {
       await showView("modsTable::views::collections");
 
       fireEvent.contextMenu(groupRowOf("Xenon"));
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(
+        screen.getByRole("menuitem", { name: "modsTable::collectionGroup::remove" }),
+      );
 
       expect(mocks.emit).toHaveBeenCalledWith("remove-collection", "x");
       expect(reinstall).not.toHaveBeenCalled();
@@ -1439,7 +1492,9 @@ describe("ModsTableSwitch", () => {
       await showView("modsTable::views::collections");
 
       fireEvent.contextMenu(groupRowOf("Xenon"));
-      await userEvent.click(screen.getByRole("menuitem", { name: "View collection" }));
+      await userEvent.click(
+        screen.getByRole("menuitem", { name: "modsTable::collectionGroup::view" }),
+      );
 
       expect(mocks.emit).toHaveBeenCalledWith("view-collection", "x");
     });
@@ -1501,7 +1556,9 @@ describe("ModsTableSwitch", () => {
         await userEvent.click(
           within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
         );
-        await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+        await userEvent.click(
+          screen.getByRole("menuitem", { name: "modsTable::collectionGroup::remove" }),
+        );
 
         expect(sent()).toEqual([
           expect.objectContaining({
@@ -1517,7 +1574,9 @@ describe("ModsTableSwitch", () => {
         await showView("modsTable::views::collections");
 
         fireEvent.contextMenu(groupRowOf("Xenon"));
-        await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+        await userEvent.click(
+          screen.getByRole("menuitem", { name: "modsTable::collectionGroup::remove" }),
+        );
 
         expect(sent()).toEqual([
           expect.objectContaining({
@@ -1560,7 +1619,9 @@ describe("ModsTableSwitch", () => {
         await showView("modsTable::views::collections");
 
         fireEvent.contextMenu(groupRowOf("Xenon"));
-        await userEvent.click(screen.getByRole("menuitem", { name: "View collection" }));
+        await userEvent.click(
+          screen.getByRole("menuitem", { name: "modsTable::collectionGroup::view" }),
+        );
 
         expect(sent()).toEqual([
           expect.objectContaining({
@@ -1696,7 +1757,9 @@ describe("ModsTableSwitch", () => {
       fireEvent.contextMenu(screen.getByText("Alpha"));
 
       const menu = screen.getByRole("menu", { name: "modsTable::rowActions::menu" });
-      expect(within(menu).getByRole("menuitem", { name: /^Remove/ })).toBeInTheDocument();
+      expect(
+        within(menu).getByRole("menuitem", { name: /^modsTable::actions::remove\b/ }),
+      ).toBeInTheDocument();
       expect(within(menu).getAllByRole("button", { name: /the row/ }).length).toBeGreaterThan(0);
     });
   });
@@ -1737,7 +1800,7 @@ describe("ModsTableSwitch", () => {
 
       await hoverRow(rowOf("Alpha"));
       await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
 
       expect(sent("app_toolbar_action_clicked")).toEqual([
         expect.objectContaining({
@@ -1752,7 +1815,7 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
 
       fireEvent.contextMenu(rowOf("Alpha"), { clientX: 10, clientY: 10 });
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
 
       expect(sent("app_toolbar_action_clicked")).toEqual([
         expect.objectContaining({ action: "Remove", toolbar: "mods-table-row", surface: "menu" }),
