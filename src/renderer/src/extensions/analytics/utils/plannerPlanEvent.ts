@@ -29,7 +29,6 @@ export function plannerPlanPayload(
     scan_ms: null,
     plan_ms: null,
     operations: null,
-    destination_states: null,
     case_mismatches: null,
     manifest_diff: null,
     error_kind: null,

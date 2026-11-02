@@ -7,6 +7,7 @@ import {
   type DiskScan,
   type Lockfile,
 } from "@nexusmods/mod-pipeline";
+import type { ManifestDiff, PlannerOperationCounts } from "@vortex/nexus-api-v3";
 import { getErrorMessageOrDefault, parseError, VortexGameId } from "@vortex/shared";
 
 import { log } from "../../../logging";
@@ -24,7 +25,8 @@ import {
   type LockfileContribution,
   type LockfileContributionCondition,
 } from "./lockfileContributions";
-import { gatherDeployedInput, gatherResolverInput } from "./resolverInput";
+import { gatherDeployedInput, gatherDeployedOrigins, gatherResolverInput } from "./resolverInput";
+import { compareWithDeployment } from "./shadowComparison";
 
 /** The games whose lockfile is resolved after each plugin sort. */
 const RESOLVED_GAMES: ReadonlySet<string> = new Set(["skyrimse"]);
@@ -87,8 +89,7 @@ const COUNT_KEY_BY_KIND = {
   [OperationKind.Backup]: "backup",
   [OperationKind.Link]: "link",
   [OperationKind.Unlink]: "unlink",
-} as const satisfies Record<OperationKind, string>;
-type OperationCountKey = (typeof COUNT_KEY_BY_KIND)[OperationKind];
+} as const satisfies Record<OperationKind, keyof PlannerOperationCounts>;
 
 const elapsedMsSince = (startedAt: Temporal.Instant) =>
   Temporal.Now.instant().since(startedAt).total("milliseconds");
@@ -99,7 +100,7 @@ function planAndLogOperations(
   previousLockfile: Lockfile,
   diskScan: DiskScan,
   scanMs: number,
-): { planMs: number; counts: Record<OperationCountKey, number> } {
+): { planMs: number; counts: PlannerOperationCounts } {
   // Debug log
   diskScan.entries.forEach((d) => log("debug", "disk scan", d.path));
 
@@ -107,7 +108,7 @@ function planAndLogOperations(
   const planStartedAt = Temporal.Now.instant();
   const operations = plan(currentLockfile, previousLockfile, diskScan);
   const planMs = elapsedMsSince(planStartedAt);
-  const counts: Record<OperationCountKey, number> = { backup: 0, link: 0, unlink: 0 };
+  const counts: PlannerOperationCounts = { backup: 0, link: 0, unlink: 0 };
   for (const operation of operations) {
     counts[COUNT_KEY_BY_KIND[operation.kind]] += 1;
   }
@@ -135,6 +136,28 @@ function planAndLogOperations(
   );
 
   return { planMs, counts };
+}
+
+/** Compares the lockfile with what the deployment's manifests say it wrote, and logs the result. */
+async function compareWithManifests(
+  api: IExtensionApi,
+  gameId: string,
+  lockfile: Lockfile,
+): Promise<ManifestDiff | null> {
+  try {
+    const shadow = compareWithDeployment(
+      lockfile,
+      await gatherDeployedOrigins(api, VortexGameId(gameId)),
+    );
+    log("info", "shadow comparison", { gameId, verdict: shadow.verdict, ...shadow.counts });
+    return shadow;
+  } catch (err) {
+    log("warn", "failed to compare with the deployment", {
+      gameId,
+      error: getErrorMessageOrDefault(err),
+    });
+    return null;
+  }
 }
 
 /**
@@ -240,6 +263,7 @@ export function registerResolveLockFile(
       );
 
       previousLockfile = currentLockfile;
+      const manifestDiff = await compareWithManifests(api, gameId, currentLockfile);
       void emitPlannerPlanEvent(api, gameId, () => ({
         ...scanFigures,
         resolve_ms: resolveMs,
@@ -249,6 +273,7 @@ export function registerResolveLockFile(
         ).length,
         plan_ms: planMs,
         operations: counts,
+        manifest_diff: manifestDiff,
       }));
     } catch (err) {
       log("warn", "failed to plan lockfile", { gameId, error: getErrorMessageOrDefault(err) });

@@ -13,6 +13,7 @@ import {
   SteamBuildId,
   SteamDepotId,
   SteamManifestId,
+  type FileOrigin,
   type GameInstall,
   type ResolverInput,
   type ResolverMod,
@@ -306,7 +307,7 @@ interface DeployedEntry {
   destinationPath: string;
 }
 
-const overridesDestination = ({ mod }: DeployedEntry, destinationKey: string) =>
+const overridesDestination = ({ mod }: { mod: IMod }, destinationKey: string) =>
   (mod.fileOverrides ?? []).some(
     (override) => pathKeyOf(toPortablePath(override)) === destinationKey,
   );
@@ -316,8 +317,11 @@ const overridesDestination = ({ mod }: DeployedEntry, destinationKey: string) =>
  * mod does not override the destination beats one whose mod does, then the type deployed later
  * wins. Each clash is noted.
  */
-function keepOnePerDestination(deployed: DeployedEntry[], notes: string[]): DeployedEntry[] {
-  const kept = new Set<DeployedEntry>();
+function keepOnePerDestination<Entry extends { mod: IMod; destinationPath: string }>(
+  deployed: Entry[],
+  notes: string[],
+): Entry[] {
+  const kept = new Set<Entry>();
   const byDestination = Map.groupBy(deployed, ({ destinationPath }) => pathKeyOf(destinationPath));
   for (const [destinationKey, entries] of byDestination) {
     const keeper =
@@ -338,27 +342,32 @@ function keepOnePerDestination(deployed: DeployedEntry[], notes: string[]): Depl
   return deployed.filter((entry) => kept.has(entry));
 }
 
+/** A manifest entry traced to its installed mod, with the folder its mod type deploys to. */
+interface ListedEntry {
+  mod: IMod;
+  file: IDeployedFile;
+  deployPath: string;
+}
+
 /**
- * The resolver input for what a game's deployment manifests say this instance deployed, one file
- * per destination. An entry that can't be traced to a staged file is left out with a note.
+ * The entries of a game's deployment manifests that trace to an installed mod, in deploy order.
+ * An unreadable manifest, or an entry of no installed mod, is left out with a note.
  */
-export async function gatherDeployedInput(
+async function listManifestEntries(
   api: IExtensionApi,
   gameMode: VortexGameId,
-  hashFile: (filePath: string) => Promise<string> = fileMD5,
-  lookupArchiveFiles: ArchiveFilesLookup = fetchArchiveFilesFor(api),
-): Promise<{ input: ResolverInput; notes: string[] }> {
+  notes: string[],
+): Promise<ListedEntry[]> {
   const state: IState = api.getState();
-  const { game, discovery, gamePath, gameId } = resolvableGame(state, gameMode);
+  const { game, gamePath } = resolvableGame(state, gameMode);
   const modPaths = game.getModPaths(gamePath);
   const stagingPath = installPathForGame(state, gameMode);
   const modByFolder = new Map(
     Object.values(state.persistent.mods[gameMode] ?? {}).map((mod) => [mod.installationPath, mod]),
   );
-  const notes: string[] = [];
 
   // mod types in deploy order, so the later of two listing one path comes last
-  const listed: { mod: IMod; file: IDeployedFile; deployPath: string }[] = [];
+  const listed: ListedEntry[] = [];
   for (const [typeId, deployPath] of Object.entries(modPaths)) {
     if (!deployPath) {
       continue;
@@ -382,6 +391,48 @@ export async function gatherDeployedInput(
       listed.push({ mod, file, deployPath: read.manifest.targetPath ?? deployPath });
     }
   }
+  return listed;
+}
+
+/** A destination a deployment wrote, and where its file comes from. */
+export type DeployedOrigin = FileOrigin & { destinationPath: string };
+
+/**
+ * Where each destination a game's deployment manifests list comes from, one per destination as
+ * the seed keeps it. Nothing is hashed or looked up in staging.
+ */
+export async function gatherDeployedOrigins(
+  api: IExtensionApi,
+  gameMode: VortexGameId,
+): Promise<DeployedOrigin[]> {
+  const notes: string[] = [];
+  const entries = (await listManifestEntries(api, gameMode, notes)).map(
+    ({ mod, file, deployPath }) => ({
+      mod,
+      destinationPath: toPortablePath(deployedFilePath(deployPath, file.target, file.relPath)),
+    }),
+  );
+  return keepOnePerDestination(entries, notes).map(({ mod, destinationPath }) => ({
+    ...modOrigin(mod, gameMode),
+    destinationPath,
+  }));
+}
+
+/**
+ * The resolver input for what a game's deployment manifests say this instance deployed, one file
+ * per destination. An entry that can't be traced to a staged file is left out with a note.
+ */
+export async function gatherDeployedInput(
+  api: IExtensionApi,
+  gameMode: VortexGameId,
+  hashFile: (filePath: string) => Promise<string> = fileMD5,
+  lookupArchiveFiles: ArchiveFilesLookup = fetchArchiveFilesFor(api),
+): Promise<{ input: ResolverInput; notes: string[] }> {
+  const state: IState = api.getState();
+  const { discovery, gameId } = resolvableGame(state, gameMode);
+  const stagingPath = installPathForGame(state, gameMode);
+  const notes: string[] = [];
+  const listed = await listManifestEntries(api, gameMode, notes);
   const originByMod = new Map(listed.map(({ mod }) => [mod, modOrigin(mod, gameMode)] as const));
   // the manifests download while the staging folders are walked
   const pendingArchiveFiles = lookupArchiveFiles(nexusFileIds(originByMod.values()));

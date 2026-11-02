@@ -71,8 +71,8 @@ export type EventPlannerPlan = {
 };
 
 /**
- * Draft until contracts/telemetry/planner_plan/v1.schema.json is agreed. Counts, durations and
- * kinds only, never a path or a name; null is a figure the run did not measure.
+ * contracts/telemetry/planner_plan/v1.schema.json. Counts, durations and kinds only, never a path
+ * or a name; null is a figure the run did not measure.
  */
 export type PlannerPlanPayload = {
   game_id: string;
@@ -85,9 +85,27 @@ export type PlannerPlanPayload = {
   resolve_ms: number | null;
   scan_ms: number | null;
   plan_ms: number | null;
-  operations: { backup: number; link: number; unlink: number } | null;
-  destination_states: Record<string, number> | null;
+  operations: PlannerOperationCounts | null;
   case_mismatches: number | null;
-  manifest_diff: boolean | null;
+  manifest_diff: ManifestDiff | null;
   error_kind: string | null;
+};
+
+/** The operations a plan would perform, by kind. */
+export type PlannerOperationCounts = {
+  backup: number;
+  link: number;
+  unlink: number;
+};
+
+/** Why one destination differs between the lockfile and what the deployment wrote. */
+export type ManifestDiffReason =
+  | "missing-from-lockfile"
+  | "missing-from-deploy"
+  | "different-winner";
+
+/** The lockfile against what the deployment wrote: mismatch counts by reason code. */
+export type ManifestDiff = {
+  verdict: "pass" | "fail";
+  counts: Record<ManifestDiffReason, number>;
 };
