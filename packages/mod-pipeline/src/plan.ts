@@ -107,7 +107,7 @@ const sameContent = (
   rhs: Pick<FileEntry, "fileHash" | "hashType">,
 ) => lhs.hashType === rhs.hashType && lhs.fileHash === rhs.fileHash;
 
-function sameOrigin(lhs: FileOrigin, rhs: FileOrigin): boolean {
+export function sameOrigin(lhs: FileOrigin, rhs: FileOrigin): boolean {
   switch (lhs.source) {
     case FileSourceKind.Nexus:
       return rhs.source === FileSourceKind.Nexus && lhs.nexusFileId === rhs.nexusFileId;

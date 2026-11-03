@@ -15,7 +15,7 @@ export {
 export { FileSourceKind, HashType, LockfileSchema, lockfileFiles } from "./lockfile";
 export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, FileEntry } from "./lockfile";
 export { folderKeyOf, pathKeyOf } from "./pathKey";
-export { OperationKind, OperationSchema, plan } from "./plan";
+export { OperationKind, OperationSchema, plan, sameOrigin } from "./plan";
 export type { Operation } from "./plan";
 export { resolve } from "./resolve";
 export { ResolverInputSchema } from "./resolverInput";

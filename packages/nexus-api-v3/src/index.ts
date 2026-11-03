@@ -15,8 +15,13 @@ export {
 } from "./client";
 export { V3ApiError } from "./errors";
 export type {
+  EventPlannerPlan,
   EventStoreGameVersion,
   GogInstall,
+  ManifestDiff,
+  ManifestDiffReason,
+  PlannerOperationCounts,
+  PlannerPlanPayload,
   SteamDepot,
   SteamInstall,
   SteamSharedDepot,
