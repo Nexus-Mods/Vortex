@@ -1,13 +1,14 @@
 import { relativePath } from "@nexusmods/paths";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { VortexModStagingFolder } from "@vortex/shared";
-import { QualifiedPath } from "@vortex/shared/filesystem";
+import { type InMemoryFS, QualifiedPath } from "@vortex/shared/filesystem";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { installInMemoryFS } from "@/test-utils/fsApi";
 import type { FileTreeEntry } from "@/ui/components/file_tree/buildTree";
 
+import type { IDeployedFiles } from "../util/destinationConflicts";
 import { ManualInstallerResult, type IManualInstallerResultProps } from "./ManualInstallerResult";
 
 // --- Helpers ---
@@ -29,7 +30,10 @@ const noMods = new Map<VortexModStagingFolder, string>();
 
 const otherMod = VortexModStagingFolder("other-mod");
 
-const deployedByOther = new Map([["shared.esp", otherMod]]);
+const deployedByOther: IDeployedFiles = {
+  byOtherMods: new Map([["shared.esp", otherMod]]),
+  byOwnMod: new Set(),
+};
 
 const renderResult = (props: Partial<IManualInstallerResultProps> = {}) =>
   render(
@@ -61,14 +65,18 @@ const rowFor = (finalPath: string): HTMLElement => {
 
 describe("ManualInstallerResult", () => {
   let restore: () => void;
+  let fs: InMemoryFS;
 
   beforeEach(() => {
-    restore = installInMemoryFS((builder) => {
+    const installed = installInMemoryFS((builder) => {
       builder.file(gameFolder.join("Game.esm"), text);
       builder.file(gameFolder.join("shared.esp"), text);
       builder.file(gameFolder.join("bin"), text);
       builder.file(gameFolder.join("Mods", "Game.esm"), text);
-    }).restore;
+    });
+
+    restore = installed.restore;
+    fs = installed.fs;
   });
 
   afterEach(() => {
@@ -100,6 +108,21 @@ describe("ManualInstallerResult", () => {
 
     expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile");
     expect(rowFor("shared.esp")).toHaveAttribute("data-status", "conflictsWithMod");
+  });
+
+  it("marks a file the mod itself deployed before as replacing its own, not the game's", async () => {
+    // on a reinstall, the previous version's deployed file is in the game folder too
+    renderResult({
+      deployed: { byOtherMods: new Map(), byOwnMod: new Set(["game.esm"]) },
+      skipTopFolder: true,
+    });
+
+    await waitFor(() =>
+      expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesOwnFile"),
+    );
+
+    expect(rowFor("Game.esm")).toHaveTextContent("manualInstaller::statusReplacesOwnFile");
+    expect(rowFor("new.dll")).toHaveAttribute("data-status", "new");
   });
 
   it("compares paths without regard to case", async () => {
@@ -153,13 +176,46 @@ describe("ManualInstallerResult", () => {
     await waitFor(() => expect(rowFor("Game.esm")).toHaveAttribute("data-status", "new"));
   });
 
-  it("reads a directory it has read before not again", async () => {
-    const enumerate = vi.spyOn(window.api.fs, "enumerateDirectory");
+  it("marks nothing for another folder until its directories are read", async () => {
     const { rerender } = renderResult({ skipTopFolder: true });
 
     await waitFor(() =>
       expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile"),
     );
+
+    rerender(
+      <ManualInstallerResult
+        deployed={deployedByOther}
+        files={files}
+        folder="Mods"
+        gameFolder={gameFolder}
+        hasDeployedFailed={false}
+        modNames={noMods}
+        skipTopFolder
+      />,
+    );
+
+    // the read of Mods can't be done yet, and the game root's says nothing about it
+    for (const row of rows()) {
+      expect(row).not.toHaveAttribute("data-status");
+    }
+    expect(screen.getByText("manualInstaller::checking")).toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(rowFor("Mods/Game.esm")).toHaveAttribute("data-status", "replacesGameFile"),
+    );
+    expect(rowFor("Mods/new.dll")).toHaveAttribute("data-status", "new");
+  });
+
+  it("reads a directory it has read before not again", async () => {
+    const { rerender } = renderResult({ skipTopFolder: true });
+
+    await waitFor(() =>
+      expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile"),
+    );
+
+    // added after the game root was read, so only a new read of it finds this
+    await fs.writeFile(gameFolder.join("new.dll"), new TextEncoder().encode("x"));
 
     const reresult = (skipTopFolder: boolean) => (
       <ManualInstallerResult
@@ -181,8 +237,8 @@ describe("ManualInstallerResult", () => {
       expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile"),
     );
 
-    // the game root and Top, each once
-    expect(enumerate).toHaveBeenCalledTimes(2);
+    // the game root as it was first read
+    expect(rowFor("new.dll")).toHaveAttribute("data-status", "new");
   });
 
   it("tells that the marks may be wrong when a directory can't be read", async () => {

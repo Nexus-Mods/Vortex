@@ -38,6 +38,7 @@
     "statusIncomplete": "Some of the game's files couldn't be checked, so a file that replaces another or conflicts with a mod may be shown as new.",
     "statusNew": "New",
     "statusReplacesGameFile": "Replaces a game file",
+    "statusReplacesOwnFile": "Replaces this mod's file",
     "statusConflictsWithMod": "Conflicts with {{mod}}",
     "useAsDefault": "Use this folder for future mods for this game",
     "dontAskAgain": "Don't ask again",

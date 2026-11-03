@@ -1,7 +1,7 @@
 import { relativePath } from "@nexusmods/paths";
 import { VortexModStagingFolder } from "@vortex/shared";
-import { QualifiedPath } from "@vortex/shared/filesystem";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { type InMemoryFS, QualifiedPath } from "@vortex/shared/filesystem";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { installInMemoryFS } from "@/test-utils/fsApi";
 
@@ -9,9 +9,10 @@ import type { IDeploymentManifest } from "../types/IDeploymentManifest";
 import type { IDeployedFile } from "../types/IDeploymentMethod";
 import {
   classifyDestinationFiles,
-  deployedByOtherMods,
+  createDirectoryReader,
+  deployedFiles,
   existingGameFiles,
-  type DirectoryFilesCache,
+  type IDeployedFiles,
 } from "./destinationConflicts";
 
 // --- Helpers ---
@@ -28,9 +29,9 @@ const folder = VortexModStagingFolder;
 
 const paths = (...values: string[]) => values.map((value) => relativePath(value));
 
-describe("deployedByOtherMods", () => {
-  it("maps each file to the staging folder of the mod that deployed it", () => {
-    const deployed = deployedByOtherMods(
+describe("deployedFiles", () => {
+  it("maps each other mod's file to the staging folder of the mod that deployed it", () => {
+    const { byOtherMods } = deployedFiles(
       manifest([
         { relPath: "Data/a.esp", source: "mod-a" },
         { relPath: "b.dll", source: "mod-b" },
@@ -38,44 +39,45 @@ describe("deployedByOtherMods", () => {
       [],
     );
 
-    expect(deployed.get("data/a.esp")).toBe("mod-a");
-    expect(deployed.get("b.dll")).toBe("mod-b");
+    expect(byOtherMods.get("data/a.esp")).toBe("mod-a");
+    expect(byOtherMods.get("b.dll")).toBe("mod-b");
   });
 
-  it("leaves out the files of the staging folders given as the mod's own", () => {
-    const deployed = deployedByOtherMods(
+  it("keeps the files of the staging folders given as the mod's own apart", () => {
+    const { byOtherMods, byOwnMod } = deployedFiles(
       manifest([
         { relPath: "new.txt", source: "new-mod" },
-        { relPath: "old.txt", source: "old-mod" },
+        { relPath: "Old.txt", source: "old-mod" },
         { relPath: "other.txt", source: "other-mod" },
       ]),
       [folder("new-mod"), folder("old-mod")],
     );
 
-    expect([...deployed.keys()]).toEqual(["other.txt"]);
+    expect([...byOtherMods.keys()]).toEqual(["other.txt"]);
+    expect(byOwnMod).toEqual(new Set(["new.txt", "old.txt"]));
   });
 
   it("keys paths without regard to case and with forward slashes", () => {
-    const deployed = deployedByOtherMods(
+    const { byOtherMods } = deployedFiles(
       manifest([{ relPath: "Data\\Textures\\Stone.DDS", source: "mod-a" }]),
       [],
     );
 
-    expect(deployed.has("data/textures/stone.dds")).toBe(true);
+    expect(byOtherMods.has("data/textures/stone.dds")).toBe(true);
   });
 
   it("puts a file's output folder in front of its path", () => {
-    const deployed = deployedByOtherMods(
+    const { byOtherMods } = deployedFiles(
       manifest([{ relPath: "a.txt", source: "mod-a", target: "sub" }]),
       [],
     );
 
-    expect(deployed.has("sub/a.txt")).toBe(true);
-    expect(deployed.has("a.txt")).toBe(false);
+    expect(byOtherMods.has("sub/a.txt")).toBe(true);
+    expect(byOtherMods.has("a.txt")).toBe(false);
   });
 
-  it("keeps the mod that deployed a path last", () => {
-    const deployed = deployedByOtherMods(
+  it("keeps the entry listed last for a path", () => {
+    const { byOtherMods } = deployedFiles(
       manifest([
         { relPath: "a.txt", source: "first" },
         { relPath: "A.txt", source: "second" },
@@ -83,25 +85,54 @@ describe("deployedByOtherMods", () => {
       [],
     );
 
-    expect(deployed.get("a.txt")).toBe("second");
+    expect(byOtherMods.get("a.txt")).toBe("second");
+  });
+
+  it("keeps the entry listed last for a path, between the mod's own and another's", () => {
+    const own = [folder("own")];
+
+    const ownLast = deployedFiles(
+      manifest([
+        { relPath: "a.txt", source: "other" },
+        { relPath: "a.txt", source: "own" },
+      ]),
+      own,
+    );
+    const otherLast = deployedFiles(
+      manifest([
+        { relPath: "a.txt", source: "own" },
+        { relPath: "a.txt", source: "other" },
+      ]),
+      own,
+    );
+
+    expect(ownLast).toEqual({ byOtherMods: new Map(), byOwnMod: new Set(["a.txt"]) });
+    expect(otherLast).toEqual({
+      byOtherMods: new Map([["a.txt", "other"]]),
+      byOwnMod: new Set(),
+    });
   });
 
   it("skips entries without a source or with a path that isn't relative to the game root", () => {
-    const deployed = deployedByOtherMods(
+    const { byOtherMods, byOwnMod } = deployedFiles(
       manifest([
         { relPath: "no-source.txt", source: "" },
         { relPath: "../outside.txt", source: "mod-a" },
-        { relPath: "C:\\drive.txt", source: "mod-a" },
+        { relPath: "C:\\drive.txt", source: "own" },
         { relPath: "ok.txt", source: "mod-a" },
       ]),
-      [],
+      [folder("own")],
     );
 
-    expect([...deployed.keys()]).toEqual(["ok.txt"]);
+    expect([...byOtherMods.keys()]).toEqual(["ok.txt"]);
+    expect(byOwnMod.size).toBe(0);
   });
 
   it("gives nothing for an empty manifest", () => {
-    expect(deployedByOtherMods(manifest([]), []).size).toBe(0);
+    expect(deployedFiles(manifest([]), [])).toEqual({
+      byOtherMods: new Map(),
+      byOwnMod: new Set(),
+    });
   });
 });
 
@@ -110,7 +141,10 @@ describe("existingGameFiles", () => {
   const text = { type: "text", data: "x" } as const;
 
   let restore: () => void;
-  let enumerate: ReturnType<typeof vi.spyOn>;
+  let fs: InMemoryFS;
+
+  // A file added after a directory was read, which only a new read of it finds.
+  const addLater = (path: QualifiedPath) => fs.writeFile(path, new TextEncoder().encode("x"));
 
   beforeEach(async () => {
     const installed = installInMemoryFS((builder) => {
@@ -123,7 +157,7 @@ describe("existingGameFiles", () => {
     await installed.fs.createDirectory(root.join("Data", "Empty"));
 
     restore = installed.restore;
-    enumerate = vi.spyOn(window.api.fs, "enumerateDirectory");
+    fs = installed.fs;
   });
 
   afterEach(() => {
@@ -166,10 +200,15 @@ describe("existingGameFiles", () => {
     expect(await existingGameFiles(root, [])).toEqual({ files: new Set(), hasFailed: false });
   });
 
-  it("reads each directory once, whatever the case of its name", async () => {
-    await existingGameFiles(root, paths("Data/a.txt", "Data/b.txt", "data/c.txt", "d.txt"));
+  it("knows a directory it has read whatever the case of its name", async () => {
+    const reader = createDirectoryReader();
 
-    expect(enumerate).toHaveBeenCalledTimes(2);
+    await existingGameFiles(root, paths("Data/a.txt"), reader);
+    await addLater(root.join("Data", "New.esp"));
+
+    const { files } = await existingGameFiles(root, paths("DATA/b.txt", "data/c.txt"), reader);
+
+    expect(files).toEqual(new Set(["data/game.esm"]));
   });
 
   it("still finds the files of the other directories when one can't be read", async () => {
@@ -180,30 +219,64 @@ describe("existingGameFiles", () => {
     });
   });
 
-  it("doesn't read a directory in the cache again", async () => {
-    const cache: DirectoryFilesCache = new Map();
+  it("doesn't read a directory the reader has read again, but does one it hasn't", async () => {
+    const reader = createDirectoryReader();
 
-    await existingGameFiles(root, paths("Data/a.txt"), cache);
-    const { files } = await existingGameFiles(root, paths("data/b.txt", "c.txt"), cache);
+    await existingGameFiles(root, paths("Data/a.txt"), reader);
+    await addLater(root.join("Data", "New.esp"));
+    await addLater(root.join("new.dll"));
 
-    expect(files).toEqual(new Set(["data/game.esm", "game.exe", "bin"]));
-    // Data once, then the game root
-    expect(enumerate).toHaveBeenCalledTimes(2);
+    const { files } = await existingGameFiles(root, paths("data/b.txt", "c.txt"), reader);
+
+    // Data as it was first read; the game root, read only now, with what was added
+    expect(files).toEqual(new Set(["data/game.esm", "game.exe", "bin", "new.dll"]));
   });
 
   it("reads a directory that failed again the next time", async () => {
-    const cache: DirectoryFilesCache = new Map();
+    const reader = createDirectoryReader();
 
-    expect((await existingGameFiles(root, paths("bin/mod.dll"), cache)).hasFailed).toBe(true);
-    expect((await existingGameFiles(root, paths("bin/mod.dll"), cache)).hasFailed).toBe(true);
+    expect((await existingGameFiles(root, paths("bin/mod.dll"), reader)).hasFailed).toBe(true);
 
-    expect(enumerate).toHaveBeenCalledTimes(2);
+    // the file in the way is replaced by a directory, which can be read
+    await fs.delete(root.join("bin"));
+    await fs.createDirectory(root.join("bin"));
+    await addLater(root.join("bin", "game.dll"));
+
+    expect(await existingGameFiles(root, paths("bin/mod.dll"), reader)).toEqual({
+      files: new Set(["bin/game.dll"]),
+      hasFailed: false,
+    });
+  });
+
+  it("finishes every read queued behind its limit, across overlapping calls", async () => {
+    // one read at a time, so all but the first wait their turn
+    const reader = createDirectoryReader(1);
+
+    const [first, second] = await Promise.all([
+      existingGameFiles(root, paths("a.txt", "Data/a.txt", "Missing/a.txt"), reader),
+      existingGameFiles(
+        root,
+        paths("Data/Textures/a.dds", "Data/Empty/a.txt", "bin/a.dll"),
+        reader,
+      ),
+    ]);
+
+    expect(first).toEqual({
+      files: new Set(["game.exe", "bin", "data/game.esm"]),
+      hasFailed: false,
+    });
+    // `bin` is a file, so it can't be read as a directory
+    expect(second).toEqual({ files: new Set(["data/textures/stone.dds"]), hasFailed: true });
   });
 });
 
 describe("classifyDestinationFiles", () => {
-  const deployed = new Map([["data/other.esp", folder("other-mod")]]);
-  const existing = new Set(["data/game.esm", "data/other.esp"]);
+  const deployed: IDeployedFiles = {
+    byOtherMods: new Map([["data/other.esp", folder("other-mod")]]),
+    byOwnMod: new Set(["data/own.esp"]),
+  };
+  // the mod's own deployed file is on disk too, as on a reinstall
+  const existing = new Set(["data/game.esm", "data/other.esp", "data/own.esp"]);
 
   it("marks a path nothing is at as new", () => {
     expect(classifyDestinationFiles(paths("Data/New.esp"), existing, deployed)).toEqual([
@@ -232,6 +305,12 @@ describe("classifyDestinationFiles", () => {
     expect(result?.status.kind).toBe("conflictsWithMod");
   });
 
+  it("marks a path the mod itself deployed to as replacing its own file, not the game's", () => {
+    expect(classifyDestinationFiles(paths("Data/Own.esp"), existing, deployed)).toEqual([
+      { path: "Data/Own.esp", status: { kind: "replacesOwnFile" } },
+    ]);
+  });
+
   it("compares without regard to case and keeps the path as given", () => {
     const [result] = classifyDestinationFiles(paths("DATA/GAME.ESM"), existing, deployed);
 
@@ -240,7 +319,7 @@ describe("classifyDestinationFiles", () => {
 
   it("keeps the order of the paths", () => {
     const results = classifyDestinationFiles(
-      paths("Data/New.esp", "Data/Game.esm", "Data/Other.esp"),
+      paths("Data/New.esp", "Data/Game.esm", "Data/Other.esp", "Data/Own.esp"),
       existing,
       deployed,
     );
@@ -249,6 +328,7 @@ describe("classifyDestinationFiles", () => {
       "new",
       "replacesGameFile",
       "conflictsWithMod",
+      "replacesOwnFile",
     ]);
   });
 

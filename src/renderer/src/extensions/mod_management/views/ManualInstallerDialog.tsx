@@ -18,7 +18,7 @@ import { normalizeDestination } from "../manualInstaller";
 import type { IManualInstallerAnswer } from "../manualInstallerQueue";
 import type { IManualInstallerRequest } from "../reducers/manualInstaller";
 import type { IDeploymentManifest } from "../types/IDeploymentManifest";
-import { deployedByOtherMods } from "../util/destinationConflicts";
+import { deployedFiles, type IDeployedFiles } from "../util/destinationConflicts";
 import { ManualInstallerGameTree } from "./ManualInstallerGameTree";
 import { ManualInstallerResult } from "./ManualInstallerResult";
 
@@ -40,6 +40,8 @@ interface IFormProps {
   request: IManualInstallerRequest;
   onAnswer: (answer: IManualInstallerAnswer | undefined) => void;
 }
+
+const NOTHING_DEPLOYED: IDeployedFiles = { byOtherMods: new Map(), byOwnMod: new Set() };
 
 function toQualifiedPath(nativePath: string): QualifiedPath | undefined {
   if (nativePath === "") {
@@ -68,7 +70,7 @@ const ManualInstallerForm = ({ loadManifest, modNames, request, onAnswer }: IFor
   const [useAsDefault, setUseAsDefault] = useState(false);
   const [dontAskAgain, setDontAskAgain] = useState(false);
   const [useForAll, setUseForAll] = useState(false);
-  const [deployed, setDeployed] = useState<ReadonlyMap<string, VortexModStagingFolder>>();
+  const [deployed, setDeployed] = useState<IDeployedFiles>();
   const [hasDeployedFailed, setHasDeployedFailed] = useState(false);
   // a folder is being named; it's taken or dropped first, so that none is lost by a click
   const [isNaming, setIsNaming] = useState(false);
@@ -84,13 +86,13 @@ const ManualInstallerForm = ({ loadManifest, modNames, request, onAnswer }: IFor
     let isCancelled = false;
 
     loadManifest(request.gameId)
-      .then((manifest) => deployedByOtherMods(manifest, request.ownStagingFolders))
+      .then((manifest) => deployedFiles(manifest, request.ownStagingFolders))
       .catch((err: unknown) => {
         log("warn", "failed to read what is deployed for the install destination", { err });
         if (!isCancelled) {
           setHasDeployedFailed(true);
         }
-        return new Map<string, VortexModStagingFolder>();
+        return NOTHING_DEPLOYED;
       })
       .then((found) => {
         if (!isCancelled) {
@@ -155,7 +157,7 @@ const ManualInstallerForm = ({ loadManifest, modNames, request, onAnswer }: IFor
 
           <ManualInstallerGameTree
             created={created}
-            deployed={deployed}
+            deployed={deployed?.byOtherMods}
             folder={folder}
             gameFolder={gameFolder}
             selectedNode={selectedNode}

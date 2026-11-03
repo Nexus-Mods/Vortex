@@ -442,7 +442,7 @@ describe("ManualInstallerDialog", () => {
     expect(onAnswer).toHaveBeenCalledWith("request", undefined);
   });
 
-  it("marks a file another mod deployed as conflicting, but not one of the mod's own", async () => {
+  it("marks a file another mod deployed as conflicting, and one of the mod's own as its", async () => {
     const own = VortexModStagingFolder("own-mod");
     renderDialog(
       { ownStagingFolders: [own], files: [file("new.dll"), file("Game.esm")] },
@@ -462,7 +462,7 @@ describe("ManualInstallerDialog", () => {
 
     await waitFor(() => expect(row("new.dll")).toHaveAttribute("data-status", "conflictsWithMod"));
 
-    expect(row("Game.esm")).not.toHaveAttribute("data-status", "conflictsWithMod");
+    expect(row("Game.esm")).toHaveAttribute("data-status", "replacesOwnFile");
   });
 
   it("loads what is deployed once for the game", async () => {

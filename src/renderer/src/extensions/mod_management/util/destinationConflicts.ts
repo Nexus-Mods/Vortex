@@ -12,6 +12,8 @@ import { readFileTreeDirectory } from "./fileTree";
 export type DestinationFileStatus =
   | { kind: "new" }
   | { kind: "replacesGameFile" }
+  /** The mod being installed, or the one it replaces, has deployed a file to the same path. */
+  | { kind: "replacesOwnFile" }
   /** Another mod has deployed a file to the same path; this is its staging folder. */
   | { kind: "conflictsWithMod"; stagingFolder: VortexModStagingFolder };
 
@@ -31,34 +33,51 @@ function pathKey(value: string): string | undefined {
   }
 }
 
+/** What `deployedFiles` found, keyed by lowercased path in the game folder. */
+export interface IDeployedFiles {
+  /** The files other mods have deployed, with the staging folder of the mod that deployed each. */
+  byOtherMods: ReadonlyMap<string, VortexModStagingFolder>;
+  /** The files the mod being installed, or the one it replaces, has deployed. */
+  byOwnMod: ReadonlySet<string>;
+}
+
 /**
- * The files other mods have deployed, by their path in the game folder, with the staging folder
- * of the mod that deployed each. Files from `ownStagingFolders`, the folders of the mod being
- * installed and of the one it replaces, aren't included. If two mods deployed the same path, the
- * one deployed last is kept.
+ * The files mods have deployed, by their path in the game folder. Files from `ownStagingFolders`,
+ * the folders of the mod being installed and of the one it replaces, are the mod's own; the rest
+ * are other mods', with the staging folder of the mod that deployed each. The manifest has one
+ * entry per path, but if a path shows up twice, the entry listed last is kept.
  *
  * The paths are for the default mod type, whose files go to the game root of a Tier 0 game.
  */
-export function deployedByOtherMods(
+export function deployedFiles(
   manifest: IDeploymentManifest,
   ownStagingFolders: readonly VortexModStagingFolder[],
-): Map<string, VortexModStagingFolder> {
+): IDeployedFiles {
   const own = new Set<string>(ownStagingFolders);
-  const deployed = new Map<string, VortexModStagingFolder>();
+  const byOtherMods = new Map<string, VortexModStagingFolder>();
+  const byOwnMod = new Set<string>();
 
   for (const file of manifest.files) {
-    if (file.source === "" || own.has(file.source)) {
+    if (file.source === "") {
       continue;
     }
 
     const key = pathKey(file.target ? `${file.target}/${file.relPath}` : file.relPath);
 
-    if (key !== undefined) {
-      deployed.set(key, VortexModStagingFolder(file.source));
+    if (key === undefined) {
+      continue;
+    }
+
+    if (own.has(file.source)) {
+      byOtherMods.delete(key);
+      byOwnMod.add(key);
+    } else {
+      byOwnMod.delete(key);
+      byOtherMods.set(key, VortexModStagingFolder(file.source));
     }
   }
 
-  return deployed;
+  return { byOtherMods, byOwnMod };
 }
 
 /** What `existingGameFiles` found. */
@@ -70,21 +89,46 @@ export interface IExistingGameFiles {
 }
 
 /**
- * The files each directory read held, by the directory's lowercased path, kept to read it only
- * once; a directory that failed is left out so it is tried again. It is for one game folder.
+ * How many directories `existingGameFiles` reads at once. A bound, not a tuned value: it keeps an
+ * archive spanning hundreds of directories from putting a listing of each in flight over IPC at
+ * once, beside whatever else main is doing.
  */
-export type DirectoryFilesCache = Map<string, Promise<string[]>>;
+export const DIRECTORY_READ_CONCURRENCY = 8;
+
+/** Runs a read once one of the limited slots is free. */
+type Limit = <T>(read: () => Promise<T>) => Promise<T>;
+
+/**
+ * Reads directories of one game folder for `existingGameFiles`. The files each directory held are
+ * kept by its lowercased path, to read it only once; a directory that failed is left out so it is
+ * tried again. Reads share one limit on how many run at once, across calls.
+ */
+export interface IDirectoryReader {
+  cache: Map<string, Promise<string[]>>;
+  limit: Promise<Limit>;
+}
+
+export function createDirectoryReader(
+  concurrency: number = DIRECTORY_READ_CONCURRENCY,
+): IDirectoryReader {
+  return {
+    cache: new Map(),
+    // ESM-only against a CommonJS renderer, so a static import fails typecheck (TS1479)
+    limit: import("p-limit").then(({ default: pLimit }) => pLimit(concurrency)),
+  };
+}
 
 /**
  * The files that already exist at `finalPaths`' directories in the game folder. It reads each
- * directory once, not each file, and a directory in `cache` not again. A directory that can't be
- * read is skipped, and reported as `hasFailed`.
+ * directory once, not each file, and a directory `reader` has read not again. A directory that
+ * can't be read is skipped, and reported as `hasFailed`.
  */
 export async function existingGameFiles(
   root: QualifiedPath,
   finalPaths: readonly RelativePath[],
-  cache: DirectoryFilesCache = new Map(),
+  reader: IDirectoryReader = createDirectoryReader(),
 ): Promise<IExistingGameFiles> {
+  const { cache } = reader;
   const directories = new Map<string, RelativePath>();
 
   for (const finalPath of finalPaths) {
@@ -96,9 +140,11 @@ export async function existingGameFiles(
     let read = cache.get(key);
 
     if (read === undefined) {
-      read = readFileTreeDirectory(root, directory).then((entries) =>
-        entries.filter(({ kind }) => kind === "file").map(({ path }) => path.toLowerCase()),
-      );
+      read = reader.limit
+        .then((limit) => limit(() => readFileTreeDirectory(root, directory)))
+        .then((entries) =>
+          entries.filter(({ kind }) => kind === "file").map(({ path }) => path.toLowerCase()),
+        );
       cache.set(key, read);
     }
 
@@ -127,20 +173,24 @@ export async function existingGameFiles(
 
 /**
  * Tells what installing each of `finalPaths` does: conflict with another mod's file, replace a
- * file of the game, or add a new one. A file another mod has deployed counts as that mod's, not
- * the game's, even though it's in the game folder too.
+ * file the mod itself deployed before, replace a file of the game, or add a new one. A file a mod
+ * has deployed counts as that mod's, not the game's, even though it's in the game folder too.
  */
 export function classifyDestinationFiles(
   finalPaths: readonly RelativePath[],
   existing: ReadonlySet<string>,
-  deployed: ReadonlyMap<string, VortexModStagingFolder>,
+  deployed: IDeployedFiles,
 ): IDestinationFile[] {
   return finalPaths.map((finalPath): IDestinationFile => {
     const key = finalPath.toLowerCase();
-    const stagingFolder = deployed.get(key);
+    const stagingFolder = deployed.byOtherMods.get(key);
 
     if (stagingFolder !== undefined) {
       return { path: finalPath, status: { kind: "conflictsWithMod", stagingFolder } };
+    }
+
+    if (deployed.byOwnMod.has(key)) {
+      return { path: finalPath, status: { kind: "replacesOwnFile" } };
     }
 
     return {
