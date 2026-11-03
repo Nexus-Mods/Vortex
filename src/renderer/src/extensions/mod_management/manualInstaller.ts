@@ -11,6 +11,7 @@ import { getBatchContext } from "../../util/BatchContext";
 import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
 import { UserCanceled } from "../../util/CustomErrors";
 import { setManualInstallerPreferences } from "../gamemode_management/actions/persistent";
+import { discoveryByGame } from "../gamemode_management/selectors";
 import { isTierZeroManagedGame, tierZeroGameFor } from "../gamemode_management/tiered/tierZero";
 import { requestManualInstallerDestination } from "./manualInstallerQueue";
 import { createManualInstallerTracker, manualInstallerUIDs } from "./manualInstallerTracker";
@@ -131,7 +132,7 @@ export function createManualInstaller(api: IExtensionApi): {
       modName,
       remaining: Math.max(remaining, 0),
       defaultFolder: entry?.manualInstallerPreferences?.defaultFolder,
-      gameFolder: api.getState().settings?.gameMode?.discovered?.[vortexGameId]?.path ?? "",
+      gameFolder: discoveryByGame(api.getState(), vortexGameId)?.path ?? "",
       files: files.map(toFileTreeEntry),
       ownStagingFolders,
       topFolder: commonTopFolder(files),
