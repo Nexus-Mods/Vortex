@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installInMemoryFS } from "@/test-utils/fsApi";
 import type { FileTreeEntry } from "@/ui/components/file_tree/buildTree";
 
+import { normalizeDestination } from "../manualInstaller";
 import type { IManualInstallerRequest } from "../reducers/manualInstaller";
 import type { IDeploymentManifest } from "../types/IDeploymentManifest";
 import { ManualInstallerDialog } from "./ManualInstallerDialog";
@@ -158,7 +159,8 @@ describe("ManualInstallerDialog", () => {
 
     expect(onAnswer).toHaveBeenCalledWith(
       "request",
-      expect.objectContaining({ folder: "Data/Sub" }),
+      // the answer has the platform's separators
+      expect.objectContaining({ folder: normalizeDestination("Data/Sub") }),
     );
   });
 
@@ -268,7 +270,8 @@ describe("ManualInstallerDialog", () => {
 
       expect(onAnswer).toHaveBeenCalledWith(
         "request",
-        expect.objectContaining({ folder: "Data/Created" }),
+        // the answer has the platform's separators
+        expect.objectContaining({ folder: normalizeDestination("Data/Created") }),
       );
     });
 
