@@ -240,6 +240,7 @@ export const ManualInstallerGameTree = ({
               ? "text-info-strong"
               : undefined
           }
+          loadErrorMessage={t("manualInstaller::directoryFailed")}
           nodes={treeNodes}
           renderNode={(node) => {
             if (node.path === renamingPath) {

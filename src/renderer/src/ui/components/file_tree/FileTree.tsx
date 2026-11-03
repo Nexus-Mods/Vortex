@@ -26,6 +26,11 @@ export interface IFileTreeProps extends Omit<
   selectedPath?: RelativePath;
   /** Gives a node's row extra classes, such as to tell game files from a mod's. */
   getNodeClassName?: (node: IFileTreeNode) => string | undefined;
+  /**
+   * What to tell, in a tooltip over the error icon of a directory whose children failed to be
+   * read, as `onLoadChildren` rejected. The icon has no text without it.
+   */
+  loadErrorMessage?: string;
   /** Shows a node in place of its name, such as with a badge after it. */
   renderNode?: (node: IFileTreeNode) => ReactNode;
   /** Opens or closes directories; it gets the full set of open ones. */
@@ -100,6 +105,7 @@ export const FileTree = ({
   className,
   expandedPaths,
   getNodeClassName,
+  loadErrorMessage,
   nodes,
   renderNode,
   selectedPath,
@@ -238,6 +244,7 @@ export const FileTree = ({
       {items.map(({ level, node, siblingCount, siblingIndex }) => (
         <FileTreeItem
           className={getNodeClassName?.(node)}
+          failedMessage={loadErrorMessage}
           hasFailed={failedPaths.has(node.path)}
           isExpanded={node.kind === "directory" ? expandedPaths.has(node.path) : undefined}
           isLoading={loadingPaths.has(node.path)}

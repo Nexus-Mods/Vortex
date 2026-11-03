@@ -28,6 +28,7 @@
     "gameFolderTree": "Install to",
     "noGameFolder": "The game folder couldn't be found. You can still install to the game folder itself or to a new folder.",
     "gameFolderFailed": "The game folder couldn't be read.",
+    "directoryFailed": "Failed to read directory.",
     "newFolder": "New folder",
     "folderName": "Folder name",
     "skipTopFolder": "Skip top folder ({{folder}})",

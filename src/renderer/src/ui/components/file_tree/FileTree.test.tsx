@@ -437,6 +437,37 @@ describe("FileTree", () => {
       expect(onLoadChildren).toHaveBeenCalledTimes(2);
     });
 
+    it("explains a failed load in a tooltip over the error icon", async () => {
+      const user = userEvent.setup();
+      const onLoadChildren = vi.fn<() => Promise<void>>().mockRejectedValue(new Error("nope"));
+      render(
+        <Harness
+          loadErrorMessage="Failed to read directory"
+          nodes={unloaded}
+          onLoadChildren={onLoadChildren}
+        />,
+      );
+
+      await user.click(toggle());
+      await user.hover(await within(item("dir")).findByTestId("file-tree-error"));
+
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Failed to read directory");
+    });
+
+    it("has no tooltip for a failed load when it's given no message", async () => {
+      const user = userEvent.setup();
+      const onLoadChildren = vi.fn<() => Promise<void>>().mockRejectedValue(new Error("nope"));
+      render(<Harness nodes={unloaded} onLoadChildren={onLoadChildren} />);
+
+      await user.click(toggle());
+      await user.hover(await within(item("dir")).findByTestId("file-tree-error"));
+
+      // longer than the tooltip takes to open
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    });
+
     it("doesn't ask for the children of a directory that has them", async () => {
       const user = userEvent.setup();
       const onLoadChildren = vi.fn(() => Promise.resolve());

@@ -2,6 +2,7 @@ import type { RelativePath } from "@nexusmods/paths";
 import React, { type CSSProperties, type MouseEvent, type ReactNode } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { isEmptyDirectory, type IFileTreeNode } from "./types";
@@ -10,6 +11,8 @@ interface IFileTreeItemProps {
   /** What the item shows next to its icon. */
   children: ReactNode;
   className?: string;
+  /** What to tell about its children failing to be read, over the icon that shows it. */
+  failedMessage?: string;
   /** Reading its children failed. */
   hasFailed?: boolean;
   /** Whether its children are showing; only a directory's item has this. */
@@ -38,6 +41,7 @@ interface IFileTreeItemProps {
 export const FileTreeItem = ({
   children,
   className,
+  failedMessage,
   hasFailed,
   isExpanded,
   isLoading,
@@ -61,7 +65,13 @@ export const FileTreeItem = ({
   if (isLoading) {
     statusIcon = <Icon className="animate-spin" name="progress_activity" size="sm" />;
   } else if (hasFailed) {
-    statusIcon = <Icon className="text-danger-strong" name="error" size="sm" />;
+    statusIcon = (
+      <Tooltip content={failedMessage ?? ""} disabled={failedMessage === undefined}>
+        <span className="flex" data-testid="file-tree-error">
+          <Icon className="text-danger-strong" name="error" size="sm" title={failedMessage} />
+        </span>
+      </Tooltip>
+    );
   }
 
   let kindIcon = <Icon name="description" size="sm" />;
