@@ -182,7 +182,9 @@ export function addCollectionAction(api: IExtensionApi, instanceIdsIn: string[])
     )
     .then((result: IDialogResult) => {
       if (result.action === "Add") {
-        const selectedCollections = collections.filter((collectionId) => result.input[collectionId] === true);
+        const selectedCollections = collections.filter(
+          (collectionId) => result.input[collectionId] === true,
+        );
         const addActions = selectedCollections.flatMap((collectionId) => {
           const rules = mods[collectionId].rules ?? [];
           return filtered.reduce((prev: Redux.Action[], modId: string) => {
@@ -237,7 +239,9 @@ export function removeCollectionAction(api: IExtensionApi, instanceIds: string[]
     )
     .then((result: IDialogResult) => {
       if (result.action === "Remove") {
-        const selectedCollections = collections.filter((collectionId) => result.input[collectionId] === true);
+        const selectedCollections = collections.filter(
+          (collectionId) => result.input[collectionId] === true,
+        );
         const removeActions = selectedCollections.flatMap((collectionId) => {
           const rules = mods[collectionId].rules ?? [];
           return validInstanceIds.reduce((prev: Redux.Action[], modId: string) => {
