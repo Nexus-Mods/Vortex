@@ -113,6 +113,7 @@ describe("nxm protocol resolver", () => {
         undefined,
         undefined,
         "skyrimspecialedition",
+        undefined,
       );
     });
 
@@ -128,6 +129,23 @@ describe("nxm protocol resolver", () => {
         "abc",
         1700000000,
         "skyrimspecialedition",
+        undefined,
+      );
+    });
+
+    test("forwards where on the site the download started", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
+
+      await resolve(`${MOD_URL}?key=abc&expires=1700000000&placement=trending_elevated&position=3`);
+
+      expect(harness.getDownloadURLs).toHaveBeenCalledWith(
+        100,
+        500,
+        "abc",
+        1700000000,
+        "skyrimspecialedition",
+        { placement: "trending_elevated", position: 3 },
       );
     });
 
