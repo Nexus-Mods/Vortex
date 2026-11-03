@@ -3,29 +3,33 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { ModsTableViewNameModal } from "./ModsTableViewNameModal";
+import { ViewNameModal } from "./ViewNameModal";
 
 const renderModal = (renaming?: string) => {
   const onCreate = vi.fn();
   const onClose = vi.fn();
   render(
-    <ModsTableViewNameModal isOpen renaming={renaming} onClose={onClose} onSubmit={onCreate} />,
+    <ViewNameModal
+      isOpen
+      createDescription="Give your view a name."
+      placeholder="e.g. Author view"
+      renameDescription="Give your view a new name."
+      renaming={renaming}
+      onClose={onClose}
+      onSubmit={onCreate}
+    />,
   );
   return { onCreate, onClose };
 };
 
 const nameField = () => screen.getByRole("textbox", { name: "Name view" });
 
-describe("ModsTableViewNameModal", () => {
-  it("asks for a name, as the design words it", () => {
+describe("ViewNameModal", () => {
+  it("asks for a name, in the page's words", () => {
     renderModal();
 
     expect(screen.getByRole("dialog", { name: "Create a new view" })).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Give your view a name. You can customise its columns, grouping and filters after creating it.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Give your view a name.")).toBeInTheDocument();
     expect(nameField()).toHaveAttribute("placeholder", "e.g. Author view");
   });
 
@@ -60,7 +64,7 @@ describe("ModsTableViewNameModal", () => {
     const { onCreate } = renderModal("Mine");
 
     expect(screen.getByRole("dialog", { name: "Rename view" })).toHaveTextContent(
-      "Give your view a new name. Your columns, grouping and filters won't change.",
+      "Give your view a new name.",
     );
     expect(nameField()).toHaveValue("Mine");
 
