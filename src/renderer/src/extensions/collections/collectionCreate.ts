@@ -168,13 +168,13 @@ export function addCollectionAction(api: IExtensionApi, instanceIdsIn: string[])
       "question",
       "Add Mods to Collection",
       {
-        text: "Choose which collection you want the selected mods to be added",
+        text: "Choose which collections you want the selected mods to be added to",
         message: sortAlphabetically(filtered)
           .map((modId) => renderModName(mods[modId], { version: true, variant: true }))
           .join("\n"),
-        choices: sortAlphabetically(collections).map((modId, idx) => ({
-          id: modId,
-          text: renderModName(mods[modId]),
+        checkboxes: sortAlphabetically(collections).map((collectionId, idx) => ({
+          id: collectionId,
+          text: renderModName(mods[collectionId]),
           value: idx === 0,
         })),
       },
@@ -182,15 +182,10 @@ export function addCollectionAction(api: IExtensionApi, instanceIdsIn: string[])
     )
     .then((result: IDialogResult) => {
       if (result.action === "Add") {
-        const collectionId = Object.keys(result.input).find((target) => result.input[target]);
-        if (mods[collectionId] === undefined) {
-          // not entirely sure how this could happen
-          return;
-        }
-        const rules = mods[collectionId].rules ?? [];
-        batchDispatch(
-          api.store,
-          filtered.reduce((prev: Redux.Action[], modId: string) => {
+        const selectedCollections = collections.filter((collectionId) => result.input[collectionId] === true);
+        const addActions = selectedCollections.flatMap((collectionId) => {
+          const rules = mods[collectionId].rules ?? [];
+          return filtered.reduce((prev: Redux.Action[], modId: string) => {
             if (!alreadyIncluded(rules, modId) && mods[modId].type !== MOD_TYPE) {
               prev.push(
                 actions.addModRule(gameId, collectionId, {
@@ -202,8 +197,9 @@ export function addCollectionAction(api: IExtensionApi, instanceIdsIn: string[])
               );
             }
             return prev;
-          }, []),
-        );
+          }, []);
+        });
+        batchDispatch(api.store, addActions);
       }
     });
 }
@@ -212,6 +208,7 @@ export function removeCollectionAction(api: IExtensionApi, instanceIds: string[]
   const state = api.getState();
   const gameId = selectors.activeGameId(state);
   const mods = state.persistent.mods[gameId];
+  const validInstanceIds = instanceIds.filter((modId) => mods[modId] !== undefined);
   const collections = Object.keys(mods).filter((collectionId) => {
     if (mods[collectionId].type !== MOD_TYPE || mods[collectionId].attributes?.editable !== true) {
       return false;
@@ -220,7 +217,7 @@ export function removeCollectionAction(api: IExtensionApi, instanceIds: string[]
     const rules = mods[collectionId].rules ?? [];
 
     // only offer the option if there is at least one mod assigned to a collection
-    return instanceIds.find((modId) => alreadyIncluded(rules, modId)) !== undefined;
+    return validInstanceIds.some((modId) => alreadyIncluded(rules, modId));
   });
 
   return api
@@ -228,11 +225,11 @@ export function removeCollectionAction(api: IExtensionApi, instanceIds: string[]
       "question",
       "Remove Mods from Collection",
       {
-        text: "Please select the (modifiable) collection to remove the mods from",
-        message: instanceIds.map((modId) => renderModName(mods[modId])).join("\n"),
-        choices: collections.map((modId, idx) => ({
-          id: modId,
-          text: renderModName(mods[modId]),
+        text: "Select the collections to remove the selected mods from",
+        message: validInstanceIds.map((modId) => renderModName(mods[modId])).join("\n"),
+        checkboxes: collections.map((collectionId, idx) => ({
+          id: collectionId,
+          text: renderModName(mods[collectionId]),
           value: idx === 0,
         })),
       },
@@ -240,19 +237,18 @@ export function removeCollectionAction(api: IExtensionApi, instanceIds: string[]
     )
     .then((result: IDialogResult) => {
       if (result.action === "Remove") {
-        const collectionId = Object.keys(result.input).find((target) => result.input[target]);
-        const rules = mods[collectionId].rules ?? [];
-
-        batchDispatch(
-          api.store,
-          instanceIds.reduce((prev: Redux.Action[], modId: string) => {
+        const selectedCollections = collections.filter((collectionId) => result.input[collectionId] === true);
+        const removeActions = selectedCollections.flatMap((collectionId) => {
+          const rules = mods[collectionId].rules ?? [];
+          return validInstanceIds.reduce((prev: Redux.Action[], modId: string) => {
             const ruleToRemove = rules.find((rule) => rule.reference.id === modId);
             if (ruleToRemove !== undefined) {
               prev.push(actions.removeModRule(gameId, collectionId, ruleToRemove));
             }
             return prev;
-          }, []),
-        );
+          }, []);
+        });
+        batchDispatch(api.store, removeActions);
       }
     });
 }
