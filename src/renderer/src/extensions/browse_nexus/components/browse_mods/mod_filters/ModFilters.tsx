@@ -8,7 +8,7 @@ import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroup
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 
-import type { IModFilters, ModTimeRange } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { IModFilters, ModTimeRange } from "../../../util/mod_views/modViews";
 
 /** Each time range, in the Dates submenu's words, and briefly, as the bar shows the one on. */
 export const timeRanges = (

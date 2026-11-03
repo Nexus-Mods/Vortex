@@ -9,7 +9,7 @@ import { PopoverPanelGroup } from "@/ui/components/popover/PopoverPanelGroup";
 import { PopoverPanelGroupItem } from "@/ui/components/popover/PopoverPanelGroupItem";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
-import type { IModSort, ModSortField } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { IModSort, ModSortField } from "../../../util/mod_views/modViews";
 
 interface IModSortOptionsProps {
   /** How the open preset sorts the mods. */
