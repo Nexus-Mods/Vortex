@@ -141,19 +141,16 @@ function planAndLogOperations(
 /** Compares the lockfile with the deployment's manifests and logs the result. */
 async function compareWithManifests(
   api: IExtensionApi,
-  gameId: string,
+  gameMode: VortexGameId,
   lockfile: Lockfile,
 ): Promise<ManifestDiff | null> {
   try {
-    const shadow = compareWithDeployment(
-      lockfile,
-      await gatherDeployedOrigins(api, VortexGameId(gameId)),
-    );
-    log("info", "shadow comparison", { gameId, verdict: shadow.verdict, ...shadow.counts });
+    const shadow = compareWithDeployment(lockfile, await gatherDeployedOrigins(api, gameMode));
+    log("info", "shadow comparison", { gameMode, verdict: shadow.verdict, ...shadow.counts });
     return shadow;
   } catch (err) {
     log("warn", "failed to compare with the deployment", {
-      gameId,
+      gameMode,
       error: getErrorMessageOrDefault(err),
     });
     return null;
@@ -173,9 +170,8 @@ export function registerResolveLockFile(
     if (!RESOLVED_GAMES.has(gameId) || scanBeforeDeployment !== undefined) {
       return;
     }
+    const gameMode = VortexGameId(gameId);
     try {
-      const gameMode = VortexGameId(gameId);
-
       if (previousLockfile === undefined) {
         const startedAt = Temporal.Now.instant();
         const state = api.getState();
@@ -208,10 +204,10 @@ export function registerResolveLockFile(
       scanBeforeDeployment = { diskScan, scanMs: elapsedMsSince(scanStartedAt), deployed: false };
     } catch (err) {
       log("warn", "failed to scan before deployment", {
-        gameId,
+        gameMode,
         error: getErrorMessageOrDefault(err),
       });
-      void emitPlannerPlanEvent(api, gameId, () => ({ error_kind: parseError(err).data.kind }));
+      void emitPlannerPlanEvent(api, gameMode, () => ({ error_kind: parseError(err).data.kind }));
     }
   };
 
@@ -237,6 +233,7 @@ export function registerResolveLockFile(
     if (!RESOLVED_GAMES.has(gameId) || scanBeforeDeployment?.deployed !== true) {
       return;
     }
+    const gameMode = VortexGameId(gameId);
     const { diskScan, scanMs } = scanBeforeDeployment;
     scanBeforeDeployment = undefined;
     const scanFigures = {
@@ -249,7 +246,7 @@ export function registerResolveLockFile(
       const resolveStartedAt = Temporal.Now.instant();
       const currentLockfile = await resolveLockfile(
         api,
-        VortexGameId(gameId),
+        gameMode,
         registeredContributions,
         hashFile,
       );
@@ -257,7 +254,7 @@ export function registerResolveLockFile(
       // expensive: a line per file, hundreds of thousands on a large setup
       // currentLockfile.files.forEach((f) => log("debug", "current lockfile", f.destinationPath));
       const { planMs, counts } = planAndLogOperations(
-        gameId,
+        gameMode,
         currentLockfile,
         previousLockfile,
         diskScan,
@@ -265,8 +262,8 @@ export function registerResolveLockFile(
       );
 
       previousLockfile = currentLockfile;
-      const manifestDiff = await compareWithManifests(api, gameId, currentLockfile);
-      void emitPlannerPlanEvent(api, gameId, () => ({
+      const manifestDiff = await compareWithManifests(api, gameMode, currentLockfile);
+      void emitPlannerPlanEvent(api, gameMode, () => ({
         ...scanFigures,
         resolve_ms: resolveMs,
         lockfile_files: currentLockfile.files.length,
@@ -278,8 +275,8 @@ export function registerResolveLockFile(
         manifest_diff: manifestDiff,
       }));
     } catch (err) {
-      log("warn", "failed to plan lockfile", { gameId, error: getErrorMessageOrDefault(err) });
-      void emitPlannerPlanEvent(api, gameId, () => ({
+      log("warn", "failed to plan lockfile", { gameMode, error: getErrorMessageOrDefault(err) });
+      void emitPlannerPlanEvent(api, gameMode, () => ({
         ...scanFigures,
         error_kind: parseError(err).data.kind,
       }));

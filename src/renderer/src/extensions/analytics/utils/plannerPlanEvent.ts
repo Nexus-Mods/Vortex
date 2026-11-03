@@ -1,5 +1,5 @@
 import type { EventPlannerPlan, PlannerPlanPayload } from "@vortex/nexus-api-v3";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, type GameId, type VortexGameId } from "@vortex/shared";
 
 import { FlagService } from "../../../FlagService";
 import { log } from "../../../logging";
@@ -14,11 +14,11 @@ export type PlannerPlanFigures = Partial<Omit<PlannerPlanPayload, "game_id">>;
 
 /** The planner_plan payload for a plan run; figures it did not measure are null. */
 export function plannerPlanPayload(
-  nexusGameId: string,
+  nexusGameId: GameId,
   figures: PlannerPlanFigures,
 ): PlannerPlanPayload {
   return {
-    game_id: nexusGameId,
+    game_id: String(nexusGameId),
     mods: null,
     lockfile_files: null,
     generated_files: null,
@@ -37,7 +37,7 @@ export function plannerPlanPayload(
 }
 
 // the games reported per session; one api serves one session
-const reportedGames = new WeakMap<IExtensionApi, Set<string>>();
+const reportedGames = new WeakMap<IExtensionApi, Set<VortexGameId>>();
 
 /**
  * Sends a game's first plan run of the session, with consent, a login, a Nexus game id and the
@@ -46,13 +46,13 @@ const reportedGames = new WeakMap<IExtensionApi, Set<string>>();
  */
 export async function emitPlannerPlanEvent(
   api: IExtensionApi,
-  internalGameId: string,
+  internalGameId: VortexGameId,
   figuresOf: () => PlannerPlanFigures,
 ): Promise<void> {
   const state = api.getState();
   const devBuild = process.env.NODE_ENV === "development";
   const consented = isTelemetryEnabled(state) && isLoggedIn(state);
-  const reported = reportedGames.get(api) ?? new Set<string>();
+  const reported = reportedGames.get(api) ?? new Set<VortexGameId>();
   if ((!consented && !devBuild) || reported.has(internalGameId)) {
     return;
   }
@@ -71,7 +71,7 @@ export async function emitPlannerPlanEvent(
   const event: EventPlannerPlan = {
     type: "planner_plan",
     version: 1,
-    payload: plannerPlanPayload(String(nexusGameId), figuresOf()),
+    payload: plannerPlanPayload(nexusGameId, figuresOf()),
   };
   if (!sends) {
     log("info", "planner-plan: telemetry event not sent in a dev build", event);

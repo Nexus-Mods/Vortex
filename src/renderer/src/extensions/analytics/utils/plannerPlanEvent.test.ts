@@ -1,4 +1,4 @@
-import { GameId } from "@vortex/shared";
+import { GameId, VortexGameId } from "@vortex/shared";
 import { beforeEach, describe, expect, onTestFinished, vi } from "vitest";
 
 import { FlagService } from "../../../FlagService";
@@ -15,6 +15,9 @@ vi.mock("../../nexus_integration/nexusV3Client", () => ({
   createVortexNexusV3InternalClient: vi.fn(),
 }));
 vi.mock("../mixpanel/numericGameId", () => ({ numericNexusGameId: vi.fn() }));
+
+const SKYRIM_SE = VortexGameId("skyrimse");
+const SKYRIM_SE_NEXUS_ID = GameId(1704);
 
 // analytics consent; the harness starts logged in
 const ANALYTICS_BINDING: IHarnessReducerBinding = {
@@ -45,7 +48,9 @@ const loggedWarnings = () =>
 
 describe("plannerPlanPayload", () => {
   test("sends the figures a run measured and null for the rest", () => {
-    expect(plannerPlanPayload("1704", { disk_entries: 3, error_kind: "fs:not-found" })).toEqual({
+    expect(
+      plannerPlanPayload(SKYRIM_SE_NEXUS_ID, { disk_entries: 3, error_kind: "fs:not-found" }),
+    ).toEqual({
       game_id: "1704",
       mods: null,
       lockfile_files: null,
@@ -73,7 +78,7 @@ describe("emitPlannerPlanEvent", () => {
     vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
       telemetryEvent,
     } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
-    vi.mocked(numericNexusGameId).mockReturnValue(GameId(1704));
+    vi.mocked(numericNexusGameId).mockReturnValue(SKYRIM_SE_NEXUS_ID);
     figuresOf.mockClear();
     vi.mocked(window.api).log.mockClear();
     enablePlannerTelemetry();
@@ -84,14 +89,14 @@ describe("emitPlannerPlanEvent", () => {
   }) => {
     const harness = makeConsentingApi(makeApi);
 
-    await emitPlannerPlanEvent(harness.api, "skyrimse", figuresOf);
-    await emitPlannerPlanEvent(harness.api, "skyrimse", figuresOf);
+    await emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf);
+    await emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf);
 
     expect(telemetryEvent).toHaveBeenCalledTimes(1);
     expect(telemetryEvent.mock.calls[0][2]).toEqual({
       type: "planner_plan",
       version: 1,
-      payload: plannerPlanPayload("1704", { lockfile_files: 2 }),
+      payload: plannerPlanPayload(SKYRIM_SE_NEXUS_ID, { lockfile_files: 2 }),
     });
     expect(figuresOf).toHaveBeenCalledTimes(1);
   });
@@ -102,7 +107,7 @@ describe("emitPlannerPlanEvent", () => {
     const harness = makeConsentingApi(makeApi);
     vi.spyOn(FlagService, "instance", "get").mockReturnValue(undefined);
 
-    await emitPlannerPlanEvent(harness.api, "skyrimse", figuresOf);
+    await emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf);
 
     expect(telemetryEvent).not.toHaveBeenCalled();
     expect(figuresOf).not.toHaveBeenCalled();
@@ -111,10 +116,10 @@ describe("emitPlannerPlanEvent", () => {
   test("sends nothing without consent or login", async ({ makeApi }) => {
     const harness = makeConsentingApi(makeApi);
     harness.api.store.dispatch(setAnalytics(false));
-    await emitPlannerPlanEvent(harness.api, "skyrimse", figuresOf);
+    await emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf);
     harness.api.store.dispatch(setAnalytics(true));
     harness.api.store.dispatch(clearOAuthCredentials(null));
-    await emitPlannerPlanEvent(harness.api, "skyrimse", figuresOf);
+    await emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf);
 
     expect(telemetryEvent).not.toHaveBeenCalled();
   });
@@ -123,7 +128,7 @@ describe("emitPlannerPlanEvent", () => {
     const harness = makeConsentingApi(makeApi);
     vi.mocked(numericNexusGameId).mockReturnValue(null);
 
-    await emitPlannerPlanEvent(harness.api, "skyrimse", figuresOf);
+    await emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf);
 
     expect(telemetryEvent).not.toHaveBeenCalled();
   });
@@ -132,7 +137,7 @@ describe("emitPlannerPlanEvent", () => {
     const harness = makeConsentingApi(makeApi);
     telemetryEvent.mockRejectedValueOnce(new Error("socket reset"));
 
-    await expect(emitPlannerPlanEvent(harness.api, "skyrimse", figuresOf)).resolves.toBeUndefined();
+    await expect(emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf)).resolves.toBeUndefined();
     expect(loggedWarnings()).toContain("planner-plan: telemetry submit failed");
   });
 
@@ -140,7 +145,7 @@ describe("emitPlannerPlanEvent", () => {
     const harness = makeConsentingApi(makeApi);
     telemetryEvent.mockResolvedValueOnce({ accepted: 0, rejected: [{ index: 0 }] });
 
-    await emitPlannerPlanEvent(harness.api, "skyrimse", figuresOf);
+    await emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf);
 
     expect(loggedWarnings()).toContain("planner-plan: telemetry event rejected");
   });
