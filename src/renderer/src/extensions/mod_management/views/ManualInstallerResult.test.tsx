@@ -38,6 +38,7 @@ const renderResult = (props: Partial<IManualInstallerResultProps> = {}) =>
       files={files}
       folder=""
       gameFolder={gameFolder}
+      hasDeployedFailed={false}
       modNames={noMods}
       skipTopFolder={false}
       {...props}
@@ -65,6 +66,7 @@ describe("ManualInstallerResult", () => {
     restore = installInMemoryFS((builder) => {
       builder.file(gameFolder.join("Game.esm"), text);
       builder.file(gameFolder.join("shared.esp"), text);
+      builder.file(gameFolder.join("bin"), text);
       builder.file(gameFolder.join("Mods", "Game.esm"), text);
     }).restore;
   });
@@ -142,11 +144,67 @@ describe("ManualInstallerResult", () => {
         files={files}
         folder="Elsewhere"
         gameFolder={gameFolder}
+        hasDeployedFailed={false}
         modNames={noMods}
         skipTopFolder
       />,
     );
 
     await waitFor(() => expect(rowFor("Game.esm")).toHaveAttribute("data-status", "new"));
+  });
+
+  it("reads a directory it has read before not again", async () => {
+    const enumerate = vi.spyOn(window.api.fs, "enumerateDirectory");
+    const { rerender } = renderResult({ skipTopFolder: true });
+
+    await waitFor(() =>
+      expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile"),
+    );
+
+    const reresult = (skipTopFolder: boolean) => (
+      <ManualInstallerResult
+        deployed={deployedByOther}
+        files={files}
+        folder=""
+        gameFolder={gameFolder}
+        hasDeployedFailed={false}
+        modNames={noMods}
+        skipTopFolder={skipTopFolder}
+      />
+    );
+
+    rerender(reresult(false));
+    await waitFor(() => expect(rowFor("Top/Game.esm")).toHaveAttribute("data-status", "new"));
+
+    rerender(reresult(true));
+    await waitFor(() =>
+      expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile"),
+    );
+
+    // the game root and Top, each once
+    expect(enumerate).toHaveBeenCalledTimes(2);
+  });
+
+  it("tells that the marks may be wrong when a directory can't be read", async () => {
+    // the game has a file where the mod has a directory, which can't be read as one
+    renderResult({ files: [file("bin/mod.dll"), file("Game.esm")] });
+
+    expect(await screen.findByTestId("manual-installer-incomplete")).toBeInTheDocument();
+    // the directories that could be read are still checked
+    expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile");
+  });
+
+  it("tells that the marks may be wrong when what other mods deployed can't be read", () => {
+    renderResult({ hasDeployedFailed: true });
+
+    expect(screen.getByTestId("manual-installer-incomplete")).toBeInTheDocument();
+  });
+
+  it("doesn't tell the marks may be wrong when everything could be read", async () => {
+    renderResult({ skipTopFolder: true });
+
+    await waitFor(() => expect(rowFor("new.dll")).toHaveAttribute("data-status", "new"));
+
+    expect(screen.queryByTestId("manual-installer-incomplete")).not.toBeInTheDocument();
   });
 });

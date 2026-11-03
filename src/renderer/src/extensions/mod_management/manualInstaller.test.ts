@@ -54,7 +54,10 @@ const answer = (overrides: Partial<IManualInstallerAnswer> = {}): IManualInstall
   ...overrides,
 });
 
-const makeApi = (dialogAnswer?: IManualInstallerAnswer, state: unknown = {}) => {
+const makeApi = (
+  dialogAnswer?: IManualInstallerAnswer,
+  state: unknown = { settings: { gameMode: { discovered: {} } } },
+) => {
   vi.mocked(requestManualInstallerDestination).mockResolvedValue(dialogAnswer);
   const emit = vi.fn();
   const dispatch = vi.fn();

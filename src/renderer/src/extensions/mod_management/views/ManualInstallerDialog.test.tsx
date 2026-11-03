@@ -330,7 +330,7 @@ describe("ManualInstallerDialog", () => {
       expect(onAnswer).toHaveBeenCalledWith("request", expect.objectContaining({ folder: "Data" }));
     });
 
-    it("keeps naming while the name doesn't work, and drops the folder if focus leaves", async () => {
+    it("keeps naming while the name doesn't work, even when focus leaves", async () => {
       const user = userEvent.setup();
       renderDialog();
 
@@ -343,7 +343,28 @@ describe("ManualInstallerDialog", () => {
 
       await user.click(screen.getByTestId("manual-installer-archive-tree"));
 
-      expect(screen.queryByTestId("manual-installer-folder-name")).not.toBeInTheDocument();
+      expect(input).toBeInTheDocument();
+      expect(input).toHaveAttribute("aria-invalid", "true");
+    });
+
+    it("can't install while a folder is being named", async () => {
+      const user = userEvent.setup();
+      const { onAnswer } = renderDialog();
+
+      const input = await startNewFolder(user, "");
+      await nameFolder(user, input, "Data");
+
+      expect(install()).toBeDisabled();
+
+      // the click takes focus from the input first, which doesn't take a name that doesn't work
+      await user.click(install());
+
+      expect(onAnswer).not.toHaveBeenCalled();
+      expect(input).toBeInTheDocument();
+
+      await nameFolder(user, input, "Created{Enter}");
+
+      expect(install()).toBeEnabled();
     });
 
     it("doesn't take a name that is a path", async () => {
@@ -460,5 +481,26 @@ describe("ManualInstallerDialog", () => {
     await waitFor(() =>
       expect(within(result).getAllByRole("listitem")[0]).toHaveAttribute("data-status", "new"),
     );
+
+    expect(screen.getByTestId("manual-installer-incomplete")).toBeInTheDocument();
+  });
+
+  it("keeps the dialog open from one request to the next, with a fresh form", async () => {
+    const user = userEvent.setup();
+    const props = {
+      loadManifest: vi.fn().mockResolvedValue(manifest()),
+      modNames: new Map<VortexModStagingFolder, string>(),
+      onAnswer: vi.fn(),
+    };
+
+    const { rerender } = render(<ManualInstallerDialog {...props} request={request()} visible />);
+
+    await user.click(screen.getByTestId("manual-installer-skip-top-folder"));
+    const dialog = screen.getByRole("dialog");
+
+    rerender(<ManualInstallerDialog {...props} request={request({ id: "next" })} visible />);
+
+    expect(screen.getByRole("dialog")).toBe(dialog);
+    expect(screen.getByTestId("manual-installer-skip-top-folder")).not.toBeChecked();
   });
 });

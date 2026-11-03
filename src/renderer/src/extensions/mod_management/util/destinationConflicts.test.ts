@@ -11,6 +11,7 @@ import {
   classifyDestinationFiles,
   deployedByOtherMods,
   existingGameFiles,
+  type DirectoryFilesCache,
 } from "./destinationConflicts";
 
 // --- Helpers ---
@@ -114,6 +115,7 @@ describe("existingGameFiles", () => {
   beforeEach(async () => {
     const installed = installInMemoryFS((builder) => {
       builder.file(root.join("game.exe"), text);
+      builder.file(root.join("bin"), text);
       builder.file(root.join("Data", "Game.esm"), text);
       builder.file(root.join("Data", "Textures", "stone.dds"), text);
     });
@@ -134,32 +136,66 @@ describe("existingGameFiles", () => {
       paths("Data/Game.esm", "Data/Mod.esp", "game.exe"),
     );
 
-    expect(existing).toEqual(new Set(["data/game.esm", "game.exe"]));
+    expect(existing).toEqual({
+      files: new Set(["data/game.esm", "game.exe", "bin"]),
+      hasFailed: false,
+    });
   });
 
   it("includes files that aren't one of the final paths", async () => {
-    const existing = await existingGameFiles(root, paths("Data/Mod.esp"));
+    const { files } = await existingGameFiles(root, paths("Data/Mod.esp"));
 
-    expect(existing.has("data/game.esm")).toBe(true);
+    expect(files.has("data/game.esm")).toBe(true);
   });
 
   it("doesn't count directories as files", async () => {
-    const existing = await existingGameFiles(root, paths("Data/Mod.esp"));
+    const { files } = await existingGameFiles(root, paths("Data/Mod.esp"));
 
-    expect(existing.has("data/textures")).toBe(false);
-    expect(existing.has("data/empty")).toBe(false);
+    expect(files.has("data/textures")).toBe(false);
+    expect(files.has("data/empty")).toBe(false);
   });
 
-  it("finds nothing in a directory that doesn't exist", async () => {
-    expect(await existingGameFiles(root, paths("Missing/a.txt"))).toEqual(new Set());
+  it("finds nothing in a directory that doesn't exist, which isn't a failure", async () => {
+    expect(await existingGameFiles(root, paths("Missing/a.txt"))).toEqual({
+      files: new Set(),
+      hasFailed: false,
+    });
   });
 
   it("finds nothing for no files", async () => {
-    expect(await existingGameFiles(root, [])).toEqual(new Set());
+    expect(await existingGameFiles(root, [])).toEqual({ files: new Set(), hasFailed: false });
   });
 
   it("reads each directory once, whatever the case of its name", async () => {
     await existingGameFiles(root, paths("Data/a.txt", "Data/b.txt", "data/c.txt", "d.txt"));
+
+    expect(enumerate).toHaveBeenCalledTimes(2);
+  });
+
+  it("still finds the files of the other directories when one can't be read", async () => {
+    // the game has a file where the mod has a directory, which can't be read as one
+    expect(await existingGameFiles(root, paths("bin/mod.dll", "Data/Mod.esp"))).toEqual({
+      files: new Set(["data/game.esm"]),
+      hasFailed: true,
+    });
+  });
+
+  it("doesn't read a directory in the cache again", async () => {
+    const cache: DirectoryFilesCache = new Map();
+
+    await existingGameFiles(root, paths("Data/a.txt"), cache);
+    const { files } = await existingGameFiles(root, paths("data/b.txt", "c.txt"), cache);
+
+    expect(files).toEqual(new Set(["data/game.esm", "game.exe", "bin"]));
+    // Data once, then the game root
+    expect(enumerate).toHaveBeenCalledTimes(2);
+  });
+
+  it("reads a directory that failed again the next time", async () => {
+    const cache: DirectoryFilesCache = new Map();
+
+    expect((await existingGameFiles(root, paths("bin/mod.dll"), cache)).hasFailed).toBe(true);
+    expect((await existingGameFiles(root, paths("bin/mod.dll"), cache)).hasFailed).toBe(true);
 
     expect(enumerate).toHaveBeenCalledTimes(2);
   });
