@@ -182,8 +182,6 @@ export function registerResolveLockFile(
           registeredContributions,
           resolve(input),
         );
-        // expensive: a line per file, hundreds of thousands on a large setup
-        // previousLockfile.files.forEach((f) => log("debug", "previous lockfile", f.destinationPath));
         log("info", "seeded previous lockfile from manifest", {
           gameMode,
           files: previousLockfile.files.length,
@@ -251,8 +249,6 @@ export function registerResolveLockFile(
         hashFile,
       );
       const resolveMs = elapsedMsSince(resolveStartedAt);
-      // expensive: a line per file, hundreds of thousands on a large setup
-      // currentLockfile.files.forEach((f) => log("debug", "current lockfile", f.destinationPath));
       const { planMs, counts } = planAndLogOperations(
         gameMode,
         currentLockfile,
@@ -260,7 +256,6 @@ export function registerResolveLockFile(
         diskScan,
         scanMs,
       );
-
       previousLockfile = currentLockfile;
       const manifestDiff = await compareWithManifests(api, gameMode, currentLockfile);
       void emitPlannerPlanEvent(api, gameMode, () => ({
