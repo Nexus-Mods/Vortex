@@ -20,7 +20,12 @@ import type { IListing } from "./listing";
 import { DEPLOYMENT_MANIFEST } from "./listing";
 import { BACKUP_SUFFIX, type IVerification } from "./verify";
 
-const FOLDER_MARKER = "__folder_managed_by_vortex";
+// LinkingDeployment tags the folders it creates; dot-prefixed off Windows, the old name in early versions
+const FOLDER_MARKERS = new Set([
+  "__folder_managed_by_vortex",
+  ".__folder_managed_by_vortex",
+  "__delete_if_empty",
+]);
 // the walk reports whole seconds, deployment manifests milliseconds
 const DEPLOY_TIME_TOLERANCE_MS = 2000;
 
@@ -47,6 +52,7 @@ function emptyCounts(verification: IVerification, fullVerify: boolean): GameFold
     fileSampleMissed: fullVerify ? 0 : null,
     hashSample: verification.hashSample,
     unknown: zero(),
+    unknownInVortexFolder: zero(),
     vortex: zero(),
     vortexChangedSinceDeploy: zero(),
   };
@@ -111,7 +117,28 @@ function reconcileSteamFiles(
 
 function isVortexOwnFile(relPath: string): boolean {
   const name = path.basename(relPath);
-  return DEPLOYMENT_MANIFEST.test(name) || name === FOLDER_MARKER;
+  return DEPLOYMENT_MANIFEST.test(name) || FOLDER_MARKERS.has(name.toLowerCase());
+}
+
+/** The folder part of a `pathKey`; "" for the game folder itself. */
+const parentKey = (key: string): string => key.slice(0, Math.max(0, key.lastIndexOf("\\")));
+
+/** Folders, as `pathKey`s, that hold a Vortex folder marker. */
+function vortexFolders(listing: IListing): Set<string> {
+  const folders = new Set<string>();
+  for (const [key, file] of listing.files) {
+    if (FOLDER_MARKERS.has(path.basename(file.relPath).toLowerCase())) folders.add(parentKey(key));
+  }
+  return folders;
+}
+
+/** Whether the file sits in a folder Vortex created, or anywhere below one. */
+function inVortexFolder(key: string, folders: ReadonlySet<string>): boolean {
+  if (folders.size === 0) return false;
+  for (let folder = parentKey(key); ; folder = parentKey(folder)) {
+    if (folders.has(folder)) return true;
+    if (folder === "") return false;
+  }
 }
 
 function reconcileOtherFiles(
@@ -120,6 +147,16 @@ function reconcileOtherFiles(
   counts: GameFolderCheckCounts,
   files: GameFolderFileReport[],
 ): void {
+  const markedFolders = vortexFolders(listing);
+  const addUnknown = (key: string, relPath: string, size: number): void => {
+    add(counts.unknown, size);
+    const report: GameFolderFileReport = { relPath, kind: "unknown", size };
+    if (inVortexFolder(key, markedFolders)) {
+      add(counts.unknownInVortexFolder, size);
+      report.inVortexFolder = true;
+    }
+    files.push(report);
+  };
   for (const [key, file] of listing.files) {
     const deployedAt = listing.deployed.get(key);
     if (deployedAt !== undefined) {
@@ -137,15 +174,13 @@ function reconcileOtherFiles(
     } else if (key.endsWith(BACKUP_SUFFIX)) {
       // a backup of a Steam file stands in for it; any other backup is a file the user had
       if (!baseline.files.has(key.slice(0, -BACKUP_SUFFIX.length))) {
-        add(counts.unknown, file.size);
-        files.push({ relPath: file.relPath, kind: "unknown", size: file.size });
+        addUnknown(key, file.relPath, file.size);
       }
     } else if (isVortexOwnFile(file.relPath)) {
       add(counts.vortex, file.size);
       files.push({ relPath: file.relPath, kind: "vortex", size: file.size });
     } else {
-      add(counts.unknown, file.size);
-      files.push({ relPath: file.relPath, kind: "unknown", size: file.size });
+      addUnknown(key, file.relPath, file.size);
     }
   }
 }
@@ -216,9 +251,19 @@ export function reportedFiles(
     [unknown[index], unknown[pick]] = [unknown[pick]!, unknown[index]!];
   }
   // sorted, so paths sharing folders sit together and compress well
-  const sample = unknown.slice(0, take).map((file) => slashPath(file.relPath));
-  for (const filePath of sample.toSorted()) {
-    reported.push({ path: filePath, status: "unknown" });
+  const sample = unknown
+    .slice(0, take)
+    .map((file) => ({
+      path: slashPath(file.relPath),
+      inVortexFolder: file.inVortexFolder === true,
+    }))
+    .toSorted((lhs, rhs) => (lhs.path < rhs.path ? -1 : lhs.path > rhs.path ? 1 : 0));
+  for (const file of sample) {
+    reported.push({
+      path: file.path,
+      status: "unknown",
+      ...(file.inVortexFolder && { inVortexFolder: true as const }),
+    });
   }
   return {
     files: reported,

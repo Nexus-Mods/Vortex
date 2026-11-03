@@ -1,7 +1,10 @@
 import type { GameFolderFileReport } from "@vortex/shared/ipc";
 import { describe, expect, it } from "vitest";
 
-import { reportedFiles } from "./reconcile";
+import { pathKey, type IBaseline } from "./baseline";
+import type { IListing } from "./listing";
+import { reconcile, reportedFiles } from "./reconcile";
+import type { IVerification } from "./verify";
 
 const unknown = (relPath: string, size = 10): GameFolderFileReport => ({
   relPath,
@@ -53,5 +56,94 @@ describe("reportedFiles", () => {
     const report = reportedFiles([unknown("a.txt"), unknown("b.txt")], 2, () => 0);
     expect(report.unknownTruncated).toBe(false);
     expect(report.files).toHaveLength(2);
+  });
+});
+
+/** A listing of the given files (relative paths, `/` separators); `deployed` maps paths to deploy times. */
+function listingOf(paths: string[], deployed: Record<string, number> = {}): IListing {
+  return {
+    files: new Map(
+      paths.map((relPath) => [pathKey(relPath), { relPath, size: 10, mtimeMs: 1_000 }]),
+    ),
+    deployed: new Map(Object.entries(deployed).map(([relPath, time]) => [pathKey(relPath), time])),
+    hasDeployment: Object.keys(deployed).length > 0,
+    filesWalked: paths.length,
+  };
+}
+
+const NO_STEAM: IBaseline = { files: new Map(), manifestCreatedAt: {} };
+const NO_VERIFICATION: IVerification = {
+  status: { status: "checked", reason: null },
+  outcomes: new Map(),
+  hashSample: { files: 0, capped: false },
+  bytesRead: 0,
+};
+
+const flagged = (paths: string[], deployed?: Record<string, number>) => {
+  const { counts, files } = reconcile(NO_STEAM, listingOf(paths, deployed), NO_VERIFICATION, false);
+  return {
+    counts,
+    byPath: Object.fromEntries(files.map((file) => [file.relPath, file])),
+  };
+};
+
+describe("reconcile: unknown files in Vortex folders", () => {
+  it("flags unknown files in a marked folder and below it", () => {
+    const { byPath, counts } = flagged([
+      "bin/x64/plugins/cyber_engine_tweaks/__folder_managed_by_vortex",
+      "bin/x64/plugins/cyber_engine_tweaks/mods/AppearanceMenu/db.sqlite3",
+      "bin/x64/plugins/cyber_engine_tweaks/cyber_engine_tweaks.log",
+      "bin/x64/plugins/other.log",
+      "imgui.ini",
+    ]);
+    expect(
+      byPath["bin/x64/plugins/cyber_engine_tweaks/mods/AppearanceMenu/db.sqlite3"],
+    ).toMatchObject({
+      kind: "unknown",
+      inVortexFolder: true,
+    });
+    expect(
+      byPath["bin/x64/plugins/cyber_engine_tweaks/cyber_engine_tweaks.log"]?.inVortexFolder,
+    ).toBe(true);
+    expect(byPath["bin/x64/plugins/other.log"]?.inVortexFolder).toBeUndefined();
+    expect(byPath["imgui.ini"]?.inVortexFolder).toBeUndefined();
+    expect(counts.unknown.files).toBe(4);
+    expect(counts.unknownInVortexFolder.files).toBe(2);
+    expect(byPath["bin/x64/plugins/cyber_engine_tweaks/__folder_managed_by_vortex"]?.kind).toBe(
+      "vortex",
+    );
+  });
+
+  it("recognises the old and the non-Windows marker names", () => {
+    const { byPath } = flagged([
+      "r6/scripts/__delete_if_empty",
+      "r6/scripts/mod/log.txt",
+      "red4ext/.__folder_managed_by_vortex",
+      "red4ext/logs/red4ext.log",
+    ]);
+    expect(byPath["r6/scripts/mod/log.txt"]?.inVortexFolder).toBe(true);
+    expect(byPath["red4ext/logs/red4ext.log"]?.inVortexFolder).toBe(true);
+  });
+
+  it("keeps deployed files as Vortex files", () => {
+    const { byPath } = flagged(["mods/__folder_managed_by_vortex", "mods/a.archive"], {
+      "mods/a.archive": 1_000,
+    });
+    expect(byPath["mods/a.archive"]?.kind).toBe("vortex");
+  });
+
+  it("sends the flag with the unknown path", () => {
+    const { files } = reportedFiles(
+      [
+        { relPath: "mods/log.txt", kind: "unknown", size: 1, inVortexFolder: true },
+        { relPath: "imgui.ini", kind: "unknown", size: 1 },
+      ],
+      10,
+      Math.random,
+    );
+    expect(files).toEqual([
+      { path: "imgui.ini", status: "unknown" },
+      { path: "mods/log.txt", status: "unknown", inVortexFolder: true },
+    ]);
   });
 });

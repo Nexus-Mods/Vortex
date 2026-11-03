@@ -66,6 +66,8 @@ export interface GameFolderCheckCounts {
   /** files picked for hashing; capped when there were more same-size files than the samples take */
   hashSample: { files: number; capped: boolean };
   unknown: GameFolderFileCount;
+  /** unknown files in a folder Vortex created (holding a folder marker), or below one */
+  unknownInVortexFolder: GameFolderFileCount;
   vortex: GameFolderFileCount;
   vortexChangedSinceDeploy: GameFolderFileCount;
 }
@@ -97,6 +99,8 @@ export interface GameFolderReportedFile {
   detectedBy?: GameFolderDetection;
   /** the original was the `.vortex_backup` Vortex made when it deployed over the file */
   fromBackup?: true;
+  /** unknown only: in a folder Vortex created, so likely written by a deployed mod at runtime */
+  inVortexFolder?: true;
 }
 
 /** Unknown files totalled by their first two folders */
@@ -108,7 +112,8 @@ export interface GameFolderFolderCount {
 
 /** A finished check, as main hands it to the renderer to send. Times are ms since the epoch. */
 export type GameFolderCheckResult = GameFolderCheckOutcome & {
-  input: GameFolderCheckInput;
+  /** without the local paths, which stay on the machine */
+  input: Omit<GameFolderCheckInput, "steamPath" | "gamePath">;
   folderCreatedAt: number | null;
   manifestCreatedAt: Record<string, number | null>;
   cost: GameFolderCheckCost;
@@ -132,5 +137,6 @@ export interface GameFolderFileReport {
   size: number;
   detectedBy?: GameFolderDetection;
   fromBackup?: boolean;
+  inVortexFolder?: boolean;
   changedSinceDeploy?: boolean;
 }

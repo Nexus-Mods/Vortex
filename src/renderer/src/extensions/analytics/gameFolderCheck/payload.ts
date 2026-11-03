@@ -22,6 +22,7 @@ const NO_COUNTS: GameFolderCheckCounts = {
   fileSampleMissed: null,
   hashSample: { files: 0, capped: false },
   unknown: zero(),
+  unknownInVortexFolder: zero(),
   vortex: zero(),
   vortexChangedSinceDeploy: zero(),
 };
@@ -73,6 +74,7 @@ export function toGameFolderStatePayload(
     file_sample_missed: counts.fileSampleMissed,
     hashed_sample: counts.hashSample,
     unknown: counts.unknown,
+    unknown_in_vortex_folder: counts.unknownInVortexFolder,
     vortex: counts.vortex,
     vortex_changed_since_deploy: counts.vortexChangedSinceDeploy,
     files: (checked?.files ?? []).map((file) => ({
@@ -80,6 +82,7 @@ export function toGameFolderStatePayload(
       status: file.status,
       ...(file.detectedBy !== undefined && { detected_by: file.detectedBy }),
       ...(file.fromBackup === true && { from_backup: true as const }),
+      ...(file.inVortexFolder === true && { in_vortex_folder: true as const }),
     })),
     unknown_truncated: checked?.unknownTruncated ?? false,
     unknown_by_folder: checked?.unknownByFolder ?? [],

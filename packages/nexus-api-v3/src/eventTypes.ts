@@ -122,6 +122,8 @@ export type GameFolderStatePayload = {
   /** files hashed: a random sample of the same-size executables and of the other files */
   hashed_sample: { files: number; capped: boolean };
   unknown: GameFolderFileCount;
+  /** unknown files in a folder Vortex created, or below one; included in `unknown` */
+  unknown_in_vortex_folder: GameFolderFileCount;
   vortex: GameFolderFileCount;
   vortex_changed_since_deploy: GameFolderFileCount;
   /** every modified and missing file, and up to the cap of unknown files */
@@ -150,6 +152,8 @@ export type GameFolderFile = {
   detected_by?: "size" | "sampled_chunk" | "full_hash";
   /** modified only: the original was the .vortex_backup Vortex made when deploying over it */
   from_backup?: true;
+  /** unknown only: in a folder Vortex created, so likely written by a deployed mod at runtime */
+  in_vortex_folder?: true;
 };
 
 export type GameFolderFolderCount = {

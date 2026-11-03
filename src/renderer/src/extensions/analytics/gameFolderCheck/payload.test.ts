@@ -41,6 +41,7 @@ describe("toGameFolderStatePayload", () => {
         { path: "Data/Skyrim.esm", status: "modified", detectedBy: "full_hash", fromBackup: true },
         { path: "Data/Update.esm", status: "missing" },
         { path: "SKSE/skse64.dll", status: "unknown" },
+        { path: "mods/db.sqlite3", status: "unknown", inVortexFolder: true },
       ],
       unknownTruncated: true,
       unknownByFolder: [{ folder: "SKSE", files: 130, bytes: 1300 }],
@@ -61,6 +62,7 @@ describe("toGameFolderStatePayload", () => {
         unknown: count(130),
         vortex: count(5),
         vortexChangedSinceDeploy: count(1),
+        unknownInVortexFolder: count(129),
       },
       input: INPUT,
       folderCreatedAt: Date.UTC(2020, 0, 1),
@@ -92,12 +94,14 @@ describe("toGameFolderStatePayload", () => {
       vortex_changed_since_deploy: count(1),
       cost: { duration_ms: 400, files_walked: 182, bytes_read: 1024 },
       unknown_truncated: true,
+      unknown_in_vortex_folder: count(129),
       unknown_by_folder: [{ folder: "SKSE", files: 130, bytes: 1300 }],
     });
     expect(payload.files).toEqual([
       { path: "Data/Skyrim.esm", status: "modified", detected_by: "full_hash", from_backup: true },
       { path: "Data/Update.esm", status: "missing" },
       { path: "SKSE/skse64.dll", status: "unknown" },
+      { path: "mods/db.sqlite3", status: "unknown", in_vortex_folder: true },
     ]);
   });
 
