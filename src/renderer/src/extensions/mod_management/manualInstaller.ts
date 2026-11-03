@@ -1,8 +1,10 @@
 import * as path from "node:path";
 
+import { relativePath } from "@nexusmods/paths";
 import { VortexGameId, type VortexModStagingFolder } from "@vortex/shared";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { FileTreeEntry } from "@/ui/components/file_tree/buildTree";
 
 import { FlagService } from "../../FlagService";
 import { getBatchContext } from "../../util/BatchContext";
@@ -37,9 +39,6 @@ export const MANUAL_INSTALLER_ID = "manual-installer";
 // after the script-based FOMOD installers (10, 20), before the FOMOD "Basic" catch-all (100)
 export const MANUAL_INSTALLER_PRIORITY = 50;
 
-// how many files the dialog previews the final paths of
-const PREVIEW_FILE_COUNT = 3;
-
 // keys in the batch context, which is shared with the other installers
 const BATCH_DESTINATION_KEY = "manual-installer-destination";
 // our own counter: "items-completed" is only incremented by the replace dialog flow
@@ -71,6 +70,12 @@ export function normalizeDestination(input: string): string | undefined {
   }
   return normalized.replace(/[\\/]+$/, "");
 }
+
+// an archive entry has the platform's separators and marks a directory with a trailing one
+const toFileTreeEntry = (name: string): FileTreeEntry => ({
+  path: relativePath(name),
+  kind: /[\\/]$/.test(name) ? "directory" : "file",
+});
 
 /** the folder all files of the archive are in, if there is a single one */
 export function commonTopFolder(files: string[]): string | undefined {
@@ -120,15 +125,14 @@ export function createManualInstaller(api: IExtensionApi): {
     const batch = batchId !== undefined ? getBatchContext("install-mod", batchId) : undefined;
     const remaining =
       batch !== undefined ? batch.itemCount - batch.get<number>(BATCH_COMPLETED_KEY, 0) - 1 : 0;
-    const sourceFiles = files.filter((name) => !name.endsWith(path.sep));
 
     const answer = await requestManualInstallerDestination(api, {
       gameId: vortexGameId,
       modName,
       remaining: Math.max(remaining, 0),
       defaultFolder: entry?.manualInstallerPreferences?.defaultFolder,
-      previewFiles: sourceFiles.slice(0, PREVIEW_FILE_COUNT),
-      files,
+      gameFolder: api.getState().settings?.gameMode?.discovered?.[vortexGameId]?.path ?? "",
+      files: files.map(toFileTreeEntry),
       ownStagingFolders,
       topFolder: commonTopFolder(files),
     });

@@ -1,5 +1,5 @@
 import type { RelativePath } from "@nexusmods/paths";
-import React, { type CSSProperties, type ReactNode } from "react";
+import React, { type CSSProperties, type MouseEvent, type ReactNode } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -30,6 +30,7 @@ interface IFileTreeItemProps {
   /** Hands over its element, for moving focus to it. */
   itemRef: (path: RelativePath, element: HTMLLIElement | null) => void;
   onClick: (node: IFileTreeNode) => void;
+  onContextMenu?: (node: IFileTreeNode, event: MouseEvent<HTMLLIElement>) => void;
   onFocus: (node: IFileTreeNode) => void;
   onToggle: (node: IFileTreeNode) => void;
 }
@@ -48,6 +49,7 @@ export const FileTreeItem = ({
   siblingCount,
   siblingIndex,
   onClick,
+  onContextMenu,
   onFocus,
   onToggle,
 }: IFileTreeItemProps) => {
@@ -83,6 +85,7 @@ export const FileTreeItem = ({
       style={{ "--nxm-file-tree-level": level } as CSSProperties}
       tabIndex={isTabStop ? 0 : -1}
       onClick={() => onClick(node)}
+      onContextMenu={onContextMenu && ((event) => onContextMenu(node, event))}
       onFocus={() => onFocus(node)}
     >
       <span

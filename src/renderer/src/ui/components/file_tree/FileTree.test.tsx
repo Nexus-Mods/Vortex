@@ -1,5 +1,5 @@
 import { relativePath, type RelativePath } from "@nexusmods/paths";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -336,6 +336,31 @@ describe("FileTree", () => {
 
       expect(queryItem("dir/a.txt")).toBeUndefined();
       expect(item("dir")).toHaveAttribute("tabindex", "0");
+    });
+  });
+
+  describe("context menu", () => {
+    it("tells which node a context menu is asked for on", () => {
+      const onNodeContextMenu = vi.fn();
+      render(<Harness onNodeContextMenu={onNodeContextMenu} />);
+
+      fireEvent.contextMenu(item("root.txt"));
+
+      expect(onNodeContextMenu).toHaveBeenCalledTimes(1);
+      expect(onNodeContextMenu).toHaveBeenCalledWith(selectedWith("root.txt"), expect.anything());
+    });
+
+    it("leaves the browser's menu alone when nothing handles it", () => {
+      render(<Harness />);
+
+      // fireEvent returns false when the event was cancelled
+      expect(fireEvent.contextMenu(item("root.txt"))).toBe(true);
+    });
+
+    it("lets the handler keep the browser's menu away", () => {
+      render(<Harness onNodeContextMenu={(_node, event) => event.preventDefault()} />);
+
+      expect(fireEvent.contextMenu(item("root.txt"))).toBe(false);
     });
   });
 

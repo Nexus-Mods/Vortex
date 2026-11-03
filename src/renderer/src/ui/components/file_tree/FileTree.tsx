@@ -2,6 +2,7 @@ import type { RelativePath } from "@nexusmods/paths";
 import React, {
   type HTMLAttributes,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
   useMemo,
   useRef,
@@ -35,6 +36,12 @@ export interface IFileTreeProps extends Omit<
    * directory shows an error, and opening it again tries again.
    */
   onLoadChildren?: (node: IFileTreeNode) => Promise<void>;
+  /**
+   * A context menu is asked for on a node, by a right-click or Shift+F10 or the Menu key with the
+   * node focused. The tree opens nothing itself; call `preventDefault` to keep the browser's
+   * menu away.
+   */
+  onNodeContextMenu?: (node: IFileTreeNode, event: MouseEvent<HTMLElement>) => void;
   /** Selects a node, by a click or by moving to it with the keyboard. */
   onSelect?: (node: IFileTreeNode) => void;
 }
@@ -98,6 +105,7 @@ export const FileTree = ({
   selectedPath,
   onExpandedChange,
   onLoadChildren,
+  onNodeContextMenu,
   onSelect,
   ...props
 }: IFileTreeProps) => {
@@ -242,6 +250,7 @@ export const FileTree = ({
           siblingCount={siblingCount}
           siblingIndex={siblingIndex}
           onClick={select}
+          onContextMenu={onNodeContextMenu}
           onFocus={(focused) => setFocusedPath(focused.path)}
           onToggle={toggle}
         >

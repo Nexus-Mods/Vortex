@@ -54,12 +54,12 @@ const answer = (overrides: Partial<IManualInstallerAnswer> = {}): IManualInstall
   ...overrides,
 });
 
-const makeApi = (dialogAnswer?: IManualInstallerAnswer) => {
+const makeApi = (dialogAnswer?: IManualInstallerAnswer, state: unknown = {}) => {
   vi.mocked(requestManualInstallerDestination).mockResolvedValue(dialogAnswer);
   const emit = vi.fn();
   const dispatch = vi.fn();
   const api = {
-    getState: () => ({}),
+    getState: () => state,
     store: { dispatch },
     events: { emit },
   } as unknown as IExtensionApi;
@@ -302,7 +302,7 @@ describe("install", () => {
 });
 
 describe("per-game preferences", () => {
-  test("the dialog preselects the default folder and offers the top folder and previews", async () => {
+  test("the dialog preselects the default folder and offers the top folder", async () => {
     withPreferences({ defaultFolder: "Mods" });
     const { api } = makeApi(answer({ folder: "Mods" }));
     await install(createManualInstaller(api), { files: folderFiles });
@@ -312,20 +312,55 @@ describe("per-game preferences", () => {
       expect.objectContaining({
         defaultFolder: "Mods",
         topFolder: "Top",
-        previewFiles: [path.join("Top", "a.dll"), path.join("Top", "b", "c.dll")],
       }),
     );
   });
 
-  test("the dialog gets every entry of the archive, directories included", async () => {
+  test("the dialog gets the game's install folder", async () => {
+    const { api } = makeApi(answer(), {
+      settings: { gameMode: { discovered: { game: { path: path.join("C:", "Games", "Game") } } } },
+    });
+    await install(createManualInstaller(api));
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ gameFolder: path.join("C:", "Games", "Game") }),
+    );
+  });
+
+  test("the dialog gets an empty install folder when the game isn't discovered", async () => {
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api));
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ gameFolder: "" }),
+    );
+  });
+
+  test("the dialog gets every entry of the archive with its kind, directories included", async () => {
     const entries = [`Top${path.sep}`, path.join("Top", "a.dll"), path.join("Top", "b", "c.dll")];
     const { api } = makeApi(answer());
     await install(createManualInstaller(api), { files: entries });
 
     expect(requestManualInstallerDestination).toHaveBeenCalledWith(
       api,
-      expect.objectContaining({ files: entries }),
+      expect.objectContaining({
+        files: [
+          { path: "Top", kind: "directory" },
+          { path: "Top/a.dll", kind: "file" },
+          { path: "Top/b/c.dll", kind: "file" },
+        ],
+      }),
     );
+  });
+
+  test("the installer keeps the archive's own names for the files it copies", async () => {
+    const entries = [path.join("Top", "a.dll")];
+    const { api } = makeApi(answer({ folder: "" }));
+    const result = await install(createManualInstaller(api), { files: entries });
+
+    expect(copiesOf(result)[0].source).toBe(entries[0]);
   });
 
   test("the dialog gets the staging folders of the mod and of the one it replaces", async () => {
