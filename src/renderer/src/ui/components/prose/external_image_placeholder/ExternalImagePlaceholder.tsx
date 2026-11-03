@@ -85,6 +85,7 @@ type IExternalImagePlaceholderProps = IExternalImagePlaceholderOptions & {
  * Stands in for images from outside Nexus Mods, which prose doesn't load: what they were, where
  * they're from, and their links, with a way to see them on the website and a Why? explaining it.
  * A run of them is one placeholder with a count. Only the images' hosts are read, never loaded.
+ * Narrower than 28rem, its buttons go under the text rather than beside it.
  */
 export const ExternalImagePlaceholder = ({
   images,
@@ -112,145 +113,147 @@ export const ExternalImagePlaceholder = ({
   };
 
   return (
-    <div className="my-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 rounded-sm border border-dashed border-stroke-weak bg-translucent-dark-200 p-4 text-left">
-      <span className="flex items-center">
-        <span className="flex rounded-full bg-surface-translucent-low p-2 text-neutral-subdued">
-          <Icon name="hide_image" size="sm" />
+    <div className="@container my-3">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 rounded-sm border border-dashed border-stroke-weak bg-translucent-dark-200 p-4 text-left @md:grid-cols-[auto_minmax(0,1fr)_auto]">
+        <span className="flex items-center">
+          <span className="flex rounded-full bg-surface-translucent-low p-2 text-neutral-subdued">
+            <Icon name="hide_image" size="sm" />
+          </span>
+
+          {images.length > 1 && (
+            <Typography
+              as="span"
+              className="-ml-2.25 rounded-full bg-surface-high p-2 font-semibold"
+              typographyType="body-sm"
+            >
+              {`+${images.length - 1}`}
+            </Typography>
+          )}
         </span>
 
-        {images.length > 1 && (
+        <span className="flex flex-col gap-y-0.5">
           <Typography
             as="span"
-            className="-ml-2.25 rounded-full bg-surface-high p-2 font-semibold"
+            appearance="moderate"
+            brand="neutral-translucent"
+            className="font-semibold"
             typographyType="body-sm"
           >
-            {`+${images.length - 1}`}
+            {headlineOf(t, images, hasLinks)}
           </Typography>
-        )}
-      </span>
 
-      <span className="flex flex-col gap-y-0.5">
-        <Typography
-          as="span"
-          appearance="moderate"
-          brand="neutral-translucent"
-          className="font-semibold"
-          typographyType="body-sm"
-        >
-          {headlineOf(t, images, hasLinks)}
-        </Typography>
-
-        <Typography
-          as="span"
-          appearance="subdued"
-          brand="neutral-translucent"
-          typographyType="body-sm"
-        >
-          {sourceOf(t, images)}
-        </Typography>
-      </span>
-
-      <span className="flex items-center gap-x-3">
-        <Button
-          appearance="subdued"
-          brand="neutral"
-          rightIcon="open_in_new"
-          size="sm"
-          onClick={() => viewWebsite("placeholder")}
-        >
-          {t("View on website")}
-        </Button>
-
-        <TypographyLink
-          appearance="moderate"
-          typographyType="body-sm"
-          variant="primary"
-          onClick={() => {
-            setWhyOpen(true);
-            onWhyOpened?.();
-          }}
-        >
-          {t("Why?")}
-        </TypographyLink>
-      </span>
-
-      {hasLinks && (
-        <div className="col-span-2 col-start-2 flex flex-col gap-y-1.5">
           <Typography
             as="span"
             appearance="subdued"
             brand="neutral-translucent"
             typographyType="body-sm"
           >
-            {t("Links to")}
+            {sourceOf(t, images)}
           </Typography>
+        </span>
 
-          <span className="flex flex-wrap gap-x-3 gap-y-1">
-            {links.map(({ href, label }) => (
-              <Tooltip
-                className="break-all"
-                content={href}
-                delay={{ open: 0, close: 50 }}
-                key={href}
-              >
-                <span className="inline-flex">
-                  <TypographyLink
-                    appearance="moderate"
-                    rightIcon="open_in_new"
-                    typographyType="body-sm"
-                    variant="primary"
-                    onClick={() => {
-                      window.api.shell.openUrl(href);
-                      onLinkOpened?.(domainOf(href));
-                    }}
-                  >
-                    {label}
-                  </TypographyLink>
-                </span>
-              </Tooltip>
-            ))}
-          </span>
-        </div>
-      )}
-
-      <Modal
-        isOpen={isWhyOpen}
-        size="md"
-        title={t("Why isn't this image shown?")}
-        onClose={() => setWhyOpen(false)}
-      >
-        <div className="flex flex-col gap-y-4">
-          <Typography appearance="subdued" typographyType="body-sm">
-            {t(
-              "Vortex only loads images stored on Nexus Mods. Images from other sites could be swapped for something harmful or used to track you, and an app doesn't have the same protections as your web browser.",
-            )}
-          </Typography>
+        <span className="col-start-2 flex items-center gap-x-3 @md:col-start-auto">
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            rightIcon="open_in_new"
+            size="sm"
+            onClick={() => viewWebsite("placeholder")}
+          >
+            {t("View on website")}
+          </Button>
 
           <TypographyLink
             appearance="moderate"
-            className="self-start"
             typographyType="body-sm"
             variant="primary"
-            onClick={() => window.api.shell.openUrl(HOSTING_HELP_URL)}
+            onClick={() => {
+              setWhyOpen(true);
+              onWhyOpened?.();
+            }}
           >
-            {t("Mod authors: how to host media on Nexus Mods")}
+            {t("Why?")}
           </TypographyLink>
+        </span>
 
-          <div className="flex justify-end">
-            <Button
-              appearance="strong"
-              brand="neutral"
-              rightIcon="open_in_new"
-              onClick={() => {
-                setWhyOpen(false);
-                viewWebsite("dialog");
-              }}
+        {hasLinks && (
+          <div className="col-start-2 flex flex-col gap-y-1.5 @md:col-span-2">
+            <Typography
+              as="span"
+              appearance="subdued"
+              brand="neutral-translucent"
+              typographyType="body-sm"
             >
-              {t("View on website")}
-            </Button>
+              {t("Links to")}
+            </Typography>
+
+            <span className="flex flex-wrap gap-x-3 gap-y-1">
+              {links.map(({ href, label }) => (
+                <Tooltip
+                  className="break-all"
+                  content={href}
+                  delay={{ open: 0, close: 50 }}
+                  key={href}
+                >
+                  <span className="inline-flex">
+                    <TypographyLink
+                      appearance="moderate"
+                      rightIcon="open_in_new"
+                      typographyType="body-sm"
+                      variant="primary"
+                      onClick={() => {
+                        window.api.shell.openUrl(href);
+                        onLinkOpened?.(domainOf(href));
+                      }}
+                    >
+                      {label}
+                    </TypographyLink>
+                  </span>
+                </Tooltip>
+              ))}
+            </span>
           </div>
-        </div>
-      </Modal>
+        )}
+
+        <Modal
+          isOpen={isWhyOpen}
+          size="md"
+          title={t("Why isn't this image shown?")}
+          onClose={() => setWhyOpen(false)}
+        >
+          <div className="flex flex-col gap-y-4">
+            <Typography appearance="subdued" typographyType="body-sm">
+              {t(
+                "Vortex only loads images stored on Nexus Mods. Images from other sites could be swapped for something harmful or used to track you, and an app doesn't have the same protections as your web browser.",
+              )}
+            </Typography>
+
+            <TypographyLink
+              appearance="moderate"
+              className="self-start"
+              typographyType="body-sm"
+              variant="primary"
+              onClick={() => window.api.shell.openUrl(HOSTING_HELP_URL)}
+            >
+              {t("Mod authors: how to host media on Nexus Mods")}
+            </TypographyLink>
+
+            <div className="flex justify-end">
+              <Button
+                appearance="strong"
+                brand="neutral"
+                rightIcon="open_in_new"
+                onClick={() => {
+                  setWhyOpen(false);
+                  viewWebsite("dialog");
+                }}
+              >
+                {t("View on website")}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      </div>
     </div>
   );
 };
