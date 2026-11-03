@@ -28,12 +28,6 @@ function pathKey(value: string): string | undefined {
   }
 }
 
-function parentOf(value: RelativePath): RelativePath {
-  const slash = value.lastIndexOf("/");
-
-  return relativePath(slash === -1 ? "" : value.slice(0, slash));
-}
-
 /**
  * The files other mods have deployed, by their path in the game folder, with the staging folder
  * of the mod that deployed each. Files from `ownStagingFolders`, the folders of the mod being
