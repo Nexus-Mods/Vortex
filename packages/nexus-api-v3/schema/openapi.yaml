@@ -979,6 +979,11 @@ paths:
 
         A file manually verified by staff is never overridden (409 is returned instead) —
         staff re-verification is also the route for reversing a quarantine.
+
+        With `place_mod_under_review`, the file's mod is also placed under moderator review and
+        reported to the moderation team; `mod_review` says what happened. This is best-effort: if
+        it fails, the file stays quarantined, the call still succeeds and `mod_review` is `failed`.
+        Reversing the quarantine does not release the mod, nor the reverse.
       operationId: quarantineModFileVersion
       x-badges:
         - name: Experimental
@@ -1425,14 +1430,15 @@ paths:
           color: orange
       summary: Search mods
       description: |
-        Search published mods, sorted and optionally filtered by game and time range.
+        Search published mods, sorted and optionally filtered by game and by creation or update time.
 
         A credential is optional. With one, mods by authors and with tags the user has blocked are
         left out.
 
-        Adult mods are left out when `include_adult` is false or the user's adult content
-        preference is off. In a country that requires age verification, or when the country is
-        unknown, they are also left out unless the user is age verified.
+        Adult mods are left out when the user's adult content preference is off. In a country that
+        requires age verification, or when the country is unknown, they are also left out unless the
+        user is age verified. The `adult` filter narrows the results further, to adult mods only or
+        to mods that are not adult.
       operationId: searchMods
       security:
         - ApiKeyAuth: []
@@ -1458,7 +1464,7 @@ paths:
                   data:
                     "$ref": "#/components/schemas/ModsSearchResponse"
                   meta:
-                    "$ref": "#/components/schemas/PaginationMeta"
+                    "$ref": "#/components/schemas/ModsSearchPaginationMeta"
         "401":
           description: The credential is invalid or expired.
           content:
@@ -2426,6 +2432,7 @@ components:
         - tags
         - primary_image
         - gallery_images
+        - primary_file_version
       properties:
         id:
           type: string
@@ -2484,6 +2491,13 @@ components:
             moderation or removed by staff.
           items:
             "$ref": "#/components/schemas/ModGalleryImage"
+        primary_file_version:
+          allOf:
+            - "$ref": "#/components/schemas/MinimalModFileVersion"
+          nullable: true
+          description: |
+            The mod's primary file version, which is its default download. Null when the mod has no
+            primary file version, or when it has been removed or quarantined.
     ModUploader:
       type: object
       description: The user who uploaded a mod.
@@ -2752,6 +2766,19 @@ components:
           type: boolean
           nullable: true
           description: Whether the mod is marked as adult content.
+    MinimalModFileVersion:
+      type: object
+      description: A minimal representation of a mod file version.
+      required:
+        - id
+        - game_scoped_id
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod file version.
+        game_scoped_id:
+          type: string
+          description: The game-scoped identifier for the mod file version.
     ModStatus:
       type: string
       description: The effective visibility status of a mod.
@@ -3076,12 +3103,21 @@ components:
           description: Why the file is being quarantined (recorded in service logs).
           minLength: 1
           maxLength: 1000
+        place_mod_under_review:
+          type: boolean
+          description: |
+            Also place the file's mod under moderator review once the file is quarantined (or was
+            already). The mod is hidden from the public and its authors cannot edit it until a moderator
+            has reviewed it. A mod already under review is left as it is.
+          default: false
     QuarantineModFileVersionSuccess:
       type: object
       required:
         - id
         - status
         - already_quarantined
+        - mod_review
+        - mod_review_reported
       properties:
         id:
           type: string
@@ -3092,6 +3128,25 @@ components:
         already_quarantined:
           type: boolean
           description: True when the file was already quarantined and nothing changed.
+        mod_review:
+          "$ref": "#/components/schemas/ModReviewOutcome"
+        mod_review_reported:
+          type: boolean
+          description: True when this call reported the mod to the moderation team.
+            Only a call that places the mod under review reports it.
+    ModReviewOutcome:
+      type: string
+      description: |
+        What happened to the file's mod when the caller asked for it to be placed under moderator review.
+        `not_requested`: the caller did not ask. `placed_under_review`: the mod is now hidden from the
+        public and locked for moderator review. `already_under_review`: the mod was already under review,
+        so nothing changed. `failed`: the mod could not be placed under review; the file is still
+        quarantined.
+      enum:
+        - not_requested
+        - placed_under_review
+        - already_under_review
+        - failed
     DownloadRepackedModFileVersionResponse:
       type: object
       required:
@@ -3680,18 +3735,14 @@ components:
             maxLength: 64
           example:
             - skyrimspecialedition
-        time_range:
-          type: string
-          enum:
-            - "1"
-            - "7"
-            - "14"
-            - "28"
-            - "365"
-            - all
-          description: |
-            Only mods created within the last N days, or updated within them for the `updated`
-            sort. `trending` and `popular` default to 7 days, and the other sorts to `all`.
+        created_at:
+          description: Only mods whose `created_at` is in this range.
+          allOf:
+            - "$ref": "#/components/schemas/DateTimeRange"
+        updated_at:
+          description: Only mods whose `updated_at` is in this range.
+          allOf:
+            - "$ref": "#/components/schemas/DateTimeRange"
         exclude_mods:
           type: array
           description: IDs of mods to leave out.
@@ -3701,11 +3752,35 @@ components:
             pattern: "^[0-9]+$"
           example:
             - "7318624273618"
-        include_adult:
-          type: boolean
+        adult:
+          type: string
+          enum:
+            - include
+            - exclude
+            - only
           description: |
-            Set to false to leave out adult mods. Setting it to true cannot include adult mods that
-            age verification or the user's adult content preference leave out.
+            Whether to include adult mods, leave them out, or return adult mods only. Defaults to
+            `include`. Adult mods that age verification or the user's adult content preference leave
+            out are never returned, so `only` returns no mods for a user who cannot see adult content.
+    DateTimeRange:
+      type: object
+      description: |
+        A time range: `gte` is the earliest time included, and `lt` the time the range ends before. Give
+        either or both; no other operators (such as `lte` or `gt`) are accepted. Times need a UTC offset,
+        as in `2026-04-01T00:00:00Z`.
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        gte:
+          type: string
+          format: date-time
+          description: Included when at or after this time.
+          example: "2026-04-01T00:00:00Z"
+        lt:
+          type: string
+          format: date-time
+          description: Included when before this time. Must be after `gte`.
+          example: "2026-10-01T00:00:00Z"
     ModsSearchSort:
       type: object
       description: The order of the results.
@@ -3716,14 +3791,14 @@ components:
           enum:
             - new
             - updated
-            - trending
-            - popular
             - endorsements
-          default: trending
+            - downloads
+          default: endorsements
           description: |
-            `new` and `updated` order by creation and update time, `trending` and `endorsements`
-            by endorsements, and `popular` by downloads. `updated` leaves out mods that haven't
-            been updated since they were created.
+            `new` orders by `created_at`, `updated` by `updated_at`, `endorsements` by endorsement
+            count and `downloads` by total downloads. A mod never updated has an `updated_at` equal to
+            its `created_at`. Sorting never leaves mods out: `filters` choose the mods, so the most
+            endorsed mods created since a time are `endorsements` with `created_at.gte`.
         direction:
           type: string
           enum:
@@ -3731,22 +3806,98 @@ components:
             - desc
           default: desc
     ModsSearchPagination:
+      description: Pages by cursor (`type` `cursor`, the default) or by number (`type`
+        `page`). The response `meta` has the same `type`.
+      oneOf:
+        - "$ref": "#/components/schemas/ModsSearchCursorPagination"
+        - "$ref": "#/components/schemas/ModsSearchPagePagination"
+    ModsSearchPagePagination:
       type: object
-      description: The page of results to return.
+      description: Pages by number, up to page 100.
       additionalProperties: false
+      required:
+        - type
       properties:
+        type:
+          type: string
+          enum:
+            - page
         page:
           type: integer
           default: 1
           minimum: 1
           maximum: 100
-          description: Page number (1-indexed).
+          description: Page number, starting at 1. Use cursor pagination to go further.
+        page_size:
+          "$ref": "#/components/schemas/ModsSearchPageSize"
+    ModsSearchCursorPagination:
+      type: object
+      description: Pages by cursor, with no page limit.
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          enum:
+            - cursor
+          default: cursor
+        cursor:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: |
+            The `next_cursor` of the previous page. Leave it out for the first page.
+
+            Send the same filters, sort and direction as that request; a cursor sent with any of them changed is rejected. Filters count as the same when they select the same mods, so the order of `games` and `exclude_mods` and the time zone of a `created_at` or `updated_at` time do not matter, and leaving out `adult` is the same as sending its default. `page_size` may change. Results are not a snapshot, so a mod that moves between requests can be repeated or missed. Cursors are for paging, not for storing.
+        page_size:
+          "$ref": "#/components/schemas/ModsSearchPageSize"
+    ModsSearchPageSize:
+      type: integer
+      default: 20
+      minimum: 1
+      maximum: 100
+      description: Number of mods per page.
+    ModsSearchPaginationMeta:
+      description: Pagination for the returned page, of the same `type` as the request.
+      oneOf:
+        - "$ref": "#/components/schemas/ModsSearchPagePaginationMeta"
+        - "$ref": "#/components/schemas/ModsSearchCursorPaginationMeta"
+    ModsSearchPagePaginationMeta:
+      description: Pagination for a page requested by number.
+      allOf:
+        - "$ref": "#/components/schemas/PaginationMeta"
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - page
+    ModsSearchCursorPaginationMeta:
+      type: object
+      description: Pagination for a page requested by cursor.
+      required:
+        - type
+        - page_size
+        - total_count
+        - next_cursor
+      properties:
+        type:
+          type: string
+          enum:
+            - cursor
         page_size:
           type: integer
-          default: 20
-          minimum: 1
-          maximum: 100
           description: Number of mods per page.
+          example: 20
+        total_count:
+          type: integer
+          description: Number of mods that match the search.
+          example: 4123
+        next_cursor:
+          type: string
+          nullable: true
+          description: Send as `cursor` to get the next page. Null on the last page.
     ModsSearchResponse:
       type: object
       required:
