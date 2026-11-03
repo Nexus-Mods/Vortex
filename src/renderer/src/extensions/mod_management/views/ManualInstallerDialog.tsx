@@ -38,7 +38,6 @@ interface IFormProps {
   loadManifest: IManualInstallerDialogProps["loadManifest"];
   modNames: IManualInstallerDialogProps["modNames"];
   request: IManualInstallerRequest;
-  visible: boolean;
   onAnswer: (answer: IManualInstallerAnswer | undefined) => void;
 }
 
@@ -55,13 +54,7 @@ function toQualifiedPath(nativePath: string): QualifiedPath | undefined {
   }
 }
 
-const ManualInstallerForm = ({
-  loadManifest,
-  modNames,
-  request,
-  visible,
-  onAnswer,
-}: IFormProps) => {
+const ManualInstallerForm = ({ loadManifest, modNames, request, onAnswer }: IFormProps) => {
   const { t } = useTranslation("mod_management");
 
   // the folder is kept as the installer takes it; the trees use relative paths
@@ -76,6 +69,9 @@ const ManualInstallerForm = ({
   const [dontAskAgain, setDontAskAgain] = useState(false);
   const [useForAll, setUseForAll] = useState(false);
   const [deployed, setDeployed] = useState<ReadonlyMap<string, VortexModStagingFolder>>();
+  const [hasDeployedFailed, setHasDeployedFailed] = useState(false);
+  // a folder is being named; it's taken or dropped first, so that none is lost by a click
+  const [isNaming, setIsNaming] = useState(false);
 
   const archiveTree = useMemo(() => buildFileTree(request.files), [request.files]);
   const [archiveExpanded, setArchiveExpanded] = useState<ReadonlySet<RelativePath>>(
@@ -91,6 +87,9 @@ const ManualInstallerForm = ({
       .then((manifest) => deployedByOtherMods(manifest, request.ownStagingFolders))
       .catch((err: unknown) => {
         log("warn", "failed to read what is deployed for the install destination", { err });
+        if (!isCancelled) {
+          setHasDeployedFailed(true);
+        }
         return new Map<string, VortexModStagingFolder>();
       })
       .then((found) => {
@@ -107,6 +106,7 @@ const ManualInstallerForm = ({
 
   // the trees let any node be selected, but only a directory can be installed to
   const isTargetValid = selectedNode?.kind !== "file";
+  const canInstall = isTargetValid && !isNaming;
 
   const selectNode = (node: IFileTreeNode) => {
     setSelectedNode(node);
@@ -117,125 +117,125 @@ const ManualInstallerForm = ({
   };
 
   return (
-    <ModalWrapper isOpen={visible} size="xl" onClose={() => onAnswer(undefined)}>
-      <ModalPanel
-        className="flex max-h-[90vh] flex-col"
-        title={t("manualInstaller::title")}
-        onClose={() => onAnswer(undefined)}
-      >
-        <div className="min-h-0 space-y-4 overflow-y-auto">
-          <Typography appearance="subdued" as="p" typographyType="body-sm">
-            {t("manualInstaller::intro", { modName: request.modName })}
-          </Typography>
+    <ModalPanel
+      className="flex max-h-[90vh] flex-col"
+      title={t("manualInstaller::title")}
+      onClose={() => onAnswer(undefined)}
+    >
+      <div className="min-h-0 space-y-4 overflow-y-auto">
+        <Typography appearance="subdued" as="p" typographyType="body-sm">
+          {t("manualInstaller::intro", { modName: request.modName })}
+        </Typography>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex min-h-0 flex-col gap-y-2">
-              <Typography appearance="subdued" as="p" typographyType="body-sm">
-                {t("manualInstaller::modFiles")}
-              </Typography>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex min-h-0 flex-col gap-y-2">
+            <Typography appearance="subdued" as="p" typographyType="body-sm">
+              {t("manualInstaller::modFiles")}
+            </Typography>
 
-              <div className="max-h-80 overflow-y-auto rounded-sm bg-surface-mid p-2">
-                <FileTree
-                  aria-label={t("manualInstaller::modFiles")}
-                  data-testid="manual-installer-archive-tree"
-                  expandedPaths={archiveExpanded}
-                  nodes={archiveTree}
-                  onExpandedChange={setArchiveExpanded}
-                />
-              </div>
-
-              {request.topFolder !== undefined && (
-                <CheckboxField
-                  checked={skipTopFolder}
-                  data-testid="manual-installer-skip-top-folder"
-                  label={t("manualInstaller::skipTopFolder", { folder: request.topFolder })}
-                  onChange={setSkipTopFolder}
-                />
-              )}
+            <div className="max-h-80 overflow-y-auto rounded-sm bg-surface-mid p-2">
+              <FileTree
+                aria-label={t("manualInstaller::modFiles")}
+                data-testid="manual-installer-archive-tree"
+                expandedPaths={archiveExpanded}
+                nodes={archiveTree}
+                onExpandedChange={setArchiveExpanded}
+              />
             </div>
 
-            <ManualInstallerGameTree
-              created={created}
-              deployed={deployed}
-              folder={folder}
-              gameFolder={gameFolder}
-              selectedNode={selectedNode}
-              onCreatedChange={setCreated}
-              onSelect={selectNode}
-            />
+            {request.topFolder !== undefined && (
+              <CheckboxField
+                checked={skipTopFolder}
+                data-testid="manual-installer-skip-top-folder"
+                label={t("manualInstaller::skipTopFolder", { folder: request.topFolder })}
+                onChange={setSkipTopFolder}
+              />
+            )}
           </div>
 
-          <ManualInstallerResult
+          <ManualInstallerGameTree
+            created={created}
             deployed={deployed}
-            files={request.files}
             folder={folder}
             gameFolder={gameFolder}
-            modNames={modNames}
-            skipTopFolder={skipTopFolder}
+            selectedNode={selectedNode}
+            onCreatedChange={setCreated}
+            onNamingChange={setIsNaming}
+            onSelect={selectNode}
           />
-
-          <CheckboxField
-            checked={useAsDefault}
-            data-testid="manual-installer-use-as-default"
-            label={t("manualInstaller::useAsDefault")}
-            onChange={setUseAsDefault}
-          />
-
-          <CheckboxField
-            checked={dontAskAgain}
-            data-testid="manual-installer-dont-ask-again"
-            label={t("manualInstaller::dontAskAgain")}
-            onChange={setDontAskAgain}
-          />
-
-          {request.remaining > 0 && (
-            <CheckboxField
-              checked={useForAll}
-              data-testid="manual-installer-use-for-all"
-              label={t("manualInstaller::useForAll", { count: request.remaining })}
-              onChange={setUseForAll}
-            />
-          )}
         </div>
 
-        <div className="mt-4 flex shrink-0 flex-col gap-y-3">
-          {/* by the button it explains, and out of the scrolling part so it can't be missed */}
-          {!isTargetValid && (
-            <Alert data-testid="manual-installer-select-directory" severity="warning">
-              {t("manualInstaller::selectDirectory")}
-            </Alert>
-          )}
+        <ManualInstallerResult
+          deployed={deployed}
+          files={request.files}
+          folder={folder}
+          gameFolder={gameFolder}
+          hasDeployedFailed={hasDeployedFailed}
+          modNames={modNames}
+          skipTopFolder={skipTopFolder}
+        />
 
-          <div className="flex justify-end gap-2">
-            <Button
-              appearance="subdued"
-              brand="neutral"
-              data-testid="manual-installer-cancel"
-              onClick={() => onAnswer(undefined)}
-            >
-              {t("manualInstaller::cancel")}
-            </Button>
+        <CheckboxField
+          checked={useAsDefault}
+          data-testid="manual-installer-use-as-default"
+          label={t("manualInstaller::useAsDefault")}
+          onChange={setUseAsDefault}
+        />
 
-            <Button
-              data-testid="manual-installer-install"
-              disabled={!isTargetValid}
-              onClick={() =>
-                onAnswer({
-                  folder,
-                  skipTopFolder,
-                  // not asking again only works with a default folder to skip to
-                  useAsDefault: useAsDefault || dontAskAgain,
-                  dontAskAgain,
-                  useForAll,
-                })
-              }
-            >
-              {t("manualInstaller::install")}
-            </Button>
-          </div>
+        <CheckboxField
+          checked={dontAskAgain}
+          data-testid="manual-installer-dont-ask-again"
+          label={t("manualInstaller::dontAskAgain")}
+          onChange={setDontAskAgain}
+        />
+
+        {request.remaining > 0 && (
+          <CheckboxField
+            checked={useForAll}
+            data-testid="manual-installer-use-for-all"
+            label={t("manualInstaller::useForAll", { count: request.remaining })}
+            onChange={setUseForAll}
+          />
+        )}
+      </div>
+
+      <div className="mt-4 flex shrink-0 flex-col gap-y-3">
+        {/* by the button it explains, and out of the scrolling part so it can't be missed */}
+        {!isTargetValid && (
+          <Alert data-testid="manual-installer-select-directory" severity="warning">
+            {t("manualInstaller::selectDirectory")}
+          </Alert>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            data-testid="manual-installer-cancel"
+            onClick={() => onAnswer(undefined)}
+          >
+            {t("manualInstaller::cancel")}
+          </Button>
+
+          <Button
+            data-testid="manual-installer-install"
+            disabled={!canInstall}
+            onClick={() =>
+              onAnswer({
+                folder,
+                skipTopFolder,
+                // not asking again only works with a default folder to skip to
+                useAsDefault: useAsDefault || dontAskAgain,
+                dontAskAgain,
+                useForAll,
+              })
+            }
+          >
+            {t("manualInstaller::install")}
+          </Button>
         </div>
-      </ModalPanel>
-    </ModalWrapper>
+      </div>
+    </ModalPanel>
   );
 };
 
@@ -247,13 +247,14 @@ export const ManualInstallerDialog = ({
   onAnswer,
 }: IManualInstallerDialogProps) =>
   request === undefined ? null : (
-    // keyed by request: each one starts with a fresh form
-    <ManualInstallerForm
-      key={request.id}
-      loadManifest={loadManifest}
-      modNames={modNames}
-      request={request}
-      visible={visible}
-      onAnswer={(answer) => onAnswer(request.id, answer)}
-    />
+    // the modal stays as requests follow one another; only the form starts afresh
+    <ModalWrapper isOpen={visible} size="xl" onClose={() => onAnswer(request.id, undefined)}>
+      <ManualInstallerForm
+        key={request.id}
+        loadManifest={loadManifest}
+        modNames={modNames}
+        request={request}
+        onAnswer={(answer) => onAnswer(request.id, answer)}
+      />
+    </ModalWrapper>
   );

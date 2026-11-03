@@ -1,7 +1,7 @@
 import { relativePath, type RelativePath } from "@nexusmods/paths";
 import type { VortexModStagingFolder } from "@vortex/shared";
 import type { QualifiedPath } from "@vortex/shared/filesystem";
-import React, { type MouseEvent, useEffect, useMemo, useState } from "react";
+import React, { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { log } from "@/logging";
@@ -13,7 +13,12 @@ import {
 import type { FileTreeEntry } from "@/ui/components/file_tree/buildTree";
 import { FileTree } from "@/ui/components/file_tree/FileTree";
 import { findNode } from "@/ui/components/file_tree/findNode";
-import { fileTreeNodeName, type IFileTreeNode } from "@/ui/components/file_tree/types";
+import {
+  fileTreeNodeName,
+  parentPath,
+  pathName,
+  type IFileTreeNode,
+} from "@/ui/components/file_tree/types";
 import { childNodes, withChildren } from "@/ui/components/file_tree/withChildren";
 import { withEmptyDirectories } from "@/ui/components/file_tree/withEmptyDirectories";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
@@ -34,24 +39,16 @@ export interface IManualInstallerGameTreeProps {
   gameFolder: QualifiedPath | undefined;
   /** The node selected in the tree, if it was one of the tree's. */
   selectedNode: IFileTreeNode | undefined;
-  /** Adds, renames or removes the directories to create. */
-  onCreatedChange: (created: RelativePath[]) => void;
+  /** Adds, renames or removes the directories to create, from the ones there are by then. */
+  onCreatedChange: (update: (created: RelativePath[]) => RelativePath[]) => void;
+  /** A folder is being named, or isn't any more. */
+  onNamingChange: (isNaming: boolean) => void;
   /** Selects a node of the tree. */
   onSelect: (node: IFileTreeNode) => void;
 }
 
 /** The game folder itself, the one node at the top of the tree. */
 const ROOT = relativePath("");
-
-function parentPathOf(path: RelativePath): RelativePath {
-  const slash = path.lastIndexOf("/");
-
-  return relativePath(slash === -1 ? "" : path.slice(0, slash));
-}
-
-function nameOf(path: RelativePath): string {
-  return path.slice(path.lastIndexOf("/") + 1);
-}
 
 function childPath(parent: RelativePath, name: string): RelativePath {
   return relativePath(parent === ROOT ? name : `${parent}/${name}`);
@@ -95,6 +92,7 @@ export const ManualInstallerGameTree = ({
   gameFolder,
   selectedNode,
   onCreatedChange,
+  onNamingChange,
   onSelect,
 }: IManualInstallerGameTreeProps) => {
   const { t } = useTranslation("mod_management");
@@ -106,6 +104,19 @@ export const ManualInstallerGameTree = ({
   const [hasFailed, setHasFailed] = useState(false);
   const [menu, setMenu] = useState<{ node: IFileTreeNode; position: IContextMenuPosition }>();
   const [renamingPath, setRenamingPath] = useState<RelativePath>();
+
+  // what is created by the time a read finishes, not by the time it started
+  const latestCreated = useRef(created);
+
+  useEffect(() => {
+    latestCreated.current = created;
+  }, [created]);
+
+  const isNaming = renamingPath !== undefined;
+
+  useEffect(() => {
+    onNamingChange(isNaming);
+  }, [isNaming, onNamingChange]);
 
   useEffect(() => {
     if (gameFolder === undefined) {
@@ -163,8 +174,8 @@ export const ManualInstallerGameTree = ({
   };
 
   const createFolderIn = async (target: IFileTreeNode) => {
-    const parentPath = target.kind === "directory" ? target.path : parentPathOf(target.path);
-    const parent = directoryAt(parentPath);
+    const parentOfNew = target.kind === "directory" ? target.path : parentPath(target.path);
+    const parent = directoryAt(parentOfNew);
 
     if (parent?.kind !== "directory") {
       return;
@@ -182,32 +193,34 @@ export const ManualInstallerGameTree = ({
       }
     }
 
-    names.push(...created.filter((other) => parentPathOf(other) === parentPath).map(nameOf));
+    names.push(
+      ...latestCreated.current.filter((other) => parentPath(other) === parentOfNew).map(pathName),
+    );
 
-    const path = childPath(parentPath, uniqueFolderName(t("manualInstaller::newFolder"), names));
+    const path = childPath(parentOfNew, uniqueFolderName(t("manualInstaller::newFolder"), names));
 
-    setExpanded((current) => new Set(current).add(parentPath));
-    onCreatedChange([...created, path]);
+    setExpanded((current) => new Set(current).add(parentOfNew));
+    onCreatedChange((current) => [...current, path]);
     setRenamingPath(path);
     onSelect({ path, kind: "directory", children: [] });
   };
 
   const commitName = (path: RelativePath, name: string) => {
-    const renamed = childPath(parentPathOf(path), name);
+    const renamed = childPath(parentPath(path), name);
 
-    onCreatedChange(created.map((other) => (other === path ? renamed : other)));
+    onCreatedChange((current) => current.map((other) => (other === path ? renamed : other)));
     setRenamingPath(undefined);
     onSelect({ path: renamed, kind: "directory", children: [] });
   };
 
   const cancelName = (path: RelativePath) => {
-    onCreatedChange(created.filter((other) => other !== path));
+    onCreatedChange((current) => current.filter((other) => other !== path));
     setRenamingPath(undefined);
-    onSelect(directoryAt(parentPathOf(path)) ?? rootNode);
+    onSelect(directoryAt(parentPath(path)) ?? rootNode);
   };
 
   const takenNames = (path: RelativePath): string[] =>
-    (directoryAt(parentPathOf(path))?.children ?? [])
+    (directoryAt(parentPath(path))?.children ?? [])
       .filter((sibling) => sibling.path !== path)
       .map(fileTreeNodeName);
 

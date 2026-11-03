@@ -8,7 +8,7 @@ export interface IManualInstallerFolderNameInputProps {
   initialName: string;
   /** The names the folder can't have, as the folders next to it have them. */
   takenNames: readonly string[];
-  /** The name was dropped: Escape, or the input lost focus with a name that doesn't work. */
+  /** The name was dropped with Escape. */
   onCancel: () => void;
   /** The name was taken, trimmed: Enter, or the input lost focus with a name that works. */
   onCommit: (name: string) => void;
@@ -57,7 +57,12 @@ export const ManualInstallerFolderNameInput = ({
       data-testid="manual-installer-folder-name"
       ref={inputRef}
       value={name}
-      onBlur={() => (isValid ? commit() : cancel())}
+      onBlur={() => {
+        // a name that doesn't work stays, with its error showing, until it's fixed or dropped
+        if (isValid) {
+          commit();
+        }
+      }}
       onChange={(event) => setName(event.target.value)}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => {
