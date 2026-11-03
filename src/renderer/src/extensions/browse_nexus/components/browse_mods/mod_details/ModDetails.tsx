@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
+import { GameDomain } from "@vortex/shared";
 import numeral from "numeral";
 import React, { forwardRef, type KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
 import { modQuery } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
+import { nexusModPageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Author } from "@/ui/components/author/Author";
 import { Button } from "@/ui/components/button/Button";
@@ -60,7 +61,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
     const created = useRelativeTime(new Date(mod.created_at).getTime(), t);
     const tracker = useBrowseModsTracker();
-    const modPageUrl = [NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/");
+    const modPageUrl = nexusModPageUrl(GameDomain(mod.game.domain_name), mod.game_scoped_id);
     const externalImagePlaceholders = useDescriptionImagePlaceholders({
       modUid: mod.id,
       modPageUrl,

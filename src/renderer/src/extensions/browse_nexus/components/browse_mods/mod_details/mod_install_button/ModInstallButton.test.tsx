@@ -5,14 +5,29 @@ import { VortexError } from "@vortex/shared/errors";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { IMod } from "@/extensions/mod_management/types/IMod";
 import type { MinimalModFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
+import type {
+  INexusModRef,
+  ModInstallState,
+} from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+
 const mocks = vi.hoisted(() => {
-  const state = { isPremium: true, installs: true, install: vi.fn(), download: vi.fn() };
+  const state = {
+    isPremium: true,
+    installs: true,
+    install: vi.fn(),
+    download: vi.fn(),
+    update: vi.fn(),
+    show: vi.fn(),
+    installState: { kind: "none" } as ModInstallState,
+    lookedUp: [] as INexusModRef[],
+  };
 
   /** The selectors the test answers. */
   const selectors = {
@@ -25,7 +40,9 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("react-redux", () => ({
   useSelector: (selector: (state: unknown) => unknown) =>
-    selector({ settings: { automation: { install: mocks.installs } } }),
+    selector({
+      settings: { automation: { install: mocks.installs } },
+    }),
 }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({
   isPremium: mocks.selectors.isPremium,
@@ -33,6 +50,18 @@ vi.mock("@/extensions/nexus_integration/selectors", () => ({
 vi.mock("@/util/selectors", () => ({ activeGameId: mocks.selectors.activeGameId }));
 vi.mock("@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus", () => ({
   useRefreshUserInfoOnFocus: () => undefined,
+}));
+vi.mock("../../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
+  useModInstallState: (ref: INexusModRef) => {
+    mocks.lookedUp.push(ref);
+    return mocks.installState;
+  },
+}));
+vi.mock("@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage", () => ({
+  showModOnModsPage: mocks.show,
+}));
+vi.mock("@/extensions/mod_management/util/update_mod/updateMod", () => ({
+  updateMod: mocks.update,
 }));
 vi.mock("@/extensions/nexus_integration/util/download_and_install/downloadAndInstall", () => ({
   downloadAndInstallNexusFile: mocks.install,
@@ -53,16 +82,26 @@ const primaryFile: MinimalModFileVersion = { id: "7340074", game_scoped_id: "42"
 let tracking: ReturnType<typeof browseModsTracking>;
 let showErrorNotification: ReturnType<typeof vi.fn>;
 let openUrl: ReturnType<typeof vi.fn>;
+let emit: ReturnType<typeof vi.fn>;
+let dispatch: ReturnType<typeof vi.fn>;
 
 const renderButton = (file?: MinimalModFileVersion | null, isError = false) => {
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
   tracking = browseModsTracking();
   showErrorNotification = vi.fn();
+  emit = vi.fn();
+  dispatch = vi.fn();
 
   const element = () => (
     <QueryClientProvider client={client}>
       <ModInstallButton
-        api={{ showErrorNotification } as unknown as IExtensionApi}
+        api={
+          {
+            showErrorNotification,
+            events: { emit },
+            store: { dispatch },
+          } as unknown as IExtensionApi
+        }
         isError={isError}
         mod={mod}
         primaryFile={file}
@@ -89,6 +128,10 @@ describe("ModInstallButton", () => {
     mocks.installs = true;
     mocks.install.mockReset();
     mocks.download.mockReset();
+    mocks.update.mockReset();
+    mocks.show.mockReset();
+    mocks.installState = { kind: "none" };
+    mocks.lookedUp = [];
     openUrl = vi.fn();
     window.api.shell = { openUrl } as unknown as typeof window.api.shell;
   });
@@ -238,5 +281,125 @@ describe("ModInstallButton", () => {
     expect(tracking.tracked("browse_mods_one_click_clicked").map((e) => e.properties)).toEqual([
       { mod_uid: "7340033", file_uid: "7340074", action: "download" },
     ]);
+  });
+
+  it("looks the mod up by its game's domain and its id", () => {
+    renderButton(primaryFile);
+
+    expect(mocks.lookedUp[0]).toEqual({ domain: "skyrimspecialedition", modId: 1 });
+  });
+
+  describe("for a mod the user already has", () => {
+    /** SkyUI installed as mod `skyui`, with the update its check found, if any. */
+    const installed = (update?: "update" | "update-site") => {
+      const skyui = {
+        id: "skyui",
+        attributes: { source: "nexus", modId: 1, fileId: 7, downloadGame: "skyrimse" },
+      } as unknown as IMod;
+      mocks.installState = { kind: "installed", mod: skyui, update };
+    };
+
+    const clicks = (eventName: string) => tracking.tracked(eventName).map((e) => e.properties);
+
+    it("shows an installed mod on the Mods page, for free users too", async () => {
+      mocks.isPremium = false;
+      installed();
+      renderButton(primaryFile);
+
+      await userEvent.click(screen.getByRole("button", { name: "View installed mod" }));
+
+      expect(mocks.show).toHaveBeenCalledWith(expect.anything(), "skyui");
+      expect(clicks("browse_mods_view_installed_clicked")).toEqual([{ mod_uid: "7340033" }]);
+    });
+
+    it("updates it as the Mods page does when the update check found one", async () => {
+      installed("update");
+      renderButton(primaryFile);
+
+      await userEvent.click(screen.getByRole("button", { name: "Update" }));
+
+      expect(mocks.update).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ id: "skyui" }),
+        "skyrimse",
+      );
+      expect(clicks("browse_mods_update_clicked")).toEqual([{ mod_uid: "7340033" }]);
+    });
+
+    it("opens the mod's page to pick the update when the newest file isn't known", async () => {
+      installed("update-site");
+      renderButton(primaryFile);
+
+      await userEvent.click(screen.getByRole("button", { name: "Update" }));
+
+      expect(emit).toHaveBeenCalledWith("open-mod-page", "skyrimse", 1, "nexus");
+      expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    /** Opens the upsell as a free user with an update, then unlocks Premium. */
+    const unlockFromUpsell = async () => {
+      mocks.isPremium = false;
+      const { rerender } = renderButton(primaryFile);
+
+      await userEvent.click(button());
+      expect(screen.getByText("Skip the website and install instantly.")).toBeInTheDocument();
+
+      mocks.isPremium = true;
+      rerender();
+    };
+
+    it("upsells a free user 1-click for an update, counted as one, updating once they unlock", async () => {
+      installed("update");
+
+      await unlockFromUpsell();
+
+      expect(upsellEvents()[0]).toEqual([
+        "browse_mods_premium_modal_shown",
+        { mod_uid: "7340033", action: "update" },
+      ]);
+      await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+      expect(mocks.install).not.toHaveBeenCalled();
+    });
+
+    it("upsells a free user an update to pick too, opening its page once they unlock", async () => {
+      installed("update-site");
+
+      await unlockFromUpsell();
+
+      await waitFor(() =>
+        expect(emit).toHaveBeenCalledWith("open-mod-page", "skyrimse", 1, "nexus"),
+      );
+      expect(mocks.install).not.toHaveBeenCalled();
+    });
+
+    it("shows an install in progress, wherever it was started", () => {
+      mocks.installState = { kind: "installing" };
+      renderButton(primaryFile);
+
+      expect(screen.getByRole("button", { name: "Install" })).toBeDisabled();
+    });
+
+    it("holds 1-click install's progress once its download is done, until it's installed", async () => {
+      mocks.install.mockReturnValue(new Promise(() => undefined));
+      const { rerender } = renderButton(primaryFile);
+
+      await userEvent.click(button());
+      mocks.installState = { kind: "downloaded", downloadId: "dl" };
+      rerender();
+
+      await waitFor(() => expect(button()).toBeDisabled());
+      expect(screen.queryByRole("button", { name: "Install" })).not.toBeInTheDocument();
+    });
+
+    it("installs a download that isn't installed, for free users too", async () => {
+      mocks.isPremium = false;
+      mocks.installState = { kind: "downloaded", downloadId: "dl" };
+      renderButton(primaryFile);
+
+      await userEvent.click(screen.getByRole("button", { name: "Install" }));
+
+      expect(emit).toHaveBeenCalledWith("start-install-download", "dl");
+      expect(clicks("browse_mods_install_clicked")).toEqual([{ mod_uid: "7340033" }]);
+    });
   });
 });
