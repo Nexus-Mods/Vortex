@@ -20,7 +20,7 @@ export type ModSortField = ModsSearchRequest["sort"]["field"];
 export type ModSortDirection = ModsSearchRequest["sort"]["direction"];
 
 /** How far back the mods go, in days or all time. */
-export type ModTimeRange = NonNullable<ModsSearchRequest["filters"]["time_range"]>;
+export type ModTimeRange = "1" | "7" | "14" | "28" | "365" | "all";
 
 /** How a preset sorts the mods. */
 export interface IModSort {
@@ -37,12 +37,12 @@ export interface IModFilters {
 }
 
 /**
- * Each preset's sort as it comes, which resetting the sort goes back to. Trending is endorsements
- * over its 7 days, which is all the API's own `trending` sort is.
+ * Each preset's sort as it comes, which resetting the sort goes back to. Trending is the most
+ * endorsed over its 7 days, and popular the most downloaded.
  */
 export const PRESET_SORTS: Record<ModPreset, IModSort> = {
   trending: { field: "endorsements", direction: "desc" },
-  popular: { field: "popular", direction: "desc" },
+  popular: { field: "downloads", direction: "desc" },
   new: { field: "new", direction: "desc" },
 };
 
@@ -76,7 +76,30 @@ interface IModsSearch {
   filters: IModFilters;
   /** The page, from 1. */
   page: number;
+  /** When the time range was picked, which it counts back from, in ms. */
+  rangeFrom: number;
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The search's date filter for a time range, counting back from `from`: mods created within it, or
+ * updated within it for the `updated` sort; none for all time.
+ */
+export const timeRangeFilter = (
+  timeRange: ModTimeRange,
+  field: ModSortField,
+  from: number,
+): Pick<ModsSearchRequest["filters"], "created_at" | "updated_at"> => {
+  if (timeRange === "all") {
+    return {};
+  }
+
+  const since = new Date(from - Number(timeRange) * DAY_MS);
+  const range = { gte: since.toISOString() };
+
+  return field === "updated" ? { updated_at: range } : { created_at: range };
+};
 
 /** The search for a page of a game's mods, sorted and filtered; none outside a game. */
 const searchFor = ({
@@ -84,15 +107,19 @@ const searchFor = ({
   sort,
   filters,
   page,
+  rangeFrom,
 }: IModsSearch): ModsSearchRequest | typeof skipToken => {
   if (!gameDomainName) {
     return skipToken;
   }
 
   return {
-    filters: { games: [gameDomainName], time_range: filters.timeRange },
+    filters: {
+      games: [gameDomainName],
+      ...timeRangeFilter(filters.timeRange, sort.field, rangeFrom),
+    },
     sort: { field: sort.field, direction: sort.direction },
-    pagination: { page, page_size: MODS_PER_PAGE },
+    pagination: { type: "page", page, page_size: MODS_PER_PAGE },
   };
 };
 
@@ -119,7 +146,8 @@ interface IModSearchOptions {
  * page's tabs, so the Mods tab's count, presets and page outlive switching to Collections and
  * back. Asks for nothing while it isn't enabled.
  * A failed page keeps its sort's total, from its cached first page, so the pages stay to move
- * off it.
+ * off it. A time range counts back from when it was picked, not from each render, so its pages'
+ * searches, and so their cache, stay the same while they're read.
  */
 export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOptions) => {
   const gameDomainName = useGameDomainName();
@@ -128,6 +156,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   const [sorts, setSorts] = useState(PRESET_SORTS);
   const [filters, setFilterState] = useState(PRESET_FILTERS[DEFAULT_PRESET]);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [rangeFrom, setRangeFrom] = useState(() => Date.now());
   const queryClient = useQueryClient();
   const sort = sorts[preset];
 
@@ -135,6 +164,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   const selectPreset = (next: ModPreset) => {
     setPreset(next);
     setFilterState(PRESET_FILTERS[next]);
+    setRangeFrom(Date.now());
     setCurrentPage(1);
   };
 
@@ -150,6 +180,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   /** Changes which mods are shown, from the first page. */
   const setFilters = (change: Partial<IModFilters>) => {
     setFilterState((previous) => ({ ...previous, ...change }));
+    setRangeFrom(Date.now());
     setCurrentPage(1);
   };
 
@@ -160,7 +191,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   const mods = useQuery({
     ...modSearchQuery(
       api,
-      searchFor({ gameDomainName: searchedGame, sort, filters, page: currentPage }),
+      searchFor({ gameDomainName: searchedGame, sort, filters, page: currentPage, rangeFrom }),
     ),
     placeholderData: keepPreviousData,
   });
@@ -178,6 +209,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
         sort: PRESET_SORTS[COUNTED_PRESET],
         filters: PRESET_FILTERS[COUNTED_PRESET],
         page: 1,
+        rangeFrom,
       }),
     ),
     select: (result) => result.meta.total_count,
@@ -185,7 +217,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
 
   const firstPage = modSearchQuery(
     api,
-    searchFor({ gameDomainName: searchedGame, sort, filters, page: 1 }),
+    searchFor({ gameDomainName: searchedGame, sort, filters, page: 1, rangeFrom }),
   );
   const pageTotal =
     mods.data?.meta.total_count ?? queryClient.getQueryData(firstPage.queryKey)?.meta.total_count;

@@ -182,7 +182,7 @@ describe("BrowseModsBar", () => {
   it("counts resetting the sort, with the sort it goes back to", async () => {
     const search = {
       ...searchWith({ timeRange: "7" }, 1),
-      sort: { field: "popular", direction: "asc" },
+      sort: { field: "downloads", direction: "asc" },
       canResetSort: true,
     } as IModSearch;
     const { tracked } = renderBar(search);

@@ -1,4 +1,5 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -40,5 +41,25 @@ describe("ModCard", () => {
     const { container } = renderCard(false);
 
     expect(container.querySelector("img")).toHaveAttribute("src", "thumb.png");
+  });
+
+  it.each([
+    ["download", "Downloads: {{total}}"],
+    ["thumb_up", "Endorsements: {{total}}"],
+  ])("says what its %s stat counts, on hover", async (icon, tooltip) => {
+    const { container } = renderCard(false);
+    const stat = container.querySelector(`[data-symbol="${icon}"]`)?.closest("span.flex");
+
+    await userEvent.hover(stat!);
+
+    expect(await screen.findByText(tooltip)).toBeInTheDocument();
+  });
+
+  it("says its date is when the mod was updated, on hover", async () => {
+    renderCard(false);
+
+    await userEvent.hover(screen.getByText("{{ count }} year ago"));
+
+    expect(await screen.findByText("Updated {{date}}")).toBeInTheDocument();
   });
 });

@@ -1,10 +1,13 @@
 import numeral from "numeral";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
+import type { IState } from "@/types/IState";
 import { Icon } from "@/ui/components/icon/Icon";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { useRelativeTime } from "@/util/useRelativeTime";
@@ -28,11 +31,18 @@ interface IModCardProps {
  * is interactive, and its layout is spans, as a button's content has to be. Beside the text the
  * picture takes two fifths of the card, up to 242px wide, so it shrinks before the text has to;
  * in a list narrower than `@md`, the text drops below it instead, as beside it the text would be
- * too narrow to read. The footer wraps rather than cutting its stats off.
+ * too narrow to read. The footer wraps rather than cutting its stats off. Hovering a stat says
+ * what it is: its downloads and endorsements in full, and that its date is when it was last
+ * updated, with the exact time.
  */
 export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) => {
   const { t } = useTranslation();
   const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
+  const language = useSelector((state: IState) => state.settings.interface.language);
+  const updatedAt = new Date(mod.updated_at).toLocaleString(language, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
   return (
     <button
@@ -90,19 +100,31 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
           </span>
 
           <span className="flex shrink-0 items-center gap-x-3">
-            <span className="flex items-center gap-x-1">
-              <Icon name="download" size="sm" />
+            <Tooltip
+              content={t("Downloads: {{total}}", { total: numeral(mod.downloads).format("0,0") })}
+            >
+              <span className="flex items-center gap-x-1">
+                <Icon name="download" size="sm" />
 
-              {numeral(mod.downloads).format("0a")}
-            </span>
+                {numeral(mod.downloads).format("0a")}
+              </span>
+            </Tooltip>
 
-            <span className="flex items-center gap-x-1">
-              <Icon name="thumb_up" size="sm" />
+            <Tooltip
+              content={t("Endorsements: {{total}}", {
+                total: numeral(mod.endorsements).format("0,0"),
+              })}
+            >
+              <span className="flex items-center gap-x-1">
+                <Icon name="thumb_up" size="sm" />
 
-              {numeral(mod.endorsements).format("0a")}
-            </span>
+                {numeral(mod.endorsements).format("0a")}
+              </span>
+            </Tooltip>
 
-            <span>{updated}</span>
+            <Tooltip content={t("Updated {{date}}", { date: updatedAt })}>
+              <span>{updated}</span>
+            </Tooltip>
 
             {mod.adult && <span>{t("Adult")}</span>}
           </span>

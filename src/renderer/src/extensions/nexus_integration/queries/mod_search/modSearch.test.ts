@@ -16,15 +16,18 @@ const api = {} as IExtensionApi;
 
 const search: ModsSearchRequest = {
   filters: { games: ["skyrimspecialedition"] },
-  sort: { field: "trending", direction: "desc" },
-  pagination: { page: 1, page_size: 20 },
+  sort: { field: "endorsements", direction: "desc" },
+  pagination: { type: "page", page: 1, page_size: 20 },
 };
 
 const client = () => new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
 
 describe("modSearchQuery", () => {
   it("asks for the search as given, and returns the API's result", async () => {
-    const response = { mods: [{ id: "1" }], meta: { page: 1, page_size: 20, total_count: 45 } };
+    const response = {
+      mods: [{ id: "1" }],
+      meta: { type: "page", page: 1, page_size: 20, total_count: 45 },
+    };
     mocks.searchMods.mockResolvedValue(response);
 
     const result = await client().query(modSearchQuery(api, search));
