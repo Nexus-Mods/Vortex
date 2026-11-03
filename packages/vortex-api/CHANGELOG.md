@@ -19,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Deprecated
 
 - `IMainPageOptions.mdi` is deprecated in favour of `menuIcon: { path }`. It still works, as a `menuIcon` path
-- `util.steam` and `util.epicGamesLauncher` were deprecated as of 2.8 and are removed as of 2.11 (see Removed). Both now delegate to `GameStoreHelper`: `util.steam.findByAppId(id)` becomes `GameStoreHelper.findByAppId(id, "steam")`, `util.steam.findByName(name)` becomes `GameStoreHelper.findByName(name, "steam")`, and likewise for `epicGamesLauncher` with `"epic"`. `util.steam.id` remains the constant `"steam"` string. `epicGamesLauncher.isGameInstalled` has no drop-in replacement and needs inlining. Each deprecated call logs a warning (once per session); any other member access also warns and returns `undefined` - see the [game store section of the migration guide](./docs/MIGRATION.md#vortex-2x-utilsteam-and-utilepicgameslauncher)
 
 ### Changed
 
