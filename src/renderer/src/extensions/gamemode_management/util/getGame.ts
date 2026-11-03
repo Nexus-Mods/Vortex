@@ -83,6 +83,11 @@ export function getGame(gameId: string): IGame {
   return makeGameProxy(game);
 }
 
+/** Whether a game extension registered the game; getGame also returns stubs, which can't be managed. */
+export function isGameRegistered(gameId: string): boolean {
+  return $.extensionGames.some((iter) => iter.id === gameId);
+}
+
 export function getGameStubDownloadInfo(gameId: string): IExtensionDownloadInfo | undefined {
   const stub = $.extensionStubs.find((iter) => iter.game.id === gameId);
   return stub?.ext;
