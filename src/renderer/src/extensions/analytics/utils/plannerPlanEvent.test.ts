@@ -141,6 +141,16 @@ describe("emitPlannerPlanEvent", () => {
     expect(loggedWarnings()).toContain("planner-plan: telemetry submit failed");
   });
 
+  test("logs figures that fail to build instead of throwing them", async ({ makeApi }) => {
+    const harness = makeConsentingApi(makeApi);
+    figuresOf.mockImplementationOnce(() => {
+      throw new Error("no lockfile");
+    });
+
+    await expect(emitPlannerPlanEvent(harness.api, SKYRIM_SE, figuresOf)).resolves.toBeUndefined();
+    expect(loggedWarnings()).toContain("planner-plan: telemetry submit failed");
+  });
+
   test("logs a rejected event", async ({ makeApi }) => {
     const harness = makeConsentingApi(makeApi);
     telemetryEvent.mockResolvedValueOnce({ accepted: 0, rejected: [{ index: 0 }] });
