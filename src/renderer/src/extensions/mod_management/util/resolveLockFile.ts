@@ -2,10 +2,11 @@ import {
   DiskEntryKind,
   FileSourceKind,
   OperationKind,
-  plan,
+  planDestinations,
   resolve,
   type DiskScan,
   type Lockfile,
+  type PlannedDestination,
 } from "@nexusmods/mod-pipeline";
 import type { ManifestDiff, PlannerOperationCounts } from "@vortex/nexus-api-v3";
 import { getErrorMessageOrDefault, parseError, VortexGameId } from "@vortex/shared";
@@ -20,6 +21,7 @@ import { getGame } from "../../gamemode_management/util/getGame";
 import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
 import { scanDeploymentTargets } from "./diskScan";
 import { addGeneratedFiles } from "./generatedFiles";
+import { keepLastPlan } from "./lastPlans";
 import {
   LockfileContributions,
   type LockfileContribution,
@@ -100,14 +102,15 @@ function planAndLogOperations(
   previousLockfile: Lockfile,
   diskScan: DiskScan,
   scanMs: number,
-): { planMs: number; counts: PlannerOperationCounts } {
+): { planMs: number; counts: PlannerOperationCounts; destinations: PlannedDestination[] } {
   // expensive: a line per disk entry, hundreds of thousands on a large setup
   // diskScan.entries.forEach((d) => log("debug", "disk scan", d.path));
 
   // Now that we have both previous lockfile, current lockfile and the disk state do the actual planning
   const planStartedAt = Temporal.Now.instant();
-  const operations = plan(currentLockfile, previousLockfile, diskScan);
+  const destinations = planDestinations(currentLockfile, previousLockfile, diskScan);
   const planMs = elapsedMsSince(planStartedAt);
+  const operations = destinations.flatMap((destination) => destination.operations);
   const counts: PlannerOperationCounts = { backup: 0, link: 0, unlink: 0 };
   for (const operation of operations) {
     counts[COUNT_KEY_BY_KIND[operation.kind]] += 1;
@@ -135,7 +138,7 @@ function planAndLogOperations(
     }),
   );
 
-  return { planMs, counts };
+  return { planMs, counts, destinations };
 }
 
 /** Compares the lockfile with the deployment's manifests and logs the result. */
@@ -249,13 +252,14 @@ export function registerResolveLockFile(
         hashFile,
       );
       const resolveMs = elapsedMsSince(resolveStartedAt);
-      const { planMs, counts } = planAndLogOperations(
+      const { planMs, counts, destinations } = planAndLogOperations(
         gameMode,
         currentLockfile,
         previousLockfile,
         diskScan,
         scanMs,
       );
+      keepLastPlan(gameMode, { plannedAt: Temporal.Now.instant(), destinations });
       previousLockfile = currentLockfile;
       const manifestDiff = await compareWithManifests(api, gameMode, currentLockfile);
       void emitPlannerPlanEvent(api, gameMode, () => ({
