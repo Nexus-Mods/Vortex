@@ -9,6 +9,12 @@ export interface IBrowseSessionState {
   section?: BrowseSection;
 }
 
+declare module "@/types/IState" {
+  interface ISessionState {
+    browse: IBrowseSessionState;
+  }
+}
+
 export const sessionReducer = actionsToReducerSpec<IBrowseSessionState, typeof actions>(
   {},
   actions,
