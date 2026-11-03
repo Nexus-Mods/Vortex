@@ -20,6 +20,7 @@ import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
+import { useDescriptionImagePlaceholders } from "../../../hooks/use_description_image_placeholders/useDescriptionImagePlaceholders.hook";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModTags } from "./mod_tags/ModTags";
 import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton";
@@ -56,6 +57,11 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
     const created = useRelativeTime(new Date(mod.created_at).getTime(), t);
     const tracker = useBrowseModsTracker();
+    const modPageUrl = [NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/");
+    const externalImagePlaceholders = useDescriptionImagePlaceholders({
+      modUid: mod.id,
+      modPageUrl,
+    });
 
     /**
      * Left leaves the details for the list, unless what's focused has used the key or uses Left
@@ -118,9 +124,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                 brand="neutral"
                 leftIcon="open_in_new"
                 onClick={() => {
-                  window.api.shell.openUrl(
-                    [NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/"),
-                  );
+                  window.api.shell.openUrl(modPageUrl);
                   tracker.trackModPageOpened({ mod_uid: mod.id });
                 }}
               />
@@ -204,6 +208,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                     <BBCode
                       bbcode={details.data.description}
                       className="text-neutral-strong"
+                      externalImagePlaceholders={externalImagePlaceholders}
                       isFromAdultContent={mod.adult}
                     />
                   )}

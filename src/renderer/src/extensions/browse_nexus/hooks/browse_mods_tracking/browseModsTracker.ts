@@ -94,6 +94,27 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       input: SelectionInput;
     }) => track("browse_mods_gallery_image_selected", props),
 
+    // Placeholders for images from outside Nexus Mods in a mod's description: sent once per mod,
+    // with how many images they stand for and how many placeholders that took.
+    trackExternalImagesShown: (props: {
+      mod_uid: string;
+      image_count: number;
+      placeholder_count: number;
+    }) => track("browse_mods_external_images_shown", props),
+
+    // From a placeholder, or its Why? dialog; `image_count` is the placeholder's.
+    trackExternalImagesWebsiteOpened: (props: {
+      mod_uid: string;
+      image_count: number;
+      source: "placeholder" | "dialog";
+    }) => track("browse_mods_external_images_website_opened", props),
+
+    trackExternalImagesWhyOpened: (props: { mod_uid: string }) =>
+      track("browse_mods_external_images_why_opened", props),
+
+    trackExternalImageLinkOpened: (props: { mod_uid: string; link_domain: string }) =>
+      track("browse_mods_external_image_link_opened", props),
+
     trackGalleryPaged: (props: { mod_uid: string; direction: GalleryDirection }) =>
       track("browse_mods_gallery_paged", props),
 
