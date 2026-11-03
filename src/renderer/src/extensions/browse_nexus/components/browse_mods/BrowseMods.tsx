@@ -6,6 +6,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 import { ResizableSplit } from "@/ui/components/resizable_split/ResizableSplit";
 import { useSavedSplit } from "@/ui/components/resizable_split/useSavedSplit.hook";
+import { nxmModOutline } from "@/ui/icon-paths";
 
 import type { SelectionInput } from "../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseModsTracking.context";
@@ -86,7 +87,8 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     listRef.current?.querySelector<HTMLElement>('[data-mod-card][tabindex="0"]')?.focus();
 
   /**
-   * The details' pane: the active mod's, or with none, pulsing while the list loads or saying so.
+   * The details' pane: the active mod's, or with none, pulsing while the list loads or saying so,
+   * level with the list's own empty state: its scroll area's 24px and the listing's 64px.
    */
   const details = () => {
     if (!activeMod && search.loading) {
@@ -96,7 +98,8 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     if (!activeMod) {
       return (
         <NoResults
-          className="self-center p-6"
+          className="self-start px-6 pt-22 pb-6"
+          icon={{ path: nxmModOutline }}
           message={t("Pick a mod from the list to see its details.")}
           title={t("No mod to show")}
         />
