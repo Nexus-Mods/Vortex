@@ -22,7 +22,7 @@ export interface IDeprecatedApiSurface<T = unknown> {
 
 /**
  * Registry of deprecated extension-api surfaces, keyed by the export's path in the api namespace
- * (e.g. "util.steam"). Registering is the only thing a future deprecation has to do: the
+ * (e.g. "util.someOldApi"). Registering is the only thing a future deprecation has to do: the
  * per-extension api proxy consults this registry on every property lookup.
  */
 const registry = new Map<string, IDeprecatedApiSurface>();
