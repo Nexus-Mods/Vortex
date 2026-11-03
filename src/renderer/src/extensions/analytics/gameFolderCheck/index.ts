@@ -7,7 +7,7 @@ import type { IExtensionApi, IExtensionContext } from "../../../types/IExtension
 import { log } from "../../../util/log";
 import { flaggedGameFolderCheckConfig, gameFolderCheckConfig } from "./config";
 import { GameFolderCheckScheduler } from "./scheduler";
-import { isSteamGame, steamCheckInput } from "./steamInput";
+import { canCheckSteamFolder, steamCheckInput } from "./steamInput";
 import { submitGameFolderCheck } from "./submit";
 
 export { queueGameFolderCheck } from "./scheduler";
@@ -47,12 +47,16 @@ async function runManualCheck(api: IExtensionApi, gameId: VortexGameId): Promise
   }
 }
 
-/** Dev builds: a "Check Game Folder" action on each Steam game's entry on the Games page. */
+/**
+ * Dev builds: a "Check Game Folder" action on each Steam game's entry on the Games page,
+ * managed or not, so a folder can be checked before Vortex touches it.
+ */
 export function registerGameFolderCheckAction(context: IExtensionContext): void {
   if (process.env.NODE_ENV !== "development") return;
   // the Games page passes Vortex game ids
   const isSteam = (gameIds: string[]) =>
-    gameIds[0] !== undefined && isSteamGame(context.api.getState(), VortexGameId(gameIds[0]));
+    gameIds[0] !== undefined &&
+    canCheckSteamFolder(context.api.getState(), VortexGameId(gameIds[0]));
   for (const group of ["game-managed-buttons", "game-unmanaged-buttons"]) {
     context.registerAction(
       group,
