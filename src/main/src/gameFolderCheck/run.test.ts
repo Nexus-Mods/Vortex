@@ -80,6 +80,14 @@ function counts(result: GameFolderCheckResult) {
 }
 
 describe("runGameFolderCheck", () => {
+  it("keeps local paths out of the result", async () => {
+    const { input } = makeInstall(STEAM_FILES);
+    const { result } = await run(input);
+    expect(result.input).not.toHaveProperty("steamPath");
+    expect(result.input).not.toHaveProperty("gamePath");
+    expect(JSON.stringify(result)).not.toContain(input.gamePath.replaceAll("\\", "\\\\"));
+  });
+
   it("finds a vanilla folder clean", async () => {
     const { input } = makeInstall(STEAM_FILES);
     const { result } = await run(input);

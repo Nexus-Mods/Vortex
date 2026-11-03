@@ -50,6 +50,7 @@ export async function runGameFolderCheck(
   signal: AbortSignal,
 ): Promise<IRunOutput> {
   const startedAt = Date.now();
+  const { steamPath: _steamPath, gamePath: _gamePath, ...reported } = input;
   const acfBefore = await mtimeOf(acfPath(input));
   const folderCreatedAt = await stat(input.gamePath).then(
     (stats) => stats.birthtimeMs,
@@ -62,7 +63,7 @@ export async function runGameFolderCheck(
     bytesRead = 0,
   ): GameFolderCheckResult => ({
     ...outcome,
-    input,
+    input: reported,
     folderCreatedAt,
     manifestCreatedAt,
     cost: { durationMs: Date.now() - startedAt, filesWalked, bytesRead },
