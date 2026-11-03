@@ -3,10 +3,13 @@ import {
   FileSourceKind,
   OperationKind,
   pathKeyOf,
+  type DiskEntry,
   type FileSource,
   type NexusFileId,
   type PlannedDestination,
 } from "@nexusmods/mod-pipeline";
+
+import { bytesToString, midClip } from "@/util/util";
 
 /** Operations by kind. */
 export type PlanOperationCounts = Record<OperationKind, number>;
@@ -54,6 +57,13 @@ export function toggledIn<T>(values: ReadonlySet<T>, value: T): Set<T> {
   return next;
 }
 
+export const NO_PLAN_FILTER: IPlanFilter = {
+  operationKinds: new Set(),
+  states: new Set(),
+  nexusFileId: undefined,
+  pathText: "",
+};
+
 export const isEmptyPlanFilter = ({
   operationKinds,
   states,
@@ -72,7 +82,8 @@ export function filterPlan(
   pathKeys: readonly string[],
   { operationKinds, states, nexusFileId, pathText }: IPlanFilter,
 ): PlannedDestination[] {
-  const pathTextKey = pathKeyOf(pathText);
+  // destinations are "/" separated; a path copied from Explorer uses "\"
+  const pathTextKey = pathKeyOf(pathText.replaceAll("\\", "/"));
   return destinations.filter(
     (destination, index) =>
       (states.size === 0 || states.has(destination.state)) &&
@@ -90,7 +101,7 @@ interface IFolderNode {
   path: string;
   /** by the folder name's path key */
   folders: Map<string, IFolderNode>;
-  /** by the folder name as spelled, so a spelling seen before skips the key */
+  /** by the folder name as spelled, which saves computing the key again */
   foldersByName: Map<string, IFolderNode>;
   files: PlannedDestination[];
 }
@@ -102,22 +113,34 @@ const folderNode = (path: string): IFolderNode => ({
   files: [],
 });
 
+/** The destinations' operations, by kind. */
+export function countByOperation(destinations: readonly PlannedDestination[]): PlanOperationCounts {
+  const counts: PlanOperationCounts = {
+    [OperationKind.Backup]: 0,
+    [OperationKind.Link]: 0,
+    [OperationKind.Unlink]: 0,
+  };
+  for (const { operations } of destinations) {
+    for (const { kind } of operations) {
+      counts[kind] += 1;
+    }
+  }
+  return counts;
+}
+
+const finishFolders = (node: IFolderNode, parentPath: string | undefined): IPlanFolder[] =>
+  [...node.folders]
+    .toSorted(([lhs], [rhs]) => (lhs < rhs ? -1 : 1))
+    .map(([, child]) => finishFolder(child, parentPath));
+
+/** A folder, joined to the folders under it while it holds nothing but one; a top folder has no parent. */
 function finishFolder(node: IFolderNode, parentPath: string | undefined): IPlanFolder {
   let folder = node;
   while (folder.files.length === 0 && folder.folders.size === 1) {
     [folder] = folder.folders.values();
   }
-  const folders = [...folder.folders]
-    .toSorted(([lhs], [rhs]) => (lhs < rhs ? -1 : 1))
-    .map(([, child]) => finishFolder(child, folder.path));
-  const operationCounts: PlanOperationCounts = {
-    [OperationKind.Backup]: 0,
-    [OperationKind.Link]: 0,
-    [OperationKind.Unlink]: 0,
-  };
-  for (const operation of folder.files.flatMap((destination) => destination.operations)) {
-    operationCounts[operation.kind] += 1;
-  }
+  const folders = finishFolders(folder, folder.path);
+  const operationCounts = countByOperation(folder.files);
   for (const child of folders) {
     for (const kind of Object.values(OperationKind)) {
       operationCounts[kind] += child.operationCounts[kind];
@@ -133,8 +156,11 @@ function finishFolder(node: IFolderNode, parentPath: string | undefined): IPlanF
   };
 }
 
-/** The destinations by folder, from the deepest folder they all share; they keep their order. */
-export function planTree(destinations: readonly PlannedDestination[]): IPlanFolder {
+/**
+ * The destinations by folder, keeping their order: the deepest folder they all share, or each
+ * drive's when they share none.
+ */
+export function planTree(destinations: readonly PlannedDestination[]): IPlanFolder[] {
   const root = folderNode("");
   for (const destination of destinations) {
     const segments = destination.destinationPath.split("/").slice(0, -1);
@@ -153,13 +179,28 @@ export function planTree(destinations: readonly PlannedDestination[]): IPlanFold
       }
       node = child;
     }
+    // the root lists only top folders, so a file at a root would have no row
+    if (node === root) {
+      throw new Error(`${destination.destinationPath} is not in a folder`);
+    }
     node.files.push(destination);
   }
-  return finishFolder(root, undefined);
+  return finishFolders(root, undefined);
+}
+
+/** Every folder of a tree, at any depth. */
+export function allFolderPaths(topFolders: readonly IPlanFolder[]): Set<string> {
+  const paths = new Set<string>();
+  const visit = (folder: IPlanFolder) => {
+    paths.add(folder.path);
+    folder.folders.forEach(visit);
+  };
+  topFolders.forEach(visit);
+  return paths;
 }
 
 /** The folders that hold an operation, at any depth. */
-export function defaultExpandedFolders(root: IPlanFolder): Set<string> {
+export function defaultExpandedFolders(topFolders: readonly IPlanFolder[]): Set<string> {
   const expanded = new Set<string>();
   const visit = (folder: IPlanFolder) => {
     if (Object.values(folder.operationCounts).some((count) => count > 0)) {
@@ -167,12 +208,15 @@ export function defaultExpandedFolders(root: IPlanFolder): Set<string> {
       folder.folders.forEach(visit);
     }
   };
-  visit(root);
+  topFolders.forEach(visit);
   return expanded;
 }
 
 /** The rows the table shows: each folder, then its folders and files while it is expanded. */
-export function planRows(root: IPlanFolder, expanded: ReadonlySet<string>): PlanRow[] {
+export function planRows(
+  topFolders: readonly IPlanFolder[],
+  expanded: ReadonlySet<string>,
+): PlanRow[] {
   const rows: PlanRow[] = [];
   const visit = (folder: IPlanFolder, depth: number) => {
     rows.push({ kind: PlanRowKind.Folder, id: `folder:${folder.path}`, folder, depth });
@@ -189,7 +233,7 @@ export function planRows(root: IPlanFolder, expanded: ReadonlySet<string>): Plan
       }),
     );
   };
-  visit(root, 0);
+  topFolders.forEach((folder) => visit(folder, 0));
   return rows;
 }
 
@@ -209,11 +253,36 @@ const STATE_NAMES = new Map(Object.entries(DestinationState).map(([name, code]) 
 export const destinationStateName = (state: DestinationState): string =>
   STATE_NAMES.get(state) ?? state;
 
-/** A Nexus file with the name of the mod it belongs to. */
+/** A state's code and its name, e.g. "DAA DeployedUnhashed". */
+export const destinationStateLabel = (state: DestinationState): string =>
+  `${state} ${destinationStateName(state)}`;
+
+/** What the scan found at a destination, one fact per line. */
+export const diskEntryLines = (entry: DiskEntry | undefined): string[] =>
+  entry === undefined
+    ? ["nothing there"]
+    : [
+        `${entry.kind}, ${bytesToString(entry.size)}, modified ${entry.modifiedTime.toLocaleString()}`,
+        entry.contentHash === undefined
+          ? "not hashed"
+          : `${entry.contentHash.hashType} ${entry.contentHash.fileHash}`,
+        ...(entry.id === undefined
+          ? []
+          : [
+              entry.deviceId === undefined
+                ? `file id ${entry.id}`
+                : `file id ${entry.id}, device ${entry.deviceId}`,
+            ]),
+        ...(entry.hardlinkCount === undefined ? [] : [`${entry.hardlinkCount} hardlinks`]),
+      ];
+
+/** A Nexus file with the name of the mod it belongs to, clipped in the middle past `maxNameLength`. */
 export const nexusFileLabel = (
   nexusFileId: NexusFileId,
   modNames: ReadonlyMap<NexusFileId, string>,
-): string => `${modNames.get(nexusFileId) ?? "unknown mod"} (Nexus file ${nexusFileId})`;
+  maxNameLength: number = Infinity,
+): string =>
+  `${midClip(modNames.get(nexusFileId) ?? "unknown mod", maxNameLength)} (Nexus file ${nexusFileId})`;
 
 /** Where a lockfile's file comes from, with its mod's name when it is a Nexus file. */
 export function originLabel(

@@ -1,6 +1,7 @@
 import {
   DiskEntryKind,
   FileSourceKind,
+  inApplyOrder,
   OperationKind,
   planDestinations,
   resolve,
@@ -27,6 +28,7 @@ import {
   type LockfileContribution,
   type LockfileContributionCondition,
 } from "./lockfileContributions";
+import { countByOperation } from "./planTree";
 import { gatherDeployedInput, gatherDeployedOrigins, gatherResolverInput } from "./resolverInput";
 import { compareWithDeployment } from "./shadowComparison";
 
@@ -110,10 +112,10 @@ function planAndLogOperations(
   const planStartedAt = Temporal.Now.instant();
   const destinations = planDestinations(currentLockfile, previousLockfile, diskScan);
   const planMs = elapsedMsSince(planStartedAt);
-  const operations = destinations.flatMap((destination) => destination.operations);
+  const countsByKind = countByOperation(destinations);
   const counts: PlannerOperationCounts = { backup: 0, link: 0, unlink: 0 };
-  for (const operation of operations) {
-    counts[COUNT_KEY_BY_KIND[operation.kind]] += 1;
+  for (const kind of Object.values(OperationKind)) {
+    counts[COUNT_KEY_BY_KIND[kind]] = countsByKind[kind];
   }
 
   log("info", "planner operations", {
@@ -131,7 +133,7 @@ function planAndLogOperations(
   // If we are doing the planing with the previous lockfile from one session the ops should reflect what needs
   // to be passes to the apply step to create a correct disk state of the game. If the prevoious lockfile is
   // created from the manifest then there should be no ops to do, and that is expected.
-  operations.forEach((o) =>
+  inApplyOrder(destinations.flatMap((destination) => destination.operations)).forEach((o) =>
     log("debug", "planner operations ", {
       operation: o.kind,
       path: o.kind == OperationKind.Backup ? o.destinationPath : o.file.destinationPath,

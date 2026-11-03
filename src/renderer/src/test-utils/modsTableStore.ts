@@ -8,9 +8,12 @@ import { sessionReducer } from "@/extensions/mod_management/reducers/session";
 import { tableReducer } from "@/reducers/tables";
 import { toolbarReducer } from "@/reducers/toolbars";
 
-/** Each table's column choices, as `settings.tables` keeps them. */
+/** Each table's column choices and filters, as `settings.tables` keeps them. */
 export interface IModsTableTestTables {
-  [tableId: string]: { attributes?: { [columnId: string]: { enabled: boolean } } };
+  [tableId: string]: {
+    attributes?: { [columnId: string]: { enabled: boolean } };
+    filter?: { [columnId: string]: unknown };
+  };
 }
 
 export const MODS_TABLE_TEST_GAME = "game";

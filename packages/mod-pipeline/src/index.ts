@@ -17,6 +17,7 @@ export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, FileEntry }
 export { folderKeyOf, pathKeyOf } from "./pathKey";
 export {
   DestinationState,
+  inApplyOrder,
   OperationKind,
   OperationSchema,
   plan,

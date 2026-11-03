@@ -1,73 +1,67 @@
-import type {
-  DiskEntry,
-  FileSource,
-  NexusFileId,
-  PlannedDestination,
-} from "@nexusmods/mod-pipeline";
-import React from "react";
+import type { FileSource, NexusFileId, PlannedDestination } from "@nexusmods/mod-pipeline";
+import React, { type ReactNode } from "react";
 
 import { Typography } from "@/ui/components/typography/Typography";
-import { bytesToString } from "@/util/util";
 
-import { destinationStateName, originLabel } from "../../util/planTree";
+import { destinationStateLabel, diskEntryLines } from "../../util/planTree";
+import { PlanModOrigin } from "./PlanModOrigin";
 
 interface IPlanDestinationDetailProps {
-  destination: PlannedDestination;
+  readonly destination: PlannedDestination;
   /** the mod each Nexus file belongs to */
-  modNames: ReadonlyMap<NexusFileId, string>;
+  readonly modNames: ReadonlyMap<NexusFileId, string>;
 }
 
-const diskLines = (entry: DiskEntry | undefined): string[] =>
-  entry === undefined
-    ? ["nothing there"]
-    : [
-        `${entry.kind}, ${bytesToString(entry.size)}, modified ${entry.modifiedTime.toLocaleString()}`,
-        entry.contentHash === undefined
-          ? "not hashed"
-          : `${entry.contentHash.hashType} ${entry.contentHash.fileHash}`,
-        ...(entry.id === undefined ? [] : [`file id ${entry.id}, device ${entry.deviceId}`]),
-        ...(entry.hardlinkCount === undefined ? [] : [`${entry.hardlinkCount} hardlinks`]),
-      ];
+const Section = ({ title, children }: { readonly title: string; readonly children: ReactNode }) => (
+  <div>
+    <p className="font-semibold">{title}</p>
 
-const fileLines = (
+    {children}
+  </div>
+);
+
+const textLines = (lines: readonly string[]) =>
+  lines.map((line) => (
+    <p className="break-all" key={line}>
+      {line}
+    </p>
+  ));
+
+const lockfileLines = (
   file: FileSource | undefined,
   modNames: ReadonlyMap<NexusFileId, string>,
-): string[] =>
-  file === undefined
-    ? ["not in the lockfile"]
-    : [originLabel(file, modNames), `${file.hashType} ${file.fileHash}`];
+): ReactNode =>
+  file === undefined ? (
+    <p>not in the lockfile</p>
+  ) : (
+    <>
+      <p>
+        <PlanModOrigin file={file} modNames={modNames} />
+      </p>
+
+      <p className="break-all">{`${file.hashType} ${file.fileHash}`}</p>
+    </>
+  );
 
 /** What the planner compared at one destination, and what it decided. */
-export const PlanDestinationDetail = ({ destination, modNames }: IPlanDestinationDetailProps) => {
-  const sections: Array<[string, string[]]> = [
-    ["On disk", diskLines(destination.disk)],
-    ["Previous lockfile", fileLines(destination.previous, modNames)],
-    ["Current lockfile", fileLines(destination.current, modNames)],
-    [
-      "Operations",
-      destination.operations.length === 0
-        ? ["none"]
-        : destination.operations.map(({ kind }) => kind),
-    ],
-  ];
+export const PlanDestinationDetail = ({ destination, modNames }: IPlanDestinationDetailProps) => (
+  <Typography as="div" className="space-y-4" typographyType="body-sm">
+    <p className="font-semibold break-all">{destination.destinationPath}</p>
 
-  return (
-    <Typography as="div" className="space-y-4" typographyType="body-sm">
-      <p className="font-semibold break-all">{destination.destinationPath}</p>
+    <p>{destinationStateLabel(destination.state)}</p>
 
-      <p>{`${destination.state} ${destinationStateName(destination.state)}`}</p>
+    <Section title="On disk">{textLines(diskEntryLines(destination.disk))}</Section>
 
-      {sections.map(([title, lines]) => (
-        <div key={title}>
-          <p className="font-semibold">{title}</p>
+    <Section title="Previous lockfile">{lockfileLines(destination.previous, modNames)}</Section>
 
-          {lines.map((line) => (
-            <p className="break-all" key={line}>
-              {line}
-            </p>
-          ))}
-        </div>
-      ))}
-    </Typography>
-  );
-};
+    <Section title="Current lockfile">{lockfileLines(destination.current, modNames)}</Section>
+
+    <Section title="Operations">
+      {textLines(
+        destination.operations.length === 0
+          ? ["none"]
+          : destination.operations.map(({ kind }) => kind),
+      )}
+    </Section>
+  </Typography>
+);

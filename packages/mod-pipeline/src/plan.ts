@@ -346,21 +346,21 @@ export function planDestinations(
 }
 
 /**
- * The operations that bring the disk from the previous lockfile to the current one: every
- * destination's operations from planDestinations. BACKUP and UNLINK come first, then LINK, each
- * in destination order, so a file can replace a folder of ours and a folder can replace a file of
- * ours.
+ * Operations in the order Apply runs them: BACKUP and UNLINK first, then LINK, each keeping its
+ * order, so a file can replace a folder of ours and a folder can replace a file of ours.
  */
+export const inApplyOrder = (operations: readonly Operation[]): Operation[] => [
+  ...operations.filter((operation) => operation.kind !== OperationKind.Link),
+  ...operations.filter((operation) => operation.kind === OperationKind.Link),
+];
+
+/** The operations that bring the disk from the previous lockfile to the current one, in Apply's order. */
 export function plan(
   current: Lockfile,
   previous: Lockfile | undefined,
   disk: DiskScan,
 ): Operation[] {
-  const operations = planDestinations(current, previous, disk).flatMap(
-    (destination) => destination.operations,
+  return inApplyOrder(
+    planDestinations(current, previous, disk).flatMap((destination) => destination.operations),
   );
-  return [
-    ...operations.filter((operation) => operation.kind !== OperationKind.Link),
-    ...operations.filter((operation) => operation.kind === OperationKind.Link),
-  ];
 }

@@ -15,12 +15,14 @@ import { modOrigin } from "../../util/resolverInput";
 import { PlanView } from "./PlanView";
 
 interface IPlanPageProps {
-  /** Whether the page is the one showing, which its `Page` needs. */
-  active?: boolean;
+  /** whether the page is showing */
+  readonly active?: boolean;
+  /** the id the page was registered under */
+  readonly pageId: string;
 }
 
 /** The active game's last plan, every destination of it, in a dev build. */
-export const PlanPage = ({ active }: IPlanPageProps) => {
+export const PlanPage = ({ active, pageId }: IPlanPageProps) => {
   const gameId = useSelector(activeGameId);
   const mods = useSelector(modsForActiveGame);
   const lastPlan = useSyncExternalStore(subscribeToLastPlans, () =>
@@ -40,7 +42,7 @@ export const PlanPage = ({ active }: IPlanPageProps) => {
   }, [mods, gameId]);
 
   return (
-    <Page active={active} pageId="mod-plan" scrollable={false}>
+    <Page active={active} pageId={pageId} scrollable={false}>
       <PageHeader
         pictogramName="tools"
         subtitle={
@@ -56,7 +58,11 @@ export const PlanPage = ({ active }: IPlanPageProps) => {
           No plan yet. A deployment followed by a plugin sort plans Skyrim SE.
         </Typography>
       ) : (
-        <PlanView key={lastPlan.plannedAt.toString()} lastPlan={lastPlan} modNames={modNames} />
+        <PlanView
+          destinations={lastPlan.destinations}
+          key={lastPlan.plannedAt.toString()}
+          modNames={modNames}
+        />
       )}
     </Page>
   );
