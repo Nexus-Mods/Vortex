@@ -5,9 +5,12 @@
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import { activeGameId } from "../../util/selectors";
+import { sessionReducer } from "./reducers/session";
 import BrowsePage from "./views/browse_page/BrowsePage";
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(["session", "browse"], sessionReducer);
+
   context.registerMainPage("search", "Browse", BrowsePage, {
     priority: 0,
     hotkey: "B",
