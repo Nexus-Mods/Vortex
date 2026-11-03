@@ -2185,6 +2185,16 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
+  // the planner only runs in dev builds, see registerResolveLockFile
+  if (process.env.NODE_ENV === "development") {
+    context.registerMainPage(
+      "account_tree",
+      "Plan",
+      LazyComponent(() => require("./components/plan_page/PlanPage")),
+      { priority: 42, group: "global", menuIcon: "account_tree", newLayout: true },
+    );
+  }
+
   // Deploy and Purge for the classic toolbar, which renders whatever component a
   // registration gives it. The new toolbar builds its own pair instead — it renders
   // actions rather than arbitrary components, see useModToolbarActions — so these are

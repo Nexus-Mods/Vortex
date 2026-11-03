@@ -56,7 +56,7 @@ const HASH_CONCURRENCY = 16;
 export const toPortablePath = (filePath: string) => QualifiedPath.fromNative(filePath).path;
 
 /** A mod's origin; a Nexus mod whose file version is unknown is user generated. */
-function modOrigin(mod: IMod, gameMode: string): ResolverMod["origin"] {
+export function modOrigin(mod: IMod, gameMode: string): ResolverMod["origin"] {
   const nexusFileId =
     mod.attributes?.source === "nexus" ? resolveFileUID(mod.attributes, gameMode) : undefined;
   return nexusFileId !== undefined
