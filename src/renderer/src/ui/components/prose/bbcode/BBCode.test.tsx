@@ -48,6 +48,13 @@ describe("BBCode", () => {
       expect(container.querySelector("img")).toHaveClass("nxm-image-media-blurred");
     });
 
+    it("shows an image held in the description itself", () => {
+      const src = "data:image/png;base64,iVBORw0KGgo=";
+      const { container } = render(<BBCode bbcode={`[img]${src}[/img]`} />);
+
+      expect(container.querySelector("img")).toHaveAttribute("src", src);
+    });
+
     it("leaves out images from elsewhere", () => {
       const { container } = render(
         <BBCode bbcode="Hi [img]https://example.com/a.png[/img] there" />,
