@@ -43,7 +43,8 @@ function relativeTime(date: Date, t: TFunction): string {
   } else if (deltaSec < SEC_PER_DAY) {
     const count = Math.floor(deltaSec / SEC_PER_HOUR);
     return t("{{ count }} hour ago", { count });
-  } else if (days < 7) {
+  } else if (days <= 7) {
+    // Days are rounded, so up to 7 they read as days: as weeks, from 6.5 days, they'd floor to 0.
     return t("{{ count }} day ago", { count: days });
   } else if (deltaSec < SEC_PER_MONTH) {
     const count = Math.floor(deltaSec / SEC_PER_WEEK);
