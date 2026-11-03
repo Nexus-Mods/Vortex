@@ -4,7 +4,7 @@ import { DiskEntryKind, type DiskEntry, type DiskScan } from "./diskScan";
 import { GameStore } from "./gameInstall";
 import { NexusFileId, NexusGameId, SteamAppId, SteamBuildId } from "./ids";
 import { FileSourceKind, HashType, type FileSource, type Lockfile } from "./lockfile";
-import { plan } from "./plan";
+import { DestinationState, OperationKind, plan, planDestinations } from "./plan";
 
 const GAME_DIR = "/fixture-root/game";
 
@@ -144,5 +144,55 @@ describe("plan", () => {
     expect(() => plan(lockfileWithNesting, undefined, diskScan())).toThrow(
       `${GAME_DIR}/Data/SKSE/plugin.dll is inside ${GAME_DIR}/Data/SKSE, another destination`,
     );
+  });
+});
+
+describe("planDestinations", () => {
+  test("lists every destination in order with its state, its inputs and its operations", () => {
+    const kept = makeFileSource("Data/a.esp");
+    const removed = makeFileSource("Data/b.esp");
+    const added = makeFileSource("Data/c.esp");
+    const keptOnDisk = diskEntry("Data/a.esp");
+
+    expect(
+      planDestinations(lockfile([kept, added]), lockfile([kept, removed]), diskScan(keptOnDisk)),
+    ).toEqual([
+      {
+        destinationPath: kept.destinationPath,
+        state: DestinationState.DeployedUnhashed,
+        disk: keptOnDisk,
+        previous: kept,
+        current: kept,
+        operations: [],
+      },
+      {
+        destinationPath: removed.destinationPath,
+        state: DestinationState.RemovedMissing,
+        disk: undefined,
+        previous: removed,
+        current: undefined,
+        operations: [],
+      },
+      {
+        destinationPath: added.destinationPath,
+        state: DestinationState.NewFile,
+        disk: undefined,
+        previous: undefined,
+        current: added,
+        operations: [{ kind: OperationKind.Link, file: added, reason: DestinationState.NewFile }],
+      },
+    ]);
+  });
+
+  test("reports a deployed file whose content is on disk as unchanged", () => {
+    const deployed = makeFileSource("Data/a.esp");
+    const onDisk: DiskEntry = {
+      ...diskEntry("Data/a.esp"),
+      contentHash: { fileHash: deployed.fileHash, hashType: deployed.hashType },
+    };
+
+    expect(
+      planDestinations(lockfile([deployed]), lockfile([deployed]), diskScan(onDisk)),
+    ).toMatchObject([{ state: DestinationState.Unchanged, operations: [] }]);
   });
 });

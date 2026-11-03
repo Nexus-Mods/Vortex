@@ -53,6 +53,7 @@
   "expected": [
     {
       "kind": "UNLINK",
+      "reason": "DAx",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307812",
@@ -63,6 +64,7 @@
     },
     {
       "kind": "LINK",
+      "reason": "xxA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307811",

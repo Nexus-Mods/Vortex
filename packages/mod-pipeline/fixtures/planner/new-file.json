@@ -27,6 +27,7 @@
   "expected": [
     {
       "kind": "LINK",
+      "reason": "xxA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307791",

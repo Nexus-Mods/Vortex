@@ -110,6 +110,7 @@
   "expected": [
     {
       "kind": "UNLINK",
+      "reason": "AAx",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307803",
@@ -120,6 +121,7 @@
     },
     {
       "kind": "UNLINK",
+      "reason": "AAx",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307806",
@@ -130,6 +132,7 @@
     },
     {
       "kind": "UNLINK",
+      "reason": "BBA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307804",
@@ -140,6 +143,7 @@
     },
     {
       "kind": "LINK",
+      "reason": "xxA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307801",
@@ -150,6 +154,7 @@
     },
     {
       "kind": "LINK",
+      "reason": "BBA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307805",

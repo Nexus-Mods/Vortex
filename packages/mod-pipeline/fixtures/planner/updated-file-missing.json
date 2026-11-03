@@ -46,6 +46,7 @@
   "expected": [
     {
       "kind": "LINK",
+      "reason": "xBA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307792",

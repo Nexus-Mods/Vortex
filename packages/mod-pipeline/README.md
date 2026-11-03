@@ -44,7 +44,11 @@ as decimal strings. `z.encode(DiskScanSchema, scan)` gives that form back, since
 lockfile (absent on a first run) and a `DiskScan` the caller takes beforehand; it
 never touches the disk. `OPERATIONS_BY_STATE` in `src/plan.ts` is the decision table and
 documents each state. LINK and UNLINK name no method: Apply deploys with the
-game's deployment method (hardlink, symlink or move).
+game's deployment method (hardlink, symlink or move). Each operation's `reason` is
+the `DestinationState` code of the destination that needs it.
+
+`planDestinations` gives every destination's state, inputs and operations, including
+those that need none; `plan` flattens and reorders its operations.
 
 The rules the table encodes:
 

@@ -32,9 +32,14 @@
     ]
   },
   "expected": [
-    { "kind": "BACKUP", "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp" },
+    {
+      "kind": "BACKUP",
+      "reason": "DxA",
+      "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+    },
     {
       "kind": "LINK",
+      "reason": "DxA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307791",
