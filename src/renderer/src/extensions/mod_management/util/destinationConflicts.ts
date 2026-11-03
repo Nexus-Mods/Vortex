@@ -2,6 +2,9 @@ import { relativePath, type RelativePath } from "@nexusmods/paths";
 import { VortexModStagingFolder } from "@vortex/shared";
 import type { QualifiedPath } from "@vortex/shared/filesystem";
 
+import { log } from "@/logging";
+import { parentPath } from "@/ui/components/file_tree/types";
+
 import type { IDeploymentManifest } from "../types/IDeploymentManifest";
 import { readFileTreeDirectory } from "./fileTree";
 
@@ -58,34 +61,68 @@ export function deployedByOtherMods(
   return deployed;
 }
 
+/** What `existingGameFiles` found. */
+export interface IExistingGameFiles {
+  /** The keys `classifyDestinationFiles` takes. */
+  files: Set<string>;
+  /** Some directory couldn't be read, so `files` may miss what is in it. */
+  hasFailed: boolean;
+}
+
 /**
- * The files that already exist at `finalPaths`' directories in the game folder, as the keys
- * `classifyDestinationFiles` takes. It reads each directory once, not each file.
+ * The files each directory read held, by the directory's lowercased path, kept to read it only
+ * once; a directory that failed is left out so it is tried again. It is for one game folder.
+ */
+export type DirectoryFilesCache = Map<string, Promise<string[]>>;
+
+/**
+ * The files that already exist at `finalPaths`' directories in the game folder. It reads each
+ * directory once, not each file, and a directory in `cache` not again. A directory that can't be
+ * read is skipped, and reported as `hasFailed`.
  */
 export async function existingGameFiles(
   root: QualifiedPath,
   finalPaths: readonly RelativePath[],
-): Promise<Set<string>> {
+  cache: DirectoryFilesCache = new Map(),
+): Promise<IExistingGameFiles> {
   const directories = new Map<string, RelativePath>();
 
   for (const finalPath of finalPaths) {
-    const directory = parentOf(finalPath);
+    const directory = parentPath(finalPath);
     directories.set(directory.toLowerCase(), directory);
   }
 
-  const existing = new Set<string>();
+  const reads = [...directories].map(async ([key, directory]) => {
+    let read = cache.get(key);
 
-  await Promise.all(
-    [...directories.values()].map(async (directory) => {
-      for (const entry of await readFileTreeDirectory(root, directory)) {
-        if (entry.kind === "file") {
-          existing.add(entry.path.toLowerCase());
-        }
-      }
-    }),
-  );
+    if (read === undefined) {
+      read = readFileTreeDirectory(root, directory).then((entries) =>
+        entries.filter(({ kind }) => kind === "file").map(({ path }) => path.toLowerCase()),
+      );
+      cache.set(key, read);
+    }
 
-  return existing;
+    try {
+      return await read;
+    } catch (err) {
+      cache.delete(key);
+      log("warn", "failed to read a game directory for the install result", { directory, err });
+      return undefined;
+    }
+  });
+
+  const files = new Set<string>();
+  let hasFailed = false;
+
+  for (const found of await Promise.all(reads)) {
+    if (found === undefined) {
+      hasFailed = true;
+    } else {
+      found.forEach((file) => files.add(file));
+    }
+  }
+
+  return { files, hasFailed };
 }
 
 /**

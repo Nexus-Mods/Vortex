@@ -35,6 +35,7 @@
     "selectDirectory": "Select a folder to install to, not a file.",
     "result": "Files will be installed to:",
     "checking": "Checking for files that would be replaced...",
+    "statusIncomplete": "Some of the game's files couldn't be checked, so a file that replaces another or conflicts with a mod may be shown as new.",
     "statusNew": "New",
     "statusReplacesGameFile": "Replaces a game file",
     "statusConflictsWithMod": "Conflicts with {{mod}}",

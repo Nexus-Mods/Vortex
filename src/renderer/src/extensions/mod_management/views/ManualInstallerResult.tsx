@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { log } from "@/logging";
+import { Alert } from "@/ui/components/alert/Alert";
 import type { FileTreeEntry } from "@/ui/components/file_tree/buildTree";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -14,6 +15,8 @@ import {
   classifyDestinationFiles,
   existingGameFiles,
   type DestinationFileStatus,
+  type DirectoryFilesCache,
+  type IExistingGameFiles,
 } from "../util/destinationConflicts";
 
 export interface IManualInstallerResultProps {
@@ -23,6 +26,8 @@ export interface IManualInstallerResultProps {
   folder: string;
   /** The game's folder, if it's known. */
   gameFolder: QualifiedPath | undefined;
+  /** What other mods deployed couldn't be read, so a conflict with one may not show. */
+  hasDeployedFailed: boolean;
   /** The mod behind each staging folder, to name the mod a file conflicts with. */
   modNames: ReadonlyMap<VortexModStagingFolder, string>;
   skipTopFolder: boolean;
@@ -47,6 +52,7 @@ export const ManualInstallerResult = ({
   files,
   folder,
   gameFolder,
+  hasDeployedFailed,
   modNames,
   skipTopFolder,
 }: IManualInstallerResultProps) => {
@@ -60,8 +66,11 @@ export const ManualInstallerResult = ({
     [files, folder, skipTopFolder],
   );
 
-  // Kept with the paths it was read for, so a result for other paths is never used.
-  const [read, setRead] = useState<{ paths: RelativePath[]; files: Set<string> }>();
+  // Each directory is read once while the dialog is open, however often the paths change.
+  const [directoryFiles] = useState<DirectoryFilesCache>(() => new Map());
+
+  // Kept with the paths it was read for; until the next read is done the last one still shows.
+  const [read, setRead] = useState<{ paths: RelativePath[]; found: IExistingGameFiles }>();
 
   useEffect(() => {
     if (gameFolder === undefined) {
@@ -70,29 +79,29 @@ export const ManualInstallerResult = ({
 
     let isCancelled = false;
 
-    existingGameFiles(gameFolder, finalPaths)
-      .catch((err: unknown) => {
-        log("warn", "failed to read the game folder for the install result", { err });
-        return new Set<string>();
-      })
+    existingGameFiles(gameFolder, finalPaths, directoryFiles)
       .then((found) => {
         if (!isCancelled) {
-          setRead({ paths: finalPaths, files: found });
+          setRead({ paths: finalPaths, found });
         }
       })
-      .catch(() => undefined);
+      .catch((err: unknown) => {
+        log("warn", "failed to read the game folder for the install result", { err });
+        if (!isCancelled) {
+          setRead({ paths: finalPaths, found: { files: new Set(), hasFailed: true } });
+        }
+      });
 
     return () => {
       isCancelled = true;
     };
-  }, [gameFolder, finalPaths]);
+  }, [gameFolder, finalPaths, directoryFiles]);
 
   // without a game folder there is nothing to replace
-  let existing: ReadonlySet<string> | undefined = NO_FILES;
-
-  if (gameFolder !== undefined) {
-    existing = read?.paths === finalPaths ? read.files : undefined;
-  }
+  const existing: ReadonlySet<string> | undefined =
+    gameFolder === undefined ? NO_FILES : read?.found.files;
+  const isChecking = gameFolder !== undefined && read?.paths !== finalPaths;
+  const isIncomplete = hasDeployedFailed || read?.found.hasFailed === true;
 
   const results = useMemo(
     () =>
@@ -118,8 +127,16 @@ export const ManualInstallerResult = ({
   return (
     <div>
       <Typography appearance="subdued" as="p" typographyType="body-sm">
-        {results === undefined ? t("manualInstaller::checking") : t("manualInstaller::result")}
+        {results === undefined || isChecking
+          ? t("manualInstaller::checking")
+          : t("manualInstaller::result")}
       </Typography>
+
+      {isIncomplete && (
+        <Alert className="mt-1" data-testid="manual-installer-incomplete" severity="warning">
+          {t("manualInstaller::statusIncomplete")}
+        </Alert>
+      )}
 
       <Typography
         as="ul"
