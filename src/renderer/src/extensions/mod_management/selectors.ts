@@ -10,6 +10,7 @@ import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { getGame } from "../gamemode_management/util/getGame";
 import getInstallPath from "./util/getInstallPath";
+import modName from "./util/modName";
 
 const installPathPattern = (state: IState) => state.settings.mods.installPath;
 const gameInstallPathPattern = (state: IState, gameId: string) =>
@@ -118,7 +119,7 @@ export const modNameByStagingFolder = createCachedSelector(
     const names = new Map<VortexModStagingFolder, string>();
 
     for (const [modId, mod] of Object.entries(mods)) {
-      const name = mod.attributes?.name ?? modId;
+      const name = modName(mod) || modId;
       names.set(VortexModStagingFolder(modId), name);
       if (mod.installationPath !== undefined && mod.installationPath !== modId) {
         names.set(VortexModStagingFolder(mod.installationPath), name);
