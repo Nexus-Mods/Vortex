@@ -1,13 +1,15 @@
 import * as path from "node:path";
 
-import type { GameDomain, GameId } from "@vortex/shared";
+import { GameDomain, type GameId, type VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 
 import type { IGame } from "@/types/IGame";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
-import type { ITierZeroGame } from "@/types/IState";
+import type { IState, ITierZeroGame } from "@/types/IState";
 import type { IQueryArgEntry } from "@/util/storeQuery";
 
+import { domainToNumericGameId } from "../../nexus_integration/util";
+import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { getGameStore } from "../util/getGame";
 
 const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
@@ -18,6 +20,31 @@ const tierZeroGameIds = new Set<GameId>();
 
 export function isTierZeroGame(gameId: GameId): boolean {
   return tierZeroGameIds.has(gameId);
+}
+
+/** Whether the internally managed game is one managed without an extension. Managed
+ * tier 0 games register under their persisted domain, which resolves to the numeric
+ * key of `isTierZeroGame` through the games list. */
+export function isTierZeroManagedGame(state: IState, gameId: VortexGameId): boolean {
+  const game = (state.session.gameMode?.known ?? []).find((iter) => iter.id === gameId);
+  if (game === undefined) {
+    return false;
+  }
+
+  const numericId = domainToNumericGameId(GameDomain(nexusGameId(game)));
+  return numericId !== undefined && isTierZeroGame(numericId);
+}
+
+/** The persisted entry of an internally managed game, resolved through the games list
+ * like `isTierZeroManagedGame`. Returns the stored object, so the reference is stable. */
+export function tierZeroGameFor(state: IState, gameId: VortexGameId): ITierZeroGame | undefined {
+  const game = (state.session.gameMode?.known ?? []).find((iter) => iter.id === gameId);
+  if (game === undefined) {
+    return undefined;
+  }
+
+  const numericId = domainToNumericGameId(GameDomain(nexusGameId(game)));
+  return numericId !== undefined ? state.persistent.gameMode.tier0[numericId] : undefined;
 }
 
 /** the game object was dropped from the registry again (un-manage) */

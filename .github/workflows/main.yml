@@ -35,8 +35,6 @@ jobs:
               - "!**.md"
               - "!docs/**"
               - "!locales/**"
-              - "!.devcontainer/**"
-              - "!docker/**"
               - "!flatpak/**"
               - "!*.nix"
               - "!flake.*"

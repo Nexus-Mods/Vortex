@@ -43,8 +43,8 @@ function modPageUrl(ref: INexusFileRef): string | undefined {
 /**
  * Download and install a missing / wrong-version file, then make it the active version,
  * disabling `enabledFile` when the download replaces a wrong version of the same chain.
- * Free users can't 1-click install, so open the file page instead (website download); the
- * premium upsell is out of MVP scope.
+ * Free users can't 1-click install, so open the file page instead (website download). The
+ * UI raises the premium upsell before getting here; this is the fallback if it doesn't.
  */
 export async function downloadFileRequirement(
   api: IExtensionApi,

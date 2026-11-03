@@ -65,8 +65,6 @@ vi.mock("react-redux", async () => {
   };
 });
 
-import { nxmExperiment, nxmRuleSettings } from "@/ui/icon-paths";
-
 import { setAutoDeployment } from "../../settings_interface/actions/automation";
 import { setBetaModsTable } from "../actions/settings";
 import { useModToolbarActions } from "./useModToolbarActions.hook";
@@ -242,6 +240,63 @@ describe("useModToolbarActions brands", () => {
   });
 });
 
+describe("useModToolbarActions manual apply", () => {
+  const deployAction = () => actionsFor([]).find((action) => action.id === "deploy");
+
+  const setModActivity = (activity: string[] | undefined) => {
+    (state.session as { base?: unknown }).base =
+      activity === undefined ? undefined : { activity: { mods: activity } };
+  };
+
+  /** Gives the fixture an active game with changes waiting to deploy, or takes it away. */
+  const setPending = (pending: boolean) => {
+    const settings = state.settings as { profiles?: unknown };
+    const persistent = state.persistent as { profiles?: unknown; deployment?: unknown };
+    settings.profiles = pending ? { activeProfileId: "p1" } : undefined;
+    persistent.profiles = pending ? { p1: { id: "p1", gameId: "skyrimse" } } : undefined;
+    persistent.deployment = pending ? { needToDeploy: { skyrimse: true } } : undefined;
+  };
+
+  afterEach(() => {
+    setModActivity(undefined);
+    setPending(false);
+  });
+
+  it("is unpinned and shows the Apply button's symbol", () => {
+    expect(deployAction()?.pinned).toBeFalsy();
+    expect(deployAction()?.icon).toBe("autorenew");
+  });
+
+  it("says it applies even without detected changes", () => {
+    setModActivity([]);
+
+    const action = deployAction();
+
+    expect(action).toMatchObject({
+      label: "Manual apply (Deploy)",
+      description: "Apply mods, even when no changes are detected.",
+    });
+    expect(action?.disabled).toBeFalsy();
+  });
+
+  it("stays neutral while changes are waiting", () => {
+    setPending(true);
+    setModActivity([]);
+    expect(deployAction()?.brand).toBeUndefined();
+  });
+
+  it.each(["deployment", "deployment_pending"])("is disabled and says so while %s", (activity) => {
+    setPending(true);
+    setModActivity([activity]);
+
+    const action = deployAction();
+
+    expect(action).toMatchObject({ disabled: true, label: "Applying mod changes…" });
+    expect(action?.description).toBeUndefined();
+    expect(action?.brand).toBeUndefined();
+  });
+});
+
 describe("useModToolbarActions auto-apply", () => {
   afterEach(() => {
     state.settings.automation.deploy = false;
@@ -260,7 +315,7 @@ describe("useModToolbarActions auto-apply", () => {
   });
 
   it("shows the rule settings symbol", () => {
-    expect(autoApply()?.iconPath).toBe(nxmRuleSettings);
+    expect(autoApply()?.icon).toBe("rule_settings");
   });
 
   it("offers to turn auto-apply on while it's off", () => {
@@ -307,7 +362,7 @@ describe("useModToolbarActions beta table", () => {
   });
 
   it("shows the experiment flask", () => {
-    expect(betaTable()?.iconPath).toBe(nxmExperiment);
+    expect(betaTable()?.icon).toBe("experiment");
   });
 
   it("offers the beta view while the classic one shows", () => {

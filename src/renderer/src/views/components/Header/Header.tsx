@@ -6,7 +6,6 @@ import { useWindowContext } from "@/contexts";
 import { Button } from "@/ui/components/button/Button";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
-import { nxmPanelClose, nxmPanelOpen } from "@/ui/icon-paths";
 
 import {
   activeProfile as activeProfileSelector,
@@ -62,7 +61,7 @@ export const Header: FC<React.PropsWithChildren<unknown>> = () => {
             aria-label={menuIsCollapsed ? t("Open menu") : t("Collapse menu")}
             brand="neutral"
             className="[-webkit-app-region:no-drag]"
-            leftIconPath={menuIsCollapsed ? nxmPanelOpen : nxmPanelClose}
+            leftIcon={menuIsCollapsed ? "left_panel_open" : "left_panel_close"}
             onClick={handleToggleMenu}
           />
         </Tooltip>

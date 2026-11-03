@@ -91,6 +91,24 @@ describe("ModsTableSwitch", () => {
     expect(screen.queryByRole("grid")).toBeNull();
   });
 
+  it("shows the classic table even when the open view's grouping can't name a mod", () => {
+    const nameless = { id: "x", enabled: true, type: "collection", rules: [] };
+    const throwingName = mod("a", "Alpha", true, {
+      attributes: {
+        get name(): string {
+          throw new Error("grouped for the classic table");
+        },
+      },
+    });
+
+    renderSwitch({ a: throwingName, x: nameless as unknown as IModWithState }, undefined, {
+      betaTable: false,
+      views: { selected: "collections", changes: {}, custom: [] },
+    });
+
+    expect(screen.getByTestId("legacy-table")).toBeInTheDocument();
+  });
+
   it("lists the mods by name, ungrouped, when no collection is installed", () => {
     renderSwitch({ b: mod("b", "Beta", false), a: mod("a", "Alpha", true) });
 
@@ -489,7 +507,10 @@ describe("ModsTableSwitch", () => {
     expect(groupRow("Ann").querySelector("img")).toHaveAttribute("src", "ann.png");
     // Not knowing whose face, a person icon stands in.
     expect(groupRow("Bo").querySelector("img")).toBeNull();
-    expect(groupRow("Bo").querySelector(".nxm-image-avatar svg")).toBeInTheDocument();
+    expect(groupRow("Bo").querySelector(".nxm-image-avatar [data-symbol]")).toHaveAttribute(
+      "data-symbol",
+      "person",
+    );
   });
 
   it("builds an author's avatar from their member id when the mod doesn't carry one", async () => {

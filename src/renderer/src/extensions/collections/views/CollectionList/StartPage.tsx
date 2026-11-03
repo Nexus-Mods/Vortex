@@ -23,6 +23,7 @@ import { UserCanceled } from "../../../../util/CustomErrors";
 import type { TFunction as TFunctionApi } from "../../../../util/i18n";
 import opn from "../../../../util/opn";
 import { getSafe } from "../../../../util/storeHelper";
+import { setBrowseSection } from "../../../browse_nexus/actions/session";
 import { setSortAdded, setSortWorkshop } from "../../actions/settings";
 import { initFromProfile } from "../../collectionCreate";
 import {
@@ -543,7 +544,8 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
 
   private openCollections = () => {
     this.context.api.events.emit("analytics-track-click-event", "Collections", "Discover more");
-    this.context.api.store?.dispatch(actions.setOpenMainPage("Browse Nexus Mods", false));
+    this.context.api.store?.dispatch(setBrowseSection("collections"));
+    this.context.api.store?.dispatch(actions.setOpenMainPage("Browse", false));
   };
 
   private openMyCollectionsPage = () => {

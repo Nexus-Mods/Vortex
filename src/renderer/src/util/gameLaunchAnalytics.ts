@@ -6,6 +6,8 @@ import {
   type GameLaunchMethod,
 } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "../extensions/analytics/mixpanel/numericGameId";
+import { supportTier } from "../extensions/gamemode_management/tiered/supportTier";
+import type { Tier } from "../extensions/gamemode_management/tiered/types";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
 import {
   enabledModCountForProfile,
@@ -30,6 +32,8 @@ interface ILaunchRecord {
   launchTime: number;
   // Set from runExecutable's exit for Vortex-spawned launches; stays null for store launches.
   exitCode: number | null;
+  // From supportTier, resolved at launch like the other fields the paired exit echoes.
+  supportTier?: Tier;
   // Exe id whose stop ends the play session. For a script-extender / mod-loader launch this is the
   // game's own executable, not the launched loader (which exits during the handoff).
   watchExeId: string;
@@ -107,6 +111,7 @@ function emitExited(api: IExtensionApi, record: ILaunchRecord, reliable: boolean
       launch_method: record.launchMethod,
       enabled_mod_count: record.enabledModCount,
       launch_session_id: record.sessionId,
+      support_tier: record.supportTier,
       duration_ms: Date.now() - record.launchTime,
       duration_reliable: reliable,
       exit_code: record.exitCode,
@@ -177,7 +182,7 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
   const profileId = lastActiveProfileForGame(state, info.gameId);
   const enabledModCount = enabledModCountForProfile(state, profileId);
   const launchedExeId = makeExeId(info.exePath);
-
+  const tier = gameId === null ? undefined : supportTier(state, gameId);
   // A launch that hands the game off to a separate process (script extender / mod loader) watches
   // the game executable; every other launch watches the exe it started. A handoff waits for the
   // game process to appear, so it is only "started" once that process is running.
@@ -196,6 +201,7 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
     enabledModCount,
     launchTime: Date.now(),
     exitCode: null,
+    supportTier: tier,
     watchExeId,
     started,
     startTimer: undefined,
@@ -218,6 +224,7 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
       launch_method: method,
       enabled_mod_count: enabledModCount,
       launch_session_id: sessionId,
+      support_tier: tier,
     }),
   );
 }

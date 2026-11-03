@@ -1,4 +1,3 @@
-import { mdiClose, mdiMagnify } from "@mdi/js";
 import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -41,7 +40,7 @@ export const Search = ({
           fieldClassName="w-full max-w-60"
           hideLabel={true}
           label={label ?? placeholder ?? ""}
-          leftIconPath={mdiMagnify}
+          leftIcon="search"
           placeholder={placeholder}
           value={value}
           onChange={(evt) => onChange(evt.target.value)}
@@ -58,7 +57,7 @@ export const Search = ({
               fieldRef.current?.querySelector("input")?.focus();
             }}
           >
-            <Icon path={mdiClose} size="sm" />
+            <Icon name="close" size="sm" />
           </button>
         )}
       </div>

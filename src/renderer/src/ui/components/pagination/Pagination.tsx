@@ -1,4 +1,3 @@
-import { mdiMenuLeft, mdiMenuRight } from "@mdi/js";
 import React, { useMemo, type ClassAttributes, type RefObject } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -91,7 +90,7 @@ export const Pagination = ({
           type="button"
           onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
         >
-          <Icon path={mdiMenuLeft} size="none" />
+          <Icon name="arrow_left" size="none" />
         </button>
 
         {activePages.map((page, i) =>
@@ -127,7 +126,7 @@ export const Pagination = ({
             handlePageChange(Math.min(totalPages, currentPage + 1));
           }}
         >
-          <Icon path={mdiMenuRight} size="none" />
+          <Icon name="arrow_right" size="none" />
         </button>
       </div>
 

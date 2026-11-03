@@ -1,0 +1,80 @@
+@layer components {
+    .nxm-message-box {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        row-gap: calc(var(--spacing) * 2);
+        width: 100%;
+    }
+
+    /* The toggle is link-style: underlined, with a chevron beside the label. */
+    .nxm-message-box-toggle {
+        display: inline-flex;
+        align-items: center;
+        column-gap: var(--spacing);
+        border-radius: var(--radius-xs);
+
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+        color: var(--color-neutral-strong);
+        text-decoration-line: underline;
+        cursor: pointer;
+
+        transition-property: color;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &:hover {
+            color: var(--color-neutral-moderate);
+        }
+    }
+
+    /* The box itself. The text and the copy button sit side by side inside its border, so the text
+       scrolls beside the button and never under it. */
+    .nxm-message-box-body {
+        display: flex;
+        align-items: flex-start;
+        column-gap: var(--spacing);
+        width: 100%;
+        padding: var(--spacing);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-stroke-weak);
+    }
+
+    .nxm-message-box-text {
+        display: block;
+        field-sizing: content;
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: calc(var(--spacing) * 7);
+        max-height: calc(var(--spacing) * 46);
+        resize: none;
+        overflow: auto;
+        user-select: text;
+        padding: var(--spacing);
+        border-radius: var(--radius-sm);
+        background-color: transparent;
+
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+        color: var(--color-neutral-subdued);
+    }
+
+    /* The ring that shows the box has focus goes around the whole box, with the copy button inside
+       it, not tight around the text alone. */
+    .nxm-message-box-text:focus-visible {
+        outline: none;
+    }
+
+    .nxm-message-box-body:has(.nxm-message-box-text:focus-visible) {
+        outline: 2px solid var(--color-focus-subdued);
+        outline-offset: 2px;
+    }
+
+    /* The copy button keeps its place at the top of the box while a long message scrolls. */
+    .nxm-message-box-copy {
+        flex-shrink: 0;
+    }
+}

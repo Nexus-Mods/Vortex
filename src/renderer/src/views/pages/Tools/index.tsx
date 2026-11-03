@@ -1,9 +1,9 @@
-import { mdiPin, mdiPlus, mdiFlash, mdiWrench } from "@mdi/js";
 import React, { type FC, type PropsWithChildren, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Typography } from "@/ui/components/typography/Typography";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
@@ -18,12 +18,12 @@ const Panel = ({
   actions,
   children,
   heading,
-  iconPath,
+  icon,
   tooltip,
 }: PropsWithChildren<{
   actions?: () => ReactNode;
   heading: string;
-  iconPath: string;
+  icon: IIconSource;
   tooltip: string;
 }>) => (
   <div className="space-y-2">
@@ -33,7 +33,7 @@ const Panel = ({
         className="flex grow items-center gap-x-2 font-semibold"
         typographyType="body-sm"
       >
-        <Icon className="shrink-0" path={iconPath} size="sm" />
+        <Icon {...getIconProps(icon)} className="shrink-0" size="sm" />
 
         {heading}
       </Typography>
@@ -98,7 +98,7 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                 {/* Default launcher section */}
                 <Panel
                   heading={t("Default launcher")}
-                  iconPath={mdiFlash}
+                  icon="bolt"
                   tooltip={t("Runs instead of the game when you hit Play")}
                 >
                   {launcherTool ? (
@@ -128,7 +128,7 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                     count: pinnedCount,
                     max: MAX_PINNED_TOOLS,
                   })}
-                  iconPath={mdiPin}
+                  icon="keep"
                   tooltip={t("Pin shortcuts to your most used tools in the left menu")}
                 >
                   {otherPinnedTools.length > 0 ? (
@@ -168,13 +168,13 @@ export const ToolsPage: FC<React.PropsWithChildren<{ active?: boolean }>> = ({ a
                 <Button
                   appearance="moderate"
                   brand="neutral"
-                  leftIconPath={mdiPlus}
+                  leftIcon="add"
                   title={t("Add tool")}
                   onClick={addNewTool}
                 />
               )}
               heading={t("Tools")}
-              iconPath={mdiWrench}
+              icon="build"
               tooltip={t("Use the + button to add a new tool")}
             >
               {unpinnedTools.length > 0 ? (

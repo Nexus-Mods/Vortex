@@ -1,14 +1,9 @@
-import {
-  mdiCheckCircleOutline,
-  mdiCloseCircleOutline,
-  mdiFileOutline,
-  mdiMonitorArrowDownVariant,
-} from "@mdi/js";
 import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Bullet } from "@/ui/components/bullet/Bullet";
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { Pill } from "@/ui/components/pill/Pill";
 import { Typography } from "@/ui/components/typography/Typography";
@@ -21,7 +16,7 @@ import { Divider } from "../divider/Divider";
 interface IFileRequirementProps {
   actions?: ReactNode;
   file: IFileRequirementData;
-  fileIconPath?: string;
+  fileIcon?: IIconSource;
   hideImage?: boolean;
   isOr?: boolean;
   showMod?: boolean;
@@ -32,7 +27,7 @@ interface IFileRequirementProps {
 export function FileRequirement({
   actions,
   file,
-  fileIconPath = mdiFileOutline,
+  fileIcon = "draft",
   hideImage = false,
   isOr,
   showMod = true,
@@ -114,7 +109,7 @@ export function FileRequirement({
           className="flex min-w-0 items-center gap-x-1.5"
           typographyType="body-sm"
         >
-          <Icon path={fileIconPath} size="sm" />
+          <Icon {...getIconProps(fileIcon)} size="sm" />
 
           {onOpenFile ? (
             <TypographyLink
@@ -141,14 +136,14 @@ export function FileRequirement({
         <div className="flex items-center gap-x-2">
           {file.installed && (
             <>
-              <Pill iconPath={mdiMonitorArrowDownVariant}>{t("detail::item::installed")}</Pill>
+              <Pill icon="install_desktop">{t("detail::item::installed")}</Pill>
 
               {file.enabled ? (
-                <Pill iconPath={mdiCheckCircleOutline} brand="success">
+                <Pill brand="success" icon="check_circle">
                   {t("detail::item::enabled")}
                 </Pill>
               ) : (
-                <Pill iconPath={mdiCloseCircleOutline}>{t("detail::item::disabled")}</Pill>
+                <Pill icon="cancel">{t("detail::item::disabled")}</Pill>
               )}
 
               {!!actions && <div className="w-px self-stretch bg-stroke-weak" />}

@@ -19,5 +19,22 @@
       "update_all": "Update all",
       "update_non_collection": "Update non-collection mods"
     }
+  },
+  "manualInstaller": {
+    "title": "Choose install folder",
+    "intro": "Choose the folder inside the game directory to install {{modName}} into.",
+    "folder": "Folder",
+    "gameFolder": "Game folder",
+    "newFolder": "New folder",
+    "createFolder": "Create folder",
+    "invalidFolder": "The folder must be inside the game directory",
+    "skipTopFolder": "Skip top folder ({{folder}})",
+    "preview": "Files will be installed to:",
+    "useAsDefault": "Use this folder for future mods for this game",
+    "dontAskAgain": "Don't ask again",
+    "useForAll_one": "Use this folder for all remaining mods ({{count}} more)",
+    "useForAll_other": "Use this folder for all remaining mods ({{count}} more)",
+    "cancel": "Cancel",
+    "install": "Install"
   }
 }

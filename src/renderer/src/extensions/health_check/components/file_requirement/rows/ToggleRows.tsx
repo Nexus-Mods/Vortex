@@ -54,7 +54,7 @@ export const ToggleRows = ({
             <Button
               appearance="subdued"
               brand="neutral"
-              leftIconPath={nxmModOutline}
+              leftIcon={{ path: nxmModOutline }}
               onClick={handleViewInMods}
             >
               {t("detail::item::view_in_mods")}

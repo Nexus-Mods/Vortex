@@ -1,4 +1,3 @@
-import { mdiChevronDown, mdiChevronRight } from "@mdi/js";
 import React, { type MouseEvent, type ReactNode } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -67,7 +66,7 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
               type="button"
               onClick={onToggle}
             >
-              <Icon path={expanded ? mdiChevronDown : mdiChevronRight} size="none" />
+              <Icon name={expanded ? "keyboard_arrow_down" : "chevron_right"} size="none" />
             </button>
           )}
 

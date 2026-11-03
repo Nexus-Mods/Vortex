@@ -1,4 +1,3 @@
-import { mdiTune, mdiViewGrid, mdiViewList } from "@mdi/js";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -17,10 +16,10 @@ const displayOptions = () => (
   <PopoverPanelGroup>
     <PopoverPanelGroupItem passive label="Display as">
       <Picker<string>
-        button={{ leftIconPath: mdiViewGrid, size: "sm" }}
+        button={{ leftIcon: { name: "grid_view", filled: true }, size: "sm" }}
         options={[
-          { label: "Grid", value: "small", iconPath: mdiViewGrid },
-          { label: "List", value: "list", iconPath: mdiViewList },
+          { label: "Grid", value: "small", icon: { name: "grid_view", filled: true } },
+          { label: "List", value: "list", icon: { name: "view_list", filled: true } },
         ]}
         value="small"
         onChange={() => {}}
@@ -30,9 +29,7 @@ const displayOptions = () => (
 );
 
 const openPanel = async () => {
-  render(
-    <ToolbarPanelButton label="Display options" leftIconPath={mdiTune} panel={displayOptions} />,
-  );
+  render(<ToolbarPanelButton label="Display options" leftIcon="tune" panel={displayOptions} />);
 
   await userEvent.click(screen.getByRole("button", { name: "Display options" }));
   await waitFor(() => expect(screen.getByText("Display as")).toBeInTheDocument());
@@ -88,7 +85,7 @@ describe("ToolbarPanelButton", () => {
       <ToolbarPanelButton
         handle={handle}
         label="Display options"
-        leftIconPath={mdiTune}
+        leftIcon="tune"
         panel={displayOptions}
       />,
     );

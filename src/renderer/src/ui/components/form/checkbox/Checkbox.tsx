@@ -1,5 +1,4 @@
 import { Checkbox as HeadlessCheckbox } from "@headlessui/react";
-import { mdiCheck, mdiMinus } from "@mdi/js";
 import React, { type ComponentProps, forwardRef } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -29,11 +28,11 @@ export const Checkbox = forwardRef<HTMLSpanElement, ICheckboxProps>(
       ref={ref}
       {...props}
     >
-      <Icon className="nxm-checkbox-icon nxm-checkbox-icon-check" path={mdiCheck} size="none" />
+      <Icon className="nxm-checkbox-icon nxm-checkbox-icon-check" name="check" size="none" />
 
       <Icon
         className="nxm-checkbox-icon nxm-checkbox-icon-indeterminate"
-        path={mdiMinus}
+        name="remove"
         size="none"
       />
     </HeadlessCheckbox>

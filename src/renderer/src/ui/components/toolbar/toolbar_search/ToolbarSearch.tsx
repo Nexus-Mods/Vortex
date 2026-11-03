@@ -1,4 +1,3 @@
-import { mdiClose, mdiMagnify } from "@mdi/js";
 import React, { type KeyboardEvent, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -69,7 +68,7 @@ export const ToolbarSearch = ({ label, value, onChange }: IToolbarSearchProps) =
     <div className="nxm-toolbar-search">
       {isOpen && (
         <div className="nxm-toolbar-search-field">
-          <Icon className="nxm-input-icon" path={mdiMagnify} size="sm" />
+          <Icon className="nxm-input-icon" name="search" size="sm" />
 
           <Input
             aria-label={label}
@@ -88,7 +87,7 @@ export const ToolbarSearch = ({ label, value, onChange }: IToolbarSearchProps) =
         aria-expanded={isOpen}
         brand="neutral"
         label={isOpen ? t("Close search") : label}
-        leftIconPath={isOpen ? mdiClose : mdiMagnify}
+        leftIcon={isOpen ? "close" : "search"}
         ref={buttonRef}
         // Ahead of the input's blur, which would close it before this could.
         onMouseDown={(event) => isOpen && event.preventDefault()}

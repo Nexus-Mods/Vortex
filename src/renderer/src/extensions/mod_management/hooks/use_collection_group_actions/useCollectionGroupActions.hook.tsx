@@ -1,4 +1,3 @@
-import { mdiDeleteOutline } from "@mdi/js";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -39,7 +38,7 @@ export const useCollectionGroupActions = (actionsFor: (modId: string) => IToolba
         {
           id: "view-collection",
           label: t("View collection"),
-          iconPath: nxmCollectionOutline,
+          icon: { path: nxmCollectionOutline },
           section: "view",
           onClick: () => api.events.emit("view-collection", collection.id),
         },
@@ -47,7 +46,7 @@ export const useCollectionGroupActions = (actionsFor: (modId: string) => IToolba
         {
           id: "remove-collection",
           label: t("Remove"),
-          iconPath: mdiDeleteOutline,
+          icon: "delete",
           section: "remove",
           onClick: () => api.events.emit("remove-collection", collection.id),
         },

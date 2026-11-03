@@ -1,6 +1,7 @@
 import * as path from "node:path";
 
 import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
+import { GameId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
@@ -163,8 +164,12 @@ function seed(
   });
 }
 
-const steamEntry = (installData?: ISteamInstallData, gamePath = "C:\\Games\\Skyrim"): unknown => ({
-  appid: "489830",
+const steamEntry = (
+  installData?: ISteamInstallData,
+  gamePath = "C:\\Games\\Skyrim",
+  appid = "489830",
+): unknown => ({
+  appid,
   name: "Skyrim",
   gamePath,
   gameStoreId: "steam",
@@ -185,7 +190,7 @@ describe("emitStoreGameVersionEvent", () => {
     vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
       telemetryEvent,
     } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
-    vi.mocked(numericNexusGameId).mockReturnValue(1704);
+    vi.mocked(numericNexusGameId).mockReturnValue(GameId(1704));
     vi.mocked(getGame).mockReturnValue({
       details: { steamAppId: 489830 },
     } as unknown as ReturnType<typeof getGame>);
@@ -244,6 +249,55 @@ describe("emitStoreGameVersionEvent", () => {
     expect(telemetryEvent).toHaveBeenCalledTimes(2);
     expect(telemetryEvent.mock.calls[1][2].payload.steam.build_id).toBe(16659741);
     expect(versionSpy).toHaveBeenCalledTimes(2);
+  });
+
+  test("reports the game, not a tool sharing its folder", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness, { discovered: { skyrimse: { path: "C:\\Games\\Skyrim", store: "steam" } } });
+    // the Creation Kit sorts first, as appmanifest_1946180.acf does on NTFS
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      withEntries(
+        steamEntry({ ...INSTALL_DATA, appId: 1946180 }, "C:\\Games\\Skyrim", "1946180"),
+        steamEntry(INSTALL_DATA),
+      ) as never,
+    );
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    expect(telemetryEvent.mock.calls[0][2].payload.steam.app_id).toBe(489830);
+  });
+
+  test("reports the edition a game with several steam ids has installed", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness, { discovered: { skyrimse: { path: "C:\\Games\\Skyrim", store: "steam" } } });
+    vi.mocked(getGame).mockReturnValue({
+      queryArgs: { steam: [{ id: "22300" }, { id: "22370" }] },
+    } as unknown as ReturnType<typeof getGame>);
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      withEntries(
+        steamEntry({ ...INSTALL_DATA, appId: 1946180 }, "C:\\Games\\Skyrim", "1946180"),
+        steamEntry({ ...INSTALL_DATA, appId: 22370 }, "C:\\Games\\Skyrim", "22370"),
+      ) as never,
+    );
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    expect(telemetryEvent.mock.calls[0][2].payload.steam.app_id).toBe(22370);
+  });
+
+  test("falls back to the path match for a game declaring no steam ids", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness, { discovered: { skyrimse: { path: "C:\\Games\\Skyrim", store: "steam" } } });
+    vi.mocked(getGame).mockReturnValue({} as unknown as ReturnType<typeof getGame>);
+    vi.mocked(getGameStoresSafe).mockReturnValue(
+      withEntries(
+        steamEntry({ ...INSTALL_DATA, appId: 22490 }, "C:\\Games\\Skyrim", "22490"),
+      ) as never,
+    );
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    expect(telemetryEvent.mock.calls[0][2].payload.steam.app_id).toBe(22490);
   });
 
   test("volatile-only changes refresh the gate without a send", async ({ makeApi }) => {
@@ -438,7 +492,8 @@ describe("emitStoreGameVersions", () => {
     } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
     vi.mocked(numericNexusGameId).mockImplementation((gameId) => {
       const ids: Record<string, number> = { skyrimse: 1704, witcher3: 1720, skyrimvr: 1705 };
-      return ids[gameId] ?? null;
+      const numeric = ids[gameId];
+      return numeric === undefined ? null : GameId(numeric);
     });
 
     restoreFs = installInMemoryFS((builder) => {
@@ -540,7 +595,7 @@ describe("emitStoreGameVersions", () => {
 
     vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
     vi.mocked(numericNexusGameId).mockImplementation((gameId) =>
-      gameId === "witcher3" ? null : 1704,
+      gameId === "witcher3" ? null : GameId(1704),
     );
 
     await emitStoreGameVersions(harness.api);

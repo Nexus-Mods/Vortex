@@ -1,7 +1,12 @@
 import * as path from "path";
 
-import { mdiGamepadSquareOutline } from "@mdi/js";
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  type GameId,
+  unknownToError,
+  VortexGameId,
+} from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as fsExtra from "fs-extra";
 import React from "react";
@@ -12,6 +17,7 @@ import { showDialog } from "../../actions/notifications";
 import { setDialogVisible } from "../../actions/session";
 import LazyComponent from "../../controls/LazyComponent";
 import OptionsFilter, { type ISelectOption } from "../../controls/table/OptionsFilter";
+import { FlagService } from "../../FlagService";
 import { log } from "../../logging";
 import ReduxProp from "../../ReduxProp";
 import type { IExtensionDownloadInfo } from "../../types/extensions";
@@ -22,7 +28,7 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import type { NotificationDismiss } from "../../types/INotification";
-import type { IProfile, IRunningTool, IState } from "../../types/IState";
+import type { IProfile, IRunningTool, IState, ITierZeroGame } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
@@ -39,7 +45,7 @@ import type { IModWithState } from "../mod_management/views/CheckModVersionsButt
 import { isLoggedIn } from "../nexus_integration/selectors";
 import { nexusGames } from "../nexus_integration/util";
 import { setNextProfile } from "../profile_management/actions/settings";
-import { setGameInfo } from "./actions/persistent";
+import { removeTierZeroGame, setGameInfo, setTierZeroGame } from "./actions/persistent";
 import { clearFavouriteGames, setDetectedGamesStatus } from "./actions/session";
 import {
   addDiscoveredGame,
@@ -54,7 +60,12 @@ import { persistentReducer } from "./reducers/persistent";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings/settings";
 import { currentGame, currentGameDiscovery, discoveryByGame, gameById } from "./selectors";
-import { synthesizePersistedTierZeroGames } from "./tiered/tierZero";
+import { catalogExtensionGameIds } from "./selectors";
+import {
+  makeTierZeroGame,
+  synthesizePersistedTierZeroGames,
+  unregisterTierZeroGame,
+} from "./tiered/tierZero";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";
@@ -95,6 +106,8 @@ declare module "@/types/IExtensionContext" {
   interface ApiEvents {
     "discover-game": (gameId: string) => string[];
     "discover-tools": (gameId: string) => void;
+    "register-tier-zero-game": (entry: ITierZeroGame) => void;
+    "remove-tier-zero-game": (gameId: GameId) => void;
   }
 }
 
@@ -721,7 +734,7 @@ function init(context: IExtensionContext): boolean {
         nexusGames: nexusGames(),
       }),
       activity,
-      mdi: mdiGamepadSquareOutline,
+      menuIcon: "stadia_controller",
     },
   );
   context.registerFooter("discovery-progress", ProgressFooter);
@@ -946,6 +959,7 @@ function init(context: IExtensionContext): boolean {
     // the extension API's GameStoreHelper is a dumb adapter; hand it the
     // manager's store list once the manager exists
     GameStoreHelperInstance.attach(() => gameModeManager.gameStores);
+
     // synthesize the persisted Tier 0 games before the store attaches so
     // getGame consumers never see a window without them. Deliberately not
     // flag-gated: the flag only gates the management flows, the games
@@ -955,6 +969,28 @@ function init(context: IExtensionContext): boolean {
       gameModeManager.games,
       (games) => gameModeManager.addGames(games),
     );
+
+    context.api.onAsync<"register-tier-zero-game">("register-tier-zero-game", (entry) => {
+      // persisting comes first: a crash between the steps resurfaces through the
+      // startup synthesis above on the next run
+      store.dispatch(setTierZeroGame(entry.gameId, entry));
+      gameModeManager.addGames([makeTierZeroGame(entry)]);
+
+      return Promise.resolve();
+    });
+
+    // the cleanup path of un-managing: registered without the flag so an
+    // opt-in from before a flag flip can still be torn down
+    context.api.onAsync<"remove-tier-zero-game">("remove-tier-zero-game", (gameId) => {
+      const entry = store.getState().persistent.gameMode.tier0[gameId];
+      if (entry === undefined) return Promise.resolve();
+
+      store.dispatch(removeTierZeroGame(gameId));
+      gameModeManager.removeGames([VortexGameId(entry.domain)]);
+      unregisterTierZeroGame(gameId);
+      return Promise.resolve();
+    });
+
     $.gameModeManager.attachToStore(store);
     // kick the first store scan eagerly; store snapshots are then populated
     // independently of quick discovery (which triggers its own reload)
@@ -1022,6 +1058,13 @@ function init(context: IExtensionContext): boolean {
             current.session.gameMode.known,
             current.settings.gameMode.discovered,
             addedGameIds,
+            {
+              // same gating the detected section lists with, so a game doesn't
+              // get reported as "new" when the section doesn't show it
+              allowTierZero:
+                FlagService.instance?.getFlag("vortex-tier-0-game-support") !== undefined,
+              extensionGameIds: catalogExtensionGameIds(current),
+            },
           );
         };
 

@@ -14,7 +14,7 @@ const { prepareMock } = vi.hoisted(() => ({ prepareMock: vi.fn() }));
 
 vi.mock("../util/prepareSupportBundle", () => ({ prepareSupportBundle: prepareMock }));
 
-const ARCHIVE_PATH = "C:\\temp\\support_bundles\\vortex-support-2026-09-21.7z";
+const ARCHIVE_PATH = "C:\\temp\\support_bundles\\vortex-support-2026-09-21.zip";
 
 interface IDeferred {
   resolve: (bundle: ISupportBundle) => void;

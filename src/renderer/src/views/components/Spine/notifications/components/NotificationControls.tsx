@@ -1,4 +1,3 @@
-import { mdiEyeOffOutline, mdiClose } from "@mdi/js";
 import React, { type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -31,7 +30,7 @@ export const NotificationControls = ({
         <Button
           appearance="weak"
           brand="neutral"
-          leftIconPath={mdiEyeOffOutline}
+          leftIcon="visibility_off"
           size="sm"
           title={t("Never show again")}
           onClick={onSuppress}
@@ -42,7 +41,7 @@ export const NotificationControls = ({
         <Button
           appearance="weak"
           brand="neutral"
-          leftIconPath={mdiClose}
+          leftIcon="close"
           size="sm"
           title={collapsed > 1 ? t("Dismiss All") : t("Dismiss")}
           onClick={onDismiss}

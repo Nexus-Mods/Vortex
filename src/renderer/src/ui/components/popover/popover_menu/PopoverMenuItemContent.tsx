@@ -1,15 +1,14 @@
-import { mdiCheck, mdiChevronRight, mdiPinOffOutline, mdiPinOutline } from "@mdi/js";
 import React from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, IconSlot } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { IMenuAction } from "./PopoverMenu.types";
 import { PopoverMenuItemControl } from "./PopoverMenuItemControl";
 
 /**
- * What a row shows, either kind: its icon and label, then its control and pin, its check
- * while it's one of a choice, and its chevron, or the room for one.
+ * What a row shows, either kind: its icon, with a pip when asked, and label, then its control and
+ * pin, its check while it's one of a choice, and its chevron, or the room for one.
  */
 export const PopoverMenuItemContent = ({
   action,
@@ -25,13 +24,7 @@ export const PopoverMenuItemContent = ({
   onSelect: () => void;
 }) => (
   <>
-    {action.icon ? (
-      <span className="nxm-dropdown-item-icon flex items-center justify-center">{action.icon}</span>
-    ) : (
-      !!action.iconPath && (
-        <Icon className="nxm-dropdown-item-icon" path={action.iconPath} size="none" />
-      )
-    )}
+    <IconSlot className="nxm-dropdown-item-icon" hasPip={action.hasPip} icon={action.icon} />
 
     <span className="nxm-dropdown-item-label">{action.label}</span>
 
@@ -39,7 +32,7 @@ export const PopoverMenuItemContent = ({
       <PopoverMenuItemControl
         showTooltip
         hasFocus={hasFocus}
-        iconPath={action.control.iconPath}
+        icon={action.control.icon}
         label={action.control.label}
         onActivate={() => {
           action.control?.onClick();
@@ -51,7 +44,7 @@ export const PopoverMenuItemContent = ({
     {!!action.pin && (
       <PopoverMenuItemControl
         hasFocus={hasFocus}
-        iconPath={action.pin.pinned ? mdiPinOffOutline : mdiPinOutline}
+        icon={action.pin.pinned ? "keep_off" : "keep"}
         label={action.pin.label}
         pressed={action.pin.pinned}
         onActivate={action.pin.onToggle}
@@ -63,7 +56,7 @@ export const PopoverMenuItemContent = ({
         className={joinClasses("nxm-dropdown-item-icon", {
           "nxm-dropdown-item-check-hidden": !action.checked,
         })}
-        path={mdiCheck}
+        name="check"
         size="none"
       />
     )}
@@ -73,7 +66,7 @@ export const PopoverMenuItemContent = ({
         className={joinClasses("nxm-dropdown-item-icon", {
           "nxm-dropdown-item-chevron-hidden": !hasPanel,
         })}
-        path={mdiChevronRight}
+        name="chevron_right"
         size="none"
       />
     )}

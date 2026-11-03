@@ -9,6 +9,8 @@ vi.mock("../../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }))
 import { makeDeploymentMethod } from "../../../test-utils/builders";
 import { makeHalfPurgedGame } from "../../../test-utils/deployedGame";
 import { test } from "../../../test-utils/harnessTest";
+import { ProcessCanceled } from "../../../util/CustomErrors";
+import { deploymentReducer } from "../reducers/deployment";
 import { purgeMods, purgeModsInPath } from "./deploy";
 import { registerDeploymentMethod } from "./deploymentMethods";
 
@@ -18,6 +20,18 @@ const leavingMethod = makeDeploymentMethod({
   externalChanges: () => Promise.resolve([]),
 });
 registerDeploymentMethod(leavingMethod);
+
+// a method whose purge is cancelled before it removes anything
+const cancelingMethod = makeDeploymentMethod({
+  id: "canceling-method",
+  externalChanges: () => Promise.resolve([]),
+  prePurge: () => Promise.reject(new ProcessCanceled("canceled")),
+});
+registerDeploymentMethod(cancelingMethod);
+
+const withDeploymentState = {
+  extraReducers: [{ path: ["persistent", "deployment"], reducer: deploymentReducer }],
+};
 
 test("purging keeps the files the purge left in the manifest", async () => {
   const game = await makeHalfPurgedGame(leavingMethod.id);
@@ -42,4 +56,20 @@ test("purging one mod type's folder goes ahead over a damaged manifest", async (
   await purgeModsInPath(game.api, game.gameId, "", game.dataPath);
 
   expect(game.dialogCalls).toEqual([]);
+});
+
+test("purging marks the game as purged", async () => {
+  const game = await makeHalfPurgedGame(leavingMethod.id, withDeploymentState);
+
+  await purgeMods(game.api, game.gameId);
+
+  expect(game.api.getState().persistent.deployment.purged[game.gameId]).toBe(true);
+});
+
+test("a cancelled purge doesn't mark the game as purged", async () => {
+  const game = await makeHalfPurgedGame(cancelingMethod.id, withDeploymentState);
+
+  await purgeMods(game.api, game.gameId);
+
+  expect(game.api.getState().persistent.deployment.purged[game.gameId]).toBeFalsy();
 });

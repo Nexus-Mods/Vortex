@@ -68,8 +68,7 @@ const widthSignature = (actions: IToolbarAction[]): string =>
   [
     actions.length,
     ...actions.map(
-      (action) =>
-        `${action.iconPath || action.icon !== undefined ? "i" : ""}${action.showLabel ? action.label : ""}`,
+      (action) => `${action.icon !== undefined ? "i" : ""}${action.showLabel ? action.label : ""}`,
     ),
   ].join(":");
 
@@ -80,13 +79,16 @@ const widthSignature = (actions: IToolbarAction[]): string =>
 const controlProps = (action: IToolbarAction) => ({
   appearance: "weak" as const,
   brand: action.brand ?? "neutral",
-  className: action.active ? "nxm-button-active" : undefined,
+  className: joinClasses({
+    "nxm-button-active": action.active,
+    "nxm-button-pip": action.hasPip,
+  }),
   "data-testid": action.testId,
   description: action.description,
   disabled: action.disabled,
   isLoading: action.isLoading,
   label: action.label,
-  ...(action.icon !== undefined ? { leftIcon: action.icon } : { leftIconPath: action.iconPath }),
+  leftIcon: action.icon,
   showLabel: action.showLabel,
 });
 

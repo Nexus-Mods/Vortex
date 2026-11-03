@@ -1,6 +1,6 @@
 import React, { type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
 
-import { Icon, type IIconSize } from "@/ui/components/icon/Icon";
+import { type IIconProp, type IIconSize, IconSlot } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import type { ResponsiveScreenSizes, XOr } from "@/ui/utils/types";
 
@@ -23,14 +23,14 @@ type ITypographyLinkTypeObject = ITypographyLinkTypeObjectDefault & {
 };
 
 export type ITypographyLinkProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  /** The size of both icons. */
+  /** The size of both icons. Default `md`. */
   iconSize?: IIconSize;
-  /** An icon's path, shown before the label. */
-  leftIconPath?: string;
+  /** An icon shown before the label. */
+  leftIcon?: IIconProp;
   /** Forwarded to the button. */
   ref?: Ref<HTMLButtonElement>;
-  /** An icon's path, shown after the label. */
-  rightIconPath?: string;
+  /** An icon shown after the label. */
+  rightIcon?: IIconProp;
   /** The type style, or one per screen size; `body-md` by default, `inherit` to take the parent's. */
   typographyType?: ITypographyLinkTypes | ITypographyLinkTypeObject;
   /** `primary` is always underlined, `secondary` only on hover or focus, `none` never. */
@@ -59,17 +59,17 @@ const hoverAppearanceMap: Record<ITypographyAppearance, ITypographyAppearance> =
 const LinkContent = ({
   iconSize,
   label,
-  leftIconPath,
-  rightIconPath,
-}: Pick<ITypographyLinkProps, "iconSize" | "leftIconPath" | "rightIconPath"> & {
+  leftIcon,
+  rightIcon,
+}: Pick<ITypographyLinkProps, "iconSize" | "leftIcon" | "rightIcon"> & {
   label?: string;
 }) => (
   <>
-    {!!leftIconPath && <Icon className="shrink-0" path={leftIconPath} size={iconSize} />}
+    <IconSlot className="shrink-0" icon={leftIcon} size={iconSize} />
 
     {label}
 
-    {!!rightIconPath && <Icon className="shrink-0" path={rightIconPath} size={iconSize} />}
+    <IconSlot className="shrink-0" icon={rightIcon} size={iconSize} />
   </>
 );
 
@@ -81,10 +81,10 @@ export const TypographyLink = ({
   className,
   customContent,
   disabled,
-  iconSize,
-  leftIconPath,
+  iconSize = "md",
+  leftIcon,
   ref,
-  rightIconPath,
+  rightIcon,
   typographyType = "body-md",
   variant = "primary",
   ...props
@@ -134,8 +134,8 @@ export const TypographyLink = ({
         <LinkContent
           iconSize={iconSize}
           label={children}
-          leftIconPath={leftIconPath}
-          rightIconPath={rightIconPath}
+          leftIcon={leftIcon}
+          rightIcon={rightIcon}
         />
       )}
     </button>

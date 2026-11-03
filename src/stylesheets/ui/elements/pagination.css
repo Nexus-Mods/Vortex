@@ -36,9 +36,10 @@
         .nxm-pagination-arrow {
             color: var(--color-neutral-moderate);
 
-            svg {
+            .nxm-icon {
                 width: calc(var(--spacing) * 6);
                 height: calc(var(--spacing) * 6);
+                font-size: calc(var(--spacing) * 6);
             }
 
             &:enabled:hover {

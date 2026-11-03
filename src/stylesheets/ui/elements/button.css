@@ -24,6 +24,19 @@
         transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
 
+        /* A dot in the top left corner, such as on a filter button while a filter is on. */
+        &.nxm-button-pip::before {
+            content: "";
+            position: absolute;
+            top: calc(var(--spacing) * 0.75);
+            left: calc(var(--spacing) * 0.75);
+            width: var(--spacing);
+            height: var(--spacing);
+            border-radius: 9999px;
+            background-color: var(--color-info-moderate);
+            pointer-events: none;
+        }
+
         &:disabled,
         &.nxm-button-disabled {
             opacity: 0.4;
@@ -43,6 +56,8 @@
             flex-shrink: 0;
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
+            /* A symbol is drawn at its font size, so it matches the box. */
+            font-size: calc(var(--spacing) * 4);
 
             &:first-child {
                 margin-left: calc(var(--spacing) * -0.5);

@@ -1,8 +1,9 @@
+import type { Pattern } from "@nexusmods/paths";
+import type { QualifiedPath } from "@nexusmods/paths";
+
 import type { VortexErrorData, VortexErrorKind } from "../errors/base";
 import { VortexError } from "../errors/base";
 import type { FileSystem, StatResult, Status } from "./filesystem";
-import type { Pattern } from "./matcher";
-import type { QualifiedPath } from "./paths";
 
 /**
  * Kinds a chaos rule can inject: every mechanical `fs:*` kind in the

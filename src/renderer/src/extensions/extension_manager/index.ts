@@ -1,6 +1,5 @@
 import * as path from "node:path";
 
-import { mdiPuzzleOutline } from "@mdi/js";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as semver from "semver";
 
@@ -355,7 +354,7 @@ function init(context: IExtensionContext) {
         },
         onRefresh: () => forceUpdateExtensions(),
       }) satisfies Partial<IExtensionManagerProps>,
-    mdi: mdiPuzzleOutline,
+    menuIcon: "extension",
   });
 
   const forceUpdateExtensions = () => {

@@ -1,6 +1,7 @@
 import React, { type KeyboardEvent, type SyntheticEvent } from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, type IIconSource } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 /**
@@ -12,7 +13,7 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
  */
 export const PopoverMenuItemControl = ({
   hasFocus,
-  iconPath,
+  icon,
   label,
   pressed,
   showTooltip = false,
@@ -20,8 +21,8 @@ export const PopoverMenuItemControl = ({
 }: {
   /** Whether its row is the one the keyboard is on, which makes it tabbable. */
   hasFocus: boolean;
-  /** Its icon, as an SVG path. */
-  iconPath: string;
+  /** Its icon. */
+  icon: IIconSource;
   /** Its accessible name. */
   label: string;
   /** For a toggle, such as a pin: whether it's on. */
@@ -53,7 +54,7 @@ export const PopoverMenuItemControl = ({
         }
       }}
     >
-      <Icon path={iconPath} size="none" />
+      <Icon {...getIconProps(icon)} size="none" />
     </span>
   );
 

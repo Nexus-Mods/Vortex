@@ -34,7 +34,17 @@ export const TabsDemo = () => {
           Primary Tabs
         </Typography>
 
-        <TabProvider tab={selectedTab1} tabListId="demo-tabs" onSetSelectedTab={setSelectedTab1}>
+        <Typography appearance="subdued">
+          Pass <code>hasBorder</code> to the TabProvider for a rule under the tabs, where nothing
+          around them already divides them off. Primary tabs only.
+        </Typography>
+
+        <TabProvider
+          hasBorder
+          tab={selectedTab1}
+          tabListId="demo-tabs"
+          onSetSelectedTab={setSelectedTab1}
+        >
           <TabBar>
             <TabButton name="Overview" panelId="overview" />
 

@@ -6,7 +6,7 @@ export type SpineSelection =
   | { type: "downloads" };
 
 interface ISpineSelectionInput {
-  /** The open page's id, or "" before one is open. */
+  /** The open page's id. */
   mainPage: string;
   /** The group of each registered page, by id. */
   pageGroups: Map<string, IMainPage["group"]>;

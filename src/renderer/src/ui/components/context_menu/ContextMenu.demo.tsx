@@ -4,7 +4,6 @@
  * for, with a nested menu opened from one of its rows
  */
 
-import { mdiDeleteOutline, mdiFolderMoveOutline, mdiPencil, mdiTune } from "@mdi/js";
 import React, { useState } from "react";
 
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
@@ -40,11 +39,11 @@ export const ContextMenuDemo = () => {
           <PopoverMenu
             actions={[
               [
-                { label: "Rename", iconPath: mdiPencil, onClick: () => setChosen("Rename") },
-                { label: "Options", iconPath: mdiTune, onClick: () => setChosen("Options") },
+                { label: "Rename", icon: "edit", onClick: () => setChosen("Rename") },
+                { label: "Options", icon: "tune", onClick: () => setChosen("Options") },
                 {
                   label: "Move to",
-                  iconPath: mdiFolderMoveOutline,
+                  icon: "drive_file_move",
                   panelRole: "menu",
                   panel: ({ close: closeSubmenu, dismiss }) => (
                     <PopoverMenu
@@ -61,7 +60,7 @@ export const ContextMenuDemo = () => {
                   ),
                 },
               ],
-              [{ label: "Delete", iconPath: mdiDeleteOutline, onClick: () => setChosen("Delete") }],
+              [{ label: "Delete", icon: "delete", onClick: () => setChosen("Delete") }],
             ]}
             label="Area actions"
             onSelect={close}

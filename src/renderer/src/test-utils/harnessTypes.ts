@@ -194,7 +194,10 @@ type DrivenLoot = Pick<
 >;
 
 /** A controllable stand-in for a LootAsync instance: every member autosort drives as a mock. */
-export type IFakeLoot = { [K in keyof DrivenLoot]: Mock<DrivenLoot[K]> };
+export type IFakeLoot = { [K in keyof DrivenLoot]: Mock<DrivenLoot[K]> } & Pick<
+  LootAsync,
+  "strayConnections"
+>;
 
 /** The plugin persistor's file lifecycle as a controllable fake: every call a mock. */
 export type IFakePersistor = {

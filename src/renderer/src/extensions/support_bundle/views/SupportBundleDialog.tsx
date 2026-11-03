@@ -1,4 +1,3 @@
-import { mdiLoading, mdiOpenInNew } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -51,7 +50,7 @@ export const SupportBundleDialog = ({ visible, onHide }: ISupportBundleDialogPro
             <TypographyLink
               brand="primary"
               data-testid="support-bundle-link-forums"
-              rightIconPath={mdiOpenInNew}
+              rightIcon="open_in_new"
               onClick={() => window.api.shell.openUrl(SUPPORT_FORUM_URL)}
             >
               {t("dialog::links::forums")}
@@ -60,8 +59,8 @@ export const SupportBundleDialog = ({ visible, onHide }: ISupportBundleDialogPro
             <TypographyLink
               brand="primary"
               data-testid="support-bundle-link-discord"
-              leftIconPath={nxmDiscord}
-              rightIconPath={mdiOpenInNew}
+              leftIcon={{ path: nxmDiscord }}
+              rightIcon="open_in_new"
               onClick={() => window.api.shell.openUrl(SUPPORT_DISCORD_URL)}
             >
               {t("dialog::links::discord")}
@@ -70,7 +69,7 @@ export const SupportBundleDialog = ({ visible, onHide }: ISupportBundleDialogPro
 
           {state.status === "preparing" ? (
             <div className="mt-4 flex items-center gap-x-2" data-testid="support-bundle-status">
-              <Icon className="animate-spin" path={mdiLoading} size="sm" />
+              <Icon className="animate-spin" name="progress_activity" size="sm" />
 
               <Typography as="p" typographyType="body-sm">
                 {state.percent === undefined

@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { describe, it, expect, vi } from "vitest";
 
+import type { XOr } from "@/ui/utils/types";
+
 import { TabBar } from "./TabBar";
 import { TabButton } from "./TabButton";
 import { TabPanel } from "./TabPanel";
@@ -13,16 +15,15 @@ import { TabProvider } from "./Tabs.context";
 const ControlledTabs = ({
   disabledThird = false,
   initial = "one",
-  tabType,
+  ...providerProps
 }: {
   disabledThird?: boolean;
   initial?: string;
-  tabType?: "primary" | "secondary";
-}) => {
+} & XOr<{ hasBorder?: boolean }, { tabType: "secondary" }>) => {
   const [tab, setTab] = useState(initial);
 
   return (
-    <TabProvider tab={tab} tabListId="test" tabType={tabType} onSetSelectedTab={setTab}>
+    <TabProvider {...providerProps} tab={tab} tabListId="test" onSetSelectedTab={setTab}>
       <TabBar>
         <TabButton name="One" panelId="one" />
 
@@ -133,6 +134,18 @@ describe("Tabs", () => {
     it("applies the secondary bar class when tabType is secondary", () => {
       renderComponent({ tabType: "secondary" });
       expect(document.querySelector(".nxm-tab-bar")).toHaveClass("nxm-tab-bar-secondary");
+    });
+  });
+
+  describe("hasBorder", () => {
+    it("draws no rule under the tabs by default", () => {
+      renderComponent();
+      expect(document.querySelector(".nxm-tab-bar")).not.toHaveClass("nxm-tab-bar-border");
+    });
+
+    it("draws a rule under the tabs with hasBorder", () => {
+      renderComponent({ hasBorder: true });
+      expect(document.querySelector(".nxm-tab-bar")).toHaveClass("nxm-tab-bar-border");
     });
   });
 

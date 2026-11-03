@@ -1,6 +1,5 @@
 import { pathToFileURL } from "url";
 
-import { mdiPlay } from "@mdi/js";
 import React, { type FC, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -120,7 +119,7 @@ export const PlayButton: FC<React.PropsWithChildren<PlayButtonProps>> = ({
           className={joinClasses(["w-full transition-all", isCollapsed ? "h-10" : "h-12"])}
           customContent={
             <>
-              <Icon className="nxm-button-icon" path={mdiPlay} size="lg" />
+              <Icon filled className="nxm-button-icon" name="play_arrow" size="lg" />
 
               {!isIconOnly && (
                 <Typography

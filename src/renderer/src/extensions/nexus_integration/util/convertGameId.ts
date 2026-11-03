@@ -1,11 +1,11 @@
 import { inspect } from "util";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
+
+import { log } from "@/logging";
 
 import type { IGame } from "../../../types/IGame";
 import type { IState } from "../../../types/IState";
-import { log } from "../../../util/log";
-import { truthy } from "../../../util/util";
 import { SITE_ID } from "../../gamemode_management/constants";
 // the game selectors directly rather than through util/selectors: that barrel re-exports this
 // extension's own selectors, and importing it from here would close an import cycle onto a leaf
@@ -17,26 +17,34 @@ import type { IGameStored, IGameStoredExt } from "../../gamemode_management/type
  * get the nexus page id for a game
  * TODO: some games have hard-coded transformations here, should move all of that to game.details
  */
-export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string): string {
+export function nexusGameId(
+  game: IGameStored | IGame,
+  fallbackGameId?: string,
+): GameDomain | undefined {
   if (game === undefined && fallbackGameId === undefined) {
     return undefined;
   }
 
-  if (truthy(game) && game.details !== undefined && game.details.nexusPageId !== undefined) {
-    return game.details.nexusPageId;
+  if (
+    game &&
+    game.details !== undefined &&
+    "nexusPageId" in game.details &&
+    typeof game.details.nexusPageId === "string"
+  ) {
+    return GameDomain(game.details.nexusPageId);
   }
 
   const gameId = game?.id ?? fallbackGameId;
 
   try {
-    return (
+    return GameDomain(
       {
         skyrimse: "skyrimspecialedition",
         skyrimvr: "skyrimspecialedition",
         falloutnv: "newvegas",
         fallout4vr: "fallout4",
         teso: "elderscrollsonline",
-      }[gameId.toLowerCase()] || gameId
+      }[gameId.toLowerCase()] || gameId,
     );
   } catch (err) {
     log("error", "failed to convert game id to domain", {
@@ -44,6 +52,7 @@ export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string):
       game: inspect(game),
       fallbackGameId,
     });
+
     throw err;
   }
 }

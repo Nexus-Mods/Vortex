@@ -1,17 +1,16 @@
 import { ListboxOption as HeadlessListboxOption } from "@headlessui/react";
-import { mdiCheck } from "@mdi/js";
-import React, { type ComponentProps, Fragment, type ReactNode } from "react";
+import React, { type ComponentProps, Fragment } from "react";
 
-import { Icon } from "@/ui/components/icon/Icon";
+import { Icon, IconSlot, type IIconProp } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
-import type { XOr } from "@/ui/utils/types";
 
 export type IListboxOption<T = unknown> = ComponentProps<typeof HeadlessListboxOption> & {
   label: string;
   value: T;
-} & XOr<{ iconPath?: string }, { icon?: ReactNode }>;
+  icon?: IIconProp;
+};
 
-export const ListboxOption = ({ className, icon, iconPath, label, ...props }: IListboxOption) => (
+export const ListboxOption = ({ className, icon, label, ...props }: IListboxOption) => (
   <HeadlessListboxOption as={Fragment} {...props}>
     {({ focus, selected }) => (
       <div
@@ -19,15 +18,11 @@ export const ListboxOption = ({ className, icon, iconPath, label, ...props }: IL
           "nxm-dropdown-item-focus": focus,
         })}
       >
-        {!!icon && (
-          <span className="nxm-dropdown-item-icon flex items-center justify-center">{icon}</span>
-        )}
-
-        {!!iconPath && <Icon className="nxm-dropdown-item-icon" path={iconPath} size="none" />}
+        <IconSlot className="nxm-dropdown-item-icon" icon={icon} />
 
         <span className="nxm-dropdown-item-label">{label}</span>
 
-        {selected && <Icon className="nxm-dropdown-item-icon" path={mdiCheck} size="none" />}
+        {selected && <Icon className="nxm-dropdown-item-icon" name="check" size="none" />}
       </div>
     )}
   </HeadlessListboxOption>

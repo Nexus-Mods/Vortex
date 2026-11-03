@@ -1,4 +1,3 @@
-import { mdiImageBroken } from "@mdi/js";
 import React, { type CSSProperties, type ReactNode } from "react";
 
 import { Image } from "@/ui/components/image/Image";
@@ -41,7 +40,7 @@ const HoverCardImage = ({
       "h-44": imageType === "collection",
       "w-full": imageType === "mod",
     })}
-    fallbackIconPath={mdiImageBroken}
+    fallbackIcon="broken_image"
     fit="cover"
     imageType={imageType}
     src={src}

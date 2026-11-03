@@ -1,13 +1,18 @@
 /**
  * Tests for the game launch/exit analytics: app_game_launched carries the launch method and a
- * session id, and app_game_exited pairs with it (same launch_session_id) with an elapsed duration.
+ * session id, and app_game_exited pairs with it (same launch_session_id) with an elapsed
+ * duration. Both events carry support_tier, resolved once at launch and echoed by the paired
+ * exit; the id resolution is mock-fixed here and supportTier reads real state (the function
+ * itself is covered by supportTier.test.ts).
  */
+import { GameDomain, GameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import type {
   GameLaunchMethod,
   MixpanelEvent,
 } from "../extensions/analytics/mixpanel/MixpanelEvents";
+import { numericNexusGameId } from "../extensions/analytics/mixpanel/numericGameId";
 import { makeExeId } from "../reducers/session";
 import { makeApiHarness, makeStarterInfo } from "../test-utils/builders";
 import {
@@ -17,11 +22,15 @@ import {
 } from "./gameLaunchAnalytics";
 import type { IStarterInfo } from "./StarterInfo";
 
+vi.mock("../extensions/analytics/mixpanel/numericGameId", () => ({
+  numericNexusGameId: vi.fn(() => null),
+}));
+
 function harness() {
   const base = makeApiHarness();
   const events: MixpanelEvent[] = [];
   base.api.events.on("analytics-track-mixpanel-event", (e: MixpanelEvent) => events.push(e));
-  return { api: base.api, events };
+  return { api: base.api, events, base };
 }
 
 const launchMethodCases: Array<[Partial<IStarterInfo>, GameLaunchMethod]> = [
@@ -67,6 +76,62 @@ describe("game launch analytics", () => {
     expect(typeof exited?.properties.duration_ms).toBe("number");
     expect(exited?.properties.duration_reliable).toBe(true);
     expect(exited?.properties.exit_code).toBeNull();
+    // the tier is only defined when the numeric game id resolves; left out otherwise
+    expect(launched?.properties.support_tier).toBeUndefined();
+    expect(exited?.properties.support_tier).toBeUndefined();
+  });
+
+  it("carries the support tier from the launch to its paired exit event", () => {
+    const h = harness();
+    h.base.setState((draft) => {
+      draft.persistent.gameMode ??= { gameInfo: {}, tier0: {} };
+      draft.persistent.gameMode.tier0[GameId(1704)] = {
+        gameId: GameId(1704),
+        domain: GameDomain("skyrimspecialedition"),
+        name: "Skyrim Special Edition",
+        storeIDs: { steam: [], gog: [], epic: [] },
+      };
+    });
+    const info = makeStarterInfo({ exePath: "C:/g/tier.exe" });
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1704));
+    emitGameLaunched(h.api, info);
+    const launched = h.events.find((e) => e.eventName === "app_game_launched");
+    expect(launched?.properties.support_tier).toBe("Tier 0");
+
+    emitExitsForStoppedTools(h.api, { [makeExeId(info.exePath)]: { started: 0 } }, {});
+
+    // captured at launch, so the paired exit reports the same tier even though the game
+    // could have been un-managed while it ran
+    const exited = h.events.find((e) => e.eventName === "app_game_exited");
+    expect(exited?.properties.support_tier).toBe("Tier 0");
+  });
+
+  it("reports an extension-backed launch as Tier 2", () => {
+    const h = harness();
+    h.base.setState((draft) => {
+      draft.session.extensions = {
+        available: [
+          {
+            name: "Skyrim Special Edition",
+            modId: 1,
+            fileId: 1,
+            author: "tester",
+            version: "1.0.0",
+            timestamp: 0,
+            gameId: 1704,
+          },
+        ],
+        optional: {},
+        updateTime: 0,
+        showBundled: false,
+      };
+    });
+    const info = makeStarterInfo({ exePath: "C:/g/extension.exe" });
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1704));
+    emitGameLaunched(h.api, info);
+    expect(h.events.find((e) => e.eventName === "app_game_launched")?.properties.support_tier).toBe(
+      "Tier 2",
+    );
   });
 
   it("reports the exit code recorded from runExecutable on app_game_exited", () => {

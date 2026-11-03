@@ -6,7 +6,7 @@ import { setOpenMainPage } from "@/actions";
 import { usePagesContext, useWindowContext } from "@/contexts";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
-import { getIconPath } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/icon_map/iconMap";
 import { useSpineContext } from "@/views/components/Spine/SpineContext";
 
 import { DownloadsMenuContent } from "./components/DownloadsMenuContent";
@@ -54,11 +54,12 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
         menuIsCollapsed ? "w-16" : "w-55.5",
       ])}
     >
-      {canScrollUp && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-1 h-6 bg-linear-to-b from-surface-base to-transparent" />
-      )}
-
-      <div className="mr-1 min-h-0 w-full overflow-y-auto pl-3" ref={scrollRef}>
+      <div
+        className={joinClasses(["mr-1 min-h-0 w-full overflow-y-auto pl-3 scroll-fade"], {
+          "scroll-fade-top": canScrollUp,
+        })}
+        ref={scrollRef}
+      >
         <div
           className={joinClasses([
             "flex flex-col gap-y-0.5 pt-1 transition-[width]",
@@ -70,8 +71,8 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
           ) : (
             visiblePages.map((page) => (
               <MenuButton
+                icon={page.menuIcon ?? getIcon(page.icon)}
                 Badge={page.menuBadge}
-                iconPath={page.mdi ?? getIconPath(page.icon)}
                 isActive={mainPage === page.id}
                 key={page.id}
                 onClick={() => {
@@ -87,14 +88,9 @@ const MenuContent: FC<React.PropsWithChildren<unknown>> = () => {
             ))
           )}
         </div>
-
-        {/* hack to hide bottom of scrollbar :( */}
-        <div className="pointer-events-none absolute right-0 bottom-0 size-3 bg-surface-base" />
       </div>
 
       <GameActions />
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1 h-6 bg-linear-to-t from-surface-base to-transparent" />
     </TooltipDelayGroup>
   );
 };

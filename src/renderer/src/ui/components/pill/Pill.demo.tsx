@@ -3,7 +3,6 @@
  * Demonstrates the Pill component variants and features
  */
 
-import { mdiCheck, mdiCheckCircleOutline, mdiClose, mdiStar, mdiTag } from "@mdi/js";
 import React, { useState } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -95,7 +94,7 @@ export const PillDemo = () => {
                   appearance={appearance}
                   as="button"
                   brand={brand}
-                  iconPath={mdiCheckCircleOutline}
+                  icon="check_circle"
                   key={brand}
                 >
                   {brand}
@@ -103,12 +102,7 @@ export const PillDemo = () => {
               ))}
 
               {/* Closes each row so the disabled treatment can be read against both grounds */}
-              <Pill
-                appearance={appearance}
-                as="button"
-                disabled={true}
-                iconPath={mdiCheckCircleOutline}
-              >
+              <Pill appearance={appearance} as="button" disabled={true} icon="check_circle">
                 disabled
               </Pill>
             </div>
@@ -122,11 +116,11 @@ export const PillDemo = () => {
         </Typography>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Pill iconPath={mdiTag}>Tagged</Pill>
+          <Pill icon={{ name: "sell", filled: true }}>Tagged</Pill>
 
-          <Pill iconPath={mdiCheck}>Verified</Pill>
+          <Pill icon="check">Verified</Pill>
 
-          <Pill icon={<Icon path={mdiStar} size="none" />}>Custom icon node</Pill>
+          <Pill icon={<Icon filled name="star" size="none" />}>Custom icon node</Pill>
         </div>
       </div>
 
@@ -144,7 +138,7 @@ export const PillDemo = () => {
             Clickable
           </Pill>
 
-          <Pill as="button" iconPath={mdiClose} onClick={() => setClicks((count) => count + 1)}>
+          <Pill as="button" icon="close" onClick={() => setClicks((count) => count + 1)}>
             With icon
           </Pill>
 

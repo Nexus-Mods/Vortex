@@ -114,7 +114,7 @@ export function buildBundleFilename(
   const who = username !== undefined && username !== "" ? username : "anonymous";
   return (
     `vortex-support-bundle_${filenamePart(version)}_${filenamePart(who)}` +
-    `_${formatBundleTimestamp(date)}.7z`
+    `_${formatBundleTimestamp(date)}.zip`
   );
 }
 
@@ -306,17 +306,14 @@ async function runArchiver(
   };
 
   try {
-    // mx has to be a string: node-7z calls indexOf on every non-boolean switch value.
+    // A zip rather than a 7z because GitHub issues refuse .7z attachments. Deflate rather than
+    // LZMA inside it so Windows Explorer can open the bundle without 7-Zip installed.
     //
-    // -md caps the LZMA2 dictionary at 16MB. Left to itself -mx9 picks 64MB, and since 7-Zip
-    // needs roughly ten times the dictionary to compress, that costs far more memory than the
-    // input is worth. Measured on 42MB of real logs: 453MB peak against 199MB, same 4.6s, and
-    // the archive grows by 30KB. Someone building a support bundle is often already short of
-    // memory, so the 30KB is a good trade.
+    // t and mx have to be strings: node-7z calls indexOf on every non-boolean switch value.
     const result = await task.add(
       archivePath,
       entries,
-      { mx: "9", ssw: true, raw: ["-m0=LZMA2", "-md=16m"] },
+      { t: "zip", mx: "5", ssw: true, raw: ["-mm=Deflate"] },
       progress as unknown as (entries: string[], percent: number) => void,
     );
 
@@ -338,7 +335,7 @@ async function runArchiver(
 }
 
 /**
- * Builds a `.7z` support bundle holding every Vortex log file, a state export (the backup hives
+ * Builds a `.zip` support bundle holding every Vortex log file, a state export (the backup hives
  * plus `session`) and a small manifest, under `<userData>/temp/support_bundles`.
  *
  * Rejects with `UserCanceled` when `options.signal` is aborted.

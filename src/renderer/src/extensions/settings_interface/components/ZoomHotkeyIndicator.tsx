@@ -1,5 +1,4 @@
 import { Transition } from "@headlessui/react";
-import { mdiMinus, mdiPlus } from "@mdi/js";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -90,7 +89,7 @@ export function ZoomHotkeyIndicator() {
         aria-label={t("Zoom out")}
         brand="neutral"
         disabled={factor <= MIN_ZOOM}
-        leftIconPath={mdiMinus}
+        leftIcon="remove"
         size="sm"
         onClick={() => adjustZoom(factor - ZOOM_STEP)}
       />
@@ -100,7 +99,7 @@ export function ZoomHotkeyIndicator() {
         aria-label={t("Zoom in")}
         brand="neutral"
         disabled={factor >= MAX_ZOOM}
-        leftIconPath={mdiPlus}
+        leftIcon="add"
         size="sm"
         onClick={() => adjustZoom(factor + ZOOM_STEP)}
       />

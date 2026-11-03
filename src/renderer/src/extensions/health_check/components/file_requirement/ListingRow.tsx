@@ -1,4 +1,3 @@
-import { mdiCallSplit, mdiCheck, mdiMonitorArrowDownVariant, mdiSwapHorizontal } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -121,7 +120,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftIconPath={mdiMonitorArrowDownVariant}
+              leftIcon="install_desktop"
               rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
               size="sm"
               onClick={doQuickInstall}
@@ -134,7 +133,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftIconPath={mdiCallSplit}
+              leftIcon="call_split"
               onClick={(e) => {
                 e.stopPropagation();
                 trackViewPickOptionsClicked({});
@@ -147,7 +146,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftIconPath={mdiSwapHorizontal}
+              leftIcon="swap_horiz"
               onClick={(e) => {
                 e.stopPropagation();
                 trackEnableThisVersionClicked({
@@ -167,7 +166,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
               <Button
                 appearance="moderate"
                 brand="neutral"
-                leftIconPath={mdiCheck}
+                leftIcon="check"
                 onClick={(e) => {
                   e.stopPropagation();
 

@@ -17,6 +17,19 @@
         .nxm-field-label-required {
             color: var(--color-neutral-subdued);
         }
+
+        /* As a link in prose is: underlined, in the text's own colour, lighter on hover. */
+        & :where(a[href]) {
+            color: inherit;
+            text-decoration-line: underline;
+            transition-property: color;
+            transition-duration: var(--default-transition-duration);
+            transition-timing-function: var(--default-transition-timing-function);
+
+            &:hover {
+                color: var(--color-neutral-strong);
+            }
+        }
     }
 
     .nxm-field-footer {

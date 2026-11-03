@@ -1,5 +1,5 @@
 import type { components } from "@vortex/nexus-api-v3";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { GameId, getErrorMessageOrDefault } from "@vortex/shared";
 
 import { emitDetectedGamesEvent } from "@/extensions/analytics/utils/detectedGamesEvent";
 import { toAvailableExtension, finite } from "@/extensions/extension_manager/availableExtensions";
@@ -69,7 +69,7 @@ function isEpicEntry(entry: IGameStoreEntry): entry is EpicGamesStoreEntry {
 /** JSON of the last payload the endpoint accepted; used to skip identical re-sends. */
 let lastSuccessfulPayload: string | undefined;
 
-function toDetectedGame(game: DetectedGame, gameId: number): IDetectedGame {
+function toDetectedGame(game: DetectedGame, gameId: GameId): IDetectedGame {
   return {
     gameUid: game.game_uid,
     gameId,
@@ -195,7 +195,7 @@ async function requestDetectedGamesBody(api: IExtensionApi, force: boolean): Pro
         continue;
       }
 
-      detected.push(toDetectedGame(game, gameId));
+      detected.push(toDetectedGame(game, GameId(gameId)));
       if (game.is_favourite) favouriteGames.push(gameId);
     }
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { IButtonBrand } from "@/ui/components/button/Button";
+import type { IIconProp, IIconSource } from "@/ui/components/icon/Icon";
 import type { XOr } from "@/ui/utils/types";
 
 /**
@@ -18,10 +19,8 @@ export type IPopoverPanel = (props: { close: () => void; dismiss: () => void }) 
 interface IMenuActionBase {
   /** The row's text, and its accessible name. */
   label: string;
-  /** The icon before the label, as an SVG path. */
-  iconPath?: string;
-  /** Drawn in place of `iconPath`, for an icon a single path can't draw, such as a logo. */
-  icon?: ReactNode;
+  /** The icon before the label: a symbol or SVG path to draw, or a node, such as a logo. */
+  icon?: IIconProp;
   /** Turns the action off; a row with a pin stays reachable so it can still be pinned. */
   disabled?: boolean;
   /** Turns the action off while something it started is under way, as `disabled` does. */
@@ -48,13 +47,15 @@ interface IMenuActionBase {
   control?: {
     /** The button's accessible name, and its tooltip. */
     label: string;
-    /** Its icon, as an SVG path. */
-    iconPath: string;
+    /** Its icon. */
+    icon: IIconSource;
     /** What it does. */
     onClick: () => void;
   };
   /** Makes the row one of a choice, checked while it's the one chosen; others keep the room. */
   checked?: boolean;
+  /** Marks it with a dot, such as while a filter it opens is on. */
+  hasPip?: boolean;
 }
 
 /**

@@ -24,6 +24,7 @@ import {
   VortexError,
   VortexProfileId,
 } from "@vortex/shared";
+import { VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
@@ -31,6 +32,7 @@ import { generate as shortid } from "shortid";
 import type { IDialogResult } from "../../actions/notifications";
 import { addNotification, dismissNotification, showDialog } from "../../actions/notifications";
 import { clearUIBlocker, setProgress, setUIBlocker } from "../../actions/session";
+import { FlagService } from "../../FlagService";
 import { log } from "../../logging";
 import type { IExtensionDownloadInfo, IRegisteredExtension } from "../../types/extensions";
 import type { IExtensionApi, IExtensionContext, ThunkStore } from "../../types/IExtensionContext";
@@ -57,6 +59,7 @@ import {
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
 import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
+import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
 import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
@@ -834,6 +837,14 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
           .then(() => PromiseBB.map(profileIds, (profileId) => removeProfileImpl(api, profileId)))
           .then(() => {
             emitGameUnmanaged(api, gameId);
+            // tear-down runs without the flag: un-managing is the cleanup path,
+            // it has to work no matter what the feature flag says
+            const tierZeroGameId = Object.values(state.persistent.gameMode?.tier0 ?? {}).find(
+              (entry) => entry.domain === gameId,
+            )?.gameId;
+            if (tierZeroGameId !== undefined) {
+              void api.emitAndAwait("remove-tier-zero-game", tierZeroGameId);
+            }
           })
           .catch((err) => {
             if (err instanceof UserCanceled) {
@@ -941,9 +952,22 @@ function init(context: IExtensionContext): boolean {
 
       context.api.events.emit("analytics-track-event", "Games", "Start managing", gameId);
 
-      context.api
-        .emitAndAwait("discover-game", gameId)
-        .then(() => checkOverridden(context.api, gameId))
+      // Managing a game nothing provides an extension for is the Tier 0 opt-in; the
+      // game has to be registered before discovery, whose path resolution reads the
+      // synthesized game's queryArgs. Any other Manage behaves exactly as before.
+      const tierZero =
+        FlagService.instance?.getFlag("vortex-tier-0-game-support") !== undefined
+          ? tierZeroEntry(context.api.getState(), VortexGameId(gameId))
+          : undefined;
+
+      const registerStep =
+        tierZero !== undefined
+          ? context.api.emitAndAwait("register-tier-zero-game", tierZero)
+          : Promise.resolve();
+
+      registerStep
+        .then(() => context.api.emitAndAwait("discover-game", gameId))
+        .then(() => Promise.resolve(checkOverridden(context.api, gameId)))
         .then(() => {
           const state = context.api.getState();
           // Mirrors the guard in manageGame: discovery can outlive the
@@ -954,7 +978,7 @@ function init(context: IExtensionContext): boolean {
               ? manageGameDiscovered
               : manageGameUndiscovered;
 
-          manageFunc(context.api, gameId);
+          return Promise.resolve(manageFunc(context.api, gameId));
         })
         .catch((err) => {
           if (!(err instanceof UserCanceled)) {

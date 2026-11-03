@@ -1,4 +1,3 @@
-import { mdiCheck, mdiDiamondStone, mdiOpenInNew } from "@mdi/js";
 import React, { type ReactNode, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -23,7 +22,7 @@ export type PremiumTrigger = "single_install" | "batch_install" | "install_all";
 
 const ListItem = ({ children }: { children: ReactNode }) => (
   <li className="flex gap-x-1">
-    <Icon className="mt-0.5 shrink-0 text-premium-strong" path={mdiCheck} size="xs" />
+    <Icon className="mt-0.5 shrink-0 text-premium-strong" name="check" size="xs" />
 
     {children}
   </li>
@@ -134,7 +133,7 @@ export const PremiumModal = ({
           appearance="moderate"
           brand="neutral"
           className="w-full"
-          leftIconPath={downloadScope === "single" && mdiOpenInNew}
+          leftIcon={downloadScope === "single" ? "open_in_new" : undefined}
           onClick={() => {
             trackPremiumModalFallbackClicked({
               ...identity,
@@ -152,7 +151,7 @@ export const PremiumModal = ({
         <Button
           brand="premium"
           className="w-full"
-          leftIconPath={mdiDiamondStone}
+          leftIcon="diamond"
           onClick={() => {
             trackPremiumModalUnlockClicked({
               ...identity,

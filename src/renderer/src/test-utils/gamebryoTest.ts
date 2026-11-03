@@ -105,7 +105,8 @@ export async function makeLootHarness(
     createLootMock.mockRejectedValueOnce(initError);
   }
 
-  const base = makeGamebryoHarness({ ...gamebryoOpts, gameId });
+  // LOOT only starts for a game folder that exists
+  const base = makeGamebryoHarness({ gamePath: tempDir, ...gamebryoOpts, gameId });
   const lootInterface = new LootCtor(base.api);
   await lootInterface.wait();
 

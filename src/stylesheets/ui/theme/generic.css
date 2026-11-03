@@ -17,6 +17,8 @@
     --aspect-game: 2 / 3;
     --aspect-mod: 16 / 9;
 
+    --scrollbar-size: calc(var(--spacing) * 2);
+
     --text-shadow-halo:
         2px 0 0 var(--color-black), -2px 0 0 var(--color-black), 0 2px 0 var(--color-black),
         0 -2px 0 var(--color-black), 2px 2px 0 var(--color-black), 2px -2px 0 var(--color-black),

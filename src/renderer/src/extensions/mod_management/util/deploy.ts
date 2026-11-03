@@ -28,6 +28,7 @@ import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import type { IModType } from "../../gamemode_management/types/IModType";
 import { getGame } from "../../gamemode_management/util/getGame";
+import { setDeploymentPurged } from "../actions/deployment";
 import { mergedSourceName } from "../modMerging";
 import { installPath, installPathForGame } from "../selectors";
 import type { IMod } from "../types/IMod";
@@ -279,6 +280,7 @@ async function purgeModsImpl(
 
       let lastDeployment: { [typeId: string]: IDeployedFile[] };
       let purgeSucceeded = true;
+      let purgeCanceled = false;
       api.store.dispatch(startActivity("mods", "purging"));
       // keyed by mod type
       const saveLeftovers = (deployments: Record<string, IDeployedFile[]>) =>
@@ -337,10 +339,14 @@ async function purgeModsImpl(
           purgeSucceeded = false;
           throw err;
         }
+        purgeCanceled = true;
       } finally {
         onProgress(85, "Post purge events");
         await activator.postPurge();
         if (purgeSucceeded) {
+          if (!purgeCanceled) {
+            api.store.dispatch(setDeploymentPurged(gameId, true));
+          }
           await api.emitAndAwait("did-purge", profile.id);
         }
       }

@@ -1,4 +1,3 @@
-import { mdiAutorenew } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -32,7 +31,7 @@ const Content = ({
         "nxm-button-icon",
         { "animate-spin reduce-motion:animate-none": isApplying },
       ])}
-      path={mdiAutorenew}
+      name="autorenew"
       size="lg"
     />
 

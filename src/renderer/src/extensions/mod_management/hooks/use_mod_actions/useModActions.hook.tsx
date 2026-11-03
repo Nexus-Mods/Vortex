@@ -1,19 +1,3 @@
-import {
-  mdiBug,
-  mdiCallMerge,
-  mdiDeleteOutline,
-  mdiFileAlertOutline,
-  mdiFolderOpenOutline,
-  mdiMinusCircleOutline,
-  mdiMonitorArrowDown,
-  mdiPaw,
-  mdiPawOutline,
-  mdiPencilOutline,
-  mdiPlaylistCheck,
-  mdiPuzzleOutline,
-  mdiRefresh,
-  mdiRotateRight,
-} from "@mdi/js";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import React, { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,10 +9,11 @@ import { useExtensionObjects } from "@/ExtensionProvider";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { NexusBadge } from "@/ui/components/badges/nexus_badge/NexusBadge";
+import type { IIconProp } from "@/ui/components/icon/Icon";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
-import { nxmCollection, nxmCollectionOutline, nxmResetTv } from "@/ui/icon-paths";
+import { nxmCollection, nxmCollectionOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
-import { getIconPath } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/icon_map/iconMap";
 
 import { calculateModSize } from "../../util/calculate_mod_size/calculateModSize.util";
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
@@ -71,9 +56,7 @@ interface IRowMenuItem {
   /** What the menu calls it, untranslated. */
   label: string;
   /** Unset keeps the icon it registered with. */
-  iconPath?: string;
-  /** In place of `iconPath`, for an icon a path can't draw. */
-  icon?: ReactNode;
+  icon?: IIconProp;
 }
 
 /**
@@ -84,25 +67,29 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
   {
     section: "manage",
     items: [
-      { title: "Add to Collection...", label: "Add to Collection", iconPath: nxmCollectionOutline },
+      {
+        title: "Add to Collection...",
+        label: "Add to Collection",
+        icon: { path: nxmCollectionOutline },
+      },
       {
         title: "Remove from Collection...",
         label: "Remove from Collection",
-        iconPath: nxmCollection,
+        icon: { path: nxmCollection },
       },
-      { title: "Install", label: "Install", iconPath: mdiMonitorArrowDown },
+      { title: "Install", label: "Install", icon: "install_desktop" },
       { title: "Unpack (as-is)", label: "Unpack (as-is)" },
-      { title: "Reinstall", label: "Reinstall", iconPath: nxmResetTv },
-      { title: "Uninstall", label: "Uninstall", iconPath: mdiMinusCircleOutline },
-      { title: "Remove related", label: "Remove related", iconPath: mdiDeleteOutline },
-      { title: "Remove", label: "Remove", iconPath: mdiDeleteOutline },
-      { title: "Check for Update", label: "Check for updates", iconPath: mdiRefresh },
+      { title: "Reinstall", label: "Reinstall", icon: "reset_tv" },
+      { title: "Uninstall", label: "Uninstall", icon: "do_not_disturb_on" },
+      { title: "Remove related", label: "Remove related", icon: "delete" },
+      { title: "Remove", label: "Remove", icon: "delete" },
+      { title: "Check for Update", label: "Check for updates", icon: "refresh" },
       {
         title: "Apply Collection Rules",
         label: "Apply collection rules",
-        iconPath: mdiPlaylistCheck,
+        icon: "playlist_add_check",
       },
-      { title: "Edit Collection", label: "Edit collection", iconPath: mdiPencilOutline },
+      { title: "Edit Collection", label: "Edit collection", icon: "edit" },
     ],
   },
   {
@@ -111,12 +98,12 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       {
         title: "Manage File Conflicts",
         label: "Manage file conflicts",
-        iconPath: getIconPath("rules"),
+        icon: getIcon("rules"),
       },
       {
         title: "Install Recommendations",
         label: "Install recommendations",
-        iconPath: mdiMonitorArrowDown,
+        icon: "install_desktop",
       },
     ],
   },
@@ -126,9 +113,9 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
       {
         title: "Open in File Manager",
         label: "Open in file manager",
-        iconPath: mdiFolderOpenOutline,
+        icon: "folder_open",
       },
-      { title: "Open Archive", label: "Open archive", iconPath: mdiFolderOpenOutline },
+      { title: "Open Archive", label: "Open archive", icon: "folder_open" },
       { title: "Open on Nexus Mods", label: "Open on Nexus Mods", icon: <NexusBadge /> },
     ],
   },
@@ -136,17 +123,21 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
   {
     section: "organise",
     items: [
-      { title: "Combine", label: "Combine", iconPath: mdiCallMerge },
-      { title: "Track", label: "Track", iconPath: mdiPawOutline },
-      { title: "Untrack", label: "Untrack", iconPath: mdiPaw },
+      { title: "Combine", label: "Combine", icon: "call_merge" },
+      { title: "Track", label: "Track", icon: "pets" },
+      { title: "Untrack", label: "Untrack", icon: { name: "pets", filled: true } },
     ],
   },
   {
     section: "maintenance",
     items: [
-      { title: "Refresh Content", label: "Refresh content", iconPath: mdiRotateRight },
-      { title: "Fix missing IDs", label: "Fix missing IDs", iconPath: mdiFileAlertOutline },
-      { title: "Create Report", label: "Generate mod report", iconPath: mdiBug },
+      { title: "Refresh Content", label: "Refresh content", icon: "rotate_right" },
+      { title: "Fix missing IDs", label: "Fix missing IDs", icon: "data_alert" },
+      {
+        title: "Create Report",
+        label: "Generate mod report",
+        icon: { name: "bug_report", filled: true },
+      },
     ],
   },
 ];
@@ -345,8 +336,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
           // The registered title, not its translation, so a pin survives a language change.
           id: definition.title,
           label: t(menuItem?.label ?? definition.title),
-          iconPath: menuItem?.iconPath ?? getIconPath(definition.icon, mdiPuzzleOutline),
-          icon: menuItem?.icon,
+          icon: menuItem?.icon ?? getIcon(definition.icon, "extension"),
           section: menuItem?.section ?? OTHER_SECTION,
           pinned: source.defaultPins.has(definition.title),
           disabled: condition !== true,

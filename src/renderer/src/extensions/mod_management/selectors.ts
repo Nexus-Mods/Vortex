@@ -67,6 +67,10 @@ export const needToDeploy = createSelector(
   (inNeedToDeploy: INeedToDeployMap, inGameMode: string) => inNeedToDeploy[inGameMode],
 );
 
+/** Whether the active game's mods were purged and haven't been deployed since. */
+export const purged = (state: IState): boolean =>
+  state.persistent.deployment.purged?.[activeGameId(state)] === true;
+
 export const needToDeployForGame = createCachedSelector(
   allNeedToDeploy,
   (state: IState, gameId: string) => gameId,

@@ -1,6 +1,5 @@
 import * as path from "path";
 
-import { mdiPlus, mdiRefresh } from "@mdi/js";
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
 import * as _ from "lodash";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -256,12 +255,12 @@ export const ExtensionManager = ({
   const toolbarActions: IToolbarAction[] = [
     {
       label: t("Update extensions"),
-      iconPath: mdiRefresh,
+      icon: "refresh",
       onClick: onRefresh,
     },
     {
       label: t("Browse extensions"),
-      iconPath: mdiPlus,
+      icon: "add",
       onClick: () => dispatch(setDialogVisible("browse-extensions")),
     },
     displayOptions,

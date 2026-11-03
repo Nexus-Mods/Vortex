@@ -1,5 +1,4 @@
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
-import { mdiClose } from "@mdi/js";
 import React, { type PropsWithChildren, type RefObject } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -63,7 +62,7 @@ export const ModalPanel = ({
 
     {showCloseButton && (
       <button className="nxm-modal-close" onClick={onClose}>
-        <Icon path={mdiClose} />
+        <Icon name="close" />
       </button>
     )}
 

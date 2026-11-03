@@ -1,7 +1,6 @@
 import { spawn } from "child_process";
 import * as path from "path";
 
-import { mdiDownload } from "@mdi/js";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
@@ -978,7 +977,7 @@ function init(context: IExtensionContext): boolean {
       downloadPathForGame,
       columns: downloadColumns,
     }),
-    mdi: mdiDownload,
+    menuIcon: "download",
   });
 
   context.registerSettings("Download", Settings, undefined, undefined, 75);

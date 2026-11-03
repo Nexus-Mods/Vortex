@@ -1,4 +1,3 @@
-import { mdiAccount, mdiMagnify } from "@mdi/js";
 import React, { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -86,6 +85,7 @@ const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
 
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
+const NO_MODS: { [id: string]: IModWithState } = {};
 const nop = () => undefined;
 
 /**
@@ -120,7 +120,9 @@ export const ModsTableSwitch = ({
     renameView,
     removeView,
   } = useModsTableView(mods);
-  const rows = useMemo(() => allModRows(mods), [mods]);
+  // The legacy table builds its own rows and groups, so build none for it.
+  const tableMods = newTable ? mods : NO_MODS;
+  const rows = useMemo(() => allModRows(tableMods), [tableMods]);
   const memberships = useCollectionMemberships(mods);
   const { changing, setEnabled, isEnabled } = useModsEnabled(onSetModsEnabled);
 
@@ -178,7 +180,7 @@ export const ModsTableSwitch = ({
               <Image
                 alt=""
                 className="ml-3.5 h-6 rounded-full"
-                fallbackIconPath={mdiAccount}
+                fallbackIcon={{ name: "person", filled: true }}
                 fit="cover"
                 imageType="avatar"
                 src={avatar.src}
@@ -296,7 +298,7 @@ export const ModsTableSwitch = ({
 
   const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
 
-  const groups = useModsTableGroups(mods, grouping, groupable, memberships, t);
+  const groups = useModsTableGroups(tableMods, grouping, groupable, memberships, t);
 
   const { search, setSearch, changeSearch, isSearching, shownRows, shownGroups } =
     useModsTableSearch({
@@ -418,9 +420,7 @@ export const ModsTableSwitch = ({
     onMenuOpen: analytics.onMenuOpen,
     defaultSort: BY_NAME,
     footer,
-    empty: isSearching && (
-      <NoResults iconPath={mdiMagnify} title={t("No mods match your search")} />
-    ),
+    empty: isSearching && <NoResults icon="search" title={t("No mods match your search")} />,
   };
 
   // A table takes rows or groups, never both; typed, so neither gains the other as undefined.

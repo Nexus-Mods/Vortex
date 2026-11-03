@@ -1,0 +1,35 @@
+name: Upgrade Electron
+description: >-
+  Upgrades Electron to the newest release of its current major that is old
+  enough for pnpm's minimumReleaseAge, keeps the pinned Node.js equal to the
+  Node.js that release bundles, and bumps node-abi when it doesn't know the new
+  Electron yet. Edits package.json, pnpm-workspace.yaml and pnpm-lock.yaml in
+  the working tree; committing and opening the PR is left to the caller. Expects
+  pnpm to be installed and the repository checked out; it installs dependencies
+  itself, with a frozen lockfile first so a stale lockfile fails early.
+
+inputs:
+  check:
+    description: "'true' reports what would change without modifying anything."
+    required: false
+    default: "false"
+
+outputs:
+  updated:
+    description: "'true' if the working tree was changed, 'false' if everything is up to date."
+  electron-old:
+    description: "Electron version before the upgrade."
+  electron-new:
+    description: "Electron version after the upgrade."
+  node-old:
+    description: "Node.js version before the upgrade."
+  node-new:
+    description: "Node.js version after the upgrade."
+  node-abi-old:
+    description: "node-abi version before the upgrade."
+  node-abi-new:
+    description: "node-abi version after the upgrade."
+
+runs:
+  using: node24
+  main: dist/index.js
