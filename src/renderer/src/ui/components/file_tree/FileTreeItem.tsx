@@ -15,6 +15,8 @@ interface IFileTreeItemProps {
   failedMessage?: string;
   /** Reading its children failed. */
   hasFailed?: boolean;
+  /** Its place among the tree's visible items, which the virtualiser knows it by. */
+  index: number;
   /** Whether its children are showing; only a directory's item has this. */
   isExpanded?: boolean;
   /** Its children are being read. */
@@ -43,6 +45,7 @@ export const FileTreeItem = ({
   className,
   failedMessage,
   hasFailed,
+  index,
   isExpanded,
   isLoading,
   isSelected,
@@ -88,6 +91,7 @@ export const FileTreeItem = ({
       aria-posinset={siblingIndex}
       aria-selected={!!isSelected}
       aria-setsize={siblingCount}
+      data-index={index}
       data-path={node.path}
       ref={(element) => itemRef(node.path, element)}
       role="treeitem"

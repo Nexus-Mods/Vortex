@@ -2,7 +2,7 @@ import { relativePath, type RelativePath } from "@nexusmods/paths";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildFileTree } from "./buildTree";
 import { FileTree, type IFileTreeProps } from "./FileTree";
@@ -476,6 +476,81 @@ describe("FileTree", () => {
       await user.click(toggle());
 
       expect(onLoadChildren).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("virtualisation", () => {
+    const MANY = buildFileTree(
+      Array.from({ length: 200 }, (_, index) => ({
+        path: relativePath(`f${String(index).padStart(3, "0")}.txt`),
+        kind: "file" as const,
+      })),
+    );
+
+    const first = "f000.txt";
+    const last = "f199.txt";
+
+    // jsdom has no layout: give the scroller a height, and the items a place in it.
+    beforeEach(() => {
+      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+        function (this: HTMLElement) {
+          return this.dataset.testid === "scroller" ? 400 : 0;
+        },
+      );
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const renderInScroller = () =>
+      render(
+        <div data-testid="scroller" style={{ overflowY: "auto" }}>
+          <Harness nodes={MANY} />
+        </div>,
+      );
+
+    const scrollTo = (top: number) => {
+      const scroller = screen.getByTestId("scroller");
+      Object.defineProperty(scroller, "scrollTop", { configurable: true, value: top });
+      fireEvent.scroll(scroller);
+    };
+
+    it("renders only the items in view, telling how many there are", () => {
+      renderInScroller();
+
+      const items = screen.getAllByRole("treeitem");
+      expect(items.length).toBeLessThan(40);
+      expect(items[0]).toHaveAttribute("aria-setsize", "200");
+      expect(queryItem(last)).toBeUndefined();
+    });
+
+    it("renders every item without a scrolling ancestor", () => {
+      render(<Harness nodes={MANY} />);
+
+      expect(screen.getAllByRole("treeitem")).toHaveLength(200);
+    });
+
+    it("moves focus to an item that wasn't rendered, and back", () => {
+      renderInScroller();
+      focus(first);
+
+      fireEvent.keyDown(screen.getByRole("tree"), { key: "End" });
+      expect(item(last)).toHaveFocus();
+
+      fireEvent.keyDown(screen.getByRole("tree"), { key: "Home" });
+      expect(item(first)).toHaveFocus();
+    });
+
+    it("keeps the item Tab moves to rendered when it's scrolled away", () => {
+      renderInScroller();
+      focus("f005.txt");
+      act(() => item("f005.txt").blur());
+
+      scrollTo(4000);
+
+      expect(item("f005.txt")).toHaveAttribute("tabindex", "0");
+      expect(queryItem("f006.txt")).toBeUndefined();
     });
   });
 });
