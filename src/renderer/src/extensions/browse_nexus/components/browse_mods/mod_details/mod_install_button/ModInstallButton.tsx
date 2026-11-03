@@ -1,10 +1,13 @@
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { GameDomain, VortexGameId } from "@vortex/shared";
+import { VortexError, type VortexErrorKind } from "@vortex/shared/errors";
 import type { TFunction } from "i18next";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { PremiumUpsellModal } from "@/extensions/nexus_integration/components/premium_upsell_modal/PremiumUpsellModal";
+import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
 import type { MinimalModFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { isPremium } from "@/extensions/nexus_integration/selectors";
@@ -14,12 +17,16 @@ import {
 } from "@/extensions/nexus_integration/util/download_and_install/downloadAndInstall";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
+import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Button } from "@/ui/components/button/Button";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
-import { ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 import { activeGameId } from "@/util/selectors";
+import { Content } from "@/util/util";
 
 import { useBrowseModsTracker } from "../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
+
+/** Error kinds that mean the download was cancelled, which isn't reported. */
+const CANCELED_KINDS: VortexErrorKind[] = ["user-canceled", "process-canceled"];
 
 /** Why the mod can't be installed, said in the tooltip; none while it can, or is loading. */
 const unavailableReason = (
@@ -52,11 +59,8 @@ interface IModInstallButtonProps {
 }
 
 /**
- * 1-click download of a mod's primary file, for Premium users only, installing it too if the user
- * has mods installed once downloaded, and saying which. Off while the mod's details load, and off
- * with a tooltip saying why when they failed to load or the mod has no primary file. Shows its
- * progress until it's done, even after switching to another mod and back, as it's a mutation keyed
- * by the mod. Counts the click; failures are reported, cancelling isn't.
+ * 1-click install of a mod's primary file; only downloads if the user's settings don't install
+ * once downloaded. Non-Premium users get the upsell instead. Progress survives switching mods.
  */
 export const ModInstallButton = ({
   api,
@@ -69,9 +73,11 @@ export const ModInstallButton = ({
   const isPremiumUser = useSelector(isPremium);
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
+  const [isUpsellOpen, setIsUpsellOpen] = useState(false);
   const unavailable = unavailableReason(t, primaryFile, isError);
   const installKey = ["browse", "install", mod.id];
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
+  const action = shouldInstall ? "install" : "download";
 
   const install = useMutation({
     mutationKey: installKey,
@@ -88,8 +94,10 @@ export const ModInstallButton = ({
         ? downloadAndInstallNexusFile(api, nexusFile)
         : downloadNexusFile(api, nexusFile);
     },
+    onMutate: ({ file }) =>
+      tracker.trackOneClickClicked({ mod_uid: mod.id, file_uid: file.id, action }),
     onError: (err) => {
-      if (err instanceof UserCanceled || err instanceof ProcessCanceled) {
+      if (err instanceof VortexError && CANCELED_KINDS.includes(err.data.kind)) {
         return;
       }
 
@@ -101,32 +109,63 @@ export const ModInstallButton = ({
     },
   });
 
-  if (!isPremiumUser) {
-    return null;
-  }
-
   return (
-    <Tooltip content={unavailable} disabled={!unavailable}>
-      <Button
-        aria-disabled={!!unavailable}
-        disabled={primaryFile === undefined && !isError}
-        isLoading={isInstalling}
-        leftIcon="download"
-        onClick={() => {
-          if (!primaryFile || !gameId) {
-            return;
-          }
+    <>
+      <Tooltip content={unavailable} disabled={!unavailable}>
+        <Button
+          aria-disabled={!!unavailable}
+          brand={isPremiumUser ? "primary" : "neutral"}
+          disabled={primaryFile === undefined && !isError}
+          isLoading={isInstalling}
+          leftIcon="download"
+          rightIcon={isPremiumUser ? undefined : <PremiumBadge />}
+          onClick={() => {
+            if (!primaryFile || !gameId) {
+              return;
+            }
 
-          tracker.trackOneClickClicked({
-            mod_uid: mod.id,
-            file_uid: primaryFile.id,
-            action: shouldInstall ? "install" : "download",
-          });
-          install.mutate({ file: primaryFile, game: gameId });
+            if (isPremiumUser) {
+              install.mutate({ file: primaryFile, game: gameId });
+              return;
+            }
+
+            setIsUpsellOpen(true);
+          }}
+        >
+          {t("1-click install")}
+        </Button>
+      </Tooltip>
+
+      <PremiumUpsellModal
+        api={api}
+        content={Content.BrowseModsAd}
+        description={t(
+          "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
+        )}
+        fallbackIcon="open_in_new"
+        fallbackLabel={t("Install via mod page (free)")}
+        isOpen={isUpsellOpen}
+        title={t("Skip the website and install instantly.")}
+        onClose={() => setIsUpsellOpen(false)}
+        onDismissed={() => tracker.trackPremiumModalDismissed({ mod_uid: mod.id, action })}
+        onFallback={() => {
+          tracker.trackPremiumModalFallbackClicked({ mod_uid: mod.id, action });
+          setIsUpsellOpen(false);
+
+          if (primaryFile) {
+            window.api.shell.openUrl(
+              `${[NEXUS_BASE_URL, mod.game.domain_name, "mods", mod.game_scoped_id].join("/")}?tab=files&file_id=${primaryFile.game_scoped_id}&nmm=1`,
+            );
+          }
         }}
-      >
-        {shouldInstall ? t("1-click install") : t("1-click download")}
-      </Button>
-    </Tooltip>
+        onPremiumUnlocked={() => {
+          if (primaryFile && gameId) {
+            install.mutate({ file: primaryFile, game: gameId });
+          }
+        }}
+        onShown={() => tracker.trackPremiumModalShown({ mod_uid: mod.id, action })}
+        onUnlockClicked={() => tracker.trackPremiumModalUnlockClicked({ mod_uid: mod.id, action })}
+      />
+    </>
   );
 };
