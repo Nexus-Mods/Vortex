@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- `util.steam` and `util.epicGamesLauncher`, deprecated in 2.8, are removed as of 2.11. Call `GameStoreHelper` directly: `GameStoreHelper.findByAppId(id, "steam")` and `GameStoreHelper.findByName(name, "steam")`, and likewise with `"epic"`. An extension that still uses either gets `undefined` and throws a `TypeError` - see the [game store section of the migration guide](./docs/MIGRATION.md#vortex-2x-utilsteam-and-utilepicgameslauncher)
 - `@mdi/js` is no longer a production dependency of Vortex, so an extension that `require`d it at runtime instead of bundling its own copy will fail to load. Bundle it, or use `menuIcon` and Material Symbols
 
 ### Deprecated
