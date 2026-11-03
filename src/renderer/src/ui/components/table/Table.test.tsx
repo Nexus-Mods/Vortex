@@ -1343,6 +1343,62 @@ describe("Table's focused group", () => {
   });
 });
 
+describe("Table's focused row", () => {
+  const GROUPS = [
+    { id: "first", label: "First", rows: [ROWS[0]] },
+    { id: "second", label: "Second", rows: [ROWS[1]] },
+  ];
+  const scrollIntoView = vi.fn();
+
+  beforeEach(() => {
+    scrollIntoView.mockClear();
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  const table = (props: {
+    focusRowId?: string;
+    onRowFocused?: () => void;
+    onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
+  }) => (
+    <Table
+      selectable
+      columns={COLUMNS}
+      focusRowId={props.focusRowId}
+      getRowId={(r) => r.id}
+      groups={GROUPS}
+      label="Files"
+      onRowFocused={props.onRowFocused}
+      onSelectedIdsChange={props.onSelectedIdsChange}
+    />
+  );
+
+  it("opens the row's group, scrolls to it, selects it alone and says so", async () => {
+    const onRowFocused = vi.fn();
+    const onSelectedIdsChange = vi.fn();
+    const { rerender } = render(table({}));
+    await userEvent.click(screen.getByRole("button", { name: "Second" }));
+
+    rerender(table({ focusRowId: "b", onRowFocused, onSelectedIdsChange }));
+
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute("aria-expanded", "true");
+    expect(onSelectedIdsChange).toHaveBeenCalledWith(new Set(["b"]));
+    expect(onRowFocused).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+    expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByText("Beta").closest('[role="row"]'));
+  });
+
+  it("waits for a row it doesn't have yet", () => {
+    const onRowFocused = vi.fn();
+    render(table({ focusRowId: "c", onRowFocused }));
+
+    expect(onRowFocused).not.toHaveBeenCalled();
+  });
+});
+
 describe("tableGroupMenuSections", () => {
   const folding = (expanded: boolean) =>
     tableGroupMenuSections({

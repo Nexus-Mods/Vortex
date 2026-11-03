@@ -1,4 +1,4 @@
-import type { VortexModStagingFolder } from "@vortex/shared";
+import type { VortexModId, VortexModStagingFolder } from "@vortex/shared";
 
 import safeCreateAction from "../../../actions/safeCreateAction";
 import { UserCanceled } from "../../../util/CustomErrors";
@@ -96,4 +96,10 @@ export function confirmExternalChanges(changes: IFileEntry[], canceled: boolean)
 export const focusModsTableGroup = safeCreateAction(
   "FOCUS_MODS_TABLE_GROUP",
   (groupId: string | undefined) => groupId,
+);
+
+/** Asks the new Mods table to scroll to a mod and select it, by id; undefined once it has. */
+export const focusModsTableMod = safeCreateAction(
+  "FOCUS_MODS_TABLE_MOD",
+  (modId: VortexModId | undefined) => modId,
 );

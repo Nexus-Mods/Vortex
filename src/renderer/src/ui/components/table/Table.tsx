@@ -62,7 +62,8 @@ const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
  * own; the built-ins say in `trackingProperties` which way they went.
  *
  * Given `focusGroupId`, it opens that group and scrolls it to the top once it has it; the group
- * opens while rendering, so its rows are counted before it's scrolled to.
+ * opens while rendering, so its rows are counted before it's scrolled to. `focusRowId` does the
+ * same for a row, opening the first group it's in, then selecting it alone.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columns,
@@ -84,6 +85,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   groupTracking,
   focusGroupId,
   onGroupFocused,
+  focusRowId,
+  onRowFocused,
   onMenuOpen,
 }: ITableProps<T, G>) => {
   const { t } = useTranslation();
@@ -213,6 +216,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     setCollapsed(next);
   }
 
+  const focusRowGroup = focusRowId
+    ? groups?.find((group) => group.rows.some((row) => getRowId(row) === focusRowId))
+    : undefined;
+
+  if (focusRowGroup && collapsed.has(focusRowGroup.id)) {
+    const next = new Set(collapsed);
+    next.delete(focusRowGroup.id);
+    setCollapsed(next);
+  }
+
   const { ready, scrollToIndex } = virtual;
 
   useEffect(() => {
@@ -228,6 +241,23 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     scrollToIndex(index);
     onGroupFocused?.();
   }, [focusGroupId, hasFocusGroup, items, onGroupFocused, ready, scrollToIndex]);
+
+  useEffect(() => {
+    if (!focusRowId || !ready) {
+      return;
+    }
+
+    const index = items.findIndex(
+      (item) => item.kind === "row" && getRowId(item.row) === focusRowId,
+    );
+    if (index === -1) {
+      return;
+    }
+
+    scrollToIndex(index);
+    onSelectedIdsChange?.(new Set([focusRowId]));
+    onRowFocused?.();
+  }, [focusRowId, getRowId, items, onRowFocused, onSelectedIdsChange, ready, scrollToIndex]);
 
   const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
 

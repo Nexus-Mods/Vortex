@@ -1,4 +1,4 @@
-import type { VortexModStagingFolder } from "@vortex/shared";
+import type { VortexModId, VortexModStagingFolder } from "@vortex/shared";
 
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { setSafe } from "../../../util/storeHelper";
@@ -18,6 +18,8 @@ export interface IModsSessionState {
   deploymentFailures: Record<string, IDeploymentFailure[]>;
   /** a group the new Mods table is to open and scroll to, until it has */
   focusedGroupId?: string;
+  /** a mod the new Mods table is to scroll to and select, until it has */
+  focusedModId?: VortexModId;
 }
 
 declare module "@/types/IState" {
@@ -34,6 +36,10 @@ export const sessionReducer: IReducerSpec = {
     [actions.focusModsTableGroup as any]: (state, payload) => ({
       ...state,
       focusedGroupId: payload,
+    }),
+    [actions.focusModsTableMod as any]: (state, payload) => ({
+      ...state,
+      focusedModId: payload,
     }),
     [actions.setExternalChanges as any]: (state, payload) => setSafe(state, ["changes"], payload),
     [actions.setExternalChangeAction.getType()]: (
