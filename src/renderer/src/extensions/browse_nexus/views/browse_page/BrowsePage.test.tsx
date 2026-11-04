@@ -155,6 +155,26 @@ describe("BrowsePage", () => {
     expect(screen.queryByText("Mods panel")).toBeNull();
   });
 
+  it("marks the page beta while the mods are open", () => {
+    render(<BrowsePage active api={api} />, { wrapper });
+
+    expect(screen.getByText(/beta/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: /Collections/ }));
+
+    expect(screen.queryByText(/beta/i)).toBeNull();
+  });
+
+  it("doesn't mark the page beta while browsing mods is flagged off", () => {
+    mocks.isModsEnabled = false;
+
+    render(<BrowsePage active api={api} />, { wrapper });
+
+    fireEvent.click(screen.getByRole("tab", { name: "Mods" }));
+
+    expect(screen.queryByText(/beta/i)).toBeNull();
+  });
+
   it("has no collections tab for a game managed without an extension", () => {
     mocks.tierZero = true;
 
