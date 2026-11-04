@@ -15,6 +15,10 @@ export const isPreset = (view: string | undefined): view is ModPreset =>
 /** A view as analytics names it: its preset, or `custom` for the user's own, never their name. */
 export type TrackedView = ModPreset | "custom";
 
+/** A view's analytics name, from its id. */
+export const trackedViewOf = (viewId: string): TrackedView =>
+  isPreset(viewId) ? viewId : "custom";
+
 /** What the mods can be sorted by. */
 export type ModSortField = ModsSearchRequest["sort"]["field"];
 
@@ -73,11 +77,9 @@ const changedFilters = (filters: IModFilters, from: IModFilters) =>
 /** The open view, resolved: how it sorts and filters, and how that differs from how it comes. */
 export interface IResolvedModView {
   /** A preset's id, or a view of the user's own. */
-  id: string;
+  viewId: string;
   /** Its name for analytics: its preset, or `custom`. */
   trackedView: TrackedView;
-  /** Whether it's a view of the user's own, rather than a preset. */
-  isCustom: boolean;
   /** How it sorts the mods, with any changes. */
   sort: IModSort;
   /** How it filters the mods, with any changes, and no filter for any it was saved without. */
@@ -103,6 +105,7 @@ export const resolveModView = (
 ): IResolvedModView => {
   const saved = custom.find((view) => view.id === selected);
   const preset = isPreset(selected) ? selected : DEFAULT_PRESET;
+  const viewId = saved?.id ?? preset;
   const change = saved ? {} : (presetChanges[preset] ?? {});
   const sort = { ...(saved?.sort ?? PRESET_SORTS[preset]), ...change.sort };
   const filters = {
@@ -117,9 +120,8 @@ export const resolveModView = (
   const changedFilterCount = saved ? 0 : changedFilters(filters, PRESET_FILTERS[preset]).length;
 
   return {
-    id: saved?.id ?? preset,
-    trackedView: saved ? "custom" : preset,
-    isCustom: !!saved,
+    viewId,
+    trackedView: trackedViewOf(viewId),
     sort,
     filters,
     activeFilterCount: changedFilters(filters, NO_FILTERS).length,

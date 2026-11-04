@@ -12,7 +12,7 @@ import { BrowseModsBar } from "./BrowseModsBar";
 /** The search the bar shows, with its filters and how many of them are on. */
 const searchWith = (filters: IModFilters, activeFilterCount: number, changedFilterCount = 0) =>
   ({
-    view: "trending",
+    viewId: "trending",
     trackedView: "trending",
     views: [],
     isEdited: false,

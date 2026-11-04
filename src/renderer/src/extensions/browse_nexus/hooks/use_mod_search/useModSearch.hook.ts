@@ -102,7 +102,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   const views = useModViews();
   const { sort, filters, rangeFrom } = views;
   const queryClient = useQueryClient();
-  const searchKey = JSON.stringify([views.view, sort, filters, rangeFrom]);
+  const searchKey = JSON.stringify([views.viewId, sort, filters, rangeFrom]);
   const [paging, setPaging] = useState({ searchKey, page: 1 });
   const currentPage = paging.searchKey === searchKey ? paging.page : 1;
 

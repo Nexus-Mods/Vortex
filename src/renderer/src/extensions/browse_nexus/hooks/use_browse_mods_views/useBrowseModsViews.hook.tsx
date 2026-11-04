@@ -8,12 +8,9 @@ import { type IViewPickerView, ViewPicker } from "@/ui/components/view_picker/Vi
 
 import { EditedViewStrip } from "../../components/browse_mods/edited_view_strip/EditedViewStrip";
 import type { IBrowseModsView } from "../../reducers/mods_views/modsViews";
-import { isPreset, type ModPreset, type TrackedView } from "../../util/mod_views/modViews";
+import { isPreset, type ModPreset, trackedViewOf } from "../../util/mod_views/modViews";
 import { useBrowseModsTracker } from "../browse_mods_tracking/BrowseModsTracking.context";
 import { type IModSearch } from "../use_mod_search/useModSearch.hook";
-
-/** A view as analytics names it, by its id. */
-const trackedViewOf = (id: string): TrackedView => (isPreset(id) ? id : "custom");
 
 /** The bar's panels a view's menu can open: its Filter menu and View options. */
 export interface IBrowseModsPanelRefs {
@@ -43,9 +40,9 @@ export const useBrowseModsViews = (search: IModSearch, panelRefs: IBrowseModsPan
   const [deleting, setDeleting] = useState<IBrowseModsView>();
   const openOnViewRef = useRef<{ viewId: string; panel: BrowseModsPanel }>(undefined);
 
-  /** Opens a view, counting it. */
+  /** Opens a view, counting it unless it's the open one and picking it again changes nothing. */
   const selectView = (id: string) => {
-    if (id !== search.view) {
+    if (id !== search.viewId || search.changedFilterCount > 0) {
       tracker.trackViewSelected({ view: trackedViewOf(id), previous_view: view });
     }
     search.selectView(id);
@@ -54,15 +51,15 @@ export const useBrowseModsViews = (search: IModSearch, panelRefs: IBrowseModsPan
   useEffect(() => {
     const pending = openOnViewRef.current;
 
-    if (pending?.viewId === search.view) {
+    if (pending?.viewId === search.viewId) {
       panelRefs[pending.panel].current?.open();
       openOnViewRef.current = undefined;
     }
-  }, [panelRefs, search.view]);
+  }, [panelRefs, search.viewId]);
 
   /** Opens one of the bar's panels on a view of the user's own, once it's the open view. */
   const editView = (viewId: string, panel: BrowseModsPanel) => {
-    if (viewId === search.view) {
+    if (viewId === search.viewId) {
       panelRefs[panel].current?.open();
       return;
     }
@@ -110,7 +107,7 @@ export const useBrowseModsViews = (search: IModSearch, panelRefs: IBrowseModsPan
       <ViewPicker
         className="min-w-0 flex-1"
         label={t("Views")}
-        selectedView={search.view}
+        selectedView={search.viewId}
         views={views}
         onAddView={() => setNaming({ kind: "new", source: "picker" })}
         onSelectView={selectView}

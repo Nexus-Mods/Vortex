@@ -54,11 +54,10 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     // The Mods tab coming into view: opening Browse on it, or switching to it.
     trackViewed: () => track("browse_mods_viewed"),
 
-    // Sent again when the open view is picked, which puts its filters back.
+    // Sent again when the open preset is picked with its filters changed, which puts them back.
     trackViewSelected: (props: { view: TrackedView; previous_view: TrackedView }) =>
       track("browse_mods_view_selected", props),
 
-    // The sort as it is after the change; `is_reset` when View options' reset put it back.
     // A view of the user's own, made from what's showing, renamed or deleted; `view` is what it
     // was made from, never its name.
     trackViewCreated: (props: { view: TrackedView; source: "picker" | "edited_strip" }) =>
@@ -71,6 +70,7 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     // The edited strip's Reset to default, putting a preset's sort and filters back.
     trackViewReset: (props: { view: TrackedView }) => track("browse_mods_view_reset", props),
 
+    // The sort as it is after the change; `is_reset` when View options' reset put it back.
     trackSortChanged: (props: {
       view: TrackedView;
       sort_field: ModSortField;

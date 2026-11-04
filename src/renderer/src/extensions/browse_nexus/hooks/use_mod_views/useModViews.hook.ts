@@ -14,6 +14,7 @@ import {
 } from "../../actions/modsViews";
 import type { IBrowseModsView } from "../../reducers/mods_views/modsViews";
 import {
+  DEFAULT_PRESET,
   type IModFilters,
   type IModSort,
   isPreset,
@@ -48,37 +49,41 @@ export const useModViews = () => {
 
   /** Changes how the open view filters, starting its time range from now. */
   const setFilters = (change: Partial<IModFilters>) => {
-    dispatch(setBrowseModsViewSearch(view.id, { filters: change }));
+    dispatch(setBrowseModsViewSearch(view.viewId, { filters: change }));
+    setRangeFrom(Date.now());
+  };
+
+  /** Opens a view; a preset with its filters as they come, its time range starting from now. */
+  const selectView = (viewId: string) => {
+    dispatch(selectBrowseModsView(viewId));
     setRangeFrom(Date.now());
   };
 
   /** Changes how the open view sorts. */
   const setSort = (change: Partial<IModSort>) =>
-    dispatch(setBrowseModsViewSearch(view.id, { sort: change }));
+    dispatch(setBrowseModsViewSearch(view.viewId, { sort: change }));
 
   return {
     ...view,
-    view: view.id,
     views,
     rangeFrom,
     setSort,
     setFilters,
-    /** Opens a view; a preset with its filters as they come. */
-    selectView: (viewId: string) => {
-      dispatch(selectBrowseModsView(viewId));
-      setRangeFrom(Date.now());
-    },
+    selectView,
     /** Puts the open preset's sort back as it comes. */
-    resetSort: () => isPreset(view.id) && setSort(PRESET_SORTS[view.id]),
+    resetSort: () => isPreset(view.viewId) && setSort(PRESET_SORTS[view.viewId]),
     /** Puts the open preset's filters back as they come. */
-    resetFilters: () => isPreset(view.id) && setFilters(PRESET_FILTERS[view.id]),
+    resetFilters: () => isPreset(view.viewId) && setFilters(PRESET_FILTERS[view.viewId]),
     /** Puts the open preset's sort and filters back as they come. */
     resetView: () => {
-      dispatch(resetBrowseModsView(view.id));
+      dispatch(resetBrowseModsView(view.viewId));
       setRangeFrom(Date.now());
     },
-    /** Saves what's showing as a view of the user's own, by name, and opens it. */
-    addView: (name: string) =>
+    /**
+     * Saves what's showing as a view of the user's own, by name, and opens it; a preset it was made
+     * from goes back as it comes, its changes now the new view's.
+     */
+    addView: (name: string) => {
       dispatch(
         addBrowseModsView({
           id: `custom-${crypto.randomUUID()}`,
@@ -86,11 +91,22 @@ export const useModViews = () => {
           sort: view.sort,
           filters: view.filters,
         }),
-      ),
+      );
+
+      if (isPreset(view.viewId)) {
+        dispatch(resetBrowseModsView(view.viewId));
+      }
+    },
     /** Renames a view of the user's own. */
     renameView: (viewId: string, name: string) => dispatch(renameBrowseModsView(viewId, name)),
-    /** Deletes a view of the user's own, opening the first preset if it was open. */
-    removeView: (viewId: string) => dispatch(removeBrowseModsView(viewId)),
+    /** Deletes a view of the user's own, opening the first preset as picking it would if it was open. */
+    removeView: (viewId: string) => {
+      dispatch(removeBrowseModsView(viewId));
+
+      if (viewId === view.viewId) {
+        selectView(DEFAULT_PRESET);
+      }
+    },
   };
 };
 

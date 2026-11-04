@@ -53,10 +53,13 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     [],
   );
   const { viewPicker, editedViewStrip } = useBrowseModsViews(search, panelRefs);
-  const { trackedView, sort, filters, currentPage, error } = search;
+  const { viewId, trackedView, sort, filters, currentPage, error } = search;
   const isEmpty = !search.loading && !error && !mods.length;
 
-  /** The search the results came from, as its events describe it; the same while it is. */
+  /**
+   * The search the results came from, as its events describe it; the same while it is, and new for
+   * each view, so two of the user's own alike still count apart.
+   */
   const searched = useMemo(
     () => ({
       view: trackedView,
@@ -64,7 +67,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       sort_direction: sort.direction,
       time_range: filters.timeRange,
     }),
-    [trackedView, sort.field, sort.direction, filters.timeRange],
+    [viewId, trackedView, sort.field, sort.direction, filters.timeRange],
   );
 
   useEffect(() => {

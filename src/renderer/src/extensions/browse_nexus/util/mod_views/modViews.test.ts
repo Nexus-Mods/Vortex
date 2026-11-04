@@ -13,9 +13,8 @@ const mine: IBrowseModsView = {
 describe("resolveModView", () => {
   it("is a preset as it comes, unedited", () => {
     expect(resolveModView("popular", [], {})).toEqual({
-      id: "popular",
+      viewId: "popular",
       trackedView: "popular",
-      isCustom: false,
       sort: { field: "downloads", direction: "desc" },
       filters: { timeRange: "7" },
       activeFilterCount: 1,
@@ -26,8 +25,8 @@ describe("resolveModView", () => {
   });
 
   it("is the first preset with nothing open, or the open view gone", () => {
-    expect(resolveModView(undefined, [], {}).id).toBe("trending");
-    expect(resolveModView("custom-gone", [], {}).id).toBe("trending");
+    expect(resolveModView(undefined, [], {}).viewId).toBe("trending");
+    expect(resolveModView("custom-gone", [], {}).viewId).toBe("trending");
   });
 
   it("puts a preset's changes over how it comes, as edited", () => {
@@ -57,9 +56,8 @@ describe("resolveModView", () => {
     });
 
     expect(view).toMatchObject({
-      id: "custom-1",
+      viewId: "custom-1",
       trackedView: "custom",
-      isCustom: true,
       sort: mine.sort,
       filters: mine.filters,
       isEdited: false,

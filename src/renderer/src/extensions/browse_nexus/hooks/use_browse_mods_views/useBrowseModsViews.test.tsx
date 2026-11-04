@@ -13,7 +13,7 @@ import { useBrowseModsViews } from "./useBrowseModsViews.hook";
 /** The search the views are for, with its filters and how many of them are on. */
 const searchWith = (filters: IModFilters, activeFilterCount: number, changedFilterCount = 0) =>
   ({
-    view: "trending",
+    viewId: "trending",
     trackedView: "trending",
     views: [],
     isEdited: false,
@@ -62,6 +62,26 @@ describe("useBrowseModsViews", () => {
     expect(propertiesOf(tracked, "browse_mods_view_selected")).toEqual([
       { view: "popular", previous_view: "trending" },
     ]);
+  });
+
+  it("counts picking the open preset again while its filters are changed, which puts them back", async () => {
+    const search = searchWith({ timeRange: "28" }, 1, 1);
+    const { tracked } = renderBar(search);
+
+    await userEvent.click(screen.getByRole("button", { name: "Trending" }));
+
+    expect(search.selectView).toHaveBeenCalledWith("trending");
+    expect(propertiesOf(tracked, "browse_mods_view_selected")).toEqual([
+      { view: "trending", previous_view: "trending" },
+    ]);
+  });
+
+  it("doesn't count picking the open view again when that changes nothing", async () => {
+    const { tracked } = renderBar(searchWith({ timeRange: "7" }, 1));
+
+    await userEvent.click(screen.getByRole("button", { name: "Trending" }));
+
+    expect(propertiesOf(tracked, "browse_mods_view_selected")).toEqual([]);
   });
 
   describe("views of the user's own", () => {

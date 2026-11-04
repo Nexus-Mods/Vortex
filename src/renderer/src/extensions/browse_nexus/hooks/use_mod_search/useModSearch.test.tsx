@@ -417,7 +417,7 @@ describe("useModSearch's views", () => {
   it("opens on the view open last time, searching as it saved", async () => {
     const { result } = render(true, { selected: "custom-1", custom: [mine] });
 
-    expect(result.current.view).toBe("custom-1");
+    expect(result.current.viewId).toBe("custom-1");
     expect(result.current.trackedView).toBe("custom");
     await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
     expect(mocks.pending.map((request) => request.search)).toContainEqual(
@@ -431,7 +431,7 @@ describe("useModSearch's views", () => {
   it("opens on the first preset when the view open last time is gone", () => {
     const { result } = render(true, { selected: "custom-gone", custom: [] });
 
-    expect(result.current.view).toBe("trending");
+    expect(result.current.viewId).toBe("trending");
   });
 
   it("remembers the view opened", () => {
@@ -455,7 +455,19 @@ describe("useModSearch's views", () => {
         filters: { timeRange: "7" },
       }),
     ]);
-    expect(result.current.view).toBe(savedViews().custom[0].id);
+    expect(result.current.viewId).toBe(savedViews().custom[0].id);
+  });
+
+  it("puts a preset back as it comes once what's showing of it is saved as a view", () => {
+    const { result } = render();
+    act(() => result.current.setSort({ field: "downloads" }));
+    act(() => result.current.setFilters({ timeRange: "28" }));
+
+    act(() => result.current.addView("Downloads this month"));
+    act(() => result.current.selectView("trending"));
+
+    expect(result.current.isEdited).toBe(false);
+    expect(result.current.sort).toEqual({ field: "endorsements", direction: "desc" });
   });
 
   it("saves a view's changes of sort and filters into it, so it's never edited", () => {
@@ -501,7 +513,22 @@ describe("useModSearch's views", () => {
 
     act(() => result.current.removeView("custom-1"));
     expect(result.current.views).toEqual([]);
-    expect(result.current.view).toBe("trending");
+    expect(result.current.viewId).toBe("trending");
+  });
+
+  it("opens the first preset as picking it would when the open view is deleted", () => {
+    const { result } = render(true, { selected: "trending", custom: [mine] });
+    act(() => result.current.setFilters({ timeRange: "28" }));
+    act(() => result.current.selectView("custom-1"));
+    const later = NOW + 2 * HOUR_MS;
+    vi.setSystemTime(later);
+
+    act(() => result.current.removeView("custom-1"));
+
+    expect(result.current.viewId).toBe("trending");
+    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.isEdited).toBe(false);
+    expect(result.current.rangeFrom).toBe(later);
   });
 });
 

@@ -39,8 +39,9 @@ interface IBrowseSectionsProps {
 
 /**
  * The open game's mods and collections, under the header with a tab for each, its title marked
- * beta while the mods are open. `BrowsePage` keys it by the game, so a sort, search or page picked
- * for one game starts over in the next, and nothing of one game's shows in another's.
+ * beta while the mods are open. `BrowsePage` keys it by the game, so a search or page picked for
+ * one game starts over in the next, and no game's results show in another's. The mods' views, the
+ * open one and the presets' changes are kept across games.
  */
 export const BrowseSections = ({
   api,
