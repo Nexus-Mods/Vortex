@@ -454,6 +454,25 @@ describe("FileTree", () => {
       expect(await screen.findByRole("tooltip")).toHaveTextContent("Failed to read directory");
     });
 
+    it("names the error icon for screen readers without a browser tooltip of its own", async () => {
+      const user = userEvent.setup();
+      const onLoadChildren = vi.fn<() => Promise<void>>().mockRejectedValue(new Error("nope"));
+      render(
+        <Harness
+          loadErrorMessage="Failed to read directory"
+          nodes={unloaded}
+          onLoadChildren={onLoadChildren}
+        />,
+      );
+
+      await user.click(toggle());
+
+      const icon = await within(item("dir")).findByRole("img", {
+        name: "Failed to read directory",
+      });
+      expect(icon).not.toHaveAttribute("title");
+    });
+
     it("has no tooltip for a failed load when it's given no message", async () => {
       const user = userEvent.setup();
       const onLoadChildren = vi.fn<() => Promise<void>>().mockRejectedValue(new Error("nope"));

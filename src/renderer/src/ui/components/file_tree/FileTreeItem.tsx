@@ -71,7 +71,8 @@ export const FileTreeItem = ({
     statusIcon = (
       <Tooltip content={failedMessage ?? ""} disabled={failedMessage === undefined}>
         <span className="flex" data-testid="file-tree-error">
-          <Icon className="text-danger-strong" name="error" size="sm" title={failedMessage} />
+          {/* named for screen readers; only the Tooltip shows on hover */}
+          <Icon aria-label={failedMessage} className="text-danger-strong" name="error" size="sm" />
         </span>
       </Tooltip>
     );
