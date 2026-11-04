@@ -1375,12 +1375,12 @@ function processInstallError(
 
 function nexusLink(state: IState, mod: IMod, gameMode: string) {
   const vortexGameId = getSafe(mod.attributes, ["downloadGame"], undefined) || gameMode;
-  const gameId = nexusGameId(gameById(state, vortexGameId), vortexGameId);
+  const domain = nexusGameId(gameById(state, vortexGameId), vortexGameId);
   if (mod.attributes?.collectionSlug !== undefined) {
-    return `https://www.nexusmods.com/${gameId}/mods/${mod.attributes?.collectionSlug}`;
+    return `https://www.nexusmods.com/${domain}/mods/${mod.attributes?.collectionSlug}`;
   } else {
     const nexusModId: number = parseInt(getSafe(mod.attributes, ["modId"], undefined), 10);
-    return nexusModPageUrl(gameId, nexusModId);
+    return nexusModPageUrl(domain, nexusModId);
   }
 }
 
