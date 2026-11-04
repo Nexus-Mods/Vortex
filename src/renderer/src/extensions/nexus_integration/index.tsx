@@ -154,13 +154,7 @@ declare module "../../types/IExtensionContext" {
 
 // functions in the nexus api that don't trigger requests but instead are
 // management functions to control the our api connection
-const mgmtFuncs = new Set([
-  "setGame",
-  "getValidationResult",
-  "getRateLimits",
-  "setLogger",
-  "clearPreferencesCache",
-]);
+const mgmtFuncs = new Set(["setGame", "getValidationResult", "getRateLimits", "setLogger"]);
 const revalidateFuncs = new Set([
   "getCollectionGraph",
   "getCollectionDownloadLink",
@@ -351,7 +345,7 @@ const requestLog = {
     } else {
       return (...args) => {
         const prom = obj[prop](...args);
-        if (prom.then !== undefined) {
+        if (prom?.then !== undefined) {
           const stack = getCaller();
           let caller = stack[1].getFunctionName();
           if (caller === null) {

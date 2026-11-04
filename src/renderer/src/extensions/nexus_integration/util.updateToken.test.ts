@@ -48,11 +48,7 @@ const makeNexus = (err: Error) => {
   const setTokenProvider = vi.fn().mockResolvedValue(undefined);
   const getUserInfo = vi.fn().mockRejectedValue(err);
 
-  return {
-    nexus: { setTokenProvider, getUserInfo, clearPreferencesCache: vi.fn() } as never,
-    setTokenProvider,
-    getUserInfo,
-  };
+  return { nexus: { setTokenProvider, getUserInfo } as never, setTokenProvider, getUserInfo };
 };
 
 const refused = (statusCode: number) =>

@@ -1277,8 +1277,15 @@ export function onGetTrendingMods(api: IExtensionApi, nexus: Nexus) {
   };
 }
 
+/**
+ * nexus-api keeps the first preferences it reads for the life of the client, whoever's they are,
+ * so a session ending or starting drops them: the next account's are read afresh.
+ */
+const forgetPreferences = (nexus: Nexus) => nexus.clearPreferencesCache();
+
 export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   return (oldValue: string, newValue: string) => {
+    forgetPreferences(nexus);
     api.store.dispatch(setUserInfo(undefined));
     if (newValue !== undefined) {
       updateKey(api, nexus, newValue);
@@ -1295,7 +1302,8 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
     log("info", "onOAuthTokenChanged event handler.");
 
     if (newValue === undefined) {
-      // logout: credentials cleared
+      // logout: credentials cleared, however the session ended
+      forgetPreferences(nexus);
       api.store.dispatch(setUserInfo(undefined));
       return;
     }
@@ -1306,6 +1314,7 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
     }
 
     // fresh login: undefined -> defined
+    forgetPreferences(nexus);
     api.store.dispatch(setUserInfo(undefined));
     updateToken(api, nexus, newValue);
   };

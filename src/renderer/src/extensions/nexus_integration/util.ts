@@ -1809,16 +1809,6 @@ function deriveMembership(user: Pick<IUserInfo, "membership_roles">): IMembershi
   };
 }
 
-/**
- * The account's user info from the API, its preferences read afresh: nexus-api keeps the first
- * preferences it reads for the life of the client, so another account, or a preference changed on
- * the website, would otherwise go unseen.
- */
-const readUserInfo = (nexus: Nexus) => {
-  nexus.clearPreferencesCache();
-  return nexus.getUserInfo();
-};
-
 export function transformUserInfoFromApi(input: IUserInfo & { preferences: IPreference }) {
   const stateUserInfo: IValidateKeyDataV2 = {
     email: input.email,
@@ -1911,7 +1901,7 @@ export function getUserInfo(
 
   if (isLoggedIn(api.getState())) {
     // get userinfo from api
-    return BluebirdPromise.resolve(readUserInfo(nexus))
+    return BluebirdPromise.resolve(nexus.getUserInfo())
       .then((apiUserInfo): UserInfoRead => {
         // update state with new info from endpoint
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
@@ -2023,7 +2013,7 @@ export function updateToken(
         // priming the provider refreshed the token, the site refused, and the session is gone
         return false;
       }
-      return BluebirdPromise.resolve(readUserInfo(nexus)).then((apiUserInfo) => {
+      return BluebirdPromise.resolve(nexus.getUserInfo()).then((apiUserInfo) => {
         api.store.dispatch(setUserInfo(transformUserInfoFromApi(apiUserInfo)));
         return true;
       });
