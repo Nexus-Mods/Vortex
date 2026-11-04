@@ -111,6 +111,15 @@ describe("AddedGames", () => {
     expect(screen.getByText("No games found")).toBeInTheDocument();
   });
 
+  it("records nothing when the reader re-picks the order already chosen", async () => {
+    renderComponent({ count: "1", games: [game("skyrim")] });
+
+    await userEvent.click(screen.getByRole("button", { name: /Name A-Z/ }));
+    await userEvent.click(screen.getByRole("option", { name: "Name A-Z" }));
+
+    expect(emit).not.toHaveBeenCalledWith("analytics-track-mixpanel-event", expect.anything());
+  });
+
   it("hands the reader's choice of order back to the caller", async () => {
     const { onSortChange } = renderComponent({ count: "1", games: [game("skyrim")] });
 

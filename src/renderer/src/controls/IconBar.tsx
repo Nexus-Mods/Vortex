@@ -467,7 +467,8 @@ interface IReportingProps {
    * Hears which action ran, by its definition and its index in the bar's position
    * order, just before it runs, whichever way it was clicked (its button, a collapsed
    * menu, a grouped dropdown or a background click). Submenu entries and component
-   * actions aren't reported: neither runs through the definition's own `action`.
+   * actions aren't reported: neither runs through the definition's own `action`. Nor is
+   * a disabled action a background click runs.
    */
   onAction?: (action: IActionDefinition, index: number) => void;
 }
@@ -484,7 +485,10 @@ function ReportingIconBar(props: IProps & Required<IReportingProps>) {
           : {
               ...action,
               action: (instanceIds: string | string[], data?: any) => {
-                onAction(action, index);
+                // clickAnywhere can run a disabled action; that isn't one the user chose
+                if (action.show === true) {
+                  onAction(action, index);
+                }
                 action.action(instanceIds, data);
               },
             },

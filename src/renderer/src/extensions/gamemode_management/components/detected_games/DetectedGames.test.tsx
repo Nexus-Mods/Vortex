@@ -235,6 +235,17 @@ describe("DetectedGames", () => {
     });
   });
 
+  describe("re-picking the order already chosen", () => {
+    it("records nothing, since nothing changed", async () => {
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: /Recently detected/ }));
+      await userEvent.click(screen.getByRole("option", { name: "Recently detected" }));
+
+      expect(tracked()).toEqual([]);
+    });
+  });
+
   describe("the header controls", () => {
     it("starts a scan from an icon button labelled for screen readers", async () => {
       renderComponent({ count: "1", games: [game("skyrim")] });

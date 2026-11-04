@@ -75,6 +75,10 @@ export const SupportedGames = forwardRef<HTMLDivElement, ISupportedGamesProps>(
             ]}
             value={sortOrder}
             onChange={(value) => {
+              // the picker also answers a re-pick of the current order
+              if (value === sortOrder) {
+                return;
+              }
               onSortChange(value);
               tracker.trackSortChanged({ section: "supported", sort: value });
             }}

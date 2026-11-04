@@ -23,7 +23,11 @@ vi.mock("./ActionControl", () => ({
   }) =>
     React.cloneElement(children, {
       instanceId,
-      actions: staticElements.map((action) => ({ ...action, show: true })),
+      // as ActionControl does with showAll: a condition that rules the action out disables it
+      actions: staticElements.map((action) => ({
+        ...action,
+        show: action.condition?.([instanceId]) ?? true,
+      })),
     } as object),
 }));
 
@@ -79,6 +83,29 @@ describe("IconBar", () => {
       expect.objectContaining({ title: "Install Extension" }),
       1,
     );
+  });
+
+  // clickAnywhere runs a bar's only action from a click on the bar itself, even one its
+  // condition disabled; nothing ran that the user chose, so nothing is reported.
+  it("doesn't tell onAction about a disabled action a background click ran", async () => {
+    const action = vi.fn();
+    const onAction = vi.fn();
+    const { container } = render(
+      <IconBar
+        buttonType="text"
+        clickAnywhere={true}
+        group="game-managed-buttons"
+        instanceId="skyrimse"
+        staticElements={[{ ...manage(action), condition: () => false }]}
+        t={((input: string) => input) as never}
+        onAction={onAction}
+      />,
+    );
+
+    await userEvent.click(container.firstElementChild as HTMLElement);
+
+    expect(action).toHaveBeenCalled();
+    expect(onAction).not.toHaveBeenCalled();
   });
 
   it("runs the action as before without onAction", async () => {

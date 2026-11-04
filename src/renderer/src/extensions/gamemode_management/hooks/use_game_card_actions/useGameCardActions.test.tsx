@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+import type * as React from "react";
 import type * as ReactReduxTypes from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
@@ -152,6 +153,27 @@ describe("useGameCardActions", () => {
     ]);
     // reporting doesn't stand in for the action itself
     expect(stop).toHaveBeenCalledWith(["skyrimse"]);
+  });
+
+  it("names the rows inside the Open menu by their own keys, not the Open row's", () => {
+    const onMenuAction = vi.fn();
+    const folder = vi.fn();
+    const open = actionsFor(
+      [
+        definition({ title: "Open Game Folder", position: 105, action: folder }),
+        definition({ title: "Open Mod Folder", position: 110 }),
+      ],
+      () => {},
+      onMenuAction,
+    ).menu[0][2];
+
+    const panel = open.panel?.({ close: () => {}, dismiss: () => {} }) as React.ReactElement<{
+      actions: Array<Array<{ onClick?: () => void }>>;
+    }>;
+    panel.props.actions[0][0].onClick?.();
+
+    expect(onMenuAction.mock.calls).toEqual([["Open Game Folder"]]);
+    expect(folder).toHaveBeenCalledWith(["skyrimse"]);
   });
 
   it("names Show as show, so a hide undone can be told apart", () => {

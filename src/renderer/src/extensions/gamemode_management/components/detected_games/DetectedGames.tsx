@@ -329,6 +329,10 @@ export const DetectedGames = ({
                 ]}
                 value={sortOrder}
                 onChange={(value) => {
+                  // the picker also answers a re-pick of the current order
+                  if (value === sortOrder) {
+                    return;
+                  }
                   dispatch(setSortDetected(value));
                   tracker.trackSortChanged({ section: "detected", sort: value });
                 }}
