@@ -56,8 +56,29 @@ describe("IconBar", () => {
 
     await userEvent.click(container.querySelector(".action-manage") as HTMLElement);
 
-    expect(onAction).toHaveBeenCalledWith(expect.objectContaining({ title: "Manage" }));
+    expect(onAction).toHaveBeenCalledWith(expect.objectContaining({ title: "Manage" }), 0);
     expect(action).toHaveBeenCalledWith(["skyrimse"], undefined);
+  });
+
+  it("tells onAction where in the bar the action sits", async () => {
+    const onAction = vi.fn();
+    const { container } = render(
+      <IconBar
+        buttonType="text"
+        group="game-unmanaged-buttons"
+        instanceId="skyrimse"
+        staticElements={[manage(), { title: "Install Extension", position: 60, action: vi.fn() }]}
+        t={((input: string) => input) as never}
+        onAction={onAction}
+      />,
+    );
+
+    await userEvent.click(container.querySelector(".action-install-extension") as HTMLElement);
+
+    expect(onAction).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Install Extension" }),
+      1,
+    );
   });
 
   it("runs the action as before without onAction", async () => {

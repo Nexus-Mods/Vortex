@@ -464,12 +464,12 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
 interface IReportingProps {
   /**
-   * Hears which action ran, by its definition, just before it runs, whichever way it
-   * was clicked (its button, a collapsed menu, a grouped dropdown or a background
-   * click). Submenu entries and component actions aren't reported: neither runs
-   * through the definition's own `action`.
+   * Hears which action ran, by its definition and its index in the bar's position
+   * order, just before it runs, whichever way it was clicked (its button, a collapsed
+   * menu, a grouped dropdown or a background click). Submenu entries and component
+   * actions aren't reported: neither runs through the definition's own `action`.
    */
-  onAction?: (action: IActionDefinition) => void;
+  onAction?: (action: IActionDefinition, index: number) => void;
 }
 
 /** Hands IconBar the actions ActionControl resolved, each reporting itself as it runs. */
@@ -478,13 +478,13 @@ function ReportingIconBar(props: IProps & Required<IReportingProps>) {
 
   const reporting = React.useMemo(
     () =>
-      actions?.map((action) =>
+      actions?.map((action, index) =>
         action.action === undefined
           ? action
           : {
               ...action,
               action: (instanceIds: string | string[], data?: any) => {
-                onAction(action);
+                onAction(action, index);
                 action.action(instanceIds, data);
               },
             },

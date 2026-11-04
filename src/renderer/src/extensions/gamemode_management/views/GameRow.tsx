@@ -34,6 +34,11 @@ export interface IProps {
   t: TFunction;
   game: IGameStored;
   discovery?: IDiscoveryResult;
+  /**
+   * The store the detected-games response matched the game on, named until discovery
+   * finds the game and names the store itself.
+   */
+  detectedStore?: string;
   mods?: { [modId: string]: IMod };
   active: boolean;
   type: string;
@@ -176,22 +181,27 @@ class GameRow extends ComponentEx<IProps, {}> {
     }
   };
 
-  // The row's own buttons are what a tile leads with, so they report under the same
-  // name; the popover's are its menu, named by their registered title.
-  private reportLeadAction = () =>
-    this.reportAction("primary", PRIMARY_ACTION_BY_SECTION[this.props.section]);
+  // The row's first button is what a tile leads with, so it reports under the same
+  // name; any after it, which a tile files in its menu, and the popover's buttons are
+  // named by their registered title.
+  private reportLeadAction = (action: IActionDefinition, index: number) =>
+    this.reportAction(
+      "primary",
+      index === 0 ? PRIMARY_ACTION_BY_SECTION[this.props.section] : action.title,
+    );
 
   private reportMenuAction = (action: IActionDefinition) => this.reportAction("menu", action.title);
 
   private reportAction(placement: TileActionPlacement, action: string) {
-    const { discovery, game, section } = this.props;
+    const { detectedStore, discovery, game, section } = this.props;
     createGamesPageTracker(this.context.api).trackTileAction({
       section,
       layout: "list",
       placement,
       action,
       game_id: numericNexusGameId(game.id),
-      game_store: discovery?.store ?? null,
+      // Discovery's store wins, as on the tile: it's the copy Vortex will manage.
+      game_store: discovery?.store ?? detectedStore ?? null,
     });
   }
 

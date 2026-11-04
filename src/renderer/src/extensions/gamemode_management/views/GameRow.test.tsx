@@ -13,7 +13,7 @@ import type { IGameStored } from "../types/IGameStored";
 const { bars, emit } = vi.hoisted(() => ({
   bars: [] as Array<{
     filter: (action: IActionDefinition) => boolean;
-    onAction?: (action: IActionDefinition) => void;
+    onAction?: (action: IActionDefinition, index: number) => void;
   }>,
   emit: vi.fn<(...args: unknown[]) => void>(),
 }));
@@ -104,7 +104,7 @@ describe("GameRow", () => {
   it("reports its own button as the section's lead action", () => {
     renderRow({ discovery: { path: "C:/Games/Skyrim", store: "steam" } });
 
-    leadBar()?.onAction?.({ title: "Manage", position: 50 } as IActionDefinition);
+    leadBar()?.onAction?.({ title: "Manage", position: 50 } as IActionDefinition, 0);
 
     expect(tracked()).toEqual([
       {
@@ -121,10 +121,32 @@ describe("GameRow", () => {
     ]);
   });
 
+  it("names the detected store for a game discovery hasn't found, as its tile does", () => {
+    renderRow({ detectedStore: "epic" });
+
+    leadBar()?.onAction?.({ title: "Manage", position: 50 } as IActionDefinition, 0);
+
+    expect(tracked()).toEqual([
+      expect.objectContaining({ properties: expect.objectContaining({ game_store: "epic" }) }),
+    ]);
+  });
+
+  it("reports a lead button after the first by its registered title, as a tile's menu does", () => {
+    renderRow();
+
+    leadBar()?.onAction?.({ title: "Install Extension", position: 60 } as IActionDefinition, 1);
+
+    expect(tracked()).toEqual([
+      expect.objectContaining({
+        properties: expect.objectContaining({ placement: "primary", action: "Install Extension" }),
+      }),
+    ]);
+  });
+
   it("reports a popover action as a menu row, by its registered title", () => {
     renderRow({ section: "added", source: undefined, type: "managed" });
 
-    menuBar()?.onAction?.({ title: "Stop Managing", position: 150 } as IActionDefinition);
+    menuBar()?.onAction?.({ title: "Stop Managing", position: 150 } as IActionDefinition, 2);
 
     expect(tracked()).toEqual([
       {

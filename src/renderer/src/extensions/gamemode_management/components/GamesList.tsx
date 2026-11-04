@@ -14,6 +14,8 @@ interface IGamesListProps {
   type: string;
   gameMode: string;
   discoveredGames: { [id: string]: IDiscoveryResult };
+  /** The store each game was detected on, by internal id, for its row to name. */
+  detectedStores?: Record<string, string>;
   /** Which Games page list the rows are in, recorded for the app_game_manage event. */
   source?: GameSource;
   /** The Games page section the rows are in, for their analytics. */
@@ -28,6 +30,7 @@ export const GamesList = ({
   type,
   gameMode,
   discoveredGames,
+  detectedStores,
   source,
   section,
   onRefreshGameInfo,
@@ -37,6 +40,7 @@ export const GamesList = ({
     {games.map((game) => (
       <GameRow
         active={game.id === gameMode}
+        detectedStore={detectedStores?.[game.id]}
         discovery={discoveredGames[game.id]}
         game={game}
         key={game.id}
