@@ -19,7 +19,7 @@ function init(context: IExtensionContext): boolean {
     props: () => ({
       api: context.api,
     }),
-    menuIcon: "grid_view",
+    menuIcon: "manage_search",
     newLayout: true,
     isTranslucent: true,
   });
