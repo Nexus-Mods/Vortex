@@ -269,6 +269,8 @@ export interface ISettingsGameMode {
   sortManaged: string;
   sortUnmanaged: string;
   sortDetected: string;
+  /** Show the experimental-support dialog before managing a Tier 0 game. Treated as on unless false. */
+  confirmTierZero?: boolean;
 }
 
 export interface ISettingsDownloads {
