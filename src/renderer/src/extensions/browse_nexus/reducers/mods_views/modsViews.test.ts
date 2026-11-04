@@ -73,4 +73,28 @@ describe("browseModsViewsReducer", () => {
 
     expect(state.selected).toBe("new");
   });
+
+  it("leaves the state as it is for a preset's change of sort or filters", () => {
+    const state = reduce[setBrowseModsViewSearch.getType()](withMine, {
+      viewId: "trending",
+      change: { sort: { field: "new" } },
+    });
+
+    expect(state).toBe(withMine);
+  });
+
+  it("leaves the state as it is when renaming a view that isn't there", () => {
+    const state = reduce[renameBrowseModsView.getType()](withMine, {
+      viewId: "custom-gone",
+      name: "Gone",
+    });
+
+    expect(state).toBe(withMine);
+  });
+
+  it("leaves the state as it is when the open view is picked again", () => {
+    const state = reduce[selectBrowseModsView.getType()](withMine, "custom-1");
+
+    expect(state).toBe(withMine);
+  });
 });

@@ -42,6 +42,22 @@ declare module "@/types/IState" {
 
 const defaultState: IBrowseModsViewsState = { custom: [] };
 
+/** Changes a view of the user's own by id; the same state, so nothing's saved, if none has it. */
+const changeCustom = (
+  state: IBrowseModsViewsState,
+  viewId: string,
+  update: (view: IBrowseModsView) => IBrowseModsView,
+): IBrowseModsViewsState => {
+  if (!state.custom.some((view) => view.id === viewId)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    custom: state.custom.map((view) => (view.id === viewId ? update(view) : view)),
+  };
+};
+
 const actions = {
   selectBrowseModsView,
   addBrowseModsView,
@@ -51,28 +67,21 @@ const actions = {
 };
 
 export const browseModsViewsReducer = actionsToReducerSpec(defaultState, actions, {
-  selectBrowseModsView: (state, viewId) => ({ ...state, selected: viewId }),
+  selectBrowseModsView: (state, viewId) =>
+    state.selected === viewId ? state : { ...state, selected: viewId },
   addBrowseModsView: (state, view) => ({
     ...state,
     selected: view.id,
     custom: [...state.custom, view],
   }),
-  renameBrowseModsView: (state, { viewId, name }) => ({
-    ...state,
-    custom: state.custom.map((view) => (view.id === viewId ? { ...view, name } : view)),
-  }),
-  setBrowseModsViewSearch: (state, { viewId, change }) => ({
-    ...state,
-    custom: state.custom.map((view) =>
-      view.id === viewId
-        ? {
-            ...view,
-            sort: { ...view.sort, ...change.sort },
-            filters: { ...view.filters, ...change.filters },
-          }
-        : view,
-    ),
-  }),
+  renameBrowseModsView: (state, { viewId, name }) =>
+    changeCustom(state, viewId, (view) => ({ ...view, name })),
+  setBrowseModsViewSearch: (state, { viewId, change }) =>
+    changeCustom(state, viewId, (view) => ({
+      ...view,
+      sort: { ...view.sort, ...change.sort },
+      filters: { ...view.filters, ...change.filters },
+    })),
   // Back to the first preset if it was open.
   removeBrowseModsView: (state, viewId) => ({
     selected: state.selected === viewId ? undefined : state.selected,
