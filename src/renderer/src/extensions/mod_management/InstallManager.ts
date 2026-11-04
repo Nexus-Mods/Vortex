@@ -1725,11 +1725,13 @@ class InstallManager {
                   tempPath = destinationPath + ".installing";
                   details.previousAttributes = fullInfo.previous;
                   details.stagingFolder = VortexModStagingFolder(modId);
-                  // only a mod this install replaces stops deploying; one that stays is another
-                  // mod's, as far as conflicts go
+                  // the previous version stops deploying when the version choice above ran: it's
+                  // removed (replace) or disabled (install), though it may still be in the
+                  // manifest until the next deployment. Without that choice it stays, and is
+                  // another mod as far as conflicts go.
                   details.previousStagingFolder =
                     existingMod !== undefined &&
-                    existingMod.id === modId &&
+                    installProfile !== undefined &&
                     existingMod.installationPath
                       ? VortexModStagingFolder(existingMod.installationPath)
                       : undefined;
