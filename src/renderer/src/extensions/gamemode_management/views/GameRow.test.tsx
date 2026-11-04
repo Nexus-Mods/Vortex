@@ -2,7 +2,8 @@
  * Tests for the list layout's game row reporting its actions: the row's own buttons
  * report as its lead action, the ones in its details popover as menu rows.
  */
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,11 +19,14 @@ const { bars, emit } = vi.hoisted(() => ({
   emit: vi.fn<(...args: unknown[]) => void>(),
 }));
 
-// Each IconBar is recorded so a test can play one of its actions being run.
+// Each IconBar is recorded so a test can play one of its actions being run. The menu bar
+// draws the Hide toggle, a registered component, as HideGameIcon's button does.
 vi.mock("../../../controls/IconBar", () => ({
-  default: (props: (typeof bars)[number]) => {
+  default: (props: (typeof bars)[number] & { instanceId: string }) => {
     bars.push(props);
-    return null;
+    return props.filter({ position: 100 } as IActionDefinition) ? (
+      <button id={`hide-${props.instanceId}`} type="button" />
+    ) : null;
   },
 }));
 
@@ -142,6 +146,24 @@ describe("GameRow", () => {
       }),
     ]);
   });
+
+  it.each([
+    [false, "hide"],
+    [true, "show"],
+  ])(
+    "reports the popover's Hide toggle on a game hidden: %s as %s, as a tile's menu does",
+    async (hidden, action) => {
+      renderRow({ discovery: { path: "C:/Games/Skyrim", store: "steam", hidden } });
+
+      await userEvent.click(screen.getByRole("button"));
+
+      expect(tracked()).toEqual([
+        expect.objectContaining({
+          properties: expect.objectContaining({ placement: "menu", action }),
+        }),
+      ]);
+    },
+  );
 
   it("reports a popover action as a menu row, by its registered title", () => {
     renderRow({ section: "added", source: undefined, type: "managed" });

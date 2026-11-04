@@ -124,7 +124,7 @@ class GameRow extends ComponentEx<IProps, {}> {
                   </Tooltip>
 
                   <PopoverPanel anchor={{ gap: 8, to: "bottom end" }} className="popover-game-info">
-                    <div className="popover-content">
+                    <div className="popover-content" onClickCapture={this.reportHideToggle}>
                       <Provider store={this.context.api.store}>
                         <IconBar
                           buttonType="text"
@@ -191,6 +191,15 @@ class GameRow extends ComponentEx<IProps, {}> {
     );
 
   private reportMenuAction = (action: IActionDefinition) => this.reportAction("menu", action.title);
+
+  // Click capture, because Hide is a registered component (HideGameIcon), whose click
+  // never reaches onAction. Named as a tile's menu names it, by what it's about to do.
+  private reportHideToggle = (event: React.MouseEvent) => {
+    const { discovery, game } = this.props;
+    if ((event.target as Element).closest(`#hide-${CSS.escape(game.id)}`) !== null) {
+      this.reportAction("menu", discovery?.hidden ? "show" : "hide");
+    }
+  };
 
   private reportAction(placement: TileActionPlacement, action: string) {
     const { detectedStore, discovery, game, section } = this.props;

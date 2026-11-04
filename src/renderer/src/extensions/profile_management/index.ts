@@ -58,7 +58,11 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
+import {
+  emitGameActivated,
+  emitGameManaged,
+  emitGameUnmanaged,
+} from "../analytics/mixpanel/gameManageAnalytics";
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
 import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
@@ -359,9 +363,16 @@ function genOnProfileChange(
   };
 
   const confirmProfile = (gameId: string, current: string) => {
+    const state = store.getState();
+    const previousGameId = activeGameId(state);
+    // A profile manageGame just created has never been active, and app_game_manage covers it.
+    const activatedBefore = state.persistent.profiles[current]?.lastActivated !== undefined;
     store.dispatch(setCurrentProfile(gameId, current));
     if (current !== undefined) {
       store.dispatch(setProfileActivated(current));
+    }
+    if (gameId !== undefined && gameId !== previousGameId && activatedBefore) {
+      emitGameActivated(api, gameId);
     }
     const confirmPromise = cancelPromise;
     setTimeout(() => {
@@ -1048,7 +1059,7 @@ function init(context: IExtensionContext): boolean {
     150,
     "delete",
     {},
-    context.api.translate("Stop Managing"),
+    "Stop Managing",
     (instanceIds: string[]) => {
       unmanageGame(context.api, instanceIds[0]);
     },

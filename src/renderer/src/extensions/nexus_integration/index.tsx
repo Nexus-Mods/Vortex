@@ -1635,7 +1635,7 @@ function init(context: IExtensionContext): boolean {
     120,
     "nexus",
     {},
-    context.api.translate("Open Nexus Page"),
+    "Open Nexus Page",
     (games: string[]) => openNexusPage(context.api.store.getState(), games),
   );
 
@@ -1644,7 +1644,7 @@ function init(context: IExtensionContext): boolean {
     120,
     "nexus",
     {},
-    context.api.translate("Open Nexus Page"),
+    "Open Nexus Page",
     (games: string[]) => openNexusPage(context.api.store.getState(), games),
   );
 
@@ -1653,7 +1653,7 @@ function init(context: IExtensionContext): boolean {
     120,
     "nexus",
     {},
-    context.api.translate("Open Nexus Page"),
+    "Open Nexus Page",
     (games: string[]) => openNexusPage(context.api.store.getState(), games),
     (games: string[]) => gameById(context.api.getState(), games[0]) !== undefined,
   );
