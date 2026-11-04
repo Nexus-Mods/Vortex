@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import type { IGameStored } from "../../types/IGameStored";
 
-const { baseState, state } = vi.hoisted(() => {
+const { baseState, emit, state } = vi.hoisted(() => {
   const baseState = () => ({
     persistent: { profiles: {} },
     settings: {
@@ -15,8 +15,13 @@ const { baseState, state } = vi.hoisted(() => {
     },
   });
 
-  return { baseState, state: { current: baseState() } };
+  return { baseState, emit: vi.fn(), state: { current: baseState() } };
 });
+
+vi.mock("@/contexts", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useMainContext: () => ({ api: { events: { emit } } }),
+}));
 
 vi.mock("react-redux", async () => {
   const actual = await vi.importActual<typeof ReactReduxTypes>("react-redux");
@@ -83,6 +88,7 @@ const shownNames = () => screen.getByTestId("games-grid").textContent?.split(","
 
 describe("SupportedGames", () => {
   beforeEach(() => {
+    emit.mockReset();
     state.current = baseState();
   });
 
@@ -140,5 +146,9 @@ describe("SupportedGames", () => {
     await userEvent.click(screen.getByRole("option", { name: "Name A-Z" }));
 
     expect(onSortChange).toHaveBeenCalledWith("alphabetical");
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "app_games_sort_changed",
+      properties: { section: "supported", sort: "alphabetical" },
+    });
   });
 });

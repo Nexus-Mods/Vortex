@@ -1,7 +1,8 @@
-import React, { forwardRef, useEffect, useState } from "react";
+import React, { forwardRef, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { useMainContext } from "@/contexts";
 import type { IState } from "@/types/IState";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Pagination } from "@/ui/components/pagination/Pagination";
@@ -9,6 +10,7 @@ import { Picker } from "@/ui/components/picker/Picker";
 import { activeGameId } from "@/util/selectors";
 
 import type { IGameStored } from "../../types/IGameStored";
+import { createGamesPageTracker } from "../../util/games_page_tracker/gamesPageTracker";
 import { GamesGrid } from "../GamesGrid";
 import { GamesList } from "../GamesList";
 import { NoGamesFound } from "../NoGamesFound";
@@ -44,6 +46,8 @@ export const SupportedGames = forwardRef<HTMLDivElement, ISupportedGamesProps>(
     ref,
   ) => {
     const { t } = useTranslation();
+    const { api } = useMainContext();
+    const tracker = useMemo(() => createGamesPageTracker(api), [api]);
     const [page, setPage] = useState(1);
 
     const discoveredGames = useSelector((state: IState) => state.settings.gameMode.discovered);
@@ -70,7 +74,10 @@ export const SupportedGames = forwardRef<HTMLDivElement, ISupportedGamesProps>(
               { label: t("Most Recent"), value: "recent" },
             ]}
             value={sortOrder}
-            onChange={onSortChange}
+            onChange={(value) => {
+              onSortChange(value);
+              tracker.trackSortChanged({ section: "supported", sort: value });
+            }}
           />
         }
         count={count}
