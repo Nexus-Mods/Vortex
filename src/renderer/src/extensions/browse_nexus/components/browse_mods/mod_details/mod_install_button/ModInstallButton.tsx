@@ -43,7 +43,7 @@ const unavailableReason = (
   }
 
   if (primaryFile === null) {
-    return t("This mod has no file to download");
+    return t("This mod isn't available through Vortex. Download it from Nexus Mods instead.");
   }
 
   return undefined;
@@ -181,7 +181,7 @@ export const ModInstallButton = ({
 
     if (installState.kind === "installing") {
       return (
-        <Button disabled isLoading appearance="moderate" leftIcon="add">
+        <Button disabled isLoading leftIcon="add">
           {t("Install")}
         </Button>
       );
@@ -207,8 +207,6 @@ export const ModInstallButton = ({
     if (installState.kind === "installed" && isPremiumUser) {
       return (
         <Button
-          appearance="moderate"
-          brand="info"
           leftIcon="download"
           onClick={() => {
             tracker.trackUpdateClicked({ mod_uid: mod.id });
@@ -225,7 +223,6 @@ export const ModInstallButton = ({
 
       return (
         <Button
-          appearance="moderate"
           leftIcon="add"
           onClick={() => {
             tracker.trackInstallClicked({ mod_uid: mod.id });

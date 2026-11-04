@@ -204,7 +204,11 @@ describe("ModInstallButton", () => {
 
     expect(button()).toHaveAttribute("aria-disabled", "true");
     expect(mocks.install).not.toHaveBeenCalled();
-    expect(await screen.findByText("This mod has no file to download")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "This mod isn't available through Vortex. Download it from Nexus Mods instead.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("can't install a mod whose details failed to load, and says why", async () => {
