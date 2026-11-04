@@ -16,7 +16,7 @@ import {
   downloadAndInstallNexusFile,
   downloadNexusFile,
 } from "@/extensions/nexus_integration/util/download_and_install/downloadAndInstall";
-import { nexusFilePageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
+import { nexusModFilesUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
@@ -259,11 +259,7 @@ export const ModInstallButton = ({
           tracker.trackPremiumModalFallbackClicked({ mod_uid: mod.id, action: upsellAction });
           setIsUpsellOpen(false);
 
-          if (primaryFile) {
-            window.api.shell.openUrl(
-              nexusFilePageUrl(domain, mod.game_scoped_id, primaryFile.game_scoped_id),
-            );
-          }
+          window.api.shell.openUrl(nexusModFilesUrl(domain, mod.game_scoped_id));
         }}
         onPremiumUnlocked={() => {
           if (installState.kind === "installed") {

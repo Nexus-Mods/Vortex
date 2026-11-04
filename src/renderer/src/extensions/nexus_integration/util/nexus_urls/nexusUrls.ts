@@ -15,3 +15,7 @@ export const nexusFilePageUrl = (
   modId: number | string,
   fileId: number | string,
 ) => `${nexusModPageUrl(domain, modId)}?tab=files&file_id=${fileId}&nmm=1`;
+
+/** A mod's Files tab, where a free user picks a file to download. */
+export const nexusModFilesUrl = (domain: GameDomain, modId: number | string) =>
+  `${nexusModPageUrl(domain, modId)}?tab=files`;

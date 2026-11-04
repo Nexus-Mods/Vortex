@@ -150,7 +150,7 @@ describe("ModInstallButton", () => {
     ]);
   });
 
-  it("sends a free user to the file on the mod page", async () => {
+  it("sends a free user to the mod's Files tab to pick a file", async () => {
     mocks.isPremium = false;
     renderButton(primaryFile);
 
@@ -158,7 +158,7 @@ describe("ModInstallButton", () => {
     await userEvent.click(screen.getByRole("button", { name: "Install via mod page (free)" }));
 
     expect(openUrl).toHaveBeenCalledWith(
-      "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=files&file_id=42&nmm=1",
+      "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=files",
     );
     expect(upsellEvents()).toContainEqual([
       "browse_mods_premium_modal_fallback_clicked",
