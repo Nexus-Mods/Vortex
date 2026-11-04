@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { useMainContext } from "@/contexts";
+import { numericNexusGameId } from "@/extensions/analytics/mixpanel/numericGameId";
 import type { IState } from "@/types/IState";
 import type { IButtonBrand } from "@/ui/components/button/Button";
 import { Button } from "@/ui/components/button/Button";
@@ -15,6 +16,11 @@ import { Tiers } from "../tiered/types";
 import type { GameSource } from "../types/GameSource";
 import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
+import {
+  createGamesPageTracker,
+  type TileActionPlacement,
+  type TilePrimaryAction,
+} from "../util/games_page_tracker/gamesPageTracker";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { useSupportTier } from "./TierZeroIndicator";
 
@@ -54,14 +60,6 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   const source: GameSource | undefined =
     section === "detected" ? "detected_list" : section === "supported" ? "all_games" : undefined;
 
-  // Registered actions still know games as managed or unmanaged, the older split of this.
-  const { menu, primary } = useGameCardActions(
-    game.id,
-    section === "added" ? "managed" : "unmanaged",
-    showDetails,
-    source,
-  );
-  const name = game.name.replace(/\t/g, " ");
   const discoveredStore = useSelector(
     (state: IState) => state.settings.gameMode.discovered[game.id]?.store,
   );
@@ -69,13 +67,58 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   // isn't installed hasn't been through discovery, which leaves the detected store.
   const store = discoveredStore ?? detectedStore;
 
+  const tracker = useMemo(() => createGamesPageTracker(api), [api]);
+  const reportAction = useCallback(
+    (placement: TileActionPlacement, action: string) =>
+      tracker.trackTileAction({
+        section,
+        placement,
+        action,
+        game_id: numericNexusGameId(game.id),
+        game_store: store ?? null,
+      }),
+    [game.id, section, store, tracker],
+  );
+  const reportMenuAction = useCallback(
+    (action: string) => reportAction("menu", action),
+    [reportAction],
+  );
+
+  // Registered actions still know games as managed or unmanaged, the older split of this.
+  const { menu, primary } = useGameCardActions(
+    game.id,
+    section === "added" ? "managed" : "unmanaged",
+    showDetails,
+    source,
+    reportMenuAction,
+  );
+  const name = game.name.replace(/\t/g, " ");
+
   const actions: Record<
     IGameSection,
-    { brand: IButtonBrand; icon?: IIconSource; label: string; reveal: boolean }
+    {
+      brand: IButtonBrand;
+      icon?: IIconSource;
+      label: string;
+      reveal: boolean;
+      key: TilePrimaryAction;
+    }
   > = {
-    added: { brand: "neutral", label: t("Open"), reveal: true },
-    detected: { brand: "primary", icon: "add", label: t("Add game"), reveal: false },
-    supported: { brand: "neutral", icon: "add", label: t("Manual add"), reveal: true },
+    added: { brand: "neutral", label: t("Open"), reveal: true, key: "open" },
+    detected: {
+      brand: "primary",
+      icon: "add",
+      label: t("Add game"),
+      reveal: false,
+      key: "add_game",
+    },
+    supported: {
+      brand: "neutral",
+      icon: "add",
+      label: t("Manual add"),
+      reveal: true,
+      key: "manual_add",
+    },
   };
 
   const action = actions[section];
@@ -83,7 +126,13 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   // Activate is conditioned away for the game already in play, so its tile opens the
   // game's mods rather than leading with nothing.
   const openMods = useCallback(() => api.events.emit("show-main-page", "Mods"), [api]);
-  const onPrimary = isActive ? openMods : primary?.onClick;
+  const runPrimary = isActive ? openMods : primary?.onClick;
+  const onPrimary =
+    runPrimary &&
+    (() => {
+      reportAction("primary", isActive ? "open_mods" : action.key);
+      runPrimary();
+    });
 
   return (
     <>

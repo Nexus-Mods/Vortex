@@ -5,6 +5,7 @@
  */
 import { EventEmitter } from "events";
 
+import { GameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
@@ -61,5 +62,24 @@ describe("createGamesPageTracker", () => {
     tracker.trackSortChanged({ section: "supported", sort: "popular" });
     expect(events[0].eventName).toBe("app_games_sort_changed");
     expect(events[0].properties).toEqual({ section: "supported", sort: "popular" });
+  });
+
+  it("emits app_game_tile_action_clicked with the tile's game and store", () => {
+    const { tracker, events } = harness();
+    tracker.trackTileAction({
+      section: "detected",
+      placement: "primary",
+      action: "add_game",
+      game_id: GameId(1704),
+      game_store: "steam",
+    });
+    expect(events[0].eventName).toBe("app_game_tile_action_clicked");
+    expect(events[0].properties).toEqual({
+      section: "detected",
+      placement: "primary",
+      action: "add_game",
+      game_id: 1704,
+      game_store: "steam",
+    });
   });
 });

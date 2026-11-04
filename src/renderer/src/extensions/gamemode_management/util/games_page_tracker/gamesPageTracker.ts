@@ -1,3 +1,5 @@
+import type { GameId } from "@vortex/shared";
+
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -12,10 +14,19 @@ export type ScanTrigger = "refresh" | "retry";
  */
 export type ScanOutcome = "success" | "discovery_failed" | "detection_failed" | "cancelled";
 
+/** Where on a tile an action was run from: the button on its art, or its overflow menu. */
+export type TileActionPlacement = "primary" | "menu";
+
+/**
+ * The tile's lead button, named for what it shows: the label depends on the section, and
+ * the game already in play opens its mods instead.
+ */
+export type TilePrimaryAction = "open" | "open_mods" | "add_game" | "manual_add";
+
 /**
  * Build a Games page analytics event, dropping `undefined` values so an optional prop is
- * left off rather than sent as null. game_id / profile_id / user_type ride along as super
- * properties, never here.
+ * left off rather than sent as null. profile_id / user_type ride along as super properties,
+ * never here; so does game_id, except on an event about a game other than the one in play.
  */
 const gamesPageEvent = (
   eventName: string,
@@ -53,6 +64,19 @@ export const createGamesPageTracker = (api: IExtensionApi) => {
 
     trackSortChanged: (props: { section: IGameSection; sort: string }) =>
       track("app_games_sort_changed", props),
+
+    // `action` is a TilePrimaryAction for the lead button. For a menu row it's hide, show
+    // or game_details for the tile's own rows, and the registered title for an action an
+    // extension added, untranslated so one action doesn't split across languages.
+    // `game_id` overrides the active-game super property: the tile's game is rarely the
+    // one in play.
+    trackTileAction: (props: {
+      section: IGameSection;
+      placement: TileActionPlacement;
+      action: string;
+      game_id: GameId | null;
+      game_store: string | null;
+    }) => track("app_game_tile_action_clicked", props),
   };
 };
 
