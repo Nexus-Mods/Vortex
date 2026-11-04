@@ -10,7 +10,6 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { DataInvalid, HTTPError, ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 
 import { markCollectionMemberSkipped } from "../../util/collectionSkip";
-import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
 import { refreshMembership } from "./membership";
 import { NxmProtocol } from "./nxmProtocol";
@@ -28,12 +27,10 @@ vi.mock("./util", async (importOriginal) => ({
   startDownload: vi.fn(() => PromiseBB.resolve("dl-1")),
 }));
 
-vi.mock("../../util/opn", () => ({ default: vi.fn(() => PromiseBB.resolve()) }));
-
 vi.mock("../../util/collectionSkip", () => ({ markCollectionMemberSkipped: vi.fn() }));
 
 const modInfoQuery = vi.mocked(getInfoGraphQL);
-const openPage = vi.mocked(opn);
+const openPage = vi.fn();
 const markSkipped = vi.mocked(markCollectionMemberSkipped);
 
 /** A resolved download link, in the shape the v1 API returns. */
@@ -56,6 +53,12 @@ const apiError = (statusCode: number, message: string) =>
 describe("nxm protocol resolver", () => {
   beforeEach(() => {
     modInfoQuery.mockReset();
+    openPage.mockReset();
+    vi.stubGlobal("api", { ...window.api, shell: { openUrl: openPage } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   test("can be constructed without touching the api, as extension init requires", () => {
@@ -464,6 +467,32 @@ describe("nxm protocol resolver", () => {
         await expect(pending).rejects.toBeInstanceOf(UserCanceled);
       });
 
+      test("opens the file's page under its game's domain, not the link's game id", async ({
+        makeNxm,
+      }) => {
+        const link = "nxm://SkyrimSE/mods/100/files/500";
+        const { harness, nxm, resolve } = makeNxm({
+          userInfo: FREE,
+          knownGames: [
+            makeGameStored({
+              details: { nxmLinkId: "SkyrimSE", nexusPageId: "skyrimspecialedition" },
+            }),
+          ],
+        });
+        websiteRoundTrip();
+        const pending = resolve(link);
+        await queued(harness);
+
+        nxm.dialogHandlers.onDownload(link);
+
+        expect(openPage).toHaveBeenCalledWith(
+          "https://www.nexusmods.com/skyrimspecialedition/mods/100?tab=files&file_id=500&nmm=1",
+        );
+
+        nxm.dialogHandlers.onCancel(link);
+        await expect(pending).rejects.toBeInstanceOf(UserCanceled);
+      });
+
       test("skipping marks the mod skipped in the active collection install", async ({
         makeNxm,
       }) => {
@@ -491,6 +520,29 @@ describe("nxm protocol resolver", () => {
             }),
           }),
         );
+      });
+
+      test("skipping looks the update chain up under its game's domain, not the link's game id", async ({
+        makeNxm,
+      }) => {
+        const link = "nxm://SkyrimSE/mods/100/files/500";
+        const { harness, nxm, resolve } = makeNxm({
+          userInfo: FREE,
+          knownGames: [
+            makeGameStored({
+              details: { nxmLinkId: "SkyrimSE", nexusPageId: "skyrimspecialedition" },
+            }),
+          ],
+        });
+        websiteRoundTrip();
+        const pending = resolve(link);
+        await queued(harness);
+        harness.getModFiles.mockResolvedValue({ file_updates: [] });
+
+        nxm.dialogHandlers.onSkip(link);
+
+        await expect(pending).rejects.toBeInstanceOf(UserCanceled);
+        expect(harness.getModFiles).toHaveBeenCalledWith(100, "skyrimspecialedition");
       });
 
       test("skipping still cancels when the update chain can't be queried", async ({ makeNxm }) => {

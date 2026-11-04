@@ -14,11 +14,16 @@ import type {
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { TimeoutError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { GameDomain, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as fuzz from "fuzzball";
 import type { TFunction } from "i18next";
-import * as React from "react";
+import React, {
+  type FunctionComponent,
+  type MouseEvent,
+  type PropsWithChildren,
+  useContext,
+} from "react";
 import { Button } from "react-bootstrap";
 import type { Action } from "redux";
 import {} from "uuid";
@@ -42,7 +47,6 @@ import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import type { LogLevel } from "../../util/log";
 import { showError } from "../../util/message";
-import opn from "../../util/opn";
 import { activeGameId, downloadPathForGame, gameById } from "../../util/selectors";
 import { currentGame, getSafe } from "../../util/storeHelper";
 import {
@@ -111,6 +115,7 @@ import { checkModVersion } from "./util/checkModsVersion";
 import { nexusGameId } from "./util/convertGameId";
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from "./util/guessModID";
 import { isStoragePathName } from "./util/healStoragePathNames";
+import { nexusModPageUrl } from "./util/nexus_urls/nexusUrls";
 import retrieveCategoryList from "./util/retrieveCategories";
 import Tracking from "./util/tracking";
 import { makeFileUID } from "./util/UIDs";
@@ -499,7 +504,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 
 function openNexusPage(state: IState, gameIds: string[]) {
   const game = gameById(state, gameIds[0]);
-  opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch((err) => undefined);
+  window.api.shell.openUrl(`${NEXUS_BASE_URL}/${nexusGameId(game)}`);
 }
 
 function remapCategory(state: IState, category: number, fromGame: string, toGame: string) {
@@ -817,7 +822,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
             author: modFileInfo.mod.author,
             category: modFileInfo.mod.modCategory.id.toString().split(",")[0],
             description: modFileInfo.description,
-            homepage: `${NEXUS_BASE_URL}/${repoInfo.gameId}/mods/${modId}`,
+            homepage: nexusModPageUrl(GameDomain(modFileInfo.game.domainName), modId),
           },
         },
       };
@@ -1172,9 +1177,9 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   callbacks.forEach((cb) => cb(nexus));
 }
 
-function toolbarBanner(t: TFunction): React.FunctionComponent<React.PropsWithChildren<any>> {
+function toolbarBanner(t: TFunction): FunctionComponent<PropsWithChildren<any>> {
   return () => {
-    const context = React.useContext<IComponentContext>(MainContext);
+    const context = useContext<IComponentContext>(MainContext);
     const trackAndGoToPremium = (e) => {
       context.api.events.emit("analytics-track-click-event", "Go Premium", "Header");
       goBuyPremium(e);
@@ -1218,15 +1223,15 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<React.PropsWithChi
   };
 }
 
-function goBuyPremium(evt: React.MouseEvent<any>) {
+function goBuyPremium(evt: MouseEvent<any>) {
   const content = evt.currentTarget.getAttribute("data-campaign");
-  opn(
+  window.api.shell.openUrl(
     nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
       content: content,
     }),
-  ).catch((err) => undefined);
+  );
 }
 
 function idValid(
@@ -1347,7 +1352,7 @@ function init(context: IExtensionContext): boolean {
           return;
         }
 
-        opn(mod.attributes.url).catch((err) => null);
+        window.api.shell.openUrl(mod.attributes.url);
       }
     },
     (ids) => {
@@ -1573,7 +1578,7 @@ function init(context: IExtensionContext): boolean {
     "Nexus Mods",
     () => {
       currentGame(context.api.store).then((game) => {
-        opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch((err) => undefined);
+        window.api.shell.openUrl(`${NEXUS_BASE_URL}/${nexusGameId(game)}`);
       });
     },
     {

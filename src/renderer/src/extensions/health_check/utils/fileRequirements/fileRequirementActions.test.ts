@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { GameDomain } from "@vortex/shared";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 // The action layer is tested against mocked boundaries: the store selectors, the
 // enable/disable action and the download events. What matters here is which mods end up
 // enabled and disabled, so `setModsEnabled` is the assertion surface.
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ shouldShowPremiumAd: vi.fn() }));
-vi.mock("@/extensions/nexus_integration/util", () => ({ nexusGames: vi.fn(() => []) }));
+vi.mock("@/extensions/nexus_integration/util", () => ({ numericGameIdToDomainName: vi.fn() }));
 vi.mock("@/extensions/nexus_integration/util/convertGameId", () => ({
   convertGameIdReverse: vi.fn(() => "skyrimse"),
 }));
@@ -14,7 +15,6 @@ vi.mock("@/extensions/profile_management/actions/profiles", () => ({
   setModsEnabled: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/logging", () => ({ log: vi.fn() }));
-vi.mock("@/util/opn", () => ({ default: vi.fn(() => Promise.resolve()) }));
 vi.mock("@/extensions/mod_management/util/modName", () => ({ default: vi.fn(() => "Mod") }));
 vi.mock("@/util/util", () => ({ sanitizeCSSId: vi.fn((id: string) => id) }));
 vi.mock("../shared/installTracking", () => ({
@@ -23,14 +23,18 @@ vi.mock("../shared/installTracking", () => ({
 
 import { knownGames } from "@/extensions/gamemode_management/selectors";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
-import { nexusGames } from "@/extensions/nexus_integration/util";
+import { numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
 import { setModsEnabled } from "@/extensions/profile_management/actions/profiles";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import opn from "@/util/opn";
 
 import { trackedInstall } from "../shared/installTracking";
-import { downloadFileRequirement, installDownloadedFile } from "./fileRequirementActions";
+import {
+  downloadFileRequirement,
+  installDownloadedFile,
+  openFilePage,
+  openModPage,
+} from "./fileRequirementActions";
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
 import type { IFileRequirementCandidate } from "./mapRequirementsReport";
 
@@ -103,14 +107,23 @@ function makeApi(modIds: string[] = ["wrong-version", INSTALLED_MOD_ID]): IExten
 const enableCalls = (): Array<[string[], boolean]> =>
   mockSetModsEnabled.mock.calls.map((call) => [call[2], call[3]]);
 
+const openUrl = vi.fn();
+
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
   mockPremiumAd.mockReturnValue(false);
   mockSetModsEnabled.mockReturnValue(Promise.resolve() as never);
   mockTrackedInstall.mockImplementation((_api, _identity, run) => run());
-  vi.mocked(nexusGames).mockReturnValue([{ id: NEXUS_GAME_ID, domain_name: "skyrimse" }] as never);
+  vi.mocked(numericGameIdToDomainName).mockImplementation((id) =>
+    id === NEXUS_GAME_ID ? GameDomain("skyrimse") : undefined,
+  );
   vi.mocked(knownGames).mockReturnValue([] as never);
   mockActiveProfile.mockReturnValue({ id: "profile-1", gameId: "skyrimse" } as never);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("downloadFileRequirement", () => {
@@ -167,7 +180,7 @@ describe("downloadFileRequirement", () => {
 
     expect(await downloadFileRequirement(makeApi(), CANDIDATE)).toBe(false);
 
-    expect(opn).toHaveBeenCalledOnce();
+    expect(openUrl).toHaveBeenCalledOnce();
     expect(mockTrackedInstall).not.toHaveBeenCalled();
     expect(mockSetModsEnabled).not.toHaveBeenCalled();
   });
@@ -199,5 +212,36 @@ describe("installDownloadedFile", () => {
     mockPremiumAd.mockReturnValue(true);
 
     expect(await installDownloadedFile(makeApi(), DOWNLOADED)).toBe(true);
+  });
+});
+
+describe("Nexus pages", () => {
+  beforeEach(() => {
+    vi.mocked(numericGameIdToDomainName).mockImplementation((id) =>
+      id === NEXUS_GAME_ID ? GameDomain("skyrimspecialedition") : undefined,
+    );
+  });
+
+  test("opens the mod's page", () => {
+    openModPage(makeApi(), CANDIDATE);
+
+    expect(openUrl).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/42");
+  });
+
+  test("opens the file on its mod's Files tab", () => {
+    openFilePage(makeApi(), CANDIDATE);
+
+    expect(openUrl).toHaveBeenCalledWith(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/42?tab=files&file_id=9001&nmm=1",
+    );
+  });
+
+  test("opens nothing when the game has no Nexus domain", () => {
+    vi.mocked(numericGameIdToDomainName).mockReturnValue(undefined);
+
+    openModPage(makeApi(), CANDIDATE);
+    openFilePage(makeApi(), CANDIDATE);
+
+    expect(openUrl).not.toHaveBeenCalled();
   });
 });
