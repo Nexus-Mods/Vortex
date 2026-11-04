@@ -25,6 +25,9 @@ type SearchProps = {
   time_range: ModTimeRange;
 };
 
+/** The mod a 1-click upsell is for, and what the click would have done: install, download or update. */
+type OneClickUpsellProps = { mod_uid: string; action: "install" | "download" | "update" };
+
 /** Builds a Browse mods event, leaving out `undefined` properties rather than sending null. */
 const browseModsEvent = (
   eventName: string,
@@ -82,6 +85,40 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       position: number;
       input: SelectionInput;
     }) => track("browse_mods_mod_selected", props),
+
+    // 1-click download, by a Premium user or a free one once the upsell sees them unlock Premium;
+    // `action` says whether it installs too, as the user's settings say. The download and install themselves are mods_download_* and
+    // mods_installation_*.
+    trackOneClickClicked: (props: {
+      mod_uid: string;
+      file_uid: string;
+      action: "install" | "download";
+    }) => track("browse_mods_one_click_clicked", props),
+
+    // The upsell raised for a free user who clicked 1-click, and what they did with it; `action` as
+    // on browse_mods_one_click_clicked, or `update` for a mod they have an update for.
+    trackPremiumModalShown: (props: OneClickUpsellProps) =>
+      track("browse_mods_premium_modal_shown", props),
+
+    trackPremiumModalDismissed: (props: OneClickUpsellProps) =>
+      track("browse_mods_premium_modal_dismissed", props),
+
+    trackPremiumModalUnlockClicked: (props: OneClickUpsellProps) =>
+      track("browse_mods_premium_modal_unlock_clicked", props),
+
+    // Opened the file on the mod page to download it from the website instead.
+    trackPremiumModalFallbackClicked: (props: OneClickUpsellProps) =>
+      track("browse_mods_premium_modal_fallback_clicked", props),
+
+    // The details' button for a mod the user already has: installing its download, updating it as
+    // the Mods page's update check says, or showing it on the Mods page.
+    trackInstallClicked: (props: { mod_uid: string }) =>
+      track("browse_mods_install_clicked", props),
+
+    trackUpdateClicked: (props: { mod_uid: string }) => track("browse_mods_update_clicked", props),
+
+    trackViewInstalledClicked: (props: { mod_uid: string }) =>
+      track("browse_mods_view_installed_clicked", props),
 
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
 

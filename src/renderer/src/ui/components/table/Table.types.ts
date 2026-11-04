@@ -88,6 +88,10 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   focusGroupId?: string;
   /** Told once `focusGroupId`'s group is open and being scrolled to, so it can be dropped. */
   onGroupFocused?: () => void;
+  /** A row to bring into view and select, once the table has it. */
+  focusRowId?: string;
+  /** Told once `focusRowId`'s row is being scrolled to and selected, so it can be dropped. */
+  onRowFocused?: () => void;
   /** Told when a context menu opens, on what, and whether from the pointer or keyboard. */
   onMenuOpen?: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
 } & (

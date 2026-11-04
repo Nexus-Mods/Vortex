@@ -1,8 +1,11 @@
+import { GameDomain, VortexGameId } from "@vortex/shared";
+
 import { knownGames } from "@/extensions/gamemode_management/selectors";
 import renderModName from "@/extensions/mod_management/util/modName";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { nexusGames } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
+import { downloadAndInstallNexusFile } from "@/extensions/nexus_integration/util/download_and_install/downloadAndInstall";
 import { decodeUID } from "@/extensions/nexus_integration/util/UIDs";
 import { setModsEnabled } from "@/extensions/profile_management/actions/profiles";
 import { activeProfile } from "@/extensions/profile_management/selectors";
@@ -71,7 +74,6 @@ export async function downloadFileRequirement(
 
   // The downloader keys downloads on Vortex's internal game id, not the Nexus domain.
   const internalGameId = convertGameIdReverse(knownGames(api.getState()), domain) || domain;
-  const nxmUrl = `nxm://${domain}/mods/${mod.id}/files/${file.id}`;
 
   try {
     await trackedInstall(
@@ -82,26 +84,13 @@ export async function downloadFileRequirement(
         mod_version: candidate.version,
       },
       async () => {
-        const dlId = await new Promise<string>((resolve, reject) =>
-          api.events.emit(
-            "start-download",
-            [nxmUrl],
-            { game: internalGameId, name: candidate.fileName, fileId: file.id, modId: mod.id },
-            undefined,
-            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-            undefined,
-            { allowInstall: false },
-          ),
-        );
-
-        const modId = await new Promise<string>((resolve, reject) =>
-          api.events.emit(
-            "start-install-download",
-            dlId,
-            { allowAutoEnable: true },
-            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-          ),
-        );
+        const modId = await downloadAndInstallNexusFile(api, {
+          gameDomain: GameDomain(domain),
+          gameId: VortexGameId(internalGameId),
+          modId: String(mod.id),
+          fileId: String(file.id),
+          name: candidate.fileName,
+        });
 
         await activateInstalledVersion(api, modId, enabledFile);
       },

@@ -5,12 +5,10 @@ import { useSelector } from "react-redux";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
-import { Typography } from "@/ui/components/typography/Typography";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
-import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import {
   HealthCheckTrackingProvider,
@@ -112,20 +110,8 @@ function HealthCheckDetailPage({
       <IssueProvider entry={shownEntry}>
         <Page active={active} id="health-check-detail-page" scrollable={false}>
           <PageHeader
-            customTitle={(compact) => (
-              <div className="flex items-center gap-x-1.5">
-                <Typography
-                  appearance={compact ? "subdued" : "moderate"}
-                  as="h2"
-                  className="font-medium transition-colors"
-                  typographyType="body-xl"
-                >
-                  {t(`detail::title::${shownEntry.severity}`)}
-                </Typography>
-
-                <BetaBadge isSubdued={compact} />
-              </div>
-            )}
+            isBeta
+            title={t(`detail::title::${shownEntry.severity}`)}
             pictogramName="health-check"
             subtitle={t(`detail::subtitle::${shownEntry.severity}`)}
           >

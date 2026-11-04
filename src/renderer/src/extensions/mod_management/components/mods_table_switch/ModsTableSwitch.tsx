@@ -91,7 +91,7 @@ const nop = () => undefined;
 /**
  * The Mods page's table: the classic one, or the new one while the user has the beta view on.
  *
- * The new table is asked to show a group; see useModsTableFocusRequest.
+ * The new table is asked to show a group or a mod; see useModsTableFocusRequest.
  */
 export const ModsTableSwitch = ({
   mods,
@@ -310,7 +310,12 @@ export const ModsTableSwitch = ({
       onSearchStarted: analytics.onSearchStarted,
     });
 
-  const { focusGroupId, onGroupFocused } = useModsTableFocusRequest({ groups, search, setSearch });
+  const { focusGroupId, onGroupFocused, focusModId, onModFocused } = useModsTableFocusRequest({
+    groups,
+    rows,
+    search,
+    setSearch,
+  });
 
   const displayOptions = useDisplayOptionsAction({
     label: t("View options"),
@@ -361,6 +366,8 @@ export const ModsTableSwitch = ({
   const tableProps = {
     focusGroupId,
     onGroupFocused,
+    focusRowId: focusModId,
+    onRowFocused: onModFocused,
     className: "mb-2 flex-1",
     toolbar: (
       <ModsTableToolbar

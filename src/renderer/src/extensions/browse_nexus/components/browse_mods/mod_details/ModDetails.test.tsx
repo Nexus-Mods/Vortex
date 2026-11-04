@@ -22,6 +22,9 @@ vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
   }),
 }));
 
+// The install button has tests of its own.
+vi.mock("./mod_install_button/ModInstallButton", () => ({ ModInstallButton: () => null }));
+
 import type { IGalleryImage } from "./mod_gallery/ModGallery";
 import { ModDetails } from "./ModDetails";
 

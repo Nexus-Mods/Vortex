@@ -7,6 +7,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
 import { TabPanel } from "@/ui/components/tabs/TabPanel";
+import { useTabContext } from "@/ui/components/tabs/Tabs.context";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 
@@ -37,9 +38,9 @@ interface IBrowseSectionsProps {
 }
 
 /**
- * The open game's mods and collections, under the header with a tab for each. `BrowsePage` keys
- * it by the game, so a sort, search or page picked for one game starts over in the next, and
- * nothing of one game's shows in another's.
+ * The open game's mods and collections, under the header with a tab for each, its title marked
+ * beta while the mods are open. `BrowsePage` keys it by the game, so a sort, search or page picked
+ * for one game starts over in the next, and nothing of one game's shows in another's.
  */
 export const BrowseSections = ({
   api,
@@ -51,6 +52,8 @@ export const BrowseSections = ({
   const subtitle = pageSubtitle(t, useSelector(currentGame)?.name);
   const collections = useCollectionSearch(api);
   const mods = useModSearch(api, { isEnabled: isModsEnabled });
+  const { selectedTab } = useTabContext();
+  const isModsTab = isModsEnabled && selectedTab === "mods";
 
   return (
     <>
@@ -59,6 +62,7 @@ export const BrowseSections = ({
         className="bg-surface-low"
         pictogramName="nexus-mods"
         subtitle={subtitle}
+        isBeta={isModsTab}
         title={t("Browse")}
       >
         <TabBar>

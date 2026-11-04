@@ -31,6 +31,7 @@ export const makeModsTableStore = ({
   activity = {},
   views = modsTableViewsReducer.defaults,
   focusedGroupId,
+  focusedModId,
 }: {
   tables?: IModsTableTestTables;
   downloads?: { [id: string]: Partial<IDownload> };
@@ -44,6 +45,8 @@ export const makeModsTableStore = ({
   views?: IModsTableViewsState;
   /** A group the table is asked to show, as `session.mods.focusedGroupId` keeps it. */
   focusedGroupId?: string;
+  /** A mod the table is asked to show, as `session.mods.focusedModId` keeps it. */
+  focusedModId?: string;
 } = {}) => {
   const initial = {
     settings: {
@@ -53,7 +56,10 @@ export const makeModsTableStore = ({
       profiles: { activeProfileId: "profile" },
       mods: { betaTable },
     },
-    session: { base: { activity }, mods: { ...sessionReducer.defaults, focusedGroupId } },
+    session: {
+      base: { activity },
+      mods: { ...sessionReducer.defaults, focusedGroupId, focusedModId },
+    },
     persistent: {
       profiles: { profile: { gameId: MODS_TABLE_TEST_GAME, modState } },
       downloads: { files: downloads },
