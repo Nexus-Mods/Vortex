@@ -95,7 +95,7 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
  * the nexus page id (domain) for the game an nxm url names, mapping the link's game id through
  * the games Vortex knows about
  */
-export function nxmPageId(state: IState, nxmGameId: string): string {
+export function nxmPageId(state: IState, nxmGameId: string): GameDomain {
   const gameId = convertNXMIdReverse(knownGames(state), nxmGameId);
   return nexusGameId(gameById(state, gameId), nxmGameId);
 }

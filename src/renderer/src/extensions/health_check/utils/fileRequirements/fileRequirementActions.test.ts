@@ -1,10 +1,11 @@
+import { GameDomain } from "@vortex/shared";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 // The action layer is tested against mocked boundaries: the store selectors, the
 // enable/disable action and the download events. What matters here is which mods end up
 // enabled and disabled, so `setModsEnabled` is the assertion surface.
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ shouldShowPremiumAd: vi.fn() }));
-vi.mock("@/extensions/nexus_integration/util", () => ({ nexusGames: vi.fn(() => []) }));
+vi.mock("@/extensions/nexus_integration/util", () => ({ numericGameIdToDomainName: vi.fn() }));
 vi.mock("@/extensions/nexus_integration/util/convertGameId", () => ({
   convertGameIdReverse: vi.fn(() => "skyrimse"),
 }));
@@ -23,7 +24,7 @@ vi.mock("../shared/installTracking", () => ({
 
 import { knownGames } from "@/extensions/gamemode_management/selectors";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
-import { nexusGames } from "@/extensions/nexus_integration/util";
+import { numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
 import { setModsEnabled } from "@/extensions/profile_management/actions/profiles";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -113,7 +114,9 @@ beforeEach(() => {
   mockPremiumAd.mockReturnValue(false);
   mockSetModsEnabled.mockReturnValue(Promise.resolve() as never);
   mockTrackedInstall.mockImplementation((_api, _identity, run) => run());
-  vi.mocked(nexusGames).mockReturnValue([{ id: NEXUS_GAME_ID, domain_name: "skyrimse" }] as never);
+  vi.mocked(numericGameIdToDomainName).mockImplementation((id) =>
+    id === NEXUS_GAME_ID ? GameDomain("skyrimse") : undefined,
+  );
   vi.mocked(knownGames).mockReturnValue([] as never);
   mockActiveProfile.mockReturnValue({ id: "profile-1", gameId: "skyrimse" } as never);
 });
@@ -209,9 +212,9 @@ describe("installDownloadedFile", () => {
 
 describe("Nexus pages", () => {
   beforeEach(() => {
-    vi.mocked(nexusGames).mockReturnValue([
-      { id: NEXUS_GAME_ID, domain_name: "skyrimspecialedition" },
-    ] as never);
+    vi.mocked(numericGameIdToDomainName).mockImplementation((id) =>
+      id === NEXUS_GAME_ID ? GameDomain("skyrimspecialedition") : undefined,
+    );
   });
 
   test("opens the mod's page", () => {
@@ -229,7 +232,7 @@ describe("Nexus pages", () => {
   });
 
   test("opens nothing when the game has no Nexus domain", () => {
-    vi.mocked(nexusGames).mockReturnValue([]);
+    vi.mocked(numericGameIdToDomainName).mockReturnValue(undefined);
 
     openModPage(makeApi(), CANDIDATE);
     openFilePage(makeApi(), CANDIDATE);

@@ -464,6 +464,32 @@ describe("nxm protocol resolver", () => {
         await expect(pending).rejects.toBeInstanceOf(UserCanceled);
       });
 
+      test("opens the file's page under its game's domain, not the link's game id", async ({
+        makeNxm,
+      }) => {
+        const link = "nxm://SkyrimSE/mods/100/files/500";
+        const { harness, nxm, resolve } = makeNxm({
+          userInfo: FREE,
+          knownGames: [
+            makeGameStored({
+              details: { nxmLinkId: "SkyrimSE", nexusPageId: "skyrimspecialedition" },
+            }),
+          ],
+        });
+        websiteRoundTrip();
+        const pending = resolve(link);
+        await queued(harness);
+
+        nxm.dialogHandlers.onDownload(link);
+
+        expect(openPage).toHaveBeenCalledWith(
+          "https://www.nexusmods.com/skyrimspecialedition/mods/100?tab=files&file_id=500&nmm=1",
+        );
+
+        nxm.dialogHandlers.onCancel(link);
+        await expect(pending).rejects.toBeInstanceOf(UserCanceled);
+      });
+
       test("skipping marks the mod skipped in the active collection install", async ({
         makeNxm,
       }) => {

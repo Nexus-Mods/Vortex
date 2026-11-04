@@ -1,7 +1,7 @@
 import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { HTTPError as NexusHTTPError, NexusError } from "@nexusmods/nexus-api";
-import { GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
+import { type GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
 import { parseError } from "@vortex/shared";
 import type { Action } from "redux";
 
@@ -47,6 +47,8 @@ const DOWNLOAD_URL_CACHE_DURATION = 5 * 60 * 1000;
 interface IQueuedDownload {
   input: string;
   url: NXMUrl;
+  /** The domain the url's game resolved to, which its link id need not be. */
+  pageId: GameDomain;
   resolve: (res: IResolvedURL) => void;
   reject: (err: Error) => void;
   /** The file's update chain, used to describe what a skip is skipping. */
@@ -163,7 +165,7 @@ export class NxmProtocol {
         return await this.#apiDownload(input, url, pageId);
       } catch (err) {
         if (await this.#confirmMembershipEnded(url, err)) {
-          return this.#websiteDownload(input, url);
+          return this.#websiteDownload(input, url, pageId);
         }
         throw err;
       }
@@ -173,7 +175,7 @@ export class NxmProtocol {
       return this.#apiDownload(input, url, pageId);
     }
 
-    return this.#websiteDownload(input, url);
+    return this.#websiteDownload(input, url, pageId);
   };
 
   /**
@@ -259,11 +261,11 @@ export class NxmProtocol {
       if (queued === undefined) {
         return;
       }
-      const { url } = queued;
+      const { url, pageId } = queued;
 
       queued.awaitingLink = true;
 
-      opn(nexusFilePageUrl(GameDomain(url.gameId), url.modId, url.fileId)).catch(() => null);
+      opn(nexusFilePageUrl(pageId, url.modId, url.fileId)).catch(() => null);
     },
 
     onSkip: (inputUrl: string) => {
@@ -390,12 +392,13 @@ export class NxmProtocol {
    * Park the download until the user brings back an authorised link from the website (or cancels
    * or skips it). FreeUserDLDialog renders off the redux queue this dispatches into.
    */
-  #websiteDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
+  #websiteDownload(input: string, url: NXMUrl, pageId: GameDomain): Promise<IResolvedURL> {
     // a promise settles once and #dequeue tolerates a repeat, so cancelling after a skip is safe
     return new Promise<IResolvedURL>((resolve, reject) => {
       this.#freeQueue.push({
         input,
         url,
+        pageId,
         resolve: (res) => {
           this.#dequeue(input);
           resolve(res);

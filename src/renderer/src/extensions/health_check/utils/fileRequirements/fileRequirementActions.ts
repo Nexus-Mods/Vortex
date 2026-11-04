@@ -1,9 +1,9 @@
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { type GameDomain, GameId, VortexGameId } from "@vortex/shared";
 
 import { knownGames } from "@/extensions/gamemode_management/selectors";
 import renderModName from "@/extensions/mod_management/util/modName";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
-import { nexusGames } from "@/extensions/nexus_integration/util";
+import { numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
 import { downloadAndInstallNexusFile } from "@/extensions/nexus_integration/util/download_and_install/downloadAndInstall";
 import {
@@ -34,17 +34,11 @@ interface INexusFileRef {
   modUID: string;
 }
 
-/** Nexus domain name (e.g. "stardewvalley") for a numeric game id, if known. */
-function nexusDomain(gameId: number): GameDomain | undefined {
-  const domain = nexusGames().find((game) => game.id === gameId)?.domain_name;
-  return domain === undefined ? undefined : GameDomain(domain);
-}
-
 /** A ref's mod on Nexus, or undefined when the mod id or domain can't be resolved. */
 function nexusMod(ref: INexusFileRef): { domain: GameDomain; modId: number } | undefined {
   // modUID is empty when the source data lacked a mod id; decode only when present.
   const mod = ref.modUID ? decodeUID(ref.modUID) : undefined;
-  const domain = mod ? nexusDomain(mod.gameId) : undefined;
+  const domain = mod ? numericGameIdToDomainName(GameId(mod.gameId)) : undefined;
   return mod && domain ? { domain, modId: mod.id } : undefined;
 }
 
@@ -68,7 +62,7 @@ export async function downloadFileRequirement(
   const mod = decodeUID(candidate.modUID);
   const file = decodeUID(candidate.fileUID);
 
-  const domain = mod ? nexusDomain(mod.gameId) : undefined;
+  const domain = mod ? numericGameIdToDomainName(GameId(mod.gameId)) : undefined;
   if (!mod || !file || !domain) {
     log("warn", "cannot download file requirement: unresolved ids", {
       fileUID: candidate.fileUID,
