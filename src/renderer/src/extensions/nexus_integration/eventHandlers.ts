@@ -1277,15 +1277,9 @@ export function onGetTrendingMods(api: IExtensionApi, nexus: Nexus) {
   };
 }
 
-/**
- * nexus-api keeps the first preferences it reads for the life of the client, whoever's they are,
- * so a session ending or starting drops them: the next account's are read afresh.
- */
-const forgetPreferences = (nexus: Nexus) => nexus.clearPreferencesCache();
-
 export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   return (oldValue: string, newValue: string) => {
-    forgetPreferences(nexus);
+    nexus.clearPreferencesCache();
     api.store.dispatch(setUserInfo(undefined));
     if (newValue !== undefined) {
       updateKey(api, nexus, newValue);
@@ -1293,7 +1287,9 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
   };
 }
 
-// fired when state variable changes 'confidential.account.nexus.OAuthCredentials'
+// fired when state variable changes 'confidential.account.nexus.OAuthCredentials'. A session ending
+// or starting drops nexus-api's cached preferences, which it keeps for the life of the client
+// whoever's they are, so the next account's are read afresh.
 export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   // Despite the historical ITokenReply annotation, the value stored in
   // state (and written by onJWTTokenRefresh / setOAuthCredentials) is the
@@ -1303,7 +1299,7 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
 
     if (newValue === undefined) {
       // logout: credentials cleared, however the session ended
-      forgetPreferences(nexus);
+      nexus.clearPreferencesCache();
       api.store.dispatch(setUserInfo(undefined));
       return;
     }
@@ -1314,7 +1310,7 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
     }
 
     // fresh login: undefined -> defined
-    forgetPreferences(nexus);
+    nexus.clearPreferencesCache();
     api.store.dispatch(setUserInfo(undefined));
     updateToken(api, nexus, newValue);
   };
