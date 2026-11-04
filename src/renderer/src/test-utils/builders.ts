@@ -1798,6 +1798,7 @@ export function makeNxmHarness(opts: Partial<IDriverHarnessState> = {}): INxmHar
     getCollectionDownloadLink,
     getModFiles,
     getUserInfo,
+    clearPreferencesCache: vi.fn(),
   } as unknown as NexusT;
 
   return {

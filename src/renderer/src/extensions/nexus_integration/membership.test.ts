@@ -26,7 +26,7 @@ const setSignedOut = (harness: IApiHarness) =>
   });
 
 const makeNexus = (getUserInfo = vi.fn().mockResolvedValue(makeApiUserInfo())) => ({
-  nexus: { getUserInfo } as never,
+  nexus: { getUserInfo, clearPreferencesCache: vi.fn() } as never,
   getUserInfo,
 });
 
@@ -51,6 +51,29 @@ describe("membership freshness", () => {
       expect(harness.getState().persistent["nexus"].userInfo).toMatchObject({ isPremium: true });
     });
 
+    test("reads the account's preferences afresh, not ones a read for another account cached", async ({
+      makeApi,
+    }) => {
+      const harness = makeApi();
+      // as nexus-api does: the first preferences read are kept until the cache is cleared
+      let cached: { adult: boolean } | undefined;
+      let onSite = { adult: true };
+      const clearPreferencesCache = vi.fn(() => {
+        cached = undefined;
+      });
+      const getUserInfo = vi.fn(async () => {
+        cached ??= onSite;
+        return { ...makeApiUserInfo(), preferences: cached };
+      });
+      const nexus = { getUserInfo, clearPreferencesCache } as never;
+
+      await refreshMembership(harness.api, nexus);
+      onSite = { adult: false };
+      await refreshMembership(harness.api, nexus);
+
+      expect(harness.getState().persistent["nexus"].userInfo).toMatchObject({ adult: false });
+    });
+
     test("shares one request between concurrent callers", async ({ makeApi }) => {
       const harness = makeApi();
       const { nexus, getUserInfo } = makeNexus();
@@ -67,7 +90,7 @@ describe("membership freshness", () => {
     test("reports failure without leaving the request stuck", async ({ makeApi }) => {
       const harness = makeApi();
       const getUserInfo = vi.fn().mockRejectedValueOnce(new Error("network down"));
-      const nexus = { getUserInfo } as never;
+      const nexus = { getUserInfo, clearPreferencesCache: vi.fn() } as never;
 
       await expect(refreshMembership(harness.api, nexus)).resolves.toBe(false);
 
@@ -113,7 +136,7 @@ describe("membership freshness", () => {
     }) => {
       const harness = makeApi();
       const getUserInfo = vi.fn().mockRejectedValue(new Error("network down"));
-      const nexus = { getUserInfo } as never;
+      const nexus = { getUserInfo, clearPreferencesCache: vi.fn() } as never;
 
       await ensureFreshMembership(harness.api, nexus);
       await ensureFreshMembership(harness.api, nexus);
@@ -130,7 +153,10 @@ describe("membership freshness", () => {
       const refresh = vi.fn();
       harness.api.events.on("refresh-user-info", refresh);
 
-      await ensureFreshMembership(harness.api, { getUserInfo } as never);
+      await ensureFreshMembership(harness.api, {
+        getUserInfo,
+        clearPreferencesCache: vi.fn(),
+      } as never);
       scheduleMembershipRefresh(harness.api, 60 * 1000);
 
       expect(refresh).not.toHaveBeenCalled();
@@ -147,7 +173,7 @@ describe("membership freshness", () => {
       const now = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
       try {
         const getUserInfo = vi.fn().mockRejectedValue(rateLimited());
-        const nexus = { getUserInfo } as never;
+        const nexus = { getUserInfo, clearPreferencesCache: vi.fn() } as never;
 
         await ensureFreshMembership(harness.api, nexus);
         now.mockReturnValue(LATER);
@@ -164,7 +190,7 @@ describe("membership freshness", () => {
       const now = vi.spyOn(Date, "now").mockReturnValue(1_000_000);
       try {
         const getUserInfo = vi.fn().mockRejectedValue(new Error("network down"));
-        const nexus = { getUserInfo } as never;
+        const nexus = { getUserInfo, clearPreferencesCache: vi.fn() } as never;
 
         await ensureFreshMembership(harness.api, nexus);
         now.mockReturnValue(LATER);
