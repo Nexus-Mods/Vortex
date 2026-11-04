@@ -80,6 +80,7 @@ import { syncFromProfile, syncToProfile } from "./sync";
 import { CorruptActiveProfile, ProfileSwitchStep } from "./types/Errors";
 import type { IProfile } from "./types/IProfile";
 import type { IProfileFeature } from "./types/IProfileFeature";
+import { confirmTierZero } from "./util/confirmTierZero";
 import { sanitizeProfile } from "./util/sanitizeProfile";
 import Connector from "./views/Connector";
 import ProfileView from "./views/ProfileView";
@@ -962,7 +963,9 @@ function init(context: IExtensionContext): boolean {
 
       const registerStep =
         tierZero !== undefined
-          ? context.api.emitAndAwait("register-tier-zero-game", tierZero)
+          ? confirmTierZero(context.api).then(() =>
+              context.api.emitAndAwait("register-tier-zero-game", tierZero),
+            )
           : Promise.resolve();
 
       registerStep
