@@ -8,12 +8,11 @@ import {
 } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
+import { filtersToSearch } from "../../util/mod_filters/modFilterList";
 import {
   type IModFilters,
   type IModSort,
   ModPreset,
-  type ModSortField,
-  type ModTimeRange,
   PRESET_FILTERS,
   PRESET_SORTS,
 } from "../../util/mod_views/modViews";
@@ -44,27 +43,6 @@ interface IModsSearch {
   rangeFrom: number;
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * The search's date filter for a time range, counting back from `from`: mods created within it, or
- * updated within it for the `updated` sort; none for all time.
- */
-export const timeRangeFilter = (
-  timeRange: ModTimeRange,
-  field: ModSortField,
-  from: number,
-): Pick<ModsSearchRequest["filters"], "created_at" | "updated_at"> => {
-  if (timeRange === "all") {
-    return {};
-  }
-
-  const since = new Date(from - Number(timeRange) * DAY_MS);
-  const range = { gte: since.toISOString() };
-
-  return field === "updated" ? { updated_at: range } : { created_at: range };
-};
-
 /** The search for a page of a game's mods, sorted and filtered; none outside a game. */
 const searchFor = ({
   gameDomainName,
@@ -80,7 +58,7 @@ const searchFor = ({
   return {
     filters: {
       games: [gameDomainName],
-      ...timeRangeFilter(filters.timeRange, sort.field, rangeFrom),
+      ...filtersToSearch(filters, { sortField: sort.field, rangeFrom }),
     },
     sort: { field: sort.field, direction: sort.direction },
     pagination: { type: "page", page, page_size: MODS_PER_PAGE },

@@ -9,11 +9,15 @@ import { useSavedSplit } from "@/ui/components/resizable_split/useSavedSplit.hoo
 import type { IToolbarPanelHandle } from "@/ui/components/toolbar/ToolbarPanelButton";
 import { nxmModOutline } from "@/ui/icon-paths";
 
-import type { SelectionInput } from "../../hooks/browse_mods_tracking/browseModsTracker";
+import {
+  type ISearchEventProps,
+  type SelectionInput,
+} from "../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useBrowseModsViews } from "../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
 import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
 import { type IModSearch, MODS_PER_PAGE } from "../../hooks/use_mod_search/useModSearch.hook";
+import { filterEventProps } from "../../util/mod_filters/modFilterList";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
 import { ModDetails } from "./mod_details/ModDetails";
@@ -53,28 +57,28 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     [],
   );
   const { viewPicker, editedViewStrip } = useBrowseModsViews(search, panelRefs);
-  const { viewId, trackedView, sort, filters, currentPage, error } = search;
+  const { trackedView, sort, filters, currentPage, error } = search;
   const isEmpty = !search.loading && !error && !mods.length;
 
   /**
-   * The search the results came from, as its events describe it; the same while it is, and new for
-   * each view, so two of the user's own alike still count apart.
+   * The search the results came from, as its events describe it, kept as a string so it only
+   * changes when a value does, not when the view's objects are rebuilt, as renaming it does. An
+   * empty search is counted once, and again for another view, even one of the user's own alike.
    */
-  const searched = useMemo(
-    () => ({
-      view: trackedView,
-      sort_field: sort.field,
-      sort_direction: sort.direction,
-      time_range: filters.timeRange,
-    }),
-    [viewId, trackedView, sort.field, sort.direction, filters.timeRange],
-  );
+  const searchedKey = JSON.stringify({
+    view: trackedView,
+    sort_field: sort.field,
+    sort_direction: sort.direction,
+    ...filterEventProps(filters),
+  });
+
+  const searched = useMemo(() => JSON.parse(searchedKey) as ISearchEventProps, [searchedKey]);
 
   useEffect(() => {
     if (isEmpty && isShown) {
       tracker.trackNoResults(searched);
     }
-  }, [isEmpty, isShown, searched, tracker]);
+  }, [isEmpty, isShown, searched, tracker, search.viewId]);
 
   /** Opens another mod's details. */
   const selectMod = (id: string, input: SelectionInput) => {

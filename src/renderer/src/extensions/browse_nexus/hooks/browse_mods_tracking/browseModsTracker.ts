@@ -3,13 +3,21 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import type {
   TrackedView,
+  ModAdultContent,
   ModSortDirection,
   ModSortField,
   ModTimeRange,
 } from "../../util/mod_views/modViews";
 
-/** Where a time range was changed from. */
-export type TimeRangeSource = "filter_menu" | "applied_filter" | "applied_filter_clear";
+/**
+ * Where a filter was changed from: its submenu or its reset there, or the chip the bar shows while
+ * it's on, or that chip's remove.
+ */
+export type FilterSource =
+  | "filter_menu"
+  | "filter_reset"
+  | "applied_filter"
+  | "applied_filter_clear";
 
 /** How a mod or picture was picked: clicked, or moved to with the keys. */
 export type SelectionInput = "pointer" | "keyboard";
@@ -17,13 +25,15 @@ export type SelectionInput = "pointer" | "keyboard";
 /** Which way the gallery's strip was paged. */
 export type GalleryDirection = "back" | "forward";
 
-/** The search a results event is about: its view, sort and time range. */
-type SearchProps = {
+/** The filters as the events name them, a property or more each, as each filter says. */
+export type IFilterEventProps = Record<string, string | number>;
+
+/** The search a results event is about: its view, sort and filters. */
+export type ISearchEventProps = {
   view: TrackedView;
   sort_field: ModSortField;
   sort_direction: ModSortDirection;
-  time_range: ModTimeRange;
-};
+} & IFilterEventProps;
 
 /** The mod a 1-click upsell is for, and what the click would have done: install, download or update. */
 type OneClickUpsellProps = { mod_uid: string; action: "install" | "download" | "update" };
@@ -82,8 +92,15 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       view: TrackedView;
       time_range: ModTimeRange;
       previous_time_range: ModTimeRange;
-      source: TimeRangeSource;
+      source: FilterSource;
     }) => track("browse_mods_time_range_changed", props),
+
+    trackAdultFilterChanged: (props: {
+      view: TrackedView;
+      adult: ModAdultContent;
+      previous_adult: ModAdultContent;
+      source: FilterSource;
+    }) => track("browse_mods_adult_filter_changed", props),
 
     // `filter_count` is how many differed from the view's own, which the reset puts back.
     trackFiltersReset: (props: { view: TrackedView; filter_count: number }) =>
@@ -118,7 +135,7 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackPremiumModalUnlockClicked: (props: OneClickUpsellProps) =>
       track("browse_mods_premium_modal_unlock_clicked", props),
 
-    // Opened the file on the mod page to download it from the website instead.
+    // Opened the mod's Files tab to download it from the website instead.
     trackPremiumModalFallbackClicked: (props: OneClickUpsellProps) =>
       track("browse_mods_premium_modal_fallback_clicked", props),
 
@@ -168,9 +185,9 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       track("browse_mods_gallery_paged", props),
 
     // Once per search that comes back empty.
-    trackNoResults: (props: SearchProps) => track("browse_mods_no_results", props),
+    trackNoResults: (props: ISearchEventProps) => track("browse_mods_no_results", props),
 
-    trackRetryClicked: (props: SearchProps & { page: number }) =>
+    trackRetryClicked: (props: ISearchEventProps & { page: number }) =>
       track("browse_mods_retry_clicked", props),
   };
 };

@@ -7,7 +7,11 @@ import { ModList } from "./ModList";
 
 // The user's settings, which the cards read, aren't needed here.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
-vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
+vi.mock("@/extensions/nexus_integration/selectors", () => ({
+  userInfo: () => undefined,
+  canSeeAdultContent: () => true,
+  isLoggedIn: () => true,
+}));
 
 type IMod = React.ComponentProps<typeof ModList>["mods"][number];
 
