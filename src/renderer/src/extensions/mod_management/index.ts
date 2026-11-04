@@ -3,6 +3,7 @@ import * as path from "path";
 import {
   getErrorCode,
   unknownToError,
+  type VortexGameId,
   VortexModId,
   VortexProfileId,
   VortexStagingFolder,
@@ -107,6 +108,7 @@ import { modsTableViewsReducer } from "./reducers/modsTableViews";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
 import { transactionsReducer } from "./reducers/transactions";
+import { modNameByStagingFolder } from "./selectors";
 import getText from "./texts";
 import type {
   IDeployedFile,
@@ -123,6 +125,7 @@ import type { IResolvedMerger } from "./types/IResolvedMerger";
 import type { TestSupported } from "./types/TestSupported";
 import {
   fallbackPurge,
+  getManifest,
   loadActivation,
   saveActivation,
   withActivationLock,
@@ -2284,16 +2287,20 @@ function init(context: IExtensionContext): boolean {
 
   context.registerDialog("collection-update-warning", CollectionUpdateWarning);
 
-  context.registerDialog(
-    MANUAL_INSTALLER_DIALOG_ID,
-    ManualInstallerDialog,
-    () =>
-      ({
-        request: context.api.getState().session.manualInstaller.pending[0],
-        onAnswer: (requestId, answer) =>
-          answerManualInstallerRequest(context.api, requestId, answer),
-      }) satisfies Partial<IManualInstallerDialogProps>,
-  );
+  // one function, as the dialog loads the manifest again whenever it changes
+  const loadManifest = (gameId: VortexGameId) => getManifest(context.api, "", gameId);
+
+  context.registerDialog(MANUAL_INSTALLER_DIALOG_ID, ManualInstallerDialog, () => {
+    const state = context.api.getState();
+    const request = state.session.manualInstaller.pending[0];
+
+    return {
+      request,
+      modNames: request === undefined ? new Map() : modNameByStagingFolder(state, request.gameId),
+      loadManifest,
+      onAnswer: (requestId, answer) => answerManualInstallerRequest(context.api, requestId, answer),
+    } satisfies Partial<IManualInstallerDialogProps>;
+  });
 
   context.registerDialog(
     "external-changes",

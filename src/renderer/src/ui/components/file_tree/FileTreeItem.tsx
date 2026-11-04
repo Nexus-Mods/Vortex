@@ -1,7 +1,8 @@
 import type { RelativePath } from "@nexusmods/paths";
-import React, { type CSSProperties, type ReactNode } from "react";
+import React, { type CSSProperties, type MouseEvent, type ReactNode } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { isEmptyDirectory, type IFileTreeNode } from "./types";
@@ -10,8 +11,12 @@ interface IFileTreeItemProps {
   /** What the item shows next to its icon. */
   children: ReactNode;
   className?: string;
+  /** What to tell about its children failing to be read, over the icon that shows it. */
+  failedMessage?: string;
   /** Reading its children failed. */
   hasFailed?: boolean;
+  /** Its place among the tree's visible items, which the virtualiser knows it by. */
+  index: number;
   /** Whether its children are showing; only a directory's item has this. */
   isExpanded?: boolean;
   /** Its children are being read. */
@@ -30,6 +35,7 @@ interface IFileTreeItemProps {
   /** Hands over its element, for moving focus to it. */
   itemRef: (path: RelativePath, element: HTMLLIElement | null) => void;
   onClick: (node: IFileTreeNode) => void;
+  onContextMenu?: (node: IFileTreeNode, event: MouseEvent<HTMLLIElement>) => void;
   onFocus: (node: IFileTreeNode) => void;
   onToggle: (node: IFileTreeNode) => void;
 }
@@ -37,7 +43,9 @@ interface IFileTreeItemProps {
 export const FileTreeItem = ({
   children,
   className,
+  failedMessage,
   hasFailed,
+  index,
   isExpanded,
   isLoading,
   isSelected,
@@ -48,6 +56,7 @@ export const FileTreeItem = ({
   siblingCount,
   siblingIndex,
   onClick,
+  onContextMenu,
   onFocus,
   onToggle,
 }: IFileTreeItemProps) => {
@@ -59,7 +68,14 @@ export const FileTreeItem = ({
   if (isLoading) {
     statusIcon = <Icon className="animate-spin" name="progress_activity" size="sm" />;
   } else if (hasFailed) {
-    statusIcon = <Icon className="text-danger-strong" name="error" size="sm" />;
+    statusIcon = (
+      <Tooltip content={failedMessage ?? ""} disabled={failedMessage === undefined}>
+        <span className="flex" data-testid="file-tree-error">
+          {/* named for screen readers; only the Tooltip shows on hover */}
+          <Icon aria-label={failedMessage} className="text-danger-strong" name="error" size="sm" />
+        </span>
+      </Tooltip>
+    );
   }
 
   let kindIcon = <Icon name="description" size="sm" />;
@@ -76,6 +92,7 @@ export const FileTreeItem = ({
       aria-posinset={siblingIndex}
       aria-selected={!!isSelected}
       aria-setsize={siblingCount}
+      data-index={index}
       data-path={node.path}
       ref={(element) => itemRef(node.path, element)}
       role="treeitem"
@@ -83,6 +100,7 @@ export const FileTreeItem = ({
       style={{ "--nxm-file-tree-level": level } as CSSProperties}
       tabIndex={isTabStop ? 0 : -1}
       onClick={() => onClick(node)}
+      onContextMenu={onContextMenu && ((event) => onContextMenu(node, event))}
       onFocus={() => onFocus(node)}
     >
       <span

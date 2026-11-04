@@ -1,66 +1,126 @@
-import React from "react";
+import { relativePath, type RelativePath } from "@nexusmods/paths";
+import type { VortexGameId, VortexModStagingFolder } from "@vortex/shared";
+import { QualifiedPath } from "@vortex/shared/filesystem";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { log } from "@/logging";
+import { Alert } from "@/ui/components/alert/Alert";
 import { Button } from "@/ui/components/button/Button";
+import { buildFileTree } from "@/ui/components/file_tree/buildTree";
+import { FileTree } from "@/ui/components/file_tree/FileTree";
+import type { IFileTreeNode } from "@/ui/components/file_tree/types";
 import { CheckboxField } from "@/ui/components/form/checkbox_field/CheckboxField";
-import { SelectField } from "@/ui/components/form/select_field/SelectField";
-import { TextField } from "@/ui/components/form/text_field/TextField";
 import { ModalPanel, ModalWrapper } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 
-import { finalPath, normalizeDestination } from "../manualInstaller";
+import { normalizeDestination } from "../manualInstaller";
 import type { IManualInstallerAnswer } from "../manualInstallerQueue";
 import type { IManualInstallerRequest } from "../reducers/manualInstaller";
+import type { IDeploymentManifest } from "../types/IDeploymentManifest";
+import { deployedFiles, type IDeployedFiles } from "../util/destinationConflicts";
+import { ManualInstallerGameTree } from "./ManualInstallerGameTree";
+import { ManualInstallerResult } from "./ManualInstallerResult";
 
 export interface IManualInstallerDialogProps {
   visible: boolean;
   /** the request to answer, the first of the queue */
   request: IManualInstallerRequest | undefined;
+  /** the mod behind each staging folder, to name the mod a file conflicts with */
+  modNames: ReadonlyMap<VortexModStagingFolder, string>;
+  /** Loads what is deployed to the game. */
+  loadManifest: (gameId: VortexGameId) => Promise<IDeploymentManifest>;
   /** Answers the request, undefined when the user cancelled. */
   onAnswer: (requestId: string, answer: IManualInstallerAnswer | undefined) => void;
 }
 
 interface IFormProps {
+  loadManifest: IManualInstallerDialogProps["loadManifest"];
+  modNames: IManualInstallerDialogProps["modNames"];
   request: IManualInstallerRequest;
   onAnswer: (answer: IManualInstallerAnswer | undefined) => void;
 }
 
-const ManualInstallerForm = ({ request, onAnswer }: IFormProps) => {
-  const { t } = useTranslation("mod_management");
-  const [created, setCreated] = React.useState<string[]>([]);
-  const [folder, setFolder] = React.useState(request.defaultFolder ?? "");
-  const [newFolder, setNewFolder] = React.useState("");
-  const [skipTopFolder, setSkipTopFolder] = React.useState(false);
-  const [useAsDefault, setUseAsDefault] = React.useState(false);
-  const [dontAskAgain, setDontAskAgain] = React.useState(false);
-  const [useForAll, setUseForAll] = React.useState(false);
+const NOTHING_DEPLOYED: IDeployedFiles = { byOtherMods: new Map(), byOwnMod: new Set() };
 
-  const folders = React.useMemo(
-    () => [
-      ...new Set([
-        "",
-        ...(request.defaultFolder !== undefined ? [request.defaultFolder] : []),
-        ...created,
-      ]),
-    ],
-    [request.defaultFolder, created],
+function toQualifiedPath(nativePath: string): QualifiedPath | undefined {
+  if (nativePath === "") {
+    return undefined;
+  }
+
+  try {
+    return QualifiedPath.fromNative(nativePath);
+  } catch (err) {
+    log("warn", "the game folder isn't a usable path", { gameFolder: nativePath, err });
+    return undefined;
+  }
+}
+
+const ManualInstallerForm = ({ loadManifest, modNames, request, onAnswer }: IFormProps) => {
+  const { t } = useTranslation("mod_management");
+
+  // the folder is kept as the installer takes it; the trees use relative paths
+  const [folder, setFolder] = useState(request.defaultFolder ?? "");
+  // the default folder is shown even if the game doesn't have it, as it will be created
+  const [created, setCreated] = useState<RelativePath[]>(
+    request.defaultFolder ? [relativePath(request.defaultFolder)] : [],
+  );
+  const [selectedNode, setSelectedNode] = useState<IFileTreeNode>();
+  const [skipTopFolder, setSkipTopFolder] = useState(false);
+  const [useAsDefault, setUseAsDefault] = useState(false);
+  const [dontAskAgain, setDontAskAgain] = useState(false);
+  const [useForAll, setUseForAll] = useState(false);
+  const [deployed, setDeployed] = useState<IDeployedFiles>();
+  const [hasDeployedFailed, setHasDeployedFailed] = useState(false);
+  // a folder is being named; it's taken or dropped first, so that none is lost by a click
+  const [isNaming, setIsNaming] = useState(false);
+
+  const archiveTree = useMemo(() => buildFileTree(request.files), [request.files]);
+  const [archiveExpanded, setArchiveExpanded] = useState<ReadonlySet<RelativePath>>(
+    () => new Set(archiveTree.filter(({ kind }) => kind === "directory").map(({ path }) => path)),
   );
 
-  const normalizedNewFolder = normalizeDestination(newFolder);
-  const newFolderInvalid = newFolder.trim() !== "" && (normalizedNewFolder ?? "") === "";
+  const gameFolder = useMemo(() => toQualifiedPath(request.gameFolder), [request.gameFolder]);
 
-  const createFolder = () => {
-    if (normalizedNewFolder === undefined || normalizedNewFolder === "") {
-      return;
+  useEffect(() => {
+    let isCancelled = false;
+
+    loadManifest(request.gameId)
+      .then((manifest) => deployedFiles(manifest, request.ownStagingFolders))
+      .catch((err: unknown) => {
+        log("warn", "failed to read what is deployed for the install destination", { err });
+        if (!isCancelled) {
+          setHasDeployedFailed(true);
+        }
+        return NOTHING_DEPLOYED;
+      })
+      .then((found) => {
+        if (!isCancelled) {
+          setDeployed(found);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [loadManifest, request.gameId, request.ownStagingFolders]);
+
+  // the trees let any node be selected, but only a directory can be installed to
+  const isTargetValid = selectedNode?.kind !== "file";
+  const canInstall = isTargetValid && !isNaming;
+
+  const selectNode = (node: IFileTreeNode) => {
+    setSelectedNode(node);
+
+    if (node.kind === "directory") {
+      setFolder(normalizeDestination(node.path) ?? "");
     }
-    setCreated((prev) => [...prev, normalizedNewFolder]);
-    setFolder(normalizedNewFolder);
-    setNewFolder("");
   };
 
   return (
     <ModalPanel
-      className="flex max-h-150 flex-col"
+      className="flex max-h-[90vh] flex-col"
       title={t("manualInstaller::title")}
       onClose={() => onAnswer(undefined)}
     >
@@ -69,69 +129,53 @@ const ManualInstallerForm = ({ request, onAnswer }: IFormProps) => {
           {t("manualInstaller::intro", { modName: request.modName })}
         </Typography>
 
-        <SelectField
-          data-testid="manual-installer-folder"
-          label={t("manualInstaller::folder")}
-          value={folder}
-          onChange={(evt) => setFolder(evt.target.value)}
-        >
-          {folders.map((iter) => (
-            <option key={iter} value={iter}>
-              {iter === "" ? t("manualInstaller::gameFolder") : iter}
-            </option>
-          ))}
-        </SelectField>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex min-h-0 flex-col gap-y-2">
+            <Typography appearance="subdued" as="p" typographyType="body-sm">
+              {t("manualInstaller::modFiles")}
+            </Typography>
 
-        <div className="flex items-end gap-2">
-          <TextField
-            data-testid="manual-installer-new-folder"
-            errorMessage={newFolderInvalid ? t("manualInstaller::invalidFolder") : undefined}
-            fieldClassName="grow"
-            label={t("manualInstaller::newFolder")}
-            value={newFolder}
-            onChange={(evt) => setNewFolder(evt.target.value)}
+            <div className="max-h-80 overflow-y-auto rounded-sm bg-surface-mid p-2">
+              <FileTree
+                aria-label={t("manualInstaller::modFiles")}
+                data-testid="manual-installer-archive-tree"
+                expandedPaths={archiveExpanded}
+                nodes={archiveTree}
+                onExpandedChange={setArchiveExpanded}
+              />
+            </div>
+
+            {request.topFolder !== undefined && (
+              <CheckboxField
+                checked={skipTopFolder}
+                data-testid="manual-installer-skip-top-folder"
+                label={t("manualInstaller::skipTopFolder", { folder: request.topFolder })}
+                onChange={setSkipTopFolder}
+              />
+            )}
+          </div>
+
+          <ManualInstallerGameTree
+            created={created}
+            deployed={deployed?.byOtherMods}
+            folder={folder}
+            gameFolder={gameFolder}
+            selectedNode={selectedNode}
+            onCreatedChange={setCreated}
+            onNamingChange={setIsNaming}
+            onSelect={selectNode}
           />
-
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            data-testid="manual-installer-create-folder"
-            disabled={normalizedNewFolder === undefined || normalizedNewFolder === ""}
-            onClick={createFolder}
-          >
-            {t("manualInstaller::createFolder")}
-          </Button>
         </div>
 
-        {request.topFolder !== undefined && (
-          <CheckboxField
-            checked={skipTopFolder}
-            data-testid="manual-installer-skip-top-folder"
-            label={t("manualInstaller::skipTopFolder", {
-              folder: request.topFolder,
-            })}
-            onChange={setSkipTopFolder}
-          />
-        )}
-
-        {request.previewFiles.length > 0 && (
-          <div>
-            <Typography appearance="subdued" as="p" typographyType="body-sm">
-              {t("manualInstaller::preview")}
-            </Typography>
-
-            <Typography
-              as="ul"
-              className="mt-1"
-              data-testid="manual-installer-preview"
-              typographyType="body-sm"
-            >
-              {request.previewFiles.map((file) => (
-                <li key={file}>{finalPath(folder, file, skipTopFolder)}</li>
-              ))}
-            </Typography>
-          </div>
-        )}
+        <ManualInstallerResult
+          deployed={deployed}
+          files={request.files}
+          folder={folder}
+          gameFolder={gameFolder}
+          hasDeployedFailed={hasDeployedFailed}
+          modNames={modNames}
+          skipTopFolder={skipTopFolder}
+        />
 
         <CheckboxField
           checked={useAsDefault}
@@ -157,46 +201,60 @@ const ManualInstallerForm = ({ request, onAnswer }: IFormProps) => {
         )}
       </div>
 
-      <div className="mt-4 flex shrink-0 justify-end gap-2">
-        <Button
-          appearance="subdued"
-          brand="neutral"
-          data-testid="manual-installer-cancel"
-          onClick={() => onAnswer(undefined)}
-        >
-          {t("manualInstaller::cancel")}
-        </Button>
+      <div className="mt-4 flex shrink-0 flex-col gap-y-3">
+        {/* by the button it explains, and out of the scrolling part so it can't be missed */}
+        {!isTargetValid && (
+          <Alert data-testid="manual-installer-select-directory" severity="warning">
+            {t("manualInstaller::selectDirectory")}
+          </Alert>
+        )}
 
-        <Button
-          data-testid="manual-installer-install"
-          onClick={() =>
-            onAnswer({
-              folder,
-              skipTopFolder,
-              // not asking again only works with a default folder to skip to
-              useAsDefault: useAsDefault || dontAskAgain,
-              dontAskAgain,
-              useForAll,
-            })
-          }
-        >
-          {t("manualInstaller::install")}
-        </Button>
+        <div className="flex justify-end gap-2">
+          <Button
+            appearance="subdued"
+            brand="neutral"
+            data-testid="manual-installer-cancel"
+            onClick={() => onAnswer(undefined)}
+          >
+            {t("manualInstaller::cancel")}
+          </Button>
+
+          <Button
+            data-testid="manual-installer-install"
+            disabled={!canInstall}
+            onClick={() =>
+              onAnswer({
+                folder,
+                skipTopFolder,
+                // not asking again only works with a default folder to skip to
+                useAsDefault: useAsDefault || dontAskAgain,
+                dontAskAgain,
+                useForAll,
+              })
+            }
+          >
+            {t("manualInstaller::install")}
+          </Button>
+        </div>
       </div>
     </ModalPanel>
   );
 };
 
 export const ManualInstallerDialog = ({
-  visible,
+  loadManifest,
+  modNames,
   request,
+  visible,
   onAnswer,
 }: IManualInstallerDialogProps) =>
   request === undefined ? null : (
-    <ModalWrapper isOpen={visible} onClose={() => onAnswer(request.id, undefined)}>
-      {/* keyed by request: each one starts with a fresh form */}
+    // the modal stays as requests follow one another; only the form starts afresh
+    <ModalWrapper isOpen={visible} size="xl" onClose={() => onAnswer(request.id, undefined)}>
       <ManualInstallerForm
         key={request.id}
+        loadManifest={loadManifest}
+        modNames={modNames}
         request={request}
         onAnswer={(answer) => onAnswer(request.id, answer)}
       />

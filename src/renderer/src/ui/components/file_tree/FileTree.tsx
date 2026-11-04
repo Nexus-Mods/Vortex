@@ -1,13 +1,18 @@
 import type { RelativePath } from "@nexusmods/paths";
 import React, {
+  type CSSProperties,
+  Fragment,
   type HTMLAttributes,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 
+import { useTableVirtualizer } from "@/ui/components/table/useTableVirtualizer.hook";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { FileTreeItem } from "./FileTreeItem";
@@ -25,6 +30,11 @@ export interface IFileTreeProps extends Omit<
   selectedPath?: RelativePath;
   /** Gives a node's row extra classes, such as to tell game files from a mod's. */
   getNodeClassName?: (node: IFileTreeNode) => string | undefined;
+  /**
+   * What to tell, in a tooltip over the error icon of a directory whose children failed to be
+   * read, as `onLoadChildren` rejected. The icon has no text without it.
+   */
+  loadErrorMessage?: string;
   /** Shows a node in place of its name, such as with a badge after it. */
   renderNode?: (node: IFileTreeNode) => ReactNode;
   /** Opens or closes directories; it gets the full set of open ones. */
@@ -35,9 +45,22 @@ export interface IFileTreeProps extends Omit<
    * directory shows an error, and opening it again tries again.
    */
   onLoadChildren?: (node: IFileTreeNode) => Promise<void>;
+  /**
+   * A context menu is asked for on a node, by a right-click or Shift+F10 or the Menu key with the
+   * node focused. The tree opens nothing itself; call `preventDefault` to keep the browser's
+   * menu away.
+   */
+  onNodeContextMenu?: (node: IFileTreeNode, event: MouseEvent<HTMLElement>) => void;
   /** Selects a node, by a click or by moving to it with the keyboard. */
   onSelect?: (node: IFileTreeNode) => void;
 }
+
+/** The height of an item, which the virtualiser takes as exact; the stylesheet sizes it by it. */
+export const FILE_TREE_ROW_HEIGHT = 28;
+
+/** Stands in for items out of view, at their height, so the scroller keeps its full length. */
+const Spacer = ({ height }: { height: number }) =>
+  height ? <li aria-hidden={true} role="presentation" style={{ height: `${height}px` }} /> : null;
 
 interface IVisibleItem {
   level: number;
@@ -89,15 +112,23 @@ const withPath = (
   return next;
 };
 
+/**
+ * A tree of files and directories. Only the items in view of its nearest scrolling ancestor are
+ * rendered, plus the one Tab moves focus to, so a directory of thousands of files stays quick.
+ * Without a scrolling ancestor every item renders.
+ */
 export const FileTree = ({
   className,
   expandedPaths,
   getNodeClassName,
+  loadErrorMessage,
   nodes,
   renderNode,
   selectedPath,
+  style,
   onExpandedChange,
   onLoadChildren,
+  onNodeContextMenu,
   onSelect,
   ...props
 }: IFileTreeProps) => {
@@ -106,13 +137,37 @@ export const FileTree = ({
   const [failedPaths, setFailedPaths] = useState<ReadonlySet<RelativePath>>(new Set());
 
   const itemElements = useRef(new Map<RelativePath, HTMLLIElement>());
+  // An item focus moves to that wasn't rendered yet; it's focused once it is.
+  const pendingFocusPath = useRef<RelativePath>(undefined);
 
   const items = useMemo(() => visibleItems(nodes, expandedPaths), [nodes, expandedPaths]);
 
   // Focus stays on the item it was last on, unless that's gone, as when its parent closed.
-  const tabStopPath = items.some((item) => item.node.path === focusedPath)
-    ? focusedPath
-    : items[0]?.node.path;
+  const focusedIndex = items.findIndex((item) => item.node.path === focusedPath);
+  const tabStopIndex = Math.max(focusedIndex, 0);
+  const tabStopPath = items[tabStopIndex]?.node.path;
+
+  // The tab stop stays rendered, so Tab can reach the tree and the keys move from it.
+  const keptIndexes = useMemo(() => [tabStopIndex], [tabStopIndex]);
+
+  const virtual = useTableVirtualizer({
+    count: items.length,
+    getItemKey: (index) => items[index]?.node.path ?? String(index),
+    getItemSize: () => FILE_TREE_ROW_HEIGHT,
+    keptIndexes,
+  });
+
+  // Runs after every render, as the item to focus may only now be rendered. Focusing it
+  // scrolls it into view, which the virtualiser follows.
+  useLayoutEffect(() => {
+    const path = pendingFocusPath.current;
+    const element = path === undefined ? undefined : itemElements.current.get(path);
+
+    if (element !== undefined) {
+      pendingFocusPath.current = undefined;
+      element.focus();
+    }
+  });
 
   const setItemElement = (path: RelativePath, element: HTMLLIElement | null) => {
     if (element === null) {
@@ -130,7 +185,16 @@ export const FileTree = ({
   const focusItem = (item: IVisibleItem | undefined) => {
     if (item !== undefined) {
       setFocusedPath(item.node.path);
-      itemElements.current.get(item.node.path)?.focus();
+
+      const element = itemElements.current.get(item.node.path);
+
+      if (element === undefined) {
+        // out of view, so not rendered until it's the tab stop
+        pendingFocusPath.current = item.node.path;
+      } else {
+        element.focus();
+      }
+
       select(item.node);
     }
   };
@@ -221,33 +285,54 @@ export const FileTree = ({
   };
 
   return (
-    <ul
-      className={joinClasses(["nxm-file-tree", className])}
-      role="tree"
-      {...props}
-      onKeyDown={handleKeyDown}
-    >
-      {items.map(({ level, node, siblingCount, siblingIndex }) => (
-        <FileTreeItem
-          className={getNodeClassName?.(node)}
-          hasFailed={failedPaths.has(node.path)}
-          isExpanded={node.kind === "directory" ? expandedPaths.has(node.path) : undefined}
-          isLoading={loadingPaths.has(node.path)}
-          isSelected={node.path === selectedPath}
-          isTabStop={node.path === tabStopPath}
-          itemRef={setItemElement}
-          key={node.path}
-          level={level}
-          node={node}
-          siblingCount={siblingCount}
-          siblingIndex={siblingIndex}
-          onClick={select}
-          onFocus={(focused) => setFocusedPath(focused.path)}
-          onToggle={toggle}
-        >
-          {renderNode?.(node) ?? <span className="truncate">{fileTreeNodeName(node)}</span>}
-        </FileTreeItem>
-      ))}
-    </ul>
+    <div ref={virtual.tableRef} onBlur={virtual.onBlur} onFocus={virtual.onFocus}>
+      {/* Always rendered, at the top of the items: where the virtualiser measures from. */}
+      <div ref={virtual.startRef} role="presentation" />
+
+      <ul
+        className={joinClasses(["nxm-file-tree", className])}
+        role="tree"
+        style={
+          { "--nxm-file-tree-row-height": `${FILE_TREE_ROW_HEIGHT}px`, ...style } as CSSProperties
+        }
+        {...props}
+        onKeyDown={handleKeyDown}
+      >
+        {virtual.items.map(({ gap, index }) => {
+          const { level, node, siblingCount, siblingIndex } = items[index];
+
+          return (
+            <Fragment key={node.path}>
+              {/* Items out of view, before the tab stop kept far from the rest too. */}
+              <Spacer height={gap} />
+
+              <FileTreeItem
+                className={getNodeClassName?.(node)}
+                failedMessage={loadErrorMessage}
+                hasFailed={failedPaths.has(node.path)}
+                index={index}
+                isExpanded={node.kind === "directory" ? expandedPaths.has(node.path) : undefined}
+                isLoading={loadingPaths.has(node.path)}
+                isSelected={node.path === selectedPath}
+                isTabStop={node.path === tabStopPath}
+                itemRef={setItemElement}
+                level={level}
+                node={node}
+                siblingCount={siblingCount}
+                siblingIndex={siblingIndex}
+                onClick={select}
+                onContextMenu={onNodeContextMenu}
+                onFocus={(focused) => setFocusedPath(focused.path)}
+                onToggle={toggle}
+              >
+                {renderNode?.(node) ?? <span className="truncate">{fileTreeNodeName(node)}</span>}
+              </FileTreeItem>
+            </Fragment>
+          );
+        })}
+
+        <Spacer height={virtual.endGap} />
+      </ul>
+    </div>
   );
 };

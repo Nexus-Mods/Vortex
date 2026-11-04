@@ -1,4 +1,5 @@
-import { PathError, type RelativePath } from "@nexusmods/paths";
+import type { RelativePath } from "@nexusmods/paths";
+import { VortexError } from "@vortex/shared";
 
 import { fileTreeNodeName, type IFileTreeNode } from "./types";
 
@@ -10,7 +11,8 @@ type MutableNode = {
   children: Map<RelativePath, MutableNode>;
 };
 
-const compareNodes = (a: IFileTreeNode, b: IFileTreeNode): number => {
+/** Directories first, then by name. */
+export const compareNodes = (a: IFileTreeNode, b: IFileTreeNode): number => {
   if (a.kind !== b.kind) {
     return a.kind === "directory" ? -1 : 1;
   }
@@ -37,7 +39,7 @@ const toNode = (node: MutableNode): IFileTreeNode =>
  * Directories above an entry are implied, so listing one is only needed for an empty directory.
  * Listing the same entry twice is fine.
  *
- * @throws {@link PathError} if the entries contradict each other: a path listed as both a file and
+ * @throws {@link VortexError} if the entries contradict each other: a path listed as both a file and
  * a directory, or a file with other entries beneath it.
  */
 export function buildFileTree(entries: readonly FileTreeEntry[]): IFileTreeNode[] {
@@ -45,7 +47,10 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): IFileTreeNode[
 
   for (const { path, kind } of entries) {
     if (path === "") {
-      throw new PathError("A tree entry must have a path", path);
+      throw new VortexError("A tree entry must have a path", {
+        kind: "argument-invalid",
+        argument: "entries",
+      });
     }
 
     const segments = path.split("/");
@@ -66,11 +71,11 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): IFileTreeNode[
         node = { path: nodePath, kind: nodeKind, children: new Map() };
         siblings.set(nodePath, node);
       } else if (node.kind !== nodeKind) {
-        throw new PathError(
+        throw new VortexError(
           isLast
             ? `"${path}" is listed as both a file and a directory`
             : `"${nodePath}" is a file but "${path}" is beneath it`,
-          path,
+          { kind: "argument-invalid", argument: "entries" },
         );
       }
 

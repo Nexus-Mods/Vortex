@@ -1,6 +1,7 @@
-import type { VortexGameId } from "@vortex/shared";
+import type { VortexGameId, VortexModStagingFolder } from "@vortex/shared";
 
 import { actionsToReducerSpec } from "@/reducers/builder";
+import type { FileTreeEntry } from "@/ui/components/file_tree/buildTree";
 
 import * as actions from "../actions/manualInstaller";
 
@@ -14,8 +15,19 @@ export interface IManualInstallerRequest {
   remaining: number;
   /** the game's default folder, preselected in the dialog */
   defaultFolder?: string;
-  /** the first few files of the archive, for the preview of the final paths */
-  previewFiles: string[];
+  /**
+   * the game's install folder, as a native path. The dialog reads the game's folder tree from
+   * it, so the trees show what the game actually has, as do the result list's conflict markers.
+   * A string, as state only holds serializable data.
+   */
+  gameFolder: string;
+  /** every entry of the archive, with its path relative to the archive's root */
+  files: FileTreeEntry[];
+  /**
+   * the staging folders of the mod being installed, and of the mod it replaces, if any. Files
+   * deployed from them don't count as another mod's.
+   */
+  ownStagingFolders: VortexModStagingFolder[];
   /** the single folder all files of the archive are in, if there is one */
   topFolder?: string;
 }

@@ -6,6 +6,9 @@
 
     .nxm-file-tree-item {
         display: flex;
+        flex-shrink: 0;
+        /* exact, as the tree's virtualiser places items by it; set by `FILE_TREE_ROW_HEIGHT` */
+        block-size: var(--nxm-file-tree-row-height);
         cursor: default;
         outline: none;
         align-items: center;
