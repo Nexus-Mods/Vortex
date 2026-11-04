@@ -18,7 +18,6 @@ import {
   UserCanceled,
 } from "../../util/CustomErrors";
 import { createKeyedCache } from "../../util/keyedCache";
-import opn from "../../util/opn";
 import { batchDispatch } from "../../util/util";
 import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
@@ -265,7 +264,7 @@ export class NxmProtocol {
 
       queued.awaitingLink = true;
 
-      opn(nexusFilePageUrl(pageId, url.modId, url.fileId)).catch(() => null);
+      window.api.shell.openUrl(nexusFilePageUrl(pageId, url.modId, url.fileId));
     },
 
     onSkip: (inputUrl: string) => {
@@ -407,7 +406,7 @@ export class NxmProtocol {
           this.#dequeue(input);
           reject(err);
         },
-        queryRelevantUpdates: () => this.#relevantUpdates(url),
+        queryRelevantUpdates: () => this.#relevantUpdates(url, pageId),
         awaitingLink: false,
       });
       this.#api.store.dispatch(addFreeUserDLItem(input));
@@ -419,8 +418,8 @@ export class NxmProtocol {
    * dependency may reference an older or newer file than the one being skipped and the nxm url
    * alone can't tell us which.
    */
-  async #relevantUpdates(url: NXMUrl): Promise<IFileUpdate[]> {
-    const files = await this.#nexus.getModFiles(url.modId, url.gameId);
+  async #relevantUpdates(url: NXMUrl, pageId: GameDomain): Promise<IFileUpdate[]> {
+    const files = await this.#nexus.getModFiles(url.modId, pageId);
 
     const previous = new Map<number, IFileUpdate>(); // new_file_id -> update
     files.file_updates.forEach((update) => previous.set(update.new_file_id, update));

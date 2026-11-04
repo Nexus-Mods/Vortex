@@ -1,6 +1,6 @@
 import type { ICollectionRevisionMod } from "@nexusmods/nexus-api";
 import { GameDomain } from "@vortex/shared";
-import * as React from "react";
+import React, { useCallback } from "react";
 import { Panel } from "react-bootstrap";
 
 import bbcodeToReact from "../../../../controls/bbcode";
@@ -13,7 +13,6 @@ import renderModName from "../../../../extensions/mod_management/util/modName";
 import { nexusGameId } from "../../../../extensions/nexus_integration/util/convertGameId";
 import { nexusModPageUrl } from "../../../../extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { TFunction } from "../../../../util/i18n";
-import opn from "../../../../util/opn";
 import { AUTHOR_UNKNOWN, NEXUS_BASE_URL } from "../../constants";
 import type { IModEx } from "../../types/IModEx";
 
@@ -43,12 +42,12 @@ function CollectionModDetails(props: ICollectionModDetails) {
     : nexusGameId(getGame(vortexGameId), vortexGameId);
   const modId = local?.attributes?.modId ?? remote?.file?.modId;
 
-  const visitUploader = React.useCallback(() => {
-    opn(`${NEXUS_BASE_URL}/users/${uploaderId}`);
+  const visitUploader = useCallback(() => {
+    window.api.shell.openUrl(`${NEXUS_BASE_URL}/users/${uploaderId}`);
   }, [uploaderId]);
 
-  const visitPage = React.useCallback(() => {
-    opn(nexusModPageUrl(domainName, modId));
+  const visitPage = useCallback(() => {
+    window.api.shell.openUrl(nexusModPageUrl(domainName, modId));
   }, [domainName, modId]);
 
   return (

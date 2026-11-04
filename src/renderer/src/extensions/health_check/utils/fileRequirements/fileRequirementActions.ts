@@ -15,7 +15,6 @@ import { setModsEnabled } from "@/extensions/profile_management/actions/profiles
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import opn from "@/util/opn";
 import { sanitizeCSSId } from "@/util/util";
 
 import { trackedInstall } from "../shared/installTracking";
@@ -238,7 +237,7 @@ export function openModPage(_api: IExtensionApi, ref: INexusFileRef): void {
     log("warn", "cannot open mod page: unresolved mod id or game", { fileUID: ref.fileUID });
     return;
   }
-  opn(nexusModPageUrl(mod.domain, mod.modId)).catch(() => undefined);
+  window.api.shell.openUrl(nexusModPageUrl(mod.domain, mod.modId));
 }
 
 /** Open the file's page on the Nexus website (the specific file, not the mod). */
@@ -249,7 +248,7 @@ export function openFilePage(_api: IExtensionApi, ref: INexusFileRef): void {
     log("warn", "cannot open file page: unresolved mod or file id", { fileUID: ref.fileUID });
     return;
   }
-  opn(nexusFilePageUrl(mod.domain, mod.modId, file.id)).catch(() => undefined);
+  window.api.shell.openUrl(nexusFilePageUrl(mod.domain, mod.modId, file.id));
 }
 
 /**

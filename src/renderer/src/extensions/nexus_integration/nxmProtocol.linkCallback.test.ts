@@ -1,5 +1,5 @@
 import PromiseBB from "bluebird";
-import { beforeEach, describe, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
 import { makeAvailableExtension, makeDownload, makeGameStored } from "@/test-utils/builders";
 import type { INxmHarness } from "@/test-utils/harnessTypes";
@@ -20,8 +20,6 @@ vi.mock("./util", async (importOriginal) => ({
   startDownload: vi.fn(() => PromiseBB.resolve("dl-1")),
 }));
 
-vi.mock("../../util/opn", () => ({ default: vi.fn(() => PromiseBB.resolve()) }));
-
 vi.mock("../../util/collectionSkip", () => ({ markCollectionMemberSkipped: vi.fn() }));
 
 const beginDownload = vi.mocked(startDownload);
@@ -35,6 +33,11 @@ describe("nxm link callback", () => {
     beginDownload.mockReturnValue(PromiseBB.resolve("dl-1") as never);
     logIn.mockReturnValue(PromiseBB.resolve() as never);
     modInfoQuery.mockReset();
+    vi.stubGlobal("api", { ...window.api, shell: { openUrl: vi.fn() } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   /** The link callback only dispatches modInfo once the download record exists. */

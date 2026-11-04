@@ -38,7 +38,6 @@ import { DataInvalid, ProcessCanceled, UserCanceled } from "../../util/CustomErr
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
 import { calcDuration, showError } from "../../util/message";
-import opn from "../../util/opn";
 import {
   activeGameId,
   currentGame,
@@ -306,7 +305,7 @@ export function onOpenCollectionPage(api: IExtensionApi) {
     if (revisionNumber !== undefined) {
       segments.push("revisions", revisionNumber.toString());
     }
-    opn(segments.join("/")).catch(() => undefined);
+    window.api.shell.openUrl(segments.join("/"));
   };
 }
 
@@ -316,7 +315,7 @@ export function onOpenModPage(api: IExtensionApi) {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
-    opn(nexusModPageUrl(nexusGameId(game, gameId), modId)).catch((err) => undefined);
+    window.api.shell.openUrl(nexusModPageUrl(nexusGameId(game, gameId), modId));
   };
 }
 
@@ -533,9 +532,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
         api.showErrorNotification("Invalid URL", url, { allowReport: false });
       })
       .catch(ProcessCanceled, () => {
-        return opn(nexusFilePageUrl(nexusGameId(game, gameId), modId, fileId)).catch(
-          () => undefined,
-        );
+        window.api.shell.openUrl(nexusFilePageUrl(nexusGameId(game, gameId), modId, fileId));
       })
       .catch((err) => {
         api.showErrorNotification("Failed to start download", err);
