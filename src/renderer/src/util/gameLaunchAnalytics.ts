@@ -6,6 +6,7 @@ import {
   type GameLaunchMethod,
 } from "../extensions/analytics/mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "../extensions/analytics/mixpanel/numericGameId";
+import { discoveryByGame } from "../extensions/gamemode_management/selectors";
 import { supportTier } from "../extensions/gamemode_management/tiered/supportTier";
 import type { Tier } from "../extensions/gamemode_management/tiered/types";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
@@ -34,6 +35,8 @@ interface ILaunchRecord {
   exitCode: number | null;
   // From supportTier, resolved at launch like the other fields the paired exit echoes.
   supportTier?: Tier;
+  // The discovered store, resolved at launch like supportTier.
+  gameStore: string | null;
   // Exe id whose stop ends the play session. For a script-extender / mod-loader launch this is the
   // game's own executable, not the launched loader (which exits during the handoff).
   watchExeId: string;
@@ -111,6 +114,7 @@ function emitExited(api: IExtensionApi, record: ILaunchRecord, reliable: boolean
       launch_method: record.launchMethod,
       enabled_mod_count: record.enabledModCount,
       launch_session_id: record.sessionId,
+      game_store: record.gameStore,
       support_tier: record.supportTier,
       duration_ms: Date.now() - record.launchTime,
       duration_reliable: reliable,
@@ -183,6 +187,9 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
   const enabledModCount = enabledModCountForProfile(state, profileId);
   const launchedExeId = makeExeId(info.exePath);
   const tier = gameId === null ? undefined : supportTier(state, gameId);
+  // The store the game was installed from, which a direct exe launch has too: info.store is only
+  // set when the launch goes through the store.
+  const gameStore = discoveryByGame(state, info.gameId)?.store ?? null;
   // A launch that hands the game off to a separate process (script extender / mod loader) watches
   // the game executable; every other launch watches the exe it started. A handoff waits for the
   // game process to appear, so it is only "started" once that process is running.
@@ -202,6 +209,7 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
     launchTime: Date.now(),
     exitCode: null,
     supportTier: tier,
+    gameStore,
     watchExeId,
     started,
     startTimer: undefined,
@@ -224,6 +232,7 @@ export function emitGameLaunched(api: IExtensionApi, info: IStarterInfo): void {
       launch_method: method,
       enabled_mod_count: enabledModCount,
       launch_session_id: sessionId,
+      game_store: gameStore,
       support_tier: tier,
     }),
   );

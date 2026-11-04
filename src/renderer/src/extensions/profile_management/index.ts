@@ -798,8 +798,6 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
     (profileId) => profiles[profileId]?.gameId === gameId,
   );
 
-  api.events.emit("analytics-track-event", "Games", "Stop managing", gameId);
-
   let message: string;
 
   if (profileIds.length > 1 || profiles[profileIds[0]]?.name !== "Default") {
@@ -950,8 +948,6 @@ function init(context: IExtensionContext): boolean {
     (instanceIds: string[]) => {
       const gameId = instanceIds[0];
 
-      context.api.events.emit("analytics-track-event", "Games", "Start managing", gameId);
-
       // Managing a game nothing provides an extension for is the Tier 0 opt-in; the
       // game has to be registered before discovery, whose path resolution reads the
       // synthesized game's queryArgs. Any other Manage behaves exactly as before.
@@ -1023,8 +1019,6 @@ function init(context: IExtensionContext): boolean {
       };
 
       log("info", "activate profile", profileData);
-
-      context.api.events.emit("analytics-track-event", "Games", "Activate", gameId, profileData);
 
       checkOverridden(context.api, gameId)
         .then(() => {

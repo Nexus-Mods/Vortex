@@ -33,8 +33,9 @@ export function emitGameManaged(api: IExtensionApi, gameId: string): void {
   );
 }
 
-/** Emits app_game_unmanage for a game the user stopped managing. Runs before the Tier 0
- * teardown removes the tier0 state, so the tier still resolves here. */
+/** Emits app_game_unmanage for a game the user stopped managing, with the store it was
+ * installed from. Runs before the Tier 0 teardown removes the tier0 state, so the tier still
+ * resolves here; unmanaging leaves the discovery in place, so the store does too. */
 export function emitGameUnmanaged(api: IExtensionApi, gameId: string): void {
   const state = api.getState();
   const numericId = numericNexusGameId(gameId);
@@ -42,6 +43,7 @@ export function emitGameUnmanaged(api: IExtensionApi, gameId: string): void {
     "analytics-track-mixpanel-event",
     new AppGameUnmanagedEvent({
       game_id: numericId,
+      game_store: discoveryByGame(state, gameId)?.store ?? null,
       support_tier: numericId === null ? undefined : supportTier(state, numericId),
     }),
   );

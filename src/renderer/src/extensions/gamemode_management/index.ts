@@ -470,7 +470,6 @@ function installGameExtension(
         if (result.action === "Install") {
           return api.emitAndAwait("install-extension", dlInfo);
         } else if (result.action === "Stop managing") {
-          api.events.emit("analytics-track-click-event", "Games", "Stop managing game");
           return api.ext.unmanageGame?.(gameId, dlInfo.name);
         } else {
           return PromiseBB.resolve(false);
