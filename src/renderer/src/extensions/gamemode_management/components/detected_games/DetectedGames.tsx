@@ -357,6 +357,7 @@ export const DetectedGames = ({
         >
           {layout === "list" ? (
             <GamesList
+              section="detected"
               discoveredGames={discoveredGames}
               gameMode={gameMode}
               games={shownGames}

@@ -18,8 +18,8 @@ import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
 import {
   createGamesPageTracker,
+  PRIMARY_ACTION_BY_SECTION,
   type TileActionPlacement,
-  type TilePrimaryAction,
 } from "../util/games_page_tracker/gamesPageTracker";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { useSupportTier } from "./TierZeroIndicator";
@@ -72,6 +72,7 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
     (placement: TileActionPlacement, action: string) =>
       tracker.trackTileAction({
         section,
+        layout: "grid",
         placement,
         action,
         game_id: numericNexusGameId(game.id),
@@ -96,29 +97,11 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
 
   const actions: Record<
     IGameSection,
-    {
-      brand: IButtonBrand;
-      icon?: IIconSource;
-      label: string;
-      reveal: boolean;
-      key: TilePrimaryAction;
-    }
+    { brand: IButtonBrand; icon?: IIconSource; label: string; reveal: boolean }
   > = {
-    added: { brand: "neutral", label: t("Open"), reveal: true, key: "open" },
-    detected: {
-      brand: "primary",
-      icon: "add",
-      label: t("Add game"),
-      reveal: false,
-      key: "add_game",
-    },
-    supported: {
-      brand: "neutral",
-      icon: "add",
-      label: t("Manual add"),
-      reveal: true,
-      key: "manual_add",
-    },
+    added: { brand: "neutral", label: t("Open"), reveal: true },
+    detected: { brand: "primary", icon: "add", label: t("Add game"), reveal: false },
+    supported: { brand: "neutral", icon: "add", label: t("Manual add"), reveal: true },
   };
 
   const action = actions[section];
@@ -130,7 +113,7 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   const onPrimary =
     runPrimary &&
     (() => {
-      reportAction("primary", isActive ? "open_mods" : action.key);
+      reportAction("primary", isActive ? "open_mods" : PRIMARY_ACTION_BY_SECTION[section]);
       runPrimary();
     });
 

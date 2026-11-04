@@ -4,6 +4,7 @@ import { ListGroupItem, Media } from "react-bootstrap";
 import { Provider } from "react-redux";
 
 import Icon from "@/controls/Icon";
+import { numericNexusGameId } from "@/extensions/analytics/mixpanel/numericGameId";
 import { Image } from "@/ui/components/image/Image";
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
@@ -16,11 +17,17 @@ import type { IActionDefinition } from "../../../types/IActionDefinition";
 import opn from "../../../util/opn";
 import type { IMod } from "../../mod_management/types/IMod";
 import { setGameAddOrigin } from "../actions/session";
+import type { IGameSection } from "../components/GameCard";
 import { TierZeroRowBadge } from "../components/TierZeroIndicator";
 import type { GameSource } from "../types/GameSource";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
+import {
+  createGamesPageTracker,
+  PRIMARY_ACTION_BY_SECTION,
+  type TileActionPlacement,
+} from "../util/games_page_tracker/gamesPageTracker";
 import GameInfoPopover from "./GameInfoPopover";
 
 export interface IProps {
@@ -32,6 +39,8 @@ export interface IProps {
   type: string;
   /** Which Games page list the row is in, recorded for the app_game_manage event. */
   source?: GameSource;
+  /** The Games page section the row is in, for the row's analytics. */
+  section: IGameSection;
   onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
   onBrowseGameLocation: (gameId: string) => PromiseLike<void>;
 }
@@ -123,6 +132,7 @@ class GameRow extends ComponentEx<IProps, {}> {
                           orientation="vertical"
                           staticElements={[]}
                           t={t}
+                          onAction={this.reportMenuAction}
                         />
 
                         <GameInfoPopover game={game} t={t} onRefreshGameInfo={onRefreshGameInfo} />
@@ -144,6 +154,7 @@ class GameRow extends ComponentEx<IProps, {}> {
               showAll={true}
               staticElements={[]}
               t={t}
+              onAction={this.reportLeadAction}
             />
           </Media.Right>
         </Media>
@@ -164,6 +175,25 @@ class GameRow extends ComponentEx<IProps, {}> {
       this.context.api.store.dispatch(setGameAddOrigin(this.props.game.id, this.props.source));
     }
   };
+
+  // The row's own buttons are what a tile leads with, so they report under the same
+  // name; the popover's are its menu, named by their registered title.
+  private reportLeadAction = () =>
+    this.reportAction("primary", PRIMARY_ACTION_BY_SECTION[this.props.section]);
+
+  private reportMenuAction = (action: IActionDefinition) => this.reportAction("menu", action.title);
+
+  private reportAction(placement: TileActionPlacement, action: string) {
+    const { discovery, game, section } = this.props;
+    createGamesPageTracker(this.context.api).trackTileAction({
+      section,
+      layout: "list",
+      placement,
+      action,
+      game_id: numericNexusGameId(game.id),
+      game_store: discovery?.store ?? null,
+    });
+  }
 
   private changeLocation = () => {
     this.props.onBrowseGameLocation(this.props.game.id);

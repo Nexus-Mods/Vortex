@@ -73,6 +73,7 @@ export const AddedGames = ({
       >
         {layout === "list" ? (
           <GamesList
+            section="added"
             discoveredGames={discoveredGames}
             gameMode={gameMode}
             games={games}

@@ -68,6 +68,7 @@ describe("createGamesPageTracker", () => {
     const { tracker, events } = harness();
     tracker.trackTileAction({
       section: "detected",
+      layout: "list",
       placement: "primary",
       action: "add_game",
       game_id: GameId(1704),
@@ -76,6 +77,7 @@ describe("createGamesPageTracker", () => {
     expect(events[0].eventName).toBe("app_game_tile_action_clicked");
     expect(events[0].properties).toEqual({
       section: "detected",
+      layout: "list",
       placement: "primary",
       action: "add_game",
       game_id: 1704,

@@ -462,19 +462,64 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 }
 
-type ExportType = IBaseProps & IActionControlProps & IExtensibleProps & React.HTMLAttributes<any>;
+interface IReportingProps {
+  /**
+   * Hears which action ran, by its definition, just before it runs, whichever way it
+   * was clicked (its button, a collapsed menu, a grouped dropdown or a background
+   * click). Submenu entries and component actions aren't reported: neither runs
+   * through the definition's own `action`.
+   */
+  onAction?: (action: IActionDefinition) => void;
+}
+
+/** Hands IconBar the actions ActionControl resolved, each reporting itself as it runs. */
+function ReportingIconBar(props: IProps & Required<IReportingProps>) {
+  const { actions, onAction, ...barProps } = props;
+
+  const reporting = React.useMemo(
+    () =>
+      actions?.map((action) =>
+        action.action === undefined
+          ? action
+          : {
+              ...action,
+              action: (instanceIds: string | string[], data?: any) => {
+                onAction(action);
+                action.action(instanceIds, data);
+              },
+            },
+      ),
+    [actions, onAction],
+  );
+
+  return <IconBar {...barProps} actions={reporting} />;
+}
+
+type ExportType = IBaseProps &
+  IActionControlProps &
+  IExtensibleProps &
+  IReportingProps &
+  React.HTMLAttributes<any>;
 
 class ActionIconBar extends React.Component<ExportType> {
   private static ACTION_PROPS = ["filter", "group", "instanceId", "showAll", "staticElements"];
   public render() {
+    const { onAction } = this.props;
     const actionProps: IActionControlProps = _.pick(
       this.props,
       ActionIconBar.ACTION_PROPS,
     ) as IActionControlProps;
-    const barProps: IBaseProps = _.omit(this.props, ActionIconBar.ACTION_PROPS) as any;
+    const barProps: IBaseProps = _.omit(this.props, [
+      ...ActionIconBar.ACTION_PROPS,
+      "onAction",
+    ]) as any;
     return (
       <ActionControl {...actionProps}>
-        <IconBar {...barProps} />
+        {onAction === undefined ? (
+          <IconBar {...barProps} />
+        ) : (
+          <ReportingIconBar {...barProps} onAction={onAction} />
+        )}
       </ActionControl>
     );
   }

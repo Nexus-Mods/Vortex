@@ -92,6 +92,7 @@ export const SupportedGames = forwardRef<HTMLDivElement, ISupportedGamesProps>(
           >
             {layout === "list" ? (
               <GamesList
+                section="supported"
                 discoveredGames={discoveredGames}
                 gameMode={gameMode}
                 games={paged}

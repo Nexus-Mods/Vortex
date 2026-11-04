@@ -14,7 +14,13 @@ export type ScanTrigger = "refresh" | "retry";
  */
 export type ScanOutcome = "success" | "discovery_failed" | "detection_failed" | "cancelled";
 
-/** Where on a tile an action was run from: the button on its art, or its overflow menu. */
+/** Which layout the game was shown in: tiles (GameCard) or list rows (GameRow). */
+export type TileLayout = "grid" | "list";
+
+/**
+ * Where on a game an action was run from: its lead button (on a tile's art, or a list
+ * row's own buttons), or its menu (a tile's overflow, or a list row's details popover).
+ */
 export type TileActionPlacement = "primary" | "menu";
 
 /**
@@ -22,6 +28,13 @@ export type TileActionPlacement = "primary" | "menu";
  * the game already in play opens its mods instead.
  */
 export type TilePrimaryAction = "open" | "open_mods" | "add_game" | "manual_add";
+
+/** What the lead button does in each section, the same whichever layout shows it. */
+export const PRIMARY_ACTION_BY_SECTION: Record<IGameSection, TilePrimaryAction> = {
+  added: "open",
+  detected: "add_game",
+  supported: "manual_add",
+};
 
 /**
  * Build a Games page analytics event, dropping `undefined` values so an optional prop is
@@ -72,6 +85,7 @@ export const createGamesPageTracker = (api: IExtensionApi) => {
     // one in play.
     trackTileAction: (props: {
       section: IGameSection;
+      layout: TileLayout;
       placement: TileActionPlacement;
       action: string;
       game_id: GameId | null;
@@ -79,5 +93,3 @@ export const createGamesPageTracker = (api: IExtensionApi) => {
     }) => track("app_game_tile_action_clicked", props),
   };
 };
-
-export type GamesPageTracker = ReturnType<typeof createGamesPageTracker>;

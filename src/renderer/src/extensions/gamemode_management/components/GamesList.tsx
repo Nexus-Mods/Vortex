@@ -6,6 +6,7 @@ import type { GameSource } from "../types/GameSource";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 import GameRow from "../views/GameRow";
+import type { IGameSection } from "./GameCard";
 
 interface IGamesListProps {
   t: TFunction;
@@ -15,6 +16,8 @@ interface IGamesListProps {
   discoveredGames: { [id: string]: IDiscoveryResult };
   /** Which Games page list the rows are in, recorded for the app_game_manage event. */
   source?: GameSource;
+  /** The Games page section the rows are in, for their analytics. */
+  section: IGameSection;
   onRefreshGameInfo: (gameId: string) => PromiseLike<void>;
   onBrowseGameLocation: (gameId: string) => PromiseLike<void>;
 }
@@ -26,6 +29,7 @@ export const GamesList = ({
   gameMode,
   discoveredGames,
   source,
+  section,
   onRefreshGameInfo,
   onBrowseGameLocation,
 }: IGamesListProps) => (
@@ -36,6 +40,7 @@ export const GamesList = ({
         discovery={discoveredGames[game.id]}
         game={game}
         key={game.id}
+        section={section}
         source={source}
         t={t}
         type={type}

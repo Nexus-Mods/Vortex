@@ -136,7 +136,14 @@ describe("GameCard", () => {
         expect(tracked()).toEqual([
           {
             eventName: "app_game_tile_action_clicked",
-            properties: { section, placement: "primary", action, game_id: 1704, game_store: "gog" },
+            properties: {
+              section,
+              layout: "grid",
+              placement: "primary",
+              action,
+              game_id: 1704,
+              game_store: "gog",
+            },
           },
         ]);
       });
@@ -167,6 +174,7 @@ describe("GameCard", () => {
           eventName: "app_game_tile_action_clicked",
           properties: {
             section: "detected",
+            layout: "grid",
             placement: "menu",
             action: "Stop Managing",
             game_id: 1704,

@@ -38,7 +38,7 @@ interface IPositionedAction {
    * What the row is called in analytics: the registered title, untranslated, or the
    * tile's own name for the rows it builds.
    */
-  key: string;
+  analyticsKey: string;
   /** The registered icon name, which is what decides whether a row folds. */
   icon?: string;
   action: IMenuAction;
@@ -86,7 +86,7 @@ const useRegisteredActions = (group: string, gameId: string): IPositionedAction[
 
     prev.push({
       position: definition.position ?? MENU_POSITION,
-      key: definition.title,
+      analyticsKey: definition.title,
       icon: definition.icon,
       action: {
         // Registrations are inconsistent about translating their own title, and a
@@ -135,7 +135,7 @@ export const useGameCardActions = (
 
     const hide: IPositionedAction = {
       position: MENU_POSITION,
-      key: hidden ? "show" : "hide",
+      analyticsKey: hidden ? "show" : "hide",
       action: {
         label: hidden ? t("Show") : t("Hide"),
         icon: getIcon(hidden ? "show" : "hide"),
@@ -145,7 +145,7 @@ export const useGameCardActions = (
 
     const details: IPositionedAction = {
       position: DETAILS_POSITION,
-      key: "game_details",
+      analyticsKey: "game_details",
       action: {
         label: t("Game details"),
         icon: getIcon("game"),
@@ -154,7 +154,7 @@ export const useGameCardActions = (
     };
 
     // A row that opens a panel has no click of its own; the rows inside it report.
-    const reported = (entry: IPositionedAction): IMenuAction => {
+    const withReporting = (entry: IPositionedAction): IMenuAction => {
       const { onClick, panel, ...row } = entry.action;
       if (onClick === undefined || panel !== undefined || onMenuAction === undefined) {
         return entry.action;
@@ -163,7 +163,7 @@ export const useGameCardActions = (
       return {
         ...row,
         onClick: () => {
-          onMenuAction(entry.key);
+          onMenuAction(entry.analyticsKey);
           onClick();
         },
       };
@@ -180,14 +180,14 @@ export const useGameCardActions = (
         ? [
             {
               position: opens[0].position,
-              key: "open",
+              analyticsKey: "open",
               action: {
                 label: openLabel,
                 icon: getIcon(OPEN_ICON),
                 panelRole: "menu",
                 panel: ({ dismiss }) => (
                   <PopoverMenu
-                    actions={[opens.map(reported)]}
+                    actions={[opens.map(withReporting)]}
                     label={openLabel}
                     onSelect={dismiss}
                   />
@@ -199,7 +199,7 @@ export const useGameCardActions = (
 
     const menu = [hide, details, ...open, ...rest.filter((entry) => entry.icon !== OPEN_ICON)]
       .sort(byPosition)
-      .map(reported);
+      .map(withReporting);
 
     return {
       menu: [menu],
