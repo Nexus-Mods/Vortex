@@ -7,6 +7,7 @@ vi.mock("@/extensions/nexus_integration/util", () => ({
   nexusGamesProm: vi.fn(() => Promise.resolve([])),
   numericGameIdToDomainName: vi.fn(),
 }));
+vi.mock("@/extensions/gamemode_management/util/getGame", () => ({ getGame: vi.fn() }));
 vi.mock("@/extensions/nexus_integration/util/UIDs", () => ({
   VORTEX_MOD_UID: "9856949944321",
   makeModUID: vi.fn((repoInfo: { gameId: string; modId: string }) =>
@@ -51,6 +52,13 @@ describe("resolveRequirementTarget", () => {
     const target = resolveRequirementTarget({ modId: "1", gameId: "1704" }, "skyrimse");
     expect(target).not.toBeNull();
     expect(target?.domainName).toBe("skyrimse");
+  });
+
+  it("gives a requirement with no game the requiring game's Nexus domain, not its Vortex id", () => {
+    const target = resolveRequirementTarget({ modId: "2" }, "skyrimse");
+    expect(target?.domainName).toBe("skyrimspecialedition");
+    // the UID is still keyed as before
+    expect(target?.gameIdForStorage).toBe("skyrimse");
   });
 });
 

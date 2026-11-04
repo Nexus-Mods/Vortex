@@ -1,6 +1,6 @@
 import type { IModFile, IModFileQuery } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Button } from "react-bootstrap";
@@ -20,6 +20,7 @@ import { useRefreshUserInfoOnFocus } from "../hooks/useRefreshUserInfoOnFocus";
 import NXMUrl from "../NXMUrl";
 import { isPremium } from "../selectors";
 import { nexusGamesProm } from "../util";
+import { nexusModPageUrl } from "../util/nexus_urls/nexusUrls";
 import { makeFileUID } from "../util/UIDs";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
 
@@ -183,7 +184,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   }, [onSkip, urls]);
 
   const openModPage = React.useCallback(() => {
-    opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/mods/${fileInfo.modId}`);
+    opn(nexusModPageUrl(GameDomain(fileInfo.game.domainName), fileInfo.modId));
   }, [fileInfo]);
 
   const openAuthorPage = React.useCallback(() => {

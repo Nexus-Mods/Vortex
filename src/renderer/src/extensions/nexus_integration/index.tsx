@@ -14,7 +14,7 @@ import type {
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { TimeoutError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { GameDomain, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as fuzz from "fuzzball";
 import type { TFunction } from "i18next";
@@ -111,6 +111,7 @@ import { checkModVersion } from "./util/checkModsVersion";
 import { nexusGameId } from "./util/convertGameId";
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from "./util/guessModID";
 import { isStoragePathName } from "./util/healStoragePathNames";
+import { nexusModPageUrl } from "./util/nexus_urls/nexusUrls";
 import retrieveCategoryList from "./util/retrieveCategories";
 import Tracking from "./util/tracking";
 import { makeFileUID } from "./util/UIDs";
@@ -817,7 +818,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
             author: modFileInfo.mod.author,
             category: modFileInfo.mod.modCategory.id.toString().split(",")[0],
             description: modFileInfo.description,
-            homepage: `${NEXUS_BASE_URL}/${repoInfo.gameId}/mods/${modId}`,
+            homepage: nexusModPageUrl(GameDomain(modFileInfo.game.domainName), modId),
           },
         },
       };

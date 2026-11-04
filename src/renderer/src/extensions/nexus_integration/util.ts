@@ -89,6 +89,7 @@ import {
 } from "./util/convertGameId";
 import { endorseCollection, endorseMod } from "./util/endorseMod";
 import { FULL_REVISION_INFO, MOD_FILE_INFO } from "./util/graphQueries";
+import { nexusModPageUrl } from "./util/nexus_urls/nexusUrls";
 import type { ITokenReply } from "./util/oauth";
 import OAuth from "./util/oauth";
 import { refuseLogin, tokenProviderFor } from "./util/oauthSession";
@@ -1373,14 +1374,13 @@ function processInstallError(
 }
 
 function nexusLink(state: IState, mod: IMod, gameMode: string) {
-  const gameId = nexusGameId(
-    gameById(state, getSafe(mod.attributes, ["downloadGame"], undefined) || gameMode),
-  );
+  const vortexGameId = getSafe(mod.attributes, ["downloadGame"], undefined) || gameMode;
+  const gameId = nexusGameId(gameById(state, vortexGameId), vortexGameId);
   if (mod.attributes?.collectionSlug !== undefined) {
     return `https://www.nexusmods.com/${gameId}/mods/${mod.attributes?.collectionSlug}`;
   } else {
     const nexusModId: number = parseInt(getSafe(mod.attributes, ["modId"], undefined), 10);
-    return `https://www.nexusmods.com/${gameId}/mods/${nexusModId}`;
+    return nexusModPageUrl(gameId, nexusModId);
   }
 }
 

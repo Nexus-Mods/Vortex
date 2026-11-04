@@ -25,7 +25,7 @@ import type {
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import { NexusError, TimeoutError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
+import { GameDomain, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
 import { AlreadyDownloaded } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import * as semver from "semver";
@@ -54,7 +54,7 @@ import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
 import { setUpdatingMods } from "../mod_management/actions/session";
 import type { IModListItem } from "../news_dashlet/types";
 import { setUserInfo } from "./actions/persistent";
-import { NEXUS_BASE_URL, NEXUS_GAMES_URL } from "./constants";
+import { NEXUS_GAMES_URL } from "./constants";
 import { ensureFreshMembership, refreshMembership } from "./membership";
 import { nxmModUrl } from "./NXMUrl";
 import { isRateLimited, notifyRateLimited } from "./rateLimit";
@@ -83,6 +83,7 @@ import {
   getModRequirementsInfo,
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
+import { nexusFilePageUrl, nexusModPageUrl } from "./util/nexus_urls/nexusUrls";
 import submitFeedback from "./util/submitFeedback";
 import type { SubmitCollectionOptions } from "./util_v3/submitCollectionV3";
 import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
@@ -315,9 +316,7 @@ export function onOpenModPage(api: IExtensionApi) {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
-    opn([NEXUS_BASE_URL, nexusGameId(game) || gameId, "mods", modId].join("/")).catch(
-      (err) => undefined,
-    );
+    opn(nexusModPageUrl(nexusGameId(game, gameId), modId)).catch((err) => undefined);
   };
 }
 
@@ -534,9 +533,9 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
         api.showErrorNotification("Invalid URL", url, { allowReport: false });
       })
       .catch(ProcessCanceled, () => {
-        const url = [NEXUS_BASE_URL, nexusGameId(game, gameId), "mods", modId].join("/");
-        const params = `?tab=files&file_id=${fileId}&nmm=1`;
-        return opn(url + params).catch(() => undefined);
+        return opn(nexusFilePageUrl(nexusGameId(game, gameId), modId, fileId)).catch(
+          () => undefined,
+        );
       })
       .catch((err) => {
         api.showErrorNotification("Failed to start download", err);
@@ -1223,7 +1222,7 @@ function extractLatestModInfo(state: IState, gameId: string, input: IModInfo): I
     category: resolveCategoryName(input.category_id.toString(), state),
     summary: input.summary,
     imageUrl: input.picture_url,
-    link: `${NEXUS_BASE_URL}/${input.domain_name}/mods/${input.mod_id}`,
+    link: nexusModPageUrl(GameDomain(input.domain_name), input.mod_id),
     extra: [
       { id: "endorsements", value: input.endorsement_count },
       { id: "downloads", value: input.mod_downloads },

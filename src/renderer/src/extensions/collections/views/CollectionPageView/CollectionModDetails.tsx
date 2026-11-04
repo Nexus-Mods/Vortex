@@ -1,4 +1,5 @@
 import type { ICollectionRevisionMod } from "@nexusmods/nexus-api";
+import { GameDomain } from "@vortex/shared";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
 
@@ -10,6 +11,7 @@ import ZoomableImage from "../../../../controls/ZoomableImage";
 import { getGame } from "../../../../extensions/gamemode_management/util/getGame";
 import renderModName from "../../../../extensions/mod_management/util/modName";
 import { nexusGameId } from "../../../../extensions/nexus_integration/util/convertGameId";
+import { nexusModPageUrl } from "../../../../extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { TFunction } from "../../../../util/i18n";
 import opn from "../../../../util/opn";
 import { AUTHOR_UNKNOWN, NEXUS_BASE_URL } from "../../constants";
@@ -34,8 +36,11 @@ function CollectionModDetails(props: ICollectionModDetails) {
   const description = local?.attributes?.shortDescription ?? remote?.file?.mod?.summary ?? "";
   const image = local?.attributes?.pictureUrl ?? remote?.file?.mod?.pictureUrl;
 
-  const domainName =
-    remote?.file?.game?.domainName ?? nexusGameId(getGame(local?.attributes?.gameId ?? gameId));
+  const remoteDomain = remote?.file?.game?.domainName;
+  const vortexGameId = local?.attributes?.gameId ?? gameId;
+  const domainName = remoteDomain
+    ? GameDomain(remoteDomain)
+    : nexusGameId(getGame(vortexGameId), vortexGameId);
   const modId = local?.attributes?.modId ?? remote?.file?.modId;
 
   const visitUploader = React.useCallback(() => {
@@ -43,7 +48,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
   }, [uploaderId]);
 
   const visitPage = React.useCallback(() => {
-    opn(`${NEXUS_BASE_URL}/${domainName}/mods/${modId}`);
+    opn(nexusModPageUrl(domainName, modId));
   }, [domainName, modId]);
 
   return (

@@ -43,7 +43,6 @@ import { showError } from "../../../util/message";
 import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
 import { getCollectionModByReference } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
@@ -53,6 +52,7 @@ import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId
 import { setShowDLDropzone, setShowDLGraph } from "../actions/settings";
 import { finishDownload, setDownloadTime } from "../actions/state";
 import type { IDownload } from "../types/IDownload";
+import { downloadFilePageUrl } from "../util/download_file_page_url/downloadFilePageUrl";
 import { friendlyDownloadName } from "../util/downloadNames";
 import getDownloadGames from "../util/getDownloadGames";
 import DownloadGraph from "./DownloadGraph";
@@ -786,41 +786,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     return ["failed", "redirect"].includes(download.state);
   };
 
-  private extractIds(download: IDownload) {
-    if (download === undefined) {
-      return undefined;
-    }
-    const isValid = (ids) =>
-      ids?.fileId !== undefined && ids?.gameId !== undefined && ids?.modId !== undefined;
-    let ids = getSafe(download.modInfo, ["nexus", "ids"], undefined);
-    if (isValid(ids)) {
-      return ids;
-    }
-    const meta = getSafe(download.modInfo, ["meta", "details"], undefined);
-    if (meta?.fileId !== undefined) {
-      ids = {
-        fileId: meta.fileId,
-        modId: meta.modId,
-        gameId: download.game[0],
-      };
-      if (isValid(ids)) {
-        return ids;
-      }
-    }
-    return undefined;
-  }
-
   private openModPage = (dlId: string) => {
-    const dl = this.getDownload(dlId);
-    const ids = this.extractIds(dl);
-    if (ids === undefined) {
+    const url = downloadFilePageUrl(this.context.api.store.getState(), this.getDownload(dlId));
+    if (url === undefined) {
       return;
     }
-    const url =
-      path.join("www.nexusmods.com", ids.gameId, "mods", ids.modId.toString()) +
-      `?tab=files&file_id=${ids.fileId}&nmm=1`;
     opn(url).catch((err) => null);
-    return;
   };
 
   private dropDownload = (type: DropType, dlPaths: string[]) => {

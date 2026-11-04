@@ -1,7 +1,7 @@
 import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { HTTPError as NexusHTTPError, NexusError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
 import { parseError } from "@vortex/shared";
 import type { Action } from "redux";
 
@@ -23,7 +23,6 @@ import { batchDispatch } from "../../util/util";
 import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
 import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
-import { NEXUS_BASE_URL } from "./constants";
 import { refreshMembership, scheduleMembershipRefresh } from "./membership";
 import NXMUrl from "./NXMUrl";
 import { isRateLimited, notifyRateLimited } from "./rateLimit";
@@ -31,6 +30,7 @@ import { isPremium, userInfo } from "./selectors";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
 import { findLatestUpdate } from "./util/checkModsVersion";
 import { nxmPageId } from "./util/convertGameId";
+import { nexusFilePageUrl } from "./util/nexus_urls/nexusUrls";
 
 const DL_QUERY: IRevisionQuery = {
   id: true,
@@ -263,9 +263,7 @@ export class NxmProtocol {
 
       queued.awaitingLink = true;
 
-      opn(
-        `${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`,
-      ).catch(() => null);
+      opn(nexusFilePageUrl(GameDomain(url.gameId), url.modId, url.fileId)).catch(() => null);
     },
 
     onSkip: (inputUrl: string) => {

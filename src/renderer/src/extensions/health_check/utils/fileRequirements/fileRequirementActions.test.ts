@@ -30,7 +30,12 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import opn from "@/util/opn";
 
 import { trackedInstall } from "../shared/installTracking";
-import { downloadFileRequirement, installDownloadedFile } from "./fileRequirementActions";
+import {
+  downloadFileRequirement,
+  installDownloadedFile,
+  openFilePage,
+  openModPage,
+} from "./fileRequirementActions";
 import type { IDownloadedFile, IInstalledFile } from "./installedFiles";
 import type { IFileRequirementCandidate } from "./mapRequirementsReport";
 
@@ -199,5 +204,36 @@ describe("installDownloadedFile", () => {
     mockPremiumAd.mockReturnValue(true);
 
     expect(await installDownloadedFile(makeApi(), DOWNLOADED)).toBe(true);
+  });
+});
+
+describe("Nexus pages", () => {
+  beforeEach(() => {
+    vi.mocked(nexusGames).mockReturnValue([
+      { id: NEXUS_GAME_ID, domain_name: "skyrimspecialedition" },
+    ] as never);
+  });
+
+  test("opens the mod's page", () => {
+    openModPage(makeApi(), CANDIDATE);
+
+    expect(opn).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/42");
+  });
+
+  test("opens the file on its mod's Files tab", () => {
+    openFilePage(makeApi(), CANDIDATE);
+
+    expect(opn).toHaveBeenCalledWith(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/42?tab=files&file_id=9001&nmm=1",
+    );
+  });
+
+  test("opens nothing when the game has no Nexus domain", () => {
+    vi.mocked(nexusGames).mockReturnValue([]);
+
+    openModPage(makeApi(), CANDIDATE);
+    openFilePage(makeApi(), CANDIDATE);
+
+    expect(opn).not.toHaveBeenCalled();
   });
 });
