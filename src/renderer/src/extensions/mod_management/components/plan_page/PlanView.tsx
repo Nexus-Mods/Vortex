@@ -163,14 +163,14 @@ export const PlanView = ({ destinations, modNames }: IPlanViewProps) => {
         const replaced =
           current !== undefined && previous !== undefined && !sameOrigin(current, previous);
         return (
-          <div className="flex flex-wrap items-center gap-1">
-            <PlanModOrigin file={current ?? previous} modNames={modNames} />
+          <div className="flex min-w-0 items-center gap-1">
+            <PlanModOrigin file={current ?? previous} modNames={modNames} oneLine />
 
             {replaced && (
               <>
-                <span>was</span>
+                <span className="shrink-0">was</span>
 
-                <PlanModOrigin file={previous} modNames={modNames} />
+                <PlanModOrigin file={previous} modNames={modNames} oneLine />
               </>
             )}
           </div>

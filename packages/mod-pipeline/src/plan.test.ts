@@ -4,7 +4,14 @@ import { DiskEntryKind, type DiskEntry, type DiskScan } from "./diskScan";
 import { GameStore } from "./gameInstall";
 import { NexusFileId, NexusGameId, SteamAppId, SteamBuildId } from "./ids";
 import { FileSourceKind, HashType, type FileSource, type Lockfile } from "./lockfile";
-import { DestinationState, OperationKind, plan, planDestinations } from "./plan";
+import {
+  DestinationState,
+  inApplyOrder,
+  OperationKind,
+  plan,
+  planDestinations,
+  type Operation,
+} from "./plan";
 
 const GAME_DIR = "/fixture-root/game";
 
@@ -194,5 +201,25 @@ describe("planDestinations", () => {
     expect(
       planDestinations(lockfile([deployed]), lockfile([deployed]), diskScan(onDisk)),
     ).toMatchObject([{ state: DestinationState.Unchanged, operations: [] }]);
+  });
+});
+
+describe("OperationKind", () => {
+  test("declares the operation kinds in the order inApplyOrder runs them", () => {
+    const file = makeFileSource("plugin.dll");
+    const reason = DestinationState.NewFile;
+    const operationByKind: Record<OperationKind, Operation> = {
+      [OperationKind.Backup]: {
+        kind: OperationKind.Backup,
+        destinationPath: file.destinationPath,
+        reason,
+      },
+      [OperationKind.Link]: { kind: OperationKind.Link, file, reason },
+      [OperationKind.Unlink]: { kind: OperationKind.Unlink, file, reason },
+    };
+
+    expect(inApplyOrder(Object.values(operationByKind)).map(({ kind }) => kind)).toEqual(
+      Object.values(OperationKind),
+    );
   });
 });

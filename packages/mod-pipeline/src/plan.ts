@@ -13,11 +13,14 @@ import { AbsolutePathSchema, folderKeyOf, INVALID_RELATIVE_PATH, pathKeyOf } fro
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
-/** What the Apply step does at one destination; Apply picks the deployment method. */
+/**
+ * What the Apply step does at one destination; Apply picks the deployment method. Declared in the
+ * order inApplyOrder runs them: LINK last, since it needs its destination cleared first.
+ */
 export const OperationKind = {
   Backup: "BACKUP",
-  Link: "LINK",
   Unlink: "UNLINK",
+  Link: "LINK",
 } as const;
 export type OperationKind = (typeof OperationKind)[keyof typeof OperationKind];
 
