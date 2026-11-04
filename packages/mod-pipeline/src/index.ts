@@ -14,6 +14,22 @@ export {
 } from "./ids";
 export { FileSourceKind, HashType, LockfileSchema, lockfileFiles } from "./lockfile";
 export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, FileEntry } from "./lockfile";
+export {
+  createJournal,
+  JournalOperationKind,
+  JournalPhase,
+  JournalReadStatus,
+  openJournal,
+  readJournal,
+} from "./journal";
+export type {
+  Journal,
+  JournalEntry,
+  JournalOperation,
+  JournalRead,
+  JournalStorage,
+  JournalWriter,
+} from "./journal";
 export { folderKeyOf, pathKeyOf } from "./pathKey";
 export {
   DestinationState,
