@@ -104,7 +104,10 @@ type Limit = <T>(read: () => Promise<T>) => Promise<T>;
  * tried again. Reads share one limit on how many run at once, across calls.
  */
 export interface IDirectoryReader {
+  /** Each directory's read, finished or not. */
   cache: Map<string, Promise<string[]>>;
+  /** The files of each directory whose read succeeded, for `cachedGameFiles` to use at once. */
+  settled: Map<string, string[]>;
   limit: Promise<Limit>;
 }
 
@@ -113,9 +116,46 @@ export function createDirectoryReader(
 ): IDirectoryReader {
   return {
     cache: new Map(),
+    settled: new Map(),
     // ESM-only against a CommonJS renderer, so a static import fails typecheck (TS1479)
     limit: import("p-limit").then(({ default: pLimit }) => pLimit(concurrency)),
   };
+}
+
+/** The directories `finalPaths` are in, by lowercased path, as the reader keys them. */
+function destinationDirectories(finalPaths: readonly RelativePath[]): Map<string, RelativePath> {
+  const directories = new Map<string, RelativePath>();
+
+  for (const finalPath of finalPaths) {
+    const directory = parentPath(finalPath);
+    directories.set(directory.toLowerCase(), directory);
+  }
+
+  return directories;
+}
+
+/**
+ * What `existingGameFiles` would find, without waiting, when `reader` has already read every
+ * directory `finalPaths` are in; undefined if any of them is still to be read. A directory whose
+ * read failed counts as still to be read, so it's tried again.
+ */
+export function cachedGameFiles(
+  finalPaths: readonly RelativePath[],
+  reader: IDirectoryReader,
+): IExistingGameFiles | undefined {
+  const files = new Set<string>();
+
+  for (const key of destinationDirectories(finalPaths).keys()) {
+    const found = reader.settled.get(key);
+
+    if (found === undefined) {
+      return undefined;
+    }
+
+    found.forEach((file) => files.add(file));
+  }
+
+  return { files, hasFailed: false };
 }
 
 /**
@@ -129,22 +169,22 @@ export async function existingGameFiles(
   reader: IDirectoryReader = createDirectoryReader(),
 ): Promise<IExistingGameFiles> {
   const { cache } = reader;
-  const directories = new Map<string, RelativePath>();
 
-  for (const finalPath of finalPaths) {
-    const directory = parentPath(finalPath);
-    directories.set(directory.toLowerCase(), directory);
-  }
-
-  const reads = [...directories].map(async ([key, directory]) => {
+  const reads = [...destinationDirectories(finalPaths)].map(async ([key, directory]) => {
     let read = cache.get(key);
 
     if (read === undefined) {
       read = reader.limit
         .then((limit) => limit(() => readFileTreeDirectory(root, directory)))
-        .then((entries) =>
-          entries.filter(({ kind }) => kind === "file").map(({ path }) => path.toLowerCase()),
-        );
+        .then((entries) => {
+          const found = entries
+            .filter(({ kind }) => kind === "file")
+            .map(({ path }) => path.toLowerCase());
+
+          reader.settled.set(key, found);
+
+          return found;
+        });
       cache.set(key, read);
     }
 

@@ -14,6 +14,7 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 import { finalPath } from "../manualInstaller";
 import {
   classifyDestinationFiles,
+  cachedGameFiles,
   createDirectoryReader,
   existingGameFiles,
   type DestinationFileStatus,
@@ -84,8 +85,15 @@ export const ManualInstallerResult = ({
   // Kept with the paths it was read for, as only a read of the current paths is used.
   const [read, setRead] = useState<{ paths: RelativePath[]; found: IExistingGameFiles }>();
 
+  // What was found for these paths already, when each of their directories has been read before,
+  // so going back to a folder shows its statuses at once rather than checking again.
+  const cached = useMemo(
+    () => (gameFolder === undefined ? undefined : cachedGameFiles(finalPaths, reader)),
+    [gameFolder, finalPaths, reader],
+  );
+
   useEffect(() => {
-    if (gameFolder === undefined) {
+    if (gameFolder === undefined || cached !== undefined) {
       return undefined;
     }
 
@@ -107,11 +115,12 @@ export const ManualInstallerResult = ({
     return () => {
       isCancelled = true;
     };
-  }, [gameFolder, finalPaths, reader]);
+  }, [gameFolder, finalPaths, reader, cached]);
 
   // A read of earlier paths would mark the current ones by the wrong directories, so the
-  // statuses wait for the read of these. Without a game folder there is nothing to replace.
-  const currentRead = read?.paths === finalPaths ? read.found : undefined;
+  // statuses come only from what was found for these: at once when their directories were all
+  // read before, else once they are. Without a game folder there is nothing to replace.
+  const currentRead = read?.paths === finalPaths ? read.found : cached;
   const existing: ReadonlySet<string> | undefined =
     gameFolder === undefined ? NO_FILES : currentRead?.files;
   const isIncomplete = hasDeployedFailed || currentRead?.hasFailed === true;

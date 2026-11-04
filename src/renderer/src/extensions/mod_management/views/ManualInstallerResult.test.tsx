@@ -241,6 +241,38 @@ describe("ManualInstallerResult", () => {
     expect(rowFor("new.dll")).toHaveAttribute("data-status", "new");
   });
 
+  it("marks the files at once for a folder whose directories were all read before", async () => {
+    const reresult = (folder: string) => (
+      <ManualInstallerResult
+        deployed={deployedByOther}
+        files={files}
+        folder={folder}
+        gameFolder={gameFolder}
+        hasDeployedFailed={false}
+        modNames={noMods}
+        skipTopFolder
+      />
+    );
+
+    const { rerender } = render(reresult(""));
+
+    await waitFor(() =>
+      expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile"),
+    );
+
+    rerender(reresult("Mods"));
+    await waitFor(() =>
+      expect(rowFor("Mods/Game.esm")).toHaveAttribute("data-status", "replacesGameFile"),
+    );
+
+    // back to the game root, read before: marked in the same render, with nothing to wait for
+    rerender(reresult(""));
+
+    expect(rowFor("Game.esm")).toHaveAttribute("data-status", "replacesGameFile");
+    expect(rowFor("new.dll")).toHaveAttribute("data-status", "new");
+    expect(screen.queryByText("manualInstaller::checking")).not.toBeInTheDocument();
+  });
+
   it("tells that the marks may be wrong when a directory can't be read", async () => {
     // the game has a file where the mod has a directory, which can't be read as one
     renderResult({ files: [file("bin/mod.dll"), file("Game.esm")] });

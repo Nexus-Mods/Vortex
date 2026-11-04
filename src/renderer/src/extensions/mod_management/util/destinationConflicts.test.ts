@@ -9,6 +9,7 @@ import type { IDeploymentManifest } from "../types/IDeploymentManifest";
 import type { IDeployedFile } from "../types/IDeploymentMethod";
 import {
   classifyDestinationFiles,
+  cachedGameFiles,
   createDirectoryReader,
   deployedFiles,
   existingGameFiles,
@@ -267,6 +268,49 @@ describe("existingGameFiles", () => {
     });
     // `bin` is a file, so it can't be read as a directory
     expect(second).toEqual({ files: new Set(["data/textures/stone.dds"]), hasFailed: true });
+  });
+
+  // on the same game folder, as it only knows what `existingGameFiles` read
+  describe("cachedGameFiles", () => {
+    it("knows nothing before the directories are read", () => {
+      expect(cachedGameFiles(paths("Data/a.txt"), createDirectoryReader())).toBeUndefined();
+    });
+
+    it("finds what was found once every directory has been read", async () => {
+      const reader = createDirectoryReader();
+      const finalPaths = paths("Data/Game.esm", "Data/Mod.esp", "game.exe");
+
+      const found = await existingGameFiles(root, finalPaths, reader);
+
+      expect(cachedGameFiles(finalPaths, reader)).toEqual(found);
+    });
+
+    it("knows nothing while one of the directories is still to be read", async () => {
+      const reader = createDirectoryReader();
+
+      await existingGameFiles(root, paths("Data/a.txt"), reader);
+
+      expect(cachedGameFiles(paths("Data/a.txt", "game.exe"), reader)).toBeUndefined();
+    });
+
+    it("knows a directory it has read whatever the case of its name", async () => {
+      const reader = createDirectoryReader();
+
+      await existingGameFiles(root, paths("Data/a.txt"), reader);
+
+      expect(cachedGameFiles(paths("DATA/b.txt"), reader)).toEqual({
+        files: new Set(["data/game.esm"]),
+        hasFailed: false,
+      });
+    });
+
+    it("knows nothing for a directory whose read failed, so it's read again", async () => {
+      const reader = createDirectoryReader();
+
+      expect((await existingGameFiles(root, paths("bin/mod.dll"), reader)).hasFailed).toBe(true);
+
+      expect(cachedGameFiles(paths("bin/mod.dll"), reader)).toBeUndefined();
+    });
   });
 });
 
