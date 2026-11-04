@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0-beta.1] - 2026-11-04
+
+_First beta of the 2.11 release._
+
+### Added
+
+- Placeholders for images from outside Nexus Mods in Browse's mod descriptions ([#24725](https://github.com/Nexus-Mods/Vortex/pull/24725))
+- Each mod's gallery in Browse's details, from the API's images, with adult content blurred ([#24711](https://github.com/Nexus-Mods/Vortex/pull/24711))
+- Time range as one of Browse's filters, with a filter menu, a pip and a split button ([#24708](https://github.com/Nexus-Mods/Vortex/pull/24708))
+- Nexus Mods images in mod descriptions, with the site's bbcode drawn as the site does ([#24700](https://github.com/Nexus-Mods/Vortex/pull/24700))
+- Simple manual installer ([#24675](https://github.com/Nexus-Mods/Vortex/pull/24675))
+- Resizable split between Browse's mod list and details, saved in settings ([#24674](https://github.com/Nexus-Mods/Vortex/pull/24674))
+- Browse's Mods tab on real data from the v3 mod search ([#24673](https://github.com/Nexus-Mods/Vortex/pull/24673))
+- Browse page with Mods and Collections tabs, a mod list beside its details, and the game's art behind the layout ([#24641](https://github.com/Nexus-Mods/Vortex/pull/24641))
+- Manage tier zero games ([#24592](https://github.com/Nexus-Mods/Vortex/pull/24592))
+
+### Changed
+
+- Removed the deprecated `util.steam` and `util.epicGamesLauncher` shims from the extension API ([#24738](https://github.com/Nexus-Mods/Vortex/pull/24738))
+- Upgraded Electron to 45.2.1 ([#24729](https://github.com/Nexus-Mods/Vortex/pull/24729))
+- Upgraded Electron to 45.1.0 ([#24703](https://github.com/Nexus-Mods/Vortex/pull/24703))
+- Nexus Mods archive details forwarded to installers for local files ([#24697](https://github.com/Nexus-Mods/Vortex/pull/24697))
+- The updater's What's New dialog moved to the new modal ([#24693](https://github.com/Nexus-Mods/Vortex/pull/24693))
+- Refined the manual installer UI ([#24688](https://github.com/Nexus-Mods/Vortex/pull/24688))
+- Upgraded to Electron 45 ([#24663](https://github.com/Nexus-Mods/Vortex/pull/24663))
+- Improved discoverability of the global Vortex settings from a game's settings ([#24555](https://github.com/Nexus-Mods/Vortex/pull/24555))
+- Google's Material Symbols in place of the MDI icons ([#24549](https://github.com/Nexus-Mods/Vortex/pull/24549))
+- More `showDialog` dialogs drawn with the new modal, including bbcode and markdown dialogs ([#24522](https://github.com/Nexus-Mods/Vortex/pull/24522))
+- More `showDialog` dialogs drawn with the new modal, including inputs and links ([#24505](https://github.com/Nexus-Mods/Vortex/pull/24505))
+
+### Fixed
+
+- Browse's mod search broken by the v3 API's breaking changes ([#24735](https://github.com/Nexus-Mods/Vortex/pull/24735))
+- "Discover more collections" not opening Browse on the Collections tab ([#24723](https://github.com/Nexus-Mods/Vortex/pull/24723))
+- Mods page crash on a mod with no name ([#24713](https://github.com/Nexus-Mods/Vortex/pull/24713))
+- Directory not closed after a completed enumeration ([#24709](https://github.com/Nexus-Mods/Vortex/pull/24709))
+- Game tile tier pill in the wrong position ([#24681](https://github.com/Nexus-Mods/Vortex/pull/24681))
+- Health Check's free install option opening the mod page instead of the file page ([#24644](https://github.com/Nexus-Mods/Vortex/pull/24644))
+- Script extender installed from a Nexus download not deployed ([#24623](https://github.com/Nexus-Mods/Vortex/pull/24623))
+- Declined manifest backup not reported as a damaged manifest with recovery steps ([#24617](https://github.com/Nexus-Mods/Vortex/pull/24617))
+- Epic game detection ([#24596](https://github.com/Nexus-Mods/Vortex/pull/24596))
+- Stall at the end of a large collection install while its mod rules were updated ([#24567](https://github.com/Nexus-Mods/Vortex/pull/24567))
+- A file shared by two mod types deployed by both, overwriting the original game file ([#24503](https://github.com/Nexus-Mods/Vortex/pull/24503))
+- Dashboard free disk space hints not shown on Linux ([#24380](https://github.com/Nexus-Mods/Vortex/pull/24380))
+
 ## [2.10.0] - 2026-11-03
 
 ### Added
@@ -2649,6 +2694,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.11.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.1
 [2.10.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0
 [2.10.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.3
 [2.10.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.2
