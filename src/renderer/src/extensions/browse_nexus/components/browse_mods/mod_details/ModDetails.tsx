@@ -165,9 +165,9 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                 />
 
                 <div className="@container border-y border-stroke-weak py-4">
-                  <div className="grid grid-cols-3 gap-2 @2xl:grid-cols-6">
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-3 @sm:grid-cols-3 @2xl:grid-cols-6 @2xl:justify-items-center">
                     {stats.map(({ label, value }) => (
-                      <div className="min-w-0 justify-self-center" key={label}>
+                      <div className="min-w-0 pl-[max(0px,calc(50%-3rem))] @2xl:pl-0" key={label}>
                         <Typography
                           appearance="subdued"
                           brand="neutral-translucent"
