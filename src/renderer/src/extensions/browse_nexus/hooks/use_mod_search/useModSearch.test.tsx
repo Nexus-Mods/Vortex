@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   gameDomainName: "skyrimspecialedition" as string | undefined,
   pending: [] as IPending[],
   requestCount: 0,
+  canSeeAdult: true,
+  hasUserInfo: true,
 }));
 
 vi.mock("../use_game_domain_name/useGameDomainName.hook", () => ({
@@ -41,7 +43,7 @@ import {
   type IBrowseModsViewsState,
 } from "../../reducers/mods_views/modsViews";
 import { type IBrowseSessionState, sessionReducer } from "../../reducers/session";
-import { MODS_PER_PAGE, timeRangeFilter, useModSearch } from "./useModSearch.hook";
+import { MODS_PER_PAGE, useModSearch } from "./useModSearch.hook";
 
 /** The time the tests start at, which the first time range counts back from. */
 const NOW = Date.parse("2026-11-03T14:35:00Z");
@@ -93,6 +95,12 @@ const makeStore = (views: IBrowseModsViewsState = browseModsViewsReducer.default
         browse: (state: IBrowseSessionState = sessionReducer.defaults, action: ITestAction) =>
           sessionReducer.reducers[action.type]?.(state, action.payload) ?? state,
       }),
+      persistent: (
+        state = {
+          nexus: { userInfo: mocks.hasUserInfo ? { adult: mocks.canSeeAdult } : undefined },
+        },
+      ) => state,
+      confidential: (state = { account: { nexus: { APIKey: "key" } } }) => state,
     }),
   );
 
@@ -123,6 +131,8 @@ describe("useModSearch", () => {
     mocks.gameDomainName = "skyrimspecialedition";
     mocks.pending = [];
     mocks.requestCount = 0;
+    mocks.canSeeAdult = true;
+    mocks.hasUserInfo = true;
   });
 
   afterEach(() => {
@@ -216,8 +226,40 @@ describe("useModSearch", () => {
       pagination: { page: 1 },
     });
     expect(result.current.currentPage).toBe(1);
-    expect(result.current.filters).toEqual({ timeRange: "28" });
+    expect(result.current.filters).toEqual({ timeRange: "28", adult: "include" });
     expect(result.current.canResetSort).toBe(false);
+  });
+
+  it("asks for mods by adult content only once it narrows them", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    expect(mocks.pending).toEqual([]);
+
+    act(() => result.current.setFilters({ adult: "only" }));
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(mocks.pending[0].search.filters).toMatchObject({ adult: "only" });
+    expect(result.current.activeFilterCount).toBe(2);
+  });
+
+  it("asks for no adult mods for a user who can't see them, whatever the view says", async () => {
+    mocks.canSeeAdult = false;
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
+
+    expect(mocks.pending.map((request) => request.search.filters.adult)).toContain("exclude");
+    expect(result.current.filters.adult).toBe("exclude");
+    expect(result.current.isEdited).toBe(false);
+  });
+
+  it("doesn't lock adult content while a logged-in user's preferences are still loading", async () => {
+    mocks.hasUserInfo = false;
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
+
+    expect(result.current.canSeeAdult).toBe(true);
+    expect(result.current.filters.adult).toBe("include");
+    expect(mocks.pending.map((request) => request.search.filters.adult)).not.toContain("exclude");
   });
 
   it("counts a time range as a filter, and none over all time", async () => {
@@ -228,7 +270,7 @@ describe("useModSearch", () => {
 
     act(() => result.current.selectView("new"));
 
-    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.filters).toEqual({ timeRange: "all", adult: "include" });
     expect(result.current.activeFilterCount).toBe(0);
   });
 
@@ -255,7 +297,7 @@ describe("useModSearch", () => {
 
     act(() => result.current.resetFilters());
 
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
     expect(result.current.changedFilterCount).toBe(0);
     expect(result.current.sort.direction).toBe("asc");
   });
@@ -269,7 +311,7 @@ describe("useModSearch", () => {
     act(() => result.current.resetSort());
 
     expect(result.current.sort.direction).toBe("desc");
-    expect(result.current.filters).toEqual({ timeRange: "365" });
+    expect(result.current.filters).toEqual({ timeRange: "365", adult: "include" });
   });
 
   it("puts a preset's own time range back whenever it's picked, even the one open", async () => {
@@ -279,17 +321,17 @@ describe("useModSearch", () => {
 
     act(() => result.current.selectView("new"));
 
-    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.filters).toEqual({ timeRange: "all", adult: "include" });
 
     act(() => result.current.setFilters({ timeRange: "28" }));
     act(() => result.current.selectView("trending"));
 
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
 
     act(() => result.current.resetFilters());
     act(() => result.current.selectView("trending"));
 
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
   });
 
   it("keeps a page's search as time passes, so it isn't fetched again", async () => {
@@ -408,6 +450,8 @@ describe("useModSearch's views", () => {
     mocks.gameDomainName = "skyrimspecialedition";
     mocks.pending = [];
     mocks.requestCount = 0;
+    mocks.canSeeAdult = true;
+    mocks.hasUserInfo = true;
   });
 
   afterEach(() => {
@@ -452,7 +496,7 @@ describe("useModSearch's views", () => {
       expect.objectContaining({
         name: "Downloads this week",
         sort: { field: "downloads", direction: "desc" },
-        filters: { timeRange: "7" },
+        filters: { timeRange: "7", adult: "include" },
       }),
     ]);
     expect(result.current.viewId).toBe(savedViews().custom[0].id);
@@ -468,6 +512,19 @@ describe("useModSearch's views", () => {
 
     expect(result.current.isEdited).toBe(false);
     expect(result.current.sort).toEqual({ field: "endorsements", direction: "desc" });
+  });
+
+  it("saves the adult content choice as stored, not as locked for a user who can't see it", () => {
+    mocks.canSeeAdult = false;
+    const { result } = render(true, {
+      selected: "custom-1",
+      custom: [{ ...mine, filters: { timeRange: "28", adult: "only" } }],
+    });
+    expect(result.current.filters.adult).toBe("exclude");
+
+    act(() => result.current.addView("Copy"));
+
+    expect(savedViews().custom[1].filters).toEqual({ timeRange: "28", adult: "only" });
   });
 
   it("saves a view's changes of sort and filters into it, so it's never edited", () => {
@@ -490,7 +547,7 @@ describe("useModSearch's views", () => {
       custom: [{ ...mine, filters: {} }],
     });
 
-    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.filters).toEqual({ timeRange: "all", adult: "include" });
   });
 
   it("is edited while a preset's sort or filters differ from how it comes, until it's reset", () => {
@@ -502,7 +559,7 @@ describe("useModSearch's views", () => {
 
     act(() => result.current.resetView());
     expect(result.current.isEdited).toBe(false);
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
   });
 
   it("renames and deletes a view, going back to the first preset if it was open", () => {
@@ -526,24 +583,8 @@ describe("useModSearch's views", () => {
     act(() => result.current.removeView("custom-1"));
 
     expect(result.current.viewId).toBe("trending");
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
     expect(result.current.isEdited).toBe(false);
     expect(result.current.rangeFrom).toBe(later);
-  });
-});
-
-describe("timeRangeFilter", () => {
-  it("filters by when mods were created, exactly a range of days back", () => {
-    expect(timeRangeFilter("1", "endorsements", NOW)).toEqual({
-      created_at: { gte: daysBack(1) },
-    });
-  });
-
-  it("filters by when they were updated for the Date updated sort", () => {
-    expect(timeRangeFilter("28", "updated", NOW)).toEqual({ updated_at: { gte: daysBack(28) } });
-  });
-
-  it("doesn't filter for all time", () => {
-    expect(timeRangeFilter("all", "updated", NOW)).toEqual({});
   });
 });

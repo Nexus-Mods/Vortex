@@ -6,19 +6,26 @@ import { describe, expect, it, vi } from "vitest";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IToolbarPanelHandle } from "@/ui/components/toolbar/ToolbarPanelButton";
 
-import type { IModFilters } from "../../util/mod_views/modViews";
+import { type IModFilters, NO_FILTERS } from "../../util/mod_views/modViews";
 import type { IModSearch } from "../use_mod_search/useModSearch.hook";
 import { useBrowseModsViews } from "./useBrowseModsViews.hook";
 
-/** The search the views are for, with its filters and how many of them are on. */
-const searchWith = (filters: IModFilters, activeFilterCount: number, changedFilterCount = 0) =>
+/**
+ * The search the views are for, with its filters (those not given as no filter has them) and how
+ * many of them are on.
+ */
+const searchWith = (
+  filters: Partial<IModFilters>,
+  activeFilterCount: number,
+  changedFilterCount = 0,
+) =>
   ({
     viewId: "trending",
     trackedView: "trending",
     views: [],
     isEdited: false,
     sort: { field: "endorsements", direction: "desc" },
-    filters,
+    filters: { ...NO_FILTERS, ...filters },
     activeFilterCount,
     changedFilterCount,
     selectView: vi.fn(),

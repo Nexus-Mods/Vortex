@@ -122,7 +122,7 @@ export const ModList = ({
 
   return (
     <div
-      className="scrollbar-inset-6 mr-1 flex min-w-0 flex-1 flex-col has-[>:focus-visible]:outline-2 has-[>:focus-visible]:-outline-offset-2 has-[>:focus-visible]:outline-focus-subdued"
+      className="scrollbar-inset-6 mr-1 flex min-w-0 flex-1 flex-col focus-ring-inset"
       ref={listRef}
     >
       <PageScroll

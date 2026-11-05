@@ -11,6 +11,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
+import { NO_FILTERS } from "../../util/mod_views/modViews";
 
 // The list, bar, backdrop and details are stood in for: these test which mod the details show.
 vi.mock("./browse_mods_bar/BrowseModsBar", () => ({ BrowseModsBar: () => null }));
@@ -105,6 +106,10 @@ const image = (name: string) => ({
 const mod = (id: string, thumbnail_url: string | null = null) =>
   ({ id, name: `Mod ${id}`, thumbnail_url }) as ModSummary;
 
+/** The open view's sort and filters, the same objects from render to render, as the view's are. */
+const SORT = { field: "endorsements", direction: "desc" } as const;
+const FILTERS = { ...NO_FILTERS, timeRange: "7" } as const;
+
 const search = (mods: ModSummary[], loading = false, overrides: Partial<IModSearch> = {}) =>
   ({
     mods,
@@ -115,8 +120,8 @@ const search = (mods: ModSummary[], loading = false, overrides: Partial<IModSear
     trackedView: "trending",
     views: [],
     isEdited: false,
-    sort: { field: "endorsements", direction: "desc" },
-    filters: { timeRange: "7" },
+    sort: SORT,
+    filters: FILTERS,
     currentPage: 1,
     ...overrides,
   }) as unknown as IModSearch;
@@ -127,6 +132,7 @@ const searched = {
   sort_field: "endorsements",
   sort_direction: "desc",
   time_range: "7",
+  adult: "include",
 };
 
 const renderComponent = (initial: IModSearch, isInitiallyShown = true) => {
@@ -258,12 +264,20 @@ describe("BrowseMods", () => {
       search([], false, { ...mine, viewId: "custom-1" }),
     );
 
-    rerender(search([], false, { ...mine, viewId: "custom-2" }));
+    rerender(search([], false, { ...mine, viewId: "custom-2", filters: { ...FILTERS } }));
 
     expect(propertiesOf("browse_mods_no_results")).toEqual([
       { ...searched, view: "custom" },
       { ...searched, view: "custom" },
     ]);
+  });
+
+  it("doesn't count the same empty search again when the view's objects are rebuilt", () => {
+    const { rerender, propertiesOf } = renderComponent(search([]));
+
+    rerender(search([], false, { sort: { ...SORT }, filters: { ...FILTERS } }));
+
+    expect(propertiesOf("browse_mods_no_results")).toEqual([searched]);
   });
 
   it("counts retrying a search that failed", async () => {

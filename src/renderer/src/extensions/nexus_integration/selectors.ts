@@ -54,6 +54,14 @@ export const isLoggedIn = (state: IState) => {
   return truthy(nexus?.APIKey) || truthy(nexus?.OAuthCredentials);
 };
 
+/**
+ * Whether the user can see adult content, which the API leaves out otherwise: not while logged out,
+ * nor once their preferences say no. While their preferences aren't known yet, as just after
+ * logging in, they're taken as yes, so nothing is locked that the API then shows.
+ */
+export const canSeeAdultContent = (state: IState) =>
+  isLoggedIn(state) && userInfo(state)?.adult !== false;
+
 export const nexusIdsFromDownloadId = createSelector(
   downloadFiles,
   (state: IState, downloadId: string) => downloadId,

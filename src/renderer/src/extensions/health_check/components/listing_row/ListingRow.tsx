@@ -32,7 +32,7 @@ export const ListingRow = ({
 
   return (
     <div
-      className="group hover-overlay-weak flex w-full cursor-pointer items-start gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-subdued"
+      className="group hover-overlay-weak flex w-full cursor-pointer items-start gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs focus-ring"
       role="button"
       tabIndex={0}
       onClick={onOpen}
