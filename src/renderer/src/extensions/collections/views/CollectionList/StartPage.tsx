@@ -2,7 +2,7 @@ import type { IRevision } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
-import React, { useEffect, useRef } from "react";
+import React, { type ComponentClass, useEffect, useRef } from "react";
 import { Panel, Tab, Tabs } from "react-bootstrap";
 import { Trans } from "react-i18next";
 import { connect } from "react-redux";
@@ -643,4 +643,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
-)(StartPage) as any as React.ComponentClass<IStartPageProps>;
+)(StartPage) as any as ComponentClass<IStartPageProps>;

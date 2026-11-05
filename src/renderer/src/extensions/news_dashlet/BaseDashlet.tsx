@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from "react";
+import React, { type MouseEvent, useCallback, useContext } from "react";
 import { Alert, ListGroup, ListGroupItem } from "react-bootstrap";
 
 import Dashlet from "../../controls/Dashlet";
@@ -58,7 +58,7 @@ function NewsItem(props: INewsItemProps) {
   const context = useContext(MainContext);
 
   const openMore = useCallback(
-    (evt: React.MouseEvent<any>) => {
+    (evt: MouseEvent<any>) => {
       context.api.events.emit("analytics-track-click-event", "Dashboard", `View ${title}`);
       evt.preventDefault();
       window.api.shell.openUrl(link);
