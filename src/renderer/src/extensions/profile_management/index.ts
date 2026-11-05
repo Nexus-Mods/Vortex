@@ -614,14 +614,19 @@ async function discoverPickedGame(
 ): Promise<void> {
   await api.emitAndAwait("discover-game", gameId, store);
 
-  if (store !== undefined) {
-    const found = api.getState().settings.gameMode.discovered[gameId]?.store;
-    if (found !== store) {
-      throw new VortexError(`"${gameId}" was not found in the game store "${store}"`, {
-        kind: "game-not-found",
-        gameId,
-      });
-    }
+  // A game without its extension isn't discovered at all, and goes on to be offered the
+  // extension; there's nothing yet to hold to the store.
+  if (store === undefined || getGame(gameId) === undefined) {
+    return;
+  }
+
+  const found = api.getState().settings.gameMode.discovered[gameId];
+  // A path no store claims is kept by discovery, so it has no store to compare.
+  if (found?.path === undefined || (found.store !== undefined && found.store !== store)) {
+    throw new VortexError(`"${gameId}" was not found in the game store "${store}"`, {
+      kind: "game-not-found",
+      gameId,
+    });
   }
 }
 
