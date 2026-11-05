@@ -7,6 +7,7 @@ import { setActionPinned } from "@/actions/toolbars";
 import type { ITableRowAction } from "@/controls/Table";
 import { MODS_TABLE_TEST_GAME, makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { IActionDefinition } from "@/types/IActionDefinition";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { nxmCollection } from "@/ui/icon-paths";
 
 const { registered, uninstall, calculateModSize } = vi.hoisted(() => ({
@@ -19,6 +20,16 @@ vi.mock("../../util/calculate_mod_size/calculateModSize.util", () => ({ calculat
 
 vi.mock("../use_uninstall_mods/useUninstallMods.hook", () => ({
   useUninstallMods: () => uninstall,
+}));
+
+// The key with its namespace, where a call names one, so a test can see which it read from.
+vi.mock("react-i18next", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useTranslation: () => {
+    const t = (key: string, options?: { ns?: string }) =>
+      options?.ns === undefined ? key : `${options.ns}:${key}`;
+    return Object.assign([t, undefined, true], { t, i18n: undefined, ready: true });
+  },
 }));
 
 // What extensions registered, by group.
@@ -60,8 +71,9 @@ const renderRowActions = (
   return { result, store };
 };
 
-const labels = (actions: { label: string; disabled?: boolean }[]) =>
-  actions.map(({ label, disabled }) => (disabled ? `${label} (disabled)` : label));
+// By id, the title an action was registered with, as its label is a translation.
+const ids = (actions: IToolbarAction[]) =>
+  actions.map(({ id, disabled }) => (disabled ? `${id} (disabled)` : id));
 
 describe("useModRowActions", () => {
   it("lays the actions out as the design's menu does, single-row ones only", () => {
@@ -75,7 +87,7 @@ describe("useModRowActions", () => {
       [{ title: "Open on Nexus Mods", position: 30 }],
     );
 
-    expect(labels(result.current.actionsFor("a"))).toEqual([
+    expect(ids(result.current.actionsFor("a"))).toEqual([
       "Reinstall",
       "Remove",
       "Open on Nexus Mods",
@@ -90,7 +102,11 @@ describe("useModRowActions", () => {
 
     expect(
       result.current.actionsFor("a").map(({ label, section }) => `${section}: ${label}`),
-    ).toEqual(["manage: Remove", "open: Open in file manager", "maintenance: Generate mod report"]);
+    ).toEqual([
+      "manage: modsTable::actions::remove",
+      "open: modsTable::actions::openInFileManager",
+      "maintenance: modsTable::actions::generateModReport",
+    ]);
   });
 
   it("shows Open on Nexus Mods with the Nexus Mods logo", () => {
@@ -110,7 +126,10 @@ describe("useModRowActions", () => {
     );
 
     const [add, remove] = result.current.actionsFor("a");
-    expect(labels([add, remove])).toEqual(["Add to Collection", "Remove from Collection"]);
+    expect([add.label, remove.label]).toEqual([
+      "modsTable::actions::addToCollection",
+      "modsTable::actions::removeFromCollection",
+    ]);
     expect(remove.icon).toEqual({ path: nxmCollection });
   });
 
@@ -123,9 +142,23 @@ describe("useModRowActions", () => {
       ],
     );
 
-    expect(
-      result.current.actionsFor("a").map(({ label, section }) => `${section}: ${label}`),
-    ).toEqual(["manage: Remove", "other: Sooner", "other: Later"]);
+    expect(result.current.actionsFor("a").map(({ id, section }) => `${section}: ${id}`)).toEqual([
+      "manage: Remove",
+      "other: Sooner",
+      "other: Later",
+    ]);
+  });
+
+  it("names an action the design doesn't list from its extension's namespace, or common", () => {
+    const { result } = renderRowActions(
+      [],
+      [{ title: "Own Words", options: { namespace: "my-ext" } }, { title: "Shared Words" }],
+    );
+
+    expect(result.current.actionsFor("a").map(({ label }) => label)).toEqual([
+      "my-ext:Own Words",
+      "common:Shared Words",
+    ]);
   });
 
   it("offers Uninstall and Check for updates for an installed mod only", () => {
@@ -133,12 +166,12 @@ describe("useModRowActions", () => {
       a: { id: "a", archiveId: "archive-a" },
     });
 
-    expect(labels(result.current.actionsFor("a"))).toEqual([
+    expect(ids(result.current.actionsFor("a"))).toEqual([
       "Uninstall",
       "Remove",
-      "Check for updates",
+      "Check for Update",
     ]);
-    expect(labels(result.current.actionsFor("b"))).toEqual(["Remove"]);
+    expect(ids(result.current.actionsFor("b"))).toEqual(["Remove"]);
   });
 
   it("leaves Uninstall out for an installed mod without its archive, as it couldn't come back", () => {
@@ -146,7 +179,7 @@ describe("useModRowActions", () => {
       c: { id: "c", archiveId: "archive-gone" },
     });
 
-    expect(labels(result.current.actionsFor("c"))).toEqual(["Remove", "Check for updates"]);
+    expect(ids(result.current.actionsFor("c"))).toEqual(["Remove", "Check for Update"]);
   });
 
   it("orders the first section as the design does", () => {
@@ -162,14 +195,14 @@ describe("useModRowActions", () => {
       { a: { id: "a", archiveId: "archive-a" } },
     );
 
-    expect(labels(result.current.actionsFor("a"))).toEqual([
-      "Add to Collection",
+    expect(ids(result.current.actionsFor("a"))).toEqual([
+      "Add to Collection...",
       "Install",
       "Reinstall",
       "Uninstall",
       "Remove related",
       "Remove",
-      "Check for updates",
+      "Check for Update",
     ]);
   });
 
@@ -179,7 +212,7 @@ describe("useModRowActions", () => {
       [{ title: "Remove" }, { title: "Legacy", options: { isClassicOnly: true } }],
     );
 
-    expect(labels(result.current.actionsFor("a"))).toEqual(["Remove"]);
+    expect(ids(result.current.actionsFor("a"))).toEqual(["Remove"]);
   });
 
   it("leaves out an action that rules itself out, and disables one that says why", () => {
@@ -188,7 +221,7 @@ describe("useModRowActions", () => {
       { title: "Reinstall", condition: () => "No associated archive." },
     ]);
 
-    expect(labels(result.current.actionsFor("a"))).toEqual(["Reinstall (disabled)"]);
+    expect(ids(result.current.actionsFor("a"))).toEqual(["Reinstall (disabled)"]);
   });
 
   it("keeps a pinned action that rules itself out, disabled, so every row has its button", () => {
@@ -203,8 +236,8 @@ describe("useModRowActions", () => {
       );
     });
 
-    expect(labels(result.current.actionsFor("a"))).toEqual(["Install", "Remove"]);
-    expect(labels(result.current.actionsFor("b"))).toEqual(["Install (disabled)", "Remove"]);
+    expect(ids(result.current.actionsFor("a"))).toEqual(["Install", "Remove"]);
+    expect(ids(result.current.actionsFor("b"))).toEqual(["Install (disabled)", "Remove"]);
     expect(result.current.pinnedCount).toBe(1);
   });
 
@@ -242,7 +275,7 @@ describe("useModRowActions", () => {
 
     const refreshContent = result.current
       .actionsFor("a")
-      .find(({ label }) => label === "Refresh content")!;
+      .find(({ id }) => id === "Refresh Content")!;
     act(() => refreshContent.onClick?.());
 
     expect(refresh).toHaveBeenCalledWith(["a"]);
@@ -287,9 +320,9 @@ describe("useModSelectionActions", () => {
       [{ title: "Add to Collection..." }],
     );
 
-    expect(labels(result.current)).toEqual([
-      "Check for updates",
-      "Add to Collection",
+    expect(ids(result.current)).toEqual([
+      "Check for Update",
+      "Add to Collection...",
       "Uninstall",
       "Remove",
       "Combine",
@@ -303,9 +336,9 @@ describe("useModSelectionActions", () => {
       [{ title: "Add to Collection..." }, { title: "Track" }],
     );
 
-    expect(result.current.filter(({ pinned }) => pinned).map(({ label }) => label)).toEqual([
-      "Check for updates",
-      "Add to Collection",
+    expect(result.current.filter(({ pinned }) => pinned).map(({ id }) => id)).toEqual([
+      "Check for Update",
+      "Add to Collection...",
       "Reinstall",
       "Uninstall",
       "Remove",
@@ -327,12 +360,12 @@ describe("useModSelectionActions", () => {
     expect(
       result.current
         .filter(({ section }) => section !== "manage")
-        .map(({ label, section }) => `${section}: ${label}`),
+        .map(({ id, section }) => `${section}: ${id}`),
     ).toEqual([
       "organise: Combine",
       "organise: Track",
       "organise: Untrack",
-      "maintenance: Refresh content",
+      "maintenance: Refresh Content",
       "maintenance: Fix missing IDs",
     ]);
   });
@@ -344,9 +377,9 @@ describe("useModSelectionActions", () => {
       [{ title: "Add to Collection..." }],
     );
 
-    expect(labels(result.current)).toEqual([
-      "Check for updates",
-      "Add to Collection",
+    expect(ids(result.current)).toEqual([
+      "Check for Update",
+      "Add to Collection...",
       "Install",
       "Reinstall",
       "Uninstall",
@@ -360,8 +393,8 @@ describe("useModSelectionActions", () => {
       ["b"],
     );
 
-    expect(labels(result.current)).toEqual([
-      "Check for updates (disabled)",
+    expect(ids(result.current)).toEqual([
+      "Check for Update (disabled)",
       "Reinstall (disabled)",
       "Uninstall (disabled)",
     ]);
@@ -376,10 +409,7 @@ describe("useModSelectionActions", () => {
       );
     });
 
-    expect(labels(result.current)).toEqual([
-      "Check for updates (disabled)",
-      "Uninstall (disabled)",
-    ]);
+    expect(ids(result.current)).toEqual(["Check for Update (disabled)", "Uninstall (disabled)"]);
   });
 
   it("checks and runs an action against every selected mod", () => {
@@ -387,7 +417,7 @@ describe("useModSelectionActions", () => {
     const action = vi.fn();
     const { result } = renderSelectionActions([{ title: "Remove", condition, action }], ["a", "b"]);
 
-    result.current.find(({ label }) => label === "Remove")?.onClick?.();
+    result.current.find(({ id }) => id === "Remove")?.onClick?.();
 
     expect(condition).toHaveBeenCalledWith(["a", "b"]);
     expect(action).toHaveBeenCalledWith(["a", "b"]);
@@ -396,7 +426,7 @@ describe("useModSelectionActions", () => {
   it("uninstalls only the selected mods it could install again, leaving the rest to Remove", () => {
     const { result } = renderSelectionActions([], ["a", "c", "d"]);
 
-    act(() => result.current.find(({ label }) => label === "Uninstall")?.onClick?.());
+    act(() => result.current.find(({ id }) => id === "Uninstall")?.onClick?.());
 
     expect(uninstall).toHaveBeenCalledWith(["a"]);
   });
@@ -404,7 +434,7 @@ describe("useModSelectionActions", () => {
   it("disables a pinned Uninstall when no selected mod has its archive", () => {
     const { result } = renderSelectionActions([], ["c", "d"]);
 
-    expect(result.current.find(({ label }) => label === "Uninstall")).toMatchObject({
+    expect(result.current.find(({ id }) => id === "Uninstall")).toMatchObject({
       disabled: true,
     });
   });
@@ -417,7 +447,7 @@ describe("useModSelectionActions", () => {
       [{ title: "Refresh Content", action: vi.fn() }],
     );
 
-    act(() => result.current.find(({ label }) => label === "Refresh content")!.onClick?.());
+    act(() => result.current.find(({ id }) => id === "Refresh Content")!.onClick?.());
 
     expect(calculateModSize.mock.calls).toEqual([
       [store, MODS_TABLE_TEST_GAME, "a"],

@@ -30,10 +30,14 @@ export type ModsTableGrouping = string;
 export interface IModsTableGroupingColumn {
   id: string;
   header: string;
-  /** The value a row is grouped under; "" for none. */
+  /** The value a row is grouped under, which keys its group; "" for none. */
   groupBy: (row: IModRow) => string;
   /** Values whose groups come first, in this order; the rest follow by name. */
-  groupOrder?: string[];
+  groupOrder?: readonly string[];
+  /** The name a value's group shows, for values that are ids; the value itself, without one. */
+  groupValueLabel?: (value: string) => string;
+  /** The name of the group for rows without a value, whole, as languages don't build it alike. */
+  noValueLabel?: string;
 }
 
 /** How a view starts out, before the user changes it. */
@@ -47,7 +51,7 @@ export interface IModsTableViewDefaults {
 export interface IModsTableView {
   /** Stable, unique, and language-independent, so a choice of view can be stored. */
   id: string;
-  /** The view's name: untranslated for a built-in one, as the user typed it for their own. */
+  /** The view's name: its translation key for a built-in one, as the user typed it for their own. */
   label: string;
   defaults: IModsTableViewDefaults;
   /** Whether it's one of the user's own, which has no defaults to reset to. */
@@ -70,23 +74,31 @@ export const NEW_VIEW_DEFAULTS: IModsTableViewDefaults = {
 
 /** The views every user has, in order, each offered while it has anything to show. */
 export const MODS_TABLE_VIEWS: IBuiltInModsTableView[] = [
-  { id: "all", label: "All mods", defaults: { grouping: "none", columns: BASE_COLUMNS } },
-  { id: "status", label: "Status", defaults: { grouping: "status", columns: BASE_COLUMNS } },
+  {
+    id: "all",
+    label: "modsTable::views::all",
+    defaults: { grouping: "none", columns: BASE_COLUMNS },
+  },
+  {
+    id: "status",
+    label: "modsTable::views::status",
+    defaults: { grouping: "status", columns: BASE_COLUMNS },
+  },
   {
     id: "updates",
-    label: "Updates",
+    label: "modsTable::views::updates",
     defaults: { grouping: "version", columns: BASE_COLUMNS },
     isAvailable: (mods) =>
       Object.values(mods).some((mod) => mod.state === "installed" && modHasUpdate(mod)),
   },
   {
     id: "categories",
-    label: "Categories",
+    label: "modsTable::views::categories",
     defaults: { grouping: "category", columns: BASE_COLUMNS },
   },
   {
     id: "collections",
-    label: "Collections",
+    label: "modsTable::views::collections",
     defaults: { grouping: "collection", columns: ["version", "collection", "installTime"] },
     isAvailable: (mods) => Object.values(mods).some((mod) => mod.type === COLLECTION_TYPE),
   },
@@ -167,7 +179,10 @@ const groupByCollection = (
     return undefined;
   }
 
-  return [...ungroupedFirst("no-collection", t("No collection"), ungrouped), ...collectionGroups];
+  return [
+    ...ungroupedFirst("no-collection", t("modsTable::groups::noCollection"), ungrouped),
+    ...collectionGroups,
+  ];
 };
 
 /**
@@ -211,10 +226,12 @@ const groupByAuthor = (mods: { [id: string]: IModWithState }, t: TFunction): IMo
   }).sort((a, b) => a.label.localeCompare(b.label));
 
   // No one to show, but the same place for it, so the names line up.
-  const noAuthor = ungroupedFirst("no-author", t("No author"), unknown).map((group) => ({
-    ...group,
-    avatar: {},
-  }));
+  const noAuthor = ungroupedFirst("no-author", t("modsTable::groups::noAuthor"), unknown).map(
+    (group) => ({
+      ...group,
+      avatar: {},
+    }),
+  );
 
   return [...noAuthor, ...authorGroups];
 };
@@ -242,20 +259,20 @@ const groupByColumn = (
     addRow(byValue, value, row);
   });
 
+  const order = column.groupOrder ?? [];
+  // Unlisted values rank after every listed one, then fall back to their names.
+  const rank = (value: string) => (order.includes(value) ? order.indexOf(value) : order.length);
+
   const valueGroups = Array.from(byValue, ([value, rows]) => ({
-    id: `${column.id}:${value}`,
-    label: value,
-    rows,
-  })).sort((a, b) => {
-    const order = column.groupOrder ?? [];
-    // Unlisted values rank after every listed one, then fall back to their names.
-    const rank = (value: string) => (order.includes(value) ? order.indexOf(value) : order.length);
-    return rank(a.label) - rank(b.label) || a.label.localeCompare(b.label);
-  });
+    value,
+    group: { id: `${column.id}:${value}`, label: column.groupValueLabel?.(value) ?? value, rows },
+  }))
+    .sort((a, b) => rank(a.value) - rank(b.value) || a.group.label.localeCompare(b.group.label))
+    .map(({ group }) => group);
 
   const noValue = ungroupedFirst(
     `no-${column.id}`,
-    t("No {{column}}", { column: column.header.toLocaleLowerCase() }),
+    column.noValueLabel ?? t("modsTable::groups::noValue"),
     none,
   );
 

@@ -96,9 +96,14 @@ describe("useModsTableDataColumns", () => {
     const columns = renderColumns();
     const modRow = row({});
 
-    expect(cellText(columnById(columns, "installTime"), modRow)).toBe("Not installed");
-    expect(cellText(columnById(columns, "enabledTime"), modRow)).toBe("Never");
-    expect(cellText(columnById(columns, "downloadTime"), modRow)).toBe("Unknown");
+    // The test `t` hands keys back, so each says which it shows.
+    expect(cellText(columnById(columns, "installTime"), modRow)).toBe(
+      "modsTable::values::notInstalled",
+    );
+    expect(cellText(columnById(columns, "enabledTime"), modRow)).toBe("modsTable::values::never");
+    expect(cellText(columnById(columns, "downloadTime"), modRow)).toBe(
+      "modsTable::values::unknown",
+    );
   });
 
   // A search matches what's on screen, so each column searches by the text its cell shows.
@@ -147,14 +152,18 @@ describe("useModsTableDataColumns", () => {
   it("says an installed mod's size isn't known until it's worked out", () => {
     const column = columnById(renderColumns(), "modSize");
 
-    expect(cellText(column, row({ state: "installed", archiveId: "archive" }))).toBe("Unknown");
+    expect(cellText(column, row({ state: "installed", archiveId: "archive" }))).toBe(
+      "modsTable::values::unknown",
+    );
   });
 
   it("shows the archive's size for a mod that isn't installed", () => {
     const column = columnById(renderColumns(), "modSize");
 
     expect(cellText(column, row({ state: "downloaded", archiveId: "archive" }))).toBe("3.0 MB");
-    expect(cellText(column, row({ state: "downloaded", archiveId: "gone" }))).toBe("Unknown");
+    expect(cellText(column, row({ state: "downloaded", archiveId: "gone" }))).toBe(
+      "modsTable::values::unknown",
+    );
   });
 
   it("shows the size as text, with nothing to click", () => {

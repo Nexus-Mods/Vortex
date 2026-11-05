@@ -63,8 +63,7 @@ describe("CollectionRevision", () => {
     revision.current = { ...revision.current, newest: 11, hasUpdate: true, update };
     render(<CollectionRevision collection={COLLECTION} />);
 
-    // the test `t` leaves the revision uninterpolated
-    await userEvent.click(screen.getByRole("button", { name: "Update to {{revision}}" }));
+    await userEvent.click(screen.getByTestId("collection-revision-update"));
 
     expect(update).toHaveBeenCalled();
   });
@@ -73,7 +72,7 @@ describe("CollectionRevision", () => {
     revision.current = { ...revision.current, newest: 11, hasUpdate: true };
     render(<CollectionRevision collection={COLLECTION} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "View changelog" }));
+    await userEvent.click(screen.getByTestId("changelog-button"));
 
     expect(screen.getByRole("heading", { name: "Changes" })).toBeInTheDocument();
     expect(screen.getByText("things").tagName).toBe("STRONG");
@@ -84,12 +83,13 @@ describe("CollectionRevision", () => {
     revision.changelog = { status: "loading" };
     const { rerender } = render(<CollectionRevision collection={COLLECTION} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "View changelog" }));
-    expect(screen.getByRole("status", { name: "Loading changelog" })).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId("changelog-button"));
+    expect(screen.getByRole("status")).toBeInTheDocument();
 
     revision.changelog = { status: "loaded", changelog: "" };
     rerender(<CollectionRevision collection={COLLECTION} />);
-    expect(screen.getByText("No changelog for this revision")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByTestId("changelog-none")).toBeInTheDocument();
   });
 
   it("says when it couldn't load the changelog, rather than that there's none", async () => {
@@ -97,9 +97,9 @@ describe("CollectionRevision", () => {
     revision.changelog = { status: "failed" };
     render(<CollectionRevision collection={COLLECTION} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "View changelog" }));
+    await userEvent.click(screen.getByTestId("changelog-button"));
 
-    expect(screen.getByText("Couldn't load the changelog")).toBeInTheDocument();
-    expect(screen.queryByText("No changelog for this revision")).toBeNull();
+    expect(screen.getByTestId("changelog-load-failed")).toBeInTheDocument();
+    expect(screen.queryByTestId("changelog-none")).toBeNull();
   });
 });

@@ -42,9 +42,169 @@
     "statusConflictsWithMod": "Conflicts with {{mod}}",
     "useAsDefault": "Use this folder for future mods for this game",
     "dontAskAgain": "Don't ask again",
-    "useForAll_one": "Use this folder for all remaining mods ({{count}} more)",
-    "useForAll_other": "Use this folder for all remaining mods ({{count}} more)",
+    "useForAll": "Use this folder for the remaining mod ({{count}} more)",
+    "useForAll_plural": "Use this folder for all remaining mods ({{count}} more)",
     "cancel": "Cancel",
     "install": "Install"
+  },
+  "modsTable": {
+    "label": "Mods",
+    "noResults": "No mods match your search",
+    "columns": {
+      "name": "Name",
+      "actions": "Actions",
+      "status": "Status",
+      "version": "Version",
+      "author": "Author",
+      "archiveName": "Archive name",
+      "modSize": "Mod size",
+      "category": "Category",
+      "modType": "Mod type",
+      "source": "Source",
+      "collection": "Collection",
+      "installTime": "Installation time",
+      "enabledTime": "Enabled time",
+      "downloadTime": "Downloaded time"
+    },
+    "values": {
+      "unknown": "Unknown",
+      "notInstalled": "Not installed",
+      "never": "Never"
+    },
+    "groups": {
+      "neverInstalled": "Never installed",
+      "uninstalled": "Uninstalled",
+      "installing": "Installing",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "updateAvailable": "Update available",
+      "upToDate": "Up-to-date",
+      "noCollection": "No collection",
+      "noAuthor": "No author",
+      "noArchiveName": "No archive name",
+      "noCategory": "No category",
+      "noModType": "No mod type",
+      "noSource": "No source",
+      "noValue": "No value"
+    },
+    "views": {
+      "all": "All mods",
+      "status": "Status",
+      "updates": "Updates",
+      "categories": "Categories",
+      "collections": "Collections"
+    },
+    "toolbar": {
+      "views": "Views",
+      "giveFeedback": "Give feedback",
+      "viewOptions": "View options",
+      "search": "Search",
+      "editViewOptions": "Edit view options"
+    },
+    "displayOptions": {
+      "groupBy": "Group by",
+      "noGrouping": "None",
+      "toggleColumns": "Toggle columns"
+    },
+    "selection": {
+      "count": "{{count}} item selected",
+      "count_plural": "{{count}} items selected",
+      "enabled": "Selected mods enabled",
+      "actions": "Selected mods actions"
+    },
+    "version": {
+      "defaultVariant": "default",
+      "switchVersion": "Switch version or variant",
+      "versions": "Versions",
+      "removeVersion": "Remove version"
+    },
+    "update": {
+      "updateTo": "Update to {{version}}",
+      "sourceUnknown": {
+        "title": "Mod source unknown",
+        "body": "Vortex doesn't know where this mod came from, so it can't check for updates."
+      },
+      "notIdentified": {
+        "title": "Mod not identified",
+        "body": "Vortex can't identify this mod, so some features, including checking for updates and adding it to Collections, won't work."
+      },
+      "chooseFile": {
+        "title": "Choose update file",
+        "body": "Vortex can't determine the correct update automatically."
+      }
+    },
+    "collectionRevision": {
+      "updateTo": "Update to {{revision}}"
+    },
+    "changelog": {
+      "view": "View changelog",
+      "title": "Changelog",
+      "newestVersion": "Newest Version",
+      "loading": "Loading changelog",
+      "loadFailed": "Couldn't load the changelog",
+      "noneForRevision": "No changelog for this revision"
+    },
+    "rowActions": {
+      "installDescription": "Installs the mod into your game, where it can be enabled or disabled.",
+      "installing": "Installing…",
+      "uninstalling": "Uninstalling…",
+      "installMod": "Install {{name}}",
+      "enabled": "{{name}} enabled",
+      "menu": "{{name}} actions"
+    },
+    "cancel": "Cancel",
+    "actions": {
+      "addToCollection": "Add to Collection",
+      "removeFromCollection": "Remove from Collection",
+      "install": "Install",
+      "unpack": "Unpack (as-is)",
+      "reinstall": "Reinstall",
+      "uninstall": "Uninstall",
+      "removeRelated": "Remove related",
+      "remove": "Remove",
+      "checkForUpdates": "Check for updates",
+      "applyCollectionRules": "Apply collection rules",
+      "editCollection": "Edit collection",
+      "manageFileConflicts": "Manage file conflicts",
+      "installRecommendations": "Install recommendations",
+      "openInFileManager": "Open in file manager",
+      "openArchive": "Open archive",
+      "openOnNexusMods": "Open on Nexus Mods",
+      "combine": "Combine",
+      "track": "Track",
+      "untrack": "Untrack",
+      "refreshContent": "Refresh content",
+      "fixMissingIds": "Fix missing IDs",
+      "generateModReport": "Generate mod report"
+    },
+    "collectionGroup": {
+      "view": "View collection",
+      "remove": "Remove"
+    },
+    "collectionHoverCard": {
+      "modCount": "{{count}} mod",
+      "modCount_plural": "{{count}} mods"
+    },
+    "disableShared": {
+      "title": "Disable mods?",
+      "shared": "{{count}} mod is shared with: {{collections}}",
+      "shared_plural": "{{count}} mods are shared with: {{collections}}",
+      "caution": "Disabling them may affect those collections. Keep the shared mods enabled to avoid issues.",
+      "keepShared": "Keep shared mods enabled",
+      "disableAll": "Disable all mods"
+    },
+    "deleteView": {
+      "body": "Are you sure you want to delete \"{{name}}\"? This won't delete any mods, but the view and its customisations will be permanently removed."
+    },
+    "viewName": {
+      "createIntro": "Give your view a name. You can customise its columns, grouping and filters after creating it.",
+      "renameIntro": "Give your view a new name. Your columns, grouping and filters won't change.",
+      "placeholder": "e.g. Author view"
+    }
+  },
+  "modsDropTarget": {
+    "title": "Drop files to add mods",
+    "archives": "Archives (.zip, .rar, .7z) are added as mods to your list.",
+    "files": "Individual files and folders are packaged into mods before being added."
   }
 }

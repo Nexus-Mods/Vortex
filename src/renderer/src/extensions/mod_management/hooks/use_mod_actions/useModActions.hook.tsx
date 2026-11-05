@@ -53,7 +53,7 @@ const byPosition = (a: IActionDefinition, b: IActionDefinition) =>
 interface IRowMenuItem {
   /** The title it was registered with, which matches it. */
   title: string;
-  /** What the menu calls it, untranslated. */
+  /** What the menu calls it, as a key in mod_management. */
   label: string;
   /** Unset keeps the icon it registered with. */
   icon?: IIconProp;
@@ -69,27 +69,27 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
     items: [
       {
         title: "Add to Collection...",
-        label: "Add to Collection",
+        label: "modsTable::actions::addToCollection",
         icon: { path: nxmCollectionOutline },
       },
       {
         title: "Remove from Collection...",
-        label: "Remove from Collection",
+        label: "modsTable::actions::removeFromCollection",
         icon: { path: nxmCollection },
       },
-      { title: "Install", label: "Install", icon: "install_desktop" },
-      { title: "Unpack (as-is)", label: "Unpack (as-is)" },
-      { title: "Reinstall", label: "Reinstall", icon: "reset_tv" },
-      { title: "Uninstall", label: "Uninstall", icon: "do_not_disturb_on" },
-      { title: "Remove related", label: "Remove related", icon: "delete" },
-      { title: "Remove", label: "Remove", icon: "delete" },
-      { title: "Check for Update", label: "Check for updates", icon: "refresh" },
+      { title: "Install", label: "modsTable::actions::install", icon: "install_desktop" },
+      { title: "Unpack (as-is)", label: "modsTable::actions::unpack" },
+      { title: "Reinstall", label: "modsTable::actions::reinstall", icon: "reset_tv" },
+      { title: "Uninstall", label: "modsTable::actions::uninstall", icon: "do_not_disturb_on" },
+      { title: "Remove related", label: "modsTable::actions::removeRelated", icon: "delete" },
+      { title: "Remove", label: "modsTable::actions::remove", icon: "delete" },
+      { title: "Check for Update", label: "modsTable::actions::checkForUpdates", icon: "refresh" },
       {
         title: "Apply Collection Rules",
-        label: "Apply collection rules",
+        label: "modsTable::actions::applyCollectionRules",
         icon: "playlist_add_check",
       },
-      { title: "Edit Collection", label: "Edit collection", icon: "edit" },
+      { title: "Edit Collection", label: "modsTable::actions::editCollection", icon: "edit" },
     ],
   },
   {
@@ -97,12 +97,12 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
     items: [
       {
         title: "Manage File Conflicts",
-        label: "Manage file conflicts",
+        label: "modsTable::actions::manageFileConflicts",
         icon: getIcon("rules"),
       },
       {
         title: "Install Recommendations",
-        label: "Install recommendations",
+        label: "modsTable::actions::installRecommendations",
         icon: "install_desktop",
       },
     ],
@@ -112,30 +112,42 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
     items: [
       {
         title: "Open in File Manager",
-        label: "Open in file manager",
+        label: "modsTable::actions::openInFileManager",
         icon: "folder_open",
       },
-      { title: "Open Archive", label: "Open archive", icon: "folder_open" },
-      { title: "Open on Nexus Mods", label: "Open on Nexus Mods", icon: <NexusBadge /> },
+      { title: "Open Archive", label: "modsTable::actions::openArchive", icon: "folder_open" },
+      {
+        title: "Open on Nexus Mods",
+        label: "modsTable::actions::openOnNexusMods",
+        icon: <NexusBadge />,
+      },
     ],
   },
   // Several mods' only: these are offered for a selection, not a row.
   {
     section: "organise",
     items: [
-      { title: "Combine", label: "Combine", icon: "call_merge" },
-      { title: "Track", label: "Track", icon: "pets" },
-      { title: "Untrack", label: "Untrack", icon: { name: "pets", filled: true } },
+      { title: "Combine", label: "modsTable::actions::combine", icon: "call_merge" },
+      { title: "Track", label: "modsTable::actions::track", icon: "pets" },
+      {
+        title: "Untrack",
+        label: "modsTable::actions::untrack",
+        icon: { name: "pets", filled: true },
+      },
     ],
   },
   {
     section: "maintenance",
     items: [
-      { title: "Refresh Content", label: "Refresh content", icon: "rotate_right" },
-      { title: "Fix missing IDs", label: "Fix missing IDs", icon: "data_alert" },
+      {
+        title: "Refresh Content",
+        label: "modsTable::actions::refreshContent",
+        icon: "rotate_right",
+      },
+      { title: "Fix missing IDs", label: "modsTable::actions::fixMissingIds", icon: "data_alert" },
       {
         title: "Create Report",
-        label: "Generate mod report",
+        label: "modsTable::actions::generateModReport",
         icon: { name: "bug_report", filled: true },
       },
     ],
@@ -222,7 +234,7 @@ const SELECTION_SOURCE: IModActionsSource = {
  * pinned and a way to make them into toolbar actions for some mods.
  */
 const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const registered = useExtensionObjects<IActionDefinition>(
     registerAction,
     undefined,
@@ -335,7 +347,11 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
         list.push({
           // The registered title, not its translation, so a pin survives a language change.
           id: definition.title,
-          label: t(menuItem?.label ?? definition.title),
+          // A title the design doesn't name, as the extension registered it: from its own
+          // namespace, as the legacy table's IconBar reads it, or common without one.
+          label: menuItem
+            ? t(menuItem.label)
+            : t(definition.title, { ns: definition.options?.namespace ?? "common" }),
           icon: menuItem?.icon ?? getIcon(definition.icon, "extension"),
           section: menuItem?.section ?? OTHER_SECTION,
           pinned: source.defaultPins.has(definition.title),
