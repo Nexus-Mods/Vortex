@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { components } from "@vortex/nexus-api-v3";
 import React, { type ReactNode } from "react";
+import { Provider } from "react-redux";
+import { combineReducers, createStore, type Store } from "redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type ModsSearchRequest = components["schemas"]["ModsSearchRequest"];
@@ -33,6 +35,12 @@ vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
+import {
+  browseModsViewsReducer,
+  type IBrowseModsView,
+  type IBrowseModsViewsState,
+} from "../../reducers/mods_views/modsViews";
+import { type IBrowseSessionState, sessionReducer } from "../../reducers/session";
 import { MODS_PER_PAGE, timeRangeFilter, useModSearch } from "./useModSearch.hook";
 
 /** The time the tests start at, which the first time range counts back from. */
@@ -68,12 +76,43 @@ const respondToStart = async (trending: number, allTime: number) => {
   await respond("new", allTime);
 };
 
-/** Renders the hook against a fresh cache with the app's defaults, kept across rerenders. */
-const render = (isEnabled = true) => {
+interface ITestAction {
+  type: string;
+  payload?: unknown;
+}
+
+/** A store with Browse's real saved views, as settings keep them, starting from `views`. */
+const makeStore = (views: IBrowseModsViewsState = browseModsViewsReducer.defaults) =>
+  createStore(
+    combineReducers({
+      settings: combineReducers({
+        browseModsViews: (state: IBrowseModsViewsState = views, action: ITestAction) =>
+          browseModsViewsReducer.reducers[action.type]?.(state, action.payload) ?? state,
+      }),
+      session: combineReducers({
+        browse: (state: IBrowseSessionState = sessionReducer.defaults, action: ITestAction) =>
+          sessionReducer.reducers[action.type]?.(state, action.payload) ?? state,
+      }),
+    }),
+  );
+
+let store: Store;
+
+/** The views the store keeps. */
+const savedViews = (): IBrowseModsViewsState => store.getState().settings.browseModsViews;
+
+/**
+ * Renders the hook against a fresh cache with the app's defaults and a store of saved views, kept
+ * across rerenders.
+ */
+const render = (isEnabled = true, views?: IBrowseModsViewsState) => {
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
+  store = makeStore(views);
   return renderHook(() => useModSearch(api, { isEnabled }), {
     wrapper: ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      <Provider store={store}>
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      </Provider>
     ),
   });
 };
@@ -111,7 +150,7 @@ describe("useModSearch", () => {
     await respondToStart(45, 900);
 
     await waitFor(() => expect(result.current.allModsTotal).toBe(900));
-    act(() => result.current.selectPreset("popular"));
+    act(() => result.current.selectView("popular"));
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     await respond("downloads", 12);
 
@@ -146,12 +185,12 @@ describe("useModSearch", () => {
     await respondToStart(45, 900);
     act(() => result.current.setSort({ direction: "asc" }));
 
-    act(() => result.current.selectPreset("popular"));
+    act(() => result.current.selectView("popular"));
 
     expect(result.current.sort).toEqual({ field: "downloads", direction: "desc" });
     expect(result.current.canResetSort).toBe(false);
 
-    act(() => result.current.selectPreset("trending"));
+    act(() => result.current.selectView("trending"));
 
     expect(result.current.sort.direction).toBe("asc");
 
@@ -187,7 +226,7 @@ describe("useModSearch", () => {
 
     expect(result.current.activeFilterCount).toBe(1);
 
-    act(() => result.current.selectPreset("new"));
+    act(() => result.current.selectView("new"));
 
     expect(result.current.filters).toEqual({ timeRange: "all" });
     expect(result.current.activeFilterCount).toBe(0);
@@ -203,7 +242,7 @@ describe("useModSearch", () => {
 
     expect(result.current.changedFilterCount).toBe(1);
 
-    act(() => result.current.selectPreset("new"));
+    act(() => result.current.selectView("new"));
 
     expect(result.current.changedFilterCount).toBe(0);
   });
@@ -238,17 +277,17 @@ describe("useModSearch", () => {
     await respondToStart(45, 900);
     act(() => result.current.setFilters({ timeRange: "1" }));
 
-    act(() => result.current.selectPreset("new"));
+    act(() => result.current.selectView("new"));
 
     expect(result.current.filters).toEqual({ timeRange: "all" });
 
     act(() => result.current.setFilters({ timeRange: "28" }));
-    act(() => result.current.selectPreset("trending"));
+    act(() => result.current.selectView("trending"));
 
     expect(result.current.filters).toEqual({ timeRange: "7" });
 
     act(() => result.current.resetFilters());
-    act(() => result.current.selectPreset("trending"));
+    act(() => result.current.selectView("trending"));
 
     expect(result.current.filters).toEqual({ timeRange: "7" });
   });
@@ -297,7 +336,7 @@ describe("useModSearch", () => {
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     await respond("endorsements", 45);
 
-    act(() => result.current.selectPreset("new"));
+    act(() => result.current.selectView("new"));
 
     await waitFor(() => expect(result.current.totalCount).toBe(900));
     expect(result.current.currentPage).toBe(1);
@@ -352,6 +391,144 @@ describe("useModSearch", () => {
 
     expect(mocks.requestCount).toBe(0);
     expect(result.current.allModsTotal).toBe(0);
+  });
+});
+
+describe("useModSearch's views", () => {
+  /** A view of the user's own, most downloaded over the last 28 days. */
+  const mine: IBrowseModsView = {
+    id: "custom-1",
+    name: "Mine",
+    sort: { field: "downloads", direction: "desc" },
+    filters: { timeRange: "28" },
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"], now: NOW });
+    mocks.gameDomainName = "skyrimspecialedition";
+    mocks.pending = [];
+    mocks.requestCount = 0;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("opens on the view open last time, searching as it saved", async () => {
+    const { result } = render(true, { selected: "custom-1", custom: [mine] });
+
+    expect(result.current.viewId).toBe("custom-1");
+    expect(result.current.trackedView).toBe("custom");
+    await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
+    expect(mocks.pending.map((request) => request.search)).toContainEqual(
+      expect.objectContaining({
+        filters: { games: ["skyrimspecialedition"], created_at: { gte: daysBack(28) } },
+        sort: { field: "downloads", direction: "desc" },
+      }),
+    );
+  });
+
+  it("opens on the first preset when the view open last time is gone", () => {
+    const { result } = render(true, { selected: "custom-gone", custom: [] });
+
+    expect(result.current.viewId).toBe("trending");
+  });
+
+  it("remembers the view opened", () => {
+    const { result } = render();
+
+    act(() => result.current.selectView("new"));
+
+    expect(savedViews().selected).toBe("new");
+  });
+
+  it("saves what's showing as a view of the user's own, and opens it", () => {
+    const { result } = render();
+    act(() => result.current.setSort({ field: "downloads" }));
+
+    act(() => result.current.addView("Downloads this week"));
+
+    expect(savedViews().custom).toEqual([
+      expect.objectContaining({
+        name: "Downloads this week",
+        sort: { field: "downloads", direction: "desc" },
+        filters: { timeRange: "7" },
+      }),
+    ]);
+    expect(result.current.viewId).toBe(savedViews().custom[0].id);
+  });
+
+  it("puts a preset back as it comes once what's showing of it is saved as a view", () => {
+    const { result } = render();
+    act(() => result.current.setSort({ field: "downloads" }));
+    act(() => result.current.setFilters({ timeRange: "28" }));
+
+    act(() => result.current.addView("Downloads this month"));
+    act(() => result.current.selectView("trending"));
+
+    expect(result.current.isEdited).toBe(false);
+    expect(result.current.sort).toEqual({ field: "endorsements", direction: "desc" });
+  });
+
+  it("saves a view's changes of sort and filters into it, so it's never edited", () => {
+    const { result } = render(true, { selected: "custom-1", custom: [mine] });
+
+    act(() => result.current.setSort({ direction: "asc" }));
+    act(() => result.current.setFilters({ timeRange: "all" }));
+
+    expect(savedViews().custom[0]).toMatchObject({
+      sort: { field: "downloads", direction: "asc" },
+      filters: { timeRange: "all" },
+    });
+    expect(result.current.isEdited).toBe(false);
+    expect(result.current.canResetSort).toBe(false);
+  });
+
+  it("goes by no filter for one a view was saved without", () => {
+    const { result } = render(true, {
+      selected: "custom-1",
+      custom: [{ ...mine, filters: {} }],
+    });
+
+    expect(result.current.filters).toEqual({ timeRange: "all" });
+  });
+
+  it("is edited while a preset's sort or filters differ from how it comes, until it's reset", () => {
+    const { result } = render();
+    expect(result.current.isEdited).toBe(false);
+
+    act(() => result.current.setFilters({ timeRange: "28" }));
+    expect(result.current.isEdited).toBe(true);
+
+    act(() => result.current.resetView());
+    expect(result.current.isEdited).toBe(false);
+    expect(result.current.filters).toEqual({ timeRange: "7" });
+  });
+
+  it("renames and deletes a view, going back to the first preset if it was open", () => {
+    const { result } = render(true, { selected: "custom-1", custom: [mine] });
+
+    act(() => result.current.renameView("custom-1", "Theirs"));
+    expect(result.current.views[0].name).toBe("Theirs");
+
+    act(() => result.current.removeView("custom-1"));
+    expect(result.current.views).toEqual([]);
+    expect(result.current.viewId).toBe("trending");
+  });
+
+  it("opens the first preset as picking it would when the open view is deleted", () => {
+    const { result } = render(true, { selected: "trending", custom: [mine] });
+    act(() => result.current.setFilters({ timeRange: "28" }));
+    act(() => result.current.selectView("custom-1"));
+    const later = NOW + 2 * HOUR_MS;
+    vi.setSystemTime(later);
+
+    act(() => result.current.removeView("custom-1"));
+
+    expect(result.current.viewId).toBe("trending");
+    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.isEdited).toBe(false);
+    expect(result.current.rangeFrom).toBe(later);
   });
 });
 

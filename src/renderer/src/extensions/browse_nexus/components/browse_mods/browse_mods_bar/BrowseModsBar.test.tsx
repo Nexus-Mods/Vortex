@@ -1,24 +1,32 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React from "react";
+import React, { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 
-import type { IModFilters, IModSearch } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { IModSearch } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { IModFilters } from "../../../util/mod_views/modViews";
 import { BrowseModsBar } from "./BrowseModsBar";
 
 /** The search the bar shows, with its filters and how many of them are on. */
 const searchWith = (filters: IModFilters, activeFilterCount: number, changedFilterCount = 0) =>
   ({
-    preset: "trending",
+    viewId: "trending",
+    trackedView: "trending",
+    views: [],
+    isEdited: false,
     sort: { field: "endorsements", direction: "desc" },
     filters,
     activeFilterCount,
     changedFilterCount,
     totalCount: 172,
     canResetSort: false,
-    selectPreset: vi.fn(),
+    selectView: vi.fn(),
+    resetView: vi.fn(),
+    addView: vi.fn(),
+    renameView: vi.fn(),
+    removeView: vi.fn(),
     setSort: vi.fn(),
     resetSort: vi.fn(),
     setFilters: vi.fn(),
@@ -28,7 +36,14 @@ const searchWith = (filters: IModFilters, activeFilterCount: number, changedFilt
 /** Renders the bar over the search, with a tracker whose events it returns. */
 const renderBar = (search: IModSearch) => {
   const tracking = browseModsTracking();
-  const view = render(<BrowseModsBar search={search} />, { wrapper: tracking.wrapper });
+  const view = render(
+    <BrowseModsBar
+      panelRefs={{ filters: createRef(), viewOptions: createRef() }}
+      search={search}
+      viewPicker={null}
+    />,
+    { wrapper: tracking.wrapper },
+  );
   return { ...view, tracked: tracking.tracked };
 };
 
@@ -76,7 +91,13 @@ describe("BrowseModsBar", () => {
 
     expect(screen.getByRole("button", { name: "Filter" })).toHaveClass("nxm-button-pip");
 
-    rerender(<BrowseModsBar search={searchWith({ timeRange: "all" }, 0)} />);
+    rerender(
+      <BrowseModsBar
+        panelRefs={{ filters: createRef(), viewOptions: createRef() }}
+        search={searchWith({ timeRange: "all" }, 0)}
+        viewPicker={null}
+      />,
+    );
 
     expect(screen.getByRole("button", { name: "Filter" })).not.toHaveClass("nxm-button-pip");
   });
@@ -92,16 +113,6 @@ describe("BrowseModsBar", () => {
     await userEvent.click(screen.getByRole("button", { name: "Filter" }));
 
     expect(await screen.findByText("Reset 1 filter to default")).toBeInTheDocument();
-  });
-
-  it("counts picking a view, and the one it was on", async () => {
-    const { tracked } = renderBar(searchWith({ timeRange: "7" }, 1));
-
-    await userEvent.click(screen.getByRole("button", { name: "Most popular" }));
-
-    expect(propertiesOf(tracked, "browse_mods_view_selected")).toEqual([
-      { view: "popular", previous_view: "trending" },
-    ]);
   });
 
   it("counts changing the time range, and where it was changed from", async () => {

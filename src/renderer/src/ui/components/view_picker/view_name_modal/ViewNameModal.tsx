@@ -6,11 +6,17 @@ import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 
-interface IModsTableViewNameModalProps {
+interface IViewNameModalProps {
   /** Whether it's showing. */
   isOpen: boolean;
   /** Renaming a view, by its name now; unset, it's making a new one. */
   renaming?: string;
+  /** What a new view starts with and can change later, said above the name field. */
+  createDescription: string;
+  /** What renaming leaves as it is, said above the name field. */
+  renameDescription: string;
+  /** An example name, in the empty field. */
+  placeholder: string;
   /** Takes the name given, trimmed. */
   onSubmit: (name: string) => void;
   /** Leaves without one. */
@@ -23,10 +29,13 @@ interface IModsTableViewNameModalProps {
  */
 const ViewNameForm = ({
   renaming,
+  createDescription,
+  renameDescription,
+  placeholder,
   inputRef,
   onSubmit,
   onClose,
-}: Omit<IModsTableViewNameModalProps, "isOpen"> & {
+}: Omit<IViewNameModalProps, "isOpen"> & {
   inputRef: RefObject<HTMLInputElement | null>;
 }) => {
   const { t } = useTranslation(["common"]);
@@ -44,16 +53,12 @@ const ViewNameForm = ({
   return (
     <form onSubmit={submit}>
       <Typography appearance="subdued" className="mb-4" typographyType="body-sm">
-        {renaming === undefined
-          ? t(
-              "Give your view a name. You can customise its columns, grouping and filters after creating it.",
-            )
-          : t("Give your view a new name. Your columns, grouping and filters won't change.")}
+        {renaming === undefined ? createDescription : renameDescription}
       </Typography>
 
       <TextField
         label={t("Name view")}
-        placeholder={t("e.g. Author view")}
+        placeholder={placeholder}
         ref={inputRef}
         value={name}
         onChange={(event) => setName(event.target.value)}
@@ -72,13 +77,19 @@ const ViewNameForm = ({
   );
 };
 
-/** Asks for a name for a view of the user's own: to make one, or to rename one. */
-export const ModsTableViewNameModal = ({
+/**
+ * Asks for a name for a view of the user's own, for `ViewPicker`'s views: to make one, or to
+ * rename one. The page says what its views hold.
+ */
+export const ViewNameModal = ({
   isOpen,
   renaming,
+  createDescription,
+  renameDescription,
+  placeholder,
   onSubmit,
   onClose,
-}: IModsTableViewNameModalProps) => {
+}: IViewNameModalProps) => {
   const { t } = useTranslation(["common"]);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -90,7 +101,15 @@ export const ModsTableViewNameModal = ({
       title={!renaming ? t("Create a new view") : t("Rename view")}
       onClose={onClose}
     >
-      <ViewNameForm inputRef={inputRef} renaming={renaming} onClose={onClose} onSubmit={onSubmit} />
+      <ViewNameForm
+        createDescription={createDescription}
+        inputRef={inputRef}
+        placeholder={placeholder}
+        renameDescription={renameDescription}
+        renaming={renaming}
+        onClose={onClose}
+        onSubmit={onSubmit}
+      />
     </Modal>
   );
 };

@@ -2,11 +2,11 @@ import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEven
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import type {
-  ModPreset,
+  TrackedView,
   ModSortDirection,
   ModSortField,
   ModTimeRange,
-} from "../use_mod_search/useModSearch.hook";
+} from "../../util/mod_views/modViews";
 
 /** Where a time range was changed from. */
 export type TimeRangeSource = "filter_menu" | "applied_filter" | "applied_filter_clear";
@@ -19,7 +19,7 @@ export type GalleryDirection = "back" | "forward";
 
 /** The search a results event is about: its view, sort and time range. */
 type SearchProps = {
-  view: ModPreset;
+  view: TrackedView;
   sort_field: ModSortField;
   sort_direction: ModSortDirection;
   time_range: ModTimeRange;
@@ -54,34 +54,46 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     // The Mods tab coming into view: opening Browse on it, or switching to it.
     trackViewed: () => track("browse_mods_viewed"),
 
-    // Sent again when the open view is picked, which puts its filters back.
-    trackViewSelected: (props: { view: ModPreset; previous_view: ModPreset }) =>
+    // Sent again when the open preset is picked with its filters changed, which puts them back.
+    trackViewSelected: (props: { view: TrackedView; previous_view: TrackedView }) =>
       track("browse_mods_view_selected", props),
+
+    // A view of the user's own, made from what's showing, renamed or deleted; `view` is what it
+    // was made from, never its name.
+    trackViewCreated: (props: { view: TrackedView; source: "picker" | "edited_strip" }) =>
+      track("browse_mods_view_created", props),
+
+    trackViewRenamed: () => track("browse_mods_view_renamed"),
+
+    trackViewDeleted: () => track("browse_mods_view_deleted"),
+
+    // The edited strip's Reset to default, putting a preset's sort and filters back.
+    trackViewReset: (props: { view: TrackedView }) => track("browse_mods_view_reset", props),
 
     // The sort as it is after the change; `is_reset` when View options' reset put it back.
     trackSortChanged: (props: {
-      view: ModPreset;
+      view: TrackedView;
       sort_field: ModSortField;
       sort_direction: ModSortDirection;
       is_reset: boolean;
     }) => track("browse_mods_sort_changed", props),
 
     trackTimeRangeChanged: (props: {
-      view: ModPreset;
+      view: TrackedView;
       time_range: ModTimeRange;
       previous_time_range: ModTimeRange;
       source: TimeRangeSource;
     }) => track("browse_mods_time_range_changed", props),
 
     // `filter_count` is how many differed from the view's own, which the reset puts back.
-    trackFiltersReset: (props: { view: ModPreset; filter_count: number }) =>
+    trackFiltersReset: (props: { view: TrackedView; filter_count: number }) =>
       track("browse_mods_filters_reset", props),
 
     // `position` counts from 1 across pages, so the 3rd mod on page 2 of 20 is 23. Moving
     // through the list with the keys picks each mod it passes, each counted as `keyboard`.
     trackModSelected: (props: {
       mod_uid: string;
-      view: ModPreset;
+      view: TrackedView;
       position: number;
       input: SelectionInput;
     }) => track("browse_mods_mod_selected", props),

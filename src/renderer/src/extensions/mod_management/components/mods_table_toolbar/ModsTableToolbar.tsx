@@ -7,12 +7,12 @@ import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import type { IToolbarPanelHandle } from "@/ui/components/toolbar/ToolbarPanelButton";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
+import { DeleteViewModal } from "@/ui/components/view_picker/delete_view_modal/DeleteViewModal";
+import { ViewNameModal } from "@/ui/components/view_picker/view_name_modal/ViewNameModal";
 import { type IViewPickerView, ViewPicker } from "@/ui/components/view_picker/ViewPicker";
 
 import { MODS_TABLE_TOOLBARS } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import type { IModsTableView } from "../../util/mods_table_views/modsTableViews";
-import { DeleteModsTableViewModal } from "../delete_mods_table_view_modal/DeleteModsTableViewModal";
-import { ModsTableViewNameModal } from "../mods_table_view_name_modal/ModsTableViewNameModal";
 
 /** Where the new Mods table's users tell us what they think of it, while it's in beta. */
 export const MODS_TABLE_FEEDBACK_URL =
@@ -128,7 +128,11 @@ export const ModsTableToolbar = ({
         <ToolbarSearch label={t("Search")} value={search} onChange={onSearchChange} />
       </Toolbar>
 
-      <DeleteModsTableViewModal
+      <DeleteViewModal
+        description={t(
+          'Are you sure you want to delete "{{name}}"? This won\'t delete any mods, but the view and its customisations will be permanently removed.',
+          { name: deleting?.label },
+        )}
         name={deleting?.label}
         onClose={() => setDeleting(undefined)}
         onDelete={() => {
@@ -139,8 +143,15 @@ export const ModsTableToolbar = ({
         }}
       />
 
-      <ModsTableViewNameModal
+      <ViewNameModal
+        createDescription={t(
+          "Give your view a name. You can customise its columns, grouping and filters after creating it.",
+        )}
         isOpen={naming !== undefined}
+        placeholder={t("e.g. Author view")}
+        renameDescription={t(
+          "Give your view a new name. Your columns, grouping and filters won't change.",
+        )}
         renaming={naming === "new" ? undefined : naming?.label}
         onClose={() => setNaming(undefined)}
         onSubmit={(name) => {
