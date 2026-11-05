@@ -10,6 +10,7 @@ import { FlagService } from "../../FlagService";
 import { getBatchContext, type IBatchContext } from "../../util/BatchContext";
 import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
 import { UserCanceled } from "../../util/CustomErrors";
+import { emitManualInstallerEvent } from "../analytics/utils/manualInstallerEvent";
 import { setManualInstallerPreferences } from "../gamemode_management/actions/persistent";
 import { isTierZeroManagedGame, tierZeroGameFor } from "../gamemode_management/tiered/tierZero";
 import {
@@ -34,6 +35,7 @@ vi.mock("../../util/collectionInstallSessionSelectors", () => ({
   getCollectionActiveSession: vi.fn(),
 }));
 vi.mock("../../util/BatchContext", () => ({ getBatchContext: vi.fn() }));
+vi.mock("../analytics/utils/manualInstallerEvent", () => ({ emitManualInstallerEvent: vi.fn() }));
 vi.mock("./manualInstallerQueue", () => ({ requestManualInstallerDestination: vi.fn() }));
 vi.mock("../nexus_integration/util/UIDs", () => ({
   makeModAndFileUIDs: (game: string, mod: string, file: string) =>
@@ -61,12 +63,18 @@ const makeApi = (
   vi.mocked(requestManualInstallerDestination).mockResolvedValue(dialogAnswer);
   const emit = vi.fn();
   const dispatch = vi.fn();
+  const handlers = new Map<string, (...args: string[]) => void>();
+  const on = vi.fn((event: string, handler: (...args: string[]) => void) => {
+    handlers.set(event, handler);
+  });
   const api = {
     getState: () => state,
     store: { dispatch },
-    events: { emit },
+    events: { emit, on },
   } as unknown as IExtensionApi;
-  return { api, emit, dispatch };
+  /** announces the successful install of an archive, like InstallManager does */
+  const didInstall = (archiveId: string) => handlers.get("did-install-mod")?.("game", archiveId);
+  return { api, emit, dispatch, didInstall };
 };
 
 const makeBatch = (itemCount: number): IBatchContext => {
@@ -132,6 +140,7 @@ beforeEach(() => {
   vi.mocked(getCollectionActiveSession).mockReset();
   vi.mocked(getBatchContext).mockReset();
   vi.mocked(requestManualInstallerDestination).mockReset();
+  vi.mocked(emitManualInstallerEvent).mockReset();
 });
 
 describe("normalizeDestination", () => {
@@ -573,5 +582,97 @@ describe("analytics", () => {
     await install(createManualInstaller(api), { modReference: reference });
 
     expect(emit).not.toHaveBeenCalled();
+  });
+});
+
+describe("manual installer telemetry", () => {
+  test("a confirmed dialog is reported once the install finished", async () => {
+    const { api, didInstall } = makeApi(answer({ folder: "Foo" }));
+    await install(createManualInstaller(api), { archiveId: "a" });
+
+    expect(emitManualInstallerEvent).not.toHaveBeenCalled();
+    didInstall("a");
+    expect(emitManualInstallerEvent).toHaveBeenCalledWith(api, {
+      gameId: "game",
+      destination: "Foo",
+      modReference: undefined,
+    });
+  });
+
+  test("it is reported only once", async () => {
+    const { api, didInstall } = makeApi(answer({ folder: "Foo" }));
+    await install(createManualInstaller(api), { archiveId: "a" });
+
+    didInstall("a");
+    didInstall("a");
+
+    expect(emitManualInstallerEvent).toHaveBeenCalledTimes(1);
+  });
+
+  test("an install that never finished reports nothing", async () => {
+    const { api, didInstall } = makeApi(answer({ folder: "Foo" }));
+    await install(createManualInstaller(api), { archiveId: "a" });
+
+    didInstall("other");
+
+    expect(emitManualInstallerEvent).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ["unattended", { unattended: true }],
+    ["a reused destination", { previousAttributes: { [INSTALL_DESTINATION_ATTRIBUTE]: "Foo" } }],
+  ])("no dialog means nothing is reported (%s)", async (_, opts) => {
+    const { api, didInstall } = makeApi();
+    await install(createManualInstaller(api), { ...opts, archiveId: "a" });
+    didInstall("a");
+
+    expect(emitManualInstallerEvent).not.toHaveBeenCalled();
+  });
+
+  test("a destination reused through don't ask again reports nothing", async () => {
+    withPreferences({ defaultFolder: "Mods", dontAskAgain: true });
+    const { api, didInstall } = makeApi();
+    await install(createManualInstaller(api), { archiveId: "a" });
+    didInstall("a");
+
+    expect(emitManualInstallerEvent).not.toHaveBeenCalled();
+  });
+
+  test("a cancelled dialog reports nothing", async () => {
+    const { api, didInstall } = makeApi(undefined);
+
+    await expect(install(createManualInstaller(api), { archiveId: "a" })).rejects.toBeInstanceOf(
+      UserCanceled,
+    );
+    didInstall("a");
+
+    expect(emitManualInstallerEvent).not.toHaveBeenCalled();
+  });
+
+  test("only the dialog's mod is reported, not the later ones reusing its folder", async () => {
+    vi.mocked(getBatchContext).mockReturnValue(makeBatch(3));
+    const { api, didInstall } = makeApi(answer({ folder: "Foo", useForAll: true }));
+    const installer = createManualInstaller(api);
+
+    await install(installer, { archiveId: "a" });
+    await install(installer, { archiveId: "b" });
+    didInstall("a");
+    didInstall("b");
+
+    expect(emitManualInstallerEvent).toHaveBeenCalledTimes(1);
+  });
+
+  test("a pick that never finished is not reported by a later reinstall of the archive", async () => {
+    const { api, didInstall } = makeApi(answer({ folder: "Foo" }));
+    const installer = createManualInstaller(api);
+
+    await install(installer, { archiveId: "a" });
+    await install(installer, {
+      archiveId: "a",
+      previousAttributes: { [INSTALL_DESTINATION_ATTRIBUTE]: "Foo" },
+    });
+    didInstall("a");
+
+    expect(emitManualInstallerEvent).not.toHaveBeenCalled();
   });
 });
