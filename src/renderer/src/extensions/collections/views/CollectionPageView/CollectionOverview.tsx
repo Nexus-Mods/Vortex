@@ -1,7 +1,7 @@
 import type { EndorsedStatus, ICollection, IRevision, RatingOptions } from "@nexusmods/nexus-api";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
-import * as React from "react";
+import React, { useCallback, useContext } from "react";
 import { Media, Panel } from "react-bootstrap";
 
 import { MainContext } from "../../../../contexts";
@@ -18,7 +18,6 @@ import type { IActionDefinition } from "../../../../types/IActionDefinition";
 import type { IDialogResult } from "../../../../types/IDialog";
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import type { TFunction as TFunctionApi } from "../../../../util/i18n";
-import opn from "../../../../util/opn";
 import * as selectors from "../../../../util/selectors";
 import { Campaign, nexusModsURL, Section } from "../../../../util/util";
 import { updateCollectionInfo } from "../../actions/persistent";
@@ -51,9 +50,9 @@ function isEndorsedStatus(value: unknown): value is EndorsedStatus {
 function EndorseButton(props: IEndorseButtonProps) {
   const { t, collection, gameId, mod, voteAllowed } = props;
 
-  const context = React.useContext(MainContext);
+  const context = useContext(MainContext);
 
-  const endorse = React.useCallback(async () => {
+  const endorse = useCallback(async () => {
     const rawEndorsedStatus = mod.attributes?.endorsed;
     const endorsedStatus: EndorsedStatus = isEndorsedStatus(rawEndorsedStatus)
       ? rawEndorsedStatus
@@ -118,12 +117,12 @@ interface ICommentButtonProps {
 
 function CommentButton(props: ICommentButtonProps) {
   const { t, collection } = props;
-  const context = React.useContext(MainContext);
+  const context = useContext(MainContext);
 
-  const click = React.useCallback(() => {
+  const click = useCallback(() => {
     if (collection?.["commentLink"] !== undefined) {
       context.api.events.emit("analytics-track-click-event", "Collections", "Comments");
-      opn(collection["commentLink"]);
+      window.api.shell.openUrl(collection["commentLink"]);
     }
   }, [collection]);
 
@@ -433,7 +432,7 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
         "Collections",
         "View on site Added Collection",
       );
-      opn(
+      window.api.shell.openUrl(
         nexusModsURL(
           [
             collection.game.domainName,
@@ -572,13 +571,13 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
             {
               label: 'View comments',
               action: () => {
-                opn(revision.collection.commentLink).catch(() => null);
+                window.api.shell.openUrl(revision.collection.commentLink);
               },
             },
             {
               label: 'View bugs',
               action: () => {
-                opn(bugLink).catch(() => null);
+                window.api.shell.openUrl(bugLink);
               },
             },
           ],
