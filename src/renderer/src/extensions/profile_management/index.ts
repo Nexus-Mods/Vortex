@@ -58,7 +58,11 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
+import {
+  emitGameActivated,
+  emitGameManaged,
+  emitGameUnmanaged,
+} from "../analytics/mixpanel/gameManageAnalytics";
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
 import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
@@ -360,9 +364,16 @@ function genOnProfileChange(
   };
 
   const confirmProfile = (gameId: string, current: string) => {
+    const state = store.getState();
+    const previousGameId = activeGameId(state);
+    // A profile manageGame just created has never been active, and app_game_manage covers it.
+    const activatedBefore = state.persistent.profiles[current]?.lastActivated !== undefined;
     store.dispatch(setCurrentProfile(gameId, current));
     if (current !== undefined) {
       store.dispatch(setProfileActivated(current));
+    }
+    if (gameId !== undefined && gameId !== previousGameId && activatedBefore) {
+      emitGameActivated(api, gameId);
     }
     const confirmPromise = cancelPromise;
     setTimeout(() => {
@@ -799,8 +810,6 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
     (profileId) => profiles[profileId]?.gameId === gameId,
   );
 
-  api.events.emit("analytics-track-event", "Games", "Stop managing", gameId);
-
   let message: string;
 
   if (profileIds.length > 1 || profiles[profileIds[0]]?.name !== "Default") {
@@ -951,8 +960,6 @@ function init(context: IExtensionContext): boolean {
     (instanceIds: string[]) => {
       const gameId = instanceIds[0];
 
-      context.api.events.emit("analytics-track-event", "Games", "Start managing", gameId);
-
       // Managing a game nothing provides an extension for is the Tier 0 opt-in; the
       // game has to be registered before discovery, whose path resolution reads the
       // synthesized game's queryArgs. Any other Manage behaves exactly as before.
@@ -1027,8 +1034,6 @@ function init(context: IExtensionContext): boolean {
 
       log("info", "activate profile", profileData);
 
-      context.api.events.emit("analytics-track-event", "Games", "Activate", gameId, profileData);
-
       checkOverridden(context.api, gameId)
         .then(() => {
           activateGame(context.api.store, gameId);
@@ -1057,7 +1062,7 @@ function init(context: IExtensionContext): boolean {
     150,
     "delete",
     {},
-    context.api.translate("Stop Managing"),
+    "Stop Managing",
     (instanceIds: string[]) => {
       unmanageGame(context.api, instanceIds[0]);
     },

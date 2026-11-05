@@ -11,6 +11,7 @@ import type {
 } from "../../test-utils/harnessTypes";
 import { test } from "../../test-utils/profileSwitchTest";
 import type { INotification } from "../../types/INotification";
+import type { MixpanelEvent } from "../analytics/mixpanel/MixpanelEvents";
 import { PROFILE_SWITCH_FAILED_NOTIFICATION_ID } from "./constants";
 
 const isNotification = (
@@ -34,6 +35,15 @@ const switchBack = async (harness: IProfileSwitchHarness) => {
   fireNotificationAction(failure.payload.id, failure.payload.process, 0, () => {});
   await switched;
   return failure;
+};
+
+// the analytics events a switch sends from here on, in order
+const trackedEvents = (harness: IProfileSwitchHarness) => {
+  const events: MixpanelEvent[] = [];
+  harness.api.events.on("analytics-track-mixpanel-event", (event: MixpanelEvent) =>
+    events.push(event),
+  );
+  return events;
 };
 
 const profiles = [
@@ -172,6 +182,53 @@ describe("profile switch", () => {
         payload: PROFILE_SWITCH_FAILED_NOTIFICATION_ID,
       }),
     );
+  });
+
+  test("reports app_game_activate, with the store, when the switch lands on another game", async ({
+    makeProfileSwitch,
+  }) => {
+    const harness = await makeProfileSwitch({ ...skyrimPending, activeProfileId: "skyrim1" });
+    harness.setState((draft) => {
+      draft.settings.gameMode.discovered.stardewvalley.store = "gog";
+    });
+    const events = trackedEvents(harness);
+
+    await harness.switchTo("stardew1");
+
+    expect(events).toEqual([
+      expect.objectContaining({
+        eventName: "app_game_activate",
+        properties: expect.objectContaining({ game_store: "gog" }),
+      }),
+    ]);
+  });
+
+  test("doesn't report app_game_activate for a switch within the same game", async ({
+    makeProfileSwitch,
+  }) => {
+    const harness = await makeProfileSwitch({ ...skyrimPending, activeProfileId: "skyrim1" });
+    const events = trackedEvents(harness);
+
+    await harness.switchTo("skyrim2");
+
+    expect(events).toEqual([]);
+  });
+
+  test("leaves a profile's first activation to app_game_manage", async ({ makeProfileSwitch }) => {
+    const harness = await makeProfileSwitch({
+      profiles: [
+        makeProfile({ id: "skyrim1", gameId: "skyrimse" }),
+        // a profile manageGame just created has never been active
+        makeProfile({ id: "stardew1", gameId: "stardewvalley", lastActivated: undefined }),
+      ],
+      lastActive: { skyrimse: "skyrim1" },
+      activeProfileId: "skyrim1",
+    });
+    const events = trackedEvents(harness);
+
+    await harness.switchTo("stardew1");
+
+    expect(events).toEqual([]);
   });
 
   test("deploys another profile of a game with nothing pending", async ({ makeProfileSwitch }) => {

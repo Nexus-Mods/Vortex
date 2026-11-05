@@ -470,7 +470,6 @@ function installGameExtension(
         if (result.action === "Install") {
           return api.emitAndAwait("install-extension", dlInfo);
         } else if (result.action === "Stop managing") {
-          api.events.emit("analytics-track-click-event", "Games", "Stop managing game");
           return api.ext.unmanageGame?.(gameId, dlInfo.name);
         } else {
           return PromiseBB.resolve(false);
@@ -865,7 +864,7 @@ function init(context: IExtensionContext): boolean {
     105,
     "open-ext",
     {},
-    context.api.translate("Open Game Folder"),
+    "Open Game Folder",
     openGameFolder,
   );
   context.registerAction(
@@ -873,7 +872,7 @@ function init(context: IExtensionContext): boolean {
     105,
     "open-ext",
     {},
-    context.api.translate("Open Game Folder"),
+    "Open Game Folder",
     openGameFolder,
     gameIsDiscovered,
   );
@@ -882,7 +881,7 @@ function init(context: IExtensionContext): boolean {
     110,
     "open-ext",
     {},
-    context.api.translate("Open Mod Folder"),
+    "Open Mod Folder",
     openModFolder,
   );
   context.registerAction(
@@ -890,7 +889,7 @@ function init(context: IExtensionContext): boolean {
     110,
     "open-ext",
     {},
-    context.api.translate("Open Mod Folder"),
+    "Open Mod Folder",
     openModFolder,
     gameIsDiscovered,
   );
@@ -899,7 +898,7 @@ function init(context: IExtensionContext): boolean {
     120,
     "browse",
     {},
-    context.api.translate("Manually Set Location"),
+    "Manually Set Location",
     (instanceIds: string[]) => {
       browseGameLocation(context.api, instanceIds[0]);
     },
@@ -910,7 +909,7 @@ function init(context: IExtensionContext): boolean {
     120,
     "browse",
     {},
-    context.api.translate("Manually Set Location"),
+    "Manually Set Location",
     (instanceIds: string[]) => {
       browseGameLocation(context.api, instanceIds[0]);
     },
