@@ -10,6 +10,8 @@ import { z } from "./zodJitless";
 export interface JournalStorage {
   /** the whole journal, or undefined when there is none */
   read(): Promise<Uint8Array | undefined>;
+  /** writes the journal atomically unless there is one already; resolves false when there is */
+  create(contents: Uint8Array): Promise<boolean>;
   /** replaces the journal atomically */
   write(contents: Uint8Array): Promise<void>;
   append(contents: Uint8Array): Promise<void>;
@@ -194,10 +196,6 @@ export async function createJournal(
   storage: JournalStorage,
   entries: readonly JournalEntry[],
 ): Promise<JournalWriter> {
-  if ((await storage.read()) !== undefined) {
-    throw new Error("a journal already exists");
-  }
-
   const runId = crypto.randomUUID();
   const header = {
     type: LineType.Header,
@@ -205,7 +203,9 @@ export async function createJournal(
     runId,
     count: entries.length,
   };
-  await storage.write(encodeLines([header, ...entries]));
+  if (!(await storage.create(encodeLines([header, ...entries])))) {
+    throw new Error("a journal already exists");
+  }
   return writerFor(storage, runId);
 }
 

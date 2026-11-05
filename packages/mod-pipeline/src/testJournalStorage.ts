@@ -6,7 +6,7 @@ import type { JournalStorage } from "./journal";
 /** A journal on the real disk, for tests; the package itself never touches a disk. */
 export const nodeJournalStorage = (workDir: string): JournalStorage => {
   const journalFile = join(workDir, "journal.ndjson");
-  let appending: fs.FileHandle | undefined;
+  let appending: Promise<fs.FileHandle> | undefined;
   return {
     read: () =>
       fs.readFile(journalFile).catch((err: unknown) => {
@@ -15,19 +15,36 @@ export const nodeJournalStorage = (workDir: string): JournalStorage => {
         }
         throw err;
       }),
+    create: async (contents) => {
+      await fs.mkdir(workDir, { recursive: true });
+      const candidate = `${journalFile}.${crypto.randomUUID()}.tmp`;
+      await fs.writeFile(candidate, contents, { flag: "wx" });
+      try {
+        await fs.link(candidate, journalFile);
+        return true;
+      } catch (err) {
+        if (err instanceof Error && "code" in err && err.code === "EEXIST") {
+          return false;
+        }
+        throw err;
+      } finally {
+        await fs.rm(candidate, { force: true });
+      }
+    },
     write: async (contents) => {
       await fs.mkdir(workDir, { recursive: true });
       await fs.writeFile(`${journalFile}.tmp`, contents);
       await fs.rename(`${journalFile}.tmp`, journalFile);
     },
     append: async (contents) => {
-      appending ??= await fs.open(journalFile, "a");
-      await appending.appendFile(contents);
+      appending ??= fs.open(journalFile, "a");
+      await (await appending).appendFile(contents);
     },
     remove: () => fs.rm(journalFile, { force: true }),
     close: async () => {
-      await appending?.close();
+      const handle = appending;
       appending = undefined;
+      await (await handle)?.close();
     },
   };
 };

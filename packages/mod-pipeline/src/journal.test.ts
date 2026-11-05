@@ -217,6 +217,19 @@ describe("createJournal", () => {
 
     expect((await foundJournal()).runId).toBe(writer.runId);
   });
+
+  test("lets only one of two overlapping runs start", async () => {
+    const started = await Promise.allSettled([
+      createJournal(storage, makeEntries()),
+      createJournal(nodeJournalStorage(workDir), makeEntries()),
+    ]);
+
+    const writers = started.flatMap((run) => (run.status === "fulfilled" ? [run.value] : []));
+    await Promise.all(writers.map((writer) => writer.close()));
+
+    expect(writers).toHaveLength(1);
+    expect((await foundJournal()).runId).toBe(writers[0]?.runId);
+  });
 });
 
 describe("openJournal", () => {

@@ -29,6 +29,41 @@ describe("journalStorageAt", () => {
     expect(await journalStorageAt(journalFile).read()).toBeUndefined();
   });
 
+  it("keeps the journal it finds when creating one", async () => {
+    const storage = journalStorageAt(journalFile);
+    await storage.create(encode("one\n"));
+
+    expect(await storage.create(encode("two\n"))).toBe(false);
+
+    expect(decode(await storage.read())).toBe("one\n");
+  });
+
+  it("lets one of two overlapping creates win, leaving only the journal", async () => {
+    const created = await Promise.all(
+      ["one\n", "two\n"].map(async (text) => ({
+        text,
+        won: await journalStorageAt(journalFile).create(encode(text)),
+      })),
+    );
+
+    const winners = created.filter(({ won }) => won);
+    expect(winners).toHaveLength(1);
+    expect(decode(await journalStorageAt(journalFile).read())).toBe(winners[0]?.text);
+    expect(await fs.readdir(path.dirname(journalFile))).toEqual([path.basename(journalFile)]);
+  });
+
+  it("keeps one handle through overlapping appends", async () => {
+    const storage = journalStorageAt(journalFile);
+    await storage.create(encode("one\n"));
+
+    await Promise.all([storage.append(encode("two\n")), storage.append(encode("three\n"))]);
+    await storage.close();
+
+    // a handle still open would make Windows refuse this
+    await storage.write(encode("four\n"));
+    expect(decode(await storage.read())).toBe("four\n");
+  });
+
   it("replaces a journal it is appending to", async () => {
     const storage = journalStorageAt(journalFile);
     await storage.write(encode("one\n"));
