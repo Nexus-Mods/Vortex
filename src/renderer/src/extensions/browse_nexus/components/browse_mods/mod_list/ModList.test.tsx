@@ -12,6 +12,9 @@ vi.mock("@/extensions/nexus_integration/selectors", () => ({
   canSeeAdultContent: () => true,
   isLoggedIn: () => true,
 }));
+vi.mock("../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
+  useModInstallState: () => ({ kind: "none" }),
+}));
 
 type IMod = React.ComponentProps<typeof ModList>["mods"][number];
 
@@ -21,6 +24,7 @@ const mod = (id: string) =>
     name: `Mod ${id}`,
     summary: "",
     author: { name: "schlangster" },
+    game: { domain_name: "skyrimspecialedition" },
     thumbnail_url: null,
     downloads: 0,
     endorsements: 0,

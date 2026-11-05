@@ -149,7 +149,7 @@ export const ModInstallButton = ({
         brand={isPremiumUser ? "primary" : "neutral"}
         disabled={primaryFile === undefined && !isError}
         isLoading={isInstalling}
-        leftIcon="download"
+        leftIcon="install_desktop"
         rightIcon={isPremiumUser ? undefined : <PremiumBadge />}
         onClick={() => {
           if (!primaryFile || !gameId) {
@@ -207,6 +207,7 @@ export const ModInstallButton = ({
     if (installState.kind === "installed" && isPremiumUser) {
       return (
         <Button
+          brand="info"
           leftIcon="download"
           onClick={() => {
             tracker.trackUpdateClicked({ mod_uid: mod.id });

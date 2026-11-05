@@ -1,9 +1,10 @@
-import { type GameDomain, VortexGameId } from "@vortex/shared";
+import { GameDomain, VortexGameId } from "@vortex/shared";
 import { shallowEqual, useSelector } from "react-redux";
+import { createSelector } from "reselect";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "@/extensions/collections/constants";
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
-import { gameById } from "@/extensions/gamemode_management/selectors";
+import { knownGames } from "@/extensions/gamemode_management/selectors";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import type { IModWithState } from "@/extensions/mod_management/types/IModProps";
 import { offersUpdate } from "@/extensions/mod_management/util/mod_has_update/modHasUpdate";
@@ -66,7 +67,7 @@ const NO_MODS: { [modId: string]: IMod } = {};
 
 const NO_MOD_STATE: { [modId: string]: IProfileMod } = {};
 
-const NO_ACTIVE_GAME: ModInstallState = { kind: "none" };
+const NONE: ModInstallState = { kind: "none" };
 
 /** Whether the Mods page offers an update in this state, as `offersUpdate` says. */
 const isOffered = (state: UpdateState): state is "update" | "update-site" => offersUpdate(state);
@@ -149,28 +150,106 @@ export const modInstallState = (
   return downloadId ? { kind: "downloaded", downloadId } : { kind: "none" };
 };
 
+/** The key `modInstallSourcesByMod` files a mod's sources under. */
+const modKey = (domain: GameDomain, modId: number) => `${domain}/${modId}`;
+
+/** The Nexus Mods mod a download is of, by `isDownloadOf`'s rules; none for one that isn't. */
+const downloadKey = (download: IDownload, domainOf: IModInstallSources["domainOf"]) => {
+  const ids = download.modInfo?.nexus?.ids;
+  const [game] = download.game;
+  const domain = ids?.gameId ? GameDomain(ids.gameId) : game && domainOf(VortexGameId(game));
+
+  return ids?.modId && domain ? modKey(domain, Number(ids.modId)) : undefined;
+};
+
+/**
+ * `modInstallState`'s sources split up by the Nexus Mods mod they're of, so a mod's state looks
+ * through its own and not the whole game's. A mod is filed under its Nexus ids and under the
+ * download it's installed from, as an install's mod only has its ids once it's done.
+ */
+export const groupModInstallSources = (
+  sources: IModInstallSources,
+): Map<string, IModInstallSources> => {
+  const { mods, downloads, gameId, domainOf } = sources;
+  const groups = new Map<string, IModInstallSources>();
+
+  const groupOf = (key: string) => {
+    const group = groups.get(key) ?? { ...sources, mods: {}, downloads: {} };
+    groups.set(key, group);
+    return group;
+  };
+
+  for (const [id, download] of Object.entries(downloads)) {
+    const key = downloadKey(download, domainOf);
+    if (key) {
+      groupOf(key).downloads[id] = download;
+    }
+  }
+
+  for (const mod of Object.values(mods)) {
+    const domain = domainOf(VortexGameId(mod.attributes?.downloadGame ?? gameId));
+    const ownKey =
+      mod.attributes?.source === "nexus" && domain
+        ? modKey(domain, Number(mod.attributes?.modId))
+        : undefined;
+    const download = mod.archiveId ? downloads[mod.archiveId] : undefined;
+    const keys = new Set([ownKey, download && downloadKey(download, domainOf)]);
+
+    for (const key of keys) {
+      if (key) {
+        groupOf(key).mods[mod.id] = mod;
+      }
+    }
+  }
+
+  return groups;
+};
+
+/** What the user has of a mod, from its sources grouped by `groupModInstallSources`. */
+export const groupedModInstallState = (
+  groups: Map<string, IModInstallSources>,
+  ref: INexusModRef,
+): ModInstallState => {
+  const sources = groups.get(modKey(ref.domain, ref.modId));
+  return sources ? modInstallState(sources, ref) : NONE;
+};
+
+/** The active game's install sources by mod, worked out once per change for every caller. */
+const modInstallSourcesByMod = createSelector(
+  [
+    activeGameId,
+    (state: IState) => state.persistent.mods,
+    (state: IState) => activeProfile(state)?.modState,
+    (state: IState) => state.persistent.downloads.files,
+    knownGames,
+  ],
+  (active, modsByGame, modState, downloads, games) => {
+    if (!active) {
+      return undefined;
+    }
+
+    const gameId = VortexGameId(active);
+
+    return groupModInstallSources({
+      mods: modsByGame[gameId] ?? NO_MODS,
+      modState: modState ?? NO_MOD_STATE,
+      downloads,
+      gameId,
+      domainOf: (id) =>
+        nexusGameId(
+          games.find((game) => game.id === id),
+          id,
+        ),
+    });
+  },
+);
+
 /**
  * What the user has of a mod in the active game; see `modInstallState`. Compared field by field,
  * so a download's progress, which replaces the downloads on every tick, doesn't re-render.
  */
 export const useModInstallState = (ref: INexusModRef): ModInstallState =>
   useSelector((state: IState): ModInstallState => {
-    const active = activeGameId(state);
-
-    if (!active) {
-      return NO_ACTIVE_GAME;
-    }
-
-    const gameId = VortexGameId(active);
-
-    return modInstallState(
-      {
-        mods: state.persistent.mods[gameId] ?? NO_MODS,
-        modState: activeProfile(state)?.modState ?? NO_MOD_STATE,
-        downloads: state.persistent.downloads.files,
-        gameId,
-        domainOf: (id) => nexusGameId(gameById(state, id), id),
-      },
-      ref,
-    );
+    const groups = modInstallSourcesByMod(state);
+    return groups ? groupedModInstallState(groups, ref) : NONE;
   }, shallowEqual);

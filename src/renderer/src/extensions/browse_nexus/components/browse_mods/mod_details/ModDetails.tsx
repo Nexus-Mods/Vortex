@@ -10,6 +10,7 @@ import { nexusModPageUrl } from "@/extensions/nexus_integration/util/nexus_urls/
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Author } from "@/ui/components/author/Author";
 import { Button } from "@/ui/components/button/Button";
+import { Pill } from "@/ui/components/pill/Pill";
 import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
@@ -22,6 +23,8 @@ import { useRelativeTime } from "@/util/useRelativeTime";
 
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useDescriptionImagePlaceholders } from "../../../hooks/use_description_image_placeholders/useDescriptionImagePlaceholders.hook";
+import { useModInstallState } from "../../../hooks/use_mod_install_state/useModInstallState.hook";
+import { modStatus, modStatusDisplay } from "../../../util/mod_status/modStatus";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModInstallButton } from "./mod_install_button/ModInstallButton";
 import { ModTags } from "./mod_tags/ModTags";
@@ -46,7 +49,7 @@ interface IModDetailsProps {
 const OWNS_LEFT = 'input, textarea, select, [contenteditable="true"], [role="tablist"]';
 
 /**
- * The picked mod's details: gallery, stats, author, pills and description. Shows the
+ * The picked mod's details: gallery, stats, author, what the user has of it, pills and description. Shows the
  * search's result at once, and the tags and description once the mod's own query has them, with
  * 1-click install of its primary file beside the mod page link. Counts opening the mod page, and
  * the gallery's picks and paging.
@@ -58,10 +61,13 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const tags = details.data?.tags ?? [];
     const hasFailed = details.isError && !details.data;
     const [tab, setTab] = useState("details");
-    const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
-    const created = useRelativeTime(new Date(mod.created_at).getTime(), t);
+    const updated = useRelativeTime(Date.parse(mod.updated_at), t);
+    const created = useRelativeTime(Date.parse(mod.created_at), t);
     const tracker = useBrowseModsTracker();
-    const modPageUrl = nexusModPageUrl(GameDomain(mod.game.domain_name), mod.game_scoped_id);
+    const domain = GameDomain(mod.game.domain_name);
+    const modPageUrl = nexusModPageUrl(domain, mod.game_scoped_id);
+    const status = modStatus(useModInstallState({ domain, modId: Number(mod.game_scoped_id) }));
+    const statusDisplay = status && modStatusDisplay(t, status);
     const externalImagePlaceholders = useDescriptionImagePlaceholders({
       modUid: mod.id,
       modPageUrl,
@@ -133,8 +139,8 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
 
               <ModInstallButton
                 api={api}
-                mod={mod}
                 isError={hasFailed}
+                mod={mod}
                 primaryFile={details.data?.primary_file_version}
               />
             </div>
@@ -195,6 +201,16 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                   </Typography>
 
                   <span aria-hidden className="mx-1 h-5.5 w-px bg-stroke-weak" />
+
+                  {!!statusDisplay && (
+                    <>
+                      <Pill brand={statusDisplay.brand} icon={statusDisplay.icon}>
+                        {statusDisplay.label}
+                      </Pill>
+
+                      <span aria-hidden className="mx-1 h-5.5 w-px bg-stroke-weak" />
+                    </>
+                  )}
 
                   <ModTags
                     category={mod.category?.name}

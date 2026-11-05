@@ -1,15 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 
+import type { ModInstallState } from "../../../hooks/use_mod_install_state/useModInstallState.hook";
 import { ModCard } from "./ModCard";
 
 // No one's logged in, so adult content is blurred, as it is by default.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
+
+/** What the user has of the mod the card shows. */
+let installState: ModInstallState = { kind: "none" };
+vi.mock("../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
+  useModInstallState: () => installState,
+}));
 
 const mod = (adult: boolean) =>
   ({
@@ -17,6 +24,7 @@ const mod = (adult: boolean) =>
     name: "SkyUI",
     summary: "Elegant, PC-friendly interface",
     author: { name: "schlangster" },
+    game: { domain_name: "skyrimspecialedition" },
     thumbnail_url: "thumb.png",
     blurred_thumbnail_url: "thumb-blurred.png",
     downloads: 9000,
@@ -29,6 +37,27 @@ const renderCard = (adult: boolean) =>
   render(<ModCard isActive={false} mod={mod(adult)} tabIndex={0} onSelect={vi.fn()} />);
 
 describe("ModCard", () => {
+  afterEach(() => {
+    installState = { kind: "none" };
+  });
+
+  it.each([
+    [{ kind: "downloaded", downloadId: "dl" }, "Downloaded"],
+    [{ kind: "installed", mod: { id: "skyui" } }, "Installed"],
+    [{ kind: "installed", mod: { id: "skyui" }, update: "update" }, "Update available"],
+  ] as Array<[ModInstallState, string]>)("says what the user has of the mod", (state, label) => {
+    installState = state;
+    renderCard(false);
+
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+
+  it("says nothing of a mod the user hasn't got", () => {
+    renderCard(false);
+
+    expect(screen.queryByText(/Downloaded|Installed|Update available/)).toBeNull();
+  });
+
   it("shows an adult mod's thumbnail as the server blurred it, blurring it no further", () => {
     const { container } = renderCard(true);
     const image = container.querySelector("img");

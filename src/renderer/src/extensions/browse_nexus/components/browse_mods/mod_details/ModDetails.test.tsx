@@ -24,6 +24,9 @@ vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
 
 // The install button has tests of its own.
 vi.mock("./mod_install_button/ModInstallButton", () => ({ ModInstallButton: () => null }));
+vi.mock("../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
+  useModInstallState: () => ({ kind: "installed", mod: { id: "skyui" }, update: "update" }),
+}));
 
 import type { IGalleryImage } from "./mod_gallery/ModGallery";
 import { ModDetails } from "./ModDetails";
@@ -169,6 +172,12 @@ describe("ModDetails", () => {
     renderComponent({ ...summary, adult: true } as ModSummary);
 
     expect(screen.getByText("Adult")).toBeInTheDocument();
+  });
+
+  it("says what the user has of the mod", () => {
+    renderComponent();
+
+    expect(screen.getByText("Update available")).toBeInTheDocument();
   });
 
   it("keeps the search's counts when the mod's differ", async () => {

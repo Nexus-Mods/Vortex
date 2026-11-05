@@ -136,7 +136,9 @@ export function FileRequirement({
         <div className="flex items-center gap-x-2">
           {file.installed && (
             <>
-              <Pill icon="install_desktop">{t("detail::item::installed")}</Pill>
+              <Pill brand="success" icon="check_circle">
+                {t("detail::item::installed")}
+              </Pill>
 
               {file.enabled ? (
                 <Pill brand="success" icon="check_circle">
