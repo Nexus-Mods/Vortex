@@ -53,6 +53,7 @@
   "expected": [
     {
       "kind": "UNLINK",
+      "reason": "DBA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307821",
@@ -63,6 +64,7 @@
     },
     {
       "kind": "LINK",
+      "reason": "DBA",
       "file": {
         "source": "NEXUS",
         "nexusFileId": "7318624307822",

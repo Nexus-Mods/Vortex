@@ -1,4 +1,5 @@
 import {
+  DiskEntryKind,
   FileSourceKind,
   GameStore,
   HashType,
@@ -8,6 +9,8 @@ import {
   SteamBuildId,
   SteamDepotId,
   SteamManifestId,
+  type DiskEntry,
+  type DiskScan,
   type FileSource,
   type GeneratedFileSource,
   type Lockfile,
@@ -22,6 +25,27 @@ export function makeGeneratedFileSource(
     destinationPath: "/fixture-root/appdata/Skyrim Special Edition/plugins.txt",
     fileHash: "plugins-txt-hash",
     hashType: HashType.Md5,
+    ...overrides,
+  };
+}
+
+/** An unhashed file on disk where SkyUI's plugin deploys. */
+export function makeDiskEntry(overrides: Partial<DiskEntry> = {}): DiskEntry {
+  return {
+    path: "/fixture-root/game/Data/SkyUI_SE.esp",
+    kind: DiskEntryKind.File,
+    size: 1024,
+    modifiedTime: Temporal.Instant.from("2025-10-09T08:53:20Z"),
+    ...overrides,
+  };
+}
+
+/** A scan of Skyrim SE's game folder that found nothing. */
+export function makeDiskScan(overrides: Partial<DiskScan> = {}): DiskScan {
+  return {
+    takenAt: Temporal.Instant.from("2026-10-21T09:00:00Z"),
+    roots: ["/fixture-root/game"],
+    entries: [],
     ...overrides,
   };
 }

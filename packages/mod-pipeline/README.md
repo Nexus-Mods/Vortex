@@ -16,6 +16,9 @@ backend. Two rules keep it that way:
   deploy, in order, each with its origin, staged files and overridden paths.
   Anything that needs Vortex or the disk is the caller's job.
 
+The journal follows the same rule: `journal.ts` owns its format and rules, and the
+caller provides a `JournalStorage` for the disk work.
+
 Paths are absolute and use `/` separators.
 
 The host provides a global `Temporal`; Node 24 has none, so the package's tests
@@ -44,7 +47,11 @@ as decimal strings. `z.encode(DiskScanSchema, scan)` gives that form back, since
 lockfile (absent on a first run) and a `DiskScan` the caller takes beforehand; it
 never touches the disk. `OPERATIONS_BY_STATE` in `src/plan.ts` is the decision table and
 documents each state. LINK and UNLINK name no method: Apply deploys with the
-game's deployment method (hardlink, symlink or move).
+game's deployment method (hardlink, symlink or move). Each operation's `reason` is
+the `DestinationState` code of the destination that needs it.
+
+`planDestinations` gives every destination's state, inputs and operations, including
+those that need none; `plan` flattens and reorders its operations.
 
 The rules the table encodes:
 
@@ -93,6 +100,8 @@ carry no machine's paths or user names:
 - `src/resolve.ts` - the resolver
 - `src/diskScan.ts` - `DiskScan`, the files under the deployment targets
 - `src/plan.ts` - the planner, its `Operation` contract and decision table
+- `src/journal.ts` - Apply's journal and the `JournalStorage` a caller provides
+- `src/testJournalStorage.ts` - a `JournalStorage` on the real disk, for tests
 - `src/resolverFixture.ts`, `src/plannerFixture.ts`, `src/loadFixtures.ts` - the fixture contracts and their loader
 
 ## Scripts

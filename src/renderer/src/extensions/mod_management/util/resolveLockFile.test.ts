@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 
+import { DestinationState } from "@nexusmods/mod-pipeline";
 import { VortexGameId, VortexModId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { expect, vi } from "vitest";
@@ -30,6 +31,7 @@ import { writeInto } from "../../../test-utils/tempDir";
 import { checksum } from "../../../util/checksum";
 import { emitPlannerPlanEvent } from "../../analytics/utils/plannerPlanEvent";
 import { sessionReducer } from "../reducers/session";
+import { lastPlanOf } from "./lastPlans";
 import {
   LockfileContributions,
   type IGeneratedFile,
@@ -325,6 +327,28 @@ test("a plan run logs its mismatches with a deployment as counts, without paths"
     });
     expect(shadowComparisons()).toHaveLength(1);
     expect(shadowComparisons()[0]).not.toMatch(/[\\/]/);
+  } finally {
+    disk.restore();
+  }
+});
+
+test("a plan run is kept as its game's last plan, with the destinations that need nothing", async () => {
+  const { game, disk, deployedPath } = await makeGameWithStagedMod(true);
+  try {
+    registerResolveLockFile(game.api, hashFile);
+    await deploy(game);
+    await game.emitAndAwait("did-sort-plugins", game.gameId);
+    // the second run plans against the first run's lockfile, with nothing changed since
+    await deploy(game);
+    await game.emitAndAwait("did-sort-plugins", game.gameId);
+
+    expect(lastPlanOf(VortexGameId(game.gameId))?.destinations).toMatchObject([
+      {
+        destinationPath: toPortablePath(deployedPath),
+        state: DestinationState.DeployedUnhashed,
+        operations: [],
+      },
+    ]);
   } finally {
     disk.restore();
   }

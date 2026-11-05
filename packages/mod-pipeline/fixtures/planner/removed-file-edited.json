@@ -43,5 +43,7 @@
       }
     ]
   },
-  "expected": [{ "kind": "BACKUP", "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp" }]
+  "expected": [
+    { "kind": "BACKUP", "reason": "BAx", "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp" }
+  ]
 }

@@ -1,11 +1,13 @@
 import {
   DiskEntryKind,
   FileSourceKind,
+  inApplyOrder,
   OperationKind,
-  plan,
+  planDestinations,
   resolve,
   type DiskScan,
   type Lockfile,
+  type PlannedDestination,
 } from "@nexusmods/mod-pipeline";
 import type { ManifestDiff, PlannerOperationCounts } from "@vortex/nexus-api-v3";
 import { getErrorMessageOrDefault, parseError, VortexGameId } from "@vortex/shared";
@@ -20,11 +22,13 @@ import { getGame } from "../../gamemode_management/util/getGame";
 import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
 import { scanDeploymentTargets } from "./diskScan";
 import { addGeneratedFiles } from "./generatedFiles";
+import { keepLastPlan } from "./lastPlans";
 import {
   LockfileContributions,
   type LockfileContribution,
   type LockfileContributionCondition,
 } from "./lockfileContributions";
+import { countByOperation } from "./planTree";
 import { gatherDeployedInput, gatherDeployedOrigins, gatherResolverInput } from "./resolverInput";
 import { compareWithDeployment } from "./shadowComparison";
 
@@ -84,13 +88,6 @@ export async function resolveLockfile(
   return withGeneratedFiles(state, gameMode, contributions, resolve(input));
 }
 
-// the key each kind of operation is counted under
-const COUNT_KEY_BY_KIND = {
-  [OperationKind.Backup]: "backup",
-  [OperationKind.Link]: "link",
-  [OperationKind.Unlink]: "unlink",
-} as const satisfies Record<OperationKind, keyof PlannerOperationCounts>;
-
 const elapsedMsSince = (startedAt: Temporal.Instant) =>
   Temporal.Now.instant().since(startedAt).total("milliseconds");
 
@@ -100,18 +97,20 @@ function planAndLogOperations(
   previousLockfile: Lockfile,
   diskScan: DiskScan,
   scanMs: number,
-): { planMs: number; counts: PlannerOperationCounts } {
+): { planMs: number; counts: PlannerOperationCounts; destinations: PlannedDestination[] } {
   // expensive: a line per disk entry, hundreds of thousands on a large setup
   // diskScan.entries.forEach((d) => log("debug", "disk scan", d.path));
 
   // Now that we have both previous lockfile, current lockfile and the disk state do the actual planning
   const planStartedAt = Temporal.Now.instant();
-  const operations = plan(currentLockfile, previousLockfile, diskScan);
+  const destinations = planDestinations(currentLockfile, previousLockfile, diskScan);
   const planMs = elapsedMsSince(planStartedAt);
-  const counts: PlannerOperationCounts = { backup: 0, link: 0, unlink: 0 };
-  for (const operation of operations) {
-    counts[COUNT_KEY_BY_KIND[operation.kind]] += 1;
-  }
+  const countsByKind = countByOperation(destinations);
+  const counts: PlannerOperationCounts = {
+    backup: countsByKind[OperationKind.Backup],
+    link: countsByKind[OperationKind.Link],
+    unlink: countsByKind[OperationKind.Unlink],
+  };
 
   log("info", "planner operations", {
     gameMode,
@@ -128,14 +127,14 @@ function planAndLogOperations(
   // If we are doing the planing with the previous lockfile from one session the ops should reflect what needs
   // to be passes to the apply step to create a correct disk state of the game. If the prevoious lockfile is
   // created from the manifest then there should be no ops to do, and that is expected.
-  operations.forEach((o) =>
+  inApplyOrder(destinations.flatMap((destination) => destination.operations)).forEach((o) =>
     log("debug", "planner operations ", {
       operation: o.kind,
       path: o.kind == OperationKind.Backup ? o.destinationPath : o.file.destinationPath,
     }),
   );
 
-  return { planMs, counts };
+  return { planMs, counts, destinations };
 }
 
 /** Compares the lockfile with the deployment's manifests and logs the result. */
@@ -249,13 +248,14 @@ export function registerResolveLockFile(
         hashFile,
       );
       const resolveMs = elapsedMsSince(resolveStartedAt);
-      const { planMs, counts } = planAndLogOperations(
+      const { planMs, counts, destinations } = planAndLogOperations(
         gameMode,
         currentLockfile,
         previousLockfile,
         diskScan,
         scanMs,
       );
+      keepLastPlan(gameMode, { plannedAt: Temporal.Now.instant(), destinations });
       previousLockfile = currentLockfile;
       const manifestDiff = await compareWithManifests(api, gameMode, currentLockfile);
       void emitPlannerPlanEvent(api, gameMode, () => ({
