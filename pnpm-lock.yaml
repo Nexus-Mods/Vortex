@@ -2441,7 +2441,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.2(supports-color@10.2.2)
+        version: 45.2.2
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -3112,7 +3112,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.2(supports-color@10.2.2)
+        version: 45.2.2
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3616,7 +3616,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.2(supports-color@10.2.2)
+        version: 45.2.2
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3838,7 +3838,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-        version: 45.2.2(supports-color@10.2.2)
+        version: 45.2.2
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -4007,7 +4007,7 @@ importers:
         version: 3.6.0
       electron:
         specifier: 'catalog:'
-        version: 45.2.2(supports-color@10.2.2)
+        version: 45.2.2
       i18next:
         specifier: 'catalog:'
         version: 21.10.0
@@ -4542,7 +4542,7 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 45.2.2(supports-color@10.2.2)
+        version: 45.2.2
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -4569,7 +4569,7 @@ importers:
         version: link:../shared
       electron:
         specifier: 'catalog:'
-        version: 45.2.2(supports-color@10.2.2)
+        version: 45.2.2
 
   src/renderer:
     dependencies:
@@ -4876,7 +4876,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 45.2.2(supports-color@10.2.2)
+        version: 45.2.2
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -14197,14 +14197,14 @@ snapshots:
       glob: 7.2.3
       minimatch: 3.1.5
 
-  '@electron/get@5.0.0(supports-color@10.2.2)':
+  '@electron/get@5.0.0':
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       env-paths: 3.0.0
       graceful-fs: 4.2.11
       progress: 2.0.3
       semver: 7.8.5
-      sumchecker: 3.0.1(supports-color@10.2.2)
+      sumchecker: 3.0.1
     optionalDependencies:
       undici: 7.29.0
     transitivePeerDependencies:
@@ -14242,7 +14242,7 @@ snapshots:
 
   '@electron/remote@2.1.3(electron@45.2.2)':
     dependencies:
-      electron: 45.2.2(supports-color@10.2.2)
+      electron: 45.2.2
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -17689,7 +17689,7 @@ snapshots:
 
   electron-extension-installer@2.0.1(electron@45.2.2):
     dependencies:
-      electron: 45.2.2(supports-color@10.2.2)
+      electron: 45.2.2
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -17729,10 +17729,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@45.2.2(supports-color@10.2.2):
+  electron@45.2.2:
     dependencies:
       '@electron-internal/extract-zip': 1.0.4
-      '@electron/get': 5.0.0(supports-color@10.2.2)
+      '@electron/get': 5.0.0
       '@types/node': 24.12.2
     transitivePeerDependencies:
       - supports-color
@@ -20862,7 +20862,7 @@ snapshots:
     dependencies:
       inline-style-parser: 0.1.1
 
-  sumchecker@3.0.1(supports-color@10.2.2):
+  sumchecker@3.0.1:
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
