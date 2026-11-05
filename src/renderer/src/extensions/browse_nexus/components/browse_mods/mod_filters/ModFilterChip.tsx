@@ -53,7 +53,7 @@ export const ModFilterChip = ({ filter, onRemove, ...props }: IModFilterChipProp
     <Tooltip content={locked}>
       <span
         aria-label={filter.label(t)}
-        className="inline-flex rounded-sm focus-visible:outline-2 focus-visible:outline-focus-subdued"
+        className="inline-flex rounded-sm focus-ring"
         role="group"
         tabIndex={0}
       >

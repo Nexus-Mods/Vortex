@@ -98,7 +98,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     return (
       <div
         aria-label={t("Mod details")}
-        className="flex min-h-0 min-w-0 flex-1 flex-col has-[>:focus-visible]:outline-2 has-[>:focus-visible]:-outline-offset-2 has-[>:focus-visible]:outline-focus-subdued"
+        className="flex min-h-0 min-w-0 flex-1 flex-col focus-ring-inset"
         role="region"
         onKeyDown={leaveOnLeft}
       >
