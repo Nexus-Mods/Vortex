@@ -26,12 +26,16 @@ const categoryId = (category: string | number | undefined) =>
 const timeOf = (value: string | number | Date | undefined) =>
   value === undefined ? undefined : new Date(value).getTime() || undefined;
 
-/** A toggleable column showing a line of text, sorted, grouped and searched by it. */
+/**
+ * A toggleable column showing a line of text, sorted, grouped and searched by it; `noValue`
+ * names the group of rows with none.
+ */
 const textColumn = (
   id: string,
   header: string,
   width: TableColumnWidth,
   text: (row: IModRow) => string,
+  noValue: string,
 ): IModsTableColumn => ({
   id,
   header,
@@ -39,6 +43,7 @@ const textColumn = (
   isToggleable: true,
   sort: (a, b) => text(a).localeCompare(text(b)),
   groupBy: text,
+  noValueLabel: noValue,
   searchText: text,
   cell: (row) => <span className="truncate">{text(row)}</span>,
 });
@@ -111,6 +116,7 @@ export const useModsTableDataColumns = (memberships: {
           t("modsTable::columns::author"),
           "160px",
           ({ mod }) => mod.attributes?.author ?? "",
+          t("modsTable::groups::noAuthor"),
         ),
         position: 50,
       },
@@ -120,6 +126,7 @@ export const useModsTableDataColumns = (memberships: {
           t("modsTable::columns::archiveName"),
           "200px",
           ({ mod }) => downloads[mod.archiveId]?.localPath ?? "",
+          t("modsTable::groups::noArchiveName"),
         ),
         position: 60,
       },
@@ -129,15 +136,22 @@ export const useModsTableDataColumns = (memberships: {
       },
       // The other extensions' columns have no position, so they take 100 and come in the
       // order the extensions load, after ModList's own.
-      textColumn("category", t("modsTable::columns::category"), "160px", ({ mod }) => {
-        const id = categoryId(mod.attributes?.category);
-        return (id !== undefined ? categories?.[id]?.name : undefined) ?? "";
-      }),
+      textColumn(
+        "category",
+        t("modsTable::columns::category"),
+        "160px",
+        ({ mod }) => {
+          const id = categoryId(mod.attributes?.category);
+          return (id !== undefined ? categories?.[id]?.name : undefined) ?? "";
+        },
+        t("modsTable::groups::noCategory"),
+      ),
       textColumn(
         "modType",
         t("modsTable::columns::modType"),
         "120px",
         ({ mod }) => getModType(mod.type)?.options.name || mod.type,
+        t("modsTable::groups::noModType"),
       ),
       textColumn(
         "modSource",
@@ -145,17 +159,23 @@ export const useModsTableDataColumns = (memberships: {
         "120px",
         ({ mod }) =>
           getModSources().find((source) => source.id === mod.attributes?.source)?.name ?? "",
+        t("modsTable::groups::noSource"),
       ),
       // Endorsed (`endorsed`, nexus_integration): the endorse button, which needs the
       // user's Nexus account and the mod's collection.
       // Tracking (`tracked`, nexus_integration): the mods a user tracks are fetched from
       // Nexus and kept outside the store.
       {
-        ...textColumn("collection", t("modsTable::columns::collection"), "180px", ({ mod }) =>
-          (memberships[mod.id] ?? [])
-            .map((collection) => displayName(collection))
-            .sort((a, b) => a.localeCompare(b))
-            .join(", "),
+        ...textColumn(
+          "collection",
+          t("modsTable::columns::collection"),
+          "180px",
+          ({ mod }) =>
+            (memberships[mod.id] ?? [])
+              .map((collection) => displayName(collection))
+              .sort((a, b) => a.localeCompare(b))
+              .join(", "),
+          t("modsTable::groups::noCollection"),
         ),
       },
       // Content (`content`, mod-content): icons for what a mod holds, scanned from its

@@ -140,12 +140,11 @@ describe("ModVersion", () => {
     });
   });
 
-  it("calls a variant with an empty name the default, in its own namespace for any caller's t", () => {
+  it("calls a variant with an empty name the default", () => {
     const current = mod("a", "1.28.4", "");
-    const nsT = vi.fn((key: string, options?: { ns?: string }) => `${options?.ns}:${key}`);
 
-    expect(modVersionText(current, [current, mod("b", "1.28.3")], nsT as never)).toBe(
-      "1.28.4 (mod_management:modsTable::version::defaultVariant)",
+    expect(modVersionText(current, [current, mod("b", "1.28.3")], t)).toBe(
+      "1.28.4 (modsTable::version::defaultVariant)",
     );
   });
 

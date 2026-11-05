@@ -126,6 +126,21 @@ describe("groupMods by a column", () => {
     ]);
   });
 
+  it("names the group without a value as the column says, whole", () => {
+    const groups = groupMods(
+      CATEGORISED,
+      "category",
+      t,
+      {},
+      {
+        ...category,
+        noValueLabel: "Keine Kategorie",
+      },
+    );
+
+    expect(groups[0]).toMatchObject({ id: "no-category", label: "Keine Kategorie" });
+  });
+
   it("puts the values a column orders first, in its order, then the rest by name", () => {
     const groups = groupMods(
       CATEGORISED,

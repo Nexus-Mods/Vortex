@@ -36,6 +36,8 @@ export interface IModsTableGroupingColumn {
   groupOrder?: readonly string[];
   /** The name a value's group shows, for values that are ids; the value itself, without one. */
   groupValueLabel?: (value: string) => string;
+  /** The name of the group for rows without a value, whole, as languages don't build it alike. */
+  noValueLabel?: string;
 }
 
 /** How a view starts out, before the user changes it. */
@@ -270,7 +272,7 @@ const groupByColumn = (
 
   const noValue = ungroupedFirst(
     `no-${column.id}`,
-    t("modsTable::groups::noValue", { column: column.header.toLocaleLowerCase() }),
+    column.noValueLabel ?? t("modsTable::groups::noValue"),
     none,
   );
 

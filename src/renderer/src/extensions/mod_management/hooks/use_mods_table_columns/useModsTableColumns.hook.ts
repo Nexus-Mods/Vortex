@@ -19,6 +19,8 @@ export interface IModsTableColumn extends ITableColumn<IModRow, IModGroup> {
   groupOrder?: readonly string[];
   /** The name a value's group shows, for values that are ids; the value itself, without one. */
   groupValueLabel?: (value: string) => string;
+  /** The name of the group for rows without a value, whole, as languages don't build it alike. */
+  noValueLabel?: string;
   /** Its name in the Group by options, where that isn't its header. */
   groupLabel?: string;
   /** The text its cell shows, which a search matches; without one, a search passes it by. */

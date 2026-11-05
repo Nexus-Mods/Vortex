@@ -22,6 +22,16 @@ vi.mock("../use_uninstall_mods/useUninstallMods.hook", () => ({
   useUninstallMods: () => uninstall,
 }));
 
+// The key with its namespace, where a call names one, so a test can see which it read from.
+vi.mock("react-i18next", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useTranslation: () => {
+    const t = (key: string, options?: { ns?: string }) =>
+      options?.ns === undefined ? key : `${options.ns}:${key}`;
+    return Object.assign([t, undefined, true], { t, i18n: undefined, ready: true });
+  },
+}));
+
 // What extensions registered, by group.
 vi.mock("@/ExtensionProvider", async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -136,6 +146,18 @@ describe("useModRowActions", () => {
       "manage: Remove",
       "other: Sooner",
       "other: Later",
+    ]);
+  });
+
+  it("names an action the design doesn't list from its extension's namespace, or common", () => {
+    const { result } = renderRowActions(
+      [],
+      [{ title: "Own Words", options: { namespace: "my-ext" } }, { title: "Shared Words" }],
+    );
+
+    expect(result.current.actionsFor("a").map(({ label }) => label)).toEqual([
+      "my-ext:Own Words",
+      "common:Shared Words",
     ]);
   });
 

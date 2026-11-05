@@ -161,7 +161,7 @@ export const ModRowActions = memo(
                 customContent: (
                   <TitledTooltip
                     body={installDescription}
-                    title={t("modsTable::rowActions::install")}
+                    title={t("modsTable::actions::install")}
                   />
                 ),
               }

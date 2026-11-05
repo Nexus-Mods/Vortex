@@ -876,7 +876,7 @@ describe("ModsTableSwitch", () => {
         await groupBy("modsTable::columns::category");
 
         const rows = bodyRows(screen.getByRole("treegrid"));
-        expect(rows.map(cellText)).toEqual(["modsTable::groups::noValue2", "Alpha", "Beta"]);
+        expect(rows.map(cellText)).toEqual(["modsTable::groups::noCategory2", "Alpha", "Beta"]);
         expect(pressedViews()).toEqual(["true", "false", "false"]);
       });
 

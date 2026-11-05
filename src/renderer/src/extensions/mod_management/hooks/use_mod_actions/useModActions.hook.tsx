@@ -347,8 +347,11 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
         list.push({
           // The registered title, not its translation, so a pin survives a language change.
           id: definition.title,
-          // A title the design doesn't name, as the extension registered it, from common.
-          label: menuItem ? t(menuItem.label) : t(definition.title, { ns: "common" }),
+          // A title the design doesn't name, as the extension registered it: from its own
+          // namespace, as the legacy table's IconBar reads it, or common without one.
+          label: menuItem
+            ? t(menuItem.label)
+            : t(definition.title, { ns: definition.options?.namespace ?? "common" }),
           icon: menuItem?.icon ?? getIcon(definition.icon, "extension"),
           section: menuItem?.section ?? OTHER_SECTION,
           pinned: source.defaultPins.has(definition.title),

@@ -81,7 +81,11 @@
       "upToDate": "Up-to-date",
       "noCollection": "No collection",
       "noAuthor": "No author",
-      "noValue": "No {{column}}"
+      "noArchiveName": "No archive name",
+      "noCategory": "No category",
+      "noModType": "No mod type",
+      "noSource": "No source",
+      "noValue": "No value"
     },
     "views": {
       "all": "All mods",
@@ -143,7 +147,6 @@
       "noneForRevision": "No changelog for this revision"
     },
     "rowActions": {
-      "install": "Install",
       "installDescription": "Installs the mod into your game, where it can be enabled or disabled.",
       "installing": "Installing…",
       "uninstalling": "Uninstalling…",

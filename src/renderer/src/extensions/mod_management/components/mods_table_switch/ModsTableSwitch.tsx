@@ -61,6 +61,7 @@ import {
   MOD_VERSION_GROUPS,
   ModVersion,
   modVersionGroup,
+  modVersionGroupName,
   modVersionText,
 } from "../mod_version/ModVersion";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
@@ -96,6 +97,20 @@ const STATUS_GROUPS = [
   "enabled",
   "disabled",
 ] as const;
+
+type StatusGroup = (typeof STATUS_GROUPS)[number];
+
+/** Each group's name, by its key; one per group, so a group added without one won't build. */
+const STATUS_GROUP_NAMES: Record<StatusGroup, string> = {
+  "never-installed": "modsTable::groups::neverInstalled",
+  uninstalled: "modsTable::groups::uninstalled",
+  installing: "modsTable::groups::installing",
+  enabled: "modsTable::groups::enabled",
+  disabled: "modsTable::groups::disabled",
+};
+
+const isStatusGroup = (value: string): value is StatusGroup =>
+  (STATUS_GROUPS as readonly string[]).includes(value);
 
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
@@ -174,19 +189,17 @@ export const ModsTableSwitch = ({
   const multiSelected = selectedIds.length > 1;
   const shownPins = multiSelected ? 0 : pinnedCount;
 
-  const columns = useMemo<IModsTableColumn[]>(() => {
-    const groupNames: { [value: string]: string } = {
-      "never-installed": t("modsTable::groups::neverInstalled"),
-      uninstalled: t("modsTable::groups::uninstalled"),
-      installing: t("modsTable::groups::installing"),
-      enabled: t("modsTable::groups::enabled"),
-      disabled: t("modsTable::groups::disabled"),
-      "update-available": t("modsTable::groups::updateAvailable"),
-      "up-to-date": t("modsTable::groups::upToDate"),
-    };
-    const groupValueLabel = (value: string) => groupNames[value] ?? value;
+  // Apart from the columns, which a toggle rebuilds, as only the language changes these.
+  const groupNames = useMemo(
+    () => ({
+      status: (value: string) => (isStatusGroup(value) ? t(STATUS_GROUP_NAMES[value]) : value),
+      version: (value: string) => modVersionGroupName(value, t),
+    }),
+    [t],
+  );
 
-    return [
+  const columns = useMemo<IModsTableColumn[]>(
+    () => [
       {
         id: "name",
         header: t("modsTable::columns::name"),
@@ -239,7 +252,7 @@ export const ModsTableSwitch = ({
           return isEnabled(mod) ? "enabled" : "disabled";
         },
         groupOrder: STATUS_GROUPS,
-        groupValueLabel,
+        groupValueLabel: groupNames.status,
         cell: ({ mod, name }) => (
           <ModRowActions
             actions={actionsFor(mod.id)}
@@ -285,7 +298,7 @@ export const ModsTableSwitch = ({
         searchText: ({ mod }) => modVersionText(mod, alternatives[mod.id], t),
         groupBy: ({ mod }) => modVersionGroup(mod),
         groupOrder: MOD_VERSION_GROUPS,
-        groupValueLabel,
+        groupValueLabel: groupNames.version,
         cell: ({ mod }) => (
           <ModVersion
             alternatives={alternatives[mod.id]}
@@ -299,22 +312,24 @@ export const ModsTableSwitch = ({
           collection === undefined ? null : <CollectionRevision collection={collection} />,
       },
       ...dataColumns,
-    ];
-  }, [
-    actionsFor,
-    alternatives,
-    changing,
-    dataColumns,
-    install,
-    isEnabled,
-    multiSelected,
-    onRemoveVersion,
-    onSelectVersion,
-    setEnabled,
-    setGroupEnabled,
-    shownPins,
-    t,
-  ]);
+    ],
+    [
+      actionsFor,
+      alternatives,
+      changing,
+      dataColumns,
+      groupNames,
+      install,
+      isEnabled,
+      multiSelected,
+      onRemoveVersion,
+      onSelectVersion,
+      setEnabled,
+      setGroupEnabled,
+      shownPins,
+      t,
+    ],
+  );
 
   const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
 

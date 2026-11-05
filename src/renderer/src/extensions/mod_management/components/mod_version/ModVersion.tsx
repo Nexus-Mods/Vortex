@@ -28,13 +28,10 @@ interface IModVersionProps {
   onRemove?: (alternativeId: string) => void;
 }
 
-/**
- * A version and its variant, as the legacy table named each option; an empty variant is none.
- * Names its namespace, as callers pass their own `t`.
- */
+/** A version and its variant, as the legacy table named each option; an empty variant is none. */
 const versionLabel = (mod: IMod, t: TFunction) =>
   `${mod.attributes?.version ?? ""} (${
-    mod.attributes?.variant || t("modsTable::version::defaultVariant", { ns: "mod_management" })
+    mod.attributes?.variant || t("modsTable::version::defaultVariant")
   })`;
 
 /** What the cell shows, as text: the version, with its variant while there's a choice. */
@@ -46,12 +43,27 @@ export const modVersionText = (mod: IMod, alternatives: IMod[] | undefined, t: T
 /** The groups the Version column puts rows in, updates first; ids, not names. */
 export const MOD_VERSION_GROUPS = ["update-available", "up-to-date"] as const;
 
+type ModVersionGroup = (typeof MOD_VERSION_GROUPS)[number];
+
+/** Each group's name, by its key; one per group, so a group added without one won't build. */
+const MOD_VERSION_GROUP_NAMES: Record<ModVersionGroup, string> = {
+  "update-available": "modsTable::groups::updateAvailable",
+  "up-to-date": "modsTable::groups::upToDate",
+};
+
+const isModVersionGroup = (value: string): value is ModVersionGroup =>
+  (MOD_VERSION_GROUPS as readonly string[]).includes(value);
+
 /**
  * The group a row falls in by version, as the classic table grouped them: by whether its
  * cell offers an update, a collection's by its revision.
  */
-export const modVersionGroup = (mod: IMod): (typeof MOD_VERSION_GROUPS)[number] =>
+export const modVersionGroup = (mod: IMod): ModVersionGroup =>
   modHasUpdate(mod) ? "update-available" : "up-to-date";
+
+/** The name a Version group shows; a value that isn't one of them, as it is. */
+export const modVersionGroupName = (group: string, t: TFunction): string =>
+  isModVersionGroup(group) ? t(MOD_VERSION_GROUP_NAMES[group]) : group;
 
 /**
  * A mod's version and what it says about updating, or a collection's revision with its
