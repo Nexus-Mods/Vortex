@@ -108,7 +108,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
       );
     } else if (type === "path") {
       return (
-        <a data-path={value} data-testid="game-info-path" onClick={this.openPath}>
+        <a data-testid="game-info-path" onClick={() => window.api.shell.openFile(value)}>
           {value}
         </a>
       );
@@ -122,11 +122,6 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
   private openUrl = (evt: React.MouseEvent<any>) => {
     evt.preventDefault();
     window.api.shell.openUrl(evt.currentTarget.href);
-  };
-
-  private openPath = (evt: React.MouseEvent<HTMLAnchorElement>) => {
-    evt.preventDefault();
-    window.api.shell.openFile(evt.currentTarget.getAttribute("data-path"));
   };
 }
 

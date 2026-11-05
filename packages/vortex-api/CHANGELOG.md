@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
+- Game info entries from `registerGameInfoProvider` accept `type: "path"`, shown as a link that opens the file or folder. The built-in `game-path` entry uses it
 
 ### Removed
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - React peer dependency upgraded to 18.3.1; `@types/react` and `@types/react-dom` peer dependencies are now 18. Extension source may need type-level fixes on next rebuild (explicit `children` props, removed type aliases) - see the [React 18 section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-18)
+- A game info entry with `type: "url"` is always opened as a URL. The game info popover used to open a filesystem path in a `"url"` entry as a path; give it `type: "path"` instead
 - `IExtensionContext` registration surfaces and `IMainPage` now use `React.FC` instead of the removed `React.StatelessComponent` (source-compatible)
 
 ## [v2.0.0]
