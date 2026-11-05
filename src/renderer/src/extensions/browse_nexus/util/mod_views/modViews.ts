@@ -3,14 +3,17 @@ import type { ModsSearchRequest } from "@/extensions/nexus_integration/queries/m
 import type { IBrowseModsView } from "../../reducers/mods_views/modsViews";
 
 /** Browse's view presets, each with a sort and filters of its own. */
-export type ModPreset = "trending" | "popular" | "new";
+export const ModPreset = {
+  trending: "trending",
+  popular: "popular",
+  new: "new",
+} as const;
 
-/** The presets, in the picker's order. */
-export const PRESETS: readonly ModPreset[] = ["trending", "popular", "new"];
+export type ModPreset = (typeof ModPreset)[keyof typeof ModPreset];
 
 /** Whether a view's id is a preset's, rather than a view of the user's own. */
 export const isPreset = (view: string | undefined): view is ModPreset =>
-  PRESETS.some((preset) => preset === view);
+  Object.values(ModPreset).some((preset) => preset === view);
 
 /** A view as analytics names it: its preset, or `custom` for the user's own, never their name. */
 export type TrackedView = ModPreset | "custom";
@@ -68,7 +71,7 @@ export const PRESET_FILTERS: Record<ModPreset, IModFilters> = {
 export const NO_FILTERS: IModFilters = { timeRange: "all" };
 
 /** The preset Browse opens on, and goes back to when the open view is gone. */
-export const DEFAULT_PRESET: ModPreset = "trending";
+export const DEFAULT_PRESET: ModPreset = ModPreset.trending;
 
 /** The filters, of a set, that differ from another. */
 const changedFilters = (filters: IModFilters, from: IModFilters) =>

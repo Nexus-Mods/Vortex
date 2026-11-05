@@ -11,7 +11,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import {
   type IModFilters,
   type IModSort,
-  type ModPreset,
+  ModPreset,
   type ModSortField,
   type ModTimeRange,
   PRESET_FILTERS,
@@ -24,7 +24,7 @@ import { useModViews } from "../use_mod_views/useModViews.hook";
  * The preset the tab's total is counted with, as it comes: the one over all time, as trending
  * and popular cover only the last week.
  */
-const COUNTED_PRESET: ModPreset = "new";
+const COUNTED_PRESET: ModPreset = ModPreset.new;
 
 export const MODS_PER_PAGE = 20;
 
