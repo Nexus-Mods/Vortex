@@ -57,13 +57,17 @@ export const modsTableViewsReducer = actionsToReducerSpec(defaultState, actions,
       ...changes,
       columns: { ...changes.columns, [columnId]: visible },
     })),
-  setModsTableViewColumnWidth: (state, { viewId, columnId, width }) =>
+  setModsTableViewColumnWidths: (state, { viewId, widths }) =>
     withChanges(state, viewId, (changes) => {
-      const { [columnId]: _previous, ...widths } = changes.widths ?? {};
-      return {
-        ...changes,
-        widths: width === undefined ? widths : { ...widths, [columnId]: width },
-      };
+      const next = { ...changes.widths };
+      for (const [columnId, width] of Object.entries(widths)) {
+        if (width === undefined) {
+          delete next[columnId];
+        } else {
+          next[columnId] = width;
+        }
+      }
+      return { ...changes, widths: next };
     }),
   resetModsTableView: (state, viewId) => {
     const { [viewId]: reset, ...changes } = state.changes;

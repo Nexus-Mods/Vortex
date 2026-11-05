@@ -10,7 +10,7 @@ import {
   resetModsTableView,
   selectModsTableView,
   setModsTableViewColumn,
-  setModsTableViewColumnWidth,
+  setModsTableViewColumnWidths,
   setModsTableViewGrouping,
 } from "../../actions/modsTableViews";
 import type { IModsTableCustomView, IModsTableViewChanges } from "../../reducers/modsTableViews";
@@ -107,9 +107,9 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
     [analytics, dispatch, isColumnShown, view.id],
   );
 
-  const setColumnWidth = useCallback(
-    (columnId: string, width: number | undefined) =>
-      dispatch(setModsTableViewColumnWidth(view.id, columnId, width)),
+  const setColumnWidths = useCallback(
+    (widths: { [columnId: string]: number | undefined }) =>
+      dispatch(setModsTableViewColumnWidths(view.id, widths)),
     [dispatch, view.id],
   );
 
@@ -158,7 +158,7 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
     select,
     setGrouping,
     setColumnVisible,
-    setColumnWidth,
+    setColumnWidths,
     reset,
     addView,
     renameView,

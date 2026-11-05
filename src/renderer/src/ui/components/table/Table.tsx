@@ -79,7 +79,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   empty,
   defaultSort,
   columnWidths,
-  onColumnResize,
+  onColumnWidthsChange,
   className,
   selectable = false,
   getRowLabel,
@@ -295,37 +295,52 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     return () => observer.disconnect();
   }, [hasToolbar]);
 
-  // A drag's width, drawn as it goes and kept once it's let go of, so settings change once.
-  const [drag, setDrag] = useState<{ columnId: string; width: number }>();
-
-  const widthOf = (columnId: string) =>
-    drag?.columnId === columnId ? drag.width : columnWidths?.[columnId];
-
   const { tableRef } = virtual;
+  const resizes = !!onColumnWidthsChange;
+
+  const template = (widths: { [columnId: string]: number | undefined }) =>
+    [
+      "var(--nxm-table-gutter-start)",
+      ...columnTracks(columns, (columnId) => widths[columnId], resizes),
+      "var(--nxm-table-gutter)",
+    ].join(" ");
+
+  const savedTemplate = template(columnWidths ?? {});
 
   /**
-   * Keeps the columns that share what's left at the width they're drawn at, before another is
-   * resized, so it pushes the columns after it along rather than taking their room.
+   * The columns that share what's left, at the width they're drawn at, to hold them there while
+   * another is resized, so it pushes the columns after it along rather than taking their room.
+   * One whose header can't be measured isn't held.
    */
-  const holdSharedColumns = (resizedId: string) => {
-    const headers = tableRef.current?.querySelectorAll('.nxm-table-header [role="columnheader"]');
+  const sharedWidths = (resizedId: string) => {
+    const headers = [
+      ...(tableRef.current?.querySelectorAll<HTMLElement>(".nxm-table-header [data-column-id]") ??
+        []),
+    ];
 
-    columns.forEach((column, index) => {
-      if (
-        column.id === resizedId ||
-        !isResizable(column) ||
-        !sharesSpace(column) ||
-        columnWidths?.[column.id] !== undefined
-      ) {
-        return;
-      }
+    return Object.fromEntries(
+      columns.flatMap((column) => {
+        if (
+          column.id === resizedId ||
+          !isResizable(column) ||
+          !sharesSpace(column) ||
+          columnWidths?.[column.id] !== undefined
+        ) {
+          return [];
+        }
 
-      const width = keptWidth(column, headers?.[index]?.getBoundingClientRect().width ?? 0);
-      if (width !== undefined) {
-        onColumnResize?.(column.id, width);
-      }
-    });
+        const drawn = headers
+          .find((header) => header.dataset.columnId === column.id)
+          ?.getBoundingClientRect().width;
+        const width = drawn ? keptWidth(column, drawn) : undefined;
+        return width === undefined ? [] : [[column.id, width]];
+      }),
+    );
   };
+
+  // A drag's widths, with the columns it holds; drawn straight onto the grid as it goes, so the
+  // rows don't render for every move, and kept in one change once it's let go of.
+  const dragWidths = useRef<{ [columnId: string]: number }>(undefined);
 
   const renderItem = (index: number) => {
     const item = items[index];
@@ -423,11 +438,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           "--nxm-table-sticky-reveal": revealWidth,
           "--nxm-table-toolbar-height": toolbarHeight ? `${toolbarHeight}px` : undefined,
-          gridTemplateColumns: [
-            "var(--nxm-table-gutter-start)",
-            ...columnTracks(columns, widthOf),
-            "var(--nxm-table-gutter)",
-          ].join(" "),
+          gridTemplateColumns: savedTemplate,
         } as CSSProperties
       }
       onBlur={virtual.onBlur}
@@ -446,30 +457,44 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     >
       <TableHeader
         checkbox={selectable ? selection.header : undefined}
-        columnWidths={columnWidths}
         columns={columns}
         sort={sort}
         toolbar={toolbar}
         toolbarRef={toolbarRef}
         onColumnDrag={(columnId, width) => {
-          if (width !== undefined && drag === undefined) {
-            holdSharedColumns(columnId);
+          const element = tableRef.current;
+          if (width === undefined) {
+            dragWidths.current = undefined;
+            if (element) {
+              element.style.gridTemplateColumns = savedTemplate;
+            }
+            return;
           }
-          setDrag(width === undefined ? undefined : { columnId, width });
+
+          dragWidths.current = {
+            ...(dragWidths.current ?? sharedWidths(columnId)),
+            [columnId]: width,
+          };
+          if (element) {
+            element.style.gridTemplateColumns = template({
+              ...columnWidths,
+              ...dragWidths.current,
+            });
+          }
         }}
         onColumnResize={
-          onColumnResize &&
+          onColumnWidthsChange &&
           ((columnId, width) => {
             const column = columns.find(({ id }) => id === columnId);
             if (!column) {
               return;
             }
             if (width === undefined) {
-              onColumnResize(columnId, undefined);
+              onColumnWidthsChange({ [columnId]: undefined });
               return;
             }
-            holdSharedColumns(columnId);
-            onColumnResize(columnId, keptWidth(column, width));
+            const { [columnId]: _dragged, ...held } = dragWidths.current ?? sharedWidths(columnId);
+            onColumnWidthsChange({ ...held, [columnId]: keptWidth(column, width) });
           })
         }
         onSort={toggleSort}

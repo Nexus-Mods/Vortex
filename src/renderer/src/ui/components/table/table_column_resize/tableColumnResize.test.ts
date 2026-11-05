@@ -4,6 +4,7 @@ import {
   columnTrack,
   columnTracks,
   DEFAULT_COLUMN_WIDTH,
+  isResizable,
   keptWidth,
   minColumnWidth,
 } from "./tableColumnResize";
@@ -19,6 +20,20 @@ describe("minColumnWidth", () => {
 
   it("is the default's least for a column without a width", () => {
     expect(minColumnWidth({})).toBe(280);
+  });
+
+  it("is unknown for a width whose least isn't in px", () => {
+    expect(minColumnWidth({ width: "minmax(min-content, 200px)" })).toBeUndefined();
+    expect(minColumnWidth({ width: "minmax(10rem, 1fr)" })).toBeUndefined();
+    expect(minColumnWidth({ width: "1fr" })).toBeUndefined();
+  });
+});
+
+describe("isResizable", () => {
+  it("is any column whose least is known, unless it says not", () => {
+    expect(isResizable({ width: "160px" })).toBe(true);
+    expect(isResizable({ width: "160px", resizable: false })).toBe(false);
+    expect(isResizable({ width: "minmax(10rem, 1fr)" })).toBe(false);
   });
 });
 
@@ -48,7 +63,7 @@ describe("columnTracks", () => {
   const none = () => undefined;
 
   it("leaves what's left to a column that shares it", () => {
-    expect(columnTracks([NAME, SIZE, ACTIONS], none)).toEqual([
+    expect(columnTracks([NAME, SIZE, ACTIONS], none, true)).toEqual([
       DEFAULT_COLUMN_WIDTH,
       "80px",
       "120px",
@@ -57,7 +72,7 @@ describe("columnTracks", () => {
 
   it("gives what's left to a gap before the sticky column once none shares it", () => {
     const widths: { [id: string]: number } = { name: 400 };
-    expect(columnTracks([NAME, SIZE, ACTIONS], (id) => widths[id])).toEqual([
+    expect(columnTracks([NAME, SIZE, ACTIONS], (id) => widths[id], true)).toEqual([
       "400px",
       "80px",
       "minmax(0, 1fr)",
@@ -66,11 +81,15 @@ describe("columnTracks", () => {
   });
 
   it("puts the gap last without a sticky column", () => {
-    expect(columnTracks([SIZE], none)).toEqual(["80px", "minmax(0, 1fr)"]);
+    expect(columnTracks([SIZE], none, true)).toEqual(["80px", "minmax(0, 1fr)"]);
+  });
+
+  it("leaves a table whose columns don't resize as its columns have it", () => {
+    expect(columnTracks([SIZE, ACTIONS], () => 300, false)).toEqual(["80px", "120px"]);
   });
 
   it("keeps a column that can't be resized at its own width", () => {
-    expect(columnTracks([{ ...SIZE, resizable: false }], () => 300)).toEqual([
+    expect(columnTracks([{ ...SIZE, resizable: false }], () => 300, true)).toEqual([
       "80px",
       "minmax(0, 1fr)",
     ]);

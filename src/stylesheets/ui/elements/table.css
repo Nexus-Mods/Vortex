@@ -421,7 +421,7 @@
             transition-duration: var(--default-transition-duration);
         }
 
-        &:has(> .nxm-table-resize-handle:is(:hover, :focus-visible, :active))::before {
+        &:has(> .nxm-table-resize-handle:is(:hover, :focus-visible, [data-dragging]))::before {
             opacity: 1;
         }
     }
@@ -459,7 +459,7 @@
 
         &:hover::after,
         &:focus-visible::after,
-        &:active::after {
+        &[data-dragging]::after {
             background-color: var(--color-translucent-strong);
             opacity: 1;
         }

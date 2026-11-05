@@ -48,7 +48,7 @@ describe("useModsTableView", () => {
     it("keeps a column's width to the open view", () => {
       const result = renderView();
 
-      act(() => result.current.setColumnWidth("author", 240));
+      act(() => result.current.setColumnWidths({ author: 240 }));
       expect(result.current.columnWidths).toEqual({ author: 240 });
 
       act(() => result.current.select("status"));
@@ -58,7 +58,7 @@ describe("useModsTableView", () => {
     it("keeps widths through a reset, and doesn't offer one for them alone", () => {
       const result = renderView();
 
-      act(() => result.current.setColumnWidth("author", 240));
+      act(() => result.current.setColumnWidths({ author: 240 }));
       expect(result.current.canReset).toBe(false);
 
       act(() => result.current.setGrouping("author"));
