@@ -8,6 +8,8 @@ export interface IModsTableViewChanges {
   grouping?: string;
   /** Whether each column the user toggled shows, by id. */
   columns?: { [columnId: string]: boolean };
+  /** The width in px of each column the user resized, by id; a reset keeps them. */
+  widths?: { [columnId: string]: number };
 }
 
 /** A view the user made, which starts from the new view defaults. */
@@ -55,9 +57,21 @@ export const modsTableViewsReducer = actionsToReducerSpec(defaultState, actions,
       ...changes,
       columns: { ...changes.columns, [columnId]: visible },
     })),
+  setModsTableViewColumnWidth: (state, { viewId, columnId, width }) =>
+    withChanges(state, viewId, (changes) => {
+      const { [columnId]: _previous, ...widths } = changes.widths ?? {};
+      return {
+        ...changes,
+        widths: width === undefined ? widths : { ...widths, [columnId]: width },
+      };
+    }),
   resetModsTableView: (state, viewId) => {
-    const { [viewId]: _reset, ...changes } = state.changes;
-    return { ...state, changes };
+    const { [viewId]: reset, ...changes } = state.changes;
+    const widths = reset?.widths;
+    if (!widths || !Object.keys(widths).length) {
+      return { ...state, changes };
+    }
+    return { ...state, changes: { ...changes, [viewId]: { widths } } };
   },
   addModsTableView: (state, { viewId, name }) => ({
     ...state,

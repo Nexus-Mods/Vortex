@@ -18,7 +18,13 @@ export const setModsTableViewColumn = createAction(
   (viewId: string, columnId: string, visible: boolean) => ({ viewId, columnId, visible }),
 );
 
-/** Forgets what the user changed about a view, back to its defaults. */
+/** Keeps a column's resized width in a view, in px, or forgets it with `undefined`. */
+export const setModsTableViewColumnWidth = createAction(
+  "SET_MODS_TABLE_VIEW_COLUMN_WIDTH",
+  (viewId: string, columnId: string, width: number | undefined) => ({ viewId, columnId, width }),
+);
+
+/** Forgets what the user changed about a view, back to its defaults, but keeps its widths. */
 export const resetModsTableView = createAction("RESET_MODS_TABLE_VIEW", (viewId: string) => viewId);
 
 /** Adds a view of the user's own, by a new id and its name, and opens it. */

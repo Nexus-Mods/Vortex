@@ -7,6 +7,7 @@ import {
   resetModsTableView,
   selectModsTableView,
   setModsTableViewColumn,
+  setModsTableViewColumnWidth,
   setModsTableViewGrouping,
 } from "../actions/modsTableViews";
 import { type IModsTableViewsState, modsTableViewsReducer } from "./modsTableViews";
@@ -38,6 +39,26 @@ describe("modsTableViewsReducer", () => {
     state = reduce(state, resetModsTableView("all"));
 
     expect(state.changes).toEqual({ status: { grouping: "category" } });
+  });
+
+  it("keeps a column's width to its view, and forgets it once it's unset", () => {
+    let state = reduce(EMPTY, setModsTableViewColumnWidth("all", "author", 240));
+    state = reduce(state, setModsTableViewColumnWidth("all", "version", 200));
+    state = reduce(state, setModsTableViewColumnWidth("status", "author", 300));
+    state = reduce(state, setModsTableViewColumnWidth("all", "version", undefined));
+
+    expect(state.changes).toEqual({
+      all: { widths: { author: 240 } },
+      status: { widths: { author: 300 } },
+    });
+  });
+
+  it("keeps a view's widths on reset, forgetting the rest", () => {
+    let state = reduce(EMPTY, setModsTableViewGrouping("all", "author"));
+    state = reduce(state, setModsTableViewColumnWidth("all", "author", 240));
+    state = reduce(state, resetModsTableView("all"));
+
+    expect(state.changes).toEqual({ all: { widths: { author: 240 } } });
   });
 
   it("adds a view of the user's own, after any others, and opens it", () => {

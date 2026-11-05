@@ -3,8 +3,10 @@ import React, { type ReactNode, type Ref } from "react";
 import { Icon } from "@/ui/components/icon/Icon";
 
 import type { ITableColumn, ITableGroup, ITableSort } from "./Table.types";
+import { isResizable, minColumnWidth } from "./table_column_resize/tableColumnResize";
 import { TableCell } from "./TableCell";
 import { type ITableCheckboxProps, TableCheckbox } from "./TableCheckbox";
+import { TableColumnResizer } from "./TableColumnResizer";
 
 interface ITableHeaderProps<T, G extends ITableGroup<T>> {
   /** The table's columns, each giving a header cell its label. */
@@ -19,6 +21,12 @@ interface ITableHeaderProps<T, G extends ITableGroup<T>> {
   checkbox?: ITableCheckboxProps;
   /** Sorts by a column, from its header's button; again reverses it. */
   onSort: (columnId: string) => void;
+  /** Resized columns' widths in px, by id. */
+  columnWidths?: { [columnId: string]: number };
+  /** Takes a column's width while it's dragged, or `undefined` once it's let go of. */
+  onColumnDrag?: (columnId: string, width: number | undefined) => void;
+  /** Takes a column's resized width, or `undefined` once it's reset; unset, none resize. */
+  onColumnResize?: (columnId: string, width: number | undefined) => void;
 }
 
 /**
@@ -33,6 +41,9 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
   checkbox,
   sort,
   onSort,
+  columnWidths,
+  onColumnDrag,
+  onColumnResize,
 }: ITableHeaderProps<T, G>) => (
   <div className="nxm-table-head" role="rowgroup">
     {/* A sticky column fades what scrolls under it instead. */}
@@ -56,12 +67,14 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
     <div aria-rowindex={toolbar ? 2 : 1} className="nxm-table-header" role="row">
       {columns.map((column, index) => {
         const direction = sort?.columnId === column.id ? sort.direction : undefined;
+        const resizable = isResizable(column) && !!onColumnResize;
 
         return (
           <TableCell
             align={column.align}
             ariaSort={column.sort === undefined ? undefined : (direction ?? "none")}
             key={column.id}
+            resizable={resizable}
             role="columnheader"
             sticky={column.sticky}
           >
@@ -85,6 +98,16 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
                   />
                 )}
               </button>
+            )}
+
+            {resizable && (
+              <TableColumnResizer
+                header={column.header}
+                minWidth={minColumnWidth(column)}
+                width={columnWidths?.[column.id]}
+                onDrag={(width) => onColumnDrag?.(column.id, width)}
+                onResize={(width) => onColumnResize?.(column.id, width)}
+              />
             )}
           </TableCell>
         );

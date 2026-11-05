@@ -499,6 +499,151 @@ describe("Table with selectable rows", () => {
   });
 });
 
+describe("Table with resizable columns", () => {
+  const RESIZABLE: Array<ITableColumn<IRow>> = [{ ...COLUMNS[0], resizable: false }, COLUMNS[1]];
+
+  const tracks = () => (screen.getByRole("grid") as HTMLElement).style.gridTemplateColumns;
+
+  const renderResizable = (
+    onColumnResize?: (columnId: string, width: number | undefined) => void,
+    columnWidths?: { [columnId: string]: number },
+  ) =>
+    render(
+      <Table
+        columnWidths={columnWidths}
+        columns={RESIZABLE}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        onColumnResize={onColumnResize}
+      />,
+    );
+
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      width: 120,
+    } as DOMRect);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("gives a resizable column's header a handle, once the table resizes", () => {
+    const { unmount } = renderResizable();
+    expect(screen.queryByRole("separator")).toBeNull();
+    unmount();
+
+    renderResizable(vi.fn());
+    const [, sizeHeader] = screen.getAllByRole("columnheader");
+    expect(within(sizeHeader).getByRole("separator")).toHaveAttribute("aria-valuemin", "80");
+    expect(screen.getAllByRole("separator")).toHaveLength(1);
+  });
+
+  it("draws a column at the width it was resized to", () => {
+    renderResizable(vi.fn(), { size: 200 });
+
+    expect(tracks()).toContain("200px");
+    expect(screen.getByRole("separator")).toHaveAttribute("aria-valuenow", "200");
+  });
+
+  it("resizes a column a step at a time from the keyboard, to its least with Home, and resets it with Enter", () => {
+    const onColumnResize = vi.fn();
+    renderResizable(onColumnResize);
+    const handle = screen.getByRole("separator");
+
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    expect(onColumnResize).toHaveBeenLastCalledWith("size", 136);
+
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    expect(onColumnResize).toHaveBeenLastCalledWith("size", 104);
+
+    fireEvent.keyDown(handle, { key: "Home" });
+    expect(onColumnResize).toHaveBeenLastCalledWith("size", undefined);
+
+    onColumnResize.mockClear();
+    fireEvent.keyDown(handle, { key: "Enter" });
+    expect(onColumnResize).toHaveBeenCalledExactlyOnceWith("size", undefined);
+
+    onColumnResize.mockClear();
+    fireEvent.keyDown(handle, { key: "ArrowRight", ctrlKey: true });
+    expect(onColumnResize).not.toHaveBeenCalled();
+  });
+
+  it("resets a column on a double-click", () => {
+    const onColumnResize = vi.fn();
+    renderResizable(onColumnResize, { size: 200 });
+
+    fireEvent.doubleClick(screen.getByRole("separator"));
+
+    expect(onColumnResize).toHaveBeenCalledWith("size", undefined);
+  });
+
+  it("draws a drag as it goes and keeps its width once it's let go of", () => {
+    const onColumnResize = vi.fn();
+    renderResizable(onColumnResize);
+    const handle = screen.getByRole("separator");
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 150 });
+
+    expect(tracks()).toContain("170px");
+    expect(onColumnResize).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(handle, { clientX: 150 });
+
+    expect(onColumnResize).toHaveBeenCalledWith("size", 170);
+  });
+
+  it("never drags a column below its width, and keeps nothing when it's dragged back to it", () => {
+    const onColumnResize = vi.fn();
+    renderResizable(onColumnResize);
+    const handle = screen.getByRole("separator");
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 0 });
+
+    expect(tracks()).toContain("80px");
+
+    fireEvent.pointerUp(handle, { clientX: 0 });
+
+    expect(onColumnResize).toHaveBeenCalledWith("size", undefined);
+  });
+
+  it("holds a column that shares what's left at its drawn width once another is resized", () => {
+    const onColumnResize = vi.fn();
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        onColumnResize={onColumnResize}
+      />,
+    );
+    vi.mocked(HTMLElement.prototype.getBoundingClientRect).mockReturnValue({
+      width: 500,
+    } as DOMRect);
+    const [, sizeHandle] = screen.getAllByRole("separator");
+
+    fireEvent.pointerDown(sizeHandle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(sizeHandle, { clientX: 120 });
+
+    expect(onColumnResize).toHaveBeenCalledExactlyOnceWith("name", 500);
+  });
+
+  it("keeps nothing from a click that doesn't drag", () => {
+    const onColumnResize = vi.fn();
+    renderResizable(onColumnResize);
+    const handle = screen.getByRole("separator");
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerUp(handle, { clientX: 100 });
+
+    expect(onColumnResize).not.toHaveBeenCalled();
+  });
+});
+
 describe("Table with a toolbar", () => {
   it("puts it in the head above the header row, which counts it among the rows", () => {
     render(
