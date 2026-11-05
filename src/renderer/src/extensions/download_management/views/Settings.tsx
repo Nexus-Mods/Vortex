@@ -49,7 +49,6 @@ import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { cleanFailedTransfer, testPathTransfer, transferPath } from "../../../util/transferPath";
@@ -196,7 +195,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </FlexLayout.Fixed>
             </FlexLayout>
             <HelpBlock>
-              <a data-url={pathPreview} onClick={this.openUrl}>
+              <a data-url={pathPreview} onClick={this.openPath}>
                 {pathPreview}
               </a>
             </HelpBlock>
@@ -394,19 +393,19 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     );
   };
 
-  private openUrl = (evt) => {
-    const url = evt.currentTarget.getAttribute("data-url");
-    opn(url).catch((err) => undefined);
+  private openPath = (evt) => {
+    const target = evt.currentTarget.getAttribute("data-url");
+    window.api.shell.openFile(target);
   };
 
   private goBuyPremium = () => {
-    opn(
+    window.api.shell.openUrl(
       nexusModsURL(PREMIUM_PATH, {
         section: Section.Users,
         campaign: Campaign.BuyPremium,
         content: Content.SettingsDownloadAd,
       }),
-    ).catch(() => null);
+    );
   };
 
   private setDownloadPath = (newPath: string) => {

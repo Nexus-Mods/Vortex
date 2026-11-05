@@ -1,11 +1,10 @@
-import * as React from "react";
+import React, { useCallback } from "react";
 import { useDispatch } from "react-redux";
 
 import FlexLayout from "../../../controls/FlexLayout";
 import FormInput from "../../../controls/FormInput";
 import { IconButton } from "../../../controls/TooltipControls";
 import type { TFunction } from "../../../util/i18n";
-import opn from "../../../util/opn";
 import { setModAttribute } from "../actions/mods";
 import type { IMod } from "../types/IMod";
 
@@ -30,15 +29,15 @@ function URLInput(props: IURLInputProps) {
 
   const dispatch = useDispatch();
 
-  const updateURL = React.useCallback(
+  const updateURL = useCallback(
     (newUrl: string) => {
       dispatch(setModAttribute(gameId, mod.id, "url", newUrl));
     },
     [gameId, mod],
   );
 
-  const openSite = React.useCallback(() => {
-    opn(mod.attributes?.url).catch(() => null);
+  const openSite = useCallback(() => {
+    window.api.shell.openUrl(mod.attributes?.url);
   }, [mod]);
 
   return (

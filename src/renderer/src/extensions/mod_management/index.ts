@@ -40,7 +40,6 @@ import { waitForCondition } from "@/util/waitForCondition";
 import LazyComponent from "../../controls/LazyComponent";
 import ReduxProp from "../../ReduxProp";
 import type { IDiscoveryResult, IState } from "../../types/IState";
-import { opn } from "../../util/api";
 import { ProcessCanceled, TemporaryError, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
@@ -1879,7 +1878,7 @@ function openDuplicateLocation(api: IExtensionApi, modId: string) {
   const gameMode = activeGameId(state);
   const installPath = installPathForGame(state, gameMode);
   const modPath = path.join(installPath, modId);
-  opn(modPath).catch(() => null);
+  window.api.shell.openFile(modPath);
 }
 function getModInfo(api: IExtensionApi, gameMode: string, modId: string) {
   const state = api.getState();
