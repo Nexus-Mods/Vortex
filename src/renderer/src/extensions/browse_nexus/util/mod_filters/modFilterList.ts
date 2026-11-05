@@ -12,5 +12,7 @@ export const filtersToSearch = (filters: IModFilters, context: IModSearchContext
   MOD_FILTERS.reduce((search, { toSearch }) => ({ ...search, ...toSearch(filters, context) }), {});
 
 /** Every filter's properties on the events about a search. */
-export const filterEventProps = (filters: IModFilters): IFilterEventProps =>
-  MOD_FILTERS.reduce((props, { eventProps }) => ({ ...props, ...eventProps(filters) }), {});
+export const filterEventProps = (filters: IModFilters): IFilterEventProps => ({
+  ...timeRangeFilter.eventProps(filters),
+  ...adultContentFilter.eventProps(filters),
+});

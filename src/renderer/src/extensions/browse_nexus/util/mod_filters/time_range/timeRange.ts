@@ -25,7 +25,7 @@ export const timeRangeSearch = (
 };
 
 /** The time range filter: how far back the mods go, counted from when it was picked. */
-export const timeRangeFilter: IModFilter<"timeRange"> = {
+export const timeRangeFilter: IModFilter<"timeRange", "time_range"> = {
   key: "timeRange",
   label: (t) => t("Dates"),
   icon: "calendar_today",

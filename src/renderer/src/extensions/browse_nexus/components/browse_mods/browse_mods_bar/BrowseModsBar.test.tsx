@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -125,13 +125,15 @@ describe("BrowseModsBar", () => {
     const { unmount } = renderBar(searchWith({ timeRange: "7" }));
     await userEvent.click(screen.getByRole("button", { name: "Filter" }));
 
-    expect(screen.queryByText(/^Reset/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Reset/ })).toBeNull();
 
     unmount();
     renderBar(searchWith({ timeRange: "all" }, ["timeRange"]));
     await userEvent.click(screen.getByRole("button", { name: "Filter" }));
 
-    expect(await screen.findByText("Reset 1 filter to default")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Reset 1 filter to default" }),
+    ).toBeInTheDocument();
   });
 
   it("counts changing the time range, and where it was changed from", async () => {
@@ -161,7 +163,7 @@ describe("BrowseModsBar", () => {
     const search = searchWith({ adult: "only" }, ["adult"]);
     renderBar(search);
 
-    expect(screen.getByText("Adult content only")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Adult content only" })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Remove adult content filter" }));
 
@@ -180,19 +182,19 @@ describe("BrowseModsBar", () => {
     expect(screen.getByRole("button", { name: "No adult content" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Remove adult content filter" })).toBeDisabled();
 
-    await userEvent.hover(screen.getByText("No adult content"));
+    await userEvent.hover(screen.getByRole("group", { name: "Adult content" }));
 
-    expect(
-      await screen.findByText("Adult content is disabled in your preferences"),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Adult content is disabled in your preferences",
+    );
   });
 
   it("tells a logged out user to log in to see adult content", async () => {
     renderBar(searchWith({ adult: "exclude" }, [], false, false));
 
-    await userEvent.hover(screen.getByText("No adult content"));
+    act(() => screen.getByRole("group", { name: "Adult content" }).focus());
 
-    expect(await screen.findByText("Log in to view adult content")).toBeInTheDocument();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Log in to view adult content");
   });
 
   it("counts changing adult content, and where it was changed from", async () => {
@@ -205,7 +207,9 @@ describe("BrowseModsBar", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "Filter" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Adult content" }));
-    await userEvent.click(await screen.findByText("Reset adult content to default"));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Reset adult content to default" }),
+    );
 
     expect(propertiesOf(tracked, "browse_mods_adult_filter_changed")).toEqual([
       { view: "trending", adult: "only", previous_adult: "exclude", source: "applied_filter" },
@@ -219,7 +223,7 @@ describe("BrowseModsBar", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Filter" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Dates" }));
-    await userEvent.click(await screen.findByText("Reset date to default"));
+    await userEvent.click(await screen.findByRole("button", { name: "Reset date to default" }));
 
     expect(search.setFilters).toHaveBeenCalledWith({ timeRange: "7" });
     expect(propertiesOf(tracked, "browse_mods_time_range_changed")).toEqual([
@@ -232,7 +236,7 @@ describe("BrowseModsBar", () => {
     const { tracked } = renderBar(search);
 
     await userEvent.click(screen.getByRole("button", { name: "Filter" }));
-    await userEvent.click(await screen.findByText("Reset 1 filter to default"));
+    await userEvent.click(await screen.findByRole("button", { name: "Reset 1 filter to default" }));
 
     expect(search.resetFilters).toHaveBeenCalled();
     expect(propertiesOf(tracked, "browse_mods_filters_reset")).toEqual([

@@ -26,7 +26,7 @@ export const adultContentLockedReason = (
  * on leaving them out for a user who can't see them, as on the website. The search leaves the
  * default out, so it asks as it did before there was a choice.
  */
-export const adultContentFilter: IModFilter<"adult"> = {
+export const adultContentFilter: IModFilter<"adult", "adult"> = {
   key: "adult",
   label: (t) => t("Adult content"),
   icon: "blur_on",

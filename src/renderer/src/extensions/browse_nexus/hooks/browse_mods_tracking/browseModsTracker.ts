@@ -25,8 +25,11 @@ export type SelectionInput = "pointer" | "keyboard";
 /** Which way the gallery's strip was paged. */
 export type GalleryDirection = "back" | "forward";
 
-/** The filters as the events name them, a property or more each, as each filter says. */
-export type IFilterEventProps = Record<string, string | number>;
+/** The filters as the events name them; each filter gives its own. */
+export type IFilterEventProps = {
+  time_range: ModTimeRange;
+  adult: ModAdultContent;
+};
 
 /** The search a results event is about: its view, sort and filters. */
 export type ISearchEventProps = {

@@ -21,8 +21,8 @@ interface IModFilterChipProps extends IAdultContentAccess {
 
 /**
  * A filter's chip in the bar: the choice on, in brief, opening its choices, with a button to take
- * it off. While the filter's locked, as on the website, it stays to say so, disabled, its tooltip
- * saying why.
+ * it off. While the filter's locked, as on the website, it stays to say so, disabled, in a group
+ * that takes focus in its place, its tooltip saying why on hover or focus.
  */
 export const ModFilterChip = ({ filter, onRemove, ...props }: IModFilterChipProps) => {
   const { t } = useTranslation();
@@ -51,7 +51,14 @@ export const ModFilterChip = ({ filter, onRemove, ...props }: IModFilterChipProp
 
   return (
     <Tooltip content={locked}>
-      <span className="inline-flex">{chip}</span>
+      <span
+        aria-label={filter.label(t)}
+        className="inline-flex rounded-sm focus-visible:outline-2 focus-visible:outline-focus-subdued"
+        role="group"
+        tabIndex={0}
+      >
+        {chip}
+      </span>
     </Tooltip>
   );
 };

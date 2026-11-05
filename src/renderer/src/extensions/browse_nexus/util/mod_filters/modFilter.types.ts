@@ -52,7 +52,10 @@ export interface IModFilterChange {
  * One of Browse's mod filters, as a choice of values: everything the menu, its chip, the search
  * and analytics need of it. No UI of its own; `ModFilterMenu` and `ModFilterChip` show any filter.
  */
-export interface IModFilter<K extends keyof IModFilters = keyof IModFilters> {
+export interface IModFilter<
+  K extends keyof IModFilters = keyof IModFilters,
+  E extends keyof IFilterEventProps = never,
+> {
   /** Which of the view's filters it is. */
   key: K;
   /** Its row in the Filter menu, and its submenu's name. */
@@ -76,7 +79,7 @@ export interface IModFilter<K extends keyof IModFilters = keyof IModFilters> {
     context: IModSearchContext,
   ) => Partial<ModsSearchRequest["filters"]>;
   /** Its properties on the events about a search. */
-  eventProps: (filters: IModFilters) => IFilterEventProps;
+  eventProps: (filters: IModFilters) => Pick<IFilterEventProps, E>;
   /** Sends its event for a change. */
   track: (tracker: BrowseModsTracker, change: IModFilterChange) => void;
 }
