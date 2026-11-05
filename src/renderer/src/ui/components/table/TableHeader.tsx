@@ -80,7 +80,7 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
                 {!!direction && (
                   <Icon
                     className="nxm-table-sort-icon"
-                    name={direction === "ascending" ? "arrow_downward" : "arrow_upward"}
+                    name={direction === "ascending" ? "arrow_upward" : "arrow_downward"}
                     size="none"
                   />
                 )}
