@@ -99,9 +99,7 @@
       "giveFeedback": "Give feedback",
       "viewOptions": "View options",
       "search": "Search",
-      "renameView": "Rename view",
-      "editViewOptions": "Edit view options",
-      "deleteView": "Delete view"
+      "editViewOptions": "Edit view options"
     },
     "displayOptions": {
       "groupBy": "Group by",

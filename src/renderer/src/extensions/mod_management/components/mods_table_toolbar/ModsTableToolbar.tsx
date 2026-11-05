@@ -97,10 +97,11 @@ export const ModsTableToolbar = ({
     return {
       id: view.id,
       label: view.label,
+      // Rename and delete as Browse's views and the shared modals word them, from common.
       actions: [
         [
           {
-            label: t("modsTable::toolbar::renameView"),
+            label: t("Rename view", { ns: "common" }),
             icon: "edit",
             onClick: () => setNaming(view),
           },
@@ -110,7 +111,7 @@ export const ModsTableToolbar = ({
             onClick: () => editOptions(view.id),
           },
           {
-            label: t("modsTable::toolbar::deleteView"),
+            label: t("Delete view", { ns: "common" }),
             icon: "delete",
             onClick: () => setDeleting(view),
           },

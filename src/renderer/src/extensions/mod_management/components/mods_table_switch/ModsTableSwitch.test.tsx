@@ -300,9 +300,7 @@ describe("ModsTableSwitch", () => {
       tab.focus();
 
       fireEvent.contextMenu(tab, { button: -1 });
-      expect(
-        await screen.findByRole("menuitem", { name: "modsTable::toolbar::renameView" }),
-      ).toHaveFocus();
+      expect(await screen.findByRole("menuitem", { name: "Rename view" })).toHaveFocus();
       await userEvent.keyboard("{Escape}");
 
       await waitFor(() => expect(tab).toHaveFocus());
@@ -314,9 +312,9 @@ describe("ModsTableSwitch", () => {
 
       fireEvent.contextMenu(screen.getByRole("button", { name: "Mine" }));
       expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
-        "modsTable::toolbar::renameView",
+        "Rename view",
         "modsTable::toolbar::editViewOptions",
-        "modsTable::toolbar::deleteView",
+        "Delete view",
       ]);
       await userEvent.keyboard("{Escape}");
 
@@ -333,9 +331,9 @@ describe("ModsTableSwitch", () => {
       await openViewMenu();
 
       expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
-        "modsTable::toolbar::renameView",
+        "Rename view",
         "modsTable::toolbar::editViewOptions",
-        "modsTable::toolbar::deleteView",
+        "Delete view",
       ]);
       expect(pressedViews()).toEqual(["true", "false", "false", "false"]);
     });
@@ -345,9 +343,7 @@ describe("ModsTableSwitch", () => {
       await createView("Mine");
 
       await openViewMenu();
-      await userEvent.click(
-        screen.getByRole("menuitem", { name: "modsTable::toolbar::deleteView" }),
-      );
+      await userEvent.click(screen.getByRole("menuitem", { name: "Delete view" }));
       await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
       expect(viewButtons().map((view) => view.textContent)).toContain("Mine");
@@ -365,9 +361,7 @@ describe("ModsTableSwitch", () => {
         await createView("Mine");
 
         await openMenu();
-        await userEvent.click(
-          screen.getByRole("menuitem", { name: "modsTable::toolbar::renameView" }),
-        );
+        await userEvent.click(screen.getByRole("menuitem", { name: "Rename view" }));
         const field = screen.getByRole("textbox", { name: "Name view" });
         expect(field).toHaveValue("Mine");
         await userEvent.clear(field);
@@ -381,9 +375,7 @@ describe("ModsTableSwitch", () => {
         await createView("Mine");
 
         await openMenu();
-        await userEvent.click(
-          screen.getByRole("menuitem", { name: "modsTable::toolbar::deleteView" }),
-        );
+        await userEvent.click(screen.getByRole("menuitem", { name: "Delete view" }));
         expect(screen.getByRole("dialog", { name: "Delete view" })).toHaveTextContent(
           "modsTable::deleteView::body",
         );
@@ -421,9 +413,7 @@ describe("ModsTableSwitch", () => {
       tab.focus();
 
       fireEvent.contextMenu(tab);
-      await userEvent.click(
-        screen.getByRole("menuitem", { name: "modsTable::toolbar::renameView" }),
-      );
+      await userEvent.click(screen.getByRole("menuitem", { name: "Rename view" }));
       await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), "s{Enter}");
 
       await waitFor(() => expect(screen.getByRole("button", { name: "Mines" })).toHaveFocus());
