@@ -37,6 +37,13 @@ export function openUrlString(raw: string): void {
  * are routed by Wine to winebrowser → the host's xdg-open.
  */
 export function openFile(filePath: string): void {
+  // The renderer used to drop an empty target before sending it. An empty path would
+  // resolve to the working directory, and a missing one would throw from the IPC listener.
+  if (typeof filePath !== "string" || filePath.length === 0) {
+    log("warn", "not opening an empty path", { filePath });
+    return;
+  }
+
   const resolvedPath = path.isAbsolute(filePath) ? filePath : path.resolve(filePath);
 
   shell.openExternal(pathToFileURL(resolvedPath).toString()).catch((err: unknown) => {

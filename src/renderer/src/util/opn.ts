@@ -22,7 +22,7 @@ function isUrlTarget(target: string): boolean {
 /**
  * Backs `util.opn` in the extension API and nothing else: Vortex's own code calls
  * window.api.shell directly, and lint blocks new imports of this file. It goes when
- * `util.opn` is removed under the deprecation policy in RELEASES.md.
+ * `util.opn` is removed under the deprecation policy in RELEASES.md (LAZ-1610).
  *
  * @deprecated use preload api window.api.shell openUrl or openFile
  */
