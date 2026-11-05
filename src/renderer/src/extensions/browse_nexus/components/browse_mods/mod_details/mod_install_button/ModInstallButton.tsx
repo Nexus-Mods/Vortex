@@ -27,7 +27,8 @@ import { activeGameId } from "@/util/selectors";
 import { Content } from "@/util/util";
 
 import { useBrowseModsTracker } from "../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
-import { useModInstallState } from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import { oneClickInstallKey } from "../../../../util/one_click_install/oneClickInstall";
 
 /** Error kinds that mean the download was cancelled, which isn't reported. */
 const CANCELED_KINDS: VortexErrorKind[] = ["user-canceled", "process-canceled"];
@@ -60,6 +61,8 @@ interface IModInstallButtonProps {
   primaryFile?: MinimalModFileVersion | null;
   /** Whether its details failed to load, so whether it has a primary file isn't known. */
   isError?: boolean;
+  /** What the user has of it, from `useModStatus`. */
+  installState: ModInstallState;
 }
 
 /**
@@ -74,6 +77,7 @@ export const ModInstallButton = ({
   mod,
   primaryFile,
   isError = false,
+  installState,
 }: IModInstallButtonProps) => {
   const { t } = useTranslation();
   const tracker = useBrowseModsTracker();
@@ -82,10 +86,9 @@ export const ModInstallButton = ({
   const shouldInstall = !!useSelector(installsWhenDownloaded);
   const [isUpsellOpen, setIsUpsellOpen] = useState(false);
   const unavailable = unavailableReason(t, primaryFile, isError);
-  const installKey = ["browse", "install", mod.id];
+  const installKey = oneClickInstallKey(mod.id);
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
   const domain = GameDomain(mod.game.domain_name);
-  const installState = useModInstallState({ domain, modId: Number(mod.game_scoped_id) });
   const action = shouldInstall ? "install" : "download";
   const upsellAction = installState.kind === "installed" ? "update" : action;
 

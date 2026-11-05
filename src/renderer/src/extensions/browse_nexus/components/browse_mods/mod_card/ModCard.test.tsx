@@ -5,17 +5,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 
-import type { ModInstallState } from "../../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModStatus } from "../../../util/mod_status/modStatus";
 import { ModCard } from "./ModCard";
 
 // No one's logged in, so adult content is blurred, as it is by default.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
 
-/** What the user has of the mod the card shows. */
-let installState: ModInstallState = { kind: "none" };
-vi.mock("../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
-  useModInstallState: () => installState,
+/** The status of the mod the card shows. */
+let status: ModStatus | undefined;
+vi.mock("../../../hooks/use_mod_status/useModStatus.hook", () => ({
+  useModStatus: () => ({ installState: { kind: "none" }, status }),
 }));
 
 const mod = (adult: boolean) =>
@@ -38,15 +38,15 @@ const renderCard = (adult: boolean) =>
 
 describe("ModCard", () => {
   afterEach(() => {
-    installState = { kind: "none" };
+    status = undefined;
   });
 
   it.each([
-    [{ kind: "downloaded", downloadId: "dl" }, "Downloaded"],
-    [{ kind: "installed", mod: { id: "skyui" } }, "Installed"],
-    [{ kind: "installed", mod: { id: "skyui" }, update: "update" }, "Update available"],
-  ] as Array<[ModInstallState, string]>)("says what the user has of the mod", (state, label) => {
-    installState = state;
+    ["downloaded", "Downloaded"],
+    ["installed", "Installed"],
+    ["update", "Update available"],
+  ] as Array<[ModStatus, string]>)("says what the user has of the mod: %s", (shown, label) => {
+    status = shown;
     renderCard(false);
 
     expect(screen.getByText(label)).toBeInTheDocument();

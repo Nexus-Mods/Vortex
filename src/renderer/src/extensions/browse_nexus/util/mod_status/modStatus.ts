@@ -33,11 +33,12 @@ export const modStatus = (state: ModInstallState): ModStatus | undefined => {
 
 /** How a status shows. */
 export const modStatusDisplay = (t: TFunction, status: ModStatus): IModStatusDisplay => {
-  const displays: Record<ModStatus, IModStatusDisplay> = {
-    update: { label: t("Update available"), icon: "update", brand: "info" },
-    installed: { label: t("Installed"), icon: "check_circle", brand: "success" },
-    downloaded: { label: t("Downloaded"), icon: "download_for_offline", brand: "success" },
-  };
-
-  return displays[status];
+  switch (status) {
+    case "update":
+      return { label: t("Update available"), icon: "update", brand: "info" };
+    case "installed":
+      return { label: t("Installed"), icon: "check_circle", brand: "success" };
+    case "downloaded":
+      return { label: t("Downloaded"), icon: "download_for_offline", brand: "success" };
+  }
 };

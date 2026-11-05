@@ -1,4 +1,3 @@
-import { GameDomain } from "@vortex/shared";
 import numeral from "numeral";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -13,8 +12,7 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
-import { useModInstallState } from "../../../hooks/use_mod_install_state/useModInstallState.hook";
-import { modStatus } from "../../../util/mod_status/modStatus";
+import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
 import { ModStatusBadge } from "../mod_status_badge/ModStatusBadge";
 
 interface IModCardProps {
@@ -43,12 +41,7 @@ interface IModCardProps {
 export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) => {
   const { t } = useTranslation();
   const updated = useRelativeTime(Date.parse(mod.updated_at), t);
-  const status = modStatus(
-    useModInstallState({
-      domain: GameDomain(mod.game.domain_name),
-      modId: Number(mod.game_scoped_id),
-    }),
-  );
+  const { status } = useModStatus(mod);
   const language = useSelector((state: IState) => state.settings.interface.language);
   const updatedAt = new Intl.DateTimeFormat(language, {
     dateStyle: "medium",

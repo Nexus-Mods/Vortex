@@ -24,8 +24,8 @@ vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
 
 // The install button has tests of its own.
 vi.mock("./mod_install_button/ModInstallButton", () => ({ ModInstallButton: () => null }));
-vi.mock("../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
-  useModInstallState: () => ({ kind: "installed", mod: { id: "skyui" }, update: "update" }),
+vi.mock("../../../hooks/use_mod_status/useModStatus.hook", () => ({
+  useModStatus: () => ({ installState: { kind: "none" }, status: "update" }),
 }));
 
 import type { IGalleryImage } from "./mod_gallery/ModGallery";

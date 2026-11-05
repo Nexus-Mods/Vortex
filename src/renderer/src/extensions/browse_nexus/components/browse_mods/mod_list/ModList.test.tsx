@@ -12,8 +12,8 @@ vi.mock("@/extensions/nexus_integration/selectors", () => ({
   canSeeAdultContent: () => true,
   isLoggedIn: () => true,
 }));
-vi.mock("../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
-  useModInstallState: () => ({ kind: "none" }),
+vi.mock("../../../hooks/use_mod_status/useModStatus.hook", () => ({
+  useModStatus: () => ({ installState: { kind: "none" }, status: undefined }),
 }));
 
 type IMod = React.ComponentProps<typeof ModList>["mods"][number];

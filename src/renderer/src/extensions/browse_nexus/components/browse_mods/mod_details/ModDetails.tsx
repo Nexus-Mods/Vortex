@@ -23,8 +23,8 @@ import { useRelativeTime } from "@/util/useRelativeTime";
 
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useDescriptionImagePlaceholders } from "../../../hooks/use_description_image_placeholders/useDescriptionImagePlaceholders.hook";
-import { useModInstallState } from "../../../hooks/use_mod_install_state/useModInstallState.hook";
-import { modStatus, modStatusDisplay } from "../../../util/mod_status/modStatus";
+import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
+import { modStatusDisplay } from "../../../util/mod_status/modStatus";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModInstallButton } from "./mod_install_button/ModInstallButton";
 import { ModTags } from "./mod_tags/ModTags";
@@ -66,7 +66,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const tracker = useBrowseModsTracker();
     const domain = GameDomain(mod.game.domain_name);
     const modPageUrl = nexusModPageUrl(domain, mod.game_scoped_id);
-    const status = modStatus(useModInstallState({ domain, modId: Number(mod.game_scoped_id) }));
+    const { installState, status } = useModStatus(mod);
     const statusDisplay = status && modStatusDisplay(t, status);
     const externalImagePlaceholders = useDescriptionImagePlaceholders({
       modUid: mod.id,
@@ -139,6 +139,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
 
               <ModInstallButton
                 api={api}
+                installState={installState}
                 isError={hasFailed}
                 mod={mod}
                 primaryFile={details.data?.primary_file_version}

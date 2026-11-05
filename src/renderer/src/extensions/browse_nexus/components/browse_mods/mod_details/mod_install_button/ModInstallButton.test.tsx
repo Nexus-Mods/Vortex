@@ -12,10 +12,7 @@ import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
-import type {
-  INexusModRef,
-  ModInstallState,
-} from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
 
 const mocks = vi.hoisted(() => {
   const state = {
@@ -26,7 +23,6 @@ const mocks = vi.hoisted(() => {
     update: vi.fn(),
     show: vi.fn(),
     installState: { kind: "none" } as ModInstallState,
-    lookedUp: [] as INexusModRef[],
   };
 
   /** The selectors the test answers. */
@@ -50,12 +46,6 @@ vi.mock("@/extensions/nexus_integration/selectors", () => ({
 vi.mock("@/util/selectors", () => ({ activeGameId: mocks.selectors.activeGameId }));
 vi.mock("@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus", () => ({
   useRefreshUserInfoOnFocus: () => undefined,
-}));
-vi.mock("../../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
-  useModInstallState: (ref: INexusModRef) => {
-    mocks.lookedUp.push(ref);
-    return mocks.installState;
-  },
 }));
 vi.mock("@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage", () => ({
   showModOnModsPage: mocks.show,
@@ -102,6 +92,7 @@ const renderButton = (file?: MinimalModFileVersion | null, isError = false) => {
             store: { dispatch },
           } as unknown as IExtensionApi
         }
+        installState={mocks.installState}
         isError={isError}
         mod={mod}
         primaryFile={file}
@@ -131,7 +122,6 @@ describe("ModInstallButton", () => {
     mocks.update.mockReset();
     mocks.show.mockReset();
     mocks.installState = { kind: "none" };
-    mocks.lookedUp = [];
     openUrl = vi.fn();
     window.api.shell = { openUrl } as unknown as typeof window.api.shell;
   });
@@ -285,12 +275,6 @@ describe("ModInstallButton", () => {
     expect(tracking.tracked("browse_mods_one_click_clicked").map((e) => e.properties)).toEqual([
       { mod_uid: "7340033", file_uid: "7340074", action: "download" },
     ]);
-  });
-
-  it("looks the mod up by its game's domain and its id", () => {
-    renderButton(primaryFile);
-
-    expect(mocks.lookedUp[0]).toEqual({ domain: "skyrimspecialedition", modId: 1 });
   });
 
   describe("for a mod the user already has", () => {
