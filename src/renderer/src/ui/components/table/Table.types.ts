@@ -38,6 +38,8 @@ export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   sticky?: "end";
   /** For a sticky column, how far its cell widens over the cells before it while its row is hovered. */
   revealWidth?: `${number}px`;
+  /** `false` keeps it at its `width`, as does a `width` whose least isn't in px. Default `true`. */
+  resizable?: boolean;
   /** Makes the column sortable: compares two rows for A to Z, as `Array.sort` does. */
   sort?: (a: T, b: T) => number;
 }
@@ -66,6 +68,10 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   footer?: ReactNode;
   /** In place of the rows while there are none: what a search that matched nothing says. */
   empty?: ReactNode;
+  /** Resized columns' widths in px, by id; a column not in it is at its `width`. */
+  columnWidths?: { [columnId: string]: number };
+  /** Takes the widths a resize changes, by id, `undefined` for one reset; unset, none resize. */
+  onColumnWidthsChange?: (widths: { [columnId: string]: number | undefined }) => void;
   /** The sort to start with; unset, the rows keep the order they're given in. */
   defaultSort?: ITableSort;
   /** Classes for the table's grid element. */
