@@ -137,6 +137,10 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
     },
   });
 
+  const chips = MOD_FILTERS.filter(
+    ({ key, lockedReason }) => search.activeFilters.includes(key) || !!lockedReason?.(t, search),
+  );
+
   return (
     <div className="border-b border-stroke-weak bg-surface-low pr-scrollbar">
       <PageContent isFullWidth className="flex items-center justify-between gap-x-4 px-6 py-3">
@@ -150,22 +154,23 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
             })}
           </Typography>
 
-          {MOD_FILTERS.filter(
-            ({ key, lockedReason }) =>
-              search.activeFilters.includes(key) || !!lockedReason?.(t, search),
-          ).map((filter) => (
-            <ModFilterChip
-              canSeeAdult={search.canSeeAdult}
-              filter={filter}
-              filters={search.filters}
-              isLoggedIn={search.isLoggedIn}
-              key={filter.key}
-              onChange={(change) => changeFilters(change, "applied_filter")}
-              onRemove={() =>
-                changeFilters({ [filter.key]: NO_FILTERS[filter.key] }, "applied_filter_clear")
-              }
-            />
-          ))}
+          {chips.length > 0 && (
+            <div className="flex items-center gap-x-2">
+              {chips.map((filter) => (
+                <ModFilterChip
+                  canSeeAdult={search.canSeeAdult}
+                  filter={filter}
+                  filters={search.filters}
+                  isLoggedIn={search.isLoggedIn}
+                  key={filter.key}
+                  onChange={(change) => changeFilters(change, "applied_filter")}
+                  onRemove={() =>
+                    changeFilters({ [filter.key]: NO_FILTERS[filter.key] }, "applied_filter_clear")
+                  }
+                />
+              ))}
+            </div>
+          )}
 
           {/* <Search placeholder={t("Search mods...")} value={search} onChange={setSearch} /> */}
 
