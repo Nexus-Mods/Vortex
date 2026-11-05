@@ -3,8 +3,8 @@ import * as path from "node:path";
 
 import {
   createJournal,
-  JournalOperationKind,
   JournalReadStatus,
+  OperationKind,
   openJournal,
   readJournal,
 } from "@nexusmods/mod-pipeline";
@@ -118,8 +118,8 @@ describe("journalStorageAt", () => {
 
   it("carries a journal through a torn last line", async () => {
     const entries = [
-      { operation: { kind: JournalOperationKind.Restore, destinationPath: "/game/a.dll" } },
-      { operation: { kind: JournalOperationKind.Restore, destinationPath: "/game/b.dll" } },
+      { operation: { kind: OperationKind.Restore, destinationPath: "/game/a.dll" } },
+      { operation: { kind: OperationKind.Restore, destinationPath: "/game/b.dll" } },
     ];
     const killed = await createJournal(journalStorageAt(journalFile), entries);
     await killed.markDone(0);

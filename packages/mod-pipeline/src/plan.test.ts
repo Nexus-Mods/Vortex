@@ -208,7 +208,7 @@ describe("OperationKind", () => {
   test("declares the operation kinds in the order inApplyOrder runs them", () => {
     const file = makeFileSource("plugin.dll");
     const reason = DestinationState.NewFile;
-    const operationByKind: Record<OperationKind, Operation> = {
+    const operationByKind: Record<Operation["kind"], Operation> = {
       [OperationKind.Backup]: {
         kind: OperationKind.Backup,
         destinationPath: file.destinationPath,
@@ -219,7 +219,7 @@ describe("OperationKind", () => {
     };
 
     expect(inApplyOrder(Object.values(operationByKind)).map(({ kind }) => kind)).toEqual(
-      Object.values(OperationKind),
+      Object.values(OperationKind).filter((kind) => kind !== OperationKind.Restore),
     );
   });
 });

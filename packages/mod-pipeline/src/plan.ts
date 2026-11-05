@@ -20,6 +20,7 @@ import { z } from "./zodJitless";
 export const OperationKind = {
   Backup: "BACKUP",
   Unlink: "UNLINK",
+  Restore: "RESTORE",
   Link: "LINK",
 } as const;
 export type OperationKind = (typeof OperationKind)[keyof typeof OperationKind];
@@ -272,7 +273,7 @@ function checkFolders(
 }
 
 function operationOf(
-  kind: OperationKind,
+  kind: Operation["kind"],
   reason: DestinationState,
   files: LockfileFilesAt,
 ): Operation {

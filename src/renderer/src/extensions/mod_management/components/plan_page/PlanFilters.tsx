@@ -66,22 +66,24 @@ export const PlanFilters = memo(function PlanFilters({
   return (
     <div className="space-y-2 p-2">
       <div className="flex flex-wrap gap-2">
-        {Object.values(OperationKind).map((kind) => (
-          <Button
-            appearance={filter.operationKinds.has(kind) ? "strong" : "weak"}
-            brand="neutral"
-            key={kind}
-            size="sm"
-            onClick={() =>
-              onFilterChange((previous) => ({
-                ...previous,
-                operationKinds: toggledIn(previous.operationKinds, kind),
-              }))
-            }
-          >
-            {`${kind} ${operationCounts[kind]}`}
-          </Button>
-        ))}
+        {Object.values(OperationKind)
+          .filter((kind) => kind !== OperationKind.Restore)
+          .map((kind) => (
+            <Button
+              appearance={filter.operationKinds.has(kind) ? "strong" : "weak"}
+              brand="neutral"
+              key={kind}
+              size="sm"
+              onClick={() =>
+                onFilterChange((previous) => ({
+                  ...previous,
+                  operationKinds: toggledIn(previous.operationKinds, kind),
+                }))
+              }
+            >
+              {`${kind} ${operationCounts[kind]}`}
+            </Button>
+          ))}
 
         {stateCounts.map(([state, count]) => (
           <Button

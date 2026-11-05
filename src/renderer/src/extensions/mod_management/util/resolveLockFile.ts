@@ -88,13 +88,6 @@ export async function resolveLockfile(
   return withGeneratedFiles(state, gameMode, contributions, resolve(input));
 }
 
-// the key each kind of operation is counted under
-const COUNT_KEY_BY_KIND = {
-  [OperationKind.Backup]: "backup",
-  [OperationKind.Link]: "link",
-  [OperationKind.Unlink]: "unlink",
-} as const satisfies Record<OperationKind, keyof PlannerOperationCounts>;
-
 const elapsedMsSince = (startedAt: Temporal.Instant) =>
   Temporal.Now.instant().since(startedAt).total("milliseconds");
 
@@ -113,10 +106,11 @@ function planAndLogOperations(
   const destinations = planDestinations(currentLockfile, previousLockfile, diskScan);
   const planMs = elapsedMsSince(planStartedAt);
   const countsByKind = countByOperation(destinations);
-  const counts: PlannerOperationCounts = { backup: 0, link: 0, unlink: 0 };
-  for (const kind of Object.values(OperationKind)) {
-    counts[COUNT_KEY_BY_KIND[kind]] = countsByKind[kind];
-  }
+  const counts: PlannerOperationCounts = {
+    backup: countsByKind[OperationKind.Backup],
+    link: countsByKind[OperationKind.Link],
+    unlink: countsByKind[OperationKind.Unlink],
+  };
 
   log("info", "planner operations", {
     gameMode,

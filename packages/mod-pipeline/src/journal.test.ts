@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { NexusFileId } from "./ids";
 import {
   createJournal,
-  JournalOperationKind,
   JournalPhase,
   JournalReadStatus,
   openJournal,
@@ -63,7 +62,7 @@ const makeEntries = (): JournalEntry[] => [
   },
   {
     operation: {
-      kind: JournalOperationKind.Restore,
+      kind: OperationKind.Restore,
       destinationPath: "/fixture-root/game/old.dll",
     },
   },
@@ -155,7 +154,7 @@ describe("readJournal", () => {
       [
         JSON.stringify({ type: "header", version: 1, runId: "run", count: 1 }),
         JSON.stringify({
-          operation: { kind: JournalOperationKind.Restore, destinationPath: "game/a" },
+          operation: { kind: OperationKind.Restore, destinationPath: "game/a" },
         }),
         "",
       ].join("\n"),

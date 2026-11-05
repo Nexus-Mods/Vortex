@@ -16,7 +16,6 @@ export { FileSourceKind, HashType, LockfileSchema, lockfileFiles } from "./lockf
 export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, FileEntry } from "./lockfile";
 export {
   createJournal,
-  JournalOperationKind,
   JournalPhase,
   JournalReadStatus,
   openJournal,

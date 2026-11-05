@@ -1,5 +1,5 @@
 import { AbsolutePathSchema } from "./pathKey";
-import { OperationSchema, type Operation } from "./plan";
+import { OperationKind, OperationSchema, type Operation } from "./plan";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -21,14 +21,9 @@ export interface JournalStorage {
   close(): Promise<void>;
 }
 
-export const JournalOperationKind = {
-  /** moves a backup back; the plan has no operation for it */
-  Restore: "RESTORE",
-} as const;
-
 export type JournalOperation =
   | Operation
-  | { kind: typeof JournalOperationKind.Restore; destinationPath: string };
+  | { kind: typeof OperationKind.Restore; destinationPath: string };
 
 /** One step of a run; progress names it by its position. */
 export interface JournalEntry {
@@ -101,7 +96,7 @@ const entrySchema = z.object({
   operation: z.union([
     OperationSchema,
     z.object({
-      kind: z.literal(JournalOperationKind.Restore),
+      kind: z.literal(OperationKind.Restore),
       destinationPath: AbsolutePathSchema,
     }),
   ]),

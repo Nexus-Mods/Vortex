@@ -118,6 +118,7 @@ export function countByOperation(destinations: readonly PlannedDestination[]): P
   const counts: PlanOperationCounts = {
     [OperationKind.Backup]: 0,
     [OperationKind.Link]: 0,
+    [OperationKind.Restore]: 0,
     [OperationKind.Unlink]: 0,
   };
   for (const { operations } of destinations) {
