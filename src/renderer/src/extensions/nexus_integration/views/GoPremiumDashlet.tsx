@@ -7,7 +7,6 @@ import Dashlet from "../../../controls/Dashlet";
 import FlexLayout from "../../../controls/FlexLayout";
 import Image from "../../../controls/Image";
 import { Pictogram } from "../../../ui/components/pictogram/Pictogram";
-import opn from "../../../util/opn";
 import { Campaign, nexusModsURL, Section, Content } from "../../../util/util";
 import { PREMIUM_PATH } from "../constants";
 
@@ -38,13 +37,13 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
 
   private goBuyPremium = () => {
     this.context.api.events.emit("analytics-track-click-event", "Go Premium", "Dashlet");
-    opn(
+    window.api.shell.openUrl(
       nexusModsURL(PREMIUM_PATH, {
         section: Section.Users,
         campaign: Campaign.BuyPremium,
         content: Content.DashboardDashletAd,
       }),
-    ).catch((err) => undefined);
+    );
   };
 }
 

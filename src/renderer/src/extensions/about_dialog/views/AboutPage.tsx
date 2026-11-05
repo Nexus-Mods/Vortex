@@ -18,7 +18,6 @@ import { getApplication } from "../../../util/application";
 import getVortexPath from "../../../util/getVortexPath";
 import github from "../../../util/github";
 import { log } from "../../../util/log";
-import opn from "../../../util/opn";
 import MainPage from "../../../views/MainPage";
 
 interface IBomModule {
@@ -205,7 +204,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     evt.preventDefault();
     const url = evt.currentTarget.getAttribute("data-url");
     if (url !== null) {
-      opn(url).catch(() => null);
+      window.api.shell.openUrl(url);
     }
   };
 

@@ -19,7 +19,6 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
-import opn from "@/util/opn";
 
 import { Divider } from "../divider/Divider";
 import { EntryActions } from "../entry_actions/EntryActions";
@@ -104,7 +103,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     });
 
     if (mod.requiredBy.modUrl) {
-      opn(mod.requiredBy.modUrl).catch(() => undefined);
+      window.api.shell.openUrl(mod.requiredBy.modUrl);
     }
   }, [trackSuggestionSourceLinkClicked, mod.requiredBy.modId, mod.requiredBy.modUrl]);
 
