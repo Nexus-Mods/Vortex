@@ -1,4 +1,5 @@
 import React, { type HTMLAttributes, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { type IPictogramName, Pictogram } from "@/ui/components/pictogram/Pictogram";
 import { Typography } from "@/ui/components/typography/Typography";
@@ -9,11 +10,26 @@ import { usePage } from "./Page.context";
 import { PageContent } from "./PageContent";
 
 export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
+  /** Lets the content span the whole bar instead of capping it at `max-w-8xl`. */
   isFullWidth?: boolean;
+  /** Marks the page as in beta with a badge beside its title. */
+  isBeta?: boolean;
+  /** Shown on the right of the title, or a render-prop told whether the header is compact. */
   children?: ReactNode | ((compact: boolean) => ReactNode);
+  /** Pictogram on the left, shrinking with the header. */
   pictogramName?: IPictogramName;
+  /** Line below the title, hidden while the header is compact. */
   subtitle?: string;
-} & XOr<{ title: string }, { customTitle: ReactNode | ((compact: boolean) => ReactNode) }>;
+} & XOr<
+    {
+      /** The page's heading. */
+      title: string;
+    },
+    {
+      /** A heading that needs more than a string, or a render-prop told whether the header is compact. */
+      customTitle: ReactNode | ((compact: boolean) => ReactNode);
+    }
+  >;
 
 /**
  * Full-bleed header for a non-scrolling `Page`. The bar itself spans the full
@@ -30,21 +46,23 @@ export type IPageHeaderProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
  * to follow that state too.
  *
  * Pass `title` for the common heading, or `customTitle` when the title needs
- * more than a string (e.g. a badge alongside it); `subtitle` renders below
- * either. `title` goes subdued once compact — `customTitle` takes a
- * render-prop so it can match. Expanded, the title drops a little to centre the
- * title and subtitle on the pictogram.
+ * more than a string; `subtitle` renders below either. `title` goes subdued
+ * once compact — `customTitle` takes a render-prop so it can match. `isBeta`
+ * puts a Beta badge beside either, subdued with the title. Expanded, the title
+ * drops a little to centre the title and subtitle on the pictogram.
  */
 export const PageHeader = ({
   children,
   className,
   isFullWidth = false,
+  isBeta = false,
   pictogramName,
   title,
   customTitle,
   subtitle,
   ...rest
 }: IPageHeaderProps) => {
+  const { t } = useTranslation();
   const { compact, scrolled } = usePage();
 
   return (
@@ -71,7 +89,7 @@ export const PageHeader = ({
           <div className="flex items-center justify-between gap-x-6">
             <div
               className={joinClasses([
-                "min-w-0 transition-[margin] ease-out",
+                "flex min-w-0 items-center gap-x-1.5 transition-[margin] ease-out",
                 !compact && !!pictogramName ? "mt-1" : "mt-0",
               ])}
             >
@@ -83,6 +101,20 @@ export const PageHeader = ({
                   typographyType="body-xl"
                 >
                   {title}
+                </Typography>
+              )}
+
+              {isBeta && (
+                <Typography
+                  appearance={compact ? "subdued" : "strong"}
+                  as="div"
+                  className={joinClasses([
+                    "flex min-h-4 items-center justify-center rounded-sm border px-1 transition-colors",
+                    compact ? "border-neutral-subdued" : "border-neutral-strong",
+                  ])}
+                  typographyType="title-xs"
+                >
+                  {t("common:::beta")}
                 </Typography>
               )}
             </div>

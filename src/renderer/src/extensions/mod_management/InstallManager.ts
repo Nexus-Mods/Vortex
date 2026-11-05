@@ -12,7 +12,7 @@ import {
   getErrorMessageOrDefault,
   unknownToError,
 } from "@vortex/shared";
-import { parseError } from "@vortex/shared";
+import { parseError, VortexModStagingFolder } from "@vortex/shared";
 import { AlreadyDownloaded, InsufficientDiskSpace } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
@@ -1724,6 +1724,17 @@ class InstallManager {
                   installContext.setInstallPathCB(modId, destinationPath);
                   tempPath = destinationPath + ".installing";
                   details.previousAttributes = fullInfo.previous;
+                  details.stagingFolder = VortexModStagingFolder(modId);
+                  // the previous version stops deploying when the version choice above ran: it's
+                  // removed (replace) or disabled (install), though it may still be in the
+                  // manifest until the next deployment. Without that choice it stays, and is
+                  // another mod as far as conflicts go.
+                  details.previousStagingFolder =
+                    existingMod !== undefined &&
+                    installProfile !== undefined &&
+                    existingMod.installationPath
+                      ? VortexModStagingFolder(existingMod.installationPath)
+                      : undefined;
                   details.archiveId = archiveId ?? undefined;
                   return this.installInner(
                     api,
@@ -4109,6 +4120,8 @@ class InstallManager {
           hasInstructionsOverrideFile: overrideInstructionsFilePresentInArchive,
           modReference: details?.modReference,
           previousAttributes: details?.previousAttributes,
+          stagingFolder: details?.stagingFolder,
+          previousStagingFolder: details?.previousStagingFolder,
           archiveId: details?.archiveId,
           hasCSScripts: supportedInstaller?.hasCSScripts,
           hasXmlConfigXML: supportedInstaller?.hasXmlConfigXML,

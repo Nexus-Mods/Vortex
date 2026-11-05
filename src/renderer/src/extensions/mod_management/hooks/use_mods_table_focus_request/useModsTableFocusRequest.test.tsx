@@ -5,28 +5,34 @@ import { describe, expect, it, vi } from "vitest";
 
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
-import type { IModGroup } from "../../util/mods_table_views/modsTableViews";
+import type { IModGroup, IModRow } from "../../util/mods_table_views/modsTableViews";
 import { useModsTableFocusRequest } from "./useModsTableFocusRequest.hook";
 
 // --- Helpers ---
 
 const group = (id: string) => ({ id }) as IModGroup;
 
+const row = (id: string) => ({ mod: { id } }) as IModRow;
+
 const render = ({
   focusedGroupId,
+  focusedModId,
   groups,
+  rows = [],
   search = "",
 }: {
   focusedGroupId?: string;
+  focusedModId?: string;
   groups: IModGroup[] | undefined;
+  rows?: IModRow[];
   search?: string;
 }) => {
-  const store = makeModsTableStore({ focusedGroupId });
+  const store = makeModsTableStore({ focusedGroupId, focusedModId });
   const setSearch = vi.fn();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  const hook = renderHook(() => useModsTableFocusRequest({ groups, search, setSearch }), {
+  const hook = renderHook(() => useModsTableFocusRequest({ groups, rows, search, setSearch }), {
     wrapper,
   });
 
@@ -35,6 +41,7 @@ const render = ({
     store,
     setSearch,
     requested: () => store.getState().session.mods.focusedGroupId,
+    requestedMod: () => store.getState().session.mods.focusedModId,
   };
 };
 
@@ -84,5 +91,42 @@ describe("useModsTableFocusRequest", () => {
     const { requested } = render({ focusedGroupId: "a", groups: [group("a")] });
 
     expect(requested()).toBe("a");
+  });
+
+  describe("for a mod", () => {
+    it("returns the mod asked for, and drops it once shown", () => {
+      const { result, requestedMod } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+      });
+
+      expect(result.current.focusModId).toBe("skyui");
+
+      result.current.onModFocused();
+
+      expect(requestedMod()).toBeUndefined();
+    });
+
+    it("clears a search once for a new request", () => {
+      const { setSearch } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+        search: "skse",
+      });
+
+      expect(setSearch).toHaveBeenCalledWith("");
+    });
+
+    it("drops a request for a mod the table doesn't have", () => {
+      const { requestedMod } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skse")],
+      });
+
+      expect(requestedMod()).toBeUndefined();
+    });
   });
 });

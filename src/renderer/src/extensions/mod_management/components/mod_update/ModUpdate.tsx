@@ -1,8 +1,8 @@
+import { VortexGameId } from "@vortex/shared";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { useMainContext } from "@/contexts";
-import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Html } from "@/ui/components/prose/html/Html";
@@ -13,10 +13,10 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { activeGameId } from "@/util/selectors";
 
 import type { IMod } from "../../types/IMod";
-import { confirmCollectionModUpdate } from "../../util/collection_update_warning/collectionUpdateWarning";
 import { offersUpdate } from "../../util/mod_has_update/modHasUpdate";
 import type { UpdateState } from "../../util/modUpdateState";
 import updateState, { isIdValid } from "../../util/modUpdateState";
+import { updateMod } from "../../util/update_mod/updateMod";
 import { ChangelogButton } from "../changelog_button/ChangelogButton";
 
 interface IModUpdateProps {
@@ -57,21 +57,6 @@ export const modUpdateDetails = (mod: IMod): IModUpdateDetails => {
     state === "current" ? undefined : attributes.newestChangelog;
 
   return { valid, state, hasUpdate, changelog, shows: !valid || hasUpdate || !!changelog?.content };
-};
-
-/** Updates a mod to its newest file, asking first if a collection has it, as that pins its version. */
-const updateMod = async (api: IExtensionApi, mod: IMod, gameId: string) => {
-  if (!(await confirmCollectionModUpdate(api, activeGameId(api.getState()), mod.id))) {
-    return;
-  }
-
-  api.events.emit(
-    "mod-update",
-    gameId,
-    mod.attributes?.modId,
-    mod.attributes?.newestFileId,
-    mod.attributes?.source,
-  );
 };
 
 /**
@@ -121,7 +106,7 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
     return null;
   }
 
-  const gameId = () => attributes.downloadGame ?? activeGameId(api.getState());
+  const gameId = () => VortexGameId(attributes.downloadGame ?? activeGameId(api.getState()));
 
   return (
     <div className="flex shrink-0 items-center gap-x-1">

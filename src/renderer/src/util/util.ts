@@ -988,6 +988,7 @@ export enum Campaign {
  * @property CollectionsDownloadAd - Advertisement shown during collection downloads.
  * @property SettingsDownloadAd - Advertisement displayed in the settings download section.
  * @property HealthCheckAd - Advertisement displayed in the health check page.
+ * @property BrowseModsAd - Advertisement displayed in Browse mods' details.
  */
 export enum Content {
   HeaderAd = "header_ad",
@@ -997,6 +998,7 @@ export enum Content {
   CollectionsDownloadAd = "collections_download_ad",
   SettingsDownloadAd = "settings_download_ad",
   HealthCheckAd = "health_check_ad",
+  BrowseModsAd = "browse_mods_ad",
 }
 
 export interface INexusURLOptions {

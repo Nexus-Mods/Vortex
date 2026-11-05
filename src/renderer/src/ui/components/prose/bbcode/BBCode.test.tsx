@@ -48,6 +48,13 @@ describe("BBCode", () => {
       expect(container.querySelector("img")).toHaveClass("nxm-image-media-blurred");
     });
 
+    it("shows an image held in the description itself", () => {
+      const src = "data:image/png;base64,iVBORw0KGgo=";
+      const { container } = render(<BBCode bbcode={`[img]${src}[/img]`} />);
+
+      expect(container.querySelector("img")).toHaveAttribute("src", src);
+    });
+
     it("leaves out images from elsewhere", () => {
       const { container } = render(
         <BBCode bbcode="Hi [img]https://example.com/a.png[/img] there" />,
@@ -255,6 +262,83 @@ describe("BBCode", () => {
 
       expect(screen.getByText("careful")).not.toHaveAttribute("class");
       expect(container).toHaveTextContent("Be careful now");
+    });
+  });
+
+  describe("external images", () => {
+    const externalImagePlaceholders = {
+      websiteUrl: "https://www.nexusmods.com/skyrimspecialedition/mods/1",
+    };
+    const imgur = (name: string) => `[img]https://i.imgur.com/${name}.png[/img]`;
+    const placeholders = () => screen.queryAllByRole("button", { name: "View on website" });
+
+    it("leaves them out without a word unless asked for placeholders", () => {
+      const { container } = render(<BBCode bbcode={`Before ${imgur("a")} after`} />);
+
+      expect(placeholders()).toHaveLength(0);
+      expect(container.querySelector("img")).toBeNull();
+    });
+
+    it("stands in for one with a placeholder, never loading it", () => {
+      const { container } = render(
+        <BBCode
+          bbcode={`Before ${imgur("a")} after`}
+          externalImagePlaceholders={externalImagePlaceholders}
+        />,
+      );
+
+      expect(placeholders()).toHaveLength(1);
+      expect(screen.getByText("External image")).toBeInTheDocument();
+      expect(container.querySelector("img")).toBeNull();
+    });
+
+    it("leaves images from Nexus Mods as they are", () => {
+      const { container } = render(
+        <BBCode
+          bbcode="[img]https://staticdelivery.nexusmods.com/mods/1704/images/a.png[/img]"
+          externalImagePlaceholders={externalImagePlaceholders}
+        />,
+      );
+
+      expect(placeholders()).toHaveLength(0);
+      expect(container.querySelector("img")).not.toBeNull();
+    });
+
+    it("stands in for a run of them, with only line breaks between, with one placeholder", () => {
+      render(
+        <BBCode
+          bbcode={`${imgur("a")}\n${imgur("b")}[br][/br]${imgur("c")}`}
+          externalImagePlaceholders={externalImagePlaceholders}
+        />,
+      );
+
+      expect(placeholders()).toHaveLength(1);
+      expect(screen.getByText("+2")).toBeInTheDocument();
+      expect(document.querySelectorAll(".nxm-prose br")).toHaveLength(0);
+    });
+
+    it("gives images with text between them a placeholder each", () => {
+      render(
+        <BBCode
+          bbcode={`${imgur("a")} and ${imgur("b")}`}
+          externalImagePlaceholders={externalImagePlaceholders}
+        />,
+      );
+
+      expect(placeholders()).toHaveLength(2);
+    });
+
+    it("keeps where a linked image links to", () => {
+      render(
+        <BBCode
+          bbcode={`[url=https://discord.gg/abc]${imgur("a")}[/url]`}
+          externalImagePlaceholders={externalImagePlaceholders}
+        />,
+      );
+
+      expect(placeholders()).toHaveLength(1);
+      expect(screen.getByText("Linked external image")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "discord.gg" })).toBeInTheDocument();
     });
   });
 });

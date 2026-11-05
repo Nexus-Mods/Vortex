@@ -1,14 +1,17 @@
 import * as path from "node:path";
 
-import { VortexGameId } from "@vortex/shared";
+import { relativePath } from "@nexusmods/paths";
+import { VortexGameId, type VortexModStagingFolder } from "@vortex/shared";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { FileTreeEntry } from "@/ui/components/file_tree/buildTree";
 
 import { FlagService } from "../../FlagService";
 import { getBatchContext } from "../../util/BatchContext";
 import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
 import { UserCanceled } from "../../util/CustomErrors";
 import { setManualInstallerPreferences } from "../gamemode_management/actions/persistent";
+import { discoveryByGame } from "../gamemode_management/selectors";
 import { isTierZeroManagedGame, tierZeroGameFor } from "../gamemode_management/tiered/tierZero";
 import { requestManualInstallerDestination } from "./manualInstallerQueue";
 import { createManualInstallerTracker, manualInstallerUIDs } from "./manualInstallerTracker";
@@ -36,9 +39,6 @@ export const MANUAL_INSTALLER_ID = "manual-installer";
 
 // after the script-based FOMOD installers (10, 20), before the FOMOD "Basic" catch-all (100)
 export const MANUAL_INSTALLER_PRIORITY = 50;
-
-// how many files the dialog previews the final paths of
-const PREVIEW_FILE_COUNT = 3;
 
 // keys in the batch context, which is shared with the other installers
 const BATCH_DESTINATION_KEY = "manual-installer-destination";
@@ -72,8 +72,14 @@ export function normalizeDestination(input: string): string | undefined {
   return normalized.replace(/[\\/]+$/, "");
 }
 
+// an archive entry has the platform's separators and marks a directory with a trailing one
+const toFileTreeEntry = (name: string): FileTreeEntry => ({
+  path: relativePath(name),
+  kind: /[\\/]$/.test(name) ? "directory" : "file",
+});
+
 /** the folder all files of the archive are in, if there is a single one */
-function commonTopFolder(files: string[]): string | undefined {
+export function commonTopFolder(files: string[]): string | undefined {
   let top: string | undefined;
   for (const file of files) {
     const segments = file.split(/[\\/]/).filter((segment) => segment !== "");
@@ -112,6 +118,7 @@ export function createManualInstaller(api: IExtensionApi): {
     vortexGameId: VortexGameId,
     files: string[],
     modName: string,
+    ownStagingFolders: VortexModStagingFolder[],
     batchId: string | undefined,
     uids: { mod_uid?: string; file_uid?: string },
   ): Promise<IDestination> => {
@@ -119,14 +126,15 @@ export function createManualInstaller(api: IExtensionApi): {
     const batch = batchId !== undefined ? getBatchContext("install-mod", batchId) : undefined;
     const remaining =
       batch !== undefined ? batch.itemCount - batch.get<number>(BATCH_COMPLETED_KEY, 0) - 1 : 0;
-    const sourceFiles = files.filter((name) => !name.endsWith(path.sep));
 
     const answer = await requestManualInstallerDestination(api, {
       gameId: vortexGameId,
       modName,
       remaining: Math.max(remaining, 0),
       defaultFolder: entry?.manualInstallerPreferences?.defaultFolder,
-      previewFiles: sourceFiles.slice(0, PREVIEW_FILE_COUNT),
+      gameFolder: discoveryByGame(api.getState(), vortexGameId)?.path ?? "",
+      files: files.map(toFileTreeEntry),
+      ownStagingFolders,
       topFolder: commonTopFolder(files),
     });
 
@@ -160,6 +168,7 @@ export function createManualInstaller(api: IExtensionApi): {
     vortexGameId: VortexGameId,
     files: string[],
     modName: string,
+    ownStagingFolders: VortexModStagingFolder[],
     unattended: boolean | undefined,
     previous: IDestination | undefined,
     batchId: string | undefined,
@@ -184,7 +193,7 @@ export function createManualInstaller(api: IExtensionApi): {
     if (defaultFolder !== undefined && preferences?.dontAskAgain === true) {
       return { folder: defaultFolder, skipTopFolder: false };
     }
-    return queryDestination(vortexGameId, files, modName, batchId, uids);
+    return queryDestination(vortexGameId, files, modName, ownStagingFolders, batchId, uids);
   };
 
   const install: InstallFunc = async (
@@ -209,6 +218,13 @@ export function createManualInstaller(api: IExtensionApi): {
         VortexGameId(vortexGameId),
         files,
         path.basename(archivePath ?? "", path.extname(archivePath ?? "")),
+        [
+          ...new Set(
+            [options?.stagingFolder, options?.previousStagingFolder].filter(
+              (folder) => folder !== undefined,
+            ),
+          ),
+        ],
         unattended,
         typeof previousFolder === "string"
           ? {

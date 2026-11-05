@@ -7,6 +7,8 @@ describe("webImageSrc", () => {
     "https://staticdelivery.nexusmods.com/mods/1704/images/3863/3863-1.png",
     "https://images.nexusmods.com/a.jpg",
     "https://nexusmods.com/a.jpg",
+    "data:image/png;base64,iVBORw0KGgo=",
+    "data:image/jpeg;base64,/9j/4AAQ",
   ])("keeps %s", (src) => {
     expect(webImageSrc(src)).toBe(src);
   });
@@ -20,7 +22,9 @@ describe("webImageSrc", () => {
     ["a file", "file:///C:/Users/me/a.png"],
     ["a network path", "\\\\example.com\\share\\a.png"],
     ["a file on a network share", "file://example.com/share/a.png"],
-    ["data", "data:image/png;base64,iVBORw0KGgo="],
+    ["a data SVG", "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="],
+    ["data that isn't an image", "data:text/html;base64,PGgxPmhpPC9oMT4="],
+    ["a data image that isn't base64", "data:image/png,abc"],
     ["a custom protocol", "nxm://skyrimspecialedition/mods/1"],
     ["a relative path", "/a.png"],
   ])("drops %s", (_, src) => {
@@ -38,7 +42,7 @@ describe("webImageSrc", () => {
       ["plain http", "http://example.com/a.png"],
       ["a file", "file:///C:/Users/me/a.png"],
       ["a network path", "\\\\example.com\\share\\a.png"],
-      ["data", "data:image/png;base64,iVBORw0KGgo="],
+      ["a data SVG", "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="],
     ])("still drops %s", (_, src) => {
       expect(webImageSrc(src, { allowAnyDomain: true })).toBeUndefined();
     });

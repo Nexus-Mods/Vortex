@@ -3,6 +3,8 @@ import * as React from "react";
 
 import { ProseImage } from "@/ui/components/prose/prose_image/ProseImage";
 
+import { externalImagePlaceholderFor } from "./externalImages";
+
 /** The sides an image can be put on, as `[img=right]` or `[img align=right]`. */
 const ALIGNS = ["left", "center", "right"] as const;
 
@@ -29,7 +31,8 @@ const sizeOf = (params: Record<string, string | undefined>) => ({
 });
 
 /**
- * An image for bbcode we don't write ourselves, drawn by `ProseImage`, so only from Nexus Mods.
+ * An image for bbcode we don't write ourselves, drawn by `ProseImage`, so only from Nexus Mods;
+ * one from elsewhere is a placeholder, when the bbcode's context asks for them.
  * Its options are read while the parser renders, as they're unset by the time React does.
  */
 class SafeImageTag extends Tag {
@@ -38,6 +41,12 @@ class SafeImageTag extends Tag {
   }
 
   public toReact() {
+    const placeholder = externalImagePlaceholderFor(this);
+
+    if (placeholder !== undefined) {
+      return placeholder;
+    }
+
     const { isFromAdultContent } = this.renderer.options;
     const align = alignOf(this.params.align) ?? alignOf(this.params.img);
     const { width, height } = sizeOf(this.params);

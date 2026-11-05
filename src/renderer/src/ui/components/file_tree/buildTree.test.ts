@@ -1,4 +1,5 @@
-import { PathError, relativePath } from "@nexusmods/paths";
+import { relativePath } from "@nexusmods/paths";
+import { VortexError } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { buildFileTree, type FileTreeEntry } from "./buildTree";
@@ -103,17 +104,17 @@ describe("buildFileTree", () => {
 
   describe("contradictory entries", () => {
     it("throws for a path listed as both a file and a directory", () => {
-      expect(() => buildFileTree([file("foo"), directory("foo")])).toThrow(PathError);
-      expect(() => buildFileTree([directory("foo"), file("foo")])).toThrow(PathError);
+      expect(() => buildFileTree([file("foo"), directory("foo")])).toThrow(VortexError);
+      expect(() => buildFileTree([directory("foo"), file("foo")])).toThrow(VortexError);
     });
 
     it("throws for a file with entries beneath it, whichever comes first", () => {
-      expect(() => buildFileTree([file("foo/bar"), file("foo/bar/baz")])).toThrow(PathError);
-      expect(() => buildFileTree([file("foo/bar/baz"), file("foo/bar")])).toThrow(PathError);
+      expect(() => buildFileTree([file("foo/bar"), file("foo/bar/baz")])).toThrow(VortexError);
+      expect(() => buildFileTree([file("foo/bar/baz"), file("foo/bar")])).toThrow(VortexError);
     });
 
     it("throws for a file with a directory beneath it", () => {
-      expect(() => buildFileTree([file("foo"), directory("foo/bar")])).toThrow(PathError);
+      expect(() => buildFileTree([file("foo"), directory("foo/bar")])).toThrow(VortexError);
     });
 
     it("names the offending path", () => {
@@ -122,6 +123,6 @@ describe("buildFileTree", () => {
   });
 
   it("throws for an empty path", () => {
-    expect(() => buildFileTree([file("")])).toThrow(PathError);
+    expect(() => buildFileTree([file("")])).toThrow(VortexError);
   });
 });

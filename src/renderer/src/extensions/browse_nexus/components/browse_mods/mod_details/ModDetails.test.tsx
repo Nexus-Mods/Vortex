@@ -22,6 +22,9 @@ vi.mock("@/extensions/nexus_integration/nexusV3Client", () => ({
   }),
 }));
 
+// The install button has tests of its own.
+vi.mock("./mod_install_button/ModInstallButton", () => ({ ModInstallButton: () => null }));
+
 import type { IGalleryImage } from "./mod_gallery/ModGallery";
 import { ModDetails } from "./ModDetails";
 
@@ -327,5 +330,56 @@ describe("ModDetails", () => {
       HTMLElement.prototype.scrollBy = scrollBy;
       vi.unstubAllGlobals();
     }
+  });
+
+  describe("external images in the description", () => {
+    const imgur = (name: string) => `[img]https://i.imgur.com/${name}.png[/img]`;
+    const description = [
+      `${imgur("a")}\n${imgur("b")}`,
+      "Some text between.",
+      `[url=https://discord.gg/abc]${imgur("c")}[/url]`,
+    ].join("\n");
+
+    it("counts them once for the mod, with how many placeholders they took", async () => {
+      renderComponent();
+      await respond(makeMod({ description }));
+
+      await waitFor(() =>
+        expect(propertiesOf("browse_mods_external_images_shown")).toEqual([
+          { mod_uid: "1704-1", image_count: 3, placeholder_count: 2 },
+        ]),
+      );
+    });
+
+    it("counts opening the mod page, Why? and an image's link from them", async () => {
+      const openUrl = vi.fn();
+      vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+
+      try {
+        renderComponent();
+        await respond(makeMod({ description }));
+
+        await userEvent.click(
+          (await screen.findAllByRole("button", { name: "View on website" }))[0],
+        );
+        await userEvent.click(screen.getByRole("button", { name: "discord.gg" }));
+        await userEvent.click(screen.getAllByRole("button", { name: "Why?" })[0]);
+
+        expect(openUrl).toHaveBeenCalledWith(
+          "https://www.nexusmods.com/skyrimspecialedition/mods/1",
+        );
+        expect(propertiesOf("browse_mods_external_images_website_opened")).toEqual([
+          { mod_uid: "1704-1", image_count: 2, source: "placeholder" },
+        ]);
+        expect(propertiesOf("browse_mods_external_images_why_opened")).toEqual([
+          { mod_uid: "1704-1" },
+        ]);
+        expect(propertiesOf("browse_mods_external_image_link_opened")).toEqual([
+          { mod_uid: "1704-1", link_domain: "discord.gg" },
+        ]);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
   });
 });

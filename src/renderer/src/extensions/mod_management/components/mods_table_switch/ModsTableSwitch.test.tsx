@@ -91,6 +91,24 @@ describe("ModsTableSwitch", () => {
     expect(screen.queryByRole("grid")).toBeNull();
   });
 
+  it("shows the classic table even when the open view's grouping can't name a mod", () => {
+    const nameless = { id: "x", enabled: true, type: "collection", rules: [] };
+    const throwingName = mod("a", "Alpha", true, {
+      attributes: {
+        get name(): string {
+          throw new Error("grouped for the classic table");
+        },
+      },
+    });
+
+    renderSwitch({ a: throwingName, x: nameless as unknown as IModWithState }, undefined, {
+      betaTable: false,
+      views: { selected: "collections", changes: {}, custom: [] },
+    });
+
+    expect(screen.getByTestId("legacy-table")).toBeInTheDocument();
+  });
+
   it("lists the mods by name, ungrouped, when no collection is installed", () => {
     renderSwitch({ b: mod("b", "Beta", false), a: mod("a", "Alpha", true) });
 
@@ -227,11 +245,8 @@ describe("ModsTableSwitch", () => {
   describe("a view of the user's own", () => {
     const createView = async (name: string) => {
       await userEvent.click(screen.getByRole("button", { name: "Add view" }));
-      await userEvent.type(
-        screen.getByRole("textbox", { name: "modsTable::viewName::label" }),
-        name,
-      );
-      await userEvent.click(screen.getByRole("button", { name: "modsTable::viewName::create" }));
+      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), name);
+      await userEvent.click(screen.getByRole("button", { name: "Create view" }));
     };
 
     it("is made from Add view, after the built-in ones, and opens", async () => {
@@ -253,14 +268,11 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
       await userEvent.click(screen.getByRole("button", { name: "Add view" }));
-      await userEvent.type(
-        screen.getByRole("textbox", { name: "modsTable::viewName::label" }),
-        "Half-typed",
-      );
-      await userEvent.click(screen.getByRole("button", { name: "modsTable::cancel" }));
+      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), "Half-typed");
+      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
       await userEvent.click(screen.getByRole("button", { name: "Add view" }));
 
-      expect(screen.getByRole("textbox", { name: "modsTable::viewName::label" })).toHaveValue("");
+      expect(screen.getByRole("textbox", { name: "Name view" })).toHaveValue("");
     });
 
     it("starts ungrouped, with the version and installation time columns", async () => {
@@ -336,7 +348,7 @@ describe("ModsTableSwitch", () => {
       await userEvent.click(
         screen.getByRole("menuitem", { name: "modsTable::toolbar::deleteView" }),
       );
-      await userEvent.click(screen.getByRole("button", { name: "modsTable::cancel" }));
+      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
       expect(viewButtons().map((view) => view.textContent)).toContain("Mine");
     });
@@ -356,7 +368,7 @@ describe("ModsTableSwitch", () => {
         await userEvent.click(
           screen.getByRole("menuitem", { name: "modsTable::toolbar::renameView" }),
         );
-        const field = screen.getByRole("textbox", { name: "modsTable::viewName::label" });
+        const field = screen.getByRole("textbox", { name: "Name view" });
         expect(field).toHaveValue("Mine");
         await userEvent.clear(field);
         await userEvent.type(field, "Theirs{Enter}");
@@ -372,12 +384,10 @@ describe("ModsTableSwitch", () => {
         await userEvent.click(
           screen.getByRole("menuitem", { name: "modsTable::toolbar::deleteView" }),
         );
-        expect(
-          screen.getByRole("dialog", { name: "modsTable::deleteView::title" }),
-        ).toHaveTextContent("modsTable::deleteView::body");
-        await userEvent.click(
-          screen.getByRole("button", { name: "modsTable::deleteView::confirm" }),
+        expect(screen.getByRole("dialog", { name: "Delete view" })).toHaveTextContent(
+          "modsTable::deleteView::body",
         );
+        await userEvent.click(screen.getByRole("button", { name: "Delete view" }));
 
         expect(viewButtons().map((view) => view.textContent)).toEqual([
           "modsTable::views::all",
@@ -414,10 +424,7 @@ describe("ModsTableSwitch", () => {
       await userEvent.click(
         screen.getByRole("menuitem", { name: "modsTable::toolbar::renameView" }),
       );
-      await userEvent.type(
-        screen.getByRole("textbox", { name: "modsTable::viewName::label" }),
-        "s{Enter}",
-      );
+      await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), "s{Enter}");
 
       await waitFor(() => expect(screen.getByRole("button", { name: "Mines" })).toHaveFocus());
     });

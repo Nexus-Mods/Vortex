@@ -19,11 +19,12 @@ import { Page } from "./Page";
 import { PageHeader } from "./PageHeader";
 import { PageScroll } from "./PageScroll";
 
-const renderPage = () =>
+const renderPage = ({ isBeta = false }: { isBeta?: boolean } = {}) =>
   render(
     <Page scrollable={false}>
       <PageHeader
         data-testid="header"
+        isBeta={isBeta}
         pictogramName="settings"
         subtitle="a subtitle"
         title="a title"
@@ -83,5 +84,21 @@ describe("PageHeader", () => {
     scrollDown();
 
     expect(screen.getByTestId("header")).toHaveClass("shadow-md");
+  });
+
+  it("marks a beta page with a badge that goes subdued with the title", () => {
+    renderPage({ isBeta: true });
+
+    expect(screen.getByText(/beta/i)).toHaveClass("border-neutral-strong");
+
+    scrollDown();
+
+    expect(screen.getByText(/beta/i)).toHaveClass("border-neutral-subdued");
+  });
+
+  it("has no badge on a page that isn't in beta", () => {
+    renderPage();
+
+    expect(screen.queryByText(/beta/i)).toBeNull();
   });
 });

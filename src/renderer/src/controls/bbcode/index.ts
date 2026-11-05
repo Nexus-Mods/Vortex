@@ -1,6 +1,8 @@
 import * as bbcode from "bbcode-to-react";
 import type * as React from "react";
 
+import type { IExternalImagePlaceholderOptions } from "@/ui/components/prose/external_image_placeholder/ExternalImagePlaceholder";
+
 import BrTag from "./BrTag";
 import CompareTag from "./CompareTag";
 import EmbedLinkTag from "./EmbedLinkTag";
@@ -43,6 +45,8 @@ export interface IBBCodeContext {
   allowLocal?: boolean;
   /** Whether what the bbcode's from, such as a mod, is adult content; blurs its images if set to. */
   isFromAdultContent?: boolean;
+  /** Shows placeholders for images from outside Nexus Mods, which are otherwise left out. */
+  externalImagePlaceholders?: IExternalImagePlaceholderOptions;
 }
 
 const createFullParser = (safe: boolean) => {

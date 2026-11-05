@@ -223,11 +223,13 @@
     }
 
     /* Focus scrolls a control into view clear of the sticky header, and a row's clear of the
-       heading stuck under it too. Its own margin, not the row's. */
+       heading stuck under it too; scrolling to a row clears them the same way. */
+    .nxm-table-row,
     :is(.nxm-table-row, .nxm-table-group-row) * {
         scroll-margin-top: var(--nxm-table-head-height);
     }
 
+    .nxm-table[role="treegrid"] .nxm-table-row,
     .nxm-table[role="treegrid"] .nxm-table-row * {
         scroll-margin-top: calc(var(--nxm-table-head-height) + var(--nxm-table-group-row-height));
     }

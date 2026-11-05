@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import { GameId } from "@vortex/shared";
+import { GameId, VortexModStagingFolder } from "@vortex/shared";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -13,6 +13,7 @@ import { UserCanceled } from "../../util/CustomErrors";
 import { setManualInstallerPreferences } from "../gamemode_management/actions/persistent";
 import { isTierZeroManagedGame, tierZeroGameFor } from "../gamemode_management/tiered/tierZero";
 import {
+  commonTopFolder,
   createManualInstaller,
   INSTALL_DESTINATION_ATTRIBUTE,
   INSTALL_SKIP_TOP_FOLDER_ATTRIBUTE,
@@ -53,12 +54,15 @@ const answer = (overrides: Partial<IManualInstallerAnswer> = {}): IManualInstall
   ...overrides,
 });
 
-const makeApi = (dialogAnswer?: IManualInstallerAnswer) => {
+const makeApi = (
+  dialogAnswer?: IManualInstallerAnswer,
+  state: unknown = { settings: { gameMode: { discovered: {} } } },
+) => {
   vi.mocked(requestManualInstallerDestination).mockResolvedValue(dialogAnswer);
   const emit = vi.fn();
   const dispatch = vi.fn();
   const api = {
-    getState: () => ({}),
+    getState: () => state,
     store: { dispatch },
     events: { emit },
   } as unknown as IExtensionApi;
@@ -89,6 +93,8 @@ interface IInstallOptions {
   modReference?: IModReference;
   archiveId?: string;
   files?: string[];
+  stagingFolder?: VortexModStagingFolder;
+  previousStagingFolder?: VortexModStagingFolder;
 }
 
 const install = (installer: ReturnType<typeof createManualInstaller>, opts: IInstallOptions = {}) =>
@@ -104,6 +110,8 @@ const install = (installer: ReturnType<typeof createManualInstaller>, opts: IIns
       previousAttributes: opts.previousAttributes,
       modReference: opts.modReference,
       archiveId: opts.archiveId,
+      stagingFolder: opts.stagingFolder,
+      previousStagingFolder: opts.previousStagingFolder,
     },
   );
 
@@ -144,6 +152,27 @@ describe("normalizeDestination", () => {
     expect(normalizeDestination("/etc")).toBeUndefined();
     expect(normalizeDestination("\\Windows")).toBeUndefined();
     expect(normalizeDestination("C:\\Windows")).toBeUndefined();
+  });
+});
+
+describe("commonTopFolder", () => {
+  test("is the folder every entry is in", () => {
+    expect(commonTopFolder([`Top${path.sep}`, path.join("Top", "a.dll")])).toBe("Top");
+    expect(commonTopFolder([path.join("Top", "a.dll"), path.join("Top", "b", "c.dll")])).toBe(
+      "Top",
+    );
+  });
+
+  test("is undefined when a file is at the archive root", () => {
+    expect(commonTopFolder([path.join("Top", "a.dll"), "readme.txt"])).toBeUndefined();
+  });
+
+  test("is undefined when the entries are in different folders", () => {
+    expect(commonTopFolder([path.join("A", "a.dll"), path.join("B", "b.dll")])).toBeUndefined();
+  });
+
+  test("is undefined for no entries", () => {
+    expect(commonTopFolder([])).toBeUndefined();
   });
 });
 
@@ -276,7 +305,7 @@ describe("install", () => {
 });
 
 describe("per-game preferences", () => {
-  test("the dialog preselects the default folder and offers the top folder and previews", async () => {
+  test("the dialog preselects the default folder and offers the top folder", async () => {
     withPreferences({ defaultFolder: "Mods" });
     const { api } = makeApi(answer({ folder: "Mods" }));
     await install(createManualInstaller(api), { files: folderFiles });
@@ -286,8 +315,90 @@ describe("per-game preferences", () => {
       expect.objectContaining({
         defaultFolder: "Mods",
         topFolder: "Top",
-        previewFiles: [path.join("Top", "a.dll"), path.join("Top", "b", "c.dll")],
       }),
+    );
+  });
+
+  test("the dialog gets the game's install folder", async () => {
+    const { api } = makeApi(answer(), {
+      settings: { gameMode: { discovered: { game: { path: path.join("C:", "Games", "Game") } } } },
+    });
+    await install(createManualInstaller(api));
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ gameFolder: path.join("C:", "Games", "Game") }),
+    );
+  });
+
+  test("the dialog gets an empty install folder when the game isn't discovered", async () => {
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api));
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ gameFolder: "" }),
+    );
+  });
+
+  test("the dialog gets every entry of the archive with its kind, directories included", async () => {
+    const entries = [`Top${path.sep}`, path.join("Top", "a.dll"), path.join("Top", "b", "c.dll")];
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api), { files: entries });
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({
+        files: [
+          { path: "Top", kind: "directory" },
+          { path: "Top/a.dll", kind: "file" },
+          { path: "Top/b/c.dll", kind: "file" },
+        ],
+      }),
+    );
+  });
+
+  test("the installer keeps the archive's own names for the files it copies", async () => {
+    const entries = [path.join("Top", "a.dll")];
+    const { api } = makeApi(answer({ folder: "" }));
+    const result = await install(createManualInstaller(api), { files: entries });
+
+    expect(copiesOf(result)[0].source).toBe(entries[0]);
+  });
+
+  test("the dialog gets the staging folders of the mod and of the one it replaces", async () => {
+    const stagingFolder = VortexModStagingFolder("new-mod");
+    const previousStagingFolder = VortexModStagingFolder("old-mod");
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api), { stagingFolder, previousStagingFolder });
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ ownStagingFolders: [stagingFolder, previousStagingFolder] }),
+    );
+  });
+
+  test("the dialog gets a staging folder once when the mod reuses its previous one", async () => {
+    const stagingFolder = VortexModStagingFolder("same-mod");
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api), {
+      stagingFolder,
+      previousStagingFolder: stagingFolder,
+    });
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ ownStagingFolders: [stagingFolder] }),
+    );
+  });
+
+  test("the dialog gets no staging folders when the installer isn't told any", async () => {
+    const { api } = makeApi(answer());
+    await install(createManualInstaller(api));
+
+    expect(requestManualInstallerDestination).toHaveBeenCalledWith(
+      api,
+      expect.objectContaining({ ownStagingFolders: [] }),
     );
   });
 

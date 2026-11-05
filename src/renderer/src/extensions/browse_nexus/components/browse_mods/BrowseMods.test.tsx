@@ -111,7 +111,10 @@ const search = (mods: ModSummary[], loading = false, overrides: Partial<IModSear
     loading,
     error: null,
     retry: vi.fn(),
-    preset: "trending",
+    viewId: "trending",
+    trackedView: "trending",
+    views: [],
+    isEdited: false,
     sort: { field: "endorsements", direction: "desc" },
     filters: { timeRange: "7" },
     currentPage: 1,
@@ -247,6 +250,20 @@ describe("BrowseMods", () => {
     rerender(search([]));
 
     expect(propertiesOf("browse_mods_no_results")).toEqual([searched]);
+  });
+
+  it("counts an empty search again for another view of the user's own searching alike", () => {
+    const mine = { trackedView: "custom" } as const;
+    const { rerender, propertiesOf } = renderComponent(
+      search([], false, { ...mine, viewId: "custom-1" }),
+    );
+
+    rerender(search([], false, { ...mine, viewId: "custom-2" }));
+
+    expect(propertiesOf("browse_mods_no_results")).toEqual([
+      { ...searched, view: "custom" },
+      { ...searched, view: "custom" },
+    ]);
   });
 
   it("counts retrying a search that failed", async () => {

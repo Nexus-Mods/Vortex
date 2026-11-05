@@ -9,7 +9,9 @@ function makeRequest(id: string): IManualInstallerRequest {
     gameId: VortexGameId("somegame"),
     modName: `mod ${id}`,
     remaining: 0,
-    previewFiles: [],
+    gameFolder: "",
+    files: [],
+    ownStagingFolders: [],
   };
 }
 

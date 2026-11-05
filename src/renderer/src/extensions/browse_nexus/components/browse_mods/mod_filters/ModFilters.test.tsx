@@ -7,7 +7,7 @@ import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 
-import type { IModFilters } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { IModFilters } from "../../../util/mod_views/modViews";
 import { ModFilters } from "./ModFilters";
 
 /** The filters, hung off a trigger as the bar's filter button hangs them, and opened. */

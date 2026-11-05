@@ -23,13 +23,23 @@
   "manualInstaller": {
     "title": "Choose install folder",
     "intro": "Choose the folder inside the game directory to install {{modName}} into.",
-    "folder": "Folder",
+    "modFiles": "Mod files",
     "gameFolder": "Game folder",
+    "gameFolderTree": "Install to",
+    "noGameFolder": "The game folder couldn't be found. You can still install to the game folder itself or to a new folder.",
+    "gameFolderFailed": "The game folder couldn't be read.",
+    "directoryFailed": "Failed to read directory.",
     "newFolder": "New folder",
-    "createFolder": "Create folder",
-    "invalidFolder": "The folder must be inside the game directory",
+    "folderName": "Folder name",
     "skipTopFolder": "Skip top folder ({{folder}})",
-    "preview": "Files will be installed to:",
+    "selectDirectory": "Select a folder to install to, not a file.",
+    "result": "Files will be installed to:",
+    "checking": "Checking for files that would be replaced...",
+    "statusIncomplete": "Some of the game's files couldn't be checked, so a file that replaces another or conflicts with a mod may be shown as new.",
+    "statusNew": "New",
+    "statusReplacesGameFile": "Replaces a game file",
+    "statusReplacesOwnFile": "Replaces this mod's file",
+    "statusConflictsWithMod": "Conflicts with {{mod}}",
     "useAsDefault": "Use this folder for future mods for this game",
     "dontAskAgain": "Don't ask again",
     "useForAll": "Use this folder for the remaining mod ({{count}} more)",
@@ -183,19 +193,12 @@
       "disableAll": "Disable all mods"
     },
     "deleteView": {
-      "title": "Delete view",
-      "body": "Are you sure you want to delete \"{{name}}\"? This won't delete any mods, but the view and its customisations will be permanently removed.",
-      "confirm": "Delete view"
+      "body": "Are you sure you want to delete \"{{name}}\"? This won't delete any mods, but the view and its customisations will be permanently removed."
     },
     "viewName": {
-      "createTitle": "Create a new view",
-      "renameTitle": "Rename view",
       "createIntro": "Give your view a name. You can customise its columns, grouping and filters after creating it.",
       "renameIntro": "Give your view a new name. Your columns, grouping and filters won't change.",
-      "label": "Name view",
-      "placeholder": "e.g. Author view",
-      "create": "Create view",
-      "rename": "Rename view"
+      "placeholder": "e.g. Author view"
     }
   },
   "modsDropTarget": {

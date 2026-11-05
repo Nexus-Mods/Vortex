@@ -3,7 +3,7 @@ import type { IModRequirements } from "@nexusmods/nexus-api";
  * Mod Requirements Health Check
  * Validates that all Nexus mod requirements are satisfied
  */
-import { GameId, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { type GameDomain, GameId, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
 import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
@@ -18,6 +18,7 @@ import renderModName from "@/extensions/mod_management/util/modName";
 import { isLoggedIn } from "@/extensions/nexus_integration/selectors";
 import { nexusGamesProm, numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
 import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
+import { nexusModPageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import { makeModUID, VORTEX_MOD_UID } from "@/extensions/nexus_integration/util/UIDs";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IProfile } from "@/extensions/profile_management/types/IProfile";
@@ -143,7 +144,7 @@ export function resolveRequirementTarget(
   fallbackGameId: string,
 ): {
   requiredModId: number;
-  domainName: string | undefined;
+  domainName: GameDomain | undefined;
   gameIdForStorage: string;
   uid: string | undefined;
 } | null {
@@ -152,9 +153,12 @@ export function resolveRequirementTarget(
     return null;
   }
   const requiredGameId = req.gameId ? parseInt(req.gameId, 10) : undefined;
+  const requiredDomain =
+    requiredGameId != null ? numericGameIdToDomainName(GameId(requiredGameId)) : undefined;
+  // a requirement with no game is on the requiring mod's game, whose id here is Vortex's
   const domainName =
-    requiredGameId != null ? numericGameIdToDomainName(GameId(requiredGameId)) : fallbackGameId;
-  const gameIdForStorage = domainName ?? fallbackGameId;
+    requiredGameId != null ? requiredDomain : nexusGameId(getGame(fallbackGameId), fallbackGameId);
+  const gameIdForStorage = requiredDomain ?? fallbackGameId;
   const uid = makeModUID({ modId: req.modId, fileId: "0", gameId: gameIdForStorage });
 
   // Filter out requirements that target Vortex itself, treat as always satisfied.
@@ -390,7 +394,7 @@ export async function checkModRequirements(
 
       // Get Nexus domain name for the requiring mod
       const game = getGame(gameId);
-      const requiringModNexusDomain = game ? nexusGameId(game, gameId) : gameId;
+      const requiringModNexusDomain = nexusGameId(game, gameId);
 
       const requirements = requirementsMap[uid];
       if (!requirements) {
@@ -438,7 +442,7 @@ export async function checkModRequirements(
           modUID: uid,
           modName: getModName(),
           modUrl: requiringModNexusDomain
-            ? `https://www.nexusmods.com/${requiringModNexusDomain}/mods/${modId}`
+            ? nexusModPageUrl(requiringModNexusDomain, modId)
             : undefined,
         };
 
@@ -476,9 +480,7 @@ export async function checkModRequirements(
             requiredBy,
             modUrl:
               (req.url && req.url.trim()) ||
-              (domainName
-                ? `https://www.nexusmods.com/${domainName}/mods/${requiredModId}`
-                : undefined),
+              (domainName ? nexusModPageUrl(domainName, requiredModId) : undefined),
           });
         }
       }

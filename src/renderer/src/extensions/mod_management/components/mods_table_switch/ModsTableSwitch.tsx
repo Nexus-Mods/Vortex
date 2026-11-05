@@ -99,12 +99,13 @@ const STATUS_GROUPS = [
 
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
+const NO_MODS: { [id: string]: IModWithState } = {};
 const nop = () => undefined;
 
 /**
  * The Mods page's table: the classic one, or the new one while the user has the beta view on.
  *
- * The new table is asked to show a group; see useModsTableFocusRequest.
+ * The new table is asked to show a group or a mod; see useModsTableFocusRequest.
  */
 export const ModsTableSwitch = ({
   mods,
@@ -133,7 +134,9 @@ export const ModsTableSwitch = ({
     renameView,
     removeView,
   } = useModsTableView(mods);
-  const rows = useMemo(() => allModRows(mods), [mods]);
+  // The legacy table builds its own rows and groups, so build none for it.
+  const tableMods = newTable ? mods : NO_MODS;
+  const rows = useMemo(() => allModRows(tableMods), [tableMods]);
   const memberships = useCollectionMemberships(mods);
   const { changing, setEnabled, isEnabled } = useModsEnabled(onSetModsEnabled);
 
@@ -315,7 +318,7 @@ export const ModsTableSwitch = ({
 
   const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
 
-  const groups = useModsTableGroups(mods, grouping, groupable, memberships, t);
+  const groups = useModsTableGroups(tableMods, grouping, groupable, memberships, t);
 
   const { search, setSearch, changeSearch, isSearching, shownRows, shownGroups } =
     useModsTableSearch({
@@ -327,7 +330,12 @@ export const ModsTableSwitch = ({
       onSearchStarted: analytics.onSearchStarted,
     });
 
-  const { focusGroupId, onGroupFocused } = useModsTableFocusRequest({ groups, search, setSearch });
+  const { focusGroupId, onGroupFocused, focusModId, onModFocused } = useModsTableFocusRequest({
+    groups,
+    rows,
+    search,
+    setSearch,
+  });
 
   const displayOptions = useDisplayOptionsAction({
     label: t("modsTable::toolbar::viewOptions"),
@@ -378,6 +386,8 @@ export const ModsTableSwitch = ({
   const tableProps = {
     focusGroupId,
     onGroupFocused,
+    focusRowId: focusModId,
+    onRowFocused: onModFocused,
     className: "mb-2 flex-1",
     toolbar: (
       <ModsTableToolbar
