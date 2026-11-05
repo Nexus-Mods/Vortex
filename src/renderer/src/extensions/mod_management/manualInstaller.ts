@@ -10,13 +10,15 @@ import { FlagService } from "../../FlagService";
 import { getBatchContext } from "../../util/BatchContext";
 import { getCollectionActiveSession } from "../../util/collectionInstallSessionSelectors";
 import { UserCanceled } from "../../util/CustomErrors";
+import type { ManualInstallerEventContext } from "../analytics/utils/manualInstallerEvent";
+import { emitManualInstallerEvent } from "../analytics/utils/manualInstallerEvent";
 import { setManualInstallerPreferences } from "../gamemode_management/actions/persistent";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import { isTierZeroManagedGame, tierZeroGameFor } from "../gamemode_management/tiered/tierZero";
 import { requestManualInstallerDestination } from "./manualInstallerQueue";
 import { createManualInstallerTracker, manualInstallerUIDs } from "./manualInstallerTracker";
 import type { IInstruction } from "./types/IInstallResult";
-import type { ICommonModAttributes } from "./types/IMod";
+import type { ICommonModAttributes, IModReference } from "./types/IMod";
 import type { InstallFunc } from "./types/InstallFunc";
 import type { TestSupported } from "./types/TestSupported";
 
@@ -114,6 +116,17 @@ export function createManualInstaller(api: IExtensionApi): {
 
   const tracker = createManualInstallerTracker(api);
 
+  // folders the user picked in the dialog, by archive, until that install is known to have
+  // finished: nothing else (saved choice, batch reuse, unattended) is ever reported
+  const pendingEvents = new Map<string, ManualInstallerEventContext>();
+  api.events.on("did-install-mod", (_gameId: string, archiveId: string) => {
+    const pending = pendingEvents.get(archiveId);
+    if (pending !== undefined) {
+      pendingEvents.delete(archiveId);
+      void emitManualInstallerEvent(api, pending);
+    }
+  });
+
   const queryDestination = async (
     vortexGameId: VortexGameId,
     files: string[],
@@ -173,6 +186,8 @@ export function createManualInstaller(api: IExtensionApi): {
     previous: IDestination | undefined,
     batchId: string | undefined,
     uids: { mod_uid?: string; file_uid?: string },
+    archiveId: string | undefined,
+    modReference: IModReference | undefined,
   ): Promise<IDestination> => {
     const preferences = tierZeroGameFor(api.getState(), vortexGameId)?.manualInstallerPreferences;
     const defaultFolder = preferences?.defaultFolder;
@@ -193,7 +208,23 @@ export function createManualInstaller(api: IExtensionApi): {
     if (defaultFolder !== undefined && preferences?.dontAskAgain === true) {
       return { folder: defaultFolder, skipTopFolder: false };
     }
-    return queryDestination(vortexGameId, files, modName, ownStagingFolders, batchId, uids);
+    const picked = await queryDestination(
+      vortexGameId,
+      files,
+      modName,
+      ownStagingFolders,
+      batchId,
+      uids,
+    );
+    // only a confirmed dialog is reported, and only if the install then succeeds
+    if (archiveId !== undefined) {
+      pendingEvents.set(archiveId, {
+        gameId: vortexGameId,
+        destination: picked.folder,
+        modReference,
+      });
+    }
+    return picked;
   };
 
   const install: InstallFunc = async (
@@ -206,6 +237,10 @@ export function createManualInstaller(api: IExtensionApi): {
     archivePath,
     options,
   ) => {
+    // an earlier install of this archive that never finished must not be reported now
+    if (options?.archiveId !== undefined) {
+      pendingEvents.delete(options.archiveId);
+    }
     const previousFolder = options?.previousAttributes?.[INSTALL_DESTINATION_ATTRIBUTE];
     const batch =
       options?.archiveId !== undefined
@@ -235,6 +270,8 @@ export function createManualInstaller(api: IExtensionApi): {
           : undefined,
         options?.archiveId,
         manualInstallerUIDs(vortexGameId, options?.modReference),
+        options?.archiveId,
+        options?.modReference,
       );
     } finally {
       // counts cancelled installs too, they are no longer remaining
