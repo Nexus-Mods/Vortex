@@ -350,7 +350,7 @@ const requestLog = {
     } else {
       return (...args) => {
         const prom = obj[prop](...args);
-        if (prom.then !== undefined) {
+        if (prom?.then !== undefined) {
           const stack = getCaller();
           let caller = stack[1].getFunctionName();
           if (caller === null) {
