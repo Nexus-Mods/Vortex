@@ -14,6 +14,7 @@ Project and coding documentation. To set up and build Vortex, start with
 
 - [DEBUGGING-GUIDE.md](DEBUGGING-GUIDE.md) - VS Code debugging, log files, DevTools, Redux DevTools, performance
 - [error-reporting/](error-reporting/README.md) - How errors are captured, filtered, fingerprinted and exported
+- [investigation/state-store-key-order-corruption.md](investigation/state-store-key-order-corruption.md) - Mod and download records vanishing because of out-of-order leveldb keys (LAZ-978)
 
 ## Writing code
 
