@@ -3,6 +3,7 @@
 @import "./button.css";
 @import "./dropdown.css";
 @import "./file-tree.css";
+@import "./focus-ring.css";
 @import "./game-art.css";
 @import "./grid.css";
 @import "./hover-card.css";
@@ -20,8 +21,8 @@
 @import "./resizable-split.css";
 @import "./scrollbar.css";
 @import "./split-button.css";
-@import "./table.css";
 @import "./tab.css";
+@import "./table.css";
 @import "./toolbar.css";
 @import "./tooltip.css";
 @import "./view-picker.css";
