@@ -44,6 +44,7 @@ import {
   quickDiscovery,
   quickDiscoveryTools,
   searchDiscovery,
+  type IStorePreference,
 } from "./util/discovery";
 import { getGame } from "./util/getGame";
 
@@ -324,7 +325,10 @@ export class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public async startQuickDiscovery(games?: IGame[]): Promise<string[]> {
+  public async startQuickDiscovery(
+    games?: IGame[],
+    preference?: IStorePreference,
+  ): Promise<string[]> {
     const abort = new AbortController();
     this.mQuickDiscoveryAbort = abort;
 
@@ -337,6 +341,7 @@ export class GameModeManager {
         this.onDiscoveredGame,
         this.onDiscoveredTool,
         abort.signal,
+        preference,
       );
 
       if (abort.signal.aborted) {

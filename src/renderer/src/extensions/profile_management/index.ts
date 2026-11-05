@@ -59,6 +59,7 @@ import {
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
 import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
+import { clearGameAddStore } from "../gamemode_management/actions/session";
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
 import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
@@ -597,8 +598,40 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
     });
 }
 
+/** The store the user picked this game from, if they picked one while adding it. */
+function pickedStore(state: IState, gameId: VortexGameId): string | undefined {
+  const picked = state.session.gameMode.gameAddStore;
+  return picked?.gameId === gameId ? picked.store : undefined;
+}
+
+/**
+ * Runs discovery for one game. With a store the user picked the game from, discovery is
+ * held to that store, and not finding the game there fails the add rather than leaving
+ * it to manage whichever install was found before.
+ */
+async function discoverPickedGame(
+  api: IExtensionApi,
+  gameId: VortexGameId,
+  store: string | undefined,
+): Promise<void> {
+  await api.emitAndAwait("discover-game", gameId, store);
+
+  if (store !== undefined) {
+    const found = api.getState().settings.gameMode.discovered[gameId]?.store;
+    if (found !== store) {
+      throw new VortexError(`"${gameId}" was not found in the game store "${store}"`, {
+        kind: "game-not-found",
+        gameId,
+      });
+    }
+  }
+}
+
 function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<void> {
   let state: IState = api.store.getState();
+  // read now: the add that recorded it clears it as soon as this returns, and the
+  // download below runs on after that
+  const store = pickedStore(state, VortexGameId(gameId));
   const knownGames = state.session.gameMode.known;
   const gameStored = knownGames.find((game) => game.id === gameId);
 
@@ -644,7 +677,11 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<v
                 .then(() => api.emitAndAwait("install-extension", extension))
                 .then((results: boolean[]) => {
                   if (results.includes(true)) {
-                    relaunch(["--game", extension.name]);
+                    relaunch(
+                      store !== undefined
+                        ? ["--game", extension.name, "--game-store", store]
+                        : ["--game", extension.name],
+                    );
                   }
                 })
                 .finally(() => {
@@ -965,8 +1002,11 @@ function init(context: IExtensionContext): boolean {
           ? context.api.emitAndAwait("register-tier-zero-game", tierZero)
           : Promise.resolve();
 
+      // what the user picked the game from, which discovery is held to
+      const store = pickedStore(context.api.getState(), VortexGameId(gameId));
+
       registerStep
-        .then(() => context.api.emitAndAwait("discover-game", gameId))
+        .then(() => discoverPickedGame(context.api, VortexGameId(gameId), store))
         .then(() => Promise.resolve(checkOverridden(context.api, gameId)))
         .then(() => {
           const state = context.api.getState();
@@ -982,8 +1022,14 @@ function init(context: IExtensionContext): boolean {
         })
         .catch((err) => {
           if (!(err instanceof UserCanceled)) {
-            context.api.showErrorNotification("Failed to manage game", err);
+            // a game missing from the store the user picked isn't a bug to report
+            context.api.showErrorNotification("Failed to manage game", err, {
+              allowReport: !(err instanceof VortexError && err.data.kind === "game-not-found"),
+            });
           }
+        })
+        .finally(() => {
+          context.api.store.dispatch(clearGameAddStore());
         });
     },
   );
@@ -1195,9 +1241,13 @@ function init(context: IExtensionContext): boolean {
           // startQuickDiscovery in gamemode_management.once() and pops the
           // "Game not discovered" dialog even though discovery would have
           // succeeded.
-          context.api
-            .emitAndAwait("discover-game", game.id)
-            .then(() => manageGame(context.api, game.id));
+          discoverPickedGame(context.api, VortexGameId(game.id), commandLine.gameStore)
+            .then(() => manageGame(context.api, game.id))
+            .catch((err) => {
+              context.api.showErrorNotification("Failed to manage game", err, {
+                allowReport: !(err instanceof VortexError && err.data.kind === "game-not-found"),
+              });
+            });
         } else {
           log("warn", "game specified on command line not found", {
             game: commandLine.game,
