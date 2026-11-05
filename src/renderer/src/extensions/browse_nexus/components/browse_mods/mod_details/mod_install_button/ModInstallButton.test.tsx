@@ -330,11 +330,31 @@ describe("ModInstallButton", () => {
       const { rerender } = renderButton(primaryFile);
 
       await userEvent.click(button());
-      expect(screen.getByText("Skip the website and install instantly.")).toBeInTheDocument();
+      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
 
       mocks.isPremium = true;
       rerender();
     };
+
+    it("offers a free user 1-click update for an update", () => {
+      installed("update");
+      mocks.isPremium = false;
+      renderButton(primaryFile);
+
+      expect(button()).toHaveTextContent("1-click update");
+    });
+
+    it("upsells a free user an update in words of updating", async () => {
+      installed("update");
+      mocks.isPremium = false;
+      renderButton(primaryFile);
+
+      await userEvent.click(button());
+
+      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
+      expect(screen.getByText("Update via mod page (free)")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Unlock 1-click updates" })).toBeInTheDocument();
+    });
 
     it("upsells a free user 1-click for an update, counted as one, updating once they unlock", async () => {
       installed("update");

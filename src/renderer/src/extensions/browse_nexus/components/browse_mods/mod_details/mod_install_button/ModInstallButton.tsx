@@ -91,6 +91,7 @@ export const ModInstallButton = ({
   const domain = GameDomain(mod.game.domain_name);
   const action = shouldInstall ? "install" : "download";
   const upsellAction = installState.kind === "installed" ? "update" : action;
+  const isUpdate = upsellAction === "update";
 
   const install = useMutation({
     mutationKey: installKey,
@@ -144,7 +145,10 @@ export const ModInstallButton = ({
     void updateMod(api, installState.mod, game);
   };
 
-  /** 1-click install, which keeps showing its progress until its install is done. */
+  /**
+   * 1-click install, which keeps showing its progress until its install is done. A free user with
+   * an update sees it as 1-click update, and its upsell says update too.
+   */
   const oneClick = () => (
     <Tooltip content={unavailable} disabled={!unavailable}>
       <Button
@@ -167,7 +171,7 @@ export const ModInstallButton = ({
           setIsUpsellOpen(true);
         }}
       >
-        {t("1-click install")}
+        {isUpdate ? t("1-click update") : t("1-click install")}
       </Button>
     </Tooltip>
   );
@@ -248,13 +252,26 @@ export const ModInstallButton = ({
       <PremiumUpsellModal
         api={api}
         content={Content.BrowseModsAd}
-        description={t(
-          "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
-        )}
+        description={
+          isUpdate
+            ? t(
+                "1-click in app updates are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
+              )
+            : t(
+                "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
+              )
+        }
         fallbackIcon="open_in_new"
-        fallbackLabel={t("Install via mod page (free)")}
+        fallbackLabel={
+          isUpdate ? t("Update via mod page (free)") : t("Install via mod page (free)")
+        }
         isOpen={isUpsellOpen}
-        title={t("Skip the website and install instantly.")}
+        unlockLabel={isUpdate ? t("Unlock 1-click updates") : undefined}
+        title={
+          isUpdate
+            ? t("Skip the website and update instantly.")
+            : t("Skip the website and install instantly.")
+        }
         onClose={() => setIsUpsellOpen(false)}
         onDismissed={() =>
           tracker.trackPremiumModalDismissed({ mod_uid: mod.id, action: upsellAction })
