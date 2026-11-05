@@ -51,13 +51,17 @@ const formatValue = (value: unknown, type: string | undefined, language: string)
 const InfoValue = ({ entry, language }: { entry: IGameInfoEntry; language: string }) => {
   const value = formatValue(entry.value, entry.type, language);
 
-  if (entry.type === "url") {
+  // A path goes to main as one, which opens it through a file:// URL.
+  if (entry.type === "url" || entry.type === "path") {
     return (
       <TypographyLink
         appearance="subdued"
         className="wrap-anywhere"
+        data-testid="game-detail-link"
         typographyType="inherit"
-        onClick={() => window.api.shell.openUrl(value)}
+        onClick={() =>
+          entry.type === "path" ? window.api.shell.openFile(value) : window.api.shell.openUrl(value)
+        }
       >
         {value}
       </TypographyLink>

@@ -1024,7 +1024,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </FlexLayout>
 
         <HelpBlock>
-          <a data-url={pathPreview} onClick={this.openPath}>
+          <a data-path={pathPreview} onClick={this.openPath}>
             {pathPreview}
           </a>
         </HelpBlock>
@@ -1084,7 +1084,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   };
 
   private openPath = (evt) => {
-    const target = evt.currentTarget.getAttribute("data-url");
+    const target = evt.currentTarget.getAttribute("data-path");
     window.api.shell.openFile(target);
   };
 

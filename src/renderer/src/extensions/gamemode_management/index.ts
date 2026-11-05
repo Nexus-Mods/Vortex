@@ -804,7 +804,7 @@ function init(context: IExtensionContext): boolean {
             path: {
               title: "Path",
               value: path.normalize(game.path),
-              type: "url",
+              type: "path",
             },
           }),
   );

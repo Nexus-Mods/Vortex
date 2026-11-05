@@ -2,7 +2,8 @@ import { EventEmitter } from "events";
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { IExtensionContext, IPreviewFile } from "../../types/IExtensionContext";
+import type { IExtensionContext, IPreviewFile } from "@/types/IExtensionContext";
+
 import init from "./index";
 
 const openFile = vi.fn();

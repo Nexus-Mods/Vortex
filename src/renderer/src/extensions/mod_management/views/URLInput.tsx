@@ -44,6 +44,7 @@ function URLInput(props: IURLInputProps) {
     <FlexLayout type="row">
       <FormInput style={{ flex: "1 1 0" }} value={mod.attributes?.url} onChange={updateURL} />
       <IconButton
+        data-testid="open-mod-website"
         icon="open-in-browser"
         disabled={!isURLValid(mod.attributes?.url)}
         tooltip={t("Open website in your browser")}
