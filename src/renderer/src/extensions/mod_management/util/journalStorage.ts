@@ -34,7 +34,7 @@ export function journalStorageAt(journalFile: string): JournalStorage {
       await fs.mkdir(path.dirname(journalFile), { recursive: true });
       // unique, so overlapping creates can't write over each other's temporary file
       const candidate = `${journalFile}.${crypto.randomUUID()}.tmp`;
-      await fs.writeFile(candidate, contents, { flag: "wx" });
+      await fs.writeFile(candidate, contents, { flag: "wx", flush: true });
       try {
         await fs.link(candidate, journalFile);
         return true;
@@ -51,12 +51,14 @@ export function journalStorageAt(journalFile: string): JournalStorage {
       // Windows refuses to replace a file that is open
       await close();
       await fs.mkdir(path.dirname(journalFile), { recursive: true });
-      await fs.writeFile(temporaryFile, contents);
+      await fs.writeFile(temporaryFile, contents, { flush: true });
       await fs.rename(temporaryFile, journalFile);
     },
     append: async (contents) => {
       appending ??= fs.open(journalFile, "a");
-      await (await appending).appendFile(contents);
+      const handle = await appending;
+      await handle.appendFile(contents);
+      await handle.sync();
     },
     remove: () => fs.rm(journalFile, { force: true }),
     close,

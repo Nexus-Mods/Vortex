@@ -5,7 +5,8 @@ import { z } from "./zodJitless";
 
 /**
  * Where a journal is kept, provided by the caller, as this package never touches a disk. What an
- * awaited call wrote must survive a process kill; a power cut is out of scope.
+ * awaited call wrote must survive a process kill, and its bytes must be flushed to the disk, though
+ * a power cut may undo the latest create, write or remove.
  */
 export interface JournalStorage {
   /** the whole journal, or undefined when there is none */
