@@ -220,7 +220,10 @@ describe("Table sorted by a column", () => {
     );
 
     const [nameHeader, sizeHeader] = screen.getAllByRole("columnheader");
+    const arrow = () => nameHeader.querySelector("[data-symbol]")?.getAttribute("data-symbol");
+
     expect(nameHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(arrow()).toBe("arrow_upward");
     expect(sizeHeader).not.toHaveAttribute("aria-sort");
     expect(within(sizeHeader).queryByRole("button")).toBeNull();
     expect(names()).toEqual(["Alpha", "Beta"]);
@@ -228,6 +231,7 @@ describe("Table sorted by a column", () => {
     await userEvent.click(within(nameHeader).getByRole("button", { name: "Name" }));
 
     expect(nameHeader).toHaveAttribute("aria-sort", "descending");
+    expect(arrow()).toBe("arrow_downward");
     expect(names()).toEqual(["Beta", "Alpha"]);
   });
 
