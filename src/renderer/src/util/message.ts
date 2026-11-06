@@ -24,7 +24,6 @@ import getVortexPath from "./getVortexPath";
 import { log } from "./log";
 import { decodeSystemError } from "./nativeErrors";
 import { jsonRequest } from "./network";
-import opn from "./opn";
 import { flatten, nexusModsURL, truthy } from "./util";
 
 function clamp(min: number, value: number, max: number): number {
@@ -270,7 +269,7 @@ export function showError(
                 { label: "Cancel" },
                 {
                   label: "Continue",
-                  action: () => opn(extIssueTrackerURL).catch(() => null),
+                  action: () => window.api.shell.openUrl(extIssueTrackerURL),
                 },
               ],
             ),

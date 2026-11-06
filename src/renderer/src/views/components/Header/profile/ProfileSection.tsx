@@ -19,7 +19,6 @@ import { PopoverButton } from "@/ui/components/popover/PopoverButton";
 import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
-import opn from "../../../../util/opn";
 import {
   isLoggedIn as isLoggedInSelector,
   userInfo as userInfoSelector,
@@ -54,7 +53,7 @@ export const ProfileSection: FC<React.PropsWithChildren<unknown>> = () => {
               icon: { name: "account_circle", filled: true },
               label: t("View profile on web"),
               onClick: () => {
-                opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch(() => {});
+                window.api.shell.openUrl(`${NEXUS_BASE_URL}/users/${userInfo.userId}`);
               },
             } satisfies IMenuAction,
           ]

@@ -66,11 +66,13 @@ Prefer `@/` imports over relative imports, especially for deeply nested files.
   relative, alphabetical within each group). Don't fight it; run
   `pnpm run format`.
 - Unused vars and args are errors unless prefixed `_`.
-- **React imports:** if a file already has `import * as React from "react"`,
-  keep using `React.*` references - don't mix styles within a file. In files
-  without it, import what you need by name
-  (`import { useCallback, type ReactNode } from "react"`) and never add a new
-  `import * as React` or `import type * as React` line.
+- **React imports:** import what you need by name
+  (`import { useCallback, type ReactNode } from "react"`), plus the default
+  `React` in files with JSX, which the renderer's tsconfig compiles with the
+  classic transform (`"jsx": "react"`). Never add a new `import * as React` or
+  `import type * as React` line. A file that already has one either keeps
+  using `React.*` throughout, or moves wholesale to named imports when you're
+  changing it anyway - don't mix styles within a file.
 
 ## Styling
 

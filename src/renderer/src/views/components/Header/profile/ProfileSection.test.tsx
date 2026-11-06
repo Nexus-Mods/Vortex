@@ -2,9 +2,13 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import type * as ReactReduxTypes from "react-redux";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { dispatch, emit } = vi.hoisted(() => ({ dispatch: vi.fn(), emit: vi.fn() }));
+const { dispatch, emit, openUrl } = vi.hoisted(() => ({
+  dispatch: vi.fn(),
+  emit: vi.fn(),
+  openUrl: vi.fn(),
+}));
 
 vi.mock("@/ExtensionProvider", () => ({
   useExtensionContext: () => ({
@@ -14,8 +18,6 @@ vi.mock("@/ExtensionProvider", () => ({
     getApi: () => ({ events: { emit }, showErrorNotification: vi.fn() }),
   }),
 }));
-
-vi.mock("../../../../util/opn", () => ({ default: vi.fn(() => Promise.resolve()) }));
 
 /** Flipped per test, then read by the real selectors through the mocked hook. */
 const store = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
@@ -68,6 +70,12 @@ describe("ProfileSection", () => {
   beforeEach(() => {
     dispatch.mockClear();
     emit.mockClear();
+    openUrl.mockClear();
+    vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe("signed in", () => {
@@ -101,6 +109,13 @@ describe("ProfileSection", () => {
 
       const labels = screen.getAllByRole("menuitem").map((item) => item.textContent);
       expect(labels.indexOf("Settings")).toBe(labels.indexOf("View profile on web") + 1);
+    });
+
+    it("opens the user's profile on the website", async () => {
+      await openMenu(/ada/i);
+      await userEvent.click(screen.getByRole("menuitem", { name: "View profile on web" }));
+
+      expect(openUrl).toHaveBeenCalledWith(expect.stringMatching(/\/users\/42$/));
     });
 
     it("opens the Vortex settings page from the Settings row", async () => {

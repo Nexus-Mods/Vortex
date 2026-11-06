@@ -36,7 +36,6 @@ import GameStoreHelperInstance from "../../util/GameStoreHelper";
 import { isContributed } from "../../util/isContributed";
 import local from "../../util/local";
 import { showError } from "../../util/message";
-import opn from "../../util/opn";
 import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
@@ -804,7 +803,7 @@ function init(context: IExtensionContext): boolean {
             path: {
               title: "Path",
               value: path.normalize(game.path),
-              type: "url",
+              type: "path",
             },
           }),
   );
@@ -834,7 +833,7 @@ function init(context: IExtensionContext): boolean {
       if (!gamePath.endsWith(path.sep)) {
         gamePath += path.sep;
       }
-      opn(gamePath).catch(() => undefined);
+      window.api.shell.openFile(gamePath);
     }
   };
 
@@ -847,7 +846,7 @@ function init(context: IExtensionContext): boolean {
         if (!targetPath.endsWith(path.sep)) {
           targetPath += path.sep;
         }
-        opn(targetPath).catch(() => undefined);
+        window.api.shell.openFile(targetPath);
       } catch (err) {
         log("warn", "failed to open mod directory", getErrorMessageOrDefault(err));
       }

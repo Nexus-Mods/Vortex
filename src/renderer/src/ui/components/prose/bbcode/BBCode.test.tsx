@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BBCode } from "./BBCode";
 
@@ -230,6 +230,38 @@ describe("BBCode", () => {
         "href",
         "file:///C:/notes.txt",
       );
+    });
+
+    describe("when clicked", () => {
+      const openUrl = vi.fn();
+
+      beforeEach(() => {
+        openUrl.mockClear();
+        vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+      });
+
+      afterEach(() => {
+        vi.unstubAllGlobals();
+      });
+
+      it("opens a web page in the browser", async () => {
+        render(<BBCode bbcode="[url=https://example.com/page]the page[/url]" />);
+
+        await userEvent.click(screen.getByRole("link", { name: "the page" }));
+
+        expect(openUrl).toHaveBeenCalledWith("https://example.com/page");
+      });
+
+      // A file: link is a URL, so it goes the same way and main hands it to the OS.
+      it("opens an allowed local file by its URL", async () => {
+        render(
+          <BBCode bbcode="[url=file:///C:/notes.txt]notes[/url]" context={{ allowLocal: true }} />,
+        );
+
+        await userEvent.click(screen.getByRole("link", { name: "notes" }));
+
+        expect(openUrl).toHaveBeenCalledWith("file:///C:/notes.txt");
+      });
     });
   });
 

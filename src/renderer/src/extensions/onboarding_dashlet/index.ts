@@ -1,5 +1,4 @@
 import type { IExtensionContext } from "../../types/IExtensionContext";
-import opn from "../../util/opn";
 import { currentGame } from "../../util/storeHelper";
 import { dismissOverlay } from "../instructions_overlay/actions";
 import { NEXUS_BASE_URL } from "../nexus_integration/constants";
@@ -54,8 +53,8 @@ function init(context: IExtensionContext): boolean {
       getMoreMods: () => {
         currentGame(context.api.store).then((game) => {
           const nxsGameId = nexusGameId(game);
-          opn(`${NEXUS_BASE_URL}/${nxsGameId !== "__placeholder" ? nxsGameId : "mods"}`).catch(
-            (err) => undefined,
+          window.api.shell.openUrl(
+            `${NEXUS_BASE_URL}/${nxsGameId !== "__placeholder" ? nxsGameId : "mods"}`,
           );
         });
       },

@@ -2,7 +2,7 @@ import type { IRevision } from "@nexusmods/nexus-api";
 import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
-import * as React from "react";
+import React, { type ComponentClass, useEffect, useRef } from "react";
 import { Panel, Tab, Tabs } from "react-bootstrap";
 import { Trans } from "react-i18next";
 import { connect } from "react-redux";
@@ -21,7 +21,6 @@ import { log } from "../../../../logging";
 import type { IActionDefinition } from "../../../../types/IActionDefinition";
 import { UserCanceled } from "../../../../util/CustomErrors";
 import type { TFunction as TFunctionApi } from "../../../../util/i18n";
-import opn from "../../../../util/opn";
 import { getSafe } from "../../../../util/storeHelper";
 import { setBrowseSection } from "../../../browse_nexus/actions/session";
 import { setSortAdded, setSortWorkshop } from "../../actions/settings";
@@ -150,9 +149,9 @@ function CreateCard(props: ICreateCardProps) {
 
   const classes = ["collection-add-btn"];
 
-  const actions = React.useRef<IActionDefinition[]>([]);
+  const actions = useRef<IActionDefinition[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     actions.current = [
       {
         title: "From Profile",
@@ -554,7 +553,7 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
       "Collections",
       "Open My Collections",
     );
-    opn(`${NEXUS_BASE_URL}/my-collections`).catch(() => null);
+    window.api.shell.openUrl(`${NEXUS_BASE_URL}/my-collections`);
   };
 
   private trackEvent = (namespace: string, eventName: string) => {
@@ -562,11 +561,11 @@ class StartPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private openFeedback = () => {
-    opn(FEEDBACK_URL).catch(() => null);
+    window.api.shell.openUrl(FEEDBACK_URL);
   };
 
   private openBugReport = () => {
-    opn(BUG_REPORT_URL).catch(() => null);
+    window.api.shell.openUrl(BUG_REPORT_URL);
   };
 
   private quickCollection = async () => {
@@ -644,4 +643,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
-)(StartPage) as any as React.ComponentClass<IStartPageProps>;
+)(StartPage) as any as ComponentClass<IStartPageProps>;

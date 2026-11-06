@@ -7,7 +7,6 @@ import { isDependencyRule } from "../../../extensions/mod_management/util/testMo
 import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../../util/CustomErrors";
-import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { Campaign, nexusModsURL, Section } from "../../../util/util";
@@ -127,7 +126,7 @@ export async function uploadCollection(
                     section: Section.Collections,
                   },
                 );
-                opn(url).catch(() => null);
+                window.api.shell.openUrl(url);
               },
             },
           ],

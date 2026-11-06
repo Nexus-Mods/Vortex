@@ -89,6 +89,13 @@ export default defineConfig([
                 "Electron's clipboard module is unavailable in the renderer. Use window.api.clipboard instead.",
             },
           ],
+          patterns: [
+            {
+              group: ["**/util/opn", "./opn"],
+              message:
+                "util/opn only backs the deprecated util.opn extension API. Use window.api.shell.openUrl or window.api.shell.openFile instead.",
+            },
+          ],
         },
       ],
       "vortex/no-restricted-imports-warnings": [

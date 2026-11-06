@@ -14,7 +14,6 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
-import opn from "../../../util/opn";
 import type { IMod } from "../../mod_management/types/IMod";
 import { setGameAddOrigin } from "../actions/session";
 import type { IGameSection } from "../components/GameCard";
@@ -169,7 +168,7 @@ class GameRow extends ComponentEx<IProps, {}> {
 
   private openLocation = () => {
     const { discovery } = this.props;
-    opn(discovery.path).catch(() => null);
+    window.api.shell.openFile(discovery.path);
   };
 
   // Click capture, because the list layout's add button sits inside IconBar, whose

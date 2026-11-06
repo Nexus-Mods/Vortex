@@ -4,7 +4,6 @@ import * as React from "react";
 import { ComponentEx, connect } from "../../../controls/ComponentEx";
 import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
 import type { IGameInfoEntry, IState } from "../../../types/IState";
-import opn from "../../../util/opn";
 import { bytesToString } from "../../../util/util";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
@@ -107,6 +106,12 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
           {value}
         </a>
       );
+    } else if (type === "path") {
+      return (
+        <a data-testid="game-info-path" onClick={() => window.api.shell.openFile(value)}>
+          {value}
+        </a>
+      );
     } else if (type === "bytes") {
       return bytesToString(value);
     } else {
@@ -116,7 +121,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
 
   private openUrl = (evt: React.MouseEvent<any>) => {
     evt.preventDefault();
-    opn(evt.currentTarget.href).catch((err) => undefined);
+    window.api.shell.openUrl(evt.currentTarget.href);
   };
 }
 

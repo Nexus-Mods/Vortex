@@ -14,7 +14,6 @@ import renderModName from "../../../../extensions/mod_management/util/modName";
 import type { IState } from "../../../../types/IState";
 import { UserCanceled } from "../../../../util/CustomErrors";
 import makeReactive from "../../../../util/makeReactive";
-import opn from "../../../../util/opn";
 import { Campaign, Section, nexusModsURL } from "../../../../util/util";
 import CollectionThumbnail from "../CollectionTile";
 
@@ -44,7 +43,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
       "Collections",
       "View on site Updated Collection",
     );
-    opn(
+    window.api.shell.openUrl(
       nexusModsURL(
         [revisionInfo.collection.game.domainName, "collections", revisionInfo.collection.slug],
         {
