@@ -44,6 +44,17 @@ test("activating a game dismisses the unsupported method's notification once ano
   expect(game.dismissedNotifications).toContain(METHOD_UNAVAILABLE_NOTIFICATION_ID);
 });
 
+test("the unsupported method's notification says why it can't be used", async () => {
+  const game = await makeDeployedGame({ methodId: unsupported.id, stagingTag: true });
+
+  await activate(game);
+
+  const notification = game.errorNotifications.find(
+    (entry) => entry.title === "Deployment method no longer supported",
+  );
+  expect(notification?.message).toContain("this method cannot deploy the game");
+});
+
 test("replacing a deployment method keeps the files its purge left in the manifest", async () => {
   const game = await makeHalfPurgedGame(unsupported.id, { stagingTag: true });
 
