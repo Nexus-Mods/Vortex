@@ -205,3 +205,33 @@ it("skips dispatch when known pid still exists", async () => {
 
   expect(store.dispatch).not.toHaveBeenCalled();
 });
+
+it.skipIf(process.platform === "win32")("matches a tool running under Wine", async () => {
+  const longToolPath = "/games/test/BodySlide x64.exe";
+  const tool = buildTool({ path: longToolPath });
+  const state = buildState({ tools: { [tool.id]: tool } });
+  // Wine truncates the name to 15 characters and the process isn't a child of Vortex
+  const processes: IProcessInfo[] = [
+    { pid: 5001, ppid: 1, name: "BodySlide x64.e", cmd: "Z:\\games\\test\\BodySlide x64.exe -x" },
+  ];
+  const { monitor, store } = createMonitor(state, processes);
+
+  await monitor.doCheck();
+
+  expect(store.dispatch).toHaveBeenCalledWith(setToolPid(longToolPath, 5001, false));
+});
+
+it.skipIf(process.platform === "win32")("waits for a tool that is still starting", async () => {
+  const tool = buildTool();
+  const state = buildState({
+    tools: { [tool.id]: tool },
+    toolsRunning: {
+      [makeExeId(toolPath)]: { pid: undefined, started: Date.now(), exclusive: false },
+    },
+  });
+  const { monitor, store } = createMonitor(state, []);
+
+  await monitor.doCheck();
+
+  expect(store.dispatch).not.toHaveBeenCalledWith(setToolStopped(toolPath));
+});
