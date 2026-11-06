@@ -124,6 +124,7 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtensionReducer } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -634,6 +635,34 @@ export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStore
   };
 }
 
+// A game extension as GameModeManager and the getGame() registry hold it.
+export function makeGame(overrides: Partial<IGame> = {}): IGame {
+  const id = overrides.id ?? "skyrimse";
+  return {
+    id,
+    name: id,
+    requiredFiles: [],
+    queryModPath: () => "mods",
+    executable: () => `${id}.exe`,
+    supportedTools: [],
+    ...overrides,
+  };
+}
+
+// A tool as discovery reports it and settings.gameMode.discovered stores it.
+export function makeDiscoveredTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
+  return {
+    id: "toolId1",
+    name: "Tool",
+    executable: () => "tool.exe",
+    requiredFiles: [],
+    path: "",
+    hidden: false,
+    custom: false,
+    ...overrides,
+  };
+}
+
 export function makeLookup(overrides: Partial<IModLookupInfo> = {}): IModLookupInfo {
   return { fileMD5: "", fileSizeBytes: 0, fileName: "", version: "", ...overrides };
 }
@@ -932,16 +961,15 @@ export function registerHarnessGame(gameId: string): void {
     extensionStubs: [],
   });
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
-    gameReg.extensionGames.push({
-      id: gameId,
-      name: gameId,
-      queryModPath: () => "mods",
-      // resolveGameVersion validates the game (executable) and tries
-      // game.getGameVersion first; provide both so tests don't fall through to
-      // exe-version probing of a nonexistent binary
-      executable: () => `${gameId}.exe`,
-      getGameVersion: () => Promise.resolve("1.0.0"),
-    } as unknown as IGame);
+    gameReg.extensionGames.push(
+      makeGame({
+        id: gameId,
+        // resolveGameVersion validates the game (executable) and tries game.getGameVersion
+        // first; answer it so tests don't fall through to exe-version probing of a nonexistent
+        // binary
+        getGameVersion: () => Promise.resolve("1.0.0"),
+      }),
+    );
   }
 }
 
@@ -1032,7 +1060,7 @@ export function makeApiHarness(
     initialState.settings.gameMode.discovered[gameId] ??= {
       path: `C:/games/${gameId}`,
       name: gameId,
-    } as IDiscoveryResult;
+    };
   }
 
   const dispatched: ITrackedAction[] = [];

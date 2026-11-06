@@ -19,7 +19,7 @@ import { GoGLauncher } from "@/util/GOGLauncher";
 import { OriginLauncher } from "@/util/OriginStore";
 import { getSafe } from "@/util/storeHelper";
 import { UPlayLauncher } from "@/util/UplayStore";
-import { batchDispatch, truthy } from "@/util/util";
+import { batchDispatch } from "@/util/util";
 import { XboxLauncher } from "@/util/xbox/XboxLauncher";
 
 import { setNextProfile } from "../../actions";
@@ -50,6 +50,16 @@ import { getGame } from "./util/getGame";
 export interface IGameStub {
   ext: IExtensionDownloadInfo;
   game: IGame;
+}
+
+/**
+ * The tool a game declares as its default launcher, skipping any the user removed from the Tools
+ * page. Game activation and tool discovery both use this so they settle on the same tool.
+ */
+function findDefaultPrimaryTool(tools: { [toolId: string]: IDiscoveredTool } | undefined) {
+  return Object.keys(tools ?? {}).find(
+    (toolId) => tools[toolId].defaultPrimary === true && tools[toolId].hidden !== true,
+  );
 }
 
 /**
@@ -203,18 +213,10 @@ export class GameModeManager {
           log("info", "changed game mode", { oldMode, newMode });
           this.mOnGameModeActivated(newMode);
           const { gameId } = currentProfile;
-          if (
-            getSafe(state, ["settings", "interface", "primaryTool", gameId], undefined) ===
-            undefined
-          ) {
-            const discovery = discoveryByGame(state, gameId);
-            if (truthy(discovery.tools)) {
-              const defaultPrimary = Object.keys(discovery.tools).find(
-                (toolId) => discovery.tools[toolId].defaultPrimary === true,
-              );
-              if (defaultPrimary !== undefined) {
-                this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
-              }
+          if (state.settings.interface.primaryTool?.[gameId] === undefined) {
+            const defaultPrimary = findDefaultPrimaryTool(discoveryByGame(state, gameId).tools);
+            if (defaultPrimary !== undefined) {
+              this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
             }
           }
         } else {
@@ -655,7 +657,40 @@ export class GameModeManager {
       delete result.executable;
       this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result, false));
     }
+    this.selectDiscoveredDefaultPrimary(gameId, result);
   };
+
+  /**
+   * Tool discovery also runs after deployment and on an already-active game, so a declared default
+   * can become available after activation. Select it then, unless the user already chose a primary
+   * tool (including clearing it, which stores null).
+   */
+  private selectDiscoveredDefaultPrimary(gameId: string, result: IDiscoveredTool) {
+    if (result.defaultPrimary !== true) {
+      return;
+    }
+    const state = this.mStore.getState();
+    const primary = state.settings.interface.primaryTool?.[gameId];
+    if (activeProfile(state)?.gameId !== gameId || primary !== undefined) {
+      return;
+    }
+    // addDiscoveredTool ignores a tool for a game with no discovery entry, so there is nothing to
+    // launch either
+    const discovery = discoveryByGame(state, gameId);
+    if (discovery === undefined) {
+      return;
+    }
+    // a customised record isn't overwritten by discovery, but the game still declares this tool a
+    // default
+    const tools = discovery.tools ?? {};
+    const defaultPrimary = findDefaultPrimaryTool({
+      ...tools,
+      [result.id]: { ...(tools[result.id] ?? result), defaultPrimary: true },
+    });
+    if (defaultPrimary !== undefined) {
+      this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
+    }
+  }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
     if (result === undefined) {
