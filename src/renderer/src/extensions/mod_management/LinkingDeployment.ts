@@ -510,7 +510,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       activation ?? [],
       (fileEntry) => {
         const fileDataPath = deployedFilePath(dataPath, fileEntry.target, fileEntry.relPath);
-        const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
+        const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
         let sourceDeleted: boolean = false;
         let destDeleted: boolean = false;
         let sourceTime: Date;
@@ -802,11 +802,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
     replace: boolean,
     dirTags: boolean,
   ): Promise<IDeployedFile> {
-    const fullPath = [
+    const fullPath = path.join(
       installPathStr,
       this.mContext.newDeployment[key].source,
       this.mContext.newDeployment[key].relPath,
-    ].join(path.sep);
+    );
     const fullOutputPath = [
       dataPath,
       this.mContext.newDeployment[key].target || null,
