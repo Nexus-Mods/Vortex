@@ -14,6 +14,7 @@ import {
   makeFileChange,
   makeMod,
   makeProfile,
+  registerTestModType,
   setCollectionSession,
 } from "../../../test-utils/builders";
 import { test as deploymentTest } from "../../../test-utils/deploymentTest";
@@ -338,5 +339,76 @@ describe("dealWithExternalChanges", () => {
 
     // The next deployment cycle would pick up B.
     expect(manager.consumeRecentChanges()).toEqual(new Set([modB]));
+  });
+});
+
+describe("a mod type resolving its own external changes", () => {
+  const SAVES = "saves";
+  // the game rewrote a save that a mod deployed
+  const SAVE_REWRITTEN = makeFileChange({
+    changeType: "refchange",
+    source: MOD_A_FOLDER,
+    filePath: "slot1.sav",
+  });
+
+  test("applies the mod type's action without showing the dialog", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([SAVE_REWRITTEN]);
+    const resolveExternalChange = vi.fn(() => "import" as const);
+    registerTestModType(SAVES, h.gameDir, { resolveExternalChange });
+    await h.stageFile(MOD_A_FOLDER, "slot1.sav");
+    await h.deployFile("slot1.sav");
+
+    await h.dealWithExternalChanges(new Set(), [], SAVES);
+
+    expect(h.dialogs).toHaveLength(0);
+    expect(resolveExternalChange).toHaveBeenCalledWith(SAVE_REWRITTEN, h.gameId);
+    // importing moves the game's copy into staging
+    expect(existsSync(path.join(h.gameDir, "slot1.sav"))).toBe(false);
+    expect(existsSync(path.join(h.stagingPath, MOD_A_FOLDER, "slot1.sav"))).toBe(true);
+  });
+
+  test("shows a change the mod type leaves undecided", async ({ makeExternalChanges }) => {
+    const h = await makeExternalChanges([SAVE_REWRITTEN]);
+    registerTestModType(SAVES, h.gameDir, { resolveExternalChange: () => undefined });
+
+    await h.dealWithExternalChanges(new Set(), [], SAVES);
+
+    expect(h.dialogs).toHaveLength(1);
+  });
+
+  test("shows a change when the mod type picks an action the change type doesn't offer", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([SAVE_REWRITTEN]);
+    registerTestModType(SAVES, h.gameDir, { resolveExternalChange: () => "restore" });
+
+    await h.dealWithExternalChanges(new Set(), [], SAVES);
+
+    expect(h.dialogs).toHaveLength(1);
+  });
+
+  test("shows a change when the mod type's resolver throws", async ({ makeExternalChanges }) => {
+    const h = await makeExternalChanges([SAVE_REWRITTEN]);
+    registerTestModType(SAVES, h.gameDir, {
+      resolveExternalChange: () => {
+        throw new Error("resolver failed");
+      },
+    });
+
+    await h.dealWithExternalChanges(new Set(), [], SAVES);
+
+    expect(h.dialogs).toHaveLength(1);
+  });
+
+  test("isn't asked about changes Vortex made itself", async ({ makeExternalChanges }) => {
+    const h = await makeExternalChanges([SAVE_REWRITTEN]);
+    const resolveExternalChange = vi.fn(() => "import" as const);
+    registerTestModType(SAVES, h.gameDir, { resolveExternalChange });
+
+    await h.dealWithExternalChanges(new Set([MOD_A_FOLDER]), [], SAVES);
+
+    expect(resolveExternalChange).not.toHaveBeenCalled();
   });
 });
