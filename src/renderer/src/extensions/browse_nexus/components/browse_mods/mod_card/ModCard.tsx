@@ -12,6 +12,9 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
+import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
+import { ModStatusBadge } from "../mod_status_badge/ModStatusBadge";
+
 interface IModCardProps {
   /** The mod it shows. */
   mod: ModSummary;
@@ -24,7 +27,7 @@ interface IModCardProps {
 }
 
 /**
- * A mod in the list: its picture, then its name, its whole summary, and a line of who uploaded
+ * A mod in the list: its picture, with what the user has of it hanging from its top, then its name, its whole summary, and a line of who uploaded
  * it, its stats and whether it's adult, held to the bottom. The card is the button that shows it
  * in the details pane, pressed while it's the one the pane shows. Lit on hover, and more so,
  * with its picture dimmed and its name and summary brighter, while pressed. Nothing else in it
@@ -37,12 +40,13 @@ interface IModCardProps {
  */
 export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) => {
   const { t } = useTranslation();
-  const updated = useRelativeTime(new Date(mod.updated_at).getTime(), t);
+  const updated = useRelativeTime(Date.parse(mod.updated_at), t);
+  const { status } = useModStatus(mod);
   const language = useSelector((state: IState) => state.settings.interface.language);
-  const updatedAt = new Date(mod.updated_at).toLocaleString(language, {
+  const updatedAt = new Intl.DateTimeFormat(language, {
     dateStyle: "medium",
     timeStyle: "short",
-  });
+  }).format(Date.parse(mod.updated_at));
 
   return (
     <button
@@ -66,6 +70,8 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
         isAdult={mod.adult}
         src={mod.thumbnail_url}
       >
+        {!!status && <ModStatusBadge status={status} />}
+
         {isActive && <span className="absolute inset-0 z-5 bg-translucent-dark-300" />}
       </AdultAwareImage>
 

@@ -31,6 +31,8 @@ export interface IPremiumUpsellModalProps {
   fallbackLabel: string;
   /** The fallback button's icon. */
   fallbackIcon?: IIconProp;
+  /** The Premium button's label. Default "Unlock 1-click installs". */
+  unlockLabel?: string;
   /** Which upsell sent the user to the Premium page, for the campaign's numbers. */
   content: Content;
   /** Closes it: called when dismissed, and once Premium is unlocked. */
@@ -59,6 +61,7 @@ export const PremiumUpsellModal = ({
   description,
   fallbackLabel,
   fallbackIcon,
+  unlockLabel,
   content,
   onClose,
   onFallback,
@@ -159,7 +162,7 @@ export const PremiumUpsellModal = ({
             );
           }}
         >
-          {t("premium_upsell::unlock")}
+          {unlockLabel ?? t("premium_upsell::unlock")}
         </Button>
       </div>
     </Modal>
