@@ -2,8 +2,7 @@ import { VortexGameId } from "@vortex/shared";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
 
-import type { IState } from "../../types/IState";
-import { getSafe } from "../../util/storeHelper";
+import type { IGameStored, IState } from "../../types/IState";
 import type { IProfile } from "./types/IProfile";
 
 export const profiles = (state: IState) => state.persistent.profiles;
@@ -38,6 +37,30 @@ export const activeProfile = (state: IState): IProfile | undefined => {
     return undefined;
   }
   return state.persistent.profiles[profileId];
+};
+
+export const knownGameForName = (state: IState, name: string): IGameStored | undefined => {
+  const extPathLookup = Object.values(state.app.extensions ?? {}).reduce(
+    (prev, ext) => {
+      prev[ext.path] = ext.name;
+      return prev;
+    },
+    {} as { [path: string]: string },
+  );
+
+  return state.session.gameMode.known.find(
+    (iter) => iter.id === name || extPathLookup[iter.extensionPath] === name,
+  );
+};
+
+export const commandLineGameId = (state: IState): string | undefined => {
+  const { commandLine } = state.session.base;
+  if (commandLine?.profile !== undefined) {
+    return state.persistent.profiles[commandLine.profile]?.gameId;
+  }
+  return commandLine?.game !== undefined
+    ? knownGameForName(state, commandLine.game)?.id
+    : undefined;
 };
 
 const profileByIdImpl = createCachedSelector(

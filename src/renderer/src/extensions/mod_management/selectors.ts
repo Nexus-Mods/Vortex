@@ -138,6 +138,11 @@ export const modsForActiveGame = createSelector(
   },
 );
 
+export const hasModsForActiveGame = createSelector(
+  (state: IState) => modsForGame(state, activeGameId(state)),
+  (mods: { [modId: string]: IMod }) => Object.keys(mods).length > 0,
+);
+
 export const getMod = createSelector(
   modsForGame,
   (state: IState, gameId: string, modId: string | number) => modId,
