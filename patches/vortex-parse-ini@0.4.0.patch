@@ -1,0 +1,234 @@
+diff --git a/lib/WinapiFormat.js b/lib/WinapiFormat.js
+index 25b588df4f35be4294cd4fe230590331028576cd..543e46bd1029a7a513aff78da98b2af8067dd0f4 100644
+--- a/lib/WinapiFormat.js
++++ b/lib/WinapiFormat.js
+@@ -1,10 +1,177 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
++const fs = require("fs");
+ const winapi = require("winapi-bindings");
++// WinapiFormat describes how a file was written (by the Windows profile API,
++// natively or under Wine), not the platform reading it. winapi-bindings exports
++// nothing outside Windows, so there the same GetPrivateProfile* and
++// WritePrivateProfileString rules are reproduced in JS: case-insensitive
++// sections and keys, the first of duplicate sections wins, ';' comments,
++// trimmed keys and values, only changed keys rewritten, and the original
++// encoding and line endings kept.
++const useWinapi = process.platform === 'win32';
++function decode(buf) {
++    if ((buf.length >= 2) && (buf[0] === 0xFF) && (buf[1] === 0xFE)) {
++        return { encoding: 'utf16le', bom: true, text: buf.toString('utf16le', 2) };
++    }
++    if ((buf.length >= 3) && (buf[0] === 0xEF) && (buf[1] === 0xBB) && (buf[2] === 0xBF)) {
++        return { encoding: 'utf8', bom: true, text: buf.toString('utf8', 3) };
++    }
++    try {
++        return { encoding: 'utf8', bom: false, text: new TextDecoder('utf-8', { fatal: true }).decode(buf) };
++    }
++    catch (err) {
++        // not valid UTF-8, most likely an ANSI file. latin1 round-trips every byte.
++        return { encoding: 'latin1', bom: false, text: buf.toString('latin1') };
++    }
++}
++function readProfile(filePath) {
++    let buf;
++    try {
++        buf = fs.readFileSync(filePath);
++    }
++    catch (err) {
++        if (err.code === 'ENOENT') {
++            return { encoding: 'utf8', bom: false, eol: '\r\n', lines: [] };
++        }
++        throw err;
++    }
++    const { encoding, bom, text } = decode(buf);
++    const eol = (text.includes('\r\n') || !text.includes('\n')) ? '\r\n' : '\n';
++    const lines = text.split(/\r?\n/);
++    if ((lines.length > 0) && (lines[lines.length - 1] === '')) {
++        lines.pop();
++    }
++    return { encoding, bom, eol, lines };
++}
++function writeProfile(filePath, profile) {
++    const text = (profile.bom ? '﻿' : '') + profile.lines.join(profile.eol) + profile.eol;
++    fs.writeFileSync(filePath, Buffer.from(text, profile.encoding));
++}
++function sectionHeader(line) {
++    const trimmed = line.trim();
++    if (!trimmed.startsWith('[')) {
++        return undefined;
++    }
++    const end = trimmed.indexOf(']');
++    return (end === -1 ? trimmed.slice(1) : trimmed.slice(1, end)).trim();
++}
++function parseEntry(line) {
++    const trimmed = line.trim();
++    if (trimmed.startsWith(';')) {
++        return undefined;
++    }
++    const eqPos = trimmed.indexOf('=');
++    if (eqPos === -1) {
++        return undefined;
++    }
++    return { key: trimmed.slice(0, eqPos).trim(), value: trimmed.slice(eqPos + 1).trim() };
++}
++function sectionNames(profile) {
++    const seen = new Set();
++    const result = [];
++    profile.lines.forEach((line) => {
++        const name = sectionHeader(line);
++        if ((name !== undefined) && !seen.has(name.toLowerCase())) {
++            seen.add(name.toLowerCase());
++            result.push(name);
++        }
++    });
++    return result;
++}
++// Like GetPrivateProfileSection, only the first section with this name is read.
++function sectionEntries(profile, section) {
++    const result = {};
++    const sectionLC = section.toLowerCase();
++    let inSection = false;
++    for (const line of profile.lines) {
++        const name = sectionHeader(line);
++        if (name !== undefined) {
++            if (inSection) {
++                break;
++            }
++            inSection = name.toLowerCase() === sectionLC;
++        }
++        else if (inSection) {
++            const entry = parseEntry(line);
++            if (entry !== undefined) {
++                result[entry.key] = entry.value;
++            }
++        }
++    }
++    return result;
++}
++// value === null removes the key. Returns whether the profile changed.
++function setValue(profile, section, key, value) {
++    const lines = profile.lines;
++    const sectionLC = section.toLowerCase();
++    const keyLC = key.toLowerCase();
++    let start = -1;
++    let end = lines.length;
++    for (let i = 0; i < lines.length; ++i) {
++        const name = sectionHeader(lines[i]);
++        if (name === undefined) {
++            continue;
++        }
++        if (start === -1) {
++            if (name.toLowerCase() === sectionLC) {
++                start = i;
++            }
++        }
++        else {
++            end = i;
++            break;
++        }
++    }
++    if (start === -1) {
++        if (value === null) {
++            return false;
++        }
++        if ((lines.length > 0) && (lines[lines.length - 1].trim() !== '')) {
++            lines.push('');
++        }
++        lines.push(`[${section}]`, `${key}=${value}`);
++        return true;
++    }
++    for (let i = start + 1; i < end; ++i) {
++        const entry = parseEntry(lines[i]);
++        if ((entry !== undefined) && (entry.key.toLowerCase() === keyLC)) {
++            if (value === null) {
++                lines.splice(i, 1);
++            }
++            else {
++                lines[i] = `${entry.key}=${value}`;
++            }
++            return true;
++        }
++    }
++    if (value === null) {
++        return false;
++    }
++    let insertAt = end;
++    while ((insertAt - 1 > start) && (lines[insertAt - 1].trim() === '')) {
++        --insertAt;
++    }
++    lines.splice(insertAt, 0, `${key}=${value}`);
++    return true;
++}
+ class WinapiFormat {
+     constructor() {
+     }
+     read(filePath) {
++        if (!useWinapi) {
++            try {
++                const profile = readProfile(filePath);
++                const output = {};
++                sectionNames(profile).forEach((section) => {
++                    output[section] = sectionEntries(profile, section);
++                });
++                return Promise.resolve(output);
++            }
++            catch (err) {
++                return Promise.reject(err);
++            }
++        }
+         const output = {};
+         return this.readSectionList(filePath)
+             .then((sections) => Promise.all(sections.map((section) => this.readSection(filePath, section)
+@@ -14,6 +181,9 @@ class WinapiFormat {
+             .then(() => Promise.resolve(output));
+     }
+     write(filePath, data, changes) {
++        if (!useWinapi) {
++            return this.writePortable(filePath, data, changes);
++        }
+         try {
+             changes.removed.forEach((fullKey) => {
+                 const [section, key] = fullKey.split('###');
+@@ -30,12 +200,40 @@ class WinapiFormat {
+             return Promise.reject(err);
+         }
+     }
++    writePortable(filePath, data, changes) {
++        try {
++            const profile = readProfile(filePath);
++            let changed = false;
++            changes.removed.forEach((fullKey) => {
++                const [section, key] = fullKey.split('###');
++                changed = setValue(profile, section, key, null) || changed;
++            });
++            [].concat(changes.added, changes.changed)
++                .forEach((fullKey) => {
++                const [section, key] = fullKey.split('###');
++                const value = data[section][key];
++                changed = setValue(profile, section, key, ((value === null) || (value === undefined)) ? '' : String(value)) || changed;
++            });
++            if (changed) {
++                writeProfile(filePath, profile);
++            }
++            return Promise.resolve();
++        }
++        catch (err) {
++            return Promise.reject(err);
++        }
++    }
+     readSectionList(filePath) {
++        if (!useWinapi) {
++            return Promise.resolve(sectionNames(readProfile(filePath)));
++        }
+         return Promise.resolve(winapi.GetPrivateProfileSectionNames(filePath));
+     }
+     readSection(filePath, section) {
++        if (!useWinapi) {
++            return Promise.resolve(sectionEntries(readProfile(filePath), section));
++        }
+         return Promise.resolve(winapi.GetPrivateProfileSection(section, filePath));
+     }
+ }
+ exports.default = WinapiFormat;
+-//# sourceMappingURL=WinapiFormat.js.map
