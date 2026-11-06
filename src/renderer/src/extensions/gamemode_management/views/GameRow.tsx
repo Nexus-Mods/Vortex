@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { ListGroupItem, Media } from "react-bootstrap";
@@ -16,7 +17,7 @@ import IconBar from "../../../controls/IconBar";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import opn from "../../../util/opn";
 import type { IMod } from "../../mod_management/types/IMod";
-import { setGameAddOrigin } from "../actions/session";
+import { setGameAddOrigin, setGameAddStore } from "../actions/session";
 import type { IGameSection } from "../components/GameCard";
 import { TierZeroRowBadge } from "../components/TierZeroIndicator";
 import type { GameSource } from "../types/GameSource";
@@ -176,8 +177,16 @@ class GameRow extends ComponentEx<IProps, {}> {
   // actions don't take a click context: any click on an unadded row records the row's
   // list, and only the add the emit is keyed to ends up read.
   private tagOrigin = () => {
-    if (this.props.source !== undefined) {
-      this.context.api.store.dispatch(setGameAddOrigin(this.props.game.id, this.props.source));
+    const { detectedStore, discovery, game, source } = this.props;
+    if (source === undefined) {
+      return;
+    }
+    const { dispatch } = this.context.api.store;
+    dispatch(setGameAddOrigin(game.id, source));
+    // Discovery's store wins, as on the tile: it's the copy Vortex will manage.
+    const store = discovery?.store ?? detectedStore;
+    if (source === "detected_list" && store !== undefined) {
+      dispatch(setGameAddStore(VortexGameId(game.id), store));
     }
   };
 
