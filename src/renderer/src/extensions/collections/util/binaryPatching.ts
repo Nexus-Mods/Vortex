@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { unknownToError } from "@vortex/shared";
+import { getErrorCode, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as crc32 from "crc-32";
 import SevenZip from "node-7z";
@@ -94,10 +94,26 @@ export function scanForDiffs(
 
               const result: { [filePath: string]: string } = {};
 
-              for (const file of instRes.instructions.filter((instr) => instr.type === "copy")) {
+              const copies = instRes.instructions.filter((instr) => instr.type === "copy");
+              let removed = 0;
+              for (const file of copies) {
                 const srcCRC = sourceChecksums[file.source];
                 const dstFilePath = path.join(localPath, file.destination);
-                const dat = await fs.readFileAsync(dstFilePath);
+                let dat: Buffer;
+                try {
+                  dat = await fs.readFileAsync(dstFilePath);
+                } catch (err) {
+                  if (getErrorCode(err) !== "ENOENT") {
+                    throw err;
+                  }
+                  // the curator removed this file. A patch can't express a deletion, so users
+                  // get it unmodified, the same as for a mod without binary patching
+                  log("debug", "file removed from staging, not patched", {
+                    filePath: file.destination,
+                  });
+                  ++removed;
+                  continue;
+                }
                 const dstCRC = crcFromBuf(dat);
                 if (srcCRC !== dstCRC) {
                   onProgress(
@@ -147,6 +163,11 @@ export function scanForDiffs(
                   }
                   log("debug", "patch created at", patchPath);
                 }
+              }
+              if (copies.length > 0 && removed === copies.length) {
+                // nothing the installer would install is in the staging folder, so it doesn't
+                // match the installer's layout and no edits could be found
+                throw new DataInvalid("none of the mod's files were found in its staging folder");
               }
               resolve(result);
             } catch (err) {

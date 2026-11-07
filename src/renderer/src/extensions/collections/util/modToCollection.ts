@@ -165,8 +165,22 @@ async function rulesToCollectionMods(
         let patches: Record<string, string>;
         if (collectionInfo.saveEdits?.[mod.id] === true) {
           const destPath = path.join(collectionPath, PATCHES_PATH, modName);
-          await fs.ensureDirWritableAsync(destPath);
-          patches = await scanForDiffs(api, game.id, mod.id, destPath, onProgress);
+          try {
+            await fs.ensureDirWritableAsync(destPath);
+            patches = await scanForDiffs(api, game.id, mod.id, destPath, onProgress);
+          } catch (err) {
+            if ((err as { mayIgnore?: boolean }).mayIgnore === false) {
+              throw err;
+            }
+            // Report it but keep the mod: dropping it from the collection means users never
+            // install it at all, which is worse than installing it without the curator's edits
+            onError(
+              'failed to create binary patches for "{{modName}}", it will be installed ' +
+                "without them: {{error}}",
+              { modName, error: getErrorMessageOrDefault(err) },
+              true,
+            );
+          }
         }
 
         if (collectionInfo.source?.[mod.id]?.type === "bundle") {
