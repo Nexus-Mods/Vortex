@@ -104,7 +104,8 @@ interface IProvider {
 
 declare module "@/types/IExtensionContext" {
   interface ApiEvents {
-    "discover-game": (gameId: string) => string[];
+    /** `store` limits discovery to that store's install, for a game the user picked from it */
+    "discover-game": (gameId: VortexGameId, store?: string) => string[];
     "discover-tools": (gameId: string) => void;
     "register-tier-zero-game": (entry: ITierZeroGame) => void;
     "remove-tier-zero-game": (gameId: GameId) => void;
@@ -1019,7 +1020,7 @@ function init(context: IExtensionContext): boolean {
       }
     }
 
-    context.api.onAsync<"discover-game">("discover-game", (gameId) => {
+    context.api.onAsync<"discover-game">("discover-game", (gameId, store) => {
       if (process.env.VORTEX_E2E === "1") {
         log(
           "debug",
@@ -1031,7 +1032,10 @@ function init(context: IExtensionContext): boolean {
 
       const game = getGame(gameId);
       if (game !== undefined) {
-        return $.gameModeManager.startQuickDiscovery([game]);
+        return $.gameModeManager.startQuickDiscovery(
+          [game],
+          store !== undefined ? { gameId, store } : undefined,
+        );
       } else {
         return Promise.resolve<string[]>([]);
       }
