@@ -6,7 +6,14 @@
 
 import * as fs from "node:fs/promises";
 
+import { createLinearPatchFile } from "./linear";
 import { applyPatch, createPatch, type BsdiffWasmExports } from "./wasm";
+
+// The wasm bsdiff's suffix sort needs about 14 bytes of wasm memory per input byte, and
+// wasm memory stops at 4 GiB, so it runs out of memory on files of a few hundred MB. The
+// worker keeps one wasm instance whose memory never shrinks, so this stays well below that.
+// Larger files get a linear patch instead.
+export const MAX_SUFFIX_SORT_SIZE = 128 * 1024 * 1024;
 
 /** Create a BSDIFF40 patch file from oldPath and newPath. */
 export async function createPatchFile(
@@ -14,7 +21,12 @@ export async function createPatchFile(
   oldPath: string,
   newPath: string,
   patchPath: string,
+  maxSuffixSortSize = MAX_SUFFIX_SORT_SIZE,
 ): Promise<void> {
+  const [oldStat, newStat] = await Promise.all([fs.stat(oldPath), fs.stat(newPath)]);
+  if (Math.max(oldStat.size, newStat.size) > maxSuffixSortSize) {
+    return createLinearPatchFile(wasm, oldPath, newPath, patchPath);
+  }
   const [oldBuf, newBuf] = await Promise.all([fs.readFile(oldPath), fs.readFile(newPath)]);
   await fs.writeFile(patchPath, createPatch(wasm, oldBuf, newBuf));
 }
