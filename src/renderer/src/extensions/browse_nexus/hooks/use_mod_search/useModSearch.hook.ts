@@ -78,7 +78,11 @@ const uniqueMods = (pages: { mods: ModSummary[] }[] | undefined): ModSummary[] =
   return [...byId.values()];
 };
 
-/** Whether a page failed as the API refused its cursor, as it does one made before an update. */
+/**
+ * Whether a page failed as the API refused its cursor, as it does one made before an update. Only a
+ * later page has one, sent with the same search the first page was accepted with, so its `422` can
+ * only be the cursor's; the API says nothing more specific.
+ */
 const isRefusedCursor = (error: Error | null) =>
   error instanceof V3ApiError && error.status === 422;
 
@@ -93,7 +97,7 @@ export interface IModSearch extends ReturnType<typeof useModViews> {
   searchKey: string;
   /** The mods loaded so far, each only where it first came. */
   mods: ModSummary[];
-  /** How many mods the search found, over every page. */
+  /** How many mods the search found; the last search's until the next one's first page comes. */
   totalCount: number;
   /** How many mods the game has over all time, whatever the view, for the tab. */
   allModsTotal: number;
@@ -176,7 +180,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
       }
     },
     retry: () => {
-      if (isRefusedCursor(mods.error)) {
+      if (mods.isFetchNextPageError && isRefusedCursor(mods.error)) {
         queryClient.setQueryData(search.queryKey, (data) =>
           data ? { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) } : data,
         );

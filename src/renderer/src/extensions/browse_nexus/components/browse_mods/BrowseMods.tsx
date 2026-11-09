@@ -43,10 +43,17 @@ interface IBrowseModsProps {
 export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   const { t } = useTranslation();
   const { mods } = search;
-  const { picked: activeMod, shown: shownMod, pick, show, flush } = useSettledPick<ModSummary>();
+  const {
+    latestPick: activeMod,
+    settledPick: shownMod,
+    pickOnceSettled,
+    pickNow,
+    settleNow,
+    startWith,
+  } = useSettledPick<ModSummary>();
 
   if (!activeMod && mods[0]) {
-    show(mods[0]);
+    startWith(mods[0]);
   }
 
   const { gallery, backdrop, setBackdrop } = useModGallery(api, shownMod);
@@ -100,7 +107,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       return;
     }
 
-    const choose = input === "pointer" ? show : pick;
+    const choose = input === "pointer" ? pickNow : pickOnceSettled;
 
     choose(mods[index], () =>
       tracker.trackModSelected({ mod_uid: id, view: trackedView, position: index + 1, input }),
@@ -122,7 +129,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     }
 
     focusDetailsRef.current = true;
-    flush();
+    settleNow();
   };
 
   /**

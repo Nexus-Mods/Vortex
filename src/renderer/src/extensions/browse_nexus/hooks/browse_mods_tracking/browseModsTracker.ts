@@ -191,7 +191,7 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     // Once per search that comes back empty.
     trackNoResults: (props: ISearchEventProps) => track("browse_mods_no_results", props),
 
-    // `pages_loaded` is how many pages had loaded when the next failed, 0 for the first.
+    // `pages_loaded` is how many pages were loaded when Try again was clicked, 0 when none were.
     trackRetryClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
       track("browse_mods_retry_clicked", props),
   };

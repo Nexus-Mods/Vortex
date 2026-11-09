@@ -615,6 +615,22 @@ describe("useModSearch", () => {
     expect(mocks.pending).toEqual([]);
   });
 
+  it("asks for a first page refused again as it is, without starting the list again", async () => {
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+    const { searchKey } = result.current;
+    await act(async () =>
+      mocks.pending.shift()!.reject(new V3ApiError({ status: 422, title: "Unprocessable Entity" })),
+    );
+    await waitFor(() => expect(result.current.error).toBeTruthy());
+
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
+    expect(cursorOf(mocks.pending.at(-1)!.search)).toBeUndefined();
+    expect(result.current.searchKey).toBe(searchKey);
+  });
+
   it("offers to try again after the mods it has when asking for them again fails", async () => {
     const { result } = render();
     await loadTwoPages(result);
