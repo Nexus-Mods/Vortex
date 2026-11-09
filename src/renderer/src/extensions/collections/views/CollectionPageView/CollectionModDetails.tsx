@@ -1,9 +1,8 @@
 import type { ICollectionRevisionMod } from "@nexusmods/nexus-api";
 import { GameDomain } from "@vortex/shared";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Panel } from "react-bootstrap";
 
-import bbcodeToReact from "../../../../controls/bbcode";
 import FlexLayout from "../../../../controls/FlexLayout";
 import Image from "../../../../controls/Image";
 import * as tooltip from "../../../../controls/TooltipControls";
@@ -12,6 +11,7 @@ import { getGame } from "../../../../extensions/gamemode_management/util/getGame
 import renderModName from "../../../../extensions/mod_management/util/modName";
 import { nexusGameId } from "../../../../extensions/nexus_integration/util/convertGameId";
 import { nexusModPageUrl } from "../../../../extensions/nexus_integration/util/nexus_urls/nexusUrls";
+import { BBCode } from "../../../../ui/components/prose/bbcode/BBCode";
 import type { TFunction } from "../../../../util/i18n";
 import { AUTHOR_UNKNOWN, NEXUS_BASE_URL } from "../../constants";
 import type { IModEx } from "../../types/IModEx";
@@ -50,6 +50,13 @@ function CollectionModDetails(props: ICollectionModDetails) {
     window.api.shell.openUrl(nexusModPageUrl(domainName, modId));
   }, [domainName, modId]);
 
+  // Images from outside Nexus Mods point to the mod's page, where they're shown; without one,
+  // they're left out.
+  const externalImagePlaceholders = useMemo(
+    () => (modId !== undefined ? { websiteUrl: nexusModPageUrl(domainName, modId) } : undefined),
+    [domainName, modId],
+  );
+
   return (
     <div className="installing-mod-overview">
       <FlexLayout type="row">
@@ -75,7 +82,13 @@ function CollectionModDetails(props: ICollectionModDetails) {
             </FlexLayout.Fixed>
 
             <FlexLayout.Flex>
-              <div className="collection-description">{bbcodeToReact(description)}</div>
+              <div className="collection-description">
+                <BBCode
+                  bbcode={description}
+                  externalImagePlaceholders={externalImagePlaceholders}
+                  size="sm"
+                />
+              </div>
             </FlexLayout.Flex>
 
             <FlexLayout.Fixed>
