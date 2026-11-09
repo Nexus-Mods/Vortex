@@ -3,8 +3,9 @@ import React from "react";
 import { useContext, useCallback, Component } from "react";
 import { Button, Media, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
 import { useSelector } from "react-redux";
+
+import { Markdown } from "@/ui/components/prose/markdown/Markdown";
 
 import { MainContext } from "../../../../contexts";
 import FlexLayout from "../../../../controls/FlexLayout";
@@ -96,7 +97,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
           </FlexLayout>
 
           <div className="changelog-scroll">
-            <ReactMarkdown>{changelog.description}</ReactMarkdown>
+            <Markdown markdown={changelog.description} size="sm" />
           </div>
         </Media.Right>
 
