@@ -3,6 +3,7 @@ export type {
   ApplyFiles,
   ApplyOptions,
   ApplyResult,
+  KeptFile,
   ResumeResult,
   RollbackResult,
   RunOptions,
@@ -31,25 +32,19 @@ export {
   openJournal,
   readJournal,
 } from "./journal";
-export type {
-  Journal,
-  JournalEntry,
-  JournalOperation,
-  JournalRead,
-  JournalStorage,
-  JournalWriter,
-} from "./journal";
+export type { Journal, JournalEntry, JournalRead, JournalStorage, JournalWriter } from "./journal";
 export { folderKeyOf, pathKeyOf } from "./pathKey";
 export {
   DestinationState,
   inApplyOrder,
+  KeptReason,
   OperationKind,
   OperationSchema,
   plan,
   planDestinations,
   sameOrigin,
 } from "./plan";
-export type { Operation, PlannedDestination } from "./plan";
+export type { Operation, PlannedDestination, PlanOptions, SetAsideReason } from "./plan";
 export { resolve } from "./resolve";
 export { ResolverInputSchema } from "./resolverInput";
 export type { ResolverInput, ResolverMod } from "./resolverInput";

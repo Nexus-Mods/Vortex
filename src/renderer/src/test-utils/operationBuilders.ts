@@ -16,6 +16,18 @@ export function makeBackupOperation(
   };
 }
 
+/** Puts the game file back where SkyUI's plugin was. */
+export function makeRestoreOperation(
+  overrides: Partial<OperationOf<typeof OperationKind.Restore>> = {},
+): OperationOf<typeof OperationKind.Restore> {
+  return {
+    kind: OperationKind.Restore,
+    destinationPath: "/fixture-root/game/Data/SkyUI_SE.esp",
+    reason: DestinationState.RemovedEdited,
+    ...overrides,
+  };
+}
+
 /** Deploys SkyUI's plugin. */
 export function makeLinkOperation(
   overrides: Partial<OperationOf<typeof OperationKind.Link>> = {},

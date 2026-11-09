@@ -20,6 +20,7 @@ import { fileMD5 } from "../../../util/checksum";
 import { emitPlannerPlanEvent } from "../../analytics/utils/plannerPlanEvent";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
+import { BACKUP_TAG } from "../LinkingDeployment";
 import { scanDeploymentTargets } from "./diskScan";
 import { addGeneratedFiles } from "./generatedFiles";
 import { keepLastPlan } from "./lastPlans";
@@ -103,7 +104,9 @@ function planAndLogOperations(
 
   // Now that we have both previous lockfile, current lockfile and the disk state do the actual planning
   const planStartedAt = Temporal.Now.instant();
-  const destinations = planDestinations(currentLockfile, previousLockfile, diskScan);
+  const destinations = planDestinations(currentLockfile, previousLockfile, diskScan, {
+    backupPathOf: (destinationPath) => destinationPath + BACKUP_TAG,
+  });
   const planMs = elapsedMsSince(planStartedAt);
   const countsByKind = countByOperation(destinations);
   const counts: PlannerOperationCounts = {
@@ -130,7 +133,7 @@ function planAndLogOperations(
   inApplyOrder(destinations.flatMap((destination) => destination.operations)).forEach((o) =>
     log("debug", "planner operations ", {
       operation: o.kind,
-      path: o.kind == OperationKind.Backup ? o.destinationPath : o.file.destinationPath,
+      path: "file" in o ? o.file.destinationPath : o.destinationPath,
     }),
   );
 

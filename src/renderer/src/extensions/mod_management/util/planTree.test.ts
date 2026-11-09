@@ -49,12 +49,15 @@ const lockfileWithTexture = () => {
   });
 };
 
+const planOptions = { backupPathOf: (destinationPath: string) => `${destinationPath}.backup` };
+
 /** SkyUI's plugin and the texture still deployed, SkyUI's config gone from disk. */
 const rerun = () =>
   planDestinations(
     lockfileWithTexture(),
     lockfileWithTexture(),
     makeDiskScan({ entries: [makeDiskEntry(), makeDiskEntry({ path: TEXTURE })] }),
+    planOptions,
   );
 
 const fileName = (path: string) => QualifiedPath.fromNative(path).basename;
@@ -66,7 +69,9 @@ const rowLabel = (row: PlanRow) =>
 
 describe("planTree", () => {
   test("groups destinations by folder, joining a folder that holds only one folder to it", () => {
-    const topFolders = planTree(planDestinations(makeLockfile(), undefined, makeDiskScan()));
+    const topFolders = planTree(
+      planDestinations(makeLockfile(), undefined, makeDiskScan(), planOptions),
+    );
 
     expect(topFolders).toMatchObject([
       {
@@ -153,6 +158,7 @@ describe("planTree", () => {
             makeDiskEntry({ path: `${gameData}/SkyUI_SE.esp` }),
           ],
         }),
+        planOptions,
       ),
     );
 

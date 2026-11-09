@@ -1,3 +1,4 @@
+import type { ApplyFiles } from "@nexusmods/mod-pipeline";
 import {
   InMemoryFS,
   InMemoryFSBuilder,
@@ -5,6 +6,8 @@ import {
   type StatResult,
 } from "@vortex/shared/filesystem";
 import { describe, expect, test } from "vitest";
+
+import { LinkCountingFS } from "@/test-utils/linkCountingFS";
 
 import { applyFilesOn } from "./applyFiles";
 
@@ -28,8 +31,10 @@ const filesWith = (...paths: string[]) => {
   for (const path of paths) {
     builder.file(qualified(path), { type: "text", data: path });
   }
-  return applyFilesOn(builder.build());
+  return applyFilesOn(new LinkCountingFS(builder.store));
 };
+
+const idAt = async (files: ApplyFiles, path: string) => (await files.statusAt(path))?.id;
 
 describe("applyFilesOn", () => {
   test("gives hardlinks of one file one id, and other files another", async () => {
@@ -37,19 +42,28 @@ describe("applyFilesOn", () => {
 
     await files.link("/a", "/link");
 
-    expect(await files.idAt("/link")).toBe(await files.idAt("/a"));
-    expect(await files.idAt("/b")).not.toBe(await files.idAt("/a"));
+    expect(await idAt(files, "/link")).toBe(await idAt(files, "/a"));
+    expect(await idAt(files, "/b")).not.toBe(await idAt(files, "/a"));
+  });
+
+  test("counts a file's hardlinks", async () => {
+    const files = filesWith("/a", "/b");
+
+    await files.link("/a", "/link");
+
+    expect((await files.statusAt("/a"))?.linkCount).toBe(2);
+    expect((await files.statusAt("/b"))?.linkCount).toBe(1);
   });
 
   test("won't move or link over a file", async () => {
     const files = filesWith("/a", "/taken");
-    const takenId = await files.idAt("/taken");
+    const takenId = await idAt(files, "/taken");
 
     await expect(files.move("/a", "/taken")).rejects.toThrow();
     await expect(files.link("/a", "/taken")).rejects.toThrow();
 
-    expect(await files.idAt("/taken")).toBe(takenId);
-    expect(await files.idAt("/a")).toBeDefined();
+    expect(await idAt(files, "/taken")).toBe(takenId);
+    expect(await idAt(files, "/a")).toBeDefined();
   });
 
   test.each([
@@ -63,8 +77,8 @@ describe("applyFilesOn", () => {
 
     await expect(files.move("/game/a", target)).rejects.toThrow("another drive");
 
-    expect(await files.idAt("/game/a")).toBeDefined();
-    expect(await files.idAt(target)).toBeUndefined();
+    expect(await idAt(files, "/game/a")).toBeDefined();
+    expect(await idAt(files, target)).toBeUndefined();
   });
 
   test("creates a folder and those above it, and again without failing", async () => {
@@ -73,7 +87,7 @@ describe("applyFilesOn", () => {
     await files.createFolder("/one/two");
     await files.createFolder("/one/two");
 
-    expect(await files.idAt("/one/two")).toBeDefined();
+    expect(await idAt(files, "/one/two")).toBeDefined();
   });
 
   test("leaves a folder with something in it", async () => {
@@ -81,7 +95,7 @@ describe("applyFilesOn", () => {
 
     await files.removeEmptyFolder("/full");
 
-    expect(await files.idAt("/full/a")).toBeDefined();
+    expect(await idAt(files, "/full/a")).toBeDefined();
   });
 
   test("leaves a file at a folder's path", async () => {
@@ -89,7 +103,7 @@ describe("applyFilesOn", () => {
 
     await files.removeEmptyFolder("/a");
 
-    expect(await files.idAt("/a")).toBeDefined();
+    expect(await idAt(files, "/a")).toBeDefined();
   });
 
   test("ignores a folder that isn't there", async () => {

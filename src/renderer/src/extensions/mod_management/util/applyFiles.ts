@@ -8,24 +8,24 @@ const qualified = (path: string) => QualifiedPath.fromNative(path);
 
 /** Apply's file work through FileSystem, on hardlinks. */
 export function applyFilesOn(fs: FileSystem): ApplyFiles {
-  const statusAt = (path: string) => fs.stat(qualified(path), { parseSymLink: true });
+  const statOf = (path: string) => fs.stat(qualified(path), { parseSymLink: true });
 
   /** The status of `folder`, or of the nearest folder above it that exists. */
   const existingFolderAt = async (folder: QualifiedPath): Promise<StatResult> => {
-    const status = await statusAt(folder.path);
+    const status = await statOf(folder.path);
     return status.exists || folder.path === folder.root
       ? status
       : existingFolderAt(folder.parent());
   };
 
   return {
-    idAt: async (path) => {
-      const status = await statusAt(path);
-      return status.exists ? entryIdOf(status) : undefined;
+    statusAt: async (path) => {
+      const status = await statOf(path);
+      return status.exists ? { id: entryIdOf(status), linkCount: status.hardlinkCount } : undefined;
     },
     move: async (from, to) => {
       const [source, targetFolder] = await Promise.all([
-        statusAt(from),
+        statOf(from),
         existingFolderAt(qualified(to).parent()),
       ]);
       // FileSystem.move copies across drives, which a kill can leave half done
@@ -41,7 +41,7 @@ export function applyFilesOn(fs: FileSystem): ApplyFiles {
     remove: (path) => fs.delete(qualified(path)),
     createFolder: (path) => fs.createDirectory(qualified(path)),
     removeEmptyFolder: async (path) => {
-      const status = await statusAt(path);
+      const status = await statOf(path);
       if (!status.exists || status.isFile) {
         return;
       }

@@ -1,12 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import {
-  JournalReadStatus,
-  OperationKind,
-  openJournal,
-  readJournal,
-} from "@nexusmods/mod-pipeline";
+import { JournalReadStatus, openJournal, readJournal } from "@nexusmods/mod-pipeline";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // the real disk, with rm and open able to fail in a way no file handle can cause on Windows
@@ -18,6 +13,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 });
 
 import { startJournal } from "@/test-utils/journal";
+import { makeRestoreOperation } from "@/test-utils/operationBuilders";
 import { makeTempDir } from "@/test-utils/tempDir";
 import { delayed } from "@/util/util";
 
@@ -170,8 +166,8 @@ describe("journalStorageAt", () => {
 
   it("carries a journal through a torn last line", async () => {
     const entries = [
-      { operation: { kind: OperationKind.Restore, destinationPath: "/game/a.dll" } },
-      { operation: { kind: OperationKind.Restore, destinationPath: "/game/b.dll" } },
+      { operation: makeRestoreOperation({ destinationPath: "/game/a.dll" }) },
+      { operation: makeRestoreOperation({ destinationPath: "/game/b.dll" }) },
     ];
     const killed = await startJournal(journalStorageAt(journalFile), entries, "fixture-run");
     await killed.markDone(0);

@@ -1,5 +1,5 @@
 import { AbsolutePathSchema } from "./pathKey";
-import { OperationKind, OperationSchema, type Operation } from "./plan";
+import { OperationSchema, type Operation } from "./plan";
 import type { Assert, MutuallyAssignable } from "./typeChecks";
 import { z } from "./zodJitless";
 
@@ -21,19 +21,14 @@ export interface JournalStorage {
   close(): Promise<void>;
 }
 
-export type JournalOperation =
-  | Operation
-  | { kind: typeof OperationKind.Restore; destinationPath: string };
-
 /** One step of a run; progress names it by its position. */
 export interface JournalEntry {
-  operation: JournalOperation;
+  operation: Operation;
   /** resolved when the run starts, so recovery doesn't depend on Stage */
   stagedPath?: string;
-  /**
-   * where an UNLINK keeps a file it can't show is ours, a BACKUP moves a game file and a RESTORE
-   * finds it; resolved when the run starts
-   */
+  /** where a BACKUP moves the game's original and a RESTORE finds it; resolved when the run starts */
+  backupPath?: string;
+  /** where an UNLINK or a BACKUP sets its file aside; resolved when the run starts */
   keptPath?: string;
 }
 
@@ -49,7 +44,7 @@ export interface Journal {
   entries: JournalEntry[];
   phase: JournalPhase;
   done: ReadonlySet<number>;
-  /** the UNLINKs marked done with their file kept */
+  /** the entries marked done with their file set aside */
   kept: ReadonlySet<number>;
   undone: ReadonlySet<number>;
   /** the folders the run made, so a rollback can remove them */
@@ -72,7 +67,7 @@ export type JournalRead =
 /** Appends to a run's journal. */
 export interface JournalWriter {
   readonly runId: string;
-  /** `kept` when an UNLINK kept its file */
+  /** `kept` when the entry set its file aside */
   markDone(index: number, kept?: boolean): Promise<void>;
   recordFolder(index: number, folderPath: string): Promise<void>;
   recordRemovedFolder(index: number): Promise<void>;
@@ -105,14 +100,9 @@ const headerSchema = z.object({
 });
 
 const entrySchema = z.object({
-  operation: z.union([
-    OperationSchema,
-    z.object({
-      kind: z.literal(OperationKind.Restore),
-      destinationPath: AbsolutePathSchema,
-    }),
-  ]),
+  operation: OperationSchema,
   stagedPath: AbsolutePathSchema.optional(),
+  backupPath: AbsolutePathSchema.optional(),
   keptPath: AbsolutePathSchema.optional(),
 });
 

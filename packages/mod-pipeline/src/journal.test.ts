@@ -66,6 +66,7 @@ const makeEntries = (): JournalEntry[] => [
     operation: {
       kind: OperationKind.Restore,
       destinationPath: "/fixture-root/game/old.dll",
+      reason: DestinationState.Removed,
     },
   },
 ];
@@ -171,7 +172,11 @@ describe("readJournal", () => {
       [
         JSON.stringify({ type: "header", version: 1, runId: "run", count: 1 }),
         JSON.stringify({
-          operation: { kind: OperationKind.Restore, destinationPath: "game/a" },
+          operation: {
+            kind: OperationKind.Restore,
+            destinationPath: "game/a",
+            reason: DestinationState.Removed,
+          },
         }),
         "",
       ].join("\n"),

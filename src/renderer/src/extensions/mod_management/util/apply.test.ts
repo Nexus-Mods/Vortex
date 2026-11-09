@@ -6,15 +6,17 @@ import {
   apply,
   ApplyStatus,
   JournalReadStatus,
-  OperationKind,
+  KeptReason,
   readJournal,
   RefusalReason,
   resumeApply,
   rollback,
   type JournalStorage,
+  type KeptFile,
   type Operation,
   type ResumeResult,
   type RunOptions,
+  type SetAsideReason,
   type StagedFiles,
 } from "@nexusmods/mod-pipeline";
 import {
@@ -26,10 +28,12 @@ import {
 import { describe, expect, test } from "vitest";
 
 import { startJournal } from "@/test-utils/journal";
+import { LinkCountingFS } from "@/test-utils/linkCountingFS";
 import { makeGeneratedFileSource, makeNexusFileSource } from "@/test-utils/lockfileBuilders";
 import {
   makeBackupOperation,
   makeLinkOperation,
+  makeRestoreOperation,
   makeUnlinkOperation,
 } from "@/test-utils/operationBuilders";
 import { makeTempDir } from "@/test-utils/tempDir";
@@ -50,12 +54,17 @@ const inGame = (name: string) => `${GAME}/${name}`;
 const inStaging = (name: string) => `${STAGING}/${name}`;
 const backupPathOf = (destinationPath: string) => `${destinationPath}${BACKUP_TAG}`;
 const backupOf = (name: string) => backupPathOf(inGame(name));
-const unlinkKeptPathOf = (_destinationPath: string, runId: string, entryIndex: number) =>
+const keptPathOf = (_destinationPath: string, runId: string, entryIndex: number) =>
   `${KEPT}/${runId}/${entryIndex}`;
+const reasonsOf = (kept: readonly KeptFile[]) =>
+  kept.map(({ destinationPath, reason }) => [destinationPath, reason]);
 
 const fileNamed = (name: string) =>
   makeNexusFileSource({ fileHash: name, destinationPath: inGame(name) });
 const backup = (name: string) => makeBackupOperation({ destinationPath: inGame(name) });
+const setAside = (name: string, reason: SetAsideReason) =>
+  makeBackupOperation({ destinationPath: inGame(name), setAside: reason });
+const restore = (name: string) => makeRestoreOperation({ destinationPath: inGame(name) });
 const unlink = (name: string) => makeUnlinkOperation({ file: fileNamed(name) });
 const link = (name: string) => makeLinkOperation({ file: fileNamed(name) });
 /**
@@ -102,7 +111,7 @@ async function seed({ staged = [], deployed = [], other = {} }: Setup): Promise<
   for (const [filePath, data] of Object.entries(other)) {
     builder.file(qualified(filePath), { type: "text", data });
   }
-  const fs = builder.build();
+  const fs = new LinkCountingFS(builder.store);
   await Promise.all(
     deployed.map((name) =>
       fs.createLink(qualified(inStaging(name)), qualified(inGame(name)), "hardlink"),
@@ -143,7 +152,7 @@ const runApply = async (
   apply(operations, {
     ...optionsOn(fs, journal ?? (await newJournal())),
     backupPathOf,
-    unlinkKeptPathOf,
+    keptPathOf,
     stagedFiles,
   });
 
@@ -176,6 +185,112 @@ describe("apply", () => {
 
       expect(await snapshot(fs)).not.toHaveProperty([backupOf("a.dll")]);
     });
+
+    /** a game file patched after an earlier run backed up its original */
+    const patchedOverBackup = {
+      [inGame("a.dll")]: "patched game file",
+      [backupOf("a.dll")]: "game file",
+    };
+
+    const seedLinkedElsewhere = async () => {
+      const fs = await seed({ staged: ["a.dll"], deployed: ["other.dll"] });
+      await fs.createLink(
+        qualified(inStaging("other.dll")),
+        qualified(inGame("a.dll")),
+        "hardlink",
+      );
+      return fs;
+    };
+
+    test("sets aside another mod's file, leaving the backup name free", async () => {
+      const fs = await seedLinkedElsewhere();
+      const before = await snapshot(fs);
+
+      const result = await runApply(fs, [
+        setAside("a.dll", KeptReason.LinkedElsewhere),
+        link("a.dll"),
+      ]);
+
+      expectStatus(result, ApplyStatus.Applied);
+      const after = await snapshot(fs);
+      expect(after).not.toHaveProperty([backupOf("a.dll")]);
+      expect(after[inGame("a.dll")]).toBe(before[inStaging("a.dll")]);
+      expect(reasonsOf(result.kept)).toEqual([[inGame("a.dll"), KeptReason.LinkedElsewhere]]);
+    });
+
+    test("rolls back rather than back up a file with another hardlink", async () => {
+      const fs = await seedLinkedElsewhere();
+      const before = await snapshot(fs);
+
+      const result = await runApply(fs, [backup("a.dll"), link("a.dll")]);
+
+      expectStatus(result, ApplyStatus.RolledBack);
+      expect(await snapshot(fs)).toEqual(before);
+    });
+
+    test("keeps the existing backup, and sets the file at the destination aside", async () => {
+      const fs = await seed({ staged: ["a.dll"], other: patchedOverBackup });
+      const before = await snapshot(fs);
+
+      const result = await runApply(fs, [setAside("a.dll", KeptReason.BackupTaken), link("a.dll")]);
+
+      expectStatus(result, ApplyStatus.Applied);
+      const after = await snapshot(fs);
+      expect(after[backupOf("a.dll")]).toBe(before[backupOf("a.dll")]);
+      expect(after[inGame("a.dll")]).toBe(before[inStaging("a.dll")]);
+      expect(reasonsOf(result.kept)).toEqual([[inGame("a.dll"), KeptReason.BackupTaken]]);
+    });
+
+    test("rolls back rather than back up over an existing backup", async () => {
+      const fs = await seed({ staged: ["a.dll"], other: patchedOverBackup });
+      const before = await snapshot(fs);
+
+      const result = await runApply(fs, [backup("a.dll"), link("a.dll")]);
+
+      expectStatus(result, ApplyStatus.RolledBack);
+      expect(await snapshot(fs)).toEqual(before);
+    });
+
+    test("puts the original back after setting aside the file over it", async () => {
+      const fs = await seed({ other: { ...patchedOverBackup, [inGame("a.dll")]: "my edit" } });
+      const before = await snapshot(fs);
+
+      const result = await runApply(fs, [
+        setAside("a.dll", KeptReason.BackupTaken),
+        restore("a.dll"),
+      ]);
+
+      expectStatus(result, ApplyStatus.Applied);
+      const after = await snapshot(fs);
+      expect(after[inGame("a.dll")]).toBe(before[backupOf("a.dll")]);
+      expect(after).not.toHaveProperty([backupOf("a.dll")]);
+      expect(reasonsOf(result.kept)).toEqual([[inGame("a.dll"), KeptReason.BackupTaken]]);
+    });
+
+    test("keeps the existing backup with nothing at the destination", async () => {
+      const fs = await seed({ staged: ["a.dll"], other: { [backupOf("a.dll")]: "game file" } });
+      const before = await snapshot(fs);
+
+      const result = await runApply(fs, [backup("a.dll"), link("a.dll")]);
+
+      expectStatus(result, ApplyStatus.Applied);
+      expect(result.kept).toEqual([]);
+      expect((await snapshot(fs))[backupOf("a.dll")]).toBe(before[backupOf("a.dll")]);
+    });
+
+    test("puts the file it kept aside back when rolling back", async () => {
+      const fs = await seed({ staged: ["a.dll"], other: patchedOverBackup });
+      const before = await snapshot(fs);
+
+      const result = await runApply(fs, [
+        setAside("a.dll", KeptReason.BackupTaken),
+        link("a.dll"),
+        link("not-in-staging.dll"),
+      ]);
+
+      expectStatus(result, ApplyStatus.RolledBack);
+      expect(await snapshot(fs)).toEqual(before);
+    });
   });
 
   describe("UNLINK", () => {
@@ -198,7 +313,7 @@ describe("apply", () => {
       const result = await runApply(fs, [unlink("a.dll")]);
 
       expectStatus(result, ApplyStatus.Applied);
-      expect(result.kept.map(({ destinationPath }) => destinationPath)).toEqual([inGame("a.dll")]);
+      expect(reasonsOf(result.kept)).toEqual([[inGame("a.dll"), KeptReason.NotOurs]]);
       const after = await snapshot(fs);
       expect(after[`${KEPT}/run/0`]).toBe(before[inGame("a.dll")]);
       expect(after).not.toHaveProperty([inGame("a.dll")]);
@@ -221,25 +336,26 @@ describe("apply", () => {
       expectStatus(result, ApplyStatus.Applied);
       expect(result.kept).toEqual([]);
     });
+  });
 
-    test("restores a backup when no LINK fills the destination", async () => {
+  describe("RESTORE", () => {
+    test("moves the backup back to the destination an UNLINK cleared", async () => {
       const fs = await seed({ deployed: ["a.dll"], other: { [backupOf("a.dll")]: "original" } });
       const before = await snapshot(fs);
 
-      expectStatus(await runApply(fs, [unlink("a.dll")]), ApplyStatus.Applied);
+      expectStatus(await runApply(fs, [unlink("a.dll"), restore("a.dll")]), ApplyStatus.Applied);
 
       const after = await snapshot(fs);
       expect(after[inGame("a.dll")]).toBe(before[backupOf("a.dll")]);
       expect(after).not.toHaveProperty([backupOf("a.dll")]);
     });
 
-    test("leaves a backup when a LINK fills the destination", async () => {
-      const fs = await seed({ deployed: ["a.dll"], other: { [backupOf("a.dll")]: "original" } });
-      const before = await snapshot(fs);
+    test("counts as done with no backup", async () => {
+      const fs = await seed({ deployed: ["a.dll"] });
 
-      expectStatus(await runApply(fs, [unlink("a.dll"), link("a.dll")]), ApplyStatus.Applied);
+      expectStatus(await runApply(fs, [unlink("a.dll"), restore("a.dll")]), ApplyStatus.Applied);
 
-      expect((await snapshot(fs))[backupOf("a.dll")]).toBe(before[backupOf("a.dll")]);
+      expect(await snapshot(fs)).not.toHaveProperty([inGame("a.dll")]);
     });
   });
 
@@ -371,12 +487,8 @@ describe("apply", () => {
         makeLinkOperation({ file: makeGeneratedFileSource() }),
       ],
       ["a LINK with no staged file", RefusalReason.NoStagedFile, link(UNSTAGED)],
-      ["a backup name already taken", RefusalReason.BackupNameTaken, backup("taken.dll")],
     ])("%s", async (_name, reason, operation) => {
-      const fs = await seed({
-        staged: ["a.dll"],
-        other: { [inGame("taken.dll")]: "game file", [backupOf("taken.dll")]: "earlier backup" },
-      });
+      const fs = await seed({ staged: ["a.dll"] });
       const before = await snapshot(fs);
       const journal = await newJournal();
 
@@ -396,7 +508,7 @@ describe("apply", () => {
       const result = await apply([link("a.dll")], {
         ...optionsOn(fs, journal),
         backupPathOf,
-        unlinkKeptPathOf,
+        keptPathOf,
         stagedFiles: { pathOf: () => "C:\\staging\\a.dll" },
       });
 
@@ -474,10 +586,9 @@ describe("resumeApply", () => {
     });
     const before = await snapshot(fs);
     const journal = await newJournal();
-    const operation = { kind: OperationKind.Restore, destinationPath: inGame("a.dll") };
     const writer = await startJournal(
       journal,
-      [{ operation, keptPath: backupOf("a.dll") }],
+      [{ operation: restore("a.dll"), backupPath: backupOf("a.dll") }],
       RUN_ID,
     );
     await writer.close();
@@ -491,7 +602,7 @@ describe("resumeApply", () => {
     ["marked done as kept", true],
     ["moved before a kill, not marked", false],
   ])("reports a file an UNLINK kept %s", async (_, markedDone) => {
-    const keptPath = unlinkKeptPathOf(inGame("a.dll"), RUN_ID, 0);
+    const keptPath = keptPathOf(inGame("a.dll"), RUN_ID, 0);
     const fs = await seed({ staged: ["a.dll"], other: { [keptPath]: "my edit" } });
     const journal = await newJournal();
     const writer = await startJournal(
@@ -507,7 +618,9 @@ describe("resumeApply", () => {
     const result = await resumeApply(optionsOn(fs, journal));
 
     expectStatus(result, ApplyStatus.Applied);
-    expect(result.kept).toEqual([{ destinationPath: inGame("a.dll"), keptPath }]);
+    expect(result.kept).toEqual([
+      { destinationPath: inGame("a.dll"), keptPath, reason: KeptReason.NotOurs },
+    ]);
   });
 
   test("finishes a rollback rather than run it forward", async () => {
@@ -597,6 +710,7 @@ const WHOLE_RUN = [
   unlink("removed.dll"),
   unlink("edited.dll"),
   unlink("restored.dll"),
+  restore("restored.dll"),
   unlink("becomes-folder.dll"),
   unlink("becomes-file/a.dll"),
   link("replaced.dll"),
@@ -662,7 +776,7 @@ async function runKilledAfter(
     files: applyFilesOn(kill.fs(fs)),
     journal: kill.journal(journal),
     backupPathOf,
-    unlinkKeptPathOf,
+    keptPathOf,
     stagedFiles,
   });
   // a dead process holds no handle

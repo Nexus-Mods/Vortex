@@ -7,18 +7,16 @@ import {
   readJournal,
   type Journal,
   type JournalEntry,
-  type JournalOperation,
   type JournalStorage,
   type JournalWriter,
 } from "./journal";
 import { FileSourceKind, type FileSource } from "./lockfile";
-import { pathKeyOf } from "./pathKey";
-import { OperationKind, parentFolders, type Operation } from "./plan";
+import { KeptReason, OperationKind, parentFolders, type Operation } from "./plan";
 
 /** The file work a run needs, provided by the caller. */
 export interface ApplyFiles {
-  /** identifies what is at a path, the same for hardlinks of one file; undefined when nothing is */
-  idAt(path: string): Promise<string | undefined>;
+  /** an id shared by a file's hardlinks, and its link count; undefined when nothing is there */
+  statusAt(path: string): Promise<{ id: string; linkCount: number } | undefined>;
   /** fails when `to` is taken or on another drive */
   move(from: string, to: string): Promise<void>;
   /** hardlinks `from` at `to`; fails when `to` is taken */
@@ -43,15 +41,15 @@ export interface RunOptions {
 export interface ApplyOptions extends RunOptions {
   stagedFiles: StagedFiles;
   /**
-   * where a BACKUP moves the game file at `destinationPath` and a RESTORE finds it: absolute, on
-   * the destination's drive, in a folder that exists
+   * where a BACKUP moves the game's original at `destinationPath` and a RESTORE finds it: absolute
+   * and on the destination's drive
    */
   backupPathOf: (destinationPath: string) => string;
   /**
-   * where an UNLINK keeps a file it can't show is ours: absolute, on the destination's drive, and
-   * unique to the run and entry; missing folders are made
+   * where the run sets aside a file it can't show is ours or the game's original: absolute, on the
+   * destination's drive, and unique to the run and entry
    */
-  unlinkKeptPathOf: (destinationPath: string, runId: string, entryIndex: number) => string;
+  keptPathOf: (destinationPath: string, runId: string, entryIndex: number) => string;
 }
 
 export const ApplyStatus = {
@@ -69,9 +67,7 @@ export const RefusalReason = {
   JournalUnavailable: "journal-unavailable",
   GeneratedFile: "generated-file",
   NoStagedFile: "no-staged-file",
-  BackupNameTaken: "backup-name-taken",
   InvalidPath: "invalid-path",
-  FilesUnavailable: "files-unavailable",
 } as const;
 export type RefusalReason = (typeof RefusalReason)[keyof typeof RefusalReason];
 
@@ -79,13 +75,14 @@ export type RefusalReason = (typeof RefusalReason)[keyof typeof RefusalReason];
 export interface FailedStep {
   cause: unknown;
   index?: number;
-  operation?: JournalOperation;
+  operation?: Operation;
 }
 
-/** A file an UNLINK kept, as it can't be shown to be ours. */
+/** A file a run set aside, and why. */
 export interface KeptFile {
   destinationPath: string;
   keptPath: string;
+  reason: KeptReason;
 }
 
 export interface AppliedResult {
@@ -138,6 +135,16 @@ function keptPathIn({ operation, keptPath }: JournalEntry): string {
   return keptPath;
 }
 
+function backupPathIn({ operation, backupPath }: JournalEntry): string {
+  if (backupPath === undefined) {
+    throw new Error(`no backup path for ${destinationOf(operation)}`);
+  }
+  return backupPath;
+}
+
+/** The id at a path, shared by a file's hardlinks. */
+const idAt = async (files: ApplyFiles, path: string) => (await files.statusAt(path))?.id;
+
 /**
  * Items for a `for await` whose body runs one at a time: a run's steps depend on the ones before.
  * @yields each item
@@ -146,7 +153,7 @@ async function* oneAtATime<T>(items: Iterable<T>): AsyncGenerator<T> {
   yield* items;
 }
 
-const destinationOf = (operation: JournalOperation) =>
+const destinationOf = (operation: Operation) =>
   "file" in operation ? operation.file.destinationPath : operation.destinationPath;
 
 const refused = (reason: RefusalReason, details: Partial<RefusedResult> = {}): RefusedResult => ({
@@ -162,7 +169,7 @@ interface Run {
   entries: readonly JournalEntry[];
   phase: JournalPhase;
   done: Set<number>;
-  /** the UNLINKs whose file the run kept */
+  /** the entries whose file the run set aside */
   kept: Set<number>;
   undone: ReadonlySet<number>;
   /** by entry, deepest first */
@@ -182,47 +189,29 @@ const foldersByEntry = (folders: readonly { index: number; path: string }[]) => 
   return byEntry;
 };
 
-/** The paths the plan's LINKs need: their destinations and the folders above them. */
-function linkedKeysOf(operations: readonly Operation[]): Set<string> {
-  const keys = new Set<string>();
-  for (const operation of operations) {
-    if (operation.kind === OperationKind.Link) {
-      keys.add(pathKeyOf(operation.file.destinationPath));
-      for (const folder of parentFolders(operation.file.destinationPath)) {
-        const key = pathKeyOf(folder);
-        // the folders above it are in already
-        if (keys.has(key)) {
-          break;
-        }
-        keys.add(key);
-      }
-    }
-  }
-  return keys;
-}
-
 /** The journal's entries for a plan, resolved once so recovery doesn't depend on current state. */
-async function entriesFor(
+function entriesFor(
   operations: readonly Operation[],
-  { files, stagedFiles, backupPathOf, unlinkKeptPathOf }: ApplyOptions,
+  { stagedFiles, backupPathOf, keptPathOf }: ApplyOptions,
   runId: string,
-): Promise<JournalEntry[] | RefusedResult> {
-  const linkedKeys = linkedKeysOf(operations);
+): JournalEntry[] | RefusedResult {
   const entries: JournalEntry[] = [];
-  for await (const operation of oneAtATime(operations)) {
+  for (const operation of operations) {
     const destinationPath = destinationOf(operation);
     if ("file" in operation && operation.file.source === FileSourceKind.VortexGenerated) {
       return refused(RefusalReason.GeneratedFile, { path: destinationPath });
     }
     switch (operation.kind) {
-      case OperationKind.Backup: {
-        const backupPath = backupPathOf(destinationPath);
-        if ((await files.idAt(backupPath)) !== undefined) {
-          return refused(RefusalReason.BackupNameTaken, { path: destinationPath });
-        }
-        entries.push({ operation, keptPath: backupPath });
+      case OperationKind.Backup:
+        entries.push(
+          operation.setAside !== undefined
+            ? { operation, keptPath: keptPathOf(destinationPath, runId, entries.length) }
+            : { operation, backupPath: backupPathOf(destinationPath) },
+        );
         break;
-      }
+      case OperationKind.Restore:
+        entries.push({ operation, backupPath: backupPathOf(destinationPath) });
+        break;
       case OperationKind.Link: {
         const stagedPath = stagedFiles.pathOf(operation.file);
         if (stagedPath === undefined) {
@@ -231,24 +220,13 @@ async function entriesFor(
         entries.push({ operation, stagedPath });
         break;
       }
-      case OperationKind.Unlink: {
+      case OperationKind.Unlink:
         entries.push({
           operation,
           stagedPath: stagedFiles.pathOf(operation.file),
-          keptPath: unlinkKeptPathOf(destinationPath, runId, entries.length),
+          keptPath: keptPathOf(destinationPath, runId, entries.length),
         });
-        const backupPath = backupPathOf(destinationPath);
-        if (
-          !linkedKeys.has(pathKeyOf(destinationPath)) &&
-          (await files.idAt(backupPath)) !== undefined
-        ) {
-          entries.push({
-            operation: { kind: OperationKind.Restore, destinationPath },
-            keptPath: backupPath,
-          });
-        }
         break;
-      }
       default: {
         const exhausted: never = operation;
         return exhausted;
@@ -266,7 +244,7 @@ async function entriesFor(
 async function createParents(run: Run, index: number, destinationPath: string): Promise<void> {
   const missing: string[] = [];
   for await (const folder of oneAtATime(parentFolders(destinationPath))) {
-    if ((await run.files.idAt(folder)) !== undefined) {
+    if ((await idAt(run.files, folder)) !== undefined) {
       break;
     }
     missing.push(folder);
@@ -282,6 +260,36 @@ async function createParents(run: Run, index: number, destinationPath: string): 
   await run.files.createFolder(deepest);
 }
 
+/** Moves a file, making and recording any missing folders. */
+async function moveInto(run: Run, index: number, from: string, to: string): Promise<void> {
+  try {
+    await run.files.move(from, to);
+  } catch {
+    // a missing folder; a real failure recurs
+    await createParents(run, index, to);
+    await run.files.move(from, to);
+  }
+}
+
+/** Sets the file at `from` aside to `keptPath`, marking the entry kept. */
+async function setAside(
+  run: Run,
+  index: number,
+  from: string,
+  fromId: string | undefined,
+  keptPath: string,
+): Promise<void> {
+  if (fromId === undefined) {
+    // set aside already, when a kill came between the move and its mark
+    if ((await idAt(run.files, keptPath)) !== undefined) {
+      run.kept.add(index);
+    }
+    return;
+  }
+  await moveInto(run, index, from, keptPath);
+  run.kept.add(index);
+}
+
 /** Settles a LINK that couldn't link straight away, from what is on the disk. */
 async function linkFromDisk(
   run: Run,
@@ -290,15 +298,15 @@ async function linkFromDisk(
   stagedPath: string,
 ): Promise<void> {
   const { files } = run;
-  const destinationId = await files.idAt(destinationPath);
+  const destinationId = await idAt(files, destinationPath);
   if (destinationId !== undefined) {
-    if (destinationId === (await files.idAt(stagedPath))) {
+    if (destinationId === (await idAt(files, stagedPath))) {
       return;
     }
     await run.writer.recordRemovedFolder(index);
     run.removedFolders.add(index);
     await files.removeEmptyFolder(destinationPath);
-    if ((await files.idAt(destinationPath)) !== undefined) {
+    if ((await idAt(files, destinationPath)) !== undefined) {
       throw new Error(`something else is at ${destinationPath}`);
     }
   }
@@ -312,39 +320,39 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
   const { operation, stagedPath } = entry;
   const destinationPath = destinationOf(operation);
   switch (operation.kind) {
-    case OperationKind.Backup:
-      if ((await files.idAt(destinationPath)) !== undefined) {
-        await files.move(destinationPath, keptPathIn(entry));
-      }
-      return;
-    case OperationKind.Unlink: {
-      const keptPath = keptPathIn(entry);
-      const destinationId = await files.idAt(destinationPath);
-      if (destinationId === undefined) {
-        // kept already, when a kill came between the move and its mark
-        if ((await files.idAt(keptPath)) !== undefined) {
-          run.kept.add(index);
-        }
+    case OperationKind.Backup: {
+      const destination = await files.statusAt(destinationPath);
+      if (entry.keptPath !== undefined) {
+        await setAside(run, index, destinationPath, destination?.id, entry.keptPath);
         return;
       }
-      if (stagedPath !== undefined && (await files.idAt(stagedPath)) === destinationId) {
+      if (destination === undefined) {
+        return;
+      }
+      // a file linked elsewhere isn't the game's original
+      if (destination.linkCount !== 1) {
+        throw new Error(`${destinationPath} has another hardlink, so it isn't the game's original`);
+      }
+      await moveInto(run, index, destinationPath, backupPathIn(entry));
+      return;
+    }
+    case OperationKind.Unlink: {
+      const destinationId = await idAt(files, destinationPath);
+      if (
+        destinationId !== undefined &&
+        stagedPath !== undefined &&
+        (await idAt(files, stagedPath)) === destinationId
+      ) {
         await files.remove(destinationPath);
         return;
       }
-      try {
-        await files.move(destinationPath, keptPath);
-      } catch {
-        // a missing folder; a real failure recurs
-        await createParents(run, index, keptPath);
-        await files.move(destinationPath, keptPath);
-      }
-      run.kept.add(index);
+      await setAside(run, index, destinationPath, destinationId, keptPathIn(entry));
       return;
     }
     case OperationKind.Restore: {
-      const keptPath = keptPathIn(entry);
-      if ((await files.idAt(keptPath)) !== undefined) {
-        await files.move(keptPath, destinationPath);
+      const backupPath = backupPathIn(entry);
+      if ((await idAt(files, backupPath)) !== undefined) {
+        await files.move(backupPath, destinationPath);
       }
       return;
     }
@@ -370,7 +378,7 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
 /** Whether the folder a destination is in is there, as it is after an UNLINK removed the file. */
 async function folderThere(run: Run, destinationPath: string): Promise<boolean> {
   const [folder] = parentFolders(destinationPath);
-  return folder === undefined || (await run.files.idAt(folder)) !== undefined;
+  return folder === undefined || (await idAt(run.files, folder)) !== undefined;
 }
 
 /** Undoes one entry, which may not have run, as the disk shows. */
@@ -380,11 +388,11 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
   const destinationPath = destinationOf(operation);
   switch (operation.kind) {
     case OperationKind.Link: {
-      const destinationId = await files.idAt(destinationPath);
+      const destinationId = await idAt(files, destinationPath);
       if (destinationId === undefined) {
         return;
       }
-      if (stagedPath !== undefined && destinationId === (await files.idAt(stagedPath))) {
+      if (stagedPath !== undefined && destinationId === (await idAt(files, stagedPath))) {
         await files.remove(destinationPath);
       } else if (
         run.done.has(index) &&
@@ -396,20 +404,20 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
       return;
     }
     case OperationKind.Restore: {
-      const keptPath = keptPathIn(entry);
+      const backupPath = backupPathIn(entry);
       if (
-        (await files.idAt(keptPath)) === undefined &&
-        (await files.idAt(destinationPath)) !== undefined
+        (await idAt(files, backupPath)) === undefined &&
+        (await idAt(files, destinationPath)) !== undefined
       ) {
-        await files.move(destinationPath, keptPath);
+        await files.move(destinationPath, backupPath);
       }
       return;
     }
     case OperationKind.Unlink: {
       const keptPath = keptPathIn(entry);
-      if ((await files.idAt(keptPath)) !== undefined) {
+      if ((await idAt(files, keptPath)) !== undefined) {
         await files.move(keptPath, destinationPath);
-      } else if (stagedPath !== undefined && (await files.idAt(destinationPath)) === undefined) {
+      } else if (stagedPath !== undefined && (await idAt(files, destinationPath)) === undefined) {
         try {
           await files.link(stagedPath, destinationPath);
         } catch (err) {
@@ -422,10 +430,15 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
       return;
     }
     case OperationKind.Backup: {
-      const keptPath = keptPathIn(entry);
-      if ((await files.idAt(keptPath)) !== undefined) {
-        await files.move(keptPath, destinationPath);
+      const movedTo = entry.keptPath ?? backupPathIn(entry);
+      if ((await idAt(files, movedTo)) === undefined) {
+        return;
       }
+      // it never moved, so what is at its backup name isn't its file
+      if (!run.done.has(index) && (await idAt(files, destinationPath)) !== undefined) {
+        return;
+      }
+      await files.move(movedTo, destinationPath);
       return;
     }
     default: {
@@ -445,18 +458,24 @@ async function undoFolders(run: Run, index: number, entry: JournalEntry): Promis
   }
   if (run.removedFolders.has(index)) {
     const folder = destinationOf(entry.operation);
-    if ((await run.files.idAt(folder)) === undefined) {
+    if ((await idAt(run.files, folder)) === undefined) {
       await run.files.createFolder(folder);
     }
   }
 }
 
+/** The files the run set aside, with why. */
 const keptFiles = (run: Run): KeptFile[] =>
-  run.entries.flatMap((entry, index) =>
-    entry.operation.kind === OperationKind.Unlink && run.kept.has(index)
-      ? [{ destinationPath: entry.operation.file.destinationPath, keptPath: keptPathIn(entry) }]
-      : [],
-  );
+  run.entries
+    .filter((_, index) => run.kept.has(index))
+    .map((entry) => ({
+      destinationPath: destinationOf(entry.operation),
+      keptPath: keptPathIn(entry),
+      reason:
+        entry.operation.kind === OperationKind.Backup && entry.operation.setAside !== undefined
+          ? entry.operation.setAside
+          : KeptReason.NotOurs,
+    }));
 
 /** Undoes the run newest first, from the entry in doubt; the journal goes last. */
 async function rollBack(
@@ -514,9 +533,8 @@ async function runForward(run: Run): Promise<ApplyResult> {
     }
   }
   try {
-    const kept = keptFiles(run);
     await run.writer.finish();
-    return { status: ApplyStatus.Applied, kept };
+    return { status: ApplyStatus.Applied, kept: keptFiles(run) };
   } catch (cause) {
     return { status: ApplyStatus.Unfinished, cause };
   }
@@ -562,12 +580,7 @@ export async function apply(
   }
 
   const runId = crypto.randomUUID();
-  let entries: JournalEntry[] | RefusedResult;
-  try {
-    entries = await entriesFor(operations, options, runId);
-  } catch (cause) {
-    return refused(RefusalReason.FilesUnavailable, { cause });
-  }
+  const entries = entriesFor(operations, options, runId);
   if (!Array.isArray(entries)) {
     return entries;
   }

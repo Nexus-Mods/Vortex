@@ -61,10 +61,31 @@ type _DestinationStateCodes = Assert<
   [DestinationState] extends [`${DiskLetter}${"x" | "A" | "B"}${"x" | "A"}`] ? true : false
 >;
 
+/** Why a run set a file aside. */
+export const KeptReason = {
+  /** an UNLINK's file isn't the staged one */
+  NotOurs: "not-ours",
+  /** the file has another hardlink, so it isn't the game's original */
+  LinkedElsewhere: "linked-elsewhere",
+  /** the backup name already holds an original */
+  BackupTaken: "backup-taken",
+} as const;
+export type KeptReason = (typeof KeptReason)[keyof typeof KeptReason];
+
+/** Why a BACKUP sets its file aside. */
+export type SetAsideReason = Exclude<KeptReason, typeof KeptReason.NotOurs>;
+
 /** One step of a plan; `reason` is the state of the destination that needs it. */
 export type Operation =
-  /** moves the file at the destination aside */
-  | { kind: typeof OperationKind.Backup; destinationPath: string; reason: DestinationState }
+  /** moves the file at the destination to its backup name, or with `setAside` keeps it elsewhere */
+  | {
+      kind: typeof OperationKind.Backup;
+      destinationPath: string;
+      reason: DestinationState;
+      setAside?: SetAsideReason;
+    }
+  /** moves the destination's backup back to it */
+  | { kind: typeof OperationKind.Restore; destinationPath: string; reason: DestinationState }
   /** deploys the current lockfile's file to its destination */
   | { kind: typeof OperationKind.Link; file: FileSource; reason: DestinationState }
   /** removes the previous lockfile's file from its destination */
@@ -77,10 +98,21 @@ const operationSchema = z.discriminatedUnion("kind", [
     kind: z.literal(OperationKind.Backup),
     destinationPath: AbsolutePathSchema,
     reason: reasonSchema,
+    setAside: z.enum([KeptReason.LinkedElsewhere, KeptReason.BackupTaken]).optional(),
+  }),
+  z.object({
+    kind: z.literal(OperationKind.Restore),
+    destinationPath: AbsolutePathSchema,
+    reason: reasonSchema,
   }),
   z.object({ kind: z.literal(OperationKind.Link), file: FileSourceSchema, reason: reasonSchema }),
   z.object({ kind: z.literal(OperationKind.Unlink), file: FileSourceSchema, reason: reasonSchema }),
 ]);
+
+export interface PlanOptions {
+  /** where the destination's backup is: absolute */
+  backupPathOf: (destinationPath: string) => string;
+}
 
 // typecheck fails when the schema and its type drift apart
 type _OperationMatches = Assert<MutuallyAssignable<z.infer<typeof operationSchema>, Operation>>;
@@ -237,13 +269,15 @@ export function* parentFolders(path: string): Generator<string> {
  * another destination, an entry on disk, or a link that would take Apply outside the scanned
  * folders. Both maps are keyed by path key; `leftOnDisk` is what the plan leaves on disk. Paths
  * are reported as the lockfile or the disk spells them.
+ * @returns the path keys of the folders above the current files
  */
 function checkFolders(
   currentByKey: ReadonlyMap<string, FileSource>,
   leftOnDisk: ReadonlyMap<string, DiskEntry>,
-): void {
+): ReadonlySet<string> {
   // each folder is checked once; the folders above it were checked with it
   const checkedFolders = new Set<string>();
+  const currentFolderKeys = new Set<string>();
   for (const { destinationPath } of currentByKey.values()) {
     for (const folder of parentFolders(destinationPath)) {
       if (checkedFolders.has(folder)) {
@@ -251,6 +285,7 @@ function checkFolders(
       }
       checkedFolders.add(folder);
       const folderKey = pathKeyOf(folder);
+      currentFolderKeys.add(folderKey);
       if (currentByKey.has(folderKey)) {
         throw new Error(`${destinationPath} is inside ${folder}, another destination`);
       }
@@ -270,16 +305,23 @@ function checkFolders(
       }
     }
   }
+  return currentFolderKeys;
 }
 
 function operationOf(
-  kind: Operation["kind"],
+  kind: (typeof OPERATIONS_BY_STATE)[DestinationState][number],
   reason: DestinationState,
   files: LockfileFilesAt,
+  setAside: SetAsideReason | undefined,
 ): Operation {
   switch (kind) {
     case OperationKind.Backup:
-      return { kind, destinationPath: destinationPathOf(files), reason };
+      return {
+        kind,
+        destinationPath: destinationPathOf(files),
+        reason,
+        ...(setAside === undefined ? {} : { setAside }),
+      };
     case OperationKind.Link:
       if (files.current === undefined) {
         throw new Error(`no current file to link at ${destinationPathOf(files)}`);
@@ -313,6 +355,7 @@ export function planDestinations(
   current: Lockfile,
   previous: Lockfile | undefined,
   disk: DiskScan,
+  { backupPathOf }: PlanOptions,
 ): PlannedDestination[] {
   if (previous !== undefined && previous.gameId !== current.gameId) {
     throw new Error(`the lockfiles are for games ${previous.gameId} and ${current.gameId}`);
@@ -329,29 +372,45 @@ export function planDestinations(
   const destinations = [...filesByDestinationKey].toSorted(([lhs], [rhs]) => (lhs < rhs ? -1 : 1));
   checkInputs(destinations, disk);
   const diskByKey = new Map(disk.entries.map((entry) => [pathKeyOf(entry.path), entry]));
-
-  const planned = destinations.map(([key, files]): PlannedDestination => {
-    const entry = diskByKey.get(key);
-    const state = destinationStateOf(entry, files);
-    return {
-      ...files,
-      destinationPath: destinationPathOf(files),
-      state,
-      disk: entry,
-      operations: OPERATIONS_BY_STATE[state].map((kind) => operationOf(kind, state, files)),
-    };
-  });
   // a path no current file uses is empty once its operations ran
   const cleared = new Set(
     destinations.filter(([, files]) => files.current === undefined).map(([key]) => key),
   );
-  checkFolders(currentByKey, new Map([...diskByKey].filter(([key]) => !cleared.has(key))));
-  return planned;
+  const currentFolderKeys = checkFolders(
+    currentByKey,
+    new Map([...diskByKey].filter(([key]) => !cleared.has(key))),
+  );
+
+  return destinations.map(([key, files]): PlannedDestination => {
+    const entry = diskByKey.get(key);
+    const state = destinationStateOf(entry, files);
+    const destinationPath = destinationPathOf(files);
+    const kinds = OPERATIONS_BY_STATE[state];
+    const backsUp = kinds.some((kind) => kind === OperationKind.Backup);
+    // the operations empty a destination no current file takes
+    const clears = cleared.has(key) && kinds.length > 0;
+    const backupOnDisk =
+      (backsUp || clears) && diskByKey.has(pathKeyOf(backupPathOf(destinationPath)));
+    let setAside: SetAsideReason | undefined;
+    // a file with another hardlink, such as a staged file, isn't the game's original
+    if ((entry?.hardlinkCount ?? 1) > 1) {
+      setAside = KeptReason.LinkedElsewhere;
+    } else if (backsUp && backupOnDisk) {
+      setAside = KeptReason.BackupTaken;
+    }
+    const operations = kinds.map((kind) => operationOf(kind, state, files, setAside));
+    // the original goes back unless a current file needs the path as a folder
+    if (clears && backupOnDisk && !currentFolderKeys.has(key)) {
+      operations.push({ kind: OperationKind.Restore, destinationPath, reason: state });
+    }
+    // `files` is this plan's own object, made above
+    return Object.assign(files, { destinationPath, state, disk: entry, operations });
+  });
 }
 
 /**
- * Operations in the order Apply runs them: BACKUP and UNLINK first, then LINK, each keeping its
- * order, so a file can replace a folder of ours and a folder can replace a file of ours.
+ * Operations in the order Apply runs them: LINK last, the others keeping their order, so a file can
+ * replace a folder of ours and a folder can replace a file of ours.
  */
 export const inApplyOrder = (operations: readonly Operation[]): Operation[] => [
   ...operations.filter((operation) => operation.kind !== OperationKind.Link),
@@ -363,8 +422,11 @@ export function plan(
   current: Lockfile,
   previous: Lockfile | undefined,
   disk: DiskScan,
+  options: PlanOptions,
 ): Operation[] {
   return inApplyOrder(
-    planDestinations(current, previous, disk).flatMap((destination) => destination.operations),
+    planDestinations(current, previous, disk, options).flatMap(
+      (destination) => destination.operations,
+    ),
   );
 }
