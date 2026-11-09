@@ -99,7 +99,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     }
   }, [isEmpty, isShown, searched, tracker, search.viewId]);
 
-  /** Picks another mod, opening its details and counting it: at once for a click, once keys settle. */
+  /** Picks another mod and counts it, shown at once if clicked, else once the keys settle. */
   const selectMod = (id: string, input: SelectionInput) => {
     const index = mods.findIndex((mod) => mod.id === id);
 
