@@ -399,8 +399,7 @@ function genOnProfileChange(
         }
 
         if (profile !== undefined) {
-          const { gameId } = profile;
-          if (!isGameRegistered(gameId)) {
+          if (!isGameRegistered(VortexGameId(profile.gameId))) {
             showError(
               store.dispatch,
               "Game no longer supported, please install the game extension",
@@ -757,7 +756,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<v
     });
 }
 
-function manageGame(api: IExtensionApi, gameId: string): PromiseLike<void> {
+function manageGame(api: IExtensionApi, gameId: VortexGameId): PromiseLike<void> {
   const state = api.store.getState() as IState;
   const profiles = state.persistent.profiles || {};
 
@@ -983,14 +982,14 @@ function init(context: IExtensionContext): boolean {
     },
     "Manage",
     (instanceIds: string[]) => {
-      const gameId = instanceIds[0];
+      const gameId = VortexGameId(instanceIds[0]);
 
       context.api.events.emit("analytics-track-event", "Games", "Start managing", gameId);
 
       // what the user picked the game from, which discovery is held to
-      const store = pickedStore(context.api.getState(), VortexGameId(gameId));
+      const store = pickedStore(context.api.getState(), gameId);
 
-      discoverPickedGame(context.api, VortexGameId(gameId), store)
+      discoverPickedGame(context.api, gameId, store)
         .then(() => checkOverridden(context.api, gameId))
         .then(() => {
           const state = context.api.getState();
@@ -1225,8 +1224,9 @@ function init(context: IExtensionContext): boolean {
           // startQuickDiscovery in gamemode_management.once() and pops the
           // "Game not discovered" dialog even though discovery would have
           // succeeded.
-          discoverPickedGame(context.api, VortexGameId(game.id), commandLine.gameStore)
-            .then(() => manageGame(context.api, game.id))
+          const gameId = VortexGameId(game.id);
+          discoverPickedGame(context.api, gameId, commandLine.gameStore)
+            .then(() => manageGame(context.api, gameId))
             .catch((err) => {
               context.api.showErrorNotification("Failed to manage game", err, {
                 allowReport: !(err instanceof VortexError && err.data.kind === "game-not-found"),

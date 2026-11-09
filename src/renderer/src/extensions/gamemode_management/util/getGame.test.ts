@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { IExtensionDownloadInfo } from "../../../types/extensions";
@@ -27,7 +28,7 @@ describe("isGameRegistered", () => {
   it("is true for a game a game extension registered", () => {
     registry.extensionGames.push(makeGame("skyrimse"));
 
-    expect(isGameRegistered("skyrimse")).toBe(true);
+    expect(isGameRegistered(VortexGameId("skyrimse"))).toBe(true);
   });
 
   it("is false for a stub, which getGame still returns", () => {
@@ -37,10 +38,10 @@ describe("isGameRegistered", () => {
     });
 
     expect(getGame("mountandblade2bannerlord")).toBeDefined();
-    expect(isGameRegistered("mountandblade2bannerlord")).toBe(false);
+    expect(isGameRegistered(VortexGameId("mountandblade2bannerlord"))).toBe(false);
   });
 
   it("is false for an unknown game", () => {
-    expect(isGameRegistered("unknown")).toBe(false);
+    expect(isGameRegistered(VortexGameId("unknown"))).toBe(false);
   });
 });
