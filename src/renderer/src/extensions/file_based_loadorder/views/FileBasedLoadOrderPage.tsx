@@ -24,7 +24,7 @@ import { fbLoadOrderTabSelected, setFBForceUpdate } from "../actions/session";
 import { activeLoadOrderIdForProfile } from "../selectors";
 import type { IRegisteredLoadOrder } from "../types/types";
 import LoadOrderPanel, { type ILoadOrderPanelProps } from "./LoadOrderPanel";
-import { resolveActiveLoadOrderId } from "./tabs";
+import { headerActionInstanceId, resolveActiveLoadOrderId } from "./tabs";
 
 export interface IBaseProps extends Pick<
   ILoadOrderPanelProps,
@@ -159,11 +159,11 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, Record<string, never>> 
     return (
       <MainPage>
         <MainPage.Header>
-          {/* header actions receive the shown load order's id as their instance id */}
+          {/* header actions receive the shown load order's id, when it has one, as their instance id */}
           <IconBar
             className="menubar"
             group="fb-load-order-icons"
-            instanceId={this.activeLoadOrderId()}
+            instanceId={headerActionInstanceId(this.activeLoadOrderId())}
             staticElements={this.mStaticButtons}
             t={t}
           />
