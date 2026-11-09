@@ -1,24 +1,6 @@
-import path from "node:path";
-
 import { log } from "../logging";
 import { registerDeprecatedApi } from "./deprecatedApiUsage";
-
-function isWindowsPath(target: string): boolean {
-  return path.win32.isAbsolute(target);
-}
-
-function isUrlTarget(target: string): boolean {
-  if (isWindowsPath(target)) {
-    return false;
-  }
-
-  try {
-    const parsed = new URL(target);
-    return parsed.protocol.length > 1;
-  } catch {
-    return false;
-  }
-}
+import { isUrlTarget } from "./is_url_target/isUrlTarget";
 
 // Only backs util.opn in the extension API. Vortex's own code calls window.api.shell
 // directly, and lint blocks new imports of this file.

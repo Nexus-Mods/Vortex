@@ -1083,9 +1083,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     this.nextState.installPath = value;
   };
 
-  private openPath = (evt) => {
+  private openPath = (evt: React.MouseEvent<HTMLAnchorElement>) => {
     const target = evt.currentTarget.getAttribute("data-path");
-    window.api.shell.openFile(target);
+    if (target) {
+      window.api.shell.openFile(target);
+    }
   };
 
   private browsePath = () => {

@@ -72,10 +72,12 @@ export function reportDeprecatedApiUsage(
   const props: AppDeprecatedApiUsedProps = {
     api_method: method,
     extension_name: state?.name ?? caller.name,
-    extension_version: state?.version,
+    // Bundled extensions have no installed-state entry (they're rescanned from disk every boot),
+    // so fall back to what the loader recorded on the registered extension.
+    extension_version: state?.version ?? caller.info?.version,
     mod_id: state?.modId,
     file_id: state?.fileId,
-    bundled: Boolean(state?.bundled),
+    bundled: Boolean(state?.bundled ?? caller.info?.bundled),
   };
 
   if (!warnedMethods.has(method)) {
