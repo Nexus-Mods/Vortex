@@ -27,7 +27,9 @@ const FIRST_CURSOR: string | undefined = undefined;
 
 /**
  * A search of Nexus Mods' mods with the v3 API, a page of `pageSize` at a time by cursor, each
- * page asking from the last one's `next_cursor`, until it has none; nothing for `skipToken`.
+ * page asking from the last one's `next_cursor`, until it has none; nothing for `skipToken`. It
+ * never goes stale: refetching it would ask for every page loaded again, one after another, and
+ * could move mods between them, so another search is what brings newer results.
  */
 export const modSearchQuery = (
   api: IExtensionApi,
@@ -46,4 +48,5 @@ export const modSearchQuery = (
             }),
     initialPageParam: FIRST_CURSOR,
     getNextPageParam: ({ meta }) => (meta.type === "cursor" && meta.next_cursor) || undefined,
+    staleTime: Infinity,
   });

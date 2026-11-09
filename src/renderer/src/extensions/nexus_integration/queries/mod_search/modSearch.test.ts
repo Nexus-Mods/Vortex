@@ -40,6 +40,23 @@ describe("modSearchQuery", () => {
     expect(result.pages).toEqual([page("1", "next")]);
   });
 
+  it("keeps a search it has fresh however long ago, rather than asking for every page again", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    mocks.searchMods.mockClear();
+    mocks.searchMods.mockResolvedValue(page("1", null));
+    const queries = client();
+
+    try {
+      await queries.fetchInfiniteQuery(modSearchQuery(api, search, 20));
+      vi.setSystemTime(Date.now() + 24 * 60 * 60 * 1000);
+      await queries.fetchInfiniteQuery(modSearchQuery(api, search, 20));
+
+      expect(mocks.searchMods).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("asks for each next page from the last one's cursor", () => {
     const { getNextPageParam } = modSearchQuery(api, search, 20);
 

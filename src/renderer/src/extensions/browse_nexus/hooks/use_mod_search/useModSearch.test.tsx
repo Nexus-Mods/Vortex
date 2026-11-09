@@ -542,6 +542,18 @@ describe("useModSearch", () => {
     expect(mocks.requestCount).toBe(2);
   });
 
+  it("keeps the mods it has on screen while it asks for them again, rather than loading afresh", async () => {
+    const { result } = render();
+    await loadTwoPages(result);
+
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
+    expect(result.current.loading).toBe(false);
+    expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
+  });
+
   it("asks for a failed first page again when retried, and shows it once it comes", async () => {
     const { result } = render();
     await waitFor(() => expect(mocks.pending).toHaveLength(2));

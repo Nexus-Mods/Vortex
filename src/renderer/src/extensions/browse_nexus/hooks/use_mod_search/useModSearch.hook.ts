@@ -77,11 +77,39 @@ interface IModSearchOptions {
   isEnabled: boolean;
 }
 
+/** The active game's mods by the open view, and the view itself, from `useModViews`. */
+export interface IModSearch extends ReturnType<typeof useModViews> {
+  /** The search the mods are from: its query key and view, as two views can search alike. */
+  searchKey: string;
+  /** The mods loaded so far, each only where it first came. */
+  mods: ModSummary[];
+  /** How many mods the search found, over every page. */
+  totalCount: number;
+  /** How many mods the game has over all time, whatever the view, for the tab. */
+  allModsTotal: number;
+  /** Whether the first page is loading with nothing of it to show; asking again keeps the mods. */
+  loading: boolean;
+  /** Why the first page failed to load. */
+  error: Error | null;
+  /** Whether a page after the first is loading. */
+  isLoadingMore: boolean;
+  /** Why the last page after the first failed, until it's asked for again. */
+  loadMoreError: Error | null;
+  /** Whether there are pages left to load. */
+  hasMore: boolean;
+  /** How many pages have loaded. */
+  pagesLoaded: number;
+  /** Loads the next page, unless one is loading, it's failed, or there are none left. */
+  loadMore: () => void;
+  /** Asks again for whichever page failed: the next one, or else the first. */
+  retry: () => void;
+}
+
 /**
  * The active game's mods by the open view, from `useModViews`, a page more at a time as
  * `loadMore` asks; any change to the view or its search starts again from the first page.
  */
-export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOptions) => {
+export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOptions): IModSearch => {
   const gameDomainName = useGameDomainName();
   const searchedGame = isEnabled ? gameDomainName : undefined;
   const views = useModViews();
@@ -116,37 +144,25 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
 
   const pages = mods.isPlaceholderData ? undefined : mods.data?.pages;
   const loaded = useMemo(() => uniqueMods(mods.data?.pages), [mods.data?.pages]);
-  const isFirstPageLoading = mods.isFetching && !mods.isFetchingNextPage;
+  const isFirstPageLoading = mods.isFetching && !mods.isFetchingNextPage && !pages;
 
   return {
     ...views,
-    /**
-     * Which search the mods are from: its query's key, and the view, as two views can make the
-     * same search. It changes whenever the game, the view or its search does.
-     */
     searchKey: JSON.stringify([views.viewId, search.queryKey]),
     mods: loaded,
     totalCount: mods.data?.pages[0]?.meta.total_count ?? 0,
     allModsTotal: allMods.data ?? 0,
     loading: isFirstPageLoading,
     error: mods.isFetchNextPageError ? null : mods.error,
-    /** Whether a page after the first is loading. */
     isLoadingMore: mods.isFetchingNextPage,
-    /** Why the last page asked for after the first failed, until it's asked for again. */
     loadMoreError: mods.isFetchNextPageError && !mods.isFetchingNextPage ? mods.error : null,
-    /** Whether there are pages left to load. */
     hasMore: !!pages && mods.hasNextPage,
-    /** How many pages of this search have loaded. */
     pagesLoaded: pages?.length ?? 0,
-    /** Loads the next page, unless one is loading, it's failed, or there are none left. */
     loadMore: () => {
       if (pages && mods.hasNextPage && !mods.isFetching && !mods.isFetchNextPageError) {
         void mods.fetchNextPage();
       }
     },
-    /** Asks again for whichever page failed: the next one, or the first. */
     retry: () => void (mods.isFetchNextPageError ? mods.fetchNextPage() : mods.refetch()),
   };
 };
-
-export type IModSearch = ReturnType<typeof useModSearch>;
