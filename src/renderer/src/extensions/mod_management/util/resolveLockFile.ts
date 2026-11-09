@@ -17,7 +17,7 @@ import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
-import { emitPlannerPlanEvent } from "../../analytics/utils/plannerPlanEvent";
+import { emitPlannerPlanEvent, isPlannerTelemetryOn } from "../../analytics/utils/plannerPlanEvent";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
 import { scanDeploymentTargets } from "./diskScan";
@@ -167,6 +167,10 @@ export function registerResolveLockFile(
   const scanBeforeDiskChange = async (gameId: string | undefined) => {
     // disk changes before the next plan, as a collection install makes, keep the first scan
     if (!RESOLVED_GAMES.has(gameId) || scanBeforeDeployment !== undefined) {
+      return;
+    }
+    // only scan if feature flag is enabled
+    if (!isPlannerTelemetryOn(api.getState())) {
       return;
     }
     const gameMode = VortexGameId(gameId);

@@ -19,6 +19,8 @@ vi.mock("../../nexus_integration/util", async (importOriginal) => ({
 vi.mock("../../analytics/utils/plannerPlanEvent", async (importOriginal) => ({
   ...(await importOriginal<typeof PlannerPlanEvent>()),
   emitPlannerPlanEvent: vi.fn(() => Promise.resolve()),
+  // the planner only scans with consent, a login and its flag on
+  isPlannerTelemetryOn: () => true,
 }));
 
 import { makeDeployedFile, makeProfileMod, makeStagedMod } from "../../../test-utils/builders";

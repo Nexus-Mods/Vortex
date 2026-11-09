@@ -1754,10 +1754,8 @@ function once(api: IExtensionApi) {
     onAddMod(api, gameMode, mod, callback);
   });
 
-  // hashes every staged file, so only dev builds resolve the lockfile for now
-  if (process.env.NODE_ENV === "development") {
-    registerResolveLockFile(api);
-  }
+  // hashes every staged file, so it only runs behind the vortex-planner-telemetry flag
+  registerResolveLockFile(api);
 
   api.events.on("profile-will-change", () => {
     // when the profile changes there is a good chance the cycle warning doesn't apply and if
