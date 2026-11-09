@@ -85,6 +85,12 @@ describe("PremiumUpsellModal", () => {
     expect(p.onFallback).toHaveBeenCalledTimes(1);
   });
 
+  it("labels its Premium button as it's told, or as unlocking 1-click installs", () => {
+    renderModal({ unlockLabel: "Unlock 1-click updates" });
+
+    expect(screen.getByRole("button", { name: "Unlock 1-click updates" })).toBeInTheDocument();
+  });
+
   it("opens the Premium page for its campaign, staying open to see the purchase land", async () => {
     const { p } = renderModal();
 

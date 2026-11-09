@@ -12,10 +12,7 @@ import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
-import type {
-  INexusModRef,
-  ModInstallState,
-} from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "../../../../util/mod_install_state/modInstallState";
 
 const mocks = vi.hoisted(() => {
   const state = {
@@ -26,7 +23,6 @@ const mocks = vi.hoisted(() => {
     update: vi.fn(),
     show: vi.fn(),
     installState: { kind: "none" } as ModInstallState,
-    lookedUp: [] as INexusModRef[],
   };
 
   /** The selectors the test answers. */
@@ -50,12 +46,6 @@ vi.mock("@/extensions/nexus_integration/selectors", () => ({
 vi.mock("@/util/selectors", () => ({ activeGameId: mocks.selectors.activeGameId }));
 vi.mock("@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus", () => ({
   useRefreshUserInfoOnFocus: () => undefined,
-}));
-vi.mock("../../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
-  useModInstallState: (ref: INexusModRef) => {
-    mocks.lookedUp.push(ref);
-    return mocks.installState;
-  },
 }));
 vi.mock("@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage", () => ({
   showModOnModsPage: mocks.show,
@@ -102,6 +92,7 @@ const renderButton = (file?: MinimalModFileVersion | null, isError = false) => {
             store: { dispatch },
           } as unknown as IExtensionApi
         }
+        installState={mocks.installState}
         isError={isError}
         mod={mod}
         primaryFile={file}
@@ -131,7 +122,6 @@ describe("ModInstallButton", () => {
     mocks.update.mockReset();
     mocks.show.mockReset();
     mocks.installState = { kind: "none" };
-    mocks.lookedUp = [];
     openUrl = vi.fn();
     window.api.shell = { openUrl } as unknown as typeof window.api.shell;
   });
@@ -287,12 +277,6 @@ describe("ModInstallButton", () => {
     ]);
   });
 
-  it("looks the mod up by its game's domain and its id", () => {
-    renderButton(primaryFile);
-
-    expect(mocks.lookedUp[0]).toEqual({ domain: "skyrimspecialedition", modId: 1 });
-  });
-
   describe("for a mod the user already has", () => {
     /** SkyUI installed as mod `skyui`, with the update its check found, if any. */
     const installed = (update?: "update" | "update-site") => {
@@ -346,11 +330,31 @@ describe("ModInstallButton", () => {
       const { rerender } = renderButton(primaryFile);
 
       await userEvent.click(button());
-      expect(screen.getByText("Skip the website and install instantly.")).toBeInTheDocument();
+      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
 
       mocks.isPremium = true;
       rerender();
     };
+
+    it("offers a free user 1-click update for an update", () => {
+      installed("update");
+      mocks.isPremium = false;
+      renderButton(primaryFile);
+
+      expect(button()).toHaveTextContent("1-click update");
+    });
+
+    it("upsells a free user an update in words of updating", async () => {
+      installed("update");
+      mocks.isPremium = false;
+      renderButton(primaryFile);
+
+      await userEvent.click(button());
+
+      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
+      expect(screen.getByText("Update via mod page (free)")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Unlock 1-click updates" })).toBeInTheDocument();
+    });
 
     it("upsells a free user 1-click for an update, counted as one, updating once they unlock", async () => {
       installed("update");
@@ -393,6 +397,18 @@ describe("ModInstallButton", () => {
 
       await waitFor(() => expect(button()).toBeDisabled());
       expect(screen.queryByRole("button", { name: "Install" })).not.toBeInTheDocument();
+    });
+
+    it("keeps saying 1-click install while it finishes, once the mod counts as installed", async () => {
+      mocks.install.mockReturnValue(new Promise(() => undefined));
+      const { rerender } = renderButton(primaryFile);
+
+      await userEvent.click(button());
+      installed();
+      rerender();
+
+      await waitFor(() => expect(button()).toBeDisabled());
+      expect(button()).toHaveTextContent("1-click install");
     });
 
     it("installs a download that isn't installed, for free users too", async () => {
