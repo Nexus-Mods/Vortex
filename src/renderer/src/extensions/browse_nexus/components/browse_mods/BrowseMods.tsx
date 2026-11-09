@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -40,21 +40,10 @@ interface IBrowseModsProps {
  * counts only the mod it stops on. Counts the mod shown, a search seen to come back empty, and
  * retrying one.
  */
-/**
- * How long, in ms, the keys must rest on a mod before the details show it: briefly for one press,
- * and longer while tapping through the list, for taps within half a second of each other.
- */
-const KEYBOARD_SETTLE = { delayMs: 150, tappingDelayMs: 400, tappingWithinMs: 500 };
-
 export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   const { t } = useTranslation();
   const { mods } = search;
-  const {
-    picked: activeMod,
-    shown: shownMod,
-    pick,
-    show,
-  } = useSettledPick<ModSummary>(KEYBOARD_SETTLE);
+  const { picked: activeMod, shown: shownMod, pick, show, flush } = useSettledPick<ModSummary>();
 
   if (!activeMod && mods[0]) {
     show(mods[0]);
@@ -62,6 +51,14 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
 
   const { gallery, backdrop, setBackdrop } = useModGallery(api, shownMod);
   const detailsRef = useRef<HTMLDivElement>(null);
+  const focusDetailsRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (focusDetailsRef.current) {
+      focusDetailsRef.current = false;
+      detailsRef.current?.focus();
+    }
+  }, [shownMod]);
   const listRef = useRef<HTMLDivElement>(null);
   const [split, setSplit] = useSavedSplit("browse-mods");
   const tracker = useBrowseModsTracker();
@@ -99,7 +96,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   const selectMod = (id: string, input: SelectionInput) => {
     const index = mods.findIndex((mod) => mod.id === id);
 
-    if (id === activeMod?.id || index < 0) {
+    if ((id === activeMod?.id && id === shownMod?.id) || index < 0) {
       return;
     }
 
@@ -113,6 +110,20 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   /** Moves focus to the list's Tab stop, for the details' Left, as Right moves it into them. */
   const focusList = () =>
     listRef.current?.querySelector<HTMLElement>('[data-mod-card][tabindex="0"]')?.focus();
+
+  /**
+   * Moves focus into the details, for Right from the list: the picked mod's, shown first if it's
+   * still waiting, and focused once they've opened, as the details shown until then go.
+   */
+  const focusDetails = () => {
+    if (activeMod === shownMod) {
+      detailsRef.current?.focus();
+      return;
+    }
+
+    focusDetailsRef.current = true;
+    flush();
+  };
 
   /**
    * The details' pane: the active mod's, or with none, pulsing while the list loads or saying so,
@@ -168,7 +179,6 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
           start={
             <ModList
               activeModId={activeMod?.id}
-              detailsRef={detailsRef}
               hasMore={search.hasMore}
               isError={!!error}
               isLoading={search.loading}
@@ -177,6 +187,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
               listRef={listRef}
               mods={mods}
               searchKey={search.searchKey}
+              onFocusDetails={focusDetails}
               onLoadMore={search.loadMore}
               onRetry={() => {
                 search.retry();

@@ -1,20 +1,13 @@
 import { act, fireEvent, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useSettledPick } from "./useSettledPick.hook";
+import {
+  SETTLE_MS as DELAY,
+  TAPPING_SETTLE_MS as TAPPING_DELAY,
+  useSettledPick,
+} from "./useSettledPick.hook";
 
-const DELAY = 150;
-
-const TAPPING_DELAY = 400;
-
-const render = () =>
-  renderHook(() =>
-    useSettledPick<string>({
-      delayMs: DELAY,
-      tappingDelayMs: TAPPING_DELAY,
-      tappingWithinMs: 500,
-    }),
-  );
+const render = () => renderHook(() => useSettledPick<string>());
 
 /** Moves the clock on, running the timers due. */
 const wait = (ms: number) =>
@@ -140,6 +133,33 @@ describe("useSettledPick", () => {
     expect(result.current.shown).toBeUndefined();
     wait(1);
     expect(result.current.shown).toBe("a");
+  });
+
+  it("hears a key let go even when something stops its key-up on the way", () => {
+    const { result } = render();
+    const swallower = document.createElement("div");
+    swallower.addEventListener("keyup", (event) => event.stopPropagation());
+    document.body.append(swallower);
+    act(() => result.current.pick("a"));
+    wait(DELAY);
+
+    act(() => {
+      fireEvent.keyUp(swallower, { key: "ArrowDown" });
+    });
+
+    expect(result.current.shown).toBe("a");
+    swallower.remove();
+  });
+
+  it("shows the pick waiting at once when flushed, as if it had settled", () => {
+    const onShown = vi.fn();
+    const { result } = render();
+    act(() => result.current.pick("a", onShown));
+
+    act(() => result.current.flush());
+
+    expect(result.current.shown).toBe("a");
+    expect(onShown).toHaveBeenCalledWith("a");
   });
 
   it("takes the window losing focus as letting go, as the key-up never comes", () => {

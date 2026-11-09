@@ -1,6 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React, { createRef, useState } from "react";
+import React, { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ModList } from "./ModList";
@@ -39,7 +39,7 @@ const modsUpTo = (count: number) => Array.from({ length: count }, (_, i) => mod(
 
 const defaults = (): IModListProps => ({
   activeModId: undefined,
-  detailsRef: createRef(),
+  onFocusDetails: vi.fn(),
   isError: false,
   isLoading: false,
   hasMore: false,
@@ -171,15 +171,13 @@ describe("ModList", () => {
     }
   });
 
-  it("moves focus to the details pane on Right from a card", async () => {
-    const detailsRef = createRef<HTMLDivElement>();
-    render(<div data-testid="details" ref={detailsRef} tabIndex={-1} />);
-    renderComponent({ activeModId: "1", detailsRef, mods: [mod("1")] });
+  it("asks to move focus to the details pane on Right from a card", async () => {
+    const { onFocusDetails } = renderComponent({ activeModId: "1", mods: [mod("1")] });
 
     act(() => screen.getByRole("button", { name: /Mod 1/ }).focus());
     await userEvent.keyboard("{ArrowRight}");
 
-    expect(screen.getByTestId("details")).toHaveFocus();
+    expect(onFocusDetails).toHaveBeenCalled();
   });
 
   it.each([
@@ -255,6 +253,15 @@ describe("ModList", () => {
 
     expect(screen.getByRole("button", { name: /^Mod 31/ })).toBeInTheDocument();
     vi.unstubAllGlobals();
+  });
+
+  it("picks nothing from the keys while another search's first page loads", async () => {
+    const { onSelectMod } = renderComponent({ mods: modsUpTo(3), isLoading: true });
+    act(() => list().focus());
+
+    await userEvent.keyboard("{ArrowDown}{End}");
+
+    expect(onSelectMod).not.toHaveBeenCalled();
   });
 
   it("picks a mod clicked, saying it was the pointer", async () => {

@@ -1,4 +1,10 @@
-import React, { type KeyboardEvent, type RefObject, useLayoutEffect, useRef } from "react";
+import React, {
+  type KeyboardEvent,
+  type RefObject,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+} from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -16,9 +22,9 @@ interface IModListProps {
   mods: ModSummary[];
   /** Which search they're from; a change scrolls back to the top. */
   searchKey: string;
-  /** The id of the mod the details pane shows, which may no longer be in the list. */
+  /** The picked mod's id, which the details show once a keyboard pick settles; maybe not listed. */
   activeModId: string | undefined;
-  /** Shows another mod in the details pane, by id, told how it was picked. */
+  /** Picks another mod, by id, told how it was picked. */
   onSelectMod: (id: string, input: SelectionInput) => void;
   /** Whether the first page is loading. */
   isLoading: boolean;
@@ -34,8 +40,8 @@ interface IModListProps {
   onLoadMore: () => void;
   /** Asks for the page that failed again. */
   onRetry: () => void;
-  /** The details pane, for Right to move focus to. */
-  detailsRef: RefObject<HTMLDivElement>;
+  /** Moves focus into the details pane, for Right from a card. */
+  onFocusDetails: () => void;
   /** The list itself, for the details pane's Left to move focus back to. */
   listRef?: RefObject<HTMLDivElement>;
 }
@@ -68,7 +74,7 @@ export const ModList = ({
   searchKey,
   activeModId,
   onSelectMod,
-  detailsRef,
+  onFocusDetails,
   listRef,
   isLoading,
   isError,
@@ -86,7 +92,7 @@ export const ModList = ({
   const virtualizer = useModListVirtualizer({
     scrollRef,
     count: mods.length,
-    getItemKey: (index) => mods[index].id,
+    getItemKey: useCallback((index: number) => mods[index].id, [mods]),
     keptIndex: mods.length ? tabStop : undefined,
   });
   const { scrollToTop } = virtualizer;
@@ -95,6 +101,7 @@ export const ModList = ({
   useLayoutEffect(() => {
     if (shownSearchRef.current !== searchKey) {
       shownSearchRef.current = searchKey;
+      focusTargetRef.current = undefined;
       scrollToTop();
     }
   }, [searchKey, scrollToTop]);
@@ -131,7 +138,7 @@ export const ModList = ({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (hasModifierKey(event) || !mods.length) {
+    if (hasModifierKey(event) || !mods.length || isLoading) {
       return;
     }
 
@@ -158,11 +165,9 @@ export const ModList = ({
       return;
     }
 
-    const details = detailsRef.current;
-
-    if (event.key === "ArrowRight" && at !== undefined && details) {
+    if (event.key === "ArrowRight" && at !== undefined) {
       event.preventDefault();
-      details.focus();
+      onFocusDetails();
     }
   };
 

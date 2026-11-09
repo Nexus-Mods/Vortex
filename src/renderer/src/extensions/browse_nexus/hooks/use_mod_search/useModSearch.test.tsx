@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { components } from "@vortex/nexus-api-v3";
+import { V3ApiError } from "@vortex/nexus-api-v3";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { combineReducers, createStore, type Store } from "redux";
@@ -586,6 +587,54 @@ describe("useModSearch", () => {
     act(() => result.current.loadMore());
     await act(async () => {});
     expect(mocks.requestCount).toBe(requests);
+  });
+
+  it("starts again from the top when a later page's cursor was refused", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    const { searchKey } = result.current;
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await act(async () =>
+      mocks.pending.shift()!.reject(new V3ApiError({ status: 422, title: "Unprocessable Entity" })),
+    );
+    await waitFor(() => expect(result.current.loadMoreError).toBeTruthy());
+
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
+    expect(result.current.loadMoreError).toBeNull();
+    expect(result.current.loading).toBe(false);
+    expect(idsOf(result.current.mods)).toEqual(["1"]);
+    expect(result.current.searchKey).not.toBe(searchKey);
+    await respond("endorsements", 45, { ids: ["1"], next: "fresh-2" });
+    await waitFor(() => expect(result.current.hasMore).toBe(true));
+    expect(mocks.pending).toEqual([]);
+  });
+
+  it("offers to try again after the mods it has when asking for them again fails", async () => {
+    const { result } = render();
+    await loadTwoPages(result);
+    act(() => result.current.retry());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+
+    await fail("Network down");
+
+    await waitFor(() => expect(result.current.loadMoreError?.message).toBe("Network down"));
+    expect(result.current.error).toBeNull();
+    expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
+  });
+
+  it("has no more to load while it's asking for its pages again, so it doesn't ask twice", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    expect(result.current.hasMore).toBe(true);
+
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(result.current.hasMore).toBe(false);
   });
 
   it("asks for a failed later page again from its cursor when retried", async () => {

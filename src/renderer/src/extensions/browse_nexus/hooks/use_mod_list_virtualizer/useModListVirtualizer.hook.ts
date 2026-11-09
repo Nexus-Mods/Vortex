@@ -92,7 +92,7 @@ export const useModListVirtualizer = ({
     })),
     totalSize: virtualizer.getTotalSize(),
     measureElement: virtualizer.measureElement,
-    scrollToTop: () => virtualizer.scrollToOffset(0),
+    scrollToTop: useCallback(() => virtualizer.scrollToOffset(0), [virtualizer]),
     onBlur,
     onFocus,
     startRef: setStart,

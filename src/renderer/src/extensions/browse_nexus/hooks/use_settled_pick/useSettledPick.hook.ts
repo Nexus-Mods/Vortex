@@ -9,29 +9,26 @@ interface IPending<T> {
   isDue: boolean;
 }
 
-interface ISettledPickOptions {
-  /** How long, in ms, a pick rests before it's shown. */
-  delayMs: number;
-  /** How long, in ms, a pick rests instead when it comes soon after a key was let go. */
-  tappingDelayMs: number;
-  /** How soon, in ms, after a key's let go a pick counts as tapping through. */
-  tappingWithinMs: number;
-}
+/** How long, in ms, a pick rests before it's shown. */
+export const SETTLE_MS = 150;
+
+/** How long, in ms, a pick rests instead when it comes soon after a key was let go. */
+export const TAPPING_SETTLE_MS = 400;
+
+/** How soon, in ms, after a key's let go a pick counts as tapping through. */
+export const TAPPING_WITHIN_MS = 500;
 
 /**
  * A pick from the keyboard that waits to be shown until the keys settle: `picked` follows every
  * pick at once, and `shown` follows `pick` once it has rested and the key's been let go, so a key
  * held down through a list shows only where it stops, whatever the system's repeat delay. A pick
- * rests for `delayMs`, or for `tappingDelayMs` when it comes within `tappingWithinMs` of a key
- * being let go, so tapping through the list shows only where the taps stop. A window that loses
- * focus counts as letting go, as its key-up never comes. `show` shows a pick straight away.
- * `onShown` runs as a pick is shown, and not for picking back the one shown.
+ * rests for `SETTLE_MS`, or for `TAPPING_SETTLE_MS` when it comes within `TAPPING_WITHIN_MS` of a
+ * key being let go, so tapping through the list shows only where the taps stop. A key-up is heard
+ * before anything else can stop it, and a window that loses focus counts as letting go, as its
+ * key-up never comes. `show` shows a pick straight away, and `flush` the one waiting. `onShown`
+ * runs as a pick is shown, and not for picking back the one shown.
  */
-export const useSettledPick = <T>({
-  delayMs,
-  tappingDelayMs,
-  tappingWithinMs,
-}: ISettledPickOptions) => {
+export const useSettledPick = <T>() => {
   const [picked, setPicked] = useState<T>();
   const [shown, setShown] = useState<T>();
   const shownRef = useRef<T>();
@@ -51,7 +48,7 @@ export const useSettledPick = <T>({
   };
 
   /** Shows the pick waiting, once it's due and no key is held. */
-  const flush = () => {
+  const showIfSettled = () => {
     const pending = pendingRef.current;
 
     if (!pending?.isDue || isHeldRef.current) {
@@ -62,24 +59,24 @@ export const useSettledPick = <T>({
     display(pending.value, pending.onShown);
   };
 
-  const flushRef = useRef(flush);
+  const showIfSettledRef = useRef(showIfSettled);
 
   useEffect(() => {
-    flushRef.current = flush;
+    showIfSettledRef.current = showIfSettled;
   });
 
   useEffect(() => {
     const release = () => {
       isHeldRef.current = false;
       releasedAtRef.current = Date.now();
-      flushRef.current();
+      showIfSettledRef.current();
     };
 
-    window.addEventListener("keyup", release);
+    window.addEventListener("keyup", release, { capture: true });
     window.addEventListener("blur", release);
 
     return () => {
-      window.removeEventListener("keyup", release);
+      window.removeEventListener("keyup", release, { capture: true });
       window.removeEventListener("blur", release);
       clearTimeout(timerRef.current);
     };
@@ -87,7 +84,7 @@ export const useSettledPick = <T>({
 
   /** Picks `value` now, from a key that's down, and shows it once it's rested and the key's up. */
   const pick = (value: T, onShown?: (value: T) => void) => {
-    const isTapping = Date.now() - releasedAtRef.current < tappingWithinMs;
+    const isTapping = Date.now() - releasedAtRef.current < TAPPING_WITHIN_MS;
     clearTimeout(timerRef.current);
     setPicked(value);
     isHeldRef.current = true;
@@ -97,9 +94,9 @@ export const useSettledPick = <T>({
         if (pendingRef.current) {
           pendingRef.current.isDue = true;
         }
-        flushRef.current();
+        showIfSettledRef.current();
       },
-      isTapping ? tappingDelayMs : delayMs,
+      isTapping ? TAPPING_SETTLE_MS : SETTLE_MS,
     );
   };
 
@@ -111,5 +108,14 @@ export const useSettledPick = <T>({
     display(value, onShown);
   };
 
-  return { picked, shown, pick, show };
+  /** Shows the pick waiting, if any, at once, as if it had settled. */
+  const flush = () => {
+    const pending = pendingRef.current;
+
+    if (pending) {
+      show(pending.value, pending.onShown);
+    }
+  };
+
+  return { picked, shown, pick, show, flush };
 };

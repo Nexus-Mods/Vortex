@@ -43,7 +43,7 @@ vi.mock("./mod_details/ModDetails", () => ({
     }, []);
 
     return (
-      <div ref={ref}>
+      <div aria-label={`Details of ${mod.name}`} ref={ref} role="region" tabIndex={-1}>
         <p data-testid="details">{mod.name}</p>
         {gallery.map(({ large_thumbnail_url }) => (
           <p data-testid="gallery-image" key={large_thumbnail_url}>
@@ -65,6 +65,7 @@ vi.mock("./mod_list/ModList", () => ({
     listRef,
     isError,
     isLoadMoreError,
+    onFocusDetails,
     onRetry,
     onSelectMod,
   }: {
@@ -73,6 +74,7 @@ vi.mock("./mod_list/ModList", () => ({
     listRef: React.RefObject<HTMLDivElement>;
     isError: boolean;
     isLoadMoreError: boolean;
+    onFocusDetails: () => void;
     onRetry: () => void;
     onSelectMod: (id: string, input: string) => void;
   }) => (
@@ -84,7 +86,14 @@ vi.mock("./mod_list/ModList", () => ({
           key={mod.id}
           tabIndex={mod.id === activeModId ? 0 : -1}
           onClick={() => onSelectMod(mod.id, "pointer")}
-          onKeyDown={(event) => event.key === "Enter" && onSelectMod(mod.id, "keyboard")}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              onSelectMod(mod.id, "keyboard");
+            }
+            if (event.key === "ArrowRight") {
+              onFocusDetails();
+            }
+          }}
         >
           {mod.name}
         </button>
@@ -288,6 +297,42 @@ describe("BrowseMods", () => {
       expect(propertiesOf("browse_mods_mod_selected")).toEqual([
         { mod_uid: "4", view: "trending", position: 4, input: "keyboard" },
       ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows a mod waiting from the keyboard at once when it's clicked", () => {
+    vi.useFakeTimers();
+    renderComponent(search([mod("1"), mod("2")]));
+
+    try {
+      fireEvent.keyDown(screen.getByRole("button", { name: "Mod 2" }), { key: "Enter" });
+      fireEvent.keyUp(window, { key: "Enter" });
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 1");
+
+      fireEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 2");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens and focuses the details of a mod waiting from the keyboard on Right", () => {
+    vi.useFakeTimers();
+    renderComponent(search([mod("1"), mod("2")]));
+
+    try {
+      const card = screen.getByRole("button", { name: "Mod 2" });
+      fireEvent.keyDown(card, { key: "Enter" });
+      fireEvent.keyDown(card, { key: "ArrowRight" });
+
+      expect(screen.getByRole("region", { name: "Details of Mod 2" })).toHaveFocus();
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(screen.getByRole("region", { name: "Details of Mod 2" })).toHaveFocus();
     } finally {
       vi.useRealTimers();
     }

@@ -1,6 +1,12 @@
-import { keepPreviousData, skipToken, useInfiniteQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  skipToken,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { V3ApiError } from "@vortex/nexus-api-v3";
 import type { GameDomain } from "@vortex/shared";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import {
   type ModsSearch,
@@ -72,6 +78,10 @@ const uniqueMods = (pages: { mods: ModSummary[] }[] | undefined): ModSummary[] =
   return [...byId.values()];
 };
 
+/** Whether a page failed as the API refused its cursor, as it does one from before it was updated. */
+const isRefusedCursor = (error: Error | null) =>
+  error instanceof V3ApiError && error.status === 422;
+
 interface IModSearchOptions {
   /** Whether to search at all; off, it asks for nothing. */
   isEnabled: boolean;
@@ -79,7 +89,7 @@ interface IModSearchOptions {
 
 /** The active game's mods by the open view, and the view itself, from `useModViews`. */
 export interface IModSearch extends ReturnType<typeof useModViews> {
-  /** The search the mods are from: its query key and view, as two views can search alike. */
+  /** The search the mods are from, by query key and view, and changing as it starts again. */
   searchKey: string;
   /** The mods loaded so far, each only where it first came. */
   mods: ModSummary[];
@@ -89,19 +99,19 @@ export interface IModSearch extends ReturnType<typeof useModViews> {
   allModsTotal: number;
   /** Whether the first page is loading with nothing of it to show; asking again keeps the mods. */
   loading: boolean;
-  /** Why the first page failed to load. */
+  /** Why the first page failed to load, with no mods to show. */
   error: Error | null;
   /** Whether a page after the first is loading. */
   isLoadingMore: boolean;
-  /** Why the last page after the first failed, until it's asked for again. */
+  /** Why a page failed with mods to show, until it's asked for again. */
   loadMoreError: Error | null;
-  /** Whether there are pages left to load. */
+  /** Whether there are pages left to load, and nothing loading that would keep one from loading. */
   hasMore: boolean;
   /** How many pages have loaded. */
   pagesLoaded: number;
   /** Loads the next page, unless one is loading, it's failed, or there are none left. */
   loadMore: () => void;
-  /** Asks again for whichever page failed: the next one, or else the first. */
+  /** Asks for the failed page again; a refused cursor starts the list again from the top. */
   retry: () => void;
 }
 
@@ -114,6 +124,8 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   const searchedGame = isEnabled ? gameDomainName : undefined;
   const views = useModViews();
   const { sort, filters, rangeFrom } = views;
+  const queryClient = useQueryClient();
+  const [restarts, setRestarts] = useState(0);
 
   const search = modSearchQuery(
     api,
@@ -148,21 +160,32 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
 
   return {
     ...views,
-    searchKey: JSON.stringify([views.viewId, search.queryKey]),
+    searchKey: JSON.stringify([views.viewId, search.queryKey, restarts]),
     mods: loaded,
     totalCount: mods.data?.pages[0]?.meta.total_count ?? 0,
     allModsTotal: allMods.data ?? 0,
     loading: isFirstPageLoading,
-    error: mods.isFetchNextPageError ? null : mods.error,
+    error: pages ? null : mods.error,
     isLoadingMore: mods.isFetchingNextPage,
-    loadMoreError: mods.isFetchNextPageError && !mods.isFetchingNextPage ? mods.error : null,
-    hasMore: !!pages && mods.hasNextPage,
+    loadMoreError: pages && !mods.isFetching ? mods.error : null,
+    hasMore: !!pages && mods.hasNextPage && !mods.isFetching,
     pagesLoaded: pages?.length ?? 0,
     loadMore: () => {
       if (pages && mods.hasNextPage && !mods.isFetching && !mods.isFetchNextPageError) {
         void mods.fetchNextPage();
       }
     },
-    retry: () => void (mods.isFetchNextPageError ? mods.fetchNextPage() : mods.refetch()),
+    retry: () => {
+      if (isRefusedCursor(mods.error)) {
+        queryClient.setQueryData(search.queryKey, (data) =>
+          data ? { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) } : data,
+        );
+        setRestarts((count) => count + 1);
+        void mods.refetch();
+        return;
+      }
+
+      void (mods.isFetchNextPageError ? mods.fetchNextPage() : mods.refetch());
+    },
   };
 };
