@@ -1,5 +1,7 @@
 import * as path from "path";
 
+import type { VortexGameId } from "@vortex/shared";
+
 import type { IExtensionDownloadInfo } from "../../../types/extensions";
 import type { IGame } from "../../../types/IGame";
 import type { IGameStore } from "../../../types/IGameStore";
@@ -81,6 +83,11 @@ export function getGame(gameId: string): IGame {
     }
   }
   return makeGameProxy(game);
+}
+
+/** Whether a game extension registered the game; getGame also returns stubs, which can't be managed. */
+export function isGameRegistered(gameId: VortexGameId): boolean {
+  return $.extensionGames.some((iter) => iter.id === gameId);
 }
 
 export function getGameStubDownloadInfo(gameId: string): IExtensionDownloadInfo | undefined {
