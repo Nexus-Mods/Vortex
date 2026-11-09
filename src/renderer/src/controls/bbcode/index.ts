@@ -15,6 +15,7 @@ import LinkTag from "./LinkTag";
 import MoreTag from "./MoreTag";
 import SafeImageTag from "./SafeImageTag";
 import SafeLinkTag from "./SafeLinkTag";
+import SafeMoreTag from "./SafeMoreTag";
 import SafeSizeTag from "./SafeSizeTag";
 import SafeSpoilerTag from "./SafeSpoilerTag";
 import SafeStyleTag from "./SafeStyleTag";
@@ -63,7 +64,7 @@ const createFullParser = (safe: boolean) => {
   parser.registerTag("line", LineTag);
   parser.registerTag("heading", HeadingTag);
   parser.registerTag("svg", SvgTag);
-  parser.registerTag("more", MoreTag);
+  parser.registerTag("more", safe ? SafeMoreTag : MoreTag);
   parser.registerTag("tooltip", TooltipTag);
   parser.registerTag("style", safe ? SafeStyleTag : StyleTag);
   parser.registerTag("left", LeftTag);

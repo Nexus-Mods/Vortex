@@ -4,6 +4,8 @@ import * as React from "react";
 import More from "../More";
 
 class MoreTag extends Tag {
+  protected readonly safe: boolean = false;
+
   public toHTML(): string[] {
     return [];
   }
@@ -14,7 +16,7 @@ class MoreTag extends Tag {
       return prev;
     }, {});
     return (
-      <More id={id} name={name} wikiId={wikiId}>
+      <More id={id} name={name} safe={this.safe} wikiId={wikiId}>
         {this.getContent(true)}
       </More>
     );

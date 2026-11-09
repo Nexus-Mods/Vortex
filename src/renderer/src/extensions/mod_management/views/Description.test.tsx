@@ -1,15 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { TFunction } from "i18next";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
+
+import type { TFunction } from "@/util/i18n";
 
 import Description from "./Description";
 
 // The user's adult content setting is unknown, so adult images blur, as they do logged out.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
-vi.mock("../../../controls/Icon", () => ({ default: () => null }));
+vi.mock("@/controls/Icon", () => ({ default: () => null }));
 
 const nexusImage = "https://staticdelivery.nexusmods.com/mods/1704/images/a.png";
 const externalImage = "https://i.imgur.com/b.png";

@@ -8,6 +8,7 @@ import { BBCode } from "./BBCode";
 // The user's adult content setting is unknown, so adult images blur, as they do logged out.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
+vi.mock("@/controls/Icon", () => ({ default: () => null }));
 
 describe("BBCode", () => {
   it("renders the tags in the app's prose styles", () => {
@@ -102,6 +103,18 @@ describe("BBCode", () => {
         "https://staticdelivery.nexusmods.com/mods/1704/images/before.png",
         "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
       ]);
+    });
+
+    it("shows only Nexus Mods images in a [more] popover", async () => {
+      const { container } = render(
+        <BBCode bbcode="[more id=info name=Info]![a](https://staticdelivery.nexusmods.com/mods/1704/images/a.png) ![b](https://i.imgur.com/b.png)[/more]" />,
+      );
+
+      await userEvent.click(container.querySelector(".more-link button"));
+
+      expect(
+        Array.from(document.querySelectorAll("img"), (img) => img.getAttribute("src")),
+      ).toEqual(["https://staticdelivery.nexusmods.com/mods/1704/images/a.png"]);
     });
   });
 

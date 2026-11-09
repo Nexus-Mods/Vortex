@@ -17,9 +17,9 @@ import type { IExtensionState, IState } from "../../types/IState";
 import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
 import { nexusSiteModPageUrl } from "../nexus_integration/util/nexus_urls/nexusUrls";
+import { ExtensionDescription } from "./components/extension_description/ExtensionDescription";
 import { findInCatalog, findInstalled } from "./queries";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
-import { ExtensionDescription } from "./views/extension_description/ExtensionDescription";
 
 export interface IBrowseExtensionsProps {
   visible: boolean;

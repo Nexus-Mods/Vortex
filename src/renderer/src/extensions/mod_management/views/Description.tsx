@@ -3,9 +3,10 @@ import memoizeOne from "memoize-one";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";
 
-import { renderSafeBBCode } from "../../../controls/bbcode";
+import { renderSafeBBCode } from "@/controls/bbcode";
+import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
+
 import Icon from "../../../controls/Icon";
-import { BBCode } from "../../../ui/components/prose/bbcode/BBCode";
 import { truthy } from "../../../util/util";
 
 interface IBaseProps {

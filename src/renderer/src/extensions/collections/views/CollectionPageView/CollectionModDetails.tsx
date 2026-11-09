@@ -3,6 +3,8 @@ import { GameDomain } from "@vortex/shared";
 import React, { useCallback, useMemo } from "react";
 import { Panel } from "react-bootstrap";
 
+import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
+
 import FlexLayout from "../../../../controls/FlexLayout";
 import Image from "../../../../controls/Image";
 import * as tooltip from "../../../../controls/TooltipControls";
@@ -11,7 +13,6 @@ import { getGame } from "../../../../extensions/gamemode_management/util/getGame
 import renderModName from "../../../../extensions/mod_management/util/modName";
 import { nexusGameId } from "../../../../extensions/nexus_integration/util/convertGameId";
 import { nexusModPageUrl } from "../../../../extensions/nexus_integration/util/nexus_urls/nexusUrls";
-import { BBCode } from "../../../../ui/components/prose/bbcode/BBCode";
 import type { TFunction } from "../../../../util/i18n";
 import { AUTHOR_UNKNOWN, NEXUS_BASE_URL } from "../../constants";
 import type { IModEx } from "../../types/IModEx";
@@ -46,15 +47,17 @@ function CollectionModDetails(props: ICollectionModDetails) {
     window.api.shell.openUrl(`${NEXUS_BASE_URL}/users/${uploaderId}`);
   }, [uploaderId]);
 
+  const modPageUrl = nexusModPageUrl(domainName, modId);
+
   const visitPage = useCallback(() => {
-    window.api.shell.openUrl(nexusModPageUrl(domainName, modId));
-  }, [domainName, modId]);
+    window.api.shell.openUrl(modPageUrl);
+  }, [modPageUrl]);
 
   // Images from outside Nexus Mods point to the mod's page, where they're shown; without one,
   // they're left out.
   const externalImagePlaceholders = useMemo(
-    () => (modId !== undefined ? { websiteUrl: nexusModPageUrl(domainName, modId) } : undefined),
-    [domainName, modId],
+    () => (modId !== undefined ? { websiteUrl: modPageUrl } : undefined),
+    [modId, modPageUrl],
   );
 
   return (
