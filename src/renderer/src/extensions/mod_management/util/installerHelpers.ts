@@ -1,3 +1,4 @@
+import { mkdir, readdir, rename, rmdir } from "node:fs/promises";
 import * as path from "path";
 
 import type { IExtensionContext } from "../../../types/IExtensionContext";
@@ -37,6 +38,38 @@ export function toPosixSeparators(instruction: IInstruction): IInstruction {
     result.destination = result.destination.replace(/\\/g, "/");
   }
   return result;
+}
+
+/**
+ * Moves extracted entries whose name contains backslashes into the matching
+ * directories. Archives made on Windows can use backslash separators, and
+ * outside Windows 7-Zip keeps them as part of the name. Does nothing on Windows.
+ */
+export async function splitBackslashNames(basePath: string): Promise<void> {
+  if (process.platform === "win32") {
+    return;
+  }
+  const entries = await readdir(basePath, { recursive: true, withFileTypes: true });
+  const relative = (entry: (typeof entries)[number]) =>
+    path.relative(basePath, path.join(entry.parentPath, entry.name));
+  const target = (relPath: string) =>
+    path.join(basePath, ...relPath.split("\\").filter((segment) => segment !== ""));
+  const leftover: string[] = [];
+  for (const entry of entries) {
+    const relPath = relative(entry);
+    if (!relPath.includes("\\")) continue;
+    if (entry.isDirectory()) {
+      await mkdir(target(relPath), { recursive: true });
+      if (entry.name.includes("\\")) leftover.push(path.join(basePath, relPath));
+    } else {
+      await mkdir(path.dirname(target(relPath)), { recursive: true });
+      await rename(path.join(basePath, relPath), target(relPath));
+    }
+  }
+  // deepest first, every file inside was moved out
+  for (const dirPath of leftover.sort((lhs, rhs) => rhs.length - lhs.length)) {
+    await rmdir(dirPath);
+  }
 }
 
 /**

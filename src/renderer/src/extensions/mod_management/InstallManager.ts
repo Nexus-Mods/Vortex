@@ -196,7 +196,7 @@ import gatherDependencies, {
 } from "./util/dependencies";
 import filterModInfo from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
-import { toPosixSeparators } from "./util/installerHelpers";
+import { splitBackslashNames, toPosixSeparators } from "./util/installerHelpers";
 import { InstallPhaseTracker, type IDeploymentDetails } from "./util/InstallPhaseTracker";
 import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
@@ -1123,6 +1123,7 @@ class InstallManager {
         }
       })
       .then(async () => {
+        await splitBackslashNames(tempPath);
         fileList = await buildFileList(tempPath);
         if (truthy(extractList) && extractList.length > 0) {
           return makeListInstaller(extractList, tempPath);
@@ -4030,6 +4031,7 @@ class InstallManager {
         }
       })
       .then(async () => {
+        await splitBackslashNames(tempPath);
         fileList = await buildFileList(tempPath);
         const hasFomodSegment = (file: string) => {
           const segments = file.toLowerCase().split(path.sep);
