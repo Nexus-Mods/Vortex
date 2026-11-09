@@ -1,9 +1,8 @@
-import * as React from "react";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 
-import Spinner from "../../../../controls/Spinner";
-import { BBCode } from "../../../../ui/components/prose/bbcode/BBCode";
-import { NEXUS_BASE_URL } from "../../../nexus_integration/constants";
+import Spinner from "@/controls/Spinner";
+import { nexusSiteModPageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
+import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
 
 interface IExtensionDescriptionProps {
   /** The extension's description from its mod page; undefined while it's being fetched. */
@@ -18,7 +17,7 @@ interface IExtensionDescriptionProps {
  */
 export const ExtensionDescription = ({ description, modId }: IExtensionDescriptionProps) => {
   const externalImagePlaceholders = useMemo(
-    () => ({ websiteUrl: `${NEXUS_BASE_URL}/site/mods/${modId}` }),
+    () => ({ websiteUrl: nexusSiteModPageUrl(modId) }),
     [modId],
   );
 

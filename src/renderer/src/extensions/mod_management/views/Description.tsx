@@ -86,7 +86,7 @@ class Description extends React.Component<IProps, IComponentState> {
         >
           {popover}
         </Overlay>
-        <a ref={this.setRef} onClick={this.toggle}>
+        <a data-testid="mod-description-toggle" ref={this.setRef} onClick={this.toggle}>
           {!short ? t("Description") : this.shortBB(short)}
         </a>
       </div>

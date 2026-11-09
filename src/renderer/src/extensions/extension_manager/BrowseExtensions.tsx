@@ -16,12 +16,10 @@ import type { IAvailableExtension, ISelector } from "../../types/extensions";
 import type { IExtensionState, IState } from "../../types/IState";
 import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
-import { NEXUS_BASE_URL } from "../nexus_integration/constants";
+import { nexusSiteModPageUrl } from "../nexus_integration/util/nexus_urls/nexusUrls";
 import { findInCatalog, findInstalled } from "./queries";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
 import { ExtensionDescription } from "./views/extension_description/ExtensionDescription";
-
-const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
 
 export interface IBrowseExtensionsProps {
   visible: boolean;
@@ -367,7 +365,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const ext = findInCatalog(availableExtensions, { modId });
     if (ext.modId !== undefined) {
-      opn(NEXUS_MODS_URL + ext.modId).catch(() => null);
+      opn(nexusSiteModPageUrl(ext.modId)).catch(() => null);
     }
   };
 }

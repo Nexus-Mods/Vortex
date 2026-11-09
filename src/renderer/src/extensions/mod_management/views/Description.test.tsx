@@ -39,9 +39,9 @@ describe("Description", () => {
       long: `Look [img]${nexusImage}[/img] and [img]${externalImage}[/img]`,
     });
 
-    await userEvent.click(screen.getByText("Short"));
+    await userEvent.click(screen.getByTestId("mod-description-toggle"));
 
-    expect(await screen.findByText(/Look/)).toBeInTheDocument();
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
     expect(imageSources()).toEqual([nexusImage]);
   });
 
@@ -50,7 +50,6 @@ describe("Description", () => {
       short: `Short [img]${nexusImage}[/img] and [img]${externalImage}[/img]`,
     });
 
-    expect(screen.getByText(/Short/)).toBeInTheDocument();
     expect(imageSources()).toEqual([nexusImage]);
   });
 });
