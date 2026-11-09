@@ -41,7 +41,7 @@ export function openUrlString(raw: string): void {
  */
 export function openFile(filePath: string): void {
   if (typeof filePath !== "string" || filePath.length === 0) {
-    log("warn", "not opening an empty path", { filePath });
+    log("warn", "not opening an invalid path", { filePath });
     return;
   }
 
