@@ -1,4 +1,4 @@
-import { GameId, VortexGameId } from "@vortex/shared";
+import { GameId } from "@vortex/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { makeMod, makeProfile, makeProfileMod } from "../../../test-utils/builders";
@@ -125,7 +125,7 @@ function seededHarness(makeApi: (overrides?: object) => IApiHarness): IApiHarnes
     profiles: {
       p1: makeProfile({
         id: "p1",
-        gameId: VortexGameId("skyrimse"),
+        gameId: "skyrimse",
         modState: { a: makeProfileMod({ enabled: true }) },
       }),
     },

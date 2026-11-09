@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 import * as React from "react";
 import { connect } from "react-redux";
 import Select from "react-select";
@@ -52,7 +51,7 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
       games
         .slice()
         .concat({
-          id: VortexGameId(SITE_ID),
+          id: SITE_ID,
           shortName: t(SITE_GAME_NAME),
           name: t(SITE_GAME_NAME),
           extensionPath: null,

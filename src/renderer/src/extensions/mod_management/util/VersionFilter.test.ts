@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { makeApiHarness, makeMod, makeProfile } from "../../../test-utils/builders";
@@ -6,8 +5,8 @@ import type { IApiHarness } from "../../../test-utils/harnessTypes";
 import type { IMod, IModAttributes } from "../types/IMod";
 import VersionFilter from "./VersionFilter";
 
-const GAME_ID = VortexGameId("skyrimse");
-const OTHER_GAME_ID = VortexGameId("fallout4");
+const GAME_ID = "skyrimse";
+const OTHER_GAME_ID = "fallout4";
 const PROFILE_ID = "profile-skyrimse";
 const OTHER_PROFILE_ID = "profile-fallout4";
 

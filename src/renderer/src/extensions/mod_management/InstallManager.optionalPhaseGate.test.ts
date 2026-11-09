@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 /**
  * Collection-install completion for a selected optional whose archive is already on disk - what a
  * resumed install produces, since reconstructModStatus maps such a member to "downloaded".
@@ -35,7 +34,7 @@ vi.mock("../../util/log", () => {
   return { default: log, log };
 });
 
-const GAME = VortexGameId("skyrimse");
+const GAME = "skyrimse";
 const PROFILE = "prof-1";
 const COLLECTION = "col-1";
 

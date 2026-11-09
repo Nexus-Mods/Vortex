@@ -1,7 +1,6 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
-import { VortexGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { makeProfile } from "../../../test-utils/builders";
@@ -15,7 +14,7 @@ vi.mock("../../../util/getVortexPath", () => ({ default: () => vortexPaths.userD
 
 import { swapUserlistForProfile, userlistPaths } from "./profileUserlist";
 
-const GAME_ID = VortexGameId("skyrimse");
+const GAME_ID = "skyrimse";
 
 const plainProfile = (id: string): IProfile => makeProfile({ id, gameId: GAME_ID });
 const localRulesProfile = (id: string, overrides: Partial<IProfile> = {}): IProfile =>

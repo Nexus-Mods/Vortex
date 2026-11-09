@@ -5,7 +5,7 @@ import {
   getErrorMessageOrDefault,
   type GameId,
   unknownToError,
-  VortexGameId,
+  type VortexGameId,
 } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as fsExtra from "fs-extra";
@@ -78,6 +78,7 @@ import { identifyStore } from "./util/identifyStore";
 import { getModType, getModTypeExtensions, registerModType } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
 import queryGameInfo from "./util/queryGameInfo";
+import { assertRegisteredGame } from "./util/registeredGame";
 import {} from "./views/GamePicker";
 import HideGameIcon from "./views/HideGameIcon";
 import ModTypeWidget from "./views/ModTypeWidget";
@@ -744,10 +745,9 @@ function init(context: IExtensionContext): boolean {
 
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
-  context.registerGame = ((registration: IGame, extensionPath: string) => {
+  context.registerGame = ((game: IGame, extensionPath: string) => {
     try {
-      // brands in place rather than copying, the extension may hand us a class instance
-      const game = Object.assign(registration, { id: VortexGameId(registration.id) });
+      assertRegisteredGame(game);
       game.extensionPath = extensionPath;
       const infoPath = path.join(extensionPath, "info.json");
       if (fsExtra.existsSync(infoPath)) {
@@ -769,13 +769,23 @@ function init(context: IExtensionContext): boolean {
     } catch (err) {
       context.api.showErrorNotification("Game Extension not loaded", err, {
         allowReport: false,
-        message: registration.name,
+        message: game.name,
       });
     }
   }) as any;
 
-  context.registerGameStub = (registration: IGame, ext: IExtensionDownloadInfo) => {
-    const game = Object.assign(registration, { id: VortexGameId(registration.id) });
+  context.registerGameStub = (game: IGame, ext: IExtensionDownloadInfo) => {
+    try {
+      assertRegisteredGame(game);
+    } catch (err) {
+      // a stub only stands in for a game that's gone; one without a usable id is skipped
+      // rather than failing the extension that registers it
+      log("warn", "skipping game stub with an invalid id", {
+        name: game?.name,
+        error: getErrorMessageOrDefault(err),
+      });
+      return;
+    }
     // If a full game extension (e.g. from the adaptor bridge) already
     // registered this game ID, skip the stub so it doesn't trigger the
     // "game extension no longer included" dialog.

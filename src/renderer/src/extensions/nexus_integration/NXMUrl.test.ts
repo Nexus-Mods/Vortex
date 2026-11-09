@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { makeDownload, makeGameStored } from "@/test-utils/builders";
@@ -146,10 +145,7 @@ describe("NXMUrl", () => {
     });
 
     it("resolves the game's nxm link id when building from a game", () => {
-      const game = makeGameStored({
-        id: VortexGameId("skyrimse"),
-        details: { nxmLinkId: "SkyrimSE" },
-      });
+      const game = makeGameStored({ id: "skyrimse", details: { nxmLinkId: "SkyrimSE" } });
       expect(nxmModUrl(game, "skyrimse", 100, 500)).toBe("nxm://SkyrimSE/mods/100/files/500");
     });
   });

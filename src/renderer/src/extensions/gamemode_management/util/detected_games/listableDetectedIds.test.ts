@@ -23,7 +23,7 @@ const detected = (gameId: number, withExtension: boolean): IDetectedGame => ({
 });
 
 const game = (id: string, nexusPageId?: string): IGameStored => ({
-  id: VortexGameId(id),
+  id,
   name: id,
   executable: undefined,
   extensionPath: undefined,

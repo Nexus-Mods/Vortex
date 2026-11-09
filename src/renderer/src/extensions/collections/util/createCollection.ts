@@ -1,4 +1,4 @@
-import { unknownToError, VortexGameId } from "@vortex/shared";
+import { unknownToError, type VortexGameId } from "@vortex/shared";
 
 import { isTierZeroManagedGame } from "../../../extensions/gamemode_management/tiered/tierZero";
 import type { IMod, IModRule } from "../../../extensions/mod_management/types/IMod";
@@ -9,7 +9,7 @@ import { MOD_TYPE } from "../constants";
 
 export async function createCollection(
   api: IExtensionApi,
-  gameId: string,
+  gameId: VortexGameId,
   id: string,
   name: string,
   rules: IModRule[],
@@ -18,7 +18,7 @@ export async function createCollection(
 
   // defense for the UI gates: games managed without an extension get no
   // collection support, none of their creation paths may run
-  if (isTierZeroManagedGame(state, VortexGameId(gameId))) {
+  if (isTierZeroManagedGame(state, gameId)) {
     throw new ProcessCanceled(
       "Collection support is unavailable for games managed without an extension.",
     );

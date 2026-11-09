@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 import { describe, it, expect } from "vitest";
 
 import { makeApiHarness, makeProfile } from "../../../test-utils/builders";
@@ -23,7 +22,7 @@ describe("setModEnabled", () => {
     const input: ProfilesState = {
       profileId1: {
         id: "profileId1",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 1",
         modState: { modId1: { enabled: false, enabledTime: 0 } },
         lastActivated: 0,
@@ -41,7 +40,7 @@ describe("setModEnabled", () => {
     const input: ProfilesState = {
       profileId1: {
         id: "profileId1",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 1",
         modState: { modId1: { enabled: false, enabledTime: 0 } },
         lastActivated: 0,
@@ -59,14 +58,14 @@ describe("setModEnabled", () => {
     const input: ProfilesState = {
       profileId1: {
         id: "profileId1",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 1",
         modState: { modId1: { enabled: false, enabledTime: 0 } },
         lastActivated: 0,
       },
       profileId2: {
         id: "profileId2",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 2",
         modState: { modId1: { enabled: false, enabledTime: 0 } },
         lastActivated: 0,
@@ -85,7 +84,7 @@ describe("setModEnabled", () => {
     const input: ProfilesState = {
       profileId1: {
         id: "profileId1",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 1",
         modState: { modId1: { enabled: true, enabledTime: 111 } },
         lastActivated: 0,
@@ -107,7 +106,7 @@ describe("setFeature", () => {
     const input: ProfilesState = {
       profileId1: {
         id: "profileId1",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 1",
         modState: {},
         lastActivated: 0,
@@ -126,7 +125,7 @@ describe("setFeature", () => {
     const input: ProfilesState = {
       profileId1: {
         id: "profileId1",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 1",
         modState: {},
         lastActivated: 0,
@@ -145,7 +144,7 @@ describe("setFeature", () => {
     const input: ProfilesState = {
       profileId1: {
         id: "profileId1",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 1",
         modState: {},
         lastActivated: 0,
@@ -153,7 +152,7 @@ describe("setFeature", () => {
       },
       profileId2: {
         id: "profileId2",
-        gameId: VortexGameId("game"),
+        gameId: "game",
         name: "Profile 2",
         modState: {},
         lastActivated: 0,

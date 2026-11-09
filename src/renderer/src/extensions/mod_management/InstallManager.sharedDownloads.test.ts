@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 /**
  * Collection members whose archive is already on disk from a DIFFERENT collection: the download
  * carries that collection's referenceTag, so the member is identified by file hash / repo rather
@@ -28,7 +27,7 @@ import { OPTIONAL_PHASE } from "./util/rulePhase";
 
 vi.mock("../../logging", () => ({ log: vi.fn() }));
 
-const GAME = VortexGameId("skyrimse");
+const GAME = "skyrimse";
 const PROFILE = "prof-1";
 const COLLECTION = "col-1";
 const SHARED_DOWNLOAD = "dl-shared";

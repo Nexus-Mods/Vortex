@@ -1,7 +1,6 @@
 import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
-import { VortexGameId } from "@vortex/shared";
 import { AlreadyDownloaded } from "@vortex/shared/errors";
 import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
 import { describe, expect, it, vi } from "vitest";
@@ -24,7 +23,7 @@ vi.mock("./util/getVortexPath", () => ({ default: () => "/vortex-userdata" }));
 
 function game(id: string, compatibleDownloads?: string[]): IGameStored {
   return {
-    id: VortexGameId(id),
+    id,
     name: id,
     requiredFiles: [],
     executable: `${id}.exe`,

@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 import React, { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -34,7 +33,7 @@ export const BrowsePage = ({ active, api }: IBrowsePageProps) => {
   const dispatch = useDispatch();
 
   const supportsCollections = useSelector(
-    (state: IState) => !gameId || !isTierZeroManagedGame(state, VortexGameId(gameId)),
+    (state: IState) => !gameId || !isTierZeroManagedGame(state, gameId),
   );
   const defaultSection: BrowseSection = isModsEnabled ? "mods" : "collections";
   const tab = supportsCollections ? (section ?? defaultSection) : "mods";

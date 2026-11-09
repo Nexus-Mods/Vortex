@@ -69,6 +69,7 @@ import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/ge
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
+import { extensionlessGameId } from "../nexus_integration/util/convertGameId";
 import {
   removeProfile,
   setProfile,
@@ -844,7 +845,11 @@ function removeMod(api: IExtensionApi, gameId: string, modId: string): PromiseBB
   });
 }
 
-function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): PromiseBB<void> {
+function unmanageGame(
+  api: IExtensionApi,
+  gameId: VortexGameId,
+  gameName?: string,
+): PromiseBB<void> {
   const state = api.getState();
   const game = getGame(gameId);
   const { mods, profiles } = state.persistent;
@@ -892,7 +897,7 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
             // tear-down runs without the flag: un-managing is the cleanup path,
             // it has to work no matter what the feature flag says
             const tierZeroGameId = Object.values(state.persistent.gameMode?.tier0 ?? {}).find(
-              (entry) => entry.domain === gameId,
+              (entry) => extensionlessGameId(entry.domain) === gameId,
             )?.gameId;
             if (tierZeroGameId !== undefined) {
               void api.emitAndAwait("remove-tier-zero-game", tierZeroGameId);
@@ -1115,7 +1120,7 @@ function init(context: IExtensionContext): boolean {
     {},
     "Stop Managing",
     (instanceIds: string[]) => {
-      unmanageGame(context.api, instanceIds[0]);
+      unmanageGame(context.api, VortexGameId(instanceIds[0]));
     },
   );
 
@@ -1172,7 +1177,8 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAPI(
     "unmanageGame",
-    (gameId: string, gameName?: string) => unmanageGame(context.api, gameId, gameName),
+    (gameId: string, gameName?: string) =>
+      unmanageGame(context.api, VortexGameId(gameId), gameName),
     {},
   );
 
@@ -1254,8 +1260,9 @@ function init(context: IExtensionContext): boolean {
           // startQuickDiscovery in gamemode_management.once() and pops the
           // "Game not discovered" dialog even though discovery would have
           // succeeded.
-          discoverPickedGame(context.api, game.id, commandLine.gameStore)
-            .then(() => manageGame(context.api, game.id))
+          const gameId = VortexGameId(game.id);
+          discoverPickedGame(context.api, gameId, commandLine.gameStore)
+            .then(() => manageGame(context.api, gameId))
             .catch((err) => {
               context.api.showErrorNotification("Failed to manage game", err, {
                 allowReport: !(err instanceof VortexError && err.data.kind === "game-not-found"),

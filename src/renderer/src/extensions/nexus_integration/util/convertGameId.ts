@@ -74,13 +74,14 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
 
   // We obviously prefer the exact match first.
   const game = validGames.find((iter) => iter.id === input.toLowerCase());
+  // the stored games are keyed by the id their extension registered
   if (game !== undefined) {
-    return game.id;
+    return VortexGameId(game.id);
   }
 
   // Alternatively - there may be a nexus page id match.
   if (validGames.length > 0) {
-    return validGames[0].id;
+    return VortexGameId(validGames[0].id);
   }
 
   // no known game matches: for a game managed without an extension the domain is the id
@@ -120,7 +121,7 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): V
 
   const clearGameMatch = knownGames.find((iter) => iter.id === input.toLowerCase());
   if (clearGameMatch) {
-    return clearGameMatch.id;
+    return VortexGameId(clearGameMatch.id);
   }
 
   const game = knownGames.find(
@@ -130,7 +131,7 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): V
   );
 
   if (game !== undefined) {
-    return game.id;
+    return VortexGameId(game.id);
   }
 
   return VortexGameId(input.toLowerCase());

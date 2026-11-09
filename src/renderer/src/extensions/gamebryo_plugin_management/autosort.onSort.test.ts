@@ -1,6 +1,5 @@
 import * as path from "node:path";
 
-import { VortexGameId } from "@vortex/shared";
 import { describe, expect, vi } from "vitest";
 
 import { startActivity, stopActivity } from "../../actions/session";
@@ -149,10 +148,7 @@ describe("LootInterface autosort-plugins", () => {
   }) => {
     const harness = await makeLoot(LootInterface);
     harness.setState((draft) => {
-      draft.persistent.profiles["profile-2"] = makeProfile({
-        id: "profile-2",
-        gameId: VortexGameId("oblivion"),
-      });
+      draft.persistent.profiles["profile-2"] = makeProfile({ id: "profile-2", gameId: "oblivion" });
       draft.settings.profiles.activeProfileId = "profile-2";
       draft.settings.profiles.nextProfileId = "profile-2";
     });

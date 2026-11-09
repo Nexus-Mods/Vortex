@@ -1,4 +1,3 @@
-import type { VortexGameId } from "@vortex/shared";
 import update from "immutability-helper";
 import * as React from "react";
 import { FormControl, ListGroupItem, Panel } from "react-bootstrap";
@@ -20,7 +19,7 @@ export interface IEditState {
 
 export interface IEditProps {
   profileId: string;
-  gameId: VortexGameId;
+  gameId: string;
   profile?: IProfile;
   features: IProfileFeature[];
   onSetFeature: (profileId: string, featureId: string, value: any) => void;

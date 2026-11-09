@@ -578,7 +578,7 @@ export function makeProfileMod(overrides: Partial<IProfileMod> = {}): IProfileMo
 export function makeProfile(overrides: Partial<IProfile> = {}): IProfile {
   return {
     id: "profile-1",
-    gameId: VortexGameId("skyrimse"),
+    gameId: "skyrimse",
     name: "Profile",
     modState: {},
     lastActivated: 0,
@@ -626,7 +626,7 @@ export function makeStarterInfo(overrides: Partial<IStarterInfo> = {}): IStarter
 // than its hardcoded fallback.
 export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStored {
   return {
-    id: VortexGameId("skyrimse"),
+    id: "skyrimse",
     name: "Skyrim Special Edition",
     requiredFiles: [],
     executable: "SkyrimSE.exe",
@@ -1233,7 +1233,7 @@ export function makeGameHarness(
   opts: IGameHarnessOpts = {},
   extraReducers: IHarnessReducerBinding[] = [],
 ): IGameHarness {
-  const gameId = VortexGameId(opts.gameId ?? "skyrimse");
+  const gameId = opts.gameId ?? "skyrimse";
   const profileId = opts.profileId ?? "profile-1";
   const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
   const gamePath = opts.gamePath;
@@ -1481,7 +1481,7 @@ export function makeInstallContextHarness(
   overrides: Partial<IDriverHarnessState> = {},
   opts: { gameId?: string; silent?: boolean } = {},
 ): IInstallContextHarness {
-  const gameId = VortexGameId(opts.gameId ?? "skyrimse");
+  const gameId = opts.gameId ?? "skyrimse";
   const base = makeApiHarness(overrides);
   const mixpanelEvents = collectMixpanelEvents(base.api);
   const ctx = new ContextCtor(gameId, base.api, opts.silent ?? false);
@@ -1521,7 +1521,7 @@ export function makeHealthCheckHarness(
   RegistryCtor: new (api: IExtensionApi) => HealthCheckRegistry,
   opts: IHealthCheckHarnessOpts = {},
 ): IHealthCheckHarness {
-  const gameId = VortexGameId(opts.gameId ?? "skyrimse");
+  const gameId = opts.gameId ?? "skyrimse";
   const profileId = opts.profileId ?? "profile-1";
   const base = makeApiHarness({
     profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },

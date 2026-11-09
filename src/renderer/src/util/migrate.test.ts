@@ -2,7 +2,6 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { VortexGameId } from "@vortex/shared";
 import type * as Redux from "redux";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -113,13 +112,13 @@ function unwrapDispatched(dispatch: ReturnType<typeof vi.fn>): Redux.AnyAction[]
 }
 
 const skyrimseGame: Partial<IGameStored> = {
-  id: VortexGameId("skyrimse"),
+  id: "skyrimse",
   name: "Skyrim Special Edition",
   details: { nexusPageId: "skyrimspecialedition" },
 };
 
 const skyrimvrGame: Partial<IGameStored> = {
-  id: VortexGameId("skyrimvr"),
+  id: "skyrimvr",
   name: "Skyrim VR",
   details: { nexusPageId: "skyrimspecialedition" },
 };

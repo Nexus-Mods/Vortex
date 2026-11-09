@@ -3,7 +3,12 @@ import { pathToFileURL } from "url";
 
 import type * as nexusApi from "@nexusmods/nexus-api";
 import type { IRevision } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError, VortexProfileId } from "@vortex/shared";
+import {
+  getErrorMessageOrDefault,
+  unknownToError,
+  VortexGameId,
+  VortexProfileId,
+} from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import memoize from "memoize-one";
@@ -259,7 +264,7 @@ async function cloneInstalledCollection(api: IExtensionApi, collectionId: string
 
 async function createNewCollection(api: IExtensionApi, profile: IProfile, name: string) {
   const id = makeCollectionId(shortid());
-  await createCollection(api, profile.gameId, id, name, []);
+  await createCollection(api, VortexGameId(profile.gameId), id, name, []);
 
   const state = api.store.getState();
   const game = selectors.gameById(state, profile.gameId);

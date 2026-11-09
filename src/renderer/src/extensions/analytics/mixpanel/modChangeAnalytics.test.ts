@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 /**
  * Tests for the mod enable/disable/remove analytics: the emit helpers resolve identity from the
  * mod's own Nexus attributes, gate out collections and non-Nexus (bundled/local) mods, and carry
@@ -13,7 +12,7 @@ import type { IMod } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { emitModRemoved, emitModStateChanged } from "./modChangeAnalytics";
 
-const GAME = VortexGameId("skyrimse");
+const GAME = "skyrimse";
 const MOD = "mod-1";
 const PROFILE = "prof-1";
 const NEXUS_ATTRS = { source: "nexus", modId: 100, fileId: 200, downloadGame: GAME };

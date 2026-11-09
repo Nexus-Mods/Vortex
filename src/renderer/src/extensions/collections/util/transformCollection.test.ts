@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 import type { ILookupResult } from "modmeta-db";
 import { describe, expect, it } from "vitest";
 
@@ -306,7 +305,7 @@ describe("makeBiDirRule", () => {
 // ---------------------------------------------------------------------------
 
 describe("collectionModToRule", () => {
-  const knownGames = [makeGameStored({ id: VortexGameId("skyrimse") })];
+  const knownGames = [makeGameStored({ id: "skyrimse" })];
 
   it("creates a requires rule for a non-optional mod", () => {
     const result = collectionModToRule(knownGames, makeCollectionMod());
@@ -737,7 +736,7 @@ describe("makeTransferrable", () => {
 // ---------------------------------------------------------------------------
 
 describe("collectionModToRule deterministic referenceTag", () => {
-  const knownGames = [makeGameStored({ id: VortexGameId("skyrimse") })];
+  const knownGames = [makeGameStored({ id: "skyrimse" })];
 
   // the shared builder defaults to a tagless nexus member (no source.tag, has md5) - exactly the
   // case that reaches the tag fallback (deterministic tag or random shortid). Bundles instead

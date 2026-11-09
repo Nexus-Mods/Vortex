@@ -1,5 +1,3 @@
-import type { VortexGameId } from "@vortex/shared";
-
 export interface IProfileMod {
   enabled: boolean;
   // MS timestamp of the last enable / last disable. Each is stamped on its own transition and
@@ -11,7 +9,7 @@ export interface IProfileMod {
 
 export interface IProfile {
   id: string;
-  gameId: VortexGameId;
+  gameId: string;
   name: string;
   modState: { [id: string]: IProfileMod };
   lastActivated: number;

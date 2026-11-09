@@ -1,4 +1,4 @@
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { GameDomain } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { IGameStored } from "@/types/IState";
@@ -7,7 +7,7 @@ import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 import { detectedInternalId } from "./detectedInternalId";
 
 const game = (id: string, nexusPageId?: string): IGameStored => ({
-  id: VortexGameId(id),
+  id,
   name: id,
   executable: undefined,
   extensionPath: undefined,
