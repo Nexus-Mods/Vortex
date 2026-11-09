@@ -17,16 +17,23 @@ const externalImage = "https://i.imgur.com/b.png";
 
 const t = ((text: string) => text) as TFunction;
 
-const renderDescription = (props: { short?: string; long?: string }) =>
+const renderDescription = (props: {
+  short?: string;
+  long?: string;
+  websiteUrl?: string;
+  isFromAdultContent?: boolean;
+}) =>
   render(
     <Description
       installed
+      isFromAdultContent={props.isFromAdultContent}
       long={props.long ?? ""}
       modId="mod"
       short={props.short ?? "Short"}
       source="nexus"
       startEditDescription={vi.fn()}
       t={t}
+      websiteUrl={props.websiteUrl}
     />,
   );
 
@@ -44,6 +51,27 @@ describe("Description", () => {
 
     expect(await screen.findByRole("tooltip")).toBeInTheDocument();
     expect(imageSources()).toEqual([nexusImage]);
+  });
+
+  it("stands in for other images in the long description with a placeholder to the mod's page", async () => {
+    renderDescription({
+      long: `Look [img]${externalImage}[/img]`,
+      websiteUrl: "https://www.nexusmods.com/skyrimspecialedition/mods/42",
+    });
+
+    await userEvent.click(screen.getByTestId("mod-description-toggle"));
+
+    expect(await screen.findByTestId("external-image-placeholder")).toBeInTheDocument();
+    expect(imageSources()).toEqual([]);
+  });
+
+  it("blurs the long description's images for an adult mod", async () => {
+    renderDescription({ long: `Look [img]${nexusImage}[/img]`, isFromAdultContent: true });
+
+    await userEvent.click(screen.getByTestId("mod-description-toggle"));
+
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
+    expect(document.querySelector("img")).toHaveClass("nxm-image-media-blurred");
   });
 
   it("shows only Nexus Mods images in the short description", () => {

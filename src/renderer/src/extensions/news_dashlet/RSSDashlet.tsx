@@ -1,7 +1,7 @@
 import * as React from "react";
 import { connect as redConnect } from "react-redux";
 
-import bbcode, { stripBBCode } from "../../controls/bbcode";
+import { renderSafeBBCode, stripBBCode } from "../../controls/bbcode";
 import { ComponentEx, translate } from "../../controls/ComponentEx";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
@@ -131,7 +131,8 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     };
 
     return {
-      name: bbcode(input.title),
+      // Its "New Files" feed has mod names their uploaders wrote.
+      name: renderSafeBBCode(input.title),
       link: input.link,
       imageUrl: image.url,
       category: input.categories?.[0],

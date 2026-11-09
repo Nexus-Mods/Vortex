@@ -701,6 +701,7 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
       pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage?.url,
       description: nexusModInfo?.description ?? nexusCollectionInfo?.collection?.description,
       shortDescription: nexusModInfo?.summary ?? nexusCollectionInfo?.collection?.summary,
+      adultContent: nexusModInfo?.contains_adult_content,
       fileType: nexusFileInfo?.category_name,
       isPrimary: nexusFileInfo?.is_primary,
       modName,

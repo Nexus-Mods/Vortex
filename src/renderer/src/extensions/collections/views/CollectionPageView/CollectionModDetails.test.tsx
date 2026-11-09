@@ -21,12 +21,12 @@ const t = ((text: string) => text) as TFunction;
 
 const openUrl = vi.fn();
 
-const remoteMod = (summary: string, modId?: number) =>
+const remoteMod = (summary: string, modId?: number, adultContent?: boolean) =>
   ({
     file: {
       modId,
       game: { domainName: "skyrimspecialedition" },
-      mod: { name: "Lanterns", summary },
+      mod: { name: "Lanterns", summary, adultContent },
     },
   }) as unknown as ICollectionRevisionMod;
 
@@ -54,6 +54,20 @@ describe("CollectionModDetails", () => {
 
     await userEvent.click(screen.getByTestId("external-image-placeholder-website"));
     expect(openUrl).toHaveBeenCalledWith(`${NEXUS_BASE_URL}/skyrimspecialedition/mods/42`);
+  });
+
+  it("blurs the description's images for an adult mod", () => {
+    render(
+      <CollectionModDetails
+        gameId="skyrimse"
+        remote={remoteMod(`Look [img]${nexusImage}[/img]`, 42, true)}
+        t={t}
+      />,
+    );
+
+    expect(document.querySelector(`img[src="${nexusImage}"]`)).toHaveClass(
+      "nxm-image-media-blurred",
+    );
   });
 
   it("leaves out other images for a mod with no page on Nexus Mods", () => {

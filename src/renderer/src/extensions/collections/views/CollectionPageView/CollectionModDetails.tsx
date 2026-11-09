@@ -35,6 +35,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
   const version = local?.attributes?.version ?? remote?.file?.version ?? "???";
   const description = local?.attributes?.shortDescription ?? remote?.file?.mod?.summary ?? "";
   const image = local?.attributes?.pictureUrl ?? remote?.file?.mod?.pictureUrl;
+  const isFromAdultContent = local?.attributes?.adultContent ?? remote?.file?.mod?.adultContent;
 
   const remoteDomain = remote?.file?.game?.domainName;
   const vortexGameId = local?.attributes?.gameId ?? gameId;
@@ -47,7 +48,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
     window.api.shell.openUrl(`${NEXUS_BASE_URL}/users/${uploaderId}`);
   }, [uploaderId]);
 
-  const modPageUrl = nexusModPageUrl(domainName, modId);
+  const modPageUrl = modId !== undefined ? nexusModPageUrl(domainName, modId) : undefined;
 
   const visitPage = useCallback(() => {
     window.api.shell.openUrl(modPageUrl);
@@ -56,8 +57,8 @@ function CollectionModDetails(props: ICollectionModDetails) {
   // Images from outside Nexus Mods point to the mod's page, where they're shown; without one,
   // they're left out.
   const externalImagePlaceholders = useMemo(
-    () => (modId !== undefined ? { websiteUrl: modPageUrl } : undefined),
-    [modId, modPageUrl],
+    () => (modPageUrl !== undefined ? { websiteUrl: modPageUrl } : undefined),
+    [modPageUrl],
   );
 
   return (
@@ -73,7 +74,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
               <FlexLayout type="row">
                 <div className="installing-mod-title">{modTitle}</div>
 
-                {modId !== undefined ? (
+                {modPageUrl !== undefined ? (
                   <tooltip.IconButton
                     className="collection-open-mod-in-browser"
                     icon="open-in-browser"
@@ -89,6 +90,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
                 <BBCode
                   bbcode={description}
                   externalImagePlaceholders={externalImagePlaceholders}
+                  isFromAdultContent={isFromAdultContent}
                   size="sm"
                 />
               </div>

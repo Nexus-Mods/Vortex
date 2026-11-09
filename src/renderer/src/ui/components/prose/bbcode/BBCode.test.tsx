@@ -117,6 +117,19 @@ describe("BBCode", () => {
       ).toEqual(["https://staticdelivery.nexusmods.com/mods/1704/images/a.png"]);
     });
 
+    it("blurs a [more] popover's images for an adult mod", async () => {
+      const { container } = render(
+        <BBCode
+          isFromAdultContent
+          bbcode="[more id=info name=Info]![a](https://staticdelivery.nexusmods.com/mods/1704/images/a.png)[/more]"
+        />,
+      );
+
+      await userEvent.click(container.querySelector(".more-link button"));
+
+      expect(document.querySelector("img")).toHaveClass("nxm-image-media-blurred");
+    });
+
     it("draws a table without the background its parameters ask for", () => {
       const { container } = render(
         <BBCode bbcode="[table background=https://i.imgur.com/a.png][tr][td background=https://i.imgur.com/b.png]Cell[/td][/tr][/table]" />,
@@ -125,6 +138,25 @@ describe("BBCode", () => {
       expect(screen.getByText("Cell").tagName).toBe("TD");
       expect(container.querySelector("[background]")).toBeNull();
     });
+  });
+
+  it("keeps how far a table cell spans and where its text sits", () => {
+    render(
+      <BBCode bbcode='[table][tr][th colspan=2 align="center"]Header[/th][/tr][tr][td rowspan=2]A[/td][td]B[/td][/tr][/table]' />,
+    );
+
+    expect(screen.getByText("Header")).toHaveAttribute("colspan", "2");
+    expect(screen.getByText("Header")).toHaveAttribute("align", "center");
+    expect(screen.getByText("A")).toHaveAttribute("rowspan", "2");
+  });
+
+  it("drops a table cell's span or alignment that isn't one", () => {
+    render(
+      <BBCode bbcode="[table][tr][td colspan=url(x) align=https://i.imgur.com/a.png]A[/td][/tr][/table]" />,
+    );
+
+    expect(screen.getByText("A")).not.toHaveAttribute("colspan");
+    expect(screen.getByText("A")).not.toHaveAttribute("align");
   });
 
   it("draws a plain tag given a style, without it", () => {

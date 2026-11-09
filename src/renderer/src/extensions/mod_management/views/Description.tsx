@@ -16,6 +16,10 @@ interface IBaseProps {
   modId: string;
   source: string;
   installed: boolean;
+  /** The mod's page on Nexus Mods, which images from elsewhere point to; without one, they're left out. */
+  websiteUrl?: string;
+  /** Whether the mod is adult content; blurs its images if the user's set to. */
+  isFromAdultContent?: boolean;
   startEditDescription: (modId: string) => void;
 }
 
@@ -35,6 +39,18 @@ class Description extends React.Component<IProps, IComponentState> {
   // Inline in the toggle link, so without the prose wrapper.
   private shortBB = memoizeOne((short: string) => renderSafeBBCode(short));
 
+  // Parsed only when one of these changes, not on every render of the row, such as on a download's
+  // progress.
+  private longBB = memoizeOne((long: string, websiteUrl?: string, isFromAdultContent?: boolean) => (
+    <BBCode
+      bbcode={long}
+      className="mb-2"
+      externalImagePlaceholders={websiteUrl !== undefined ? { websiteUrl } : undefined}
+      isFromAdultContent={isFromAdultContent}
+      size="sm"
+    />
+  ));
+
   constructor(props: IProps) {
     super(props);
 
@@ -44,11 +60,11 @@ class Description extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, installed, long, short, source } = this.props;
+    const { t, installed, isFromAdultContent, long, short, source, websiteUrl } = this.props;
 
     const popover = (
       <Popover id="popover-mod-description">
-        <BBCode bbcode={long || `<${t("No description")}>`} className="mb-2" size="sm" />
+        {this.longBB(long || `<${t("No description")}>`, websiteUrl, isFromAdultContent)}
         {truthy(source) ? (
           <a
             onClick={nop}

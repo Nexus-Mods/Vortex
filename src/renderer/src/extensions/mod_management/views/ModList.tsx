@@ -63,6 +63,8 @@ import { PageScroll } from "../../../views/components/Page/PageScroll";
 import MainPage from "../../../views/MainPage";
 import getDownloadGames from "../../download_management/util/getDownloadGames";
 import { getGame } from "../../gamemode_management/util/getGame";
+import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { nexusModPageUrl } from "../../nexus_integration/util/nexus_urls/nexusUrls";
 import { setModEnabled, setModsEnabled } from "../../profile_management/actions/profiles";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { removeMod, setModAttribute } from "../actions/mods";
@@ -841,12 +843,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           <ZoomableImage className="mod-picture" url={url}>
             <Description
               installed={mod.state === "installed"}
+              isFromAdultContent={mod.attributes?.adultContent}
               long={long}
               modId={mod.id}
               short={short}
               source={mod.attributes?.source}
               startEditDescription={this.editDescription}
               t={t}
+              websiteUrl={this.modPageUrl(mod)}
             />
           </ZoomableImage>
         );
@@ -1356,6 +1360,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         this.setModsEnabled([altId], true);
       }
     });
+  };
+
+  /** A Nexus Mods mod's page, which its description's images from elsewhere point to. */
+  private modPageUrl = (mod: IModWithState): string | undefined => {
+    const { modId, source, downloadGame } = mod.attributes ?? {};
+
+    if (source !== "nexus" || modId === undefined) {
+      return undefined;
+    }
+
+    const vortexGameId = downloadGame ?? this.props.gameMode;
+    return nexusModPageUrl(nexusGameId(getGame(vortexGameId), vortexGameId), modId);
   };
 
   private editDescription = (modId: string) => {

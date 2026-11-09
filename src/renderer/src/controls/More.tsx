@@ -32,6 +32,8 @@ export interface IMoreProps {
   orientation?: "vertical" | "horizontal";
   /** Its text isn't ours, such as a mod's description, so only Nexus Mods images and web links. */
   safe?: boolean;
+  /** Whether what its text is from, such as a mod, is adult content; blurs its images if set to. */
+  isFromAdultContent?: boolean;
 }
 
 export interface IComponentState {
@@ -62,7 +64,7 @@ class More extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, children, id, name, orientation, safe, wikiId } = this.props;
+    const { t, children, id, isFromAdultContent, name, orientation, safe, wikiId } = this.props;
     const { open } = this.state;
 
     if (children === undefined) {
@@ -82,7 +84,7 @@ class More extends ComponentEx<IProps, IComponentState> {
     const popover = (
       <Popover id={`popover-${id}`} className="more-popover" title={name}>
         {safe ? (
-          <Markdown markdown={children} size="sm" />
+          <Markdown isFromAdultContent={isFromAdultContent} markdown={children} size="sm" />
         ) : (
           <ReactMarkdown>{children}</ReactMarkdown>
         )}
