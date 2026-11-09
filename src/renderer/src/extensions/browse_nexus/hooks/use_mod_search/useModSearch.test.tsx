@@ -181,7 +181,11 @@ describe("useModSearch", () => {
     await waitFor(() => expect(mocks.pending).toHaveLength(2));
 
     expect(mocks.pending.map((request) => request.search)).toContainEqual({
-      filters: { games: ["skyrimspecialedition"], created_at: { gte: daysBack(7) } },
+      filters: {
+        games: ["skyrimspecialedition"],
+        supports_mod_managers: true,
+        created_at: { gte: daysBack(7) },
+      },
       sort: { field: "endorsements", direction: "desc" },
       pagination: { type: "cursor", cursor: undefined, page_size: MODS_PER_PAGE },
     });
@@ -192,7 +196,16 @@ describe("useModSearch", () => {
     expect(result.current.totalCount).toBe(45);
   });
 
-  it("counts the tab from every mod, over all time, whatever the preset", async () => {
+  it("asks only for mods that can be installed with a mod manager, for the list and its total", async () => {
+    render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+
+    for (const request of mocks.pending) {
+      expect(request.search.filters.supports_mod_managers).toBe(true);
+    }
+  });
+
+  it("counts the tab from every mod a mod manager can install, over all time, whatever the preset", async () => {
     const { result } = render();
     await respondToStart(45, 900);
 
@@ -723,7 +736,11 @@ describe("useModSearch's views", () => {
     await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
     expect(mocks.pending.map((request) => request.search)).toContainEqual(
       expect.objectContaining({
-        filters: { games: ["skyrimspecialedition"], created_at: { gte: daysBack(28) } },
+        filters: {
+          games: ["skyrimspecialedition"],
+          supports_mod_managers: true,
+          created_at: { gte: daysBack(28) },
+        },
         sort: { field: "downloads", direction: "desc" },
       }),
     );

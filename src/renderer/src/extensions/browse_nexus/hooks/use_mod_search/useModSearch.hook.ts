@@ -45,7 +45,10 @@ interface IModsSearch {
   rangeFrom: number;
 }
 
-/** The search for a game's mods, sorted and filtered; none outside a game. */
+/**
+ * The search for a game's mods, sorted and filtered; none outside a game. Only mods that can be
+ * installed with a mod manager, as Vortex can't install the rest.
+ */
 const searchFor = ({
   gameDomainName,
   sort,
@@ -60,6 +63,7 @@ const searchFor = ({
     filters: {
       games: [gameDomainName],
       ...filtersToSearch(filters, { sortField: sort.field, rangeFrom }),
+      supports_mod_managers: true,
     },
     sort: { field: sort.field, direction: sort.direction },
   };
@@ -99,7 +103,7 @@ export interface IModSearch extends ReturnType<typeof useModViews> {
   mods: ModSummary[];
   /** How many mods the search found; the last search's until the next one's first page comes. */
   totalCount: number;
-  /** How many mods the game has over all time, whatever the view, for the tab. */
+  /** How many of the game's mods a mod manager can install, over all time, whatever the view. */
   allModsTotal: number;
   /** Whether the first page is loading with nothing of it to show; asking again keeps the mods. */
   loading: boolean;
@@ -141,8 +145,9 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   const mods = useInfiniteQuery({ ...search, placeholderData: keepPreviousData });
 
   /**
-   * The tab's total, every one of the game's mods, which doesn't depend on the preset or its
-   * sort: always the all-time preset's first page, the very query above while that's open.
+   * The tab's total, every one of the game's mods a mod manager can install, which doesn't depend
+   * on the preset or its sort: always the all-time preset's first page, the very query above while
+   * that's open.
    */
   const allMods = useInfiniteQuery({
     ...modSearchQuery(
