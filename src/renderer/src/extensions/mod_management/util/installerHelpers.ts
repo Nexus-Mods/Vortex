@@ -1,7 +1,8 @@
-import { mkdir, readdir, rename, rmdir } from "node:fs/promises";
+import { lstat, mkdir, readdir, realpath, rename, rmdir } from "node:fs/promises";
 import * as path from "path";
 
 import type { IExtensionContext } from "../../../types/IExtensionContext";
+import { DataInvalid } from "../../../util/CustomErrors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import type { IInstallerMatch, IInstallerSpec } from "../types/IInstallerSpec";
 import type { IInstallResult, IInstruction } from "../types/IInstallResult";
@@ -49,26 +50,52 @@ export async function splitBackslashNames(basePath: string): Promise<void> {
   if (process.platform === "win32") {
     return;
   }
+  const realBase = await realpath(basePath);
   const entries = await readdir(basePath, { recursive: true, withFileTypes: true });
-  const relative = (entry: (typeof entries)[number]) =>
-    path.relative(basePath, path.join(entry.parentPath, entry.name));
-  const target = (relPath: string) =>
-    path.join(basePath, ...relPath.split("\\").filter((segment) => segment !== ""));
   const leftover: string[] = [];
   for (const entry of entries) {
-    const relPath = relative(entry);
+    const relPath = path.relative(basePath, path.join(entry.parentPath, entry.name));
     if (!relPath.includes("\\")) continue;
+    const destination = path.join(
+      basePath,
+      ...relPath.split("\\").filter((segment) => segment !== ""),
+    );
+    // keep traversal and symlinks inside the mod
+    const existingParent = await closestExisting(path.dirname(destination));
+    if (
+      !isInside(basePath, destination) ||
+      !isInside(realBase, await realpath(existingParent), true)
+    ) {
+      throw new DataInvalid(`Archive entry "${relPath}" points outside the mod`);
+    }
     if (entry.isDirectory()) {
-      await mkdir(target(relPath), { recursive: true });
+      await mkdir(destination, { recursive: true });
       if (entry.name.includes("\\")) leftover.push(path.join(basePath, relPath));
     } else {
-      await mkdir(path.dirname(target(relPath)), { recursive: true });
-      await rename(path.join(basePath, relPath), target(relPath));
+      await mkdir(path.dirname(destination), { recursive: true });
+      await rename(path.join(basePath, relPath), destination);
     }
   }
   // deepest first, every file inside was moved out
   for (const dirPath of leftover.sort((lhs, rhs) => rhs.length - lhs.length)) {
     await rmdir(dirPath);
+  }
+}
+
+function isInside(parent: string, child: string, allowSame: boolean = false): boolean {
+  const relPath = path.relative(parent, child);
+  if (relPath === "") {
+    return allowSame;
+  }
+  return relPath !== ".." && !relPath.startsWith(`..${path.sep}`) && !path.isAbsolute(relPath);
+}
+
+async function closestExisting(dirPath: string): Promise<string> {
+  try {
+    await lstat(dirPath);
+    return dirPath;
+  } catch {
+    return closestExisting(path.dirname(dirPath));
   }
 }
 
