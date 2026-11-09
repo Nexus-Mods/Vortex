@@ -42,9 +42,15 @@ export interface RunOptions {
 
 export interface ApplyOptions extends RunOptions {
   stagedFiles: StagedFiles;
-  /** where a BACKUP moves the game file at `destinationPath` and a RESTORE finds it; absolute */
+  /**
+   * where a BACKUP moves the game file at `destinationPath` and a RESTORE finds it: absolute, on
+   * the destination's drive, in a folder that exists
+   */
   backupPathOf: (destinationPath: string) => string;
-  /** where an UNLINK keeps a file it can't show is ours; absolute and unique to the run and entry */
+  /**
+   * where an UNLINK keeps a file it can't show is ours: absolute, on the destination's drive, and
+   * unique to the run and entry; missing folders are made
+   */
   unlinkKeptPathOf: (destinationPath: string, runId: string, entryIndex: number) => string;
 }
 
@@ -361,6 +367,12 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
   }
 }
 
+/** Whether the folder a destination is in is there, as it is after an UNLINK removed the file. */
+async function folderThere(run: Run, destinationPath: string): Promise<boolean> {
+  const [folder] = parentFolders(destinationPath);
+  return folder === undefined || (await run.files.idAt(folder)) !== undefined;
+}
+
 /** Undoes one entry, which may not have run, as the disk shows. */
 async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<void> {
   const { files } = run;
@@ -398,7 +410,14 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
       if ((await files.idAt(keptPath)) !== undefined) {
         await files.move(keptPath, destinationPath);
       } else if (stagedPath !== undefined && (await files.idAt(destinationPath)) === undefined) {
-        await files.link(stagedPath, destinationPath);
+        try {
+          await files.link(stagedPath, destinationPath);
+        } catch (err) {
+          // a folder that is gone held nothing this UNLINK removed
+          if (await folderThere(run, destinationPath)) {
+            throw err;
+          }
+        }
       }
       return;
     }
@@ -553,11 +572,15 @@ export async function apply(
     return entries;
   }
 
-  let writer: JournalWriter;
+  let writer: JournalWriter | undefined;
   try {
     writer = await createJournal(options.journal, entries, runId);
   } catch (cause) {
     return refused(RefusalReason.JournalUnavailable, { cause });
+  }
+  // another run can create its journal between the read above and this one
+  if (writer === undefined) {
+    return refused(RefusalReason.JournalExists);
   }
   const run = runOf(options.files, writer, {
     entries,

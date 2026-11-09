@@ -2,7 +2,6 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
 import {
-  createJournal,
   JournalReadStatus,
   OperationKind,
   openJournal,
@@ -10,13 +9,15 @@ import {
 } from "@nexusmods/mod-pipeline";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// the real disk, with rm open to a failure no file handle can cause on Windows
+// the real disk, with rm and open able to fail in a way no file handle can cause on Windows
 vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof fs>();
   const rm = vi.fn(actual.rm);
-  return { ...actual, default: { ...actual, rm }, rm };
+  const open = vi.fn(actual.open);
+  return { ...actual, default: { ...actual, rm, open }, rm, open };
 });
 
+import { startJournal } from "@/test-utils/journal";
 import { makeTempDir } from "@/test-utils/tempDir";
 import { delayed } from "@/util/util";
 
@@ -25,6 +26,7 @@ import { journalStorageAt } from "./journalStorage";
 const encode = (text: string) => new TextEncoder().encode(text);
 const decode = (bytes: Uint8Array | undefined) =>
   bytes === undefined ? undefined : new TextDecoder().decode(bytes);
+const busy = () => Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" });
 
 describe("journalStorageAt", () => {
   let journalFile: string;
@@ -47,14 +49,33 @@ describe("journalStorageAt", () => {
   });
 
   it("creates the journal when its temporary file can't be cleaned up", async () => {
-    vi.mocked(fs.rm).mockRejectedValueOnce(
-      Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" }),
-    );
+    vi.mocked(fs.rm).mockRejectedValueOnce(busy());
     const storage = journalStorageAt(journalFile);
 
     expect(await storage.create(encode("one\n"))).toBe(true);
 
     expect(decode(await storage.read())).toBe("one\n");
+  });
+
+  it("removes the journal once another process lets go of it", async () => {
+    const storage = journalStorageAt(journalFile);
+    await storage.write(encode("one\n"));
+    vi.mocked(fs.rm).mockRejectedValueOnce(busy());
+
+    await storage.remove();
+
+    expect(await storage.read()).toBeUndefined();
+  });
+
+  it("appends once another process lets go of the journal", async () => {
+    const storage = journalStorageAt(journalFile);
+    await storage.write(encode("one\n"));
+    vi.mocked(fs.open).mockRejectedValueOnce(busy());
+
+    await storage.append(encode("two\n"));
+    await storage.close();
+
+    expect(decode(await storage.read())).toBe("one\ntwo\n");
   });
 
   it("lets one of two overlapping creates win, leaving only the journal", async () => {
@@ -152,7 +173,7 @@ describe("journalStorageAt", () => {
       { operation: { kind: OperationKind.Restore, destinationPath: "/game/a.dll" } },
       { operation: { kind: OperationKind.Restore, destinationPath: "/game/b.dll" } },
     ];
-    const killed = await createJournal(journalStorageAt(journalFile), entries, "fixture-run");
+    const killed = await startJournal(journalStorageAt(journalFile), entries, "fixture-run");
     await killed.markDone(0);
     await killed.close();
     await fs.appendFile(journalFile, '{"type":"done","ind');

@@ -10,6 +10,19 @@ import { applyFilesOn } from "./applyFiles";
 
 const qualified = (path: string) => QualifiedPath.fromNative(path);
 
+/** `/other` is on a second drive. */
+class TwoDrivesFS extends InMemoryFS {
+  override async stat(
+    path: QualifiedPath,
+    options?: { parseSymLink: boolean },
+  ): Promise<StatResult> {
+    const status = await super.stat(path, options);
+    return status.exists && path.path.startsWith("/other")
+      ? { ...status, deviceId: status.deviceId + 1n }
+      : status;
+  }
+}
+
 const filesWith = (...paths: string[]) => {
   const builder = new InMemoryFSBuilder();
   for (const path of paths) {
@@ -39,27 +52,19 @@ describe("applyFilesOn", () => {
     expect(await files.idAt("/a")).toBeDefined();
   });
 
-  test("won't move a file to another drive", async () => {
-    class TwoDrivesFS extends InMemoryFS {
-      override async stat(
-        path: QualifiedPath,
-        options?: { parseSymLink: boolean },
-      ): Promise<StatResult> {
-        const status = await super.stat(path, options);
-        return status.exists && path.path.startsWith("/other")
-          ? { ...status, deviceId: status.deviceId + 1n }
-          : status;
-      }
-    }
+  test.each([
+    ["a folder there", "/other/a"],
+    ["a folder not made yet", "/other/new/a"],
+  ])("won't move a file into %s on another drive", async (_, target) => {
     const seeded = new InMemoryFSBuilder()
       .file(qualified("/game/a"), { type: "text", data: "a" })
       .dir(qualified("/other"));
     const files = applyFilesOn(new TwoDrivesFS(seeded.store));
 
-    await expect(files.move("/game/a", "/other/a")).rejects.toThrow("another drive");
+    await expect(files.move("/game/a", target)).rejects.toThrow("another drive");
 
     expect(await files.idAt("/game/a")).toBeDefined();
-    expect(await files.idAt("/other/a")).toBeUndefined();
+    expect(await files.idAt(target)).toBeUndefined();
   });
 
   test("creates a folder and those above it, and again without failing", async () => {

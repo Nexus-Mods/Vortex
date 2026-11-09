@@ -225,22 +225,21 @@ const writerFor = (storage: JournalStorage, runId: string): JournalWriter => {
   };
 };
 
-/** Starts a run; fails if a journal is already there. */
+/** Starts a run; undefined when a journal is already there. */
 export async function createJournal(
   storage: JournalStorage,
   entries: readonly JournalEntry[],
   runId: string,
-): Promise<JournalWriter> {
+): Promise<JournalWriter | undefined> {
   const header = {
     type: LineType.Header,
     version: JOURNAL_VERSION,
     runId,
     count: entries.length,
   };
-  if (!(await storage.create(encodeLines([header, ...entries])))) {
-    throw new Error("a journal already exists");
-  }
-  return writerFor(storage, runId);
+  return (await storage.create(encodeLines([header, ...entries])))
+    ? writerFor(storage, runId)
+    : undefined;
 }
 
 /** A journal that can't be read is reported and left in place. */

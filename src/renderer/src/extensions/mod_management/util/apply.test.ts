@@ -5,7 +5,6 @@ import * as path from "node:path";
 import {
   apply,
   ApplyStatus,
-  createJournal,
   JournalReadStatus,
   OperationKind,
   readJournal,
@@ -26,6 +25,7 @@ import {
 } from "@vortex/shared/filesystem";
 import { describe, expect, test } from "vitest";
 
+import { startJournal } from "@/test-utils/journal";
 import { makeGeneratedFileSource, makeNexusFileSource } from "@/test-utils/lockfileBuilders";
 import {
   makeBackupOperation,
@@ -410,9 +410,23 @@ describe("apply", () => {
       const fs = await seed({ staged: ["a.dll"] });
       const before = await snapshot(fs);
       const journal = await newJournal();
-      await (await createJournal(journal, [], RUN_ID)).close();
+      await (await startJournal(journal, [], RUN_ID)).close();
 
       const result = await runApply(fs, [link("a.dll")], journal);
+
+      expectStatus(result, ApplyStatus.Refused);
+      expect(result.reason).toBe(RefusalReason.JournalExists);
+      expect(await snapshot(fs)).toEqual(before);
+    });
+
+    test("a journal another run started after this one looked", async () => {
+      const fs = await seed({ staged: ["a.dll"] });
+      const before = await snapshot(fs);
+      const journal = await newJournal();
+      await (await startJournal(journal, [], RUN_ID)).close();
+      const lookedTooEarly = { ...journal, read: () => Promise.resolve(undefined) };
+
+      const result = await runApply(fs, [link("a.dll")], lookedTooEarly);
 
       expectStatus(result, ApplyStatus.Refused);
       expect(result.reason).toBe(RefusalReason.JournalExists);
@@ -461,7 +475,7 @@ describe("resumeApply", () => {
     const before = await snapshot(fs);
     const journal = await newJournal();
     const operation = { kind: OperationKind.Restore, destinationPath: inGame("a.dll") };
-    const writer = await createJournal(
+    const writer = await startJournal(
       journal,
       [{ operation, keptPath: backupOf("a.dll") }],
       RUN_ID,
@@ -480,7 +494,7 @@ describe("resumeApply", () => {
     const keptPath = unlinkKeptPathOf(inGame("a.dll"), RUN_ID, 0);
     const fs = await seed({ staged: ["a.dll"], other: { [keptPath]: "my edit" } });
     const journal = await newJournal();
-    const writer = await createJournal(
+    const writer = await startJournal(
       journal,
       [{ operation: unlink("a.dll"), stagedPath: inStaging("a.dll"), keptPath }],
       RUN_ID,
@@ -500,7 +514,7 @@ describe("resumeApply", () => {
     const fs = await seed({ staged: ["a.dll"] });
     const before = await snapshot(fs);
     const journal = await newJournal();
-    const writer = await createJournal(
+    const writer = await startJournal(
       journal,
       [{ operation: link("a.dll"), stagedPath: inStaging("a.dll") }],
       RUN_ID,
@@ -533,10 +547,20 @@ describe("rollback", () => {
     expect(await snapshot(fs)).toEqual(before);
   });
 
+  test("rolls back an UNLINK whose folder is gone", async () => {
+    const fs = await seed({ staged: ["gone/a.dll"] });
+    const before = await snapshot(fs);
+
+    const result = await runApply(fs, [unlink("gone/a.dll"), link("not-in-staging.dll")]);
+
+    expectStatus(result, ApplyStatus.RolledBack);
+    expect(await snapshot(fs)).toEqual(before);
+  });
+
   test("leaves a folder the run created when something else is in it", async () => {
     const fs = await seed({ other: { [inGame("new/mine.txt")]: "mine" } });
     const journal = await newJournal();
-    const writer = await createJournal(
+    const writer = await startJournal(
       journal,
       [{ operation: link("new/a.dll"), stagedPath: inStaging("new/a.dll") }],
       RUN_ID,
@@ -552,7 +576,7 @@ describe("rollback", () => {
   test("fails and keeps the journal when a LINK's destination is no longer ours", async () => {
     const fs = await seed({ staged: ["a.dll"], other: { [inGame("a.dll")]: "someone else's" } });
     const journal = await newJournal();
-    const writer = await createJournal(
+    const writer = await startJournal(
       journal,
       [{ operation: link("a.dll"), stagedPath: inStaging("a.dll") }],
       RUN_ID,

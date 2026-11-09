@@ -1,6 +1,6 @@
 import type { ApplyFiles } from "@nexusmods/mod-pipeline";
 import { VortexError } from "@vortex/shared";
-import { QualifiedPath, type FileSystem } from "@vortex/shared/filesystem";
+import { QualifiedPath, type FileSystem, type StatResult } from "@vortex/shared/filesystem";
 
 import { entryIdOf } from "./diskScan";
 
@@ -10,6 +10,14 @@ const qualified = (path: string) => QualifiedPath.fromNative(path);
 export function applyFilesOn(fs: FileSystem): ApplyFiles {
   const statusAt = (path: string) => fs.stat(qualified(path), { parseSymLink: true });
 
+  /** The status of `folder`, or of the nearest folder above it that exists. */
+  const existingFolderAt = async (folder: QualifiedPath): Promise<StatResult> => {
+    const status = await statusAt(folder.path);
+    return status.exists || folder.path === folder.root
+      ? status
+      : existingFolderAt(folder.parent());
+  };
+
   return {
     idAt: async (path) => {
       const status = await statusAt(path);
@@ -18,7 +26,7 @@ export function applyFilesOn(fs: FileSystem): ApplyFiles {
     move: async (from, to) => {
       const [source, targetFolder] = await Promise.all([
         statusAt(from),
-        statusAt(qualified(to).parent().path),
+        existingFolderAt(qualified(to).parent()),
       ]);
       // FileSystem.move copies across drives, which a kill can leave half done
       if (source.exists && targetFolder.exists && source.deviceId !== targetFolder.deviceId) {

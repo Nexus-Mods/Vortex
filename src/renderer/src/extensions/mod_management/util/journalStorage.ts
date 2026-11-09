@@ -7,8 +7,8 @@ import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 import { log } from "../../../logging";
 import { withFileRetry } from "../../../util/fileRetry";
 
-/** About 1.5 s, which a resume can wait for */
-const RENAME_ATTEMPTS = 16;
+/** About 1.5 s while a scanner or indexer holds the journal, which a run can wait for */
+const ATTEMPTS_WHILE_HELD = 16;
 
 /**
  * Apply's journal on disk, through node:fs: FileSystem's write streams can't append, and a kill can
@@ -64,16 +64,15 @@ export function journalStorageAt(journalFile: string): JournalStorage {
       await close();
       await fs.mkdir(path.dirname(journalFile), { recursive: true });
       await fs.writeFile(temporaryFile, contents, { flush: true });
-      // a scanner or indexer can hold the journal for a moment after it changes
-      await withFileRetry(() => fs.rename(temporaryFile, journalFile), RENAME_ATTEMPTS);
+      await withFileRetry(() => fs.rename(temporaryFile, journalFile), ATTEMPTS_WHILE_HELD);
     },
     append: async (contents) => {
-      appending ??= fs.open(journalFile, "a");
+      appending ??= withFileRetry(() => fs.open(journalFile, "a"), ATTEMPTS_WHILE_HELD);
       const handle = await appending;
       await handle.appendFile(contents);
       await handle.sync();
     },
-    remove: () => fs.rm(journalFile, { force: true }),
+    remove: () => withFileRetry(() => fs.rm(journalFile, { force: true }), ATTEMPTS_WHILE_HELD),
     close,
   };
 }
