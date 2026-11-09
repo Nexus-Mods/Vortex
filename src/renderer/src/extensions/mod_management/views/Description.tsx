@@ -3,8 +3,9 @@ import memoizeOne from "memoize-one";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";
 
-import bbcode from "../../../controls/bbcode";
+import { renderSafeBBCode } from "../../../controls/bbcode";
 import Icon from "../../../controls/Icon";
+import { BBCode } from "../../../ui/components/prose/bbcode/BBCode";
 import { truthy } from "../../../util/util";
 
 interface IBaseProps {
@@ -29,9 +30,9 @@ function nop() {
 
 class Description extends React.Component<IProps, IComponentState> {
   private mRef: Element;
-  private mLongBB: React.ReactChild[];
 
-  private shortBB = memoizeOne((short: string) => bbcode(short));
+  // Inline in the toggle link, so without the prose wrapper.
+  private shortBB = memoizeOne((short: string) => renderSafeBBCode(short));
 
   constructor(props: IProps) {
     super(props);
@@ -42,11 +43,11 @@ class Description extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, installed, short, source } = this.props;
+    const { t, installed, long, short, source } = this.props;
 
     const popover = (
       <Popover id="popover-mod-description">
-        <div>{this.mLongBB}</div>
+        <BBCode bbcode={long || `<${t("No description")}>`} size="sm" />
         {truthy(source) ? (
           <a
             onClick={nop}
@@ -107,10 +108,6 @@ class Description extends React.Component<IProps, IComponentState> {
   };
 
   private toggle = () => {
-    const { t } = this.props;
-    if (!this.state.open) {
-      this.mLongBB = bbcode(this.props.long || `<${t("No description")}>`);
-    }
     this.setState({ open: !this.state.open });
   };
 }
