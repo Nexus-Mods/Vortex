@@ -2,6 +2,7 @@
     position: absolute;
     top: 12px;
     right: 16px;
+    -webkit-app-region: no-drag;
     .window-control {
         width: 38px;
         background-color: initial;

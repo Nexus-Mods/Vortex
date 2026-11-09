@@ -80,7 +80,13 @@ import { PROFILE_SWITCH_FAILED_NOTIFICATION_ID, STUCK_TIMEOUT } from "./constant
 import { profilesReducer } from "./reducers/profiles";
 import { settingsReducer } from "./reducers/settings";
 import transferSetupReducer from "./reducers/transferSetup";
-import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } from "./selectors";
+import {
+  activeGameId,
+  activeProfile,
+  knownGameForName,
+  lastActiveProfileForGame,
+  profileById,
+} from "./selectors";
 import { syncFromProfile, syncToProfile } from "./sync";
 import { CorruptActiveProfile, ProfileSwitchStep } from "./types/Errors";
 import type { IProfile } from "./types/IProfile";
@@ -1233,20 +1239,7 @@ function init(context: IExtensionContext): boolean {
           );
         }
       } else if (commandLine.game !== undefined && known.length > 0) {
-        // the game specified on the command line may be a game id or an extension
-        // name, because at the time we download an extension we don't actually know
-        // the game id yet.
-
-        const extState = context.api.getState().app.extensions ?? {};
-        const extPathLookup = Object.values(extState).reduce((prevExt, ext) => {
-          prevExt[ext.path] = ext.name;
-          return prevExt;
-        }, {});
-
-        const game = known.find(
-          (iter) =>
-            iter.id === commandLine.game || extPathLookup[iter.extensionPath] === commandLine.game,
-        );
+        const game = knownGameForName(state, commandLine.game);
 
         if (game !== undefined) {
           // Wait for discovery to populate before deciding undiscovered vs
