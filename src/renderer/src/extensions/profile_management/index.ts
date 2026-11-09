@@ -60,16 +60,12 @@ import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
 import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
 import { clearGameAddStore } from "../gamemode_management/actions/session";
-<<<<<<< HEAD
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
-import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
-=======
 import {
   getGame,
   getGameStubDownloadInfo,
   isGameRegistered,
 } from "../gamemode_management/util/getGame";
->>>>>>> e9f1b50e1 (Merge pull request #24702 from Nexus-Mods/task/LAZ-1540)
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
@@ -1005,7 +1001,7 @@ function init(context: IExtensionContext): boolean {
       // synthesized game's queryArgs. Any other Manage behaves exactly as before.
       const tierZero =
         FlagService.instance?.getFlag("vortex-tier-0-game-support") !== undefined
-          ? tierZeroEntry(context.api.getState(), VortexGameId(gameId))
+          ? tierZeroEntry(context.api.getState(), gameId)
           : undefined;
 
       const registerStep =
@@ -1016,14 +1012,9 @@ function init(context: IExtensionContext): boolean {
       // what the user picked the game from, which discovery is held to
       const store = pickedStore(context.api.getState(), gameId);
 
-<<<<<<< HEAD
       registerStep
-        .then(() => discoverPickedGame(context.api, VortexGameId(gameId), store))
+        .then(() => discoverPickedGame(context.api, gameId, store))
         .then(() => Promise.resolve(checkOverridden(context.api, gameId)))
-=======
-      discoverPickedGame(context.api, gameId, store)
-        .then(() => checkOverridden(context.api, gameId))
->>>>>>> e9f1b50e1 (Merge pull request #24702 from Nexus-Mods/task/LAZ-1540)
         .then(() => {
           const state = context.api.getState();
           // Mirrors the guard in manageGame: discovery can outlive the
