@@ -48,7 +48,9 @@ import { MODS_PER_PAGE, useModSearch } from "./useModSearch.hook";
 /** The time the tests start at, which the first time range counts back from. */
 const NOW = Date.parse("2026-11-03T14:35:00Z");
 
-const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
+
+const HOUR_MS = 60 * MINUTE_MS;
 
 /** The start of a range of so many days back from a time, `NOW` unless given. */
 const daysBack = (days: number, from = NOW) => new Date(from - days * 24 * HOUR_MS).toISOString();
@@ -346,17 +348,49 @@ describe("useModSearch", () => {
     expect(result.current.totalCount).toBe(45);
   });
 
-  it("counts a range back from when it's picked", async () => {
+  it("counts a range back from the five minutes before it's picked", async () => {
     const { result } = render();
     await respondToStart(45, 900);
-    const later = NOW + 2 * HOUR_MS;
-    vi.setSystemTime(later);
+    const fiveMinutesBefore = NOW + 2 * HOUR_MS;
+    vi.setSystemTime(fiveMinutesBefore + 3 * MINUTE_MS);
 
     act(() => result.current.setFilters({ timeRange: "28" }));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search.filters).toMatchObject({
-      created_at: { gte: daysBack(28, later) },
+      created_at: { gte: daysBack(28, fiveMinutesBefore) },
+    });
+  });
+
+  it("shows a view picked again within five minutes from its cached search", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.selectView("popular"));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("downloads", 12);
+    vi.setSystemTime(NOW + 4 * MINUTE_MS);
+
+    act(() => result.current.selectView("trending"));
+    act(() => result.current.selectView("popular"));
+    await act(async () => {});
+
+    expect(mocks.pending).toEqual([]);
+    expect(result.current.totalCount).toBe(12);
+  });
+
+  it("searches a view picked again after five minutes afresh", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.selectView("popular"));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("downloads", 12);
+    vi.setSystemTime(NOW + 5 * MINUTE_MS);
+
+    act(() => result.current.selectView("popular"));
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(mocks.pending[0].search.filters).toMatchObject({
+      created_at: { gte: daysBack(7, NOW + 5 * MINUTE_MS) },
     });
   });
 

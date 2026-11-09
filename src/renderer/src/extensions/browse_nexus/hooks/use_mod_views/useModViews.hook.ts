@@ -26,6 +26,15 @@ import {
 
 const NO_VIEWS: IBrowseModsView[] = [];
 
+/** How long the results stay fresh, which a time range's start is rounded down to. */
+const RANGE_STEP_MS = 5 * 60 * 1000;
+
+/**
+ * Now, rounded down to five minutes, so picking a view again soon after makes the same search and
+ * shows its cached results rather than loading them again.
+ */
+const rangeStart = () => Math.floor(Date.now() / RANGE_STEP_MS) * RANGE_STEP_MS;
+
 const customViews = (state: IState) => state.settings.browseModsViews?.custom ?? NO_VIEWS;
 
 /** The open view, resolved; the same object until the view, its saving or its changes do. */
@@ -43,7 +52,8 @@ const openView = createSelector(
 /**
  * Browse's mods views: the open one, resolved, the user's own, and changing, saving and picking
  * them, and whether the user is logged in and can see adult content. `rangeFrom` is when the time
- * range was last picked, which the search counts back from.
+ * range was last picked, to the five minutes before, which the search counts back from; it holds
+ * while the view stays open, so its results don't move as time passes.
  */
 export const useModViews = () => {
   const dispatch = useDispatch();
@@ -51,18 +61,18 @@ export const useModViews = () => {
   const views = useSelector(customViews);
   const canSeeAdult = useSelector(canSeeAdultContent);
   const loggedIn = useSelector(isLoggedIn);
-  const [rangeFrom, setRangeFrom] = useState(() => Date.now());
+  const [rangeFrom, setRangeFrom] = useState(rangeStart);
 
-  /** Changes how the open view filters, starting its time range from now. */
+  /** Changes how the open view filters, starting its time range again. */
   const setFilters = (change: Partial<IModFilters>) => {
     dispatch(setBrowseModsViewSearch(view.viewId, { filters: change }));
-    setRangeFrom(Date.now());
+    setRangeFrom(rangeStart());
   };
 
-  /** Opens a view; a preset with its filters as they come, its time range starting from now. */
+  /** Opens a view; a preset with its filters as they come, its time range starting again. */
   const selectView = (viewId: string) => {
     dispatch(selectBrowseModsView(viewId));
-    setRangeFrom(Date.now());
+    setRangeFrom(rangeStart());
   };
 
   /** Changes how the open view sorts. */
@@ -85,7 +95,7 @@ export const useModViews = () => {
     /** Puts the open preset's sort and filters back as they come. */
     resetView: () => {
       dispatch(resetBrowseModsView(view.viewId));
-      setRangeFrom(Date.now());
+      setRangeFrom(rangeStart());
     },
     /**
      * Saves what's showing as a view of the user's own, by name, and opens it; a preset it was made
