@@ -98,6 +98,16 @@ export default defineConfig([
           ],
         },
       ],
+      // A no-restricted-imports importNames rule would also reject `import * as util from "util/api"`.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "ImportDeclaration[source.value=/(^|\\/)util\\/api$|^\\.\\/api$/] > ImportSpecifier[imported.name='opn']",
+          message:
+            "opn only backs the deprecated util.opn extension API. Use window.api.shell.openUrl or window.api.shell.openFile instead.",
+        },
+      ],
       "vortex/no-restricted-imports-warnings": [
         "warn",
         {

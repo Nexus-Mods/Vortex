@@ -7,6 +7,7 @@ import type { IGameInfoEntry, IState } from "../../../types/IState";
 import { bytesToString } from "../../../util/util";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
+import { openGameInfoValue } from "../util/openGameInfoValue";
 
 export interface IBaseProps {
   t: TFunction;
@@ -91,24 +92,26 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
         {t(gameInfo[key].title)}
       </div>,
       <div key={`${key}-value`} className="game-info-value">
-        {this.renderValue(gameInfo[key].value, gameInfo[key].type || "string")}
+        {this.renderValue(gameInfo[key])}
       </div>,
     ];
   };
 
-  private renderValue = (value: any, type: string) => {
+  private renderValue = (entry: IGameInfoEntry) => {
     const { language } = this.props;
+    const { value } = entry;
+    const type = entry.type || "string";
     if (type === "date") {
       return new Date(value).toLocaleString(language);
-    } else if (type === "url") {
+    } else if (type === "url" || type === "path") {
       return (
-        <a onClick={this.openUrl} href={value}>
-          {value}
-        </a>
-      );
-    } else if (type === "path") {
-      return (
-        <a data-testid="game-info-path" onClick={() => window.api.shell.openFile(value)}>
+        <a
+          href={type === "url" ? value : "#"}
+          onClick={(evt) => {
+            evt.preventDefault();
+            openGameInfoValue(entry);
+          }}
+        >
           {value}
         </a>
       );
@@ -117,11 +120,6 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     } else {
       return value;
     }
-  };
-
-  private openUrl = (evt: React.MouseEvent<any>) => {
-    evt.preventDefault();
-    window.api.shell.openUrl(evt.currentTarget.href);
   };
 }
 

@@ -55,11 +55,19 @@ describe("GameInfoPopover", () => {
     vi.unstubAllGlobals();
   });
 
-  // The game folder has to reach main as a path, so it opens through a file:// URL there.
   it("opens the game folder as a path", async () => {
     renderPopover({ path: entry("path", "C:\\Games\\Skyrim", "path") });
 
-    await userEvent.click(screen.getByTestId("game-info-path"));
+    await userEvent.click(screen.getByRole("link", { name: "C:\\Games\\Skyrim" }));
+
+    expect(openFile).toHaveBeenCalledWith("C:\\Games\\Skyrim");
+    expect(openUrl).not.toHaveBeenCalled();
+  });
+
+  it("opens a path given as a url entry as a path", async () => {
+    renderPopover({ path: entry("path", "C:\\Games\\Skyrim", "url") });
+
+    await userEvent.click(screen.getByRole("link", { name: "C:\\Games\\Skyrim" }));
 
     expect(openFile).toHaveBeenCalledWith("C:\\Games\\Skyrim");
     expect(openUrl).not.toHaveBeenCalled();
