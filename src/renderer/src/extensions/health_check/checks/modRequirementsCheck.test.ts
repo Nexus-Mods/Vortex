@@ -7,6 +7,22 @@ vi.mock("@/extensions/nexus_integration/util", () => ({
   nexusGamesProm: vi.fn(() => Promise.resolve([])),
   numericGameIdToDomainName: vi.fn(),
 }));
+vi.mock("@/extensions/gamemode_management/util/getGame", () => ({ getGame: vi.fn() }));
+// checkModRequirements' store reads and network fetches, for the one test that runs it whole
+vi.mock("@/extensions/profile_management/selectors", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  activeProfile: vi.fn(),
+}));
+vi.mock("@/extensions/nexus_integration/selectors", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  isLoggedIn: vi.fn(() => true),
+}));
+vi.mock("@/extensions/health_check/utils/shared/modDetails", () => ({
+  getModDetails: vi.fn(() => Promise.resolve()),
+}));
+vi.mock("@/extensions/health_check/utils/modRequirements/modFiles", () => ({
+  getModFilesWithCache: vi.fn(() => Promise.resolve([{ fileId: 1 }])),
+}));
 vi.mock("@/extensions/nexus_integration/util/UIDs", () => ({
   VORTEX_MOD_UID: "9856949944321",
   makeModUID: vi.fn((repoInfo: { gameId: string; modId: string }) =>
@@ -22,9 +38,16 @@ import { GameDomain } from "@vortex/shared";
 
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import { numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
+import { activeProfile } from "@/extensions/profile_management/selectors";
 import type { IProfile } from "@/extensions/profile_management/types/IProfile";
+import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { partitionNexusMods, resolveRequirementTarget } from "./modRequirementsCheck";
+import type { IModRequirementsCheckMetadata } from "../types";
+import {
+  checkModRequirements,
+  partitionNexusMods,
+  resolveRequirementTarget,
+} from "./modRequirementsCheck";
 
 const mockDomainName = vi.mocked(numericGameIdToDomainName);
 
@@ -51,6 +74,46 @@ describe("resolveRequirementTarget", () => {
     const target = resolveRequirementTarget({ modId: "1", gameId: "1704" }, "skyrimse");
     expect(target).not.toBeNull();
     expect(target?.domainName).toBe("skyrimse");
+  });
+
+  it("gives a requirement with no game the requiring game's Nexus domain, not its Vortex id", () => {
+    const target = resolveRequirementTarget({ modId: "2" }, "skyrimse");
+    expect(target?.domainName).toBe("skyrimspecialedition");
+    // the UID is still keyed as before
+    expect(target?.gameIdForStorage).toBe("skyrimse");
+  });
+});
+
+describe("checkModRequirements", () => {
+  it("links the requiring mod under its game's Nexus domain, not its Vortex id", async () => {
+    const mod = {
+      id: "mod-1",
+      attributes: { modId: 100, source: "nexus", downloadGame: "skyrimse" },
+    } as unknown as IMod;
+    vi.mocked(activeProfile).mockReturnValue({
+      id: "profile-1",
+      gameId: "skyrimse",
+      modState: { "mod-1": { enabled: true } },
+    } as unknown as IProfile);
+    const api = {
+      getState: () => ({ persistent: { mods: { skyrimse: { "mod-1": mod } } } }),
+      ext: {
+        nexusGetModRequirements: vi.fn(() =>
+          Promise.resolve({
+            "skyrimse-100": { nexusRequirements: { nodes: [{ modId: "2" }], totalCount: 1 } },
+          }),
+        ),
+      },
+    } as unknown as IExtensionApi;
+
+    const result = await checkModRequirements(api);
+
+    const metadata = result.metadata as IModRequirementsCheckMetadata;
+    const [missing] = metadata.modRequirements["mod-1"].missingMods;
+    expect(missing.requiredBy.modUrl).toBe(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/100",
+    );
+    expect(missing.modUrl).toBe("https://www.nexusmods.com/skyrimspecialedition/mods/2");
   });
 });
 

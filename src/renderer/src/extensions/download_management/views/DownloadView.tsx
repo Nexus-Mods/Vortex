@@ -4,7 +4,7 @@ import { parseError, unknownToError } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import _ from "lodash";
-import * as React from "react";
+import React, { useEffect } from "react";
 import { Button, Panel } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
 import type * as Redux from "redux";
@@ -40,10 +40,8 @@ import {
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
 import { getCollectionModByReference } from "../../../util/selectors";
-import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import MainPage from "../../../views/MainPage";
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
@@ -53,6 +51,7 @@ import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId
 import { setShowDLDropzone, setShowDLGraph } from "../actions/settings";
 import { finishDownload, setDownloadTime } from "../actions/state";
 import type { IDownload } from "../types/IDownload";
+import { downloadModFilePageUrl } from "../util/download_mod_file_page_url/downloadModFilePageUrl";
 import { friendlyDownloadName } from "../util/downloadNames";
 import getDownloadGames from "../util/getDownloadGames";
 import DownloadGraph from "./DownloadGraph";
@@ -111,7 +110,7 @@ const nop = () => null;
 const DROPZONE_ACCEPT: DropType[] = ["urls", "files"];
 
 function MountTrigger(props: { cb: () => void }) {
-  React.useEffect(() => {
+  useEffect(() => {
     props.cb();
   }, []);
   return null;
@@ -786,41 +785,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     return ["failed", "redirect"].includes(download.state);
   };
 
-  private extractIds(download: IDownload) {
-    if (download === undefined) {
-      return undefined;
-    }
-    const isValid = (ids) =>
-      ids?.fileId !== undefined && ids?.gameId !== undefined && ids?.modId !== undefined;
-    let ids = getSafe(download.modInfo, ["nexus", "ids"], undefined);
-    if (isValid(ids)) {
-      return ids;
-    }
-    const meta = getSafe(download.modInfo, ["meta", "details"], undefined);
-    if (meta?.fileId !== undefined) {
-      ids = {
-        fileId: meta.fileId,
-        modId: meta.modId,
-        gameId: download.game[0],
-      };
-      if (isValid(ids)) {
-        return ids;
-      }
-    }
-    return undefined;
-  }
-
   private openModPage = (dlId: string) => {
-    const dl = this.getDownload(dlId);
-    const ids = this.extractIds(dl);
-    if (ids === undefined) {
+    const url = downloadModFilePageUrl(this.context.api.store.getState(), this.getDownload(dlId));
+    if (url === undefined) {
       return;
     }
-    const url =
-      path.join("www.nexusmods.com", ids.gameId, "mods", ids.modId.toString()) +
-      `?tab=files&file_id=${ids.fileId}&nmm=1`;
-    opn(url).catch((err) => null);
-    return;
+    window.api.shell.openUrl(url);
   };
 
   private dropDownload = (type: DropType, dlPaths: string[]) => {

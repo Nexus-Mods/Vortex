@@ -1,8 +1,8 @@
+import { VortexGameId } from "@vortex/shared";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { useMainContext } from "@/contexts";
-import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Html } from "@/ui/components/prose/html/Html";
@@ -13,10 +13,10 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { activeGameId } from "@/util/selectors";
 
 import type { IMod } from "../../types/IMod";
-import { confirmCollectionModUpdate } from "../../util/collection_update_warning/collectionUpdateWarning";
 import { offersUpdate } from "../../util/mod_has_update/modHasUpdate";
 import type { UpdateState } from "../../util/modUpdateState";
 import updateState, { isIdValid } from "../../util/modUpdateState";
+import { updateMod } from "../../util/update_mod/updateMod";
 import { ChangelogButton } from "../changelog_button/ChangelogButton";
 
 interface IModUpdateProps {
@@ -59,21 +59,6 @@ export const modUpdateDetails = (mod: IMod): IModUpdateDetails => {
   return { valid, state, hasUpdate, changelog, shows: !valid || hasUpdate || !!changelog?.content };
 };
 
-/** Updates a mod to its newest file, asking first if a collection has it, as that pins its version. */
-const updateMod = async (api: IExtensionApi, mod: IMod, gameId: string) => {
-  if (!(await confirmCollectionModUpdate(api, activeGameId(api.getState()), mod.id))) {
-    return;
-  }
-
-  api.events.emit(
-    "mod-update",
-    gameId,
-    mod.attributes?.modId,
-    mod.attributes?.newestFileId,
-    mod.attributes?.source,
-  );
-};
-
 /**
  * What a mod's Version cell says about updating it, as the legacy table's did: a warning
  * while Vortex can't tell which mod it is, so can't check; otherwise a button to update it,
@@ -82,24 +67,23 @@ const updateMod = async (api: IExtensionApi, mod: IMod, gameId: string) => {
  * nothing marks a version bugged.
  */
 export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdateProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const { api } = useMainContext();
   const { attributes = {} } = mod;
   const { valid, state, changelog, shows } = details;
 
   if (!valid) {
-    const [title, body] =
+    const [title, body, testId] =
       attributes.source === undefined
         ? [
-            t("Mod source unknown"),
-            t("Vortex doesn't know where this mod came from, so it can't check for updates."),
+            t("modsTable::update::sourceUnknown::title"),
+            t("modsTable::update::sourceUnknown::body"),
+            "mod-update-source-unknown",
           ]
         : [
-            t("Mod not identified"),
-            t(
-              "Vortex can't identify this mod, so some features, including checking for " +
-                "updates and adding it to Collections, won't work.",
-            ),
+            t("modsTable::update::notIdentified::title"),
+            t("modsTable::update::notIdentified::body"),
+            "mod-update-not-identified",
           ];
 
     return (
@@ -108,6 +92,7 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
           aria-description={body}
           aria-label={title}
           className="flex size-6 shrink-0 items-center justify-center text-translucent-moderate"
+          data-testid={testId}
           role="img"
           tabIndex={0}
         >
@@ -121,7 +106,7 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
     return null;
   }
 
-  const gameId = () => attributes.downloadGame ?? activeGameId(api.getState());
+  const gameId = () => VortexGameId(attributes.downloadGame ?? activeGameId(api.getState()));
 
   return (
     <div className="flex shrink-0 items-center gap-x-1">
@@ -129,7 +114,8 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
         <ToolbarButton
           appearance="moderate"
           brand="info"
-          label={t("Update to {{version}}", { version: attributes.newestVersion ?? "?" })}
+          data-testid="mod-update-button"
+          label={t("modsTable::update::updateTo", { version: attributes.newestVersion ?? "?" })}
           leftIcon="download"
           size="sm"
           onClick={() => void updateMod(api, mod, gameId())}
@@ -140,17 +126,18 @@ export const ModUpdate = ({ mod, details = modUpdateDetails(mod) }: IModUpdatePr
         <Tooltip
           customContent={
             <TitledTooltip
-              body={t("Vortex can't determine the correct update automatically.")}
-              title={t("Choose update file")}
+              body={t("modsTable::update::chooseFile::body")}
+              title={t("modsTable::update::chooseFile::title")}
             />
           }
           placement="bottom"
         >
           <Button
             appearance="moderate"
-            aria-description={t("Vortex can't determine the correct update automatically.")}
-            aria-label={t("Choose update file")}
+            aria-description={t("modsTable::update::chooseFile::body")}
+            aria-label={t("modsTable::update::chooseFile::title")}
             brand="info"
+            data-testid="mod-update-choose-file"
             leftIcon="unknown_document"
             size="sm"
             onClick={() =>

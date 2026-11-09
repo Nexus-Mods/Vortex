@@ -47,6 +47,27 @@ describe("setTierZeroGame", () => {
   });
 });
 
+describe("setManualInstallerPreferences", () => {
+  it("sets the preferences on the existing entry", () => {
+    const state = makeState({ 1234: makeEntry() });
+    const preferences = { defaultFolder: "mods", dontAskAgain: true };
+    const result = persistentReducer.reducers.SET_MANUAL_INSTALLER_PREFERENCES(state, {
+      gameId: GameId(1234),
+      preferences,
+    });
+    expect(getEntry(result, 1234)).toEqual(makeEntry({ manualInstallerPreferences: preferences }));
+  });
+
+  it("leaves state untouched when the game id is unknown", () => {
+    const state = makeState({ 1234: makeEntry() });
+    const result = persistentReducer.reducers.SET_MANUAL_INSTALLER_PREFERENCES(state, {
+      gameId: GameId(9999),
+      preferences: { defaultFolder: "mods" },
+    });
+    expect(result).toBe(state);
+  });
+});
+
 describe("removeTierZeroGame", () => {
   it("removes the entry", () => {
     const state = makeState({

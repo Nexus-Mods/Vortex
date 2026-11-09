@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -17,6 +17,11 @@ import { setSortDetected } from "../../actions/settings";
 import { catalogExtensionGameIds } from "../../selectors";
 import type { IGameStored } from "../../types/IGameStored";
 import { listableDetectedIds } from "../../util/detected_games/listableDetectedIds";
+import {
+  createGamesPageTracker,
+  type ScanOutcome,
+  type ScanTrigger,
+} from "../../util/games_page_tracker/gamesPageTracker";
 import { GamesGrid } from "../GamesGrid";
 import { GamesList } from "../GamesList";
 import { Section } from "../section/Section";
@@ -87,6 +92,11 @@ export const DetectedGames = ({
   const [quickScanning, setQuickScanning] = useState(false);
   const [scanFailed, setScanFailed] = useState(false);
   const scanIdRef = useRef(0);
+  // The scan the reader started that's still to be reported. Cleared once reported, so a
+  // cancelled scan's late result can't report it a second time.
+  const trackedScanRef = useRef<{ trigger: ScanTrigger; startedAt: number } | undefined>(undefined);
+
+  const tracker = useMemo(() => createGamesPageTracker(api), [api]);
 
   // Must consult the flag and the extension catalog the same way GamePicker lists
   // the section, so the scan's "found" set counts exactly what the section shows.
@@ -96,7 +106,25 @@ export const DetectedGames = ({
   const scanning = (quickScanning || discoveryRunning || detectionRunning) && !filtering;
   const failed = scanFailed || detectionFailed;
 
-  const handleScan = () => {
+  const reportScan = (
+    outcome: ScanOutcome,
+    counts: { detected_count?: number; new_detected_count?: number } = {},
+  ) => {
+    const scan = trackedScanRef.current;
+    if (scan === undefined) {
+      return;
+    }
+
+    trackedScanRef.current = undefined;
+    tracker.trackScanCompleted({
+      trigger: scan.trigger,
+      outcome,
+      duration_ms: Date.now() - scan.startedAt,
+      ...counts,
+    });
+  };
+
+  const handleScan = (trigger: ScanTrigger) => {
     const addedGameIds = new Set(Object.values(profiles).map((profile) => profile.gameId));
     const knownBefore = new Set(
       listableDetectedIds(detectedGames ?? [], knownGames, discoveredGames, addedGameIds, {
@@ -107,6 +135,7 @@ export const DetectedGames = ({
     const comparable = detectionStatus === "success" || (detectedGames?.length ?? 0) > 0;
     const scanId = ++scanIdRef.current;
 
+    trackedScanRef.current = { trigger, startedAt: Date.now() };
     setScanFailed(false);
     setQuickScanning(true);
 
@@ -125,11 +154,13 @@ export const DetectedGames = ({
         }
 
         if (failure === "discovery") {
+          reportScan("discovery_failed");
           setScanFailed(true);
           return;
         }
 
         if (failure === "detection") {
+          reportScan("detection_failed");
           api.sendNotification({
             type: "error",
             message: t("Couldn't check for new games. Check your internet connection."),
@@ -139,6 +170,7 @@ export const DetectedGames = ({
         }
 
         if (!comparable) {
+          reportScan("success", { detected_count: found.length });
           api.sendNotification({
             type: "info",
             message: t("Game detection finished"),
@@ -148,6 +180,7 @@ export const DetectedGames = ({
         }
 
         const added = found.filter((id) => !knownBefore.has(id)).length;
+        reportScan("success", { detected_count: found.length, new_detected_count: added });
 
         api.sendNotification({
           type: added > 0 ? "success" : "info",
@@ -161,13 +194,19 @@ export const DetectedGames = ({
 
   // An aborted scan only settles once in-flight lookups finish, so clear the flag now.
   const handleCancelScan = () => {
+    reportScan("cancelled");
     scanIdRef.current++;
     api.events.emit("cancel-game-scan");
     setQuickScanning(false);
   };
 
   const retryButton = (
-    <Button appearance="moderate" brand="neutral" isLoading={quickScanning} onClick={handleScan}>
+    <Button
+      appearance="moderate"
+      brand="neutral"
+      isLoading={quickScanning}
+      onClick={() => handleScan("retry")}
+    >
       {t("Retry scan")}
     </Button>
   );
@@ -276,7 +315,7 @@ export const DetectedGames = ({
                   brand="neutral"
                   leftIcon="refresh"
                   size="sm"
-                  onClick={handleScan}
+                  onClick={() => handleScan("refresh")}
                 />
               </Tooltip>
             )}
@@ -289,7 +328,14 @@ export const DetectedGames = ({
                   { label: t("Name A-Z"), value: "alphabetical" },
                 ]}
                 value={sortOrder}
-                onChange={(value) => dispatch(setSortDetected(value))}
+                onChange={(value) => {
+                  // the picker also answers a re-pick of the current order
+                  if (value === sortOrder) {
+                    return;
+                  }
+                  dispatch(setSortDetected(value));
+                  tracker.trackSortChanged({ section: "detected", sort: value });
+                }}
               />
             )}
           </div>
@@ -315,6 +361,8 @@ export const DetectedGames = ({
         >
           {layout === "list" ? (
             <GamesList
+              section="detected"
+              detectedStores={detectedStores}
               discoveredGames={discoveredGames}
               gameMode={gameMode}
               games={shownGames}

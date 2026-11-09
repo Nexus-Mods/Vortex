@@ -7,12 +7,12 @@ import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import type { IToolbarPanelHandle } from "@/ui/components/toolbar/ToolbarPanelButton";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
+import { DeleteViewModal } from "@/ui/components/view_picker/delete_view_modal/DeleteViewModal";
+import { ViewNameModal } from "@/ui/components/view_picker/view_name_modal/ViewNameModal";
 import { type IViewPickerView, ViewPicker } from "@/ui/components/view_picker/ViewPicker";
 
 import { MODS_TABLE_TOOLBARS } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import type { IModsTableView } from "../../util/mods_table_views/modsTableViews";
-import { DeleteModsTableViewModal } from "../delete_mods_table_view_modal/DeleteModsTableViewModal";
-import { ModsTableViewNameModal } from "../mods_table_view_name_modal/ModsTableViewNameModal";
 
 /** Where the new Mods table's users tell us what they think of it, while it's in beta. */
 export const MODS_TABLE_FEEDBACK_URL =
@@ -55,7 +55,7 @@ export const ModsTableToolbar = ({
   search,
   onSearchChange,
 }: IModsTableToolbarProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   // "new" while making a view, the view while renaming one, and unset otherwise.
   const [naming, setNaming] = useState<IModsTableView | "new">();
   const [deleting, setDeleting] = useState<IModsTableView>();
@@ -68,7 +68,7 @@ export const ModsTableToolbar = ({
     () => [
       {
         id: "feedback",
-        label: t("Give feedback"),
+        label: t("modsTable::toolbar::giveFeedback"),
         icon: "rate_review",
         onClick: () => window.api.shell.openUrl(MODS_TABLE_FEEDBACK_URL),
       },
@@ -97,15 +97,24 @@ export const ModsTableToolbar = ({
     return {
       id: view.id,
       label: view.label,
+      // Rename and delete as Browse's views and the shared modals word them, from common.
       actions: [
         [
-          { label: t("Rename view"), icon: "edit", onClick: () => setNaming(view) },
           {
-            label: t("Edit view options"),
+            label: t("Rename view", { ns: "common" }),
+            icon: "edit",
+            onClick: () => setNaming(view),
+          },
+          {
+            label: t("modsTable::toolbar::editViewOptions"),
             icon: "tune",
             onClick: () => editOptions(view.id),
           },
-          { label: t("Delete view"), icon: "delete", onClick: () => setDeleting(view) },
+          {
+            label: t("Delete view", { ns: "common" }),
+            icon: "delete",
+            onClick: () => setDeleting(view),
+          },
         ],
       ],
     };
@@ -115,7 +124,7 @@ export const ModsTableToolbar = ({
     <>
       <ViewPicker
         className="min-w-0 flex-1"
-        label={t("Views")}
+        label={t("modsTable::toolbar::views")}
         selectedView={selectedView}
         views={pickerViews}
         onAddView={() => setNaming("new")}
@@ -125,10 +134,15 @@ export const ModsTableToolbar = ({
       <Toolbar className="shrink-0 justify-end" tracking={tracking}>
         <ToolbarGroup actions={actions} />
 
-        <ToolbarSearch label={t("Search")} value={search} onChange={onSearchChange} />
+        <ToolbarSearch
+          label={t("modsTable::toolbar::search")}
+          value={search}
+          onChange={onSearchChange}
+        />
       </Toolbar>
 
-      <DeleteModsTableViewModal
+      <DeleteViewModal
+        description={t("modsTable::deleteView::body", { name: deleting?.label })}
         name={deleting?.label}
         onClose={() => setDeleting(undefined)}
         onDelete={() => {
@@ -139,8 +153,11 @@ export const ModsTableToolbar = ({
         }}
       />
 
-      <ModsTableViewNameModal
+      <ViewNameModal
+        createDescription={t("modsTable::viewName::createIntro")}
         isOpen={naming !== undefined}
+        placeholder={t("modsTable::viewName::placeholder")}
+        renameDescription={t("modsTable::viewName::renameIntro")}
         renaming={naming === "new" ? undefined : naming?.label}
         onClose={() => setNaming(undefined)}
         onSubmit={(name) => {

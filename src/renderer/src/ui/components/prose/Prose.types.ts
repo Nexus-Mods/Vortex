@@ -5,3 +5,9 @@ export interface IProseProps {
   /** Classes for its wrapper, e.g. to change its colour from the body text's. */
   className?: string;
 }
+
+/** What the prose that can show images shares: `Markdown`, `Html` and `BBCode`. */
+export interface IProseWithImagesProps extends IProseProps {
+  /** Whether what it's from, such as a mod, is adult content; blurs its images if the user's set to. */
+  isFromAdultContent?: boolean;
+}

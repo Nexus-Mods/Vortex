@@ -36,6 +36,18 @@ describe("ContextMenu", () => {
     expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
   });
 
+  it("puts the classes it's given on its panel", () => {
+    render(
+      <ContextMenu className="raised" position={{ x: 10, y: 20 }} onClose={vi.fn()}>
+        {() => <button type="button">Rename</button>}
+      </ContextMenu>,
+    );
+
+    const panel = screen.getByRole("button", { name: "Rename" }).parentElement;
+
+    expect(panel).toHaveClass("raised", "nxm-popover-panel");
+  });
+
   it("closes on Escape, and from its content once a row is chosen", async () => {
     const onClose = renderMenu({ x: 10, y: 20 });
 

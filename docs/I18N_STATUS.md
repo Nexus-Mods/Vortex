@@ -17,13 +17,16 @@
 
 ### Migration Progress
 
-**Completed:** 1 file (BrowseNexusPage.tsx - 13 strings migrated)
+**Completed:** 1 file (BrowseNexusPage.tsx - 13 strings migrated). That page
+has since been split up: the page shell is now `BrowsePage.tsx`, which has no
+strings of its own, and most of the migrated strings live in
+`BrowseCollections.tsx`.
 **Remaining:** ~1,768+ strings across 1,457 source files
 
 ### Working Examples
 
-1. **BrowseNexusPage.tsx** (`src/renderer/src/extensions/browse_nexus/views/BrowseNexusPage.tsx`)
-    - 13 strings migrated to proper namespaced keys
+1. **BrowseCollections.tsx** (`src/renderer/src/extensions/browse_nexus/components/browse_collections/BrowseCollections.tsx`)
+    - Strings use proper namespaced keys, through the `collectionT` helper
     - Uses `collection` and `common` namespaces
     - Shows proper key structure: `namespace:::section:::key`
     - Fully functional and tested
@@ -55,18 +58,18 @@ pagination/
 
 ## Next Steps
 
-Future migrations should follow the pattern established in BrowseNexusPage.tsx.
+Future migrations should follow the pattern in BrowseCollections.tsx.
 
 ### Priority Areas for Future Migration
 
 1. **New features** (100% compliance required from day one)
-2. **Collections pages** (`extensions/collections/src/views/**/*.tsx`)
+2. **Collections pages** (`src/renderer/src/extensions/collections/views/**/*.tsx`)
     - Already has namespace defined
     - ~350+ strings to migrate
-3. **Extension manager** (`src/extensions/extension_manager/**/*.tsx`)
+3. **Extension manager** (`src/renderer/src/extensions/extension_manager/**/*.tsx`)
     - Frequently used, high visibility
     - ~70+ strings
-4. **Mod management core** (`src/extensions/mod_management/**/*.tsx`)
+4. **Mod management core** (`src/renderer/src/extensions/mod_management/**/*.tsx`)
     - Critical functionality
     - ~150+ strings
 
@@ -75,12 +78,12 @@ Future migrations should follow the pattern established in BrowseNexusPage.tsx.
 - **"Fix on Touch"** - Migrate strings when working on a file
 - **New Development** - All new code must use proper keys
 - **No Rush** - Existing literal strings work fine, migrate incrementally
-- **Follow the Example** - BrowseNexusPage.tsx shows the pattern
+- **Follow the Example** - BrowseCollections.tsx shows the pattern
 
 ## Tools & Resources
 
 - **Migration Guide:** `docs/I18N_MIGRATION_GUIDE.md`
-- **Example File:** `src/renderer/src/extensions/browse_nexus/views/BrowseNexusPage.tsx`
+- **Example File:** `src/renderer/src/extensions/browse_nexus/components/browse_collections/BrowseCollections.tsx`
 - **Namespace Files:** `locales/en/*.json`
 - **i18n Config:** `src/renderer/src/util/i18n.ts` (the `ns` array registers namespaces)
 
@@ -144,5 +147,5 @@ keySeparator: "::",
 
 - **Foundation:** ✅ Complete (namespaces configured, example working)
 - **Documentation:** ✅ Complete (guide + status docs created)
-- **Proof of Concept:** ✅ Complete (BrowseNexusPage.tsx migrated)
+- **Proof of Concept:** ✅ Complete (BrowseNexusPage.tsx migrated; its strings now live mostly in BrowseCollections.tsx)
 - **Full Migration:** 🔄 In Progress (< 1% complete, incremental approach)

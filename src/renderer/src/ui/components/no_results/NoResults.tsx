@@ -25,6 +25,7 @@ export const NoResults = ({
   iconClassName,
   isError,
   message,
+  onRetry,
   title,
 }: PropsWithChildren<{
   appearance?: IAppearance;
@@ -33,6 +34,7 @@ export const NoResults = ({
   iconClassName?: string;
   isError?: boolean;
   message?: string;
+  onRetry?: () => void;
   title: string;
 }>) => (
   <div className={joinClasses(["mx-auto flex max-w-md flex-col items-center gap-y-4", className])}>
@@ -57,16 +59,24 @@ export const NoResults = ({
     {children
       ? children
       : isError && (
-          <Button
-            appearance="moderate"
-            brand="neutral"
-            leftIcon="open_in_new"
-            onClick={() =>
-              window.api.shell.openUrl("https://help.nexusmods.com/article/125-contact-us")
-            }
-          >
-            Contact support
-          </Button>
+          <div className="flex flex-wrap justify-center gap-2">
+            {!!onRetry && (
+              <Button appearance="moderate" brand="neutral" leftIcon="refresh" onClick={onRetry}>
+                Try again
+              </Button>
+            )}
+
+            <Button
+              appearance="moderate"
+              brand="neutral"
+              leftIcon="open_in_new"
+              onClick={() =>
+                window.api.shell.openUrl("https://help.nexusmods.com/article/125-contact-us")
+              }
+            >
+              Contact support
+            </Button>
+          </div>
         )}
   </div>
 );

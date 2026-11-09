@@ -345,11 +345,23 @@ export class AppGameManagedEvent implements MixpanelEvent {
   }
 }
 
-/** Sent when a game is unmanaged (its profiles and mods are removed). */
+/** Sent when a game is unmanaged (its profiles and mods are removed). `game_store` is as on
+ * app_game_manage. */
 export class AppGameUnmanagedEvent implements MixpanelEvent {
   readonly eventName = "app_game_unmanage";
   readonly properties: Record<string, unknown>;
-  constructor(props: { game_id: number | null; support_tier?: Tier }) {
+  constructor(props: { game_id: number | null; game_store: string | null; support_tier?: Tier }) {
+    this.properties = { ...props };
+  }
+}
+
+/** Sent when the active game switches to a game managed before, however the switch was started
+ * (Games page, spine, quick launcher). A game's first activation is app_game_manage's.
+ * `game_store` is as on app_game_manage. */
+export class AppGameActivatedEvent implements MixpanelEvent {
+  readonly eventName = "app_game_activate";
+  readonly properties: Record<string, unknown>;
+  constructor(props: { game_id: number | null; game_store: string | null; support_tier?: Tier }) {
     this.properties = { ...props };
   }
 }
@@ -366,6 +378,8 @@ export interface GameLaunchedProps {
   launch_method: GameLaunchMethod;
   enabled_mod_count: number;
   launch_session_id: string;
+  // Store id from discovery, as on app_game_manage; null when Vortex couldn't tell.
+  game_store: string | null;
   support_tier?: Tier;
 }
 
@@ -391,6 +405,7 @@ export interface GameExitedProps {
   // Process exit code, when Vortex launched the process itself; null for store launches.
   exit_code: number | null;
   // Captured at launch like the other paired fields.
+  game_store: string | null;
   support_tier?: Tier;
 }
 

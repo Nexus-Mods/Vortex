@@ -1,5 +1,7 @@
 import * as path from "path";
 
+import type { VortexGameId } from "@vortex/shared";
+import { VortexModStagingFolder } from "@vortex/shared";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
 
@@ -8,6 +10,7 @@ import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { getGame } from "../gamemode_management/util/getGame";
 import getInstallPath from "./util/getInstallPath";
+import modName from "./util/modName";
 
 const installPathPattern = (state: IState) => state.settings.mods.installPath;
 const gameInstallPathPattern = (state: IState, gameId: string) =>
@@ -105,6 +108,27 @@ export const modsForGame = (state: IState, gameId: string): { [modId: string]: I
   }
   return state.persistent.mods?.[gameId] || {};
 };
+
+/**
+ * The mod behind each staging folder, as the deployment manifest names sources. Both the mod id
+ * and its folder in staging work as the folder, and a mod without a name is named by its id.
+ */
+export const modNameByStagingFolder = createCachedSelector(
+  (state: IState, gameId: VortexGameId) => modsForGame(state, gameId),
+  (mods: { [modId: string]: IMod }): Map<VortexModStagingFolder, string> => {
+    const names = new Map<VortexModStagingFolder, string>();
+
+    for (const [modId, mod] of Object.entries(mods)) {
+      const name = modName(mod) || modId;
+      names.set(VortexModStagingFolder(modId), name);
+      if (mod.installationPath !== undefined && mod.installationPath !== modId) {
+        names.set(VortexModStagingFolder(mod.installationPath), name);
+      }
+    }
+
+    return names;
+  },
+)((_state, gameId: VortexGameId) => gameId);
 
 export const modsForActiveGame = createSelector(
   activeGameId,

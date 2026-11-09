@@ -1,3 +1,5 @@
+import { GameDomain, VortexGameId } from "@vortex/shared";
+
 import { knownGames } from "@/extensions/gamemode_management/selectors";
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
 import type { IModFileInfo, IModRequirementExt } from "@/extensions/health_check/types";
@@ -5,6 +7,7 @@ import {
   convertGameIdReverse,
   nexusGameId,
 } from "@/extensions/nexus_integration/util/convertGameId";
+import { downloadAndInstallNexusFile } from "@/extensions/nexus_integration/util/download_and_install/downloadAndInstall";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGame } from "@/types/IGame";
 import { ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
@@ -69,9 +72,8 @@ export async function onDownloadRequirement(
 
     const game: IGame = getGame(gameId);
     const nexusDomainName = nexusGameId(game, gameId);
-    const nxmUrl = `nxm://${nexusDomainName}/mods/${modId}/files/${targetFile.fileId}`;
     // mod.gameId is the Nexus domain (e.g. "skyrimspecialedition"); the downloader and
-    // download.game records key on the internal id ("skyrimse"). Convert before emitting
+    // download.game records key on the internal id ("skyrimse"). Convert before downloading
     // so the file lands in the same folder the install handler later looks in.
     const internalGameId = convertGameIdReverse(knownGames(api.getState()), gameId) || gameId;
 
@@ -83,32 +85,13 @@ export async function onDownloadRequirement(
         mod_version: targetFile.version,
       },
       async () => {
-        const dlId = await new Promise<string>((resolve, reject) =>
-          api.events.emit<"start-download">(
-            "start-download",
-            [nxmUrl],
-            { game: internalGameId, name: targetFile.name, fileId: targetFile.fileId, modId },
-            undefined,
-            (err, id?) =>
-              err !== null || id === undefined
-                ? reject(err ?? new Error("download did not report an id"))
-                : resolve(id),
-            undefined,
-            { allowInstall: false },
-          ),
-        );
-
-        await new Promise<string>((resolve, reject) =>
-          api.events.emit<"start-install-download">(
-            "start-install-download",
-            dlId,
-            { allowAutoEnable: true }, // Auto-enable since user explicitly requested via requirements
-            (err, modId) =>
-              err !== null || modId === undefined
-                ? reject(err ?? new Error("install did not report a mod id"))
-                : resolve(modId),
-          ),
-        );
+        await downloadAndInstallNexusFile(api, {
+          gameDomain: GameDomain(nexusDomainName),
+          gameId: VortexGameId(internalGameId),
+          modId: String(modId),
+          fileId: String(targetFile.fileId),
+          name: targetFile.name,
+        });
       },
     );
   } catch (err) {

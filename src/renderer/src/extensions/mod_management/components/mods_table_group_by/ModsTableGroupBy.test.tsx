@@ -20,25 +20,25 @@ describe("ModsTableGroupBy", () => {
   it("shows what the table groups by", () => {
     renderGroupBy("category");
 
-    expect(screen.getByRole("button", { name: /Group by/ })).toHaveTextContent("Category");
+    expect(screen.getByRole("button")).toHaveTextContent("Category");
   });
 
   it("offers none, then each column it can group by, in order", async () => {
-    renderGroupBy();
+    const onChange = renderGroupBy("category");
 
-    await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
+    await userEvent.click(screen.getByRole("button"));
 
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
-      "None",
-      "Status",
-      "Category",
-    ]);
+    const [none, ...columns] = screen.getAllByRole("option");
+    expect(columns.map((option) => option.textContent)).toEqual(["Status", "Category"]);
+
+    await userEvent.click(none);
+    expect(onChange).toHaveBeenCalledWith("none");
   });
 
   it("groups by the column chosen", async () => {
     const onChange = renderGroupBy();
 
-    await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
+    await userEvent.click(screen.getByRole("button"));
     await userEvent.click(screen.getByRole("option", { name: "Status" }));
 
     expect(onChange).toHaveBeenCalledWith("status");

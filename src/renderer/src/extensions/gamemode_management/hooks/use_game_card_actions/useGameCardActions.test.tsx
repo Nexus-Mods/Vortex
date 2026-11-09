@@ -1,4 +1,6 @@
 import { renderHook } from "@testing-library/react";
+import { VortexGameId } from "@vortex/shared";
+import type * as React from "react";
 import type * as ReactReduxTypes from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
@@ -30,6 +32,8 @@ vi.mock("react-redux", async () => {
   };
 });
 
+import { setGameAddOrigin, setGameAddStore } from "../../actions/session";
+import type { GameSource } from "../../types/GameSource";
 import { useGameCardActions } from "./useGameCardActions.hook";
 
 const definition = (over: Partial<IActionDefinition>): IActionDefinition =>
@@ -41,9 +45,15 @@ const definition = (over: Partial<IActionDefinition>): IActionDefinition =>
     ...over,
   }) as IActionDefinition;
 
-const actionsFor = (definitions: IActionDefinition[], showDetails = () => {}) => {
+const actionsFor = (
+  definitions: IActionDefinition[],
+  showDetails = () => {},
+  onMenuAction?: (action: string) => void,
+) => {
   objects.current = definitions;
-  const { result } = renderHook(() => useGameCardActions("skyrimse", "managed", showDetails));
+  const { result } = renderHook(() =>
+    useGameCardActions("skyrimse", "managed", showDetails, undefined, onMenuAction),
+  );
 
   return result.current;
 };
@@ -124,11 +134,111 @@ describe("useGameCardActions", () => {
     expect(showDetails).toHaveBeenCalledOnce();
   });
 
+  // The registered title, not the label: the label is translated, so it would split one
+  // action across languages in the data.
+  it("names each menu row it runs by a key that doesn't follow the language", () => {
+    const onMenuAction = vi.fn();
+    const stop = vi.fn();
+    const menu = actionsFor(
+      [definition({ title: "Stop Managing", position: 150, icon: "delete", action: stop })],
+      () => {},
+      onMenuAction,
+    ).menu[0];
+
+    for (const row of menu) {
+      row.onClick?.();
+    }
+
+    expect(onMenuAction.mock.calls.map(([action]) => action)).toEqual([
+      "hide",
+      "game_details",
+      "Stop Managing",
+    ]);
+    // reporting doesn't stand in for the action itself
+    expect(stop).toHaveBeenCalledWith(["skyrimse"]);
+  });
+
+  it("names the rows inside the Open menu by their own keys, not the Open row's", () => {
+    const onMenuAction = vi.fn();
+    const folder = vi.fn();
+    const open = actionsFor(
+      [
+        definition({ title: "Open Game Folder", position: 105, action: folder }),
+        definition({ title: "Open Mod Folder", position: 110 }),
+      ],
+      () => {},
+      onMenuAction,
+    ).menu[0][2];
+
+    const panel = open.panel?.({ close: () => {}, dismiss: () => {} }) as React.ReactElement<{
+      actions: Array<Array<{ onClick?: () => void }>>;
+    }>;
+    panel.props.actions[0][0].onClick?.();
+
+    expect(onMenuAction.mock.calls).toEqual([["Open Game Folder"]]);
+    expect(folder).toHaveBeenCalledWith(["skyrimse"]);
+  });
+
+  it("names Show as show, so a hide undone can be told apart", () => {
+    hidden.current = true;
+    const onMenuAction = vi.fn();
+
+    actionsFor([], () => {}, onMenuAction).menu[0][0].onClick?.();
+
+    expect(onMenuAction).toHaveBeenCalledWith("show");
+
+    hidden.current = false;
+  });
+
   it("says Show for a game that's already hidden", () => {
     hidden.current = true;
 
     expect(labels([])[0]).toBe("Show");
 
     hidden.current = false;
+  });
+
+  describe("the store a tile names", () => {
+    const leadWith = (source: GameSource | undefined, store: string | undefined) => {
+      const manage = vi.fn();
+      objects.current = [
+        definition({ title: "Manage", position: 50, icon: "activate", action: manage }),
+      ];
+      dispatch.mockClear();
+      const { result } = renderHook(() =>
+        useGameCardActions("skyrimse", "managed", () => {}, source, undefined, store),
+      );
+
+      return { manage, primary: result.current.primary };
+    };
+
+    it("is recorded before a detected game's add runs, so discovery can be held to it", () => {
+      const { manage, primary } = leadWith("detected_list", "steam");
+
+      primary?.onClick();
+
+      expect(dispatch).toHaveBeenCalledWith(setGameAddStore(VortexGameId("skyrimse"), "steam"));
+      expect(dispatch.mock.invocationCallOrder.at(-1)).toBeLessThan(
+        manage.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("is not recorded when the tile names none", () => {
+      const { primary } = leadWith("detected_list", undefined);
+
+      primary?.onClick();
+
+      expect(dispatch).toHaveBeenCalledOnce();
+      expect(dispatch).toHaveBeenCalledWith(setGameAddOrigin("skyrimse", "detected_list"));
+    });
+
+    it("is not recorded for a game added from the list of every supported game", () => {
+      const { primary } = leadWith("all_games", "steam");
+
+      primary?.onClick();
+
+      expect(dispatch).toHaveBeenCalledOnce();
+      expect(dispatch).toHaveBeenCalledWith(setGameAddOrigin("skyrimse", "all_games"));
+    });
   });
 });

@@ -209,6 +209,11 @@ export interface IToolbarStates {
   [toolbarId: string]: IToolbarState;
 }
 
+/** Where the user left each resizable split, keyed by split id: the first pane's share, 0 to 1. */
+export interface ISplitStates {
+  [splitId: string]: number;
+}
+
 export interface IStateDownloads {
   speed: number;
   speedHistory: number[];
@@ -264,6 +269,8 @@ export interface ISettingsGameMode {
   sortManaged: string;
   sortUnmanaged: string;
   sortDetected: string;
+  /** Show the experimental-support dialog before managing a Tier 0 game. Treated as on unless false. */
+  confirmTierZero?: boolean;
 }
 
 export interface ISettingsDownloads {
@@ -337,6 +344,7 @@ export interface ISettings {
   notifications: ISettingsNotification;
   tables: ITableStates;
   toolbars: IToolbarStates;
+  splits: ISplitStates;
   update: ISettingsUpdate;
   workarounds: ISettingsWorkarounds;
 }
@@ -373,6 +381,15 @@ export interface ITierZeroGame {
     gog: string[];
     epic: string[];
   };
+  manualInstallerPreferences?: IManualInstallerPreferences;
+}
+
+/** the user's Manual Installer preferences for one game */
+export interface IManualInstallerPreferences {
+  /** folder, relative to the game root, mods are installed to by default */
+  defaultFolder?: string;
+  /** skip the destination dialog when a default folder is set */
+  dontAskAgain?: boolean;
 }
 
 export interface IStateGameMode {

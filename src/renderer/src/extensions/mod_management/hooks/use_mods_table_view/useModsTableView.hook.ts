@@ -10,6 +10,7 @@ import {
   resetModsTableView,
   selectModsTableView,
   setModsTableViewColumn,
+  setModsTableViewColumnWidths,
   setModsTableViewGrouping,
 } from "../../actions/modsTableViews";
 import type { IModsTableCustomView, IModsTableViewChanges } from "../../reducers/modsTableViews";
@@ -24,12 +25,13 @@ import { useModsTableAnalytics } from "../use_mods_table_analytics/useModsTableA
 
 const NO_CUSTOM: IModsTableCustomView[] = [];
 const NO_CHANGES: IModsTableViewChanges = {};
+const NO_WIDTHS: { [columnId: string]: number } = {};
 
 const viewsState = (state: IState) => state.settings.modsTableViews;
 
 /**
- * The new Mods table's views, and the open one as the user left it: its grouping and columns,
- * which changing saves to it. A built-in view the user changed can go back to its defaults;
+ * The new Mods table's views, and the open one as the user left it: its grouping, columns and
+ * their widths, which changing saves to it. Resetting it keeps its widths. A built-in view the user changed can go back to its defaults;
  * their own can't, having none. A built-in view that groups keeps to its grouping, which is
  * what it's for. An open view that's no longer offered, such as Updates once there are none,
  * gives way to the first.
@@ -64,6 +66,8 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
     (columnId: string) => changes.columns?.[columnId] ?? view.defaults.columns.includes(columnId),
     [changes, view],
   );
+
+  const columnWidths = changes.widths ?? NO_WIDTHS;
 
   const canReset =
     !view.isCustom &&
@@ -101,6 +105,12 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
       dispatch(setModsTableViewColumn(view.id, columnId, visible));
     },
     [analytics, dispatch, isColumnShown, view.id],
+  );
+
+  const setColumnWidths = useCallback(
+    (widths: { [columnId: string]: number | undefined }) =>
+      dispatch(setModsTableViewColumnWidths(view.id, widths)),
+    [dispatch, view.id],
   );
 
   const reset = useCallback(() => {
@@ -143,10 +153,12 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
     grouping,
     groupingLocked,
     isColumnShown,
+    columnWidths,
     canReset,
     select,
     setGrouping,
     setColumnVisible,
+    setColumnWidths,
     reset,
     addView,
     renameView,

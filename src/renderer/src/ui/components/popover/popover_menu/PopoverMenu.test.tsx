@@ -94,6 +94,17 @@ describe("PopoverMenu", () => {
       expect(item.querySelector(".nxm-dropdown-item-icon [data-testid='logo']")).not.toBeNull();
     });
 
+    it("marks an action's icon with a pip when asked, as for a filter that's on", async () => {
+      await openMenu([[{ ...plainAction("Dates"), hasPip: true }, plainAction("Plain")]]);
+
+      expect(
+        screen.getByRole("menuitem", { name: "Dates" }).querySelector(".nxm-icon-pip"),
+      ).not.toBeNull();
+      expect(
+        screen.getByRole("menuitem", { name: "Plain" }).querySelector(".nxm-icon-pip"),
+      ).toBeNull();
+    });
+
     it("separates groups with a rule", async () => {
       await openMenu([[plainAction("View profile")], [plainAction("Logout")]]);
       expect(screen.getAllByRole("separator")).toHaveLength(1);

@@ -8,6 +8,8 @@
     --z-index-popover: 1030;
     --z-index-flyout: 1040;
     --z-index-modal: 1050;
+    /* a menu opened from inside a modal, which has to show above it */
+    --z-index-modal-popover: 1055;
     --z-index-tooltip: 1060;
     --z-index-dropzone: 1070;
     --z-index-toast: 1090;

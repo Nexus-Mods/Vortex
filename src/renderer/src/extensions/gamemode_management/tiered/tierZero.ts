@@ -35,6 +35,18 @@ export function isTierZeroManagedGame(state: IState, gameId: VortexGameId): bool
   return numericId !== undefined && isTierZeroGame(numericId);
 }
 
+/** The persisted entry of an internally managed game, resolved through the games list
+ * like `isTierZeroManagedGame`. Returns the stored object, so the reference is stable. */
+export function tierZeroGameFor(state: IState, gameId: VortexGameId): ITierZeroGame | undefined {
+  const game = (state.session.gameMode?.known ?? []).find((iter) => iter.id === gameId);
+  if (game === undefined) {
+    return undefined;
+  }
+
+  const numericId = domainToNumericGameId(GameDomain(nexusGameId(game)));
+  return numericId !== undefined ? state.persistent.gameMode.tier0[numericId] : undefined;
+}
+
 /** the game object was dropped from the registry again (un-manage) */
 export function unregisterTierZeroGame(gameId: GameId): void {
   tierZeroGameIds.delete(gameId);

@@ -5,7 +5,8 @@ description: >-
   Node.js that release bundles, and bumps node-abi when it doesn't know the new
   Electron yet. Edits package.json, pnpm-workspace.yaml and pnpm-lock.yaml in
   the working tree; committing and opening the PR is left to the caller. Expects
-  pnpm to be installed and the repository checked out.
+  pnpm to be installed and the repository checked out; it installs dependencies
+  itself, with a frozen lockfile first so a stale lockfile fails early.
 
 inputs:
   check:

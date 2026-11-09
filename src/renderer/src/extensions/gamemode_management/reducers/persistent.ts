@@ -39,6 +39,19 @@ export const persistentReducer = actionsToReducerSpec<IStateGameMode, typeof act
       ...state,
       tier0: { ...state.tier0, [payload.gameId]: payload.entry },
     }),
+    setManualInstallerPreferences: (state, payload) => {
+      const existing = state.tier0[payload.gameId];
+      if (existing === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        tier0: {
+          ...state.tier0,
+          [payload.gameId]: { ...existing, manualInstallerPreferences: payload.preferences },
+        },
+      };
+    },
     removeTierZeroGame: (state, payload) => {
       if (state.tier0[payload.gameId] === undefined) {
         return state;
