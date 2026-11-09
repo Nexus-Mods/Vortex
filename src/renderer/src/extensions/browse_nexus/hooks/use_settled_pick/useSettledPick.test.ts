@@ -30,16 +30,16 @@ describe("useSettledPick", () => {
     vi.useRealTimers();
   });
 
-  it("shows a pick from a key pressed and let go once it has rested for the delay", () => {
+  it("shows a pick once it has rested for the delay after its key's let go", () => {
     const onShown = vi.fn();
     const { result } = render();
 
     act(() => result.current.pickOnceSettled("a", onShown));
-    wait(50);
+    wait(100);
     release();
 
     expect(result.current.latestPick).toBe("a");
-    wait(DELAY - 51);
+    wait(DELAY - 1);
     expect(result.current.settledPick).toBeUndefined();
     wait(1);
     expect(result.current.settledPick).toBe("a");
@@ -61,33 +61,30 @@ describe("useSettledPick", () => {
     expect(result.current.latestPick).toBe("d");
     expect(result.current.settledPick).toBeUndefined();
     release();
+    wait(DELAY);
     expect(result.current.settledPick).toBe("d");
     expect(onShown.mock.calls).toEqual([["d"]]);
   });
 
-  it("shows a tap after a pause at the short delay, and taps that follow only once they stop", () => {
+  it("shows none of quick taps but the last, the first one's key let go too late to show it", () => {
     const onShown = vi.fn();
     const { result } = render();
     const tap = (value: string) => {
       act(() => result.current.pickOnceSettled(value, onShown));
-      wait(50);
+      wait(100);
       release();
+      wait(80);
     };
 
     tap("a");
-    wait(DELAY - 50);
-    expect(result.current.settledPick).toBe("a");
-
-    for (const value of ["b", "c", "d"]) {
-      wait(150);
-      tap(value);
-    }
-    wait(TAPPING_DELAY - 51);
-    expect(result.current.settledPick).toBe("a");
+    tap("b");
+    tap("c");
+    wait(TAPPING_DELAY - 81);
+    expect(result.current.settledPick).toBeUndefined();
     wait(1);
 
-    expect(result.current.settledPick).toBe("d");
-    expect(onShown.mock.calls).toEqual([["a"], ["d"]]);
+    expect(result.current.settledPick).toBe("c");
+    expect(onShown.mock.calls).toEqual([["c"]]);
   });
 
   it("goes back to the short delay for a tap well after the last", () => {
@@ -103,7 +100,7 @@ describe("useSettledPick", () => {
     expect(result.current.settledPick).toBe("b");
   });
 
-  it("shows a key held down soon after a tap at the short delay once it's let go", () => {
+  it("shows a key held down well after a tap at the short delay once it's let go", () => {
     const { result } = render();
     act(() => result.current.pickOnceSettled("a"));
     release();
@@ -117,22 +114,11 @@ describe("useSettledPick", () => {
       wait(33);
     }
     release();
+    wait(DELAY - 1);
     expect(result.current.settledPick).toBe("a");
-    wait(DELAY - 33);
+    wait(1);
 
     expect(result.current.settledPick).toBe("d");
-  });
-
-  it("waits out the delay after a key's let go too soon", () => {
-    const { result } = render();
-    act(() => result.current.pickOnceSettled("a"));
-
-    release();
-    wait(DELAY - 1);
-
-    expect(result.current.settledPick).toBeUndefined();
-    wait(1);
-    expect(result.current.settledPick).toBe("a");
   });
 
   it("hears a key let go even when something stops its key-up on the way", () => {
@@ -141,11 +127,11 @@ describe("useSettledPick", () => {
     swallower.addEventListener("keyup", (event) => event.stopPropagation());
     document.body.append(swallower);
     act(() => result.current.pickOnceSettled("a"));
-    wait(DELAY);
 
     act(() => {
       fireEvent.keyUp(swallower, { key: "ArrowDown" });
     });
+    wait(DELAY);
 
     expect(result.current.settledPick).toBe("a");
     swallower.remove();
@@ -165,11 +151,11 @@ describe("useSettledPick", () => {
   it("takes the window losing focus as letting go, as the key-up never comes", () => {
     const { result } = render();
     act(() => result.current.pickOnceSettled("a"));
-    wait(DELAY);
 
     act(() => {
       fireEvent.blur(window);
     });
+    wait(DELAY);
 
     expect(result.current.settledPick).toBe("a");
   });

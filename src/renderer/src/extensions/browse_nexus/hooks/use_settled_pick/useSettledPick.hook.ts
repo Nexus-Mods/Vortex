@@ -9,21 +9,21 @@ interface IPending<T> {
   isDue: boolean;
 }
 
-/** How long, in ms, a pick rests before it's shown. */
+/** How long, in ms, a pick rests after its key's let go before it's shown. */
 export const SETTLE_MS = 150;
 
-/** How long, in ms, a pick rests instead when it comes soon after a key was let go. */
+/** How long, in ms, it rests instead when the key before it was let go soon before. */
 export const TAPPING_SETTLE_MS = 400;
 
-/** How soon, in ms, after a key's let go a pick counts as tapping through. */
+/** How soon, in ms, one key's let go after another for it to count as tapping through. */
 export const TAPPING_WITHIN_MS = 500;
 
 /**
  * A pick that waits for the keys to settle before it's shown, so holding or tapping a key through
  * a list shows only where it stops. `latestPick` follows every pick at once, and `settledPick`
- * follows `pickOnceSettled` once the key's let go and it has rested for `SETTLE_MS`, or
- * `TAPPING_SETTLE_MS` while tapping. `pickNow` and `settleNow` show at once, and `startWith` shows
- * the first, safely while rendering.
+ * follows `pickOnceSettled` once its key's let go and it has rested since for `SETTLE_MS`, or
+ * `TAPPING_SETTLE_MS` while tapping, so a quick tap after it lands in time to take its place.
+ * `pickNow` and `settleNow` show at once, and `startWith` shows the first, safely while rendering.
  */
 export const useSettledPick = <T>() => {
   const [latestPick, setLatestPick] = useState<T>();
@@ -68,9 +68,23 @@ export const useSettledPick = <T>() => {
 
   useEffect(() => {
     const release = () => {
+      const now = Date.now();
+      const isTapping = now - releasedAtRef.current < TAPPING_WITHIN_MS;
       isHeldRef.current = false;
-      releasedAtRef.current = Date.now();
-      settleIfDueRef.current();
+      releasedAtRef.current = now;
+
+      if (pendingRef.current && !pendingRef.current.isDue) {
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(
+          () => {
+            if (pendingRef.current) {
+              pendingRef.current.isDue = true;
+            }
+            settleIfDueRef.current();
+          },
+          isTapping ? TAPPING_SETTLE_MS : SETTLE_MS,
+        );
+      }
     };
 
     window.addEventListener("keyup", release, { capture: true });
@@ -83,22 +97,12 @@ export const useSettledPick = <T>() => {
     };
   }, []);
 
-  /** Picks `value` now, from a key that's down, and shows it once it's rested and the key's up. */
+  /** Picks `value` now, from a key that's down, and shows it once the key's up and it's rested. */
   const pickOnceSettled = (value: T, onShown?: (value: T) => void) => {
-    const isTapping = Date.now() - releasedAtRef.current < TAPPING_WITHIN_MS;
     clearTimeout(timerRef.current);
     setLatestPick(value);
     isHeldRef.current = true;
     pendingRef.current = { value, onShown, isDue: false };
-    timerRef.current = setTimeout(
-      () => {
-        if (pendingRef.current) {
-          pendingRef.current.isDue = true;
-        }
-        settleIfDueRef.current();
-      },
-      isTapping ? TAPPING_SETTLE_MS : SETTLE_MS,
-    );
   };
 
   /** Picks and shows `value` at once, instead of one waiting to be shown. */

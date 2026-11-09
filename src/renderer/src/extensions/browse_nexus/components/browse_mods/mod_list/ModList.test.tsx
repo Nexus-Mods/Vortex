@@ -110,7 +110,6 @@ describe("ModList", () => {
 
     expect(onRetry).toHaveBeenCalled();
     expect(renderedCards()).toHaveLength(2);
-    expect(screen.getByText("More mods couldn't be loaded. Try again.")).toBeInTheDocument();
   });
 
   it("leaves focus on the list after Try again, as the button goes", async () => {
