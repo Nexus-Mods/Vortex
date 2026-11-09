@@ -340,3 +340,16 @@ how to select elements and the extension-test mocking pattern, see
 
 Prefer self-documenting names over comments. Comment the non-obvious **why** (a
 subscription tradeoff, a workaround), not the **what**. Remove narration.
+
+## Legacy table navigation
+
+`controls/Table.tsx` (SuperTable) serves the production Mods table. With
+`stickyHeader`, rows scroll in the nearest ancestor whose vertical overflow is
+`auto`, `scroll` or `overlay`; when none exists, the document scrolls.
+Other tables scroll their own main pane. The `<tableId>-scroll-to` event brings
+the requested row into that scroller's visible area, allowing space for the
+sticky header. For example, the Plugins page emits `mods-scroll-to` after
+opening the Mods page for a plugin's owning mod. Page Up/Down uses the same
+scroller's height when choosing the next row. The development-only modern
+Mods table has separate navigation; SuperTable's event listeners do not apply
+to it.
