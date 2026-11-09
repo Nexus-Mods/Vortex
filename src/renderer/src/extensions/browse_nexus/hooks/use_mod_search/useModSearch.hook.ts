@@ -78,7 +78,7 @@ const uniqueMods = (pages: { mods: ModSummary[] }[] | undefined): ModSummary[] =
   return [...byId.values()];
 };
 
-/** Whether a page failed as the API refused its cursor, as it does one from before it was updated. */
+/** Whether a page failed as the API refused its cursor, as it does one made before an update. */
 const isRefusedCursor = (error: Error | null) =>
   error instanceof V3ApiError && error.status === 422;
 
@@ -101,7 +101,7 @@ export interface IModSearch extends ReturnType<typeof useModViews> {
   loading: boolean;
   /** Why the first page failed to load, with no mods to show. */
   error: Error | null;
-  /** Whether a page after the first is loading. */
+  /** Whether a page is loading with mods on screen: the next, or the first again. */
   isLoadingMore: boolean;
   /** Why a page failed with mods to show, until it's asked for again. */
   loadMoreError: Error | null;
@@ -166,7 +166,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
     allModsTotal: allMods.data ?? 0,
     loading: isFirstPageLoading,
     error: pages ? null : mods.error,
-    isLoadingMore: mods.isFetchingNextPage,
+    isLoadingMore: !!pages && mods.isFetching,
     loadMoreError: pages && !mods.isFetching ? mods.error : null,
     hasMore: !!pages && mods.hasNextPage && !mods.isFetching,
     pagesLoaded: pages?.length ?? 0,

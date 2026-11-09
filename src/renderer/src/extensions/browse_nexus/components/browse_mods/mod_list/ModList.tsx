@@ -32,13 +32,13 @@ interface IModListProps {
   isError: boolean;
   /** Whether there are more mods to load. */
   hasMore: boolean;
-  /** Whether a later page is loading. */
+  /** Whether a page is loading with mods on screen: the next, or the first again. */
   isLoadingMore: boolean;
   /** Whether a later page failed to load. */
   isLoadMoreError: boolean;
   /** Asks for the next page, if there is one and nothing's loading. */
   onLoadMore: () => void;
-  /** Asks for the page that failed again. */
+  /** Asks for the page that failed again; focus goes to the list, as the Try again button goes. */
   onRetry: () => void;
   /** Moves focus into the details pane, for Right from a card. */
   onFocusDetails: () => void;
@@ -203,7 +203,10 @@ export const ModList = ({
           skeletonCount={6}
           SkeletonTile={ModCardSkeleton}
           onLoadMore={onLoadMore}
-          onRetry={onRetry}
+          onRetry={() => {
+            onRetry();
+            scrollRef.current?.focus();
+          }}
         >
           <div
             className="relative -mb-3.5"

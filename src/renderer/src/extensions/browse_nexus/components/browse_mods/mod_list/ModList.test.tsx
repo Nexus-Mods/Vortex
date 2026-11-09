@@ -113,6 +113,15 @@ describe("ModList", () => {
     expect(screen.getByText("More mods couldn't be loaded. Try again.")).toBeInTheDocument();
   });
 
+  it("leaves focus on the list after Try again, as the button goes", async () => {
+    const { onRetry } = renderComponent({ mods: modsUpTo(2), isLoadMoreError: true });
+
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(onRetry).toHaveBeenCalled();
+    expect(list()).toHaveFocus();
+  });
+
   it("renders only the cards near those in view", () => {
     renderComponent({ mods: modsUpTo(50) });
 

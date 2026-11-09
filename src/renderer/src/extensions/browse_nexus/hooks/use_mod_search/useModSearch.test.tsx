@@ -552,6 +552,7 @@ describe("useModSearch", () => {
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
     expect(result.current.loading).toBe(false);
+    expect(result.current.isLoadingMore).toBe(true);
     expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
   });
 
@@ -606,6 +607,7 @@ describe("useModSearch", () => {
     expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
     expect(result.current.loadMoreError).toBeNull();
     expect(result.current.loading).toBe(false);
+    expect(result.current.isLoadingMore).toBe(true);
     expect(idsOf(result.current.mods)).toEqual(["1"]);
     expect(result.current.searchKey).not.toBe(searchKey);
     await respond("endorsements", 45, { ids: ["1"], next: "fresh-2" });
