@@ -2,6 +2,8 @@
     position: absolute;
     top: 12px;
     right: 16px;
+    // sits over the toolbar's drag region without being inside it
+    -webkit-app-region: no-drag;
     .window-control {
         width: 38px;
         background-color: initial;
