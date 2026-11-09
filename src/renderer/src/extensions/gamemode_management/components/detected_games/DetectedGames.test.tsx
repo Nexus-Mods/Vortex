@@ -116,6 +116,12 @@ const scanFailing = (err: Error, failure: "discovery" | "detection" = "detection
     },
   );
 
+/** The analytics events the section emitted, in order. */
+const tracked = () =>
+  emit.mock.calls
+    .filter(([event]) => event === "analytics-track-mixpanel-event")
+    .map(([, payload]) => payload as { eventName: string; properties: Record<string, unknown> });
+
 const renderComponent = (props: Partial<SectionProps> = {}) => {
   const onBrowseSupported = vi.fn();
   const element = (overrides: Partial<SectionProps> = {}) => (
@@ -220,6 +226,23 @@ describe("DetectedGames", () => {
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({ payload: "alphabetical", type: "SET_SORT_DETECTED" }),
       );
+      expect(tracked()).toEqual([
+        {
+          eventName: "app_games_sort_changed",
+          properties: { section: "detected", sort: "alphabetical" },
+        },
+      ]);
+    });
+  });
+
+  describe("re-picking the order already chosen", () => {
+    it("records nothing, since nothing changed", async () => {
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: /Recently detected/ }));
+      await userEvent.click(screen.getByRole("option", { name: "Recently detected" }));
+
+      expect(tracked()).toEqual([]);
     });
   });
 
@@ -604,6 +627,99 @@ describe("DetectedGames", () => {
       scanResolving();
       await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
       expect(await screen.findByText("No installed games detected")).toBeInTheDocument();
+    });
+  });
+
+  describe("tracking", () => {
+    const scanEvents = () =>
+      tracked().filter((event) => event.eventName === "app_games_scan_completed");
+
+    it("reports a scan from the header with what it found", async () => {
+      // nothing was listed before the scan, so both games it lists are new
+      scanResolving(["skyrim", "fallout4"]);
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
+      expect(scanEvents()).toHaveLength(1);
+      expect(scanEvents()[0].properties).toEqual({
+        trigger: "refresh",
+        outcome: "success",
+        duration_ms: expect.any(Number),
+        detected_count: 2,
+        new_detected_count: 2,
+      });
+    });
+
+    it("counts the new games only against an earlier successful detection", async () => {
+      state.current.session.gameMode.detectedGamesStatus = undefined;
+      scanResolving(["skyrim"]);
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+
+      expect(scanEvents()[0].properties).toEqual({
+        trigger: "retry",
+        outcome: "success",
+        duration_ms: expect.any(Number),
+        detected_count: 1,
+      });
+    });
+
+    it("reports a scan retried from the panel as a retry", async () => {
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+
+      expect(scanEvents()[0].properties.trigger).toBe("retry");
+    });
+
+    for (const failure of ["discovery", "detection"] as const) {
+      it(`reports the ${failure} step failing, without counts`, async () => {
+        scanFailing(new Error("no connection"), failure);
+        renderComponent({ count: "1", games: [game("skyrim")] });
+
+        await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
+        expect(scanEvents()[0].properties).toEqual({
+          trigger: "refresh",
+          outcome: `${failure}_failed`,
+          duration_ms: expect.any(Number),
+        });
+      });
+    }
+
+    it("reports a cancelled scan once, ignoring the result that lands later", async () => {
+      let finish = () => undefined as void;
+      emit.mockImplementation((event: string, cb?: (ids: string[]) => void) => {
+        if (event === "start-quick-discovery") {
+          finish = () => cb?.(["fallout4"]);
+        }
+      });
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+      await userEvent.click(screen.getByRole("button", { name: "Cancel scan" }));
+      finish();
+      await Promise.resolve();
+
+      expect(scanEvents()).toHaveLength(1);
+      expect(scanEvents()[0].properties).toEqual({
+        trigger: "refresh",
+        outcome: "cancelled",
+        duration_ms: expect.any(Number),
+      });
+    });
+
+    // A detection started at startup or login shows the same cancel, but wasn't a scan
+    // the reader asked for, so there's nothing of theirs to report.
+    it("doesn't report cancelling a detection the reader didn't start", async () => {
+      state.current.session.gameMode.detectedGamesStatus = "running";
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Cancel scan" }));
+
+      expect(scanEvents()).toEqual([]);
     });
   });
 });

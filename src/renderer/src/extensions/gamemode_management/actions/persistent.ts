@@ -1,7 +1,7 @@
 import type { GameDomain, GameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
-import type { ITierZeroGame } from "@/types/IState";
+import type { IManualInstallerPreferences, ITierZeroGame } from "@/types/IState";
 
 export const setGameInfo = createAction(
   "SET_GAME_INFO",
@@ -20,6 +20,14 @@ export const setGameInfo = createAction(
 export const setTierZeroGame = createAction(
   "SET_TIER_ZERO_GAME",
   (gameId: GameId, entry: ITierZeroGame) => ({ gameId, entry }),
+);
+
+/**
+ * set the user's Manual Installer preferences for a Tier 0 game
+ */
+export const setManualInstallerPreferences = createAction(
+  "SET_MANUAL_INSTALLER_PREFERENCES",
+  (gameId: GameId, preferences: IManualInstallerPreferences) => ({ gameId, preferences }),
 );
 
 /**

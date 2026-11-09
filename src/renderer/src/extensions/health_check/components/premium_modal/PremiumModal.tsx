@@ -1,33 +1,18 @@
-import React, { type ReactNode, useEffect, useRef } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import {
   useOptionalIssue,
   useTracker,
 } from "@/extensions/health_check/hooks/HealthCheckTracking.context";
-import { PREMIUM_PATH } from "@/extensions/nexus_integration/constants";
-import { useRefreshUserInfoOnFocus } from "@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus";
-import { isPremium } from "@/extensions/nexus_integration/selectors";
+import { PremiumUpsellModal } from "@/extensions/nexus_integration/components/premium_upsell_modal/PremiumUpsellModal";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { Button } from "@/ui/components/button/Button";
-import { Icon } from "@/ui/components/icon/Icon";
-import { Modal } from "@/ui/components/modal/Modal";
-import { Typography } from "@/ui/components/typography/Typography";
-import opn from "@/util/opn";
-import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
+import { Content } from "@/util/util";
 
 /** Which 1-click flow surfaced the premium upsell modal. */
 export type PremiumTrigger = "single_install" | "batch_install" | "install_all";
 
-const ListItem = ({ children }: { children: ReactNode }) => (
-  <li className="flex gap-x-1">
-    <Icon className="mt-0.5 shrink-0 text-premium-strong" name="check" size="xs" />
-
-    {children}
-  </li>
-);
-
+/** Health Check's Premium upsell, worded for installing one requirement or many, and counted. */
 export const PremiumModal = ({
   api,
   isOpen,
@@ -65,112 +50,34 @@ export const PremiumModal = ({
   // Absent for the cross-check install-all upsell raised from the listing.
   const identity = useOptionalIssue()?.identity;
 
-  useEffect(() => {
-    if (isOpen) {
-      trackPremiumModalShown({
-        ...identity,
-        trigger,
-        mod_uid: modUID,
-        mod_count: modCount,
-      });
-    }
-  }, [isOpen, trigger, identity, modUID, modCount, trackPremiumModalShown]);
-
-  // The purchase happens on the website, so watch for it while the upsell is up. This is
-  // also why "Unlock premium" doesn't close the modal: staying open is what keeps the
-  // check armed until the new membership can be seen.
-  useRefreshUserInfoOnFocus(api, isOpen);
-
-  // Premium specifically, not `!shouldShowPremiumAd`: supporters can't download through
-  // the client either, and an absent userInfo would read as a purchase that never happened.
-  const unlocked = useSelector(isPremium);
-  // Guards against re-running the action, not against re-rendering: onClose is the
-  // parent's setState, so isOpen is still true for the rest of this effect's runs.
-  const handledUnlockRef = useRef(false);
-
-  useEffect(() => {
-    if (!isOpen) {
-      handledUnlockRef.current = false;
-      return;
-    }
-
-    if (!unlocked || handledUnlockRef.current) {
-      return;
-    }
-
-    handledUnlockRef.current = true;
-    onClose();
-    onPremiumUnlocked?.();
-  }, [isOpen, unlocked, onClose, onPremiumUnlocked]);
-
   return (
-    <Modal
+    <PremiumUpsellModal
+      api={api}
+      content={Content.HealthCheckAd}
+      description={t(`premium::modal::description::${downloadScope}`)}
+      fallbackIcon={downloadScope === "single" ? "open_in_new" : undefined}
+      fallbackLabel={t(`premium::modal::buttons::secondary::${downloadScope}`)}
       isOpen={isOpen}
       title={t(`premium::modal::title::${downloadScope}`)}
-      onClose={() => {
-        trackPremiumModalDismissed({ ...identity, trigger });
-        onClose();
+      onClose={onClose}
+      onDismissed={() => trackPremiumModalDismissed({ ...identity, trigger })}
+      onFallback={() => {
+        trackPremiumModalFallbackClicked({
+          ...identity,
+          trigger,
+          mod_count: modCount,
+          fallback_type: downloadScope === "single" ? "single_mod_page" : "batch_mod_pages",
+        });
+
+        onDownload();
       }}
-    >
-      <Typography appearance="subdued" as="div" className="space-y-2" typographyType="body-sm">
-        <p className="whitespace-pre-line">{t(`premium::modal::description::${downloadScope}`)}</p>
-
-        <p>{t("premium::modal::benefits_title")}</p>
-
-        <ul className="space-y-2">
-          <ListItem>{t("premium::modal::benefits::downloads")}</ListItem>
-
-          <ListItem>{t("premium::modal::benefits::collections")}</ListItem>
-
-          <ListItem>{t("premium::modal::benefits::speed")}</ListItem>
-
-          <ListItem>{t("premium::modal::benefits::ad_free")}</ListItem>
-        </ul>
-      </Typography>
-
-      <div className="mt-4 grid grid-cols-2 gap-x-2">
-        <Button
-          appearance="moderate"
-          brand="neutral"
-          className="w-full"
-          leftIcon={downloadScope === "single" ? "open_in_new" : undefined}
-          onClick={() => {
-            trackPremiumModalFallbackClicked({
-              ...identity,
-              trigger,
-              mod_count: modCount,
-              fallback_type: downloadScope === "single" ? "single_mod_page" : "batch_mod_pages",
-            });
-
-            onDownload();
-          }}
-        >
-          {t(`premium::modal::buttons::secondary::${downloadScope}`)}
-        </Button>
-
-        <Button
-          brand="premium"
-          className="w-full"
-          leftIcon="diamond"
-          onClick={() => {
-            trackPremiumModalUnlockClicked({
-              ...identity,
-              trigger,
-              mod_count: modCount,
-            });
-
-            opn(
-              nexusModsURL(PREMIUM_PATH, {
-                section: Section.Users,
-                campaign: Campaign.BuyPremium,
-                content: Content.HealthCheckAd,
-              }),
-            ).catch(() => undefined);
-          }}
-        >
-          {t("premium::modal::buttons::primary")}
-        </Button>
-      </div>
-    </Modal>
+      onPremiumUnlocked={onPremiumUnlocked}
+      onShown={() =>
+        trackPremiumModalShown({ ...identity, trigger, mod_uid: modUID, mod_count: modCount })
+      }
+      onUnlockClicked={() =>
+        trackPremiumModalUnlockClicked({ ...identity, trigger, mod_count: modCount })
+      }
+    />
   );
 };

@@ -5,9 +5,14 @@
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import { activeGameId } from "../../util/selectors";
+import { browseModsViewsReducer } from "./reducers/mods_views/modsViews";
+import { sessionReducer } from "./reducers/session";
 import BrowsePage from "./views/browse_page/BrowsePage";
 
 function init(context: IExtensionContext): boolean {
+  context.registerReducer(["session", "browse"], sessionReducer);
+  context.registerReducer(["settings", "browseModsViews"], browseModsViewsReducer);
+
   context.registerMainPage("search", "Browse", BrowsePage, {
     priority: 0,
     hotkey: "B",
@@ -16,7 +21,7 @@ function init(context: IExtensionContext): boolean {
     props: () => ({
       api: context.api,
     }),
-    menuIcon: "grid_view",
+    menuIcon: "manage_search",
     newLayout: true,
     isTranslucent: true,
   });

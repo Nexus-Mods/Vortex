@@ -302,7 +302,7 @@ async function fetchReleases(repo: string): Promise<GithubReleaseLite[]> {
 function releaseSection(version: string, body: string, publishedAt?: string): string {
   const published =
     publishedAt != null && !Number.isNaN(Date.parse(publishedAt))
-      ? `<span class="changelog-release-date">${formatReleaseDate(publishedAt)}</span>`
+      ? ` <span class="changelog-release-date">${formatReleaseDate(publishedAt)}</span>`
       : "";
   return [
     `<section class="changelog-release">`,

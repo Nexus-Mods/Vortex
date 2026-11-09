@@ -24,6 +24,8 @@ declare module "@vortex/shared/errors" {
     "loot:stray-connection": { count: number };
     /** The worker rejected the arguments a call gave it, which is this side's mistake. */
     "loot:api-misuse": { detail: string };
+    /** LOOT's native library could not be loaded; blocked when Application Control refused it. */
+    "loot:library-failed": { reason: string; blocked: boolean };
     /** A libloot call that failed for no recognised reason or did not answer. */
     "loot:failed": NoPayload;
   }

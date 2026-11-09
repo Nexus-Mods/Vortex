@@ -71,6 +71,8 @@ interface ITableVirtualizerOptions {
   getItemSize: (index: number) => number;
   /** The group headings' rows, in order; the one over the rows in view stays rendered. */
   stickyIndexes?: number[];
+  /** Rows that stay rendered wherever they are, such as the one Tab moves focus to. */
+  keptIndexes?: number[];
 }
 
 /**
@@ -85,6 +87,7 @@ export const useTableVirtualizer = ({
   count,
   getItemKey,
   getItemSize,
+  keptIndexes,
   stickyIndexes,
 }: ITableVirtualizerOptions) => {
   const tableRef = useRef<HTMLDivElement>(null);
@@ -128,11 +131,12 @@ export const useTableVirtualizer = ({
       const kept = [
         stickyIndexes?.findLast((index) => index <= range.startIndex),
         focusedIndex,
+        ...(keptIndexes ?? []),
       ].filter((index) => index !== undefined && index < range.count);
 
       return [...new Set([...defaultRangeExtractor(range), ...kept])].sort((a, b) => a - b);
     },
-    [focusedIndex, stickyIndexes],
+    [focusedIndex, keptIndexes, stickyIndexes],
   );
 
   const virtualizer = useVirtualizer({

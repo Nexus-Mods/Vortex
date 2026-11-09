@@ -19,3 +19,11 @@ describe("setUpdaterSnapshot", () => {
     expect(result).toEqual({ snapshot });
   });
 });
+
+describe("setWhatsNew", () => {
+  it("stores what the What's New dialog shows in session state", () => {
+    const whatsNew = { version: "2.7.0", notes: "<p>Notes</p>", action: "download" };
+    const result = sessionReducer.reducers.SET_WHATS_NEW({}, whatsNew);
+    expect(result).toEqual({ whatsNew });
+  });
+});

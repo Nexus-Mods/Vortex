@@ -483,9 +483,9 @@ or add the equivalent override for your package manager (pnpm: `peerDependencyRu
 
 ## Vortex 2.x: `util.steam` and `util.epicGamesLauncher`
 
-`util.steam` and `util.epicGamesLauncher` are deprecated as of **2.8** and removed in **2.10**. Both now delegate to `util.GameStoreHelper`; call it directly instead.
+`util.steam` and `util.epicGamesLauncher` were deprecated in **2.8** and are removed in **2.11**. Both delegated to `util.GameStoreHelper`; call it directly instead.
 
-They keep working until 2.10. Each deprecated call logs a warning once per session, and any member not listed below also warns and returns `undefined`.
+Up to 2.10 they keep working: each deprecated call logs a warning once per session, and any member not listed below also warns and returns `undefined`.
 
 ### What to change
 
@@ -529,7 +529,7 @@ The old method also fell back to a name lookup when the app id missed. Vortex's 
 
 ### If you don't update
 
-In 2.10 `util.steam` is `undefined` and the call throws a `TypeError`. These lookups usually sit in `findGame` or `queryPath`, so the game stops being discovered.
+From 2.11 `util.steam` is `undefined` and the call throws a `TypeError`. These lookups usually sit in `findGame` or `queryPath`, so the game stops being discovered.
 
 ### Promise types
 

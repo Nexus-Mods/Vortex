@@ -13,12 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- `util.steam` and `util.epicGamesLauncher`, deprecated in 2.8, are removed as of 2.11; call `GameStoreHelper` directly. An extension that still uses either gets `undefined` and throws a `TypeError` - see the [game store section of the migration guide](./docs/MIGRATION.md#vortex-2x-utilsteam-and-utilepicgameslauncher)
 - `@mdi/js` is no longer a production dependency of Vortex, so an extension that `require`d it at runtime instead of bundling its own copy will fail to load. Bundle it, or use `menuIcon` and Material Symbols
 
 ### Deprecated
 
 - `IMainPageOptions.mdi` is deprecated in favour of `menuIcon: { path }`. It still works, as a `menuIcon` path
-- `util.steam` and `util.epicGamesLauncher` are deprecated as of 2.8 and will be removed in 2.10. Both now delegate to `GameStoreHelper`: `util.steam.findByAppId(id)` becomes `GameStoreHelper.findByAppId(id, "steam")`, `util.steam.findByName(name)` becomes `GameStoreHelper.findByName(name, "steam")`, and likewise for `epicGamesLauncher` with `"epic"`. `util.steam.id` remains the constant `"steam"` string. `epicGamesLauncher.isGameInstalled` has no drop-in replacement and needs inlining. Each deprecated call logs a warning (once per session); any other member access also warns and returns `undefined` - see the [game store section of the migration guide](./docs/MIGRATION.md#vortex-2x-utilsteam-and-utilepicgameslauncher)
 
 ### Changed
 

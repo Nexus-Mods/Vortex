@@ -23,6 +23,12 @@ import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { ITableGroup, ITableProps, TableItem } from "./Table.types";
+import {
+  columnTracks,
+  isResizable,
+  keptWidth,
+  sharesSpace,
+} from "./table_column_resize/tableColumnResize";
 import { TableGroup } from "./TableGroup";
 import { tableGroupBlocks } from "./tableGroupBlocks";
 import { tableGroupMenuActions } from "./TableGroupMenu";
@@ -38,9 +44,6 @@ import { useTableVirtualizer } from "./useTableVirtualizer.hook";
 const ROW_HEIGHT = 40;
 const GROUP_ROW_HEIGHT = 48;
 const GROUP_ROW_GAP = 4;
-
-/** A column without a width shares what's left, but never shrinks past this when columns overflow. */
-const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
 
 /**
  * A column-driven table drawn as one CSS grid: the columns' widths make its tracks, and
@@ -62,7 +65,8 @@ const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
  * own; the built-ins say in `trackingProperties` which way they went.
  *
  * Given `focusGroupId`, it opens that group and scrolls it to the top once it has it; the group
- * opens while rendering, so its rows are counted before it's scrolled to.
+ * opens while rendering, so its rows are counted before it's scrolled to. `focusRowId` does the
+ * same for a row, opening the first group it's in, then selecting it alone.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columns,
@@ -74,6 +78,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   footer,
   empty,
   defaultSort,
+  columnWidths,
+  onColumnWidthsChange,
   className,
   selectable = false,
   getRowLabel,
@@ -84,6 +90,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   groupTracking,
   focusGroupId,
   onGroupFocused,
+  focusRowId,
+  onRowFocused,
   onMenuOpen,
 }: ITableProps<T, G>) => {
   const { t } = useTranslation();
@@ -213,6 +221,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     setCollapsed(next);
   }
 
+  const focusRowGroup = focusRowId
+    ? groups?.find((group) => group.rows.some((row) => getRowId(row) === focusRowId))
+    : undefined;
+
+  if (focusRowGroup && collapsed.has(focusRowGroup.id)) {
+    const next = new Set(collapsed);
+    next.delete(focusRowGroup.id);
+    setCollapsed(next);
+  }
+
   const { ready, scrollToIndex } = virtual;
 
   useEffect(() => {
@@ -228,6 +246,23 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     scrollToIndex(index);
     onGroupFocused?.();
   }, [focusGroupId, hasFocusGroup, items, onGroupFocused, ready, scrollToIndex]);
+
+  useEffect(() => {
+    if (!focusRowId || !ready) {
+      return;
+    }
+
+    const index = items.findIndex(
+      (item) => item.kind === "row" && getRowId(item.row) === focusRowId,
+    );
+    if (index === -1) {
+      return;
+    }
+
+    scrollToIndex(index);
+    onSelectedIdsChange?.(new Set([focusRowId]));
+    onRowFocused?.();
+  }, [focusRowId, getRowId, items, onRowFocused, onSelectedIdsChange, ready, scrollToIndex]);
 
   const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
 
@@ -259,6 +294,53 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     observer.observe(element);
     return () => observer.disconnect();
   }, [hasToolbar]);
+
+  const { tableRef } = virtual;
+  const resizes = !!onColumnWidthsChange;
+
+  const template = (widths: { [columnId: string]: number | undefined }) =>
+    [
+      "var(--nxm-table-gutter-start)",
+      ...columnTracks(columns, (columnId) => widths[columnId], resizes),
+      "var(--nxm-table-gutter)",
+    ].join(" ");
+
+  const savedTemplate = template(columnWidths ?? {});
+
+  /**
+   * The columns that share what's left, at the width they're drawn at, to hold them there while
+   * another is resized, so it pushes the columns after it along rather than taking their room.
+   * One whose header can't be measured isn't held.
+   */
+  const sharedWidths = (resizedId: string) => {
+    const headers = [
+      ...(tableRef.current?.querySelectorAll<HTMLElement>(".nxm-table-header [data-column-id]") ??
+        []),
+    ];
+
+    return Object.fromEntries(
+      columns.flatMap((column) => {
+        if (
+          column.id === resizedId ||
+          !isResizable(column) ||
+          !sharesSpace(column) ||
+          columnWidths?.[column.id] !== undefined
+        ) {
+          return [];
+        }
+
+        const drawn = headers
+          .find((header) => header.dataset.columnId === column.id)
+          ?.getBoundingClientRect().width;
+        const width = drawn ? keptWidth(column, drawn) : undefined;
+        return width === undefined ? [] : [[column.id, width]];
+      }),
+    );
+  };
+
+  // A drag's widths, with the columns it holds; drawn straight onto the grid as it goes, so the
+  // rows don't render for every move, and kept in one change once it's let go of.
+  const dragWidths = useRef<{ [columnId: string]: number }>(undefined);
 
   const renderItem = (index: number) => {
     const item = items[index];
@@ -356,11 +438,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           "--nxm-table-sticky-reveal": revealWidth,
           "--nxm-table-toolbar-height": toolbarHeight ? `${toolbarHeight}px` : undefined,
-          gridTemplateColumns: [
-            "var(--nxm-table-gutter-start)",
-            ...columns.map((column) => column.width ?? DEFAULT_COLUMN_WIDTH),
-            "var(--nxm-table-gutter)",
-          ].join(" "),
+          gridTemplateColumns: savedTemplate,
         } as CSSProperties
       }
       onBlur={virtual.onBlur}
@@ -383,6 +461,42 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         sort={sort}
         toolbar={toolbar}
         toolbarRef={toolbarRef}
+        onColumnDrag={(columnId, width) => {
+          const element = tableRef.current;
+          if (width === undefined) {
+            dragWidths.current = undefined;
+            if (element) {
+              element.style.gridTemplateColumns = savedTemplate;
+            }
+            return;
+          }
+
+          dragWidths.current = {
+            ...(dragWidths.current ?? sharedWidths(columnId)),
+            [columnId]: width,
+          };
+          if (element) {
+            element.style.gridTemplateColumns = template({
+              ...columnWidths,
+              ...dragWidths.current,
+            });
+          }
+        }}
+        onColumnResize={
+          onColumnWidthsChange &&
+          ((columnId, width) => {
+            const column = columns.find(({ id }) => id === columnId);
+            if (!column) {
+              return;
+            }
+            if (width === undefined) {
+              onColumnWidthsChange({ [columnId]: undefined });
+              return;
+            }
+            const { [columnId]: _dragged, ...held } = dragWidths.current ?? sharedWidths(columnId);
+            onColumnWidthsChange({ ...held, [columnId]: keptWidth(column, width) });
+          })
+        }
         onSort={toggleSort}
       />
 

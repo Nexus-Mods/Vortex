@@ -8,7 +8,10 @@
         overflow: hidden;
         align-items: center;
         justify-content: center;
-        background-color: var(--color-surface-translucent-low);
+
+        &.nxm-image-styled {
+            background-color: var(--color-surface-translucent-low);
+        }
 
         &.nxm-image-avatar {
             aspect-ratio: var(--aspect-avatar);

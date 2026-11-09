@@ -30,7 +30,9 @@ interface IModVersionProps {
 
 /** A version and its variant, as the legacy table named each option; an empty variant is none. */
 const versionLabel = (mod: IMod, t: TFunction) =>
-  `${mod.attributes?.version ?? ""} (${mod.attributes?.variant || t("default")})`;
+  `${mod.attributes?.version ?? ""} (${
+    mod.attributes?.variant || t("modsTable::version::defaultVariant")
+  })`;
 
 /** What the cell shows, as text: the version, with its variant while there's a choice. */
 export const modVersionText = (mod: IMod, alternatives: IMod[] | undefined, t: TFunction) =>
@@ -38,12 +40,30 @@ export const modVersionText = (mod: IMod, alternatives: IMod[] | undefined, t: T
     ? versionLabel(mod, t)
     : (mod.attributes?.version ?? "");
 
+/** The groups the Version column puts rows in, updates first; ids, not names. */
+export const MOD_VERSION_GROUPS = ["update-available", "up-to-date"] as const;
+
+type ModVersionGroup = (typeof MOD_VERSION_GROUPS)[number];
+
+/** Each group's name, by its key; one per group, so a group added without one won't build. */
+const MOD_VERSION_GROUP_NAMES: Record<ModVersionGroup, string> = {
+  "update-available": "modsTable::groups::updateAvailable",
+  "up-to-date": "modsTable::groups::upToDate",
+};
+
+const isModVersionGroup = (value: string): value is ModVersionGroup =>
+  (MOD_VERSION_GROUPS as readonly string[]).includes(value);
+
 /**
- * The group a row falls in by version, as the classic table named them: by whether its cell
- * offers an update, a collection's by its revision.
+ * The group a row falls in by version, as the classic table grouped them: by whether its
+ * cell offers an update, a collection's by its revision.
  */
-export const modVersionGroup = (mod: IMod, t: TFunction) =>
-  modHasUpdate(mod) ? t("Update available") : t("Up-to-date");
+export const modVersionGroup = (mod: IMod): ModVersionGroup =>
+  modHasUpdate(mod) ? "update-available" : "up-to-date";
+
+/** The name a Version group shows; a value that isn't one of them, as it is. */
+export const modVersionGroupName = (group: string, t: TFunction): string =>
+  isModVersionGroup(group) ? t(MOD_VERSION_GROUP_NAMES[group]) : group;
 
 /**
  * A mod's version and what it says about updating, or a collection's revision with its
@@ -90,7 +110,7 @@ const ModVersionPicker = ({
   onSelect,
   onRemove,
 }: IModVersionProps & { alternatives: IMod[] }) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const label = versionLabel(mod, t);
 
   // One of a choice each, the one in use checked; each removable, the one in use too.
@@ -103,7 +123,7 @@ const ModVersionPicker = ({
         onRemove === undefined
           ? undefined
           : {
-              label: t("Remove version"),
+              label: t("modsTable::version::removeVersion"),
               icon: "do_not_disturb_on",
               onClick: () => onRemove(alternative.id),
             },
@@ -120,7 +140,7 @@ const ModVersionPicker = ({
               <div className="nxm-tooltip-content space-y-0.5">
                 <p>{label}</p>
 
-                <p className="text-neutral-subdued">{t("Switch version or variant")}</p>
+                <p className="text-neutral-subdued">{t("modsTable::version::switchVersion")}</p>
               </div>
             }
             disabled={open}
@@ -130,6 +150,7 @@ const ModVersionPicker = ({
               aria-haspopup="menu"
               brand="neutral"
               className="min-w-0 flex-1 justify-between px-1 [&>span]:truncate"
+              data-testid="mod-version-picker"
               rightIcon="keyboard_arrow_down"
               size="sm"
             >
@@ -142,7 +163,11 @@ const ModVersionPicker = ({
             className="nxm-popover-panel-dropdown"
           >
             {({ close }) => (
-              <PopoverMenu actions={[options]} label={t("Versions")} onSelect={close} />
+              <PopoverMenu
+                actions={[options]}
+                label={t("modsTable::version::versions")}
+                onSelect={close}
+              />
             )}
           </PopoverPanel>
         </>

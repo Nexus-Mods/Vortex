@@ -2,6 +2,7 @@ import type { UpdaterSnapshot } from "@vortex/shared/ipc";
 import * as reduxAct from "redux-act";
 
 import safeCreateAction from "../../actions/safeCreateAction";
+import type { IWhatsNew } from "./reducers";
 
 /**
  * changes the 'channel' from which to receive Vortex updates
@@ -18,3 +19,9 @@ export const setUpdaterSnapshot = safeCreateAction(
   "SET_UPDATER_SNAPSHOT",
   (snapshot: UpdaterSnapshot) => snapshot,
 );
+
+/**
+ * the notes the What's New dialog shows. `action` is the update's button, when there is an update
+ * to act on: "download" it, or "restart" to install one already staged.
+ */
+export const setWhatsNew = safeCreateAction("SET_WHATS_NEW", (whatsNew: IWhatsNew) => whatsNew);

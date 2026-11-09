@@ -1,14 +1,20 @@
+import { type GameDomain, GameId, VortexGameId } from "@vortex/shared";
+
 import { knownGames } from "@/extensions/gamemode_management/selectors";
 import renderModName from "@/extensions/mod_management/util/modName";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
-import { nexusGames } from "@/extensions/nexus_integration/util";
+import { numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
 import { convertGameIdReverse } from "@/extensions/nexus_integration/util/convertGameId";
+import { downloadAndInstallNexusFile } from "@/extensions/nexus_integration/util/download_and_install/downloadAndInstall";
+import {
+  nexusFilePageUrl,
+  nexusModPageUrl,
+} from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import { decodeUID } from "@/extensions/nexus_integration/util/UIDs";
 import { setModsEnabled } from "@/extensions/profile_management/actions/profiles";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import opn from "@/util/opn";
 import { sanitizeCSSId } from "@/util/util";
 
 import { trackedInstall } from "../shared/installTracking";
@@ -27,17 +33,12 @@ interface INexusFileRef {
   modUID: string;
 }
 
-/** Nexus domain name (e.g. "stardewvalley") for a numeric game id, if known. */
-function nexusDomain(gameId: number): string | undefined {
-  return nexusGames().find((game) => game.id === gameId)?.domain_name;
-}
-
-/** The mod page URL for a ref, or undefined when the mod id or domain can't be resolved. */
-function modPageUrl(ref: INexusFileRef): string | undefined {
+/** A ref's mod on Nexus, or undefined when the mod id or domain can't be resolved. */
+function nexusMod(ref: INexusFileRef): { domain: GameDomain; modId: number } | undefined {
   // modUID is empty when the source data lacked a mod id; decode only when present.
   const mod = ref.modUID ? decodeUID(ref.modUID) : undefined;
-  const domain = mod ? nexusDomain(mod.gameId) : undefined;
-  return mod && domain ? `https://www.nexusmods.com/${domain}/mods/${mod.id}` : undefined;
+  const domain = mod ? numericGameIdToDomainName(GameId(mod.gameId)) : undefined;
+  return mod && domain ? { domain, modId: mod.id } : undefined;
 }
 
 /**
@@ -60,7 +61,7 @@ export async function downloadFileRequirement(
   const mod = decodeUID(candidate.modUID);
   const file = decodeUID(candidate.fileUID);
 
-  const domain = mod ? nexusDomain(mod.gameId) : undefined;
+  const domain = mod ? numericGameIdToDomainName(GameId(mod.gameId)) : undefined;
   if (!mod || !file || !domain) {
     log("warn", "cannot download file requirement: unresolved ids", {
       fileUID: candidate.fileUID,
@@ -71,7 +72,6 @@ export async function downloadFileRequirement(
 
   // The downloader keys downloads on Vortex's internal game id, not the Nexus domain.
   const internalGameId = convertGameIdReverse(knownGames(api.getState()), domain) || domain;
-  const nxmUrl = `nxm://${domain}/mods/${mod.id}/files/${file.id}`;
 
   try {
     await trackedInstall(
@@ -82,26 +82,13 @@ export async function downloadFileRequirement(
         mod_version: candidate.version,
       },
       async () => {
-        const dlId = await new Promise<string>((resolve, reject) =>
-          api.events.emit(
-            "start-download",
-            [nxmUrl],
-            { game: internalGameId, name: candidate.fileName, fileId: file.id, modId: mod.id },
-            undefined,
-            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-            undefined,
-            { allowInstall: false },
-          ),
-        );
-
-        const modId = await new Promise<string>((resolve, reject) =>
-          api.events.emit(
-            "start-install-download",
-            dlId,
-            { allowAutoEnable: true },
-            (err: Error | null, res: string) => (err ? reject(err) : resolve(res)),
-          ),
-        );
+        const modId = await downloadAndInstallNexusFile(api, {
+          gameDomain: domain,
+          gameId: VortexGameId(internalGameId),
+          modId: String(mod.id),
+          fileId: String(file.id),
+          name: candidate.fileName,
+        });
 
         await activateInstalledVersion(api, modId, enabledFile);
       },
@@ -245,26 +232,23 @@ export function switchActiveVersion(
 
 /** Open the mod's Nexus page for a candidate or installed file. */
 export function openModPage(_api: IExtensionApi, ref: INexusFileRef): void {
-  const url = modPageUrl(ref);
-  if (!url) {
+  const mod = nexusMod(ref);
+  if (!mod) {
     log("warn", "cannot open mod page: unresolved mod id or game", { fileUID: ref.fileUID });
     return;
   }
-  opn(url).catch(() => undefined);
+  window.api.shell.openUrl(nexusModPageUrl(mod.domain, mod.modId));
 }
 
 /** Open the file's page on the Nexus website (the specific file, not the mod). */
 export function openFilePage(_api: IExtensionApi, ref: INexusFileRef): void {
-  const base = modPageUrl(ref);
+  const mod = nexusMod(ref);
   const file = decodeUID(ref.fileUID);
-  if (!base || !file) {
+  if (!mod || !file) {
     log("warn", "cannot open file page: unresolved mod or file id", { fileUID: ref.fileUID });
     return;
   }
-  // `file_id` can reach hidden mods and archived files. An alternative form is
-  //   `${base}?tab=files&show_file=${file.id}`
-  // but `show_file` cannot open hidden mods or archived files (it could be updated to).
-  opn(`${base}?tab=files&file_id=${file.id}&nmm=1`).catch(() => undefined);
+  window.api.shell.openUrl(nexusFilePageUrl(mod.domain, mod.modId, file.id));
 }
 
 /**

@@ -123,6 +123,18 @@ describe("game manage analytics", () => {
     expect(h.events[0].properties.support_tier).toBeUndefined();
   });
 
+  it("includes the store the game was discovered in on app_game_unmanage", () => {
+    const h = harness({ skyrimse: { store: "gog" } });
+    emitGameUnmanaged(h.api, "skyrimse");
+    expect(h.events[0].properties.game_store).toBe("gog");
+  });
+
+  it("sends a null game_store on app_game_unmanage when the store is unknown", () => {
+    const h = harness();
+    emitGameUnmanaged(h.api, "skyrimse");
+    expect(h.events[0].properties.game_store).toBeNull();
+  });
+
   it("categorizes a Tier 0 game on app_game_unmanage", () => {
     const h = harness({}, undefined, { 1303: { domain: "emberville" } });
     vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1303));

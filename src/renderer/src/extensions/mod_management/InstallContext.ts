@@ -398,6 +398,13 @@ class InstallContext implements IInstallContext {
         ? type.options.name
         : "Mod";
 
+    // the Manual Installer reports the folder it used
+    const destination = mod?.attributes?.installDestination;
+    const message =
+      destination !== undefined
+        ? `${modName} (installed to ${destination === "" ? "the game folder" : destination})`
+        : modName;
+
     // Terminal install analytics are emitted from finishInstallCB (the exactly-once
     // hook with archiveId still in hand); this method only builds the user notification.
     switch (outcome) {
@@ -412,7 +419,7 @@ class InstallContext implements IInstallContext {
           return {
             id: `may-enable-${id}`,
             type: "success",
-            message: modName,
+            message,
             title: `${typeName} installed`,
             group: "mod-installed",
             actions: [
@@ -427,7 +434,7 @@ class InstallContext implements IInstallContext {
           };
         }
 
-        return InstallContext.batchInstalledToast(typeName, modName);
+        return InstallContext.batchInstalledToast(typeName, message);
       case "canceled":
         return {
           type: "info",

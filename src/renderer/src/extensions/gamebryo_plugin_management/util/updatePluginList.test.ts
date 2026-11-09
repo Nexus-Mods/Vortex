@@ -1,19 +1,26 @@
 import { rm, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { startActivity, stopActivity } from "../../../actions/session";
 import { makeFakePersistor, makeMod, makePlugin } from "../../../test-utils/builders";
 import { seedPluginDir, test, type IGamebryoFixtures } from "../../../test-utils/gamebryoTest";
 import { makeTempDir } from "../../../test-utils/tempDir";
 import type { ThunkStore } from "../../../types/IExtensionContext";
+import { recordErrorSpan } from "../../../util/errorHandling";
+import type * as ErrorHandling from "../../../util/errorHandling";
 import { setDeploymentNecessary } from "../../mod_management/actions/deployment";
 import type { IMod } from "../../mod_management/types/IMod";
 import { setPluginList } from "../actions/plugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { initGameSupport } from "./gameSupport";
 import { makeUpdatePluginList } from "./updatePluginList";
+
+vi.mock("../../../util/errorHandling", async (importOriginal) => ({
+  ...(await importOriginal<typeof ErrorHandling>()),
+  recordErrorSpan: vi.fn(),
+}));
 
 interface IScenario {
   // plugin files staged per mod (the mod id doubles as its staging folder name); null seeds the
@@ -187,6 +194,28 @@ describe("updatePluginList", () => {
 
     expect(harness.pluginList()).toEqual(previous);
     expect(persistor.setKnownPlugins).toHaveBeenCalledTimes(1);
+    expect(recordErrorSpan).toHaveBeenCalledWith(
+      "the game folder could not be read",
+      expect.any(Error),
+      expect.anything(),
+    );
+  });
+
+  // the persisted discovery outlives a removed game until discovery notices it is gone
+  test("records no failed read when the game itself is gone", async ({ makeGamebryo }) => {
+    const { harness, dataPath, scan } = await arrange(makeGamebryo, {
+      staged: { modX: ["One.esp"] },
+      deployed: ["Skyrim.esm"],
+    });
+    await scan();
+    const previous = harness.pluginList();
+    vi.mocked(recordErrorSpan).mockClear();
+    await rm(path.dirname(dataPath), { recursive: true });
+
+    await scan();
+
+    expect(harness.pluginList()).toEqual(previous);
+    expect(recordErrorSpan).not.toHaveBeenCalled();
   });
 
   test("wraps the scan in the update-plugin-list activity", async ({ makeGamebryo }) => {
