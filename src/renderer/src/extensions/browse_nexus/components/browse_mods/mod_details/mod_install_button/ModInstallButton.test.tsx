@@ -12,7 +12,7 @@ import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
-import type { ModInstallState } from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "../../../../util/mod_install_state/modInstallState";
 
 const mocks = vi.hoisted(() => {
   const state = {
@@ -397,6 +397,18 @@ describe("ModInstallButton", () => {
 
       await waitFor(() => expect(button()).toBeDisabled());
       expect(screen.queryByRole("button", { name: "Install" })).not.toBeInTheDocument();
+    });
+
+    it("keeps saying 1-click install while it finishes, once the mod counts as installed", async () => {
+      mocks.install.mockReturnValue(new Promise(() => undefined));
+      const { rerender } = renderButton(primaryFile);
+
+      await userEvent.click(button());
+      installed();
+      rerender();
+
+      await waitFor(() => expect(button()).toBeDisabled());
+      expect(button()).toHaveTextContent("1-click install");
     });
 
     it("installs a download that isn't installed, for free users too", async () => {

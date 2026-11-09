@@ -27,7 +27,7 @@ import { activeGameId } from "@/util/selectors";
 import { Content } from "@/util/util";
 
 import { useBrowseModsTracker } from "../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
-import type { ModInstallState } from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "../../../../util/mod_install_state/modInstallState";
 import { oneClickInstallKey } from "../../../../util/one_click_install/oneClickInstall";
 
 /** Error kinds that mean the download was cancelled, which isn't reported. */
@@ -49,6 +49,31 @@ const unavailableReason = (
 
   return undefined;
 };
+
+/**
+ * What 1-click and its Premium upsell say: worded for an update when the user has the mod with one,
+ * and otherwise for installing it. The upsell's Premium button keeps its own label for an install.
+ */
+const oneClickText = (t: TFunction, isUpdate: boolean) =>
+  isUpdate
+    ? {
+        button: t("1-click update"),
+        title: t("Skip the website and update instantly."),
+        description: t(
+          "1-click in app updates are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
+        ),
+        fallbackLabel: t("Update via mod page (free)"),
+        unlockLabel: t("Unlock 1-click updates"),
+      }
+    : {
+        button: t("1-click install"),
+        title: t("Skip the website and install instantly."),
+        description: t(
+          "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
+        ),
+        fallbackLabel: t("Install via mod page (free)"),
+        unlockLabel: undefined,
+      };
 
 /** Whether the user has mods installed once they're downloaded, as their settings say. */
 const installsWhenDownloaded = (state: IState) => state.settings.automation.install;
@@ -90,8 +115,9 @@ export const ModInstallButton = ({
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
   const domain = GameDomain(mod.game.domain_name);
   const action = shouldInstall ? "install" : "download";
-  const upsellAction = installState.kind === "installed" ? "update" : action;
-  const isUpdate = upsellAction === "update";
+  const hasUpdate = installState.kind === "installed" && !!installState.update;
+  const upsellAction = hasUpdate ? "update" : action;
+  const { button: oneClickLabel, ...upsellText } = oneClickText(t, hasUpdate);
 
   const install = useMutation({
     mutationKey: installKey,
@@ -171,7 +197,7 @@ export const ModInstallButton = ({
           setIsUpsellOpen(true);
         }}
       >
-        {isUpdate ? t("1-click update") : t("1-click install")}
+        {oneClickLabel}
       </Button>
     </Tooltip>
   );
@@ -250,28 +276,11 @@ export const ModInstallButton = ({
       {control()}
 
       <PremiumUpsellModal
+        {...upsellText}
         api={api}
         content={Content.BrowseModsAd}
-        description={
-          isUpdate
-            ? t(
-                "1-click in app updates are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
-              )
-            : t(
-                "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
-              )
-        }
         fallbackIcon="open_in_new"
-        fallbackLabel={
-          isUpdate ? t("Update via mod page (free)") : t("Install via mod page (free)")
-        }
         isOpen={isUpsellOpen}
-        unlockLabel={isUpdate ? t("Unlock 1-click updates") : undefined}
-        title={
-          isUpdate
-            ? t("Skip the website and update instantly.")
-            : t("Skip the website and install instantly.")
-        }
         onClose={() => setIsUpsellOpen(false)}
         onDismissed={() =>
           tracker.trackPremiumModalDismissed({ mod_uid: mod.id, action: upsellAction })

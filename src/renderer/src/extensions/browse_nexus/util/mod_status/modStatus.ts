@@ -3,7 +3,7 @@ import type { TFunction } from "i18next";
 import type { SymbolName } from "@/ui/components/icon/Icon";
 import type { IPillBrand } from "@/ui/components/pill/Pill";
 
-import type { ModInstallState } from "../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "../mod_install_state/modInstallState";
 
 /** What Browse says the user has of a mod, the most pressing first. */
 export type ModStatus = "update" | "installed" | "downloaded";

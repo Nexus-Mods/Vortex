@@ -36,17 +36,20 @@ interface IModCardProps {
  * in a list narrower than `@md`, the text drops below it instead, as beside it the text would be
  * too narrow to read. The footer wraps rather than cutting its stats off. Hovering a stat says
  * what it is: its downloads and endorsements in full, and that its date is when it was last
- * updated, with the exact time.
+ * updated, with the exact time. A mod whose date can't be read shows none.
  */
 export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) => {
   const { t } = useTranslation();
-  const updated = useRelativeTime(Date.parse(mod.updated_at), t);
+  const updatedTime = Date.parse(mod.updated_at);
+  const isDated = !Number.isNaN(updatedTime);
+  const updated = useRelativeTime(isDated ? updatedTime : undefined, t);
   const { status } = useModStatus(mod);
   const language = useSelector((state: IState) => state.settings.interface.language);
-  const updatedAt = new Intl.DateTimeFormat(language, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(Date.parse(mod.updated_at));
+  const updatedAt =
+    isDated &&
+    new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(
+      updatedTime,
+    );
 
   return (
     <button
@@ -128,9 +131,11 @@ export const ModCard = ({ mod, isActive, tabIndex, onSelect }: IModCardProps) =>
               </span>
             </Tooltip>
 
-            <Tooltip content={t("Updated {{date}}", { date: updatedAt })}>
-              <span>{updated}</span>
-            </Tooltip>
+            {isDated && (
+              <Tooltip content={t("Updated {{date}}", { date: updatedAt })}>
+                <span>{updated}</span>
+              </Tooltip>
+            )}
 
             {mod.adult && <span>{t("Adult")}</span>}
           </span>

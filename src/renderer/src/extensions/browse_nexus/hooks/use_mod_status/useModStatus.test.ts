@@ -3,10 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 
-import type {
-  INexusModRef,
-  ModInstallState,
-} from "../use_mod_install_state/useModInstallState.hook";
+import type { INexusModRef, ModInstallState } from "../../util/mod_install_state/modInstallState";
 import { useModStatus } from "./useModStatus.hook";
 
 const mocks = vi.hoisted(() => ({

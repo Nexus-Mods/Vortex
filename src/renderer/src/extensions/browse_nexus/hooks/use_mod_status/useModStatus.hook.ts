@@ -3,12 +3,10 @@ import { GameDomain } from "@vortex/shared";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 
+import type { ModInstallState } from "../../util/mod_install_state/modInstallState";
 import { type ModStatus, modStatus } from "../../util/mod_status/modStatus";
 import { oneClickInstallKey } from "../../util/one_click_install/oneClickInstall";
-import {
-  type ModInstallState,
-  useModInstallState,
-} from "../use_mod_install_state/useModInstallState.hook";
+import { useModInstallState } from "../use_mod_install_state/useModInstallState.hook";
 
 /** What the user has of a mod, and the status Browse shows for it. */
 export interface IModStatusResult {

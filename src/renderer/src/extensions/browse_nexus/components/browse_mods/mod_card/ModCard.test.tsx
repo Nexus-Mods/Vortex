@@ -33,8 +33,10 @@ const mod = (adult: boolean) =>
     adult,
   }) as unknown as ModSummary;
 
-const renderCard = (adult: boolean) =>
-  render(<ModCard isActive={false} mod={mod(adult)} tabIndex={0} onSelect={vi.fn()} />);
+const renderCard = (adult: boolean, change: Partial<ModSummary> = {}) =>
+  render(
+    <ModCard isActive={false} mod={{ ...mod(adult), ...change }} tabIndex={0} onSelect={vi.fn()} />,
+  );
 
 describe("ModCard", () => {
   afterEach(() => {
@@ -82,6 +84,13 @@ describe("ModCard", () => {
     await userEvent.hover(stat!);
 
     expect(await screen.findByText(tooltip)).toBeInTheDocument();
+  });
+
+  it("shows no date for a mod whose date can't be read, rather than failing", () => {
+    renderCard(false, { updated_at: "not a date" });
+
+    expect(screen.getByText("SkyUI")).toBeInTheDocument();
+    expect(screen.queryByText(/ago$/)).toBeNull();
   });
 
   it("says its date is when the mod was updated, on hover", async () => {
