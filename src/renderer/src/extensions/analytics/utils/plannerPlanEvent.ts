@@ -5,6 +5,7 @@ import { FlagService } from "../../../FlagService";
 import { log } from "../../../logging";
 import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
@@ -36,6 +37,18 @@ export function plannerPlanPayload(
   };
 }
 
+/**
+ * Whether planner telemetry can be sent: consent, a login and the planner telemetry flag on. The
+ * flag is read only with consent and a login, since each read reports an evaluation.
+ */
+export function isPlannerTelemetryOn(state: IState): boolean {
+  return (
+    isTelemetryEnabled(state) &&
+    isLoggedIn(state) &&
+    FlagService.instance?.getFlag("vortex-planner-telemetry") !== undefined
+  );
+}
+
 // the games reported per session; one api serves one session
 const reportedGames = new WeakMap<IExtensionApi, Set<VortexGameId>>();
 
@@ -61,9 +74,7 @@ export async function emitPlannerPlanEvent(
     if (nexusGameId === null) {
       return;
     }
-    // each flag read reports an evaluation
-    const sends =
-      consented && FlagService.instance?.getFlag("vortex-planner-telemetry") !== undefined;
+    const sends = consented && isPlannerTelemetryOn(state);
     if (!sends && !devBuild) {
       return;
     }
