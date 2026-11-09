@@ -16,6 +16,7 @@ import MoreTag from "./MoreTag";
 import SafeImageTag from "./SafeImageTag";
 import SafeLinkTag from "./SafeLinkTag";
 import SafeMoreTag from "./SafeMoreTag";
+import SAFE_SIMPLE_TAGS from "./SafeSimpleTag";
 import SafeSizeTag from "./SafeSizeTag";
 import SafeSpoilerTag from "./SafeSpoilerTag";
 import SafeStyleTag from "./SafeStyleTag";
@@ -74,6 +75,7 @@ const createFullParser = (safe: boolean) => {
     parser.registerTag("img", SafeImageTag);
     parser.registerTag("compare", CompareTag);
     ["video", "twitter", "soundcloud"].forEach((tag) => parser.registerTag(tag, EmbedLinkTag));
+    Object.entries(SAFE_SIMPLE_TAGS).forEach(([name, tag]) => parser.registerTag(name, tag));
   }
 
   return parser;

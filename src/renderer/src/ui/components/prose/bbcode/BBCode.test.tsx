@@ -116,6 +116,22 @@ describe("BBCode", () => {
         Array.from(document.querySelectorAll("img"), (img) => img.getAttribute("src")),
       ).toEqual(["https://staticdelivery.nexusmods.com/mods/1704/images/a.png"]);
     });
+
+    it("draws a table without the background its parameters ask for", () => {
+      const { container } = render(
+        <BBCode bbcode="[table background=https://i.imgur.com/a.png][tr][td background=https://i.imgur.com/b.png]Cell[/td][/tr][/table]" />,
+      );
+
+      expect(screen.getByText("Cell").tagName).toBe("TD");
+      expect(container.querySelector("[background]")).toBeNull();
+    });
+  });
+
+  it("draws a plain tag given a style, without it", () => {
+    render(<BBCode bbcode="[b style=color:red]bold[/b]" />);
+
+    expect(screen.getByText("bold").tagName).toBe("STRONG");
+    expect(screen.getByText("bold")).not.toHaveAttribute("style");
   });
 
   describe("embeds", () => {
