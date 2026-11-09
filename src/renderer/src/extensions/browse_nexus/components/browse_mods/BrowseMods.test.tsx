@@ -64,6 +64,7 @@ vi.mock("./mod_list/ModList", () => ({
     activeModId,
     listRef,
     isError,
+    isLoadMoreError,
     onRetry,
     onSelectMod,
   }: {
@@ -71,11 +72,12 @@ vi.mock("./mod_list/ModList", () => ({
     activeModId: string;
     listRef: React.RefObject<HTMLDivElement>;
     isError: boolean;
+    isLoadMoreError: boolean;
     onRetry: () => void;
     onSelectMod: (id: string, input: string) => void;
   }) => (
     <div ref={listRef}>
-      {isError && <button onClick={onRetry}>Retry</button>}
+      {(isError || isLoadMoreError) && <button onClick={onRetry}>Retry</button>}
       {mods.map((mod) => (
         <button
           data-mod-card
@@ -122,7 +124,7 @@ const search = (mods: ModSummary[], loading = false, overrides: Partial<IModSear
     isEdited: false,
     sort: SORT,
     filters: FILTERS,
-    currentPage: 1,
+    pagesLoaded: 0,
     ...overrides,
   }) as unknown as IModSearch;
 
@@ -170,7 +172,7 @@ describe("BrowseMods", () => {
     expect(mounts).toEqual(["1", "2"]);
   });
 
-  it("keeps the picked mod through a change of page", async () => {
+  it("keeps the picked mod through another search", async () => {
     const { rerender } = renderComponent(search([mod("1"), mod("2")]));
     await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
 
@@ -181,7 +183,7 @@ describe("BrowseMods", () => {
     expect(screen.queryByTestId("details-skeleton")).not.toBeInTheDocument();
   });
 
-  it("keeps the first mod through a change of page when none's been picked", () => {
+  it("keeps the first mod through another search when none's been picked", () => {
     const { rerender } = renderComponent(search([mod("1"), mod("2")]));
 
     rerender(search([mod("3"), mod("4")]));
@@ -235,16 +237,15 @@ describe("BrowseMods", () => {
     expect(screen.getByRole("button", { name: "Mod 2" })).toHaveFocus();
   });
 
-  it("counts picking a mod, with its place across the pages", async () => {
-    const { propertiesOf } = renderComponent(
-      search([mod("1"), mod("2")], false, { currentPage: 2 }),
-    );
+  it("counts picking a mod, with its place across the pages loaded", async () => {
+    const loaded = Array.from({ length: 22 }, (_, i) => mod(`${i + 1}`));
+    const { propertiesOf } = renderComponent(search(loaded, false, { pagesLoaded: 2 }));
 
-    await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
-    await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mod 22" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mod 22" }));
 
     expect(propertiesOf("browse_mods_mod_selected")).toEqual([
-      { mod_uid: "2", view: "trending", position: 22, input: "pointer" },
+      { mod_uid: "22", view: "trending", position: 22, input: "pointer" },
     ]);
   });
 
@@ -287,8 +288,21 @@ describe("BrowseMods", () => {
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
 
     expect(failed.retry).toHaveBeenCalled();
-    expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, page: 1 }]);
+    expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, pages_loaded: 0 }]);
     expect(propertiesOf("browse_mods_no_results")).toEqual([]);
+  });
+
+  it("counts retrying a later page that failed, with how many pages had loaded", async () => {
+    const failed = search([mod("1"), mod("2")], false, {
+      loadMoreError: new Error("offline"),
+      pagesLoaded: 2,
+    });
+    const { propertiesOf } = renderComponent(failed);
+
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(failed.retry).toHaveBeenCalled();
+    expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, pages_loaded: 2 }]);
   });
 
   it("counts an empty search only once the user can see it", () => {

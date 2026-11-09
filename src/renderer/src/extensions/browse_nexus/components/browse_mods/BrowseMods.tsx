@@ -16,7 +16,7 @@ import {
 import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useBrowseModsViews } from "../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
 import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
-import { type IModSearch, MODS_PER_PAGE } from "../../hooks/use_mod_search/useModSearch.hook";
+import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { filterEventProps } from "../../util/mod_filters/modFilterList";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
@@ -57,7 +57,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     [],
   );
   const { viewPicker, editedViewStrip } = useBrowseModsViews(search, panelRefs);
-  const { trackedView, sort, filters, currentPage, error } = search;
+  const { trackedView, sort, filters, error } = search;
   const isEmpty = !search.loading && !error && !mods.length;
 
   /**
@@ -93,7 +93,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       tracker.trackModSelected({
         mod_uid: id,
         view: trackedView,
-        position: (currentPage - 1) * MODS_PER_PAGE + index + 1,
+        position: index + 1,
         input,
       });
     }
@@ -157,17 +157,19 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
           start={
             <ModList
               activeModId={activeMod?.id}
-              currentPage={search.currentPage}
               detailsRef={detailsRef}
+              hasMore={search.hasMore}
               isError={!!error}
               isLoading={search.loading}
+              isLoadingMore={search.isLoadingMore}
+              isLoadMoreError={!!search.loadMoreError}
               listRef={listRef}
               mods={mods}
-              totalCount={search.totalCount}
-              onPageChange={search.setCurrentPage}
+              searchKey={search.searchKey}
+              onLoadMore={search.loadMore}
               onRetry={() => {
                 search.retry();
-                tracker.trackRetryClicked({ ...searched, page: currentPage });
+                tracker.trackRetryClicked({ ...searched, pages_loaded: search.pagesLoaded });
               }}
               onSelectMod={selectMod}
             />
