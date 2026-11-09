@@ -48,7 +48,7 @@ class Description extends React.Component<IProps, IComponentState> {
 
     const popover = (
       <Popover id="popover-mod-description">
-        <BBCode bbcode={long || `<${t("No description")}>`} size="sm" />
+        <BBCode bbcode={long || `<${t("No description")}>`} className="mb-2" size="sm" />
         {truthy(source) ? (
           <a
             onClick={nop}
