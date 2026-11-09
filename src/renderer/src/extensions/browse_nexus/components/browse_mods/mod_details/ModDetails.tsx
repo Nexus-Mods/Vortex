@@ -51,7 +51,7 @@ const OWNS_LEFT = 'input, textarea, select, [contenteditable="true"], [role="tab
 /**
  * The picked mod's details: gallery, stats, author, what the user has of it, pills and description. Shows the
  * search's result at once, and the tags and description once the mod's own query has them, with
- * 1-click install of its primary file beside the mod page link. Counts opening the mod page, and
+ * 1-click install of its main file beside the mod page link. Counts opening the mod page, and
  * the gallery's picks and paging.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
@@ -141,8 +141,8 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                 api={api}
                 installState={installState}
                 isError={hasFailed}
+                mainFile={details.data?.main_file_version}
                 mod={mod}
-                primaryFile={details.data?.primary_file_version}
               />
             </div>
           </div>
