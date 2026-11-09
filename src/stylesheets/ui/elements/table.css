@@ -397,6 +397,79 @@
         color: var(--color-translucent-strong);
     }
 
+    /* A resizable column's header holds its handle, which sits over the gap after it. As tall as
+       the header row, so every handle is, whatever the header holds. */
+    .nxm-table-cell[data-resizable] {
+        position: relative;
+        align-self: stretch;
+
+        /* Lit while its handle is hovered, focused or dragged, so it's clear which column the
+           handle resizes; reaching into the gap before it, as a sort button's fill does. */
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            right: 0;
+            left: calc(var(--spacing) * -2);
+            z-index: -1;
+            border-radius: var(--radius-sm);
+            background-color: var(--color-surface-translucent-low);
+            opacity: 0;
+            pointer-events: none;
+            transition-property: opacity;
+            transition-timing-function: var(--default-transition-timing-function);
+            transition-duration: var(--default-transition-duration);
+        }
+
+        &:has(> .nxm-table-resize-handle:is(:hover, :focus-visible, [data-dragging]))::before {
+            opacity: 1;
+        }
+    }
+
+    /* A strip wide enough to grab, drawing a line down its middle: faint while its header is
+       hovered, full while the handle itself is hovered, focused or dragged. */
+    .nxm-table-resize-handle {
+        position: absolute;
+        top: 0;
+        right: calc(var(--nxm-table-gap) / -2);
+        bottom: 0;
+        z-index: 1;
+        width: calc(var(--spacing) * 2);
+        border-radius: var(--radius-sm);
+        cursor: col-resize;
+        touch-action: none;
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset-block: calc(var(--spacing) * 1);
+            left: 50%;
+            width: 1px;
+            translate: -50%;
+            background-color: var(--color-translucent-weak);
+            opacity: 0;
+            transition-property: opacity, background-color;
+            transition-timing-function: var(--default-transition-timing-function);
+            transition-duration: var(--default-transition-duration);
+        }
+
+        .nxm-table-cell[data-resizable]:hover > &::after {
+            opacity: 1;
+        }
+
+        &:hover::after,
+        &:focus-visible::after,
+        &[data-dragging]::after {
+            background-color: var(--color-translucent-strong);
+            opacity: 1;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-subdued);
+            outline-offset: 2px;
+        }
+    }
+
     .nxm-table-cell {
         display: flex;
         align-items: center;
@@ -411,6 +484,8 @@
     /* Pinned at the right of what's in view, solid in its row's tint so the columns pass
        under it, covering the gutter to its right and fading them out to its left. */
     .nxm-table-cell[data-sticky="end"] {
+        /* The last column's track, past any gap the table puts before it. */
+        grid-column-end: -2;
         position: sticky;
         right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap));
         z-index: 2;

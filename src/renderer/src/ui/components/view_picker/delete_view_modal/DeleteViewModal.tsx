@@ -5,30 +5,33 @@ import { Button } from "@/ui/components/button/Button";
 import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 
-interface IDeleteModsTableViewModalProps {
+interface IDeleteViewModalProps {
   /** The name of the view being deleted; unset, it isn't showing. */
   name?: string;
+  /** What deleting it removes, and what it leaves, said in full with its name. */
+  description: string;
   /** Deletes it. */
   onDelete: () => void;
   /** Keeps it. */
   onClose: () => void;
 }
 
-/** Asks before deleting a view of the user's own, which can't be brought back. */
-export const DeleteModsTableViewModal = ({
+/**
+ * Asks before deleting a view of the user's own, for `ViewPicker`'s views, which can't be brought
+ * back. The page says what deleting it removes.
+ */
+export const DeleteViewModal = ({
   name,
+  description,
   onDelete,
   onClose,
-}: IDeleteModsTableViewModalProps) => {
+}: IDeleteViewModalProps) => {
   const { t } = useTranslation(["common"]);
 
   return (
     <Modal isOpen={name !== undefined} size="sm" title={t("Delete view")} onClose={onClose}>
       <Typography appearance="subdued" typographyType="body-sm">
-        {t(
-          'Are you sure you want to delete "{{name}}"? This won\'t delete any mods, but the view and its customisations will be permanently removed.',
-          { name },
-        )}
+        {description}
       </Typography>
 
       <div className="mt-4 flex gap-2">

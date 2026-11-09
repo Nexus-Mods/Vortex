@@ -106,6 +106,41 @@ describe("game launch analytics", () => {
     expect(exited?.properties.support_tier).toBe("Tier 0");
   });
 
+  it("carries the game store from the launch to its paired exit event", () => {
+    const h = harness();
+    h.base.setState((draft) => {
+      draft.settings.gameMode.discovered.skyrimse = { path: "C:/games/skyrimse", store: "xbox" };
+    });
+    // a direct exe launch still reports the store the game was installed from
+    const info = makeStarterInfo({ exePath: "C:/g/store.exe" });
+    emitGameLaunched(h.api, info);
+    const launched = h.events.find((e) => e.eventName === "app_game_launched");
+    expect(launched?.properties.game_store).toBe("xbox");
+
+    // captured at launch, so the paired exit reports it even if the discovery changed meanwhile
+    h.base.setState((draft) => {
+      delete draft.settings.gameMode.discovered.skyrimse;
+    });
+    emitExitsForStoppedTools(h.api, { [makeExeId(info.exePath)]: { started: 0 } }, {});
+
+    const exited = h.events.find((e) => e.eventName === "app_game_exited");
+    expect(exited?.properties.game_store).toBe("xbox");
+  });
+
+  it("sends a null game_store when the store is unknown", () => {
+    const h = harness();
+    const info = makeStarterInfo({ exePath: "C:/g/nostore.exe" });
+    emitGameLaunched(h.api, info);
+    emitExitsForStoppedTools(h.api, { [makeExeId(info.exePath)]: { started: 0 } }, {});
+
+    expect(h.events.find((e) => e.eventName === "app_game_launched")?.properties.game_store).toBe(
+      null,
+    );
+    expect(h.events.find((e) => e.eventName === "app_game_exited")?.properties.game_store).toBe(
+      null,
+    );
+  });
+
   it("reports an extension-backed launch as Tier 2", () => {
     const h = harness();
     h.base.setState((draft) => {

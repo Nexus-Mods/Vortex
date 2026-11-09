@@ -126,7 +126,7 @@ export const ModRowActions = memo(
     installLabel,
     modState,
   }: IModRowActionsProps) => {
-    const { t } = useTranslation(["common"]);
+    const { t } = useTranslation("mod_management");
     const tracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
     const busy = useRowBusy(modId, modState);
     const engaged = useTableRowEngaged();
@@ -141,9 +141,7 @@ export const ModRowActions = memo(
       }
     }, [engaged]);
 
-    const installDescription = t(
-      "Installs the mod into your game, where it can be enabled or disabled.",
-    );
+    const installDescription = t("modsTable::rowActions::installDescription");
 
     const toggle =
       onInstall === undefined && busy === undefined ? (
@@ -159,8 +157,20 @@ export const ModRowActions = memo(
         // it stands in for, from its start, so it lines up with theirs.
         <Tooltip
           {...(busy === undefined
-            ? { customContent: <TitledTooltip body={installDescription} title={t("Install")} /> }
-            : { content: busy === "installing" ? t("Installing…") : t("Uninstalling…") })}
+            ? {
+                customContent: (
+                  <TitledTooltip
+                    body={installDescription}
+                    title={t("modsTable::actions::install")}
+                  />
+                ),
+              }
+            : {
+                content:
+                  busy === "installing"
+                    ? t("modsTable::rowActions::installing")
+                    : t("modsTable::rowActions::uninstalling"),
+              })}
         >
           <span className="flex w-8 shrink-0">
             <Button

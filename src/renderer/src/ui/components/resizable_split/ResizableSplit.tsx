@@ -1,13 +1,6 @@
-import React, {
-  type CSSProperties,
-  type KeyboardEvent,
-  type PointerEvent,
-  type ReactNode,
-  useRef,
-  useState,
-} from "react";
+import React, { type CSSProperties, type ReactNode, useRef } from "react";
 
-import { hasModifierKey } from "@/ui/utils/hasModifierKey";
+import { useResizeHandle } from "@/ui/components/resize_handle/useResizeHandle.hook";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 /** How far Left or Right moves the split. */
@@ -38,9 +31,10 @@ interface IResizableSplitProps {
 }
 
 /**
- * Two panes side by side with a handle between them that resizes them, by dragging or with the
- * arrow keys, Home and End. Double-click or Enter evens it out. The caller keeps the split; a
- * drag hands it over once let go. Styled by the `nxm-resizable-split` classes.
+ * Two panes side by side with a handle between them that resizes them, as `useResizeHandle`
+ * does: by dragging or with the arrow keys, Home and End; double-click or Enter evens it out.
+ * The caller keeps the split; a drag hands it over once let go. Styled by the
+ * `nxm-resizable-split` classes.
  */
 export const ResizableSplit = ({
   start,
@@ -54,59 +48,21 @@ export const ResizableSplit = ({
   className,
 }: IResizableSplitProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragSplitRef = useRef<number>(undefined);
-  const [dragSplit, setDragSplit] = useState<number>();
-  const visibleSplit = dragSplit ?? split;
 
-  /** Keeps a split between the bounds, to the hundredth. */
-  const clamp = (value: number) => Math.round(Math.min(max, Math.max(min, value)) * 100) / 100;
-
-  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.currentTarget.focus();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragSplitRef.current = split;
-    setDragSplit(split);
-  };
-
-  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-
-    if (dragSplitRef.current === undefined || !rect?.width) {
-      return;
-    }
-
-    dragSplitRef.current = clamp((event.clientX - rect.left) / rect.width);
-    setDragSplit(dragSplitRef.current);
-  };
-
-  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    event.currentTarget.releasePointerCapture(event.pointerId);
-    const finalSplit = dragSplitRef.current;
-    dragSplitRef.current = undefined;
-    setDragSplit(undefined);
-
-    if (finalSplit !== undefined && finalSplit !== split) {
-      onSplitChange(finalSplit);
-    }
-  };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const next = {
-      ArrowLeft: split - STEP,
-      ArrowRight: split + STEP,
-      Home: min,
-      End: max,
-      Enter: EVEN,
-    }[event.key];
-
-    if (next === undefined || hasModifierKey(event)) {
-      return;
-    }
-
-    event.preventDefault();
-    onSplitChange(clamp(next));
-  };
+  const handle = useResizeHandle({
+    value: split,
+    min,
+    max,
+    step: STEP,
+    round: (value) => Math.round(value * 100) / 100,
+    dragTo: (clientX) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      return rect?.width ? (clientX - rect.left) / rect.width : undefined;
+    },
+    onChange: onSplitChange,
+    onReset: () => onSplitChange(EVEN),
+  });
+  const visibleSplit = handle.value;
 
   return (
     <div
@@ -124,15 +80,10 @@ export const ResizableSplit = ({
         aria-valuenow={Math.round(visibleSplit * 100)}
         aria-valuetext={valueText?.(Math.round(visibleSplit * 100))}
         className="nxm-resizable-split-handle"
-        data-dragging={dragSplit !== undefined || undefined}
+        data-dragging={handle.dragging || undefined}
         role="separator"
         tabIndex={0}
-        onDoubleClick={() => onSplitChange(EVEN)}
-        onKeyDown={onKeyDown}
-        onPointerCancel={onPointerUp}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
+        {...handle.handleProps}
       >
         <div className="nxm-resizable-split-rule" />
       </div>

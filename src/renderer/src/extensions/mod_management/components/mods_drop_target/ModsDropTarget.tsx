@@ -150,15 +150,11 @@ export const ModsDropTarget = ({ onDropFiles, children }: IModsDropTargetProps) 
             <div className="flex flex-col items-center gap-y-2 rounded-md border-2 border-dashed border-primary-moderate px-6 py-10 text-center">
               <Icon className="text-primary-moderate" name="move_to_inbox" size="2xl" />
 
-              <Typography typographyType="heading-xs">{t("Drop files to add mods")}</Typography>
+              <Typography typographyType="heading-xs">{t("modsDropTarget::title")}</Typography>
 
-              <Typography appearance="subdued">
-                {t("Archives (.zip, .rar, .7z) are added as mods to your list.")}
-              </Typography>
+              <Typography appearance="subdued">{t("modsDropTarget::archives")}</Typography>
 
-              <Typography appearance="subdued">
-                {t("Individual files and folders are packaged into mods before being added.")}
-              </Typography>
+              <Typography appearance="subdued">{t("modsDropTarget::files")}</Typography>
             </div>
           </div>
         </div>

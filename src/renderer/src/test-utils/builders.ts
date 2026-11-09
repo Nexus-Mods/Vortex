@@ -124,13 +124,14 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtensionReducer } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type {
   IExtensionApi,
   IExtensionContext,
   IRunOptions,
   IStateVerifier,
 } from "../types/IExtensionContext";
-import type { IRegisteredGame } from "../types/IGame";
+import type { IGame, IRegisteredGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
   HealthCheckCategory,
@@ -634,6 +635,40 @@ export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStore
   };
 }
 
+// A game extension as GameModeManager and the getGame() registry hold it.
+export function makeGame(overrides: Partial<IGame> = {}): IGame {
+  const id = overrides.id ?? "skyrimse";
+  return {
+    id,
+    name: id,
+    requiredFiles: [],
+    queryModPath: () => "mods",
+    executable: () => `${id}.exe`,
+    supportedTools: [],
+    ...overrides,
+  };
+}
+
+// A game as the registry holds it once registerGame has branded its id.
+export function makeRegisteredGame(overrides: Partial<IGame> = {}): IRegisteredGame {
+  const game = makeGame(overrides);
+  return { ...game, id: VortexGameId(game.id) };
+}
+
+// A tool as discovery reports it and settings.gameMode.discovered stores it.
+export function makeDiscoveredTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
+  return {
+    id: "toolId1",
+    name: "Tool",
+    executable: () => "tool.exe",
+    requiredFiles: [],
+    path: "",
+    hidden: false,
+    custom: false,
+    ...overrides,
+  };
+}
+
 export function makeLookup(overrides: Partial<IModLookupInfo> = {}): IModLookupInfo {
   return { fileMD5: "", fileSizeBytes: 0, fileName: "", version: "", ...overrides };
 }
@@ -932,16 +967,15 @@ export function registerHarnessGame(gameId: string): void {
     extensionStubs: [],
   });
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
-    gameReg.extensionGames.push({
-      id: VortexGameId(gameId),
-      name: gameId,
-      queryModPath: () => "mods",
-      // resolveGameVersion validates the game (executable) and tries
-      // game.getGameVersion first; provide both so tests don't fall through to
-      // exe-version probing of a nonexistent binary
-      executable: () => `${gameId}.exe`,
-      getGameVersion: () => Promise.resolve("1.0.0"),
-    } as unknown as IRegisteredGame);
+    gameReg.extensionGames.push(
+      makeRegisteredGame({
+        id: gameId,
+        // resolveGameVersion validates the game (executable) and tries game.getGameVersion
+        // first; answer it so tests don't fall through to exe-version probing of a nonexistent
+        // binary
+        getGameVersion: () => Promise.resolve("1.0.0"),
+      }),
+    );
   }
 }
 
@@ -1032,7 +1066,7 @@ export function makeApiHarness(
     initialState.settings.gameMode.discovered[gameId] ??= {
       path: `C:/games/${gameId}`,
       name: gameId,
-    } as IDiscoveryResult;
+    };
   }
 
   const dispatched: ITrackedAction[] = [];

@@ -15,6 +15,7 @@ export {
 } from "./client";
 export { V3ApiError } from "./errors";
 export type {
+  EventManualInstaller,
   EventStoreGameVersion,
   GogInstall,
   SteamDepot,

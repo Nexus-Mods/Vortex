@@ -22,12 +22,10 @@ interface IBrowsePageProps {
 }
 
 /**
- * Browsing a game's mods and collections, a tab each in the header. The open tab is session
- * state, so it's kept while the page is left and a link from elsewhere, such as Discover more
- * collections, can pick it. The mods are behind the `laz-vortex-browse-mods` flag, and say
- * they're coming soon while it's off, when the page opens on the collections instead. The tab
- * picked outlasts changing game; everything under it starts over. Counts the mods coming into
- * view, whether by opening the page on them or switching tab.
+ * A game's mods and collections, a tab each. The open tab is session state, so it survives leaving
+ * the page or changing game, and links from elsewhere can pick it. The mods are behind
+ * `laz-vortex-browse-mods`, and while it's off they say they're coming soon and the page opens on
+ * the collections. Counts the mods coming into view.
  */
 export const BrowsePage = ({ active, api }: IBrowsePageProps) => {
   const gameId = useSelector(activeGameId);
