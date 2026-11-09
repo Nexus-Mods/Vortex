@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -17,6 +17,7 @@ import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseMod
 import { useBrowseModsViews } from "../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
 import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
+import { useSettledPick } from "../../hooks/use_settled_pick/useSettledPick.hook";
 import { filterEventProps } from "../../util/mod_filters/modFilterList";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
@@ -34,18 +35,32 @@ interface IBrowseModsProps {
 
 /**
  * The active game's mods: the bar, the edited strip under it, and the list beside the details in
- * a resizable split. Counts picking a mod, a search seen to come back empty, and retrying one.
+ * a resizable split. The list's pick moves at once; the details show a mod clicked at once, and
+ * one picked from the keyboard once the keys settle, so a key held down through the list loads and
+ * counts only the mod it stops on. Counts the mod shown, a search seen to come back empty, and
+ * retrying one.
  */
+/**
+ * How long, in ms, the keys must rest on a mod before the details show it: briefly for one press,
+ * and longer while tapping through the list, for taps within half a second of each other.
+ */
+const KEYBOARD_SETTLE = { delayMs: 150, tappingDelayMs: 400, tappingWithinMs: 500 };
+
 export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   const { t } = useTranslation();
   const { mods } = search;
-  const [activeMod, setActiveMod] = useState<ModSummary>();
+  const {
+    picked: activeMod,
+    shown: shownMod,
+    pick,
+    show,
+  } = useSettledPick<ModSummary>(KEYBOARD_SETTLE);
 
   if (!activeMod && mods[0]) {
-    setActiveMod(mods[0]);
+    show(mods[0]);
   }
 
-  const { gallery, backdrop, setBackdrop } = useModGallery(api, activeMod);
+  const { gallery, backdrop, setBackdrop } = useModGallery(api, shownMod);
   const detailsRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [split, setSplit] = useSavedSplit("browse-mods");
@@ -80,23 +95,19 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     }
   }, [isEmpty, isShown, searched, tracker, search.viewId]);
 
-  /** Opens another mod's details. */
+  /** Picks another mod, opening its details and counting it: at once for a click, once keys settle. */
   const selectMod = (id: string, input: SelectionInput) => {
-    if (id === activeMod?.id) {
+    const index = mods.findIndex((mod) => mod.id === id);
+
+    if (id === activeMod?.id || index < 0) {
       return;
     }
 
-    const index = mods.findIndex((mod) => mod.id === id);
-    setActiveMod(mods[index]);
+    const choose = input === "pointer" ? show : pick;
 
-    if (index >= 0) {
-      tracker.trackModSelected({
-        mod_uid: id,
-        view: trackedView,
-        position: index + 1,
-        input,
-      });
-    }
+    choose(mods[index], () =>
+      tracker.trackModSelected({ mod_uid: id, view: trackedView, position: index + 1, input }),
+    );
   };
 
   /** Moves focus to the list's Tab stop, for the details' Left, as Right moves it into them. */
@@ -108,11 +119,11 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
    * level with the list's own empty state: its scroll area's 24px and the listing's 64px.
    */
   const details = () => {
-    if (!activeMod && search.loading) {
+    if (!shownMod && search.loading) {
       return <ModDetailsSkeleton />;
     }
 
-    if (!activeMod) {
+    if (!shownMod) {
       return (
         <NoResults
           className="self-start px-6 pt-22 pb-6"
@@ -127,8 +138,8 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       <ModDetails
         api={api}
         gallery={gallery}
-        key={activeMod.id}
-        mod={activeMod}
+        key={shownMod.id}
+        mod={shownMod}
         ref={detailsRef}
         onFocusList={focusList}
         onPick={setBackdrop}
@@ -145,7 +156,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       <div className="relative flex min-h-0 flex-1 overflow-hidden game-art-backdrop backdrop-dim-scope">
         <ModBackdrop
           blurredSrc={backdrop?.blurred_large_thumbnail_url}
-          isAdult={!!activeMod?.adult}
+          isAdult={!!shownMod?.adult}
           src={backdrop?.large_thumbnail_url}
         />
 

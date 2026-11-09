@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -84,6 +84,7 @@ vi.mock("./mod_list/ModList", () => ({
           key={mod.id}
           tabIndex={mod.id === activeModId ? 0 : -1}
           onClick={() => onSelectMod(mod.id, "pointer")}
+          onKeyDown={(event) => event.key === "Enter" && onSelectMod(mod.id, "keyboard")}
         >
           {mod.name}
         </button>
@@ -247,6 +248,49 @@ describe("BrowseMods", () => {
     expect(propertiesOf("browse_mods_mod_selected")).toEqual([
       { mod_uid: "22", view: "trending", position: 22, input: "pointer" },
     ]);
+  });
+
+  it("shows and counts a mod clicked at once", () => {
+    mounts.length = 0;
+    const { propertiesOf } = renderComponent(search([mod("1"), mod("2")]));
+
+    fireEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+
+    expect(screen.getByTestId("details")).toHaveTextContent("Mod 2");
+    expect(propertiesOf("browse_mods_mod_selected")).toEqual([
+      { mod_uid: "2", view: "trending", position: 2, input: "pointer" },
+    ]);
+  });
+
+  it("shows and counts only the mod that moving through the list from the keyboard stops on", () => {
+    vi.useFakeTimers();
+    mounts.length = 0;
+    const { propertiesOf } = renderComponent(search([mod("1"), mod("2"), mod("3"), mod("4")]));
+    const press = (name: string) =>
+      fireEvent.keyDown(screen.getByRole("button", { name }), { key: "Enter" });
+
+    try {
+      press("Mod 2");
+      press("Mod 3");
+      press("Mod 4");
+      fireEvent.keyUp(window, { key: "Enter" });
+      act(() => {
+        vi.advanceTimersByTime(149);
+      });
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 1");
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 4");
+      expect(mounts).toEqual(["1", "4"]);
+      expect(propertiesOf("browse_mods_mod_selected")).toEqual([
+        { mod_uid: "4", view: "trending", position: 4, input: "keyboard" },
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("counts a search that comes back empty once, not while it loads", () => {

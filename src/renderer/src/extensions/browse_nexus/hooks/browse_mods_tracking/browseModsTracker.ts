@@ -110,8 +110,8 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       track("browse_mods_filters_reset", props),
 
     // `position` counts from 1 across the pages loaded, so the 3rd mod of the second page of 20
-    // is 23. Moving
-    // through the list with the keys picks each mod it passes, each counted as `keyboard`.
+    // is 23. Sent as the mod's shown: at once for a click, and once the keys settle for the
+    // keyboard, so moving through the list with the keys counts only the mod it stops on.
     trackModSelected: (props: {
       mod_uid: string;
       view: TrackedView;
