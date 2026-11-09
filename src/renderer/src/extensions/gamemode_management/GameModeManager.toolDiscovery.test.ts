@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/logging", () => ({ log: vi.fn() }));
@@ -63,8 +62,8 @@ import { settingsReducer } from "./reducers/settings/settings";
 
 const discoveredTools: IDiscoveredTool[] = [];
 
-const GAME = VortexGameId("skyrimse");
-const OTHER_GAME = VortexGameId("fallout4");
+const GAME = "skyrimse";
+const OTHER_GAME = "fallout4";
 const SCRIPT_EXTENDER = "skse64";
 // a tool the game extension declares as its default launcher
 const SCRIPT_EXTENDER_TOOL: Partial<IDiscoveredTool> = {
@@ -74,7 +73,7 @@ const SCRIPT_EXTENDER_TOOL: Partial<IDiscoveredTool> = {
 
 interface ISetupOpts {
   // the profile that is active when discovery reports the tool
-  activeGameId?: VortexGameId;
+  activeGameId?: string;
   // a primary tool the user (or an earlier discovery) already settled on
   primaryTool?: string | null;
   // the tool record already in settings.gameMode.discovered, if any
