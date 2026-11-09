@@ -842,6 +842,15 @@ class LootInterface {
       log("info", "not starting LOOT for a game that is not discovered", { gameMode });
       return { game: gameMode, loot: undefined };
     }
+    // the persisted discovery outlives the game until discovery notices it is gone
+    const isDirectory = await stat(gamePath).then(
+      (stats) => stats.isDirectory(),
+      () => false,
+    );
+    if (!isDirectory) {
+      log("info", "not starting LOOT for a game whose folder is gone", { gameMode, gamePath });
+      return { game: gameMode, loot: undefined };
+    }
     const localPath = pluginPath(gameMode);
     try {
       await fs.ensureDirAsync(localPath);

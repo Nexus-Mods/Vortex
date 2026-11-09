@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import * as path from "path";
 
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
@@ -81,9 +81,18 @@ async function updatePluginListImpl(
         path: modPath,
         error: getErrorMessageOrDefault(err),
       });
-      recordErrorSpan("the game folder could not be read", unknownToError(err), {
-        [SpanAttribute.ErrorCode]: getErrorCode(err) ?? "",
-      });
+      // a game that is gone is discovery's to report, not a failed read
+      const gameGone =
+        getErrorCode(err) === "ENOENT" &&
+        (await stat(discovery.path).then(
+          () => false,
+          () => true,
+        ));
+      if (!gameGone) {
+        recordErrorSpan("the game folder could not be read", unknownToError(err), {
+          [SpanAttribute.ErrorCode]: getErrorCode(err) ?? "",
+        });
+      }
       return undefined;
     }
     return selectPluginFiles(modPath, fileNames, gameId);

@@ -1,6 +1,7 @@
 import { stat } from "node:fs/promises";
 import * as path from "node:path";
 
+import type { VortexGameId } from "@vortex/shared";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as fsExtra from "fs-extra";
@@ -123,18 +124,30 @@ async function updateManuallyConfigured(
   }
 }
 
+/**
+ * The store the user picked a game from. Priority only ranks installs when nothing was
+ * picked, so discovery for this game looks at this store's install and no other.
+ */
+export interface IStorePreference {
+  gameId: VortexGameId;
+  store: string;
+}
+
 async function queryByArgs(
   discoveredGames: { [id: string]: IDiscoveryResult },
   game: IGame,
+  store?: string,
 ): Promise<IGameStoreEntry | undefined> {
   const results = await storeLookup.find(getGameStoresSafe(), game.queryArgs);
   const filtered = (
     await Promise.all(
-      results.map<Promise<IGameStoreEntry | undefined>>((res) =>
-        stat(res.gamePath)
-          .then(() => res)
-          .catch(() => undefined),
-      ),
+      results
+        .filter((res) => store === undefined || res.gameStoreId === store)
+        .map<Promise<IGameStoreEntry | undefined>>((res) =>
+          stat(res.gamePath)
+            .then(() => res)
+            .catch(() => undefined),
+        ),
     )
   ).filter(Boolean);
 
@@ -152,7 +165,10 @@ async function queryByArgs(
   return filtered.sort((lhs, rhs) => prio(lhs) - prio(rhs))[0];
 }
 
-async function queryByCB(game: IGame): Promise<Partial<IGameStoreEntry> | undefined> {
+async function queryByCB(
+  game: IGame,
+  preferredStore?: string,
+): Promise<Partial<IGameStoreEntry> | undefined> {
   let gamePath: string | Bluebird<string | IGameStoreEntry>;
 
   try {
@@ -195,6 +211,18 @@ async function queryByCB(game: IGame): Promise<Partial<IGameStoreEntry> | undefi
   }
 
   if (!resolvedPath) return undefined;
+
+  // queryPath resolves one path, so another store's install can't be swapped in; one
+  // that's identifiably in a different store than the user picked is not theirs. A path
+  // no store claims can't be told apart, so it stays.
+  if (preferredStore !== undefined && store !== undefined && store !== preferredStore) {
+    log("info", "rejecting game discovery, install is in another store than the one picked", {
+      game: game.id,
+      store,
+      preferredStore,
+    });
+    return undefined;
+  }
 
   try {
     await stat(resolvedPath);
@@ -266,6 +294,7 @@ export async function quickDiscovery(
   onDiscoveredGame: DiscoveredCB,
   onDiscoveredTool: DiscoveredToolCB,
   signal?: AbortSignal,
+  preference?: IStorePreference,
 ): Promise<string[]> {
   const promises = knownGames.map(async (game) => {
     await quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool);
@@ -277,11 +306,14 @@ export async function quickDiscovery(
       return undefined;
     }
 
+    // only the game the user picked a store for is held to it, a scan of every game isn't
+    const preferredStore = preference?.gameId === game.id ? preference.store : undefined;
+
     log("debug", "discovering game", game.id);
 
     try {
       if (game.queryArgs) {
-        const result = await queryByArgs(discoveredGames, game);
+        const result = await queryByArgs(discoveredGames, game, preferredStore);
         if (!result) return undefined;
 
         return await handleDiscoveredGame(
@@ -293,7 +325,7 @@ export async function quickDiscovery(
           onDiscoveredTool,
         );
       } else if (game.queryPath !== undefined) {
-        const result = await queryByCB(game);
+        const result = await queryByCB(game, preferredStore);
         if (!result) return undefined;
 
         return await handleDiscoveredGame(
