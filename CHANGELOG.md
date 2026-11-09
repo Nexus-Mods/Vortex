@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0-beta.2] - 2026-11-09
+
+### Fixed
+
+- Legacy UI's window controls not clickable over the toolbar's drag region ([#24790](https://github.com/Nexus-Mods/Vortex/pull/24790))
+- Default launchers not selected after late discovery ([#24737](https://github.com/Nexus-Mods/Vortex/pull/24737))
+- Mods page not scrolling to a plugin's mod from its Mod link ([#24736](https://github.com/Nexus-Mods/Vortex/pull/24736))
+
 ## [2.11.0-beta.1] - 2026-11-04
 
 _First beta of the 2.11 release._
@@ -48,6 +56,13 @@ _First beta of the 2.11 release._
 - Stall at the end of a large collection install while its mod rules were updated ([#24567](https://github.com/Nexus-Mods/Vortex/pull/24567))
 - A file shared by two mod types deployed by both, overwriting the original game file ([#24503](https://github.com/Nexus-Mods/Vortex/pull/24503))
 - Dashboard free disk space hints not shown on Linux ([#24380](https://github.com/Nexus-Mods/Vortex/pull/24380))
+
+## [2.10.1] - 2026-11-05
+
+### Fixed
+
+- Unnecessary environment variables logged when reporting a tool that failed to spawn ([#24771](https://github.com/Nexus-Mods/Vortex/pull/24771))
+- Game store the user picked ignored in favour of priority-based discovery ([#24770](https://github.com/Nexus-Mods/Vortex/pull/24770))
 
 ## [2.10.0] - 2026-11-03
 
@@ -2694,7 +2709,9 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.11.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.2
 [2.11.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.1
+[2.10.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.1
 [2.10.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0
 [2.10.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.3
 [2.10.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.2
