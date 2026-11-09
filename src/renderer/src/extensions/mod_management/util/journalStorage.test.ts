@@ -8,9 +8,17 @@ import {
   openJournal,
   readJournal,
 } from "@nexusmods/mod-pipeline";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// the real disk, with rm open to a failure no file handle can cause on Windows
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof fs>();
+  const rm = vi.fn(actual.rm);
+  return { ...actual, default: { ...actual, rm }, rm };
+});
 
 import { makeTempDir } from "@/test-utils/tempDir";
+import { delayed } from "@/util/util";
 
 import { journalStorageAt } from "./journalStorage";
 
@@ -34,6 +42,17 @@ describe("journalStorageAt", () => {
     await storage.create(encode("one\n"));
 
     expect(await storage.create(encode("two\n"))).toBe(false);
+
+    expect(decode(await storage.read())).toBe("one\n");
+  });
+
+  it("creates the journal when its temporary file can't be cleaned up", async () => {
+    vi.mocked(fs.rm).mockRejectedValueOnce(
+      Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" }),
+    );
+    const storage = journalStorageAt(journalFile);
+
+    expect(await storage.create(encode("one\n"))).toBe(true);
 
     expect(decode(await storage.read())).toBe("one\n");
   });
@@ -89,6 +108,18 @@ describe("journalStorageAt", () => {
     expect(decode(await storage.read())).toBe("one\ntwo\nthree\n");
   });
 
+  it("replaces the journal once another process lets go of it", async () => {
+    const storage = journalStorageAt(journalFile);
+    await storage.write(encode("one\n"));
+    const scanner = await fs.open(journalFile, "r");
+    const released = delayed(150).then(() => scanner.close());
+
+    await storage.write(encode("two\n"));
+    await released;
+
+    expect(decode(await storage.read())).toBe("two\n");
+  });
+
   it("ignores a temporary file a kill left behind", async () => {
     await fs.mkdir(path.dirname(journalFile));
     await fs.writeFile(`${journalFile}.tmp`, "part of a jour");
@@ -121,7 +152,7 @@ describe("journalStorageAt", () => {
       { operation: { kind: OperationKind.Restore, destinationPath: "/game/a.dll" } },
       { operation: { kind: OperationKind.Restore, destinationPath: "/game/b.dll" } },
     ];
-    const killed = await createJournal(journalStorageAt(journalFile), entries);
+    const killed = await createJournal(journalStorageAt(journalFile), entries, "fixture-run");
     await killed.markDone(0);
     await killed.close();
     await fs.appendFile(journalFile, '{"type":"done","ind');

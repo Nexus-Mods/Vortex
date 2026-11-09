@@ -2,7 +2,13 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
 import type { JournalStorage } from "@nexusmods/mod-pipeline";
-import { getErrorCode } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+
+import { log } from "../../../logging";
+import { withFileRetry } from "../../../util/fileRetry";
+
+/** About 1.5 s, which a resume can wait for */
+const RENAME_ATTEMPTS = 16;
 
 /**
  * Apply's journal on disk, through node:fs: FileSystem's write streams can't append, and a kill can
@@ -44,7 +50,13 @@ export function journalStorageAt(journalFile: string): JournalStorage {
         }
         throw err;
       } finally {
-        await fs.rm(candidate, { force: true });
+        // the journal is settled either way, and nothing reads a leftover temporary file
+        await fs.rm(candidate, { force: true }).catch((err: unknown) =>
+          log("warn", "couldn't remove a temporary journal file", {
+            candidate,
+            error: getErrorMessageOrDefault(err),
+          }),
+        );
       }
     },
     write: async (contents) => {
@@ -52,7 +64,8 @@ export function journalStorageAt(journalFile: string): JournalStorage {
       await close();
       await fs.mkdir(path.dirname(journalFile), { recursive: true });
       await fs.writeFile(temporaryFile, contents, { flush: true });
-      await fs.rename(temporaryFile, journalFile);
+      // a scanner or indexer can hold the journal for a moment after it changes
+      await withFileRetry(() => fs.rename(temporaryFile, journalFile), RENAME_ATTEMPTS);
     },
     append: async (contents) => {
       appending ??= fs.open(journalFile, "a");

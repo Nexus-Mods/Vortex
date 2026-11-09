@@ -1,3 +1,13 @@
+export { apply, ApplyStatus, RefusalReason, resumeApply, rollback } from "./apply";
+export type {
+  ApplyFiles,
+  ApplyOptions,
+  ApplyResult,
+  ResumeResult,
+  RollbackResult,
+  RunOptions,
+  StagedFiles,
+} from "./apply";
 export { DiskEntryKind, DiskScanSchema } from "./diskScan";
 export type { DiskEntry, DiskScan } from "./diskScan";
 export { GameStore } from "./gameInstall";

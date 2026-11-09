@@ -18,6 +18,8 @@ import { FileSourceKind, HashType, type FileSource } from "./lockfile";
 import { DestinationState, OperationKind } from "./plan";
 import { nodeJournalStorage } from "./testJournalStorage";
 
+const RUN_ID = "fixture-run";
+
 let root: string;
 let workDir: string;
 let journalFile: string;
@@ -84,7 +86,7 @@ describe("readJournal", () => {
   test("reads back the entries of a new journal, with nothing done", async () => {
     const entries = makeEntries();
 
-    const writer = await createJournal(storage, entries);
+    const writer = await createJournal(storage, entries, RUN_ID);
     await writer.close();
 
     expect(await foundJournal()).toEqual({
@@ -92,28 +94,34 @@ describe("readJournal", () => {
       entries,
       phase: JournalPhase.Applying,
       done: new Set(),
+      kept: new Set(),
       undone: new Set(),
       createdFolders: [],
+      removedFolders: new Set(),
     });
   });
 
   test("reads back what a run recorded, without it being closed", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await createJournal(storage, makeEntries(), RUN_ID);
 
     await writer.markDone(0);
     await writer.recordFolder(1, "/fixture-root/game/sub");
+    await writer.recordRemovedFolder(1);
     await writer.markDone(1);
+    await writer.markDone(2, true);
 
     expect(await foundJournal()).toMatchObject({
       phase: JournalPhase.Applying,
-      done: new Set([0, 1]),
+      done: new Set([0, 1, 2]),
+      kept: new Set([2]),
       createdFolders: [{ index: 1, path: "/fixture-root/game/sub" }],
+      removedFolders: new Set([1]),
     });
     await writer.close();
   });
 
   test("reads back a rollback's progress", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await createJournal(storage, makeEntries(), RUN_ID);
     await writer.markDone(0);
     await writer.markDone(1);
 
@@ -129,7 +137,7 @@ describe("readJournal", () => {
   });
 
   test("ignores a torn last line and leaves it in the file", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await createJournal(storage, makeEntries(), RUN_ID);
     await writer.markDone(0);
     await writer.close();
     await fs.appendFile(journalFile, '{"type":"done","ind');
@@ -194,7 +202,7 @@ describe("readJournal", () => {
       }),
     );
 
-    const writer = await createJournal(storage, entries);
+    const writer = await createJournal(storage, entries, RUN_ID);
     await writer.close();
     await fs.appendFile(
       journalFile,
@@ -209,18 +217,18 @@ describe("readJournal", () => {
 
 describe("createJournal", () => {
   test("refuses to replace a journal in progress", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await createJournal(storage, makeEntries(), RUN_ID);
     await writer.close();
 
-    await expect(createJournal(storage, [])).rejects.toThrow("already exists");
+    await expect(createJournal(storage, [], "second-run")).rejects.toThrow("already exists");
 
     expect((await foundJournal()).runId).toBe(writer.runId);
   });
 
   test("lets only one of two overlapping runs start", async () => {
     const started = await Promise.allSettled([
-      createJournal(storage, makeEntries()),
-      createJournal(nodeJournalStorage(workDir), makeEntries()),
+      createJournal(storage, makeEntries(), "first-run"),
+      createJournal(nodeJournalStorage(workDir), makeEntries(), "second-run"),
     ]);
 
     const writers = started.flatMap((run) => (run.status === "fulfilled" ? [run.value] : []));
@@ -233,7 +241,7 @@ describe("createJournal", () => {
 
 describe("openJournal", () => {
   test("continues a journal whose writer never closed", async () => {
-    const killed = await createJournal(storage, makeEntries());
+    const killed = await createJournal(storage, makeEntries(), RUN_ID);
     await killed.markDone(0);
 
     const writer = await openJournal(nodeJournalStorage(workDir));
@@ -246,7 +254,7 @@ describe("openJournal", () => {
   });
 
   test("removes a torn last line before appending", async () => {
-    const earlier = await createJournal(storage, makeEntries());
+    const earlier = await createJournal(storage, makeEntries(), RUN_ID);
     await earlier.markDone(0);
     await earlier.close();
     await fs.appendFile(journalFile, '{"type":"done","ind');
@@ -270,7 +278,7 @@ describe("openJournal", () => {
 
 describe("JournalWriter.finish", () => {
   test("ends the run, leaving no journal", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await createJournal(storage, makeEntries(), RUN_ID);
     await writer.markDone(0);
 
     await writer.finish();

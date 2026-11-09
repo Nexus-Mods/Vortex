@@ -30,6 +30,11 @@ export interface JournalEntry {
   operation: JournalOperation;
   /** resolved when the run starts, so recovery doesn't depend on Stage */
   stagedPath?: string;
+  /**
+   * where an UNLINK keeps a file it can't show is ours, a BACKUP moves a game file and a RESTORE
+   * finds it; resolved when the run starts
+   */
+  keptPath?: string;
 }
 
 export const JournalPhase = {
@@ -44,9 +49,13 @@ export interface Journal {
   entries: JournalEntry[];
   phase: JournalPhase;
   done: ReadonlySet<number>;
+  /** the UNLINKs marked done with their file kept */
+  kept: ReadonlySet<number>;
   undone: ReadonlySet<number>;
   /** the folders the run made, so a rollback can remove them */
   createdFolders: { index: number; path: string }[];
+  /** the LINKs that may have removed an empty folder at their destination, for a rollback to restore */
+  removedFolders: ReadonlySet<number>;
 }
 
 export const JournalReadStatus = {
@@ -58,13 +67,15 @@ export const JournalReadStatus = {
 export type JournalRead =
   | { status: typeof JournalReadStatus.None }
   | { status: typeof JournalReadStatus.Invalid }
-  | { status: typeof JournalReadStatus.Found; journal: Journal };
+  | { status: typeof JournalReadStatus.Found; journal: Journal; bytes: Uint8Array };
 
 /** Appends to a run's journal. */
 export interface JournalWriter {
   readonly runId: string;
-  markDone(index: number): Promise<void>;
+  /** `kept` when an UNLINK kept its file */
+  markDone(index: number, kept?: boolean): Promise<void>;
   recordFolder(index: number, folderPath: string): Promise<void>;
+  recordRemovedFolder(index: number): Promise<void>;
   startRollback(): Promise<void>;
   markUndone(index: number): Promise<void>;
   close(): Promise<void>;
@@ -79,6 +90,7 @@ const LineType = {
   Header: "header",
   Done: "done",
   Folder: "folder",
+  RemovedFolder: "removed-folder",
   Phase: "phase",
   Undone: "undone",
 } as const;
@@ -101,15 +113,23 @@ const entrySchema = z.object({
     }),
   ]),
   stagedPath: AbsolutePathSchema.optional(),
+  keptPath: AbsolutePathSchema.optional(),
 });
 
 // typecheck fails when the schema and its type drift apart
 type _EntryMatches = Assert<MutuallyAssignable<z.infer<typeof entrySchema>, JournalEntry>>;
 
+export const JournalEntrySchema: z.ZodType<JournalEntry> = entrySchema;
+
 const progressSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal(LineType.Done), index: positionSchema }),
+  z.object({
+    type: z.literal(LineType.Done),
+    index: positionSchema,
+    kept: z.literal(true).optional(),
+  }),
   z.object({ type: z.literal(LineType.Undone), index: positionSchema }),
   z.object({ type: z.literal(LineType.Folder), index: positionSchema, path: AbsolutePathSchema }),
+  z.object({ type: z.literal(LineType.RemovedFolder), index: positionSchema }),
   z.object({ type: z.literal(LineType.Phase), phase: z.enum(JournalPhase) }),
 ]);
 
@@ -141,8 +161,10 @@ function parseJournal(text: string): Journal | undefined {
 
   let phase: JournalPhase = JournalPhase.Applying;
   const done = new Set<number>();
+  const kept = new Set<number>();
   const undone = new Set<number>();
   const createdFolders: Journal["createdFolders"] = [];
+  const removedFolders = new Set<number>();
   for (const line of lines.slice(header.count)) {
     const progress = parseLine(progressSchema, line);
     if (progress === undefined) {
@@ -157,13 +179,27 @@ function parseJournal(text: string): Journal | undefined {
     }
     if (progress.type === LineType.Done) {
       done.add(progress.index);
+      if (progress.kept === true) {
+        kept.add(progress.index);
+      }
     } else if (progress.type === LineType.Undone) {
       undone.add(progress.index);
-    } else {
+    } else if (progress.type === LineType.Folder) {
       createdFolders.push({ index: progress.index, path: progress.path });
+    } else {
+      removedFolders.add(progress.index);
     }
   }
-  return { runId: header.runId, entries, phase, done, undone, createdFolders };
+  return {
+    runId: header.runId,
+    entries,
+    phase,
+    done,
+    kept,
+    undone,
+    createdFolders,
+    removedFolders,
+  };
 }
 
 const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
@@ -175,8 +211,10 @@ const writerFor = (storage: JournalStorage, runId: string): JournalWriter => {
   const append = (line: object) => storage.append(encodeLines([line]));
   return {
     runId,
-    markDone: (index) => append({ type: LineType.Done, index }),
+    markDone: (index, kept) =>
+      append(kept === true ? { type: LineType.Done, index, kept } : { type: LineType.Done, index }),
     recordFolder: (index, folderPath) => append({ type: LineType.Folder, index, path: folderPath }),
+    recordRemovedFolder: (index) => append({ type: LineType.RemovedFolder, index }),
     startRollback: () => append({ type: LineType.Phase, phase: JournalPhase.RollingBack }),
     markUndone: (index) => append({ type: LineType.Undone, index }),
     close: () => storage.close(),
@@ -191,8 +229,8 @@ const writerFor = (storage: JournalStorage, runId: string): JournalWriter => {
 export async function createJournal(
   storage: JournalStorage,
   entries: readonly JournalEntry[],
+  runId: string,
 ): Promise<JournalWriter> {
-  const runId = crypto.randomUUID();
   const header = {
     type: LineType.Header,
     version: JOURNAL_VERSION,
@@ -214,16 +252,23 @@ export async function readJournal(storage: JournalStorage): Promise<JournalRead>
   const journal = parseJournal(decode(bytes));
   return journal === undefined
     ? { status: JournalReadStatus.Invalid }
-    : { status: JournalReadStatus.Found, journal };
+    : { status: JournalReadStatus.Found, journal, bytes };
 }
 
-/** Continues an interrupted run, first removing a torn last line. */
+/** Continues an interrupted run. */
 export async function openJournal(storage: JournalStorage): Promise<JournalWriter> {
-  const bytes = (await storage.read()) ?? new Uint8Array();
-  const journal = parseJournal(decode(bytes));
-  if (journal === undefined) {
+  const read = await readJournal(storage);
+  if (read.status !== JournalReadStatus.Found) {
     throw new Error("the journal can't be read");
   }
+  return continueJournal(storage, read);
+}
+
+/** Continues the run just read, first removing a torn last line. */
+export async function continueJournal(
+  storage: JournalStorage,
+  { journal, bytes }: Extract<JournalRead, { status: typeof JournalReadStatus.Found }>,
+): Promise<JournalWriter> {
   const complete = bytes.subarray(0, bytes.lastIndexOf(NEWLINE) + 1);
   if (complete.length < bytes.length) {
     await storage.write(complete);

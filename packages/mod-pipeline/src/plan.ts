@@ -224,7 +224,7 @@ function checkInputs(destinations: ReadonlyArray<[string, LockfileFilesAt]>, dis
  * The folders above a path, nearest first.
  * @yields each folder, up to and not including the root
  */
-function* parentFolders(path: string): Generator<string> {
+export function* parentFolders(path: string): Generator<string> {
   let folder = QualifiedPath.fromNative(path).parent();
   while (folder.path !== folder.root) {
     yield folder.path;

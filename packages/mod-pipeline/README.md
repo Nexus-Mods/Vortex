@@ -17,7 +17,9 @@ backend. Two rules keep it that way:
   Anything that needs Vortex or the disk is the caller's job.
 
 The journal follows the same rule: `journal.ts` owns its format and rules, and the
-caller provides a `JournalStorage` for the disk work.
+caller provides a `JournalStorage` for the disk work. So does Apply: `apply.ts` owns
+what a run does, and the caller provides its file work as `ApplyFiles`, which is why
+Apply's tests live with Vortex's `ApplyFiles`, on `InMemoryFS` and `ChaosFS`.
 
 Paths are absolute and use `/` separators.
 
@@ -101,6 +103,7 @@ carry no machine's paths or user names:
 - `src/diskScan.ts` - `DiskScan`, the files under the deployment targets
 - `src/plan.ts` - the planner, its `Operation` contract and decision table
 - `src/journal.ts` - Apply's journal and the `JournalStorage` a caller provides
+- `src/apply.ts` - `apply`, `resumeApply`, `rollback` and the `ApplyFiles` and `StagedFiles` a caller provides
 - `src/testJournalStorage.ts` - a `JournalStorage` on the real disk, for tests
 - `src/resolverFixture.ts`, `src/plannerFixture.ts`, `src/loadFixtures.ts` - the fixture contracts and their loader
 
