@@ -91,15 +91,20 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
 
   /**
    * The list's empty state, or its end of results, with its actions counted. Removing the filters
-   * keeps focus in the list, as the button goes while the mods load. There's no search text yet;
-   * it's passed here once Browse has a search box.
+   * keeps focus in the list, as the button goes while the mods load. The search text is what's
+   * actually searched, so a search too short to send reads as none.
    */
   const emptyState = ({ isEnd }: Pick<IEmptyStateInput, "isEnd">) => {
-    const state = emptyStateKind({ isEnd, filterCount: search.activeFilterCount });
+    const state = emptyStateKind({
+      isEnd,
+      searchText: search.searchQuery,
+      filterCount: search.activeFilterCount,
+    });
 
     return (
       <ModListEmptyState
         filterCount={search.activeFilterCount}
+        searchText={search.searchQuery}
         gameName={gameName}
         kind={state}
         onLearnMore={() => {
@@ -119,7 +124,9 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
           domain
             ? () => {
                 tracker.trackEmptyStateWebsiteSearchOpened({ view: trackedView, state });
-                window.api.shell.openUrl(websiteModSearchUrl(domain, { sort, filters }));
+                window.api.shell.openUrl(
+                  websiteModSearchUrl(domain, { text: search.searchQuery, sort, filters }),
+                );
               }
             : undefined
         }

@@ -478,6 +478,29 @@ describe("BrowseMods", () => {
       expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
     });
 
+    it("says what was searched for when nothing matches it", () => {
+      renderComponent({ ...emptyWith([]), searchQuery: "sky" } as IModSearch);
+
+      expect(screen.getByText('No mods match "{{search}}"')).toBeInTheDocument();
+    });
+
+    it("searches the website for the same text", async () => {
+      const openUrl = vi.fn();
+      vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+      renderComponent({ ...emptyWith([]), searchQuery: "sky" } as IModSearch);
+
+      await userEvent.click(screen.getByRole("button", { name: "Search on website" }));
+
+      expect(openUrl).toHaveBeenCalledWith(
+        websiteModSearchUrl(GameDomain("skyrimspecialedition"), {
+          text: "sky",
+          sort: SORT,
+          filters: FILTERS,
+        }),
+      );
+      vi.unstubAllGlobals();
+    });
+
     it("ends the last page with the end of results", () => {
       renderComponent(search([mod("1")], false, { activeFilters: [], activeFilterCount: 0 }));
 

@@ -1,5 +1,5 @@
 import numeral from "numeral";
-import React, { type ReactNode } from "react";
+import React, { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
@@ -9,7 +9,7 @@ import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics
 import { Typography } from "@/ui/components/typography/Typography";
 import { PageContent } from "@/views/components/Page/PageContent";
 
-// import { Search } from "../../../../gamemode_management/components/search/Search";
+import { Search } from "../../../../gamemode_management/components/search/Search";
 import type { FilterSource } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import type { IBrowseModsPanelRefs } from "../../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
@@ -38,11 +38,12 @@ interface IBrowseModsBarProps {
 
 /**
  * The bar over Browse's mods: its views, results count, a chip for each filter while it narrows
- * the mods or is locked, filter and view options. Counts each change, and the toolbar's clicks.
+ * the mods or is locked, filter and view options, and the search. The search applies on Enter,
+ * and clears at once when emptied. Counts each change, and the toolbar's clicks.
  */
 export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarProps) => {
   const { t } = useTranslation();
-  // const [search, setSearch] = useState("");
+  const [searchDraft, setSearchDraft] = useState(search.searchText);
   const tracker = useBrowseModsTracker();
   const toolbarTracking = useToolbarAnalytics("browse_mods");
   const view = search.trackedView;
@@ -155,16 +156,29 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
             </div>
           )}
 
-          {/* <Search placeholder={t("Search mods...")} value={search} onChange={setSearch} /> */}
+          <div className="flex items-center gap-x-2">
+            <Toolbar tracking={toolbarTracking}>
+              <ToolbarGroup
+                actions={[
+                  filter,
+                  { ...displayOptions, id: "view-options", panelHandle: panelRefs.viewOptions },
+                ]}
+              />
+            </Toolbar>
 
-          <Toolbar tracking={toolbarTracking}>
-            <ToolbarGroup
-              actions={[
-                filter,
-                { ...displayOptions, id: "view-options", panelHandle: panelRefs.viewOptions },
-              ]}
+            <Search
+              placeholder={t("Search mods...")}
+              value={searchDraft}
+              onChange={(text) => {
+                setSearchDraft(text);
+
+                if (!text) {
+                  search.setSearchText("");
+                }
+              }}
+              onSubmit={() => search.setSearchText(searchDraft)}
             />
-          </Toolbar>
+          </div>
         </div>
       </PageContent>
     </div>

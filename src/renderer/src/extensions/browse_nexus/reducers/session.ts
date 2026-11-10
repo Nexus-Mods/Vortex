@@ -5,16 +5,21 @@ import {
   selectBrowseModsView,
   setBrowseModsViewSearch,
 } from "../actions/modsViews";
-import { setBrowseSection } from "../actions/session";
+import { setBrowseModSearchText, setBrowseSection } from "../actions/session";
 import type { BrowseSection } from "../util/browseSection";
 import { type IModViewChange, isPreset, type ModPreset } from "../util/mod_views/modViews";
 
-/** session.browse: Browse's open section, and the changes to its presets, kept until a restart. */
+/**
+ * session.browse: Browse's open section, the changes to its presets, and the text its mods are
+ * searched for, kept until a restart.
+ */
 export interface IBrowseSessionState {
   /** The open section; none for Browse's default. */
   section?: BrowseSection;
   /** What's changed about each preset's sort and filters, over how it comes. */
   presetChanges?: Partial<Record<ModPreset, IModViewChange>>;
+  /** The text its mods' names are searched for, as entered, whatever the view; none for none. */
+  modSearchText?: string;
 }
 
 declare module "@/types/IState" {
@@ -25,6 +30,7 @@ declare module "@/types/IState" {
 
 const actions = {
   setBrowseSection,
+  setBrowseModSearchText,
   setBrowseModsViewSearch,
   resetBrowseModsView,
   selectBrowseModsView,
@@ -49,6 +55,7 @@ export const sessionReducer = actionsToReducerSpec<IBrowseSessionState, typeof a
   actions,
   {
     setBrowseSection: (state, payload) => ({ ...state, section: payload }),
+    setBrowseModSearchText: (state, payload) => ({ ...state, modSearchText: payload }),
     setBrowseModsViewSearch: (state, { viewId, change }) =>
       changePreset(state, viewId, (previous) => ({
         sort: { ...previous.sort, ...change.sort },

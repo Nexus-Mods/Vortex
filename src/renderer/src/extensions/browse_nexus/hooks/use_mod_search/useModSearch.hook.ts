@@ -7,6 +7,7 @@ import {
 import { V3ApiError } from "@vortex/nexus-api-v3";
 import type { GameDomain } from "@vortex/shared";
 import { useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
   type ModsSearch,
@@ -14,11 +15,13 @@ import {
   modSearchQuery,
 } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { IState } from "@/types/IState";
 import {
   getListingStatus,
   type ListingStatus,
 } from "@/ui/components/listing/listing_status/listingStatus";
 
+import { setBrowseModSearchText } from "../../actions/session";
 import { filtersToSearch } from "../../util/mod_filters/modFilterList";
 import {
   type IModFilters,
@@ -36,7 +39,28 @@ import { useModViews } from "../use_mod_views/useModViews.hook";
  */
 const COUNTED_PRESET: ModPreset = ModPreset.new;
 
+/** The text Browse's mods are searched for, as entered; none before any is. */
+const modSearchText = (state: IState) => state.session.browse?.modSearchText;
+
 export const MODS_PER_PAGE = 20;
+
+/** The API's bounds on a name search: characters other than spaces at least, and in all. */
+const MIN_QUERY_CHARACTERS = 2;
+const MAX_QUERY_LENGTH = 100;
+
+/**
+ * The name search the API is sent for the text entered: trimmed and cut to its limit, or none
+ * when it has too few characters other than spaces for the API to take.
+ */
+const queryFor = (text: string | undefined) => {
+  const query = text?.trim().slice(0, MAX_QUERY_LENGTH);
+
+  if (!query || query.replace(/\s/g, "").length < MIN_QUERY_CHARACTERS) {
+    return undefined;
+  }
+
+  return query;
+};
 
 interface IModsSearch {
   /** The game whose mods to search; none searches nothing. */
@@ -47,23 +71,27 @@ interface IModsSearch {
   filters: IModFilters;
   /** When the time range was picked, which it counts back from, in ms. */
   rangeFrom: number;
+  /** The text to find in their names; none searches no names. */
+  query?: string;
 }
 
 /**
- * The search for a game's mods, sorted and filtered; none outside a game. Only mods that can be
- * installed with a mod manager, as Vortex can't install the rest.
+ * The search for a game's mods, sorted and filtered, and by name given a query; none outside a
+ * game. Only mods that can be installed with a mod manager, as Vortex can't install the rest.
  */
 const searchFor = ({
   gameDomainName,
   sort,
   filters,
   rangeFrom,
+  query,
 }: IModsSearch): ModsSearch | typeof skipToken => {
   if (!gameDomainName) {
     return skipToken;
   }
 
   return {
+    ...(query && { query }),
     filters: {
       games: [gameDomainName],
       ...filtersToSearch(filters, { sortField: sort.field, rangeFrom }),
@@ -101,6 +129,12 @@ interface IModSearchOptions {
 
 /** The active game's mods by the open view, and the view itself, from `useModViews`. */
 export interface IModSearch extends ReturnType<typeof useModViews> {
+  /** The text entered to search the mods' names for, whatever the view; empty for none. */
+  searchText: string;
+  /** What's searched for of it: trimmed, and none with too few characters for the API. */
+  searchQuery: string | undefined;
+  /** Searches the mods' names for this text, in every view until a restart; empty for none. */
+  setSearchText: (text: string) => void;
   /** The search the mods are from, by query key and view, and changing as it starts again. */
   searchKey: string;
   /** The mods loaded so far, each only where it first came. */
@@ -130,10 +164,13 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   const { sort, filters, rangeFrom } = views;
   const queryClient = useQueryClient();
   const [restarts, setRestarts] = useState(0);
+  const dispatch = useDispatch();
+  const searchText = useSelector(modSearchText) ?? "";
+  const searchQuery = queryFor(searchText);
 
   const search = modSearchQuery(
     api,
-    searchFor({ gameDomainName: searchedGame, sort, filters, rangeFrom }),
+    searchFor({ gameDomainName: searchedGame, sort, filters, rangeFrom, query: searchQuery }),
     MODS_PER_PAGE,
   );
 
@@ -165,6 +202,9 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
 
   return {
     ...views,
+    searchText,
+    searchQuery,
+    setSearchText: (text: string) => dispatch(setBrowseModSearchText(text)),
     searchKey: JSON.stringify([views.viewId, search.queryKey, restarts]),
     mods: loaded,
     totalCount: mods.data?.pages[0]?.meta.total_count ?? 0,

@@ -49,7 +49,7 @@ export const Search = ({
         {!!value && (
           <button
             aria-label={t("Clear search")}
-            className="absolute top-1/2 right-3 -translate-y-1/2 rounded-xs text-neutral-subdued transition-colors hover:text-neutral-strong"
+            className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center justify-center rounded-xs text-neutral-subdued transition-colors hover:text-neutral-strong"
             data-testid="search-clear"
             type="button"
             onClick={() => {
