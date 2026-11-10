@@ -64,11 +64,6 @@
     "@electron/remote": "catalog:",
     "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
-<<<<<<< HEAD
-    "@hot-updater/bsdiff": "catalog:",
-=======
-    "@mdi/js": "catalog:",
->>>>>>> 1a9684695 (Merge pull request #24815 from Nexus-Mods/fix/bsdiff-large-files)
     "@microsoft/api-extractor": "catalog:",
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/file-dependency-resolver": "workspace:*",
