@@ -21,12 +21,21 @@ export interface IByteProgress {
 const isInFlight = (download: IDownload): boolean =>
   ACTIVE_DOWNLOAD_STATES.includes(download.state) || download.state === "paused";
 
-/** Download ids by every reference tag they carry; the first download wins a shared tag. */
+const NO_MEMBERS: ReadonlySet<string> = new Set();
+
+/**
+ * Download ids by every reference tag they carry. The first download wins a shared tag, except
+ * that a failed one gives way: a retry is a new download carrying the same tag.
+ */
 const downloadIdsByTag = (files: Record<string, IDownload>): Map<string, string> => {
   const byTag = new Map<string, string>();
   for (const [id, download] of Object.entries(files)) {
     for (const tag of downloadReferenceTags(download)) {
-      if (!byTag.has(tag)) {
+      const current = byTag.get(tag);
+      if (
+        current === undefined ||
+        (files[current].state === "failed" && download.state !== "failed")
+      ) {
         byTag.set(tag, id);
       }
     }
@@ -35,16 +44,29 @@ const downloadIdsByTag = (files: Record<string, IDownload>): Map<string, string>
 };
 
 /**
+ * Rule ids of the members whose archive is already on disk. Taken when an install starts, so
+ * an update or a resumed install measures only what it has left to download.
+ */
+export const downloadedMemberIds = (session: ICollectionInstallSession): ReadonlySet<string> =>
+  new Set(
+    Object.entries(session.mods ?? {})
+      .filter(([, member]) => DOWNLOADED_MEMBER_STATUSES.includes(member.status))
+      .map(([ruleId]) => ruleId),
+  );
+
+/**
  * The bytes the spine's download ring reports.
  *
  * Without a collection installing, that is every active or paused download. While one is
  * installing, the collection's selected members count with their expected size, so the ring
  * tracks the whole collection rather than resetting as each member's download completes.
- * Downloads that aren't one of its members are added on top.
+ * Members in `alreadyDownloaded` (see `downloadedMemberIds`) are left out. Downloads that
+ * aren't one of the counted members are added on top.
  */
 export const downloadByteProgress = (
   files: Record<string, IDownload>,
   session: ICollectionInstallSession | undefined,
+  alreadyDownloaded: ReadonlySet<string> = NO_MEMBERS,
 ): IByteProgress => {
   let received = 0;
   let total = 0;
@@ -53,16 +75,20 @@ export const downloadByteProgress = (
   if (session !== undefined) {
     const byTag = downloadIdsByTag(files);
 
-    for (const member of Object.values(session.mods ?? {})) {
+    for (const [ruleId, member] of Object.entries(session.mods ?? {})) {
+      if (alreadyDownloaded.has(ruleId) || EXCLUDED_MEMBER_STATUSES.includes(member.status)) {
+        continue;
+      }
+
       const tag = member.rule?.reference?.tag;
       const downloadId = tag === undefined ? undefined : byTag.get(tag);
       const download = downloadId === undefined ? undefined : files[downloadId];
 
-      if (downloadId !== undefined) {
-        claimed.add(downloadId);
-      }
+      const isDone =
+        DOWNLOADED_MEMBER_STATUSES.includes(member.status) || download?.state === "finished";
 
-      if (EXCLUDED_MEMBER_STATUSES.includes(member.status) || download?.state === "failed") {
+      // The session keeps a failed download's member on "downloading", so the download decides.
+      if (!isDone && download?.state === "failed") {
         continue;
       }
 
@@ -75,9 +101,9 @@ export const downloadByteProgress = (
         continue;
       }
 
-      const isDone =
-        DOWNLOADED_MEMBER_STATUSES.includes(member.status) || download?.state === "finished";
-
+      if (downloadId !== undefined) {
+        claimed.add(downloadId);
+      }
       total += size;
       received += isDone ? size : (download?.received ?? 0);
     }

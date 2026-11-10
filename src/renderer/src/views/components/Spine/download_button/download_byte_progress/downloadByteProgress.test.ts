@@ -7,7 +7,7 @@ import type {
   ICollectionInstallSession,
 } from "@/types/collections/ICollectionInstallSession";
 
-import { downloadByteProgress } from "./downloadByteProgress";
+import { downloadByteProgress, downloadedMemberIds } from "./downloadByteProgress";
 
 interface IMemberFixture {
   tag: string;
@@ -141,5 +141,53 @@ describe("downloadByteProgress", () => {
     };
 
     expect(downloadByteProgress(files, session)).toEqual({ received: 150, total: 400 });
+  });
+
+  it("leaves out members that were already downloaded when the install started", () => {
+    const session = sessionWith([
+      { tag: "a", status: "installed", fileSize: 1000 },
+      { tag: "b", status: "downloading", fileSize: 100 },
+    ]);
+    const files = { dl: memberDownload("b", { size: 100, received: 50 }) };
+
+    expect(downloadByteProgress(files, session, new Set(["a"]))).toEqual({
+      received: 50,
+      total: 100,
+    });
+  });
+
+  it("pairs a member with its retried download over an earlier failed one", () => {
+    const session = sessionWith([
+      { tag: "a", status: "installed", fileSize: 100 },
+      { tag: "b", status: "pending", fileSize: 100 },
+    ]);
+    const files = {
+      first: memberDownload("a", { state: "failed", size: 100, received: 20 }),
+      retry: memberDownload("a", { state: "finished", size: 100, received: 100 }),
+    };
+
+    expect(downloadByteProgress(files, session)).toEqual({ received: 100, total: 200 });
+  });
+
+  it("counts an excluded member's still-running download as an unrelated one", () => {
+    const session = sessionWith([{ tag: "a", status: "failed", fileSize: 100 }]);
+    const files = { dl: memberDownload("a", { state: "started", size: 100, received: 20 }) };
+
+    expect(downloadByteProgress(files, session)).toEqual({ received: 20, total: 100 });
+  });
+});
+
+describe("downloadedMemberIds", () => {
+  it("names the members whose archive is already on disk", () => {
+    const session = sessionWith([
+      { tag: "a", status: "downloaded" },
+      { tag: "b", status: "installing" },
+      { tag: "c", status: "installed" },
+      { tag: "d", status: "pending" },
+      { tag: "e", status: "downloading" },
+      { tag: "f", status: "failed" },
+    ]);
+
+    expect([...downloadedMemberIds(session)].sort()).toEqual(["a", "b", "c"]);
   });
 });
