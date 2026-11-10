@@ -63,8 +63,8 @@ const makeApi = (
   vi.mocked(requestManualInstallerDestination).mockResolvedValue(dialogAnswer);
   const emit = vi.fn();
   const dispatch = vi.fn();
-  const handlers = new Map<string, (...args: string[]) => void>();
-  const on = vi.fn((event: string, handler: (...args: string[]) => void) => {
+  const handlers = new Map<string, (...args: unknown[]) => void>();
+  const on = vi.fn((event: string, handler: (...args: unknown[]) => void) => {
     handlers.set(event, handler);
   });
   const api = {
@@ -72,8 +72,10 @@ const makeApi = (
     store: { dispatch },
     events: { emit, on },
   } as unknown as IExtensionApi;
-  /** announces the successful install of an archive, like InstallManager does */
-  const didInstall = (archiveId: string) => handlers.get("did-install-mod")?.("game", archiveId);
+  /** announces the successful install, like InstallManager does. archiveId is null when the
+   * install doesn't come from a download */
+  const didInstall = (installId: string, archiveId: string | null = installId) =>
+    handlers.get("did-install-mod")?.("game", archiveId, "mod", {}, installId);
   return { api, emit, dispatch, didInstall };
 };
 
@@ -100,6 +102,8 @@ interface IInstallOptions {
   previousAttributes?: Record<string, unknown>;
   modReference?: IModReference;
   archiveId?: string;
+  // like InstallManager, falls back to the archive id when the install isn't from a download
+  installId?: string;
   files?: string[];
   stagingFolder?: VortexModStagingFolder;
   previousStagingFolder?: VortexModStagingFolder;
@@ -118,6 +122,7 @@ const install = (installer: ReturnType<typeof createManualInstaller>, opts: IIns
       previousAttributes: opts.previousAttributes,
       modReference: opts.modReference,
       archiveId: opts.archiveId,
+      installId: opts.installId ?? opts.archiveId,
       stagingFolder: opts.stagingFolder,
       previousStagingFolder: opts.previousStagingFolder,
     },
@@ -597,6 +602,28 @@ describe("manual installer telemetry", () => {
       destination: "Foo",
       modReference: undefined,
     });
+  });
+
+  test("an install without a download (Install From File) is reported", async () => {
+    const { api, didInstall } = makeApi(answer({ folder: "Foo" }));
+    await install(createManualInstaller(api), { installId: "direct-install-x" });
+
+    didInstall("direct-install-x", null);
+
+    expect(emitManualInstallerEvent).toHaveBeenCalledWith(api, {
+      gameId: "game",
+      destination: "Foo",
+      modReference: undefined,
+    });
+  });
+
+  test("an install without a download and without a picked folder reports nothing", async () => {
+    const { api, didInstall } = makeApi();
+    await install(createManualInstaller(api), { installId: "direct-install-x", unattended: true });
+
+    didInstall("direct-install-x", null);
+
+    expect(emitManualInstallerEvent).not.toHaveBeenCalled();
   });
 
   test("it is reported only once", async () => {
