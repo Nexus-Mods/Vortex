@@ -18,23 +18,36 @@ export function uniqueFolderName(base: string, taken: Iterable<string>): string 
   return name;
 }
 
+/** Why a name can't be a folder's: see `folderNameProblem`. */
+export type FolderNameProblem = "empty" | "dot" | "trailingDot" | "invalidCharacter" | "taken";
+
 /**
- * Whether `name`, trimmed, can name a new folder: it has something in it, is no path, and
- * isn't `.` or `..`, ends in no dot as Windows takes none, and no sibling has it. Names match
- * without regard to case.
+ * What is wrong with `name`, trimmed, as the name of a new folder, or `undefined` if it works. It
+ * works if it has something in it, is no path, isn't `.` or `..`, ends in no dot as Windows takes
+ * none, and no sibling has it. Names match without regard to case. If several things are wrong,
+ * the first of these is the one reported.
  */
-export function isValidFolderName(name: string, taken: Iterable<string>): boolean {
+export function folderNameProblem(
+  name: string,
+  taken: Iterable<string>,
+): FolderNameProblem | undefined {
   const trimmed = name.trim();
 
-  if (
-    trimmed === "" ||
-    trimmed === "." ||
-    trimmed === ".." ||
-    trimmed.endsWith(".") ||
-    INVALID_CHARACTERS.test(trimmed)
-  ) {
-    return false;
+  if (trimmed === "") {
+    return "empty";
+  }
+  if (trimmed === "." || trimmed === "..") {
+    return "dot";
+  }
+  if (INVALID_CHARACTERS.test(trimmed)) {
+    return "invalidCharacter";
+  }
+  if (trimmed.endsWith(".")) {
+    return "trailingDot";
+  }
+  if ([...taken].some((other) => other.toLowerCase() === trimmed.toLowerCase())) {
+    return "taken";
   }
 
-  return ![...taken].some((other) => other.toLowerCase() === trimmed.toLowerCase());
+  return undefined;
 }

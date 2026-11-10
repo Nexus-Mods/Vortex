@@ -347,6 +347,32 @@ describe("ManualInstallerDialog", () => {
       expect(input).toHaveAttribute("aria-invalid", "true");
     });
 
+    it("says why the name doesn't work, and stops when it does", async () => {
+      const user = userEvent.setup();
+      renderDialog();
+
+      const input = await startNewFolder(user, "");
+      await nameFolder(user, input, "Data");
+
+      // the test translations show the keys
+      expect(await screen.findByText("manualInstaller::folderNameTaken")).toBeInTheDocument();
+
+      await nameFolder(user, input, "a/b");
+
+      expect(
+        await screen.findByText("manualInstaller::folderNameInvalidCharacter"),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("manualInstaller::folderNameTaken")).not.toBeInTheDocument();
+
+      await nameFolder(user, input, "Created");
+
+      await waitFor(() =>
+        expect(
+          screen.queryByText("manualInstaller::folderNameInvalidCharacter"),
+        ).not.toBeInTheDocument(),
+      );
+    });
+
     it("can't install while a folder is being named", async () => {
       const user = userEvent.setup();
       const { onAnswer } = renderDialog();
