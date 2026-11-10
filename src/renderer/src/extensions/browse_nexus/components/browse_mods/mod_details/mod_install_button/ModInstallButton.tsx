@@ -33,12 +33,20 @@ import { oneClickInstallKey } from "../../../../util/one_click_install/oneClickI
 /** Error kinds that mean the download was cancelled, which isn't reported. */
 const CANCELED_KINDS: VortexErrorKind[] = ["user-canceled", "process-canceled"];
 
-/** Why the mod can't be installed, said in the tooltip; none while it can, or is loading. */
+/**
+ * Why the mod can't be installed, said in the tooltip; none while it can, or is loading. An update
+ * never needs its main file, so nothing stops one.
+ */
 const unavailableReason = (
   t: TFunction,
   mainFile: ModMainFileVersion | null | undefined,
   isError: boolean,
+  hasUpdate: boolean,
 ) => {
+  if (hasUpdate) {
+    return undefined;
+  }
+
   if (isError) {
     return t("Couldn't load this mod's files");
   }
@@ -110,12 +118,13 @@ export const ModInstallButton = ({
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
   const [isUpsellOpen, setIsUpsellOpen] = useState(false);
-  const unavailable = unavailableReason(t, mainFile, isError);
   const installKey = oneClickInstallKey(mod.id);
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
   const domain = GameDomain(mod.game.domain_name);
   const action = shouldInstall ? "install" : "download";
   const hasUpdate = installState.kind === "installed" && !!installState.update;
+  const unavailable = unavailableReason(t, mainFile, isError, hasUpdate);
+  const isLoadingFile = !hasUpdate && mainFile === undefined && !isError;
   const upsellAction = hasUpdate ? "update" : action;
   const { button: oneClickLabel, ...upsellText } = oneClickText(t, hasUpdate);
 
@@ -180,21 +189,23 @@ export const ModInstallButton = ({
       <Button
         aria-disabled={!!unavailable}
         brand={isPremiumUser ? "primary" : "neutral"}
-        disabled={mainFile === undefined && !isError}
+        disabled={isLoadingFile}
         isLoading={isInstalling}
         leftIcon="install_desktop"
         rightIcon={isPremiumUser ? undefined : <PremiumBadge />}
         onClick={() => {
-          if (!mainFile || !gameId) {
+          if (unavailable) {
             return;
           }
 
-          if (isPremiumUser) {
+          if (!isPremiumUser) {
+            setIsUpsellOpen(true);
+            return;
+          }
+
+          if (mainFile && gameId) {
             install.mutate({ file: mainFile, game: gameId });
-            return;
           }
-
-          setIsUpsellOpen(true);
         }}
       >
         {oneClickLabel}
