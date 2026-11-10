@@ -25,6 +25,7 @@ import { ImageDemo } from "@/ui/components/image/Image.demo";
 import { ListingDemo } from "@/ui/components/listing/Listing.demo";
 import { MessageBoxDemo } from "@/ui/components/message_box/MessageBox.demo";
 import { ModalDemo } from "@/ui/components/modal/Modal.demo";
+import { NoResultsDemo } from "@/ui/components/no_results/NoResults.demo";
 import { PaginationDemo } from "@/ui/components/pagination/Pagination.demo";
 import { PickerDemo } from "@/ui/components/picker/Picker.demo";
 import { PillDemo } from "@/ui/components/pill/Pill.demo";
@@ -142,6 +143,7 @@ const DEMO_GROUPS: IDemoGroup[] = [
     name: "Data",
     demos: [
       { id: "listing", name: "Listing", Demo: ListingDemo },
+      { id: "no-results", name: "No results", Demo: NoResultsDemo },
       { id: "table", name: "Table", Demo: TableDemo },
       { id: "file-tree", name: "File tree", Demo: FileTreeDemo },
     ],
