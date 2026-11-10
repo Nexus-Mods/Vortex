@@ -707,16 +707,16 @@ export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStore
 }
 
 // A game extension as GameModeManager and the getGame() registry hold it.
-export function makeGame(overrides: Partial<Omit<IGame, "id">> & { id?: string } = {}): IGame {
-  const id = VortexGameId(overrides.id ?? "skyrimse");
+export function makeGame(overrides: Partial<IGame> = {}): IGame {
+  const id = overrides.id ?? VortexGameId("skyrimse");
   return {
+    id,
     name: id,
     requiredFiles: [],
     queryModPath: () => "mods",
     executable: () => `${id}.exe`,
     supportedTools: [],
     ...overrides,
-    id,
   };
 }
 
@@ -1034,7 +1034,7 @@ export function registerHarnessGame(gameId: string): void {
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
     gameReg.extensionGames.push(
       makeGame({
-        id: gameId,
+        id: VortexGameId(gameId),
         // resolveGameVersion validates the game (executable) and tries game.getGameVersion
         // first; answer it so tests don't fall through to exe-version probing of a nonexistent
         // binary

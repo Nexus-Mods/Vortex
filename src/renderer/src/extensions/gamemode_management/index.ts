@@ -78,7 +78,6 @@ import { identifyStore } from "./util/identifyStore";
 import { getModType, getModTypeExtensions, registerModType } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
 import queryGameInfo from "./util/queryGameInfo";
-import { validateGameId } from "./util/validateGameId";
 import {} from "./views/GamePicker";
 import HideGameIcon from "./views/HideGameIcon";
 import ModTypeWidget from "./views/ModTypeWidget";
@@ -746,8 +745,16 @@ function init(context: IExtensionContext): boolean {
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
+    // the type says VortexGameId, but JavaScript extensions or ones built against older typings
+    // can pass anything
+    if (!game.id) {
+      context.api.showErrorNotification("Game Extension not loaded", "The game has no id", {
+        allowReport: false,
+        message: game.name,
+      });
+      return;
+    }
     try {
-      validateGameId(game);
       game.extensionPath = extensionPath;
       const infoPath = path.join(extensionPath, "info.json");
       if (fsExtra.existsSync(infoPath)) {
@@ -775,15 +782,10 @@ function init(context: IExtensionContext): boolean {
   }) as any;
 
   context.registerGameStub = (game: IGame, ext: IExtensionDownloadInfo) => {
-    try {
-      validateGameId(game);
-    } catch (err) {
-      // a stub only stands in for a game that's gone; one without a usable id is skipped
-      // rather than failing the extension that registers it
-      log("warn", "skipping game stub with an invalid id", {
-        name: game?.name,
-        error: getErrorMessageOrDefault(err),
-      });
+    // a stub only stands in for a game that's gone; one without an id is skipped rather than
+    // failing the extension that registers it
+    if (!game.id) {
+      log("warn", "skipping game stub without an id", { name: game.name });
       return;
     }
     // If a full game extension (e.g. from the adaptor bridge) already
