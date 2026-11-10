@@ -69,6 +69,7 @@ import type {
 } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type PluginPersistor from "../extensions/gamebryo_plugin_management/util/PluginPersistor";
 import toPluginId from "../extensions/gamebryo_plugin_management/util/toPluginId";
+import type { IGameStub } from "../extensions/gamemode_management/GameModeManager";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
@@ -1012,6 +1013,18 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   } as unknown as IState;
 }
 
+// the process-`local` game registry getGame() and isGameRegistered() read
+const harnessGameRegistry = () =>
+  local<{
+    gameModeManager: unknown;
+    extensionGames: IGame[];
+    extensionStubs: IGameStub[];
+  }>("gamemode-management", {
+    gameModeManager: undefined,
+    extensionGames: [],
+    extensionStubs: [],
+  });
+
 /**
  * Register a fake game in the process-`local` registries getGame() reads, so the driver's
  * startImpl can resolve the installed game version (a global singleton, not redux, and not
@@ -1020,17 +1033,19 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
  */
 const harnessGames = new Set<string>();
 
-export function registerHarnessGame(gameId: string): void {
+export function registerHarnessGame(gameId: string, opts: { stub?: boolean } = {}): void {
+  const gameReg = harnessGameRegistry();
+  // a stub is only the extension Vortex offers to download, so discovery never records it
+  if (opts.stub === true) {
+    if (!gameReg.extensionStubs.some((stub) => stub.game.id === gameId)) {
+      gameReg.extensionStubs.push({
+        game: makeGame({ id: gameId }),
+        ext: { name: `Game: ${gameId}`, modId: 1 },
+      });
+    }
+    return;
+  }
   harnessGames.add(gameId);
-  const gameReg = local<{
-    gameModeManager: unknown;
-    extensionGames: IGame[];
-    extensionStubs: unknown[];
-  }>("gamemode-management", {
-    gameModeManager: undefined,
-    extensionGames: [],
-    extensionStubs: [],
-  });
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
     gameReg.extensionGames.push(
       makeGame({
@@ -1050,16 +1065,9 @@ export function registerHarnessGame(gameId: string): void {
  * would persist and could mask a different test's expectation. Call from afterEach.
  */
 export function resetHarnessRegistries(): void {
-  const gameReg = local<{
-    gameModeManager: unknown;
-    extensionGames: IGame[];
-    extensionStubs: unknown[];
-  }>("gamemode-management", {
-    gameModeManager: undefined,
-    extensionGames: [],
-    extensionStubs: [],
-  });
+  const gameReg = harnessGameRegistry();
   gameReg.extensionGames.length = 0;
+  gameReg.extensionStubs.length = 0;
 }
 
 /**
@@ -1304,7 +1312,7 @@ export function makeGameHarness(
   const profileId = opts.profileId ?? "profile-1";
   const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
   const gamePath = opts.gamePath;
-  registerHarnessGame(gameId);
+  registerHarnessGame(gameId, { stub: opts.stub });
   const base = makeApiHarness(
     {
       profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
@@ -1339,7 +1347,7 @@ export async function makeProfileSwitchHarness(
   opts: IProfileSwitchOpts,
 ): Promise<IProfileSwitchHarness> {
   const gameIds = [...new Set(opts.profiles.map((profile) => profile.gameId))];
-  gameIds.forEach(registerHarnessGame);
+  gameIds.forEach((gameId) => registerHarnessGame(gameId));
 
   const gameRoot = await mkdtemp(path.join(os.tmpdir(), "vortex-profile-switch-"));
   const gameSettingsPath = (gameId: string) => path.join(gameRoot, gameId, "settings.ini");
