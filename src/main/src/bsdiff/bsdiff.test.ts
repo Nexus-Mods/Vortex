@@ -7,19 +7,47 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { hashFileStream } from "../hash/compute";
 import { applyPatchFile, createPatchFile } from "./patch";
-import { applyPatch, createPatch, loadWasm } from "./wasm";
+import { loadWasm } from "./wasm";
 
 const TEST_DATA_DIR = path.resolve(__dirname, "..", "..", "test-data");
 
-// hdiff.wasm ships with the @hot-updater/bsdiff package. Load the module once
-// and reuse the instance for every case, the same way the worker does at runtime.
-function wasmPath(): string {
-  const pkgEntry = require.resolve("@hot-updater/bsdiff");
-  return path.join(path.resolve(pkgEntry, "..", ".."), "assets", "hdiff.wasm");
-}
-const wasm = loadWasm(fs.readFileSync(wasmPath()));
+// built by scripts/build-hdiffpatch-wasm.mjs. Compile the module once for every
+// case, the same way the worker does at runtime.
+const wasm = loadWasm(fs.readFileSync(path.join(__dirname, "hdiffpatch", "hdiffz.wasm")));
 
 // --- Helpers ---
+
+// runs fn with the path of a fresh temp folder, removed afterwards
+async function withTmpDir<T>(
+  fn: (tmpPath: (name: string) => string) => T | Promise<T>,
+): Promise<T> {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsdiff-"));
+  try {
+    return await fn((name) => path.join(tmpDir, name));
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+// createPatchFile over buffers, through temp files
+function createPatch(oldBuf: Uint8Array, newBuf: Uint8Array): Promise<Buffer> {
+  return withTmpDir((tmpPath) => {
+    fs.writeFileSync(tmpPath("old.bin"), oldBuf);
+    fs.writeFileSync(tmpPath("new.bin"), newBuf);
+    createPatchFile(wasm, tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
+    return fs.readFileSync(tmpPath("out.diff"));
+  });
+}
+
+// applyPatchFile over buffers, through temp files
+function applyPatch(oldBuf: Uint8Array, patchBuf: Uint8Array): Promise<Buffer> {
+  return withTmpDir((tmpPath) => {
+    fs.writeFileSync(tmpPath("old.bin"), oldBuf);
+    fs.writeFileSync(tmpPath("patch.diff"), patchBuf);
+    applyPatchFile(wasm, tmpPath("old.bin"), tmpPath("patch.diff"), tmpPath("new.bin"));
+    return fs.readFileSync(tmpPath("new.bin"));
+  });
+}
 
 function generateBytes(size: number, seed: number): Buffer {
   const buf = Buffer.alloc(size);
@@ -89,96 +117,82 @@ function makeTestPair(tc: (typeof TEST_CASES)[0]): {
 
 // --- Data correctness tests ---
 
-describe("bsdiff wasm core - buffer API", () => {
+describe("bsdiff wasm core - round trips", () => {
   for (const tc of TEST_CASES) {
-    it(`round-trips ${tc.name}`, () => {
+    it(`round-trips ${tc.name}`, async () => {
       const { oldBuf, newBuf } = makeTestPair(tc);
-      const patch = createPatch(wasm, oldBuf, newBuf);
+      const patch = await createPatch(oldBuf, newBuf);
       expect(patch.length).toBeGreaterThan(0);
       // Verify BSDIFF40 magic
       const magic = Buffer.from(patch.slice(0, 8)).toString("ascii");
       expect(magic).toBe("BSDIFF40");
 
-      const result = applyPatch(wasm, oldBuf, patch);
+      const result = await applyPatch(oldBuf, patch);
       expect(md5(result)).toBe(md5(newBuf));
     });
   }
 
-  it("handles identical files", () => {
+  it("handles identical files", async () => {
     const buf = generateBytes(1024, 999);
-    const patch = createPatch(wasm, buf, buf);
-    const result = applyPatch(wasm, buf, patch);
+    const patch = await createPatch(buf, buf);
+    const result = await applyPatch(buf, patch);
     expect(md5(result)).toBe(md5(buf));
   });
 });
 
 describe("bsdiff wasm core - file API", () => {
-  it("createPatchFile + applyPatchFile round-trips", async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsdiff-file-"));
-    const tmpPath = (name: string) => path.join(tmpDir, name);
-    try {
+  it("createPatchFile + applyPatchFile round-trips", () =>
+    withTmpDir((tmpPath) => {
       const { oldBuf, newBuf } = makeTestPair(TEST_CASES[1]!); // 10kb-5pct
       fs.writeFileSync(tmpPath("old.bin"), oldBuf);
       fs.writeFileSync(tmpPath("new.bin"), newBuf);
 
-      await createPatchFile(wasm, tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
+      createPatchFile(wasm, tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
       expect(fs.existsSync(tmpPath("out.diff"))).toBe(true);
 
-      await applyPatchFile(wasm, tmpPath("old.bin"), tmpPath("out.diff"), tmpPath("patched.bin"));
+      applyPatchFile(wasm, tmpPath("old.bin"), tmpPath("out.diff"), tmpPath("patched.bin"));
       const patched = fs.readFileSync(tmpPath("patched.bin"));
       expect(md5(patched)).toBe(md5(newBuf));
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    }
-  });
+    }));
 
   // larger than a suffix sort can index in 32-bit wasm, at about 14 bytes per input byte
-  it("creates a patch that reproduces an edited 384 MiB file", async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsdiff-large-"));
-    const tmpPath = (name: string) => path.join(tmpDir, name);
-    try {
-      const content = generateNoise(384 * 1024 * 1024, 1);
-      fs.writeFileSync(tmpPath("old.bin"), content);
-      content[4] = content[4]! ^ 0xff;
-      fs.writeFileSync(tmpPath("new.bin"), content);
+  it(
+    "creates a patch that reproduces an edited 384 MiB file",
+    () =>
+      withTmpDir(async (tmpPath) => {
+        const content = generateNoise(384 * 1024 * 1024, 1);
+        fs.writeFileSync(tmpPath("old.bin"), content);
+        content[4] = content[4]! ^ 0xff;
+        fs.writeFileSync(tmpPath("new.bin"), content);
 
-      const largeWasm = loadWasm(fs.readFileSync(wasmPath()));
-      await createPatchFile(largeWasm, tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
-      await applyPatchFile(
-        largeWasm,
-        tmpPath("old.bin"),
-        tmpPath("out.diff"),
-        tmpPath("patched.bin"),
-      );
-      expect((await hashFileStream("md5", tmpPath("patched.bin"))).hash).toBe(md5(content));
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    }
-  }, 120_000);
+        createPatchFile(wasm, tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
+        applyPatchFile(wasm, tmpPath("old.bin"), tmpPath("out.diff"), tmpPath("patched.bin"));
+        expect((await hashFileStream("md5", tmpPath("patched.bin"))).hash).toBe(md5(content));
+      }),
+    120_000,
+  );
 
   // the fixture has the shape bsdiff writes for an in-place edit, like patches already in
   // published collections: header, then bzip2 -6 blocks of one control entry (add 2^30,
   // copy 0, seek 0), a diff of zeros with 1 at byte 4, and an empty extra
-  it("applies a bsdiff patch to a 1 GiB file", async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsdiff-apply-"));
-    const tmpPath = (name: string) => path.join(tmpDir, name);
-    try {
-      const content = generateNoise(1024 * 1024 * 1024, 1);
-      fs.writeFileSync(tmpPath("old.bin"), content);
-      content[4] = content[4]! + 1;
+  it(
+    "applies a bsdiff patch to a 1 GiB file",
+    () =>
+      withTmpDir(async (tmpPath) => {
+        const content = generateNoise(1024 * 1024 * 1024, 1);
+        fs.writeFileSync(tmpPath("old.bin"), content);
+        content[4] = content[4]! + 1;
 
-      const applyWasm = loadWasm(fs.readFileSync(wasmPath()));
-      await applyPatchFile(
-        applyWasm,
-        tmpPath("old.bin"),
-        path.join(__dirname, "__fixtures__", "increment-byte-4-1gib.diff"),
-        tmpPath("patched.bin"),
-      );
-      expect((await hashFileStream("md5", tmpPath("patched.bin"))).hash).toBe(md5(content));
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    }
-  }, 120_000);
+        applyPatchFile(
+          wasm,
+          tmpPath("old.bin"),
+          path.join(__dirname, "__fixtures__", "increment-byte-4-1gib.diff"),
+          tmpPath("patched.bin"),
+        );
+        expect((await hashFileStream("md5", tmpPath("patched.bin"))).hash).toBe(md5(content));
+      }),
+    120_000,
+  );
 });
 
 // --- Cross-compatibility with native patches ---
@@ -202,11 +216,11 @@ describe.skipIf(!hasNativeBaseline())("bsdiff wasm core - native cross-compatibi
   });
 
   for (const tc of TEST_CASES) {
-    it(`applies native patch for ${tc.name}`, () => {
+    it(`applies native patch for ${tc.name}`, async () => {
       const { oldBuf, newBuf } = makeTestPair(tc);
       const nativePatch = fs.readFileSync(path.join(TEST_DATA_DIR, `${tc.name}-native.diff`));
 
-      const result = applyPatch(wasm, oldBuf, nativePatch);
+      const result = await applyPatch(oldBuf, nativePatch);
       expect(md5(result)).toBe(md5(newBuf));
       expect(md5(result)).toBe(baseline[tc.name]!.newMd5);
     });
@@ -214,10 +228,10 @@ describe.skipIf(!hasNativeBaseline())("bsdiff wasm core - native cross-compatibi
 });
 
 describe("bsdiff wasm core - error handling", () => {
-  it("throws (does not silently succeed) when applying a malformed patch", () => {
-    // A buffer that is not a valid BSDIFF40 patch: the WASM apply_patch returns
-    // a non-OK status, which createPatch/applyPatch surface as a thrown error.
+  it("throws (does not silently succeed) when applying a malformed patch", async () => {
+    // A buffer that is not a valid BSDIFF40 patch: hdiffz exits with an error,
+    // which applyPatchFile surfaces as a thrown error.
     const garbagePatch = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]);
-    expect(() => applyPatch(wasm, new Uint8Array([1, 2, 3]), garbagePatch)).toThrow(Error);
+    await expect(applyPatch(new Uint8Array([1, 2, 3]), garbagePatch)).rejects.toThrow(Error);
   });
 });
