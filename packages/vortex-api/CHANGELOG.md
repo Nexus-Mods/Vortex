@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
 - Game info entries from `registerGameInfoProvider` accept `type: "path"`, shown as a link that opens the file or folder. The built-in `game-path` entry uses it
+- `IExtensionApi.openUrl(url)` opens a URL in the default application for its scheme, and `IExtensionApi.openFile(path)` opens a file or folder in its default application. Both log and ignore a target they can't open, such as an empty path, or a filesystem path passed to `openUrl`. They will replace `util.opn`, whose deprecation will be announced here once they've reached a stable release
 
 ### Removed
 

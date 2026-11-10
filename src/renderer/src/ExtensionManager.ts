@@ -106,6 +106,7 @@ import type { i18n } from "./util/i18n";
 import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
 import { showError } from "./util/message";
+import { openFile, openUrl } from "./util/open_target/openTarget";
 import { deregisterProtocolHandler, registerProtocolHandler } from "./util/protocolRegistration";
 import runElevatedCustomTool from "./util/runElevatedCustomTool";
 import { activeGameId } from "./util/selectors";
@@ -786,6 +787,8 @@ class ExtensionManager {
       saveFile: this.saveFile,
       selectExecutable: this.selectExecutable,
       selectDir: this.selectDir,
+      openUrl,
+      openFile,
       events: this.mEventEmitter,
       translate: (input, options?) => {
         if (this.mTranslator == null) {
