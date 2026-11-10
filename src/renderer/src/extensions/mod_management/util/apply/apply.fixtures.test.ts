@@ -1,14 +1,28 @@
+import { readdirSync, readFileSync } from "node:fs";
+import * as path from "node:path";
+
 import { describe, expect, test } from "vitest";
 
 import { apply, ApplyStatus, resumeApply, rollback, type ApplyOptions } from "./apply";
 import type { ApplyFixture } from "./applyFixture";
 import { ApplyFixtureSchema } from "./applyFixture";
 import { JournalReadStatus, readJournal, type JournalStorage } from "./journal";
-import { loadFixtures } from "./loadFixtures";
 import { killAfter, MemoryDisk } from "./testApplyFiles";
 import { memoryJournalStorage } from "./testJournalStorage";
 
-const fixtures = loadFixtures("apply", ApplyFixtureSchema);
+const fixtureDir = path.join(__dirname, "fixtures");
+const fixtures = readdirSync(fixtureDir)
+  .filter((fileName) => fileName.endsWith(".json"))
+  .toSorted()
+  .map((fileName) => {
+    const parsed = ApplyFixtureSchema.safeParse(
+      JSON.parse(readFileSync(path.join(fixtureDir, fileName), "utf8")),
+    );
+    if (!parsed.success) {
+      throw new Error(`${fileName} is not an apply fixture: ${parsed.error.message}`);
+    }
+    return parsed.data;
+  });
 
 /** Fixtures name a destination's backup by this suffix, and keep a set-aside file by its entry. */
 const optionsFor = (fixture: ApplyFixture): Omit<ApplyOptions, "files" | "journal"> => ({

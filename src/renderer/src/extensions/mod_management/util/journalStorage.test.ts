@@ -1,8 +1,9 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import { JournalReadStatus, openJournal, readJournal } from "@nexusmods/mod-pipeline";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { JournalReadStatus, openJournal, readJournal } from "./apply/journal";
 
 // the real disk, with rm and open able to fail in a way no file handle can cause on Windows
 vi.mock("node:fs/promises", async (importOriginal) => {

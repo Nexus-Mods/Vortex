@@ -2,9 +2,17 @@ import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import {
+  DestinationState,
+  FileSourceKind,
+  HashType,
+  NexusFileId,
+  OperationKind,
+  type FileSource,
+} from "@nexusmods/mod-pipeline";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { NexusFileId } from "./ids";
+import { journalStorageAt } from "../journalStorage";
 import {
   createJournal,
   JournalPhase,
@@ -14,9 +22,6 @@ import {
   type JournalEntry,
   type JournalStorage,
 } from "./journal";
-import { FileSourceKind, HashType, type FileSource } from "./lockfile";
-import { DestinationState, OperationKind } from "./plan";
-import { nodeJournalStorage } from "./testJournalStorage";
 
 const RUN_ID = "fixture-run";
 
@@ -29,7 +34,7 @@ beforeEach(async () => {
   root = await fs.mkdtemp(join(tmpdir(), "journal-"));
   workDir = join(root, "work");
   journalFile = join(workDir, "journal.ndjson");
-  storage = nodeJournalStorage(workDir);
+  storage = journalStorageAt(journalFile);
 });
 
 afterEach(async () => {
@@ -246,7 +251,7 @@ describe("createJournal", () => {
   test("lets only one of two overlapping runs start", async () => {
     const started = await Promise.all([
       createJournal(storage, makeEntries(), "first-run"),
-      createJournal(nodeJournalStorage(workDir), makeEntries(), "second-run"),
+      createJournal(journalStorageAt(journalFile), makeEntries(), "second-run"),
     ]);
 
     const writers = started.filter((writer) => writer !== undefined);
@@ -262,7 +267,7 @@ describe("openJournal", () => {
     const killed = await startJournal();
     await killed.markDone(0);
 
-    const writer = await openJournal(nodeJournalStorage(workDir));
+    const writer = await openJournal(journalStorageAt(journalFile));
     await writer.markDone(1);
     await writer.close();
     await killed.close();

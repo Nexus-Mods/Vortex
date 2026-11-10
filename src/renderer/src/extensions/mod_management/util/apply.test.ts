@@ -1,20 +1,6 @@
 import * as path from "node:path";
 
-import {
-  apply,
-  ApplyStatus,
-  JournalReadStatus,
-  KeptReason,
-  readJournal,
-  RefusalReason,
-  resumeApply,
-  rollback,
-  type JournalStorage,
-  type Operation,
-  type ResumeResult,
-  type RunOptions,
-  type StagedFiles,
-} from "@nexusmods/mod-pipeline";
+import { KeptReason, type Operation } from "@nexusmods/mod-pipeline";
 import { InMemoryFSBuilder, QualifiedPath, type FileSystem } from "@vortex/shared/filesystem";
 import { describe, expect, test } from "vitest";
 
@@ -28,6 +14,17 @@ import {
 import { makeTempDir } from "@/test-utils/tempDir";
 
 import { BACKUP_TAG } from "../LinkingDeployment";
+import {
+  apply,
+  ApplyStatus,
+  RefusalReason,
+  resumeApply,
+  rollback,
+  type ResumeResult,
+  type RunOptions,
+  type StagedFiles,
+} from "./apply/apply";
+import { JournalReadStatus, readJournal, type JournalStorage } from "./apply/journal";
 import { applyFilesOn } from "./applyFiles";
 import { journalStorageAt } from "./journalStorage";
 

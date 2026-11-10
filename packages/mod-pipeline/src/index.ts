@@ -1,14 +1,3 @@
-export { apply, ApplyStatus, RefusalReason, resumeApply, rollback } from "./apply";
-export type {
-  ApplyFiles,
-  ApplyOptions,
-  ApplyResult,
-  KeptFile,
-  ResumeResult,
-  RollbackResult,
-  RunOptions,
-  StagedFiles,
-} from "./apply";
 export { DiskEntryKind, DiskScanSchema } from "./diskScan";
 export type { DiskEntry, DiskScan } from "./diskScan";
 export { GameStore } from "./gameInstall";
@@ -25,21 +14,14 @@ export {
 } from "./ids";
 export { FileSourceKind, HashType, LockfileSchema, lockfileFiles } from "./lockfile";
 export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, FileEntry } from "./lockfile";
-export {
-  createJournal,
-  JournalPhase,
-  JournalReadStatus,
-  openJournal,
-  readJournal,
-} from "./journal";
-export type { Journal, JournalEntry, JournalRead, JournalStorage, JournalWriter } from "./journal";
-export { folderKeyOf, pathKeyOf } from "./pathKey";
+export { AbsolutePathSchema, folderKeyOf, pathKeyOf } from "./pathKey";
 export {
   DestinationState,
   inApplyOrder,
   KeptReason,
   OperationKind,
   OperationSchema,
+  parentFolders,
   plan,
   planDestinations,
   sameOrigin,

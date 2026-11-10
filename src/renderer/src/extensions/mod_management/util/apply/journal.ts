@@ -1,12 +1,12 @@
-import { AbsolutePathSchema } from "./pathKey";
-import { OperationSchema, type Operation } from "./plan";
-import type { Assert, MutuallyAssignable } from "./typeChecks";
-import { z } from "./zodJitless";
+import { AbsolutePathSchema, OperationSchema, type Operation } from "@nexusmods/mod-pipeline";
+import { z } from "zod";
+
+type MutuallyAssignable<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+type Assert<T extends true> = T;
 
 /**
- * Where a journal is kept, provided by the caller, as this package never touches a disk. What an
- * awaited call wrote must survive a process kill, and its bytes must be flushed to the disk, though
- * a power cut may undo the latest create, write or remove.
+ * Where a journal is kept: what an awaited call wrote survives a kill and is flushed to disk; a
+ * power cut may undo the latest create, write or remove.
  */
 export interface JournalStorage {
   /** the whole journal, or undefined when there is none */

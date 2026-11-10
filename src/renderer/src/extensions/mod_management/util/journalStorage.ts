@@ -1,11 +1,11 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import type { JournalStorage } from "@nexusmods/mod-pipeline";
 import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
 
 import { log } from "../../../logging";
 import { withFileRetry } from "../../../util/fileRetry";
+import type { JournalStorage } from "./apply/journal";
 
 /** About 1.5 s while a scanner or indexer holds the journal, which a run can wait for */
 const ATTEMPTS_WHILE_HELD = 16;

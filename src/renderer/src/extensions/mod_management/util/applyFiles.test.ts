@@ -1,4 +1,3 @@
-import type { ApplyFiles } from "@nexusmods/mod-pipeline";
 import {
   InMemoryFS,
   InMemoryFSBuilder,
@@ -9,6 +8,7 @@ import { describe, expect, test } from "vitest";
 
 import { LinkCountingFS } from "@/test-utils/linkCountingFS";
 
+import type { ApplyFiles } from "./apply/apply";
 import { applyFilesOn } from "./applyFiles";
 
 const qualified = (path: string) => QualifiedPath.fromNative(path);

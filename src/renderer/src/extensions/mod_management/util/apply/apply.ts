@@ -1,4 +1,13 @@
 import {
+  FileSourceKind,
+  KeptReason,
+  OperationKind,
+  parentFolders,
+  type FileSource,
+  type Operation,
+} from "@nexusmods/mod-pipeline";
+
+import {
   continueJournal,
   createJournal,
   JournalEntrySchema,
@@ -10,8 +19,6 @@ import {
   type JournalStorage,
   type JournalWriter,
 } from "./journal";
-import { FileSourceKind, type FileSource } from "./lockfile";
-import { KeptReason, OperationKind, parentFolders, type Operation } from "./plan";
 
 /** The file work a run needs, provided by the caller. */
 export interface ApplyFiles {
@@ -145,14 +152,6 @@ function backupPathIn({ operation, backupPath }: JournalEntry): string {
 /** The id at a path, shared by a file's hardlinks. */
 const idAt = async (files: ApplyFiles, path: string) => (await files.statusAt(path))?.id;
 
-/**
- * Items for a `for await` whose body runs one at a time: a run's steps depend on the ones before.
- * @yields each item
- */
-async function* oneAtATime<T>(items: Iterable<T>): AsyncGenerator<T> {
-  yield* items;
-}
-
 const destinationOf = (operation: Operation) =>
   "file" in operation ? operation.file.destinationPath : operation.destinationPath;
 
@@ -253,7 +252,7 @@ async function markChanging(run: Run, index: number): Promise<void> {
 /** Records and makes the folders above a destination that aren't there. */
 async function createParents(run: Run, index: number, destinationPath: string): Promise<void> {
   const missing: string[] = [];
-  for await (const folder of oneAtATime(parentFolders(destinationPath))) {
+  for (const folder of parentFolders(destinationPath)) {
     if ((await idAt(run.files, folder)) !== undefined) {
       break;
     }
@@ -263,7 +262,7 @@ async function createParents(run: Run, index: number, destinationPath: string): 
   if (deepest === undefined) {
     return;
   }
-  for await (const folder of oneAtATime(missing)) {
+  for (const folder of missing) {
     await run.writer.recordFolder(index, folder);
     addFolder(run.createdFolders, index, folder);
   }
@@ -461,7 +460,7 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
 async function undoFolders(run: Run, index: number, entry: JournalEntry): Promise<void> {
   const created = run.createdFolders.get(index);
   if (created !== undefined) {
-    for await (const folder of oneAtATime(created)) {
+    for (const folder of created) {
       await run.files.removeEmptyFolder(folder);
     }
   }
@@ -504,7 +503,7 @@ async function rollBack(
     return stopped({ cause });
   }
 
-  for await (const [index, entry] of oneAtATime([...run.entries.entries()].toReversed())) {
+  for (const [index, entry] of [...run.entries.entries()].toReversed()) {
     if (run.undone.has(index) || !run.changing.has(index)) {
       continue;
     }
@@ -527,7 +526,7 @@ async function rollBack(
 
 /** Runs what isn't marked done; a failed step stops the run and rolls it back. */
 async function runForward(run: Run): Promise<ApplyResult> {
-  for await (const [index, entry] of oneAtATime(run.entries.entries())) {
+  for (const [index, entry] of run.entries.entries()) {
     if (run.done.has(index)) {
       continue;
     }

@@ -1,7 +1,7 @@
+import { folderKeyOf, parentFolders, pathKeyOf } from "@nexusmods/mod-pipeline";
+
 import type { ApplyFiles } from "./apply";
 import type { JournalStorage } from "./journal";
-import { folderKeyOf, pathKeyOf } from "./pathKey";
-import { parentFolders } from "./plan";
 
 /** A disk as fixtures write it. */
 export interface FixtureDisk {
@@ -55,12 +55,12 @@ export class MemoryDisk {
   /** Apply's file work on this disk. */
   files(): ApplyFiles {
     return {
-      statusAt: async (path) => this.#statusAt(path),
-      move: async (from, to) => this.#move(from, to),
-      link: async (from, to) => this.#link(from, to),
-      remove: async (path) => this.#remove(path),
-      createFolder: async (path) => this.#createFolder(path),
-      removeEmptyFolder: async (path) => this.#removeEmptyFolder(path),
+      statusAt: (path) => Promise.try(() => this.#statusAt(path)),
+      move: (from, to) => Promise.try(() => this.#move(from, to)),
+      link: (from, to) => Promise.try(() => this.#link(from, to)),
+      remove: (path) => Promise.try(() => this.#remove(path)),
+      createFolder: (path) => Promise.try(() => this.#createFolder(path)),
+      removeEmptyFolder: (path) => Promise.try(() => this.#removeEmptyFolder(path)),
     };
   }
 

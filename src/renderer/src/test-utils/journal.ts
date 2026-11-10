@@ -3,7 +3,7 @@ import {
   type JournalEntry,
   type JournalStorage,
   type JournalWriter,
-} from "@nexusmods/mod-pipeline";
+} from "../extensions/mod_management/util/apply/journal";
 
 /** Starts a run's journal holding `entries`, on storage that has none. */
 export async function startJournal(

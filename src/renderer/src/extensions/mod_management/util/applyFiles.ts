@@ -1,7 +1,7 @@
-import type { ApplyFiles } from "@nexusmods/mod-pipeline";
 import { VortexError } from "@vortex/shared";
 import { QualifiedPath, type FileSystem, type StatResult } from "@vortex/shared/filesystem";
 
+import type { ApplyFiles } from "./apply/apply";
 import { entryIdOf } from "./diskScan";
 
 const qualified = (path: string) => QualifiedPath.fromNative(path);
