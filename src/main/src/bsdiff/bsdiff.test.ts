@@ -5,6 +5,7 @@ import * as path from "node:path";
 
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { hashFileStream } from "../hash/compute";
 import { applyPatchFile, createPatchFile } from "./patch";
 import { applyPatch, createPatch, loadWasm } from "./wasm";
 
@@ -28,6 +29,13 @@ function generateBytes(size: number, seed: number): Buffer {
     buf[i] = state & 0xff;
   }
   return buf;
+}
+
+// deterministic content that never repeats, like a real archive. CTR is a stream cipher, so
+// update returns every byte
+function generateNoise(size: number, seed: number): Buffer {
+  const cipher = crypto.createCipheriv("aes-128-ctr", Buffer.alloc(16, seed), Buffer.alloc(16));
+  return cipher.update(Buffer.alloc(size));
 }
 
 function modifyBytes(buf: Buffer, changePercent: number, seed: number): Buffer {
@@ -123,6 +131,54 @@ describe("bsdiff wasm core - file API", () => {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+
+  // larger than a suffix sort can index in 32-bit wasm, at about 14 bytes per input byte
+  it("creates a patch that reproduces an edited 384 MiB file", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsdiff-large-"));
+    const tmpPath = (name: string) => path.join(tmpDir, name);
+    try {
+      const content = generateNoise(384 * 1024 * 1024, 1);
+      fs.writeFileSync(tmpPath("old.bin"), content);
+      content[4] = content[4]! ^ 0xff;
+      fs.writeFileSync(tmpPath("new.bin"), content);
+
+      const largeWasm = loadWasm(fs.readFileSync(wasmPath()));
+      await createPatchFile(largeWasm, tmpPath("old.bin"), tmpPath("new.bin"), tmpPath("out.diff"));
+      await applyPatchFile(
+        largeWasm,
+        tmpPath("old.bin"),
+        tmpPath("out.diff"),
+        tmpPath("patched.bin"),
+      );
+      expect((await hashFileStream("md5", tmpPath("patched.bin"))).hash).toBe(md5(content));
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 120_000);
+
+  // the fixture has the shape bsdiff writes for an in-place edit, like patches already in
+  // published collections: header, then bzip2 -6 blocks of one control entry (add 2^30,
+  // copy 0, seek 0), a diff of zeros with 1 at byte 4, and an empty extra
+  it("applies a bsdiff patch to a 1 GiB file", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bsdiff-apply-"));
+    const tmpPath = (name: string) => path.join(tmpDir, name);
+    try {
+      const content = generateNoise(1024 * 1024 * 1024, 1);
+      fs.writeFileSync(tmpPath("old.bin"), content);
+      content[4] = content[4]! + 1;
+
+      const applyWasm = loadWasm(fs.readFileSync(wasmPath()));
+      await applyPatchFile(
+        applyWasm,
+        tmpPath("old.bin"),
+        path.join(__dirname, "__fixtures__", "increment-byte-4-1gib.diff"),
+        tmpPath("patched.bin"),
+      );
+      expect((await hashFileStream("md5", tmpPath("patched.bin"))).hash).toBe(md5(content));
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 120_000);
 });
 
 // --- Cross-compatibility with native patches ---
