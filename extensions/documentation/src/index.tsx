@@ -70,7 +70,7 @@ export default function init(context: types.IExtensionContext) {
           context.api.events.emit("analytics-track-click-event", "Dashboard", "Intro Video");
         },
         undefined,
-        (t) => <TutorialButton video={element} />,
+        (t) => <TutorialButton api={context.api} video={element} />,
         5,
       );
     } else {
@@ -78,10 +78,12 @@ export default function init(context: types.IExtensionContext) {
         const element = tutData[key][0];
         // Add the tutorial item to the relevant icon group.
         context.registerAction(key, 400, TutorialButton, {}, () => ({
+          api: context.api,
           video: element,
         }));
       } else {
         context.registerAction(key, 400, TutorialDropdown, {}, () => ({
+          api: context.api,
           groupName: key,
           videos: tutData[key],
         }));
