@@ -29,6 +29,13 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["persistent", "analyticsTelemetry"], telemetryReducer);
   context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
 
+  // Set in init, not once, so the check is in place before any other
+  // extension's startup code tracks an event. The store isn't set until after
+  // every init has run, hence the optional chain.
+  AnalyticsMixpanel.setConsentGetter(
+    () => context.api.store?.getState().settings.analytics?.enabled,
+  );
+
   context.once(() => {
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
     const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
@@ -215,9 +222,10 @@ function init(context: IExtensionContext): boolean {
                     {
                       label: "Yes, share anonymous data",
                       action: () => {
-                        startAnalytics();
+                        // Save consent before starting, or the tracker drops app_launched.
                         ignoreNextAnalyticsStateChange = true;
                         context.api.store.dispatch(setAnalytics(true));
+                        startAnalytics();
                       },
                       default: true,
                     },
