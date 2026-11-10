@@ -10,6 +10,7 @@ import {
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  makeDeployedFile,
   makeFileChange,
   makeMod,
   makeProfile,
@@ -22,7 +23,8 @@ import {
   test,
 } from "../../../test-utils/externalChangesTest";
 import { MERGED_PATH } from "../modMerging";
-import { changeToEntry, dealWithExternalChanges } from "./externalChanges";
+import { deployedFilePath } from "./deployedFilePath";
+import { changesBySource, changeToEntry, dealWithExternalChanges } from "./externalChanges";
 
 vi.mock("../../../logging", () => {
   const log = vi.fn();
@@ -33,6 +35,54 @@ const MOD_A = VortexModId("mod-a");
 const MOD_A_FOLDER = VortexModStagingFolder("mod-a-folder");
 const REMOVED_FOLDER = VortexModStagingFolder("removed-folder");
 const MODS_WITH_A = { [MOD_A]: makeMod({ id: MOD_A, installationPath: MOD_A_FOLDER }) };
+// each mod's subfolder, for games that don't merge mods (mergeMods off)
+const MOD_A_TARGET = "AAA-mod-a";
+const REMOVED_TARGET = "AAB-removed";
+
+// the ModInfo.xml every 7 Days to Die mod ships, in the last deployment
+const MOD_A_MOD_INFO = makeDeployedFile({
+  relPath: "ModInfo.xml",
+  source: MOD_A_FOLDER,
+  target: MOD_A_TARGET,
+});
+const REMOVED_MOD_INFO = makeDeployedFile({
+  relPath: "ModInfo.xml",
+  source: REMOVED_FOLDER,
+  target: REMOVED_TARGET,
+});
+// mod A's ModInfo.xml, deleted from staging while the mod's folder is still there
+const MOD_A_MOD_INFO_DELETED = makeFileChange({
+  changeType: "srcdeleted",
+  source: MOD_A_FOLDER,
+  filePath: "ModInfo.xml",
+  target: MOD_A_TARGET,
+});
+// that ModInfo.xml, deleted from staging along with its mod's folder
+const REMOVED_MOD_INFO_DELETED = makeFileChange({
+  changeType: "srcdeleted",
+  source: REMOVED_FOLDER,
+  filePath: "ModInfo.xml",
+  target: REMOVED_TARGET,
+});
+
+describe("changesBySource", () => {
+  it("lists one change type's files per mod, leaving other types at the same path", () => {
+    const deleted = changeToEntry(
+      "",
+      makeFileChange({ changeType: "deleted", source: MOD_A_FOLDER, filePath: "ModInfo.xml" }),
+      new Set(),
+    );
+    const replaced = changeToEntry(
+      "",
+      makeFileChange({ changeType: "refchange", source: REMOVED_FOLDER, filePath: "ModInfo.xml" }),
+      new Set(),
+    );
+
+    expect(changesBySource([deleted, replaced], "deleted")).toEqual([
+      { source: MOD_A_FOLDER, filePaths: ["ModInfo.xml"] },
+    ]);
+  });
+});
 
 describe("changeToEntry", () => {
   const existing = new Set([MOD_A_FOLDER]);
@@ -110,6 +160,53 @@ describe("dealWithExternalChanges", () => {
 
     expect(h.dialogs).toHaveLength(1);
     expect(existsSync(path.join(h.gameDir, "plugin.esp"))).toBe(false);
+  });
+
+  test("imports a file deployed into its mod's subfolder back into staging", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([MOD_A_MOD_INFO_DELETED]);
+    await h.stageFile(MOD_A_FOLDER, "other.esp");
+    await h.deployFile("ModInfo.xml", MOD_A_TARGET);
+
+    await h.dealWithExternalChanges(new Set());
+
+    expect(existsSync(path.join(h.stagingPath, MOD_A_FOLDER, "ModInfo.xml"))).toBe(true);
+  });
+
+  test("drops a deleted link from the deployment when its method reports no target", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([
+      makeFileChange({ changeType: "deleted", source: MOD_A_FOLDER, filePath: "ModInfo.xml" }),
+    ]);
+
+    const [resolved] = await h.dealWithExternalChanges(new Set(), [MOD_A_MOD_INFO]);
+
+    expect(resolved).toEqual([]);
+  });
+
+  test("removes a file deployed into its mod's subfolder", async ({ makeExternalChanges }) => {
+    const h = await makeExternalChanges([REMOVED_MOD_INFO_DELETED]);
+    await h.deployFile("ModInfo.xml", REMOVED_TARGET);
+
+    await h.dealWithExternalChanges(new Set());
+
+    expect(existsSync(deployedFilePath(h.gameDir, REMOVED_TARGET, "ModInfo.xml"))).toBe(false);
+  });
+
+  test("keeps the deployment of other mods that deploy a file at the same path", async ({
+    makeExternalChanges,
+  }) => {
+    const h = await makeExternalChanges([REMOVED_MOD_INFO_DELETED]);
+    await h.deployFile("ModInfo.xml", REMOVED_TARGET);
+
+    const [resolved] = await h.dealWithExternalChanges(new Set(), [
+      REMOVED_MOD_INFO,
+      MOD_A_MOD_INFO,
+    ]);
+
+    expect(resolved).toEqual([MOD_A_MOD_INFO]);
   });
 
   test("reports a mod's changed content by game and mod id", async ({ makeExternalChanges }) => {

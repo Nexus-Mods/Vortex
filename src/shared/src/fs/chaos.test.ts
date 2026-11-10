@@ -1,10 +1,10 @@
+import { QualifiedPath } from "@nexusmods/paths";
 import { assert, describe, expect, it } from "vitest";
 
 import { VortexError } from "../errors/base";
 import { ChaosFS } from "./chaos";
 import { InMemoryFS } from "./in-memory";
 import { Builder } from "./in-memory-builder";
-import { QualifiedPath } from "./paths";
 
 const encode = (text: string): Uint8Array => new TextEncoder().encode(text);
 

@@ -4,6 +4,7 @@
  * in each other's runtime code.
  */
 import type NexusT from "@nexusmods/nexus-api";
+import type { VortexProfileId } from "@vortex/shared";
 import type { WireDownloadCheckpoint } from "@vortex/shared/ipc";
 import type { LootAsync } from "loot";
 import type { Mock } from "vitest";
@@ -30,6 +31,10 @@ import type { HealthCheckRegistry } from "../extensions/health_check/core/Health
 import type { IHistoryEvent } from "../extensions/history_management/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
+import type {
+  IDeployedFile,
+  IDeploymentMethod,
+} from "../extensions/mod_management/types/IDeploymentMethod";
 import type { IMod, IModRule } from "../extensions/mod_management/types/IMod";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
@@ -98,6 +103,8 @@ export interface IApiHarness {
   errorNotifications: Array<{ title: string; message: unknown; allowReport: boolean | undefined }>;
   // sendNotification calls, recorded in order (full notification, so ids/actions are assertable)
   notifications: INotification[];
+  // dismissNotification calls, the notification ids in order
+  dismissedNotifications: string[];
   // ext.addToHistory calls, recorded in order
   historyEntries: Array<{ stack: string; entry: IHistoryEvent }>;
   // ext.showHistory calls, recorded in order
@@ -126,6 +133,22 @@ export interface IGameHarnessOpts {
   // the game's discovered install folder (state.settings.gameMode.discovered[gameId].path);
   // undiscovered unless set
   gamePath?: string;
+  // this Vortex instance's id (state.app.instanceId), which deployment manifests record
+  instanceId?: string;
+  // the game's configured deployment method (state.settings.mods.activator); none unless set
+  activatorId?: string;
+}
+
+export interface IDeployedGameHarness extends IGameHarness {
+  // writes a file into the default mod type's deploy target and returns its manifest entry
+  deployFile: (relPath: string, target?: string) => Promise<IDeployedFile>;
+  // saves the default mod type's manifest as written by the given deployment method
+  saveManifest: (files: IDeployedFile[], methodId: string) => PromiseLike<unknown>;
+  // installs and deploys one plugin per mod over the saved manifest
+  deployMods: (method: IDeploymentMethod, modIds: string[]) => Promise<void>;
+  // the relPaths the default mod type's manifest lists
+  recordedFiles: () => Promise<string[]>;
+  isDeployed: (file: IDeployedFile) => boolean;
 }
 
 export interface IGameHarness extends IApiHarness {
@@ -171,7 +194,10 @@ type DrivenLoot = Pick<
 >;
 
 /** A controllable stand-in for a LootAsync instance: every member autosort drives as a mock. */
-export type IFakeLoot = { [K in keyof DrivenLoot]: Mock<DrivenLoot[K]> };
+export type IFakeLoot = { [K in keyof DrivenLoot]: Mock<DrivenLoot[K]> } & Pick<
+  LootAsync,
+  "strayConnections"
+>;
 
 /** The plugin persistor's file lifecycle as a controllable fake: every call a mock. */
 export type IFakePersistor = {
@@ -305,6 +331,13 @@ export interface IManagerInternals {
     recommended: boolean,
     silent: boolean,
   ) => Promise<unknown[]>;
+  updateRules: (
+    api: unknown,
+    gameId: string,
+    sourceModId: string,
+    dependencies: unknown[],
+    recommended: boolean,
+  ) => Promise<void>;
   withInstructions: (
     api: unknown,
     sourceName: string,
@@ -345,11 +378,15 @@ export interface IProfileSwitchOpts {
   gameSettings?: Record<string, string>;
   // the settings file saved in each profile, keyed by profileId
   savedSettings?: Record<string, string>;
+  // the error a profile's deployment fails with, keyed by profileId
+  failingDeploys?: Record<VortexProfileId, Error>;
 }
 
 export interface IProfileSwitchHarness extends IApiHarness {
   // switch the way the UI does (SET_NEXT_PROFILE) and resolve once the profile is active
   switchTo: (profileId: string) => Promise<void>;
+  // resolves on the next profile-did-change, for switches a test triggers some other way
+  profileChanged: () => Promise<void>;
   // the profiles deployed since the harness was built, in order
   deployed: string[];
   // the game's live settings file, which a deploy of profile X rewrites to "deployed:X"

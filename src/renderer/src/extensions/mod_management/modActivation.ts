@@ -6,10 +6,11 @@ import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
 import getNormalizeFunc, { type Normalize } from "../../util/getNormalizeFunc";
 import { truthy } from "../../util/util";
-import { MERGED_PATH } from "./modMerging";
+import { mergedSourceName } from "./modMerging";
 import type { IDeployedFile, IDeploymentMethod } from "./types/IDeploymentMethod";
 import type { IMod } from "./types/IMod";
 import type BlacklistSet from "./util/BlacklistSet";
+import { fileOverrideEntries } from "./util/BlacklistSet";
 import renderModName from "./util/modName";
 
 async function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
@@ -78,20 +79,11 @@ async function deployMods(
         progressCB(renderModName(mod), Math.round((idx * 50) / mods.length));
       }
       const modPath = path.join(installationPath, mod.installationPath);
-      if (mod.fileOverrides !== undefined) {
-        mod.fileOverrides
-          .map((file) => {
-            const relPath = path.relative(destinationPath, file);
-            const relPathWithSource = path.join(mod.installationPath, relPath);
-            const normRelPathWithSource = normalize(relPathWithSource);
-            return normRelPathWithSource;
-          })
-          .forEach((file) => skipFiles.add(file));
-      }
+      fileOverrideEntries(mod, destinationPath, normalize).forEach((file) => skipFiles.add(file));
       await method.activate(modPath, mod.installationPath, subDir(mod), skipFiles);
     }
 
-    const mergePath = truthy(typeId) ? MERGED_PATH + "." + typeId : MERGED_PATH;
+    const mergePath = mergedSourceName(typeId);
 
     await method.activate(
       path.join(installationPath, mergePath),

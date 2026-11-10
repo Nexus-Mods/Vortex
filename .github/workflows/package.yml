@@ -114,6 +114,7 @@ jobs:
           draft: true
           name: ${{ needs.build.outputs.raw-version }}
           tag_name: ${{ needs.build.outputs.tag-version }}
+          target_commitish: ${{ github.ref_name }}
 
       - name: Create GitHub Release on Vortex-Staging
         if: ${{ inputs.staging-release }}

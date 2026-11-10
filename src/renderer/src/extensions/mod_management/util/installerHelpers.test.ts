@@ -8,6 +8,7 @@ import {
   findCommonRootDir,
   makeInstallerFromSpec,
   matchesAnyStopPattern,
+  toPosixSeparators,
 } from "./installerHelpers";
 
 vi.mock("../../gamemode_management/util/getGame", () => ({
@@ -298,5 +299,28 @@ describe("declareInstallers", () => {
     expect(registerInstaller.mock.calls[0]?.[1]).toBe(60);
     expect(registerInstaller.mock.calls[1]?.[0]).toBe("xrebirth-nomodtype");
     expect(registerInstaller.mock.calls[1]?.[1]).toBe(70);
+  });
+});
+
+describe("toPosixSeparators", () => {
+  test("converts backslashes in source and destination", () => {
+    expect(
+      toPosixSeparators({
+        type: "copy",
+        source: "mod\\archive\\a.archive",
+        destination: "archive\\pc\\mod\\a.archive",
+      }),
+    ).toEqual({
+      type: "copy",
+      source: "mod/archive/a.archive",
+      destination: "archive/pc/mod/a.archive",
+    });
+  });
+
+  test("leaves instructions without paths untouched", () => {
+    expect(toPosixSeparators({ type: "setmodtype", value: "dinput" })).toEqual({
+      type: "setmodtype",
+      value: "dinput",
+    });
   });
 });

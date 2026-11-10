@@ -1,42 +1,42 @@
-import update from "immutability-helper";
+import { actionsToReducerSpec } from "@/reducers/builder";
+import type { IDiscoveryState } from "@/types/IState";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { discoveryFinished, discoveryProgress, setPhaseCount } from "../actions/discovery";
+import * as actions from "../actions/discovery";
+
+const defaultState: IDiscoveryState = {
+  running: false,
+  phases: {},
+};
 
 /**
  * reducer for changes to the known mods
  */
-export const discoveryReducer: IReducerSpec = {
-  reducers: {
-    [setPhaseCount as any]: (state, payload) => {
-      let res = update(state, { phases: { $set: {} } });
-      for (let i = 0; i < payload; ++i) {
-        res = update(res, {
-          phases: { [i]: { $set: { progress: 0, directory: 0 } } },
-        });
-      }
-      return res;
-    },
-    [discoveryProgress as any]: (state, payload) =>
-      state.phases[payload.idx] !== undefined
-        ? update(state, {
-            running: { $set: true },
-            phases: {
-              [payload.idx]: {
-                progress: { $set: payload.percent },
-                directory: { $set: payload.directory },
-              },
+export const discoveryReducer = actionsToReducerSpec(defaultState, actions, {
+  setPhaseCount: (state, count) => {
+    const phases: IDiscoveryState["phases"] = {};
+    for (let i = 0; i < count; ++i) {
+      phases[i] = { progress: 0, directory: "" };
+    }
+
+    return { ...state, phases };
+  },
+  discoveryProgress: (state, payload) =>
+    state.phases[payload.idx] === undefined
+      ? state
+      : {
+          ...state,
+          running: true,
+          phases: {
+            ...state.phases,
+            [payload.idx]: {
+              progress: payload.percent,
+              directory: payload.directory,
             },
-          })
-        : state,
-    [discoveryFinished as any]: (state, payload) =>
-      update(state, {
-        running: { $set: false },
-        phases: { $set: [] },
-      }),
-  },
-  defaults: {
+          },
+        },
+  discoveryFinished: (state) => ({
+    ...state,
     running: false,
-    phases: {},
-  },
-};
+    phases: [],
+  }),
+});

@@ -14,6 +14,7 @@ import { log } from "../../logging";
 import type { ICheckbox, IDialogAction } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { fileMD5 } from "../../util/checksum";
+import { recordErrorSpan } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { getSafe } from "../../util/storeHelper";
@@ -44,10 +45,13 @@ import { toLootError } from "./util/lootErrors";
 import { downloadMasterlist, downloadPrelude } from "./util/masterlist";
 import { listPaths, MetadataLists } from "./util/metadataLists";
 import { explainMasterNotLoaded } from "./util/missingMasters";
-import { SpanAttribute, type SpanAttributes } from "./util/spanAttributes";
+import { definedAttributes, SpanAttribute, type SpanAttributes } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 
 const MAX_RESTARTS = 3;
+
+// how long a failed start waits for its worker to be seen ending, which lags the pipe closing
+const WORKER_EXIT_GRACE_MS = 1000;
 
 const basename = (filePath: string) => path.basename(filePath);
 
@@ -838,6 +842,15 @@ class LootInterface {
       log("info", "not starting LOOT for a game that is not discovered", { gameMode });
       return { game: gameMode, loot: undefined };
     }
+    // the persisted discovery outlives the game until discovery notices it is gone
+    const isDirectory = await stat(gamePath).then(
+      (stats) => stats.isDirectory(),
+      () => false,
+    );
+    if (!isDirectory) {
+      log("info", "not starting LOOT for a game whose folder is gone", { gameMode, gamePath });
+      return { game: gameMode, loot: undefined };
+    }
     const localPath = pluginPath(gameMode);
     try {
       await fs.ensureDirAsync(localPath);
@@ -848,23 +861,61 @@ class LootInterface {
     }
 
     let loot: LootAsync | undefined;
+    let workerEnded: (exit: SpanAttributes) => void = () => undefined;
+    const workerExit = new Promise<SpanAttributes>((resolve) => {
+      workerEnded = (exit) => resolve({ ...exit, [SpanAttribute.LootWorkerRunning]: false });
+    });
 
     try {
-      loot = await getLootAsync().create(
-        this.convertGameId(gameMode, false),
-        gamePath,
-        localPath,
-        "en",
-        this.logCB,
-        (modulePath, args) => this.fork(modulePath, args, () => loot?.isClosed() === true),
-      );
+      // node-loot only fails a start over the pipe, so a worker that ends before it is ready
+      // would leave the start waiting forever
+      loot = await Promise.race([
+        getLootAsync().create(
+          this.convertGameId(gameMode, false),
+          gamePath,
+          localPath,
+          "en",
+          this.logCB,
+          (modulePath, args) =>
+            this.fork(modulePath, args, () => loot?.isClosed() === true, workerEnded),
+        ),
+        workerExit.then((): never => {
+          throw new VortexError("LOOT process ended", { kind: "loot:process-died", call: "init" });
+        }),
+      ]);
     } catch (rawErr) {
-      const err = toLootError(rawErr);
+      const err = rawErr instanceof VortexError ? rawErr : toLootError(rawErr);
       log("error", "failed to initialize LOOT", { kind: err.data.kind, error: err.message });
+      // a lost pipe says nothing of the worker, so the report says whether it ended, and how
+      const worker: SpanAttributes =
+        err.data.kind === "loot:process-died"
+          ? await Promise.race([
+              workerExit,
+              Bluebird.delay(WORKER_EXIT_GRACE_MS).then(() => ({
+                [SpanAttribute.LootWorkerRunning]: true,
+              })),
+            ])
+          : {};
       lootErrorReporter.report(this.mExtensionApi, err, LootPhase.Init, {
-        context: { [SpanAttribute.LootGameMode]: gameMode },
+        context: { [SpanAttribute.LootGameMode]: gameMode, ...worker },
       });
       return { game: gameMode, loot: undefined };
+    }
+    // the worker survived another process on its pipe; telemetry counts how often that happens
+    if (loot.strayConnections > 0) {
+      const count = loot.strayConnections;
+      log("warn", "another process opened the LOOT pipe", { gameMode, count });
+      recordErrorSpan(
+        "Another process opened the LOOT pipe",
+        new VortexError("another process opened the LOOT pipe", {
+          kind: "loot:stray-connection",
+          count,
+        }),
+        definedAttributes({
+          [SpanAttribute.LootGameMode]: gameMode,
+          [SpanAttribute.LootStrayConnections]: count,
+        }),
+      );
     }
     // a fresh instance holds no lists, whatever was loaded for the game before it
     this.mLists.invalidate();
@@ -886,7 +937,12 @@ class LootInterface {
     return { game: gameMode, loot };
   });
 
-  private fork = (modulePath: string, args: string[], wasClosed: () => boolean) => {
+  private fork = (
+    modulePath: string,
+    args: string[],
+    wasClosed: () => boolean,
+    ended: (exit: SpanAttributes) => void,
+  ) => {
     let exit: { code: number | null; signal: NodeJS.Signals | null } | undefined;
     const attempt = (retries: number): Bluebird<void> => {
       return (this.mExtensionApi as any)
@@ -916,20 +972,27 @@ class LootInterface {
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
       .then(() => {
+        const context = {
+          [SpanAttribute.LootExitCode]: exit?.code ?? undefined,
+          [SpanAttribute.LootExitSignal]: exit?.signal ?? undefined,
+        };
+        ended(context);
         // a clean exit or a signal is no error to runExecutable, yet a worker not closed has died
         if (exit !== undefined && !wasClosed()) {
-          this.workerDied(new VortexError("LOOT process ended", { kind: "loot:process-died" }), {
-            [SpanAttribute.LootExitCode]: exit.code ?? undefined,
-            [SpanAttribute.LootExitSignal]: exit.signal ?? undefined,
-          });
+          this.workerDied(
+            new VortexError("LOOT process ended", { kind: "loot:process-died" }),
+            context,
+          );
         }
       })
       .catch((err) => {
         log("warn", "LOOT process died", { error: err.message });
+        const context = { [SpanAttribute.LootExitCode]: err.exitCode };
+        ended(context);
         // the exit code and the worker's last words are all this side ever learns about the crash
         this.workerDied(
           new VortexError(err.message, { kind: "loot:process-died" }, { cause: err }),
-          { [SpanAttribute.LootExitCode]: err.exitCode },
+          context,
         );
       });
   };

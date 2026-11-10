@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type Ref, useImperativeHandle, useRef } from "react";
 
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
@@ -8,9 +8,19 @@ import { ToolbarButton, type IToolbarButtonProps } from "./ToolbarButton";
 import type { IToolbarPanel } from "./ToolbarGroup";
 import { TOOLBAR_CONTROL_ATTRIBUTE } from "./useToolbarOverflow.hook";
 
+/** A way to open a toolbar's panel from outside it, such as from another menu. */
+export interface IToolbarPanelHandle {
+  /** Opens the panel, if it isn't already, by pressing its button: Headless UI's only way in. */
+  open: () => void;
+}
+
 export type IToolbarPanelButtonProps = IToolbarButtonProps & {
+  /** What the panel holds, given ways to close it. */
   panel: IToolbarPanel;
+  /** Whether it's a panel of settings or a menu, which styles and focuses it. Default `dialog`. */
   panelRole?: "dialog" | "menu";
+  /** Filled with a way to open the panel from outside. */
+  handle?: Ref<IToolbarPanelHandle>;
 };
 
 /**
@@ -56,10 +66,24 @@ const focusPanel = (element: HTMLElement | null) => {
 export const ToolbarPanelButton = ({
   panel,
   panelRole,
+  handle,
   onClick,
   ...props
 }: IToolbarPanelButtonProps) => {
   const isMenu = panelRole === "menu";
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useImperativeHandle(
+    handle,
+    () => ({
+      open: () => {
+        if (buttonRef.current?.getAttribute("aria-expanded") !== "true") {
+          buttonRef.current?.click();
+        }
+      },
+    }),
+    [],
+  );
 
   return (
     // The wrapper is what the group lays out, so it is what the group measures.
@@ -70,6 +94,7 @@ export const ToolbarPanelButton = ({
             {...props}
             aria-haspopup={panelRole ?? "dialog"}
             as={PopoverButton}
+            ref={buttonRef}
             tooltipDisabled={open}
             onClick={open ? undefined : onClick}
           />

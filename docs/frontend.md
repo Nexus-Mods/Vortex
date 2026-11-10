@@ -60,6 +60,8 @@ build/test/format loop.
 
 ## Imports
 
+Prefer `@/` imports over relative imports, especially for deeply nested files.
+
 - `oxfmt` owns import grouping and ordering (external, then `@/` alias, then
   relative, alphabetical within each group). Don't fight it; run
   `pnpm run format`.
@@ -81,6 +83,67 @@ build/test/format loop.
   `bg-danger-strong`, `bg-warning-moderate`, `bg-info-moderate`, and so on.
 - Shared components also expose semantic `nxm-`-prefixed classes
   (`nxm-tab-button`). Keep that pattern for reusable primitives.
+
+### Text
+
+`Typography` (`src/renderer/src/ui/components/typography/Typography.tsx`) styles
+a **block** of text, and everything inside it inherits that style. `as` picks the
+element for its meaning only; `typographyType` picks the style, `body-md` unless
+given.
+
+A body style is normal weight. For Design's Medium and Semi Bold variants, add
+`font-medium` (500) or `font-semibold` (600) to its `className`; the size, line
+height and letter spacing stay the body style's.
+
+```tsx
+<Typography className="font-medium" typographyType="body-sm">
+    Mods
+</Typography>
+```
+
+Wrap a list or a run of paragraphs in one `Typography`, and put plain elements
+inside:
+
+```tsx
+<Typography as="ul" className="list-inside list-disc space-y-2">
+  <li>First</li>
+  <li>Second</li>
+</Typography>
+
+<Typography as="div" className="space-y-2">
+  <p>First paragraph.</p>
+  <p>Second paragraph.</p>
+</Typography>
+```
+
+Not one per item:
+
+```tsx
+<ul>
+  <li><Typography as="span">First</Typography></li>
+  <li><Typography as="span">Second</Typography></li>
+</ul>
+
+<Typography>First paragraph.</Typography>
+<Typography>Second paragraph.</Typography>
+```
+
+Nest another `Typography` only where the style changes: a heading, a subdued
+line, a different size. One that changes only the colour takes
+`typographyType="inherit"`, so it keeps the parent's type style instead of
+resetting to `body-md`:
+
+```tsx
+<Typography as="div" className="space-y-2" typographyType="body-sm">
+    <p>
+        {`Some text, and `}
+        <Typography appearance="subdued" as="span" typographyType="inherit">
+            a subdued phrase
+        </Typography>
+        .
+    </p>
+</Typography>
+```
 
 ### Scrims
 
@@ -192,6 +255,23 @@ The answer is published as `data-reduce-motion="true"` on `<html>`
 - For writing reducers, registering them and the deprecated `storeHelper`
   path helpers, see [state.md](state.md).
 
+## API data (TanStack Query)
+
+Nexus Mods API data goes through TanStack Query, not Redux. The client's
+defaults are in `src/renderer/src/util/queryClient.ts`.
+
+- Queries and mutations are `queryOptions` and `mutationOptions` factories,
+  one directory each under
+  `src/renderer/src/extensions/nexus_integration/queries/` and `mutations/`.
+- A call with a side effect is a mutation, not a query, so it runs only when
+  called and is never cached. Asking for a download link records a download,
+  so it's a mutation.
+- Mutations aren't retried, which is TanStack's default: one that reached the
+  server before failing would run twice. Only set `retry` on one that's safe
+  to repeat.
+- Pass `skipToken` rather than `enabled: false` while a query's inputs aren't
+  ready, so its function never runs with them missing.
+
 ## i18n
 
 Localize with `useTranslation(["ns", "common"])`. For namespaces and key format,
@@ -206,11 +286,35 @@ label, so selecting a tab stopped working as soon as the label was translated.
 
 ## Icons
 
-- MDI paths from `@mdi/js`, mapped in `views/components/iconMap.ts` via
-  `getIconPath(name)`. Pages can pass an `mdi` path directly.
+- `<Icon name="settings" />` draws a Material Symbol from the variable font, by the
+  symbol's name. `filled`, `weight`, `grade` and `opticalSize` set the font's axes; `size` keeps
+  the same steps as for a path. `Icon` takes either `name` or `path`.
+- The whole font ships, so `name` takes any Material Symbol, and a name the font doesn't have
+  fails the typecheck.
+- A component's `icon` prop (`leftIcon`, `rightIcon`, `fallbackIcon` and so on) takes a symbol by
+  name (`icon="star"`), a symbol with its axes (`icon={{ name: "star", filled: true }}`), an SVG
+  path for the custom `nxm*` icons the font lacks (`icon={{ path: nxmMod }}`), or an element. The type
+  is `IIconProp` (`IIconSource` where an element makes no sense), from `Icon.tsx`. Legacy icon names,
+  which actions and extensions register with, resolve through `getIcon(name)` in
+  `views/components/icon_map/iconMap.ts`. Pages can pass a `menuIcon`, a symbol
+  or `{ path }`; an extension's own `mdi` path still works, but is deprecated in its favour.
+- An icon's `title` names it for screen readers; it isn't a tooltip. On a symbol it becomes the
+  `aria-label` and shows nothing on hover, by design. A path icon's SVG `<title>` happens to get
+  the browser's own hover text, but don't rely on that either. For text on hover, wrap the icon,
+  or the control it sits in, in `Tooltip` (`ui/components/tooltip/Tooltip.tsx`).
+  A decorative icon takes no `title`.
 - Custom SVGs must use the 24x24 viewBox the `Icon` component renders. To port a
   Material Symbols icon (`0 -960 960 960`): scale by 0.025 and offset absolute Y
   by +960. Keep it a single filled path with `fill="currentColor"`.
+
+## Modal buttons
+
+- The primary action is the default `Button`. A destructive one is `brand="danger"`.
+- Next to a primary action, a secondary one such as "Close" or "Cancel" is
+  `appearance="moderate" brand="neutral"`.
+- A secondary action that is the only button, such as "Close", is
+  `appearance="strong" brand="neutral"`, so it reads as the way out and not a dim
+  afterthought. `ModalLayer` does this for the dialogs it draws.
 
 ## Pages and extensions
 
@@ -236,3 +340,16 @@ how to select elements and the extension-test mocking pattern, see
 
 Prefer self-documenting names over comments. Comment the non-obvious **why** (a
 subscription tradeoff, a workaround), not the **what**. Remove narration.
+
+## Legacy table navigation
+
+`controls/Table.tsx` (SuperTable) serves the production Mods table. With
+`stickyHeader`, rows scroll in the nearest ancestor whose vertical overflow is
+`auto`, `scroll` or `overlay`; when none exists, the document scrolls.
+Other tables scroll their own main pane. The `<tableId>-scroll-to` event brings
+the requested row into that scroller's visible area, allowing space for the
+sticky header. For example, the Plugins page emits `mods-scroll-to` after
+opening the Mods page for a plugin's owning mod. Page Up/Down uses the same
+scroller's height when choosing the next row. The development-only modern
+Mods table has separate navigation; SuperTable's event listeners do not apply
+to it.

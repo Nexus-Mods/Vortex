@@ -22,6 +22,11 @@ export const Timeouts = {
    * are throttled, so SMAPI alone takes ~30s locally — past a single round-trip.
    */
   MOD_INSTALL: min(2) * scalingFactor,
+  /**
+   * Making a game the active one: the profile switch, the staging folder set up
+   * on first manage, and the game's workspace loading afterwards.
+   */
+  GAME_ACTIVATION: sec(30) * scalingFactor,
   /** Bounded wait for a client-rendered modal to appear (or confirm it won't). */
   MODAL: sec(10) * scalingFactor,
   /** Cold-start and worker fixture setup. */

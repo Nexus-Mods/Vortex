@@ -1,4 +1,3 @@
-import { mdiMonitorArrowDownVariant } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -25,6 +24,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
     showPremiumModal,
     setShowPremiumModal,
     openModPage,
+    openFilePage,
     installInApp,
     markFeedback,
   } = useModRequirementActions(api, mod, identity);
@@ -73,7 +73,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
             <Button
               appearance="moderate"
               brand="neutral"
-              leftIconPath={mdiMonitorArrowDownVariant}
+              leftIcon="install_desktop"
               rightIcon={showPremiumAd ? <PremiumBadge /> : undefined}
               size="sm"
               onClick={(e) => {
@@ -117,7 +117,7 @@ export const ListingRow = ({ api, entry, isHidden, onOpen, onToggleHide }: IList
         onClose={() => setShowPremiumModal(false)}
         onDownload={() => {
           setShowPremiumModal(false);
-          openModPage();
+          openFilePage();
         }}
         onPremiumUnlocked={() => void installInApp()}
       />

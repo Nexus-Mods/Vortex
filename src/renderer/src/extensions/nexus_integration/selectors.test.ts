@@ -26,7 +26,7 @@ function makeState(downloads: Record<string, { modInfo?: any }>): IState {
 
 describe("nexusIdsFromDownloadId", () => {
   describe("collection downloads (APP-277 regression)", () => {
-    // The modInfo shape produced by `handleAddCollection` in BrowseNexusPage
+    // The modInfo shape produced by `handleAddCollection` in useCollectionSearch
     // and `installCollection` in the collections extension after the APP-277
     // fix. If either handler regresses to passing `{}`, this selector returns
     // `undefined` and the `collections_download_completed` analytics event

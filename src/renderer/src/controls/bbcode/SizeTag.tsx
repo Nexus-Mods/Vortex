@@ -22,7 +22,7 @@ class SizeTag extends Tag {
     return [<span style={{ fontSize: this.calc(size) }}>{this.getComponents()}</span>];
   }
 
-  private calc(sizeFactor: number): string {
+  protected calc(sizeFactor: number): string {
     return `${1 + sizeFactor * 0.1}rem`;
   }
 }

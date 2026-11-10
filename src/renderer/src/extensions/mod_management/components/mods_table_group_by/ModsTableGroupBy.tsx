@@ -17,19 +17,27 @@ interface IModsTableGroupByProps {
   grouping: ModsTableGrouping;
   /** Groups it by another column, or by none. */
   onChange: (grouping: ModsTableGrouping) => void;
+  /** Shows the grouping without letting it change, for a view that groups as it's meant to. */
+  disabled?: boolean;
 }
 
 /** The display options' section for choosing what the table groups by. */
-export const ModsTableGroupBy = ({ columns, grouping, onChange }: IModsTableGroupByProps) => {
-  const { t } = useTranslation(["common"]);
+export const ModsTableGroupBy = ({
+  columns,
+  grouping,
+  onChange,
+  disabled,
+}: IModsTableGroupByProps) => {
+  const { t } = useTranslation("mod_management");
 
   return (
     <PopoverPanelGroup>
-      <PopoverPanelGroupItem passive label={t("Group by")}>
+      <PopoverPanelGroupItem passive label={t("modsTable::displayOptions::groupBy")}>
         <Picker<ModsTableGrouping>
           button={{ size: "sm" }}
+          disabled={disabled}
           options={[
-            { label: t("None"), value: "none" },
+            { label: t("modsTable::displayOptions::noGrouping"), value: "none" },
             ...columns.map(({ id, header }) => ({ label: header, value: id })),
           ]}
           value={grouping}

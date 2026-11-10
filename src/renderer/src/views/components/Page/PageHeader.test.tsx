@@ -19,11 +19,12 @@ import { Page } from "./Page";
 import { PageHeader } from "./PageHeader";
 import { PageScroll } from "./PageScroll";
 
-const renderPage = () =>
+const renderPage = ({ isBeta = false }: { isBeta?: boolean } = {}) =>
   render(
     <Page scrollable={false}>
       <PageHeader
         data-testid="header"
+        isBeta={isBeta}
         pictogramName="settings"
         subtitle="a subtitle"
         title="a title"
@@ -34,6 +35,9 @@ const renderPage = () =>
   );
 
 const pictogram = () => screen.getByTestId("header").querySelector("svg");
+
+/** The row holding the subtitle, which collapses with the header. */
+const subtitleRow = () => screen.getByText("a subtitle").parentElement;
 
 const scrollDown = () =>
   fireEvent.scroll(screen.getByTestId("scroll"), { target: { scrollTop: 40 } });
@@ -47,12 +51,12 @@ describe("PageHeader", () => {
     renderPage();
 
     expect(pictogram()).toHaveClass("size-14");
-    expect(screen.getByText("a subtitle")).not.toHaveClass("hidden");
+    expect(subtitleRow()).not.toHaveAttribute("aria-hidden");
 
     scrollDown();
 
     expect(pictogram()).toHaveClass("size-7");
-    expect(screen.getByText("a subtitle")).toHaveClass("hidden");
+    expect(subtitleRow()).toHaveAttribute("aria-hidden", "true");
   });
 
   // The setting exists to spend no vertical space on the header and to take the
@@ -64,7 +68,7 @@ describe("PageHeader", () => {
     renderPage();
 
     expect(pictogram()).toHaveClass("size-7");
-    expect(screen.getByText("a subtitle")).toHaveClass("hidden");
+    expect(subtitleRow()).toHaveAttribute("aria-hidden", "true");
   });
 
   // The shadow says content has scrolled under the header, which is true of the
@@ -80,5 +84,21 @@ describe("PageHeader", () => {
     scrollDown();
 
     expect(screen.getByTestId("header")).toHaveClass("shadow-md");
+  });
+
+  it("marks a beta page with a badge that goes subdued with the title", () => {
+    renderPage({ isBeta: true });
+
+    expect(screen.getByText(/beta/i)).toHaveClass("border-neutral-strong");
+
+    scrollDown();
+
+    expect(screen.getByText(/beta/i)).toHaveClass("border-neutral-subdued");
+  });
+
+  it("has no badge on a page that isn't in beta", () => {
+    renderPage();
+
+    expect(screen.queryByText(/beta/i)).toBeNull();
   });
 });

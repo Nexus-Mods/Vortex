@@ -31,6 +31,7 @@ import { showExternalChanges } from "../actions/session";
 import { MERGED_PATH } from "../modMerging";
 import { modsForGame } from "../selectors";
 import type { FileAction, IFileEntry } from "../types/IFileEntry";
+import { deployedFileKey, deployedFilePath } from "./deployedFilePath";
 
 /**
  * look at the file actions and act accordingly. Depending on the action this can
@@ -71,6 +72,9 @@ async function applyFileActions(
     {},
   );
 
+  const deployedPath = (entry: IFileEntry) =>
+    deployedFilePath(outputPath, entry.target, entry.filePath);
+
   // not doing anything with 'nop'. The regular deployment code is responsible for doing the right
   // thing in this case.
 
@@ -78,7 +82,7 @@ async function applyFileActions(
   await Promise.all(
     (actionGroups["drop"] || []).map((entry) =>
       truthy(entry.filePath)
-        ? fs.removeAsync(path.join(outputPath, entry.filePath))
+        ? fs.removeAsync(deployedPath(entry))
         : Promise.reject(new Error("invalid file path")),
     ),
   );
@@ -94,7 +98,7 @@ async function applyFileActions(
   await Promise.all(
     (actionGroups["import"] || []).map((entry) => {
       const source = path.join(sourcePath, entry.source, entry.filePath);
-      const deployed = path.join(outputPath, entry.filePath);
+      const deployed = deployedPath(entry);
       // Very rarely we have a case where the files are links of each other
       // (or at least node reports that) so the copy would fail.
       // Instead of handling the errors (when we can't be sure if it's due to a bug in node.js
@@ -117,17 +121,19 @@ async function applyFileActions(
   // the activation list because then they get reinstalled.
   // this includes files that were deleted and those replaced
   const dropSet = new Set(
-    [].concat(
-      (actionGroups["restore"] || []).map((entry) => entry.filePath),
-      (actionGroups["drop"] || []).map((entry) => entry.filePath),
+    [
+      ...(actionGroups["restore"] || []),
+      ...(actionGroups["drop"] || []),
       // also remove the files that got deleted, except these won't be reinstalled
-      (actionGroups["delete"] || []).map((entry) => entry.filePath),
+      ...(actionGroups["delete"] || []),
       // also remove the files that got imported because they too only exist in staging
       // at this point
-      (actionGroups["import"] || []).map((entry) => entry.filePath),
-    ),
+      ...(actionGroups["import"] || []),
+    ].map((entry) => deployedFileKey(VortexModStagingFolder(entry.source), entry.filePath)),
   );
-  const newDeployment = lastDeployment.filter((entry) => !dropSet.has(entry.relPath));
+  const newDeployment = lastDeployment.filter(
+    (entry) => !dropSet.has(deployedFileKey(VortexModStagingFolder(entry.source), entry.relPath)),
+  );
   lastDeployment = newDeployment;
 
   const affectedMods = new Set<VortexModId>();
@@ -215,11 +221,25 @@ function fileEntry(modTypeId: string, change: IFileChange, action: FileAction): 
     modTypeId,
     filePath: change.filePath,
     source: change.source,
+    target: change.target,
     type: change.changeType,
     action,
     sourceModified: change.sourceTime,
     destModified: change.destTime,
   };
+}
+
+/** The files of one change type, per mod. */
+export function changesBySource(
+  changes: IFileEntry[],
+  changeType: IFileEntry["type"],
+): Array<{ source: VortexModStagingFolder; filePaths: string[] }> {
+  const bySource = new Map<VortexModStagingFolder, string[]>();
+  for (const entry of changes.filter((change) => change.type === changeType)) {
+    const source = VortexModStagingFolder(entry.source);
+    bySource.set(source, [...(bySource.get(source) ?? []), entry.filePath]);
+  }
+  return [...bySource].map(([source, filePaths]) => ({ source, filePaths }));
 }
 
 /** The dialog's entry for a change; `existingFolders` are the mod folders still in staging. */

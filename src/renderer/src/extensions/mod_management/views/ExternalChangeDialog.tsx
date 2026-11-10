@@ -4,6 +4,7 @@
 //  https://github.com/Nexus-Mods/Vortex/issues/7629
 import path from "path";
 
+import { VortexModStagingFolder } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import update from "immutability-helper";
 import * as React from "react";
@@ -21,6 +22,7 @@ import getVortexPath from "../../../util/getVortexPath";
 import { setdefault } from "../../../util/util";
 import { confirmExternalChanges, setExternalChangeAction } from "../actions/session";
 import type { FileAction, IFileEntry } from "../types/IFileEntry";
+import { changesBySource } from "../util/externalChanges";
 
 export interface IBaseProps {}
 
@@ -29,7 +31,12 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onChangeAction: (fileNames: string[], action: FileAction) => void;
+  // source limits the change to that mod's files
+  onChangeAction: (
+    fileNames: string[],
+    action: FileAction,
+    source?: VortexModStagingFolder,
+  ) => void;
   onClose: (changes: IFileEntry[], cancel: boolean) => void;
 }
 
@@ -433,7 +440,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             edit: {
               inline: true,
               choices: () => possibleActions[type],
-              onChangeValue: (source: ISourceEntry, value: any) => {
+              onChangeValue: (source: ISourceEntry, value: FileAction | undefined) => {
                 let newAction = value;
                 if (value === undefined) {
                   const typeActions = possibleActions[type];
@@ -445,8 +452,10 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
                 //   I wasn't able to reproduce a case where it was, but we did get a crash
                 //   report where it was.
                 if (source.filePaths !== undefined) {
-                  source.filePaths.forEach((filePath) =>
-                    this.props.onChangeAction([filePath], newAction),
+                  this.props.onChangeAction(
+                    source.filePaths,
+                    newAction,
+                    VortexModStagingFolder(source.id),
                   );
                 }
               },
@@ -470,6 +479,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             name: "File Name",
             description: "file name",
             calc: (file: IFileEntry) => file.filePath,
+            placement: "table",
+            edit: {},
+          },
+          {
+            id: "mod",
+            name: "Mod",
+            description: "the mod's folder in the staging folder",
+            calc: (file: IFileEntry) => file.source,
             placement: "table",
             edit: {},
           },
@@ -508,19 +525,21 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             edit: {
               inline: true,
               choices: () => possibleActions[type],
-              onChangeValue: (file: IFileEntry, value: any) => {
+              onChangeValue: (file: IFileEntry, value: FileAction | undefined) => {
                 const typeActions = possibleActions[type];
                 const idx = typeActions.findIndex((act) => act.key === file.action);
                 if (idx < 0) {
                   return;
                 }
+                const source = VortexModStagingFolder(file.source);
                 if (value === undefined) {
                   this.props.onChangeAction(
                     [file.filePath],
                     typeActions[(idx + 1) % typeActions.length].key as FileAction,
+                    source,
                   );
                 } else {
-                  this.props.onChangeAction([file.filePath], value);
+                  this.props.onChangeAction([file.filePath], value, source);
                 }
               },
             },
@@ -535,13 +554,11 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     this.setState(update(this.state, { showFiles: { $set: !this.state.showFiles } }));
   };
 
-  private setAllFunc = (changeType: string, action: FileAction) => {
+  private setAllFunc = (changeType: IFileEntry["type"], action: FileAction) => {
     const { changes, onChangeAction } = this.props;
-    onChangeAction(
-      changes
-        .filter((entry) => (entry.type as string) === changeType)
-        .map((entry) => entry.filePath),
-      action,
+    // per mod: two mods can have a file at the same path
+    changesBySource(changes, changeType).forEach(({ source, filePaths }) =>
+      onChangeAction(filePaths, action, source),
     );
   };
 
@@ -585,8 +602,8 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onChangeAction: (fileName: string[], action: FileAction) =>
-      dispatch(setExternalChangeAction(fileName, action)),
+    onChangeAction: (fileName: string[], action: FileAction, source?: VortexModStagingFolder) =>
+      dispatch(setExternalChangeAction(fileName, action, source)),
     onClose: (changes: IFileEntry[], cancel: boolean) =>
       dispatch(confirmExternalChanges(changes, cancel)),
   };

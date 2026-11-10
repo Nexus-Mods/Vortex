@@ -1,4 +1,5 @@
 import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
+import type { GameDomain, GameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -165,6 +166,8 @@ export interface IExtensionState {
   fileId?: number;
   /** Nexus Mods endorsed status of the extension mod page. */
   endorsed: EndorsedStatus;
+  /** Set when the user declined linking this unlinked extension to its Nexus Mods page. */
+  nexusLinkDeclined?: boolean;
 }
 
 /**
@@ -204,6 +207,11 @@ export interface IToolbarState {
 
 export interface IToolbarStates {
   [toolbarId: string]: IToolbarState;
+}
+
+/** Where the user left each resizable split, keyed by split id: the first pane's share, 0 to 1. */
+export interface ISplitStates {
+  [splitId: string]: number;
 }
 
 export interface IStateDownloads {
@@ -261,6 +269,8 @@ export interface ISettingsGameMode {
   sortManaged: string;
   sortUnmanaged: string;
   sortDetected: string;
+  /** Show the experimental-support dialog before managing a Tier 0 game. Treated as on unless false. */
+  confirmTierZero?: boolean;
 }
 
 export interface ISettingsDownloads {
@@ -293,6 +303,8 @@ export interface ISettingsMods {
   confirmPurge: boolean;
   cleanupOnDeploy: boolean;
   installerSandbox: boolean;
+  /** Whether the Mods page shows the new table, in beta, rather than the classic one. */
+  betaTable: boolean;
 }
 
 export interface ISettingsNotification {
@@ -332,6 +344,7 @@ export interface ISettings {
   notifications: ISettingsNotification;
   tables: ITableStates;
   toolbars: IToolbarStates;
+  splits: ISplitStates;
   update: ISettingsUpdate;
   workarounds: ISettingsWorkarounds;
 }
@@ -357,12 +370,38 @@ export interface IGameInfoEntry {
   type?: string;
 }
 
+export interface ITierZeroGame {
+  /** numeric Nexus Mods game id (e.g. 1303) */
+  gameId: GameId;
+  /** the nexus domain the game is managed under; the synthesized game's id */
+  domain: GameDomain;
+  name: string;
+  storeIDs: {
+    steam: string[];
+    gog: string[];
+    epic: string[];
+  };
+  manualInstallerPreferences?: IManualInstallerPreferences;
+}
+
+/** the user's Manual Installer preferences for one game */
+export interface IManualInstallerPreferences {
+  /** folder, relative to the game root, mods are installed to by default */
+  defaultFolder?: string;
+  /** skip the destination dialog when a default folder is set */
+  dontAskAgain?: boolean;
+}
+
 export interface IStateGameMode {
   gameInfo: {
     [gameId: string]: {
       [key: string]: IGameInfoEntry;
     };
   };
+
+  /** games managed without a game extension, keyed by numeric nexus game id
+   * (immutable across domain renames; the entry also carries the domain) */
+  tier0: Record<GameId, ITierZeroGame>;
 }
 
 export interface IBrowserState {
@@ -429,6 +468,24 @@ export interface ISessionState {
   updater: IUpdaterSessionState;
 }
 
+export interface IPersistentState {
+  profiles: { [profileId: string]: IProfile };
+  mods: IModTable;
+  downloads: IStateDownloads;
+  collections: ICollectionsPersistentState;
+  categories: { [gameId: string]: ICategoryDictionary };
+  gameMode: IStateGameMode;
+  deployment: {
+    needToDeploy: { [gameId: string]: boolean };
+    /** Games whose mods were purged and haven't been deployed since. */
+    purged: { [gameId: string]: boolean };
+    deploymentCounter: { [gameId: string]: number };
+  };
+  transactions: IStateTransactions;
+  history: IHistoryPersistent;
+  healthCheck: IHealthCheckPersistentState;
+}
+
 export interface IState {
   app: IApp;
   user: IUser;
@@ -437,21 +494,7 @@ export interface IState {
   };
   session: ISessionState;
   settings: ISettings;
-  persistent: {
-    profiles: { [profileId: string]: IProfile };
-    mods: IModTable;
-    downloads: IStateDownloads;
-    collections: ICollectionsPersistentState;
-    categories: { [gameId: string]: ICategoryDictionary };
-    gameMode: IStateGameMode;
-    deployment: {
-      needToDeploy: { [gameId: string]: boolean };
-      deploymentCounter: { [gameId: string]: number };
-    };
-    transactions: IStateTransactions;
-    history: IHistoryPersistent;
-    healthCheck: IHealthCheckPersistentState;
-  };
+  persistent: IPersistentState;
 }
 
 export interface IDiscoveryPhase {

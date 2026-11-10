@@ -25,6 +25,7 @@ import { modRuleId } from "../../../util/collectionInstallSession";
 import { reconstructSessionMods } from "../../../util/collectionSessionReconstruct";
 import type { IMod, IModAttributes, IModRule } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
+import { resolveCollectionMods } from "../util/resolveCollectionMods/resolveCollectionMods";
 import { buildCollectionItemRows, collectRemovalTargets, isRemovableItem } from "./itemRows";
 
 vi.mock("../../../util/log", () => ({ log: vi.fn() }));
@@ -427,6 +428,25 @@ describe("buildCollectionItemRows", () => {
     expect(second[idA]).toBe(first[idA]);
     expect(second[idB]).not.toBe(first[idB]);
     expect(second[idB].attributes?.version).toBe("2.1.0");
+  });
+
+  it("takes installed mods from a supplied resolvedMods instead of resolving them again", () => {
+    const rule = requiresRule({ reference: { id: "mod-1" } });
+    const mods: Record<string, IMod> = { "mod-1": installedMod("mod-1") };
+    const resolvedMods = resolveCollectionMods([rule], mods);
+
+    // an empty mods map would leave the member pending if the rows re-resolved it
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods: {},
+      downloads: {},
+      modState: {},
+      sessionMods: {},
+      resolvedMods,
+    });
+
+    expect(rows[modRuleId(rule)].id).toBe("mod-1");
+    expect(rows[modRuleId(rule)].status).toBe("installed");
   });
 });
 

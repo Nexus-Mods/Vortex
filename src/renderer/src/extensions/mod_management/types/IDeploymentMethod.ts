@@ -14,6 +14,8 @@ export interface IFileChange {
    * the source mod
    */
   source: string;
+  /** the mod's subfolder, for games that don't merge mods (mergeMods off) */
+  target?: string;
   /**
    * type of change.
    * refchange means that the installed file

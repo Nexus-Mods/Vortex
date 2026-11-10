@@ -26,6 +26,7 @@
             opacity: 0;
             width: calc(var(--spacing) * 4);
             height: calc(var(--spacing) * 4);
+            font-size: calc(var(--spacing) * 4);
             transition-property: opacity;
             transition-timing-function: var(--default-transition-timing-function);
             transition-duration: var(--default-transition-duration);
@@ -46,7 +47,7 @@
             border-color: var(--color-danger-strong);
         }
 
-        &[data-focus] {
+        &:is([data-focus], :focus-visible) {
             outline: 2px solid var(--color-focus-subdued);
             outline-offset: 2px;
         }
@@ -83,8 +84,9 @@
             }
         }
 
-        /* the whole row is the click target, so it all hovers together */
-        .nxm-field-control:hover {
+        /* the whole row is the click target, so it all hovers together. A link in the label isn't
+           part of that: clicking it doesn't tick the checkbox, so it doesn't light it either. */
+        .nxm-field-control:hover:not(:has(.nxm-field-label a[href]:hover)) {
             .nxm-field-label:not([data-disabled]) {
                 color: var(--color-neutral-strong);
             }

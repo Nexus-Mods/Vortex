@@ -1,14 +1,41 @@
-import React, { type CSSProperties, Fragment, useCallback, useMemo, useState } from "react";
+import React, {
+  type CSSProperties,
+  Fragment,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useTranslation } from "react-i18next";
 
+import {
+  ContextMenu,
+  contextMenuPosition,
+  type IContextMenuPosition,
+  openedFromKeyboard,
+} from "@/ui/components/context_menu/ContextMenu";
+import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { ITableGroup, ITableProps, TableItem } from "./Table.types";
-import { TableGroupBackdrop } from "./TableGroupBackdrop";
+import {
+  columnTracks,
+  isResizable,
+  keptWidth,
+  sharesSpace,
+} from "./table_column_resize/tableColumnResize";
+import { TableGroup } from "./TableGroup";
+import { tableGroupBlocks } from "./tableGroupBlocks";
+import { tableGroupMenuActions } from "./TableGroupMenu";
 import { TableGroupRow } from "./TableGroupRow";
 import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
 import { TableSpacer } from "./TableSpacer";
-import { useTableGroupBackdrops } from "./useTableGroupBackdrops.hook";
 import { useTableSelection } from "./useTableSelection.hook";
 import { useTableSort } from "./useTableSort.hook";
 import { useTableVirtualizer } from "./useTableVirtualizer.hook";
@@ -18,15 +45,28 @@ const ROW_HEIGHT = 40;
 const GROUP_ROW_HEIGHT = 48;
 const GROUP_ROW_GAP = 4;
 
-/** A column without a width shares what's left, but never shrinks past this when columns overflow. */
-const DEFAULT_COLUMN_WIDTH = "minmax(280px, 1fr)";
-
 /**
  * A column-driven table drawn as one CSS grid: the columns' widths make its tracks, and
  * every row is a subgrid of them, so cells line up across rows without a `<table>`.
  * Carries the grid roles, so it reads as a table to assistive tech; grouped, it's a
  * treegrid whose group rows collapse. Only the rows in view render, against the page's
- * scroller, under a header that sticks to it.
+ * scroller, under a header that sticks to it. A right-click on a row offers its `rowMenu`, once
+ * the row is selected. Every selected row shows what's in it as a hovered one does, so a table
+ * that shows actions in its rows decides itself what several selected rows show.
+ *
+ * Each group's heading and rows render in a rowgroup as tall as all its rows, rendered or not,
+ * so the heading sticks under the header while they pass and the next group's pushes it off.
+ *
+ * A group heading has a "…" at its end, in the sticky column or the last, and a right-click menu,
+ * both listing the same items, drawn by the toolbar components as a row's are. First the table's
+ * built-in items, each with a stable id (`collapse`, `collapse-all`, `select-all`): collapsing or
+ * expanding the group or every group, and selecting its rows. Then the page's `groupMenu` actions.
+ * The heading's toolbar counts every click through `groupTracking`, as a row's toolbar counts its
+ * own; the built-ins say in `trackingProperties` which way they went.
+ *
+ * Given `focusGroupId`, it opens that group and scrolls it to the top once it has it; the group
+ * opens while rendering, so its rows are counted before it's scrolled to. `focusRowId` does the
+ * same for a row, opening the first group it's in, then selecting it alone.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columns,
@@ -38,12 +78,23 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   footer,
   empty,
   defaultSort,
+  columnWidths,
+  onColumnWidthsChange,
   className,
   selectable = false,
   getRowLabel,
   selectedIds,
   onSelectedIdsChange,
+  rowMenu,
+  groupMenu,
+  groupTracking,
+  focusGroupId,
+  onGroupFocused,
+  focusRowId,
+  onRowFocused,
+  onMenuOpen,
 }: ITableProps<T, G>) => {
+  const { t } = useTranslation();
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
 
   // Each row once, though a row in two groups shows in both.
@@ -51,6 +102,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     () => [...new Set((rows ?? groups?.flatMap((group) => group.rows) ?? []).map(getRowId))],
     [getRowId, groups, rows],
   );
+
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggle = (groupId: string) =>
@@ -61,6 +113,26 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       }
       return next;
     });
+
+  const [menu, setMenu] = useState<
+    | { position: IContextMenuPosition; kind: "row"; rowId: string }
+    | { position: IContextMenuPosition; kind: "group"; groupId: string }
+  >();
+
+  const menuGroup =
+    menu?.kind === "group" ? groups?.find((group) => group.id === menu.groupId) : undefined;
+
+  const menuRow =
+    menu?.kind === "row"
+      ? (rows ?? groups?.flatMap((group) => group.rows))?.find(
+          (row) => getRowId(row) === menu.rowId,
+        )
+      : undefined;
+
+  // Closed while rendering once what it was opened on is gone, so it never shows a frame for nothing.
+  if ((menu?.kind === "group" && !menuGroup) || (menu?.kind === "row" && menuRow === undefined)) {
+    setMenu(undefined);
+  }
 
   // Every row in order, a group's under it while it's open, as the virtualiser counts them.
   const items = useMemo<Array<TableItem<T, G>>>(() => {
@@ -90,7 +162,6 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
             key: `${group.id}:${getRowId(row)}`,
             row,
             level: 2,
-            tint: group.image,
           }),
         ),
       ];
@@ -104,7 +175,24 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       ),
     [getRowId, items],
   );
+
   const selection = useTableSelection(rowIds, shownRows, selectedIds, onSelectedIdsChange);
+
+  const groupMenuOptions = (group: G) => ({
+    allSelected:
+      !!group.rows.length && group.rows.every((row) => selection.selected.has(getRowId(row))),
+    expanded: !collapsed.has(group.id),
+    onDeselectAll: selectable ? () => selection.remove(group.rows.map(getRowId)) : undefined,
+    onSelectAll: selectable ? () => selection.add(group.rows.map(getRowId)) : undefined,
+    onSetAllExpanded: (expanded: boolean) =>
+      setCollapsed(new Set(expanded ? [] : (groups ?? []).map((other) => other.id))),
+    onToggle: () => toggle(group.id),
+  });
+
+  const groupActions = (group: G) => [
+    ...tableGroupMenuActions({ ...groupMenuOptions(group), t }),
+    ...(groupMenu?.(group) ?? []),
+  ];
 
   const getItemKey = useCallback((index: number) => items[index].key, [items]);
   const getItemSize = useCallback(
@@ -113,15 +201,226 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     [items],
   );
 
-  const virtual = useTableVirtualizer({ count: items.length, getItemKey, getItemSize });
+  const stickyIndexes = useMemo(
+    () => items.flatMap((item, index) => (item.kind === "group" ? [index] : [])),
+    [items],
+  );
+
+  const virtual = useTableVirtualizer({
+    count: items.length,
+    getItemKey,
+    getItemSize,
+    stickyIndexes,
+  });
+
+  const hasFocusGroup = !!focusGroupId && !!groups?.some((group) => group.id === focusGroupId);
+
+  if (hasFocusGroup && collapsed.has(focusGroupId)) {
+    const next = new Set(collapsed);
+    next.delete(focusGroupId);
+    setCollapsed(next);
+  }
+
+  const focusRowGroup = focusRowId
+    ? groups?.find((group) => group.rows.some((row) => getRowId(row) === focusRowId))
+    : undefined;
+
+  if (focusRowGroup && collapsed.has(focusRowGroup.id)) {
+    const next = new Set(collapsed);
+    next.delete(focusRowGroup.id);
+    setCollapsed(next);
+  }
+
+  const { ready, scrollToIndex } = virtual;
+
+  useEffect(() => {
+    if (!hasFocusGroup || !ready) {
+      return;
+    }
+
+    const index = items.findIndex((item) => item.key === `group:${focusGroupId}`);
+    if (index === -1) {
+      return;
+    }
+
+    scrollToIndex(index);
+    onGroupFocused?.();
+  }, [focusGroupId, hasFocusGroup, items, onGroupFocused, ready, scrollToIndex]);
+
+  useEffect(() => {
+    if (!focusRowId || !ready) {
+      return;
+    }
+
+    const index = items.findIndex(
+      (item) => item.kind === "row" && getRowId(item.row) === focusRowId,
+    );
+    if (index === -1) {
+      return;
+    }
+
+    scrollToIndex(index);
+    onSelectedIdsChange?.(new Set([focusRowId]));
+    onRowFocused?.();
+  }, [focusRowId, getRowId, items, onRowFocused, onSelectedIdsChange, ready, scrollToIndex]);
+
   const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
+
   // The rows in the sticky head, which come before the table's own in aria-rowindex.
   const headRows = toolbar ? 2 : 1;
   const showsEmpty = items.length === 0 && !!empty;
   // The rows after the head: the items, or what stands in for them.
   const bodyRows = showsEmpty ? 1 : items.length;
 
-  const backdrops = useTableGroupBackdrops({ getItemSize, items, rendered: virtual.items });
+  const starts = useMemo(() => {
+    const tops = [0];
+    items.forEach((_, index) => tops.push(tops[index] + getItemSize(index)));
+    return tops;
+  }, [getItemSize, items]);
+
+  // The toolbar grows as what's in it wraps, and the head and the scroll margins reckon with its
+  // height, so it's measured into the variable they read.
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarHeight, setToolbarHeight] = useState<number>();
+  const hasToolbar = !!toolbar;
+
+  useLayoutEffect(() => {
+    const element = toolbarRef.current;
+    if (element === null || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver(() => setToolbarHeight(element.offsetHeight));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [hasToolbar]);
+
+  const { tableRef } = virtual;
+  const resizes = !!onColumnWidthsChange;
+
+  const template = (widths: { [columnId: string]: number | undefined }) =>
+    [
+      "var(--nxm-table-gutter-start)",
+      ...columnTracks(columns, (columnId) => widths[columnId], resizes),
+      "var(--nxm-table-gutter)",
+    ].join(" ");
+
+  const savedTemplate = template(columnWidths ?? {});
+
+  /**
+   * The columns that share what's left, at the width they're drawn at, to hold them there while
+   * another is resized, so it pushes the columns after it along rather than taking their room.
+   * One whose header can't be measured isn't held.
+   */
+  const sharedWidths = (resizedId: string) => {
+    const headers = [
+      ...(tableRef.current?.querySelectorAll<HTMLElement>(".nxm-table-header [data-column-id]") ??
+        []),
+    ];
+
+    return Object.fromEntries(
+      columns.flatMap((column) => {
+        if (
+          column.id === resizedId ||
+          !isResizable(column) ||
+          !sharesSpace(column) ||
+          columnWidths?.[column.id] !== undefined
+        ) {
+          return [];
+        }
+
+        const drawn = headers
+          .find((header) => header.dataset.columnId === column.id)
+          ?.getBoundingClientRect().width;
+        const width = drawn ? keptWidth(column, drawn) : undefined;
+        return width === undefined ? [] : [[column.id, width]];
+      }),
+    );
+  };
+
+  // A drag's widths, with the columns it holds; drawn straight onto the grid as it goes, so the
+  // rows don't render for every move, and kept in one change once it's let go of.
+  const dragWidths = useRef<{ [columnId: string]: number }>(undefined);
+
+  const renderItem = (index: number) => {
+    const item = items[index];
+
+    if (item.kind === "group") {
+      return (
+        <TableGroupRow
+          columns={columns}
+          expanded={item.expanded}
+          group={item.group}
+          index={index}
+          menu={
+            <Toolbar className="ml-auto pl-1" tracking={groupTracking}>
+              <ToolbarGroup actions={groupActions(item.group)} maxVisible={0} />
+            </Toolbar>
+          }
+          rowIndex={index + headRows + 1}
+          onContextMenu={(event: MouseEvent<HTMLDivElement>) => {
+            event.preventDefault();
+            onMenuOpen?.("group", openedFromKeyboard(event) ? "keyboard" : "pointer");
+            setMenu({
+              position: contextMenuPosition(event),
+              kind: "group",
+              groupId: item.group.id,
+            });
+          }}
+          onToggle={() => toggle(item.group.id)}
+        />
+      );
+    }
+
+    return (
+      <TableRow
+        checkbox={
+          selectable
+            ? selection.checkbox({ key: item.key, id: getRowId(item.row) }, getRowLabel?.(item.row))
+            : undefined
+        }
+        columns={columns}
+        index={index}
+        level={item.level}
+        row={item.row}
+        rowIndex={index + headRows + 1}
+        sortedColumnId={sort?.columnId}
+        onClick={
+          selectable
+            ? (click) => selection.click({ key: item.key, id: getRowId(item.row) }, click)
+            : undefined
+        }
+        onContextMenu={
+          rowMenu
+            ? (event) => {
+                event.preventDefault();
+                const id = getRowId(item.row);
+                const inSelection =
+                  selectable && selection.selected.has(id) && selection.selected.size > 1;
+                onMenuOpen?.(
+                  inSelection ? "selection" : "row",
+                  openedFromKeyboard(event) ? "keyboard" : "pointer",
+                );
+                if (selectable) {
+                  selection.contextClick({ key: item.key, id });
+                }
+                setMenu({
+                  position: contextMenuPosition(event),
+                  kind: "row",
+                  rowId: getRowId(item.row),
+                });
+              }
+            : undefined
+        }
+      />
+    );
+  };
+
+  const blocks = tableGroupBlocks(
+    virtual.items.map(({ index }) => index),
+    stickyIndexes,
+    starts,
+  );
 
   return (
     <div
@@ -138,11 +437,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-height": `${GROUP_ROW_HEIGHT}px`,
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           "--nxm-table-sticky-reveal": revealWidth,
-          gridTemplateColumns: [
-            "var(--nxm-table-gutter-start)",
-            ...columns.map((column) => column.width ?? DEFAULT_COLUMN_WIDTH),
-            "var(--nxm-table-gutter)",
-          ].join(" "),
+          "--nxm-table-toolbar-height": toolbarHeight ? `${toolbarHeight}px` : undefined,
+          gridTemplateColumns: savedTemplate,
         } as CSSProperties
       }
       onBlur={virtual.onBlur}
@@ -152,7 +448,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         if (
           selectable &&
           event.currentTarget.contains(target) &&
-          target.closest('[role="row"], [role="rowgroup"]') === null
+          target.closest('[role="row"], .nxm-table-head') === null
         ) {
           selection.clear();
         }
@@ -160,67 +456,83 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
       onFocus={virtual.onFocus}
     >
       <TableHeader
-        columns={columns}
         checkbox={selectable ? selection.header : undefined}
+        columns={columns}
         sort={sort}
         toolbar={toolbar}
+        toolbarRef={toolbarRef}
+        onColumnDrag={(columnId, width) => {
+          const element = tableRef.current;
+          if (width === undefined) {
+            dragWidths.current = undefined;
+            if (element) {
+              element.style.gridTemplateColumns = savedTemplate;
+            }
+            return;
+          }
+
+          dragWidths.current = {
+            ...(dragWidths.current ?? sharedWidths(columnId)),
+            [columnId]: width,
+          };
+          if (element) {
+            element.style.gridTemplateColumns = template({
+              ...columnWidths,
+              ...dragWidths.current,
+            });
+          }
+        }}
+        onColumnResize={
+          onColumnWidthsChange &&
+          ((columnId, width) => {
+            const column = columns.find(({ id }) => id === columnId);
+            if (!column) {
+              return;
+            }
+            if (width === undefined) {
+              onColumnWidthsChange({ [columnId]: undefined });
+              return;
+            }
+            const { [columnId]: _dragged, ...held } = dragWidths.current ?? sharedWidths(columnId);
+            onColumnWidthsChange({ ...held, [columnId]: keptWidth(column, width) });
+          })
+        }
         onSort={toggleSort}
       />
 
       {/* Always rendered, at the top of the rows: where the virtualiser measures from. */}
       <div className="nxm-table-spacer" ref={virtual.startRef} role="presentation" />
 
-      {/* Behind the groups in view, even one whose own row has scrolled away. */}
-      {backdrops.map(({ height, key, src, top }) => (
-        <TableGroupBackdrop height={height} key={`backdrop:${key}`} src={src} top={top} />
-      ))}
-
-      {virtual.items.map(({ gap, index }) => {
-        const item = items[index];
-
-        return (
-          <Fragment key={item.key}>
+      {!groups &&
+        virtual.items.map(({ gap, index }) => (
+          <Fragment key={items[index].key}>
             {/* Rows out of view, before a focused row kept far from the rest too. */}
             <TableSpacer height={gap} />
-
-            {item.kind === "group" ? (
-              <TableGroupRow
-                columns={columns}
-                expanded={item.expanded}
-                group={item.group}
-                index={index}
-                rowIndex={index + headRows + 1}
-                onToggle={() => toggle(item.group.id)}
-              />
-            ) : (
-              <TableRow
-                columns={columns}
-                index={index}
-                level={item.level}
-                row={item.row}
-                rowIndex={index + headRows + 1}
-                sortedColumnId={sort?.columnId}
-                checkbox={
-                  selectable
-                    ? selection.checkbox(
-                        { key: item.key, id: getRowId(item.row) },
-                        getRowLabel?.(item.row),
-                      )
-                    : undefined
-                }
-                tint={item.tint}
-                onClick={
-                  selectable
-                    ? (click) => selection.click({ key: item.key, id: getRowId(item.row) }, click)
-                    : undefined
-                }
-              />
-            )}
+            {renderItem(index)}
           </Fragment>
-        );
-      })}
+        ))}
 
-      <TableSpacer height={virtual.endGap} />
+      {!!groups &&
+        blocks.blocks.map(({ endGap, gap, heading, rows: blockRows }) => {
+          const item = items[heading];
+
+          return (
+            <Fragment key={`block:${item.key}`}>
+              <TableSpacer height={gap} />
+              <TableGroup image={item.kind === "group" ? item.group.image : undefined}>
+                {blockRows.map((row) => (
+                  <Fragment key={items[row.index].key}>
+                    <TableSpacer height={row.gap} />
+                    {renderItem(row.index)}
+                  </Fragment>
+                ))}
+                <TableSpacer height={endGap} />
+              </TableGroup>
+            </Fragment>
+          );
+        })}
+
+      <TableSpacer height={groups ? blocks.endGap : virtual.endGap} />
 
       {showsEmpty && (
         <div aria-rowindex={headRows + 1} className="nxm-table-empty" role="row">
@@ -229,6 +541,27 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           </div>
         </div>
       )}
+
+      <ContextMenu position={menu?.position} onClose={() => setMenu(undefined)}>
+        {(close) => {
+          if (menu?.kind === "group") {
+            if (!menuGroup) {
+              return null;
+            }
+
+            return (
+              <ToolbarMenu
+                actions={groupActions(menuGroup)}
+                label={t("{{name}} group actions", { name: menuGroup.label })}
+                tracking={groupTracking}
+                onSelect={close}
+              />
+            );
+          }
+
+          return menuRow === undefined ? null : rowMenu?.(menuRow, close);
+        }}
+      </ContextMenu>
 
       {!!footer && (
         <div aria-rowindex={bodyRows + headRows + 1} className="nxm-table-footer" role="row">

@@ -9,6 +9,8 @@ const schema = z.looseObject({
   version: z.string(),
   id: z.string().optional(),
   namespace: z.string().optional(),
+  // an unusable value leaves the extension unlinked rather than unloadable
+  modId: z.number().int().positive().optional().catch(undefined),
 });
 
 export function parseExtensionInfo(data: unknown): ExtensionInfo {
@@ -21,6 +23,7 @@ export function parseExtensionInfo(data: unknown): ExtensionInfo {
     description: parsed.description ?? "<missing>",
     id: parsed.id,
     namespace: parsed.namespace,
+    modId: parsed.modId,
   };
 
   return result;

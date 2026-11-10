@@ -10,6 +10,7 @@ import type { IFileRequirementReport } from "@/extensions/health_check/utils/fil
 import { severityStyleMap } from "@/extensions/health_check/utils/shared/severityStyles";
 import type { IState } from "@/types/IState";
 import { Icon } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -87,8 +88,8 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
       <div className="flex items-center justify-between gap-x-4 border-b border-stroke-weak p-3">
         <div className="flex min-w-0 items-center gap-x-2">
           <Icon
+            {...getIconProps(severityStyle.icon)}
             className={joinClasses(["shrink-0", severityStyle.textClassName])}
-            path={severityStyle.iconPath}
           />
 
           <Typography as="div" className="font-semibold">

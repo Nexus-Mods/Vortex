@@ -1,24 +1,24 @@
-import { mdiAlertOctagonOutline, mdiAlertOutline, mdiInformationOutline } from "@mdi/js";
+import type { IIconSource } from "@/ui/components/icon/Icon";
 
 export type Severity = "suggestion" | "warning" | "error";
 
 export const severityStyleMap: Record<
   Severity,
-  { backgroundClassName: string; iconPath: string; textClassName: string }
+  { backgroundClassName: string; icon: IIconSource; textClassName: string }
 > = {
   error: {
     backgroundClassName: "bg-danger-moderate",
-    iconPath: mdiAlertOctagonOutline,
+    icon: "report",
     textClassName: "text-danger-strong",
   },
   suggestion: {
     backgroundClassName: "bg-info-moderate",
-    iconPath: mdiInformationOutline,
+    icon: "info",
     textClassName: "text-info-strong",
   },
   warning: {
     backgroundClassName: "bg-warning-moderate",
-    iconPath: mdiAlertOutline,
+    icon: "warning",
     textClassName: "text-warning-strong",
   },
 };

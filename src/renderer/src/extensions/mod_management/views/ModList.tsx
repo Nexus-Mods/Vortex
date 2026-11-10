@@ -1,6 +1,5 @@
 import path from "path";
 
-import { mdiChevronDown, mdiOpenInNew } from "@mdi/js";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
@@ -68,6 +67,7 @@ import { setModEnabled, setModsEnabled } from "../../profile_management/actions/
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import { removeMod, setModAttribute } from "../actions/mods";
 import { setShowModDropzone } from "../actions/settings";
+import { ModsDropTarget } from "../components/mods_drop_target/ModsDropTarget";
 import { ModsTableSwitch } from "../components/mods_table_switch/ModsTableSwitch";
 import { ModsToolbar } from "../components/mods_toolbar/ModsToolbar";
 import { DOWNLOAD_TIME, ENABLED_TIME, INSTALL_TIME } from "../modAttributes";
@@ -409,7 +409,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
    * sticky header, and a footer below the table rather than over it.
    */
   private renderPage(): JSX.Element {
-    const { t, modSources, showDropzone } = this.props;
+    const { t, modSources } = this.props;
 
     let content: JSX.Element;
 
@@ -417,7 +417,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       content = (
         <NoResults
           className="my-auto"
-          iconPath={nxmModOutline}
+          icon={{ path: nxmModOutline }}
           message={t("But don't worry, I know a place...")}
           title={t("You don't have any installed mods")}
         >
@@ -442,7 +442,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             </SuperTable>
           }
           mods={this.state.primaryMods}
+          alternatives={this.state.groupedMods}
           rowActions={this.modActions}
+          onRemoveVersion={this.removeSelectedMod}
+          onSelectVersion={this.selectVersionFromTable}
           onSetModsEnabled={this.setModsEnabledFromTable}
         />
       );
@@ -450,45 +453,26 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Page active={this.props.active} pageId={this.props.pageId} scrollable={false}>
-        <PageHeader
-          isFullWidth
-          pictogramName="mod"
-          subtitle={t("Manage the mods installed for this game.")}
-          title={t("Mods")}
-        >
-          <ModsToolbar t={t} />
-        </PageHeader>
+        <ModsDropTarget onDropFiles={this.dropModFiles}>
+          <PageHeader
+            isFullWidth
+            pictogramName="mod"
+            subtitle={t("Manage the mods installed for this game.")}
+            title={t("Mods")}
+          >
+            <ModsToolbar t={t} />
+          </PageHeader>
 
-        <PageScroll isFullWidth className="flex min-h-full flex-col gap-y-4">
-          <div className="mod-list-container flex flex-1 flex-col" ref={this.setBoundsRef}>
-            {content}
-          </div>
-        </PageScroll>
+          <PageScroll isFullWidth className="flex min-h-full flex-col gap-y-4">
+            <div className="mod-list-container flex flex-1 flex-col" ref={this.setBoundsRef}>
+              {content}
+            </div>
+          </PageScroll>
 
-        <PageContent isFullWidth>
-          <div ref={this.setTableFooterRef} />
-
-          <div className="mod-drop-container relative">
-            <Panel className="mod-drop-panel" expanded={showDropzone} onToggle={nop}>
-              <Panel.Collapse>
-                <Panel.Body>
-                  <Dropzone
-                    accept={["files"]}
-                    clickable={false}
-                    drop={this.dropMod}
-                    icon="folder-download"
-                  />
-                </Panel.Body>
-              </Panel.Collapse>
-
-              <CollapseIcon
-                position="topright"
-                visible={showDropzone}
-                onClick={this.toggleDropzone}
-              />
-            </Panel>
-          </div>
-        </PageContent>
+          <PageContent isFullWidth>
+            <div ref={this.setTableFooterRef} />
+          </PageContent>
+        </ModsDropTarget>
       </Page>
     );
   }
@@ -667,7 +651,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     if (filtered.length === 1) {
       return (
-        <Button leftIconPath={mdiOpenInNew} onClick={this.getMoreMods}>
+        <Button leftIcon="open_in_new" onClick={this.getMoreMods}>
           {label}
         </Button>
       );
@@ -675,7 +659,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Dropdown>
-        <UiDropdownButton rightIconPath={mdiChevronDown}>{label}</UiDropdownButton>
+        <UiDropdownButton rightIcon="keyboard_arrow_down">{label}</UiDropdownButton>
 
         <DropdownItems>
           {filtered.map((source) => (
@@ -1347,6 +1331,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     });
   };
 
+  private selectVersionFromTable = (modId: string, altId: string) =>
+    this.selectVersion({ modId, altId });
+
   private selectVersion = (evtKey) => {
     const { gameMode, profileId } = this.props;
     const { modId, altId } = evtKey;
@@ -1855,6 +1842,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if (nonArchives.length > 0) {
       onDropNonArchiveFiles(nonArchives);
     }
+  };
+
+  private dropModFiles = (paths: string[]) => {
+    this.dropMod("files", paths);
   };
 
   private conditionNotInstalled = (instanceId: string | string[]) => {

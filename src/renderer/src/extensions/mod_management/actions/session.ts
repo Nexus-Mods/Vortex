@@ -1,6 +1,8 @@
+import type { VortexModId, VortexModStagingFolder } from "@vortex/shared";
+
 import safeCreateAction from "../../../actions/safeCreateAction";
 import { UserCanceled } from "../../../util/CustomErrors";
-import type { IFileEntry } from "../types/IFileEntry";
+import type { FileAction, IFileEntry } from "../types/IFileEntry";
 
 export interface IDeploymentProblem {
   activator: string;
@@ -51,9 +53,14 @@ export const addDeploymentFailures = safeCreateAction(
  */
 export const setExternalChanges = safeCreateAction("SET_EXTERNAL_CHANGES", (entries) => entries);
 
+/** source limits the action to that mod's files */
 export const setExternalChangeAction = safeCreateAction(
   "SET_EXTERNAL_CHANGE_ACTION",
-  (filePaths: string[], action: string) => ({ filePaths, action }),
+  (filePaths: string[], action: FileAction, source: VortexModStagingFolder | undefined) => ({
+    filePaths,
+    action,
+    source,
+  }),
 );
 
 let curResolve;
@@ -84,3 +91,15 @@ export function confirmExternalChanges(changes: IFileEntry[], canceled: boolean)
     dispatch(setExternalChanges([]));
   };
 }
+
+/** Asks the new Mods table to open and scroll to a group, by id; undefined once it has. */
+export const focusModsTableGroup = safeCreateAction(
+  "FOCUS_MODS_TABLE_GROUP",
+  (groupId: string | undefined) => groupId,
+);
+
+/** Asks the new Mods table to scroll to a mod and select it, by id; undefined once it has. */
+export const focusModsTableMod = safeCreateAction(
+  "FOCUS_MODS_TABLE_MOD",
+  (modId: VortexModId | undefined) => modId,
+);

@@ -66,6 +66,26 @@ describe("useToolbarAnalytics", () => {
 
     expect(Object.keys(event.properties)).not.toContain("extension");
   });
+
+  it("adds an action's own properties to its click", () => {
+    const event = report({ id: "beta-table", properties: { view: "beta" } }, "bar");
+
+    expect(event.properties).toEqual({
+      action: "beta-table",
+      surface: "bar",
+      toolbar: "mods",
+      view: "beta",
+    });
+  });
+
+  it("keeps an action's own properties from standing in for which button it was", () => {
+    const event = report(
+      { id: "beta-table", properties: { action: "other", surface: "x" } },
+      "bar",
+    );
+
+    expect(event.properties).toMatchObject({ action: "beta-table", surface: "bar" });
+  });
 });
 
 describe("useToolbarAnalytics pin tracking", () => {
@@ -74,6 +94,13 @@ describe("useToolbarAnalytics pin tracking", () => {
 
     expect(event.eventName).toBe("app_toolbar_pin_changed");
     expect(event.properties).toEqual({ action: "deploy", pinned, toolbar: "mods" });
+  });
+
+  // What a click says about itself, such as which way a toggle went, means nothing on a pin.
+  it("leaves an action's own properties off its pin", () => {
+    const event = reportPin({ id: "beta-table", properties: { view: "beta" } }, true);
+
+    expect(event.properties).toEqual({ action: "beta-table", pinned: true, toolbar: "mods" });
   });
 
   it("names the extension a pinned action came from", () => {

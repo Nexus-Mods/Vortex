@@ -1,6 +1,5 @@
 /** Demonstrates TextField, and the Field parts and bare Input it's built from. */
 
-import { mdiMagnify } from "@mdi/js";
 import React from "react";
 
 import { Description } from "@/ui/components/form/field/Description";
@@ -75,7 +74,7 @@ export const TextFieldDemo = () => (
       description="An icon inside the input, and a label kept for screen readers only."
       title="Icon and hidden label"
     >
-      <TextField label="Icon" leftIconPath={mdiMagnify} placeholder="Search..." />
+      <TextField label="Icon" leftIcon="search" placeholder="Search..." />
 
       <TextField
         hideLabel

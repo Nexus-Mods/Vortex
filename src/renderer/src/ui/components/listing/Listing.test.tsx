@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { Listing } from "./Listing";
 
@@ -52,6 +53,16 @@ describe("Listing", () => {
     it("renders the error NoResults with the given title", () => {
       renderComponent({ errorTitle: "Boom", isError: true });
       expect(screen.getByText("Boom")).toBeInTheDocument();
+    });
+
+    it("offers to try again, beside contacting support, when it's given a retry", async () => {
+      const onRetry = vi.fn();
+      renderComponent({ isError: true, onRetry });
+
+      await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+      expect(onRetry).toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: "Contact support" })).toBeInTheDocument();
     });
 
     it("renders customError when provided", () => {

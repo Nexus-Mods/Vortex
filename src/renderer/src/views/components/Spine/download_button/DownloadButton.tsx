@@ -1,4 +1,3 @@
-import { mdiDownload, mdiDownloadOutline } from "@mdi/js";
 import React, { type ReactNode, useMemo } from "react";
 import { useSelector } from "react-redux";
 
@@ -131,7 +130,7 @@ export const DownloadButton = () => {
         tooltipDisabled
         border={showProgress ? "none" : "visible"}
         className="group/download flex-col gap-y-0.5"
-        iconPath={!showProgress && (isActive ? mdiDownload : mdiDownloadOutline)}
+        icon={showProgress ? undefined : { name: "download", filled: isActive }}
         isActive={isActive}
         title={LABEL}
         onClick={() => selectDownloads()}
@@ -144,7 +143,7 @@ export const DownloadButton = () => {
               <Typography
                 as="span"
                 brand="none"
-                className="relative z-1 leading-none font-semibold text-shadow-halo text-shadow-translucent-dark-100"
+                className="relative z-1 leading-none font-medium text-shadow-halo text-shadow-translucent-dark-100"
                 type="body-sm"
               >
                 {isTime ? Math.ceil(estimatedMins) : speedMBps.toFixed(1)}

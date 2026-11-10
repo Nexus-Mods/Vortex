@@ -29,7 +29,8 @@ const toolbarActionClickedEvent = ({
   ...event
 }: IToolbarActionEvent & { surface: ToolbarSurface }): MixpanelEvent => ({
   eventName: "app_toolbar_action_clicked",
-  properties: { ...actionProperties(event), surface },
+  // The action's own first, so none of them can stand in for which button this was.
+  properties: { ...event.action.properties, ...actionProperties(event), surface },
 });
 
 /**

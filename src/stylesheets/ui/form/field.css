@@ -9,13 +9,26 @@
         display: flex;
         column-gap: calc(var(--spacing) * 1);
 
-        font-size: var(--text-body-md);
-        line-height: var(--text-body-md--line-height);
-        letter-spacing: var(--text-body-md--letter-spacing);
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
         color: var(--color-neutral-strong);
 
         .nxm-field-label-required {
             color: var(--color-neutral-subdued);
+        }
+
+        /* As a link in prose is: underlined, in the text's own colour, lighter on hover. */
+        & :where(a[href]) {
+            color: inherit;
+            text-decoration-line: underline;
+            transition-property: color;
+            transition-duration: var(--default-transition-duration);
+            transition-timing-function: var(--default-transition-timing-function);
+
+            &:hover {
+                color: var(--color-neutral-strong);
+            }
         }
     }
 

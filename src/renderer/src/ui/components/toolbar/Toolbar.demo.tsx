@@ -3,22 +3,6 @@
  * Demonstrates the Toolbar / ToolbarGroup layout with icon-only buttons.
  */
 
-import {
-  mdiCallMerge,
-  mdiCheck,
-  mdiClose,
-  mdiCloudDownloadOutline,
-  mdiDeleteOutline,
-  mdiEyeOutline,
-  mdiFolderOpenOutline,
-  mdiHistory,
-  mdiLabelOutline,
-  mdiPaw,
-  mdiPawOutline,
-  mdiPlaylistCheck,
-  mdiPlusCircleOutline,
-  mdiRefresh,
-} from "@mdi/js";
 import React, { useState } from "react";
 
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
@@ -31,31 +15,31 @@ import { Toolbar } from "./Toolbar";
 import { type IToolbarAction, ToolbarGroup } from "./ToolbarGroup";
 
 const generalActions: IToolbarAction[] = [
-  { label: "Install mod", iconPath: mdiPlusCircleOutline },
-  { label: "Open mods folder", iconPath: mdiFolderOpenOutline },
-  { label: "History", iconPath: mdiHistory },
-  { label: "Refresh", iconPath: mdiRefresh },
-  { label: "Categories", iconPath: mdiLabelOutline },
-  { label: "Manage rules", iconPath: mdiPlaylistCheck },
+  { label: "Install mod", icon: "add_circle" },
+  { label: "Open mods folder", icon: "folder_open" },
+  { label: "History", icon: "history" },
+  { label: "Refresh", icon: "refresh" },
+  { label: "Categories", icon: "label" },
+  { label: "Manage rules", icon: "playlist_add_check" },
 ];
 
 const contextualActions: IToolbarAction[] = [
-  { label: "1 selected", iconPath: mdiClose, showLabel: true },
-  { label: "Remove", iconPath: mdiDeleteOutline },
-  { label: "Refresh", iconPath: mdiRefresh },
-  { label: "Download updates", iconPath: mdiCloudDownloadOutline, brand: "info" },
-  { label: "Enable", iconPath: mdiCheck },
-  { label: "Disable", iconPath: mdiClose },
+  { label: "1 selected", icon: "close", showLabel: true },
+  { label: "Remove", icon: "delete" },
+  { label: "Refresh", icon: "refresh" },
+  { label: "Download updates", icon: "cloud_download", brand: "info" },
+  { label: "Enable", icon: "check" },
+  { label: "Disable", icon: "close" },
 ];
 
 // Ten actions, used below to show both limits: a `maxVisible` slot cap, and the
 // width of the toolbar itself.
 const manyActions: IToolbarAction[] = [
   ...generalActions,
-  { label: "Combine", iconPath: mdiCallMerge },
-  { label: "Highlight", iconPath: mdiEyeOutline },
-  { label: "Track", iconPath: mdiPaw },
-  { label: "Untrack", iconPath: mdiPawOutline },
+  { label: "Combine", icon: "call_merge" },
+  { label: "Highlight", icon: "visibility" },
+  { label: "Track", icon: { name: "pets", filled: true } },
+  { label: "Untrack", icon: "pets" },
 ];
 
 // The same ten with a pin at each end, to show that a pin holds its place rather

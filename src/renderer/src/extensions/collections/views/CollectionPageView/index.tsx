@@ -42,7 +42,10 @@ import { getSafe } from "../../../../util/storeHelper";
 import { batchDispatch, sanitizeCSSId } from "../../../../util/util";
 import type { IDownload } from "../../../download_management/types/IDownload";
 import { addModRule, removeModRule } from "../../../mod_management/actions/mods";
+import { selectModsTableView } from "../../../mod_management/actions/modsTableViews";
+import { focusModsTableGroup } from "../../../mod_management/actions/session";
 import type { IMod, IModRule } from "../../../mod_management/types/IMod";
+import { checkModUpdates } from "../../../mod_management/util/check_mod_updates/checkModUpdates";
 import { coerceToSemver } from "../../../mod_management/util/coerceToSemver";
 import renderModName, { renderModReference } from "../../../mod_management/util/modName";
 import { removeMods } from "../../../mod_management/util/removeMods";
@@ -62,7 +65,9 @@ import {
   collectRemovalTargets,
   isRemovableItem,
 } from "../../installSession/itemRows";
+import { applyCollectionRules } from "../../util/apply_collection_rules/applyCollectionRules";
 import type InstallDriver from "../../util/InstallDriver";
+import { makeCollectionModsResolver } from "../../util/resolveCollectionMods/resolveCollectionMods";
 import CollectionInstructions from "./CollectionInstructions";
 import CollectionItemStatus from "./CollectionItemStatus";
 import CollectionOverview from "./CollectionOverview";
@@ -610,6 +615,8 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
               totalSize={totalSize}
               votedSuccess={votedSuccess}
               onClone={this.clone}
+              onApplyRules={this.applyRules}
+              onCheckForUpdate={this.checkForUpdate}
               onClose={this.close}
               onRemove={this.remove}
               onSetEnabled={this.setEnabled}
@@ -740,9 +747,28 @@ class CollectionPage extends ComponentEx<IProps, IComponentState> {
     setModsEnabled(this.context.api, profile.id, [collection.id], enable);
   };
 
+  private checkForUpdate = () => {
+    void checkModUpdates(this.context.api, [this.props.collection.id]);
+  };
+
+  private applyRules = () => {
+    void applyCollectionRules(this.context.api, this.props.collection.id);
+  };
+
   private showMods = () => {
     const { collection } = this.props;
     const { api } = this.context;
+
+    const { settings } = api.getState();
+
+    if (settings.mods?.betaTable === true && (settings.window.useModernLayout ?? true)) {
+      batchDispatch(api.store, [
+        selectModsTableView("collections"),
+        focusModsTableGroup(collection.id),
+      ]);
+      api.events.emit("show-main-page", "Mods");
+      return;
+    }
 
     const batch = [];
     batch.push(setAttributeFilter("mods", undefined, undefined));
@@ -1040,18 +1066,26 @@ function makeMapStateToProps(): (state: IState, ownProps: ICollectionPageProps) 
   // that only advances bytes rebuilds to a reference-equal map and connect skips the render.
   // Download state transitions (paused/failed/finished) flow through because they change row content.
   let lastRows: Record<string, ICollectionItemRow> = {};
+  const getRules = (_state: IState, ownProps: ICollectionPageProps) => ownProps.collection?.rules;
+  const getMods = (state: IState, ownProps: ICollectionPageProps) =>
+    state.persistent.mods[ownProps.profile?.gameId] ?? EMPTY_MODS;
+  // memoized on rules and mods alone, and threaded back in so each rebuild only retests the mods
+  // that changed: resolving a not-yet-installed member scans every installed mod, far too slow on
+  // a large collection to repeat on each progress tick or each mod an install writes
+  const resolveMods = makeCollectionModsResolver();
+  const getResolvedMods = createSelector(getRules, getMods, resolveMods);
   const getItemRows = createSelector(
-    (_state: IState, ownProps: ICollectionPageProps) => ownProps.collection?.rules,
-    (state: IState, ownProps: ICollectionPageProps) =>
-      state.persistent.mods[ownProps.profile?.gameId] ?? EMPTY_MODS,
+    getRules,
+    getMods,
     (state: IState) => state.persistent.downloads.files,
     (_state: IState, ownProps: ICollectionPageProps) =>
       ownProps.profile?.modState ?? EMPTY_MOD_STATE,
     (state: IState, ownProps: ICollectionPageProps) =>
       sessionModsForCollection(state, ownProps.collection?.id),
-    (rules, mods, downloads, modState, sessionMods) => {
+    getResolvedMods,
+    (rules, mods, downloads, modState, sessionMods, resolvedMods) => {
       lastRows = buildCollectionItemRows(
-        { rules: rules ?? [], mods, downloads, modState, sessionMods },
+        { rules: rules ?? [], mods, downloads, modState, sessionMods, resolvedMods },
         lastRows,
       );
       return lastRows;

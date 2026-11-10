@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 
+import { renderSafeBBCode } from "@/controls/bbcode";
+
 import { CheckboxField, type ICheckboxFieldProps } from "./CheckboxField";
 
 const renderField = (props: Partial<ICheckboxFieldProps> = {}) =>
@@ -67,5 +69,42 @@ describe("CheckboxField", () => {
     renderField({ className: "box-class", fieldClassName: "field-class" });
     expect(getCheckbox()).toHaveClass("nxm-checkbox", "box-class");
     expect(getCheckbox().closest(".nxm-field")).toHaveClass("nxm-checkbox-field", "field-class");
+  });
+
+  it("runs a link in its label, not the checkbox, when text inside the link is clicked", async () => {
+    const onChange = vi.fn();
+    const terms = vi.fn();
+    render(
+      <CheckboxField
+        label={renderSafeBBCode("I accept the [url=cb://terms][b]terms[/b][/url]", {
+          callbacks: { terms },
+        })}
+        onChange={onChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByText("terms"));
+
+    expect(terms).toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("toggles the checkbox when a link without a target is clicked, as plain text", async () => {
+    const onChange = vi.fn();
+    render(
+      <CheckboxField
+        label={
+          <>
+            Open <a>a folder</a>
+          </>
+        }
+        checked={false}
+        onChange={onChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByText("a folder"));
+
+    expect(onChange).toHaveBeenCalledWith(true);
   });
 });

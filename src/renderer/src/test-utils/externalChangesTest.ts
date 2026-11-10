@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import * as path from "node:path";
 
 import { type VortexModId, VortexProfileId, VortexStagingFolder } from "@vortex/shared";
@@ -11,12 +11,13 @@ import type {
 } from "../extensions/mod_management/types/IDeploymentMethod";
 import type { IFileEntry } from "../extensions/mod_management/types/IFileEntry";
 import type { IMod } from "../extensions/mod_management/types/IMod";
+import { deployedFilePath } from "../extensions/mod_management/util/deployedFilePath";
 import { dealWithExternalChanges } from "../extensions/mod_management/util/externalChanges";
 import type { IDeploymentMethod } from "../types/IExtensionContext";
 import { makeGameHarness, type IHarnessReducerBinding } from "./builders";
 import type { IApiHarness, IGameHarness } from "./harnessTypes";
 import { test as installManagerTest } from "./installManagerTest";
-import { makeTempDir } from "./tempDir";
+import { makeTempDir, writeInto } from "./tempDir";
 
 export interface IExternalChangesHarness extends IGameHarness {
   // the default mod type's deploy target
@@ -24,9 +25,13 @@ export interface IExternalChangesHarness extends IGameHarness {
   // each dialog's entries, in order, confirmed as preselected
   dialogs: IFileEntry[][];
   stageFile: (modFolder: string, relPath: string) => Promise<void>;
-  deployFile: (relPath: string) => Promise<void>;
-  // runs against an empty last deployment
-  dealWithExternalChanges: (recentChanges: Set<string> | undefined) => Promise<IDeployedFile[][]>;
+  // the mod's subfolder, for games that don't merge mods (mergeMods off)
+  deployFile: (relPath: string, target?: string) => Promise<void>;
+  // runs against the default mod type's last deployment (empty unless given)
+  dealWithExternalChanges: (
+    recentChanges: Set<string> | undefined,
+    lastDeployment?: IDeployedFile[],
+  ) => Promise<IDeployedFile[][]>;
 }
 
 export interface IExternalChangesFixtures {
@@ -55,12 +60,6 @@ export function confirmExternalChangesDialogs(harness: IApiHarness): IFileEntry[
   return dialogs;
 }
 
-async function writeInto(folder: string, relPath: string): Promise<void> {
-  const filePath = path.join(folder, relPath);
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, relPath);
-}
-
 async function makeExternalChangesHarness(
   changes: IFileChange[],
   mods: Record<VortexModId, IMod> = {},
@@ -86,15 +85,15 @@ async function makeExternalChangesHarness(
     gameDir,
     dialogs,
     stageFile: (modFolder, relPath) => writeInto(path.join(stagingDir, modFolder), relPath),
-    deployFile: (relPath) => writeInto(gameDir, relPath),
-    dealWithExternalChanges: (recentChanges) =>
+    deployFile: (relPath, target) => writeInto(deployedFilePath(gameDir, target, ""), relPath),
+    dealWithExternalChanges: (recentChanges, lastDeployment = []) =>
       dealWithExternalChanges(
         harness.api,
         activator,
         VortexProfileId(harness.profileId),
         VortexStagingFolder(stagingDir),
         { "": gameDir },
-        { "": [] },
+        { "": lastDeployment },
         recentChanges,
       ),
   };

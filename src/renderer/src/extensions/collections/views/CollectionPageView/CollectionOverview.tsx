@@ -170,6 +170,8 @@ interface ICollectionOverviewProps {
   showDownvoteResponse: boolean;
   onSetEnabled: (enable: boolean) => void;
   onShowMods: () => void;
+  onCheckForUpdate: () => void;
+  onApplyRules: () => void;
   onSuppressVoteResponse: (response: "upvote" | "downvote") => void;
   onClose?: () => void;
   onClone?: (collectionId: string) => void;
@@ -216,6 +218,16 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
         title: "Show in Mods",
         action: this.props.onShowMods,
         icon: "inspect",
+      },
+      {
+        title: "Check for Update",
+        action: this.props.onCheckForUpdate,
+        icon: "refresh",
+      },
+      {
+        title: "Apply Collection Rules",
+        action: this.props.onApplyRules,
+        icon: "conflict",
       },
       {
         title: "Edit (Workshop)",

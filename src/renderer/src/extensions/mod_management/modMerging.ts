@@ -20,6 +20,11 @@ import type { IResolvedMerger } from "./types/IResolvedMerger";
 
 export const MERGED_PATH = "__merged";
 
+/** The staging folder holding a mod type's merged output, deployed after every mod. */
+export function mergedSourceName(typeId: string | null | undefined): string {
+  return !typeId ? MERGED_PATH : `${MERGED_PATH}.${typeId}`;
+}
+
 function calcHashImpl(filePath: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const hash = crypto.createHash("md5");

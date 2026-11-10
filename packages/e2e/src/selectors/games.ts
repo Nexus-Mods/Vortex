@@ -2,7 +2,10 @@ import type { Locator, Page } from "@playwright/test";
 
 export class GamesPage {
   readonly page: Page;
-  /** "Games detected": installed games Vortex found but the user hasn't added. */
+  /**
+   * "Games detected", or "New games detected" when it has games the user hasn't
+   * seen: installed games Vortex found but the user hasn't added.
+   */
   readonly detectedSection: Locator;
   /** "Added games": the games the user is managing. */
   readonly addedSection: Locator;
@@ -19,7 +22,7 @@ export class GamesPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.detectedSection = this.section("Games detected");
+    this.detectedSection = this.section(/^(New games|Games) detected$/);
     this.addedSection = this.section("Added games");
     this.supportedSection = this.section("All supported games");
     this.notDiscoveredDialog = page
@@ -40,15 +43,33 @@ export class GamesPage {
 
   /**
    * The primary action on a tile in "All supported games". It's revealed on
-   * hover, so hover the tile before clicking.
+   * hover, so hover the tile before clicking. Scoped to that section because a
+   * detected game also has a tile under "Games detected", whose action is
+   * "Add game" instead.
    */
   manualAddButton(gameName: string): Locator {
-    return this.gameTile(gameName).getByRole("button", { name: "Manual add", exact: true });
+    return this.gameTileInSection(this.supportedSection, gameName).getByRole("button", {
+      name: "Manual add",
+      exact: true,
+    });
+  }
+
+  /**
+   * The primary action on a tile in "Added games". Adding a game activates it
+   * but leaves the user on the Games page; Open is what takes them into the
+   * game's workspace.
+   */
+  openButton(gameName: string): Locator {
+    return this.gameTileInSection(this.addedSection, gameName).getByRole("button", {
+      name: "Open",
+      exact: true,
+    });
   }
 
   // A section is a <section> whose header carries its title; the sections have
-  // no accessible name, so anchor on the exact header text.
-  private section(title: string): Locator {
+  // no accessible name, so anchor on the header text. The title may also be
+  // given as a pattern for a section whose title varies.
+  private section(title: string | RegExp): Locator {
     return this.page
       .locator("section")
       .filter({ has: this.page.getByText(title, { exact: true }) });

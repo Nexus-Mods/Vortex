@@ -8,6 +8,7 @@ import { UserCanceled } from "@/util/CustomErrors";
 import onceCB from "@/util/onceCB";
 import * as selectors from "@/util/selectors";
 
+import { purged } from "../selectors";
 import { getAllActivators } from "../util/deploymentMethods";
 import { NoDeployment } from "../util/exceptions";
 
@@ -50,24 +51,30 @@ export const useActivator = () => {
 };
 
 /**
- * Deploys the active profile's mods, as the Deploy toolbar action and the menu's Apply
- * button both do. Warns instead when the game has no deployment method set.
+ * Deploys the active profile's mods, as the menu's Apply button does. Warns instead when
+ * the game has no deployment method set.
  */
 export const useDeployMods = (): {
+  /** The active game has changes waiting to be deployed. */
   needToDeploy: boolean;
   /** Changes deploy on their own, so there's nothing for the user to apply. */
   autoDeploy: boolean;
+  /** The mods were purged and haven't been deployed since; only a deploy puts them back. */
+  isPurged: boolean;
+  /** A deploy is running, or auto-apply's is about to start. */
   isDeploying: boolean;
   /** 0-100 while deploying; undefined otherwise. */
   deployProgress: number | undefined;
   /** What the deploy is doing, e.g. the mod it's on; undefined when idle. */
   deployStep: string | undefined;
+  /** Deploys the active profile's mods, or warns when there's no deployment method. */
   deploy: () => void;
 } => {
   const { api } = useMainContext();
   const activator = useActivator();
   const needToDeploy = useSelector(selectors.needToDeploy);
   const autoDeploy = useSelector((state: IState) => state.settings.automation.deploy);
+  const isPurged = useSelector(purged);
 
   // Auto deploy waits a moment before starting, so a pending one counts as deploying.
   const isDeploying = useSelector((state: IState) =>
@@ -123,6 +130,7 @@ export const useDeployMods = (): {
   return {
     needToDeploy,
     autoDeploy,
+    isPurged,
     isDeploying,
     deployProgress: isDeploying ? (percent ?? 0) : undefined,
     deployStep: isDeploying ? step || undefined : undefined,

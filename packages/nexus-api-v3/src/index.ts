@@ -14,5 +14,14 @@ export {
   type NexusV3InternalClient,
 } from "./client";
 export { V3ApiError } from "./errors";
+export type {
+  EventManualInstaller,
+  EventStoreGameVersion,
+  GogInstall,
+  SteamDepot,
+  SteamInstall,
+  SteamSharedDepot,
+  StoreGameVersionPayload,
+} from "./eventTypes";
 export { uploadHeadersFor, type UploadHeaders } from "./uploadHeaders";
 export type { Middleware as NexusV3Middleware } from "openapi-fetch";

@@ -21,7 +21,7 @@
 
         &::placeholder {
             color: var(--color-neutral-subdued);
-            font-style: normal;
+            font-style: italic;
         }
 
         &[data-disabled],
@@ -52,6 +52,13 @@
                 background-color: var(--color-surface-translucent-mid);
             }
         }
+    }
+
+    /* A text area is an input that grows downwards: vertical padding, and room for a few lines. */
+    .nxm-textarea {
+        min-height: calc(var(--spacing) * 16);
+        padding-block: calc(var(--spacing) * 1.5);
+        resize: vertical;
     }
 
     .nxm-input-icon {

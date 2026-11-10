@@ -36,19 +36,17 @@ Examples worth reading as reference:
 
 ## Packages
 
-Workspace packages under `packages/` (plus `packages/adaptors/*`, which is its
-own workspace glob):
+Workspace packages under `packages/`:
 
 - `packages/vortex-api/` - The extension-facing API package published to NPM
-- `packages/adaptor-api/` - Interfaces and builder for game adaptors
-- `packages/adaptors/` - Individual adaptors, one directory each
-  (`cyberpunk2077`, plus `fs-test` and `ping-test` fixtures)
 - `packages/nexus-api-v3/` - Typed HTTP client for the Nexus Mods OpenAPI v3 API
 - `packages/file-dependency-resolver/` - File-to-file dependency resolver behind
   the file-level requirements health check
 - `packages/exe-version/` - Reads version info out of Windows executables
 - `packages/pe-resources/` - Portable Executable resource parsing
 - `packages/icon-extract/` - Extracts icons from executables
+- `packages/paths/` - Typed relative and qualified paths, path matching
+- `packages/steam-kv-parser/` - Parser for Steam's KeyValues (VDF) files
 - `packages/extension-test-mocks/` - Shared mocks for extension tests
 - `packages/game-extension-test/` - Harness and CLI for testing game extensions
 - `packages/e2e/` - Playwright end-to-end tests

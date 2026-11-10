@@ -1,9 +1,10 @@
-import { mdiArrowDown, mdiArrowUp } from "@mdi/js";
-import React, { type ReactNode } from "react";
+import React, { type ReactNode, type Ref } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
 
 import type { ITableColumn, ITableGroup, ITableSort } from "./Table.types";
+import { isResizable, minColumnWidth } from "./table_column_resize/tableColumnResize";
+import { TableColumnResizer } from "./table_column_resizer/TableColumnResizer";
 import { TableCell } from "./TableCell";
 import { type ITableCheckboxProps, TableCheckbox } from "./TableCheckbox";
 
@@ -12,12 +13,18 @@ interface ITableHeaderProps<T, G extends ITableGroup<T>> {
   columns: Array<ITableColumn<T, G>>;
   /** Controls above the header row, the head's first row when there are any. */
   toolbar?: ReactNode;
+  /** The toolbar's cell, for the table to measure as what's in it wraps. */
+  toolbarRef?: Ref<HTMLDivElement>;
   /** The column the rows are sorted by, and which way, if any. */
   sort?: ITableSort;
   /** The checkbox for every row, at the start of the first header, when rows can be selected. */
   checkbox?: ITableCheckboxProps;
   /** Sorts by a column, from its header's button; again reverses it. */
   onSort: (columnId: string) => void;
+  /** Takes a column's width while it's dragged, or `undefined` once it's let go of. */
+  onColumnDrag?: (columnId: string, width: number | undefined) => void;
+  /** Takes a column's resized width, or `undefined` once it's reset; unset, none resize. */
+  onColumnResize?: (columnId: string, width: number | undefined) => void;
 }
 
 /**
@@ -28,9 +35,12 @@ interface ITableHeaderProps<T, G extends ITableGroup<T>> {
 export const TableHeader = <T, G extends ITableGroup<T>>({
   columns,
   toolbar,
+  toolbarRef,
   checkbox,
   sort,
   onSort,
+  onColumnDrag,
+  onColumnResize,
 }: ITableHeaderProps<T, G>) => (
   <div className="nxm-table-head" role="rowgroup">
     {/* A sticky column fades what scrolls under it instead. */}
@@ -40,7 +50,12 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
 
     {!!toolbar && (
       <div aria-rowindex={1} className="nxm-table-toolbar" role="row">
-        <div aria-colspan={columns.length} className="nxm-table-toolbar-cell" role="gridcell">
+        <div
+          aria-colspan={columns.length}
+          className="nxm-table-toolbar-cell"
+          ref={toolbarRef}
+          role="gridcell"
+        >
           {toolbar}
         </div>
       </div>
@@ -49,12 +64,15 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
     <div aria-rowindex={toolbar ? 2 : 1} className="nxm-table-header" role="row">
       {columns.map((column, index) => {
         const direction = sort?.columnId === column.id ? sort.direction : undefined;
+        const resizable = isResizable(column) && !!onColumnResize;
 
         return (
           <TableCell
             align={column.align}
             ariaSort={column.sort === undefined ? undefined : (direction ?? "none")}
+            columnId={column.id}
             key={column.id}
+            resizable={resizable}
             role="columnheader"
             sticky={column.sticky}
           >
@@ -73,11 +91,20 @@ export const TableHeader = <T, G extends ITableGroup<T>>({
                 {!!direction && (
                   <Icon
                     className="nxm-table-sort-icon"
-                    path={direction === "ascending" ? mdiArrowDown : mdiArrowUp}
+                    name={direction === "ascending" ? "arrow_upward" : "arrow_downward"}
                     size="none"
                   />
                 )}
               </button>
+            )}
+
+            {resizable && (
+              <TableColumnResizer
+                header={column.header}
+                minWidth={minColumnWidth(column) ?? 0}
+                onDrag={(width) => onColumnDrag?.(column.id, width)}
+                onResize={(width) => onColumnResize?.(column.id, width)}
+              />
             )}
           </TableCell>
         );

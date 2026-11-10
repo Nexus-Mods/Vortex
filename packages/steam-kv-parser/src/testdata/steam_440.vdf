@@ -1,0 +1,348 @@
+﻿"appinfo"
+{
+	"appid"		"440"
+	"change_number"		"1"
+	"common"
+	{
+		"icon"		"e3f595a92552da3d664ad00277fad2107345f743"
+		"logo"		"07385eb55b5ba974aebbe74d3c99626bda7920b8"
+		"logo_small"		"07385eb55b5ba974aebbe74d3c99626bda7920b8_thumb"
+		"metacritic_url"		"pc/teamfortress2"
+		"name"		"Team Fortress 2"
+		"clienticon"		"033bdd91842b6aca0633ee1e5f3e6b82f2e8962f"
+		"clienttga"		"689dd46bd63e3e460cdd86d936d5de409a291633"
+		"languages"
+		{
+			"english"		"1"
+			"german"		"1"
+			"french"		"1"
+			"italian"		"1"
+			"koreana"		"1"
+			"spanish"		"1"
+			"schinese"		"1"
+			"tchinese"		"1"
+			"russian"		"1"
+			"japanese"		"1"
+			"portuguese"		"1"
+			"polish"		"1"
+			"danish"		"1"
+			"dutch"		"1"
+			"finnish"		"1"
+			"norwegian"		"1"
+			"swedish"		"1"
+			"hungarian"		"1"
+			"czech"		"1"
+			"romanian"		"1"
+			"turkish"		"1"
+			"brazilian"		"1"
+			"bulgarian"		"1"
+		}
+		"clienticns"		"b0780e91df4308b1ad57cc93d6032b4f0e2930cc"
+		"linuxclienticon"		"b2659c540592221fcd7675d76a0171f4b3782c1c"
+		"oslist"		"windows,macos,linux"
+		"type"		"game"
+		"metacritic_name"		"Team Fortress 2"
+		"controller_support"		"partial"
+		"metacritic_score"		"92"
+		"metacritic_fullurl"		"http://www.metacritic.com/game/pc/team-fortress-2"
+		"community_visible_stats"		"1"
+		"workshop_visible"		"1"
+		"community_hub_visible"		"1"
+		"gameid"		"440"
+	}
+	"extended"
+	{
+		"developer"		"Valve"
+		"developer_url"		"http://www.valvesoftware.com/"
+		"gamedir"		"tf"
+		"gamemanualurl"		"http://store.steampowered.com/manual/440/"
+		"homepage"		"http://www.teamfortress.com/"
+		"icon"		"steam/games/icon_tf2"
+		"icon2"		"steam/games/icon_tf2"
+		"isfreeapp"		"1"
+		"languages"		"english,german,french,spanish,russian"
+		"loadallbeforelaunch"		"1"
+		"minclientversion"		"1393366296"
+		"noservers"		"0"
+		"primarycache"		"441"
+		"primarycache_linux"		"452"
+		"requiressse"		"1"
+		"serverbrowsername"		"Team Fortress 2"
+		"sourcegame"		"1"
+		"state"		"eStateAvailable"
+		"vacmacmodulecache"		"160"
+		"vacmodulecache"		"202"
+		"vacmodulefilename"		"sourceinit.dat"
+		"validoslist"		"windows,macos,linux"
+		"publisher"		"Valve"
+		"listofdlc"		"456,457,458,459,217221,217222"
+	}
+	"config"
+	{
+		"signedfiles"
+		{
+			"hl2.exe"		"30819D300D06092A864886F70D010101050003818B0030818702818100B1260881BDFE84463D88C6AB8DB914A2E593893C10508B8A5ABDF692E9A5419A3EDBAE86A052849983B75E3B425C18178B260003D857DF0B6505C6CF9C84F5859FCE3B63F1FB2D4818501F6C5FA4AD1430EEB081A74ABD74CD1F4AA1FCCA3B88DD0548AED34443CEB52444EAE9099AA4FE66B2E6224D02381C248025C7044079020111"
+			"client.dll"		"30819D300D06092A864886F70D010101050003818B0030818702818100B1260881BDFE84463D88C6AB8DB914A2E593893C10508B8A5ABDF692E9A5419A3EDBAE86A052849983B75E3B425C18178B260003D857DF0B6505C6CF9C84F5859FCE3B63F1FB2D4818501F6C5FA4AD1430EEB081A74ABD74CD1F4AA1FCCA3B88DD0548AED34443CEB52444EAE9099AA4FE66B2E6224D02381C248025C7044079020111"
+			"engine.dll"		"30819D300D06092A864886F70D010101050003818B0030818702818100B1260881BDFE84463D88C6AB8DB914A2E593893C10508B8A5ABDF692E9A5419A3EDBAE86A052849983B75E3B425C18178B260003D857DF0B6505C6CF9C84F5859FCE3B63F1FB2D4818501F6C5FA4AD1430EEB081A74ABD74CD1F4AA1FCCA3B88DD0548AED34443CEB52444EAE9099AA4FE66B2E6224D02381C248025C7044079020111"
+			"server.dll"		"30819D300D06092A864886F70D010101050003818B0030818702818100B1260881BDFE84463D88C6AB8DB914A2E593893C10508B8A5ABDF692E9A5419A3EDBAE86A052849983B75E3B425C18178B260003D857DF0B6505C6CF9C84F5859FCE3B63F1FB2D4818501F6C5FA4AD1430EEB081A74ABD74CD1F4AA1FCCA3B88DD0548AED34443CEB52444EAE9099AA4FE66B2E6224D02381C248025C7044079020111"
+			"prec.dll"		"30819D300D06092A864886F70D010101050003818B0030818702818100BA240326DFC66BFDC28782BD644FC3BAB284F4A07554E17A8DA6CCA0B4AFBFC9BAB2938846D7595BC7A560FF6215C670C74EEB9D118DE9FC0E8ED0A18DD24D8DBAE8B950C6C062BA5DEFDECB967745C53433839EB7B1A6CA340D0E48273E18AB87106FBD22AC32B2776092E924D3C414DC3328735E984E4A1B1B4E72B0F41017020111"
+			"sourcevr.dll"		"30819D300D06092A864886F70D010101050003818B0030818702818100B1260881BDFE84463D88C6AB8DB914A2E593893C10508B8A5ABDF692E9A5419A3EDBAE86A052849983B75E3B425C18178B260003D857DF0B6505C6CF9C84F5859FCE3B63F1FB2D4818501F6C5FA4AD1430EEB081A74ABD74CD1F4AA1FCCA3B88DD0548AED34443CEB52444EAE9099AA4FE66B2E6224D02381C248025C7044079020111"
+		}
+		"defaultlowviolencecountries"		"DE"
+		"usemms"		""
+		"systemprofile"		"1"
+		"contenttype"		"3"
+		"checkforupdatesbeforelaunch"		"1"
+		"convertgcfs"		"217,316,312,322,452,305,306,307,441,442,443,206,207,208,319,444,445,446,448,449"
+		"installdir"		"Team Fortress 2"
+		"cleanupcmds"		"if not exist hl2.exe goto EOF;ren \"..\..\common\Team Fortress 2\" TF2_bak;del /q /s bin\*;cd tf;del /q /s *.cache media\*.mov;mkdir download;cd download;move ..\maps .\;move ..\materials .\;move ..\models .\;move ..\particles .\;move ..\resource .\;move ..\sound .\;move ..\scripts .\;cd resource;del game.ico tf.ttf tf2.ttf tf2build.ttf tf2professor.ttf tf2secondary.ttf tfd.ttf;cd ..\sound\ui;del gamestartup*.mp3 tv_tune*.mp3 holiday\gamestartup_*.mp3;:EOF"
+		"launch"
+		{
+			"0"
+			{
+				"executable"		"hl2.exe"
+				"arguments"		"-steam -game tf"
+				"vacmodulefilename"		"resource\sourceinit.dat"
+				"config"
+				{
+					"oslist"		"windows"
+				}
+			}
+			"1"
+			{
+				"executable"		"hl2_osx"
+				"arguments"		"-steam -game tf"
+				"config"
+				{
+					"oslist"		"macos"
+				}
+			}
+			"2"
+			{
+				"executable"		"hl2.sh"
+				"arguments"		"-game tf -steam"
+				"config"
+				{
+					"oslist"		"linux"
+				}
+			}
+		}
+		"vrcompositorsupport"		"0"
+		"steamcontrollertemplateindex"		"1"
+		"steamcontrollerconfigfileids"		"557207646"
+	}
+	"depots"
+	{
+		"441"
+		{
+			"name"		"TF2 Client server shared"
+			"systemdefined"		"1"
+			"manifests"
+			{
+				"public"		"2083859864140555065"
+				"competitive"		"4319183612061984249"
+			}
+			"maxsize"		"17551308382"
+		}
+		"440"
+		{
+			"name"		"TF2 Client"
+			"systemdefined"		"1"
+			"manifests"
+			{
+				"public"		"1118032470228587934"
+			}
+			"maxsize"		"825745"
+		}
+		"232251"
+		{
+			"name"		"TF2 Windows client"
+			"config"
+			{
+				"oslist"		"windows"
+			}
+			"systemdefined"		"1"
+			"manifests"
+			{
+				"public"		"3945544614058498223"
+				"competitive"		"9012562015026846189"
+			}
+			"maxsize"		"559369804"
+		}
+		"232252"
+		{
+			"name"		"TF2 OSX client"
+			"config"
+			{
+				"oslist"		"macos"
+			}
+			"systemdefined"		"1"
+			"manifests"
+			{
+				"public"		"6790282279211746850"
+				"competitive"		"586428901945121915"
+			}
+			"maxsize"		"490084851"
+		}
+		"232253"
+		{
+			"name"		"TF2 Linux client"
+			"config"
+			{
+				"oslist"		"linux"
+			}
+			"systemdefined"		"1"
+			"manifests"
+			{
+				"public"		"1454350395276815"
+				"competitive"		"5785822361100563164"
+			}
+			"maxsize"		"532159301"
+		}
+		"444"
+		{
+			"name"		"TF2 lv"
+			"config"
+			{
+				"lowviolence"		"1"
+			}
+			"manifests"
+			{
+				"public"		"646330807595077556"
+			}
+			"maxsize"		"7452052"
+		}
+		"445"
+		{
+			"name"		"TF2 russian"
+			"config"
+			{
+				"language"		"russian"
+			}
+			"manifests"
+			{
+				"public"		"5602233730528152354"
+			}
+			"maxsize"		"90075889"
+		}
+		"446"
+		{
+			"name"		"TF2 german"
+			"config"
+			{
+				"language"		"german"
+			}
+			"manifests"
+			{
+				"public"		"6215119033293728486"
+			}
+			"maxsize"		"74594251"
+		}
+		"448"
+		{
+			"name"		"TF2 french"
+			"config"
+			{
+				"language"		"french"
+			}
+			"manifests"
+			{
+				"public"		"8469957949853360122"
+			}
+			"maxsize"		"73934506"
+		}
+		"449"
+		{
+			"name"		"TF2 spanish"
+			"config"
+			{
+				"language"		"spanish"
+			}
+			"manifests"
+			{
+				"public"		"2451727451644207550"
+			}
+			"maxsize"		"73947996"
+		}
+		"overridescddb"		"1"
+		"baselanguages"		"english,german,french,italian,koreana,spanish,schinese,tchinese,russian,japanese,portuguese,polish,danish,dutch,finnish,norwegian,swedish,hungarian,czech,romanian,turkish,brazilian,bulgarian,greek"
+		"workshopdepot"		"440"
+		"branches"
+		{
+			"public"
+			{
+				"buildid"		"1047383"
+				"timeupdated"		"1459297669"
+			}
+			"dev_prerelease"
+			{
+				"buildid"		"1047383"
+				"description"		"Private beta"
+				"pwdrequired"		"1"
+				"timeupdated"		"1459297639"
+			}
+			"prerelease"
+			{
+				"buildid"		"1047383"
+				"description"		"Latest available build"
+				"timeupdated"		"1459297650"
+			}
+			"competitive"
+			{
+				"buildid"		"1051562"
+				"description"		"Competitive beta secret amazing client"
+				"timeupdated"		"1459464143"
+			}
+			"steam_controller_test"
+			{
+				"buildid"		"1047383"
+				"description"		"Steam Controller test"
+				"pwdrequired"		"1"
+				"timeupdated"		"1459297660"
+			}
+		}
+	}
+	"ufs"
+	{
+		"quota"		"1073741824"
+		"maxnumfiles"		"1000"
+		"hidecloudui"		"0"
+	}
+	"sysreqs"
+	{
+		"macos"
+		{
+			"supported"		"1"
+			"wants_fast_gpu"		"1"
+			"intel900"		"warn"
+			"intelx3100"		"warn"
+			"8086"
+			{
+				"27a6"		"warn"
+				"2a02"		"warn"
+			}
+			"10de"
+			{
+				"009d"		"deny"
+				"0391"		"deny"
+				"0393"		"deny"
+				"0395"		"deny"
+			}
+		}
+		"macos104"
+		{
+			"supported"		"0"
+			"os_min"		"macos1058"
+		}
+		"macos105"
+		{
+			"supported"		"0"
+			"os_min"		"macos1058"
+		}
+		"macos106"
+		{
+			"supported"		"0"
+			"os_min"		"macos1063"
+		}
+	}
+}

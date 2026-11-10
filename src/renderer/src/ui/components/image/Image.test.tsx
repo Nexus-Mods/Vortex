@@ -1,4 +1,3 @@
-import { mdiAccount } from "@mdi/js";
 import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, it, expect, vi } from "vitest";
@@ -36,6 +35,16 @@ describe("Image", () => {
       renderComponent({ children: <span data-testid="badge" /> });
       expect(screen.getByTestId("badge")).toBeInTheDocument();
     });
+
+    it("frames the picture, unless it's told not to style it", () => {
+      const { rerender } = renderComponent();
+      expect(document.querySelector(".nxm-image-frame")).toBeInTheDocument();
+      expect(getContainer()).toHaveClass("nxm-image-styled");
+
+      rerender(<Image alt="A mod" isStyled={false} src="mod.png" />);
+      expect(document.querySelector(".nxm-image-frame")).toBeNull();
+      expect(getContainer()).not.toHaveClass("nxm-image-styled");
+    });
   });
 
   describe("loading", () => {
@@ -68,6 +77,12 @@ describe("Image", () => {
 
     it("waits for nothing when there is no src", () => {
       renderComponent({ src: undefined });
+      expect(getSpinner()).not.toBeInTheDocument();
+    });
+
+    it("takes a null src, as an API sends for a picture it hasn't got, as none", () => {
+      renderComponent({ src: null });
+      expect(getImg()).not.toHaveAttribute("src");
       expect(getSpinner()).not.toBeInTheDocument();
     });
 
@@ -131,25 +146,28 @@ describe("Image", () => {
       fireEvent.error(getImg() as Element);
       expect(getImg()).toBeNull();
       // the fallback Icon exposes the alt text as its accessible name
-      expect(screen.getByRole("img", { name: "A mod" }).tagName).toBe("svg");
+      expect(screen.getByRole("img", { name: "A mod" })).toHaveAttribute(
+        "data-symbol",
+        "broken_image",
+      );
     });
 
     it("shows the caller's icon instead, when given one", () => {
-      renderComponent({ fallbackIconPath: mdiAccount, src: "bad.png" });
+      renderComponent({ fallbackIcon: { name: "person", filled: true }, src: "bad.png" });
       fireEvent.error(getImg() as Element);
-      expect(document.querySelector("svg path")).toHaveAttribute("d", mdiAccount);
+      expect(document.querySelector("[data-symbol]")).toHaveAttribute("data-symbol", "person");
     });
 
     it("shows the caller's icon when there's no src at all", () => {
-      renderComponent({ fallbackIconPath: mdiAccount, src: undefined });
+      renderComponent({ fallbackIcon: { name: "person", filled: true }, src: undefined });
       expect(getImg()).toBeNull();
-      expect(screen.getByRole("img", { name: "A mod" }).tagName).toBe("svg");
+      expect(screen.getByRole("img", { name: "A mod" })).toHaveAttribute("data-symbol", "person");
     });
 
     it("keeps an empty frame for no src when there's no icon to show", () => {
       renderComponent({ src: undefined });
       expect(getImg()).toBeInTheDocument();
-      expect(document.querySelector("svg path")).toBeNull();
+      expect(document.querySelector("[data-symbol]")).toBeNull();
     });
 
     it("calls a caller-provided onError handler", () => {

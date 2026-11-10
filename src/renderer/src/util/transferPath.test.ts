@@ -46,6 +46,10 @@ vi.mock("fs", () => ({
   },
 }));
 
+vi.mock("./getVolumePath", () => ({
+  getVolumePath: (input: string) => path.dirname(input),
+}));
+
 vi.mock("winapi-bindings", () => ({
   GetVolumePathName: (input: string) => {
     const res = path.dirname(input);
@@ -168,9 +172,7 @@ const MB = 1024 * 1024;
 const baseA = path.sep + "drivea";
 const baseB = path.sep + "driveb";
 
-const describeOnWindows = process.platform === "win32" ? describe : describe.skip;
-
-describeOnWindows("testPathTransfer", () => {
+describe("testPathTransfer", () => {
   beforeEach(() => {
     walkHandlers[path.join(baseA, "source")] = (cb) => {
       cb(null, [

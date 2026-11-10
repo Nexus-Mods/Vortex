@@ -1,4 +1,3 @@
-import { mdiMonitorArrowDownVariant } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -117,7 +116,7 @@ export const RequirementBody = ({
       appearance="strong"
       brand="neutral"
       isLoading={downloadingAll}
-      leftIconPath={mdiMonitorArrowDownVariant}
+      leftIcon="install_desktop"
       rightIcon={ctx.showPremiumAd ? <PremiumBadge /> : undefined}
       size="sm"
       onClick={installAll}

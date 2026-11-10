@@ -1,7 +1,8 @@
+import type { VortexGameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
 import type { GameSource } from "../types/GameSource";
-import type { IDetectedGame } from "../types/IDetectedGame";
+import type { DetectedGamesStatus, IDetectedGame } from "../types/IDetectedGame";
 import type { IGameStored } from "../types/IGameStored";
 
 const identity = <T>(input: T): T => input;
@@ -27,6 +28,15 @@ export const setShowHiddenGames = createAction("SET_SHOW_HIDDEN_GAMES", identity
 export const setDetectedGames = createAction("SET_DETECTED_GAMES", identity<IDetectedGame[]>);
 
 /**
+ * records how the last detected-games request went: running, failed or succeeded;
+ * undefined when there's nothing to say, as before any request or after logging out
+ */
+export const setDetectedGamesStatus = createAction(
+  "SET_DETECTED_GAMES_STATUS",
+  identity<DetectedGamesStatus | undefined>,
+);
+
+/**
  * sets the Nexus Mods game ids the user has favourited, as reported alongside
  * the detected games. User data, cleared on logout.
  */
@@ -42,3 +52,15 @@ export const setGameAddOrigin = createAction(
   "SET_GAME_ADD_ORIGIN",
   (gameId: string, source: GameSource) => ({ gameId, source }),
 );
+
+/**
+ * records the store the user picked a game from, by clicking the tile that named it, so
+ * the add manages that store's install rather than whichever one discovery ranks first
+ */
+export const setGameAddStore = createAction(
+  "SET_GAME_ADD_STORE",
+  (gameId: VortexGameId, store: string) => ({ gameId, store }),
+);
+
+/** forgets the store picked for an add, once the add has finished or failed */
+export const clearGameAddStore = createAction("CLEAR_GAME_ADD_STORE");

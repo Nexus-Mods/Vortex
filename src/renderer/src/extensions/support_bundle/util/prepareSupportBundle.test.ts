@@ -149,20 +149,20 @@ describe("buildBundleFilename", () => {
 
   it("uses the nexus account name", () => {
     expect(buildBundleFilename("2.2.0", "Ada", when)).toBe(
-      "vortex-support-bundle_2.2.0_Ada_20260105-090307.7z",
+      "vortex-support-bundle_2.2.0_Ada_20260105-090307.zip",
     );
   });
 
   it("falls back to anonymous when logged out", () => {
     expect(buildBundleFilename("2.2.0", undefined, when)).toBe(
-      "vortex-support-bundle_2.2.0_anonymous_20260105-090307.7z",
+      "vortex-support-bundle_2.2.0_anonymous_20260105-090307.zip",
     );
     expect(buildBundleFilename("2.2.0", "", when)).toContain("_anonymous_");
   });
 
   it("keeps a prerelease version intact", () => {
     expect(buildBundleFilename("2.2.0-beta.3", "Ada", when)).toBe(
-      "vortex-support-bundle_2.2.0-beta.3_Ada_20260105-090307.7z",
+      "vortex-support-bundle_2.2.0-beta.3_Ada_20260105-090307.zip",
     );
   });
 
@@ -172,7 +172,7 @@ describe("buildBundleFilename", () => {
     expect(name).not.toMatch(/\s/);
     // the invalid set is platform dependent, so ask util.ts rather than hard coding it
     expect(name.search(INVALID_FILENAME_RE)).toBe(-1);
-    expect(name.endsWith(".7z")).toBe(true);
+    expect(name.endsWith(".zip")).toBe(true);
   });
 });
 
@@ -217,10 +217,10 @@ describe("prepareSupportBundle", () => {
 
     expect(archive).toBe(bundle.archivePath);
     expect(path.basename(archive)).toMatch(
-      /^vortex-support-bundle_.+_Ada-Lovelace_\d{8}-\d{6}\.7z$/,
+      /^vortex-support-bundle_.+_Ada-Lovelace_\d{8}-\d{6}\.zip$/,
     );
-    // -md caps the dictionary so max compression doesn't cost ~450MB of peak memory
-    expect(options).toEqual({ mx: "9", ssw: true, raw: ["-m0=LZMA2", "-md=16m"] });
+    // zip, because GitHub issues refuse .7z attachments
+    expect(options).toEqual({ t: "zip", mx: "5", ssw: true, raw: ["-mm=Deflate"] });
 
     // the three entries go in separately so they land at the archive root
     const staging = staged!.staging;
@@ -394,7 +394,7 @@ describe("prepareSupportBundle", () => {
     const bundle = await prepareSupportBundle(makeStore(makeState(false)));
 
     expect(path.basename(bundle.archivePath)).toMatch(
-      /^vortex-support-bundle_.+_anonymous_\d{8}-\d{6}\.7z$/,
+      /^vortex-support-bundle_.+_anonymous_\d{8}-\d{6}\.zip$/,
     );
     expect(staged!.manifest.nexusUsername).toBeUndefined();
     expect(staged!.manifest.nexusUserId).toBeUndefined();

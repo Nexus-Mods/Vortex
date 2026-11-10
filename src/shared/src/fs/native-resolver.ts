@@ -1,5 +1,7 @@
-import { DIRECTORY_SEPARATOR, getPathRoot, isUnixRootType } from "./native";
-import type { PathResolver, QualifiedPath, ResolvedPath } from "./paths";
+import { DIRECTORY_SEPARATOR, getPathRoot, isUnixRootType } from "@nexusmods/paths";
+import type { QualifiedPath, ResolvedPath } from "@nexusmods/paths";
+
+import type { PathResolver } from "./paths";
 import { PathResolverError } from "./paths";
 
 /**

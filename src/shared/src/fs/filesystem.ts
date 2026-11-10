@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
-import type { Pattern } from "./matcher";
-import type { QualifiedPath, ResolvedPath } from "./paths";
+import type { Pattern } from "@nexusmods/paths";
+import type { QualifiedPath, ResolvedPath } from "@nexusmods/paths";
 
 /**
  * Filesystem operations.

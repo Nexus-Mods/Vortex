@@ -15,6 +15,8 @@ export type IToolbarButtonProps = IButtonProps & {
    */
   as?: ForwardRefExoticComponent<IButtonProps & RefAttributes<HTMLButtonElement>>;
   label: string;
+  /** Said under the label in the tooltip, and as the control's accessible description. */
+  description?: string;
   showLabel?: boolean;
   placement?: ITooltipPlacement;
   /**
@@ -23,6 +25,15 @@ export type IToolbarButtonProps = IButtonProps & {
    */
   tooltipDisabled?: boolean;
 };
+
+/** A tooltip's bold title over what it means, as the design words these: 240px wide. */
+const TitledTooltip = ({ title, body }: { title: string; body: string }) => (
+  <div className="nxm-tooltip-content max-w-60">
+    <p className="font-semibold">{title}</p>
+
+    <p>{body}</p>
+  </div>
+);
 
 /**
  * A toolbar control: an icon-only `Button` whose label is shown on hover.
@@ -40,6 +51,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, IToolbarButtonProps>(
   (
     {
       as: Control = Button,
+      description,
       label,
       placement = "bottom",
       showLabel = false,
@@ -48,8 +60,19 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, IToolbarButtonProps>(
     },
     ref,
   ) => (
-    <Tooltip content={label} disabled={showLabel || tooltipDisabled} placement={placement}>
-      <Control {...props} aria-label={showLabel ? undefined : label} ref={ref}>
+    <Tooltip
+      disabled={showLabel || tooltipDisabled}
+      placement={placement}
+      {...(description === undefined
+        ? { content: label }
+        : { customContent: <TitledTooltip body={description} title={label} /> })}
+    >
+      <Control
+        {...props}
+        aria-description={description}
+        aria-label={showLabel ? undefined : label}
+        ref={ref}
+      >
         {showLabel && label}
       </Control>
     </Tooltip>

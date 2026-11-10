@@ -1,8 +1,10 @@
 import type { Locator, Page } from "@playwright/test";
 
-/** Labels of the three toggles in the Interface tab's "Automation" section. */
+/**
+ * Labels of the toggles in the Interface tab's "Automation" section. The modern layout has no
+ * auto-deploy toggle: the Mods toolbar's auto-apply action replaces it.
+ */
 export const AUTOMATION_LABELS = {
-  deploy: "Deploy Mods when Enabled",
   install: "Install Mods when downloaded",
   enable: "Enable Mods when installed (in current profile)",
 } as const;

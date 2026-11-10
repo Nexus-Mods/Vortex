@@ -1,6 +1,7 @@
+import { lstat } from "node:fs/promises";
 import * as path from "path";
 
-import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, VortexModStagingFolder } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import type { IEntry } from "turbowalk";
@@ -24,6 +25,7 @@ import type {
   IUnavailableReason,
 } from "./types/IDeploymentMethod";
 import type BlacklistSet from "./util/BlacklistSet";
+import { deployedFileKey, deployedFilePath } from "./util/deployedFilePath";
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -32,6 +34,31 @@ export interface IDeployment {
 // TODO: guess I need to pull this out of the linking activator as the deployment
 //   code needs to know about these files when merging archives
 export const BACKUP_TAG = ".vortex_backup";
+
+async function isAbsent(filePath: string): Promise<boolean> {
+  try {
+    await lstat(filePath);
+    return false;
+  } catch (err: unknown) {
+    if (getErrorCode(err) === "ENOENT") {
+      return true;
+    }
+    throw err;
+  }
+}
+
+/** Moves a file aside for a link, refusing when an earlier backup already holds the name. */
+async function backUpGameFile(filePath: string): Promise<void> {
+  const backupPath = filePath + BACKUP_TAG;
+  if (await isAbsent(filePath)) {
+    return;
+  }
+  if (!(await isAbsent(backupPath))) {
+    throw new Error(`"${backupPath}" already exists`);
+  }
+  // the util/fs rename keeps the busy-retry and elevated-unlock handling a locked game file needs
+  await fs.renameAsync(filePath, backupPath);
+}
 
 interface IDeploymentContext {
   previousDeployment: IDeployment;
@@ -482,11 +509,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return mapWithConcurrency(
       activation ?? [],
       (fileEntry) => {
-        const fileDataPath = (
-          truthy(fileEntry.target)
-            ? [dataPath, fileEntry.target, fileEntry.relPath]
-            : [dataPath, fileEntry.relPath]
-        ).join(path.sep);
+        const fileDataPath = deployedFilePath(dataPath, fileEntry.target, fileEntry.relPath);
         const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
         let sourceDeleted: boolean = false;
         let destDeleted: boolean = false;
@@ -547,18 +570,21 @@ abstract class LinkingActivator implements IDeploymentMethod {
               changes.push({
                 filePath: fileEntry.relPath,
                 source: fileEntry.source,
+                target: fileEntry.target,
                 changeType: "srcdeleted",
               });
             } else if (destDeleted && !sourceDeleted) {
               changes.push({
                 filePath: fileEntry.relPath,
                 source: fileEntry.source,
+                target: fileEntry.target,
                 changeType: "deleted",
               });
             } else if (!sourceDeleted && !destDeleted && !isLink) {
               changes.push({
                 filePath: fileEntry.relPath,
                 source: fileEntry.source,
+                target: fileEntry.target,
                 sourceTime,
                 destTime,
                 changeType: "refchange",
@@ -670,7 +696,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
     // that the same file may show up with different change types. This can cause an error
     // since the same action can not be applied
 
-    const changeMap: { [filePath: string]: IFileChange } = {};
+    // keyed by deployedFileKey
+    const changeMap: { [fileKey: string]: IFileChange } = {};
 
     // if one of the files is deleted that's the more important change, otherwise we
     // take the later one, assuming there is a chronological order to the changes
@@ -679,11 +706,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
     };
 
     for (const change of input) {
-      if (
-        changeMap[change.filePath] === undefined ||
-        moreImportant(change, changeMap[change.filePath])
-      ) {
-        changeMap[change.filePath] = change;
+      const key = deployedFileKey(VortexModStagingFolder(change.source), change.filePath);
+      if (changeMap[key] === undefined || moreImportant(change, changeMap[key])) {
+        changeMap[key] = change;
       }
     }
 
@@ -796,7 +821,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           .then((link) =>
             link
               ? Promise.resolve(undefined) // don't re-create link that's already correct
-              : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG),
+              : backUpGameFile(fullOutputPath),
           )
           .catch((err: unknown) =>
             getErrorCode(err) === "ENOENT"

@@ -1,4 +1,3 @@
-import { mdiPlusCircleOutline, mdiPuzzleOutline } from "@mdi/js";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import _ from "lodash";
 import React, { useCallback, useMemo } from "react";
@@ -11,7 +10,7 @@ import { useExtensionObjects } from "@/ExtensionProvider";
 import { log } from "@/logging";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
-import { PopoverMenu } from "@/ui/components/popover/PopoverMenu";
+import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { trackedActions } from "@/ui/components/toolbar/ToolbarGroup";
@@ -22,9 +21,11 @@ import type { TFunction } from "@/util/i18n";
 import * as selectors from "@/util/selectors";
 import { getSafe } from "@/util/storeHelper";
 import { batchDispatch } from "@/util/util";
-import { getIconPath } from "@/views/components/iconMap";
+import { getIcon } from "@/views/components/icon_map/iconMap";
 
 import NXMUrl from "../../nexus_integration/NXMUrl";
+import { setAutoDeployment } from "../../settings_interface/actions/automation";
+import { setBetaModsTable } from "../actions/settings";
 import { selectModsToUpdate } from "../util/collection_update_warning/collectionUpdateWarning";
 import { NoDeployment } from "../util/exceptions";
 import metaLookupMatch from "../util/metaLookupMatch";
@@ -49,10 +50,11 @@ interface IPositionedAction {
  * fixed: pinning an action puts it back where it belongs rather than at the end.
  *
  * The order the bar reads in — Install From File, Open, History, Check for Updates,
- * Categories, Manage Rules, Deploy, Purge — comes from these and from the positions
- * passed to `registerAction` elsewhere, so a change here moves the action in the
- * overflow menu too. Deploy and Purge keep the positions they had as components, which
- * puts them at the end of the row.
+ * Categories, Manage Rules, Manual apply, Purge — comes from these and from the positions
+ * passed to `registerAction` elsewhere, so a change here moves the action in the overflow
+ * menu too. Manual apply and Purge keep the positions they had as components, which puts
+ * them at the end of the row. Auto-apply and the view switch come after everything else,
+ * each in a section of its own.
  */
 const POSITION = {
   installFromFile: 25,
@@ -61,6 +63,8 @@ const POSITION = {
   deploy: 105,
   purge: 110,
   import: 120,
+  autoApply: 990,
+  betaTable: 1000,
 };
 
 /**
@@ -108,25 +112,106 @@ const NO_ACTIONS: IPositionedAction[] = [];
 
 const EMPTY_MODS: { [modId: string]: IModWithState } = {};
 
-/** Deploy (Apply changes) — was `ActivationButton`. Disabled and unbranded while applying. */
+/**
+ * Manual apply: deploys whether or not changes were detected, for the cases the menu's Apply
+ * button can't see. Not pinned, never branded, and disabled while applying.
+ */
 const useDeployAction = (t: TFunction): IPositionedAction => {
-  const { needToDeploy, isDeploying, deploy } = useDeployMods();
+  const { isDeploying, deploy } = useDeployMods();
 
   return useMemo(
     () => ({
       position: POSITION.deploy,
+      action: isDeploying
+        ? {
+            id: "deploy",
+            label: t("Applying mod changes…"),
+            icon: "autorenew",
+            testId: "deploy-mods",
+            disabled: true,
+          }
+        : {
+            id: "deploy",
+            label: t("Manual apply (Deploy)"),
+            description: t("Apply mods, even when no changes are detected."),
+            icon: "autorenew",
+            testId: "deploy-mods",
+            onClick: deploy,
+          },
+    }),
+    [deploy, isDeploying, t],
+  );
+};
+
+/**
+ * Turns auto-apply on or off: whether enabling or disabling a mod applies the change at
+ * once. Not pinned, and lit while on. Next to last, in a section of its own above the view
+ * switch. Replaces the switch the modern layout's settings had.
+ */
+const useAutoApplyAction = (t: TFunction): IPositionedAction => {
+  const dispatch = useDispatch();
+  const autoApply = useSelector((state: IState) => state.settings.automation.deploy === true);
+
+  return useMemo(
+    () => ({
+      position: POSITION.autoApply,
       action: {
-        id: "deploy",
-        label: isDeploying ? t("Applying mod changes…") : t("Deploy (Apply changes)"),
-        iconPath: getIconPath("deploy"),
-        pinned: true,
-        testId: "deploy-mods",
-        brand: needToDeploy && !isDeploying ? "primary" : "neutral",
-        disabled: isDeploying,
-        onClick: deploy,
+        id: "auto-apply",
+        ...(autoApply
+          ? {
+              label: t("Disable auto-apply"),
+              description: t("Mod changes will need to be applied manually."),
+            }
+          : {
+              label: t("Enable auto-apply"),
+              description: t("Automatically apply changes as you make them."),
+            }),
+        icon: "rule_settings",
+        active: autoApply,
+        section: "automation",
+        testId: "auto-apply",
+        // The state it switches to.
+        trackingProperties: { autoApply: !autoApply },
+        onClick: () => dispatch(setAutoDeployment(!autoApply)),
       },
     }),
-    [deploy, isDeploying, needToDeploy, t],
+    [autoApply, dispatch, t],
+  );
+};
+
+/**
+ * Switches the Mods page between the classic table and the new one, in beta. After every
+ * other action, in a section of its own in the overflow menu, and lit while the beta is on.
+ */
+const useBetaTableAction = (t: TFunction): IPositionedAction => {
+  const dispatch = useDispatch();
+  const betaTable = useSelector((state: IState) => state.settings.mods.betaTable === true);
+
+  return useMemo(
+    () => ({
+      position: POSITION.betaTable,
+      action: {
+        id: "beta-table",
+        ...(betaTable
+          ? {
+              label: t("Switch to classic view"),
+              description: t("Return to the original mod list."),
+            }
+          : {
+              label: t("Switch to beta view"),
+              description: t("Try the new mod list. Some features aren't supported yet."),
+            }),
+        icon: "experiment",
+        active: betaTable,
+        pinned: true,
+        section: "view",
+        testId: "beta-mods-table",
+        // The view it switches to.
+        trackingProperties: { view: betaTable ? "classic" : "beta" },
+        onClick: () => dispatch(setBetaModsTable(!betaTable)),
+      },
+    }),
+    [betaTable, dispatch, t],
   );
 };
 
@@ -245,7 +330,7 @@ const usePurgeAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "purge",
         label: t("Purge Mods"),
-        iconPath: getIconPath("purge"),
+        icon: getIcon("purge"),
         pinned: true,
         testId: "purge-mods",
         onClick: activator !== undefined ? purge : noMethod,
@@ -326,7 +411,7 @@ const useInstallFromFileAction = (t: TFunction): IPositionedAction => {
       action: {
         id: "install-from-file",
         label: t("Install From File"),
-        iconPath: mdiPlusCircleOutline,
+        icon: "add_circle",
         pinned: true,
         testId: "install-from-archive",
         onClick: install,
@@ -390,7 +475,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         });
       }
 
-      const toUpdate = await selectModsToUpdate(mods, updateAble);
+      const toUpdate = await selectModsToUpdate(api, gameMode, updateAble);
       if (toUpdate.length > 0) {
         api.events.emit("mods-update", gameMode, toUpdate);
       }
@@ -452,7 +537,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         ? {
             id: "check-versions",
             label: t("Checking for mod updates"),
-            iconPath: getIconPath("refresh"),
+            icon: getIcon("refresh"),
             pinned: true,
             disabled: true,
             isLoading: true,
@@ -460,7 +545,7 @@ const useCheckVersionsAction = (t: TFunction): IPositionedAction => {
         : {
             id: "check-versions",
             label: t("Check for Updates"),
-            iconPath: getIconPath("refresh"),
+            icon: getIcon("refresh"),
             pinned: true,
             testId: "check-mod-updates-button",
             onClick: check,
@@ -533,7 +618,7 @@ const useRegisteredActions = (group: string): IPositionedAction[] => {
         id: definition.title,
         label: !notice ? definition.title : `${definition.title} (${notice})`,
         brand: brands[index],
-        iconPath: getIconPath(definition.icon, mdiPuzzleOutline),
+        icon: getIcon(definition.icon, "extension"),
         pinned: definition.options?.pinned ?? false,
         disabled: typeof condition === "string",
         extension: definition.options?.namespace,
@@ -589,7 +674,7 @@ const useActionMenu = (
       action: {
         id: menu.id,
         label: `${label}...`,
-        iconPath: getIconPath(menu.icon),
+        icon: getIcon(menu.icon),
         pinned: menu.pinned,
         panelRole: "menu",
         panel: ({ dismiss }) => (
@@ -615,6 +700,8 @@ export const useModToolbarActions = (
   const checkVersions = useCheckVersionsAction(t);
   const deploy = useDeployAction(t);
   const purge = usePurgeAction(t);
+  const autoApply = useAutoApplyAction(t);
+  const betaTable = useBetaTableAction(t);
   const registered = useRegisteredActions("mod-icons");
 
   const byIcon = useMemo(() => _.groupBy(registered, (entry) => entry.icon), [registered]);
@@ -633,10 +720,20 @@ export const useModToolbarActions = (
 
   return useMemo(
     () =>
-      [installFromFile, checkVersions, deploy, purge, open, importFrom, ...ownRow]
+      [
+        installFromFile,
+        checkVersions,
+        deploy,
+        autoApply,
+        purge,
+        open,
+        importFrom,
+        betaTable,
+        ...ownRow,
+      ]
         .filter((entry): entry is IPositionedAction => entry !== undefined)
         .sort((lhs, rhs) => lhs.position - rhs.position)
         .map((entry) => entry.action),
-    [checkVersions, deploy, importFrom, installFromFile, open, ownRow, purge],
+    [autoApply, betaTable, checkVersions, deploy, importFrom, installFromFile, open, ownRow, purge],
   );
 };

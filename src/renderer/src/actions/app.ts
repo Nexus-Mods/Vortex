@@ -30,6 +30,13 @@ export const setExtensionEndorsed = createAction(
   (extensionId: string, endorsed: EndorsedStatus) => ({ extensionId, endorsed }),
 );
 
+export const setExtensionModId = createAction(
+  "SET_EXTENSION_MOD_ID",
+  (extensionId: string, modId: number) => ({ extensionId, modId }),
+);
+
+export const declineExtensionNexusLink = createAction("DECLINE_EXTENSION_NEXUS_LINK", id<string>);
+
 export const removeExtension = createAction("REMOVE_EXTENSION", id<string>);
 
 export const forgetExtension = createAction("FORGET_EXTENSION", id<string>);

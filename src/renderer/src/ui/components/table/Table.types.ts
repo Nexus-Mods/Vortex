@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import type { IToolbarContext } from "@/ui/components/toolbar/Toolbar.context";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
+
 /** A collapsible run of rows under a row of its own. */
 export interface ITableGroup<T> {
   /** Stable, unique identifier for the group. */
@@ -35,6 +38,8 @@ export interface ITableColumn<T, G extends ITableGroup<T> = ITableGroup<T>> {
   sticky?: "end";
   /** For a sticky column, how far its cell widens over the cells before it while its row is hovered. */
   revealWidth?: `${number}px`;
+  /** `false` keeps it at its `width`, as does a `width` whose least isn't in px. Default `true`. */
+  resizable?: boolean;
   /** Makes the column sortable: compares two rows for A to Z, as `Array.sort` does. */
   sort?: (a: T, b: T) => number;
 }
@@ -46,6 +51,9 @@ export interface ITableSort {
   /** A to Z, or Z to A; the values `aria-sort` takes. */
   direction: "ascending" | "descending";
 }
+
+/** What a context menu was opened on: a group header, a row, or a row in a multi-selection. */
+export type TableMenuTarget = "group" | "row" | "selection";
 
 export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   /** The columns, in order, each making a track of the table's grid. */
@@ -60,6 +68,10 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   footer?: ReactNode;
   /** In place of the rows while there are none: what a search that matched nothing says. */
   empty?: ReactNode;
+  /** Resized columns' widths in px, by id; a column not in it is at its `width`. */
+  columnWidths?: { [columnId: string]: number };
+  /** Takes the widths a resize changes, by id, `undefined` for one reset; unset, none resize. */
+  onColumnWidthsChange?: (widths: { [columnId: string]: number | undefined }) => void;
   /** The sort to start with; unset, the rows keep the order they're given in. */
   defaultSort?: ITableSort;
   /** Classes for the table's grid element. */
@@ -72,6 +84,22 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   selectedIds?: ReadonlySet<string>;
   /** Takes the selection the user changes it to, with `selectedIds`. */
   onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
+  /** A row's context menu, given the way to close it; unset, rows have none. */
+  rowMenu?: (row: T, close: () => void) => ReactNode;
+  /** A group heading's own actions, after the built-ins in its "…" and right-click menu. */
+  groupMenu?: (group: G) => IToolbarAction[];
+  /** Counts the clicks in a heading's menus, built-ins included, as a toolbar's `tracking` does. */
+  groupTracking?: IToolbarContext["tracking"];
+  /** A group to open and bring into view, once the table has it. */
+  focusGroupId?: string;
+  /** Told once `focusGroupId`'s group is open and being scrolled to, so it can be dropped. */
+  onGroupFocused?: () => void;
+  /** A row to bring into view and select, once the table has it. */
+  focusRowId?: string;
+  /** Told once `focusRowId`'s row is being scrolled to and selected, so it can be dropped. */
+  onRowFocused?: () => void;
+  /** Told when a context menu opens, on what, and whether from the pointer or keyboard. */
+  onMenuOpen?: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
 } & (
   | {
       /** The rows, ungrouped. */
@@ -95,8 +123,6 @@ export type TableItem<T, G> =
       row: T;
       /** 2 under a group, unset in a flat grid. */
       level?: number;
-      /** The picture of the group it's under, which tints it. */
-      tint?: string;
     }
   | {
       kind: "group";

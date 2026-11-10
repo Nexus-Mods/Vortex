@@ -1,8 +1,10 @@
+import type { VortexGameId } from "@vortex/shared";
+
 import { actionsToReducerSpec } from "@/reducers/builder";
 
 import * as actions from "../actions/session";
 import type { GameSource } from "../types/GameSource";
-import type { IDetectedGame } from "../types/IDetectedGame";
+import type { DetectedGamesStatus, IDetectedGame } from "../types/IDetectedGame";
 import type { IGameStored } from "../types/IGameStored";
 
 type DefaultState = {
@@ -10,8 +12,15 @@ type DefaultState = {
   disabled: Record<string, string>;
   showHidden: boolean;
   detectedGames: IDetectedGame[];
+  /** Unset before any request, or once there's nothing to say about the last one. */
+  detectedGamesStatus?: DetectedGamesStatus;
   favouriteGames: number[];
   gameAddOrigin: { gameId: string; source: GameSource } | null;
+  /**
+   * The store the user picked the game from while adding it. Unlike `gameAddOrigin` it's
+   * cleared when the add ends, because discovery acts on it.
+   */
+  gameAddStore: { gameId: VortexGameId; store: string } | null;
 };
 
 declare module "@/types/IState" {
@@ -27,6 +36,7 @@ const defaultState: DefaultState = {
   detectedGames: [],
   favouriteGames: [],
   gameAddOrigin: null,
+  gameAddStore: null,
 };
 
 export const sessionReducer = actionsToReducerSpec(defaultState, actions, {
@@ -53,6 +63,10 @@ export const sessionReducer = actionsToReducerSpec(defaultState, actions, {
     ...state,
     detectedGames: payload,
   }),
+  setDetectedGamesStatus: (state, payload) => ({
+    ...state,
+    detectedGamesStatus: payload,
+  }),
   setFavouriteGames: (state, payload) => ({
     ...state,
     favouriteGames: payload,
@@ -64,5 +78,13 @@ export const sessionReducer = actionsToReducerSpec(defaultState, actions, {
   setGameAddOrigin: (state, payload) => ({
     ...state,
     gameAddOrigin: payload,
+  }),
+  setGameAddStore: (state, payload) => ({
+    ...state,
+    gameAddStore: payload,
+  }),
+  clearGameAddStore: (state) => ({
+    ...state,
+    gameAddStore: null,
   }),
 });

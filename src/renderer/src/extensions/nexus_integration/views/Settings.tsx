@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Alert, FormGroup, HelpBlock } from "react-bootstrap";
+import { FormGroup } from "react-bootstrap";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
@@ -68,23 +68,10 @@ class Settings extends ComponentEx<IProps, {}> {
     return (
       <form>
         <FormGroup>
-          <Toggle
-            checked={associated}
-            onToggle={this.associate}
-            disabled={process.platform === "linux"}
-          >
+          <Toggle checked={associated} onToggle={this.associate}>
             {t("Handle Mod Manager Download buttons on")}{" "}
             <a onClick={this.openNexus}>nexusmods.com</a> (nxm:// links)
           </Toggle>
-          {
-            // on linux this is handled by the desktop environment so you'd have to implement
-            // separate solutions for kde, gnome, xfce, ...
-            process.platform === "linux" ? (
-              <HelpBlock>
-                <Alert bsStyle="info">{t("Not supported on Linux")}</Alert>
-              </HelpBlock>
-            ) : null
-          }
           <div style={{ marginTop: 15 }}>
             {t(
               "Fix Nexus Mods links in Chrome " +

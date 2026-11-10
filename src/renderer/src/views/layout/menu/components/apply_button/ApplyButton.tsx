@@ -1,4 +1,3 @@
-import { mdiAutorenew } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -32,7 +31,7 @@ const Content = ({
         "nxm-button-icon",
         { "animate-spin reduce-motion:animate-none": isApplying },
       ])}
-      path={mdiAutorenew}
+      name="autorenew"
       size="lg"
     />
 
@@ -41,7 +40,7 @@ const Content = ({
         // While applying the bar sets the colour, so the text picks it up from there.
         {...(isApplying ? { brand: "none" as const } : { appearance: "inverted" as const })}
         as="span"
-        className="font-semibold"
+        className="font-medium"
         typographyType="body-lg"
       >
         {label}

@@ -10,7 +10,14 @@ const { baseState, dispatch, emit, sendNotification, state } = vi.hoisted(() => 
   // Enough of the store for the selectors this section reads, activeGameId included.
   const baseState = () => ({
     persistent: { profiles: {} },
-    session: { discovery: { running: false } },
+    session: {
+      discovery: { running: false },
+      gameMode: {
+        known: [] as Array<{ id: string; name: string }>,
+        detectedGames: [] as Array<{ gameUid: string; extension?: object }>,
+        detectedGamesStatus: "success" as "running" | "failed" | "success" | undefined,
+      },
+    },
     settings: {
       gameMode: {
         discovered: {},
@@ -46,10 +53,19 @@ vi.mock("react-redux", async () => {
 });
 
 // The tiles are the grid's concern and pull in the store; this file is about which of
-// the four empty states this section picks, so the lists are stubbed out.
+// the four empty states this section picks, so the lists are stubbed out. The grid's
+// stand-in also shows the detected stores it was handed.
 vi.mock("../GamesGrid", () => ({
-  GamesGrid: ({ games }: { games: IGameStored[] }) => (
-    <div data-testid="games-grid">{games.map((iter) => iter.name).join(",")}</div>
+  GamesGrid: ({
+    detectedStores,
+    games,
+  }: {
+    detectedStores?: Record<string, string>;
+    games: IGameStored[];
+  }) => (
+    <div data-stores={JSON.stringify(detectedStores)} data-testid="games-grid">
+      {games.map((iter) => iter.name).join(",")}
+    </div>
   ),
 }));
 
@@ -84,17 +100,31 @@ const scanResolving = (gameIds: string[] = []) =>
 /** Leaves the scan in flight, so the scanning UI stays put. */
 const scanPending = () => emit.mockImplementation(() => undefined);
 
-const scanFailing = (err: Error) =>
-  emit.mockImplementation((event: string, cb?: (ids: string[], error?: Error) => void) => {
-    if (event === "start-quick-discovery") {
-      cb?.([], err);
-    }
-  });
+/**
+ * Fails the scan at the step given; detection is the endpoint, discovery the local search.
+ * A detection failure is recorded in the store's status, as the request would.
+ */
+const scanFailing = (err: Error, failure: "discovery" | "detection" = "detection") =>
+  emit.mockImplementation(
+    (event: string, cb?: (ids: string[], error?: Error, step?: string) => void) => {
+      if (event === "start-quick-discovery") {
+        if (failure === "detection") {
+          state.current.session.gameMode.detectedGamesStatus = "failed";
+        }
+        cb?.([], err, failure);
+      }
+    },
+  );
+
+/** The analytics events the section emitted, in order. */
+const tracked = () =>
+  emit.mock.calls
+    .filter(([event]) => event === "analytics-track-mixpanel-event")
+    .map(([, payload]) => payload as { eventName: string; properties: Record<string, unknown> });
 
 const renderComponent = (props: Partial<SectionProps> = {}) => {
   const onBrowseSupported = vi.fn();
-
-  render(
+  const element = (overrides: Partial<SectionProps> = {}) => (
     <DetectedGames
       {...({
         count: "0",
@@ -105,11 +135,18 @@ const renderComponent = (props: Partial<SectionProps> = {}) => {
         onBrowseSupported,
         onRefreshGameInfo: vi.fn(),
         ...props,
+        ...overrides,
       } as SectionProps)}
-    />,
+    />
   );
 
-  return { onBrowseSupported };
+  const { rerender } = render(element());
+
+  // The mocked selectors read the store on render, so a store change needs one.
+  return {
+    onBrowseSupported,
+    rerender: (overrides?: Partial<SectionProps>) => rerender(element(overrides)),
+  };
 };
 
 // --- Tests ---
@@ -126,6 +163,15 @@ describe("DetectedGames", () => {
   it("hands its games to the grid", () => {
     renderComponent({ count: "1", games: [game("skyrim")] });
     expect(screen.getByTestId("games-grid")).toHaveTextContent("skyrim");
+  });
+
+  it("hands the grid the store each game was detected on", () => {
+    renderComponent({ count: "1", detectedStores: { skyrim: "steam" }, games: [game("skyrim")] });
+
+    expect(screen.getByTestId("games-grid")).toHaveAttribute(
+      "data-stores",
+      JSON.stringify({ skyrim: "steam" }),
+    );
   });
 
   it("hands them to the list when the layout says so", () => {
@@ -180,6 +226,23 @@ describe("DetectedGames", () => {
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({ payload: "alphabetical", type: "SET_SORT_DETECTED" }),
       );
+      expect(tracked()).toEqual([
+        {
+          eventName: "app_games_sort_changed",
+          properties: { section: "detected", sort: "alphabetical" },
+        },
+      ]);
+    });
+  });
+
+  describe("re-picking the order already chosen", () => {
+    it("records nothing, since nothing changed", async () => {
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: /Recently detected/ }));
+      await userEvent.click(screen.getByRole("option", { name: "Recently detected" }));
+
+      expect(tracked()).toEqual([]);
     });
   });
 
@@ -189,6 +252,23 @@ describe("DetectedGames", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
       expect(emit).toHaveBeenCalledWith("start-quick-discovery", expect.any(Function));
+    });
+
+    it("ignores the result of a scan the reader cancelled", async () => {
+      let finish = () => undefined as void;
+      emit.mockImplementation((event: string, cb?: (ids: string[]) => void) => {
+        if (event === "start-quick-discovery") {
+          finish = () => cb?.(["fallout4"]);
+        }
+      });
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+      await userEvent.click(screen.getByRole("button", { name: "Cancel scan" }));
+      finish();
+      await Promise.resolve();
+
+      expect(sendNotification).not.toHaveBeenCalled();
     });
 
     it("swaps that button for a spinner and a cancel while the scan runs", async () => {
@@ -351,8 +431,8 @@ describe("DetectedGames", () => {
       expect(screen.queryByTestId("detected-games-lit")).not.toBeInTheDocument();
     });
 
-    it("counts only games that weren't already discovered", async () => {
-      state.current.settings.gameMode.discovered = { skyrim: { path: "C:/skyrim" } };
+    it("counts only games that weren't already detected", async () => {
+      state.current.session.gameMode.detectedGames = [{ gameUid: "skyrim", extension: {} }];
       scanResolving(["skyrim"]);
       renderComponent();
 
@@ -361,6 +441,50 @@ describe("DetectedGames", () => {
       expect(await screen.findByText("Games detected")).toBeInTheDocument();
       expect(sendNotification).toHaveBeenCalledWith(
         expect.objectContaining({ message: "No new games found", type: "info" }),
+      );
+    });
+
+    // Discovery lists games the response can't name, such as an extension still in
+    // development, so a scan that reports one of those again has found nothing new.
+    it("counts a game only discovery found as already detected", async () => {
+      state.current.session.gameMode.known = [{ id: "emberville", name: "Emberville" }];
+      state.current.settings.gameMode.discovered = {
+        emberville: { path: "C:/Games/Emberville" },
+      };
+      scanResolving(["emberville"]);
+      renderComponent({ count: "1", games: [game("emberville")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
+      expect(sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "No new games found", type: "info" }),
+      );
+    });
+
+    // Without an earlier result there's nothing to tell new games from.
+    it("reports no count before any detection has succeeded", async () => {
+      state.current.session.gameMode.detectedGamesStatus = undefined;
+      scanResolving(["skyrim", "fallout4"]);
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+
+      expect(sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Game detection finished", type: "info" }),
+      );
+    });
+
+    // Only a successful detection stores games, so they're still a result after a later failure.
+    it("still counts against stored games after a later detection failed", async () => {
+      state.current.session.gameMode.detectedGamesStatus = "failed";
+      state.current.session.gameMode.detectedGames = [{ gameUid: "skyrim", extension: {} }];
+      scanResolving(["skyrim", "fallout4"]);
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+
+      expect(sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Found {{count}} new game", type: "success" }),
       );
     });
 
@@ -376,19 +500,226 @@ describe("DetectedGames", () => {
     });
   });
 
+  describe("detection status", () => {
+    it("shows detection running as scanning", () => {
+      state.current.session.gameMode.detectedGamesStatus = "running";
+      renderComponent();
+      expect(screen.getByText("Scanning for installed games...")).toBeInTheDocument();
+    });
+
+    it("shows a failed detection as the connection panel, with a retry", async () => {
+      state.current.session.gameMode.detectedGamesStatus = "failed";
+      renderComponent();
+      expect(screen.getByText("Can't detect games right now")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+      expect(emit).toHaveBeenCalledWith("start-quick-discovery", expect.any(Function));
+    });
+
+    it("keeps the panel when games are already added", () => {
+      state.current.session.gameMode.detectedGamesStatus = "failed";
+      renderComponent({ count: "0", games: [], hasAddedGames: true });
+      expect(screen.getByText("Can't detect games right now")).toBeInTheDocument();
+    });
+  });
+
   describe("a failed scan", () => {
+    it("says it couldn't check, in place of a count", async () => {
+      scanFailing(new Error("no connection"));
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
+      expect(sendNotification).toHaveBeenCalledOnce();
+      expect(sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Couldn't check for new games. Check your internet connection.",
+          type: "error",
+          displayMS: 4000,
+        }),
+      );
+    });
+
+    it("says so in the description when cards fill the section", async () => {
+      scanFailing(new Error("no connection"));
+      const { rerender } = renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+      rerender();
+
+      expect(
+        screen.getByText(
+          "Can't detect games right now. Check your internet connection and try again.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("games-grid")).toHaveTextContent("skyrim");
+      expect(sendNotification).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: "No new games found" }),
+      );
+    });
+
+    it("says so in the description while a search fills the section", () => {
+      state.current.session.gameMode.detectedGamesStatus = "failed";
+      renderComponent({ count: "0/1", filtering: true });
+
+      expect(screen.getByText("No games found")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Can't detect games right now. Check your internet connection and try again.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("drops the description once detection recovers", () => {
+      state.current.session.gameMode.detectedGamesStatus = "failed";
+      const { rerender } = renderComponent({ count: "1", games: [game("skyrim")] });
+
+      state.current.session.gameMode.detectedGamesStatus = "success";
+      rerender();
+
+      expect(screen.getByText("Installed games you haven't added yet.")).toBeInTheDocument();
+    });
+
+    // Discovery raises its own error notification, and isn't a connection problem.
+    it("leaves a discovery failure to its own notification", async () => {
+      scanFailing(new Error("disk"), "discovery");
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
+      expect(sendNotification).not.toHaveBeenCalled();
+    });
+
+    // The store's status is the record of a detection failure, so it clears with it.
+    it("drops the panel once detection recovers in the background", async () => {
+      scanFailing(new Error("no connection"));
+      const { rerender } = renderComponent();
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+      expect(await screen.findByText("Can't detect games right now")).toBeInTheDocument();
+
+      state.current.session.gameMode.detectedGamesStatus = "success";
+      rerender();
+
+      expect(screen.getByText("No installed games detected")).toBeInTheDocument();
+    });
+
+    it("keeps a discovery failure's panel until the next scan", async () => {
+      scanFailing(new Error("disk"), "discovery");
+      const { rerender } = renderComponent();
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+      rerender();
+
+      expect(await screen.findByText("Can't detect games right now")).toBeInTheDocument();
+    });
+
     it("surfaces the failure and lets the reader retry", async () => {
       scanFailing(new Error("no connection"));
       renderComponent();
 
       await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
       expect(await screen.findByText("Can't detect games right now")).toBeInTheDocument();
-      expect(sendNotification).not.toHaveBeenCalled();
+      expect(sendNotification).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: "No new games found" }),
+      );
 
       // retrying clears the failure rather than leaving the error on screen
+      state.current.session.gameMode.detectedGamesStatus = "success";
       scanResolving();
       await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
       expect(await screen.findByText("No installed games detected")).toBeInTheDocument();
+    });
+  });
+
+  describe("tracking", () => {
+    const scanEvents = () =>
+      tracked().filter((event) => event.eventName === "app_games_scan_completed");
+
+    it("reports a scan from the header with what it found", async () => {
+      // nothing was listed before the scan, so both games it lists are new
+      scanResolving(["skyrim", "fallout4"]);
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
+      expect(scanEvents()).toHaveLength(1);
+      expect(scanEvents()[0].properties).toEqual({
+        trigger: "refresh",
+        outcome: "success",
+        duration_ms: expect.any(Number),
+        detected_count: 2,
+        new_detected_count: 2,
+      });
+    });
+
+    it("counts the new games only against an earlier successful detection", async () => {
+      state.current.session.gameMode.detectedGamesStatus = undefined;
+      scanResolving(["skyrim"]);
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+
+      expect(scanEvents()[0].properties).toEqual({
+        trigger: "retry",
+        outcome: "success",
+        duration_ms: expect.any(Number),
+        detected_count: 1,
+      });
+    });
+
+    it("reports a scan retried from the panel as a retry", async () => {
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Retry scan" }));
+
+      expect(scanEvents()[0].properties.trigger).toBe("retry");
+    });
+
+    for (const failure of ["discovery", "detection"] as const) {
+      it(`reports the ${failure} step failing, without counts`, async () => {
+        scanFailing(new Error("no connection"), failure);
+        renderComponent({ count: "1", games: [game("skyrim")] });
+
+        await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+
+        expect(scanEvents()[0].properties).toEqual({
+          trigger: "refresh",
+          outcome: `${failure}_failed`,
+          duration_ms: expect.any(Number),
+        });
+      });
+    }
+
+    it("reports a cancelled scan once, ignoring the result that lands later", async () => {
+      let finish = () => undefined as void;
+      emit.mockImplementation((event: string, cb?: (ids: string[]) => void) => {
+        if (event === "start-quick-discovery") {
+          finish = () => cb?.(["fallout4"]);
+        }
+      });
+      renderComponent({ count: "1", games: [game("skyrim")] });
+
+      await userEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+      await userEvent.click(screen.getByRole("button", { name: "Cancel scan" }));
+      finish();
+      await Promise.resolve();
+
+      expect(scanEvents()).toHaveLength(1);
+      expect(scanEvents()[0].properties).toEqual({
+        trigger: "refresh",
+        outcome: "cancelled",
+        duration_ms: expect.any(Number),
+      });
+    });
+
+    // A detection started at startup or login shows the same cancel, but wasn't a scan
+    // the reader asked for, so there's nothing of theirs to report.
+    it("doesn't report cancelling a detection the reader didn't start", async () => {
+      state.current.session.gameMode.detectedGamesStatus = "running";
+      renderComponent();
+
+      await userEvent.click(screen.getByRole("button", { name: "Cancel scan" }));
+
+      expect(scanEvents()).toEqual([]);
     });
   });
 });

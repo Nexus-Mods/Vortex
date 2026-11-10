@@ -5,13 +5,13 @@ import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import type { IEntry } from "turbowalk";
 import turbowalk from "turbowalk";
-import * as winapi from "winapi-bindings";
 
 import { setSettingsPage } from "../../actions/session";
 import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import { UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
+import { getVolumePath } from "../../util/getVolumePath";
 import { log } from "../../util/log";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -118,7 +118,7 @@ class DeploymentMethod extends LinkingDeployment {
           solution: (t) => {
             let displayPath = modPaths[typeId];
             try {
-              displayPath = winapi.GetVolumePathName(modPaths[typeId]);
+              displayPath = getVolumePath(modPaths[typeId]);
             } catch (err) {
               log("warn", "Failed to resolve volume path", {
                 path: modPaths[typeId],
@@ -189,18 +189,17 @@ class DeploymentMethod extends LinkingDeployment {
     progressCB?: (files: number, total: number) => void,
   ): PromiseLike<IDeployedFile[]> {
     const deployment: IDeployment = this.context.newDeployment;
-    const lnkExtUpper = LNK_EXT.toUpperCase();
+    const lnkExt = this.normalize(LNK_EXT);
     const extLen = LNK_EXT.length;
     this.context.newDeployment = Object.keys(deployment).reduce(
-      (prev: IDeployment, relPath: string) => {
-        if (path.extname(relPath) === lnkExtUpper) {
-          deployment[relPath].relPath = deployment[relPath].relPath.substr(
-            0,
-            relPath.length - extLen,
-          );
-          prev[relPath.substr(0, relPath.length - extLen)] = deployment[relPath];
+      (prev: IDeployment, key: string) => {
+        const file = deployment[key];
+        // the key also holds the mod's subfolder and is normalized, so trim each by its own length
+        if (this.normalize(path.extname(file.relPath)) === lnkExt) {
+          file.relPath = file.relPath.slice(0, -extLen);
+          prev[key.slice(0, -extLen)] = file;
         } else {
-          prev[relPath] = deployment[relPath];
+          prev[key] = file;
         }
         return prev;
       },
@@ -221,7 +220,7 @@ class DeploymentMethod extends LinkingDeployment {
             sourcePath,
             entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length),
           );
-          const normPath = this.normalize(relPath);
+          const normPath = this.normalize(path.join(dataPath, relPath));
           if (
             this.context.newDeployment[normPath] !== undefined &&
             this.context.newDeployment[normPath].source === sourceName

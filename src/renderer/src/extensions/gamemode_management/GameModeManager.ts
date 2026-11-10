@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import type { VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type * as Redux from "redux";
@@ -18,7 +19,7 @@ import { GoGLauncher } from "@/util/GOGLauncher";
 import { OriginLauncher } from "@/util/OriginStore";
 import { getSafe } from "@/util/storeHelper";
 import { UPlayLauncher } from "@/util/UplayStore";
-import { batchDispatch, truthy } from "@/util/util";
+import { batchDispatch } from "@/util/util";
 import { XboxLauncher } from "@/util/xbox/XboxLauncher";
 
 import { setNextProfile } from "../../actions";
@@ -36,13 +37,14 @@ import { addDiscoveredGame, addDiscoveredTool, clearDiscoveredGame } from "./act
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IToolStored } from "./types/IToolStored";
-import { requestDetectedGames } from "./util/detectedGames";
+import { requestDetectedGames } from "./util/detected_games/detectedGames";
 import {
   assertToolDir,
   discoverRelativeTools,
   quickDiscovery,
   quickDiscoveryTools,
   searchDiscovery,
+  type IStorePreference,
 } from "./util/discovery";
 import { getGame } from "./util/getGame";
 
@@ -52,11 +54,21 @@ export interface IGameStub {
 }
 
 /**
+ * The tool a game declares as its default launcher, skipping any the user removed from the Tools
+ * page. Game activation and tool discovery both use this so they settle on the same tool.
+ */
+function findDefaultPrimaryTool(tools: { [toolId: string]: IDiscoveredTool } | undefined) {
+  return Object.keys(tools ?? {}).find(
+    (toolId) => tools[toolId].defaultPrimary === true && tools[toolId].hidden !== true,
+  );
+}
+
+/**
  * discovers game modes
  *
  * @class GameModeManager
  */
-class GameModeManager {
+export class GameModeManager {
   private mApi: IExtensionApi;
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
@@ -99,14 +111,58 @@ class GameModeManager {
   public attachToStore(store: Redux.Store<IState>) {
     this.mStore = store;
 
-    const gamesStored: IGameStored[] = this.mKnownGames
-      .map(this.storeGame)
-      .filter(this.isValidGame);
-    store.dispatch(setKnownGames(gamesStored));
+    this.dispatchKnownGames();
     // we used to activate the game mode right here but there is another
     // call to do this in the "once" CB of gamemode_management so it's
     // redundant and the other call handles errors properly while this one
     // didn't
+  }
+
+  private dispatchKnownGames(): void {
+    if (this.mStore === null) {
+      return;
+    }
+    const gamesStored: IGameStored[] = this.mKnownGames
+      .map(this.storeGame)
+      .filter(this.isValidGame);
+    this.mStore.dispatch(setKnownGames(gamesStored));
+  }
+
+  /**
+   * register games with the manager at runtime, making them visible to every
+   * getGame consumer and the next discovery run
+   */
+  public addGames(games: IGame[]): void {
+    const added = games.filter((game) => !this.mKnownGames.some((iter) => iter.id === game.id));
+
+    if (added.length === 0) {
+      return;
+    }
+
+    // mKnownGames aliases $.extensionGames (see constructor): this one push
+    // registers the games for both getGame consumers and the manager
+    this.mKnownGames.push(...added);
+    this.dispatchKnownGames();
+  }
+
+  /**
+   * drop games from the manager and the game registry; unknown ids are ignored
+   */
+  public removeGames(ids: VortexGameId[]): void {
+    const remove = new Set<string>(ids);
+    if (!this.mKnownGames.some((game) => remove.has(game.id))) {
+      return;
+    }
+
+    // in place: mKnownGames aliases $.extensionGames, reassigning would
+    // desync the registry all getGame consumers read
+    for (let idx = this.mKnownGames.length - 1; idx >= 0; --idx) {
+      if (remove.has(this.mKnownGames[idx].id)) {
+        this.mKnownGames.splice(idx, 1);
+      }
+    }
+
+    this.dispatchKnownGames();
   }
 
   /**
@@ -158,18 +214,10 @@ class GameModeManager {
           log("info", "changed game mode", { oldMode, newMode });
           this.mOnGameModeActivated(newMode);
           const { gameId } = currentProfile;
-          if (
-            getSafe(state, ["settings", "interface", "primaryTool", gameId], undefined) ===
-            undefined
-          ) {
-            const discovery = discoveryByGame(state, gameId);
-            if (truthy(discovery.tools)) {
-              const defaultPrimary = Object.keys(discovery.tools).find(
-                (toolId) => discovery.tools[toolId].defaultPrimary === true,
-              );
-              if (defaultPrimary !== undefined) {
-                this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
-              }
+          if (state.settings.interface.primaryTool?.[gameId] === undefined) {
+            const defaultPrimary = findDefaultPrimaryTool(discoveryByGame(state, gameId).tools);
+            if (defaultPrimary !== undefined) {
+              this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
             }
           }
         } else {
@@ -279,12 +327,15 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public async startQuickDiscovery(games?: IGame[]): Promise<string[]> {
+  public async startQuickDiscovery(
+    games?: IGame[],
+    preference?: IStorePreference,
+  ): Promise<string[]> {
     const abort = new AbortController();
     this.mQuickDiscoveryAbort = abort;
 
     try {
-      await this.reloadStoreGames();
+      await this.reloadStoreGames(false);
 
       const results = await quickDiscovery(
         games ?? this.mKnownGames,
@@ -292,6 +343,7 @@ class GameModeManager {
         this.onDiscoveredGame,
         this.onDiscoveredTool,
         abort.signal,
+        preference,
       );
 
       if (abort.signal.aborted) {
@@ -299,6 +351,8 @@ class GameModeManager {
       }
 
       this.postDiscovery();
+      // Detection runs last, and is forced so a scan always asks the endpoint afresh.
+      await requestDetectedGames(this.mApi, { force: true });
       return results;
     } finally {
       if (this.mQuickDiscoveryAbort === abort) {
@@ -499,7 +553,8 @@ class GameModeManager {
     }
   }
 
-  private async reloadStoreGames(): Promise<void> {
+  /** Reloads the stores' games, then starts detection unless the caller will run it itself. */
+  private async reloadStoreGames(detect = true): Promise<void> {
     const stores = this.mKnownGameStores;
     this.mApi.sendNotification?.({
       id: "gamestore-reload",
@@ -524,9 +579,9 @@ class GameModeManager {
       await Promise.all(promsies);
     } finally {
       this.mApi.dismissNotification?.("gamestore-reload");
-      void requestDetectedGames(this.mApi).catch((err) =>
-        log("warn", "detected-games: unexpected failure", { err }),
-      );
+      if (detect) {
+        void requestDetectedGames(this.mApi);
+      }
     }
   }
 
@@ -607,7 +662,40 @@ class GameModeManager {
       delete result.executable;
       this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result, false));
     }
+    this.selectDiscoveredDefaultPrimary(gameId, result);
   };
+
+  /**
+   * Tool discovery also runs after deployment and on an already-active game, so a declared default
+   * can become available after activation. Select it then, unless the user already chose a primary
+   * tool (including clearing it, which stores null).
+   */
+  private selectDiscoveredDefaultPrimary(gameId: string, result: IDiscoveredTool) {
+    if (result.defaultPrimary !== true) {
+      return;
+    }
+    const state = this.mStore.getState();
+    const primary = state.settings.interface.primaryTool?.[gameId];
+    if (activeProfile(state)?.gameId !== gameId || primary !== undefined) {
+      return;
+    }
+    // addDiscoveredTool ignores a tool for a game with no discovery entry, so there is nothing to
+    // launch either
+    const discovery = discoveryByGame(state, gameId);
+    if (discovery === undefined) {
+      return;
+    }
+    // a customised record isn't overwritten by discovery, but the game still declares this tool a
+    // default
+    const tools = discovery.tools ?? {};
+    const defaultPrimary = findDefaultPrimaryTool({
+      ...tools,
+      [result.id]: { ...(tools[result.id] ?? result), defaultPrimary: true },
+    });
+    if (defaultPrimary !== undefined) {
+      this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
+    }
+  }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
     if (result === undefined) {
@@ -632,5 +720,3 @@ class GameModeManager {
     );
   };
 }
-
-export default GameModeManager;

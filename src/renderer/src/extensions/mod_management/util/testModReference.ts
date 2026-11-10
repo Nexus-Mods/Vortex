@@ -4,8 +4,10 @@ import * as _ from "lodash";
 import minimatch from "minimatch";
 import * as semver from "semver";
 
+import type { IModLookupData } from "../../../types/IModLookupResult";
 import { truthy } from "../../../util/util";
 import type { IDownload } from "../../download_management/types/IDownload";
+import NXMUrl from "../../nexus_integration/NXMUrl";
 import type {
   IChoiceType,
   IMod,
@@ -132,6 +134,56 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
 }
 
 /**
+ * Reference positions by tag, and by id for id-only references. It reads each reference when
+ * added, so build one per use.
+ */
+export function referenceIndex() {
+  const byTag = new Map<string | undefined, number[]>();
+  const byId = new Map<string, number[]>();
+  const indexInto = <TKey>(map: Map<TKey, number[]>, key: TKey, position: number) => {
+    const positions = map.get(key);
+    if (positions === undefined) {
+      map.set(key, [position]);
+    } else {
+      positions.push(position);
+    }
+  };
+
+  return {
+    add: (position: number, reference: IModReference | undefined) => {
+      indexInto(byTag, reference?.tag, position);
+      if (reference?.id !== undefined) {
+        indexInto(byId, reference.id, position);
+      }
+    },
+    /** the positions of references with this tag */
+    withTag: (tag: string | undefined): number[] => byTag.get(tag) ?? [],
+    /** the positions of references referenceEqual could match to this one, in order */
+    candidates: (reference: IModReference | undefined): number[] => {
+      const sameId = reference?.id !== undefined ? (byId.get(reference.id) ?? []) : [];
+      return idOnlyRef(reference)
+        ? sameId
+        : [...(byTag.get(reference?.tag) ?? []), ...sameId].sort((lhs, rhs) => lhs - rhs);
+    },
+  };
+}
+
+/** Finds the first rule whose reference referenceEqual matches. Build it per use. */
+export function rulesByReference(
+  rules: IModRule[],
+): (reference: IModReference) => IModRule | undefined {
+  const index = referenceIndex();
+  rules.forEach((rule, ruleIndex) => index.add(ruleIndex, rule.reference));
+
+  return (reference) => {
+    const ruleIndex = index
+      .candidates(reference)
+      .find((candidate) => referenceEqual(rules[candidate].reference, reference));
+    return ruleIndex === undefined ? undefined : rules[ruleIndex];
+  };
+}
+
+/**
  * Check whether an installed mod matches a requested install spec: the same installer
  * choices, file list, and binary patches. This is deliberately separate from
  * testModReference / findModByRef, which match a mod by IDENTITY only (which mod,
@@ -220,6 +272,59 @@ export function downloadToModRef(download: IDownload): IModReference {
     logicalFileName: download.modInfo?.meta?.logicalFileName ?? download.localPath,
   };
   return ref;
+}
+
+/**
+ * Converts the result of a mod meta lookup (by md5) to an IModReference object, for archives
+ * that have no download to take the reference from, such as a local file installed directly.
+ * The ids come from the lookup details, or else from the source uri if that is an nxm link.
+ *
+ * @param value - The lookup result to convert
+ * @param fileMD5 - The md5 hash of the archive the lookup was made for
+ * @param gameId - The game the archive is being installed for
+ */
+export function lookupToModRef(
+  value: IModLookupData,
+  fileMD5: string,
+  gameId: string,
+): IModReference {
+  let modId = value.details?.modId;
+  let fileId = value.details?.fileId;
+  if ((modId === undefined || fileId === undefined) && typeof value.sourceURI === "string") {
+    try {
+      const nxmUrl = new NXMUrl(value.sourceURI);
+      modId ??= nxmUrl.modId?.toString();
+      fileId ??= nxmUrl.fileId?.toString();
+    } catch {
+      // not an nxm link, there is nothing to take the ids from
+    }
+  }
+
+  return {
+    repo: value.source ? { repository: value.source, modId, fileId } : undefined,
+    fileMD5,
+    gameId,
+    logicalFileName: value.logicalFileName ?? value.fileName,
+  };
+}
+
+/**
+ * Completes a mod reference with what a lookup found. A reference that already identifies the
+ * repository entry or the file (the rule that pulled the archive in, or a download that was
+ * enriched) is never overwritten, only the missing parts are filled in.
+ */
+export function completeModRef(
+  existing: IModReference | undefined,
+  found: IModReference,
+): IModReference {
+  if (existing === undefined) {
+    return found;
+  }
+  return {
+    ...existing,
+    repo: existing.repo ?? found.repo,
+    fileMD5: existing.fileMD5 ?? found.fileMD5,
+  };
 }
 
 export function sanitizeExpression(fileName: string): string {

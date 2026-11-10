@@ -1,4 +1,3 @@
-import { mdiFolderAlert, mdiUpdate } from "@mdi/js";
 import type { TFunction } from "i18next";
 import React, { useEffect } from "react";
 
@@ -24,7 +23,7 @@ const CustomCategoryFetchError = ({ fetch, clear, error, t }: ICustomCategoryFet
 
   return (
     <div className="flex flex-col items-center gap-y-4 py-16">
-      <Icon path={mdiFolderAlert} size="lg" />
+      <Icon name="error" size="lg" />
 
       <Typography appearance="strong" brand="warning" typographyType="body-lg">
         {error.title}
@@ -36,7 +35,7 @@ const CustomCategoryFetchError = ({ fetch, clear, error, t }: ICustomCategoryFet
         </Typography>
       )}
 
-      <Button appearance="subdued" brand="neutral" leftIconPath={mdiUpdate} onClick={fetch}>
+      <Button appearance="subdued" brand="neutral" leftIcon="update" onClick={fetch}>
         {t("Try again")}
       </Button>
     </div>

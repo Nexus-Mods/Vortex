@@ -20,7 +20,7 @@ const registerMainPage = (
   return {
     id: options.id || title,
     icon,
-    mdi: options.mdi,
+    menuIcon: options.menuIcon ?? (options.mdi ? { path: options.mdi } : undefined),
     title,
     component,
     propsFunc: options.props || emptyFunc,
@@ -32,6 +32,7 @@ const registerMainPage = (
     badge: options.badge,
     activity: options.activity,
     menuBadge: options.menuBadge,
+    isTranslucent: options.isTranslucent,
     priority: options.priority !== undefined ? options.priority : 100,
     onReset: options.onReset,
     namespace: extInfo.namespace,

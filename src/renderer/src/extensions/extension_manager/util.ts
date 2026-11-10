@@ -113,6 +113,7 @@ export async function downloadAndInstallExtension(
 
     await installExtension(api, path.join(downloadPath, download.localPath), {
       catalogEntry,
+      nexusIds: { modId: ext.modId, fileId },
       analytics: {
         source: "nexusmods",
         gameDomain: catalogEntry?.gameDomain,

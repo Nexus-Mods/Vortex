@@ -1,11 +1,16 @@
 import { test as base, vi } from "vitest";
 
-import { makeApiHarness, resetHarnessRegistries } from "./builders";
+import { makeApiHarness, resetHarnessRegistries, type IHarnessReducerBinding } from "./builders";
 import type { IApiHarness, IDriverHarnessState } from "./harnessTypes";
 
 export interface IHarnessFixtures {
-  // build an api-only harness over the given seeded slices (no driver, no game registration)
-  makeApi: (overrides?: Partial<IDriverHarnessState>) => IApiHarness;
+  // build an api-only harness over the given seeded slices (no driver, no game registration);
+  // extraReducers bind extension reducer specs to the slices they own, so actions the code
+  // dispatches are observable by read-back
+  makeApi: (
+    overrides?: Partial<IDriverHarnessState>,
+    extraReducers?: IHarnessReducerBinding[],
+  ) => IApiHarness;
 }
 
 /**
@@ -30,6 +35,9 @@ export const test = base.extend<IHarnessFixtures & { autoCleanup: void }>({
     { auto: true },
   ],
   makeApi: async ({ task: _task }, use) => {
-    await use((overrides?: Partial<IDriverHarnessState>) => makeApiHarness(overrides));
+    await use(
+      (overrides?: Partial<IDriverHarnessState>, extraReducers?: IHarnessReducerBinding[]) =>
+        makeApiHarness(overrides, extraReducers),
+    );
   },
 });

@@ -35,12 +35,14 @@ function isCompatible(gameId: string, mod: types.IMod, version: string): boolean
   return true;
 }
 
-async function testGameVersions(api: types.IExtensionApi): Promise<types.ITestResult> {
+export async function testGameVersions(api: types.IExtensionApi): Promise<types.ITestResult> {
   const t = api.translate;
-  const state: types.IState = api.store.getState();
-  const gameMode = selectors.activeGameId(state);
+  const gameMode = selectors.activeGameId(api.store.getState());
   const currentGameVersion: string = await getGameVersion(api, gameMode);
 
+  // read state after the await so that overlapping runs see the version stored by the
+  // run that finished first and don't report the same change twice
+  const state: types.IState = api.store.getState();
   const mods = state.persistent.mods[gameMode];
 
   const incompatible = Object.keys(mods || {}).filter(
@@ -71,14 +73,13 @@ async function testGameVersions(api: types.IExtensionApi): Promise<types.ITestRe
     undefined,
   );
 
-  const invalidates = updateInvalidatesMods(gameMode);
-  if (
-    res === undefined &&
-    invalidates !== "never" &&
+  const versionChanged =
     previousGameVersion !== undefined &&
     currentGameVersion !== undefined &&
-    previousGameVersion !== currentGameVersion
-  ) {
+    previousGameVersion !== currentGameVersion;
+
+  const invalidates = updateInvalidatesMods(gameMode);
+  if (res === undefined && invalidates !== "never" && versionChanged) {
     let text = "The game has been updated from {{before}} to {{after}}.";
 
     if (invalidates === "some") {
@@ -106,6 +107,12 @@ async function testGameVersions(api: types.IExtensionApi): Promise<types.ITestRe
   }
 
   api.store.dispatch(setGameVersion(gameMode, currentGameVersion));
+
+  // independent of the notification above, which is skipped when mods are incompatible
+  // or the game's updates never invalidate mods
+  if (versionChanged) {
+    api.events.emit("game-version-changed", gameMode, previousGameVersion, currentGameVersion);
+  }
 
   return Promise.resolve(res);
 }

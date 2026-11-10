@@ -1,7 +1,6 @@
 import React, { type ReactNode } from "react";
 
 import type { ITableColumn } from "./Table.types";
-import { TableCellTint } from "./TableCellTint";
 
 interface ITableCellProps {
   /** Where the content sits in the column, from the column's own `align`. */
@@ -14,10 +13,12 @@ interface ITableCellProps {
   ariaSort?: "ascending" | "descending" | "none";
   /** Whether the rows are sorted by its column. */
   sorted?: boolean;
+  /** Whether it's a header with a handle that resizes its column. */
+  resizable?: boolean;
+  /** Its column's id, on a header, for the table to find it by. */
+  columnId?: string;
   /** From the column's own `sticky`. */
   sticky?: ITableColumn<unknown>["sticky"];
-  /** A picture to tint a sticky cell with, as its group's rows are. */
-  tint?: string;
 }
 
 /** A cell in its column's track. Its content truncates itself; the cell doesn't clip. */
@@ -27,18 +28,20 @@ export const TableCell = ({
   children,
   role = "gridcell",
   sorted = false,
+  resizable = false,
+  columnId,
   sticky,
-  tint,
 }: ITableCellProps) => (
   <div
     aria-sort={ariaSort}
     className="nxm-table-cell"
     data-align={align}
+    data-column-id={columnId}
+    data-resizable={resizable ? "" : undefined}
     data-sorted={sorted ? "" : undefined}
     data-sticky={sticky}
     role={role}
   >
-    {!!tint && <TableCellTint src={tint} />}
     {children}
   </div>
 );

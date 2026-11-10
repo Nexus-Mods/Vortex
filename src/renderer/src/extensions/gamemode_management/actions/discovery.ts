@@ -1,10 +1,8 @@
-import * as reduxAct from "redux-act";
+import { createAction } from "redux-act";
 
-import safeCreateAction from "../../../actions/safeCreateAction";
+export const setPhaseCount = createAction("SET_DISCOVERY_PHASE_COUNT", (count: number) => count);
 
-export const setPhaseCount = safeCreateAction("SET_DISCOVERY_PHASE_COUNT", (count) => count);
-
-export const discoveryProgress = safeCreateAction(
+export const discoveryProgress = createAction(
   "DISCOVERY_PROGRESS",
   (idx: number, percent: number, directory: string) => ({
     idx,
@@ -13,4 +11,4 @@ export const discoveryProgress = safeCreateAction(
   }),
 );
 
-export const discoveryFinished = safeCreateAction("DISCOVERY_FINISHED");
+export const discoveryFinished = createAction("DISCOVERY_FINISHED");

@@ -2,6 +2,7 @@ import { isClobberedKeySegment } from "@vortex/shared/state";
 import * as _ from "lodash";
 import type { IRule } from "modmeta-db";
 
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { VerifierDropParent } from "../../../types/IExtensionContext";
 import { log } from "../../../util/log";
@@ -15,8 +16,8 @@ import {
   setSafe,
 } from "../../../util/storeHelper";
 import * as actions from "../actions/mods";
-import type { IMod } from "../types/IMod";
-import { referenceEqual } from "../util/testModReference";
+import type { IMod, IModRule } from "../types/IMod";
+import { referenceEqual, referenceIndex } from "../util/testModReference";
 
 // A modId is unusable as a staging-folder name if it was clobbered by a bad
 // state write: the installationPath self-heal uses this to tell a recoverable
@@ -43,11 +44,77 @@ function ruleEqual(lhs: IRule, rhs: IRule) {
   return _.isEqual(reduceRule(lhs), reduceRule(rhs));
 }
 
+const definedFields = (reference: IModRule["reference"]) =>
+  _.omitBy(reference, (value) => value === undefined);
+
+/** The rules after each replacement in turn, as REMOVE_MOD_RULE then ADD_MOD_RULE leave them. */
+function replaceRules(
+  rules: IModRule[],
+  replacements: Array<{ oldRule: IModRule; newRule: IModRule }>,
+): IModRule[] {
+  // removed rules leave empty slots, so slot numbers stay valid
+  const slots: Array<IModRule | undefined> = [...rules];
+  const index = referenceIndex();
+  slots.forEach((rule, slot) => index.add(slot, rule?.reference));
+
+  for (const { oldRule, newRule } of replacements) {
+    for (const slot of index.withTag(oldRule.reference?.tag)) {
+      if (slots[slot] !== undefined && ruleEqual(slots[slot], oldRule)) {
+        slots[slot] = undefined;
+      }
+    }
+
+    const newReference = definedFields(newRule.reference);
+    const firstMatch = index
+      .candidates(newRule.reference)
+      .find(
+        (slot) =>
+          slots[slot] !== undefined &&
+          referenceEqual(newReference, definedFields(slots[slot].reference)),
+      );
+    if (firstMatch !== undefined) {
+      slots[firstMatch] = newRule;
+      index.add(firstMatch, newRule.reference);
+    } else {
+      index.add(slots.push(newRule) - 1, newRule.reference);
+    }
+  }
+
+  return slots.filter((rule): rule is IModRule => rule !== undefined);
+}
+
+/** keyed by game id, then by mod id */
+type IModsState = Record<string, Record<string, IMod>>;
+
+const modRulesReducer = actionsToReducerSpec<
+  IModsState,
+  { modRulesReplaced: typeof actions.modRulesReplaced }
+>(
+  {},
+  { modRulesReplaced: actions.modRulesReplaced },
+  {
+    modRulesReplaced: (state, { gameId, modId, replacements }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [gameId]: {
+          ...state[gameId],
+          [modId]: { ...mod, rules: replaceRules(mod.rules ?? [], replacements) },
+        },
+      };
+    },
+  },
+);
+
 /**
  * reducer for changes to the known mods
  */
 export const modsReducer: IReducerSpec = {
   reducers: {
+    ...modRulesReducer.reducers,
     [actions.addMod as any]: (state, payload) => {
       const { gameId, mod } = payload;
       return setSafe(state, [gameId, mod.id], mod);

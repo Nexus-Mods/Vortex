@@ -1,0 +1,76 @@
+@layer components {
+    .nxm-view-picker {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: calc(var(--spacing) * 1);
+    }
+
+    .nxm-view-picker-divider {
+        flex-shrink: 0;
+        width: 1px;
+        height: calc(var(--spacing) * 4);
+        margin-inline: calc(var(--spacing) * 1);
+        background-color: var(--color-stroke-weak);
+    }
+
+    /* A view, lit while it's the open one. One with a menu is a pill holding the view's own
+       button and, tight to its right edge, its "…". */
+    .nxm-view-button {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        column-gap: calc(var(--spacing) * 1.5);
+        height: calc(var(--spacing) * 7);
+        padding-inline: calc(var(--spacing) * 2);
+        border-radius: var(--radius-sm);
+        background-color: var(--color-surface-low);
+        color: var(--color-neutral-subdued);
+        white-space: nowrap;
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+        cursor: pointer;
+        transition-property: color, background-color, outline-color;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        &:hover {
+            color: var(--color-neutral-strong);
+            background-image: linear-gradient(
+                --alpha(var(--color-white) / 3%),
+                --alpha(var(--color-white) / 3%)
+            );
+        }
+
+        &[aria-pressed="true"],
+        &:has(> [aria-pressed="true"]) {
+            color: var(--color-neutral-strong);
+            background-color: var(--color-surface-mid);
+            background-image: none;
+        }
+
+        &:focus-visible,
+        &:has(> .nxm-view-button-label:focus-visible) {
+            outline: 2px solid var(--color-focus-subdued);
+            outline-offset: 2px;
+        }
+    }
+
+    .nxm-view-button-menu {
+        column-gap: 0;
+        padding-inline: 0 calc(var(--spacing) * 0.5);
+    }
+
+    /* A menu view's own button, filling the pill up to its "…" so any of it opens the view. */
+    .nxm-view-button-label {
+        display: flex;
+        align-items: center;
+        align-self: stretch;
+        padding-inline: calc(var(--spacing) * 2) calc(var(--spacing) * 1.5);
+        border-radius: inherit;
+        color: inherit;
+        cursor: inherit;
+        outline: none;
+    }
+}

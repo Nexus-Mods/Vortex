@@ -1,3 +1,4 @@
+import { lstat } from "node:fs/promises";
 import * as path from "path";
 import * as util from "util";
 
@@ -5,7 +6,6 @@ import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/
 import PromiseBB from "bluebird";
 import type { TFunction } from "i18next";
 import turbowalk from "turbowalk";
-import * as winapi from "winapi-bindings";
 
 import { setSettingsPage } from "../../actions/session";
 import { log } from "../../logging";
@@ -13,6 +13,7 @@ import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionCon
 import type { IGame } from "../../types/IGame";
 import type { IState } from "../../types/IState";
 import * as fs from "../../util/fs";
+import { getVolumePath } from "../../util/getVolumePath";
 import { installPathForGame } from "../../util/selectors";
 import type { IDiscoveryResult } from "../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -117,7 +118,7 @@ class DeploymentMethod extends LinkingDeployment {
           solution: (t) => {
             let displayPath = modPaths[typeId];
             try {
-              displayPath = winapi.GetVolumePathName(modPaths[typeId]);
+              displayPath = getVolumePath(modPaths[typeId]);
             } catch {
               log("warn", "Failed to resolve volume path", {
                 path: modPaths[typeId],
@@ -311,16 +312,23 @@ class DeploymentMethod extends LinkingDeployment {
     linkStatsIn: fs.Stats,
     sourceStatsIn: fs.Stats,
   ): PromiseBB<boolean> {
-    if (linkStatsIn !== undefined && sourceStatsIn !== undefined) {
+    // ids past 2^53 (ReFS) aren't exact as numbers; those are compared on disk below
+    if (
+      linkStatsIn !== undefined &&
+      sourceStatsIn !== undefined &&
+      Number.isSafeInteger(linkStatsIn.ino) &&
+      Number.isSafeInteger(sourceStatsIn.ino)
+    ) {
       return PromiseBB.resolve(linkStatsIn.nlink > 1 && linkStatsIn.ino === sourceStatsIn.ino);
     }
 
-    return fs
-      .lstatAsync(linkPath)
+    return PromiseBB.resolve(lstat(linkPath, { bigint: true }))
       .then((linkStats) =>
-        linkStats.nlink === 1
+        linkStats.nlink === 1n
           ? PromiseBB.resolve(false)
-          : fs.lstatAsync(sourcePath).then((sourceStats) => linkStats.ino === sourceStats.ino),
+          : PromiseBB.resolve(lstat(sourcePath, { bigint: true })).then(
+              (sourceStats) => linkStats.ino === sourceStats.ino,
+            ),
       )
       .catch((err) =>
         getErrorCode(err) === "ENOENT"

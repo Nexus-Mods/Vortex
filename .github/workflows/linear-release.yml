@@ -29,8 +29,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
           fetch-depth: 0
+
+      # the Linear CLI scans <base>..HEAD, so it needs HEAD at the tag
+      - name: Check out tag in a worktree
+        id: tag-tree
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          TREE: ${{ runner.temp }}/release-tag
+        run: |
+          git worktree add --detach "$TREE" "refs/tags/$TAG"
+          echo "git-dir=$(git -C "$TREE" rev-parse --absolute-git-dir)" >> "$GITHUB_OUTPUT"
+          echo "work-tree=$TREE" >> "$GITHUB_OUTPUT"
 
       - name: Prepare release range
         id: prepare
@@ -44,6 +54,10 @@ jobs:
       - name: Sync issues to release
         id: sync
         uses: linear/linear-release-action@v0
+        # the action has no working-directory input; its CLI shells out to git, which follows these
+        env:
+          GIT_DIR: ${{ steps.tag-tree.outputs.git-dir }}
+          GIT_WORK_TREE: ${{ steps.tag-tree.outputs.work-tree }}
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: sync
@@ -57,6 +71,9 @@ jobs:
       - name: Mark release as released
         id: complete
         uses: linear/linear-release-action@v0
+        env:
+          GIT_DIR: ${{ steps.tag-tree.outputs.git-dir }}
+          GIT_WORK_TREE: ${{ steps.tag-tree.outputs.work-tree }}
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: complete

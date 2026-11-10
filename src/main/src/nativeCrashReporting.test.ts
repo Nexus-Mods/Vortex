@@ -41,15 +41,25 @@ vi.mock("@opentelemetry/sdk-trace-base", () => ({
 import { sendPendingNativeCrashReport } from "./errorReporting";
 
 describe("native crash startup sweep", () => {
+  const execPath = process.execPath;
   let root: string;
+  let install: string;
   beforeEach(async () => {
     vi.clearAllMocks();
     root = await mkdtemp(path.join(tmpdir(), "vortex-crash-sweep-"));
     telemetry.getPath.mockReturnValue(root);
     telemetry.getVersion.mockReturnValue("43.0.0");
+    // unreadable dumps are dated against the executable, so pin its mtime
+    // rather than inherit whenever the runner installed node
+    install = await mkdtemp(path.join(tmpdir(), "vortex-crash-install-"));
+    process.execPath = path.join(install, "Vortex.exe");
+    await writeFile(process.execPath, "");
+    await utimes(process.execPath, new Date(0), new Date(0));
   });
   afterEach(async () => {
+    process.execPath = execPath;
     await rm(root, { recursive: true, force: true });
+    await rm(install, { recursive: true, force: true });
   });
 
   async function dump(name: string, processType: string) {
@@ -158,6 +168,18 @@ describe("native crash startup sweep", () => {
       "crash.sourceProcess": "unknown",
       "error.message": "unknown crash from previous session: unreadable crash dump",
     });
+    expect(await readdir(root)).toEqual([]);
+  });
+
+  it("discards unreadable dumps written before the install", async () => {
+    const now = new Date();
+    await utimes(process.execPath, now, now);
+    const broken = path.join(root, "broken.dmp");
+    await writeFile(broken, Buffer.alloc(32));
+    const old = new Date(now.getTime() - 60 * 1000);
+    await utimes(broken, old, old);
+    await sendPendingNativeCrashReport();
+    expect(telemetry.startSpan).not.toHaveBeenCalled();
     expect(await readdir(root)).toEqual([]);
   });
 

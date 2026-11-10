@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { useMainContext } from "@/contexts";
 import type { IState } from "@/types/IState";
 import { Listing } from "@/ui/components/listing/Listing";
 import { Picker } from "@/ui/components/picker/Picker";
 import { activeGameId } from "@/util/selectors";
 
 import type { IGameStored } from "../../types/IGameStored";
+import { createGamesPageTracker } from "../../util/games_page_tracker/gamesPageTracker";
 import { GamesGrid } from "../GamesGrid";
 import { GamesList } from "../GamesList";
 import { Section } from "../section/Section";
@@ -33,6 +35,8 @@ export const AddedGames = ({
   onSortChange,
 }: IAddedGamesProps) => {
   const { t } = useTranslation();
+  const { api } = useMainContext();
+  const tracker = useMemo(() => createGamesPageTracker(api), [api]);
 
   const discoveredGames = useSelector((state: IState) => state.settings.gameMode.discovered);
   const gameMode = useSelector(activeGameId);
@@ -48,7 +52,14 @@ export const AddedGames = ({
             { label: t("Recently used"), value: "recentlyused" },
           ]}
           value={sortOrder}
-          onChange={onSortChange}
+          onChange={(value) => {
+            // the picker also answers a re-pick of the current order
+            if (value === sortOrder) {
+              return;
+            }
+            onSortChange(value);
+            tracker.trackSortChanged({ section: "added", sort: value });
+          }}
         />
       }
       count={count}
@@ -66,6 +77,7 @@ export const AddedGames = ({
       >
         {layout === "list" ? (
           <GamesList
+            section="added"
             discoveredGames={discoveredGames}
             gameMode={gameMode}
             games={games}

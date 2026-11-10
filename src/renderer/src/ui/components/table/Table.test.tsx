@@ -1,10 +1,19 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { createPortal } from "react-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// jsdom loads no pictures, so every picture's colour is the same, known one.
+vi.mock("@/ui/components/image/useImageColour.hook", () => ({
+  useImageColour: (src: string | undefined) => (src ? "rgb(1, 2, 3)" : undefined),
+}));
+
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 
 import { Table } from "./Table";
 import type { ITableColumn } from "./Table.types";
+import { tableGroupMenuSections } from "./TableGroupMenu";
 import { useTableRowEngaged } from "./TableRow.context";
 
 interface IRow {
@@ -96,6 +105,25 @@ describe("Table", () => {
       fireEvent.focus(rowOf(ROWS[1].id));
       fireEvent.blur(rowOf(ROWS[1].id));
 
+      expect(engagedIn(ROWS[1].id)).toBe("true");
+    });
+
+    it("tells its cells while it's selected, though never pointed at, as a hovered row's", () => {
+      render(
+        <Table
+          selectable
+          columns={[
+            COLUMNS[0],
+            { id: "engaged", header: "Engaged", cell: (row) => <Engaged id={row.id} /> },
+          ]}
+          getRowId={(row) => row.id}
+          label="Files"
+          rows={ROWS}
+          selectedIds={new Set([ROWS[1].id])}
+        />,
+      );
+
+      expect(engagedIn(ROWS[0].id)).toBe("false");
       expect(engagedIn(ROWS[1].id)).toBe("true");
     });
   });
@@ -192,7 +220,10 @@ describe("Table sorted by a column", () => {
     );
 
     const [nameHeader, sizeHeader] = screen.getAllByRole("columnheader");
+    const arrow = () => nameHeader.querySelector("[data-symbol]")?.getAttribute("data-symbol");
+
     expect(nameHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(arrow()).toBe("arrow_upward");
     expect(sizeHeader).not.toHaveAttribute("aria-sort");
     expect(within(sizeHeader).queryByRole("button")).toBeNull();
     expect(names()).toEqual(["Alpha", "Beta"]);
@@ -200,6 +231,7 @@ describe("Table sorted by a column", () => {
     await userEvent.click(within(nameHeader).getByRole("button", { name: "Name" }));
 
     expect(nameHeader).toHaveAttribute("aria-sort", "descending");
+    expect(arrow()).toBe("arrow_downward");
     expect(names()).toEqual(["Beta", "Alpha"]);
   });
 
@@ -327,6 +359,26 @@ describe("Table with selectable rows", () => {
       expect(rowCheckbox(1)).toHaveAttribute("aria-checked", "true");
     });
 
+    it("deselects the only selected row when it's clicked again", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await userEvent.click(cell("Alpha"));
+
+      expect(selected()).toEqual([]);
+      expect(rowCheckbox(0)).toHaveAttribute("aria-checked", "false");
+    });
+
+    it("keeps just the row clicked from several selected", async () => {
+      renderFive();
+
+      await userEvent.click(cell("Alpha"));
+      await clickWith("Beta", "Control");
+      await userEvent.click(cell("Beta"));
+
+      expect(selected()).toEqual(["Beta"]);
+    });
+
     it("adds and removes a row with Ctrl held, leaving the rest", async () => {
       renderFive();
 
@@ -447,6 +499,169 @@ describe("Table with selectable rows", () => {
   });
 });
 
+describe("Table with resizable columns", () => {
+  const RESIZABLE: Array<ITableColumn<IRow>> = [{ ...COLUMNS[0], resizable: false }, COLUMNS[1]];
+
+  type Widths = { [columnId: string]: number | undefined };
+
+  const tracks = () => (screen.getByRole("grid") as HTMLElement).style.gridTemplateColumns;
+
+  const renderResizable = ({
+    columns = RESIZABLE,
+    columnWidths,
+    resizes = true,
+  }: {
+    columns?: Array<ITableColumn<IRow>>;
+    columnWidths?: { [columnId: string]: number };
+    resizes?: boolean;
+  } = {}) => {
+    const onColumnWidthsChange = vi.fn<(widths: Widths) => void>();
+    render(
+      <Table
+        columnWidths={columnWidths}
+        columns={columns}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        onColumnWidthsChange={resizes ? onColumnWidthsChange : undefined}
+      />,
+    );
+    return onColumnWidthsChange;
+  };
+
+  /** Draws every element 120px wide, or as `widths` has it by the column whose header it is. */
+  const drawWidths = (widths: { [columnId: string]: number } = {}) =>
+    vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        return { width: widths[this.dataset.columnId ?? ""] ?? 120 } as DOMRect;
+      });
+
+  beforeEach(() => {
+    drawWidths();
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1000);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("gives a resizable column's header a handle, from its width", () => {
+    renderResizable();
+
+    const [nameHeader, sizeHeader] = screen.getAllByRole("columnheader");
+    expect(within(nameHeader).queryByRole("separator")).toBeNull();
+    expect(within(sizeHeader).getByRole("separator")).toHaveAttribute("aria-valuemin", "80");
+  });
+
+  it("gives no handles, and no gap, to a table that doesn't resize its columns", () => {
+    renderResizable({ columns: [COLUMNS[1]], resizes: false });
+
+    expect(screen.queryByRole("separator")).toBeNull();
+    expect(tracks()).toBe("var(--nxm-table-gutter-start) 80px var(--nxm-table-gutter)");
+  });
+
+  it("draws a column at the width it was resized to", () => {
+    renderResizable({ columnWidths: { size: 200 } });
+
+    expect(tracks()).toContain("200px");
+  });
+
+  it("resizes a column a step at a time from the keyboard, to its bounds, and resets it", () => {
+    const onColumnWidthsChange = renderResizable();
+    const handle = screen.getByRole("separator");
+
+    for (const key of ["ArrowRight", "ArrowLeft", "Home", "End", "Enter"]) {
+      fireEvent.keyDown(handle, { key });
+    }
+
+    expect(onColumnWidthsChange.mock.calls).toEqual([
+      [{ size: 136 }],
+      [{ size: 104 }],
+      [{ size: undefined }],
+      [{ size: 1000 }],
+      [{ size: undefined }],
+    ]);
+  });
+
+  it("resets a column on a double-click", () => {
+    const onColumnWidthsChange = renderResizable({ columnWidths: { size: 200 } });
+
+    fireEvent.doubleClick(screen.getByRole("separator"));
+
+    expect(onColumnWidthsChange).toHaveBeenCalledWith({ size: undefined });
+  });
+
+  it("draws a drag as it goes and keeps its width once it's let go of", () => {
+    const onColumnWidthsChange = renderResizable();
+    const handle = screen.getByRole("separator");
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 150 });
+
+    expect(tracks()).toContain("170px");
+    expect(handle).toHaveAttribute("aria-valuenow", "170");
+    expect(onColumnWidthsChange).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(handle, { clientX: 150 });
+
+    expect(onColumnWidthsChange.mock.calls).toEqual([[{ size: 170 }]]);
+  });
+
+  it("keeps nothing from a drag that's cancelled, and draws the kept widths again", () => {
+    const onColumnWidthsChange = renderResizable();
+    const handle = screen.getByRole("separator");
+    const kept = tracks();
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 150 });
+    fireEvent.pointerCancel(handle);
+
+    expect(onColumnWidthsChange).not.toHaveBeenCalled();
+    expect(tracks()).toBe(kept);
+  });
+
+  it("never drags a column below its width, and keeps nothing when it's dragged back to it", () => {
+    const onColumnWidthsChange = renderResizable();
+    const handle = screen.getByRole("separator");
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 0 });
+
+    expect(tracks()).toContain("80px");
+
+    fireEvent.pointerUp(handle, { clientX: 0 });
+
+    expect(onColumnWidthsChange).toHaveBeenCalledWith({ size: undefined });
+  });
+
+  it("holds a column that shares what's left at its drawn width, kept with the resize in one change", () => {
+    drawWidths({ name: 500 });
+    const onColumnWidthsChange = renderResizable({ columns: COLUMNS });
+    const [, sizeHandle] = screen.getAllByRole("separator");
+
+    fireEvent.pointerDown(sizeHandle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(sizeHandle, { clientX: 120 });
+
+    expect(tracks()).toContain("500px 140px");
+    expect(onColumnWidthsChange).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(sizeHandle, { clientX: 120 });
+
+    expect(onColumnWidthsChange.mock.calls).toEqual([[{ name: 500, size: 140 }]]);
+  });
+
+  it("holds nothing whose header can't be measured", () => {
+    drawWidths({ name: 0 });
+    const onColumnWidthsChange = renderResizable({ columns: COLUMNS });
+    const [, sizeHandle] = screen.getAllByRole("separator");
+
+    fireEvent.keyDown(sizeHandle, { key: "ArrowRight" });
+
+    expect(onColumnWidthsChange.mock.calls).toEqual([[{ size: 136 }]]);
+  });
+});
+
 describe("Table with a toolbar", () => {
   it("puts it in the head above the header row, which counts it among the rows", () => {
     render(
@@ -538,8 +753,8 @@ describe("Table with groups", () => {
       <Table columns={GROUPED_COLUMNS} getRowId={(row) => row.id} groups={GROUPS} label="Files" />,
     );
 
-  // Its solid background would hide the group's tint, so it draws its own.
-  it("tints a sticky column's cells with their group's picture", () => {
+  // Its solid background would hide the group's tint, so it takes the group's colour itself.
+  it("gives a sticky column's cells their group's colour", () => {
     render(
       <Table
         columns={[GROUPED_COLUMNS[0], { ...GROUPED_COLUMNS[1], sticky: "end" }]}
@@ -549,12 +764,14 @@ describe("Table with groups", () => {
       />,
     );
 
-    const tinted = [...document.querySelectorAll('[data-sticky="end"]')].filter((cell) =>
-      cell.querySelector(".nxm-table-cell-tint"),
+    const colours = [...document.querySelectorAll<HTMLElement>('[data-sticky="end"]')].map(
+      (cell) =>
+        cell
+          .closest<HTMLElement>(".nxm-table-group")
+          ?.style.getPropertyValue("--nxm-table-group-colour") ?? "header",
     );
-    // The first group's row and its two rows; not the header, nor the second group's.
-    expect(tinted).toHaveLength(3);
-    expect(document.querySelectorAll(".nxm-table-cell-tint")).toHaveLength(3);
+    // The header, the first group's row and its two rows, then the second group's.
+    expect(colours).toEqual(["header", ...Array(3).fill("rgb(1, 2, 3)"), "", ""]);
   });
 
   it("is a treegrid of group rows, each above its own rows, a row in two groups in both", () => {
@@ -576,8 +793,8 @@ describe("Table with groups", () => {
     ]);
   });
 
-  it("washes a group's row from its image, when it has one", () => {
-    const { container } = render(
+  it("tints a group from its image, when it has one", () => {
+    render(
       <Table
         columns={GROUPED_COLUMNS}
         getRowId={(row) => row.id}
@@ -586,30 +803,13 @@ describe("Table with groups", () => {
       />,
     );
 
-    const groupRows = container.querySelectorAll(".nxm-table-group-row");
-    expect(groupRows[0].lastElementChild?.tagName).toBe("CANVAS");
-    expect(groupRows[1].querySelector("canvas")).toBeNull();
-  });
+    const groupOf = (name: string) =>
+      screen.getByRole("button", { name }).closest('[role="rowgroup"]') as HTMLElement;
 
-  it("tints an open group's rows from its image, below its own row, until it collapses", async () => {
-    const { container } = render(
-      <Table
-        columns={GROUPED_COLUMNS}
-        getRowId={(row) => row.id}
-        groups={[{ ...GROUPS[0], image: "first.png" }, GROUPS[1]]}
-        label="Files"
-      />,
+    expect(groupOf("First").style.getPropertyValue("--nxm-table-group-colour")).toBe(
+      "rgb(1, 2, 3)",
     );
-
-    const backdrops = () => container.querySelectorAll<HTMLElement>(".nxm-table-group-backdrop");
-    expect(backdrops()).toHaveLength(1);
-    // Under the first group's row, 48px and a 4px gap, over its two 40px rows.
-    expect(backdrops()[0].style.getPropertyValue("--nxm-table-backdrop-top")).toBe("52px");
-    expect(backdrops()[0].style.height).toBe("80px");
-
-    await userEvent.click(screen.getByRole("button", { name: "First" }));
-
-    expect(backdrops()).toHaveLength(0);
+    expect(groupOf("Second").style.getPropertyValue("--nxm-table-group-colour")).toBe("");
   });
 
   it("collapses a group's rows from its button, and opens them again", async () => {
@@ -683,5 +883,726 @@ describe("Table in a scrolling page", () => {
     expect(screen.getByRole("button", { name: "Row 100" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Row 0" })).toHaveFocus();
     expect(screen.queryByRole("button", { name: "Row 1" })).toBeNull();
+  });
+
+  const renderGroupedInPage = () =>
+    render(
+      <div data-testid="page" style={{ overflowY: "auto" }}>
+        <Table
+          columns={FOCUSABLE}
+          getRowId={(row) => row.id}
+          groups={[
+            { id: "first", label: "First", rows: MANY.slice(0, 100) },
+            { id: "second", label: "Second", rows: MANY.slice(100) },
+          ]}
+          label="Files"
+        />
+      </div>,
+    );
+
+  const groupOf = (name: string) =>
+    screen.getByRole("button", { name }).closest('[role="rowgroup"]') as HTMLElement;
+
+  // A heading's height with the gap above it, a row's, and the spacers' between them.
+  const heightOf = (group: HTMLElement) =>
+    [...group.children].reduce((height, child) => {
+      if (child.getAttribute("role") === "row") {
+        return height + (child.getAttribute("aria-expanded") === null ? 40 : 52);
+      }
+      return height + parseFloat((child as HTMLElement).style.height || "0");
+    }, 0);
+
+  it("keeps the heading of the group scrolled into, which sticks over its rows", () => {
+    renderGroupedInPage();
+
+    scrollTo(screen.getByTestId("page"), 2000);
+
+    expect(screen.getByRole("button", { name: "First" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Row 1" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Second" })).toBeNull();
+  });
+
+  it("puts a group's heading and rows in a rowgroup as tall as all its rows", () => {
+    renderGroupedInPage();
+
+    scrollTo(screen.getByTestId("page"), 2000);
+
+    const first = groupOf("First");
+    expect(within(first).getByRole("button", { name: "Row 50" })).toBeInTheDocument();
+    expect(heightOf(first)).toBe(52 + 100 * 40);
+  });
+
+  it("starts each group's rowgroup where its heading is", () => {
+    renderGroupedInPage();
+
+    expect(within(groupOf("First")).getByRole("button", { name: "Row 0" })).toBeInTheDocument();
+  });
+});
+
+describe("Table's context menus", () => {
+  const GROUPS = [
+    { id: "first", label: "First", rows: [ROWS[0]] },
+    { id: "second", label: "Second", rows: [ROWS[1]] },
+  ];
+
+  const groupRow = (name: string) =>
+    screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement;
+  const row = (name: string) => screen.getByText(name).closest('[role="row"]') as HTMLElement;
+  const menuItems = () => screen.getAllByRole("menuitem").map((item) => item.textContent);
+  // Hidden too: an open menu hides the rest of the page from assistive tech, as it holds focus.
+  const checkbox = (name: string) => within(row(name)).getByRole("checkbox", { hidden: true });
+  const checked = (name: string) => checkbox(name).getAttribute("aria-checked") === "true";
+
+  const renderGrouped = (selectable = true) =>
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+        groups={GROUPS}
+        label="Files"
+        selectable={selectable}
+      />,
+    );
+
+  it("offers to collapse an open group, or every one, and to select its rows", () => {
+    renderGrouped();
+
+    fireEvent.contextMenu(groupRow("First"));
+
+    expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+  });
+
+  describe("a group heading's …", () => {
+    const more = (name: string) =>
+      within(groupRow(name)).getByRole("button", { name: "More actions" });
+    const separators = () => screen.getAllByRole("separator").length;
+
+    const tracking = () => ({
+      onActionClick: vi.fn(),
+      onPinChange: vi.fn(),
+      onPinsReset: vi.fn(),
+    });
+
+    const renderWithMenu = ({
+      groupMenu,
+      groupTracking,
+      sticky = false,
+    }: {
+      groupMenu?: (group: { id: string }) => IToolbarAction[];
+      groupTracking?: ReturnType<typeof tracking>;
+      sticky?: boolean;
+    } = {}) =>
+      render(
+        <Table
+          columns={[
+            { ...COLUMNS[0], groupCell: () => <span>start</span> },
+            { ...COLUMNS[1], sticky: sticky ? "end" : undefined },
+            { id: "last", header: "Last", width: "40px", cell: () => null },
+          ]}
+          getRowId={(r) => r.id}
+          groupMenu={groupMenu}
+          groupTracking={groupTracking}
+          groups={GROUPS}
+          label="Files"
+          selectable
+        />,
+      );
+
+    const open = (onClick = vi.fn()): IToolbarAction => ({
+      id: "open",
+      label: "Open",
+      onClick,
+      section: "own",
+    });
+
+    it("is on every group heading, at the end of the last column's cell", () => {
+      renderWithMenu();
+
+      for (const name of ["First", "Second"]) {
+        const cells = within(groupRow(name)).getAllByRole("gridcell");
+        expect(cells[cells.length - 1].lastElementChild).toContainElement(more(name));
+      }
+    });
+
+    it("is in the sticky column's cell, where there is one", () => {
+      renderWithMenu({ sticky: true });
+
+      const stuck = groupRow("First").querySelector('[data-sticky="end"]') as HTMLElement;
+      expect(within(stuck).getByRole("button", { name: "More actions" })).toBeInTheDocument();
+    });
+
+    it("lists exactly the context menu's items, the group's own after the built-in ones", async () => {
+      renderWithMenu({ groupMenu: (group) => (group.id === "first" ? [open()] : []) });
+
+      fireEvent.contextMenu(groupRow("First"));
+      const contextItems = menuItems();
+      const contextSeparators = separators();
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(more("First"));
+
+      expect(menuItems()).toEqual(contextItems);
+      expect(separators()).toBe(contextSeparators);
+      expect(contextItems).toEqual(["Collapse", "Collapse all", "Select all in group", "Open"]);
+      expect(contextSeparators).toBe(2);
+    });
+
+    const clicks = (groupTracking: ReturnType<typeof tracking>) =>
+      groupTracking.onActionClick.mock.calls.map(([{ id, properties }, surface]) => [
+        id,
+        properties,
+        surface,
+      ]);
+
+    it("counts a built-in item once from either, with the state it moves to", async () => {
+      const groupTracking = tracking();
+      renderWithMenu({ groupTracking });
+
+      await userEvent.click(more("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+      expect(clicks(groupTracking)).toEqual([["collapse", { expanded: false }, "overflow"]]);
+      expect(groupRow("First").getAttribute("aria-expanded")).toBe("false");
+      expect(screen.queryByRole("menu")).toBeNull();
+
+      fireEvent.contextMenu(groupRow("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+      expect(groupRow("Second").getAttribute("aria-expanded")).toBe("false");
+      expect(screen.queryByRole("menu")).toBeNull();
+
+      await userEvent.click(more("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Expand" }));
+
+      expect(clicks(groupTracking)).toEqual([
+        ["collapse", { expanded: false }, "overflow"],
+        ["collapse", { expanded: false }, "menu"],
+        ["collapse", { expanded: true }, "overflow"],
+      ]);
+      expect(groupRow("First").getAttribute("aria-expanded")).toBe("true");
+    });
+
+    it("counts Collapse all and Select all in group by id, with the state they move to", async () => {
+      const groupTracking = tracking();
+      renderWithMenu({ groupTracking });
+
+      await userEvent.click(more("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Collapse all" }));
+      fireEvent.contextMenu(groupRow("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
+      fireEvent.contextMenu(groupRow("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+      await userEvent.click(more("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Deselect all in group" }));
+
+      expect(clicks(groupTracking)).toEqual([
+        ["collapse-all", { expanded: false }, "overflow"],
+        ["collapse-all", { expanded: true }, "menu"],
+        ["select-all", { selected: true }, "menu"],
+        ["select-all", { selected: false }, "overflow"],
+      ]);
+    });
+
+    it("counts the group's own action through groupTracking, as menu or overflow", async () => {
+      const groupTracking = tracking();
+      const onClick = vi.fn();
+      renderWithMenu({ groupMenu: () => [open(onClick)], groupTracking });
+
+      fireEvent.contextMenu(groupRow("First"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Open" }));
+      await userEvent.click(more("Second"));
+      await userEvent.click(screen.getByRole("menuitem", { name: "Open" }));
+
+      expect(onClick).toHaveBeenCalledTimes(2);
+      expect(groupTracking.onActionClick.mock.calls).toEqual([
+        [expect.objectContaining({ id: "open" }), "menu"],
+        [expect.objectContaining({ id: "open" }), "overflow"],
+      ]);
+    });
+
+    it("neither collapses the group nor selects its rows when clicked", async () => {
+      renderWithMenu();
+
+      await userEvent.click(more("First"));
+
+      expect(groupRow("First").getAttribute("aria-expanded")).toBe("true");
+      expect(checked("Alpha")).toBe(false);
+    });
+  });
+
+  it("adds a group's own actions after its built-in ones", async () => {
+    const open = vi.fn();
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        groupMenu={(group) => (group.id === "first" ? [{ label: "Open", onClick: open }] : [])}
+        groups={GROUPS}
+        label="Files"
+        selectable
+      />,
+    );
+
+    fireEvent.contextMenu(groupRow("First"));
+    expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group", "Open"]);
+
+    await userEvent.click(screen.getByRole("menuitem", { name: "Open" }));
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it("adds nothing to a group without actions of its own", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        groupMenu={() => []}
+        groups={GROUPS}
+        label="Files"
+        selectable
+      />,
+    );
+
+    fireEvent.contextMenu(groupRow("Second"));
+
+    expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
+  });
+
+  it("collapses the group, then offers to expand it", async () => {
+    renderGrouped();
+
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+    expect(screen.getByRole("button", { name: "First" })).toHaveAttribute("aria-expanded", "false");
+    fireEvent.contextMenu(groupRow("First"));
+    expect(menuItems()).toEqual(["Expand", "Expand all", "Select all in group"]);
+  });
+
+  it("collapses every group, and expands them all again", async () => {
+    renderGrouped();
+
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Collapse all" }));
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+
+    fireEvent.contextMenu(groupRow("Second"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
+    expect(screen.getByRole("button", { name: "First" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("adds the group's rows to the selection", async () => {
+    renderGrouped();
+    await userEvent.click(checkbox("Beta"));
+
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+
+    expect([checked("Alpha"), checked("Beta")]).toEqual([true, true]);
+  });
+
+  it("offers to deselect the group's rows once they're all selected, leaving the rest", async () => {
+    renderGrouped();
+    await userEvent.click(checkbox("Alpha"));
+    await userEvent.click(checkbox("Beta"));
+
+    fireEvent.contextMenu(groupRow("First"));
+    expect(menuItems()).toEqual(["Collapse", "Collapse all", "Deselect all in group"]);
+    await userEvent.click(screen.getByRole("menuitem", { name: "Deselect all in group" }));
+
+    expect([checked("Alpha"), checked("Beta")]).toEqual([false, true]);
+  });
+
+  it("expands every group from a collapsed one, though others are open", async () => {
+    renderGrouped();
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Collapse" }));
+
+    fireEvent.contextMenu(groupRow("First"));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Expand all" }));
+
+    expect(screen.getByRole("button", { name: "First" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("selects the group's rows as they are when chosen, not when it opened", async () => {
+    const { rerender } = renderGrouped();
+    fireEvent.contextMenu(groupRow("First"));
+
+    rerender(
+      <Table
+        selectable
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+        groups={[{ id: "first", label: "First", rows: ROWS }]}
+        label="Files"
+      />,
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: "Select all in group" }));
+
+    expect([checked("Alpha"), checked("Beta")]).toEqual([true, true]);
+  });
+
+  it("closes once its group is gone", () => {
+    const { rerender } = renderGrouped();
+    fireEvent.contextMenu(groupRow("First"));
+
+    rerender(
+      <Table
+        selectable
+        columns={COLUMNS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+        groups={[GROUPS[1]]}
+        label="Files"
+      />,
+    );
+
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("offers no selecting where rows can't be selected", () => {
+    renderGrouped(false);
+
+    fireEvent.contextMenu(groupRow("First"));
+
+    expect(menuItems()).toEqual(["Collapse", "Collapse all"]);
+  });
+
+  describe("a row's", () => {
+    const renderWithMenu = () =>
+      render(
+        <Table
+          selectable
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          getRowLabel={(r) => r.name}
+          label="Files"
+          rowMenu={(r, close) => (
+            <button type="button" onClick={close}>
+              Menu for {r.name}
+            </button>
+          )}
+          rows={ROWS}
+        />,
+      );
+
+    it("opens its menu, selecting just it when it wasn't selected", async () => {
+      renderWithMenu();
+      await userEvent.click(checkbox("Beta"));
+
+      fireEvent.contextMenu(row("Alpha"));
+
+      expect(screen.getByRole("button", { name: "Menu for Alpha" })).toBeInTheDocument();
+      expect([checked("Alpha"), checked("Beta")]).toEqual([true, false]);
+    });
+
+    it("keeps the selection when it's one of those selected", async () => {
+      renderWithMenu();
+      await userEvent.click(checkbox("Alpha"));
+      await userEvent.click(checkbox("Beta"));
+
+      fireEvent.contextMenu(row("Alpha"));
+
+      expect([checked("Alpha"), checked("Beta")]).toEqual([true, true]);
+    });
+
+    it("builds its menu from the row as it is now, and closes once it's gone", () => {
+      const menuFor = (r: IRow) => <span>Menu for {r.name}</span>;
+      const { rerender } = render(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={ROWS}
+        />,
+      );
+      fireEvent.contextMenu(row("Alpha"));
+
+      rerender(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={[{ ...ROWS[0], name: "Renamed" }, ROWS[1]]}
+        />,
+      );
+      expect(screen.getByText("Menu for Renamed")).toBeInTheDocument();
+
+      rerender(
+        <Table
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={menuFor}
+          rows={[ROWS[1]]}
+        />,
+      );
+      expect(screen.queryByRole("menu")).toBeNull();
+    });
+
+    it("opens from the keyboard under the focused control, handing focus back to it", async () => {
+      renderWithMenu();
+      const control = checkbox("Alpha");
+      control.focus();
+
+      fireEvent.contextMenu(control, { button: -1 });
+      expect(
+        screen.getByRole("button", { name: "Menu for Alpha", hidden: true }),
+      ).toBeInTheDocument();
+      await userEvent.keyboard("{Escape}");
+
+      expect(control).toHaveFocus();
+    });
+
+    it("opens none from a right-click in something its row portalled out", () => {
+      render(
+        <Table
+          selectable
+          columns={[
+            {
+              id: "name",
+              header: "Name",
+              cell: (r) => (
+                <>
+                  {r.name}
+                  {r.id === "a" && createPortal(<span>Portalled</span>, document.body)}
+                </>
+              ),
+            },
+          ]}
+          getRowId={(r) => r.id}
+          label="Files"
+          rowMenu={(r) => <span>Menu for {r.name}</span>}
+          rows={ROWS}
+        />,
+      );
+
+      fireEvent.contextMenu(screen.getByText("Portalled"));
+
+      expect(screen.queryByText(/Menu for/)).toBeNull();
+    });
+
+    it("leaves the browser's menu alone without one", () => {
+      renderTable();
+
+      expect(fireEvent.contextMenu(row("Alpha"))).toBe(true);
+    });
+  });
+
+  // The table reports, through callbacks, what's done with its menus; what's made of that is
+  // the page's, so the table itself stays free of analytics.
+  describe("reporting", () => {
+    const renderReporting = () => {
+      const onMenuOpen = vi.fn();
+
+      render(
+        <Table
+          selectable
+          columns={COLUMNS}
+          getRowId={(r) => r.id}
+          getRowLabel={(r) => r.name}
+          groups={GROUPS}
+          label="Files"
+          rowMenu={(r) => <span>Menu for {r.name}</span>}
+          onMenuOpen={onMenuOpen}
+        />,
+      );
+
+      return { onMenuOpen };
+    };
+
+    it("says a menu opened on a group header, from the pointer", () => {
+      const { onMenuOpen } = renderReporting();
+
+      fireEvent.contextMenu(groupRow("First"), { clientX: 10, clientY: 10 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("group", "pointer");
+    });
+
+    it("says a menu opened on a row, from the keyboard", () => {
+      const { onMenuOpen } = renderReporting();
+
+      fireEvent.contextMenu(row("Alpha"), { button: -1 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("row", "keyboard");
+    });
+
+    it("says a menu opened on a row of a multi-selection", async () => {
+      const { onMenuOpen } = renderReporting();
+      await userEvent.click(checkbox("Alpha"));
+      await userEvent.click(checkbox("Beta"));
+
+      fireEvent.contextMenu(row("Alpha"), { clientX: 10, clientY: 10 });
+
+      expect(onMenuOpen).toHaveBeenCalledWith("selection", "pointer");
+    });
+  });
+});
+
+describe("Table's focused group", () => {
+  const GROUPS = [
+    { id: "first", label: "First", rows: [ROWS[0]] },
+    { id: "second", label: "Second", rows: [ROWS[1]] },
+  ];
+  const groupRow = (name: string) =>
+    screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement;
+  const scrollIntoView = vi.fn();
+
+  beforeEach(() => {
+    scrollIntoView.mockClear();
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  const table = (props: {
+    groups?: typeof GROUPS;
+    focusGroupId?: string;
+    onGroupFocused?: () => void;
+  }) => (
+    <Table
+      columns={COLUMNS}
+      focusGroupId={props.focusGroupId}
+      getRowId={(r) => r.id}
+      groups={props.groups ?? GROUPS}
+      label="Files"
+      onGroupFocused={props.onGroupFocused}
+    />
+  );
+
+  it("opens the group, scrolls to its row and says so", async () => {
+    const onGroupFocused = vi.fn();
+    const { rerender } = render(table({}));
+    await userEvent.click(screen.getByRole("button", { name: "Second" }));
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+
+    rerender(table({ focusGroupId: "second", onGroupFocused }));
+
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute("aria-expanded", "true");
+    expect(onGroupFocused).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+    expect(scrollIntoView.mock.contexts[0]).toBe(groupRow("Second"));
+  });
+
+  it("waits for a group it doesn't have yet", () => {
+    const onGroupFocused = vi.fn();
+    const { rerender } = render(
+      table({ groups: [GROUPS[0]], focusGroupId: "second", onGroupFocused }),
+    );
+
+    expect(onGroupFocused).not.toHaveBeenCalled();
+
+    rerender(table({ focusGroupId: "second", onGroupFocused }));
+
+    expect(onGroupFocused).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Table's focused row", () => {
+  const GROUPS = [
+    { id: "first", label: "First", rows: [ROWS[0]] },
+    { id: "second", label: "Second", rows: [ROWS[1]] },
+  ];
+  const scrollIntoView = vi.fn();
+
+  beforeEach(() => {
+    scrollIntoView.mockClear();
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  const table = (props: {
+    focusRowId?: string;
+    onRowFocused?: () => void;
+    onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
+  }) => (
+    <Table
+      selectable
+      columns={COLUMNS}
+      focusRowId={props.focusRowId}
+      getRowId={(r) => r.id}
+      groups={GROUPS}
+      label="Files"
+      onRowFocused={props.onRowFocused}
+      onSelectedIdsChange={props.onSelectedIdsChange}
+    />
+  );
+
+  it("opens the row's group, scrolls to it, selects it alone and says so", async () => {
+    const onRowFocused = vi.fn();
+    const onSelectedIdsChange = vi.fn();
+    const { rerender } = render(table({}));
+    await userEvent.click(screen.getByRole("button", { name: "Second" }));
+
+    rerender(table({ focusRowId: "b", onRowFocused, onSelectedIdsChange }));
+
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute("aria-expanded", "true");
+    expect(onSelectedIdsChange).toHaveBeenCalledWith(new Set(["b"]));
+    expect(onRowFocused).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+    expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByText("Beta").closest('[role="row"]'));
+  });
+
+  it("waits for a row it doesn't have yet", () => {
+    const onRowFocused = vi.fn();
+    render(table({ focusRowId: "c", onRowFocused }));
+
+    expect(onRowFocused).not.toHaveBeenCalled();
+  });
+});
+
+describe("tableGroupMenuSections", () => {
+  const folding = (expanded: boolean) =>
+    tableGroupMenuSections({
+      expanded,
+      onToggle: vi.fn(),
+      onSetAllExpanded: vi.fn(),
+      t: ((text: string) => text) as never,
+    })[0];
+
+  it("gives Collapse all Collapse's icon, and Expand all Expand's", () => {
+    expect(folding(true).map(({ label, icon }) => [label, icon])).toEqual([
+      ["Collapse", "unfold_less"],
+      ["Collapse all", "unfold_less"],
+    ]);
+    expect(folding(false).map(({ label, icon }) => [label, icon])).toEqual([
+      ["Expand", "unfold_more"],
+      ["Expand all", "unfold_more"],
+    ]);
+  });
+
+  it("gives each built-in item its id, whichever way its label reads", () => {
+    for (const expanded of [true, false]) {
+      for (const allSelected of [true, false]) {
+        const ids = tableGroupMenuSections({
+          allSelected,
+          expanded,
+          onDeselectAll: vi.fn(),
+          onSelectAll: vi.fn(),
+          onSetAllExpanded: vi.fn(),
+          onToggle: vi.fn(),
+          t: ((text: string) => text) as never,
+        })
+          .flat()
+          .map(({ id }) => id);
+
+        expect(ids).toEqual(["collapse", "collapse-all", "select-all"]);
+      }
+    }
   });
 });

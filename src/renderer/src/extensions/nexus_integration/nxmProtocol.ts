@@ -1,7 +1,7 @@
 import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { HTTPError as NexusHTTPError, NexusError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { type GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
 import { parseError } from "@vortex/shared";
 import type { Action } from "redux";
 
@@ -18,12 +18,10 @@ import {
   UserCanceled,
 } from "../../util/CustomErrors";
 import { createKeyedCache } from "../../util/keyedCache";
-import opn from "../../util/opn";
 import { batchDispatch } from "../../util/util";
 import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
 import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
-import { NEXUS_BASE_URL } from "./constants";
 import { refreshMembership, scheduleMembershipRefresh } from "./membership";
 import NXMUrl from "./NXMUrl";
 import { isRateLimited, notifyRateLimited } from "./rateLimit";
@@ -31,6 +29,7 @@ import { isPremium, userInfo } from "./selectors";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
 import { findLatestUpdate } from "./util/checkModsVersion";
 import { nxmPageId } from "./util/convertGameId";
+import { nexusFilePageUrl } from "./util/nexus_urls/nexusUrls";
 
 const DL_QUERY: IRevisionQuery = {
   id: true,
@@ -47,6 +46,8 @@ const DOWNLOAD_URL_CACHE_DURATION = 5 * 60 * 1000;
 interface IQueuedDownload {
   input: string;
   url: NXMUrl;
+  /** The domain the url's game resolved to, which its link id need not be. */
+  pageId: GameDomain;
   resolve: (res: IResolvedURL) => void;
   reject: (err: Error) => void;
   /** The file's update chain, used to describe what a skip is skipping. */
@@ -163,7 +164,7 @@ export class NxmProtocol {
         return await this.#apiDownload(input, url, pageId);
       } catch (err) {
         if (await this.#confirmMembershipEnded(url, err)) {
-          return this.#websiteDownload(input, url);
+          return this.#websiteDownload(input, url, pageId);
         }
         throw err;
       }
@@ -173,7 +174,7 @@ export class NxmProtocol {
       return this.#apiDownload(input, url, pageId);
     }
 
-    return this.#websiteDownload(input, url);
+    return this.#websiteDownload(input, url, pageId);
   };
 
   /**
@@ -198,7 +199,7 @@ export class NxmProtocol {
   }
 
   /** Registered as the OS handler for nxm:// links. */
-  readonly handleLink = (url: string, install: boolean) => {
+  readonly handleLink = async (url: string, install: boolean) => {
     let nxmUrl: NXMUrl;
     try {
       nxmUrl = new NXMUrl(url);
@@ -211,19 +212,10 @@ export class NxmProtocol {
         log("info", "nxm premium link, re-reading the membership");
         scheduleMembershipRefresh(this.#api);
         return false;
-      } else if (nxmUrl.gameId === SITE_ID && this.#isExtensionAvailable(nxmUrl.modId)) {
-        if (install) {
-          return this.#api.emitAndAwait("install-extension", {
-            name: "Pending",
-            modId: nxmUrl.modId,
-            fileId: nxmUrl.fileId,
-          });
-        }
-        this.#api.events.emit("show-extension-page", nxmUrl.modId);
-        bringToFront();
-        return Promise.resolve();
+      } else if (nxmUrl.gameId === SITE_ID && (await this.#handleSiteLink(nxmUrl, install))) {
+        return;
       } else if (state.settings.interface.foregroundDL) {
-        bringToFront();
+        void bringToFront();
       }
     } catch (err) {
       this.#api.showErrorNotification("Invalid URL", err, { allowReport: false });
@@ -237,8 +229,30 @@ export class NxmProtocol {
     void this.#startLinkDownload(nxmUrl, url, install);
   };
 
+  /** Installs or shows a site link that is an extension; false for a modding tool to download. */
+  async #handleSiteLink(nxmUrl: NXMUrl, install: boolean): Promise<boolean> {
+    // a link that starts Vortex arrives before the catalog has been fetched
+    await this.#api.emitAndAwait("await-extension-catalog");
+
+    if (!this.#isExtensionAvailable(nxmUrl.modId)) {
+      return false;
+    }
+
+    if (install) {
+      await this.#api.emitAndAwait("install-extension", {
+        name: "Pending",
+        modId: nxmUrl.modId,
+        fileId: nxmUrl.fileId,
+      });
+    } else {
+      this.#api.events.emit("show-extension-page", nxmUrl.modId);
+      void bringToFront();
+    }
+    return true;
+  }
+
   readonly dialogHandlers: IFreeUserDialogHandlers = {
-    onUpdated: bringToFront,
+    onUpdated: () => void bringToFront(),
 
     /** Send the user to the file's page to generate an authorised link. */
     onDownload: (inputUrl: string) => {
@@ -246,13 +260,11 @@ export class NxmProtocol {
       if (queued === undefined) {
         return;
       }
-      const { url } = queued;
+      const { url, pageId } = queued;
 
       queued.awaitingLink = true;
 
-      opn(
-        `${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`,
-      ).catch(() => null);
+      window.api.shell.openUrl(nexusFilePageUrl(pageId, url.modId, url.fileId));
     },
 
     onSkip: (inputUrl: string) => {
@@ -379,12 +391,13 @@ export class NxmProtocol {
    * Park the download until the user brings back an authorised link from the website (or cancels
    * or skips it). FreeUserDLDialog renders off the redux queue this dispatches into.
    */
-  #websiteDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
+  #websiteDownload(input: string, url: NXMUrl, pageId: GameDomain): Promise<IResolvedURL> {
     // a promise settles once and #dequeue tolerates a repeat, so cancelling after a skip is safe
     return new Promise<IResolvedURL>((resolve, reject) => {
       this.#freeQueue.push({
         input,
         url,
+        pageId,
         resolve: (res) => {
           this.#dequeue(input);
           resolve(res);
@@ -393,7 +406,7 @@ export class NxmProtocol {
           this.#dequeue(input);
           reject(err);
         },
-        queryRelevantUpdates: () => this.#relevantUpdates(url),
+        queryRelevantUpdates: () => this.#relevantUpdates(url, pageId),
         awaitingLink: false,
       });
       this.#api.store.dispatch(addFreeUserDLItem(input));
@@ -405,8 +418,8 @@ export class NxmProtocol {
    * dependency may reference an older or newer file than the one being skipped and the nxm url
    * alone can't tell us which.
    */
-  async #relevantUpdates(url: NXMUrl): Promise<IFileUpdate[]> {
-    const files = await this.#nexus.getModFiles(url.modId, url.gameId);
+  async #relevantUpdates(url: NXMUrl, pageId: GameDomain): Promise<IFileUpdate[]> {
+    const files = await this.#nexus.getModFiles(url.modId, pageId);
 
     const previous = new Map<number, IFileUpdate>(); // new_file_id -> update
     files.file_updates.forEach((update) => previous.set(update.new_file_id, update));
@@ -490,7 +503,14 @@ export class NxmProtocol {
 
   async #modDownload(url: NXMUrl, pageId: string): Promise<IFoundDownload> {
     return {
-      urls: await this.#nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId),
+      urls: await this.#nexus.getDownloadURLs(
+        url.modId,
+        url.fileId,
+        url.key,
+        url.expires,
+        pageId,
+        url.source,
+      ),
       ids: { modId: url.modId, fileId: url.fileId },
     };
   }

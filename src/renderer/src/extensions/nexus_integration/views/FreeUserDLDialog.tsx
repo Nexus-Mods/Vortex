@@ -1,8 +1,8 @@
 import type { IModFile, IModFileQuery } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
 import type { TFunction } from "i18next";
-import * as React from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 import { useSelector } from "react-redux";
 
@@ -12,7 +12,6 @@ import type { IComponentContext } from "../../../types/IComponentContext";
 import type { IState } from "../../../types/IState";
 import { freeUserDownloadPosition } from "../../../util/collectionInstallSession";
 import { log } from "../../../util/log";
-import opn from "../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../util/util";
 import { MainContext } from "../../../views/MainWindow";
 import { NEXUS_BASE_URL, PREMIUM_PATH } from "../constants";
@@ -20,6 +19,7 @@ import { useRefreshUserInfoOnFocus } from "../hooks/useRefreshUserInfoOnFocus";
 import NXMUrl from "../NXMUrl";
 import { isPremium } from "../selectors";
 import { nexusGamesProm } from "../util";
+import { nexusModPageUrl } from "../util/nexus_urls/nexusUrls";
 import { makeFileUID } from "../util/UIDs";
 import NewFreeDownloadModal from "./NewFreeDownloadModal";
 
@@ -103,19 +103,19 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
   const collectionInstallSession = useSelector<IState, ICollectionInstallSession | undefined>(
     (state) => state.session?.["collections"]?.activeSession,
   );
-  const context = React.useContext<IComponentContext>(MainContext);
+  const context = useContext<IComponentContext>(MainContext);
 
-  const [fileInfo, setFileInfo] = React.useState<any>(null);
-  const [campaign, setCampaign] = React.useState<string>(undefined);
-  const [positionText, setPositionText] = React.useState<string>("1/1");
-  const lastFetchUrl = React.useRef<string>();
+  const [fileInfo, setFileInfo] = useState<any>(null);
+  const [campaign, setCampaign] = useState<string>(undefined);
+  const [positionText, setPositionText] = useState<string>("1/1");
+  const lastFetchUrl = useRef<string>();
 
   const show = urls.length > 0 && !premium;
 
   // the user leaves for the website to buy premium, so re-read on their return
   useRefreshUserInfoOnFocus(context.api, show);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (collectionInstallSession?.mods == null) {
       return;
     }
@@ -123,14 +123,14 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     setPositionText(`${position}/${total}`);
   }, [collectionInstallSession]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // an upgrade mid-dialog means the download can go through the api instead
     if (premium && urls.length > 0) {
       retry();
     }
   }, [premium]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchFileInfo = async () => {
       const url: NXMUrl = new NXMUrl(urls[0]);
 
@@ -166,40 +166,42 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
     }
   }, [urls]);
 
-  const retry = React.useCallback(() => {
+  const retry = useCallback(() => {
     onRetry();
   }, [onRetry]);
 
-  const cancel = React.useCallback(() => {
+  const cancel = useCallback(() => {
     onCancel(urls[0]);
   }, [onCancel, urls]);
 
-  const download = React.useCallback(() => {
+  const download = useCallback(() => {
     onDownload(urls[0]);
   }, [onDownload, urls]);
 
-  const skip = React.useCallback(() => {
+  const skip = useCallback(() => {
     onSkip(urls[0]);
   }, [onSkip, urls]);
 
-  const openModPage = React.useCallback(() => {
-    opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/mods/${fileInfo.modId}`);
+  const openModPage = useCallback(() => {
+    window.api.shell.openUrl(nexusModPageUrl(GameDomain(fileInfo.game.domainName), fileInfo.modId));
   }, [fileInfo]);
 
-  const openAuthorPage = React.useCallback(() => {
-    opn(`${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`);
+  const openAuthorPage = useCallback(() => {
+    window.api.shell.openUrl(
+      `${NEXUS_BASE_URL}/${fileInfo.game.domainName}/users/${fileInfo.owner.memberId}`,
+    );
   }, [fileInfo]);
 
-  const goPremium = React.useCallback(() => {
+  const goPremium = useCallback(() => {
     context.api.events.emit("analytics-track-click-event", "Go Premium", "Download Mod");
 
-    opn(
+    window.api.shell.openUrl(
       nexusModsURL(PREMIUM_PATH, {
         section: Section.Users,
         campaign: Campaign.BuyPremium,
         content: Content.DownloadModModal,
       }),
-    ).catch(() => null);
+    );
   }, [campaign]);
 
   return (

@@ -80,6 +80,17 @@ for (const dir of ["fonts", "icons", "images", "pictograms"]) {
   await copy(join(WORKSPACE, "assets", dir), join(ASSETS, dir));
 }
 
+// The Material Symbols font, from the renderer's deps, which own the Icon component.
+const symbolsDir = dirname(
+  createRequire(join(WORKSPACE, "src/renderer/package.json")).resolve(
+    "material-symbols/package.json",
+  ),
+);
+await copy(
+  join(symbolsDir, "material-symbols-outlined.woff2"),
+  join(ASSETS, "fonts/material-symbols-outlined.woff2"),
+);
+
 for (const file of await glob("assets/*.json", { cwd: WORKSPACE })) {
   await copy(join(WORKSPACE, file), join(ASSETS, basename(file)));
 }

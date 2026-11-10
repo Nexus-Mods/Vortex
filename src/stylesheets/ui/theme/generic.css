@@ -8,7 +8,10 @@
     --z-index-popover: 1030;
     --z-index-flyout: 1040;
     --z-index-modal: 1050;
+    /* a menu opened from inside a modal, which has to show above it */
+    --z-index-modal-popover: 1055;
     --z-index-tooltip: 1060;
+    --z-index-dropzone: 1070;
     --z-index-toast: 1090;
 
     --aspect-avatar: 1 / 1;
@@ -16,13 +19,15 @@
     --aspect-game: 2 / 3;
     --aspect-mod: 16 / 9;
 
+    --scrollbar-size: calc(var(--spacing) * 2);
+
     --text-shadow-halo:
         2px 0 0 var(--color-black), -2px 0 0 var(--color-black), 0 2px 0 var(--color-black),
         0 -2px 0 var(--color-black), 2px 2px 0 var(--color-black), 2px -2px 0 var(--color-black),
         -2px 2px 0 var(--color-black), -2px -2px 0 var(--color-black);
 
-    --shadow-sm:
-        0px 2px 4px rgb(0 0 0 / 14%), 0px 3px 4px rgb(0 0 0 / 12%), 0px 1px 5px rgb(0 0 0 / 20%);
+    --shadow-xs: 0px 1px 2px rgba(0, 0, 0, 0.18);
+    --shadow-sm: 0px 4px 4px rgba(0, 0, 0, 0.24);
     --shadow-md:
         0px 6px 10px rgb(0 0 0 / 14%), 0px 1px 18px rgb(0 0 0 / 12%), 0px 3px 5px rgb(0 0 0 / 20%);
     --shadow-lg:

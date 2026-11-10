@@ -104,6 +104,16 @@ export const removeModRule = safeCreateAction(
   (gameId: string, modId: string, rule: IModRule) => ({ gameId, modId, rule }),
 );
 
+/** each old rule of this mod was replaced by its new one, as removeModRule then addModRule do */
+export const modRulesReplaced = safeCreateAction(
+  "MOD_RULES_REPLACED",
+  (
+    gameId: string,
+    modId: string,
+    replacements: Array<{ oldRule: IModRule; newRule: IModRule }>,
+  ) => ({ gameId, modId, replacements }),
+);
+
 /**
  * store the mod id for a resolved rule, so we can resolve it quicker and more
  * reliably in the future

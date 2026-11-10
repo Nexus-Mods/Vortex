@@ -1,4 +1,3 @@
-import { mdiCancel, mdiPlus } from "@mdi/js";
 import type { TFunction } from "i18next";
 import React, { useCallback } from "react";
 
@@ -32,7 +31,7 @@ export function CategoryAddParent({
   const actions: IToolbarAction[] = [
     {
       label: t("Create"),
-      iconPath: mdiPlus,
+      icon: "add",
       showLabel: true,
       onClick: makeCategory,
       brand: "primary",
@@ -40,7 +39,7 @@ export function CategoryAddParent({
     },
     {
       label: t("Cancel"),
-      iconPath: mdiCancel,
+      icon: "block",
       showLabel: true,
       onClick: toggle,
     },

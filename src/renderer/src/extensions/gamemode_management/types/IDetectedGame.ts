@@ -1,3 +1,5 @@
+import type { GameId } from "@vortex/shared";
+
 import type { IAvailableExtension } from "@/types/extensions";
 
 /**
@@ -8,7 +10,7 @@ export interface IDetectedGame {
   /** The game's id in the games catalogue/spine. */
   gameUid: string;
   /** The Nexus Mods game ID. */
-  gameId: number;
+  gameId: GameId;
 
   /** Cover art for the game, undefined when unavailable. */
   imageUrl?: string;
@@ -23,3 +25,6 @@ export interface IDetectedGame {
   /** The Vortex game extension for the game, undefined when there is none. */
   extension?: IAvailableExtension;
 }
+
+/** How the last detected-games request went, for the section to show; none before any. */
+export type DetectedGamesStatus = "running" | "failed" | "success";

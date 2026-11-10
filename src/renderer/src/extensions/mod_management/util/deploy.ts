@@ -1,4 +1,9 @@
-import { getErrorCode, VortexProfileId, VortexStagingFolder } from "@vortex/shared";
+import {
+  getErrorCode,
+  VortexModStagingFolder,
+  VortexProfileId,
+  VortexStagingFolder,
+} from "@vortex/shared";
 import { generate as shortid } from "shortid";
 
 import { startActivity, stopActivity } from "../../../actions/session";
@@ -12,6 +17,7 @@ import type { IGame } from "../../../types/IGame";
 import type { IProfile } from "../../../types/IState";
 import { ProcessCanceled, TemporaryError } from "../../../util/CustomErrors";
 import { withTrackedActivity } from "../../../util/errorHandling";
+import type { Normalize } from "../../../util/getNormalizeFunc";
 import {
   activeProfile,
   discoveryByGame,
@@ -22,15 +28,19 @@ import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
 import type { IModType } from "../../gamemode_management/types/IModType";
 import { getGame } from "../../gamemode_management/util/getGame";
+import { setDeploymentPurged } from "../actions/deployment";
+import { mergedSourceName } from "../modMerging";
 import { installPath, installPathForGame } from "../selectors";
 import type { IMod } from "../types/IMod";
 import {
   fallbackPurgeType,
   getManifest,
   loadActivation,
-  saveActivation,
+  ownDeployedFiles,
+  savePurgeLeftovers,
   withActivationLock,
 } from "./activationStore";
+import BlacklistSet, { fileOverrideEntries, skipListEntries } from "./BlacklistSet";
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import { NoDeployment } from "./exceptions";
 import { dealWithExternalChanges } from "./externalChanges";
@@ -61,19 +71,50 @@ export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => st
   }
 }
 
-async function filterManifest(
-  activator: IDeploymentMethod,
-  deployPath: string,
-  stagingPath: string,
-  deployment: IDeployedFile[],
-): Promise<IDeployedFile[]> {
-  const results = await Promise.all(
-    deployment.map(async (item) => ({
-      item,
-      keep: await activator.isDeployed(stagingPath, deployPath, item),
-    })),
+export interface ISingleModActivation {
+  method: IDeploymentMethod;
+  game: IGame;
+  dataPath: string;
+  normalize: Normalize;
+  lastActivation: IDeployedFile[];
+  mod: IMod;
+  modPath: string;
+  subDir: string;
+  /** staging folders a full deployment activates after `mod` */
+  laterSources: Set<VortexModStagingFolder>;
+}
+
+/** The mods sorted after `mod`, then its type's merged output. */
+export function laterStagingFolders(sortedMods: IMod[], mod: IMod): Set<VortexModStagingFolder> {
+  const position = sortedMods.findIndex((entry) => entry.id === mod.id);
+  const laterMods = sortedMods
+    .slice(position + 1)
+    .filter((entry) => entry.installationPath !== undefined && entry.installationPath !== "");
+  return new Set([
+    ...laterMods.map((entry) => VortexModStagingFolder(entry.installationPath)),
+    VortexModStagingFolder(mergedSourceName(mod.type)),
+  ]);
+}
+
+/** Activates one mod over the last deployment of its type; files from later sources stay deployed. */
+export async function activateSingleMod(activation: ISingleModActivation): Promise<void> {
+  const { method, game, dataPath, normalize, lastActivation, mod, modPath, subDir, laterSources } =
+    activation;
+  const laterSourceNames: ReadonlySet<string> = laterSources;
+  // only files in the same output folder can collide with this mod's
+  const laterRelPaths = lastActivation
+    .filter((file) => (file.target ?? "") === subDir && laterSourceNames.has(file.source))
+    .map((file) => file.relPath);
+  const skip = new BlacklistSet(
+    [
+      ...fileOverrideEntries(mod, dataPath, normalize),
+      ...skipListEntries(mod.installationPath, laterRelPaths, normalize),
+    ],
+    game,
+    normalize,
   );
-  return results.filter((r) => r.keep).map((r) => r.item);
+  await method.prepare(dataPath, false, lastActivation, normalize);
+  await method.activate(modPath, mod.installationPath, subDir, skip);
 }
 
 export async function loadAllManifests(
@@ -239,7 +280,23 @@ async function purgeModsImpl(
 
       let lastDeployment: { [typeId: string]: IDeployedFile[] };
       let purgeSucceeded = true;
+      let purgeCanceled = false;
       api.store.dispatch(startActivity("mods", "purging"));
+      // keyed by mod type
+      const saveLeftovers = (deployments: Record<string, IDeployedFile[]>) =>
+        Promise.all(
+          modTypes.map((typeId) =>
+            savePurgeLeftovers(
+              gameId,
+              typeId,
+              api.getState().app.instanceId,
+              modPaths[typeId],
+              stagingPath,
+              deployments[typeId] ?? [],
+              activator.id,
+            ),
+          ),
+        );
 
       // TODO: we really should be using the deployment specified in the manifest,
       //   not the current one! This only works because we force a purge when switching
@@ -273,46 +330,23 @@ async function purgeModsImpl(
 
         onProgress(75, "Saving updated manifest");
 
-        await Promise.all(
-          modTypes.map((typeId) =>
-            saveActivation(
-              gameId,
-              typeId,
-              state.app.instanceId,
-              modPaths[typeId],
-              stagingPath,
-              [],
-              activator.id,
-            ),
-          ),
-        );
+        await saveLeftovers(lastDeployment);
       } catch (err: unknown) {
         if (lastDeployment !== undefined) {
-          await Promise.all(
-            modTypes.map((typeId) =>
-              filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId]).then(
-                (files) =>
-                  saveActivation(
-                    gameId,
-                    typeId,
-                    state.app.instanceId,
-                    modPaths[typeId],
-                    stagingPath,
-                    files,
-                    activator.id,
-                  ),
-              ),
-            ),
-          );
+          await saveLeftovers(lastDeployment);
         }
         if (!(err instanceof ProcessCanceled)) {
           purgeSucceeded = false;
           throw err;
         }
+        purgeCanceled = true;
       } finally {
         onProgress(85, "Post purge events");
         await activator.postPurge();
         if (purgeSucceeded) {
+          if (!purgeCanceled) {
+            api.store.dispatch(setDeploymentPurged(gameId, true));
+          }
           await api.emitAndAwait("did-purge", profile.id);
         }
       }
@@ -399,16 +433,17 @@ export function purgeModsInPath(
         let purgeSucceeded = true;
         try {
           await activator.prePurge(stagingPath);
+          const lastDeployment = await ownDeployedFiles(api, typeId, modPath, stagingPath);
           onProgress(25, "Removing links");
           await activator.purge(stagingPath, modPath, gameId);
           onProgress(50, "Saving updated manifest");
-          await saveActivation(
+          await savePurgeLeftovers(
             gameId,
             typeId,
             state.app.instanceId,
             modPath,
             stagingPath,
-            [],
+            lastDeployment,
             activator.id,
           );
         } catch (err: unknown) {

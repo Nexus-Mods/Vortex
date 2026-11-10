@@ -24,19 +24,31 @@ describe("Typography", () => {
       expect(get().tagName).toBe("H1");
     });
 
-    it("infers the type class from `as` when typographyType is omitted", () => {
+    it("keeps the body-md type class whatever `as` is", () => {
       render(<Typography as="h1">text</Typography>);
-      expect(get()).toHaveClass("text-heading-2xl");
+      expect(get()).toHaveClass("text-body-md");
+      expect(get()).not.toHaveClass("text-heading-2xl");
     });
 
-    it("uses an explicit typographyType over the inferred one", () => {
+    it("uses the typographyType given", () => {
       render(
-        <Typography as="h1" typographyType="body-sm">
+        <Typography as="h1" typographyType="heading-sm">
           text
         </Typography>,
       );
-      expect(get()).toHaveClass("text-body-sm");
-      expect(get()).not.toHaveClass("text-heading-2xl");
+      expect(get()).toHaveClass("text-heading-sm");
+      expect(get()).not.toHaveClass("text-body-md");
+    });
+
+    it("adds no type class with typographyType inherit, so it keeps its parent's", () => {
+      render(
+        <Typography as="div" typographyType="body-sm">
+          <Typography as="span" typographyType="inherit">
+            text
+          </Typography>
+        </Typography>,
+      );
+      expect(get().className).not.toMatch(/\btext-(body|heading|title)-/);
     });
   });
 

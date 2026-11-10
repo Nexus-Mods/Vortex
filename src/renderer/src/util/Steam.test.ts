@@ -33,6 +33,38 @@ const MANIFEST = `"AppState"
   "LastUpdated" "0"
 }`;
 
+/** Mini appmanifest with the depot values the telemetry needs: depot ids whose
+    file order differs from depot-id order, inline-brace entries like real Steam
+    files write them, plus branch/language and a shared (redistributable) depot. */
+const DEPOT_MANIFEST = `"AppState"
+{
+  "appid" "42"
+  "name" "Test Game"
+  "installdir" "TestGame"
+  "buildid" "12345"
+  "TargetBuildID" "12346"
+  "StateFlags" "4"
+  "InstalledDepots"
+  {
+    "7" { "manifest" "m7" "size" "1" }
+    "3" { "manifest" "m3" "size" "2" "dlcappid" "1" }
+  }
+  "SharedDepots"
+  {
+    "5" "4"
+  }
+  "UserConfig"
+  {
+    "language" "english"
+    "BetaKey" "beta-2"
+  }
+  "MountedConfig"
+  {
+    "language" "english"
+    "BetaKey" "beta-2"
+  }
+}`;
+
 /** simple-vdf rejects inline braces, so every block needs its own lines. */
 const vdf = (...lines: string[]): string => lines.join("\n");
 
@@ -90,7 +122,7 @@ vi.mock("./linux/proton", () => ({
  * appmanifest per known library, then wraps it in ChaosFS so tests can inject
  * parseError-classifiable faults.
  */
-const installTestFS = (): (() => void) => {
+const installTestFS = (manifest: string = MANIFEST): (() => void) => {
   const { fs, restore } = installInMemoryFS((builder) => {
     builder.file(QualifiedPath.fromNative(path.join(BASE_FOLDER, "config", "libraryfolders.vdf")), {
       type: "text",
@@ -102,7 +134,7 @@ const installTestFS = (): (() => void) => {
         QualifiedPath.fromNative(path.join(library, "steamapps", "appmanifest_42.acf")),
         {
           type: "text",
-          data: MANIFEST,
+          data: manifest,
         },
       );
     }
@@ -116,8 +148,8 @@ const installTestFS = (): (() => void) => {
  * Drive the manager-owned scan, then read the data through allGames -
  * allGames itself no longer triggers a parse.
  */
-const scanAllGames = async () => {
-  const restore = installTestFS();
+const scanAllGames = async (manifest: string = MANIFEST) => {
+  const restore = installTestFS(manifest);
   try {
     const store = new Steam();
     await store.reloadGames();
@@ -261,5 +293,36 @@ describe("Steam.allGames", () => {
       gamePathIn(BASE_FOLDER),
       gamePathIn(ALT_LIBRARY),
     ]);
+  });
+
+  it("keeps the InstalledDepots file order, which depot-id sort would lose", async () => {
+    const entries = await scanAllGames(DEPOT_MANIFEST);
+
+    expect(entries[0]?.installData).toEqual({
+      appId: 42,
+      buildId: 12345,
+      stateFlags: 4,
+      targetBuildId: 12346,
+      branch: "beta-2",
+      language: "english",
+      mountedLanguage: "english",
+      depots: [
+        { depotId: 7, manifestId: "m7", dlcAppId: null },
+        { depotId: 3, manifestId: "m3", dlcAppId: "1" },
+      ],
+      sharedDepots: [{ depotId: 5, ownerAppId: 4 }],
+    });
+  });
+
+  it("normalizes the default branch to null", async () => {
+    const entries = await scanAllGames(DEPOT_MANIFEST.replace("beta-2", "public"));
+
+    expect(entries[0]?.installData?.branch).toBeNull();
+  });
+
+  it("skips install data when the manifest lacks build or state fields", async () => {
+    const entries = await scanAllGames();
+
+    expect(entries[0]?.installData).toBeUndefined();
   });
 });

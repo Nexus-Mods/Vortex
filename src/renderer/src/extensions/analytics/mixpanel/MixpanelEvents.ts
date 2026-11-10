@@ -1,3 +1,4 @@
+import type { Tier } from "../../gamemode_management/tiered/types";
 import type { GameSource } from "../../gamemode_management/types/GameSource";
 import type { ExtensionInstallSource } from "./extensionInstallAnalytics";
 
@@ -51,6 +52,7 @@ export class AppLaunchedEvent implements MixpanelEvent {
     update_channel?: string,
     zoom_percent?: number,
     is_hidpi?: boolean,
+    mods_table_view?: "beta" | "classic",
   ) {
     this.properties = {
       $os: mapPlatformToMixpanel(os), // Override auto-detected OS for accuracy
@@ -65,6 +67,9 @@ export class AppLaunchedEvent implements MixpanelEvent {
       // Whether this session's display is above the app's HiDPI threshold — lets zoom
       // usage be cross-referenced against display density.
       is_hidpi,
+      // Which Mods table the session opens on: the classic one, or the new one in beta.
+      // Named as the toolbar toggle's clicks name the view they switch to.
+      mods_table_view,
     };
   }
 }
@@ -321,6 +326,9 @@ export interface GameManagedProps {
   // The Games page list the user picked the game from, null when the add started
   // elsewhere (command line, extension install flows).
   game_source: GameSource | null;
+  // From supportTier. Omitted only when the numeric Nexus id couldn't be resolved
+  // (game_id is null then).
+  support_tier?: Tier;
 }
 
 /**
@@ -337,11 +345,23 @@ export class AppGameManagedEvent implements MixpanelEvent {
   }
 }
 
-/** Sent when a game is unmanaged (its profiles and mods are removed). */
+/** Sent when a game is unmanaged (its profiles and mods are removed). `game_store` is as on
+ * app_game_manage. */
 export class AppGameUnmanagedEvent implements MixpanelEvent {
   readonly eventName = "app_game_unmanage";
   readonly properties: Record<string, unknown>;
-  constructor(props: { game_id: number | null }) {
+  constructor(props: { game_id: number | null; game_store: string | null; support_tier?: Tier }) {
+    this.properties = { ...props };
+  }
+}
+
+/** Sent when the active game switches to a game managed before, however the switch was started
+ * (Games page, spine, quick launcher). A game's first activation is app_game_manage's.
+ * `game_store` is as on app_game_manage. */
+export class AppGameActivatedEvent implements MixpanelEvent {
+  readonly eventName = "app_game_activate";
+  readonly properties: Record<string, unknown>;
+  constructor(props: { game_id: number | null; game_store: string | null; support_tier?: Tier }) {
     this.properties = { ...props };
   }
 }
@@ -358,6 +378,9 @@ export interface GameLaunchedProps {
   launch_method: GameLaunchMethod;
   enabled_mod_count: number;
   launch_session_id: string;
+  // Store id from discovery, as on app_game_manage; null when Vortex couldn't tell.
+  game_store: string | null;
+  support_tier?: Tier;
 }
 
 export class AppGameLaunchedEvent implements MixpanelEvent {
@@ -381,6 +404,9 @@ export interface GameExitedProps {
   duration_reliable: boolean;
   // Process exit code, when Vortex launched the process itself; null for store launches.
   exit_code: number | null;
+  // Captured at launch like the other paired fields.
+  game_store: string | null;
+  support_tier?: Tier;
 }
 
 /**
@@ -866,6 +892,7 @@ export interface ModsDeployedProps {
   manual: boolean;
   is_collection_postprocess: boolean;
   duration_ms: number;
+  support_tier?: Tier;
 }
 
 /**

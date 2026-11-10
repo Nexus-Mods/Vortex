@@ -1,4 +1,3 @@
-import { mdiChevronRight } from "@mdi/js";
 import React, { type KeyboardEvent, type ReactNode } from "react";
 
 import {
@@ -6,6 +5,7 @@ import {
   severityStyleMap,
 } from "@/extensions/health_check/utils/shared/severityStyles";
 import { Icon } from "@/ui/components/icon/Icon";
+import { getIconProps } from "@/ui/components/icon/utils/icon_props/iconProps.util";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
@@ -32,7 +32,7 @@ export const ListingRow = ({
 
   return (
     <div
-      className="group hover-overlay-weak flex w-full cursor-pointer items-start gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-subdued"
+      className="group hover-overlay-weak flex w-full cursor-pointer items-start gap-x-4 rounded-sm bg-surface-mid px-4 py-3 shadow-xs focus-ring"
       role="button"
       tabIndex={0}
       onClick={onOpen}
@@ -44,8 +44,8 @@ export const ListingRow = ({
       }}
     >
       <Icon
+        {...getIconProps(severityStyle.icon)}
         className={joinClasses(["shrink-0", severityStyle.textClassName])}
-        path={severityStyle.iconPath}
       />
 
       <div className="min-w-0 grow text-left">
@@ -70,7 +70,7 @@ export const ListingRow = ({
 
       {action}
 
-      <Icon className="shrink-0 text-translucent-moderate" path={mdiChevronRight} size="lg" />
+      <Icon className="shrink-0 text-translucent-moderate" name="chevron_right" size="lg" />
     </div>
   );
 };

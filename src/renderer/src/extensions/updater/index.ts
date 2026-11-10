@@ -1,13 +1,15 @@
 import type { UpdaterSnapshot, UpdaterState } from "@vortex/shared/ipc";
 
+import { setDialogVisible } from "../../actions";
 import type { IExtensionContext } from "../../types/IExtensionContext";
 import { toUpdateChannel } from "../../types/IState";
 import { getApplication } from "../../util/application";
-import { setUpdaterSnapshot } from "./actions";
+import { setUpdaterSnapshot, setWhatsNew } from "./actions";
 import settingsReducer, { sessionReducer } from "./reducers";
 import SettingsUpdate from "./SettingsUpdate";
 import { createUpdaterAnalytics, isTransition } from "./updaterAnalytics";
 import { initUpdaterStatus } from "./updaterStatus";
+import { WhatsNewDialog, WHATS_NEW_DIALOG_ID } from "./whats_new_dialog/WhatsNewDialog";
 
 // Notification surfaces. UPDATE is the single slot for "what the updater is
 // doing with a version" (available/downloading/staged); the others are
@@ -42,6 +44,13 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "update"], settingsReducer);
   context.registerReducer(["session", "updater"], sessionReducer);
   context.registerSettings("Vortex", SettingsUpdate);
+
+  // What the dialog's button does is set up with the updater, in `once` below, as it needs what
+  // is created there.
+  let confirmWhatsNew: (() => void) | undefined;
+  context.registerDialog(WHATS_NEW_DIALOG_ID, WhatsNewDialog, () => ({
+    onConfirm: () => confirmWhatsNew?.(),
+  }));
 
   context.once(() => {
     // main decides this (see isUpdaterActive): a managed install is updated by its launcher, and
@@ -90,40 +99,30 @@ function init(context: IExtensionContext): boolean {
 
     // ---- dialogs -----------------------------------------------------------
 
-    // What's New dialog with HTML release notes. Buttons act via their own
-    // callbacks rather than label matching, so a renamed or translated label
-    // can't silently break the action.
+    // What's New dialog with HTML release notes, as an update on offer: its button acts via a
+    // callback rather than label matching, so a renamed or translated label can't silently break
+    // the action.
     const showUpdateDialog = async (version: string, releaseNotes?: string) => {
       const {
         snapshot: { state },
       } = await window.api.updater.getStatus();
       const staged = state.type === "staged";
-      await context.api.showDialog(
-        "info",
-        `What's New in ${version}`,
-        {
-          htmlText: releaseNotes
-            ? `<div class="changelog-dialog-release">${releaseNotes}</div>`
-            : "<p>A new version of Vortex is available.</p>",
-        },
-        [
-          { label: "Close" },
-          {
-            // matches the notification's action button
-            label: staged ? "Restart Now" : "Download",
-            default: true,
-            action: () => {
-              if (staged) {
-                analytics.installStarted(state, "dialog");
-                act(() => window.api.updater.restartAndInstall());
-              } else {
-                act(() => window.api.updater.downloadUpdate(channelNow(), false));
-              }
-            },
-          },
-        ],
-        "new-update-changelog-dialog",
+      confirmWhatsNew = () => {
+        if (staged) {
+          analytics.installStarted(state, "dialog");
+          act(() => window.api.updater.restartAndInstall());
+        } else {
+          act(() => window.api.updater.downloadUpdate(channelNow(), false));
+        }
+      };
+      context.api.store.dispatch(
+        setWhatsNew({
+          version,
+          notes: releaseNotes || undefined,
+          action: staged ? "restart" : "download",
+        }),
       );
+      context.api.store.dispatch(setDialogVisible(WHATS_NEW_DIALOG_ID));
     };
 
     // One-time notice on the first launch after an update; "View changes"
@@ -132,17 +131,9 @@ function init(context: IExtensionContext): boolean {
     const showPostUpdateChanges = async () => {
       const version = getApplication().version;
       const notes = await window.api.updater.getUpdateChangelog(channelNow()).catch(() => null);
-      await context.api.showDialog(
-        "info",
-        `What's New in ${version}`,
-        {
-          htmlText: notes
-            ? `<div class="changelog-dialog-release">${notes}</div>`
-            : "<p>No release notes are available for this update.</p>",
-        },
-        [{ label: "Close" }],
-        "new-update-changelog-dialog",
-      );
+      confirmWhatsNew = undefined;
+      context.api.store.dispatch(setWhatsNew({ version, notes: notes || undefined }));
+      context.api.store.dispatch(setDialogVisible(WHATS_NEW_DIALOG_ID));
     };
 
     // A downgrade offer only ever follows a purposeful switch to the stable

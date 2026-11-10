@@ -1,27 +1,34 @@
-import { mdiGog, mdiMicrosoftXbox, mdiHelp, mdiSteam, mdiUbisoft } from "@mdi/js";
 import React, { type ButtonHTMLAttributes, type FC } from "react";
 
+import type { IIconSource } from "@/ui/components/icon/Icon";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
-import { nxmElectronicArts, nxmEpicGames } from "@/ui/icon-paths";
+import {
+  nxmElectronicArts,
+  nxmEpicGames,
+  nxmGog,
+  nxmSteam,
+  nxmUbisoft,
+  nxmXbox,
+} from "@/ui/icon-paths";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { useGameImage } from "./utils";
 
 // Fallback for stores without specific icons
-const _DEFAULT_STORE_ICON = mdiHelp;
+const _DEFAULT_STORE_ICON: IIconSource = "question_mark";
 
 // Map store IDs to icon paths
 // Since we can have custom game stores,
 // we should provide for the IGameStore interface to
 // optionally specify its own icon in the future
 const _STORE_ICONS: Record<string, string> = {
-  steam: mdiSteam,
+  steam: nxmSteam,
   epic: nxmEpicGames,
 
-  gog: mdiGog,
-  xbox: mdiMicrosoftXbox,
+  gog: nxmGog,
+  xbox: nxmXbox,
   origin: nxmElectronicArts,
-  uplay: mdiUbisoft,
+  uplay: nxmUbisoft,
 };
 
 /** Deterministic hue from a string, for the letter-avatar background. */
@@ -60,10 +67,12 @@ export const GameButton: FC<React.PropsWithChildren<GameButtonProps>> = ({
     <Tooltip content={title} placement="right">
       <button
         aria-label={title}
-        className={joinClasses("group relative size-12 shrink-0 overflow-hidden rounded-lg", {
-          "outline-2 outline-offset-2 outline-neutral-strong focus-visible:outline-info-subdued":
-            isActive,
-        })}
+        className={joinClasses(
+          "group focus-ring relative size-12 shrink-0 overflow-hidden rounded-lg",
+          {
+            "outline-2 outline-offset-2 outline-neutral-strong": isActive,
+          },
+        )}
         {...props}
       >
         {exhausted ? (

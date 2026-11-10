@@ -51,7 +51,7 @@ https://images.nexusmods.com/images/games/v2/{numericId}/thumbnail.jpg  // 1:1 s
 Neither is bundled by Vortex; both are fetched from Nexus at runtime.
 
 The `tile.jpg` URL is built by the shared helper `gameTileImageURL()`
-(`src/renderer/src/extensions/nexus_integration/util/gameTileImageURL.ts`), which returns `undefined`
+(`src/renderer/src/extensions/nexus_integration/util/gameImageURLs.ts`), which returns `undefined`
 when no numeric id resolves (e.g. non-Nexus games).
 
 ---
@@ -150,7 +150,7 @@ The tile overlays (name gradient, active-mod count, "Community" tag, hover menu,
 
 | Concern                         | File                                                                                                |
 | ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Tile URL helper (`tile.jpg`)    | `src/renderer/src/extensions/nexus_integration/util/gameTileImageURL.ts`                            |
+| Tile URL helper (`tile.jpg`)    | `src/renderer/src/extensions/nexus_integration/util/gameImageURLs.ts`                               |
 | Domain → numeric id             | `src/renderer/src/extensions/nexus_integration/util/convertGameId.ts`, `.../util.ts` (`nexusGames`) |
 | Games page grid tile            | `src/renderer/src/extensions/gamemode_management/views/GameThumbnail.tsx`                           |
 | Games page list row             | `src/renderer/src/extensions/gamemode_management/views/GameRow.tsx`                                 |

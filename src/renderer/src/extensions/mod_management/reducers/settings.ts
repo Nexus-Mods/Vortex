@@ -24,6 +24,7 @@ export const settingsReducer: IReducerSpec = {
     [actions.setConfirmPurge as any]: (state, payload) => setSafe(state, ["confirmPurge"], payload),
     [actions.setCleanupOnDeploy as any]: (state, payload) =>
       setSafe(state, ["cleanupOnDeploy"], payload),
+    [actions.setBetaModsTable as any]: (state, payload) => setSafe(state, ["betaTable"], payload),
   },
   defaults: {
     installPath: {},
@@ -34,6 +35,7 @@ export const settingsReducer: IReducerSpec = {
     showDropzone: true,
     confirmPurge: true,
     cleanupOnDeploy: false,
+    betaTable: false,
   },
   verifiers: {
     installPath: {
