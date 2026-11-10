@@ -679,6 +679,63 @@ describe("emitStoreGameVersions", () => {
     expect(exeCalls).toEqual({ skyrimse: 2, witcher3: 1, skyrimvr: 1 });
   });
 
+  describe("reports the gog game, not a DLC registered in its folder", () => {
+    const DLC_ID = "1207658930";
+
+    /** Emits with the DLC's entry listed before the game's, as Galaxy's key order can. */
+    const emitWithDlc = async (
+      harness: IApiHarness,
+      dlcEntry: object,
+      infoFiles: Record<string, string>,
+    ): Promise<unknown> => {
+      restoreFs();
+      restoreFs = installInMemoryFS((builder) => {
+        for (const [productId, rootGameId] of Object.entries(infoFiles)) {
+          builder.file(QualifiedPath.fromNative(path.join(GOG_PATH, `goggame-${productId}.info`)), {
+            type: "text",
+            data: `{"gameId": "${productId}", "rootGameId": "${rootGameId}", "buildId": "1"}`,
+          });
+        }
+      }).restore;
+      vi.mocked(getGameStoresSafe).mockReturnValue([
+        {
+          id: "steam",
+          snapshot: () => ({
+            entries: [steamEntry(INSTALL_DATA), SKYRIMVR_ENTRY],
+            isInstalled: true,
+          }),
+        },
+        { id: "gog", snapshot: () => ({ entries: [dlcEntry, GOG_ENTRY], isInstalled: true }) },
+      ] as never);
+
+      await emitStoreGameVersions(harness.api);
+      return telemetryEvent.mock.calls
+        .map((call) => call[2].payload)
+        .find((payload) => payload.game_id === "1720");
+    };
+
+    test("named by the registry, even when the DLC's .info is gone", async ({ makeApi }) => {
+      const harness = harnessWithVersionLookups(makeApi, {});
+      const dlcEntry = { ...GOG_ENTRY, appid: DLC_ID, name: "DLC", dependsOn: GOG_ID };
+
+      const witcher = await emitWithDlc(harness, dlcEntry, { [GOG_ID]: GOG_ID });
+
+      expect(witcher).toMatchObject({ failure_reason: null, gog: { product_id: GOG_ID } });
+    });
+
+    test("named by the DLC's .info where the registry doesn't say", async ({ makeApi }) => {
+      const harness = harnessWithVersionLookups(makeApi, {});
+      const dlcEntry = { ...GOG_ENTRY, appid: DLC_ID, name: "DLC" };
+
+      const witcher = await emitWithDlc(harness, dlcEntry, {
+        [GOG_ID]: GOG_ID,
+        [DLC_ID]: GOG_ID,
+      });
+
+      expect(witcher).toMatchObject({ failure_reason: null, gog: { product_id: GOG_ID } });
+    });
+  });
+
   test("re-sends a gog install after a game update", async ({ makeApi }) => {
     const exeCalls: Record<string, number> = {};
     const harness = harnessWithVersionLookups(makeApi, exeCalls);

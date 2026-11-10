@@ -5,11 +5,13 @@ import { v4 as uuid } from "uuid";
 
 import { setStoreGameVersionCache } from "@/extensions/analytics/actions/telemetry.action";
 import type { IStoreGameVersionCacheEntry } from "@/extensions/analytics/types/telemetry";
+import { log } from "@/logging";
 
 import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
-import { log } from "../../../util/log";
+import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
+import { gogGameProductId } from "../../../util/GOGLauncher";
 import type { ISteamEntry } from "../../../util/Steam";
 import { normalizeStoreQuery } from "../../../util/storeQuery";
 import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
@@ -36,6 +38,28 @@ export function gogInstallFromInfo(raw: string, productId: string): GogInstall |
     /"language"\s*:\s*"([^"]+)"/.exec(raw)?.[1];
 
   return { product_id: productId, build_id: buildId, install_language: language ?? "" };
+}
+
+/** The game a goggame-<productId>.info belongs to: itself for a game, the game for a DLC. */
+function gogRootGameId(raw: string): string | undefined {
+  return /"rootGameId"\s*:\s*"?(\d+)"?/.exec(raw)?.[1];
+}
+
+/** The raw goggame-<productId>.info in the game folder; undefined when unreadable. */
+async function readGogInfo(gamePath: string, productId: string): Promise<string | undefined> {
+  try {
+    const blob = await window.api.fs.readFile(
+      QualifiedPath.fromNative(gamePath).join(`goggame-${productId}.info`),
+    );
+    return new TextDecoder().decode(blob);
+  } catch (err) {
+    // a missing file just means Galaxy never wrote metadata for this install
+    log("debug", "store-game-version: gog info file unreadable", {
+      gamePath,
+      error: getErrorMessageOrDefault(err),
+    });
+    return undefined;
+  }
 }
 
 /** The store's install block without the fields that change while the install stays the same. */
@@ -126,6 +150,35 @@ function gameSteamAppIds(game: IGame | undefined): Set<string> {
   return ids;
 }
 
+const inFolder = (entry: IGameStoreEntry, folder: string): boolean =>
+  entry.gamePath !== undefined && normPath(entry.gamePath) === normPath(folder);
+
+/** The GOG install in the game's folder. Each DLC has its own entry there too, so the
+    game's install is reported: named by the registry and, where the registry doesn't
+    say, by the DLC's .info. */
+async function scanGogInstall(
+  discovery: IDiscoveryResult,
+  entries: IGameStoreEntry[],
+): Promise<InstallRecord> {
+  const entry = entries.find((iter) => inFolder(iter, discovery.path));
+  if (entry === undefined) {
+    return { storeId: "gog", install: null, failureReason: "store-entry-not-found" };
+  }
+
+  let productId = gogGameProductId(entry);
+  let raw = await readGogInfo(discovery.path, productId);
+  const rootGameId = raw === undefined ? undefined : gogRootGameId(raw);
+  if (rootGameId !== undefined && rootGameId !== productId) {
+    productId = rootGameId;
+    raw = await readGogInfo(discovery.path, productId);
+  }
+  const info = raw === undefined ? null : gogInstallFromInfo(raw, productId);
+  if (info === null) {
+    return { storeId: "gog", install: null, failureReason: "info-parse-failed" };
+  }
+  return { storeId: "gog", install: info, failureReason: null };
+}
+
 /** Collect the store install identity for one game, from data that is cheap to
     read per deploy: store snapshots, manifest install data, GOG .info files. */
 export async function scanInstall(
@@ -133,15 +186,16 @@ export async function scanInstall(
   discovery: IDiscoveryResult,
 ): Promise<InstallRecord> {
   const storeId = discovery.store as StoreId;
-  const game = getGame(internalGameId);
   const entries =
     getGameStoresSafe()
       .find((store) => store.id === storeId)
       ?.snapshot().entries ?? [];
-  const ownIds = storeId === "steam" ? gameSteamAppIds(game) : new Set<string>();
-  const atPath = entries.filter(
-    (iter) => iter.gamePath !== undefined && normPath(iter.gamePath) === normPath(discovery.path),
-  );
+  if (storeId === "gog") {
+    return scanGogInstall(discovery, entries);
+  }
+
+  const ownIds = gameSteamAppIds(getGame(internalGameId));
+  const atPath = entries.filter((iter) => inFolder(iter, discovery.path));
   // tools like the Creation Kit install into the game's own folder, so the path alone
   // can match several manifests: the game's own app id decides between them
   const entry =
@@ -155,34 +209,6 @@ export async function scanInstall(
       storeId,
       install: null,
       failureReason: "store-entry-not-found",
-    };
-  }
-
-  if (storeId === "gog") {
-    let info: GogInstall | null = null;
-    try {
-      const blob = await window.api.fs.readFile(
-        QualifiedPath.fromNative(entry.gamePath).join(`goggame-${entry.appid}.info`),
-      );
-      info = gogInstallFromInfo(new TextDecoder().decode(blob), entry.appid);
-    } catch (err) {
-      // a missing file just means Galaxy never wrote metadata for this install
-      log("debug", "store-game-version: gog info file unreadable", {
-        gamePath: entry.gamePath,
-        error: getErrorMessageOrDefault(err),
-      });
-    }
-    if (info === null) {
-      return {
-        storeId,
-        install: null,
-        failureReason: "info-parse-failed",
-      };
-    }
-    return {
-      storeId,
-      install: info,
-      failureReason: null,
     };
   }
 
