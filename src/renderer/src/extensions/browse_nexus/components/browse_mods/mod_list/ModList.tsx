@@ -1,5 +1,6 @@
 import React, {
   type KeyboardEvent,
+  type ReactNode,
   type RefObject,
   useCallback,
   useLayoutEffect,
@@ -42,6 +43,10 @@ interface IModListProps {
   onRetry: () => void;
   /** Moves focus into the details pane, for Right from a card. */
   onFocusDetails: () => void;
+  /** Shown in place of the mods when there are none. */
+  emptyState: ReactNode;
+  /** Shown after the last card once the last page has loaded. */
+  endOfResults: ReactNode;
   /** The list itself, for the details pane's Left to move focus back to. */
   listRef?: RefObject<HTMLDivElement>;
 }
@@ -67,7 +72,8 @@ const FROM_CARD: Partial<Record<string, (at: number, last: number) => number>> =
  * near it. A later page that fails offers to try again where it would go. One Tab stop, the open
  * mod or else the first; Up, Down, Home and End pick a mod, and Right moves focus into the
  * details. A mod picked from the keyboard is focused once it renders, which it does as the open
- * one wherever it is. Another search scrolls back to the top.
+ * one wherever it is. Another search scrolls back to the top. With no mods it shows the empty
+ * state, and once the last page has loaded, the end of results after it.
  */
 export const ModList = ({
   mods,
@@ -83,8 +89,12 @@ export const ModList = ({
   isLoadMoreError,
   onLoadMore,
   onRetry,
+  emptyState,
+  endOfResults,
 }: IModListProps) => {
   const { t } = useTranslation();
+  const isLastPageLoaded =
+    !!mods.length && !hasMore && !isLoading && !isLoadingMore && !isLoadMoreError;
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusTargetRef = useRef<number>();
   const activeIndex = mods.findIndex((mod) => mod.id === activeModId);
@@ -198,7 +208,7 @@ export const ModList = ({
           isLoadingMore={isLoadingMore}
           isLoadMoreError={isLoadMoreError}
           loadMoreErrorMessage={t("More mods couldn't be loaded. Try again.")}
-          noResultsTitle={t("No mods found")}
+          customNoResults={emptyState}
           scrollRef={scrollRef}
           skeletonCount={6}
           SkeletonTile={ModCardSkeleton}
@@ -231,6 +241,8 @@ export const ModList = ({
             ))}
           </div>
         </Listing>
+
+        {isLastPageLoaded && endOfResults}
       </PageScroll>
     </div>
   );

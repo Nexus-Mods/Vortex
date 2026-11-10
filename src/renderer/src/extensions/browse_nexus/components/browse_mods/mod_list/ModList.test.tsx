@@ -50,6 +50,8 @@ const defaults = (): IModListProps => ({
   onLoadMore: vi.fn(),
   onRetry: vi.fn(),
   onSelectMod: vi.fn(),
+  emptyState: <div data-testid="empty-state" />,
+  endOfResults: <div data-testid="end-of-results" />,
 });
 
 const renderComponent = (props: Partial<IModListProps> = {}) => {
@@ -278,5 +280,42 @@ describe("ModList", () => {
     await userEvent.click(screen.getByRole("button", { name: /Mod 2/ }));
 
     expect(onSelectMod).toHaveBeenCalledWith("2", "pointer");
+  });
+
+  describe("empty states", () => {
+    it("shows the empty state when there are no mods", () => {
+      renderComponent({ mods: [] });
+      expect(screen.getByTestId("empty-state")).toBeInTheDocument();
+    });
+
+    it("ends the last page with the end of results", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: false });
+      expect(screen.getByTestId("end-of-results")).toBeInTheDocument();
+    });
+
+    it("holds the end of results while more load", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoadingMore: true });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
+
+    it("holds the end of results after loading more failed", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoadMoreError: true });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
+
+    it("holds the end of results while the first page loads again", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoading: true });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
+
+    it("holds the end of results while there are more pages", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: true });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
+
+    it("shows no end of results with no mods", () => {
+      renderComponent({ mods: [] });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
   });
 });

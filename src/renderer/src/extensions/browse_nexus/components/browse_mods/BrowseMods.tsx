@@ -1,6 +1,8 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
+import { currentGame } from "@/extensions/gamemode_management/selectors";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { NoResults } from "@/ui/components/no_results/NoResults";
@@ -15,15 +17,23 @@ import {
 } from "../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useBrowseModsViews } from "../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
+import {
+  clearActiveFilters,
+  useChangeModFilters,
+} from "../../hooks/use_change_mod_filters/useChangeModFilters.hook";
+import { useGameDomainName } from "../../hooks/use_game_domain_name/useGameDomainName.hook";
 import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { useSettledPick } from "../../hooks/use_settled_pick/useSettledPick.hook";
+import { emptyStateKind, type IEmptyStateInput } from "../../util/empty_state_kind/emptyStateKind";
 import { filterEventProps } from "../../util/mod_filters/modFilterList";
+import { websiteModSearchUrl } from "../../util/website_mod_search_url/websiteModSearchUrl";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
 import { ModDetails } from "./mod_details/ModDetails";
 import { ModDetailsSkeleton } from "./mod_details/ModDetails.skeleton";
 import { ModList } from "./mod_list/ModList";
+import { LEARN_MORE_URL, ModListEmptyState } from "./mod_list_empty_state/ModListEmptyState";
 
 interface IBrowseModsProps {
   api: IExtensionApi;
@@ -77,6 +87,47 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   );
   const { viewPicker, editedViewStrip } = useBrowseModsViews(search, panelRefs);
   const { trackedView, sort, filters, error } = search;
+  const changeFilters = useChangeModFilters(search);
+  const gameName = useSelector(currentGame)?.name;
+  const domain = useGameDomainName();
+
+  /**
+   * The list's empty state, or its end of results, with its actions counted. Removing the filters
+   * keeps focus in the list, as the button goes while the mods load. There's no search text yet;
+   * it's passed here once Browse has a search box.
+   */
+  const emptyState = ({ isEnd }: Pick<IEmptyStateInput, "isEnd">) => {
+    const state = emptyStateKind({ isEnd, filterCount: search.activeFilterCount });
+
+    return (
+      <ModListEmptyState
+        filterCount={search.activeFilterCount}
+        gameName={gameName}
+        kind={state}
+        onLearnMore={() => {
+          tracker.trackEmptyStateLearnMoreOpened({ view: trackedView, state });
+          window.api.shell.openUrl(LEARN_MORE_URL);
+        }}
+        onRemoveFilters={() => {
+          tracker.trackEmptyStateFiltersRemoved({
+            view: trackedView,
+            state,
+            filter_count: search.activeFilterCount,
+          });
+          changeFilters(clearActiveFilters(search), "empty_state");
+          listRef.current?.querySelector<HTMLElement>('[role="region"]')?.focus();
+        }}
+        onSearchWebsite={
+          domain
+            ? () => {
+                tracker.trackEmptyStateWebsiteSearchOpened({ view: trackedView, state });
+                window.api.shell.openUrl(websiteModSearchUrl(domain, { sort, filters }));
+              }
+            : undefined
+        }
+      />
+    );
+  };
   const isEmpty = !search.loading && !error && !mods.length;
 
   /**
@@ -186,6 +237,8 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
           start={
             <ModList
               activeModId={activeMod?.id}
+              emptyState={emptyState({ isEnd: false })}
+              endOfResults={emptyState({ isEnd: true })}
               hasMore={search.hasMore}
               isError={!!error}
               isLoading={search.loading}
