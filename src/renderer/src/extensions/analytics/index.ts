@@ -8,6 +8,7 @@ import { getCPUArch } from "@/util/nativeArch";
 
 import { isHidpiDisplay } from "../../contexts/WindowContext";
 import { activeGameId, activeProfileId } from "../../util/selectors";
+import { isLoggedIn } from "../nexus_integration/selectors";
 import { nexusGamesProm } from "../nexus_integration/util";
 import { zoomFromState } from "../settings_interface/utils/zoom";
 import { setAnalytics } from "./actions/analytics.action";
@@ -239,6 +240,12 @@ function init(context: IExtensionContext): boolean {
           },
         ],
       });
+    }
+
+    if (!isLoggedIn(context.api.getState())) {
+      // Launched logged out: there's no login to restore, so close the startup
+      // queue rather than hold events for whoever logs in next.
+      AnalyticsMixpanel.stop();
     }
 
     if (enabled() === undefined && !!getUserInfo()) {

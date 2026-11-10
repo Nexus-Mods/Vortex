@@ -8,6 +8,7 @@ import { EventEmitter } from "node:events";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import type * as TrackerModule from "./mixpanel/MixpanelAnalytics";
 
 const mp = vi.hoisted(() => ({
   init: vi.fn(),
@@ -31,15 +32,34 @@ vi.mock("../../util/selectors", () => ({
 vi.mock("../nexus_integration/util", () => ({ nexusGamesProm: () => Promise.resolve() }));
 vi.mock("./utils/storeGameVersionEvent", () => ({ emitStoreGameVersions: vi.fn() }));
 
+// The real tracker is a singleton whose startup queue closes for good, so the default export
+// forwards to a fresh real instance per test.
+const tracker = vi.hoisted(() => ({ current: undefined as object | undefined }));
+vi.mock("./mixpanel/MixpanelAnalytics", async (importOriginal) => {
+  const actual = await importOriginal<typeof TrackerModule>();
+  const forward = new Proxy(
+    {},
+    {
+      get: (_target, prop) => {
+        const value = Reflect.get(tracker.current, prop);
+        return typeof value === "function" ? value.bind(tracker.current) : value;
+      },
+    },
+  );
+  return { ...actual, default: forward };
+});
+
 import init from "./index";
-import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
+import AnalyticsMixpanel, { MixpanelAnalytics } from "./mixpanel/MixpanelAnalytics";
 
 interface FakeDialogAction {
   label: string;
   action: () => void;
 }
 
-function makeContext(enabled: boolean | undefined) {
+const savedUser = { userId: 42, isPremium: false, isSupporter: false };
+
+function makeContext(enabled: boolean | undefined, { loggedIn = true, restored = true } = {}) {
   const onceCallbacks: Array<() => void> = [];
   const state = {
     settings: {
@@ -47,7 +67,10 @@ function makeContext(enabled: boolean | undefined) {
       update: { channel: "stable" },
       window: { useModernLayout: true },
     },
-    persistent: { nexus: { userInfo: { userId: 42, isPremium: false, isSupporter: false } } },
+    confidential: {
+      account: loggedIn ? { nexus: { OAuthCredentials: { token: "token" } } } : {},
+    },
+    persistent: { nexus: { userInfo: restored ? savedUser : undefined } },
   };
   // mirror the settings reducer for the one action the consent dialog dispatches
   const dispatch = vi.fn((action: { type: string; payload: unknown }) => {
@@ -93,8 +116,8 @@ const sent = () => mp.track.mock.calls.map(([name]) => name);
 
 describe("analytics extension consent wiring", () => {
   beforeEach(() => {
-    AnalyticsMixpanel.stop();
     vi.clearAllMocks();
+    tracker.current = new MixpanelAnalytics();
   });
 
   it("sends app_launched when the user clicks Yes in the consent dialog", () => {
@@ -116,5 +139,27 @@ describe("analytics extension consent wiring", () => {
     AnalyticsMixpanel.trackEvent(event);
 
     expect(sent()).toEqual(["probe"]);
+  });
+
+  it("holds consented events while a saved login restores", () => {
+    const harness = makeContext(true, { restored: false });
+    init(harness.context);
+    harness.runOnce();
+    AnalyticsMixpanel.trackEvent(event);
+
+    AnalyticsMixpanel.start({ userId: 42 } as never, false);
+
+    expect(sent()).toEqual(["probe"]);
+  });
+
+  it("drops events from a launch that starts logged out, even once someone logs in", () => {
+    const harness = makeContext(true, { loggedIn: false, restored: false });
+    init(harness.context);
+    harness.runOnce();
+    AnalyticsMixpanel.trackEvent(event);
+
+    AnalyticsMixpanel.start({ userId: 43 } as never, false);
+
+    expect(mp.track).not.toHaveBeenCalled();
   });
 });
