@@ -48,4 +48,41 @@ describe("createBrowseModsTracker", () => {
 
     expect(emit.mock.calls[0][1].properties).toEqual({});
   });
+
+  it("counts an empty state's Remove filters, by its state and how many it cleared", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackEmptyStateFiltersRemoved({
+      view: "trending",
+      state: "filters_only",
+      filter_count: 2,
+    });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_empty_state_filters_removed",
+      properties: { view: "trending", state: "filters_only", filter_count: 2 },
+    });
+  });
+
+  it("counts an empty state's Search on website, by its state", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackEmptyStateWebsiteSearchOpened({ view: "popular", state: "end_of_results" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_empty_state_website_search_opened",
+      properties: { view: "popular", state: "end_of_results" },
+    });
+  });
+
+  it("counts an empty state's Learn more, by its state", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackEmptyStateLearnMoreOpened({ view: "custom", state: "nothing_for_game" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_empty_state_learn_more_opened",
+      properties: { view: "custom", state: "nothing_for_game" },
+    });
+  });
 });

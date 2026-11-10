@@ -20,6 +20,17 @@ export type FilterSource =
   | "applied_filter_clear"
   | "empty_state";
 
+/**
+ * Which of the mod list's empty states an action came from: the end of the last page, or an empty
+ * list with a search, a search and filters, filters, or neither.
+ */
+export type EmptyStateKind =
+  | "end_of_results"
+  | "search_only"
+  | "search_and_filters"
+  | "filters_only"
+  | "nothing_for_game";
+
 /** How a mod or picture was picked: clicked, or moved to with the keys. */
 export type SelectionInput = "pointer" | "keyboard";
 
@@ -191,6 +202,19 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
 
     // Once per search that comes back empty.
     trackNoResults: (props: ISearchEventProps) => track("browse_mods_no_results", props),
+
+    // `filter_count` is how many filters Remove filters cleared; each also sends its own change.
+    trackEmptyStateFiltersRemoved: (props: {
+      view: TrackedView;
+      state: EmptyStateKind;
+      filter_count: number;
+    }) => track("browse_mods_empty_state_filters_removed", props),
+
+    trackEmptyStateWebsiteSearchOpened: (props: { view: TrackedView; state: EmptyStateKind }) =>
+      track("browse_mods_empty_state_website_search_opened", props),
+
+    trackEmptyStateLearnMoreOpened: (props: { view: TrackedView; state: EmptyStateKind }) =>
+      track("browse_mods_empty_state_learn_more_opened", props),
 
     // `pages_loaded` is how many pages were loaded when Try again was clicked, 0 when none were.
     trackRetryClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
