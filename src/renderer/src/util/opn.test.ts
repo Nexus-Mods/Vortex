@@ -59,7 +59,7 @@ describe("util.opn in the extension api", () => {
       bundled: false,
     });
     expect(mocks.log).toHaveBeenCalledWith("warn", '"util.opn" is deprecated', {
-      replacement: "api.openUrl or api.openFile",
+      replacement: "api.openUrl or api.openFile (Vortex 2.12 and later)",
       api_method: "util.opn",
       extension_name: "ext-a",
       extension_version: undefined,

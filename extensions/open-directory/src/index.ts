@@ -196,14 +196,17 @@ function getGameInstallPath(state: any, gameId: string): Promise<string> {
   });
 }
 
-function openPath(api: types.IExtensionApi, mainPath: string, fallbackPath?: string) {
-  fs.statAsync(mainPath)
-    .then(() => api.openFile(mainPath))
-    .catch(() => {
-      if (fallbackPath !== undefined) {
-        api.openFile(fallbackPath);
-      }
-    });
+async function openPath(api: types.IExtensionApi, mainPath: string, fallbackPath?: string) {
+  try {
+    await fs.statAsync(mainPath);
+  } catch {
+    if (fallbackPath !== undefined) {
+      api.openFile(fallbackPath);
+    }
+    return;
+  }
+
+  api.openFile(mainPath);
 }
 
 export default init;
