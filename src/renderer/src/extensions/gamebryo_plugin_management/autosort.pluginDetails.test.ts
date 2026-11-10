@@ -101,7 +101,8 @@ describe("LootInterface plugin-details", () => {
 
     const result = await harness.requestDetails(["one.esp", "two.esp", "three.esp"]);
 
-    expect(harness.loot.loadPlugins).toHaveBeenCalledWith(["one.esp"], false);
+    // the on-disk spelling, which a case-sensitive data folder needs to find the file
+    expect(harness.loot.loadPlugins).toHaveBeenCalledWith([makePlugin().filePath], false);
     expect(
       harness.notifications.filter(
         (notification) => notification.id === "loot-skipped-invalid-plugins",
