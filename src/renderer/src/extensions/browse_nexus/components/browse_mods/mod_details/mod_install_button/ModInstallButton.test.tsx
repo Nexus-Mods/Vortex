@@ -349,6 +349,27 @@ describe("ModInstallButton", () => {
       expect(button()).toHaveTextContent("1-click update");
     });
 
+    it("upsells a free user 1-click for an update without needing its main file", async () => {
+      installed("update");
+      mocks.isPremium = false;
+      renderButton(null);
+
+      expect(button()).not.toHaveAttribute("aria-disabled", "true");
+      await userEvent.click(button());
+
+      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
+    });
+
+    it("upsells a free user 1-click for an update while its details load", async () => {
+      installed("update");
+      mocks.isPremium = false;
+      renderButton(undefined);
+
+      await userEvent.click(button());
+
+      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
+    });
+
     it("upsells a free user an update in words of updating", async () => {
       installed("update");
       mocks.isPremium = false;
