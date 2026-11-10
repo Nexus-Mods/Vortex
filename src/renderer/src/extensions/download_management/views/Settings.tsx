@@ -395,7 +395,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private openPath = (evt: React.MouseEvent<HTMLAnchorElement>) => {
     const target = evt.currentTarget.getAttribute("data-path");
-    window.api.shell.openFile(target);
+    if (target) {
+      window.api.shell.openFile(target);
+    }
   };
 
   private goBuyPremium = () => {
