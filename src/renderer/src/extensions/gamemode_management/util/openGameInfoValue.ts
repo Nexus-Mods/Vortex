@@ -6,6 +6,16 @@ import { isUrlTarget } from "@/util/is_url_target/isUrlTarget";
 const warnedEntries = new Set<string>();
 
 export function openGameInfoValue(entry: IGameInfoEntry): void {
+  // Same check util.opn used. Main drops an empty path but not "undefined" or "null",
+  // which it would open relative to its working directory.
+  if (!entry.value) {
+    log("warn", "Game info entry has no value to open", {
+      key: entry.key,
+      provider: entry.provider,
+    });
+    return;
+  }
+
   const value = String(entry.value);
 
   if (entry.type === "path") {

@@ -10,7 +10,7 @@ vi.mock("@/logging", () => ({ log: vi.fn() }));
 const openUrl = vi.fn();
 const openFile = vi.fn();
 
-const entry = (value: string, type: string, key = "row"): IGameInfoEntry => ({
+const entry = (value: unknown, type: string, key = "row"): IGameInfoEntry => ({
   key,
   provider: "some-extension",
   priority: 0,
@@ -62,6 +62,24 @@ describe("openGameInfoValue", () => {
       );
     },
   );
+
+  it.each([
+    ["path", undefined],
+    ["path", null],
+    ["path", ""],
+    ["url", undefined],
+    ["url", null],
+    ["url", ""],
+  ])("opens nothing for a %s entry with the value %j, and warns", (type, value) => {
+    openGameInfoValue(entry(value, type));
+
+    expect(openFile).not.toHaveBeenCalled();
+    expect(openUrl).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith("warn", "Game info entry has no value to open", {
+      key: "row",
+      provider: "some-extension",
+    });
+  });
 
   it("warns once per provider and key however often the entry is opened", () => {
     openGameInfoValue(entry("D:\\Games\\Fallout", "url", "repeated"));
