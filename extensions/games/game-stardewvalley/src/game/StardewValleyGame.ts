@@ -29,7 +29,7 @@ type Setup = NonNullable<types.IGame["setup"]>;
  */
 export default class StardewValleyGame implements types.IGame {
   public context: types.IExtensionContext;
-  public id: VortexGameId = VortexGameId(GAME_ID);
+  public id: VortexGameId = GAME_ID;
   public name: string = "Stardew Valley";
   public logo: string = "assets/gameart.jpg";
   public requiredFiles: string[];

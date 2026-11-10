@@ -1,6 +1,6 @@
 import path from "path";
 
-import { log, util } from "@nexusmods/vortex-api";
+import { log, util, VortexGameId } from "@nexusmods/vortex-api";
 export class ResourceInaccessibleError extends Error {
   private mIsReportingAllowed;
   private mFilePath;
@@ -80,7 +80,7 @@ export function getSuppressModLimitBranch() {
   return ["settings", "witcher3", "suppressModLimitPatch"];
 }
 
-export const GAME_ID = "witcher3";
+export const GAME_ID = VortexGameId("witcher3");
 
 // File used by some mods to define hotkey/input mapping
 export const INPUT_XML_FILENAME = "input.xml";

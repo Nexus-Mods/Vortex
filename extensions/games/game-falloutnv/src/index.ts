@@ -18,7 +18,7 @@ const localeFoldersXbox = {
   es: "Fallout New Vegas Spanish",
 };
 
-const GAME_ID = "falloutnv";
+const GAME_ID = VortexGameId("falloutnv");
 const NEXUS_DOMAIN_NAME = "newvegas";
 const STEAMAPP_ID = "22380";
 const STEAMAPP_ID2 = "22490";
@@ -269,7 +269,7 @@ function main(context: types.IExtensionContext): boolean {
   context.requireExtension("Fallout New Vegas Sanity Checks", undefined, true);
 
   context.registerGame({
-    id: VortexGameId(GAME_ID),
+    id: GAME_ID,
     name: "Fallout:\tNew Vegas",
     setup: (discovery) => prepareForModding(context.api, discovery) as any,
     shortName: "New Vegas",

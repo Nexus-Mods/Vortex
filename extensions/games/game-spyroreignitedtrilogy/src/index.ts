@@ -1,6 +1,6 @@
 import path from "path";
 
-import { fs, log, selectors, types, util, VortexGameId } from "@nexusmods/vortex-api";
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID, MOD_FILE_EXT, modsRelPath } from "./common";
 import { deserialize, serialize, validate } from "./loadOrder";
@@ -152,7 +152,7 @@ function toLOPrefix(context: types.IExtensionContext, mod: types.IMod): string {
 
 function main(context: types.IExtensionContext) {
   context.registerGame({
-    id: VortexGameId(GAME_ID),
+    id: GAME_ID,
     name: "Spyro Reignited Trilogy",
     mergeMods: (mod) => toLOPrefix(context, mod),
     queryPath: toBlue(findGame),

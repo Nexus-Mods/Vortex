@@ -1,6 +1,6 @@
 import path from "path";
 
-import { fs, log, selectors, types, util, VortexGameId } from "@nexusmods/vortex-api";
+import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 
 import { GAME_ID, MOD_FILE_EXT, modsRelPath } from "./common";
@@ -171,7 +171,7 @@ function getGameVersion(gamePath: string) {
 
 function main(context: types.IExtensionContext) {
   context.registerGame({
-    id: VortexGameId(GAME_ID),
+    id: GAME_ID,
     name: "Code Vein",
     mergeMods: (mod) => toLOPrefix(context, mod),
     queryPath: toBlue(findGame),

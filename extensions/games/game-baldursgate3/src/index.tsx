@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { fs, selectors, types, util, VortexGameId } from "@nexusmods/vortex-api";
+import { fs, selectors, types, util } from "@nexusmods/vortex-api";
 /* eslint-disable */
 /**
  * Important - although we no longer define the info panel here,
@@ -266,7 +266,7 @@ function main(context: types.IExtensionContext) {
   context.registerReducer(["settings", "baldursgate3"], reducer);
 
   context.registerGame({
-    id: VortexGameId(GAME_ID),
+    id: GAME_ID,
     name: "Baldur's Gate 3",
     mergeMods: true,
     queryPath: findGame,

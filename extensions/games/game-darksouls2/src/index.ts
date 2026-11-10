@@ -52,7 +52,7 @@ class DarkSouls2 implements types.IGame {
 
   constructor(context: types.IExtensionContext) {
     this.context = context;
-    this.id = VortexGameId(DARKSOULS2_GAME_ID);
+    this.id = DARKSOULS2_GAME_ID;
     this.name = "Dark Souls II";
     this.mergeMods = true;
     this.logo = "gameart.jpg";

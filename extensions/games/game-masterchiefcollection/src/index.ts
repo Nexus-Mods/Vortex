@@ -43,7 +43,7 @@ class MasterChiefCollectionGame implements types.IGame {
 
   constructor(context) {
     this.context = context;
-    this.id = VortexGameId(GAME_ID);
+    this.id = GAME_ID;
     this.name = "Halo: The Master Chief Collection";
     this.shortName = "Halo: MCC";
     this.logo = "gameart.jpg";

@@ -1,6 +1,6 @@
 import path from "path";
 
-import { actions, fs, selectors, types, util, VortexGameId } from "@nexusmods/vortex-api";
+import { actions, fs, selectors, types, util } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { useSelector } from "react-redux";
 
@@ -276,7 +276,7 @@ function main(context: types.IExtensionContext) {
   context.registerReducer(["settings", "7daystodie"], reducer);
 
   context.registerGame({
-    id: VortexGameId(GAME_ID),
+    id: GAME_ID,
     name: "7 Days to Die",
     mergeMods: (mod) => toLOPrefix(context, mod),
     queryPath: toBlue(findGame),

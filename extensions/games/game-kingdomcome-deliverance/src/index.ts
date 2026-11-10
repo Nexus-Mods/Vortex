@@ -10,7 +10,6 @@ import {
   MainPage,
   selectors,
   util,
-  VortexGameId,
 } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 import * as React from "react";
@@ -406,7 +405,7 @@ function writeOrderFile(filePath, modList) {
 
 function main(context: types.IExtensionContext) {
   context.registerGame({
-    id: VortexGameId(GAME_ID),
+    id: GAME_ID,
     name: "Kingdom Come:\tDeliverance",
     mergeMods: (mod) => transformId(mod.id),
     queryPath: findGame,
