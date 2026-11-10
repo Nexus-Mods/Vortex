@@ -46,4 +46,8 @@ describe("detectedInternalId", () => {
   it("falls back to the first registered game when none is installed", () => {
     expect(detectedInternalId(known, {}, GameDomain("neverwinter"))).toBe("nwn");
   });
+
+  it("is undefined when no known game matches the domain", () => {
+    expect(detectedInternalId(known, {}, GameDomain("emberville"))).toBeUndefined();
+  });
 });

@@ -84,7 +84,7 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
     return VortexGameId(validGames[0].id);
   }
 
-  // no known game matches: for a game managed without an extension the domain is the id
+  // no known game matches: assume an extension game that isn't registered (yet) uses the domain as its id
   return VortexGameId(
     {
       skyrimspecialedition: "skyrimse",
@@ -92,14 +92,6 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
       elderscrollsonline: "teso",
     }[input.toLowerCase()] || input.toLowerCase(),
   );
-}
-
-/**
- * the id Vortex gives a game it manages without an extension (a Tier 0 game): its nexus domain.
- * Only for games known to have no extension, for any other use {@link convertGameIdReverse}
- */
-export function extensionlessGameId(domain: GameDomain): VortexGameId {
-  return VortexGameId(domain);
 }
 
 /**

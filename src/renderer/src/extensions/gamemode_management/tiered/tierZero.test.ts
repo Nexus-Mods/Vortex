@@ -4,7 +4,7 @@ import { assert, describe, it, expect, afterEach } from "vitest";
 import type { IGame } from "@/types/IGame";
 import type { IGameStore } from "@/types/IGameStore";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
-import type { ITierZeroGame } from "@/types/IState";
+import type { IState, ITierZeroGame } from "@/types/IState";
 import local from "@/util/local";
 
 import {
@@ -12,6 +12,8 @@ import {
   isTierZeroGame,
   makeTierZeroGame,
   synthesizePersistedTierZeroGames,
+  tierZeroGameFor,
+  tierZeroGameId,
   unregisterTierZeroGame,
 } from "./tierZero";
 
@@ -67,12 +69,37 @@ afterEach(() => {
   unregisterTierZeroGame(GameId(1234));
 });
 
+describe("tierZeroGameId", () => {
+  it("is the game's numeric id behind the tier-0 prefix", () => {
+    expect(tierZeroGameId(GameId(1303))).toBe("tier-0-1303");
+  });
+});
+
+describe("tierZeroGameFor", () => {
+  const stateWith = (entry: ITierZeroGame) =>
+    ({
+      persistent: { gameMode: { tier0: { [entry.gameId]: entry } } },
+    }) as unknown as IState;
+
+  it("joins the registered id to the persisted entry", () => {
+    const entry = makeEntry();
+    expect(tierZeroGameFor(stateWith(entry), tierZeroGameId(entry.gameId))).toBe(entry);
+  });
+
+  it("does not match the entry's domain", () => {
+    const entry = makeEntry();
+    expect(tierZeroGameFor(stateWith(entry), VortexGameId("somegame"))).toBeUndefined();
+  });
+});
+
 describe("makeTierZeroGame", () => {
   it("synthesizes the game shape for the entry", () => {
     const game = makeTierZeroGame(makeEntry());
     assert(game);
 
-    expect(game.id).toBe("somegame");
+    expect(game.id).toBe("tier-0-1234");
+    // the domain is data on the game, never derived from the id
+    expect(game.details?.nexusPageId).toBe("somegame");
     expect(game.name).toBe("Some Game");
     expect(game.queryModPath("C:\\Games\\SomeGame")).toBe(".");
     expect(game.requiredFiles).toEqual([]);
@@ -266,7 +293,7 @@ describe("synthesizePersistedTierZeroGames", () => {
     );
 
     expect(added).toHaveLength(1);
-    expect(added[0].map((game) => game.id)).toEqual(["somegame", "othergame"]);
+    expect(added[0].map((game) => game.id)).toEqual(["tier-0-1234", "tier-0-2345"]);
   });
 
   it("skips domains owned by a loaded extension game", () => {
@@ -306,7 +333,7 @@ describe("synthesizePersistedTierZeroGames", () => {
 
     expect(added).toHaveLength(1);
     expect(added[0]).toHaveLength(1);
-    expect(added[0][0].id).toBe("somegame");
+    expect(added[0][0].id).toBe("tier-0-1234");
     expect(isTierZeroGame(GameId(2345))).toBe(false);
   });
 

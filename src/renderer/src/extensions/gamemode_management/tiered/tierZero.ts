@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import { GameDomain, type GameId, type VortexGameId } from "@vortex/shared";
+import { VortexGameId, type GameDomain, type GameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 
 import type { IGame } from "@/types/IGame";
@@ -8,8 +8,7 @@ import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 import type { IState, ITierZeroGame } from "@/types/IState";
 import type { IQueryArgEntry } from "@/util/storeQuery";
 
-import { domainToNumericGameId } from "../../nexus_integration/util";
-import { extensionlessGameId, nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { getGameStore } from "../util/getGame";
 
 const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
@@ -18,33 +17,32 @@ const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
  * and not on IGame so nothing about the synthesized object gives it away. */
 const tierZeroGameIds = new Set<GameId>();
 
+/**
+ * the id Vortex gives a game it manages without an extension, `tier-0-{gameId}`.
+ * Deliberately not the game's nexus domain, so it can't be mistaken for one or collide with
+ * the id of an extension game. The domain of such a game is its `details.nexusPageId`.
+ */
+export function tierZeroGameId(gameId: GameId): VortexGameId {
+  return VortexGameId(`tier-0-${gameId}`);
+}
+
 export function isTierZeroGame(gameId: GameId): boolean {
   return tierZeroGameIds.has(gameId);
 }
 
 /** Whether the internally managed game is one managed without an extension. Managed
- * tier 0 games register under their persisted domain, which resolves to the numeric
- * key of `isTierZeroGame` through the games list. */
+ * tier 0 games register under the id derived from their persisted entry's numeric id. */
 export function isTierZeroManagedGame(state: IState, gameId: VortexGameId): boolean {
-  const game = (state.session.gameMode?.known ?? []).find((iter) => iter.id === gameId);
-  if (game === undefined) {
-    return false;
-  }
-
-  const numericId = domainToNumericGameId(GameDomain(nexusGameId(game)));
-  return numericId !== undefined && isTierZeroGame(numericId);
+  const entry = tierZeroGameFor(state, gameId);
+  return entry !== undefined && isTierZeroGame(entry.gameId);
 }
 
-/** The persisted entry of an internally managed game, resolved through the games list
- * like `isTierZeroManagedGame`. Returns the stored object, so the reference is stable. */
+/** The persisted entry of an internally managed game, joined through the id it was
+ * registered under. Returns the stored object, so the reference is stable. */
 export function tierZeroGameFor(state: IState, gameId: VortexGameId): ITierZeroGame | undefined {
-  const game = (state.session.gameMode?.known ?? []).find((iter) => iter.id === gameId);
-  if (game === undefined) {
-    return undefined;
-  }
-
-  const numericId = domainToNumericGameId(GameDomain(nexusGameId(game)));
-  return numericId !== undefined ? state.persistent.gameMode.tier0[numericId] : undefined;
+  return Object.values(state.persistent.gameMode?.tier0 ?? {}).find(
+    (entry) => tierZeroGameId(entry.gameId) === gameId,
+  );
 }
 
 /** the game object was dropped from the registry again (un-manage) */
@@ -132,16 +130,18 @@ function launchId(entry: ITierZeroGame, store: string, gamePath: string): string
 }
 
 /**
- * synthesize the game object for a Tier 0 entry; the entry's nexus domain
- * becomes the game's id. Pure factory: deciding whether the entry should
- * become a game at all (an extension may own the domain) is the caller's job.
+ * synthesize the game object for a Tier 0 entry; the id is derived from the
+ * entry's numeric game id and the nexus domain is kept in `details.nexusPageId`.
+ * Pure factory: deciding whether the entry should become a game at all (an
+ * extension may own the domain) is the caller's job.
  */
 export function makeTierZeroGame(entry: ITierZeroGame): IGame {
   tierZeroGameIds.add(entry.gameId);
 
   return {
-    id: extensionlessGameId(entry.domain),
+    id: tierZeroGameId(entry.gameId),
     name: entry.name,
+    details: { nexusPageId: entry.domain },
     // mods install to the game root
     queryModPath: () => ".",
     requiredFiles: [],
@@ -182,10 +182,10 @@ export function synthesizePersistedTierZeroGames(
   knownGames: IGame[],
   addGames: (games: IGame[]) => void,
 ): void {
+  // the domain query rather than a comparison with the id: extension games name their
+  // domain in details or, without it, by their id, and Tier 0 games by details
   const ownsDomain = (domain: GameDomain, games: IGame[]) =>
-    games.some(
-      (game) => game.id === extensionlessGameId(domain) || game.details?.nexusPageId === domain,
-    );
+    games.some((game) => nexusGameId(game) === domain);
 
   const synthesized: IGame[] = [];
   for (const entry of Object.values(tier0)) {

@@ -43,7 +43,6 @@ import { setModType } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { isLoggedIn } from "../nexus_integration/selectors";
 import { nexusGames } from "../nexus_integration/util";
-import { extensionlessGameId } from "../nexus_integration/util/convertGameId";
 import { setNextProfile } from "../profile_management/actions/settings";
 import { removeTierZeroGame, setGameInfo, setTierZeroGame } from "./actions/persistent";
 import { clearFavouriteGames, setDetectedGamesStatus } from "./actions/session";
@@ -64,6 +63,7 @@ import { catalogExtensionGameIds } from "./selectors";
 import {
   makeTierZeroGame,
   synthesizePersistedTierZeroGames,
+  tierZeroGameId,
   unregisterTierZeroGame,
 } from "./tiered/tierZero";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
@@ -1001,7 +1001,7 @@ function init(context: IExtensionContext): boolean {
       if (entry === undefined) return Promise.resolve();
 
       store.dispatch(removeTierZeroGame(gameId));
-      gameModeManager.removeGames([extensionlessGameId(entry.domain)]);
+      gameModeManager.removeGames([tierZeroGameId(entry.gameId)]);
       unregisterTierZeroGame(gameId);
       return Promise.resolve();
     });
