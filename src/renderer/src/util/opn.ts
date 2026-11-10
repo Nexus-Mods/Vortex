@@ -8,9 +8,9 @@ import { isUrlTarget } from "./is_url_target/isUrlTarget";
 /**
  * Opens a URL in the default browser, or a file or folder in its default application.
  *
- * @deprecated Call `window.api.shell.openUrl` for a URL or `window.api.shell.openFile` for
- * a path. The removal release will be announced in the vortex-api CHANGELOG at least two
- * releases ahead.
+ * @deprecated Call `api.openUrl` for a URL or `api.openFile` for a path, on the
+ * `IExtensionApi` your extension is given. The removal release will be announced in the
+ * vortex-api CHANGELOG at least two releases ahead.
  */
 function open(target: string, _wait?: boolean): Promise<void> {
   if (!target) {
@@ -29,7 +29,7 @@ function open(target: string, _wait?: boolean): Promise<void> {
 
 registerDeprecatedApi<typeof open>("util.opn", {
   makeForCaller: (report) => (target, wait) => {
-    report("util.opn", "window.api.shell.openUrl or window.api.shell.openFile");
+    report("util.opn", "api.openUrl or api.openFile");
     return open(target, wait);
   },
 });

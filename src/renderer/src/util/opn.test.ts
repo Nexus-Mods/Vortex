@@ -59,7 +59,7 @@ describe("util.opn in the extension api", () => {
       bundled: false,
     });
     expect(mocks.log).toHaveBeenCalledWith("warn", '"util.opn" is deprecated', {
-      replacement: "window.api.shell.openUrl or window.api.shell.openFile",
+      replacement: "api.openUrl or api.openFile",
       api_method: "util.opn",
       extension_name: "ext-a",
       extension_version: undefined,
