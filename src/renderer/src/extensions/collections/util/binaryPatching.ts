@@ -2,7 +2,6 @@ import * as path from "path";
 
 import { unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
-import * as crc32 from "crc-32";
 import SevenZip from "node-7z";
 
 import type { IInstallResult } from "../../../extensions/mod_management/types/IInstallResult";
@@ -18,11 +17,7 @@ import * as selectors from "../../../util/selectors";
 import { makeQueue } from "../../../util/util";
 import { MAX_PATCH_SIZE, PATCHES_PATH, PATCH_OVERHEAD } from "../constants";
 import { diffFiles, patchFiles } from "./bsdiff";
-
-function crcFromBuf(data: Buffer) {
-  // >>> 0 converts signed to unsigned
-  return (crc32.buf(data) >>> 0).toString(16).toUpperCase().padStart(8, "0");
-}
+import { fileCRC32 } from "./fileCRC";
 
 async function validatePatch(srcFilePath: string, patchFilePath: string) {
   const srcStats: fs.Stats = await fs.statAsync(srcFilePath);
@@ -97,8 +92,7 @@ export function scanForDiffs(
               for (const file of instRes.instructions.filter((instr) => instr.type === "copy")) {
                 const srcCRC = sourceChecksums[file.source];
                 const dstFilePath = path.join(localPath, file.destination);
-                const dat = await fs.readFileAsync(dstFilePath);
-                const dstCRC = crcFromBuf(dat);
+                const dstCRC = await fileCRC32(dstFilePath);
                 if (srcCRC !== dstCRC) {
                   onProgress(
                     undefined,
@@ -180,8 +174,7 @@ export async function applyPatches(
       // if the patch is missing, trigger the error here because bsdiff would produce a non-standard
       // string exception
       await fs.statAsync(diffPath);
-      const srcDat = await fs.readFileAsync(srcPath);
-      const srcCRC = crcFromBuf(srcDat);
+      const srcCRC = await fileCRC32(srcPath);
       if (srcCRC === patches[filePath]) {
         await patchFiles(srcPath, srcPath + ".patched", diffPath);
         await fs.removeAsync(srcPath);
