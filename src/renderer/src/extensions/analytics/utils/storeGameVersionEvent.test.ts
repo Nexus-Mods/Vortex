@@ -12,13 +12,13 @@ import { test } from "../../../test-utils/harnessTest";
 import type { IApiHarness } from "../../../test-utils/harnessTypes";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
 import { readGameVersions } from "../../gamemode_management/util/getGameVersion";
+import { gogInstallFromInfo } from "../../gamemode_management/util/store_install/gogInstall";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
 import telemetryReducer from "../reducers/telemetry.reducer";
 import {
   emitStoreGameVersions,
   emitStoreGameVersionEvent,
-  gogInstallFromInfo,
   storeGameVersionChangeKey,
 } from "./storeGameVersionEvent";
 
