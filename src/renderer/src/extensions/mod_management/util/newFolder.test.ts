@@ -1,6 +1,14 @@
+import { relativePath } from "@nexusmods/paths";
 import { describe, expect, it } from "vitest";
 
-import { folderNameProblem, uniqueFolderName } from "./newFolder";
+import {
+  folderNameProblem,
+  removeCreated,
+  removeOpen,
+  renameCreated,
+  renameOpen,
+  uniqueFolderName,
+} from "./newFolder";
 
 describe("uniqueFolderName", () => {
   it("is the base when nothing has it", () => {
@@ -77,5 +85,48 @@ describe("folderNameProblem", () => {
   it("reports the first problem when there are several", () => {
     expect(folderNameProblem("a/b.", [])).toBe("invalidCharacter");
     expect(folderNameProblem("a.", ["a."])).toBe("trailingDot");
+  });
+});
+
+const paths = (...names: string[]) => names.map((name) => relativePath(name));
+
+describe("renameCreated", () => {
+  it("renames the folder and the folders below it", () => {
+    expect(
+      renameCreated(paths("A", "A/C", "A/C/D", "Other"), relativePath("A"), relativePath("B")),
+    ).toEqual(paths("B", "B/C", "B/C/D", "Other"));
+  });
+
+  it("renames a folder inside another", () => {
+    expect(renameCreated(paths("X/A", "X/A/C"), relativePath("X/A"), relativePath("X/B"))).toEqual(
+      paths("X/B", "X/B/C"),
+    );
+  });
+
+  it("leaves a folder that only starts with the same letters", () => {
+    expect(renameCreated(paths("A", "AB", "AB/C"), relativePath("A"), relativePath("B"))).toEqual(
+      paths("B", "AB", "AB/C"),
+    );
+  });
+});
+
+describe("removeCreated", () => {
+  it("removes the folder and the folders below it", () => {
+    expect(removeCreated(paths("A", "A/C", "Other"), relativePath("A"))).toEqual(paths("Other"));
+  });
+
+  it("keeps a folder that only starts with the same letters", () => {
+    expect(removeCreated(paths("A", "AB"), relativePath("A"))).toEqual(paths("AB"));
+  });
+});
+
+describe("renameOpen and removeOpen", () => {
+  it("move and drop the paths below the folder, as for the created folders", () => {
+    const open = new Set(paths("", "A", "A/C", "Other"));
+
+    expect(renameOpen(open, relativePath("A"), relativePath("B"))).toEqual(
+      new Set(paths("", "B", "B/C", "Other")),
+    );
+    expect(removeOpen(open, relativePath("A"))).toEqual(new Set(paths("", "Other")));
   });
 });

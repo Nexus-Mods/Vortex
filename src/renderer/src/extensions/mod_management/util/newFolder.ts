@@ -1,3 +1,5 @@
+import { relativePath, type RelativePath } from "@nexusmods/paths";
+
 // Characters no file system we install to takes in a name, or that would make it a path.
 // eslint-disable-next-line no-control-regex
 const INVALID_CHARACTERS = /[\\/:*?"<>|\u0000-\u001f]/;
@@ -16,6 +18,50 @@ export function uniqueFolderName(base: string, taken: Iterable<string>): string 
   }
 
   return name;
+}
+
+/** Whether `path` is `folder` or somewhere below it. */
+function isInFolder(path: string, folder: string): boolean {
+  return path === folder || path.startsWith(`${folder}/`);
+}
+
+/**
+ * The folders to create after `from` was renamed to `to`: `from` and the folders below it move,
+ * the rest stays.
+ */
+export function renameCreated(
+  created: readonly RelativePath[],
+  from: RelativePath,
+  to: RelativePath,
+): RelativePath[] {
+  return created.map((path) =>
+    isInFolder(path, from) ? relativePath(`${to}${path.slice(from.length)}`) : path,
+  );
+}
+
+/** The folders to create after `folder` was deleted: it and the folders below it are gone. */
+export function removeCreated(
+  created: readonly RelativePath[],
+  folder: RelativePath,
+): RelativePath[] {
+  return created.filter((path) => !isInFolder(path, folder));
+}
+
+/** The paths of an open set after `from` was renamed to `to`, as `renameCreated` has it. */
+export function renameOpen(
+  open: ReadonlySet<RelativePath>,
+  from: RelativePath,
+  to: RelativePath,
+): Set<RelativePath> {
+  return new Set(renameCreated([...open], from, to));
+}
+
+/** The paths of an open set after `folder` was deleted, as `removeCreated` has it. */
+export function removeOpen(
+  open: ReadonlySet<RelativePath>,
+  folder: RelativePath,
+): Set<RelativePath> {
+  return new Set(removeCreated([...open], folder));
 }
 
 /** Why a name can't be a folder's: see `folderNameProblem`. */

@@ -226,7 +226,7 @@ describe("ManualInstallerDialog", () => {
     // leaves the new folder's name to be typed over.
     const startNewFolder = async (user: ReturnType<typeof userEvent.setup>, path: string) => {
       fireEvent.contextMenu(await gameItem(path));
-      await user.click(await screen.findByRole("menuitem"));
+      await user.click(await screen.findByRole("menuitem", { name: "manualInstaller::newFolder" }));
 
       return screen.findByTestId("manual-installer-folder-name");
     };
@@ -413,6 +413,141 @@ describe("ManualInstallerDialog", () => {
 
       expect(await gameItem("Data/First")).toBeInTheDocument();
       expect(await gameItem("Data/Second")).toBeInTheDocument();
+    });
+
+    describe("a folder made in the dialog", () => {
+      const hasGameItem = (path: string) =>
+        Array.from(gameTree().querySelectorAll<HTMLElement>("[data-path]")).some(
+          (element) => element.dataset.path === path,
+        );
+
+      // opens the context menu of a node of the game tree and chooses an action of it
+      const choose = async (
+        user: ReturnType<typeof userEvent.setup>,
+        path: string,
+        action: "renameFolder" | "deleteFolder",
+      ) => {
+        fireEvent.contextMenu(await gameItem(path));
+        await user.click(
+          await screen.findByRole("menuitem", { name: `manualInstaller::${action}` }),
+        );
+      };
+
+      it("is the only kind of folder with rename and delete in its menu", async () => {
+        const user = userEvent.setup();
+        renderDialog();
+
+        fireEvent.contextMenu(await gameItem("Data"));
+        expect(await screen.findAllByRole("menuitem")).toHaveLength(1);
+        await user.keyboard("{Escape}");
+
+        await nameFolder(user, await startNewFolder(user, "Data"), "First{Enter}");
+        fireEvent.contextMenu(await gameItem("Data/First"));
+
+        expect(await screen.findAllByRole("menuitem")).toHaveLength(3);
+      });
+
+      it("can be renamed", async () => {
+        const user = userEvent.setup();
+        const { onAnswer } = renderDialog();
+
+        await nameFolder(user, await startNewFolder(user, "Data"), "First{Enter}");
+        await choose(user, "Data/First", "renameFolder");
+
+        const input = await screen.findByTestId("manual-installer-folder-name");
+        expect(input).toHaveValue("First");
+        await nameFolder(user, input, "Renamed{Enter}");
+
+        expect(await gameItem("Data/Renamed")).toHaveAttribute("aria-selected", "true");
+        expect(hasGameItem("Data/First")).toBe(false);
+
+        await user.click(install());
+
+        expect(onAnswer).toHaveBeenCalledWith(
+          "request",
+          expect.objectContaining({ folder: normalizeDestination("Data/Renamed") }),
+        );
+      });
+
+      it("takes the folders made inside it along when renamed", async () => {
+        const user = userEvent.setup();
+        renderDialog();
+
+        await nameFolder(user, await startNewFolder(user, "Data"), "First{Enter}");
+        await nameFolder(user, await startNewFolder(user, "Data/First"), "Inner{Enter}");
+        await choose(user, "Data/First", "renameFolder");
+        await nameFolder(
+          user,
+          await screen.findByTestId("manual-installer-folder-name"),
+          "Renamed{Enter}",
+        );
+
+        expect(await gameItem("Data/Renamed/Inner")).toBeInTheDocument();
+        expect(hasGameItem("Data/First/Inner")).toBe(false);
+      });
+
+      it("keeps its name when renaming is dropped with Escape", async () => {
+        const user = userEvent.setup();
+        renderDialog();
+
+        await nameFolder(user, await startNewFolder(user, "Data"), "First{Enter}");
+        await choose(user, "Data/First", "renameFolder");
+        await nameFolder(
+          user,
+          await screen.findByTestId("manual-installer-folder-name"),
+          "Other{Escape}",
+        );
+
+        expect(await gameItem("Data/First")).toBeInTheDocument();
+        expect(screen.queryByTestId("manual-installer-folder-name")).not.toBeInTheDocument();
+        expect(install()).toBeEnabled();
+      });
+
+      it("can't be renamed to a name its neighbour has", async () => {
+        const user = userEvent.setup();
+        renderDialog();
+
+        await nameFolder(user, await startNewFolder(user, "Data"), "First{Enter}");
+        await nameFolder(user, await startNewFolder(user, "Data"), "Second{Enter}");
+        await choose(user, "Data/Second", "renameFolder");
+
+        const input = await screen.findByTestId("manual-installer-folder-name");
+        await nameFolder(user, input, "First{Enter}");
+
+        expect(input).toBeInTheDocument();
+        expect(input).toHaveAttribute("aria-invalid", "true");
+        expect(await screen.findByText("manualInstaller::folderNameTaken")).toBeInTheDocument();
+      });
+
+      it("can be deleted, which selects the folder it was in", async () => {
+        const user = userEvent.setup();
+        const { onAnswer } = renderDialog();
+
+        await nameFolder(user, await startNewFolder(user, "Data"), "First{Enter}");
+        await choose(user, "Data/First", "deleteFolder");
+
+        await waitFor(() => expect(hasGameItem("Data/First")).toBe(false));
+        expect(await gameItem("Data")).toHaveAttribute("aria-selected", "true");
+
+        await user.click(install());
+
+        expect(onAnswer).toHaveBeenCalledWith(
+          "request",
+          expect.objectContaining({ folder: "Data" }),
+        );
+      });
+
+      it("takes the folders made inside it along when deleted", async () => {
+        const user = userEvent.setup();
+        renderDialog();
+
+        await nameFolder(user, await startNewFolder(user, "Data"), "First{Enter}");
+        await nameFolder(user, await startNewFolder(user, "Data/First"), "Inner{Enter}");
+        await choose(user, "Data/First", "deleteFolder");
+
+        await waitFor(() => expect(hasGameItem("Data/First")).toBe(false));
+        expect(hasGameItem("Data/First/Inner")).toBe(false);
+      });
     });
   });
 

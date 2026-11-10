@@ -22,10 +22,17 @@ import {
 import { childNodes, withChildren } from "@/ui/components/file_tree/withChildren";
 import { withEmptyDirectories } from "@/ui/components/file_tree/withEmptyDirectories";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { readFileTreeDirectory } from "../util/fileTree";
-import { uniqueFolderName } from "../util/newFolder";
+import {
+  removeCreated,
+  removeOpen,
+  renameCreated,
+  renameOpen,
+  uniqueFolderName,
+} from "../util/newFolder";
 import { ManualInstallerFolderNameInput } from "./ManualInstallerFolderNameInput";
 
 export interface IManualInstallerGameTreeProps {
@@ -103,7 +110,8 @@ export const ManualInstallerGameTree = ({
   const [expanded, setExpanded] = useState<ReadonlySet<RelativePath>>(new Set([ROOT]));
   const [hasFailed, setHasFailed] = useState(false);
   const [menu, setMenu] = useState<{ node: IFileTreeNode; position: IContextMenuPosition }>();
-  const [renamingPath, setRenamingPath] = useState<RelativePath>();
+  // the folder being named: a new one, which Escape drops, or a folder renamed, which it keeps
+  const [renaming, setRenaming] = useState<{ path: RelativePath; isNew: boolean }>();
 
   // what is created by the time a read finishes, not by the time it started
   const latestCreated = useRef(created);
@@ -112,7 +120,7 @@ export const ManualInstallerGameTree = ({
     latestCreated.current = created;
   }, [created]);
 
-  const isNaming = renamingPath !== undefined;
+  const isNaming = renaming !== undefined;
 
   useEffect(() => {
     onNamingChange(isNaming);
@@ -201,22 +209,53 @@ export const ManualInstallerGameTree = ({
 
     setExpanded((current) => new Set(current).add(parentOfNew));
     onCreatedChange((current) => [...current, path]);
-    setRenamingPath(path);
+    setRenaming({ path, isNew: true });
     onSelect({ path, kind: "directory", children: [] });
   };
 
   const commitName = (path: RelativePath, name: string) => {
     const renamed = childPath(parentPath(path), name);
 
-    onCreatedChange((current) => current.map((other) => (other === path ? renamed : other)));
-    setRenamingPath(undefined);
+    // the folders made inside it move with it, and stay open if they were
+    onCreatedChange((current) => renameCreated(current, path, renamed));
+    setExpanded((current) => renameOpen(current, path, renamed));
+    setRenaming(undefined);
     onSelect({ path: renamed, kind: "directory", children: [] });
   };
 
-  const cancelName = (path: RelativePath) => {
-    onCreatedChange((current) => current.filter((other) => other !== path));
-    setRenamingPath(undefined);
-    onSelect(directoryAt(parentPath(path)) ?? rootNode);
+  const cancelName = (path: RelativePath, isNew: boolean) => {
+    setRenaming(undefined);
+
+    // a folder that was never named goes, one that is renamed keeps the name it had
+    if (isNew) {
+      onCreatedChange((current) => current.filter((other) => other !== path));
+      onSelect(directoryAt(parentPath(path)) ?? rootNode);
+    }
+  };
+
+  /**
+   * The closest folder above `path` that is still there once it's deleted: one the game has, or
+   * one that is only there for a folder to create inside it. The game folder if there is none.
+   */
+  const survivingAncestor = (path: RelativePath, remaining: readonly RelativePath[]) => {
+    for (let ancestor = parentPath(path); ancestor !== ROOT; ancestor = parentPath(ancestor)) {
+      if (
+        findNode(nodes, ancestor) !== undefined ||
+        remaining.some((other) => other.startsWith(`${ancestor}/`))
+      ) {
+        return ancestor;
+      }
+    }
+
+    return ROOT;
+  };
+
+  const deleteFolder = (path: RelativePath) => {
+    const survivor = survivingAncestor(path, removeCreated(latestCreated.current, path));
+
+    onCreatedChange((current) => removeCreated(current, path));
+    setExpanded((current) => removeOpen(current, path));
+    onSelect(directoryAt(survivor) ?? rootNode);
   };
 
   const takenNames = (path: RelativePath): string[] =>
@@ -256,12 +295,12 @@ export const ManualInstallerGameTree = ({
           loadErrorMessage={t("manualInstaller::directoryFailed")}
           nodes={treeNodes}
           renderNode={(node) => {
-            if (node.path === renamingPath) {
+            if (node.path === renaming?.path) {
               return (
                 <ManualInstallerFolderNameInput
                   initialName={fileTreeNodeName(node)}
                   takenNames={takenNames(node.path)}
-                  onCancel={() => cancelName(node.path)}
+                  onCancel={() => cancelName(node.path, renaming.isNew)}
                   onCommit={(name) => commitName(node.path, name)}
                 />
               );
@@ -313,6 +352,23 @@ export const ManualInstallerGameTree = ({
                   },
                 },
               ],
+              // only the folders made in the dialog can be changed, the game's own can't
+              ...(menu !== undefined && created.includes(menu.node.path)
+                ? [
+                    [
+                      {
+                        label: t("manualInstaller::renameFolder"),
+                        icon: "edit",
+                        onClick: () => setRenaming({ path: menu.node.path, isNew: false }),
+                      },
+                      {
+                        label: t("manualInstaller::deleteFolder"),
+                        icon: "delete",
+                        onClick: () => deleteFolder(menu.node.path),
+                      },
+                    ] satisfies IMenuAction[],
+                  ]
+                : []),
             ]}
             label={t("manualInstaller::newFolder")}
             onSelect={close}

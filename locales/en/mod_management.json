@@ -30,6 +30,8 @@
     "gameFolderFailed": "The game folder couldn't be read.",
     "directoryFailed": "Failed to read directory.",
     "newFolder": "New folder",
+    "renameFolder": "Rename",
+    "deleteFolder": "Delete",
     "folderName": "Folder name",
     "folderNameEmpty": "Enter a name for the folder.",
     "folderNameDot": "A folder can't be named \".\" or \"..\".",
