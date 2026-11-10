@@ -626,6 +626,17 @@ describe("manual installer telemetry", () => {
     expect(emitManualInstallerEvent).not.toHaveBeenCalled();
   });
 
+  test("a request answered through another one's use for all is not reported", async () => {
+    const { api, didInstall } = makeApi(
+      answer({ folder: "Foo", useForAll: true, fromBatch: true }),
+    );
+    const result = await install(createManualInstaller(api), { archiveId: "a" });
+    didInstall("a");
+
+    expect(destinationOf(result)).toBe("Foo");
+    expect(emitManualInstallerEvent).not.toHaveBeenCalled();
+  });
+
   test("it is reported only once", async () => {
     const { api, didInstall } = makeApi(answer({ folder: "Foo" }));
     await install(createManualInstaller(api), { archiveId: "a" });

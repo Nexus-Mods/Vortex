@@ -139,7 +139,7 @@ export function createManualInstaller(api: IExtensionApi): {
     ownStagingFolders: VortexModStagingFolder[],
     batchId: string | undefined,
     uids: { mod_uid?: string; file_uid?: string },
-  ): Promise<IDestination> => {
+  ): Promise<{ destination: IDestination; confirmed: boolean }> => {
     const entry = tierZeroGameFor(api.getState(), vortexGameId);
     const batch = batchId !== undefined ? getBatchContext("install-mod", batchId) : undefined;
     const remaining =
@@ -148,6 +148,7 @@ export function createManualInstaller(api: IExtensionApi): {
     const answer = await requestManualInstallerDestination(api, {
       gameId: vortexGameId,
       modName,
+      batchId,
       remaining: Math.max(remaining, 0),
       defaultFolder: entry?.manualInstallerPreferences?.defaultFolder,
       gameFolder: discoveryByGame(api.getState(), vortexGameId)?.path ?? "",
@@ -160,13 +161,20 @@ export function createManualInstaller(api: IExtensionApi): {
       tracker.trackClosed({ outcome: "cancelled", ...uids });
       throw new UserCanceled();
     }
-    tracker.trackClosed({ outcome: "completed", ...uids });
 
     // the dialog only offers folders it validated
     const destination: IDestination = {
       folder: normalizeDestination(answer.folder) ?? "",
       skipTopFolder: answer.skipTopFolder,
     };
+
+    // this request waited while another one of its batch was answered with "use for all": like
+    // the installs that come after, it reuses the folder without a dialog. All that is already
+    // done, and it is neither tracked nor reported as a pick.
+    if (answer.fromBatch === true) {
+      return { destination, confirmed: false };
+    }
+    tracker.trackClosed({ outcome: "completed", ...uids });
 
     if (answer.useAsDefault && entry !== undefined) {
       api.store?.dispatch(
@@ -179,7 +187,7 @@ export function createManualInstaller(api: IExtensionApi): {
     if (answer.useForAll) {
       batch?.set(BATCH_DESTINATION_KEY, destination);
     }
-    return destination;
+    return { destination, confirmed: true };
   };
 
   const resolveDestination = async (
@@ -213,7 +221,7 @@ export function createManualInstaller(api: IExtensionApi): {
     if (defaultFolder !== undefined && preferences?.dontAskAgain === true) {
       return { folder: defaultFolder, skipTopFolder: false };
     }
-    const picked = await queryDestination(
+    const { destination, confirmed } = await queryDestination(
       vortexGameId,
       files,
       modName,
@@ -222,14 +230,14 @@ export function createManualInstaller(api: IExtensionApi): {
       uids,
     );
     // only a confirmed dialog is reported, and only if the install then succeeds
-    if (installId !== undefined) {
+    if (confirmed && installId !== undefined) {
       pendingEvents.set(installId, {
         gameId: vortexGameId,
-        destination: picked.folder,
+        destination: destination.folder,
         modReference,
       });
     }
-    return picked;
+    return destination;
   };
 
   const install: InstallFunc = async (
