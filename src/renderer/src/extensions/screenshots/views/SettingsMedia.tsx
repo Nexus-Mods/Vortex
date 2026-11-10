@@ -1,4 +1,3 @@
-import { mdiAlertOutline, mdiDelete, mdiPencil, mdiPlus } from "@mdi/js";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
@@ -99,13 +98,13 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
           actions={[
             {
               label: t("settings::edit_source"),
-              iconPath: mdiPencil,
+              icon: "edit",
               onClick: () => onEditSource(id, source),
               testId: `source-actions-edit-${id}`,
             },
             {
               label: t("settings::delete_source"),
-              iconPath: mdiDelete,
+              icon: "delete",
               onClick: () => onDeleteSource(id),
               testId: `source-actions-delete-${id}`,
             },
@@ -155,7 +154,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
         brand="neutral"
         className="max-w-48"
         data-testid={"add-custom-source"}
-        leftIconPath={mdiPlus}
+        leftIcon={"add"}
         size="sm"
         onClick={() => setShowAddModal(true)}
       >
@@ -207,7 +206,7 @@ const SettingsMedia: React.FC<React.PropsWithChildren<ISettingsMediaProps>> = ({
               className="nxm-alert-warning flex items-start gap-2"
               typographyType="body-sm"
             >
-              <Icon className="nxm-alert-icon inline" path={mdiAlertOutline} size="sm" />
+              <Icon className="nxm-alert-icon inline" name="warning" size="sm" />
 
               {t("settings::exp::video_support_warn")}
 

@@ -1,14 +1,3 @@
-import {
-  mdiCancel,
-  mdiClose,
-  mdiFolderOpenOutline,
-  mdiImageOutline,
-  mdiTag,
-  mdiTagOutline,
-  mdiTagPlus,
-  mdiUpload,
-  mdiWeb,
-} from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -72,7 +61,7 @@ export default function MediaViewSingleDetails({
       <section className="flex flex-col gap-5">
         <div className="flex flex-col">
           <Typography as="h3" className="flex items-center gap-1.5" typographyType="body-md">
-            <Icon path={mdiTagOutline} size="sm" />
+            <Icon name="sell" size="sm" />
 
             {t("single::mods_used")}
           </Typography>
@@ -86,7 +75,7 @@ export default function MediaViewSingleDetails({
           appearance="moderate"
           brand="neutral"
           disabled={entry.type === "video"}
-          leftIconPath={isAddingTag ? mdiCancel : mdiTagPlus}
+          leftIcon={isAddingTag ? "cancel" : "add"}
           title={
             entry.type === "video" ? t("single::video_tag_disabled") : t("single::actions::add_mod")
           }
@@ -99,7 +88,7 @@ export default function MediaViewSingleDetails({
           {tags?.length ? (
             tags.map((tag) => (
               <GameMediaModTagPill
-                iconPath={mdiClose}
+                iconPath="close"
                 key={tag.id}
                 tag={tag}
                 onRemove={() => removeTag(tag.id)}
@@ -111,7 +100,7 @@ export default function MediaViewSingleDetails({
               className="flex items-center gap-1.5 italic"
               typographyType="body-sm"
             >
-              <Icon path={mdiTag} size="sm" />
+              <Icon name="sell" size="sm" />
 
               {t("single::no_tags")}
             </Typography>
@@ -161,7 +150,7 @@ export default function MediaViewSingleDetails({
               appearance="subdued"
               brand="neutral"
               className="grow"
-              leftIconPath={mdiImageOutline}
+              leftIcon="image"
               onClick={() => window.api.shell.openFile(entry.path)}
             >
               {entry.type === "image"
@@ -173,7 +162,7 @@ export default function MediaViewSingleDetails({
               appearance="subdued"
               brand="neutral"
               className="grow"
-              leftIconPath={mdiFolderOpenOutline}
+              leftIcon="folder_open"
               onClick={() => window.api.shell.showItemInFolder(entry.path)}
             >
               {t("single::actions::view_in_folder")}
@@ -185,11 +174,11 @@ export default function MediaViewSingleDetails({
       <div className="border-b border-b-stroke-subdued/70" />
 
       {uploadInfo ? (
-        <Button leftIconPath={mdiWeb} onClick={() => window.api.shell.openUrl(uploadInfo.url)}>
+        <Button leftIcon="web" onClick={() => window.api.shell.openUrl(uploadInfo.url)}>
           {t("single::actions::view_web")}
         </Button>
       ) : (
-        <Button leftIconPath={mdiUpload} onClick={startUpload}>
+        <Button leftIcon="upload" onClick={startUpload}>
           {t("single::upload::title")}
         </Button>
       )}

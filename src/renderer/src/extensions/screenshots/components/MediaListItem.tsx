@@ -1,11 +1,10 @@
 import { pathToFileURL } from "url";
 
-import { mdiPlayCircleOutline } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
-import { gameTileImageURL } from "@/extensions/nexus_integration/util/gameTileImageURL";
+import { gameArtURL } from "@/extensions/gamemode_management/util/gameArtURL";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import relativeTime from "@/util/relativeTime";
@@ -27,7 +26,7 @@ export default function MediaListItem({ item, onClick, game }: IMediaListItemPro
     if (item.type === "image") return pathToFileURL(item.thumbnailPath ?? item.path).toString();
     else if (item.type === "video") {
       const thumbnail = item.thumbnailPath ? pathToFileURL(item.thumbnailPath) : undefined;
-      return thumbnail ? thumbnail.toString() : gameTileImageURL(game)?.replace("tile", "hero");
+      return thumbnail ? thumbnail.toString() : gameArtURL(game)?.replace("tile", "hero");
     }
   });
 
@@ -56,7 +55,7 @@ export default function MediaListItem({ item, onClick, game }: IMediaListItemPro
         {item.type === "video" && (
           <Icon
             className="pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-1/2 opacity-60 drop-shadow-md"
-            path={mdiPlayCircleOutline}
+            name="play_circle"
             size="2xl"
           />
         )}

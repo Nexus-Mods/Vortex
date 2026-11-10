@@ -1,4 +1,3 @@
-import { mdiFolderCogOutline } from "@mdi/js";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -115,7 +114,7 @@ export default function SettingsMediaAddSourceModal({
             appearance="subdued"
             brand="neutral"
             className="shrink-0 self-end border-l-0"
-            leftIconPath={mdiFolderCogOutline}
+            leftIcon={"settings"}
             title={t("settings::add_modal::source_path_select")}
             onClick={() => void selectDirectory()}
           />

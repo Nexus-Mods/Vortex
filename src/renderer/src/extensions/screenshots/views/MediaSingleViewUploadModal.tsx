@@ -1,4 +1,3 @@
-import { mdiClipboardOutline, mdiClose, mdiOpenInNew } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -68,7 +67,7 @@ export default function MediaSingleViewUploadModal({
             <Button
               appearance="subdued"
               brand="info"
-              leftIconPath={mdiClipboardOutline}
+              leftIcon={"content_copy"}
               size="sm"
               onClick={() => void copyBBCodeToClipboard()}
             >
@@ -81,13 +80,13 @@ export default function MediaSingleViewUploadModal({
           <Button
             appearance="strong"
             brand="primary"
-            leftIconPath={mdiOpenInNew}
+            leftIcon={"open_in_new"}
             onClick={openFileAndUploadPage}
           >
             {t("single::actions::continue")}
           </Button>
 
-          <Button appearance="subdued" brand="neutral" leftIconPath={mdiClose} onClick={onClose}>
+          <Button appearance="subdued" brand="neutral" leftIcon={"close"} onClick={onClose}>
             {t("single::actions::cancel")}
           </Button>
         </div>

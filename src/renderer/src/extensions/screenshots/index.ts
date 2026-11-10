@@ -4,7 +4,6 @@
  * Can be tested with pnpm --filter @vortex/renderer exec vitest run src/extensions/screenshots
  */
 
-import { mdiImageOutline } from "@mdi/js";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
@@ -27,7 +26,7 @@ function init(context: IExtensionContext) {
     newLayout: true,
     visible: () => activeGameId(context.api.getState()) !== undefined,
     isModernOnly: true,
-    mdi: mdiImageOutline,
+    menuIcon: "image",
     props: () => ({
       api: context.api,
     }),

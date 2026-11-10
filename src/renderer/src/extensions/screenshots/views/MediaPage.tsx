@@ -1,4 +1,3 @@
-import { mdiCogOutline, mdiFolderOpenOutline, mdiRefresh } from "@mdi/js";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -115,7 +114,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             brand="neutral"
             data-testid={"refresh-media"}
             disabled={isLoading}
-            leftIconPath={mdiRefresh}
+            leftIcon={"refresh"}
             size="sm"
             title={t("common:::refresh")}
             onClick={refreshAll}
@@ -125,7 +124,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
             appearance="weak"
             brand="neutral"
             data-testid={"open-media-settings"}
-            leftIconPath={mdiCogOutline}
+            leftIcon={"settings"}
             size="sm"
             title={t("common:::settings")}
             onClick={openSettings}
@@ -213,7 +212,7 @@ export default function MediaPage({ active, api }: IMediaPageProps) {
                     <Button
                       appearance="subdued"
                       brand="neutral"
-                      leftIconPath={mdiFolderOpenOutline}
+                      leftIcon={"folder_open"}
                       size="sm"
                       title={t("listing::actions::open_folder")}
                       onClick={() => window.api.shell.openFile(allSources[k].path)}

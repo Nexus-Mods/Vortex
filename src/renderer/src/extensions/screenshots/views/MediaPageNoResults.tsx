@@ -1,4 +1,3 @@
-import { mdiCog, mdiImageRefresh, mdiRefresh } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -22,7 +21,7 @@ export default function MediaPageNoResults({
     <NoResults
       appearance="default"
       className="pt-8"
-      iconPath={mdiImageRefresh}
+      icon={"refresh"}
       isError={false}
       message={t("listing::no_results::message")}
       title={t("listing::no_results::title")}
@@ -41,7 +40,7 @@ export default function MediaPageNoResults({
             appearance="subdued"
             brand="neutral"
             data-testid={"no-results-refresh"}
-            leftIconPath={mdiRefresh}
+            leftIcon={"refresh"}
             onClick={refresh}
           >
             {t("listing::actions::scan_again")}
@@ -53,7 +52,7 @@ export default function MediaPageNoResults({
             appearance="subdued"
             brand="neutral"
             data-testid={"no-results-settings"}
-            leftIconPath={mdiCog}
+            leftIcon={"settings"}
             onClick={openSettings}
           >
             {t("common:::settings")}

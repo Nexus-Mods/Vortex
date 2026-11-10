@@ -1,6 +1,5 @@
 import { pathToFileURL } from "url";
 
-import { mdiArrowLeft, mdiChevronLeft, mdiChevronRight } from "@mdi/js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -150,7 +149,7 @@ export default function MediaSingleView({
         <Button
           appearance="weak"
           brand="neutral"
-          leftIconPath={mdiArrowLeft}
+          leftIcon={"arrow_left"}
           size="sm"
           type="button"
           onClick={onBack}
@@ -216,7 +215,7 @@ export default function MediaSingleView({
                 brand="neutral"
                 className="absolute top-1/2 left-4 z-10 -translate-y-1/2 rounded-full"
                 disabled={!prev}
-                leftIconPath={mdiChevronLeft}
+                leftIcon={"chevron_left"}
                 role="button"
                 title="Previous"
                 onClick={() => prev()}
@@ -230,7 +229,7 @@ export default function MediaSingleView({
                 brand="neutral"
                 className="absolute top-1/2 right-4 z-10 -translate-y-1/2 rounded-full"
                 disabled={!next}
-                leftIconPath={mdiChevronRight}
+                leftIcon={"chevron_right"}
                 role="button"
                 title="Next"
                 onClick={() => next()}

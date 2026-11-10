@@ -1,4 +1,3 @@
-import { mdiTagRemove } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -54,7 +53,7 @@ export default function ModTagIndicator({ x, y, mod, gameId, mediaId }: IModTags
       <Button
         appearance="subdued"
         brand="neutral"
-        leftIconPath={mdiTagRemove}
+        leftIcon="label_off"
         size="sm"
         title={t("shared::remove")}
         onClick={removeTag}

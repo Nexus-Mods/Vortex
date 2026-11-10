@@ -2,6 +2,7 @@ import type { ForwardRefExoticComponent, RefAttributes } from "react";
 import React, { forwardRef } from "react";
 import type { ReactNode } from "react-markdown";
 
+import type { SymbolName } from "@/ui/components/icon/Icon";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
@@ -25,7 +26,7 @@ export type IGameMediaModTagPillBrand =
 type IBaseGameMediaModTagProps = {
   appearance?: IGameMediaModTagPillAppearance;
   brand?: IGameMediaModTagPillBrand;
-} & XOr<{ iconPath?: string }, { icon?: ReactNode }>;
+} & XOr<{ iconPath?: SymbolName }, { icon?: ReactNode }>;
 
 type IGameMediaModTagProps = {
   tag: GameMediaModTag;
@@ -58,7 +59,7 @@ const Content = ({
   iconPath,
   label,
   onRemove,
-}: Pick<IGameMediaModTagProps, "icon" | "iconPath" | "onRemove"> & { label?: string }) => (
+}: Pick<IGameMediaModTagProps, "icon" | "onRemove"> & { iconPath: SymbolName; label?: string }) => (
   <>
     <span className="nex-pill-label line-clamp-1">{label}</span>
 
@@ -74,7 +75,7 @@ const Content = ({
     {!!iconPath && (
       <Icon
         className="nxm-pill-icon flex items-center justify-center hover:cursor-pointer"
-        path={iconPath}
+        name={iconPath}
         size="none"
         onClick={onRemove}
       />

@@ -1,4 +1,3 @@
-import { mdiAlertOutline, mdiOpenInNew } from "@mdi/js";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -21,7 +20,7 @@ export default function MediaVideoSteamFailed() {
   return (
     <div className="flex aspect-video w-full grow flex-col items-center justify-center gap-2 bg-surface-mid">
       <div className="flex gap-2">
-        <Icon className="nxm-alert-icon inline" path={mdiAlertOutline} size="sm" />
+        <Icon className="nxm-alert-icon inline" name="warning" size="sm" />
 
         <Typography appearance="strong" brand="warning">
           {t("single::steam_clip_unplayable")}
@@ -31,7 +30,7 @@ export default function MediaVideoSteamFailed() {
       <Button
         appearance="strong"
         brand="info"
-        leftIconPath={mdiOpenInNew}
+        leftIcon="open_in_new"
         type="button"
         onClick={() => window.api.shell.openUrl(steamUri)}
       >
