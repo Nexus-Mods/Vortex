@@ -153,6 +153,30 @@ function gameSteamAppIds(game: IGame | undefined): Set<string> {
 const inFolder = (entry: IGameStoreEntry, folder: string): boolean =>
   entry.gamePath !== undefined && normPath(entry.gamePath) === normPath(folder);
 
+/** The product id of a goggame-<productId>.info in the folder, for a game the registry
+    doesn't list: Galaxy was uninstalled, or Windows reset, and the game kept working
+    without it. Undefined when the folder has none. */
+async function gogInfoProductIdIn(folder: string): Promise<string | undefined> {
+  try {
+    const files = await window.api.fs.enumerateDirectory(QualifiedPath.fromNative(folder), {
+      types: "files",
+      include: "*/goggame-*.info",
+    });
+    for await (const file of files) {
+      const productId = /^goggame-(\d+)\.info$/i.exec(file.basename)?.[1];
+      if (productId !== undefined) {
+        return productId;
+      }
+    }
+  } catch (err) {
+    log("debug", "store-game-version: gog folder unreadable", {
+      folder,
+      error: getErrorMessageOrDefault(err),
+    });
+  }
+  return undefined;
+}
+
 /** The GOG install in the game's folder. Each DLC has its own entry there too, so the
     game's install is reported: named by the registry and, where the registry doesn't
     say, by the DLC's .info. */
@@ -161,11 +185,13 @@ async function scanGogInstall(
   entries: IGameStoreEntry[],
 ): Promise<InstallRecord> {
   const entry = entries.find((iter) => inFolder(iter, discovery.path));
-  if (entry === undefined) {
+  const startId =
+    entry !== undefined ? gogGameProductId(entry) : await gogInfoProductIdIn(discovery.path);
+  if (startId === undefined) {
     return { storeId: "gog", install: null, failureReason: "store-entry-not-found" };
   }
 
-  let productId = gogGameProductId(entry);
+  let productId = startId;
   let raw = await readGogInfo(discovery.path, productId);
   const rootGameId = raw === undefined ? undefined : gogRootGameId(raw);
   if (rootGameId !== undefined && rootGameId !== productId) {
