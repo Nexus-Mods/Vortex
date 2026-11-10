@@ -5,7 +5,8 @@ import type { IDownload } from "@/extensions/download_management/types/IDownload
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import type { IProfileMod } from "@/extensions/profile_management/types/IProfile";
 
-import { type IModInstallSources, modInstallState } from "./useModInstallState.hook";
+import { downloadKeysOf, groupedModInstallState, groupModInstallSources } from "./modInstallGroups";
+import { type IModInstallSources, modInstallState } from "./modInstallState";
 
 const GAME = VortexGameId("enderalspecialedition");
 const DOMAIN = GameDomain("enderalspecialedition");
@@ -35,6 +36,7 @@ const download = (overrides: Partial<IDownload> = {}): IDownload =>
     ...overrides,
   }) as IDownload;
 
+/** What the user has of SkyUI, which the mod's own grouped sources must agree with. */
 const stateOf = (
   mods: Record<string, IMod> = {},
   downloads: Record<string, IDownload> = {},
@@ -48,7 +50,14 @@ const stateOf = (
     domainOf: (id) => GameDomain(id === "skyrimse" ? "skyrimspecialedition" : id),
   };
 
-  return modInstallState(sources, { domain: DOMAIN, modId: SKYUI });
+  const ref = { domain: DOMAIN, modId: SKYUI };
+  const state = modInstallState(sources, ref);
+
+  const keys = downloadKeysOf(downloads, sources.domainOf);
+  const groups = groupModInstallSources(mods, keys, GAME, sources.domainOf);
+
+  expect(groupedModInstallState(groups, sources, ref)).toEqual(state);
+  return state;
 };
 
 describe("modInstallState", () => {
@@ -155,5 +164,13 @@ describe("modInstallState", () => {
     };
 
     expect(stateOf({}, downloads)).toEqual({ kind: "none" });
+  });
+});
+
+describe("modInstallState with a malformed download", () => {
+  it("passes over a download that has Nexus ids but no game", () => {
+    const gameless = download({ game: undefined, modInfo: { nexus: { ids: { modId: SKYUI } } } });
+
+    expect(stateOf({}, { dl: gameless })).toEqual({ kind: "none" });
   });
 });

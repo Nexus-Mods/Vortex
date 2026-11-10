@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -43,7 +43,7 @@ vi.mock("./mod_details/ModDetails", () => ({
     }, []);
 
     return (
-      <div ref={ref}>
+      <div aria-label={`Details of ${mod.name}`} ref={ref} role="region" tabIndex={-1}>
         <p data-testid="details">{mod.name}</p>
         {gallery.map(({ large_thumbnail_url }) => (
           <p data-testid="gallery-image" key={large_thumbnail_url}>
@@ -64,6 +64,8 @@ vi.mock("./mod_list/ModList", () => ({
     activeModId,
     listRef,
     isError,
+    isLoadMoreError,
+    onFocusDetails,
     onRetry,
     onSelectMod,
   }: {
@@ -71,17 +73,27 @@ vi.mock("./mod_list/ModList", () => ({
     activeModId: string;
     listRef: React.RefObject<HTMLDivElement>;
     isError: boolean;
+    isLoadMoreError: boolean;
+    onFocusDetails: () => void;
     onRetry: () => void;
     onSelectMod: (id: string, input: string) => void;
   }) => (
     <div ref={listRef}>
-      {isError && <button onClick={onRetry}>Retry</button>}
+      {(isError || isLoadMoreError) && <button onClick={onRetry}>Retry</button>}
       {mods.map((mod) => (
         <button
           data-mod-card
           key={mod.id}
           tabIndex={mod.id === activeModId ? 0 : -1}
           onClick={() => onSelectMod(mod.id, "pointer")}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              onSelectMod(mod.id, "keyboard");
+            }
+            if (event.key === "ArrowRight") {
+              onFocusDetails();
+            }
+          }}
         >
           {mod.name}
         </button>
@@ -122,7 +134,7 @@ const search = (mods: ModSummary[], loading = false, overrides: Partial<IModSear
     isEdited: false,
     sort: SORT,
     filters: FILTERS,
-    currentPage: 1,
+    pagesLoaded: 0,
     ...overrides,
   }) as unknown as IModSearch;
 
@@ -170,7 +182,7 @@ describe("BrowseMods", () => {
     expect(mounts).toEqual(["1", "2"]);
   });
 
-  it("keeps the picked mod through a change of page", async () => {
+  it("keeps the picked mod through another search", async () => {
     const { rerender } = renderComponent(search([mod("1"), mod("2")]));
     await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
 
@@ -181,7 +193,7 @@ describe("BrowseMods", () => {
     expect(screen.queryByTestId("details-skeleton")).not.toBeInTheDocument();
   });
 
-  it("keeps the first mod through a change of page when none's been picked", () => {
+  it("keeps the first mod through another search when none's been picked", () => {
     const { rerender } = renderComponent(search([mod("1"), mod("2")]));
 
     rerender(search([mod("3"), mod("4")]));
@@ -235,17 +247,95 @@ describe("BrowseMods", () => {
     expect(screen.getByRole("button", { name: "Mod 2" })).toHaveFocus();
   });
 
-  it("counts picking a mod, with its place across the pages", async () => {
-    const { propertiesOf } = renderComponent(
-      search([mod("1"), mod("2")], false, { currentPage: 2 }),
-    );
+  it("counts picking a mod, with its place across the pages loaded", async () => {
+    const loaded = Array.from({ length: 22 }, (_, i) => mod(`${i + 1}`));
+    const { propertiesOf } = renderComponent(search(loaded, false, { pagesLoaded: 2 }));
 
-    await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
-    await userEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mod 22" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mod 22" }));
 
     expect(propertiesOf("browse_mods_mod_selected")).toEqual([
-      { mod_uid: "2", view: "trending", position: 22, input: "pointer" },
+      { mod_uid: "22", view: "trending", position: 22, input: "pointer" },
     ]);
+  });
+
+  it("shows and counts a mod clicked at once", () => {
+    mounts.length = 0;
+    const { propertiesOf } = renderComponent(search([mod("1"), mod("2")]));
+
+    fireEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+
+    expect(screen.getByTestId("details")).toHaveTextContent("Mod 2");
+    expect(propertiesOf("browse_mods_mod_selected")).toEqual([
+      { mod_uid: "2", view: "trending", position: 2, input: "pointer" },
+    ]);
+  });
+
+  it("shows and counts only the mod that moving through the list from the keyboard stops on", () => {
+    vi.useFakeTimers();
+    mounts.length = 0;
+    const { propertiesOf } = renderComponent(search([mod("1"), mod("2"), mod("3"), mod("4")]));
+    const press = (name: string) =>
+      fireEvent.keyDown(screen.getByRole("button", { name }), { key: "Enter" });
+
+    try {
+      press("Mod 2");
+      press("Mod 3");
+      press("Mod 4");
+      fireEvent.keyUp(window, { key: "Enter" });
+      act(() => {
+        vi.advanceTimersByTime(149);
+      });
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 1");
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 4");
+      expect(mounts).toEqual(["1", "4"]);
+      expect(propertiesOf("browse_mods_mod_selected")).toEqual([
+        { mod_uid: "4", view: "trending", position: 4, input: "keyboard" },
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows a mod waiting from the keyboard at once when it's clicked", () => {
+    vi.useFakeTimers();
+    renderComponent(search([mod("1"), mod("2")]));
+
+    try {
+      fireEvent.keyDown(screen.getByRole("button", { name: "Mod 2" }), { key: "Enter" });
+      fireEvent.keyUp(window, { key: "Enter" });
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 1");
+
+      fireEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 2");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens and focuses the details of a mod waiting from the keyboard on Right", () => {
+    vi.useFakeTimers();
+    renderComponent(search([mod("1"), mod("2")]));
+
+    try {
+      const card = screen.getByRole("button", { name: "Mod 2" });
+      fireEvent.keyDown(card, { key: "Enter" });
+      fireEvent.keyDown(card, { key: "ArrowRight" });
+
+      expect(screen.getByRole("region", { name: "Details of Mod 2" })).toHaveFocus();
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(screen.getByRole("region", { name: "Details of Mod 2" })).toHaveFocus();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("counts a search that comes back empty once, not while it loads", () => {
@@ -287,8 +377,21 @@ describe("BrowseMods", () => {
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
 
     expect(failed.retry).toHaveBeenCalled();
-    expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, page: 1 }]);
+    expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, pages_loaded: 0 }]);
     expect(propertiesOf("browse_mods_no_results")).toEqual([]);
+  });
+
+  it("counts retrying a later page that failed, with how many pages had loaded", async () => {
+    const failed = search([mod("1"), mod("2")], false, {
+      loadMoreError: new Error("offline"),
+      pagesLoaded: 2,
+    });
+    const { propertiesOf } = renderComponent(failed);
+
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(failed.retry).toHaveBeenCalled();
+    expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, pages_loaded: 2 }]);
   });
 
   it("counts an empty search only once the user can see it", () => {

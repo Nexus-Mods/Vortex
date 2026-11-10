@@ -109,8 +109,9 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackFiltersReset: (props: { view: TrackedView; filter_count: number }) =>
       track("browse_mods_filters_reset", props),
 
-    // `position` counts from 1 across pages, so the 3rd mod on page 2 of 20 is 23. Moving
-    // through the list with the keys picks each mod it passes, each counted as `keyboard`.
+    // `position` counts from 1 across the pages loaded, so the 3rd mod of the second page of 20
+    // is 23. Sent as the mod's shown: at once for a click, and once the keys settle for the
+    // keyboard, so moving through the list with the keys counts only the mod it stops on.
     trackModSelected: (props: {
       mod_uid: string;
       view: TrackedView;
@@ -190,7 +191,8 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     // Once per search that comes back empty.
     trackNoResults: (props: ISearchEventProps) => track("browse_mods_no_results", props),
 
-    trackRetryClicked: (props: ISearchEventProps & { page: number }) =>
+    // `pages_loaded` is how many pages were loaded when Try again was clicked, 0 when none were.
+    trackRetryClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
       track("browse_mods_retry_clicked", props),
   };
 };

@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage";
 import { updateMod } from "@/extensions/mod_management/util/update_mod/updateMod";
 import { PremiumUpsellModal } from "@/extensions/nexus_integration/components/premium_upsell_modal/PremiumUpsellModal";
-import type { MinimalModFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
+import type { ModMainFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { isPremium } from "@/extensions/nexus_integration/selectors";
 import {
@@ -27,7 +27,8 @@ import { activeGameId } from "@/util/selectors";
 import { Content } from "@/util/util";
 
 import { useBrowseModsTracker } from "../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
-import { useModInstallState } from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "../../../../util/mod_install_state/modInstallState";
+import { oneClickInstallKey } from "../../../../util/one_click_install/oneClickInstall";
 
 /** Error kinds that mean the download was cancelled, which isn't reported. */
 const CANCELED_KINDS: VortexErrorKind[] = ["user-canceled", "process-canceled"];
@@ -35,19 +36,44 @@ const CANCELED_KINDS: VortexErrorKind[] = ["user-canceled", "process-canceled"];
 /** Why the mod can't be installed, said in the tooltip; none while it can, or is loading. */
 const unavailableReason = (
   t: TFunction,
-  primaryFile: MinimalModFileVersion | null | undefined,
+  mainFile: ModMainFileVersion | null | undefined,
   isError: boolean,
 ) => {
   if (isError) {
     return t("Couldn't load this mod's files");
   }
 
-  if (primaryFile === null) {
+  if (mainFile === null) {
     return t("This mod isn't available through Vortex. Download it from Nexus Mods instead.");
   }
 
   return undefined;
 };
+
+/**
+ * What 1-click and its Premium upsell say: worded for an update when the user has the mod with one,
+ * and otherwise for installing it. The upsell's Premium button keeps its own label for an install.
+ */
+const oneClickText = (t: TFunction, isUpdate: boolean) =>
+  isUpdate
+    ? {
+        button: t("1-click update"),
+        title: t("Skip the website and update instantly."),
+        description: t(
+          "1-click in app updates are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
+        ),
+        fallbackLabel: t("Update via mod page (free)"),
+        unlockLabel: t("Unlock 1-click updates"),
+      }
+    : {
+        button: t("1-click install"),
+        title: t("Skip the website and install instantly."),
+        description: t(
+          "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
+        ),
+        fallbackLabel: t("Install via mod page (free)"),
+        unlockLabel: undefined,
+      };
 
 /** Whether the user has mods installed once they're downloaded, as their settings say. */
 const installsWhenDownloaded = (state: IState) => state.settings.automation.install;
@@ -56,24 +82,27 @@ interface IModInstallButtonProps {
   api: IExtensionApi;
   /** The mod to download, and install. */
   mod: ModSummary;
-  /** Its primary file, the one downloaded; null when it has none, absent while its details load. */
-  primaryFile?: MinimalModFileVersion | null;
-  /** Whether its details failed to load, so whether it has a primary file isn't known. */
+  /** Its main file, the one downloaded; null when it has none, absent while its details load. */
+  mainFile?: ModMainFileVersion | null;
+  /** Whether its details failed to load, so whether it has a main file isn't known. */
   isError?: boolean;
+  /** What the user has of it, from `useModStatus`. */
+  installState: ModInstallState;
 }
 
 /**
  * The details' button for what the user has of a mod: View installed mod once it's installed,
  * Update while the Mods page's update check offers one, Install for a download, and otherwise
- * 1-click install of its primary file, which only downloads if the user's settings don't install
+ * 1-click install of its main file, which only downloads if the user's settings don't install
  * once downloaded. Non-Premium users get the 1-click upsell for an update as for an install, its
  * events saying which. Progress survives switching mods.
  */
 export const ModInstallButton = ({
   api,
   mod,
-  primaryFile,
+  mainFile,
   isError = false,
+  installState,
 }: IModInstallButtonProps) => {
   const { t } = useTranslation();
   const tracker = useBrowseModsTracker();
@@ -81,17 +110,18 @@ export const ModInstallButton = ({
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
   const [isUpsellOpen, setIsUpsellOpen] = useState(false);
-  const unavailable = unavailableReason(t, primaryFile, isError);
-  const installKey = ["browse", "install", mod.id];
+  const unavailable = unavailableReason(t, mainFile, isError);
+  const installKey = oneClickInstallKey(mod.id);
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
   const domain = GameDomain(mod.game.domain_name);
-  const installState = useModInstallState({ domain, modId: Number(mod.game_scoped_id) });
   const action = shouldInstall ? "install" : "download";
-  const upsellAction = installState.kind === "installed" ? "update" : action;
+  const hasUpdate = installState.kind === "installed" && !!installState.update;
+  const upsellAction = hasUpdate ? "update" : action;
+  const { button: oneClickLabel, ...upsellText } = oneClickText(t, hasUpdate);
 
   const install = useMutation({
     mutationKey: installKey,
-    mutationFn: ({ file, game }: { file: MinimalModFileVersion; game: string }) => {
+    mutationFn: ({ file, game }: { file: ModMainFileVersion; game: string }) => {
       const nexusFile = {
         gameDomain: domain,
         gameId: VortexGameId(game),
@@ -141,30 +171,33 @@ export const ModInstallButton = ({
     void updateMod(api, installState.mod, game);
   };
 
-  /** 1-click install, which keeps showing its progress until its install is done. */
+  /**
+   * 1-click install, which keeps showing its progress until its install is done. A free user with
+   * an update sees it as 1-click update, and its upsell says update too.
+   */
   const oneClick = () => (
     <Tooltip content={unavailable} disabled={!unavailable}>
       <Button
         aria-disabled={!!unavailable}
         brand={isPremiumUser ? "primary" : "neutral"}
-        disabled={primaryFile === undefined && !isError}
+        disabled={mainFile === undefined && !isError}
         isLoading={isInstalling}
-        leftIcon="download"
+        leftIcon="install_desktop"
         rightIcon={isPremiumUser ? undefined : <PremiumBadge />}
         onClick={() => {
-          if (!primaryFile || !gameId) {
+          if (!mainFile || !gameId) {
             return;
           }
 
           if (isPremiumUser) {
-            install.mutate({ file: primaryFile, game: gameId });
+            install.mutate({ file: mainFile, game: gameId });
             return;
           }
 
           setIsUpsellOpen(true);
         }}
       >
-        {t("1-click install")}
+        {oneClickLabel}
       </Button>
     </Tooltip>
   );
@@ -207,6 +240,7 @@ export const ModInstallButton = ({
     if (installState.kind === "installed" && isPremiumUser) {
       return (
         <Button
+          brand="info"
           leftIcon="download"
           onClick={() => {
             tracker.trackUpdateClicked({ mod_uid: mod.id });
@@ -242,15 +276,11 @@ export const ModInstallButton = ({
       {control()}
 
       <PremiumUpsellModal
+        {...upsellText}
         api={api}
         content={Content.BrowseModsAd}
-        description={t(
-          "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
-        )}
         fallbackIcon="open_in_new"
-        fallbackLabel={t("Install via mod page (free)")}
         isOpen={isUpsellOpen}
-        title={t("Skip the website and install instantly.")}
         onClose={() => setIsUpsellOpen(false)}
         onDismissed={() =>
           tracker.trackPremiumModalDismissed({ mod_uid: mod.id, action: upsellAction })
@@ -267,8 +297,8 @@ export const ModInstallButton = ({
             return;
           }
 
-          if (primaryFile && gameId) {
-            install.mutate({ file: primaryFile, game: gameId });
+          if (mainFile && gameId) {
+            install.mutate({ file: mainFile, game: gameId });
           }
         }}
         onShown={() => tracker.trackPremiumModalShown({ mod_uid: mod.id, action: upsellAction })}

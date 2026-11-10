@@ -592,6 +592,12 @@ paths:
           "$ref": "#/components/responses/Forbidden"
         "404":
           "$ref": "#/components/responses/ModNotFound"
+        "409":
+          description: The mod has been removed.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         "422":
           "$ref": "#/components/responses/ValidationFailed"
   "/team-mods":
@@ -1141,6 +1147,12 @@ paths:
           "$ref": "#/components/responses/Forbidden"
         "404":
           "$ref": "#/components/responses/ModFileVersionNotFound"
+        "409":
+          description: The mod has been removed.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         "422":
           "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/{id}/dependencies/dlc":
@@ -1211,6 +1223,12 @@ paths:
           "$ref": "#/components/responses/Forbidden"
         "404":
           "$ref": "#/components/responses/ModFileVersionNotFound"
+        "409":
+          description: The mod has been removed.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         "422":
           "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/{id}/dependencies/ranges/materialized":
@@ -1522,8 +1540,9 @@ paths:
           color: orange
       summary: Create a new mod file version
       description: |
-        Creates a new version of an existing mod file. The upload specified in the request becomes
-        the most recent entry in the update chain.
+        Creates a new version of an existing mod file from the upload specified in the request. The
+        new version is inserted after `previous_version_id`, or after the latest version if that is
+        omitted.
       operationId: createModFileVersion
       parameters:
         - name: id
@@ -1592,7 +1611,7 @@ paths:
                   - data
                 properties:
                   data:
-                    "$ref": "#/components/schemas/ModFileVersion"
+                    "$ref": "#/components/schemas/ModFileVersionWithStats"
         "403":
           "$ref": "#/components/responses/Forbidden"
         "404":
@@ -2077,7 +2096,7 @@ paths:
         - mod-files
       summary: Create a new update group version (updates a mod file)
       description: |
-        Creates a new version of an update group (tied to a mod file), the upload specified in the request becomes the most recent entry in the update chain.
+        Creates a new version of an update group (tied to a mod file) from the upload specified in the request. The new version is inserted after `previous_version_id`, or after the latest version if that is omitted.
 
         **Deprecated** since 2026-06-11. Use "Create a new mod file version"
         (`POST /mod-files/{id}/versions`, operationId `createModFileVersion`) instead.
@@ -2311,6 +2330,22 @@ components:
           type: integer
           description: Total number of items matching the query across all pages.
           example: 4123
+    CursorPaginationMeta:
+      type: object
+      description: Pagination metadata for cursor-paginated responses.
+      required:
+        - page_size
+        - next_cursor
+      properties:
+        page_size:
+          type: integer
+          description: The maximum number of items requested for this page.
+          example: 100
+        next_cursor:
+          type: string
+          nullable: true
+          description: Pass as `cursor` to fetch the next page. Null when there are
+            no more items.
     EditCollectionRequest:
       type: object
       properties:
@@ -2432,7 +2467,7 @@ components:
         - tags
         - primary_image
         - gallery_images
-        - primary_file_version
+        - main_file_version
       properties:
         id:
           type: string
@@ -2491,13 +2526,13 @@ components:
             moderation or removed by staff.
           items:
             "$ref": "#/components/schemas/ModGalleryImage"
-        primary_file_version:
+        main_file_version:
           allOf:
-            - "$ref": "#/components/schemas/MinimalModFileVersion"
+            - "$ref": "#/components/schemas/ModMainFileVersion"
           nullable: true
-          description: |
-            The mod's primary file version, which is its default download. Null when the mod has no
-            primary file version, or when it has been removed or quarantined.
+          description: The primary main file version, or the newest if none is primary,
+            among those whose `security_scan_status` is `cleared`. Null when there
+            is none.
     ModUploader:
       type: object
       description: The user who uploaded a mod.
@@ -2671,6 +2706,8 @@ components:
         - category
         - uploaded_at
         - manifest_url
+        - supports_mod_managers
+        - security_scan_status
       properties:
         id:
           type: string
@@ -2707,6 +2744,35 @@ components:
           description: Whether this version is the primary file for the mod. The primary
             file represents the default download file for a mod page. There can be
             at most one primary file per mod. Defaults to false if omitted.
+        supports_mod_managers:
+          type: boolean
+          description: Whether the author allows this file to be installed with a
+            mod manager.
+        security_scan_status:
+          "$ref": "#/components/schemas/SecurityScanStatus"
+    ModFileVersionStats:
+      type: object
+      description: Download counters for a mod file version.
+      required:
+        - downloads
+        - unique_downloads
+      properties:
+        downloads:
+          type: integer
+          description: Total downloads of this version.
+        unique_downloads:
+          type: integer
+          description: Downloads of this version by distinct users.
+    ModFileVersionWithStats:
+      description: A mod file version with its download counters.
+      allOf:
+        - "$ref": "#/components/schemas/ModFileVersion"
+        - type: object
+          required:
+            - stats
+          properties:
+            stats:
+              "$ref": "#/components/schemas/ModFileVersionStats"
     ModFilesResponse:
       type: object
       required:
@@ -2724,7 +2790,7 @@ components:
         versions:
           type: array
           items:
-            "$ref": "#/components/schemas/ModFileVersion"
+            "$ref": "#/components/schemas/ModFileVersionWithStats"
     ModFileCategory:
       type: string
       enum:
@@ -2766,12 +2832,14 @@ components:
           type: boolean
           nullable: true
           description: Whether the mod is marked as adult content.
-    MinimalModFileVersion:
+    ModMainFileVersion:
       type: object
-      description: A minimal representation of a mod file version.
+      description: The version of a mod's main file to download by default.
       required:
         - id
         - game_scoped_id
+        - is_primary
+        - supports_mod_managers
       properties:
         id:
           type: string
@@ -2779,6 +2847,14 @@ components:
         game_scoped_id:
           type: string
           description: The game-scoped identifier for the mod file version.
+        is_primary:
+          type: boolean
+          description: Whether the author marked this version as the mod's primary
+            file.
+        supports_mod_managers:
+          type: boolean
+          description: Whether the author allows this file to be installed with a
+            mod manager.
     ModStatus:
       type: string
       description: The effective visibility status of a mod.
@@ -2789,6 +2865,19 @@ components:
         - under_moderation
         - removed
         - removed_by_staff
+    SecurityScanStatus:
+      type: string
+      description: |
+        Whether the file's security scan allows it to be downloaded.
+        - `cleared`: the file is cleared for download.
+        - `pending`: the scan has not finished.
+        - `quarantined`: the file has been quarantined as possible malware and can't be downloaded.
+        - `unverified`: the file has not been scanned, or its scan could not complete.
+      enum:
+        - cleared
+        - pending
+        - quarantined
+        - unverified
     MinimalGame:
       type: object
       description: A minimal representation of a game.
@@ -3762,6 +3851,11 @@ components:
             Whether to include adult mods, leave them out, or return adult mods only. Defaults to
             `include`. Adult mods that age verification or the user's adult content preference leave
             out are never returned, so `only` returns no mods for a user who cannot see adult content.
+        supports_mod_managers:
+          type: boolean
+          description: |
+            `true` returns only mods that can be installed with a mod manager, `false` only mods that
+            cannot. Mods are not filtered on mod manager support when left out.
     DateTimeRange:
       type: object
       description: |
@@ -3874,30 +3968,22 @@ components:
               enum:
                 - page
     ModsSearchCursorPaginationMeta:
-      type: object
       description: Pagination for a page requested by cursor.
-      required:
-        - type
-        - page_size
-        - total_count
-        - next_cursor
-      properties:
-        type:
-          type: string
-          enum:
-            - cursor
-        page_size:
-          type: integer
-          description: Number of mods per page.
-          example: 20
-        total_count:
-          type: integer
-          description: Number of mods that match the search.
-          example: 4123
-        next_cursor:
-          type: string
-          nullable: true
-          description: Send as `cursor` to get the next page. Null on the last page.
+      allOf:
+        - "$ref": "#/components/schemas/CursorPaginationMeta"
+        - type: object
+          required:
+            - type
+            - total_count
+          properties:
+            type:
+              type: string
+              enum:
+                - cursor
+            total_count:
+              type: integer
+              description: Number of mods that match the search.
+              example: 4123
     ModsSearchResponse:
       type: object
       required:
@@ -4064,6 +4150,8 @@ components:
         primary_mod_manager_download:
           type: boolean
           description: Whether this file is the default download for mod managers.
+            Only a main file can be the default; `true` with another category is rejected
+            with a 422.
           default: false
         allow_mod_manager_download:
           type: boolean
@@ -4266,7 +4354,8 @@ components:
           type: boolean
           description: Whether this file is the default download for mod managers.
             If omitted, a main file takes over as the default download when the version
-            it replaces was the default.
+            it replaces was the default. Only a main file can be the default; `true`
+            with another category is rejected with a 422.
         allow_mod_manager_download:
           type: boolean
           description: Whether mod manager downloads are enabled for this file.
@@ -4281,8 +4370,8 @@ components:
         previous_version_id:
           type: string
           nullable: true
-          description: The unique identifier for the mod file version this version
-            is replacing.
+          description: The version of this mod file to insert the new version directly
+            after. If omitted, the new version is inserted after the latest version.
     CreateUpdateGroupVersionSuccess:
       allOf:
         - "$ref": "#/components/schemas/UploadModFile"
@@ -4318,7 +4407,8 @@ components:
           type: boolean
           description: Whether this file is the default download for mod managers.
             If omitted, a main file takes over as the default download when the version
-            it replaces was the default.
+            it replaces was the default. Only a main file can be the default; `true`
+            with another category is rejected with a 422.
         allow_mod_manager_download:
           type: boolean
           description: Whether mod manager downloads are enabled for this file.
@@ -4337,8 +4427,8 @@ components:
         previous_version_id:
           type: string
           nullable: true
-          description: The unique identifier for the mod file version this version
-            is replacing.
+          description: The version of this mod file to insert the new version directly
+            after. If omitted, the new version is inserted after the latest version.
     CreateModFileVersionSuccess:
       type: object
       required:

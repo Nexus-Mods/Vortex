@@ -1,15 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 
+import type { ModStatus } from "../../../util/mod_status/modStatus";
 import { ModCard } from "./ModCard";
 
 // No one's logged in, so adult content is blurred, as it is by default.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
+
+/** The status of the mod the card shows. */
+let status: ModStatus | undefined;
+vi.mock("../../../hooks/use_mod_status/useModStatus.hook", () => ({
+  useModStatus: () => ({ installState: { kind: "none" }, status }),
+}));
 
 const mod = (adult: boolean) =>
   ({
@@ -17,6 +24,7 @@ const mod = (adult: boolean) =>
     name: "SkyUI",
     summary: "Elegant, PC-friendly interface",
     author: { name: "schlangster" },
+    game: { domain_name: "skyrimspecialedition" },
     thumbnail_url: "thumb.png",
     blurred_thumbnail_url: "thumb-blurred.png",
     downloads: 9000,
@@ -25,10 +33,33 @@ const mod = (adult: boolean) =>
     adult,
   }) as unknown as ModSummary;
 
-const renderCard = (adult: boolean) =>
-  render(<ModCard isActive={false} mod={mod(adult)} tabIndex={0} onSelect={vi.fn()} />);
+const renderCard = (adult: boolean, change: Partial<ModSummary> = {}) =>
+  render(
+    <ModCard isActive={false} mod={{ ...mod(adult), ...change }} tabIndex={0} onSelect={vi.fn()} />,
+  );
 
 describe("ModCard", () => {
+  afterEach(() => {
+    status = undefined;
+  });
+
+  it.each([
+    ["downloaded", "Downloaded"],
+    ["installed", "Installed"],
+    ["update", "Update available"],
+  ] as Array<[ModStatus, string]>)("says what the user has of the mod: %s", (shown, label) => {
+    status = shown;
+    renderCard(false);
+
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+
+  it("says nothing of a mod the user hasn't got", () => {
+    renderCard(false);
+
+    expect(screen.queryByText(/Downloaded|Installed|Update available/)).toBeNull();
+  });
+
   it("shows an adult mod's thumbnail as the server blurred it, blurring it no further", () => {
     const { container } = renderCard(true);
     const image = container.querySelector("img");
@@ -53,6 +84,13 @@ describe("ModCard", () => {
     await userEvent.hover(stat!);
 
     expect(await screen.findByText(tooltip)).toBeInTheDocument();
+  });
+
+  it("shows no date for a mod whose date can't be read, rather than failing", () => {
+    renderCard(false, { updated_at: "not a date" });
+
+    expect(screen.getByText("SkyUI")).toBeInTheDocument();
+    expect(screen.queryByText(/ago$/)).toBeNull();
   });
 
   it("says its date is when the mod was updated, on hover", async () => {

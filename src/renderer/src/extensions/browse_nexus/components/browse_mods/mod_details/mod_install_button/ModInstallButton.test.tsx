@@ -6,16 +6,13 @@ import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IMod } from "@/extensions/mod_management/types/IMod";
-import type { MinimalModFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
+import type { ModMainFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
-import type {
-  INexusModRef,
-  ModInstallState,
-} from "../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "../../../../util/mod_install_state/modInstallState";
 
 const mocks = vi.hoisted(() => {
   const state = {
@@ -26,7 +23,6 @@ const mocks = vi.hoisted(() => {
     update: vi.fn(),
     show: vi.fn(),
     installState: { kind: "none" } as ModInstallState,
-    lookedUp: [] as INexusModRef[],
   };
 
   /** The selectors the test answers. */
@@ -51,12 +47,6 @@ vi.mock("@/util/selectors", () => ({ activeGameId: mocks.selectors.activeGameId 
 vi.mock("@/extensions/nexus_integration/hooks/useRefreshUserInfoOnFocus", () => ({
   useRefreshUserInfoOnFocus: () => undefined,
 }));
-vi.mock("../../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
-  useModInstallState: (ref: INexusModRef) => {
-    mocks.lookedUp.push(ref);
-    return mocks.installState;
-  },
-}));
 vi.mock("@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage", () => ({
   showModOnModsPage: mocks.show,
 }));
@@ -77,7 +67,12 @@ const mod = {
   name: "SkyUI",
 } as unknown as ModSummary;
 
-const primaryFile: MinimalModFileVersion = { id: "7340074", game_scoped_id: "42" };
+const mainFile: ModMainFileVersion = {
+  id: "7340074",
+  game_scoped_id: "42",
+  is_primary: true,
+  supports_mod_managers: true,
+};
 
 let tracking: ReturnType<typeof browseModsTracking>;
 let showErrorNotification: ReturnType<typeof vi.fn>;
@@ -85,7 +80,7 @@ let openUrl: ReturnType<typeof vi.fn>;
 let emit: ReturnType<typeof vi.fn>;
 let dispatch: ReturnType<typeof vi.fn>;
 
-const renderButton = (file?: MinimalModFileVersion | null, isError = false) => {
+const renderButton = (file?: ModMainFileVersion | null, isError = false) => {
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
   tracking = browseModsTracking();
   showErrorNotification = vi.fn();
@@ -102,9 +97,10 @@ const renderButton = (file?: MinimalModFileVersion | null, isError = false) => {
             store: { dispatch },
           } as unknown as IExtensionApi
         }
+        installState={mocks.installState}
         isError={isError}
         mod={mod}
-        primaryFile={file}
+        mainFile={file}
       />
     </QueryClientProvider>
   );
@@ -131,14 +127,13 @@ describe("ModInstallButton", () => {
     mocks.update.mockReset();
     mocks.show.mockReset();
     mocks.installState = { kind: "none" };
-    mocks.lookedUp = [];
     openUrl = vi.fn();
     window.api.shell = { openUrl } as unknown as typeof window.api.shell;
   });
 
   it("offers a free user Premium instead, counting it", async () => {
     mocks.isPremium = false;
-    renderButton(primaryFile);
+    renderButton(mainFile);
 
     await userEvent.click(button());
 
@@ -152,7 +147,7 @@ describe("ModInstallButton", () => {
 
   it("sends a free user to the mod's Files tab to pick a file", async () => {
     mocks.isPremium = false;
-    renderButton(primaryFile);
+    renderButton(mainFile);
 
     await userEvent.click(button());
     await userEvent.click(screen.getByRole("button", { name: "Install via mod page (free)" }));
@@ -169,7 +164,7 @@ describe("ModInstallButton", () => {
   it("installs once a free user unlocks Premium from the upsell", async () => {
     mocks.isPremium = false;
     mocks.install.mockReturnValue(new Promise(() => undefined));
-    const { rerender } = renderButton(primaryFile);
+    const { rerender } = renderButton(mainFile);
 
     await userEvent.click(button());
     mocks.isPremium = true;
@@ -196,7 +191,7 @@ describe("ModInstallButton", () => {
     expect(button()).toBeDisabled();
   });
 
-  it("can't install a mod without a primary file, and says why", async () => {
+  it("can't install a mod without a main file, and says why", async () => {
     renderButton(null);
 
     await userEvent.click(button());
@@ -222,9 +217,9 @@ describe("ModInstallButton", () => {
     expect(await screen.findByText("Couldn't load this mod's files")).toBeInTheDocument();
   });
 
-  it("installs the primary file, counting it and showing progress until it's done", async () => {
+  it("installs the main file, counting it and showing progress until it's done", async () => {
     mocks.install.mockReturnValue(new Promise(() => undefined));
-    renderButton(primaryFile);
+    renderButton(mainFile);
 
     await userEvent.click(button());
 
@@ -245,7 +240,7 @@ describe("ModInstallButton", () => {
 
   it("reports an install that fails", async () => {
     mocks.install.mockRejectedValue(new Error("disk full"));
-    renderButton(primaryFile);
+    renderButton(mainFile);
 
     await userEvent.click(button());
 
@@ -257,7 +252,7 @@ describe("ModInstallButton", () => {
     mocks.install.mockRejectedValue(
       new VortexError("canceled by user", { kind: "user-canceled", skipped: false }),
     );
-    renderButton(primaryFile);
+    renderButton(mainFile);
 
     await userEvent.click(button());
 
@@ -268,7 +263,7 @@ describe("ModInstallButton", () => {
   it("only downloads, still labelled install, for a user who doesn't install mods once downloaded", async () => {
     mocks.installs = false;
     mocks.download.mockReturnValue(new Promise(() => undefined));
-    renderButton(primaryFile);
+    renderButton(mainFile);
 
     expect(button()).toHaveTextContent("1-click install");
 
@@ -287,12 +282,6 @@ describe("ModInstallButton", () => {
     ]);
   });
 
-  it("looks the mod up by its game's domain and its id", () => {
-    renderButton(primaryFile);
-
-    expect(mocks.lookedUp[0]).toEqual({ domain: "skyrimspecialedition", modId: 1 });
-  });
-
   describe("for a mod the user already has", () => {
     /** SkyUI installed as mod `skyui`, with the update its check found, if any. */
     const installed = (update?: "update" | "update-site") => {
@@ -308,7 +297,7 @@ describe("ModInstallButton", () => {
     it("shows an installed mod on the Mods page, for free users too", async () => {
       mocks.isPremium = false;
       installed();
-      renderButton(primaryFile);
+      renderButton(mainFile);
 
       await userEvent.click(screen.getByRole("button", { name: "View installed mod" }));
 
@@ -318,7 +307,7 @@ describe("ModInstallButton", () => {
 
     it("updates it as the Mods page does when the update check found one", async () => {
       installed("update");
-      renderButton(primaryFile);
+      renderButton(mainFile);
 
       await userEvent.click(screen.getByRole("button", { name: "Update" }));
 
@@ -332,7 +321,7 @@ describe("ModInstallButton", () => {
 
     it("opens the mod's page to pick the update when the newest file isn't known", async () => {
       installed("update-site");
-      renderButton(primaryFile);
+      renderButton(mainFile);
 
       await userEvent.click(screen.getByRole("button", { name: "Update" }));
 
@@ -343,14 +332,34 @@ describe("ModInstallButton", () => {
     /** Opens the upsell as a free user with an update, then unlocks Premium. */
     const unlockFromUpsell = async () => {
       mocks.isPremium = false;
-      const { rerender } = renderButton(primaryFile);
+      const { rerender } = renderButton(mainFile);
 
       await userEvent.click(button());
-      expect(screen.getByText("Skip the website and install instantly.")).toBeInTheDocument();
+      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
 
       mocks.isPremium = true;
       rerender();
     };
+
+    it("offers a free user 1-click update for an update", () => {
+      installed("update");
+      mocks.isPremium = false;
+      renderButton(mainFile);
+
+      expect(button()).toHaveTextContent("1-click update");
+    });
+
+    it("upsells a free user an update in words of updating", async () => {
+      installed("update");
+      mocks.isPremium = false;
+      renderButton(mainFile);
+
+      await userEvent.click(button());
+
+      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
+      expect(screen.getByText("Update via mod page (free)")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Unlock 1-click updates" })).toBeInTheDocument();
+    });
 
     it("upsells a free user 1-click for an update, counted as one, updating once they unlock", async () => {
       installed("update");
@@ -378,14 +387,14 @@ describe("ModInstallButton", () => {
 
     it("shows an install in progress, wherever it was started", () => {
       mocks.installState = { kind: "installing" };
-      renderButton(primaryFile);
+      renderButton(mainFile);
 
       expect(screen.getByRole("button", { name: "Install" })).toBeDisabled();
     });
 
     it("holds 1-click install's progress once its download is done, until it's installed", async () => {
       mocks.install.mockReturnValue(new Promise(() => undefined));
-      const { rerender } = renderButton(primaryFile);
+      const { rerender } = renderButton(mainFile);
 
       await userEvent.click(button());
       mocks.installState = { kind: "downloaded", downloadId: "dl" };
@@ -395,10 +404,22 @@ describe("ModInstallButton", () => {
       expect(screen.queryByRole("button", { name: "Install" })).not.toBeInTheDocument();
     });
 
+    it("keeps saying 1-click install while it finishes, once the mod counts as installed", async () => {
+      mocks.install.mockReturnValue(new Promise(() => undefined));
+      const { rerender } = renderButton(mainFile);
+
+      await userEvent.click(button());
+      installed();
+      rerender();
+
+      await waitFor(() => expect(button()).toBeDisabled());
+      expect(button()).toHaveTextContent("1-click install");
+    });
+
     it("installs a download that isn't installed, for free users too", async () => {
       mocks.isPremium = false;
       mocks.installState = { kind: "downloaded", downloadId: "dl" };
-      renderButton(primaryFile);
+      renderButton(mainFile);
 
       await userEvent.click(screen.getByRole("button", { name: "Install" }));
 

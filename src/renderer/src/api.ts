@@ -25,3 +25,5 @@ export type {
   FileSystemErrorData,
   OsErrorData,
 } from "@vortex/shared";
+
+export { VortexGameId, VortexProfileId, GameId, GameDomain } from "@vortex/shared";

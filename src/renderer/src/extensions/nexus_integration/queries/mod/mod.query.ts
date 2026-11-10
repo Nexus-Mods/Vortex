@@ -11,8 +11,8 @@ export type Mod = components["schemas"]["Mod"];
 /** One of a mod's images in each size, as the v3 API returns it. */
 export type ModImage = components["schemas"]["ModImage"];
 
-/** A mod's file version, by its ids alone, such as the mod's primary file. */
-export type MinimalModFileVersion = components["schemas"]["MinimalModFileVersion"];
+/** The version of a mod's main file it downloads by default: the primary one, or else the newest. */
+export type ModMainFileVersion = components["schemas"]["ModMainFileVersion"];
 
 /** The keys of the mod queries. */
 export const modKeys = {
