@@ -56,7 +56,7 @@ describe("ViewNameModal", () => {
     await userEvent.type(nameField(), "a".repeat(45));
 
     expect(nameField()).toHaveValue("a".repeat(40));
-    expect(screen.getByText("0 / 40")).toBeInTheDocument();
+    expect(screen.getByLabelText("remaining character count")).toHaveTextContent("0 / 40");
 
     await userEvent.click(screen.getByRole("button", { name: "Create view" }));
 
@@ -67,6 +67,25 @@ describe("ViewNameModal", () => {
     const { onCreate, onClose } = renderModal();
 
     await userEvent.type(nameField(), "Mine");
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onClose).toHaveBeenCalled();
+    expect(onCreate).not.toHaveBeenCalled();
+  });
+
+  it("cuts a name saved before the limit to 40 characters to rename it", async () => {
+    const { onCreate } = renderModal("a".repeat(48));
+
+    expect(nameField()).toHaveValue("a".repeat(40));
+
+    await userEvent.click(screen.getByRole("button", { name: "Rename view" }));
+
+    expect(onCreate).toHaveBeenCalledWith("a".repeat(40));
+  });
+
+  it("leaves a name saved before the limit as it is on Cancel", async () => {
+    const { onCreate, onClose } = renderModal("a".repeat(48));
+
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(onClose).toHaveBeenCalled();

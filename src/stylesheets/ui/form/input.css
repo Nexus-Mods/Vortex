@@ -2,7 +2,6 @@
     .nxm-input {
         width: 100%;
         min-height: calc(var(--spacing) * 7);
-        border-radius: var(--radius-sm);
         padding-inline: calc(var(--spacing) * 3);
 
         font-size: var(--text-body-sm);
@@ -10,7 +9,20 @@
         letter-spacing: var(--text-body-sm--letter-spacing);
 
         color: var(--color-neutral-strong);
+
+        &::placeholder {
+            color: var(--color-neutral-subdued);
+            font-style: italic;
+        }
+    }
+
+    /* The box an input draws, and its states: on the input itself, or, for a text area with a
+       count, on its control (see below), from the text area's state. One rule for both, so they
+       can't drift apart. */
+    .nxm-input,
+    .nxm-field-control:has(> .nxm-textarea ~ .nxm-field-character-count) {
         border: solid 1px var(--color-stroke-subdued);
+        border-radius: var(--radius-sm);
         background-color: var(--color-translucent-dark-400);
 
         transition-property:
@@ -18,40 +30,47 @@
             pointer-events;
         transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
+    }
 
-        &::placeholder {
-            color: var(--color-neutral-subdued);
-            font-style: italic;
-        }
+    .nxm-input:is([data-disabled], [readonly]),
+    .nxm-field-control:has(> .nxm-textarea ~ .nxm-field-character-count):has(
+        > .nxm-textarea:is([data-disabled], [readonly])
+    ) {
+        opacity: 0.4;
+        outline: none;
+    }
 
-        &[data-disabled],
-        &[readonly] {
-            opacity: 0.4;
-            outline: none;
-        }
+    .nxm-input[data-disabled],
+    .nxm-field-control:has(> .nxm-textarea ~ .nxm-field-character-count):has(
+        > .nxm-textarea[data-disabled]
+    ) {
+        cursor: not-allowed;
+    }
 
-        &[data-disabled] {
-            cursor: not-allowed;
-        }
+    .nxm-input[data-invalid],
+    .nxm-field-control:has(> .nxm-textarea ~ .nxm-field-character-count):has(
+        > .nxm-textarea[data-invalid]
+    ) {
+        border-color: var(--color-danger-strong);
+        background-color: var(--color-surface-translucent-mid);
+    }
 
-        &[data-invalid] {
-            border-color: var(--color-danger-strong);
-            background-color: var(--color-surface-translucent-mid);
-        }
+    .nxm-input:not([data-disabled], [data-invalid], [readonly])[data-hover],
+    .nxm-field-control:has(> .nxm-textarea ~ .nxm-field-character-count):has(
+        > .nxm-textarea:not([data-disabled], [data-invalid], [readonly])[data-hover]
+    ) {
+        border-color: var(--color-stroke-moderate);
+        background-color: var(--color-surface-translucent-low);
+    }
 
-        &:not([data-disabled], [data-invalid], [readonly]) {
-            &[data-hover] {
-                border-color: var(--color-stroke-moderate);
-                background-color: var(--color-surface-translucent-low);
-            }
-
-            /* :focus, not data-focus: Headless UI only sets that for keyboard focus, and a text
-               input should show it however it was focused. */
-            &:focus {
-                border-color: var(--color-stroke-strong);
-                background-color: var(--color-surface-translucent-mid);
-            }
-        }
+    /* :focus, not data-focus: Headless UI only sets that for keyboard focus, and a text input
+       should show it however it was focused. */
+    .nxm-input:not([data-disabled], [data-invalid], [readonly]):focus,
+    .nxm-field-control:has(> .nxm-textarea ~ .nxm-field-character-count):has(
+        > .nxm-textarea:not([data-disabled], [data-invalid], [readonly]):focus
+    ) {
+        border-color: var(--color-stroke-strong);
+        background-color: var(--color-surface-translucent-mid);
     }
 
     /* A text area is an input that grows downwards: vertical padding, and room for three whole
@@ -70,8 +89,8 @@
 
     /* A text area with a count draws its box on the control instead, and resizes from it, so the
        count gets a strip of its own inside the box, below three lines of text that scroll clear of
-       it. The strip's there while the count's hidden too, so nothing moves when it shows. Its
-       states copy `.nxm-input`'s above, so change them together. */
+       it. The strip's there while the count's hidden too, so nothing moves when it shows. The box
+       and its states are `.nxm-input`'s, above. */
     .nxm-field-control:has(> .nxm-textarea ~ .nxm-field-character-count) {
         flex-direction: column;
         align-items: stretch;
@@ -80,12 +99,6 @@
         );
         overflow: hidden;
         resize: vertical;
-        border: solid 1px var(--color-stroke-subdued);
-        border-radius: var(--radius-sm);
-        background-color: var(--color-translucent-dark-400);
-        transition-property: border-color, background-color, opacity;
-        transition-timing-function: var(--default-transition-timing-function);
-        transition-duration: var(--default-transition-duration);
 
         > .nxm-textarea {
             --nxm-character-count-strip: calc(var(--spacing) * 2 + 1lh);
@@ -104,7 +117,7 @@
             }
         }
 
-        &:has(> .nxm-textarea:focus-visible) {
+        &:has(> .nxm-textarea:focus-visible:not([readonly])) {
             outline: var(--color-info-subdued) solid calc(var(--spacing) * 0.5);
             outline-offset: calc(var(--spacing) * 0.5);
         }
@@ -112,29 +125,6 @@
         > .nxm-field-character-count {
             bottom: var(--spacing);
             opacity: 1;
-        }
-
-        &:has(> .nxm-textarea:is([data-disabled], [readonly])) {
-            opacity: 0.4;
-        }
-
-        &:has(> .nxm-textarea[data-disabled]) {
-            cursor: not-allowed;
-        }
-
-        &:has(> .nxm-textarea[data-invalid]) {
-            border-color: var(--color-danger-strong);
-            background-color: var(--color-surface-translucent-mid);
-        }
-
-        &:has(> .nxm-textarea:not([data-disabled], [data-invalid], [readonly])[data-hover]) {
-            border-color: var(--color-stroke-moderate);
-            background-color: var(--color-surface-translucent-low);
-        }
-
-        &:has(> .nxm-textarea:not([data-disabled], [data-invalid], [readonly]):focus) {
-            border-color: var(--color-stroke-strong);
-            background-color: var(--color-surface-translucent-mid);
         }
     }
 

@@ -29,6 +29,7 @@ interface IViewNameModalProps {
 /**
  * The name field and actions. Its own component inside the modal, whose content mounts each
  * time it opens, so the name starts from the view being renamed, or from nothing, every time.
+ * A name saved before the limit starts cut to it, so it can be edited and saved like any other.
  */
 const ViewNameForm = ({
   renaming,
@@ -42,7 +43,7 @@ const ViewNameForm = ({
   inputRef: RefObject<HTMLInputElement | null>;
 }) => {
   const { t } = useTranslation(["common"]);
-  const [name, setName] = useState(renaming ?? "");
+  const [name, setName] = useState((renaming ?? "").slice(0, MAX_NAME_LENGTH));
   const trimmed = name.trim();
 
   const submit = (event: FormEvent) => {

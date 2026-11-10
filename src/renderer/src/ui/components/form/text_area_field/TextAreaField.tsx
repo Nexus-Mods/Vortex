@@ -1,6 +1,6 @@
 import React, { forwardRef, useState } from "react";
 
-import { CharacterCount, characterCountRoom } from "@/ui/components/form/field/CharacterCount";
+import { CharacterCount, characterCountStyle } from "@/ui/components/form/field/CharacterCount";
 import { Description } from "@/ui/components/form/field/Description";
 import { ErrorMessage } from "@/ui/components/form/field/ErrorMessage";
 import { Field } from "@/ui/components/form/field/Field";
@@ -61,10 +61,7 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, ITextAreaFieldProps
           {label}
         </Label>
 
-        <div
-          className="nxm-field-control"
-          style={maxLength !== undefined ? characterCountRoom(maxLength) : undefined}
-        >
+        <div className="nxm-field-control" style={characterCountStyle(maxLength)}>
           <Textarea
             {...props}
             defaultValue={defaultValue}

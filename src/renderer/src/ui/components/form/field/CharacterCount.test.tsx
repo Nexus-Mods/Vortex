@@ -29,6 +29,12 @@ describe("CharacterCount", () => {
     expect(count()).not.toHaveClass("nxm-field-character-count-danger");
   });
 
+  it("counts none left, not below, for a value over the max", () => {
+    render(<CharacterCount length={28} maxLength={20} />);
+    expect(count()).toHaveTextContent("0 / 20");
+    expect(count()).toHaveClass("nxm-field-character-count-danger");
+  });
+
   it("turns to danger with a tenth left", () => {
     render(<CharacterCount length={18} maxLength={20} />);
     expect(count()).toHaveClass("nxm-field-character-count-danger");
