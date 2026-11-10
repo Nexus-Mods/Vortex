@@ -137,6 +137,8 @@ export interface IGameHarnessOpts {
   instanceId?: string;
   // the game's configured deployment method (state.settings.mods.activator); none unless set
   activatorId?: string;
+  // the game is only a stub: getGame finds it, but no game extension registered it
+  stub?: boolean;
 }
 
 export interface IDeployedGameHarness extends IGameHarness {

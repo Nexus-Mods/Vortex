@@ -611,7 +611,7 @@ function pickedStore(state: IState, gameId: VortexGameId): string | undefined {
  * held to that store, and not finding the game there fails the add rather than leaving
  * it to manage whichever install was found before.
  */
-async function discoverPickedGame(
+export async function discoverPickedGame(
   api: IExtensionApi,
   gameId: VortexGameId,
   store: string | undefined,
@@ -620,7 +620,7 @@ async function discoverPickedGame(
 
   // A game without its extension isn't discovered at all, and goes on to be offered the
   // extension; there's nothing yet to hold to the store.
-  if (store === undefined || getGame(gameId) === undefined) {
+  if (store === undefined || !isGameRegistered(gameId)) {
     return;
   }
 
