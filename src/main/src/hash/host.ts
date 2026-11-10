@@ -22,9 +22,8 @@ import type { HashJob, HashResult } from "./protocol";
 
 const WORKER_SCRIPT = path.join(__dirname, "hash-worker.cjs");
 
-// Hashing is largely disk-bound, so a small pool is enough to stop concurrent
-// finalizations serializing without thrashing the disk with too many readers.
-const POOL_SIZE = Math.max(2, Math.min(4, os.cpus().length - 1));
+// Hashing many files is bound by how many are read at once, so the pool grows with the CPUs.
+const POOL_SIZE = Math.max(2, Math.min(16, os.cpus().length - 1));
 
 export interface HashFileResult {
   hash: string;

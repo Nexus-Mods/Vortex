@@ -1,4 +1,8 @@
-export type TelemetryEvent = EventDetectedGame | EventStoreGameVersion | EventManualInstaller;
+export type TelemetryEvent =
+  | EventDetectedGame
+  | EventStoreGameVersion
+  | EventManualInstaller
+  | EventPlannerPlan;
 
 // https://github.com/Nexus-Mods/flamework/tree/master/contracts/telemetry
 export type EventDetectedGame = {
@@ -86,4 +90,48 @@ export type EventManualInstaller = {
     /** the numeric Nexus file id, only set when mod_id is set */
     file_id: number | null;
   };
+};
+
+export type EventPlannerPlan = {
+  type: "planner_plan";
+  version: 1;
+
+  payload: PlannerPlanPayload;
+};
+
+/** contracts/telemetry/planner_plan/v1.schema.json; null is a figure the run did not measure. */
+export type PlannerPlanPayload = {
+  game_id: string;
+  mods: number | null;
+  lockfile_files: number | null;
+  generated_files: number | null;
+  disk_entries: number | null;
+  scan_roots: number | null;
+  first_run: boolean | null;
+  resolve_ms: number | null;
+  scan_ms: number | null;
+  plan_ms: number | null;
+  operations: PlannerOperationCounts | null;
+  case_mismatches: number | null;
+  manifest_diff: ManifestDiff | null;
+  error_kind: string | null;
+};
+
+/** The operations a plan would perform, by kind. */
+export type PlannerOperationCounts = {
+  backup: number;
+  link: number;
+  unlink: number;
+};
+
+/** Why one destination differs between the lockfile and what the deployment wrote. */
+export type ManifestDiffReason =
+  | "missing-from-lockfile"
+  | "missing-from-deploy"
+  | "different-winner";
+
+/** How the lockfile differs from what the deployment wrote, counted by reason code. */
+export type ManifestDiff = {
+  verdict: "pass" | "fail";
+  counts: Record<ManifestDiffReason, number>;
 };

@@ -81,6 +81,7 @@ import { handleSetPluginList } from "./util/onSetPluginList";
 import { makePluginConflictPrompt } from "./util/pluginFileConflict";
 import PluginHistory from "./util/PluginHistory";
 import { makeSetPluginLight } from "./util/pluginLight";
+import { pluginListContribution } from "./util/pluginListContribution";
 import PluginPersistor from "./util/PluginPersistor";
 import { copyIgnoringMissing, swapUserlistForProfile, userlistPaths } from "./util/profileUserlist";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
@@ -1156,6 +1157,10 @@ function init(context: IExtensionContextExt) {
   const history = new PluginHistory(context.api, makeSetPluginGhost(context.api), setPluginLight);
 
   initPersistor(context);
+  context.optional.registerLockfileContribution(
+    (_state: IState, gameMode: string) => gameSupported(gameMode),
+    pluginListContribution,
+  );
   pluginSync = makePluginSync(context.api, {
     persistors: {
       plugins: pluginPersistor,

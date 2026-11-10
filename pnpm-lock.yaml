@@ -3905,6 +3905,19 @@ importers:
         specifier: workspace:*
         version: link:../pe-resources
 
+  packages/mod-pipeline:
+    dependencies:
+      '@nexusmods/paths':
+        specifier: workspace:*
+        version: link:../paths
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.4
+
   packages/nexus-api-v3:
     devDependencies:
       openapi-fetch:
@@ -4062,6 +4075,9 @@ importers:
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
         version: 0.13.4
+      '@nexusmods/mod-pipeline':
+        specifier: workspace:*
+        version: link:../../packages/mod-pipeline
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/f3f9728b409dd2b6eb6c81ba5d0fbe76a0a2c914
@@ -4622,6 +4638,9 @@ importers:
       '@nexusmods/fomod-installer-native':
         specifier: 'catalog:'
         version: 0.13.4
+      '@nexusmods/mod-pipeline':
+        specifier: workspace:*
+        version: link:../../packages/mod-pipeline
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/f3f9728b409dd2b6eb6c81ba5d0fbe76a0a2c914

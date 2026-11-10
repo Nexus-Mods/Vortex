@@ -74,7 +74,7 @@ function refreshCache(
 
 /** Everything a game's store install contributes except the two game versions,
     the only expensive fields: failures carry their reason and `install` is null. */
-interface InstallRecord {
+export interface InstallRecord {
   storeId: StoreId;
   install: InstallBlock | null;
   failureReason: string | null;
@@ -117,7 +117,7 @@ function gameSteamAppIds(game: IGame | undefined): Set<string> {
 
 /** Collect the store install identity for one game, from data that is cheap to
     read per deploy: store snapshots, manifest install data, GOG .info files. */
-async function scanInstall(
+export async function scanInstall(
   internalGameId: string,
   discovery: IDiscoveryResult,
 ): Promise<InstallRecord> {

@@ -65,7 +65,11 @@ import {
 } from "../analytics/mixpanel/gameManageAnalytics";
 import { clearGameAddStore } from "../gamemode_management/actions/session";
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
-import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
+import {
+  getGame,
+  getGameStubDownloadInfo,
+  isGameRegistered,
+} from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
@@ -410,9 +414,7 @@ function genOnProfileChange(
         }
 
         if (profile !== undefined) {
-          const { gameId } = profile;
-          const game = getGame(gameId);
-          if (game === undefined) {
+          if (!isGameRegistered(VortexGameId(profile.gameId))) {
             showError(
               store.dispatch,
               "Game no longer supported, please install the game extension",
@@ -774,11 +776,11 @@ function manageGame(api: IExtensionApi, gameId: VortexGameId): PromiseLike<void>
   const profiles = state.persistent.profiles || {};
 
   // Discovery state outlives the registering extension. If the extension
-  // didn't load (missing dependency, exception, disabled) getGame is
-  // undefined and activating would create an orphan profile.
+  // didn't load (missing dependency, exception, disabled, uninstalled with
+  // only its stub left) activating would create an orphan profile.
   if (
     state.settings.gameMode?.discovered?.[gameId]?.path !== undefined &&
-    getGame(gameId) !== undefined
+    isGameRegistered(gameId)
   ) {
     const profile = Object.values(profiles).find((prof) => prof.gameId === gameId);
     if (profile !== undefined) {
@@ -1034,7 +1036,7 @@ function init(context: IExtensionContext): boolean {
           // registering extension.
           const manageFunc =
             state.settings.gameMode.discovered[gameId]?.path !== undefined &&
-            getGame(gameId) !== undefined
+            isGameRegistered(gameId)
               ? manageGameDiscovered
               : manageGameUndiscovered;
 

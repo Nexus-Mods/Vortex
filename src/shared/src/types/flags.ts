@@ -17,6 +17,8 @@ export const flagVariantSchemas = {
   "vortex-tier-0-game-support": {},
   // On/off gate for browsing mods on the Browse page; off shows a coming-soon panel instead.
   "laz-vortex-browse-mods": {},
+  // On/off gate for the planner_plan telemetry event.
+  "vortex-planner-telemetry": {},
 };
 
 type FlagVariantSchemas = typeof flagVariantSchemas;
