@@ -132,6 +132,7 @@ import lazyRequire from "./lazyRequire";
 import local from "./local";
 import makeReactive from "./makeReactive";
 import onceCB from "./onceCB";
+// eslint-disable-next-line no-restricted-imports -- util.opn stays exported to extensions until its deprecation window ends
 import opn from "./opn";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";

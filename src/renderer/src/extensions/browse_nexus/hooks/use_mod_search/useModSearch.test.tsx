@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { components } from "@vortex/nexus-api-v3";
+import { V3ApiError } from "@vortex/nexus-api-v3";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { combineReducers, createStore, type Store } from "redux";
@@ -10,7 +11,10 @@ type ModsSearchRequest = components["schemas"]["ModsSearchRequest"];
 
 interface IPending {
   search: ModsSearchRequest;
-  resolve: (result: { mods: unknown[]; meta: { total_count: number } }) => void;
+  resolve: (result: {
+    mods: unknown[];
+    meta: { type: "cursor"; total_count: number; next_cursor: string | null };
+  }) => void;
   reject: (error: Error) => void;
 }
 
@@ -18,6 +22,8 @@ const mocks = vi.hoisted(() => ({
   gameDomainName: "skyrimspecialedition" as string | undefined,
   pending: [] as IPending[],
   requestCount: 0,
+  canSeeAdult: true,
+  hasUserInfo: true,
 }));
 
 vi.mock("../use_game_domain_name/useGameDomainName.hook", () => ({
@@ -41,29 +47,44 @@ import {
   type IBrowseModsViewsState,
 } from "../../reducers/mods_views/modsViews";
 import { type IBrowseSessionState, sessionReducer } from "../../reducers/session";
-import { MODS_PER_PAGE, timeRangeFilter, useModSearch } from "./useModSearch.hook";
+import { MODS_PER_PAGE, useModSearch } from "./useModSearch.hook";
 
 /** The time the tests start at, which the first time range counts back from. */
 const NOW = Date.parse("2026-11-03T14:35:00Z");
 
-const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
+
+const HOUR_MS = 60 * MINUTE_MS;
 
 /** The start of a range of so many days back from a time, `NOW` unless given. */
 const daysBack = (days: number, from = NOW) => new Date(from - days * 24 * HOUR_MS).toISOString();
 
 const api = {} as IExtensionApi;
 
-/** Answers the request still waiting for a preset's mods, with one mod to show. */
-const respond = (sort: string, totalCount: number) =>
+interface IRespondOptions {
+  /** The page's mods' ids; one, the total, unless given. */
+  ids?: string[];
+  /** The cursor of the page after it; none for the last. */
+  next?: string;
+}
+
+/** Answers the request still waiting for a preset's mods, with one mod to show unless given. */
+const respond = (sort: string, totalCount: number, { ids, next }: IRespondOptions = {}) =>
   act(async () => {
     const index = mocks.pending.findIndex((request) => request.search.sort.field === sort);
     const [request] = mocks.pending.splice(index, 1);
-    request.resolve({ mods: [{ id: `${totalCount}` }], meta: { total_count: totalCount } });
+    request.resolve({
+      mods: (ids ?? [`${totalCount}`]).map((id) => ({ id })),
+      meta: { type: "cursor", total_count: totalCount, next_cursor: next ?? null },
+    });
   });
 
-/** The page a request asks for, by number as Browse pages. */
-const pageOf = (search: ModsSearchRequest) =>
-  search.pagination.type === "page" ? search.pagination.page : undefined;
+/** The cursor a request asks from, none for the first page. */
+const cursorOf = (search: ModsSearchRequest) =>
+  search.pagination?.type === "cursor" ? search.pagination.cursor : undefined;
+
+/** The ids of the mods the hook has loaded. */
+const idsOf = (mods: { id: string }[]) => mods.map((mod) => mod.id);
 
 /** Fails the oldest request still waiting. */
 const fail = (message: string) =>
@@ -74,6 +95,24 @@ const respondToStart = async (trending: number, allTime: number) => {
   await waitFor(() => expect(mocks.pending).toHaveLength(2));
   await respond("endorsements", trending);
   await respond("new", allTime);
+};
+
+/**
+ * Loads trending's first two pages, mods 1 and then 2, of 45, with 900 over all time; the second
+ * leads on to `next`, if given.
+ */
+const loadTwoPages = async (
+  result: { current: ReturnType<typeof useModSearch> },
+  next?: string,
+) => {
+  await waitFor(() => expect(mocks.pending).toHaveLength(2));
+  await respond("endorsements", 45, { ids: ["1"], next: "page-2" });
+  await respond("new", 900);
+  await waitFor(() => expect(result.current.hasMore).toBe(true));
+  act(() => result.current.loadMore());
+  await waitFor(() => expect(mocks.pending).toHaveLength(1));
+  await respond("endorsements", 45, { ids: ["2"], next });
+  await waitFor(() => expect(result.current.pagesLoaded).toBe(2));
 };
 
 interface ITestAction {
@@ -93,6 +132,12 @@ const makeStore = (views: IBrowseModsViewsState = browseModsViewsReducer.default
         browse: (state: IBrowseSessionState = sessionReducer.defaults, action: ITestAction) =>
           sessionReducer.reducers[action.type]?.(state, action.payload) ?? state,
       }),
+      persistent: (
+        state = {
+          nexus: { userInfo: mocks.hasUserInfo ? { adult: mocks.canSeeAdult } : undefined },
+        },
+      ) => state,
+      confidential: (state = { account: { nexus: { APIKey: "key" } } }) => state,
     }),
   );
 
@@ -123,20 +168,26 @@ describe("useModSearch", () => {
     mocks.gameDomainName = "skyrimspecialedition";
     mocks.pending = [];
     mocks.requestCount = 0;
+    mocks.canSeeAdult = true;
+    mocks.hasUserInfo = true;
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("asks for the game's trending mods, a page at a time", async () => {
+  it("asks for the game's trending mods by cursor, from the first page", async () => {
     const { result } = render();
     await waitFor(() => expect(mocks.pending).toHaveLength(2));
 
     expect(mocks.pending.map((request) => request.search)).toContainEqual({
-      filters: { games: ["skyrimspecialedition"], created_at: { gte: daysBack(7) } },
+      filters: {
+        games: ["skyrimspecialedition"],
+        supports_mod_managers: true,
+        created_at: { gte: daysBack(7) },
+      },
       sort: { field: "endorsements", direction: "desc" },
-      pagination: { type: "page", page: 1, page_size: MODS_PER_PAGE },
+      pagination: { type: "cursor", cursor: undefined, page_size: MODS_PER_PAGE },
     });
 
     await respondToStart(45, 900);
@@ -145,7 +196,16 @@ describe("useModSearch", () => {
     expect(result.current.totalCount).toBe(45);
   });
 
-  it("counts the tab from every mod, over all time, whatever the preset", async () => {
+  it("asks only for mods that can be installed with a mod manager, for the list and its total", async () => {
+    render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+
+    for (const request of mocks.pending) {
+      expect(request.search.filters.supports_mod_managers).toBe(true);
+    }
+  });
+
+  it("counts the tab from every mod a mod manager can install, over all time, whatever the preset", async () => {
     const { result } = render();
     await respondToStart(45, 900);
 
@@ -160,10 +220,7 @@ describe("useModSearch", () => {
 
   it("sorts the open preset another way from the first page, keeping the tab's total", async () => {
     const { result } = render();
-    await respondToStart(45, 900);
-    act(() => result.current.setCurrentPage(2));
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond("endorsements", 45);
+    await loadTwoPages(result);
 
     act(() => result.current.setSort({ field: "downloads" }));
 
@@ -171,9 +228,8 @@ describe("useModSearch", () => {
     expect(mocks.pending[0].search).toMatchObject({
       filters: { created_at: { gte: daysBack(7) } },
       sort: { field: "downloads", direction: "desc" },
-      pagination: { page: 1 },
     });
-    expect(result.current.currentPage).toBe(1);
+    expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
     expect(result.current.canResetSort).toBe(true);
     await respond("downloads", 30);
     await waitFor(() => expect(result.current.totalCount).toBe(30));
@@ -202,10 +258,7 @@ describe("useModSearch", () => {
 
   it("filters the open preset by time from the first page, as a filter rather than its sort", async () => {
     const { result } = render();
-    await respondToStart(45, 900);
-    act(() => result.current.setCurrentPage(2));
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond("endorsements", 45);
+    await loadTwoPages(result);
 
     act(() => result.current.setFilters({ timeRange: "28" }));
 
@@ -213,11 +266,42 @@ describe("useModSearch", () => {
     expect(mocks.pending[0].search).toMatchObject({
       filters: { created_at: { gte: daysBack(28) } },
       sort: { field: "endorsements", direction: "desc" },
-      pagination: { page: 1 },
     });
-    expect(result.current.currentPage).toBe(1);
-    expect(result.current.filters).toEqual({ timeRange: "28" });
+    expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
+    expect(result.current.filters).toEqual({ timeRange: "28", adult: "include" });
     expect(result.current.canResetSort).toBe(false);
+  });
+
+  it("asks for mods by adult content only once it narrows them", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    expect(mocks.pending).toEqual([]);
+
+    act(() => result.current.setFilters({ adult: "only" }));
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(mocks.pending[0].search.filters).toMatchObject({ adult: "only" });
+    expect(result.current.activeFilterCount).toBe(2);
+  });
+
+  it("asks for no adult mods for a user who can't see them, whatever the view says", async () => {
+    mocks.canSeeAdult = false;
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
+
+    expect(mocks.pending.map((request) => request.search.filters.adult)).toContain("exclude");
+    expect(result.current.filters.adult).toBe("exclude");
+    expect(result.current.isEdited).toBe(false);
+  });
+
+  it("doesn't lock adult content while a logged-in user's preferences are still loading", async () => {
+    mocks.hasUserInfo = false;
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
+
+    expect(result.current.canSeeAdult).toBe(true);
+    expect(result.current.filters.adult).toBe("include");
+    expect(mocks.pending.map((request) => request.search.filters.adult)).not.toContain("exclude");
   });
 
   it("counts a time range as a filter, and none over all time", async () => {
@@ -228,7 +312,7 @@ describe("useModSearch", () => {
 
     act(() => result.current.selectView("new"));
 
-    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.filters).toEqual({ timeRange: "all", adult: "include" });
     expect(result.current.activeFilterCount).toBe(0);
   });
 
@@ -255,7 +339,7 @@ describe("useModSearch", () => {
 
     act(() => result.current.resetFilters());
 
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
     expect(result.current.changedFilterCount).toBe(0);
     expect(result.current.sort.direction).toBe("asc");
   });
@@ -269,7 +353,7 @@ describe("useModSearch", () => {
     act(() => result.current.resetSort());
 
     expect(result.current.sort.direction).toBe("desc");
-    expect(result.current.filters).toEqual({ timeRange: "365" });
+    expect(result.current.filters).toEqual({ timeRange: "365", adult: "include" });
   });
 
   it("puts a preset's own time range back whenever it's picked, even the one open", async () => {
@@ -279,17 +363,17 @@ describe("useModSearch", () => {
 
     act(() => result.current.selectView("new"));
 
-    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.filters).toEqual({ timeRange: "all", adult: "include" });
 
     act(() => result.current.setFilters({ timeRange: "28" }));
     act(() => result.current.selectView("trending"));
 
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
 
     act(() => result.current.resetFilters());
     act(() => result.current.selectView("trending"));
 
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
   });
 
   it("keeps a page's search as time passes, so it isn't fetched again", async () => {
@@ -304,75 +388,303 @@ describe("useModSearch", () => {
     expect(result.current.totalCount).toBe(45);
   });
 
-  it("counts a range back from when it's picked", async () => {
+  it("counts a range back from the five minutes before it's picked", async () => {
     const { result } = render();
     await respondToStart(45, 900);
-    const later = NOW + 2 * HOUR_MS;
-    vi.setSystemTime(later);
+    const fiveMinutesBefore = NOW + 2 * HOUR_MS;
+    vi.setSystemTime(fiveMinutesBefore + 3 * MINUTE_MS);
 
     act(() => result.current.setFilters({ timeRange: "28" }));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search.filters).toMatchObject({
-      created_at: { gte: daysBack(28, later) },
+      created_at: { gte: daysBack(28, fiveMinutesBefore) },
     });
   });
 
-  it("keeps the last total while the next page loads", async () => {
+  it("shows a view picked again within five minutes from its cached search", async () => {
     const { result } = render();
     await respondToStart(45, 900);
+    act(() => result.current.selectView("popular"));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("downloads", 12);
+    vi.setSystemTime(NOW + 4 * MINUTE_MS);
 
-    act(() => result.current.setCurrentPage(2));
+    act(() => result.current.selectView("trending"));
+    act(() => result.current.selectView("popular"));
+    await act(async () => {});
 
-    await waitFor(() => expect(result.current.loading).toBe(true));
-    expect(pageOf(mocks.pending[0].search)).toBe(2);
+    expect(mocks.pending).toEqual([]);
+    expect(result.current.totalCount).toBe(12);
+  });
+
+  it("searches a view picked again after five minutes afresh", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.selectView("popular"));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("downloads", 12);
+    vi.setSystemTime(NOW + 5 * MINUTE_MS);
+
+    act(() => result.current.selectView("popular"));
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(mocks.pending[0].search.filters).toMatchObject({
+      created_at: { gte: daysBack(7, NOW + 5 * MINUTE_MS) },
+    });
+  });
+
+  it("loads the next page from the last one's cursor, adding its mods to the list", async () => {
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+    await respond("endorsements", 45, { ids: ["1", "2"], next: "page-2" });
+    await respond("new", 900);
+    await waitFor(() => expect(result.current.hasMore).toBe(true));
+
+    act(() => result.current.loadMore());
+
+    await waitFor(() => expect(result.current.isLoadingMore).toBe(true));
+    expect(cursorOf(mocks.pending[0].search)).toBe("page-2");
+    expect(result.current.loading).toBe(false);
+    await respond("endorsements", 45, { ids: ["3"] });
+
+    await waitFor(() => expect(idsOf(result.current.mods)).toEqual(["1", "2", "3"]));
+    expect(result.current.pagesLoaded).toBe(2);
     expect(result.current.totalCount).toBe(45);
+  });
+
+  it("shows a mod that comes again on a later page only where it came first", async () => {
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+    await respond("endorsements", 45, { ids: ["1", "2"], next: "page-2" });
+    await respond("new", 900);
+    await waitFor(() => expect(result.current.hasMore).toBe(true));
+
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("endorsements", 45, { ids: ["2", "3"] });
+
+    await waitFor(() => expect(idsOf(result.current.mods)).toEqual(["1", "2", "3"]));
+  });
+
+  it("asks for nothing more after the last page", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    await waitFor(() => expect(result.current.mods).toHaveLength(1));
+    const requests = mocks.requestCount;
+
+    act(() => result.current.loadMore());
+    await act(async () => {});
+
+    expect(result.current.hasMore).toBe(false);
+    expect(mocks.requestCount).toBe(requests);
+  });
+
+  it("asks for one next page at a time", async () => {
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+    await respond("endorsements", 45, { next: "page-2" });
+    await respond("new", 900);
+    await waitFor(() => expect(result.current.hasMore).toBe(true));
+
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(result.current.isLoadingMore).toBe(true));
+    act(() => result.current.loadMore());
+    await act(async () => {});
+
+    expect(mocks.pending).toHaveLength(1);
+  });
+
+  it("keeps the search's key as more pages load", async () => {
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+    const { searchKey } = result.current;
+
+    await loadTwoPages(result);
+
+    expect(result.current.searchKey).toBe(searchKey);
+  });
+
+  it("gives the search another key for another game", async () => {
+    const { result, rerender } = render();
+    await respondToStart(45, 900);
+    const { searchKey } = result.current;
+
+    mocks.gameDomainName = "fallout4";
+    rerender();
+
+    expect(result.current.searchKey).not.toBe(searchKey);
+  });
+
+  it("gives the search another key for another view making the same search", async () => {
+    const { result } = render();
+    await respondToStart(45, 900);
+    act(() => result.current.setSort({ field: "downloads" }));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("downloads", 30);
+    const { searchKey } = result.current;
+    const requests = mocks.requestCount;
+
+    act(() => result.current.addView("Downloads this week"));
+    await act(async () => {});
+
+    expect(mocks.requestCount).toBe(requests);
+    expect(result.current.searchKey).not.toBe(searchKey);
   });
 
   it("shows another preset from the first page, from the count's request when it's all-time", async () => {
     const { result } = render();
-    await respondToStart(45, 900);
-    act(() => result.current.setCurrentPage(2));
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    await respond("endorsements", 45);
+    await loadTwoPages(result);
 
     act(() => result.current.selectView("new"));
 
     await waitFor(() => expect(result.current.totalCount).toBe(900));
-    expect(result.current.currentPage).toBe(1);
+    expect(result.current.pagesLoaded).toBe(1);
     expect(result.current.mods).toEqual([{ id: "900" }]);
     expect(mocks.requestCount).toBe(3);
   });
 
-  it("shows a failed page's error at once, keeping its total, without retrying it", async () => {
+  it("shows a failed first page's error at once, without retrying it", async () => {
     const { result } = render();
-    await respondToStart(45, 900);
-    act(() => result.current.setCurrentPage(2));
-    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
 
     await fail("Network down");
 
     // Within waitFor's second: a retry would hold the error back for its first second's delay.
     await waitFor(() => expect(result.current.error?.message).toBe("Network down"));
-    expect(result.current.totalCount).toBe(45);
-    expect(mocks.requestCount).toBe(3);
+    expect(result.current.loadMoreError).toBeNull();
+    expect(mocks.requestCount).toBe(2);
   });
 
-  it("asks for a failed page again when retried, and shows it once it comes", async () => {
+  it("keeps the mods it has on screen while it asks for them again, rather than loading afresh", async () => {
     const { result } = render();
-    await respondToStart(45, 900);
-    act(() => result.current.setCurrentPage(2));
+    await loadTwoPages(result);
+
+    act(() => result.current.retry());
+
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
+    expect(result.current.loading).toBe(false);
+    expect(result.current.isLoadingMore).toBe(true);
+    expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
+  });
+
+  it("asks for a failed first page again when retried, and shows it once it comes", async () => {
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
     await fail("Network down");
+    await respond("new", 900);
     await waitFor(() => expect(result.current.error).toBeTruthy());
 
     act(() => result.current.retry());
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    expect(pageOf(mocks.pending[0].search)).toBe(2);
+    expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
     await respond("endorsements", 45);
 
     await waitFor(() => expect(result.current.error).toBeNull());
     expect(result.current.mods).toEqual([{ id: "45" }]);
+  });
+
+  it("keeps the mods loaded when a later page fails, as its own error, loading no more", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+
+    await fail("Network down");
+
+    await waitFor(() => expect(result.current.loadMoreError?.message).toBe("Network down"));
+    expect(result.current.error).toBeNull();
+    expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
+    expect(result.current.pagesLoaded).toBe(2);
+    const requests = mocks.requestCount;
+    act(() => result.current.loadMore());
+    await act(async () => {});
+    expect(mocks.requestCount).toBe(requests);
+  });
+
+  it("starts again from the top when a later page's cursor was refused", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    const { searchKey } = result.current;
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await act(async () =>
+      mocks.pending.shift()!.reject(new V3ApiError({ status: 422, title: "Unprocessable Entity" })),
+    );
+    await waitFor(() => expect(result.current.loadMoreError).toBeTruthy());
+
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
+    expect(result.current.loadMoreError).toBeNull();
+    expect(result.current.loading).toBe(false);
+    expect(result.current.isLoadingMore).toBe(true);
+    expect(idsOf(result.current.mods)).toEqual(["1"]);
+    expect(result.current.searchKey).not.toBe(searchKey);
+    await respond("endorsements", 45, { ids: ["1"], next: "fresh-2" });
+    await waitFor(() => expect(result.current.hasMore).toBe(true));
+    expect(mocks.pending).toEqual([]);
+  });
+
+  it("asks for a first page refused again as it is, without starting the list again", async () => {
+    const { result } = render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+    const { searchKey } = result.current;
+    await act(async () =>
+      mocks.pending.shift()!.reject(new V3ApiError({ status: 422, title: "Unprocessable Entity" })),
+    );
+    await waitFor(() => expect(result.current.error).toBeTruthy());
+
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
+    expect(cursorOf(mocks.pending.at(-1)!.search)).toBeUndefined();
+    expect(result.current.searchKey).toBe(searchKey);
+  });
+
+  it("offers to try again after the mods it has when asking for them again fails", async () => {
+    const { result } = render();
+    await loadTwoPages(result);
+    act(() => result.current.retry());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+
+    await fail("Network down");
+
+    await waitFor(() => expect(result.current.loadMoreError?.message).toBe("Network down"));
+    expect(result.current.error).toBeNull();
+    expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
+  });
+
+  it("has no more to load while it's asking for its pages again, so it doesn't ask twice", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    expect(result.current.hasMore).toBe(true);
+
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(result.current.hasMore).toBe(false);
+  });
+
+  it("asks for a failed later page again from its cursor when retried", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await fail("Network down");
+    await waitFor(() => expect(result.current.loadMoreError).toBeTruthy());
+
+    act(() => result.current.retry());
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(cursorOf(mocks.pending[0].search)).toBe("page-3");
+    expect(result.current.isLoadingMore).toBe(true);
+    expect(result.current.loadMoreError).toBeNull();
+    await respond("endorsements", 45, { ids: ["3"] });
+    await waitFor(() => expect(idsOf(result.current.mods)).toEqual(["1", "2", "3"]));
+    expect(result.current.loadMoreError).toBeNull();
   });
 
   it("asks for nothing outside a game", async () => {
@@ -408,6 +720,8 @@ describe("useModSearch's views", () => {
     mocks.gameDomainName = "skyrimspecialedition";
     mocks.pending = [];
     mocks.requestCount = 0;
+    mocks.canSeeAdult = true;
+    mocks.hasUserInfo = true;
   });
 
   afterEach(() => {
@@ -422,7 +736,11 @@ describe("useModSearch's views", () => {
     await waitFor(() => expect(mocks.pending.length).toBeGreaterThan(0));
     expect(mocks.pending.map((request) => request.search)).toContainEqual(
       expect.objectContaining({
-        filters: { games: ["skyrimspecialedition"], created_at: { gte: daysBack(28) } },
+        filters: {
+          games: ["skyrimspecialedition"],
+          supports_mod_managers: true,
+          created_at: { gte: daysBack(28) },
+        },
         sort: { field: "downloads", direction: "desc" },
       }),
     );
@@ -452,7 +770,7 @@ describe("useModSearch's views", () => {
       expect.objectContaining({
         name: "Downloads this week",
         sort: { field: "downloads", direction: "desc" },
-        filters: { timeRange: "7" },
+        filters: { timeRange: "7", adult: "include" },
       }),
     ]);
     expect(result.current.viewId).toBe(savedViews().custom[0].id);
@@ -468,6 +786,19 @@ describe("useModSearch's views", () => {
 
     expect(result.current.isEdited).toBe(false);
     expect(result.current.sort).toEqual({ field: "endorsements", direction: "desc" });
+  });
+
+  it("saves the adult content choice as stored, not as locked for a user who can't see it", () => {
+    mocks.canSeeAdult = false;
+    const { result } = render(true, {
+      selected: "custom-1",
+      custom: [{ ...mine, filters: { timeRange: "28", adult: "only" } }],
+    });
+    expect(result.current.filters.adult).toBe("exclude");
+
+    act(() => result.current.addView("Copy"));
+
+    expect(savedViews().custom[1].filters).toEqual({ timeRange: "28", adult: "only" });
   });
 
   it("saves a view's changes of sort and filters into it, so it's never edited", () => {
@@ -490,7 +821,7 @@ describe("useModSearch's views", () => {
       custom: [{ ...mine, filters: {} }],
     });
 
-    expect(result.current.filters).toEqual({ timeRange: "all" });
+    expect(result.current.filters).toEqual({ timeRange: "all", adult: "include" });
   });
 
   it("is edited while a preset's sort or filters differ from how it comes, until it's reset", () => {
@@ -502,7 +833,7 @@ describe("useModSearch's views", () => {
 
     act(() => result.current.resetView());
     expect(result.current.isEdited).toBe(false);
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
   });
 
   it("renames and deletes a view, going back to the first preset if it was open", () => {
@@ -526,24 +857,8 @@ describe("useModSearch's views", () => {
     act(() => result.current.removeView("custom-1"));
 
     expect(result.current.viewId).toBe("trending");
-    expect(result.current.filters).toEqual({ timeRange: "7" });
+    expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
     expect(result.current.isEdited).toBe(false);
     expect(result.current.rangeFrom).toBe(later);
-  });
-});
-
-describe("timeRangeFilter", () => {
-  it("filters by when mods were created, exactly a range of days back", () => {
-    expect(timeRangeFilter("1", "endorsements", NOW)).toEqual({
-      created_at: { gte: daysBack(1) },
-    });
-  });
-
-  it("filters by when they were updated for the Date updated sort", () => {
-    expect(timeRangeFilter("28", "updated", NOW)).toEqual({ updated_at: { gte: daysBack(28) } });
-  });
-
-  it("doesn't filter for all time", () => {
-    expect(timeRangeFilter("all", "updated", NOW)).toEqual({});
   });
 });

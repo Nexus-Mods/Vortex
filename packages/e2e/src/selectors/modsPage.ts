@@ -55,6 +55,10 @@ export class ModsPage {
     return this.page.getByRole("row").filter({ hasText: name }).first();
   }
 
+  rowByModIdPrefix(prefix: string): Locator {
+    return this.page.locator(`tr[data-rowid^=${JSON.stringify(prefix)}]`);
+  }
+
   statusButtonInRow(name: string | RegExp): Locator {
     return this.row(name).locator("#btn-mods-enabled");
   }

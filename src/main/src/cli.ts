@@ -18,6 +18,7 @@ const ARG_COUNTS: Record<string, number> = {
   "--install-archive": 1,
   "--start-minimized": 1,
   "--game": 1,
+  "--game-store": 1,
   "--profile": 1,
   "--get": 1,
   "--set": 1,
@@ -115,6 +116,7 @@ const SKIP_ARGS: Record<string, number> = {
   "-i": 1,
   "--start-minimized": 1,
   "--game": 1,
+  "--game-store": 1,
   "--profile": 1,
   "--install": 1,
   "--install-archive": 1,
@@ -236,6 +238,10 @@ export function parseCommandline(argv: string[], electronIsShitHack: boolean): I
     )
     .option("--start-minimized", "Starts Vortex in the task bar")
     .option("--game <game id>", "Starts Vortex with a different game enabled")
+    .option(
+      "--game-store <store id>",
+      "With --game, only use the install of that game from this game store",
+    )
     .option("--run <path>", "Execute the js program instead of Vortex itself.")
     .option("--report <path>", "Send an error report. For internal use")
     .option("--restore <path>", "Restore a state backup")

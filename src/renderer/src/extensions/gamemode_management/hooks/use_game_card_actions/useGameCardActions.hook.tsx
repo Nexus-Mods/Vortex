@@ -1,4 +1,4 @@
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,7 +11,7 @@ import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { getIcon } from "@/views/components/icon_map/iconMap";
 
-import { setGameAddOrigin } from "../../actions/session";
+import { setGameAddOrigin, setGameAddStore } from "../../actions/session";
 import { setGameHidden } from "../../actions/settings";
 import type { GameSource } from "../../types/GameSource";
 
@@ -120,6 +120,7 @@ export const useGameCardActions = (
   onShowDetails: () => void,
   source?: GameSource,
   onMenuAction?: (action: string) => void,
+  store?: string,
 ): IGameCardActions => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -213,6 +214,11 @@ export const useGameCardActions = (
               label: sorted[0].action.label,
               onClick: () => {
                 dispatch(setGameAddOrigin(gameId, source));
+                // A tile of the detected list names the store the user is picking; the
+                // add manages that store's install, so discovery mustn't choose another.
+                if (source === "detected_list" && store !== undefined) {
+                  dispatch(setGameAddStore(VortexGameId(gameId), store));
+                }
                 sorted[0].action.onClick?.();
               },
             }
@@ -220,5 +226,5 @@ export const useGameCardActions = (
             ? { label: sorted[0].action.label, onClick: () => sorted[0].action.onClick?.() }
             : undefined,
     };
-  }, [dispatch, gameId, hidden, onMenuAction, onShowDetails, registered, source, t]);
+  }, [dispatch, gameId, hidden, onMenuAction, onShowDetails, registered, source, store, t]);
 };

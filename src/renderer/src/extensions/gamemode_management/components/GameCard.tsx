@@ -92,6 +92,7 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
     showDetails,
     source,
     reportMenuAction,
+    store,
   );
   const name = game.name.replace(/\t/g, " ");
 

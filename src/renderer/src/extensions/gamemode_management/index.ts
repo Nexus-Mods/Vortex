@@ -36,7 +36,6 @@ import GameStoreHelperInstance from "../../util/GameStoreHelper";
 import { isContributed } from "../../util/isContributed";
 import local from "../../util/local";
 import { showError } from "../../util/message";
-import opn from "../../util/opn";
 import { activeGameId, activeProfile } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
@@ -72,7 +71,7 @@ import type { IModType } from "./types/IModType";
 import { requestDetectedGames, resetDetectedGamesHash } from "./util/detected_games/detectedGames";
 import { listableDetectedIds } from "./util/detected_games/listableDetectedIds";
 import getDriveList from "./util/getDriveList";
-import { getGame, getGameStore, getGameStores } from "./util/getGame";
+import { getGame, getGameStore, getGameStores, isGameRegistered } from "./util/getGame";
 import { identifyStore } from "./util/identifyStore";
 import { getModType, getModTypeExtensions, registerModType } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
@@ -104,7 +103,8 @@ interface IProvider {
 
 declare module "@/types/IExtensionContext" {
   interface ApiEvents {
-    "discover-game": (gameId: string) => string[];
+    /** `store` limits discovery to that store's install, for a game the user picked from it */
+    "discover-game": (gameId: VortexGameId, store?: string) => string[];
     "discover-tools": (gameId: string) => void;
     "register-tier-zero-game": (entry: ITierZeroGame) => void;
     "remove-tier-zero-game": (gameId: GameId) => void;
@@ -804,7 +804,7 @@ function init(context: IExtensionContext): boolean {
             path: {
               title: "Path",
               value: path.normalize(game.path),
-              type: "url",
+              type: "path",
             },
           }),
   );
@@ -834,7 +834,7 @@ function init(context: IExtensionContext): boolean {
       if (!gamePath.endsWith(path.sep)) {
         gamePath += path.sep;
       }
-      opn(gamePath).catch(() => undefined);
+      window.api.shell.openFile(gamePath);
     }
   };
 
@@ -847,7 +847,7 @@ function init(context: IExtensionContext): boolean {
         if (!targetPath.endsWith(path.sep)) {
           targetPath += path.sep;
         }
-        opn(targetPath).catch(() => undefined);
+        window.api.shell.openFile(targetPath);
       } catch (err) {
         log("warn", "failed to open mod directory", getErrorMessageOrDefault(err));
       }
@@ -1018,7 +1018,7 @@ function init(context: IExtensionContext): boolean {
       }
     }
 
-    context.api.onAsync<"discover-game">("discover-game", (gameId) => {
+    context.api.onAsync<"discover-game">("discover-game", (gameId, store) => {
       if (process.env.VORTEX_E2E === "1") {
         log(
           "debug",
@@ -1030,7 +1030,10 @@ function init(context: IExtensionContext): boolean {
 
       const game = getGame(gameId);
       if (game !== undefined) {
-        return $.gameModeManager.startQuickDiscovery([game]);
+        return $.gameModeManager.startQuickDiscovery(
+          [game],
+          store !== undefined ? { gameId, store } : undefined,
+        );
       } else {
         return Promise.resolve<string[]>([]);
       }
@@ -1340,20 +1343,16 @@ function init(context: IExtensionContext): boolean {
         commandLine.game === undefined &&
         commandLine.profile === undefined
       ) {
-        const gameMode = profile.gameId;
+        const gameMode = VortexGameId(profile.gameId);
         const discovery = store.getState().settings.gameMode.discovered[gameMode];
-        if (
-          discovery !== undefined &&
-          discovery.path !== undefined &&
-          getGame(gameMode) !== undefined
-        ) {
+        if (discovery !== undefined && discovery.path !== undefined && isGameRegistered(gameMode)) {
           changeGameMode(undefined, gameMode, profile.id).then(() => null);
-        } else if (getGame(gameMode) !== undefined) {
+        } else if (isGameRegistered(gameMode)) {
           // Game extension is loaded but the game is no longer discovered
           // (e.g. uninstalled) — clear the active profile
           store.dispatch(setNextProfile(undefined));
         }
-        // If getGame returns undefined the extension may not be installed yet
+        // If the game isn't registered the extension may not be installed yet
         // (e.g. community extension pending install). Don't clear the profile —
         // removeDisappearedGames/stubs will handle offering to install it.
       }

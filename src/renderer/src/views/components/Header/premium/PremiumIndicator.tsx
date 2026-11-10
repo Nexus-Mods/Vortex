@@ -12,7 +12,6 @@ import {
   isPremium as isPremiumSelector,
   shouldShowPremiumAd,
 } from "../../../../extensions/nexus_integration/selectors";
-import opn from "../../../../util/opn";
 import { useNexusLogin } from "./useNexusLogin.hook";
 
 export const PremiumIndicator: FC<React.PropsWithChildren<unknown>> = () => {
@@ -25,13 +24,13 @@ export const PremiumIndicator: FC<React.PropsWithChildren<unknown>> = () => {
   const handleLogin = useNexusLogin();
 
   const handleGoPremium = useCallback(() => {
-    opn(
+    window.api.shell.openUrl(
       nexusModsURL(PREMIUM_PATH, {
         section: Section.Users,
         campaign: Campaign.BuyPremium,
         content: Content.HeaderAd,
       }),
-    ).catch(() => undefined);
+    );
   }, []);
 
   if (!loggedIn) {

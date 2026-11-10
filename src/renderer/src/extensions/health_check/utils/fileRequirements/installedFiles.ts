@@ -2,7 +2,7 @@ import type { IDownload } from "@/extensions/download_management/types/IDownload
 import type { IModDetails } from "@/extensions/health_check/types";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import { nexusGamesProm } from "@/extensions/nexus_integration/util";
-import { makeFileUID, makeModUID } from "@/extensions/nexus_integration/util/UIDs";
+import { makeFileUID, makeModUID, resolveFileUID } from "@/extensions/nexus_integration/util/UIDs";
 import { activeProfile } from "@/extensions/profile_management/selectors";
 import { log } from "@/logging";
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -92,20 +92,6 @@ export interface IInstalledFileRef {
   enabled: boolean;
   /** False for files installed by a collection on the active profile (they satisfy but don't emit). */
   emitRequirements: boolean;
-}
-
-/**
- * Resolve a Nexus file UID for a mod, or return undefined if not possible.
- * Shared by both gather functions below.
- */
-function resolveFileUID(attributes: IInstalledModAttributes, gameId: string): string | undefined {
-  if (attributes.fileId === undefined) return undefined;
-  return (
-    makeFileUID({
-      gameId: attributes.downloadGame ?? gameId,
-      fileId: attributes.fileId.toString(),
-    }) ?? undefined
-  );
 }
 
 /**

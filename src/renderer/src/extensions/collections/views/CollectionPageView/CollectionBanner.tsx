@@ -7,7 +7,6 @@ import FlexLayout from "../../../../controls/FlexLayout";
 import Icon from "../../../../controls/Icon";
 import Image from "../../../../controls/Image";
 import { Pictogram } from "../../../../ui/components/pictogram/Pictogram";
-import opn from "../../../../util/opn";
 import { Campaign, Content, nexusModsURL, Section } from "../../../../util/util";
 import { PREMIUM_PATH } from "../../constants";
 
@@ -61,13 +60,13 @@ class CollectionBanner extends ComponentEx<ICollectionBannerProps, {}> {
       "Go Premium",
       "Collections Added Collection",
     );
-    opn(
+    window.api.shell.openUrl(
       nexusModsURL(PREMIUM_PATH, {
         section: Section.Users,
         campaign: Campaign.BuyPremium,
         content: Content.CollectionsDownloadAd,
       }),
-    ).catch((err) => undefined);
+    );
   };
 }
 

@@ -1,90 +1,79 @@
 /**
- * Pure bsdiff WASM helpers (BSDIFF40-compatible). No worker and no I/O, so they
- * run in any context: the patch worker thread, a direct caller, or a test.
+ * Runs HDiffPatch's hdiffz (hdiffpatch/hdiffz.wasm, built by
+ * scripts/build-hdiffpatch-wasm.mjs) as a WASI command. No worker and no IPC, so
+ * it runs in any context: the patch worker thread, a direct caller, or a test.
+ * Each run gets a fresh instance, so its memory is released when the run ends.
  */
 
-export interface BsdiffWasmExports {
-  memory: WebAssembly.Memory;
-  alloc(size: number): number;
-  dealloc(ptr: number, size: number): void;
-  create_patch(basePtr: number, baseLen: number, nextPtr: number, nextLen: number): number;
-  apply_patch(basePtr: number, baseLen: number, patchPtr: number, patchLen: number): number;
-  output_ptr(): number;
-  output_len(): number;
-  free_output(): void;
+import { randomUUID } from "node:crypto";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { WASI } from "node:wasi";
+
+export function loadWasm(wasmBytes: BufferSource): WebAssembly.Module {
+  return new WebAssembly.Module(wasmBytes);
 }
 
-const BSDIFF_OK = 0;
-
-export function loadWasm(wasmBytes: BufferSource): BsdiffWasmExports {
-  const wasmModule = new WebAssembly.Module(wasmBytes);
-  const instance = new WebAssembly.Instance(wasmModule);
-
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return instance.exports as unknown as BsdiffWasmExports;
+// the last lines hdiffz printed, which name what went wrong
+function failureText(log: string): string {
+  return log
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== "")
+    .slice(-3)
+    .join("; ");
 }
 
-function runBinaryOp(
-  wasm: BsdiffWasmExports,
-  left: Uint8Array,
-  right: Uint8Array,
-  op: (lPtr: number, lLen: number, rPtr: number, rLen: number) => number,
-): number {
-  const lPtr = wasm.alloc(left.byteLength);
-  const rPtr = wasm.alloc(right.byteLength);
+/**
+ * Run hdiffz with options followed by filePaths. Each file's folder is opened
+ * to the command under a guest folder of its own. Throws if hdiffz exits
+ * with an error.
+ */
+export function runHdiffz(
+  wasmModule: WebAssembly.Module,
+  options: string[],
+  filePaths: string[],
+): void {
+  // guest folders the command sees, keyed by the host folder each stands for
+  const guestFolders = new Map<string, string>();
+  const guestPaths = filePaths.map((filePath) => {
+    const hostFolder = path.dirname(path.resolve(filePath));
+    let guestFolder = guestFolders.get(hostFolder);
+    if (guestFolder === undefined) {
+      guestFolder = `/${guestFolders.size}`;
+      guestFolders.set(hostFolder, guestFolder);
+    }
+    return `${guestFolder}/${path.basename(filePath)}`;
+  });
+  // host folders, keyed by guest folder, as WASI takes them
+  const preopens = Object.fromEntries(
+    [...guestFolders].map(([hostFolder, guestFolder]) => [guestFolder, hostFolder]),
+  );
+
+  const logPath = path.join(os.tmpdir(), `vortex-hdiffz-${randomUUID()}.log`);
+  const logFd = fs.openSync(logPath, "w+");
   try {
-    if (left.byteLength > 0) {
-      new Uint8Array(wasm.memory.buffer, lPtr, left.byteLength).set(left);
+    const wasi = new WASI({
+      version: "preview1",
+      args: ["hdiffz", ...options, ...guestPaths],
+      env: {},
+      preopens,
+      stdout: logFd,
+      stderr: logFd,
+      returnOnExit: true,
+    });
+    const instance = new WebAssembly.Instance(wasmModule, {
+      wasi_snapshot_preview1: wasi.wasiImport,
+    });
+    const exitCode = wasi.start(instance);
+    if (exitCode !== 0) {
+      throw new Error(
+        `hdiffz failed with exit code ${exitCode}: ${failureText(fs.readFileSync(logPath, "utf8"))}`,
+      );
     }
-    if (right.byteLength > 0) {
-      new Uint8Array(wasm.memory.buffer, rPtr, right.byteLength).set(right);
-    }
-    return op(lPtr, left.byteLength, rPtr, right.byteLength);
   } finally {
-    if (left.byteLength > 0) wasm.dealloc(lPtr, left.byteLength);
-    if (right.byteLength > 0) wasm.dealloc(rPtr, right.byteLength);
+    fs.closeSync(logFd);
+    fs.rmSync(logPath, { force: true });
   }
-}
-
-function readOutput(wasm: BsdiffWasmExports): Uint8Array {
-  const ptr = wasm.output_ptr();
-  const len = wasm.output_len();
-  if (len === 0) {
-    wasm.free_output();
-    return new Uint8Array();
-  }
-  const result = new Uint8Array(new Uint8Array(wasm.memory.buffer, ptr, len));
-  wasm.free_output();
-  return result;
-}
-
-function runOp(
-  wasm: BsdiffWasmExports,
-  name: "create_patch" | "apply_patch",
-  left: Uint8Array,
-  right: Uint8Array,
-): Uint8Array {
-  const status = runBinaryOp(wasm, left, right, wasm[name]);
-  if (status !== BSDIFF_OK) {
-    throw new Error(`bsdiff ${name} failed with status ${status}`);
-  }
-  return readOutput(wasm);
-}
-
-/** Create a BSDIFF40 patch between two buffers. Throws on a non-OK wasm status. */
-export function createPatch(
-  wasm: BsdiffWasmExports,
-  oldBuf: Uint8Array,
-  newBuf: Uint8Array,
-): Uint8Array {
-  return runOp(wasm, "create_patch", oldBuf, newBuf);
-}
-
-/** Apply a BSDIFF40 patch to a buffer. Throws on a non-OK wasm status. */
-export function applyPatch(
-  wasm: BsdiffWasmExports,
-  oldBuf: Uint8Array,
-  patchBuf: Uint8Array,
-): Uint8Array {
-  return runOp(wasm, "apply_patch", oldBuf, patchBuf);
 }

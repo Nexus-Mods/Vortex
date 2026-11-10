@@ -40,7 +40,6 @@ import { waitForCondition } from "@/util/waitForCondition";
 import LazyComponent from "../../controls/LazyComponent";
 import ReduxProp from "../../ReduxProp";
 import type { IDiscoveryResult, IState } from "../../types/IState";
-import { opn } from "../../util/api";
 import { ProcessCanceled, TemporaryError, UserCanceled } from "../../util/CustomErrors";
 import Debouncer from "../../util/Debouncer";
 import * as fs from "../../util/fs";
@@ -74,7 +73,7 @@ import {
   enabledModCountForProfile,
   lastActiveProfileForGame,
 } from "../profile_management/selectors";
-import type { IProfile, IProfileMod } from "../profile_management/types/IProfile";
+import type { IProfile } from "../profile_management/types/IProfile";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
 import { setDeploymentNecessary, setDeploymentPurged } from "./actions/deployment";
 import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
@@ -161,7 +160,8 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import sortMods from "./util/sort";
+import { registerLockfileContribution, registerResolveLockFile } from "./util/resolveLockFile";
+import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
 import DeactivationButton from "./views/DeactivationButton";
@@ -193,6 +193,12 @@ declare module "../../types/IExtensionContext" {
     "will-remove-mod": (gameId: string, modId: string, options?: IRemoveModOptions) => void;
     // every deployments map below is keyed by mod type id
     "will-purge": (profileId: string, deployments: Record<string, IDeployedFile[]>) => void;
+    "will-deploy": (
+      profileId: string,
+      deployments: Record<string, IDeployedFile[]>,
+      options?: IDeployOptions,
+    ) => void;
+    "will-deploy-single-mod": (gameId: string, modId: string, enable?: boolean) => void;
     "did-purge": (profileId: string) => void;
     "did-deploy": (
       profileId: string,
@@ -201,6 +207,7 @@ declare module "../../types/IExtensionContext" {
       options?: IDeployOptions,
     ) => void;
     "mods-did-deploy": (profileId: string, deployments: Record<string, IDeployedFile[]>) => void;
+    "did-deploy-single-mod": (gameId: string, modId: string, enable?: boolean) => void;
   }
 }
 
@@ -494,31 +501,6 @@ function checkIncompatibilities(
   } else {
     return Promise.resolve();
   }
-}
-
-function doSortMods(
-  api: IExtensionApi,
-  profile: IProfile,
-  mods: { [modId: string]: IMod },
-  includeModId?: VortexModId,
-) {
-  // sort (all) mods based on their dependencies so the right files get activated
-  const modState: { [id: string]: IProfileMod } = profile !== undefined ? profile.modState : {};
-  const unsorted = Object.keys(mods)
-    .map((key: string) => mods[key])
-    .filter(
-      (mod: IMod) => mod.id === includeModId || getSafe(modState, [mod.id, "enabled"], false),
-    );
-
-  return sortMods(profile.gameId, unsorted, api).catch((unknownErr) => {
-    const err = unknownToError(unknownErr);
-    if (unknownErr instanceof CycleError) {
-      throw new ProcessCanceled(
-        "Deployment is not possible when you have cyclical mod rules. " + err.message,
-      );
-    }
-    throw unknownErr;
-  });
 }
 
 interface IMergeResultByType {
@@ -1324,6 +1306,7 @@ function onDeploySingleMod(api: IExtensionApi) {
     }
 
     const subdir = genSubDirFunc(game, getModType(mod.type));
+    let deployed = false;
     await withActivationLock(async () => {
       try {
         const normalize = await getNormalizeFunc(dataPath);
@@ -1335,6 +1318,7 @@ function onDeploySingleMod(api: IExtensionApi) {
           stagingPath,
           activator,
         );
+        await api.emitAndAwait("will-deploy-single-mod", gameId, modId, enable);
         resetDeploymentFailures(api, gameId);
         if (enable !== false) {
           const profile = profileById(state, lastActiveProfileForGame(state, gameId));
@@ -1368,6 +1352,7 @@ function onDeploySingleMod(api: IExtensionApi) {
           activator.id,
         );
         reportRecordedFailures(api, gameId);
+        deployed = true;
       } catch (unknownErr) {
         if (activator.cancel !== undefined) {
           activator.cancel(gameId, dataPath, stagingPath);
@@ -1388,6 +1373,10 @@ function onDeploySingleMod(api: IExtensionApi) {
         }
       }
     });
+    // outside the activation lock, so a listener can deploy again
+    if (deployed) {
+      await api.emitAndAwait("did-deploy-single-mod", gameId, modId, enable);
+    }
   };
 }
 
@@ -1764,6 +1753,9 @@ function once(api: IExtensionApi) {
     onAddMod(api, gameMode, mod, callback);
   });
 
+  // hashes every staged file, so it only runs behind the vortex-planner-telemetry flag
+  registerResolveLockFile(api);
+
   api.events.on("profile-will-change", () => {
     // when the profile changes there is a good chance the cycle warning doesn't apply and if
     // the game changes the cycle dialog can't even be opened or it would trigger an error
@@ -1879,7 +1871,7 @@ function openDuplicateLocation(api: IExtensionApi, modId: string) {
   const gameMode = activeGameId(state);
   const installPath = installPathForGame(state, gameMode);
   const modPath = path.join(installPath, modId);
-  opn(modPath).catch(() => null);
+  window.api.shell.openFile(modPath);
 }
 function getModInfo(api: IExtensionApi, gameMode: string, modId: string) {
   const state = api.getState();
@@ -2074,6 +2066,8 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["persistent", "deployment"], deploymentReducer);
   context.registerReducer(["persistent", "transactions"], transactionsReducer);
 
+  context["registerLockfileContribution"] = registerLockfileContribution;
+
   const modsActivity = new ReduxProp(
     context.api,
     [["session", "base", "activity", "mods"]],
@@ -2197,6 +2191,16 @@ function init(context: IExtensionContext): boolean {
       menuIcon: { path: nxmModOutline },
     },
   );
+
+  // the planner only runs in dev builds, see registerResolveLockFile
+  if (process.env.NODE_ENV === "development") {
+    context.registerMainPage(
+      "account_tree",
+      "Plan",
+      LazyComponent(() => require("./components/plan_page/PlanPage")),
+      { priority: 42, group: "global", menuIcon: "account_tree", newLayout: true },
+    );
+  }
 
   // Deploy and Purge for the classic toolbar, which renders whatever component a
   // registration gives it. The new toolbar builds its own pair instead — it renders

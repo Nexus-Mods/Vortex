@@ -61,9 +61,9 @@ export const BrowseSections = ({
       <PageHeader
         isFullWidth
         className="bg-surface-low"
+        isBeta={isModsTab}
         pictogramName="nexus-mods"
         subtitle={subtitle}
-        isBeta={isModsTab}
         title={t("Browse")}
       >
         <TabBar>

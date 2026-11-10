@@ -22,7 +22,6 @@ import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
-import opn from "../../util/opn";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, delay, setdefault } from "../../util/util";
 import { discoveryByGame } from "../gamemode_management/selectors";
@@ -81,6 +80,7 @@ import { handleSetPluginList } from "./util/onSetPluginList";
 import { makePluginConflictPrompt } from "./util/pluginFileConflict";
 import PluginHistory from "./util/PluginHistory";
 import { makeSetPluginLight } from "./util/pluginLight";
+import { pluginListContribution } from "./util/pluginListContribution";
 import PluginPersistor from "./util/PluginPersistor";
 import { copyIgnoringMissing, swapUserlistForProfile, userlistPaths } from "./util/profileUserlist";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
@@ -188,7 +188,7 @@ function register(
     (activity: string[]) => activity !== undefined && activity.length > 0,
   );
 
-  const openLOOTSite = () => opn("https://loot.github.io/").catch(() => null);
+  const openLOOTSite = () => window.api.shell.openUrl("https://loot.github.io/");
 
   const parseESPFile = async (filePath: string, gameMode: string): Promise<IESPFile> => {
     const fileInfo = await ESPFile.open(filePath, gameMode);
@@ -1156,6 +1156,10 @@ function init(context: IExtensionContextExt) {
   const history = new PluginHistory(context.api, makeSetPluginGhost(context.api), setPluginLight);
 
   initPersistor(context);
+  context.optional.registerLockfileContribution(
+    (_state: IState, gameMode: string) => gameSupported(gameMode),
+    pluginListContribution,
+  );
   pluginSync = makePluginSync(context.api, {
     persistors: {
       plugins: pluginPersistor,

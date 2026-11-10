@@ -63,8 +63,13 @@ import {
   emitGameManaged,
   emitGameUnmanaged,
 } from "../analytics/mixpanel/gameManageAnalytics";
+import { clearGameAddStore } from "../gamemode_management/actions/session";
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
-import { getGame, getGameStubDownloadInfo } from "../gamemode_management/util/getGame";
+import {
+  getGame,
+  getGameStubDownloadInfo,
+  isGameRegistered,
+} from "../gamemode_management/util/getGame";
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
@@ -408,9 +413,7 @@ function genOnProfileChange(
         }
 
         if (profile !== undefined) {
-          const { gameId } = profile;
-          const game = getGame(gameId);
-          if (game === undefined) {
+          if (!isGameRegistered(VortexGameId(profile.gameId))) {
             showError(
               store.dispatch,
               "Game no longer supported, please install the game extension",
@@ -609,8 +612,45 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
     });
 }
 
+/** The store the user picked this game from, if they picked one while adding it. */
+function pickedStore(state: IState, gameId: VortexGameId): string | undefined {
+  const picked = state.session.gameMode.gameAddStore;
+  return picked?.gameId === gameId ? picked.store : undefined;
+}
+
+/**
+ * Runs discovery for one game. With a store the user picked the game from, discovery is
+ * held to that store, and not finding the game there fails the add rather than leaving
+ * it to manage whichever install was found before.
+ */
+async function discoverPickedGame(
+  api: IExtensionApi,
+  gameId: VortexGameId,
+  store: string | undefined,
+): Promise<void> {
+  await api.emitAndAwait("discover-game", gameId, store);
+
+  // A game without its extension isn't discovered at all, and goes on to be offered the
+  // extension; there's nothing yet to hold to the store.
+  if (store === undefined || getGame(gameId) === undefined) {
+    return;
+  }
+
+  const found = api.getState().settings.gameMode.discovered[gameId];
+  // A path no store claims is kept by discovery, so it has no store to compare.
+  if (found?.path === undefined || (found.store !== undefined && found.store !== store)) {
+    throw new VortexError(`"${gameId}" was not found in the game store "${store}"`, {
+      kind: "game-not-found",
+      gameId,
+    });
+  }
+}
+
 function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<void> {
   let state: IState = api.store.getState();
+  // read now: the add that recorded it clears it as soon as this returns, and the
+  // download below runs on after that
+  const store = pickedStore(state, VortexGameId(gameId));
   const knownGames = state.session.gameMode.known;
   const gameStored = knownGames.find((game) => game.id === gameId);
 
@@ -656,7 +696,11 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<v
                 .then(() => api.emitAndAwait("install-extension", extension))
                 .then((results: boolean[]) => {
                   if (results.includes(true)) {
-                    relaunch(["--game", extension.name]);
+                    relaunch(
+                      store !== undefined
+                        ? ["--game", extension.name, "--game-store", store]
+                        : ["--game", extension.name],
+                    );
                   }
                 })
                 .finally(() => {
@@ -726,16 +770,16 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<v
     });
 }
 
-function manageGame(api: IExtensionApi, gameId: string): PromiseLike<void> {
+function manageGame(api: IExtensionApi, gameId: VortexGameId): PromiseLike<void> {
   const state = api.store.getState() as IState;
   const profiles = state.persistent.profiles || {};
 
   // Discovery state outlives the registering extension. If the extension
-  // didn't load (missing dependency, exception, disabled) getGame is
-  // undefined and activating would create an orphan profile.
+  // didn't load (missing dependency, exception, disabled, uninstalled with
+  // only its stub left) activating would create an orphan profile.
   if (
     state.settings.gameMode?.discovered?.[gameId]?.path !== undefined &&
-    getGame(gameId) !== undefined
+    isGameRegistered(gameId)
   ) {
     const profile = Object.values(profiles).find((prof) => prof.gameId === gameId);
     if (profile !== undefined) {
@@ -958,14 +1002,14 @@ function init(context: IExtensionContext): boolean {
     },
     "Manage",
     (instanceIds: string[]) => {
-      const gameId = instanceIds[0];
+      const gameId = VortexGameId(instanceIds[0]);
 
       // Managing a game nothing provides an extension for is the Tier 0 opt-in; the
       // game has to be registered before discovery, whose path resolution reads the
       // synthesized game's queryArgs. Any other Manage behaves exactly as before.
       const tierZero =
         FlagService.instance?.getFlag("vortex-tier-0-game-support") !== undefined
-          ? tierZeroEntry(context.api.getState(), VortexGameId(gameId))
+          ? tierZeroEntry(context.api.getState(), gameId)
           : undefined;
 
       const registerStep =
@@ -975,8 +1019,11 @@ function init(context: IExtensionContext): boolean {
             )
           : Promise.resolve();
 
+      // what the user picked the game from, which discovery is held to
+      const store = pickedStore(context.api.getState(), gameId);
+
       registerStep
-        .then(() => context.api.emitAndAwait("discover-game", gameId))
+        .then(() => discoverPickedGame(context.api, gameId, store))
         .then(() => Promise.resolve(checkOverridden(context.api, gameId)))
         .then(() => {
           const state = context.api.getState();
@@ -984,7 +1031,7 @@ function init(context: IExtensionContext): boolean {
           // registering extension.
           const manageFunc =
             state.settings.gameMode.discovered[gameId]?.path !== undefined &&
-            getGame(gameId) !== undefined
+            isGameRegistered(gameId)
               ? manageGameDiscovered
               : manageGameUndiscovered;
 
@@ -992,8 +1039,14 @@ function init(context: IExtensionContext): boolean {
         })
         .catch((err) => {
           if (!(err instanceof UserCanceled)) {
-            context.api.showErrorNotification("Failed to manage game", err);
+            // a game missing from the store the user picked isn't a bug to report
+            context.api.showErrorNotification("Failed to manage game", err, {
+              allowReport: !(err instanceof VortexError && err.data.kind === "game-not-found"),
+            });
           }
+        })
+        .finally(() => {
+          context.api.store.dispatch(clearGameAddStore());
         });
     },
   );
@@ -1203,9 +1256,14 @@ function init(context: IExtensionContext): boolean {
           // startQuickDiscovery in gamemode_management.once() and pops the
           // "Game not discovered" dialog even though discovery would have
           // succeeded.
-          context.api
-            .emitAndAwait("discover-game", game.id)
-            .then(() => manageGame(context.api, game.id));
+          const gameId = VortexGameId(game.id);
+          discoverPickedGame(context.api, gameId, commandLine.gameStore)
+            .then(() => manageGame(context.api, gameId))
+            .catch((err) => {
+              context.api.showErrorNotification("Failed to manage game", err, {
+                allowReport: !(err instanceof VortexError && err.data.kind === "game-not-found"),
+              });
+            });
         } else {
           log("warn", "game specified on command line not found", {
             game: commandLine.game,

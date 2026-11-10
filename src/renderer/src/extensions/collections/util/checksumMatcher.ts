@@ -2,7 +2,6 @@ import * as path from "path";
 
 import { unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
-import * as crc32 from "crc-32";
 import SevenZip from "node-7z";
 
 import { convertGameIdReverse } from "../../../extensions/nexus_integration/util/convertGameId";
@@ -13,6 +12,7 @@ import * as fs from "../../../util/fs";
 import * as selectors from "../../../util/selectors";
 import walk from "../../../util/walk";
 import { ReplicateHashMismatchError } from "../util/errors";
+import { fileCRC32 } from "./fileCRC";
 
 export async function matchChecksums(
   api: IExtensionApi,
@@ -69,29 +69,12 @@ export async function matchChecksums(
   );
 
   const localChecksums: Set<string> = new Set();
-  const computeCRC32Stream = (filePath: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const stream = fs.createReadStream(filePath);
-      let crc = 0;
-      stream.on("data", (chunk: Buffer) => {
-        crc = crc32.buf(chunk, crc);
-      });
-      stream.on("end", () => {
-        // >>> 0 converts signed to unsigned
-        resolve((crc >>> 0).toString(16).toUpperCase().padStart(8, "0"));
-      });
-      stream.on("error", (err: Error) => {
-        reject(err);
-      });
-    });
-  };
-
   for (const entry of entries) {
     const isDirectory = (await fs.statAsync(entry)).isDirectory();
     if (isDirectory) {
       continue;
     }
-    const crc = await computeCRC32Stream(entry);
+    const crc = await fileCRC32(entry);
     localChecksums.add(crc);
   }
 

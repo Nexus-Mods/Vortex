@@ -14,7 +14,6 @@ import { IconButton } from "../../controls/TooltipControls";
 import ZoomableImage from "../../controls/ZoomableImage";
 import type { IAvailableExtension, ISelector } from "../../types/extensions";
 import type { IExtensionState, IState } from "../../types/IState";
-import opn from "../../util/opn";
 import { SITE_ID } from "../gamemode_management/constants";
 import { nexusSiteModPageUrl } from "../nexus_integration/util/nexus_urls/nexusUrls";
 import { ExtensionDescription } from "./components/extension_description/ExtensionDescription";
@@ -365,7 +364,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const ext = findInCatalog(availableExtensions, { modId });
     if (ext.modId !== undefined) {
-      opn(nexusSiteModPageUrl(ext.modId)).catch(() => null);
+      window.api.shell.openUrl(nexusSiteModPageUrl(ext.modId));
     }
   };
 }
