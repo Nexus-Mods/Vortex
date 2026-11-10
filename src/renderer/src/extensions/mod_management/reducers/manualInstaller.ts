@@ -13,6 +13,11 @@ export interface IManualInstallerRequest {
   modName: string;
   /** how many more installs of the same batch are still to come after this one */
   remaining: number;
+  /**
+   * the batch this install belongs to. Requests of one batch can be waiting at the same time, so
+   * answering one with "use for all" has to answer the others too.
+   */
+  batchId?: string;
   /** the game's default folder, preselected in the dialog */
   defaultFolder?: string;
   /**

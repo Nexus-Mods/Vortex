@@ -1736,6 +1736,7 @@ class InstallManager {
                       ? VortexModStagingFolder(existingMod.installationPath)
                       : undefined;
                   details.archiveId = archiveId ?? undefined;
+                  details.installId = dummyArchiveId;
                   return this.installInner(
                     api,
                     archivePath,
@@ -1892,7 +1893,14 @@ class InstallManager {
                   }
                   this.setModSize(api, modId, installGameId);
                   promiseCallback?.(null, modId);
-                  api.events.emit("did-install-mod", installGameId, archiveId, modId, modInfo);
+                  api.events.emit(
+                    "did-install-mod",
+                    installGameId,
+                    archiveId,
+                    modId,
+                    modInfo,
+                    dummyArchiveId,
+                  );
                   return null;
                 })
                 .catch((err) => {

@@ -21,6 +21,11 @@ export interface IManualInstallerAnswer {
   dontAskAgain: boolean;
   /** use this folder for the rest of the batch */
   useForAll: boolean;
+  /**
+   * set on the answer given to a request that was still waiting when another request of its
+   * batch was answered with useForAll. The user never saw a dialog for it.
+   */
+  fromBatch?: boolean;
 }
 
 // the resolvers can't live in the state, it only holds serializable data
@@ -42,7 +47,11 @@ export function requestManualInstallerDestination(
   });
 }
 
-/** Answers a request. The dialog can report the same request more than once, only the first counts. */
+/**
+ * Answers a request. The dialog can report the same request more than once, only the first counts.
+ * An answer with useForAll also answers the requests of the same batch that are still waiting,
+ * the user doesn't get a dialog for them.
+ */
 export function answerManualInstallerRequest(
   api: IExtensionApi,
   requestId: string,
@@ -54,9 +63,27 @@ export function answerManualInstallerRequest(
   }
   resolvers.delete(requestId);
 
-  api.store?.dispatch(dequeueManualInstallerRequest(requestId));
+  const pending = api.getState().session.manualInstaller.pending;
+  const batchId = pending.find((request) => request.id === requestId)?.batchId;
+  const peers =
+    answer?.useForAll === true && batchId !== undefined
+      ? pending.filter((request) => request.id !== requestId && request.batchId === batchId)
+      : [];
+
+  for (const id of [requestId, ...peers.map((request) => request.id)]) {
+    api.store?.dispatch(dequeueManualInstallerRequest(id));
+  }
   if (api.getState().session.manualInstaller.pending.length === 0) {
     api.store?.dispatch(setDialogVisible(undefined));
   }
+
   resolve(answer);
+  for (const peer of peers) {
+    const resolvePeer = resolvers.get(peer.id);
+    resolvers.delete(peer.id);
+    // peers only exist for an answer, a cancelled request never has any
+    if (answer !== undefined) {
+      resolvePeer?.({ ...answer, fromBatch: true });
+    }
+  }
 }

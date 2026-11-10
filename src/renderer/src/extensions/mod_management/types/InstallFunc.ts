@@ -21,6 +21,9 @@ export interface IInstallationDetails {
   // id of the download being installed, the key of its "install-mod" batch context. Not set when
   // the install doesn't come from a download.
   archiveId?: string;
+  // identifies this install in the "did-install-mod" event. Unlike archiveId it is set for every
+  // install, including ones that don't come from a download (e.g. "Install From File").
+  installId?: string;
   hasXmlConfigXML?: boolean;
   hasCSScripts?: boolean;
   isTrusted?: boolean;

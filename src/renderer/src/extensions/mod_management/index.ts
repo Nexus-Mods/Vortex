@@ -107,7 +107,6 @@ import { modsTableViewsReducer } from "./reducers/modsTableViews";
 import { sessionReducer } from "./reducers/session";
 import { settingsReducer } from "./reducers/settings";
 import { transactionsReducer } from "./reducers/transactions";
-import { modNameByStagingFolder } from "./selectors";
 import getText from "./texts";
 import type {
   IDeployedFile,
@@ -168,10 +167,8 @@ import DeactivationButton from "./views/DeactivationButton";
 import type { IDuplicatesMap, IRemoveDuplicateMap } from "./views/DuplicatesDialog";
 import {} from "./views/ExternalChangeDialog";
 import {} from "./views/FixDeploymentDialog";
-import {
-  ManualInstallerDialog,
-  type IManualInstallerDialogProps,
-} from "./views/ManualInstallerDialog";
+import type { IManualInstallerDialogProps } from "./views/ManualInstallerDialog";
+import { ManualInstallerDialogHost } from "./views/ManualInstallerDialogHost";
 import {} from "./views/ModList";
 import {} from "./views/Settings";
 import URLInput from "./views/URLInput";
@@ -2294,13 +2291,9 @@ function init(context: IExtensionContext): boolean {
   // one function, as the dialog loads the manifest again whenever it changes
   const loadManifest = (gameId: VortexGameId) => getManifest(context.api, "", gameId);
 
-  context.registerDialog(MANUAL_INSTALLER_DIALOG_ID, ManualInstallerDialog, () => {
-    const state = context.api.getState();
-    const request = state.session.manualInstaller.pending[0];
-
+  // the request itself is read from the state by the host, see there
+  context.registerDialog(MANUAL_INSTALLER_DIALOG_ID, ManualInstallerDialogHost, () => {
     return {
-      request,
-      modNames: request === undefined ? new Map() : modNameByStagingFolder(state, request.gameId),
       loadManifest,
       onAnswer: (requestId, answer) => answerManualInstallerRequest(context.api, requestId, answer),
     } satisfies Partial<IManualInstallerDialogProps>;
