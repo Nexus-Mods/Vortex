@@ -66,7 +66,7 @@ interface IDeploymentContext {
   onComplete: () => void;
 }
 
-async function mapWithConcurrency<T, R>(
+export async function mapWithConcurrency<T, R>(
   items: T[],
   fn: (item: T, index: number) => Promise<R> | R,
   concurrency: number,

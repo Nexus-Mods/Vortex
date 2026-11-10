@@ -759,14 +759,20 @@ export function init(fs: FileSystem) {
 
     const entries: EnumerateEntryWire[] = [];
     let done = false;
-    for (let pulled = 0; pulled < max; pulled++) {
-      const step = await session.iterator.next();
-      if (step.done === true) {
-        done = true;
-        break;
-      }
+    try {
+      for (let pulled = 0; pulled < max; pulled++) {
+        const step = await session.iterator.next();
+        if (step.done === true) {
+          done = true;
+          break;
+        }
 
-      entries.push(enumerationEntryToWire(step.value));
+        entries.push(enumerationEntryToWire(step.value));
+      }
+    } catch (err) {
+      // A failed listing cannot continue: evict it so the opendir handle is released.
+      evictEnumeration(handle);
+      throw err;
     }
 
     if (done) {

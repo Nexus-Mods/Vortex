@@ -1,0 +1,370 @@
+import { QualifiedPath } from "@nexusmods/paths";
+
+import type { DiskEntry, DiskScan } from "./diskScan";
+import {
+  FileSourceKind,
+  FileSourceSchema,
+  type FileOrigin,
+  type FileSource,
+  type Lockfile,
+  type FileEntry,
+} from "./lockfile";
+import { AbsolutePathSchema, folderKeyOf, INVALID_RELATIVE_PATH, pathKeyOf } from "./pathKey";
+import type { Assert, MutuallyAssignable } from "./typeChecks";
+import { z } from "./zodJitless";
+
+/**
+ * What the Apply step does at one destination; Apply picks the deployment method. Declared in the
+ * order inApplyOrder runs them: LINK last, since it needs its destination cleared first.
+ */
+export const OperationKind = {
+  Backup: "BACKUP",
+  Unlink: "UNLINK",
+  Restore: "RESTORE",
+  Link: "LINK",
+} as const;
+export type OperationKind = (typeof OperationKind)[keyof typeof OperationKind];
+
+type DiskLetter = "x" | "A" | "B" | "C" | "D";
+
+/**
+ * Every reachable state of a destination. Each value is its code, written Disk, Previous, Current:
+ * - `x`: nothing there
+ * - `A`: the current file, or the previous one when the current lockfile has none
+ * - `B`: the previous file, when its content or origin differs from the current one
+ * - `C`: content neither lockfile has
+ * - `D` (disk only): an entry the scan did not hash
+ */
+export const DestinationState = {
+  NewFile: "xxA",
+  NewOverIdentical: "AxA",
+  NewOverOther: "BxA",
+  NewOverUnhashed: "DxA",
+  DeployedMissing: "xAA",
+  Unchanged: "AAA",
+  DeployedEdited: "BAA",
+  DeployedUnhashed: "DAA",
+  UpdatedMissing: "xBA",
+  UpdatedOverIdentical: "ABA",
+  Updated: "BBA",
+  UpdatedOverEdited: "CBA",
+  UpdatedOverUnhashed: "DBA",
+  RemovedMissing: "xAx",
+  Removed: "AAx",
+  RemovedEdited: "BAx",
+  RemovedUnhashed: "DAx",
+} as const;
+export type DestinationState = (typeof DestinationState)[keyof typeof DestinationState];
+
+// typecheck fails on a code that is not Disk, Previous, Current letters
+type _DestinationStateCodes = Assert<
+  [DestinationState] extends [`${DiskLetter}${"x" | "A" | "B"}${"x" | "A"}`] ? true : false
+>;
+
+/** One step of a plan; `reason` is the state of the destination that needs it. */
+export type Operation =
+  /** moves the file at the destination aside */
+  | { kind: typeof OperationKind.Backup; destinationPath: string; reason: DestinationState }
+  /** deploys the current lockfile's file to its destination */
+  | { kind: typeof OperationKind.Link; file: FileSource; reason: DestinationState }
+  /** removes the previous lockfile's file from its destination */
+  | { kind: typeof OperationKind.Unlink; file: FileSource; reason: DestinationState };
+
+const reasonSchema = z.enum(DestinationState);
+
+const operationSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal(OperationKind.Backup),
+    destinationPath: AbsolutePathSchema,
+    reason: reasonSchema,
+  }),
+  z.object({ kind: z.literal(OperationKind.Link), file: FileSourceSchema, reason: reasonSchema }),
+  z.object({ kind: z.literal(OperationKind.Unlink), file: FileSourceSchema, reason: reasonSchema }),
+]);
+
+// typecheck fails when the schema and its type drift apart
+type _OperationMatches = Assert<MutuallyAssignable<z.infer<typeof operationSchema>, Operation>>;
+
+export const OperationSchema: z.ZodType<Operation> = operationSchema;
+
+/**
+ * The operations each state needs; typecheck fails on a missing or extra row. Every
+ * LINK lands on an empty destination: whatever is there is unlinked when it is ours, and backed up
+ * otherwise, so Apply never writes through a hardlink into a staged file.
+ */
+const OPERATIONS_BY_STATE = {
+  [DestinationState.NewFile]: [OperationKind.Link],
+  // the same content, but not ours to take over
+  [DestinationState.NewOverIdentical]: [OperationKind.Backup, OperationKind.Link],
+  [DestinationState.NewOverOther]: [OperationKind.Backup, OperationKind.Link],
+  [DestinationState.NewOverUnhashed]: [OperationKind.Backup, OperationKind.Link],
+  [DestinationState.DeployedMissing]: [OperationKind.Link],
+  [DestinationState.Unchanged]: [],
+  [DestinationState.DeployedEdited]: [OperationKind.Backup, OperationKind.Link],
+  // trusted to be what we deployed
+  [DestinationState.DeployedUnhashed]: [],
+  [DestinationState.UpdatedMissing]: [OperationKind.Link],
+  // the update's content, but not placed by us
+  [DestinationState.UpdatedOverIdentical]: [OperationKind.Backup, OperationKind.Link],
+  [DestinationState.Updated]: [OperationKind.Unlink, OperationKind.Link],
+  [DestinationState.UpdatedOverEdited]: [OperationKind.Backup, OperationKind.Link],
+  // trusted to be our older file
+  [DestinationState.UpdatedOverUnhashed]: [OperationKind.Unlink, OperationKind.Link],
+  [DestinationState.RemovedMissing]: [],
+  [DestinationState.Removed]: [OperationKind.Unlink],
+  [DestinationState.RemovedEdited]: [OperationKind.Backup],
+  // trusted to be the removed file
+  [DestinationState.RemovedUnhashed]: [OperationKind.Unlink],
+} as const satisfies Record<DestinationState, readonly OperationKind[]>;
+
+const sameContent = (
+  lhs: Pick<FileEntry, "fileHash" | "hashType">,
+  rhs: Pick<FileEntry, "fileHash" | "hashType">,
+) => lhs.hashType === rhs.hashType && lhs.fileHash === rhs.fileHash;
+
+export function sameOrigin(lhs: FileOrigin, rhs: FileOrigin): boolean {
+  switch (lhs.source) {
+    case FileSourceKind.Nexus:
+      return rhs.source === FileSourceKind.Nexus && lhs.nexusFileId === rhs.nexusFileId;
+    case FileSourceKind.VortexGenerated:
+    case FileSourceKind.UserGenerated:
+      return rhs.source === lhs.source;
+  }
+  const exhausted: never = lhs;
+  return exhausted;
+}
+
+// the same bytes from another mod still relink, so a symlink never points into a purged mod
+const sameFile = (lhs: FileSource, rhs: FileSource) =>
+  sameContent(lhs, rhs) && sameOrigin(lhs, rhs);
+
+/** The current and previous lockfile's file at one destination; at least one is there. */
+type LockfileFilesAt =
+  | { current: FileSource; previous: FileSource | undefined }
+  | { current: undefined; previous: FileSource };
+
+// operations keep the lockfile's own spelling of a path
+const destinationPathOf = (files: LockfileFilesAt) =>
+  files.current !== undefined ? files.current.destinationPath : files.previous.destinationPath;
+
+/** The disk entry's letter compared with `file`. */
+function diskLetterAgainst(
+  entry: DiskEntry | undefined,
+  file: FileSource,
+): Exclude<DiskLetter, "C"> {
+  if (entry === undefined) {
+    return "x";
+  }
+  if (entry.contentHash === undefined) {
+    return "D";
+  }
+  return sameContent(entry.contentHash, file) ? "A" : "B";
+}
+
+/** A destination's state; typecheck fails if it can produce one OPERATIONS_BY_STATE lacks. */
+function destinationStateOf(
+  entry: DiskEntry | undefined,
+  { current, previous }: LockfileFilesAt,
+): DestinationState {
+  if (current === undefined) {
+    return `${diskLetterAgainst(entry, previous)}Ax`;
+  }
+  if (previous === undefined) {
+    return `${diskLetterAgainst(entry, current)}xA`;
+  }
+  if (sameFile(previous, current)) {
+    return `${diskLetterAgainst(entry, current)}AA`;
+  }
+  if (entry === undefined) {
+    return DestinationState.UpdatedMissing;
+  }
+  if (entry.contentHash === undefined) {
+    return DestinationState.UpdatedOverUnhashed;
+  }
+  // content matching our older file counts as that file, so an origin change still relinks
+  if (sameContent(entry.contentHash, previous)) {
+    return DestinationState.Updated;
+  }
+  return sameContent(entry.contentHash, current)
+    ? DestinationState.UpdatedOverIdentical
+    : DestinationState.UpdatedOverEdited;
+}
+
+/** A lockfile's files by path key; throws when it lists one destination twice. */
+function filesByKey(files: readonly FileSource[]): Map<string, FileSource> {
+  const fileByKey = new Map(files.map((file) => [pathKeyOf(file.destinationPath), file]));
+  if (fileByKey.size !== files.length) {
+    throw new Error("a lockfile lists a destination twice");
+  }
+  return fileByKey;
+}
+
+/** Throws on a destination outside the scanned folders and on an unsorted scan. */
+function checkInputs(destinations: ReadonlyArray<[string, LockfileFilesAt]>, disk: DiskScan): void {
+  const rootPrefixes = disk.roots.map(folderKeyOf);
+  for (const [destinationKey, files] of destinations) {
+    const covered = rootPrefixes.some(
+      (prefix) =>
+        destinationKey.startsWith(prefix) &&
+        !INVALID_RELATIVE_PATH.test(destinationKey.slice(prefix.length)),
+    );
+    if (!covered) {
+      throw new Error(`${destinationPathOf(files)} is not a valid path under a scanned folder`);
+    }
+  }
+  disk.entries.forEach((entry, index) => {
+    const before = disk.entries[index - 1];
+    if (before !== undefined && before.path >= entry.path) {
+      throw new Error(`the disk scan is not sorted by path at ${entry.path}`);
+    }
+  });
+}
+
+/**
+ * The folders above a path, nearest first.
+ * @yields each folder, up to and not including the root
+ */
+function* parentFolders(path: string): Generator<string> {
+  let folder = QualifiedPath.fromNative(path).parent();
+  while (folder.path !== folder.root) {
+    yield folder.path;
+    folder = folder.parent();
+  }
+}
+
+/**
+ * Throws where a current file and something else need the same path as a file and as a folder:
+ * another destination, an entry on disk, or a link that would take Apply outside the scanned
+ * folders. Both maps are keyed by path key; `leftOnDisk` is what the plan leaves on disk. Paths
+ * are reported as the lockfile or the disk spells them.
+ */
+function checkFolders(
+  currentByKey: ReadonlyMap<string, FileSource>,
+  leftOnDisk: ReadonlyMap<string, DiskEntry>,
+): void {
+  // each folder is checked once; the folders above it were checked with it
+  const checkedFolders = new Set<string>();
+  for (const { destinationPath } of currentByKey.values()) {
+    for (const folder of parentFolders(destinationPath)) {
+      if (checkedFolders.has(folder)) {
+        break;
+      }
+      checkedFolders.add(folder);
+      const folderKey = pathKeyOf(folder);
+      if (currentByKey.has(folderKey)) {
+        throw new Error(`${destinationPath} is inside ${folder}, another destination`);
+      }
+      if (leftOnDisk.has(folderKey)) {
+        throw new Error(`${folder} is a file or link on disk where a folder is needed`);
+      }
+    }
+  }
+  for (const entry of leftOnDisk.values()) {
+    for (const folder of parentFolders(entry.path)) {
+      if (checkedFolders.has(folder)) {
+        break;
+      }
+      checkedFolders.add(folder);
+      if (currentByKey.has(pathKeyOf(folder))) {
+        throw new Error(`${folder} is a folder on disk`);
+      }
+    }
+  }
+}
+
+function operationOf(
+  kind: Operation["kind"],
+  reason: DestinationState,
+  files: LockfileFilesAt,
+): Operation {
+  switch (kind) {
+    case OperationKind.Backup:
+      return { kind, destinationPath: destinationPathOf(files), reason };
+    case OperationKind.Link:
+      if (files.current === undefined) {
+        throw new Error(`no current file to link at ${destinationPathOf(files)}`);
+      }
+      return { kind, file: files.current, reason };
+    case OperationKind.Unlink:
+      if (files.previous === undefined) {
+        throw new Error(`no previous file to unlink at ${destinationPathOf(files)}`);
+      }
+      return { kind, file: files.previous, reason };
+  }
+  const exhausted: never = kind;
+  return exhausted;
+}
+
+/** One destination of a plan: its state, the inputs the state came from and its operations. */
+export type PlannedDestination = LockfileFilesAt & {
+  /** as the lockfile spells it */
+  destinationPath: string;
+  state: DestinationState;
+  disk: DiskEntry | undefined;
+  /** in the order Apply runs them at this destination */
+  operations: Operation[];
+};
+
+/**
+ * Every destination either lockfile lists, in destination order, with what the three way merge of
+ * both lockfiles and the disk scan decided for it. No previous lockfile is a first run.
+ */
+export function planDestinations(
+  current: Lockfile,
+  previous: Lockfile | undefined,
+  disk: DiskScan,
+): PlannedDestination[] {
+  if (previous !== undefined && previous.gameId !== current.gameId) {
+    throw new Error(`the lockfiles are for games ${previous.gameId} and ${current.gameId}`);
+  }
+  const currentByKey = filesByKey(current.files);
+  const previousByKey = filesByKey(previous?.files ?? []);
+  const filesByDestinationKey = new Map<string, LockfileFilesAt>();
+  for (const [key, previousFile] of previousByKey) {
+    filesByDestinationKey.set(key, { current: undefined, previous: previousFile });
+  }
+  for (const [key, currentFile] of currentByKey) {
+    filesByDestinationKey.set(key, { current: currentFile, previous: previousByKey.get(key) });
+  }
+  const destinations = [...filesByDestinationKey].toSorted(([lhs], [rhs]) => (lhs < rhs ? -1 : 1));
+  checkInputs(destinations, disk);
+  const diskByKey = new Map(disk.entries.map((entry) => [pathKeyOf(entry.path), entry]));
+
+  const planned = destinations.map(([key, files]): PlannedDestination => {
+    const entry = diskByKey.get(key);
+    const state = destinationStateOf(entry, files);
+    return {
+      ...files,
+      destinationPath: destinationPathOf(files),
+      state,
+      disk: entry,
+      operations: OPERATIONS_BY_STATE[state].map((kind) => operationOf(kind, state, files)),
+    };
+  });
+  // a path no current file uses is empty once its operations ran
+  const cleared = new Set(
+    destinations.filter(([, files]) => files.current === undefined).map(([key]) => key),
+  );
+  checkFolders(currentByKey, new Map([...diskByKey].filter(([key]) => !cleared.has(key))));
+  return planned;
+}
+
+/**
+ * Operations in the order Apply runs them: BACKUP and UNLINK first, then LINK, each keeping its
+ * order, so a file can replace a folder of ours and a folder can replace a file of ours.
+ */
+export const inApplyOrder = (operations: readonly Operation[]): Operation[] => [
+  ...operations.filter((operation) => operation.kind !== OperationKind.Link),
+  ...operations.filter((operation) => operation.kind === OperationKind.Link),
+];
+
+/** The operations that bring the disk from the previous lockfile to the current one, in Apply's order. */
+export function plan(
+  current: Lockfile,
+  previous: Lockfile | undefined,
+  disk: DiskScan,
+): Operation[] {
+  return inApplyOrder(
+    planDestinations(current, previous, disk).flatMap((destination) => destination.operations),
+  );
+}

@@ -44,6 +44,7 @@ import {
   useCollectionMemberships,
   useModsTableGroups,
 } from "../../hooks/use_mods_table_groups/useModsTableGroups.hook";
+import { useModsTableNameFilter } from "../../hooks/use_mods_table_name_filter/useModsTableNameFilter.hook";
 import { useModsTableSearch } from "../../hooks/use_mods_table_search/useModsTableSearch.hook";
 import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
 import type { IModWithState } from "../../types/IModProps";
@@ -354,6 +355,7 @@ export const ModsTableSwitch = ({
     search,
     setSearch,
   });
+  useModsTableNameFilter(setSearch, newTable);
 
   const displayOptions = useDisplayOptionsAction({
     label: t("modsTable::toolbar::viewOptions"),
