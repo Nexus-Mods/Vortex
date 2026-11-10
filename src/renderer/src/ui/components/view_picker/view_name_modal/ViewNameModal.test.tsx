@@ -50,6 +50,19 @@ describe("ViewNameModal", () => {
     expect(onCreate).toHaveBeenCalledWith("Recently installed");
   });
 
+  it("stops a name at 40 characters, counting what's left", async () => {
+    const { onCreate } = renderModal();
+
+    await userEvent.type(nameField(), "a".repeat(45));
+
+    expect(nameField()).toHaveValue("a".repeat(40));
+    expect(screen.getByText("0 / 40")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Create view" }));
+
+    expect(onCreate).toHaveBeenCalledWith("a".repeat(40));
+  });
+
   it("leaves without creating one on Cancel", async () => {
     const { onCreate, onClose } = renderModal();
 

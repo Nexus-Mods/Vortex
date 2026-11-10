@@ -6,6 +6,9 @@ import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 
+/** The longest name a view can be given, so it fits beside the other views and their buttons. */
+const MAX_NAME_LENGTH = 40;
+
 interface IViewNameModalProps {
   /** Whether it's showing. */
   isOpen: boolean;
@@ -58,6 +61,7 @@ const ViewNameForm = ({
 
       <TextField
         label={t("Name view")}
+        maxLength={MAX_NAME_LENGTH}
         placeholder={placeholder}
         ref={inputRef}
         value={name}
