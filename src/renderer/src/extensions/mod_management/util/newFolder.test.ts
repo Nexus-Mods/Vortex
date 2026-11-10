@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidFolderName, uniqueFolderName } from "./newFolder";
+import { folderNameProblem, uniqueFolderName } from "./newFolder";
 
 describe("uniqueFolderName", () => {
   it("is the base when nothing has it", () => {
@@ -27,50 +27,55 @@ describe("uniqueFolderName", () => {
   });
 });
 
-describe("isValidFolderName", () => {
+describe("folderNameProblem", () => {
   it("takes an ordinary name", () => {
-    expect(isValidFolderName("Textures", [])).toBe(true);
-    expect(isValidFolderName("My Mod 2", ["Data"])).toBe(true);
-    expect(isValidFolderName(".hidden", [])).toBe(true);
+    expect(folderNameProblem("Textures", [])).toBeUndefined();
+    expect(folderNameProblem("My Mod 2", ["Data"])).toBeUndefined();
+    expect(folderNameProblem(".hidden", [])).toBeUndefined();
   });
 
   it("trims the name before judging it", () => {
-    expect(isValidFolderName("  Textures  ", [])).toBe(true);
-    expect(isValidFolderName("   ", [])).toBe(false);
+    expect(folderNameProblem("  Textures  ", [])).toBeUndefined();
+    expect(folderNameProblem("   ", [])).toBe("empty");
   });
 
-  it("rejects an empty name", () => {
-    expect(isValidFolderName("", [])).toBe(false);
+  it("reports an empty name", () => {
+    expect(folderNameProblem("", [])).toBe("empty");
   });
 
-  it("rejects the names of the current and the parent directory", () => {
-    expect(isValidFolderName(".", [])).toBe(false);
-    expect(isValidFolderName("..", [])).toBe(false);
+  it("reports the names of the current and the parent directory", () => {
+    expect(folderNameProblem(".", [])).toBe("dot");
+    expect(folderNameProblem("..", [])).toBe("dot");
   });
 
-  it("rejects a name that would be a path", () => {
-    expect(isValidFolderName("a/b", [])).toBe(false);
-    expect(isValidFolderName("a\\b", [])).toBe(false);
+  it("reports a name that would be a path", () => {
+    expect(folderNameProblem("a/b", [])).toBe("invalidCharacter");
+    expect(folderNameProblem("a\\b", [])).toBe("invalidCharacter");
   });
 
-  it("rejects characters a Windows name can't have", () => {
+  it("reports characters a Windows name can't have", () => {
     for (const character of [":", "*", "?", '"', "<", ">", "|"]) {
-      expect(isValidFolderName(`a${character}b`, [])).toBe(false);
+      expect(folderNameProblem(`a${character}b`, [])).toBe("invalidCharacter");
     }
   });
 
-  it("rejects control characters", () => {
-    expect(isValidFolderName("a\u0000b", [])).toBe(false);
-    expect(isValidFolderName("a\tb", [])).toBe(false);
+  it("reports control characters", () => {
+    expect(folderNameProblem("a\u0000b", [])).toBe("invalidCharacter");
+    expect(folderNameProblem("a\tb", [])).toBe("invalidCharacter");
   });
 
-  it("rejects a name ending in a dot", () => {
-    expect(isValidFolderName("name.", [])).toBe(false);
+  it("reports a name ending in a dot", () => {
+    expect(folderNameProblem("name.", [])).toBe("trailingDot");
   });
 
-  it("rejects a name a sibling has, without regard to case", () => {
-    expect(isValidFolderName("Data", ["Data"])).toBe(false);
-    expect(isValidFolderName("data", ["DATA"])).toBe(false);
-    expect(isValidFolderName(" Data ", ["Data"])).toBe(false);
+  it("reports a name a sibling has, without regard to case", () => {
+    expect(folderNameProblem("Data", ["Data"])).toBe("taken");
+    expect(folderNameProblem("data", ["DATA"])).toBe("taken");
+    expect(folderNameProblem(" Data ", ["Data"])).toBe("taken");
+  });
+
+  it("reports the first problem when there are several", () => {
+    expect(folderNameProblem("a/b.", [])).toBe("invalidCharacter");
+    expect(folderNameProblem("a.", ["a."])).toBe("trailingDot");
   });
 });
