@@ -140,7 +140,7 @@ import type {
   IRunOptions,
   IStateVerifier,
 } from "../types/IExtensionContext";
-import type { IGame, IRegisteredGame } from "../types/IGame";
+import type { IGame } from "../types/IGame";
 import type { IHealthCheckResult, IModCheckContext, IModHealthCheck } from "../types/IHealthCheck";
 import {
   HealthCheckCategory,
@@ -337,8 +337,8 @@ export function makeDeploymentMethod(
 }
 
 /** A game with no deploy skip patterns. */
-export function makeBlacklistGame(): IRegisteredGame {
-  return { details: {} } as unknown as IRegisteredGame;
+export function makeBlacklistGame(): IGame {
+  return { details: {} } as unknown as IGame;
 }
 
 /** The deployment method an extension's init registers, bound to the api. */
@@ -707,23 +707,17 @@ export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStore
 }
 
 // A game extension as GameModeManager and the getGame() registry hold it.
-export function makeGame(overrides: Partial<IGame> = {}): IGame {
-  const id = overrides.id ?? "skyrimse";
+export function makeGame(overrides: Partial<Omit<IGame, "id">> & { id?: string } = {}): IGame {
+  const id = VortexGameId(overrides.id ?? "skyrimse");
   return {
-    id,
     name: id,
     requiredFiles: [],
     queryModPath: () => "mods",
     executable: () => `${id}.exe`,
     supportedTools: [],
     ...overrides,
+    id,
   };
-}
-
-// A game as the registry holds it once registerGame has branded its id.
-export function makeRegisteredGame(overrides: Partial<IGame> = {}): IRegisteredGame {
-  const game = makeGame(overrides);
-  return { ...game, id: VortexGameId(game.id) };
 }
 
 // A tool as discovery reports it and settings.gameMode.discovered stores it.
@@ -1030,7 +1024,7 @@ export function registerHarnessGame(gameId: string): void {
   harnessGames.add(gameId);
   const gameReg = local<{
     gameModeManager: unknown;
-    extensionGames: IRegisteredGame[];
+    extensionGames: IGame[];
     extensionStubs: unknown[];
   }>("gamemode-management", {
     gameModeManager: undefined,
@@ -1039,7 +1033,7 @@ export function registerHarnessGame(gameId: string): void {
   });
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
     gameReg.extensionGames.push(
-      makeRegisteredGame({
+      makeGame({
         id: gameId,
         // resolveGameVersion validates the game (executable) and tries game.getGameVersion
         // first; answer it so tests don't fall through to exe-version probing of a nonexistent
@@ -1058,7 +1052,7 @@ export function registerHarnessGame(gameId: string): void {
 export function resetHarnessRegistries(): void {
   const gameReg = local<{
     gameModeManager: unknown;
-    extensionGames: IRegisteredGame[];
+    extensionGames: IGame[];
     extensionStubs: unknown[];
   }>("gamemode-management", {
     gameModeManager: undefined,

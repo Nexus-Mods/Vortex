@@ -3,7 +3,7 @@ import * as path from "path";
 import type { VortexGameId } from "@vortex/shared";
 
 import type { IExtensionDownloadInfo } from "../../../types/extensions";
-import type { IGame, IRegisteredGame } from "../../../types/IGame";
+import type { IGame } from "../../../types/IGame";
 import type { IGameStore } from "../../../types/IGameStore";
 import local from "../../../util/local";
 import { log } from "../../../util/log";
@@ -48,17 +48,17 @@ const gameExHandler = {
   },
 };
 
-function makeGameProxy(game: IRegisteredGame): IRegisteredGame {
+function makeGameProxy(game: IGame): IGame {
   if (game === undefined) {
     return undefined;
   }
-  return new Proxy<IRegisteredGame>(game, gameExHandler);
+  return new Proxy(game, gameExHandler);
 }
 
 // this isn't nice...
 const $ = local<{
   gameModeManager: GameModeManager;
-  extensionGames: IRegisteredGame[];
+  extensionGames: IGame[];
   extensionStubs: IGameStub[];
 }>("gamemode-management", {
   gameModeManager: undefined,
@@ -67,14 +67,14 @@ const $ = local<{
 });
 
 // ...neither is this
-export function getGames(): IRegisteredGame[] {
+export function getGames(): IGame[] {
   if ($.gameModeManager === undefined) {
     throw new Error("getGames only available in renderer process");
   }
   return $.gameModeManager.games.map(makeGameProxy);
 }
 
-export function getGame(gameId: string): IRegisteredGame {
+export function getGame(gameId: string): IGame {
   let game = $.extensionGames.find((iter) => iter.id === gameId);
   if (game === undefined) {
     const stub = $.extensionStubs.find((iter) => iter.game.id === gameId);

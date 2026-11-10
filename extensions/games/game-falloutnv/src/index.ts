@@ -3,7 +3,7 @@ import * as nodeFs from "fs";
 import path from "path";
 
 import { IFileInfo } from "@nexusmods/nexus-api";
-import { actions, fs, log, types, selectors, util } from "@nexusmods/vortex-api";
+import { actions, fs, log, types, selectors, util, VortexGameId } from "@nexusmods/vortex-api";
 import * as semver from "semver";
 import * as winapi from "winapi-bindings";
 
@@ -269,7 +269,7 @@ function main(context: types.IExtensionContext): boolean {
   context.requireExtension("Fallout New Vegas Sanity Checks", undefined, true);
 
   context.registerGame({
-    id: GAME_ID,
+    id: VortexGameId(GAME_ID),
     name: "Fallout:\tNew Vegas",
     setup: (discovery) => prepareForModding(context.api, discovery) as any,
     shortName: "New Vegas",

@@ -1,17 +1,24 @@
 import { describe, expect, it } from "vitest";
 
 import { makeGame } from "@/test-utils/builders";
+import type { IGame } from "@/types/IGame";
 
-import { assertRegisteredGame } from "./registeredGame";
+import { validateGameId } from "./validateGameId";
 
-describe("assertRegisteredGame", () => {
+describe("validateGameId", () => {
   it("accepts a game and leaves it unchanged", () => {
     const game = makeGame({ id: "skyrimse" });
     const before = { ...game };
 
-    assertRegisteredGame(game);
+    validateGameId(game);
 
     expect(game).toEqual(before);
+  });
+
+  it("accepts a plain-string id, as a JavaScript extension passes it", () => {
+    const game = { ...makeGame(), id: "stardewvalley" } as unknown as IGame;
+
+    expect(() => validateGameId(game)).not.toThrow();
   });
 
   it("accepts a class whose id is a getter, keeping its prototype", () => {
@@ -26,12 +33,14 @@ describe("assertRegisteredGame", () => {
     }
     const game = new GetterGame();
 
-    expect(() => assertRegisteredGame(game)).not.toThrow();
+    expect(() => validateGameId(game as unknown as IGame)).not.toThrow();
     expect(game).toBeInstanceOf(GetterGame);
     expect(game.id).toBe("gettergame");
   });
 
   it("rejects a game with an empty id", () => {
-    expect(() => assertRegisteredGame(makeGame({ id: "" }))).toThrow();
+    const game = { ...makeGame(), id: "" } as unknown as IGame;
+
+    expect(() => validateGameId(game)).toThrow();
   });
 });

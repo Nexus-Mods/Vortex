@@ -1,4 +1,4 @@
-import { util } from "@nexusmods/vortex-api";
+import { util, VortexGameId } from "@nexusmods/vortex-api";
 import type { types } from "@nexusmods/vortex-api";
 
 import { healthChecks } from "./diagnostic";
@@ -13,7 +13,7 @@ import { XREBIRTH_STOP_PATTERNS } from "./stopPatterns";
 
 function main(context: types.IExtensionContext): boolean {
   context.registerGame({
-    id: XREBIRTH_GAME_ID,
+    id: VortexGameId(XREBIRTH_GAME_ID),
     name: "X Rebirth",
     queryArgs: { steam: "2870" },
     queryModPath: () => "extensions",

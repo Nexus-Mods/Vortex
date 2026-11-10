@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "path";
 
-import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
+import { actions, fs, log, selectors, types, util, VortexGameId } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import Bluebird from "bluebird";
 import winapi from "winapi-bindings";
@@ -205,7 +205,7 @@ function prepareForModding(api: types.IExtensionApi) {
 function main(context: types.IExtensionContext) {
   context.registerReducer(["settings", "witcher3"], W3Reducer);
   context.registerGame({
-    id: GAME_ID,
+    id: VortexGameId(GAME_ID),
     name: "The Witcher 3",
     mergeMods: true,
     queryPath: findGame,

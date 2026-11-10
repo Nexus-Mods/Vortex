@@ -1,7 +1,7 @@
 /* eslint-disable */
 import path from "path";
 
-import { actions, fs, log, types, util } from "@nexusmods/vortex-api";
+import { actions, fs, log, types, util, VortexGameId } from "@nexusmods/vortex-api";
 import semver from "semver";
 
 const GAME_ID = "nomanssky";
@@ -125,7 +125,7 @@ async function getGameVersion(gamePath: string) {
 
 function main(context: types.IExtensionContext) {
   context.registerGame({
-    id: GAME_ID,
+    id: VortexGameId(GAME_ID),
     name: "No Man's Sky",
     mergeMods: true,
     queryPath: findGame,

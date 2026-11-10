@@ -1,6 +1,6 @@
 import path from "path";
 
-import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
+import { actions, log, selectors, types, util, VortexGameId } from "@nexusmods/vortex-api";
 import * as React from "react";
 import * as winapi from "winapi-bindings";
 
@@ -152,7 +152,7 @@ function CollectionDataWrap(api: types.IExtensionApi, props: IExtendedInterfaceP
 
 function main(context: types.IExtensionContext) {
   context.registerGame({
-    id: MORROWIND_ID,
+    id: VortexGameId(MORROWIND_ID),
     name: "Morrowind",
     mergeMods: true,
     queryPath: util.toBlue(findGame),

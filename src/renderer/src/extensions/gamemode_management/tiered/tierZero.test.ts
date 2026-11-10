@@ -1,7 +1,7 @@
 import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
 import { assert, describe, it, expect, afterEach } from "vitest";
 
-import type { IRegisteredGame } from "@/types/IGame";
+import type { IGame } from "@/types/IGame";
 import type { IGameStore } from "@/types/IGameStore";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 import type { ITierZeroGame } from "@/types/IState";
@@ -30,7 +30,7 @@ function makeEntry(overrides: Partial<ITierZeroGame> = {}): ITierZeroGame {
   };
 }
 
-function makeKnownGame(id: string, overrides: Partial<IRegisteredGame> = {}): IRegisteredGame {
+function makeKnownGame(id: string, overrides: Partial<IGame> = {}): IGame {
   return {
     id: VortexGameId(id),
     name: "Known Game",
@@ -38,7 +38,7 @@ function makeKnownGame(id: string, overrides: Partial<IRegisteredGame> = {}): IR
     executable: () => "game.exe",
     requiredFiles: [],
     ...overrides,
-  } satisfies IRegisteredGame;
+  } satisfies IGame;
 }
 
 function makeStoreEntry(
@@ -255,7 +255,7 @@ describe("synthesizePersistedTierZeroGames", () => {
   });
 
   it("registers one game per entry in a single addGames call", () => {
-    const added: IRegisteredGame[][] = [];
+    const added: IGame[][] = [];
     synthesizePersistedTierZeroGames(
       {
         [GameId(1234)]: makeEntry(),
@@ -270,7 +270,7 @@ describe("synthesizePersistedTierZeroGames", () => {
   });
 
   it("skips domains owned by a loaded extension game", () => {
-    const added: IRegisteredGame[][] = [];
+    const added: IGame[][] = [];
     synthesizePersistedTierZeroGames(
       { [GameId(1234)]: makeEntry() },
       [makeKnownGame("somegame")],
@@ -282,7 +282,7 @@ describe("synthesizePersistedTierZeroGames", () => {
   });
 
   it("skips domains owned via the extension's nexusPageId", () => {
-    const added: IRegisteredGame[][] = [];
+    const added: IGame[][] = [];
     synthesizePersistedTierZeroGames(
       { [GameId(1234)]: makeEntry() },
       [makeKnownGame("othergame", { details: { nexusPageId: "somegame" } })],
@@ -294,7 +294,7 @@ describe("synthesizePersistedTierZeroGames", () => {
   });
 
   it("skips a second entry whose domain an earlier entry of the pass claimed", () => {
-    const added: IRegisteredGame[][] = [];
+    const added: IGame[][] = [];
     synthesizePersistedTierZeroGames(
       {
         [GameId(1234)]: makeEntry(),

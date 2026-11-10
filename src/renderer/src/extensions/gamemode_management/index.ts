@@ -26,7 +26,7 @@ import type {
   IExtensionApi,
   IExtensionContext,
 } from "../../types/IExtensionContext";
-import type { IGame, IRegisteredGame } from "../../types/IGame";
+import type { IGame } from "../../types/IGame";
 import type { NotificationDismiss } from "../../types/INotification";
 import type { IProfile, IRunningTool, IState, ITierZeroGame } from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
@@ -78,7 +78,7 @@ import { identifyStore } from "./util/identifyStore";
 import { getModType, getModTypeExtensions, registerModType } from "./util/modTypeExtensions";
 import ProcessMonitor from "./util/ProcessMonitor";
 import queryGameInfo from "./util/queryGameInfo";
-import { assertRegisteredGame } from "./util/registeredGame";
+import { validateGameId } from "./util/validateGameId";
 import {} from "./views/GamePicker";
 import HideGameIcon from "./views/HideGameIcon";
 import ModTypeWidget from "./views/ModTypeWidget";
@@ -88,7 +88,7 @@ import RecentlyManagedDashlet from "./views/RecentlyManagedDashlet";
 
 const $ = local<{
   gameModeManager: GameModeManager;
-  extensionGames: IRegisteredGame[];
+  extensionGames: IGame[];
   extensionStubs: IGameStub[];
 }>("gamemode-management", {
   gameModeManager: undefined,
@@ -747,7 +747,7 @@ function init(context: IExtensionContext): boolean {
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
     try {
-      assertRegisteredGame(game);
+      validateGameId(game);
       game.extensionPath = extensionPath;
       const infoPath = path.join(extensionPath, "info.json");
       if (fsExtra.existsSync(infoPath)) {
@@ -776,7 +776,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerGameStub = (game: IGame, ext: IExtensionDownloadInfo) => {
     try {
-      assertRegisteredGame(game);
+      validateGameId(game);
     } catch (err) {
       // a stub only stands in for a game that's gone; one without a usable id is skipped
       // rather than failing the extension that registers it

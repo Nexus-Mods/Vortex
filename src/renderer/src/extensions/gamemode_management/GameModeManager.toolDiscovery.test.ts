@@ -50,7 +50,7 @@ vi.mock("../../util/fs", async () => {
 import {
   makeApiHarness,
   makeDiscoveredTool,
-  makeRegisteredGame,
+  makeGame,
   makeProfile,
 } from "../../test-utils/builders";
 import type { IDiscoveredTool } from "../../types/IDiscoveredTool";
@@ -109,7 +109,7 @@ function setup(opts: ISetupOpts = {}) {
 
   const manager = new GameModeManager(
     harness.api,
-    [makeRegisteredGame({ id: GAME }), makeRegisteredGame({ id: OTHER_GAME })],
+    [makeGame({ id: GAME }), makeGame({ id: OTHER_GAME })],
     [],
     () => undefined,
   );

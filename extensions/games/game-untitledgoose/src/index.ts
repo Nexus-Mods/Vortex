@@ -1,6 +1,6 @@
 import path from "path";
 
-import { fs, log, types, util } from "@nexusmods/vortex-api";
+import { fs, log, types, util, VortexGameId } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 
 import { migrate020 } from "./migrations";
@@ -50,7 +50,7 @@ function prepareForModding(discovery: types.IDiscoveryResult) {
 
 export default function main(context: types.IExtensionContext) {
   context.registerGame({
-    id: GAME_ID,
+    id: VortexGameId(GAME_ID),
     name: "Untitled Goose Game",
     mergeMods: true,
     queryPath: findGame,

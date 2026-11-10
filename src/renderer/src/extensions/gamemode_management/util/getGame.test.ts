@@ -2,14 +2,14 @@ import { VortexGameId } from "@vortex/shared";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { IExtensionDownloadInfo } from "../../../types/extensions";
-import type { IRegisteredGame } from "../../../types/IGame";
+import type { IGame } from "../../../types/IGame";
 import local from "../../../util/local";
 import type { IGameStub } from "../GameModeManager";
 import { getGame, isGameRegistered } from "./getGame";
 
 const registry = local<{
   gameModeManager: unknown;
-  extensionGames: IRegisteredGame[];
+  extensionGames: IGame[];
   extensionStubs: IGameStub[];
 }>("gamemode-management", {
   gameModeManager: undefined,
@@ -17,8 +17,7 @@ const registry = local<{
   extensionStubs: [],
 });
 
-const makeGame = (id: string): IRegisteredGame =>
-  ({ id: VortexGameId(id), name: id }) as unknown as IRegisteredGame;
+const makeGame = (id: string): IGame => ({ id, name: id }) as unknown as IGame;
 
 describe("isGameRegistered", () => {
   afterEach(() => {

@@ -259,6 +259,15 @@ export const util: {
 
 export const log: Mock = vi.fn();
 
+// Mirror of the brander in @vortex/shared: a brand is type-only, so at runtime it only rejects an
+// empty id.
+export function VortexGameId(id: string): string {
+  if (id.length === 0) {
+    throw new Error("Must be a non-empty string!");
+  }
+  return id;
+}
+
 export const types: {
   HealthCheckCategory: typeof HealthCheckCategory;
   HealthCheckSeverity: typeof HealthCheckSeverity;

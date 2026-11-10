@@ -17,6 +17,12 @@ export type DirectoryCleaningMode = "tag" | "all";
  */
 export interface IGame extends ITool {
   /**
+   * the id Vortex knows this game by, which profiles, mods and game settings are keyed on.
+   * Create it with `VortexGameId("mygame")`
+   */
+  id: VortexGameId;
+
+  /**
    * determine the default directory where mods for this game
    * should be stored.
    *
@@ -242,13 +248,4 @@ export interface IGame extends ITool {
    * if the user enabled a mod while this promise is pending, that mod will be deployed.
    */
   deploymentGate?: () => PromiseBB<void>;
-}
-
-/**
- * a game as Vortex holds it once registered: the {@link IGame} an extension passed to
- * registerGame, with its plain-string id branded as a {@link VortexGameId}. Extensions keep
- * writing {@link IGame}, everything Vortex hands back out is one of these
- */
-export interface IRegisteredGame extends IGame {
-  id: VortexGameId;
 }

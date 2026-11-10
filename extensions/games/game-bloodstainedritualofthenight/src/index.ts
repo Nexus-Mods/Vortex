@@ -1,6 +1,6 @@
 import path from "path";
 
-import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
+import { fs, log, selectors, types, util, VortexGameId } from "@nexusmods/vortex-api";
 
 import { GAME_ID, MOD_FILE_EXT, modsRelPath } from "./common";
 import { deserialize, serialize, validate } from "./loadOrder";
@@ -165,7 +165,7 @@ async function requiresLauncher(gamePath: string, store?: string) {
 
 function main(context: types.IExtensionContext) {
   context.registerGame({
-    id: GAME_ID,
+    id: VortexGameId(GAME_ID),
     name: "Bloodstained:\tRitual of the Night",
     mergeMods: (mod) => toLOPrefix(context, mod),
     queryPath: toBlue(findGame),

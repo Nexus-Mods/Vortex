@@ -3,7 +3,7 @@
  */
 import path from "path";
 
-import { fs, util } from "@nexusmods/vortex-api";
+import { fs, util, VortexGameId } from "@nexusmods/vortex-api";
 import type { types } from "@nexusmods/vortex-api";
 
 import { GAME_ID, MODS_REL_PATH } from "../common";
@@ -29,7 +29,7 @@ type Setup = NonNullable<types.IGame["setup"]>;
  */
 export default class StardewValleyGame implements types.IGame {
   public context: types.IExtensionContext;
-  public id: string = GAME_ID;
+  public id: VortexGameId = VortexGameId(GAME_ID);
   public name: string = "Stardew Valley";
   public logo: string = "assets/gameart.jpg";
   public requiredFiles: string[];

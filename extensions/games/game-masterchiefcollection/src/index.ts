@@ -1,7 +1,15 @@
 /* eslint-disable */
 import path from "path";
 
-import { fs, types, FlexLayout, OptionsFilter, selectors, util } from "@nexusmods/vortex-api";
+import {
+  fs,
+  types,
+  FlexLayout,
+  OptionsFilter,
+  selectors,
+  util,
+  VortexGameId,
+} from "@nexusmods/vortex-api";
 import * as React from "react";
 
 import { GAME_ID, HALO_GAMES, MS_APPID, STEAM_ID, MODTYPE_PLUG_AND_PLAY } from "./common";
@@ -21,7 +29,7 @@ import { applyToManifest } from "./util";
 // Master chef collection
 class MasterChiefCollectionGame implements types.IGame {
   public context: types.IExtensionContext;
-  public id: string;
+  public id: VortexGameId;
   public name: string;
   public shortName: string;
   public logo: string;
@@ -35,7 +43,7 @@ class MasterChiefCollectionGame implements types.IGame {
 
   constructor(context) {
     this.context = context;
-    this.id = GAME_ID;
+    this.id = VortexGameId(GAME_ID);
     this.name = "Halo: The Master Chief Collection";
     this.shortName = "Halo: MCC";
     this.logo = "gameart.jpg";

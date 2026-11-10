@@ -10,7 +10,7 @@ import { log } from "@/logging";
 import type { IExtensionDownloadInfo } from "@/types/extensions";
 import type { IDiscoveredTool } from "@/types/IDiscoveredTool";
 import type { IExtensionApi, ThunkStore } from "@/types/IExtensionContext";
-import type { IGame, IRegisteredGame } from "@/types/IGame";
+import type { IGame } from "@/types/IGame";
 import type { IGameStore } from "@/types/IGameStore";
 import type { IGameStoreSnapshot } from "@/types/IGameStore";
 import type { IState } from "@/types/IState";
@@ -50,7 +50,7 @@ import { getGame } from "./util/getGame";
 
 export interface IGameStub {
   ext: IExtensionDownloadInfo;
-  game: IRegisteredGame;
+  game: IGame;
 }
 
 /**
@@ -71,7 +71,7 @@ function findDefaultPrimaryTool(tools: { [toolId: string]: IDiscoveredTool } | u
 export class GameModeManager {
   private mApi: IExtensionApi;
   private mStore: ThunkStore<IState>;
-  private mKnownGames: IRegisteredGame[];
+  private mKnownGames: IGame[];
   private mGameStubs: IGameStub[];
   private mKnownGameStores: IGameStore[];
   private mActiveSearch: PromiseBB<void>;
@@ -80,7 +80,7 @@ export class GameModeManager {
 
   constructor(
     api: IExtensionApi,
-    extensionGames: IRegisteredGame[],
+    extensionGames: IGame[],
     gameStubs: IGameStub[],
     onGameModeActivated: (mode: string) => void,
   ) {
@@ -132,7 +132,7 @@ export class GameModeManager {
    * register games with the manager at runtime, making them visible to every
    * getGame consumer and the next discovery run
    */
-  public addGames(games: IRegisteredGame[]): void {
+  public addGames(games: IGame[]): void {
     const added = games.filter((game) => !this.mKnownGames.some((iter) => iter.id === game.id));
 
     if (added.length === 0) {
@@ -289,7 +289,7 @@ export class GameModeManager {
     }
   }
 
-  public get games(): IRegisteredGame[] {
+  public get games(): IGame[] {
     return this.mKnownGames;
   }
 
@@ -328,7 +328,7 @@ export class GameModeManager {
    * @memberOf GameModeManager
    */
   public async startQuickDiscovery(
-    games?: IRegisteredGame[],
+    games?: IGame[],
     preference?: IStorePreference,
   ): Promise<string[]> {
     const abort = new AbortController();
@@ -591,7 +591,7 @@ export class GameModeManager {
     );
   }
 
-  private storeGame = (game: IRegisteredGame): IGameStored => {
+  private storeGame = (game: IGame): IGameStored => {
     const steamId = this.extractSteamId(game);
 
     const environment = { ...game.environment };
