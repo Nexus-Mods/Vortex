@@ -13,6 +13,7 @@ import { PageContent } from "@/views/components/Page/PageContent";
 import type { FilterSource } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import type { IBrowseModsPanelRefs } from "../../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
+import { useChangeModFilters } from "../../../hooks/use_change_mod_filters/useChangeModFilters.hook";
 import { type IModSearch } from "../../../hooks/use_mod_search/useModSearch.hook";
 import { MOD_FILTERS } from "../../../util/mod_filters/modFilterList";
 import {
@@ -45,25 +46,7 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
   const tracker = useBrowseModsTracker();
   const toolbarTracking = useToolbarAnalytics("browse_mods");
   const view = search.trackedView;
-  /** Changes some filters, from wherever they were changed; any already as asked are left be. */
-  const changeFilters = (change: Partial<IModFilters>, source: FilterSource) => {
-    const changed: Partial<IModFilters> = Object.fromEntries(
-      Object.entries(change).filter(
-        ([key, value]) => value !== search.filters[key as keyof IModFilters],
-      ),
-    );
-
-    if (!Object.keys(changed).length) {
-      return;
-    }
-
-    search.setFilters(changed);
-
-    const filters = { ...search.filters, ...changed };
-    MOD_FILTERS.filter(({ key }) => key in changed).forEach(({ track }) =>
-      track(tracker, { view, filters, previous: search.filters, source }),
-    );
-  };
+  const changeFilters = useChangeModFilters(search);
 
   /** Puts one filter back as the open preset has it, counting it as a change from its reset. */
   const resetFilter = (key: keyof IModFilters) => {

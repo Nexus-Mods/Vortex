@@ -10,14 +10,15 @@ import type {
 } from "../../util/mod_views/modViews";
 
 /**
- * Where a filter was changed from: its submenu or its reset there, or the chip the bar shows while
- * it's on, or that chip's remove.
+ * Where a filter was changed from: its submenu or its reset there, the chip the bar shows while
+ * it's on, or that chip's remove, or an empty state's Remove filters.
  */
 export type FilterSource =
   | "filter_menu"
   | "filter_reset"
   | "applied_filter"
-  | "applied_filter_clear";
+  | "applied_filter_clear"
+  | "empty_state";
 
 /** How a mod or picture was picked: clicked, or moved to with the keys. */
 export type SelectionInput = "pointer" | "keyboard";
