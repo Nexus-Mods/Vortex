@@ -1,6 +1,14 @@
+import { relativePath } from "@nexusmods/paths";
 import { describe, expect, it } from "vitest";
 
-import { isValidFolderName, uniqueFolderName } from "./newFolder";
+import {
+  folderNameProblem,
+  removeCreated,
+  removeOpen,
+  renameCreated,
+  renameOpen,
+  uniqueFolderName,
+} from "./newFolder";
 
 describe("uniqueFolderName", () => {
   it("is the base when nothing has it", () => {
@@ -27,50 +35,98 @@ describe("uniqueFolderName", () => {
   });
 });
 
-describe("isValidFolderName", () => {
+describe("folderNameProblem", () => {
   it("takes an ordinary name", () => {
-    expect(isValidFolderName("Textures", [])).toBe(true);
-    expect(isValidFolderName("My Mod 2", ["Data"])).toBe(true);
-    expect(isValidFolderName(".hidden", [])).toBe(true);
+    expect(folderNameProblem("Textures", [])).toBeUndefined();
+    expect(folderNameProblem("My Mod 2", ["Data"])).toBeUndefined();
+    expect(folderNameProblem(".hidden", [])).toBeUndefined();
   });
 
   it("trims the name before judging it", () => {
-    expect(isValidFolderName("  Textures  ", [])).toBe(true);
-    expect(isValidFolderName("   ", [])).toBe(false);
+    expect(folderNameProblem("  Textures  ", [])).toBeUndefined();
+    expect(folderNameProblem("   ", [])).toBe("empty");
   });
 
-  it("rejects an empty name", () => {
-    expect(isValidFolderName("", [])).toBe(false);
+  it("reports an empty name", () => {
+    expect(folderNameProblem("", [])).toBe("empty");
   });
 
-  it("rejects the names of the current and the parent directory", () => {
-    expect(isValidFolderName(".", [])).toBe(false);
-    expect(isValidFolderName("..", [])).toBe(false);
+  it("reports the names of the current and the parent directory", () => {
+    expect(folderNameProblem(".", [])).toBe("dot");
+    expect(folderNameProblem("..", [])).toBe("dot");
   });
 
-  it("rejects a name that would be a path", () => {
-    expect(isValidFolderName("a/b", [])).toBe(false);
-    expect(isValidFolderName("a\\b", [])).toBe(false);
+  it("reports a name that would be a path", () => {
+    expect(folderNameProblem("a/b", [])).toBe("invalidCharacter");
+    expect(folderNameProblem("a\\b", [])).toBe("invalidCharacter");
   });
 
-  it("rejects characters a Windows name can't have", () => {
+  it("reports characters a Windows name can't have", () => {
     for (const character of [":", "*", "?", '"', "<", ">", "|"]) {
-      expect(isValidFolderName(`a${character}b`, [])).toBe(false);
+      expect(folderNameProblem(`a${character}b`, [])).toBe("invalidCharacter");
     }
   });
 
-  it("rejects control characters", () => {
-    expect(isValidFolderName("a\u0000b", [])).toBe(false);
-    expect(isValidFolderName("a\tb", [])).toBe(false);
+  it("reports control characters", () => {
+    expect(folderNameProblem("a\u0000b", [])).toBe("invalidCharacter");
+    expect(folderNameProblem("a\tb", [])).toBe("invalidCharacter");
   });
 
-  it("rejects a name ending in a dot", () => {
-    expect(isValidFolderName("name.", [])).toBe(false);
+  it("reports a name ending in a dot", () => {
+    expect(folderNameProblem("name.", [])).toBe("trailingDot");
   });
 
-  it("rejects a name a sibling has, without regard to case", () => {
-    expect(isValidFolderName("Data", ["Data"])).toBe(false);
-    expect(isValidFolderName("data", ["DATA"])).toBe(false);
-    expect(isValidFolderName(" Data ", ["Data"])).toBe(false);
+  it("reports a name a sibling has, without regard to case", () => {
+    expect(folderNameProblem("Data", ["Data"])).toBe("taken");
+    expect(folderNameProblem("data", ["DATA"])).toBe("taken");
+    expect(folderNameProblem(" Data ", ["Data"])).toBe("taken");
+  });
+
+  it("reports the first problem when there are several", () => {
+    expect(folderNameProblem("a/b.", [])).toBe("invalidCharacter");
+    expect(folderNameProblem("a.", ["a."])).toBe("trailingDot");
+  });
+});
+
+const paths = (...names: string[]) => names.map((name) => relativePath(name));
+
+describe("renameCreated", () => {
+  it("renames the folder and the folders below it", () => {
+    expect(
+      renameCreated(paths("A", "A/C", "A/C/D", "Other"), relativePath("A"), relativePath("B")),
+    ).toEqual(paths("B", "B/C", "B/C/D", "Other"));
+  });
+
+  it("renames a folder inside another", () => {
+    expect(renameCreated(paths("X/A", "X/A/C"), relativePath("X/A"), relativePath("X/B"))).toEqual(
+      paths("X/B", "X/B/C"),
+    );
+  });
+
+  it("leaves a folder that only starts with the same letters", () => {
+    expect(renameCreated(paths("A", "AB", "AB/C"), relativePath("A"), relativePath("B"))).toEqual(
+      paths("B", "AB", "AB/C"),
+    );
+  });
+});
+
+describe("removeCreated", () => {
+  it("removes the folder and the folders below it", () => {
+    expect(removeCreated(paths("A", "A/C", "Other"), relativePath("A"))).toEqual(paths("Other"));
+  });
+
+  it("keeps a folder that only starts with the same letters", () => {
+    expect(removeCreated(paths("A", "AB"), relativePath("A"))).toEqual(paths("AB"));
+  });
+});
+
+describe("renameOpen and removeOpen", () => {
+  it("move and drop the paths below the folder, as for the created folders", () => {
+    const open = new Set(paths("", "A", "A/C", "Other"));
+
+    expect(renameOpen(open, relativePath("A"), relativePath("B"))).toEqual(
+      new Set(paths("", "B", "B/C", "Other")),
+    );
+    expect(removeOpen(open, relativePath("A"))).toEqual(new Set(paths("", "Other")));
   });
 });

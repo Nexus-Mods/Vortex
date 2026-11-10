@@ -1,7 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { isValidFolderName } from "../util/newFolder";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
+
+import { folderNameProblem, type FolderNameProblem } from "../util/newFolder";
+
+const PROBLEM_MESSAGES: Record<FolderNameProblem, string> = {
+  empty: "manualInstaller::folderNameEmpty",
+  dot: "manualInstaller::folderNameDot",
+  trailingDot: "manualInstaller::folderNameTrailingDot",
+  invalidCharacter: "manualInstaller::folderNameInvalidCharacter",
+  taken: "manualInstaller::folderNameTaken",
+};
 
 export interface IManualInstallerFolderNameInputProps {
   /** What the input starts with, all of it selected. */
@@ -33,7 +43,8 @@ export const ManualInstallerFolderNameInput = ({
     inputRef.current?.select();
   }, []);
 
-  const isValid = isValidFolderName(name, takenNames);
+  const problem = folderNameProblem(name, takenNames);
+  const isValid = problem === undefined;
 
   const commit = () => {
     if (!isDone.current) {
@@ -49,37 +60,48 @@ export const ManualInstallerFolderNameInput = ({
     }
   };
 
+  // A tree row has a fixed height, so the reason is a tooltip rather than a line below the input.
+  // It stays up for as long as the name doesn't work.
   return (
-    <input
-      aria-invalid={!isValid}
-      aria-label={t("manualInstaller::folderName")}
-      className="min-w-0 grow rounded-sm border border-primary-strong bg-surface-low px-1 text-neutral-strong outline-none aria-invalid:border-danger-strong"
-      data-testid="manual-installer-folder-name"
-      ref={inputRef}
-      value={name}
-      onBlur={() => {
-        // a name that doesn't work stays, with its error showing, until it's fixed or dropped
-        if (isValid) {
-          commit();
-        }
-      }}
-      onChange={(event) => setName(event.target.value)}
-      onClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => {
-        // the tree around the input would take the keys for its own, and the dialog Escape
-        event.stopPropagation();
-
-        if (event.key === "Enter") {
-          event.preventDefault();
-
+    <Tooltip
+      content={problem === undefined ? "" : t(PROBLEM_MESSAGES[problem])}
+      disabled={problem === undefined}
+      open={problem !== undefined}
+      persistent
+      placement="bottom"
+      positionerClassName="z-modal-popover"
+    >
+      <input
+        aria-invalid={!isValid}
+        aria-label={t("manualInstaller::folderName")}
+        className="min-w-0 grow rounded-sm border border-primary-strong bg-surface-low px-1 text-neutral-strong outline-none aria-invalid:border-danger-strong"
+        data-testid="manual-installer-folder-name"
+        ref={inputRef}
+        value={name}
+        onBlur={() => {
+          // a name that doesn't work stays, with its error showing, until it's fixed or dropped
           if (isValid) {
             commit();
           }
-        } else if (event.key === "Escape") {
-          event.preventDefault();
-          cancel();
-        }
-      }}
-    />
+        }}
+        onChange={(event) => setName(event.target.value)}
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          // the tree around the input would take the keys for its own, and the dialog Escape
+          event.stopPropagation();
+
+          if (event.key === "Enter") {
+            event.preventDefault();
+
+            if (isValid) {
+              commit();
+            }
+          } else if (event.key === "Escape") {
+            event.preventDefault();
+            cancel();
+          }
+        }}
+      />
+    </Tooltip>
   );
 };

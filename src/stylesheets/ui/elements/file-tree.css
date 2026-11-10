@@ -18,6 +18,26 @@
         padding-inline-start: calc((var(--nxm-file-tree-level) - 0.5) * 1rem);
         border-radius: var(--radius-sm);
         color: var(--color-neutral-moderate);
+        position: relative;
+
+        /*
+         * Indent guides: a line under the chevron of each folder the item is in. Rows touch, so
+         * the lines join up down an open folder. A top-level item is in none, which is what sets
+         * it apart from the contents of the folder above it.
+         */
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            inset-inline-start: 1rem;
+            inline-size: calc((var(--nxm-file-tree-level) - 1) * 1rem);
+            pointer-events: none;
+            background-image: repeating-linear-gradient(
+                to right,
+                var(--color-stroke-weak) 0 1px,
+                transparent 1px 1rem
+            );
+        }
 
         &:hover {
             background-color: var(--color-surface-high);
