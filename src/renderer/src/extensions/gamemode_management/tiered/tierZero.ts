@@ -9,7 +9,7 @@ import type { IState, ITierZeroGame } from "@/types/IState";
 import type { IQueryArgEntry } from "@/util/storeQuery";
 
 import { domainToNumericGameId } from "../../nexus_integration/util";
-import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { extensionlessGameId, nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { getGameStore } from "../util/getGame";
 
 const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
@@ -140,7 +140,7 @@ export function makeTierZeroGame(entry: ITierZeroGame): IGame {
   tierZeroGameIds.add(entry.gameId);
 
   return {
-    id: entry.domain,
+    id: extensionlessGameId(entry.domain),
     name: entry.name,
     // mods install to the game root
     queryModPath: () => ".",
@@ -183,7 +183,9 @@ export function synthesizePersistedTierZeroGames(
   addGames: (games: IGame[]) => void,
 ): void {
   const ownsDomain = (domain: GameDomain, games: IGame[]) =>
-    games.some((game) => game.id === domain || game.details?.nexusPageId === domain);
+    games.some(
+      (game) => game.id === extensionlessGameId(domain) || game.details?.nexusPageId === domain,
+    );
 
   const synthesized: IGame[] = [];
   for (const entry of Object.values(tier0)) {

@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 
 import type { IModType } from "../extensions/gamemode_management/types/IModType";
@@ -15,6 +16,12 @@ export type DirectoryCleaningMode = "tag" | "all";
  * @interface IGame
  */
 export interface IGame extends ITool {
+  /**
+   * the id Vortex knows this game by, which profiles, mods and game settings are keyed on.
+   * Create it with `VortexGameId("mygame")`
+   */
+  id: VortexGameId;
+
   /**
    * determine the default directory where mods for this game
    * should be stored.

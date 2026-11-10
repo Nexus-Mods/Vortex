@@ -1,4 +1,4 @@
-import { GameDomain, GameId } from "@vortex/shared";
+import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
 import { assert, describe, it, expect, afterEach } from "vitest";
 
 import type { IGame } from "@/types/IGame";
@@ -32,7 +32,7 @@ function makeEntry(overrides: Partial<ITierZeroGame> = {}): ITierZeroGame {
 
 function makeKnownGame(id: string, overrides: Partial<IGame> = {}): IGame {
   return {
-    id,
+    id: VortexGameId(id),
     name: "Known Game",
     queryModPath: () => ".",
     executable: () => "game.exe",

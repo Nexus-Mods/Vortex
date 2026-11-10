@@ -1,9 +1,9 @@
 import path from "path";
 
-import { log } from "@nexusmods/vortex-api";
+import { log, VortexGameId } from "@nexusmods/vortex-api";
 import type { types } from "@nexusmods/vortex-api";
 
-export const DARKSOULS2_GAME_ID = "darksouls2";
+export const DARKSOULS2_GAME_ID = VortexGameId("darksouls2");
 
 /**
  * Dark Souls II keeps everything one level below the install root, in

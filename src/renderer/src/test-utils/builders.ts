@@ -26,7 +26,12 @@ import * as path from "path";
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import type { components as V3Components } from "@vortex/nexus-api-v3";
-import { type VortexModId, VortexModStagingFolder, VortexProfileId } from "@vortex/shared";
+import {
+  VortexGameId,
+  type VortexModId,
+  VortexModStagingFolder,
+  VortexProfileId,
+} from "@vortex/shared";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import type { LootAsync, PluginInterface, PluginMetadata, Vertex } from "loot";
@@ -703,7 +708,7 @@ export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStore
 
 // A game extension as GameModeManager and the getGame() registry hold it.
 export function makeGame(overrides: Partial<IGame> = {}): IGame {
-  const id = overrides.id ?? "skyrimse";
+  const id = overrides.id ?? VortexGameId("skyrimse");
   return {
     id,
     name: id,
@@ -1029,7 +1034,7 @@ export function registerHarnessGame(gameId: string): void {
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
     gameReg.extensionGames.push(
       makeGame({
-        id: gameId,
+        id: VortexGameId(gameId),
         // resolveGameVersion validates the game (executable) and tries game.getGameVersion
         // first; answer it so tests don't fall through to exe-version probing of a nonexistent
         // binary

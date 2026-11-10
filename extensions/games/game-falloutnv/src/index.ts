@@ -3,7 +3,7 @@ import * as nodeFs from "fs";
 import path from "path";
 
 import { IFileInfo } from "@nexusmods/nexus-api";
-import { actions, fs, log, types, selectors, util } from "@nexusmods/vortex-api";
+import { actions, fs, log, types, selectors, util, VortexGameId } from "@nexusmods/vortex-api";
 import * as semver from "semver";
 import * as winapi from "winapi-bindings";
 
@@ -18,7 +18,7 @@ const localeFoldersXbox = {
   es: "Fallout New Vegas Spanish",
 };
 
-const GAME_ID = "falloutnv";
+const GAME_ID = VortexGameId("falloutnv");
 const NEXUS_DOMAIN_NAME = "newvegas";
 const STEAMAPP_ID = "22380";
 const STEAMAPP_ID2 = "22490";

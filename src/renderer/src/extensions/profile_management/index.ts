@@ -73,6 +73,7 @@ import {
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
+import { extensionlessGameId } from "../nexus_integration/util/convertGameId";
 import {
   removeProfile,
   setProfile,
@@ -581,7 +582,7 @@ function genOnProfileChange(
   };
 }
 
-function manageGameDiscovered(api: IExtensionApi, gameId: string) {
+function manageGameDiscovered(api: IExtensionApi, gameId: VortexGameId) {
   const profileId = shortid();
   // initialize the staging directory.
   // It's not great that this is here, the code would better fit into mod_management
@@ -646,11 +647,11 @@ async function discoverPickedGame(
   }
 }
 
-function manageGameUndiscovered(api: IExtensionApi, gameId: string): PromiseBB<void> {
+function manageGameUndiscovered(api: IExtensionApi, gameId: VortexGameId): PromiseBB<void> {
   let state: IState = api.store.getState();
   // read now: the add that recorded it clears it as soon as this returns, and the
   // download below runs on after that
-  const store = pickedStore(state, VortexGameId(gameId));
+  const store = pickedStore(state, gameId);
   const knownGames = state.session.gameMode.known;
   const gameStored = knownGames.find((game) => game.id === gameId);
 
@@ -846,7 +847,11 @@ function removeMod(api: IExtensionApi, gameId: string, modId: string): PromiseBB
   });
 }
 
-function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): PromiseBB<void> {
+function unmanageGame(
+  api: IExtensionApi,
+  gameId: VortexGameId,
+  gameName?: string,
+): PromiseBB<void> {
   const state = api.getState();
   const game = getGame(gameId);
   const { mods, profiles } = state.persistent;
@@ -894,7 +899,7 @@ function unmanageGame(api: IExtensionApi, gameId: string, gameName?: string): Pr
             // tear-down runs without the flag: un-managing is the cleanup path,
             // it has to work no matter what the feature flag says
             const tierZeroGameId = Object.values(state.persistent.gameMode?.tier0 ?? {}).find(
-              (entry) => entry.domain === gameId,
+              (entry) => extensionlessGameId(entry.domain) === gameId,
             )?.gameId;
             if (tierZeroGameId !== undefined) {
               void api.emitAndAwait("remove-tier-zero-game", tierZeroGameId);
@@ -1117,7 +1122,7 @@ function init(context: IExtensionContext): boolean {
     {},
     "Stop Managing",
     (instanceIds: string[]) => {
-      unmanageGame(context.api, instanceIds[0]);
+      unmanageGame(context.api, VortexGameId(instanceIds[0]));
     },
   );
 
@@ -1174,7 +1179,8 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAPI(
     "unmanageGame",
-    (gameId: string, gameName?: string) => unmanageGame(context.api, gameId, gameName),
+    (gameId: string, gameName?: string) =>
+      unmanageGame(context.api, VortexGameId(gameId), gameName),
     {},
   );
 

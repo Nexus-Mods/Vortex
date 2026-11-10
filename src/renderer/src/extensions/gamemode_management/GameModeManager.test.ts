@@ -13,7 +13,7 @@ vi.mock("../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }));
 
 function makeKnownGame(id: string, overrides: Partial<IGame> = {}): IGame {
   return {
-    id,
+    id: VortexGameId(id),
     name: `Game ${id}`,
     queryModPath: () => ".",
     executable: () => "game.exe",
@@ -31,7 +31,10 @@ function makeTierZeroEntry(domain: string) {
   };
 }
 
-function makeManager(extensionGames: IGame[]): { manager: GameModeManager; dispatched: any[] } {
+function makeManager(extensionGames: IGame[]): {
+  manager: GameModeManager;
+  dispatched: any[];
+} {
   const dispatched: any[] = [];
   const manager = new GameModeManager({} as any, extensionGames, [], () => undefined);
   manager.attachToStore({ dispatch: (action: any) => dispatched.push(action) } as any);
