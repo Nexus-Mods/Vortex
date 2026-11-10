@@ -228,6 +228,44 @@ describe("DownloadButton", () => {
       rerender(<DownloadButton />);
       expect(offset(container)).toBeCloseTo(CIRCUMFERENCE * 0.5, 3);
     });
+
+    // Free users start each member's download by hand, so there are gaps with nothing in
+    // flight while the collection still has mods to download.
+    it("stays up between a collection's downloads", () => {
+      const members = (aStatus: CollectionModStatus) =>
+        collectionSession([
+          { tag: "a", status: aStatus, fileSize: 100 },
+          { tag: "b", status: "pending", fileSize: 100 },
+        ]);
+      setStore([tagged("a", 50)], 1, members("downloading"));
+      const { container, rerender } = render(<DownloadButton />);
+
+      setStore([tagged("a", 100, "finished")], 0, members("downloaded"));
+      rerender(<DownloadButton />);
+
+      const button = within(container).getByRole("button", { name: "Downloads" });
+      expect(offset(container)).toBeCloseTo(CIRCUMFERENCE * 0.5, 3);
+      expect(button).toHaveTextContent("mb/s");
+      expect(button).not.toHaveTextContent("paused");
+    });
+
+    it("goes back to the icon once the collection has nothing left to download", () => {
+      setStore(
+        [tagged("a", 50)],
+        1,
+        collectionSession([{ tag: "a", status: "downloading", fileSize: 100 }]),
+      );
+      const { container, rerender } = render(<DownloadButton />);
+
+      setStore(
+        [tagged("a", 100, "finished")],
+        0,
+        collectionSession([{ tag: "a", status: "installing", fileSize: 100 }]),
+      );
+      rerender(<DownloadButton />);
+
+      expect(container.querySelectorAll("circle")).toHaveLength(0);
+    });
   });
 
   describe("ring colours", () => {

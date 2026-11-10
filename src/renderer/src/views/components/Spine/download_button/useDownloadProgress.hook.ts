@@ -66,7 +66,12 @@ export const useDownloadProgress = (): IDownloadProgress => {
     const active = allDownloads.filter(([, dl]) => ACTIVE_DOWNLOAD_STATES.includes(dl.state));
     const paused = allDownloads.filter(([, dl]) => dl.state === "paused");
 
-    if (active.length === 0 && paused.length === 0) {
+    const { received, total } = downloadByteProgress(files, session, alreadyDownloaded);
+    const remainingBytes = total - received;
+
+    // A collection with mods left to download keeps the ring up between downloads (free users
+    // start each one by hand), rather than flicking back to the icon each time.
+    if (active.length === 0 && paused.length === 0 && remainingBytes <= 0) {
       return {
         activeIds: [],
         estimatedMins: 0,
@@ -80,14 +85,11 @@ export const useDownloadProgress = (): IDownloadProgress => {
     // Paused downloads still have received bytes to report.
     const relevant = [...active, ...paused];
 
-    const { received, total } = downloadByteProgress(files, session, alreadyDownloaded);
-    const remainingBytes = total - received;
-
     return {
       activeIds: relevant.map(([id]) => id),
       estimatedMins: speed > 0 ? remainingBytes / speed / 60 : 0,
       isDownloading: true,
-      isPaused: active.length === 0,
+      isPaused: active.length === 0 && paused.length > 0,
       progress: total > 0 ? (received * 100) / total : 0,
       speedMBps: speed / (1024 * 1024),
     };
