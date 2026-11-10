@@ -676,6 +676,7 @@ async function updateMeta(api: IExtensionApi, collectionId?: string) {
               pictureUrl: info.collection.tileImage?.url,
               description: info.collection.description,
               shortDescription: info.collection.summary,
+              adultContent: info.adultContent,
               newestFileId: latestPublishedRev?.id,
               newestVersion: latestPublishedRev?.revisionNumber?.toString?.(),
               metadata: info.metadata,

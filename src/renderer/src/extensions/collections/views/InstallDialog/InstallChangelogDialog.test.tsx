@@ -22,9 +22,10 @@ const externalImage = "https://i.imgur.com/b.png";
 
 const collection = { id: "collection", attributes: { name: "Lanterns" } } as unknown as IMod;
 
-const revision = (description: string) =>
+const revision = (description: string, adultContent = false) =>
   ({
     revisionNumber: 2,
+    adultContent,
     collection: { slug: "lanterns", game: { domainName: "skyrimspecialedition" } },
     collectionChangelog: { createdAt: "2026-11-01T00:00:00Z", description },
   }) as unknown as IRevision;
@@ -47,5 +48,16 @@ describe("InstallChangelogDialog", () => {
 
     await waitFor(() => expect(imageSources()).toContain(nexusImage));
     expect(imageSources()).toEqual([nexusImage]);
+  });
+
+  it("blurs the changelog's images for an adult collection", async () => {
+    render(<InstallChangelogDialog />);
+
+    act(() => {
+      void showChangelog(collection, "skyrimse", revision(`Look ![a](${nexusImage})`, true));
+    });
+
+    await waitFor(() => expect(imageSources()).toContain(nexusImage));
+    expect(document.querySelector("img")).toHaveClass("nxm-image-media-blurred");
   });
 });

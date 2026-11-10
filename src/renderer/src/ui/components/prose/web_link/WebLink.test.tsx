@@ -18,6 +18,15 @@ describe("WebLink", () => {
     );
   });
 
+  it("keeps a link to an email address", () => {
+    renderMarkdown("[contact me](mailto:curator@example.com)");
+
+    expect(screen.getByRole("link", { name: "contact me" })).toHaveAttribute(
+      "href",
+      "mailto:curator@example.com",
+    );
+  });
+
   it.each([
     ["a file", "file:///C:/run.exe"],
     ["an app", "steam://run/1"],

@@ -36,8 +36,12 @@ function nop() {
 class Description extends React.Component<IProps, IComponentState> {
   private mRef: Element;
 
-  // Inline in the toggle link, so without the prose wrapper.
-  private shortBB = memoizeOne((short: string) => renderSafeBBCode(short));
+  // Inline in the toggle link, so without the prose wrapper, and without placeholders for images
+  // from elsewhere: a placeholder's buttons can't sit in a link, and would toggle the popover. The
+  // long description, a click away, has them.
+  private shortBB = memoizeOne((short: string, isFromAdultContent?: boolean) =>
+    renderSafeBBCode(short, { isFromAdultContent }),
+  );
 
   // Parsed only when one of these changes, not on every render of the row, such as on a download's
   // progress.
@@ -104,7 +108,7 @@ class Description extends React.Component<IProps, IComponentState> {
           {popover}
         </Overlay>
         <a data-testid="mod-description-toggle" ref={this.setRef} onClick={this.toggle}>
-          {!short ? t("Description") : this.shortBB(short)}
+          {!short ? t("Description") : this.shortBB(short, isFromAdultContent)}
         </a>
       </div>
     );

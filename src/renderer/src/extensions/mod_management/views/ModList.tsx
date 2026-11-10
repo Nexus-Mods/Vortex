@@ -1371,7 +1371,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     }
 
     const vortexGameId = downloadGame ?? this.props.gameMode;
-    return nexusModPageUrl(nexusGameId(getGame(vortexGameId), vortexGameId), modId);
+
+    // A bad stored game, such as an empty string or a legacy array, can't name a domain and throws.
+    // That shouldn't take down the mod list, so the description just goes without placeholders.
+    try {
+      return nexusModPageUrl(nexusGameId(getGame(vortexGameId), vortexGameId), modId);
+    } catch {
+      return undefined;
+    }
   };
 
   private editDescription = (modId: string) => {

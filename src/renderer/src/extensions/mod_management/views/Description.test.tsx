@@ -81,4 +81,10 @@ describe("Description", () => {
 
     expect(imageSources()).toEqual([nexusImage]);
   });
+
+  it("blurs the short description's images for an adult mod", () => {
+    renderDescription({ short: `Short [img]${nexusImage}[/img]`, isFromAdultContent: true });
+
+    expect(document.querySelector("img")).toHaveClass("nxm-image-media-blurred");
+  });
 });

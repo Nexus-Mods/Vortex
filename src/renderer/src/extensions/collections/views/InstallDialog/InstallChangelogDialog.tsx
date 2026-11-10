@@ -97,7 +97,12 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
           </FlexLayout>
 
           <div className="changelog-scroll">
-            <Markdown markdown={changelog.description} size="sm" />
+            <Markdown
+              // A boolean from the API, though nexus-api types it as a string.
+              isFromAdultContent={!!revisionInfo.adultContent}
+              markdown={changelog.description}
+              size="sm"
+            />
           </div>
         </Media.Right>
 

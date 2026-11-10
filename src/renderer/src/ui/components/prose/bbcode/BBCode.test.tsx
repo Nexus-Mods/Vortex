@@ -146,17 +146,32 @@ describe("BBCode", () => {
     );
 
     expect(screen.getByText("Header")).toHaveAttribute("colspan", "2");
-    expect(screen.getByText("Header")).toHaveAttribute("align", "center");
+    // As a style, since the prose styles' own alignment would win over the attribute.
+    expect(screen.getByText("Header")).toHaveStyle({ textAlign: "center" });
     expect(screen.getByText("A")).toHaveAttribute("rowspan", "2");
   });
 
-  it("drops a table cell's span or alignment that isn't one", () => {
+  it("keeps a table's and its cells' size and a cell's vertical alignment", () => {
     render(
-      <BBCode bbcode="[table][tr][td colspan=url(x) align=https://i.imgur.com/a.png]A[/td][/tr][/table]" />,
+      <BBCode bbcode='[table width="100%"][tr][td width=200 height=50% valign=top]A[/td][/tr][/table]' />,
     );
 
+    expect(screen.getByRole("table")).toHaveStyle({ width: "100%" });
+    expect(screen.getByText("A")).toHaveStyle({
+      width: "200px",
+      height: "50%",
+      verticalAlign: "top",
+    });
+  });
+
+  it("drops a table cell's span, size or alignment that isn't one", () => {
+    render(
+      <BBCode bbcode="[table width=url(x)][tr][td colspan=url(x) width=calc(1px) align=https://i.imgur.com/a.png valign=url(x)]A[/td][/tr][/table]" />,
+    );
+
+    expect(screen.getByRole("table")).not.toHaveAttribute("style");
     expect(screen.getByText("A")).not.toHaveAttribute("colspan");
-    expect(screen.getByText("A")).not.toHaveAttribute("align");
+    expect(screen.getByText("A")).not.toHaveAttribute("style");
   });
 
   it("draws a plain tag given a style, without it", () => {
