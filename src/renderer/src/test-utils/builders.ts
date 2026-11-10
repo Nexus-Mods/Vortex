@@ -1039,7 +1039,7 @@ export function registerHarnessGame(gameId: string, opts: { stub?: boolean } = {
   if (opts.stub === true) {
     if (!gameReg.extensionStubs.some((stub) => stub.game.id === gameId)) {
       gameReg.extensionStubs.push({
-        game: makeGame({ id: gameId }),
+        game: makeGame({ id: VortexGameId(gameId) }),
         ext: { name: `Game: ${gameId}`, modId: 1 },
       });
     }
