@@ -1,6 +1,6 @@
 import React, { forwardRef, useState } from "react";
 
-import { CharacterCount } from "@/ui/components/form/field/CharacterCount";
+import { CharacterCount, characterCountStyle } from "@/ui/components/form/field/CharacterCount";
 import { Description } from "@/ui/components/form/field/Description";
 import { ErrorMessage } from "@/ui/components/form/field/ErrorMessage";
 import { Field } from "@/ui/components/form/field/Field";
@@ -61,7 +61,7 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, ITextAreaFieldProps
           {label}
         </Label>
 
-        <div className="nxm-field-control">
+        <div className="nxm-field-control" style={characterCountStyle(maxLength)}>
           <Textarea
             {...props}
             defaultValue={defaultValue}
@@ -75,13 +75,15 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, ITextAreaFieldProps
               onChange?.(event);
             }}
           />
+
+          {maxLength !== undefined && <CharacterCount length={length} maxLength={maxLength} />}
         </div>
 
         {!!errorMessage && hideErrors && (
           <ErrorMessage className="sr-only">{errorMessage}</ErrorMessage>
         )}
 
-        {(showError || !!hintList.length || maxLength !== undefined) && (
+        {(showError || !!hintList.length) && (
           <div className="nxm-field-footer">
             <div className="nxm-field-messages">
               {showError && <ErrorMessage>{errorMessage}</ErrorMessage>}
@@ -90,8 +92,6 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, ITextAreaFieldProps
                 <Description key={`${index}-${hint}`}>{hint}</Description>
               ))}
             </div>
-
-            {maxLength !== undefined && <CharacterCount length={length} maxLength={maxLength} />}
           </div>
         )}
       </Field>

@@ -143,7 +143,7 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
 
   return (
     <div className="border-b border-stroke-weak bg-surface-low pr-scrollbar">
-      <PageContent isFullWidth className="flex items-center justify-between gap-x-4 px-6 py-3">
+      <PageContent isFullWidth className="flex items-start justify-between gap-x-4 px-6 py-3">
         {viewPicker}
 
         <div className="flex shrink-0 items-center gap-x-4">

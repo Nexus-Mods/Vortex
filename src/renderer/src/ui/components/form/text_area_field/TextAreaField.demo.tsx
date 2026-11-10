@@ -71,10 +71,12 @@ export const TextAreaFieldDemo = () => (
     </Section>
 
     <Section
-      description="Given maxLength. Turns to warning with a quarter left, and danger with a tenth."
+      description="Given maxLength. Hidden until half are left, then turns to warning with a quarter left, and danger with a tenth."
       title="Character count"
     >
       <TextAreaField label="Plenty left" maxLength={100} placeholder="Type up to 100 characters" />
+
+      <TextAreaField defaultValue={"1234567890".repeat(5)} label="Half left" maxLength={100} />
 
       <TextAreaField defaultValue={"1234567890".repeat(8)} label="Warning" maxLength={100} />
 
