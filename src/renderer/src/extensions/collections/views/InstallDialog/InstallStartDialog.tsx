@@ -7,6 +7,8 @@ import Select from "react-select";
 import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 
+import { WebLink } from "@/ui/components/prose/web_link/WebLink";
+
 import * as actions from "../../../../actions";
 import { ComponentEx } from "../../../../controls/ComponentEx";
 import FlexLayout from "../../../../controls/FlexLayout";
@@ -259,6 +261,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
 
                 <ReactMarkdown
                   allowedElements={["p", "br", "a", "em", "strong"]}
+                  components={{ a: WebLink }}
                   className="textarea-install-collection-instructions"
                   unwrapDisallowed={true}
                 >

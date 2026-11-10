@@ -113,7 +113,7 @@ export const ExternalImagePlaceholder = ({
   };
 
   return (
-    <div className="@container my-3">
+    <div className="@container my-3" data-testid="external-image-placeholder">
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 rounded-sm border border-dashed border-stroke-weak bg-translucent-dark-200 p-4 text-left @md:grid-cols-[auto_minmax(0,1fr)_auto]">
         <span className="flex items-center">
           <span className="flex rounded-full bg-surface-translucent-low p-2 text-neutral-subdued">
@@ -156,6 +156,7 @@ export const ExternalImagePlaceholder = ({
           <Button
             appearance="subdued"
             brand="neutral"
+            data-testid="external-image-placeholder-website"
             rightIcon="open_in_new"
             size="sm"
             onClick={() => viewWebsite("placeholder")}

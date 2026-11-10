@@ -4,7 +4,6 @@ import { Button, FormControl, ListGroup, ListGroupItem, ModalHeader } from "reac
 
 import { log } from "@/logging";
 
-import bbcode from "../../controls/bbcode";
 import { ComponentEx, connect, translate } from "../../controls/ComponentEx";
 import FlexLayout from "../../controls/FlexLayout";
 import FormInput from "../../controls/FormInput";
@@ -16,11 +15,10 @@ import ZoomableImage from "../../controls/ZoomableImage";
 import type { IAvailableExtension, ISelector } from "../../types/extensions";
 import type { IExtensionState, IState } from "../../types/IState";
 import { SITE_ID } from "../gamemode_management/constants";
-import { NEXUS_BASE_URL } from "../nexus_integration/constants";
+import { nexusSiteModPageUrl } from "../nexus_integration/util/nexus_urls/nexusUrls";
+import { ExtensionDescription } from "./components/extension_description/ExtensionDescription";
 import { findInCatalog, findInstalled } from "./queries";
 import { downloadAndInstallExtension, selectorMatch } from "./util";
-
-const NEXUS_MODS_URL: string = `${NEXUS_BASE_URL}/site/mods/`;
 
 export interface IBrowseExtensionsProps {
   visible: boolean;
@@ -298,7 +296,10 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         </FlexLayout.Fixed>
         <FlexLayout.Flex>
           <div className="description-text">
-            {details === undefined ? <Spinner /> : bbcode(details.description ?? "")}
+            <ExtensionDescription
+              description={details === undefined ? undefined : (details.description ?? "")}
+              modId={ext.modId}
+            />
           </div>
         </FlexLayout.Flex>
       </FlexLayout>
@@ -363,7 +364,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const ext = findInCatalog(availableExtensions, { modId });
     if (ext.modId !== undefined) {
-      window.api.shell.openUrl(NEXUS_MODS_URL + ext.modId);
+      window.api.shell.openUrl(nexusSiteModPageUrl(ext.modId));
     }
   };
 }

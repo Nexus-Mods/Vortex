@@ -1,9 +1,10 @@
 import type { ICollectionRevisionMod } from "@nexusmods/nexus-api";
 import { GameDomain } from "@vortex/shared";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Panel } from "react-bootstrap";
 
-import bbcodeToReact from "../../../../controls/bbcode";
+import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
+
 import FlexLayout from "../../../../controls/FlexLayout";
 import Image from "../../../../controls/Image";
 import * as tooltip from "../../../../controls/TooltipControls";
@@ -34,6 +35,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
   const version = local?.attributes?.version ?? remote?.file?.version ?? "???";
   const description = local?.attributes?.shortDescription ?? remote?.file?.mod?.summary ?? "";
   const image = local?.attributes?.pictureUrl ?? remote?.file?.mod?.pictureUrl;
+  const isFromAdultContent = local?.attributes?.adultContent ?? remote?.file?.mod?.adultContent;
 
   const remoteDomain = remote?.file?.game?.domainName;
   const vortexGameId = local?.attributes?.gameId ?? gameId;
@@ -46,9 +48,18 @@ function CollectionModDetails(props: ICollectionModDetails) {
     window.api.shell.openUrl(`${NEXUS_BASE_URL}/users/${uploaderId}`);
   }, [uploaderId]);
 
+  const modPageUrl = modId !== undefined ? nexusModPageUrl(domainName, modId) : undefined;
+
   const visitPage = useCallback(() => {
-    window.api.shell.openUrl(nexusModPageUrl(domainName, modId));
-  }, [domainName, modId]);
+    window.api.shell.openUrl(modPageUrl);
+  }, [modPageUrl]);
+
+  // Images from outside Nexus Mods point to the mod's page, where they're shown; without one,
+  // they're left out.
+  const externalImagePlaceholders = useMemo(
+    () => (modPageUrl !== undefined ? { websiteUrl: modPageUrl } : undefined),
+    [modPageUrl],
+  );
 
   return (
     <div className="installing-mod-overview">
@@ -63,7 +74,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
               <FlexLayout type="row">
                 <div className="installing-mod-title">{modTitle}</div>
 
-                {modId !== undefined ? (
+                {modPageUrl !== undefined ? (
                   <tooltip.IconButton
                     className="collection-open-mod-in-browser"
                     icon="open-in-browser"
@@ -75,7 +86,14 @@ function CollectionModDetails(props: ICollectionModDetails) {
             </FlexLayout.Fixed>
 
             <FlexLayout.Flex>
-              <div className="collection-description">{bbcodeToReact(description)}</div>
+              <div className="collection-description">
+                <BBCode
+                  bbcode={description}
+                  externalImagePlaceholders={externalImagePlaceholders}
+                  isFromAdultContent={isFromAdultContent}
+                  size="sm"
+                />
+              </div>
             </FlexLayout.Flex>
 
             <FlexLayout.Fixed>

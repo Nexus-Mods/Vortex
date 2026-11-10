@@ -4,6 +4,8 @@ import { Button } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 import ReactMarkdown from "react-markdown";
 
+import { WebLink } from "@/ui/components/prose/web_link/WebLink";
+
 import { tooltip } from "../../controls/api";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
@@ -192,6 +194,7 @@ function InstructionsOverlay(props: IInstructionsOverlayProps) {
       return (
         <ReactMarkdown
           allowedElements={["p", "br", "a", "em", "strong"]}
+          components={{ a: WebLink }}
           className="instructions-overlay-content"
           unwrapDisallowed={true}
         >

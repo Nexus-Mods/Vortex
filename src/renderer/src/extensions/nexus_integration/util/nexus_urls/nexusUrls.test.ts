@@ -1,7 +1,12 @@
 import { GameDomain } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
-import { nexusFilePageUrl, nexusModFilesUrl, nexusModPageUrl } from "./nexusUrls";
+import {
+  nexusFilePageUrl,
+  nexusModFilesUrl,
+  nexusModPageUrl,
+  nexusSiteModPageUrl,
+} from "./nexusUrls";
 
 const SKYRIM = GameDomain("skyrimspecialedition");
 
@@ -10,6 +15,12 @@ describe("nexusModPageUrl", () => {
     expect(nexusModPageUrl(SKYRIM, 12604)).toBe(
       "https://www.nexusmods.com/skyrimspecialedition/mods/12604",
     );
+  });
+});
+
+describe("nexusSiteModPageUrl", () => {
+  it("is the mod's page in the site section", () => {
+    expect(nexusSiteModPageUrl(2295)).toBe("https://www.nexusmods.com/site/mods/2295");
   });
 });
 

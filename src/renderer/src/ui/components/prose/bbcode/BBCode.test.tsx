@@ -8,6 +8,7 @@ import { BBCode } from "./BBCode";
 // The user's adult content setting is unknown, so adult images blur, as they do logged out.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
+vi.mock("@/controls/Icon", () => ({ default: () => null }));
 
 describe("BBCode", () => {
   it("renders the tags in the app's prose styles", () => {
@@ -103,6 +104,81 @@ describe("BBCode", () => {
         "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
       ]);
     });
+
+    it("shows only Nexus Mods images in a [more] popover", async () => {
+      const { container } = render(
+        <BBCode bbcode="[more id=info name=Info]![a](https://staticdelivery.nexusmods.com/mods/1704/images/a.png) ![b](https://i.imgur.com/b.png)[/more]" />,
+      );
+
+      await userEvent.click(container.querySelector(".more-link button"));
+
+      expect(
+        Array.from(document.querySelectorAll("img"), (img) => img.getAttribute("src")),
+      ).toEqual(["https://staticdelivery.nexusmods.com/mods/1704/images/a.png"]);
+    });
+
+    it("blurs a [more] popover's images for an adult mod", async () => {
+      const { container } = render(
+        <BBCode
+          isFromAdultContent
+          bbcode="[more id=info name=Info]![a](https://staticdelivery.nexusmods.com/mods/1704/images/a.png)[/more]"
+        />,
+      );
+
+      await userEvent.click(container.querySelector(".more-link button"));
+
+      expect(document.querySelector("img")).toHaveClass("nxm-image-media-blurred");
+    });
+
+    it("draws a table without the background its parameters ask for", () => {
+      const { container } = render(
+        <BBCode bbcode="[table background=https://i.imgur.com/a.png][tr][td background=https://i.imgur.com/b.png]Cell[/td][/tr][/table]" />,
+      );
+
+      expect(screen.getByText("Cell").tagName).toBe("TD");
+      expect(container.querySelector("[background]")).toBeNull();
+    });
+  });
+
+  it("keeps how far a table cell spans and where its text sits", () => {
+    render(
+      <BBCode bbcode='[table][tr][th colspan=2 align="center"]Header[/th][/tr][tr][td rowspan=2]A[/td][td]B[/td][/tr][/table]' />,
+    );
+
+    expect(screen.getByText("Header")).toHaveAttribute("colspan", "2");
+    // As a style, since the prose styles' own alignment would win over the attribute.
+    expect(screen.getByText("Header")).toHaveStyle({ textAlign: "center" });
+    expect(screen.getByText("A")).toHaveAttribute("rowspan", "2");
+  });
+
+  it("keeps a table's and its cells' size and a cell's vertical alignment", () => {
+    render(
+      <BBCode bbcode='[table width="100%"][tr][td width=200 height=50% valign=top]A[/td][/tr][/table]' />,
+    );
+
+    expect(screen.getByRole("table")).toHaveStyle({ width: "100%" });
+    expect(screen.getByText("A")).toHaveStyle({
+      width: "200px",
+      height: "50%",
+      verticalAlign: "top",
+    });
+  });
+
+  it("drops a table cell's span, size or alignment that isn't one", () => {
+    render(
+      <BBCode bbcode="[table width=url(x)][tr][td colspan=url(x) width=calc(1px) align=https://i.imgur.com/a.png valign=url(x)]A[/td][/tr][/table]" />,
+    );
+
+    expect(screen.getByRole("table")).not.toHaveAttribute("style");
+    expect(screen.getByText("A")).not.toHaveAttribute("colspan");
+    expect(screen.getByText("A")).not.toHaveAttribute("style");
+  });
+
+  it("draws a plain tag given a style, without it", () => {
+    render(<BBCode bbcode="[b style=color:red]bold[/b]" />);
+
+    expect(screen.getByText("bold").tagName).toBe("STRONG");
+    expect(screen.getByText("bold")).not.toHaveAttribute("style");
   });
 
   describe("embeds", () => {

@@ -2,6 +2,8 @@ import * as React from "react";
 import { Button } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 
+import { WebLink } from "@/ui/components/prose/web_link/WebLink";
+
 import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";
 import { renderModReference } from "../../../../extensions/mod_management/util/modName";
@@ -72,6 +74,7 @@ function Instructions(props: IInstructionsProps) {
     <>
       <ReactMarkdown
         allowedElements={["p", "br", "a", "em", "strong"]}
+        components={{ a: WebLink }}
         className="collection-instructions-text"
         unwrapDisallowed={true}
       >
@@ -92,6 +95,7 @@ function Instructions(props: IInstructionsProps) {
                     <td className="collection-mod-instructions">
                       <ReactMarkdown
                         allowedElements={["p", "br", "a", "em", "strong"]}
+                        components={{ a: WebLink }}
                         unwrapDisallowed={true}
                       >
                         {iter.instructions}
@@ -125,6 +129,7 @@ function Instructions(props: IInstructionsProps) {
                     <td className="collection-mod-instructions">
                       <ReactMarkdown
                         allowedElements={["p", "br", "a", "em", "strong"]}
+                        components={{ a: WebLink }}
                         unwrapDisallowed={true}
                       >
                         {iter.instructions}

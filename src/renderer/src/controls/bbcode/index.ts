@@ -15,6 +15,7 @@ import LinkTag from "./LinkTag";
 import MoreTag from "./MoreTag";
 import SafeImageTag from "./SafeImageTag";
 import SafeLinkTag from "./SafeLinkTag";
+import SAFE_SIMPLE_TAGS from "./SafeSimpleTag";
 import SafeSizeTag from "./SafeSizeTag";
 import SafeSpoilerTag from "./SafeSpoilerTag";
 import SafeStyleTag from "./SafeStyleTag";
@@ -51,6 +52,8 @@ export interface IBBCodeContext {
 
 const createFullParser = (safe: boolean) => {
   const parser = new bbcode.Parser();
+  // Read by tags that draw bbcode we don't write ourselves differently, such as `[more]`.
+  parser["renderer"].options.safe = safe;
 
   parser.registerTag("size", safe ? SafeSizeTag : SizeTag);
   parser.registerTag("br", BrTag);
@@ -73,6 +76,7 @@ const createFullParser = (safe: boolean) => {
     parser.registerTag("img", SafeImageTag);
     parser.registerTag("compare", CompareTag);
     ["video", "twitter", "soundcloud"].forEach((tag) => parser.registerTag(tag, EmbedLinkTag));
+    Object.entries(SAFE_SIMPLE_TAGS).forEach(([name, tag]) => parser.registerTag(name, tag));
   }
 
   return parser;

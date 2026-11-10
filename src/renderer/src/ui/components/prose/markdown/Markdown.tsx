@@ -1,11 +1,11 @@
-import React, { type ReactNode } from "react";
+import React from "react";
 import ReactMarkdown from "react-markdown";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
-import { webHref } from "@/ui/utils/webHref";
 
 import type { IProseWithImagesProps } from "../Prose.types";
 import { ProseImage } from "../prose_image/ProseImage";
+import { WebLink } from "../web_link/WebLink";
 
 interface IMarkdownProps extends IProseWithImagesProps {
   /** The markdown to render, such as a changelog. */
@@ -16,11 +16,6 @@ interface IMarkdownProps extends IProseWithImagesProps {
    */
   allowMedia?: boolean;
 }
-
-/** A link, its target kept only if it's a web page, so it can't open a file or app. */
-const WebLink = ({ href, children }: { href?: string; children?: ReactNode }) => (
-  <a href={webHref(href)}>{children}</a>
-);
 
 /**
  * Markdown we don't write ourselves, such as a changelog, in the app's prose styles. Links open

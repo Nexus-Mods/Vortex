@@ -33,6 +33,7 @@ const revisionInfo: IRevisionQuery = {
   modFiles: {
     file: {
       mod: {
+        adultContent: true,
         author: true,
         category: true,
         modCategory: {
