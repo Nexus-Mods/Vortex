@@ -54,11 +54,88 @@
         }
     }
 
-    /* A text area is an input that grows downwards: vertical padding, and room for a few lines. */
+    /* A text area is an input that grows downwards: vertical padding, and room for three whole
+       lines, so none is cut through. */
     .nxm-textarea {
-        min-height: calc(var(--spacing) * 16);
+        min-height: calc(3lh + var(--spacing) * 3 + 2px);
         padding-block: calc(var(--spacing) * 1.5);
         resize: vertical;
+    }
+
+    /* A text input keeps room on its right for its character count while it shows. */
+    .nxm-field-control:has(> .nxm-field-character-count:not(.nxm-field-character-count-hidden))
+        > .nxm-input:not(.nxm-textarea) {
+        padding-right: calc(var(--spacing) * 4.5 + var(--nxm-character-count-width));
+    }
+
+    /* A text area with a count draws its box on the control instead, and resizes from it, so the
+       count gets a strip of its own inside the box, below three lines of text that scroll clear of
+       it. The strip's there while the count's hidden too, so nothing moves when it shows. Its
+       states copy `.nxm-input`'s above, so change them together. */
+    .nxm-field-control:has(> .nxm-textarea ~ .nxm-field-character-count) {
+        flex-direction: column;
+        align-items: stretch;
+        min-height: calc(
+            4 * var(--text-body-sm) * var(--text-body-sm--line-height) + var(--spacing) * 3.5 + 2px
+        );
+        overflow: hidden;
+        resize: vertical;
+        border: solid 1px var(--color-stroke-subdued);
+        border-radius: var(--radius-sm);
+        background-color: var(--color-translucent-dark-400);
+        transition-property: border-color, background-color, opacity;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        > .nxm-textarea {
+            --nxm-character-count-strip: calc(var(--spacing) * 2 + 1lh);
+            flex: 1 1 auto;
+            height: 0;
+            min-height: 0;
+            padding-bottom: 0;
+            margin-bottom: var(--nxm-character-count-strip);
+            border-width: 0;
+            background-color: transparent;
+            resize: none;
+            opacity: 1;
+
+            &:focus-visible {
+                outline: none;
+            }
+        }
+
+        &:has(> .nxm-textarea:focus-visible) {
+            outline: var(--color-info-subdued) solid calc(var(--spacing) * 0.5);
+            outline-offset: calc(var(--spacing) * 0.5);
+        }
+
+        > .nxm-field-character-count {
+            bottom: var(--spacing);
+            opacity: 1;
+        }
+
+        &:has(> .nxm-textarea:is([data-disabled], [readonly])) {
+            opacity: 0.4;
+        }
+
+        &:has(> .nxm-textarea[data-disabled]) {
+            cursor: not-allowed;
+        }
+
+        &:has(> .nxm-textarea[data-invalid]) {
+            border-color: var(--color-danger-strong);
+            background-color: var(--color-surface-translucent-mid);
+        }
+
+        &:has(> .nxm-textarea:not([data-disabled], [data-invalid], [readonly])[data-hover]) {
+            border-color: var(--color-stroke-moderate);
+            background-color: var(--color-surface-translucent-low);
+        }
+
+        &:has(> .nxm-textarea:not([data-disabled], [data-invalid], [readonly]):focus) {
+            border-color: var(--color-stroke-strong);
+            background-color: var(--color-surface-translucent-mid);
+        }
     }
 
     .nxm-input-icon {
