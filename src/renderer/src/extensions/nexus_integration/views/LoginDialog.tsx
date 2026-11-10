@@ -19,7 +19,6 @@ import Spinner from "../../../controls/Spinner";
 import { Button, IconButton } from "../../../controls/TooltipControls";
 import { UserCanceled } from "../../../util/CustomErrors";
 import { log } from "../../../util/log";
-import opn from "../../../util/opn";
 import { setUserAPIKey } from "../actions/account";
 import { setLoginId, setOauthPending } from "../actions/session";
 import { NEXUS_BASE_URL } from "../constants";
@@ -349,7 +348,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private openApiAccess = () => {
-    opn(API_ACCESS_URL).catch(() => null);
+    window.api.shell.openUrl(API_ACCESS_URL);
   };
 
   private hide = () => {

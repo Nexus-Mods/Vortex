@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
+- Game info entries from `registerGameInfoProvider` accept `type: "path"`, shown as a link that opens the file or folder. The built-in `game-path` entry uses it
 
 ### Removed
 
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Deprecated
 
 - `IMainPageOptions.mdi` is deprecated in favour of `menuIcon: { path }`. It still works, as a `menuIcon` path
+- A filesystem path in a game info entry with `type: "url"` is deprecated in favour of `type: "path"`. It still opens as a path, in the game info popover and the game details dialog, and logs a warning naming the provider
 
 ### Changed
 

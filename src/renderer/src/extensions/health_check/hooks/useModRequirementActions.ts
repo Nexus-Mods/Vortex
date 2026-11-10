@@ -6,7 +6,6 @@ import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequir
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
 import { makeModAndFileUIDs } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import opn from "@/util/opn";
 
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
@@ -40,7 +39,7 @@ export function useModRequirementActions(
 
   const openModPage = useCallback(() => {
     if (mod.modUrl) {
-      opn(mod.modUrl).catch(() => undefined);
+      window.api.shell.openUrl(mod.modUrl);
     }
   }, [mod.modUrl]);
 

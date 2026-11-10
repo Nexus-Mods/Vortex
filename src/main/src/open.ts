@@ -35,8 +35,16 @@ export function openUrlString(raw: string): void {
  * directory, but under Wine `shell.openPath` triggers a Win32 `ShellExecute`
  * "open" verb that Wine has no folder handler for, whereas `file://` URLs
  * are routed by Wine to winebrowser → the host's xdg-open.
+ *
+ * Logs and drops an empty or missing path: an empty one would resolve to the
+ * working directory, and a missing one would throw from the IPC listener.
  */
 export function openFile(filePath: string): void {
+  if (typeof filePath !== "string" || filePath.length === 0) {
+    log("warn", "not opening an invalid path", { filePath });
+    return;
+  }
+
   const resolvedPath = path.isAbsolute(filePath) ? filePath : path.resolve(filePath);
 
   shell.openExternal(pathToFileURL(resolvedPath).toString()).catch((err: unknown) => {

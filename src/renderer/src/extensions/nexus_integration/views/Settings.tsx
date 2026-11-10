@@ -13,7 +13,6 @@ import { Button } from "../../../controls/TooltipControls";
 import type { DialogActions, DialogType, IDialogContent } from "../../../types/IDialog";
 import type { IErrorOptions } from "../../../types/IExtensionContext";
 import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
 import { setAssociatedWithNXMURLs } from "../actions/settings";
 import { NEXUS_BASE_URL } from "../constants";
 import getText from "../texts";
@@ -95,7 +94,7 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 
   private openNexus = () => {
-    opn(NEXUS_BASE_URL).catch(() => null);
+    window.api.shell.openUrl(NEXUS_BASE_URL);
   };
 
   private chromeFix = () => {

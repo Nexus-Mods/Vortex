@@ -18,7 +18,6 @@ import More from "../../../controls/More";
 import Usage from "../../../controls/Usage";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IState } from "../../../types/IState";
-import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { INI_TWEAKS_PATH, NAMESPACE, OPTIONAL_TWEAK_PREFIX } from "../constants";
@@ -115,7 +114,7 @@ class Tweak extends PureComponentEx<ITweakProps, {}> {
 
   private edit = () => {
     const { tweaksPath, fileName } = this.props;
-    opn(path.join(tweaksPath, fileName)).catch(() => null);
+    window.api.shell.openFile(path.join(tweaksPath, fileName));
   };
 
   private enable = () => {

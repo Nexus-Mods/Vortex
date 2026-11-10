@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type MouseEvent, useCallback, useContext } from "react";
 import { Alert, ListGroup, ListGroupItem } from "react-bootstrap";
 
 import Dashlet from "../../controls/Dashlet";
@@ -6,7 +6,6 @@ import EmptyPlaceholder from "../../controls/EmptyPlaceholder";
 import Icon from "../../controls/Icon";
 import { IconButton } from "../../controls/TooltipControls";
 import type { TFunction } from "../../util/i18n";
-import opn from "../../util/opn";
 import { MainContext } from "../../views/MainWindow";
 import type { IExtra, IListItem } from "./types";
 
@@ -56,13 +55,13 @@ function NewsItem(props: INewsItemProps) {
 
   const { category, extra, imageUrl, link, name, summary } = item;
 
-  const context = React.useContext(MainContext);
+  const context = useContext(MainContext);
 
-  const openMore = React.useCallback(
-    (evt: React.MouseEvent<any>) => {
+  const openMore = useCallback(
+    (evt: MouseEvent<any>) => {
       context.api.events.emit("analytics-track-click-event", "Dashboard", `View ${title}`);
       evt.preventDefault();
-      opn(link).catch((err) => undefined);
+      window.api.shell.openUrl(link);
     },
     [link, title],
   );

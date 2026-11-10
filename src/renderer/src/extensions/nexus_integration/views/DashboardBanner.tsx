@@ -14,7 +14,6 @@ import Spinner from "../../../controls/Spinner";
 import { IconButton } from "../../../controls/TooltipControls";
 import { UserCanceled } from "../../../util/CustomErrors";
 import getVortexPath from "../../../util/getVortexPath";
-import opn from "../../../util/opn";
 import { truthy } from "../../../util/util";
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
 import { setUserInfo } from "../actions/persistent";
@@ -124,7 +123,7 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
 
   private openProfile = () => {
     const { userInfo } = this.props;
-    opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch((err) => undefined);
+    window.api.shell.openUrl(`${NEXUS_BASE_URL}/users/${userInfo.userId}`);
   };
 
   private logout = () => {
