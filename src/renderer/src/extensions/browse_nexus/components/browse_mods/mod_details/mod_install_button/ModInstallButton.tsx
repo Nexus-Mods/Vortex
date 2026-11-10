@@ -124,6 +124,7 @@ export const ModInstallButton = ({
   const action = shouldInstall ? "install" : "download";
   const hasUpdate = installState.kind === "installed" && !!installState.update;
   const unavailable = unavailableReason(t, mainFile, isError, hasUpdate);
+  const isLoadingFile = !hasUpdate && mainFile === undefined && !isError;
   const upsellAction = hasUpdate ? "update" : action;
   const { button: oneClickLabel, ...upsellText } = oneClickText(t, hasUpdate);
 
@@ -188,7 +189,7 @@ export const ModInstallButton = ({
       <Button
         aria-disabled={!!unavailable}
         brand={isPremiumUser ? "primary" : "neutral"}
-        disabled={!hasUpdate && mainFile === undefined && !isError}
+        disabled={isLoadingFile}
         isLoading={isInstalling}
         leftIcon="install_desktop"
         rightIcon={isPremiumUser ? undefined : <PremiumBadge />}

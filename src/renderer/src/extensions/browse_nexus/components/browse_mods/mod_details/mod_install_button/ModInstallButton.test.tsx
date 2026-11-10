@@ -365,6 +365,7 @@ describe("ModInstallButton", () => {
       mocks.isPremium = false;
       renderButton(undefined);
 
+      expect(button()).not.toBeDisabled();
       await userEvent.click(button());
 
       expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
