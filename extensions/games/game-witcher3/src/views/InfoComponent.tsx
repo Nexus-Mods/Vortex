@@ -1,4 +1,4 @@
-import { Toggle, util } from "@nexusmods/vortex-api";
+import { Toggle, types } from "@nexusmods/vortex-api";
 /* eslint-disable */
 import * as React from "react";
 import * as BS from "react-bootstrap";
@@ -10,11 +10,12 @@ import { AUTO_SORT_LABEL, I18N_NAMESPACE } from "../common";
 import { autoSortLoadOrderEnabled } from "../selectors";
 
 interface InfoComponentProps {
+  api: types.IExtensionApi;
   onToggleModsState: (enable: boolean) => void;
 }
 
 export default function InfoComponent(props: InfoComponentProps) {
-  const { onToggleModsState } = props;
+  const { api, onToggleModsState } = props;
   const t = useTranslation(I18N_NAMESPACE).t;
   const store = useStore();
   const autoSort = useSelector(autoSortLoadOrderEnabled);
@@ -41,7 +42,7 @@ export default function InfoComponent(props: InfoComponentProps) {
           )}
           <a
             onClick={() =>
-              util.opn("https://wiki.nexusmods.com/index.php/Modding_The_Witcher_3_with_Vortex")
+              api.openUrl("https://wiki.nexusmods.com/index.php/Modding_The_Witcher_3_with_Vortex")
             }
           >
             {t("Modding The Witcher 3 with Vortex.", { ns: I18N_NAMESPACE })}

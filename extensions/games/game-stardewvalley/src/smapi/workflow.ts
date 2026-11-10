@@ -2,7 +2,6 @@
  * User-facing SMAPI provisioning workflow.
  */
 import type { types } from "@nexusmods/vortex-api";
-import { util } from "@nexusmods/vortex-api";
 
 import { SMAPI_URL } from "../common";
 import { downloadSMAPI } from "./download";
@@ -39,7 +38,7 @@ export async function downloadAndInstallSMAPI(
     await deploySMAPI(api);
   } catch (err) {
     api.showErrorNotification?.("Failed to download/install SMAPI", err);
-    util.opn(SMAPI_URL).catch(() => null);
+    api.openUrl(SMAPI_URL);
   } finally {
     api.dismissNotification?.("smapi-installing");
   }

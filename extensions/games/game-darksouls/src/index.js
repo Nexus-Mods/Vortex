@@ -55,9 +55,7 @@ class DarkSouls {
                 {
                   label: "Go to DSfix page",
                   action: () => {
-                    util
-                      .opn("https://www.nexusmods.com/darksouls/mods/19")
-                      .catch((err) => undefined);
+                    this.context.api.openUrl("https://www.nexusmods.com/darksouls/mods/19");
                     resolve();
                   },
                 },

@@ -52,7 +52,7 @@ async function showSMAPILog(api: types.IExtensionApi, basePath: string, logFile:
             `[${timestamp} INFO Vortex] Log exported by Vortex ${util.getApplication().version}.\n` +
               logData,
           );
-          return util.opn("https://smapi.io/log").catch(() => undefined);
+          api.openUrl("https://smapi.io/log");
         },
       },
       {

@@ -124,9 +124,7 @@ function prepare(api, discovery) {
       {
         title: "Download",
         action: () =>
-          util
-            .opn("https://www.nexusmods.com/skyrimspecialedition/mods/106712?tab=files")
-            .catch(() => {}),
+          api.openUrl("https://www.nexusmods.com/skyrimspecialedition/mods/106712?tab=files"),
       },
     ],
   });

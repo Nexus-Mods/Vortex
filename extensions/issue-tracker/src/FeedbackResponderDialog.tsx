@@ -210,7 +210,7 @@ class FeedbackResponderDialog extends ComponentEx<IProps, IComponentState> {
   };
 
   private openLink = (evt) => {
-    util.opn(evt.currentTarget.getAttribute("data-link")).catch((err) => null);
+    this.context.api.openUrl(evt.currentTarget.getAttribute("data-link"));
   };
 
   private renderGithubIssue = (issue: IGithubIssue, idx: number) => {

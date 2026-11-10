@@ -109,7 +109,7 @@ export default function init(context: types.IExtensionContext) {
       const isModernLayout = state.settings?.window?.useModernLayout;
       if (isModernLayout) {
         const url = generateUrl(wikiId) ?? WIKI_URL;
-        util.opn(url).catch(() => null);
+        context.api.openUrl(url);
       } else {
         context.api.events.emit("show-main-page", "Knowledge base");
         const url = generateUrl(wikiId);

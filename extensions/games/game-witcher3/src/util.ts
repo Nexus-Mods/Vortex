@@ -167,11 +167,10 @@ export function notifyMissingScriptMerger(api, force: boolean = false) {
               },
               {
                 label: "Download Script Merger",
-                action: () =>
-                  util
-                    .opn(SCRIPT_MERGER_RELEASES_URL)
-                    .catch((err) => null)
-                    .then(() => api.dismissNotification("missing-script-merger")),
+                action: () => {
+                  api.openUrl(SCRIPT_MERGER_RELEASES_URL);
+                  api.dismissNotification("missing-script-merger");
+                },
               },
             ],
           );
