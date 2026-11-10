@@ -1,0 +1,36 @@
+{
+  "name": "a run rolls back past an UNLINK whose folder is gone since the scan",
+  "disk": {
+    "files": { "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll": "SkyUI dll" },
+    "folders": ["/fixture-root/game/Data"]
+  },
+  "staged": {
+    "skyui-dll-hash": "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll",
+    "missing-esp-hash": "/fixture-root/staging/Missing/Missing.esp"
+  },
+  "operations": [
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307801",
+        "fileHash": "skyui-dll-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/SkyUI.dll"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307799",
+        "fileHash": "missing-esp-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Missing.esp"
+      }
+    }
+  ],
+  "expected": { "status": "rolled-back", "failedAt": 1 }
+}

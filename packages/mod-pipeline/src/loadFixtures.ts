@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url";
 import type { z } from "./zodJitless";
 
 /** Every fixture in `fixtures/<folder>`, in file name order. */
-export function loadFixtures<T>(folder: "resolver" | "planner", schema: z.ZodType<T>): T[] {
+export function loadFixtures<T>(
+  folder: "resolver" | "planner" | "apply",
+  schema: z.ZodType<T>,
+): T[] {
   const fixtureDir = fileURLToPath(new URL(`../fixtures/${folder}/`, import.meta.url));
   return readdirSync(fixtureDir)
     .filter((fileName) => fileName.endsWith(".json"))

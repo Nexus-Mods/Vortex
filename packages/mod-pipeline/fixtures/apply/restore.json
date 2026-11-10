@@ -1,0 +1,39 @@
+{
+  "name": "the original goes back where a removed file of ours was",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI_SE.esp": "SkyUI esp v1",
+      "/fixture-root/game/Data/SkyUI_SE.esp.backup": "game's own esp",
+      "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1"
+    }
+  },
+  "staged": { "skyui-esp-v1-hash": "/fixture-root/staging/SkyUI/SkyUI_SE.esp" },
+  "operations": [
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    },
+    {
+      "kind": "RESTORE",
+      "reason": "DAx",
+      "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+    }
+  ],
+  "expected": {
+    "status": "applied",
+    "kept": [],
+    "disk": {
+      "files": {
+        "/fixture-root/game/Data/SkyUI_SE.esp": "game's own esp",
+        "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1"
+      }
+    }
+  }
+}

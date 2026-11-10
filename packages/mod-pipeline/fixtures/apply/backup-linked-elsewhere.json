@@ -1,0 +1,48 @@
+{
+  "name": "another mod's file where a mod file goes is set aside, leaving the backup name free",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI_SE.esp": "other mod's esp",
+      "/fixture-root/staging/OtherMod/SkyUI_SE.esp": "other mod's esp",
+      "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1"
+    }
+  },
+  "staged": { "skyui-esp-v1-hash": "/fixture-root/staging/SkyUI/SkyUI_SE.esp" },
+  "operations": [
+    {
+      "kind": "BACKUP",
+      "reason": "DxA",
+      "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp",
+      "setAside": "linked-elsewhere"
+    },
+    {
+      "kind": "LINK",
+      "reason": "DxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    }
+  ],
+  "expected": {
+    "status": "applied",
+    "kept": [
+      {
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp",
+        "keptPath": "/fixture-root/kept/0",
+        "reason": "linked-elsewhere"
+      }
+    ],
+    "disk": {
+      "files": {
+        "/fixture-root/game/Data/SkyUI_SE.esp": "SkyUI esp v1",
+        "/fixture-root/kept/0": "other mod's esp",
+        "/fixture-root/staging/OtherMod/SkyUI_SE.esp": "other mod's esp",
+        "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1"
+      }
+    }
+  }
+}

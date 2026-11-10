@@ -103,6 +103,7 @@ describe("readJournal", () => {
       runId: writer.runId,
       entries,
       phase: JournalPhase.Applying,
+      changing: new Set(),
       done: new Set(),
       kept: new Set(),
       undone: new Set(),
@@ -115,13 +116,16 @@ describe("readJournal", () => {
     const writer = await startJournal();
 
     await writer.markDone(0);
+    await writer.markChanging(1);
     await writer.recordFolder(1, "/fixture-root/game/sub");
     await writer.recordRemovedFolder(1);
     await writer.markDone(1);
+    await writer.markChanging(2);
     await writer.markDone(2, true);
 
     expect(await foundJournal()).toMatchObject({
       phase: JournalPhase.Applying,
+      changing: new Set([1, 2]),
       done: new Set([0, 1, 2]),
       kept: new Set([2]),
       createdFolders: [{ index: 1, path: "/fixture-root/game/sub" }],

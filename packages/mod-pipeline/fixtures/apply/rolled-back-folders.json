@@ -1,0 +1,51 @@
+{
+  "name": "a rolled back run removes only the folders it created",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SKSE/Plugins/AddressLibrary.bin": "address library",
+      "/fixture-root/staging/SkyUI/Interface/SkyUI/skyui.swf": "SkyUI swf",
+      "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll": "SkyUI dll"
+    }
+  },
+  "staged": {
+    "skyui-dll-hash": "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll",
+    "skyui-swf-hash": "/fixture-root/staging/SkyUI/Interface/SkyUI/skyui.swf",
+    "missing-esp-hash": "/fixture-root/staging/Missing/Missing.esp"
+  },
+  "operations": [
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307801",
+        "fileHash": "skyui-dll-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/SkyUI.dll"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307802",
+        "fileHash": "skyui-swf-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Interface/SkyUI/skyui.swf"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307799",
+        "fileHash": "missing-esp-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Missing.esp"
+      }
+    }
+  ],
+  "expected": { "status": "rolled-back", "failedAt": 2 }
+}

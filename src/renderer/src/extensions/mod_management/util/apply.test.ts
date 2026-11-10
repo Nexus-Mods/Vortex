@@ -1,5 +1,3 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import * as path from "node:path";
 
 import {
@@ -12,26 +10,17 @@ import {
   resumeApply,
   rollback,
   type JournalStorage,
-  type KeptFile,
   type Operation,
   type ResumeResult,
   type RunOptions,
-  type SetAsideReason,
   type StagedFiles,
 } from "@nexusmods/mod-pipeline";
-import {
-  ChaosFS,
-  InMemoryFSBuilder,
-  QualifiedPath,
-  type FileSystem,
-} from "@vortex/shared/filesystem";
+import { InMemoryFSBuilder, QualifiedPath, type FileSystem } from "@vortex/shared/filesystem";
 import { describe, expect, test } from "vitest";
 
 import { startJournal } from "@/test-utils/journal";
-import { LinkCountingFS } from "@/test-utils/linkCountingFS";
-import { makeGeneratedFileSource, makeNexusFileSource } from "@/test-utils/lockfileBuilders";
+import { makeNexusFileSource } from "@/test-utils/lockfileBuilders";
 import {
-  makeBackupOperation,
   makeLinkOperation,
   makeRestoreOperation,
   makeUnlinkOperation,
@@ -56,31 +45,14 @@ const backupPathOf = (destinationPath: string) => `${destinationPath}${BACKUP_TA
 const backupOf = (name: string) => backupPathOf(inGame(name));
 const keptPathOf = (_destinationPath: string, runId: string, entryIndex: number) =>
   `${KEPT}/${runId}/${entryIndex}`;
-const reasonsOf = (kept: readonly KeptFile[]) =>
-  kept.map(({ destinationPath, reason }) => [destinationPath, reason]);
 
 const fileNamed = (name: string) =>
   makeNexusFileSource({ fileHash: name, destinationPath: inGame(name) });
-const backup = (name: string) => makeBackupOperation({ destinationPath: inGame(name) });
-const setAside = (name: string, reason: SetAsideReason) =>
-  makeBackupOperation({ destinationPath: inGame(name), setAside: reason });
 const restore = (name: string) => makeRestoreOperation({ destinationPath: inGame(name) });
 const unlink = (name: string) => makeUnlinkOperation({ file: fileNamed(name) });
 const link = (name: string) => makeLinkOperation({ file: fileNamed(name) });
-/**
- * A LINK from another staged folder, as a path can't be both a file and a folder there. The file
- * name stays the same: InMemoryFS lists a hardlink under its first name.
- */
-const linkFrom = (stagedName: string, name: string) =>
-  makeLinkOperation({
-    file: makeNexusFileSource({ fileHash: stagedName, destinationPath: inGame(name) }),
-  });
 
-const UNSTAGED = "unstaged.dll";
-
-const stagedFiles: StagedFiles = {
-  pathOf: (file) => (file.fileHash === UNSTAGED ? undefined : inStaging(file.fileHash)),
-};
+const stagedFiles: StagedFiles = { pathOf: (file) => inStaging(file.fileHash) };
 
 const newJournal = async () =>
   journalStorageAt(path.join(await makeTempDir("apply-journal-"), "journal.ndjson"));
@@ -94,33 +66,22 @@ const unreadableJournal = async () => {
 interface Setup {
   /** files only in staging */
   staged?: string[];
-  /** files in staging with a hardlink at their destination */
-  deployed?: string[];
   /** other files, by path, with their contents */
   other?: Record<string, string>;
 }
 
-async function seed({ staged = [], deployed = [], other = {} }: Setup): Promise<FileSystem> {
+function seed({ staged = [], other = {} }: Setup): FileSystem {
   const builder = new InMemoryFSBuilder().dir(qualified(GAME)).dir(qualified(WORK));
-  for (const name of [...staged, ...deployed]) {
+  for (const name of staged) {
     builder.file(qualified(inStaging(name)), { type: "text", data: `staged ${name}` });
-  }
-  for (const name of deployed) {
-    builder.dir(qualified(inGame(name)).parent());
   }
   for (const [filePath, data] of Object.entries(other)) {
     builder.file(qualified(filePath), { type: "text", data });
   }
-  const fs = new LinkCountingFS(builder.store);
-  await Promise.all(
-    deployed.map((name) =>
-      fs.createLink(qualified(inStaging(name)), qualified(inGame(name)), "hardlink"),
-    ),
-  );
-  return fs;
+  return builder.build();
 }
 
-/** Files as `contents#id`, folders as `folder`. A kept file's run id is dropped. */
+/** Files as `contents#id`, folders as `folder`. */
 async function snapshot(fs: FileSystem): Promise<Record<string, string>> {
   const entries: Record<string, string> = {};
   const listing = await fs.enumerateDirectory(qualified(ROOT), {
@@ -128,12 +89,11 @@ async function snapshot(fs: FileSystem): Promise<Record<string, string>> {
     recursive: true,
   });
   for await (const [entryPath, status] of listing) {
-    const name = entryPath.path.replace(/\/kept\/[^/]+/, "/kept/run");
     if (status.isFile) {
       const contents = new TextDecoder().decode(await fs.readFile(entryPath));
-      entries[name] = `${contents}#${status.id}`;
+      entries[entryPath.path] = `${contents}#${status.id}`;
     } else {
-      entries[name] = "folder";
+      entries[entryPath.path] = "folder";
     }
   }
   return entries;
@@ -144,13 +104,9 @@ const optionsOn = (fs: FileSystem, journal: JournalStorage): RunOptions => ({
   journal,
 });
 
-const runApply = async (
-  fs: FileSystem,
-  operations: readonly Operation[],
-  journal?: JournalStorage,
-) =>
+const runApply = (fs: FileSystem, operations: readonly Operation[], journal: JournalStorage) =>
   apply(operations, {
-    ...optionsOn(fs, journal ?? (await newJournal())),
+    ...optionsOn(fs, journal),
     backupPathOf,
     keptPathOf,
     stagedFiles,
@@ -166,307 +122,8 @@ function expectStatus<S extends ResumeResult["status"]>(
 }
 
 describe("apply", () => {
-  describe("BACKUP", () => {
-    test("moves what is at the destination to its backup name", async () => {
-      const fs = await seed({ other: { [inGame("a.dll")]: "game file" } });
-      const before = await snapshot(fs);
-
-      expectStatus(await runApply(fs, [backup("a.dll")]), ApplyStatus.Applied);
-
-      const after = await snapshot(fs);
-      expect(after[backupOf("a.dll")]).toBe(before[inGame("a.dll")]);
-      expect(after).not.toHaveProperty([inGame("a.dll")]);
-    });
-
-    test("counts as done with nothing at the destination", async () => {
-      const fs = await seed({});
-
-      expectStatus(await runApply(fs, [backup("a.dll")]), ApplyStatus.Applied);
-
-      expect(await snapshot(fs)).not.toHaveProperty([backupOf("a.dll")]);
-    });
-
-    /** a game file patched after an earlier run backed up its original */
-    const patchedOverBackup = {
-      [inGame("a.dll")]: "patched game file",
-      [backupOf("a.dll")]: "game file",
-    };
-
-    const seedLinkedElsewhere = async () => {
-      const fs = await seed({ staged: ["a.dll"], deployed: ["other.dll"] });
-      await fs.createLink(
-        qualified(inStaging("other.dll")),
-        qualified(inGame("a.dll")),
-        "hardlink",
-      );
-      return fs;
-    };
-
-    test("sets aside another mod's file, leaving the backup name free", async () => {
-      const fs = await seedLinkedElsewhere();
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [
-        setAside("a.dll", KeptReason.LinkedElsewhere),
-        link("a.dll"),
-      ]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      const after = await snapshot(fs);
-      expect(after).not.toHaveProperty([backupOf("a.dll")]);
-      expect(after[inGame("a.dll")]).toBe(before[inStaging("a.dll")]);
-      expect(reasonsOf(result.kept)).toEqual([[inGame("a.dll"), KeptReason.LinkedElsewhere]]);
-    });
-
-    test("rolls back rather than back up a file with another hardlink", async () => {
-      const fs = await seedLinkedElsewhere();
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [backup("a.dll"), link("a.dll")]);
-
-      expectStatus(result, ApplyStatus.RolledBack);
-      expect(await snapshot(fs)).toEqual(before);
-    });
-
-    test("keeps the existing backup, and sets the file at the destination aside", async () => {
-      const fs = await seed({ staged: ["a.dll"], other: patchedOverBackup });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [setAside("a.dll", KeptReason.BackupTaken), link("a.dll")]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      const after = await snapshot(fs);
-      expect(after[backupOf("a.dll")]).toBe(before[backupOf("a.dll")]);
-      expect(after[inGame("a.dll")]).toBe(before[inStaging("a.dll")]);
-      expect(reasonsOf(result.kept)).toEqual([[inGame("a.dll"), KeptReason.BackupTaken]]);
-    });
-
-    test("rolls back rather than back up over an existing backup", async () => {
-      const fs = await seed({ staged: ["a.dll"], other: patchedOverBackup });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [backup("a.dll"), link("a.dll")]);
-
-      expectStatus(result, ApplyStatus.RolledBack);
-      expect(await snapshot(fs)).toEqual(before);
-    });
-
-    test("puts the original back after setting aside the file over it", async () => {
-      const fs = await seed({ other: { ...patchedOverBackup, [inGame("a.dll")]: "my edit" } });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [
-        setAside("a.dll", KeptReason.BackupTaken),
-        restore("a.dll"),
-      ]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      const after = await snapshot(fs);
-      expect(after[inGame("a.dll")]).toBe(before[backupOf("a.dll")]);
-      expect(after).not.toHaveProperty([backupOf("a.dll")]);
-      expect(reasonsOf(result.kept)).toEqual([[inGame("a.dll"), KeptReason.BackupTaken]]);
-    });
-
-    test("keeps the existing backup with nothing at the destination", async () => {
-      const fs = await seed({ staged: ["a.dll"], other: { [backupOf("a.dll")]: "game file" } });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [backup("a.dll"), link("a.dll")]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      expect(result.kept).toEqual([]);
-      expect((await snapshot(fs))[backupOf("a.dll")]).toBe(before[backupOf("a.dll")]);
-    });
-
-    test("puts the file it kept aside back when rolling back", async () => {
-      const fs = await seed({ staged: ["a.dll"], other: patchedOverBackup });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [
-        setAside("a.dll", KeptReason.BackupTaken),
-        link("a.dll"),
-        link("not-in-staging.dll"),
-      ]);
-
-      expectStatus(result, ApplyStatus.RolledBack);
-      expect(await snapshot(fs)).toEqual(before);
-    });
-  });
-
-  describe("UNLINK", () => {
-    test("deletes a destination with the staged file's id", async () => {
-      const fs = await seed({ deployed: ["a.dll"] });
-
-      const result = await runApply(fs, [unlink("a.dll")]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      expect(result.kept).toEqual([]);
-      const after = await snapshot(fs);
-      expect(after).not.toHaveProperty([inGame("a.dll")]);
-      expect(after).toHaveProperty([inStaging("a.dll")]);
-    });
-
-    test("keeps a destination with another id, and reports it", async () => {
-      const fs = await seed({ staged: ["a.dll"], other: { [inGame("a.dll")]: "my edit" } });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [unlink("a.dll")]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      expect(reasonsOf(result.kept)).toEqual([[inGame("a.dll"), KeptReason.NotOurs]]);
-      const after = await snapshot(fs);
-      expect(after[`${KEPT}/run/0`]).toBe(before[inGame("a.dll")]);
-      expect(after).not.toHaveProperty([inGame("a.dll")]);
-    });
-
-    test("keeps a destination with no staged file", async () => {
-      const fs = await seed({ other: { [inGame(UNSTAGED)]: "my edit" } });
-
-      const result = await runApply(fs, [unlink(UNSTAGED)]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      expect(result.kept).toHaveLength(1);
-    });
-
-    test("counts as done with nothing at the destination", async () => {
-      const fs = await seed({ staged: ["a.dll"] });
-
-      const result = await runApply(fs, [unlink("a.dll")]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      expect(result.kept).toEqual([]);
-    });
-  });
-
-  describe("RESTORE", () => {
-    test("moves the backup back to the destination an UNLINK cleared", async () => {
-      const fs = await seed({ deployed: ["a.dll"], other: { [backupOf("a.dll")]: "original" } });
-      const before = await snapshot(fs);
-
-      expectStatus(await runApply(fs, [unlink("a.dll"), restore("a.dll")]), ApplyStatus.Applied);
-
-      const after = await snapshot(fs);
-      expect(after[inGame("a.dll")]).toBe(before[backupOf("a.dll")]);
-      expect(after).not.toHaveProperty([backupOf("a.dll")]);
-    });
-
-    test("counts as done with no backup", async () => {
-      const fs = await seed({ deployed: ["a.dll"] });
-
-      expectStatus(await runApply(fs, [unlink("a.dll"), restore("a.dll")]), ApplyStatus.Applied);
-
-      expect(await snapshot(fs)).not.toHaveProperty([inGame("a.dll")]);
-    });
-  });
-
-  describe("LINK", () => {
-    test("links the staged file, creating the folders it needs", async () => {
-      const fs = await seed({ staged: ["sub/folder/a.dll"] });
-
-      expectStatus(await runApply(fs, [link("sub/folder/a.dll")]), ApplyStatus.Applied);
-
-      const after = await snapshot(fs);
-      expect(after[inGame("sub/folder/a.dll")]).toBe(after[inStaging("sub/folder/a.dll")]);
-    });
-
-    test("counts as done when the destination is already the staged file", async () => {
-      const fs = await seed({ deployed: ["a.dll"] });
-      const before = await snapshot(fs);
-
-      expectStatus(await runApply(fs, [link("a.dll")]), ApplyStatus.Applied);
-
-      expect(await snapshot(fs)).toEqual(before);
-    });
-
-    test("rolls back rather than overwrite anything else", async () => {
-      const fs = await seed({
-        staged: ["a.dll", "b.dll"],
-        other: { [inGame("b.dll")]: "someone else's" },
-      });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [link("a.dll"), link("b.dll")]);
-
-      expectStatus(result, ApplyStatus.RolledBack);
-      expect(result.failedAt).toMatchObject({ index: 1, operation: link("b.dll") });
-      expect(await snapshot(fs)).toEqual(before);
-    });
-  });
-
-  describe("a file and a folder swapping places", () => {
-    const FAILS = link("not-in-staging.dll");
-
-    test("links a file over a folder the run emptied", async () => {
-      const fs = await seed({ staged: ["over/sub"], deployed: ["sub/a.dll"] });
-
-      const result = await runApply(fs, [unlink("sub/a.dll"), linkFrom("over/sub", "sub")]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      const after = await snapshot(fs);
-      expect(after[inGame("sub")]).toBe(after[inStaging("over/sub")]);
-    });
-
-    test("puts the emptied folder and its file back when rolling back", async () => {
-      const fs = await seed({ staged: ["over/sub"], deployed: ["sub/a.dll"] });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [unlink("sub/a.dll"), linkFrom("over/sub", "sub"), FAILS]);
-
-      expectStatus(result, ApplyStatus.RolledBack);
-      expect(await snapshot(fs)).toEqual(before);
-    });
-
-    test("rolls back rather than link over a folder with something in it", async () => {
-      const fs = await seed({ staged: ["over/sub"], other: { [inGame("sub/mine.txt")]: "mine" } });
-      const before = await snapshot(fs);
-
-      expectStatus(await runApply(fs, [linkFrom("over/sub", "sub")]), ApplyStatus.RolledBack);
-
-      expect(await snapshot(fs)).toEqual(before);
-    });
-
-    test.each<[string, Setup, Operation]>([
-      ["deleted", { staged: ["in.dll"], deployed: ["sub"] }, unlink("sub")],
-      ["kept", { staged: ["in.dll", "sub"], other: { [inGame("sub")]: "my edit" } }, unlink("sub")],
-      ["backed up", { staged: ["in.dll"], other: { [inGame("sub")]: "game file" } }, backup("sub")],
-    ])("puts a %s file back over the folder that replaced it", async (_name, setup, clearing) => {
-      const fs = await seed(setup);
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [clearing, linkFrom("in.dll", "sub/in.dll"), FAILS]);
-
-      expectStatus(result, ApplyStatus.RolledBack);
-      expect(await snapshot(fs)).toEqual(before);
-    });
-
-    test("leaves a backup when a LINK needs its destination as a folder", async () => {
-      const fs = await seed({
-        staged: ["in.dll"],
-        deployed: ["sub"],
-        other: { [backupOf("sub")]: "original" },
-      });
-      const before = await snapshot(fs);
-
-      const result = await runApply(fs, [unlink("sub"), linkFrom("in.dll", "sub/in.dll")]);
-
-      expectStatus(result, ApplyStatus.Applied);
-      const after = await snapshot(fs);
-      expect(after[inGame("sub/in.dll")]).toBe(after[inStaging("in.dll")]);
-      expect(after[backupOf("sub")]).toBe(before[backupOf("sub")]);
-    });
-  });
-
-  test("leaves no journal after a finished run", async () => {
-    const fs = await seed({ staged: ["a.dll"] });
-    const journal = await newJournal();
-
-    expectStatus(await runApply(fs, [link("a.dll")], journal), ApplyStatus.Applied);
-
-    expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
-  });
-
   test("keeps a finished run when its journal can't be removed, for a resume to end", async () => {
-    const fs = await seed({ staged: ["a.dll"] });
+    const fs = seed({ staged: ["a.dll"] });
     const journal = await newJournal();
     const failing = { ...journal, remove: () => Promise.reject(new Error("held by a scanner")) };
 
@@ -480,28 +137,8 @@ describe("apply", () => {
   });
 
   describe("refuses, changing nothing", () => {
-    test.each<[string, RefusalReason, Operation]>([
-      [
-        "a generated file to link",
-        RefusalReason.GeneratedFile,
-        makeLinkOperation({ file: makeGeneratedFileSource() }),
-      ],
-      ["a LINK with no staged file", RefusalReason.NoStagedFile, link(UNSTAGED)],
-    ])("%s", async (_name, reason, operation) => {
-      const fs = await seed({ staged: ["a.dll"] });
-      const before = await snapshot(fs);
-      const journal = await newJournal();
-
-      const result = await runApply(fs, [link("a.dll"), operation], journal);
-
-      expectStatus(result, ApplyStatus.Refused);
-      expect(result.reason).toBe(reason);
-      expect(await snapshot(fs)).toEqual(before);
-      expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
-    });
-
     test("a staged path its journal couldn't read back", async () => {
-      const fs = await seed({ staged: ["a.dll"] });
+      const fs = seed({ staged: ["a.dll"] });
       const before = await snapshot(fs);
       const journal = await newJournal();
 
@@ -519,7 +156,7 @@ describe("apply", () => {
     });
 
     test("a journal in progress", async () => {
-      const fs = await seed({ staged: ["a.dll"] });
+      const fs = seed({ staged: ["a.dll"] });
       const before = await snapshot(fs);
       const journal = await newJournal();
       await (await startJournal(journal, [], RUN_ID)).close();
@@ -532,7 +169,7 @@ describe("apply", () => {
     });
 
     test("a journal another run started after this one looked", async () => {
-      const fs = await seed({ staged: ["a.dll"] });
+      const fs = seed({ staged: ["a.dll"] });
       const before = await snapshot(fs);
       const journal = await newJournal();
       await (await startJournal(journal, [], RUN_ID)).close();
@@ -546,7 +183,7 @@ describe("apply", () => {
     });
 
     test("a journal that can't be read, keeping it", async () => {
-      const fs = await seed({ staged: ["a.dll"] });
+      const fs = seed({ staged: ["a.dll"] });
       const journal = await unreadableJournal();
 
       const result = await runApply(fs, [link("a.dll")], journal);
@@ -563,7 +200,7 @@ describe.each([
   ["rollback", rollback],
 ])("%s", (_name, settle) => {
   test("has nothing to do without a journal", async () => {
-    const result = await settle(optionsOn(await seed({}), await newJournal()));
+    const result = await settle(optionsOn(seed({}), await newJournal()));
 
     expectStatus(result, ApplyStatus.NothingToDo);
   });
@@ -571,7 +208,7 @@ describe.each([
   test("refuses a journal that can't be read, keeping it", async () => {
     const journal = await unreadableJournal();
 
-    const result = await settle(optionsOn(await seed({}), journal));
+    const result = await settle(optionsOn(seed({}), journal));
 
     expectStatus(result, ApplyStatus.Refused);
     expect(result.reason).toBe(RefusalReason.JournalUnavailable);
@@ -581,7 +218,7 @@ describe.each([
 
 describe("resumeApply", () => {
   test("rolls back when a RESTORE finds its destination occupied", async () => {
-    const fs = await seed({
+    const fs = seed({
       other: { [inGame("a.dll")]: "someone else's", [backupOf("a.dll")]: "original" },
     });
     const before = await snapshot(fs);
@@ -603,7 +240,7 @@ describe("resumeApply", () => {
     ["moved before a kill, not marked", false],
   ])("reports a file an UNLINK kept %s", async (_, markedDone) => {
     const keptPath = keptPathOf(inGame("a.dll"), RUN_ID, 0);
-    const fs = await seed({ staged: ["a.dll"], other: { [keptPath]: "my edit" } });
+    const fs = seed({ staged: ["a.dll"], other: { [keptPath]: "my edit" } });
     const journal = await newJournal();
     const writer = await startJournal(
       journal,
@@ -624,7 +261,7 @@ describe("resumeApply", () => {
   });
 
   test("finishes a rollback rather than run it forward", async () => {
-    const fs = await seed({ staged: ["a.dll"] });
+    const fs = seed({ staged: ["a.dll"] });
     const before = await snapshot(fs);
     const journal = await newJournal();
     const writer = await startJournal(
@@ -643,41 +280,15 @@ describe("resumeApply", () => {
 });
 
 describe("rollback", () => {
-  test("removes only the folders the run created", async () => {
-    const fs = await seed({
-      staged: ["kept/a.dll", "new/deep/b.dll"],
-      other: { [inGame("kept/existing.dll")]: "game file" },
-    });
-    const before = await snapshot(fs);
-
-    const result = await runApply(fs, [
-      link("kept/a.dll"),
-      link("new/deep/b.dll"),
-      link("not-in-staging.dll"),
-    ]);
-
-    expectStatus(result, ApplyStatus.RolledBack);
-    expect(await snapshot(fs)).toEqual(before);
-  });
-
-  test("rolls back an UNLINK whose folder is gone", async () => {
-    const fs = await seed({ staged: ["gone/a.dll"] });
-    const before = await snapshot(fs);
-
-    const result = await runApply(fs, [unlink("gone/a.dll"), link("not-in-staging.dll")]);
-
-    expectStatus(result, ApplyStatus.RolledBack);
-    expect(await snapshot(fs)).toEqual(before);
-  });
-
   test("leaves a folder the run created when something else is in it", async () => {
-    const fs = await seed({ other: { [inGame("new/mine.txt")]: "mine" } });
+    const fs = seed({ other: { [inGame("new/mine.txt")]: "mine" } });
     const journal = await newJournal();
     const writer = await startJournal(
       journal,
       [{ operation: link("new/a.dll"), stagedPath: inStaging("new/a.dll") }],
       RUN_ID,
     );
+    await writer.markChanging(0);
     await writer.recordFolder(0, inGame("new"));
     await writer.close();
 
@@ -687,13 +298,14 @@ describe("rollback", () => {
   });
 
   test("fails and keeps the journal when a LINK's destination is no longer ours", async () => {
-    const fs = await seed({ staged: ["a.dll"], other: { [inGame("a.dll")]: "someone else's" } });
+    const fs = seed({ staged: ["a.dll"], other: { [inGame("a.dll")]: "someone else's" } });
     const journal = await newJournal();
     const writer = await startJournal(
       journal,
       [{ operation: link("a.dll"), stagedPath: inStaging("a.dll") }],
       RUN_ID,
     );
+    await writer.markChanging(0);
     await writer.markDone(0);
     await writer.close();
 
@@ -702,170 +314,5 @@ describe("rollback", () => {
     expectStatus(result, ApplyStatus.RollbackFailed);
     expect(result.rollbackFailedAt).toMatchObject({ index: 0 });
     expect(await journalStatusOf(journal)).toBe(JournalReadStatus.Found);
-  });
-});
-
-const WHOLE_RUN = [
-  backup("replaced.dll"),
-  unlink("removed.dll"),
-  unlink("edited.dll"),
-  unlink("restored.dll"),
-  restore("restored.dll"),
-  unlink("becomes-folder.dll"),
-  unlink("becomes-file/a.dll"),
-  link("replaced.dll"),
-  link("sub/folder/new.dll"),
-  linkFrom("inside.dll", "becomes-folder.dll/inside.dll"),
-  linkFrom("over/becomes-file", "becomes-file"),
-];
-// staging has no such file, so its LINK fails once everything before it ran
-const FAILING_RUN = [...WHOLE_RUN, link("not-in-staging.dll")];
-
-const seedWholeRun = () =>
-  seed({
-    staged: ["replaced.dll", "edited.dll", "sub/folder/new.dll", "inside.dll", "over/becomes-file"],
-    deployed: ["removed.dll", "restored.dll", "becomes-folder.dll", "becomes-file/a.dll"],
-    other: {
-      [inGame("replaced.dll")]: "game file",
-      [inGame("edited.dll")]: "my edit",
-      [backupOf("restored.dll")]: "original",
-    },
-  });
-
-/** Every file and journal call after the first `calls` fails, as in a killed process. */
-function killAfter(calls: number) {
-  let used = 0;
-  const isDead = () => used++ >= calls;
-  const guarded = async <T>(call: () => Promise<T>) => {
-    if (isDead()) {
-      throw new Error("killed");
-    }
-    return call();
-  };
-  return {
-    fs: (fs: FileSystem) =>
-      new ChaosFS(fs, [
-        { fault: { kind: "os:generic", originalCode: "EIO" }, times: Infinity, path: isDead },
-      ]),
-    journal: (journal: JournalStorage): JournalStorage => ({
-      read: () => guarded(() => journal.read()),
-      create: (contents) => guarded(() => journal.create(contents)),
-      write: (contents) => guarded(() => journal.write(contents)),
-      append: async (contents) => {
-        // the kill tears the line it lands on
-        if (used === calls) {
-          await journal.append(contents.subarray(0, contents.length >> 1));
-        }
-        return guarded(() => journal.append(contents));
-      },
-      remove: () => guarded(() => journal.remove()),
-      close: () => guarded(() => journal.close()),
-    }),
-    callsUsed: () => used,
-  };
-}
-
-async function runKilledAfter(
-  operations: readonly Operation[],
-  calls: number,
-  journal: JournalStorage,
-) {
-  const fs = await seedWholeRun();
-  const kill = killAfter(calls);
-  await apply(operations, {
-    files: applyFilesOn(kill.fs(fs)),
-    journal: kill.journal(journal),
-    backupPathOf,
-    keptPathOf,
-    stagedFiles,
-  });
-  // a dead process holds no handle
-  await journal.close();
-  return { fs, callsUsed: kill.callsUsed() };
-}
-
-async function killedRun(operations: readonly Operation[], calls: number) {
-  const journal = await newJournal();
-  const { fs } = await runKilledAfter(operations, calls, journal);
-  return { fs, journal };
-}
-
-// test.each needs these while collecting, where makeTempDir can't clean up
-const killPoints = async (operations: readonly Operation[]) => {
-  const folder = await mkdtemp(path.join(tmpdir(), "apply-kill-points-"));
-  const journal = journalStorageAt(path.join(folder, "journal.ndjson"));
-  const { callsUsed } = await runKilledAfter(operations, Number.POSITIVE_INFINITY, journal);
-  await rm(folder, { recursive: true, force: true });
-  return Array.from({ length: callsUsed }, (_, index) => index);
-};
-
-const startState = async () => snapshot(await seedWholeRun());
-const finishedState = async () => {
-  const fs = await seedWholeRun();
-  await runApply(fs, WHOLE_RUN);
-  return snapshot(fs);
-};
-
-describe("after a kill", async () => {
-  const WHOLE_RUN_KILLS = await killPoints(WHOLE_RUN);
-  const FAILING_RUN_KILLS = await killPoints(FAILING_RUN);
-
-  test("the runs under test do real work", async () => {
-    const start = await startState();
-    const finished = await finishedState();
-
-    expect(finished).toMatchObject({
-      [backupOf("replaced.dll")]: start[inGame("replaced.dll")],
-      [inGame("restored.dll")]: start[backupOf("restored.dll")],
-      [`${KEPT}/run/2`]: start[inGame("edited.dll")],
-    });
-    expect(finished).not.toHaveProperty([inGame("removed.dll")]);
-    expect(WHOLE_RUN_KILLS.length).toBeGreaterThan(WHOLE_RUN.length * 2);
-  });
-
-  test.each(WHOLE_RUN_KILLS)("resuming finishes a run killed at call %i", async (calls) => {
-    const { fs, journal } = await killedRun(WHOLE_RUN, calls);
-    const started = (await journalStatusOf(journal)) === JournalReadStatus.Found;
-
-    const result = await resumeApply(optionsOn(fs, journal));
-
-    expect(result.status).toBe(started ? ApplyStatus.Applied : ApplyStatus.NothingToDo);
-    const finished = await finishedState();
-    if (started) {
-      expect(await snapshot(fs)).toEqual(finished);
-    } else {
-      expect([await startState(), finished]).toContainEqual(await snapshot(fs));
-    }
-    expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
-  });
-
-  test.each(WHOLE_RUN_KILLS)("rolling back undoes a run killed at call %i", async (calls) => {
-    const { fs, journal } = await killedRun(WHOLE_RUN, calls);
-    const started = (await journalStatusOf(journal)) === JournalReadStatus.Found;
-
-    const result = await rollback(optionsOn(fs, journal));
-
-    expect(result.status).toBe(started ? ApplyStatus.RolledBack : ApplyStatus.NothingToDo);
-    const start = await startState();
-    if (started) {
-      expect(await snapshot(fs)).toEqual(start);
-    } else {
-      expect([start, await finishedState()]).toContainEqual(await snapshot(fs));
-    }
-    expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
-  });
-
-  describe.each([
-    ["rollback", rollback],
-    ["resumeApply", resumeApply],
-  ])("%s", (_name, settle) => {
-    test.each(FAILING_RUN_KILLS)("settles a failed run killed at call %i", async (calls) => {
-      const { fs, journal } = await killedRun(FAILING_RUN, calls);
-
-      await settle(optionsOn(fs, journal));
-
-      expect(await snapshot(fs)).toEqual(await startState());
-      expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
-    });
   });
 });

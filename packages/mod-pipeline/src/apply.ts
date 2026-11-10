@@ -168,6 +168,8 @@ interface Run {
   writer: JournalWriter;
   entries: readonly JournalEntry[];
   phase: JournalPhase;
+  /** the entries that may have changed the disk; a rollback undoes only these */
+  changing: Set<number>;
   done: Set<number>;
   /** the entries whose file the run set aside */
   kept: Set<number>;
@@ -240,6 +242,14 @@ function entriesFor(
     : refused(RefusalReason.InvalidPath, { path: destinationOf(unreadable.operation) });
 }
 
+/** Records, once, that an entry is about to change the disk. */
+async function markChanging(run: Run, index: number): Promise<void> {
+  if (!run.changing.has(index)) {
+    await run.writer.markChanging(index);
+    run.changing.add(index);
+  }
+}
+
 /** Records and makes the folders above a destination that aren't there. */
 async function createParents(run: Run, index: number, destinationPath: string): Promise<void> {
   const missing: string[] = [];
@@ -286,23 +296,31 @@ async function setAside(
     }
     return;
   }
+  await markChanging(run, index);
   await moveInto(run, index, from, keptPath);
   run.kept.add(index);
 }
 
-/** Settles a LINK that couldn't link straight away, from what is on the disk. */
+/** Whether the file a destination holds, by its id, is the staged file. */
+const isStagedFile = async (
+  files: ApplyFiles,
+  destinationId: string | undefined,
+  stagedPath: string | undefined,
+) =>
+  destinationId !== undefined &&
+  stagedPath !== undefined &&
+  destinationId === (await idAt(files, stagedPath));
+
+/** Settles a LINK that couldn't link straight away, from what was at its destination. */
 async function linkFromDisk(
   run: Run,
   index: number,
   destinationPath: string,
   stagedPath: string,
+  destinationId: string | undefined,
 ): Promise<void> {
   const { files } = run;
-  const destinationId = await idAt(files, destinationPath);
   if (destinationId !== undefined) {
-    if (destinationId === (await idAt(files, stagedPath))) {
-      return;
-    }
     await run.writer.recordRemovedFolder(index);
     run.removedFolders.add(index);
     await files.removeEmptyFolder(destinationPath);
@@ -333,16 +351,14 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
       if (destination.linkCount !== 1) {
         throw new Error(`${destinationPath} has another hardlink, so it isn't the game's original`);
       }
+      await markChanging(run, index);
       await moveInto(run, index, destinationPath, backupPathIn(entry));
       return;
     }
     case OperationKind.Unlink: {
       const destinationId = await idAt(files, destinationPath);
-      if (
-        destinationId !== undefined &&
-        stagedPath !== undefined &&
-        (await idAt(files, stagedPath)) === destinationId
-      ) {
+      if (await isStagedFile(files, destinationId, stagedPath)) {
+        await markChanging(run, index);
         await files.remove(destinationPath);
         return;
       }
@@ -352,6 +368,7 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
     case OperationKind.Restore: {
       const backupPath = backupPathIn(entry);
       if ((await idAt(files, backupPath)) !== undefined) {
+        await markChanging(run, index);
         await files.move(backupPath, destinationPath);
       }
       return;
@@ -360,11 +377,16 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
       if (stagedPath === undefined) {
         throw new Error(`no staged file to link at ${destinationPath}`);
       }
+      const destinationId = await idAt(files, destinationPath);
+      if (await isStagedFile(files, destinationId, stagedPath)) {
+        return;
+      }
+      await markChanging(run, index);
       try {
         await files.link(stagedPath, destinationPath);
       } catch {
         // a taken destination or a missing folder; a real failure recurs
-        await linkFromDisk(run, index, destinationPath, stagedPath);
+        await linkFromDisk(run, index, destinationPath, stagedPath, destinationId);
       }
       return;
     }
@@ -373,12 +395,6 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
       throw new Error(`unknown operation ${JSON.stringify(exhausted)}`);
     }
   }
-}
-
-/** Whether the folder a destination is in is there, as it is after an UNLINK removed the file. */
-async function folderThere(run: Run, destinationPath: string): Promise<boolean> {
-  const [folder] = parentFolders(destinationPath);
-  return folder === undefined || (await idAt(run.files, folder)) !== undefined;
 }
 
 /** Undoes one entry, which may not have run, as the disk shows. */
@@ -392,7 +408,7 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
       if (destinationId === undefined) {
         return;
       }
-      if (stagedPath !== undefined && destinationId === (await idAt(files, stagedPath))) {
+      if (await isStagedFile(files, destinationId, stagedPath)) {
         await files.remove(destinationPath);
       } else if (
         run.done.has(index) &&
@@ -418,14 +434,7 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
       if ((await idAt(files, keptPath)) !== undefined) {
         await files.move(keptPath, destinationPath);
       } else if (stagedPath !== undefined && (await idAt(files, destinationPath)) === undefined) {
-        try {
-          await files.link(stagedPath, destinationPath);
-        } catch (err) {
-          // a folder that is gone held nothing this UNLINK removed
-          if (await folderThere(run, destinationPath)) {
-            throw err;
-          }
-        }
+        await files.link(stagedPath, destinationPath);
       }
       return;
     }
@@ -477,7 +486,7 @@ const keptFiles = (run: Run): KeptFile[] =>
           : KeptReason.NotOurs,
     }));
 
-/** Undoes the run newest first, from the entry in doubt; the journal goes last. */
+/** Undoes the entries that changed the disk, newest first; the journal goes last. */
 async function rollBack(
   run: Run,
   failedAt?: FailedStep,
@@ -495,10 +504,8 @@ async function rollBack(
     return stopped({ cause });
   }
 
-  const firstNotDone = run.entries.findIndex((_, index) => !run.done.has(index));
-  const ran = firstNotDone === -1 ? run.entries : run.entries.slice(0, firstNotDone + 1);
-  for await (const [index, entry] of oneAtATime([...ran.entries()].toReversed())) {
-    if (run.undone.has(index)) {
+  for await (const [index, entry] of oneAtATime([...run.entries.entries()].toReversed())) {
+    if (run.undone.has(index) || !run.changing.has(index)) {
       continue;
     }
     try {
@@ -545,6 +552,7 @@ const runOf = (files: ApplyFiles, writer: JournalWriter, journal: Omit<Journal, 
   writer,
   entries: journal.entries,
   phase: journal.phase,
+  changing: new Set(journal.changing),
   done: new Set(journal.done),
   kept: new Set(journal.kept),
   undone: journal.undone,
@@ -598,6 +606,7 @@ export async function apply(
   const run = runOf(options.files, writer, {
     entries,
     phase: JournalPhase.Applying,
+    changing: new Set(),
     done: new Set(),
     kept: new Set(),
     undone: new Set(),

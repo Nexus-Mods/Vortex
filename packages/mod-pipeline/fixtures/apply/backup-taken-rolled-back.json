@@ -1,0 +1,45 @@
+{
+  "name": "a file set aside over an existing backup goes back when the run rolls back",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI_SE.esp": "patched game esp",
+      "/fixture-root/game/Data/SkyUI_SE.esp.backup": "game's own esp",
+      "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1"
+    }
+  },
+  "staged": {
+    "skyui-esp-v1-hash": "/fixture-root/staging/SkyUI/SkyUI_SE.esp",
+    "missing-esp-hash": "/fixture-root/staging/Missing/Missing.esp"
+  },
+  "operations": [
+    {
+      "kind": "BACKUP",
+      "reason": "DxA",
+      "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp",
+      "setAside": "backup-taken"
+    },
+    {
+      "kind": "LINK",
+      "reason": "DxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307799",
+        "fileHash": "missing-esp-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Missing.esp"
+      }
+    }
+  ],
+  "expected": { "status": "rolled-back", "failedAt": 2 }
+}

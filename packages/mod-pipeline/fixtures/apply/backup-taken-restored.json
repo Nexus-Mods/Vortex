@@ -1,0 +1,39 @@
+{
+  "name": "the original goes back after the file over it is set aside",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI_SE.esp": "my edit",
+      "/fixture-root/game/Data/SkyUI_SE.esp.backup": "game's own esp"
+    }
+  },
+  "staged": {},
+  "operations": [
+    {
+      "kind": "BACKUP",
+      "reason": "BAx",
+      "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp",
+      "setAside": "backup-taken"
+    },
+    {
+      "kind": "RESTORE",
+      "reason": "BAx",
+      "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+    }
+  ],
+  "expected": {
+    "status": "applied",
+    "kept": [
+      {
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp",
+        "keptPath": "/fixture-root/kept/0",
+        "reason": "backup-taken"
+      }
+    ],
+    "disk": {
+      "files": {
+        "/fixture-root/game/Data/SkyUI_SE.esp": "game's own esp",
+        "/fixture-root/kept/0": "my edit"
+      }
+    }
+  }
+}

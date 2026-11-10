@@ -1,0 +1,39 @@
+{
+  "name": "a backed up file goes back over the folder that replaced it when the run rolls back",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI": "game's own file",
+      "/fixture-root/staging/SkyUI/SkyUI/config.txt": "SkyUI config"
+    }
+  },
+  "staged": {
+    "skyui-config-hash": "/fixture-root/staging/SkyUI/SkyUI/config.txt",
+    "missing-esp-hash": "/fixture-root/staging/Missing/Missing.esp"
+  },
+  "operations": [
+    { "kind": "BACKUP", "reason": "BAx", "destinationPath": "/fixture-root/game/Data/SkyUI" },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307811",
+        "fileHash": "skyui-config-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI/config.txt"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307799",
+        "fileHash": "missing-esp-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Missing.esp"
+      }
+    }
+  ],
+  "expected": { "status": "rolled-back", "failedAt": 2 }
+}

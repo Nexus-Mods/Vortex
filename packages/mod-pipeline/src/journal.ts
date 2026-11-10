@@ -43,6 +43,8 @@ export interface Journal {
   runId: string;
   entries: JournalEntry[];
   phase: JournalPhase;
+  /** the entries that may have changed the disk, so a rollback undoes them */
+  changing: ReadonlySet<number>;
   done: ReadonlySet<number>;
   /** the entries marked done with their file set aside */
   kept: ReadonlySet<number>;
@@ -67,6 +69,8 @@ export type JournalRead =
 /** Appends to a run's journal. */
 export interface JournalWriter {
   readonly runId: string;
+  /** called before the entry first changes the disk */
+  markChanging(index: number): Promise<void>;
   /** `kept` when the entry set its file aside */
   markDone(index: number, kept?: boolean): Promise<void>;
   recordFolder(index: number, folderPath: string): Promise<void>;
@@ -83,6 +87,7 @@ const NEWLINE = 0x0a;
 
 const LineType = {
   Header: "header",
+  Changing: "changing",
   Done: "done",
   Folder: "folder",
   RemovedFolder: "removed-folder",
@@ -112,6 +117,7 @@ type _EntryMatches = Assert<MutuallyAssignable<z.infer<typeof entrySchema>, Jour
 export const JournalEntrySchema: z.ZodType<JournalEntry> = entrySchema;
 
 const progressSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal(LineType.Changing), index: positionSchema }),
   z.object({
     type: z.literal(LineType.Done),
     index: positionSchema,
@@ -150,6 +156,7 @@ function parseJournal(text: string): Journal | undefined {
   }
 
   let phase: JournalPhase = JournalPhase.Applying;
+  const changing = new Set<number>();
   const done = new Set<number>();
   const kept = new Set<number>();
   const undone = new Set<number>();
@@ -167,7 +174,9 @@ function parseJournal(text: string): Journal | undefined {
     if (progress.index >= header.count) {
       return undefined;
     }
-    if (progress.type === LineType.Done) {
+    if (progress.type === LineType.Changing) {
+      changing.add(progress.index);
+    } else if (progress.type === LineType.Done) {
       done.add(progress.index);
       if (progress.kept === true) {
         kept.add(progress.index);
@@ -184,6 +193,7 @@ function parseJournal(text: string): Journal | undefined {
     runId: header.runId,
     entries,
     phase,
+    changing,
     done,
     kept,
     undone,
@@ -201,6 +211,7 @@ const writerFor = (storage: JournalStorage, runId: string): JournalWriter => {
   const append = (line: object) => storage.append(encodeLines([line]));
   return {
     runId,
+    markChanging: (index) => append({ type: LineType.Changing, index }),
     markDone: (index, kept) =>
       append(kept === true ? { type: LineType.Done, index, kept } : { type: LineType.Done, index }),
     recordFolder: (index, folderPath) => append({ type: LineType.Folder, index, path: folderPath }),

@@ -4,18 +4,6 @@ import { makeNexusFileSource } from "./lockfileBuilders";
 
 type OperationOf<Kind extends Operation["kind"]> = Extract<Operation, { kind: Kind }>;
 
-/** Moves a game file aside where SkyUI's plugin deploys. */
-export function makeBackupOperation(
-  overrides: Partial<OperationOf<typeof OperationKind.Backup>> = {},
-): OperationOf<typeof OperationKind.Backup> {
-  return {
-    kind: OperationKind.Backup,
-    destinationPath: "/fixture-root/game/Data/SkyUI_SE.esp",
-    reason: DestinationState.NewOverOther,
-    ...overrides,
-  };
-}
-
 /** Puts the game file back where SkyUI's plugin was. */
 export function makeRestoreOperation(
   overrides: Partial<OperationOf<typeof OperationKind.Restore>> = {},

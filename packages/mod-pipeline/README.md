@@ -18,8 +18,9 @@ backend. Two rules keep it that way:
 
 The journal follows the same rule: `journal.ts` owns its format and rules, and the
 caller provides a `JournalStorage` for the disk work. So does Apply: `apply.ts` owns
-what a run does, and the caller provides its file work as `ApplyFiles`, which is why
-Apply's tests live with Vortex's `ApplyFiles`, on `InMemoryFS` and `ChaosFS`.
+what a run does, and the caller provides its file work as `ApplyFiles`. Apply's
+fixtures run on an in-memory `ApplyFiles`; Vortex's `ApplyFiles` and the journal
+cases no fixture holds are tested with Vortex.
 
 Paths are absolute and use `/` separators.
 
@@ -85,6 +86,17 @@ fixture's `name`.
 one per row of the decision table plus links, files only on disk and a combined
 plan. `src/plan.fixtures.test.ts` plans each twice the same way.
 
+`fixtures/apply/*.json` each hold `{ name, disk, staged, operations, expected }`. A
+disk lists files by path with their contents, where paths with the same contents are
+hardlinks of one file, and the folders that hold nothing. `staged` gives each file's
+staged path by its hash. `expected` is the run's status: `applied` with the files it
+set aside and the disk after, `rolled-back` with the failed step, or `refused` with
+the reason; a run that doesn't apply leaves the disk as it found it.
+`src/apply.fixtures.test.ts` runs each on `MemoryDisk`, then again killed at every
+file and journal call, and expects a resume to reach the expected disk and a
+rollback the disk before. A backup is the destination with `.backup` added, and a
+set-aside file goes to `/fixture-root/kept/<entry>`.
+
 Absolute paths live under `/fixture-root`, one folder per location, so fixtures
 carry no machine's paths or user names:
 
@@ -104,8 +116,9 @@ carry no machine's paths or user names:
 - `src/plan.ts` - the planner, its `Operation` contract and decision table
 - `src/journal.ts` - Apply's journal and the `JournalStorage` a caller provides
 - `src/apply.ts` - `apply`, `resumeApply`, `rollback` and the `ApplyFiles` and `StagedFiles` a caller provides
-- `src/testJournalStorage.ts` - a `JournalStorage` on the real disk, for tests
-- `src/resolverFixture.ts`, `src/plannerFixture.ts`, `src/loadFixtures.ts` - the fixture contracts and their loader
+- `src/testJournalStorage.ts` - a `JournalStorage` on the real disk and one in memory, for tests
+- `src/testApplyFiles.ts` - `MemoryDisk`, an in-memory `ApplyFiles`, and `killAfter`, for tests
+- `src/resolverFixture.ts`, `src/plannerFixture.ts`, `src/applyFixture.ts`, `src/loadFixtures.ts` - the fixture contracts and their loader
 
 ## Scripts
 
