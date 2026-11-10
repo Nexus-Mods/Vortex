@@ -3,7 +3,7 @@
  * Demonstrates the Listing component states and features
  */
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 
 import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
@@ -36,6 +36,89 @@ const items = [
   "Fifth Item",
   "Sixth Item",
 ];
+
+/** How many items the loading-more example ends at. */
+const MORE_TOTAL = 30;
+
+/** How many items the loading-more example starts with, and goes back to on reset. */
+const MORE_START = 6;
+
+/**
+ * A list in its own scroller that loads six more items as its end nears, until there are 30. Reset
+ * goes back to the first six, at the top, cancelling a load still on its way.
+ */
+const LoadMoreExample = () => {
+  const [count, setCount] = useState(MORE_START);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadMoreError, setIsLoadMoreError] = useState(false);
+  const [failNext, setFailNext] = useState(false);
+  const failNextRef = useRef(failNext);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const loadRef = useRef<ReturnType<typeof setTimeout>>();
+  failNextRef.current = failNext;
+
+  const loadMore = () => {
+    setIsLoadingMore(true);
+    setIsLoadMoreError(false);
+    loadRef.current = setTimeout(() => {
+      setIsLoadingMore(false);
+
+      if (failNextRef.current) {
+        setFailNext(false);
+        setIsLoadMoreError(true);
+        return;
+      }
+
+      setCount((current) => Math.min(current + 6, MORE_TOTAL));
+    }, 800);
+  };
+
+  const reset = () => {
+    clearTimeout(loadRef.current);
+    setCount(MORE_START);
+    setIsLoadingMore(false);
+    setIsLoadMoreError(false);
+    setFailNext(false);
+    scrollRef.current?.scrollTo({ top: 0 });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-x-2">
+        <Button appearance="subdued" brand="neutral" onClick={() => setFailNext(true)}>
+          {failNext ? "The next load will fail" : "Fail the next load"}
+        </Button>
+
+        <Button appearance="subdued" brand="neutral" onClick={reset}>
+          Reset
+        </Button>
+      </div>
+
+      <div
+        className="h-80 overflow-y-auto rounded-sm border border-stroke-weak p-4"
+        ref={scrollRef}
+      >
+        <Listing
+          className="flex flex-col gap-y-2"
+          entityCount={count}
+          errorTitle="Something went wrong"
+          hasMore={count < MORE_TOTAL}
+          isLoadingMore={isLoadingMore}
+          isLoadMoreError={isLoadMoreError}
+          loadMoreErrorMessage="More items couldn't be loaded. Try again."
+          scrollRef={scrollRef}
+          SkeletonTile={SkeletonTile}
+          onLoadMore={loadMore}
+          onRetry={loadMore}
+        >
+          {Array.from({ length: count }, (_, index) => (
+            <ExampleTile key={index} title={`Item ${index + 1}`} />
+          ))}
+        </Listing>
+      </div>
+    </div>
+  );
+};
 
 export const ListingDemo = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -197,6 +280,21 @@ export const ListingDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
+          Loading More
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          For a list that loads a page at a time, such as an infinite query: with hasMore and
+          onLoadMore, the Listing asks for more as the end of the items comes within 320px of its
+          scroller&apos;s view. isLoadingMore draws tiles after the items while more load, and
+          isLoadMoreError offers onRetry after them, keeping the items already shown.
+        </Typography>
+
+        <LoadMoreExample />
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
           Custom Error
         </Typography>
 
@@ -233,11 +331,6 @@ export const ListingDemo = () => {
           <li>
             The className prop is passed to the grid container, so layout classes like CSS grid work
             directly
-          </li>
-
-          <li>
-            Use additionalContent for elements like pagination that should appear after the list
-            when not loading
           </li>
 
           <li>Use customError or customNoResults to fully override the default empty states</li>

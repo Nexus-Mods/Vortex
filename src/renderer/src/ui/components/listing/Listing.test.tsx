@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 
 import { Listing } from "./Listing";
 
@@ -21,15 +21,6 @@ describe("Listing", () => {
       renderComponent({ isLoading: true, skeletonCount: 3 });
       expect(screen.getAllByTestId("skeleton")).toHaveLength(3);
     });
-
-    it("does not render additionalContent while still loading", () => {
-      renderComponent({
-        additionalContent: <div data-testid="more" />,
-        isLoading: true,
-        skeletonCount: 1,
-      });
-      expect(screen.queryByTestId("more")).not.toBeInTheDocument();
-    });
   });
 
   describe("with content", () => {
@@ -37,15 +28,6 @@ describe("Listing", () => {
       renderComponent({ children: <div data-testid="content" />, entityCount: 2 });
       expect(screen.getByTestId("content")).toBeInTheDocument();
       expect(screen.queryByTestId("skeleton")).not.toBeInTheDocument();
-    });
-
-    it("renders additionalContent once loaded", () => {
-      renderComponent({
-        additionalContent: <div data-testid="more" />,
-        children: <div data-testid="content" />,
-        entityCount: 2,
-      });
-      expect(screen.getByTestId("more")).toBeInTheDocument();
     });
   });
 
@@ -85,6 +67,133 @@ describe("Listing", () => {
     it("renders customNoResults when provided", () => {
       renderComponent({ customNoResults: <div data-testid="custom-empty" /> });
       expect(screen.getByTestId("custom-empty")).toBeInTheDocument();
+    });
+  });
+
+  describe("loading more", () => {
+    interface IObserved {
+      report: (isIntersecting: boolean) => void;
+      options: IntersectionObserverInit | undefined;
+    }
+
+    let observed: IObserved[];
+
+    // jsdom has no IntersectionObserver: record each one, to report its marker as in view or not.
+    beforeEach(() => {
+      observed = [];
+      vi.stubGlobal(
+        "IntersectionObserver",
+        class {
+          constructor(
+            callback: (entries: { isIntersecting: boolean }[]) => void,
+            options?: IntersectionObserverInit,
+          ) {
+            observed.push({ report: (isIntersecting) => callback([{ isIntersecting }]), options });
+          }
+          observe() {}
+          disconnect() {}
+        },
+      );
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const items = <div data-testid="content" />;
+
+    it("draws tiles after the items while more load, keeping the items", () => {
+      renderComponent({ children: items, entityCount: 2, isLoadingMore: true });
+
+      expect(screen.getByTestId("content")).toBeInTheDocument();
+      expect(screen.getAllByTestId("skeleton")).toHaveLength(2);
+    });
+
+    it("offers to try again after the items when more failed to load, keeping them", async () => {
+      const onRetry = vi.fn();
+      renderComponent({
+        children: items,
+        entityCount: 2,
+        errorTitle: "Something went wrong",
+        isLoadMoreError: true,
+        loadMoreErrorMessage: "More mods couldn't be loaded.",
+        onRetry,
+      });
+
+      await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+      expect(onRetry).toHaveBeenCalled();
+      expect(screen.getByTestId("content")).toBeInTheDocument();
+      expect(screen.getByText("More mods couldn't be loaded.")).toBeInTheDocument();
+    });
+
+    it("draws only the tiles while more load again after failing", () => {
+      renderComponent({
+        children: items,
+        entityCount: 2,
+        isLoadingMore: true,
+        isLoadMoreError: true,
+        loadMoreErrorMessage: "More mods couldn't be loaded.",
+      });
+
+      expect(screen.getAllByTestId("skeleton")).toHaveLength(2);
+      expect(screen.queryByText("More mods couldn't be loaded.")).toBeNull();
+    });
+
+    it("asks for more as the end of the items nears the view of the scroller it's given", () => {
+      const onLoadMore = vi.fn();
+      const scrollRef = { current: null as HTMLDivElement | null };
+      render(
+        <div data-testid="scroller" ref={scrollRef}>
+          <Listing
+            hasMore
+            entityCount={2}
+            scrollRef={scrollRef}
+            SkeletonTile={SkeletonTile}
+            onLoadMore={onLoadMore}
+          >
+            {items}
+          </Listing>
+        </div>,
+      );
+      expect(observed).toHaveLength(1);
+      expect(observed[0].options?.root).toBe(screen.getByTestId("scroller"));
+      expect(observed[0].options?.rootMargin).toBe("0px 0px 320px 0px");
+
+      act(() => observed[0].report(false));
+      expect(onLoadMore).not.toHaveBeenCalled();
+
+      act(() => observed[0].report(true));
+      expect(onLoadMore).toHaveBeenCalledTimes(1);
+    });
+
+    it("watches the window's view when it's given no scroller", () => {
+      renderComponent({ children: items, entityCount: 2, hasMore: true, onLoadMore: vi.fn() });
+
+      expect(observed[0].options?.root).toBeNull();
+    });
+
+    it.each([
+      ["there's no more", { hasMore: false }],
+      ["more is loading", { hasMore: true, isLoadingMore: true }],
+      ["loading more failed", { hasMore: true, isLoadMoreError: true }],
+      ["the first items are loading", { hasMore: true, isLoading: true }],
+    ])("asks for no more while %s", (_, state) => {
+      renderComponent({ children: items, entityCount: 2, onLoadMore: vi.fn(), ...state });
+
+      expect(observed).toHaveLength(0);
+    });
+
+    it("watches again once more has loaded, in case the end is still in view", () => {
+      const props = { children: items, entityCount: 2, hasMore: true, onLoadMore: vi.fn() };
+      const { rerender } = render(<Listing SkeletonTile={SkeletonTile} {...props} />);
+
+      rerender(<Listing SkeletonTile={SkeletonTile} {...props} isLoadingMore />);
+      rerender(<Listing SkeletonTile={SkeletonTile} {...props} entityCount={4} />);
+      act(() => observed[1].report(true));
+
+      expect(observed).toHaveLength(2);
+      expect(props.onLoadMore).toHaveBeenCalledTimes(1);
     });
   });
 });

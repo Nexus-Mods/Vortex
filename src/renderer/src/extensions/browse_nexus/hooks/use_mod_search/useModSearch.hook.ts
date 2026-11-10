@@ -1,9 +1,16 @@
-import { keepPreviousData, skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  skipToken,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { V3ApiError } from "@vortex/nexus-api-v3";
 import type { GameDomain } from "@vortex/shared";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
-  type ModsSearchRequest,
+  type ModsSearch,
+  type ModSummary,
   modSearchQuery,
 } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -27,9 +34,6 @@ const COUNTED_PRESET: ModPreset = ModPreset.new;
 
 export const MODS_PER_PAGE = 20;
 
-/** The last page the search will return; it refuses any after. */
-export const MAX_PAGES = 100;
-
 interface IModsSearch {
   /** The game whose mods to search; none searches nothing. */
   gameDomainName: GameDomain | undefined;
@@ -37,20 +41,17 @@ interface IModsSearch {
   sort: IModSort;
   /** Which of them to show. */
   filters: IModFilters;
-  /** The page, from 1. */
-  page: number;
   /** When the time range was picked, which it counts back from, in ms. */
   rangeFrom: number;
 }
 
-/** The search for a page of a game's mods, sorted and filtered; none outside a game. */
+/** The search for a game's mods, sorted and filtered; none outside a game. */
 const searchFor = ({
   gameDomainName,
   sort,
   filters,
-  page,
   rangeFrom,
-}: IModsSearch): ModsSearchRequest | typeof skipToken => {
+}: IModsSearch): ModsSearch | typeof skipToken => {
   if (!gameDomainName) {
     return skipToken;
   }
@@ -61,75 +62,134 @@ const searchFor = ({
       ...filtersToSearch(filters, { sortField: sort.field, rangeFrom }),
     },
     sort: { field: sort.field, direction: sort.direction },
-    pagination: { type: "page", page, page_size: MODS_PER_PAGE },
   };
 };
+
+/** The pages' mods in order, each only where it first came, as a mod that moves can repeat. */
+const uniqueMods = (pages: { mods: ModSummary[] }[] | undefined): ModSummary[] => {
+  const byId = new Map<string, ModSummary>();
+
+  for (const mod of (pages ?? []).flatMap((page) => page.mods)) {
+    if (!byId.has(mod.id)) {
+      byId.set(mod.id, mod);
+    }
+  }
+
+  return [...byId.values()];
+};
+
+/**
+ * Whether a page failed as the API refused its cursor, as it does one made before an update. Only a
+ * later page has one, sent with the same search the first page was accepted with, so its `422` can
+ * only be the cursor's; the API says nothing more specific.
+ */
+const isRefusedCursor = (error: Error | null) =>
+  error instanceof V3ApiError && error.status === 422;
 
 interface IModSearchOptions {
   /** Whether to search at all; off, it asks for nothing. */
   isEnabled: boolean;
 }
 
+/** The active game's mods by the open view, and the view itself, from `useModViews`. */
+export interface IModSearch extends ReturnType<typeof useModViews> {
+  /** The search the mods are from, by query key and view, and changing as it starts again. */
+  searchKey: string;
+  /** The mods loaded so far, each only where it first came. */
+  mods: ModSummary[];
+  /** How many mods the search found; the last search's until the next one's first page comes. */
+  totalCount: number;
+  /** How many mods the game has over all time, whatever the view, for the tab. */
+  allModsTotal: number;
+  /** Whether the first page is loading with nothing of it to show; asking again keeps the mods. */
+  loading: boolean;
+  /** Why the first page failed to load, with no mods to show. */
+  error: Error | null;
+  /** Whether a page is loading with mods on screen: the next, or the first again. */
+  isLoadingMore: boolean;
+  /** Why a page failed with mods to show, until it's asked for again. */
+  loadMoreError: Error | null;
+  /** Whether there are pages left to load, and nothing loading that would keep one from loading. */
+  hasMore: boolean;
+  /** How many pages have loaded. */
+  pagesLoaded: number;
+  /** Loads the next page, unless one is loading, it's failed, or there are none left. */
+  loadMore: () => void;
+  /** Asks for the failed page again; a refused cursor starts the list again from the top. */
+  retry: () => void;
+}
+
 /**
- * The active game's mods by the open view, from `useModViews`, a page at a time; any change to the
- * view or its search starts again from the first page, and a failed page keeps its first's total.
+ * The active game's mods by the open view, from `useModViews`, a page more at a time as
+ * `loadMore` asks; any change to the view or its search starts again from the first page.
  */
-export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOptions) => {
+export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOptions): IModSearch => {
   const gameDomainName = useGameDomainName();
   const searchedGame = isEnabled ? gameDomainName : undefined;
   const views = useModViews();
   const { sort, filters, rangeFrom } = views;
   const queryClient = useQueryClient();
-  const searchKey = JSON.stringify([views.viewId, sort, filters, rangeFrom]);
-  const [paging, setPaging] = useState({ searchKey, page: 1 });
-  const currentPage = paging.searchKey === searchKey ? paging.page : 1;
+  const [restarts, setRestarts] = useState(0);
 
-  /** The page showing; it keeps the last page's results while the next loads. */
-  const mods = useQuery({
-    ...modSearchQuery(
-      api,
-      searchFor({ gameDomainName: searchedGame, sort, filters, page: currentPage, rangeFrom }),
-    ),
-    placeholderData: keepPreviousData,
-  });
+  const search = modSearchQuery(
+    api,
+    searchFor({ gameDomainName: searchedGame, sort, filters, rangeFrom }),
+    MODS_PER_PAGE,
+  );
+
+  /** The pages loaded; it keeps the last search's while another's first page loads. */
+  const mods = useInfiniteQuery({ ...search, placeholderData: keepPreviousData });
 
   /**
    * The tab's total, every one of the game's mods, which doesn't depend on the preset or its
-   * sort: always the all-time preset's first page as it comes, the very query above while
-   * that's the page showing.
+   * sort: always the all-time preset's first page, the very query above while that's open.
    */
-  const allMods = useQuery({
+  const allMods = useInfiniteQuery({
     ...modSearchQuery(
       api,
       searchFor({
         gameDomainName: searchedGame,
         sort: PRESET_SORTS[COUNTED_PRESET],
         filters: PRESET_FILTERS[COUNTED_PRESET],
-        page: 1,
         rangeFrom,
       }),
+      MODS_PER_PAGE,
     ),
-    select: (result) => result.meta.total_count,
+    select: (result) => result.pages[0]?.meta.total_count,
   });
 
-  const firstPage = modSearchQuery(
-    api,
-    searchFor({ gameDomainName: searchedGame, sort, filters, page: 1, rangeFrom }),
-  );
-  const pageTotal =
-    mods.data?.meta.total_count ?? queryClient.getQueryData(firstPage.queryKey)?.meta.total_count;
+  const pages = mods.isPlaceholderData ? undefined : mods.data?.pages;
+  const loaded = useMemo(() => uniqueMods(mods.data?.pages), [mods.data?.pages]);
+  const isFirstPageLoading = mods.isFetching && !mods.isFetchingNextPage && !pages;
 
   return {
     ...views,
-    mods: mods.data?.mods ?? [],
-    totalCount: pageTotal ?? 0,
+    searchKey: JSON.stringify([views.viewId, search.queryKey, restarts]),
+    mods: loaded,
+    totalCount: mods.data?.pages[0]?.meta.total_count ?? 0,
     allModsTotal: allMods.data ?? 0,
-    loading: mods.isFetching,
-    error: mods.error,
-    retry: () => void mods.refetch(),
-    currentPage,
-    setCurrentPage: (page: number) => setPaging({ searchKey, page }),
+    loading: isFirstPageLoading,
+    error: pages ? null : mods.error,
+    isLoadingMore: !!pages && mods.isFetching,
+    loadMoreError: pages && !mods.isFetching ? mods.error : null,
+    hasMore: !!pages && mods.hasNextPage && !mods.isFetching,
+    pagesLoaded: pages?.length ?? 0,
+    loadMore: () => {
+      if (pages && mods.hasNextPage && !mods.isFetching && !mods.isFetchNextPageError) {
+        void mods.fetchNextPage();
+      }
+    },
+    retry: () => {
+      if (mods.isFetchNextPageError && isRefusedCursor(mods.error)) {
+        queryClient.setQueryData(search.queryKey, (data) =>
+          data ? { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) } : data,
+        );
+        setRestarts((count) => count + 1);
+        void mods.refetch();
+        return;
+      }
+
+      void (mods.isFetchNextPageError ? mods.fetchNextPage() : mods.refetch());
+    },
   };
 };
-
-export type IModSearch = ReturnType<typeof useModSearch>;

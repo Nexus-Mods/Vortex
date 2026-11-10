@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage";
 import { updateMod } from "@/extensions/mod_management/util/update_mod/updateMod";
 import { PremiumUpsellModal } from "@/extensions/nexus_integration/components/premium_upsell_modal/PremiumUpsellModal";
-import type { MinimalModFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
+import type { ModMainFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { isPremium } from "@/extensions/nexus_integration/selectors";
 import {
@@ -36,14 +36,14 @@ const CANCELED_KINDS: VortexErrorKind[] = ["user-canceled", "process-canceled"];
 /** Why the mod can't be installed, said in the tooltip; none while it can, or is loading. */
 const unavailableReason = (
   t: TFunction,
-  primaryFile: MinimalModFileVersion | null | undefined,
+  mainFile: ModMainFileVersion | null | undefined,
   isError: boolean,
 ) => {
   if (isError) {
     return t("Couldn't load this mod's files");
   }
 
-  if (primaryFile === null) {
+  if (mainFile === null) {
     return t("This mod isn't available through Vortex. Download it from Nexus Mods instead.");
   }
 
@@ -82,9 +82,9 @@ interface IModInstallButtonProps {
   api: IExtensionApi;
   /** The mod to download, and install. */
   mod: ModSummary;
-  /** Its primary file, the one downloaded; null when it has none, absent while its details load. */
-  primaryFile?: MinimalModFileVersion | null;
-  /** Whether its details failed to load, so whether it has a primary file isn't known. */
+  /** Its main file, the one downloaded; null when it has none, absent while its details load. */
+  mainFile?: ModMainFileVersion | null;
+  /** Whether its details failed to load, so whether it has a main file isn't known. */
   isError?: boolean;
   /** What the user has of it, from `useModStatus`. */
   installState: ModInstallState;
@@ -93,14 +93,14 @@ interface IModInstallButtonProps {
 /**
  * The details' button for what the user has of a mod: View installed mod once it's installed,
  * Update while the Mods page's update check offers one, Install for a download, and otherwise
- * 1-click install of its primary file, which only downloads if the user's settings don't install
+ * 1-click install of its main file, which only downloads if the user's settings don't install
  * once downloaded. Non-Premium users get the 1-click upsell for an update as for an install, its
  * events saying which. Progress survives switching mods.
  */
 export const ModInstallButton = ({
   api,
   mod,
-  primaryFile,
+  mainFile,
   isError = false,
   installState,
 }: IModInstallButtonProps) => {
@@ -110,7 +110,7 @@ export const ModInstallButton = ({
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
   const [isUpsellOpen, setIsUpsellOpen] = useState(false);
-  const unavailable = unavailableReason(t, primaryFile, isError);
+  const unavailable = unavailableReason(t, mainFile, isError);
   const installKey = oneClickInstallKey(mod.id);
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
   const domain = GameDomain(mod.game.domain_name);
@@ -121,7 +121,7 @@ export const ModInstallButton = ({
 
   const install = useMutation({
     mutationKey: installKey,
-    mutationFn: ({ file, game }: { file: MinimalModFileVersion; game: string }) => {
+    mutationFn: ({ file, game }: { file: ModMainFileVersion; game: string }) => {
       const nexusFile = {
         gameDomain: domain,
         gameId: VortexGameId(game),
@@ -180,17 +180,17 @@ export const ModInstallButton = ({
       <Button
         aria-disabled={!!unavailable}
         brand={isPremiumUser ? "primary" : "neutral"}
-        disabled={primaryFile === undefined && !isError}
+        disabled={mainFile === undefined && !isError}
         isLoading={isInstalling}
         leftIcon="install_desktop"
         rightIcon={isPremiumUser ? undefined : <PremiumBadge />}
         onClick={() => {
-          if (!primaryFile || !gameId) {
+          if (!mainFile || !gameId) {
             return;
           }
 
           if (isPremiumUser) {
-            install.mutate({ file: primaryFile, game: gameId });
+            install.mutate({ file: mainFile, game: gameId });
             return;
           }
 
@@ -297,8 +297,8 @@ export const ModInstallButton = ({
             return;
           }
 
-          if (primaryFile && gameId) {
-            install.mutate({ file: primaryFile, game: gameId });
+          if (mainFile && gameId) {
+            install.mutate({ file: mainFile, game: gameId });
           }
         }}
         onShown={() => tracker.trackPremiumModalShown({ mod_uid: mod.id, action: upsellAction })}
