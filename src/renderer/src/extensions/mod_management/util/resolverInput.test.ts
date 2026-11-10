@@ -14,7 +14,7 @@ import { VortexGameId, VortexModId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { expect, onTestFinished, vi } from "vitest";
 
-import type * as StoreGameVersionEvent from "../../analytics/utils/storeGameVersionEvent";
+import type * as StoreInstall from "../../gamemode_management/util/store_install/storeInstall";
 import type * as NexusIntegrationUtil from "../../nexus_integration/util";
 
 // util/Steam reads paths at import time and there is no ApplicationData here
@@ -25,10 +25,10 @@ vi.mock("../../nexus_integration/util", async (importOriginal) => ({
   nexusGames: () => [{ domain_name: "skyrimspecialedition", id: 1704 }],
 }));
 // the harness has no Steam library to scan
-vi.mock("../../analytics/utils/storeGameVersionEvent", async (importOriginal) => {
+vi.mock("../../gamemode_management/util/store_install/storeInstall", async (importOriginal) => {
   const { makeSteamInstallRecord } = await import("../../../test-utils/builders.js");
   return {
-    ...(await importOriginal<typeof StoreGameVersionEvent>()),
+    ...(await importOriginal<typeof StoreInstall>()),
     scanInstall: () => Promise.resolve(makeSteamInstallRecord()),
   };
 });

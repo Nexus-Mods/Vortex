@@ -41,7 +41,6 @@ import thunkMiddleware from "redux-thunk";
 import { onTestFinished, vi } from "vitest";
 
 import type { MixpanelEvent } from "../extensions/analytics/mixpanel/MixpanelEvents";
-import type { InstallRecord } from "../extensions/analytics/utils/storeGameVersionEvent";
 import type { ICategory } from "../extensions/category_management/types/ICategoryDictionary";
 import { MOD_TYPE } from "../extensions/collections/constants";
 import type { ICollectionItemRow } from "../extensions/collections/installSession/itemRows";
@@ -77,6 +76,7 @@ import {
   getModTypeExtensions,
   registerModType,
 } from "../extensions/gamemode_management/util/modTypeExtensions";
+import type { InstallRecord } from "../extensions/gamemode_management/util/store_install/storeInstall";
 import type { IExtensionContextEx } from "../extensions/hardlink_activator";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type {

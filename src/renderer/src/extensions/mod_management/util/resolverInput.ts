@@ -28,10 +28,10 @@ import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
 import getNormalizeFunc from "../../../util/getNormalizeFunc";
 import { numericNexusGameId } from "../../analytics/mixpanel/numericGameId";
-import { scanInstall } from "../../analytics/utils/storeGameVersionEvent";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { getModType } from "../../gamemode_management/util/modTypeExtensions";
+import { scanInstall } from "../../gamemode_management/util/store_install/storeInstall";
 import { createVortexNexusV3Client } from "../../nexus_integration/nexusV3Client";
 import { resolveFileUID } from "../../nexus_integration/util/UIDs";
 import {

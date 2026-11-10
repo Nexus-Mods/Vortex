@@ -12,13 +12,13 @@ import { test } from "../../../test-utils/harnessTest";
 import type { IApiHarness } from "../../../test-utils/harnessTypes";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
 import { readGameVersions } from "../../gamemode_management/util/getGameVersion";
+import { gogInstallFromInfo } from "../../gamemode_management/util/store_install/gogInstall";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
 import telemetryReducer from "../reducers/telemetry.reducer";
 import {
   emitStoreGameVersions,
   emitStoreGameVersionEvent,
-  gogInstallFromInfo,
   storeGameVersionChangeKey,
 } from "./storeGameVersionEvent";
 
@@ -679,13 +679,14 @@ describe("emitStoreGameVersions", () => {
     expect(exeCalls).toEqual({ skyrimse: 2, witcher3: 1, skyrimvr: 1 });
   });
 
-  describe("reports the gog game, not a DLC registered in its folder", () => {
-    const DLC_ID = "1207658930";
+  describe("reports the gog game, not a DLC in its folder", () => {
+    // sorts before the game's id, as a DLC's often does
+    const DLC_ID = "1207658900";
 
-    /** Emits with the DLC's entry listed before the game's, as Galaxy's key order can. */
-    const emitWithDlc = async (
+    /** Emits with the given registry entries and .info files (product id to rootGameId). */
+    const emitWithGogFolder = async (
       harness: IApiHarness,
-      dlcEntry: object,
+      gogEntries: object[],
       infoFiles: Record<string, string>,
     ): Promise<unknown> => {
       restoreFs();
@@ -705,7 +706,7 @@ describe("emitStoreGameVersions", () => {
             isInstalled: true,
           }),
         },
-        { id: "gog", snapshot: () => ({ entries: [dlcEntry, GOG_ENTRY], isInstalled: true }) },
+        { id: "gog", snapshot: () => ({ entries: gogEntries, isInstalled: true }) },
       ] as never);
 
       await emitStoreGameVersions(harness.api);
@@ -718,7 +719,9 @@ describe("emitStoreGameVersions", () => {
       const harness = harnessWithVersionLookups(makeApi, {});
       const dlcEntry = { ...GOG_ENTRY, appid: DLC_ID, name: "DLC", dependsOn: GOG_ID };
 
-      const witcher = await emitWithDlc(harness, dlcEntry, { [GOG_ID]: GOG_ID });
+      const witcher = await emitWithGogFolder(harness, [dlcEntry, GOG_ENTRY], {
+        [GOG_ID]: GOG_ID,
+      });
 
       expect(witcher).toMatchObject({ failure_reason: null, gog: { product_id: GOG_ID } });
     });
@@ -727,9 +730,21 @@ describe("emitStoreGameVersions", () => {
       const harness = harnessWithVersionLookups(makeApi, {});
       const dlcEntry = { ...GOG_ENTRY, appid: DLC_ID, name: "DLC" };
 
-      const witcher = await emitWithDlc(harness, dlcEntry, {
+      const witcher = await emitWithGogFolder(harness, [dlcEntry, GOG_ENTRY], {
         [GOG_ID]: GOG_ID,
         [DLC_ID]: GOG_ID,
+      });
+
+      expect(witcher).toMatchObject({ failure_reason: null, gog: { product_id: GOG_ID } });
+    });
+
+    // Galaxy was uninstalled, or Windows reset: the game kept its .info files
+    test("found by its folder's .info files when the registry lists none", async ({ makeApi }) => {
+      const harness = harnessWithVersionLookups(makeApi, {});
+
+      const witcher = await emitWithGogFolder(harness, [], {
+        [DLC_ID]: GOG_ID,
+        [GOG_ID]: GOG_ID,
       });
 
       expect(witcher).toMatchObject({ failure_reason: null, gog: { product_id: GOG_ID } });

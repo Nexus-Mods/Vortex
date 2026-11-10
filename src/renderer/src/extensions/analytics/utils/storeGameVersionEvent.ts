@@ -1,6 +1,5 @@
-import type { GogInstall, StoreGameVersionPayload } from "@vortex/nexus-api-v3";
+import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
 import { getErrorMessageOrDefault } from "@vortex/shared";
-import { QualifiedPath } from "@vortex/shared/filesystem";
 import { v4 as uuid } from "uuid";
 
 import { setStoreGameVersionCache } from "@/extensions/analytics/actions/telemetry.action";
@@ -9,58 +8,20 @@ import { log } from "@/logging";
 
 import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IGame } from "../../../types/IGame";
-import type { IGameStoreEntry } from "../../../types/IGameStoreEntry";
-import { gogGameProductId } from "../../../util/GOGLauncher";
-import type { ISteamEntry } from "../../../util/Steam";
-import { normalizeStoreQuery } from "../../../util/storeQuery";
 import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
-import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
+import { getGame } from "../../gamemode_management/util/getGame";
 import { readGameVersions } from "../../gamemode_management/util/getGameVersion";
+import {
+  scanInstall,
+  type GogInstallBlock,
+  type InstallBlock,
+  type InstallRecord,
+  type SteamInstallBlock,
+  type StoreId,
+} from "../../gamemode_management/util/store_install/storeInstall";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
-
-/**
- * The gog install block from the raw goggame-<productId>.info content. The fields
- * are regexed off the raw text rather than passed through JSON.parse because build
- * ids exceed 2^53 and would be corrupted as JS numbers (per the contract notes).
- */
-export function gogInstallFromInfo(raw: string, productId: string): GogInstall | null {
-  const buildId = /"buildId"\s*:\s*"?(\d+)"?/.exec(raw)?.[1];
-  if (buildId === undefined) return null;
-
-  // GOG writes the requested languages as a list of locale tags ("languages"); some
-  // installers instead carry a scalar "language". Prefer the tag list.
-  const language =
-    /"languages"\s*:\s*\[\s*"([^"]+)"/.exec(raw)?.[1] ??
-    /"language"\s*:\s*"([^"]+)"/.exec(raw)?.[1];
-
-  return { product_id: productId, build_id: buildId, install_language: language ?? "" };
-}
-
-/** The game a goggame-<productId>.info belongs to: itself for a game, the game for a DLC. */
-function gogRootGameId(raw: string): string | undefined {
-  return /"rootGameId"\s*:\s*"?(\d+)"?/.exec(raw)?.[1];
-}
-
-/** The raw goggame-<productId>.info in the game folder; undefined when unreadable. */
-async function readGogInfo(gamePath: string, productId: string): Promise<string | undefined> {
-  try {
-    const blob = await window.api.fs.readFile(
-      QualifiedPath.fromNative(gamePath).join(`goggame-${productId}.info`),
-    );
-    return new TextDecoder().decode(blob);
-  } catch (err) {
-    // a missing file just means Galaxy never wrote metadata for this install
-    log("debug", "store-game-version: gog info file unreadable", {
-      gamePath,
-      error: getErrorMessageOrDefault(err),
-    });
-    return undefined;
-  }
-}
 
 /** The store's install block without the fields that change while the install stays the same. */
 function stableInstallBlock(payload: StoreGameVersionPayload): unknown {
@@ -92,11 +53,6 @@ export function storeGameVersionChangeKey(payload: StoreGameVersionPayload): str
   ]);
 }
 
-type SteamInstallBlock = Extract<StoreGameVersionPayload, { store: "steam" }>["steam"];
-type GogInstallBlock = Extract<StoreGameVersionPayload, { store: "gog" }>["gog"];
-type InstallBlock = SteamInstallBlock | GogInstallBlock;
-type StoreId = "steam" | "gog";
-
 /** Cache writes dispatch through the analytics reducer under
     persistent.analyticsTelemetry, which persists across Vortex sessions. */
 function refreshCache(
@@ -106,21 +62,6 @@ function refreshCache(
 ): void {
   api.store.dispatch(setStoreGameVersionCache({ gameId, cache: entry }));
 }
-
-/** Everything a game's store install contributes except the two game versions,
-    the only expensive fields: failures carry their reason and `install` is null. */
-export interface InstallRecord {
-  storeId: StoreId;
-  install: InstallBlock | null;
-  failureReason: string | null;
-}
-
-/** Windows and POSIX disagree about separators and case; matches either way. */
-const normPath = (value: string): string =>
-  value
-    .replace(/[/\\]+/g, "/")
-    .replace(/\/$/, "")
-    .toLowerCase();
 
 const asPayload = (
   base: {
@@ -135,115 +76,6 @@ const asPayload = (
   storeId === "steam"
     ? { ...base, store: "steam", steam: install as SteamInstallBlock }
     : { ...base, store: "gog", gog: install as GogInstallBlock };
-
-/** The Steam app ids the game's extension declares, empty when it declares none. */
-function gameSteamAppIds(game: IGame | undefined): Set<string> {
-  const ids = new Set<string>();
-  if (game?.details?.steamAppId !== undefined) {
-    ids.add(String(game.details.steamAppId));
-  }
-  for (const query of normalizeStoreQuery(game?.queryArgs?.steam)) {
-    if (query.id !== undefined) {
-      ids.add(query.id);
-    }
-  }
-  return ids;
-}
-
-const inFolder = (entry: IGameStoreEntry, folder: string): boolean =>
-  entry.gamePath !== undefined && normPath(entry.gamePath) === normPath(folder);
-
-/** The GOG install in the game's folder. Each DLC has its own entry there too, so the
-    game's install is reported: named by the registry and, where the registry doesn't
-    say, by the DLC's .info. */
-async function scanGogInstall(
-  discovery: IDiscoveryResult,
-  entries: IGameStoreEntry[],
-): Promise<InstallRecord> {
-  const entry = entries.find((iter) => inFolder(iter, discovery.path));
-  if (entry === undefined) {
-    return { storeId: "gog", install: null, failureReason: "store-entry-not-found" };
-  }
-
-  let productId = gogGameProductId(entry);
-  let raw = await readGogInfo(discovery.path, productId);
-  const rootGameId = raw === undefined ? undefined : gogRootGameId(raw);
-  if (rootGameId !== undefined && rootGameId !== productId) {
-    productId = rootGameId;
-    raw = await readGogInfo(discovery.path, productId);
-  }
-  const info = raw === undefined ? null : gogInstallFromInfo(raw, productId);
-  if (info === null) {
-    return { storeId: "gog", install: null, failureReason: "info-parse-failed" };
-  }
-  return { storeId: "gog", install: info, failureReason: null };
-}
-
-/** Collect the store install identity for one game, from data that is cheap to
-    read per deploy: store snapshots, manifest install data, GOG .info files. */
-export async function scanInstall(
-  internalGameId: string,
-  discovery: IDiscoveryResult,
-): Promise<InstallRecord> {
-  const storeId = discovery.store as StoreId;
-  const entries =
-    getGameStoresSafe()
-      .find((store) => store.id === storeId)
-      ?.snapshot().entries ?? [];
-  if (storeId === "gog") {
-    return scanGogInstall(discovery, entries);
-  }
-
-  const ownIds = gameSteamAppIds(getGame(internalGameId));
-  const atPath = entries.filter((iter) => inFolder(iter, discovery.path));
-  // tools like the Creation Kit install into the game's own folder, so the path alone
-  // can match several manifests: the game's own app id decides between them
-  const entry =
-    atPath.find((iter) => ownIds.has(iter.appid)) ??
-    atPath[0] ??
-    // the game variant Steam runs may deploy from a path different from its manifest's
-    entries.find((iter) => ownIds.has(iter.appid));
-
-  if (entry === undefined) {
-    return {
-      storeId,
-      install: null,
-      failureReason: "store-entry-not-found",
-    };
-  }
-
-  // steam: install data comes pre-parsed and zod-validated from the scan
-  const data = (entry as ISteamEntry).installData;
-  if (data === undefined) {
-    return {
-      storeId,
-      install: null,
-      failureReason: "acf-parse-failed",
-    };
-  }
-  return {
-    storeId,
-    install: {
-      app_id: data.appId,
-      build_id: data.buildId,
-      branch: data.branch,
-      language: data.language,
-      mounted_language: data.mountedLanguage,
-      state_flags: data.stateFlags,
-      target_build_id: data.targetBuildId,
-      depots: data.depots.map((depot) => ({
-        depot_id: depot.depotId,
-        manifest_id: depot.manifestId,
-        dlc_app_id: depot.dlcAppId,
-      })),
-      shared_depots: data.sharedDepots.map((depot) => ({
-        depot_id: depot.depotId,
-        owner_app_id: depot.ownerAppId,
-      })),
-    },
-    failureReason: null,
-  };
-}
 
 /** The cheap change key: the record with both game versions (the expensive fields)
     nulled out, so identity drift is visible without resolving versions. */
