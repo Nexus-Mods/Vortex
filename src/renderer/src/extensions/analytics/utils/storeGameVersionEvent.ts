@@ -38,22 +38,33 @@ export function gogInstallFromInfo(raw: string, productId: string): GogInstall |
   return { product_id: productId, build_id: buildId, install_language: language ?? "" };
 }
 
-/**
- * Change-check hash for one payload. `state_flags` and `target_build_id` are stripped:
- * they flip on routine updates without the install identity changing (per MOD-12).
- */
+/** The store's install block without the fields that change while the install stays the same. */
+function stableInstallBlock(payload: StoreGameVersionPayload): unknown {
+  switch (payload.store) {
+    case "steam":
+      // these flip on routine updates (per MOD-12)
+      return { ...payload.steam, state_flags: undefined, target_build_id: undefined };
+    case "gog":
+      return payload.gog;
+    case "epic":
+    case "xbox":
+      return undefined;
+    default: {
+      const exhausted: never = payload;
+      return exhausted;
+    }
+  }
+}
+
+/** Change-check hash for one payload. */
 export function storeGameVersionChangeKey(payload: StoreGameVersionPayload): string {
-  const steam =
-    payload.store === "steam"
-      ? { ...payload.steam, state_flags: undefined, target_build_id: undefined }
-      : undefined;
   return JSON.stringify([
     payload.game_id,
     payload.failure_reason,
     payload.exe_version,
     payload.extension_version,
     payload.store,
-    steam,
+    stableInstallBlock(payload),
   ]);
 }
 

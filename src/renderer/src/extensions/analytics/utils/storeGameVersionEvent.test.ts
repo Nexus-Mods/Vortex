@@ -117,6 +117,15 @@ describe("storeGameVersionChangeKey", () => {
       storeGameVersionChangeKey(base),
     );
   });
+
+  // persisted caches hold keys in this format: a changed format re-sends every steam install
+  it("keeps the persisted steam key format", () => {
+    expect(storeGameVersionChangeKey(base)).toBe(
+      '["1704",null,"1.6.1170.0","1.6.1170","steam",{"app_id":489830,"build_id":16659740,' +
+        '"branch":null,"language":"english","mounted_language":"english","depots":[{"depot_id":' +
+        '489831,"manifest_id":"7997079406114800065","dlc_app_id":null}],"shared_depots":[]}]',
+    );
+  });
 });
 
 // The api harness does not model analytics consent, login credentials, or discovery state;
@@ -668,5 +677,32 @@ describe("emitStoreGameVersions", () => {
       steam: { build_id: 16659741 },
     });
     expect(exeCalls).toEqual({ skyrimse: 2, witcher3: 1, skyrimvr: 1 });
+  });
+
+  test("re-sends a gog install after a game update", async ({ makeApi }) => {
+    const exeCalls: Record<string, number> = {};
+    const harness = harnessWithVersionLookups(makeApi, exeCalls);
+
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+
+    await emitStoreGameVersions(harness.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(3);
+
+    // a GOG update rewrites the .info with the new build id
+    restoreFs();
+    restoreFs = installInMemoryFS((builder) => {
+      builder.file(QualifiedPath.fromNative(path.join(GOG_PATH, `goggame-${GOG_ID}.info`)), {
+        type: "text",
+        data: '{"rootGameId": 1207658924, "buildId": "58219005939443187", "languages": ["en-US"]}',
+      });
+    }).restore;
+
+    await emitStoreGameVersions(harness.api);
+    expect(telemetryEvent).toHaveBeenCalledTimes(4);
+    expect(telemetryEvent.mock.calls[3][2].payload).toMatchObject({
+      game_id: "1720",
+      gog: { product_id: GOG_ID, build_id: "58219005939443187" },
+    });
+    expect(exeCalls).toEqual({ skyrimse: 1, witcher3: 2, skyrimvr: 1 });
   });
 });
