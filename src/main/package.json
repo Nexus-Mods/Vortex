@@ -78,7 +78,9 @@
           "{projectRoot}/build/main.cjs.map",
           "{projectRoot}/build/bsdiff-worker.cjs",
           "{projectRoot}/build/bsdiff-worker.cjs.map",
-          "{projectRoot}/build/hdiff.wasm"
+          "{projectRoot}/build/hdiffz.wasm",
+          "{projectRoot}/build/LICENSE-HDiffPatch.txt",
+          "{projectRoot}/build/LICENSE-bzip2.txt"
         ]
       },
       "publish": {
@@ -232,7 +234,11 @@
     "@electron/remote": "catalog:",
     "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
+<<<<<<< HEAD
     "@hot-updater/bsdiff": "catalog:",
+=======
+    "@mdi/js": "catalog:",
+>>>>>>> 1a9684695 (Merge pull request #24815 from Nexus-Mods/fix/bsdiff-large-files)
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",
