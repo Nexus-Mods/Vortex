@@ -4057,15 +4057,6 @@ importers:
       '@headlessui/react':
         specifier: 'catalog:'
         version: 2.2.10(react-dom@18.3.1)(react@18.3.1)
-<<<<<<< HEAD
-      '@hot-updater/bsdiff':
-        specifier: 'catalog:'
-        version: 0.30.6
-=======
-      '@mdi/js':
-        specifier: 'catalog:'
-        version: 7.4.47
->>>>>>> 1a9684695 (Merge pull request #24815 from Nexus-Mods/fix/bsdiff-large-files)
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
@@ -4623,15 +4614,6 @@ importers:
       '@headlessui/react':
         specifier: 'catalog:'
         version: 2.2.10(react-dom@18.3.1)(react@18.3.1)
-<<<<<<< HEAD
-      '@hot-updater/bsdiff':
-        specifier: 'catalog:'
-        version: 0.30.6
-=======
-      '@mdi/js':
-        specifier: 'catalog:'
-        version: 7.4.47
->>>>>>> 1a9684695 (Merge pull request #24815 from Nexus-Mods/fix/bsdiff-large-files)
       '@microsoft/api-extractor':
         specifier: 'catalog:'
         version: 7.58.9(@types/node@24.12.2)
