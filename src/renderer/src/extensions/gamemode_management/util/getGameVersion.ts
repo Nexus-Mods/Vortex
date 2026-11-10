@@ -40,16 +40,28 @@ async function fromExtension(game: IGame, discovery: IDiscoveryResult): Promise<
   return null;
 }
 
-/** The version attribute of the discovered executable; null when it can't be read. */
-async function fromExecutable(game: IGame, discovery: IDiscoveryResult): Promise<string | null> {
+/** The discovered executable's version, or why it can't be read. */
+export type ExeVersion = { version: string } | { failure: "exe-not-found" | "exe-unreadable" };
+
+async function readExecutable(game: IGame, discovery: IDiscoveryResult): Promise<ExeVersion> {
   const exePath = path.join(discovery.path, discovery.executable || game.executable());
 
   try {
     await stat(exePath);
-    return exeVersion(exePath);
   } catch {
-    return null;
+    return { failure: "exe-not-found" };
   }
+  try {
+    return { version: exeVersion(exePath) };
+  } catch {
+    return { failure: "exe-unreadable" };
+  }
+}
+
+/** The version attribute of the discovered executable; null when it can't be read. */
+async function fromExecutable(game: IGame, discovery: IDiscoveryResult): Promise<string | null> {
+  const exe = await readExecutable(game, discovery);
+  return "version" in exe ? exe.version : null;
 }
 
 function assertDiscovered(game: IGame, discovery: IDiscoveryResult): void {
@@ -76,10 +88,10 @@ export const resolveGameVersion: GameVersionResolver = async (game, discovery) =
 export async function readGameVersions(
   game: IGame,
   discovery: IDiscoveryResult,
-): Promise<{ exe: string | null; extension: string | null }> {
+): Promise<{ exe: ExeVersion; extension: string | null }> {
   assertDiscovered(game, discovery);
   return {
-    exe: await fromExecutable(game, discovery),
+    exe: await readExecutable(game, discovery),
     extension: await fromExtension(game, discovery),
   };
 }

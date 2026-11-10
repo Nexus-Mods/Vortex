@@ -10,7 +10,7 @@ import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { readGameVersions } from "../../gamemode_management/util/getGameVersion";
+import { readGameVersions, type ExeVersion } from "../../gamemode_management/util/getGameVersion";
 import {
   scanInstall,
   type GogInstallBlock,
@@ -129,26 +129,28 @@ export async function emitStoreGameVersionEvent(
   }
 
   // the install identity moved; (re)read both game versions
-  let exeVersion: string | null = null;
+  let exe: ExeVersion | { failure: "no-executable" } = { failure: "no-executable" };
   let extensionVersion: string | null = null;
   try {
-    ({ exe: exeVersion, extension: extensionVersion } = await readGameVersions(
+    ({ exe, extension: extensionVersion } = await readGameVersions(
       getGame(internalGameId),
       discovery,
     ));
   } catch (err) {
+    // the lookup throws when there is no exe to read: the game names none, as Tier 0
+    // games do, or isn't loaded
     log("debug", "store-game-version: game version lookup failed", {
       gameId: internalGameId,
       error: getErrorMessageOrDefault(err),
     });
   }
+  const exeVersion = "version" in exe ? exe.version : null;
 
   const payload = asPayload(
     {
       game_id: String(gameId),
       // install identity problems outrank version lookup problems in failure_reason
-      failure_reason:
-        record.failureReason ?? (exeVersion === null ? "version-lookup-failed" : null),
+      failure_reason: record.failureReason ?? ("failure" in exe ? exe.failure : null),
       exe_version: exeVersion,
       extension_version: extensionVersion,
     },

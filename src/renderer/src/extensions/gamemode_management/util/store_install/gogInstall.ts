@@ -92,9 +92,12 @@ export async function scanGogInstall(
     productId = rootGameId;
     raw = await readGogInfo(folder, productId);
   }
-  const info = raw === undefined ? null : gogInstallFromInfo(raw, productId);
+  if (raw === undefined) {
+    return { storeId: "gog", install: null, failureReason: "info-missing" };
+  }
+  const info = gogInstallFromInfo(raw, productId);
   if (info === null) {
-    return { storeId: "gog", install: null, failureReason: "info-parse-failed" };
+    return { storeId: "gog", install: null, failureReason: "info-no-build-id" };
   }
   return { storeId: "gog", install: info, failureReason: null };
 }

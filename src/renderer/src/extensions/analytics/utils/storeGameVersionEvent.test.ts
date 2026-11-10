@@ -195,7 +195,9 @@ describe("emitStoreGameVersionEvent", () => {
 
   beforeEach(() => {
     telemetryEvent.mockReset().mockResolvedValue({ accepted: 1, rejected: [] });
-    versionSpy.mockReset().mockResolvedValue({ exe: "1.6.1170.0", extension: "1.6.1170" });
+    versionSpy
+      .mockReset()
+      .mockResolvedValue({ exe: { version: "1.6.1170.0" }, extension: "1.6.1170" });
     vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
       telemetryEvent,
     } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
@@ -361,12 +363,12 @@ describe("emitStoreGameVersionEvent", () => {
     const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness);
 
-    versionSpy.mockResolvedValue({ exe: null, extension: "1.6.1170" });
+    versionSpy.mockResolvedValue({ exe: { failure: "exe-not-found" }, extension: "1.6.1170" });
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
     expect(telemetryEvent).toHaveBeenCalledTimes(1);
     expect(telemetryEvent.mock.calls[0][2].payload).toMatchObject({
       exe_version: null,
-      failure_reason: "version-lookup-failed",
+      failure_reason: "exe-not-found",
     });
 
     // the lookup runs again, but an identical failure is not re-sent
@@ -375,7 +377,7 @@ describe("emitStoreGameVersionEvent", () => {
     expect(telemetryEvent).toHaveBeenCalledTimes(1);
 
     // once the lookup recovers, the resolved version goes out and closes the gate
-    versionSpy.mockResolvedValue({ exe: "1.6.1170.0", extension: "1.6.1170" });
+    versionSpy.mockResolvedValue({ exe: { version: "1.6.1170.0" }, extension: "1.6.1170" });
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
     expect(telemetryEvent).toHaveBeenCalledTimes(2);
     expect(telemetryEvent.mock.calls[1][2].payload).toMatchObject({
@@ -541,7 +543,7 @@ describe("emitStoreGameVersions", () => {
     vi.mocked(readGameVersions).mockImplementation(async (game) => {
       exeCalls[game.id] = (exeCalls[game.id] ?? 0) + 1;
       return {
-        exe: versions[game.id]?.exe ?? null,
+        exe: { version: versions[game.id]?.exe ?? "" },
         extension: versions[game.id]?.extension ?? null,
       };
     });
