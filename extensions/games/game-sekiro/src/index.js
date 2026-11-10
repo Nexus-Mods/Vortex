@@ -32,7 +32,7 @@ function prepareForModding(api, discovery) {
             {
               label: "Go to Mod Engine Page",
               action: () => {
-                util.opn("https://www.nexusmods.com/sekiro/mods/6").catch((err) => undefined);
+                api.openUrl("https://www.nexusmods.com/sekiro/mods/6");
                 resolve();
               },
             },

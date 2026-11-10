@@ -1,4 +1,4 @@
-import { ComponentEx, Icon, Overlay, tooltip, util } from "@nexusmods/vortex-api";
+import { ComponentEx, Icon, Overlay, tooltip } from "@nexusmods/vortex-api";
 import { TFunction } from "i18next";
 import * as React from "react";
 import { Popover } from "react-bootstrap";
@@ -184,7 +184,7 @@ class TutorialButton extends ComponentEx<IProps, {}> {
   }
 
   private openLink = () => {
-    util.opn(this.props.video.attribution.link).catch((err) => null);
+    this.context.api.openUrl(this.props.video.attribution.link);
   };
 
   private getRef = () => {

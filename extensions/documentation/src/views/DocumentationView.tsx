@@ -7,7 +7,6 @@ import {
   Spinner,
   tooltip,
   types,
-  util,
   Webview,
 } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
@@ -64,7 +63,7 @@ class DocumentationView extends ComponentEx<IProps, IComponentState> {
         const newUrl: string = this.mWebView.getURL();
         if (newUrl.toLowerCase() === LOGIN_URL) {
           this.navigate(this.state.history[this.state.historyIdx]);
-          util.opn(newUrl).catch(() => null);
+          this.context.api.openUrl(newUrl);
           return;
         }
         const isAllowed = ALLOWED_DOMAINS.some((domain) => newUrl.toLowerCase().startsWith(domain));
@@ -167,7 +166,7 @@ class DocumentationView extends ComponentEx<IProps, IComponentState> {
           "in your default browser.",
         message: link,
       },
-      [{ label: "Cancel" }, { label: "Continue", action: () => util.opn(link).catch(() => null) }],
+      [{ label: "Cancel" }, { label: "Continue", action: () => this.context.api.openUrl(link) }],
     );
   };
 
@@ -230,7 +229,7 @@ class DocumentationView extends ComponentEx<IProps, IComponentState> {
 
   private openBrowser = () => {
     const { history, historyIdx } = this.state;
-    util.opn(history[historyIdx]).catch((err) => null);
+    this.context.api.openUrl(history[historyIdx]);
   };
 
   private setRef = (ref) => {

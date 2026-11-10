@@ -446,7 +446,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private openLink = (evt: React.MouseEvent<HTMLAnchorElement>) => {
     evt.preventDefault();
     const link = evt.currentTarget.getAttribute("data-link");
-    util.opn(link).catch(() => null);
+    this.context.api.openUrl(link);
   };
 
   private getLink(link: string, text: string): JSX.Element {
@@ -778,7 +778,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
   private openLog = (evt) => {
     evt.preventDefault();
-    (util as any).opn(this.mTrace.logFilePath).catch((err) => undefined);
+    this.context.api.openFile(this.mTrace.logFilePath);
   };
 
   private nextLabel(step: Step): string {

@@ -166,9 +166,7 @@ function showFullReleaseModFixerRecommendation(api: types.IExtensionApi) {
             .then((result) => {
               dismiss();
               if (result.action === "Open Nexus Mods") {
-                util
-                  .opn("https://www.nexusmods.com/baldursgate3/mods/141?tab=description")
-                  .catch(() => null);
+                api.openUrl("https://www.nexusmods.com/baldursgate3/mods/141?tab=description");
               } else if (result.action === "Cancel") {
                 // dismiss anyway
               }
@@ -474,7 +472,7 @@ function main(context: types.IExtensionContext) {
     () => {
       getActivePlayerProfile(context.api).then((bg3ProfileId) => {
         const gameSettingsPath: string = path.join(profilesPath(), bg3ProfileId, "modsettings.lsx");
-        util.opn(gameSettingsPath).catch(() => null);
+        context.api.openFile(gameSettingsPath);
       });
     },
     isBG3,

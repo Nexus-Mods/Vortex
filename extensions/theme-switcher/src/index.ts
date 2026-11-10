@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { fs, log, types, util } from "@nexusmods/vortex-api";
+import { fs, types } from "@nexusmods/vortex-api";
 import Bluebird from "bluebird";
 
 import * as ops from "./operations";
@@ -44,11 +44,7 @@ function applyTheme(api: types.IExtensionApi, theme: string, initial: boolean) {
 
 function editStyle(api: types.IExtensionApi, themeName: string): Bluebird<void> {
   const stylePath = path.join(ops.themePath(themeName), "style.scss");
-  return fs.ensureFileAsync(stylePath).then(() =>
-    util.opn(stylePath).catch((err) => {
-      log("error", "failed to open", err);
-    }),
-  );
+  return fs.ensureFileAsync(stylePath).then(() => api.openFile(stylePath));
 }
 
 function init(context: types.IExtensionContext) {

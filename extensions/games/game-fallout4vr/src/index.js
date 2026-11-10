@@ -118,8 +118,7 @@ function prepare(api, discovery) {
     actions: [
       {
         title: "Download",
-        action: () =>
-          util.opn("https://www.nexusmods.com/fallout4/mods/91141?tab=files").catch(() => {}),
+        action: () => api.openUrl("https://www.nexusmods.com/fallout4/mods/91141?tab=files"),
       },
     ],
   });

@@ -373,7 +373,7 @@ function init(context: types.IExtensionContext) {
     "feedback",
     { classicOnly: true } as any,
     "Send Feedback",
-    () => util.opn(FEEDBACK_GOOGLE_FORM).catch(() => null) as any,
+    () => context.api.openUrl(FEEDBACK_GOOGLE_FORM),
   );
 
   context.registerAction(
@@ -382,7 +382,7 @@ function init(context: types.IExtensionContext) {
     "bug",
     { classicOnly: true } as any,
     "Report Bug",
-    () => util.opn(VORTEX_ISSUE_TRACKER).catch(() => null) as any,
+    () => context.api.openUrl(VORTEX_ISSUE_TRACKER),
   );
 
   context.once(() => {
@@ -399,9 +399,9 @@ function init(context: types.IExtensionContext) {
             {
               title: "View Logs/Open issue tracker",
               action: () => {
-                util.opn(VORTEX_ISSUE_TRACKER).catch(() => null);
+                context.api.openUrl(VORTEX_ISSUE_TRACKER);
                 (files || []).forEach((file) => {
-                  util.opn(file.filePath).catch(() => null);
+                  context.api.openFile(file.filePath);
                 });
               },
             },
@@ -419,8 +419,8 @@ function init(context: types.IExtensionContext) {
           {
             title: "View Log/Open issue tracker",
             action: () => {
-              util.opn(VORTEX_ISSUE_TRACKER).catch(() => null);
-              util.opn(logSessionPath).catch(() => null);
+              context.api.openUrl(VORTEX_ISSUE_TRACKER);
+              context.api.openFile(logSessionPath);
             },
           },
         ],
