@@ -8,6 +8,7 @@ import { EventEmitter } from "node:events";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
+import type { IValidateKeyDataV2 } from "../nexus_integration/types/IValidateKeyData";
 import type * as TrackerModule from "./mixpanel/MixpanelAnalytics";
 
 const mp = vi.hoisted(() => ({
@@ -34,14 +35,14 @@ vi.mock("./utils/storeGameVersionEvent", () => ({ emitStoreGameVersions: vi.fn()
 
 // The real tracker is a singleton whose startup queue closes for good, so the default export
 // forwards to a fresh real instance per test.
-const tracker = vi.hoisted(() => ({ current: undefined as object | undefined }));
+const tracker = vi.hoisted((): { current?: TrackerModule.MixpanelAnalytics } => ({}));
 vi.mock("./mixpanel/MixpanelAnalytics", async (importOriginal) => {
   const actual = await importOriginal<typeof TrackerModule>();
   const forward = new Proxy(
     {},
     {
-      get: (_target, prop) => {
-        const value = Reflect.get(tracker.current, prop);
+      get: (_target, prop): unknown => {
+        const value: unknown = Reflect.get(tracker.current, prop);
         return typeof value === "function" ? value.bind(tracker.current) : value;
       },
     },
@@ -57,7 +58,12 @@ interface FakeDialogAction {
   action: () => void;
 }
 
-const savedUser = { userId: 42, isPremium: false, isSupporter: false };
+const savedUser = {
+  userId: 42,
+  isPremium: false,
+  isSupporter: false,
+  isLifetime: false,
+} as IValidateKeyDataV2;
 
 function makeContext(enabled: boolean | undefined, { loggedIn = true, restored = true } = {}) {
   const onceCallbacks: Array<() => void> = [];
@@ -73,16 +79,16 @@ function makeContext(enabled: boolean | undefined, { loggedIn = true, restored =
     persistent: { nexus: { userInfo: restored ? savedUser : undefined } },
   };
   // mirror the settings reducer for the one action the consent dialog dispatches
-  const dispatch = vi.fn((action: { type: string; payload: unknown }) => {
+  const dispatch = vi.fn((action: { type: string; payload: boolean }) => {
     if (action.type === "SET_UPDATE_ANALYTICS") {
-      state.settings.analytics.enabled = action.payload as boolean;
+      state.settings.analytics.enabled = action.payload;
     }
   });
   let notification: { actions: Array<{ action: (dismiss: () => void) => void }> };
   let dialogActions: FakeDialogAction[] = [];
   const api = {
     getState: () => state,
-    store: { getState: () => state, dispatch } as unknown,
+    store: { getState: () => state, dispatch },
     onStateChange: vi.fn(),
     onAsync: vi.fn(),
     events: new EventEmitter(),
@@ -135,7 +141,7 @@ describe("analytics extension consent wiring", () => {
     const harness = makeContext(true);
     init(harness.context);
 
-    AnalyticsMixpanel.start({ userId: 42 } as never, false);
+    AnalyticsMixpanel.start(savedUser, false);
     AnalyticsMixpanel.trackEvent(event);
 
     expect(sent()).toEqual(["probe"]);
@@ -147,7 +153,7 @@ describe("analytics extension consent wiring", () => {
     harness.runOnce();
     AnalyticsMixpanel.trackEvent(event);
 
-    AnalyticsMixpanel.start({ userId: 42 } as never, false);
+    AnalyticsMixpanel.start(savedUser, false);
 
     expect(sent()).toEqual(["probe"]);
   });
@@ -158,7 +164,7 @@ describe("analytics extension consent wiring", () => {
     harness.runOnce();
     AnalyticsMixpanel.trackEvent(event);
 
-    AnalyticsMixpanel.start({ userId: 43 } as never, false);
+    AnalyticsMixpanel.start({ ...savedUser, userId: 43 }, false);
 
     expect(mp.track).not.toHaveBeenCalled();
   });
