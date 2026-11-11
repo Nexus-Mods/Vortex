@@ -7,6 +7,10 @@ import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 /**
  * Numeric Nexus game id for an internal game id, so every analytics event carries game_id in the
  * same form. null when the game isn't a Nexus game or the games cache hasn't loaded.
+ *
+ * @deprecated Use `convertId(gameData(state), { vortexGameId }, "gameId")`. This helper guesses a
+ * domain from the game id when the game declares none, and returns `null` where `convertId`
+ * returns `undefined`.
  */
 export function numericNexusGameId(internalGameId: string): GameId | null {
   // TODO: change internalGameId from string to branded VortexGameId type

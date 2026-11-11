@@ -19,7 +19,12 @@ function nexusIdForDomain(domain: string): number | undefined {
   return domainToId.get(domain);
 }
 
-/** The game's numeric Nexus id, if it has one (none for non-Nexus/community games). */
+/**
+ * The game's numeric Nexus id, if it has one (none for non-Nexus/community games).
+ *
+ * @deprecated Use `convertId(gameData(state), { vortexGameId }, "gameId")`. This helper guesses a
+ * domain from the game id when the game declares none.
+ */
 export function nexusGameIdForGame(game: IGameStored): GameId | undefined {
   const domain = nexusGameId(game);
   if (!domain) {
