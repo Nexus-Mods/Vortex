@@ -58,6 +58,7 @@ import {
   setGamePath,
   setGameSearchPaths,
 } from "./actions/settings";
+import { gameData } from "./gameData";
 import { GameModeManager } from "./GameModeManager";
 import { type IGameStub } from "./GameModeManager";
 import { discoveryReducer } from "./reducers/discovery";
@@ -1098,7 +1099,7 @@ function init(context: IExtensionContext): boolean {
 
           return listableDetectedIds(
             current.session.gameMode.detectedGames,
-            current.session.gameMode.known,
+            gameData(current),
             current.settings.gameMode.discovered,
             addedGameIds,
             {

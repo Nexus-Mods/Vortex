@@ -9,7 +9,7 @@ import type { IGameStored } from "../../types/IGameStored";
 const { baseState, dispatch, emit, sendNotification, state } = vi.hoisted(() => {
   // Enough of the store for the selectors this section reads, activeGameId included.
   const baseState = () => ({
-    persistent: { profiles: {} },
+    persistent: { profiles: {}, gameMode: { tier0: {} } },
     session: {
       discovery: { running: false },
       gameMode: {

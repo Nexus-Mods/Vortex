@@ -10,6 +10,7 @@ import { GameId, VortexGameId } from "@vortex/shared";
 
 import type { IGameStored } from "@/types/IState";
 
+import type { IGameData } from "../../queries";
 import type { IDetectedGame } from "../../types/IDetectedGame";
 import { isListableDetectedGame, listableDetectedIds } from "./listableDetectedIds";
 
@@ -36,6 +37,12 @@ const known = [
   { id: "skyrimse", details: { nexusPageId: "skyrimspecialedition" } },
   { id: "shadowrunreturns" },
 ] as unknown as IGameStored[];
+
+const dataFor = (games: IGameStored[] = []): IGameData => ({
+  known: games,
+  tier0: {},
+  nexusGames: [],
+});
 
 describe("isListableDetectedGame", () => {
   it("lists a game the endpoint returned an extension for", () => {
@@ -86,26 +93,28 @@ describe("isListableDetectedGame with the Tier 0 flag on", () => {
 
 describe("listableDetectedIds", () => {
   it("includes bundled games, whose extension the endpoint leaves out", () => {
-    const ids = listableDetectedIds([detected(1704, false), detected(102, false)], known);
+    const ids = listableDetectedIds([detected(1704, false), detected(102, false)], dataFor(known));
 
     expect(ids).toEqual(["uid-1704", "uid-102"]);
   });
 
   it("includes games with an extension even when Vortex doesn't know them yet", () => {
-    expect(listableDetectedIds([detected(5, true)], known)).toEqual(["uid-5"]);
+    expect(listableDetectedIds([detected(5, true)], dataFor(known))).toEqual(["uid-5"]);
   });
 
   it("leaves out games with no extension that nothing in Vortex handles", () => {
-    expect(listableDetectedIds([detected(5, false)], known)).toEqual([]);
+    expect(listableDetectedIds([detected(5, false)], dataFor(known))).toEqual([]);
   });
 
   it("leaves out games with no extension without known games to check", () => {
-    expect(listableDetectedIds([detected(102, false)])).toEqual([]);
+    expect(listableDetectedIds([detected(102, false)], dataFor())).toEqual([]);
   });
 
   it("includes extension-less games with the Tier 0 options on", () => {
     expect(
-      listableDetectedIds([detected(5, false)], known, {}, new Set(), { allowTierZero: true }),
+      listableDetectedIds([detected(5, false)], dataFor(known), {}, new Set(), {
+        allowTierZero: true,
+      }),
     ).toEqual(["uid-5"]);
   });
 
@@ -113,7 +122,7 @@ describe("listableDetectedIds", () => {
     const coveredByCatalog = { allowTierZero: true, extensionGameIds: new Set([GameId(5)]) };
 
     expect(
-      listableDetectedIds([detected(5, false)], known, {}, new Set(), coveredByCatalog),
+      listableDetectedIds([detected(5, false)], dataFor(known), {}, new Set(), coveredByCatalog),
     ).toEqual([]);
   });
 });
@@ -123,16 +132,16 @@ describe("listableDetectedIds with discovery", () => {
   const withEmberville = [...known, game("emberville")];
 
   it("adds a game only discovery found, by its internal id", () => {
-    const ids = listableDetectedIds([], withEmberville, {
-      emberville: { path: "C:/Games/Emberville" },
+    const ids = listableDetectedIds([], dataFor(withEmberville), {
+      [VortexGameId("emberville")]: { path: "C:/Games/Emberville" },
     });
 
     expect(ids).toEqual(["emberville"]);
   });
 
   it("counts a game the response and discovery both found once", () => {
-    const ids = listableDetectedIds([detected(1704, false)], withEmberville, {
-      skyrimse: { path: "C:/Games/Skyrim Special Edition" },
+    const ids = listableDetectedIds([detected(1704, false)], dataFor(withEmberville), {
+      [VortexGameId("skyrimse")]: { path: "C:/Games/Skyrim Special Edition" },
     });
 
     expect(ids).toEqual(["uid-1704"]);
@@ -142,8 +151,8 @@ describe("listableDetectedIds with discovery", () => {
   it("counts a game once when it shares its Nexus domain with another known game", () => {
     const withVR = [...known, game("skyrimvr", "skyrimspecialedition")];
 
-    const ids = listableDetectedIds([detected(1704, false)], withVR, {
-      skyrimvr: { path: "C:/Games/Skyrim VR" },
+    const ids = listableDetectedIds([detected(1704, false)], dataFor(withVR), {
+      [VortexGameId("skyrimvr")]: { path: "C:/Games/Skyrim VR" },
     });
 
     expect(ids).toEqual(["uid-1704"]);
@@ -152,8 +161,8 @@ describe("listableDetectedIds with discovery", () => {
   it("leaves out a discovered game the user has added", () => {
     const ids = listableDetectedIds(
       [],
-      withEmberville,
-      { emberville: { path: "C:/Games/Emberville" } },
+      dataFor(withEmberville),
+      { [VortexGameId("emberville")]: { path: "C:/Games/Emberville" } },
       new Set(["emberville"]),
     );
 

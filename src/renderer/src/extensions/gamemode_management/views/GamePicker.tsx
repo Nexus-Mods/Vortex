@@ -29,15 +29,16 @@ import { AddedGames } from "../components/added_games/AddedGames";
 import { DetectedGames } from "../components/detected_games/DetectedGames";
 import { Section } from "../components/section/Section";
 import { SupportedGames } from "../components/supported_games/SupportedGames";
+import { gameData } from "../gameData";
 import {
   DEFAULT_PICKER_LAYOUT,
   useDisplayOptionsAction,
 } from "../hooks/useDisplayOptionsAction.hook";
+import { convertId } from "../queries";
 import { catalogExtensionGameIds } from "../selectors";
 import type { IDetectedGame } from "../types/IDetectedGame";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
-import { detectedInternalId } from "../util/detected_games/detectedInternalId";
 import { detectedStore } from "../util/detected_games/detectedStore";
 import {
   isListableDetectedGame,
@@ -133,6 +134,7 @@ const GamePicker = ({
   // the catalog provides one, else the supported section keeps its download flow
   const tierZeroAllowed = useFlag("vortex-tier-0-game-support") !== undefined;
   const extensionGameIds = useSelector(catalogExtensionGameIds);
+  const data = useSelector(gameData);
   const detectedListOptions = useMemo(
     () => ({ allowTierZero: tierZeroAllowed, extensionGameIds }),
     [tierZeroAllowed, extensionGameIds],
@@ -324,7 +326,7 @@ const GamePicker = ({
       // nexus domain but not always, and is the installed one where games share a domain
       const domain = GameDomain(nexusGame.domain_name);
       const internalId =
-        detectedInternalId(knownGames, discoveredGames, domain) ??
+        convertId(data, { gameDomain: domain, discovered: discoveredGames }, "vortexGameId") ??
         tierZeroCandidateId(game, detectedListOptions) ??
         convertGameIdReverse(knownGames, domain);
       if (profileGames.has(internalId)) {

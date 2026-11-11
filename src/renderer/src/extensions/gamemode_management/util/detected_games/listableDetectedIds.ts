@@ -4,10 +4,10 @@ import type { IGameStored } from "@/types/IState";
 
 import { numericGameIdToDomainName } from "../../../nexus_integration/util";
 import { convertGameIdReverse } from "../../../nexus_integration/util/convertGameId";
+import { convertId, type IGameData } from "../../queries";
 import { tierZeroGameId } from "../../tiered/tierZeroGameId";
 import type { IDetectedGame } from "../../types/IDetectedGame";
 import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
-import { detectedInternalId } from "./detectedInternalId";
 import { locallyDetectedGames } from "./locallyDetectedGames";
 
 export interface IListableOptions {
@@ -52,7 +52,7 @@ export function tierZeroCandidateId(
 export function isListableDetectedGame(
   game: IDetectedGame,
   internalId: VortexGameId,
-  knownGames: IGameStored[],
+  knownGames: readonly IGameStored[],
   options: IListableOptions = {},
 ): boolean {
   return (
@@ -70,11 +70,12 @@ export function isListableDetectedGame(
  */
 export function listableDetectedIds(
   detected: IDetectedGame[],
-  knownGames: IGameStored[] = [],
-  discovered: { [gameId: string]: IDiscoveryResult } = {},
+  data: IGameData,
+  discovered: Record<VortexGameId, IDiscoveryResult> = {},
   addedGameIds: ReadonlySet<string> = new Set(),
   options: IListableOptions = {},
 ): string[] {
+  const knownGames = data.known;
   const ids: string[] = [];
   const listedIds = new Set<string>();
 
@@ -83,7 +84,7 @@ export function listableDetectedIds(
     const internalId =
       domain === undefined
         ? undefined
-        : (detectedInternalId(knownGames, discovered, domain) ??
+        : (convertId(data, { gameDomain: domain, discovered }, "vortexGameId") ??
           tierZeroCandidateId(game, options) ??
           convertGameIdReverse(knownGames, domain));
     if (isListableDetectedGame(game, internalId, knownGames, options)) {

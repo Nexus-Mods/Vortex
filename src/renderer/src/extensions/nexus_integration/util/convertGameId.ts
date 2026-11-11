@@ -66,7 +66,10 @@ export function nexusGameId(
  * @deprecated Use `convertId(gameData(state), { gameDomain }, "vortexGameId")`. This helper falls
  * back to the input as a game id when no known game matches; `convertId` returns `undefined` instead.
  */
-export function convertGameIdReverse(knownGames: IGameStored[], input: string): VortexGameId {
+export function convertGameIdReverse(
+  knownGames: readonly IGameStored[],
+  input: string,
+): VortexGameId {
   // an empty string is no game id either, and branding one would throw
   if (input?.toLowerCase === undefined || input === "") {
     return undefined;

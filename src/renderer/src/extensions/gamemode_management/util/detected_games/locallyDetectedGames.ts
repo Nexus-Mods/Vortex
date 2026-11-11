@@ -19,7 +19,7 @@ export interface ILocallyDetectedOptions {
  * reaches the section through here.
  */
 export function locallyDetectedGames(
-  knownGames: IGameStored[],
+  knownGames: readonly IGameStored[],
   discovered: { [gameId: string]: IDiscoveryResult },
   options: ILocallyDetectedOptions,
 ): IGameStored[] {

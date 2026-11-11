@@ -14,6 +14,7 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 import { activeGameId } from "@/util/selectors";
 
 import { setSortDetected } from "../../actions/settings";
+import { gameData } from "../../gameData";
 import { catalogExtensionGameIds } from "../../selectors";
 import type { IGameStored } from "../../types/IGameStored";
 import { listableDetectedIds } from "../../util/detected_games/listableDetectedIds";
@@ -81,7 +82,7 @@ export const DetectedGames = ({
     (state: IState) => state.session.discovery?.running ?? false,
   );
   const detectedGames = useSelector((state: IState) => state.session.gameMode?.detectedGames);
-  const knownGames = useSelector((state: IState) => state.session.gameMode?.known);
+  const data = useSelector(gameData);
   const profiles = useSelector((state: IState) => state.persistent.profiles);
   const detectionStatus = useSelector(
     (state: IState) => state.session.gameMode?.detectedGamesStatus,
@@ -127,7 +128,7 @@ export const DetectedGames = ({
   const handleScan = (trigger: ScanTrigger) => {
     const addedGameIds = new Set(Object.values(profiles).map((profile) => profile.gameId));
     const knownBefore = new Set(
-      listableDetectedIds(detectedGames ?? [], knownGames, discoveredGames, addedGameIds, {
+      listableDetectedIds(detectedGames ?? [], data, discoveredGames, addedGameIds, {
         allowTierZero: tierZeroAllowed,
         extensionGameIds,
       }),
