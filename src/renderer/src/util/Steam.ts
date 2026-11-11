@@ -132,6 +132,17 @@ function collectInstallData(appState: KVBlock): ISteamInstallData | undefined {
   };
 }
 
+/** The install-relevant fields of an appmanifest_<appid>.acf's text; undefined when
+    it doesn't parse or lacks them. */
+export function installDataFromManifest(manifestText: string): ISteamInstallData | undefined {
+  try {
+    const appState = parseKV(manifestText);
+    return appState.key === "AppState" ? collectInstallData(appState) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 const STORE_ID = "steam";
 const STORE_NAME = "Steam";
 const STEAM_EXEC = process.platform === "win32" ? "Steam.exe" : "steam.sh";
@@ -163,8 +174,8 @@ export interface ISteamInstallData {
 }
 
 export interface ISteamEntry extends IGameStoreEntry {
-  /** Install-relevant appmanifest fields; undefined when those fields are missing. */
-  installData?: ISteamInstallData;
+  /** The appmanifest_<appid>.acf the entry was read from. */
+  manifestPath: string;
   usesProton?: boolean;
   compatDataPath?: string;
   protonPath?: string;
@@ -491,8 +502,6 @@ class Steam implements IGameStore {
       return undefined;
     }
 
-    const installData = collectInstallData(appState);
-
     const result: ISteamEntry = {
       appid: appId,
       gameStoreId: STORE_ID,
@@ -500,7 +509,7 @@ class Steam implements IGameStore {
       gamePath: path.join(steamAppsPath, "common", installDir),
       lastUser: manifestLeaf(appState, "LastOwner"),
       lastUpdated: new Date(Number(manifestLeaf(appState, "LastUpdated") ?? 0) * 1000),
-      installData,
+      manifestPath: path.join(steamAppsPath, entry.basename),
     };
 
     if (process.platform === "linux") {

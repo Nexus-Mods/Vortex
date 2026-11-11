@@ -2,7 +2,7 @@ import * as path from "node:path";
 
 import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
 import { GameId } from "@vortex/shared";
-import { QualifiedPath } from "@vortex/shared/filesystem";
+import { type InMemoryFSBuilder, QualifiedPath } from "@vortex/shared/filesystem";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
 import type { IHarnessReducerBinding } from "@/test-utils/builders";
@@ -12,7 +12,7 @@ import { test } from "../../../test-utils/harnessTest";
 import type { IApiHarness } from "../../../test-utils/harnessTypes";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
 import { readGameVersions } from "../../gamemode_management/util/getGameVersion";
-import { gogInstallFromInfo } from "../../gamemode_management/util/store_install/gogInstall";
+import { parseGogInfo } from "../../gamemode_management/util/store_install/gogInstall";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
 import telemetryReducer from "../reducers/telemetry.reducer";
@@ -58,28 +58,19 @@ const INSTALL_DATA: ISteamInstallData = {
   sharedDepots: [{ depotId: 228990, ownerAppId: 228980 }],
 };
 
-describe("gogInstallFromInfo", () => {
+describe("parseGogInfo", () => {
   it("reads a 64-bit id through regex, not JSON.parse", () => {
     // JSON.parse rounds this to ...188; the extractor must see the raw digits.
     expect(
-      gogInstallFromInfo(
+      parseGogInfo(
         '{"rootGameId":1207658924,"buildId": 55136646198962190, "languages": ["en-US","de-DE"]}',
-        "1207658924",
       ),
-    ).toEqual({
-      product_id: "1207658924",
-      build_id: "55136646198962190",
-      install_language: "en-US",
+    ).toEqual({ rootGameId: "1207658924", buildId: "55136646198962190", language: "en-US" });
+    expect(parseGogInfo('{"buildId": "123", "language": "English"}')).toEqual({
+      rootGameId: undefined,
+      buildId: "123",
+      language: "English",
     });
-    expect(gogInstallFromInfo('{"buildId": "123", "language": "English"}', "1207658924")).toEqual({
-      product_id: "1207658924",
-      build_id: "123",
-      install_language: "English",
-    });
-  });
-
-  it("rejects content without a build id", () => {
-    expect(gogInstallFromInfo('{"languages": ["en-US"]}', "1")).toBeNull();
   });
 });
 
@@ -173,27 +164,81 @@ function seed(
   });
 }
 
-const steamEntry = (
-  installData?: ISteamInstallData,
-  gamePath = "C:\\Games\\Skyrim",
-  appid = "489830",
-): unknown => ({
+const manifestPathOf = (appid: string): string => `C:\\Steam\\steamapps\\appmanifest_${appid}.acf`;
+
+/** A store entry as the Steam scan records it; the install data stays in its manifest. */
+const steamEntry = (gamePath = "C:\\Games\\Skyrim", appid = "489830"): unknown => ({
   appid,
   name: "Skyrim",
   gamePath,
   gameStoreId: "steam",
-  installData,
+  manifestPath: manifestPathOf(appid),
 });
 
 const withEntries = (...entries: unknown[]): unknown => [
   { id: "steam", snapshot: () => ({ entries, isInstalled: true }) },
 ];
 
+/** The appmanifest_<appid>.acf Steam writes for an install. */
+const acf = (data: ISteamInstallData): string =>
+  [
+    '"AppState"',
+    "{",
+    `  "appid" "${data.appId}"`,
+    `  "buildid" "${data.buildId}"`,
+    `  "StateFlags" "${data.stateFlags}"`,
+    `  "TargetBuildID" "${data.targetBuildId}"`,
+    `  "UserConfig" { "language" "${data.language}"${data.branch === null ? "" : ` "BetaKey" "${data.branch}"`} }`,
+    `  "MountedConfig" { "language" "${data.mountedLanguage}" }`,
+    '  "InstalledDepots"',
+    "  {",
+    ...data.depots.map(
+      (depot) =>
+        `    "${depot.depotId}" { "manifest" "${depot.manifestId}"${depot.dlcAppId === null ? "" : ` "dlcappid" "${depot.dlcAppId}"`} }`,
+    ),
+    "  }",
+    '  "SharedDepots"',
+    "  {",
+    ...data.sharedDepots.map((depot) => `    "${depot.depotId}" "${depot.ownerAppId}"`),
+    "  }",
+    "}",
+  ].join("\n");
+
+// Store files (appmanifests, GOG .info files) live in an in-memory fs per test. Every
+// write gets a newer modified time, as a real one does: the store install scans remember
+// files by size and modified time, across tests too.
+let storeFiles: InMemoryFSBuilder;
+let restoreStoreFiles: () => void;
+let fileWrites = 0;
+
+beforeEach(() => {
+  restoreStoreFiles = installInMemoryFS((builder) => {
+    storeFiles = builder;
+  }).restore;
+});
+
+afterEach(() => restoreStoreFiles());
+
+async function writeStoreFile(nativePath: string, text: string): Promise<void> {
+  const file = QualifiedPath.fromNative(nativePath);
+  if ((await window.api.fs.stat(file)).exists) {
+    await window.api.fs.delete(file);
+  }
+  storeFiles.file(
+    file,
+    { type: "text", data: text },
+    { modifiedTime: Temporal.Instant.fromEpochMilliseconds(++fileWrites * 1000) },
+  );
+}
+
+const writeManifest = (data: ISteamInstallData): Promise<void> =>
+  writeStoreFile(manifestPathOf(String(data.appId)), acf(data));
+
 describe("emitStoreGameVersionEvent", () => {
   const telemetryEvent = vi.fn();
   const versionSpy = vi.mocked(readGameVersions);
 
-  beforeEach(() => {
+  beforeEach(async () => {
     telemetryEvent.mockReset().mockResolvedValue({ accepted: 1, rejected: [] });
     versionSpy
       .mockReset()
@@ -205,12 +250,14 @@ describe("emitStoreGameVersionEvent", () => {
     vi.mocked(getGame).mockReturnValue({
       details: { steamAppId: 489830 },
     } as unknown as ReturnType<typeof getGame>);
-    vi.mocked(getGameStoresSafe).mockReturnValue(withEntries(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(getGameStoresSafe).mockReturnValue(withEntries(steamEntry()) as never);
+    await writeManifest(INSTALL_DATA);
   });
 
-  test("posts the steam snapshot once and again only after a change", async ({ makeApi }) => {
+  test("posts the steam install once and again only after a steam update", async ({ makeApi }) => {
     const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness);
+    const manifestReads = vi.spyOn(window.api.fs, "readFile");
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
 
@@ -245,6 +292,8 @@ describe("emitStoreGameVersionEvent", () => {
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
     expect(versionSpy).toHaveBeenCalledTimes(1);
+    // an unchanged manifest isn't read again
+    expect(manifestReads).toHaveBeenCalledTimes(1);
 
     // an exe-version-only change does not re-send: the identity is unchanged, so the
     // cheap gate skips before the version lookup happens again
@@ -252,10 +301,9 @@ describe("emitStoreGameVersionEvent", () => {
     expect(telemetryEvent).toHaveBeenCalledTimes(1);
     expect(versionSpy).toHaveBeenCalledTimes(1);
 
-    // an install-identity change (steam update, new build id) re-sends
-    vi.mocked(getGameStoresSafe).mockReturnValue(
-      withEntries(steamEntry({ ...INSTALL_DATA, buildId: 16659741 })) as never,
-    );
+    // Steam updates the game while Vortex runs: the scan's entry stays the same, only
+    // the manifest moves to the new build id, and that re-sends
+    await writeManifest({ ...INSTALL_DATA, buildId: 16659741 });
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
     expect(telemetryEvent).toHaveBeenCalledTimes(2);
     expect(telemetryEvent.mock.calls[1][2].payload.steam.build_id).toBe(16659741);
@@ -266,11 +314,9 @@ describe("emitStoreGameVersionEvent", () => {
     const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness, { discovered: { skyrimse: { path: "C:\\Games\\Skyrim", store: "steam" } } });
     // the Creation Kit sorts first, as appmanifest_1946180.acf does on NTFS
+    await writeManifest({ ...INSTALL_DATA, appId: 1946180 });
     vi.mocked(getGameStoresSafe).mockReturnValue(
-      withEntries(
-        steamEntry({ ...INSTALL_DATA, appId: 1946180 }, "C:\\Games\\Skyrim", "1946180"),
-        steamEntry(INSTALL_DATA),
-      ) as never,
+      withEntries(steamEntry("C:\\Games\\Skyrim", "1946180"), steamEntry()) as never,
     );
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
@@ -284,10 +330,12 @@ describe("emitStoreGameVersionEvent", () => {
     vi.mocked(getGame).mockReturnValue({
       queryArgs: { steam: [{ id: "22300" }, { id: "22370" }] },
     } as unknown as ReturnType<typeof getGame>);
+    await writeManifest({ ...INSTALL_DATA, appId: 1946180 });
+    await writeManifest({ ...INSTALL_DATA, appId: 22370 });
     vi.mocked(getGameStoresSafe).mockReturnValue(
       withEntries(
-        steamEntry({ ...INSTALL_DATA, appId: 1946180 }, "C:\\Games\\Skyrim", "1946180"),
-        steamEntry({ ...INSTALL_DATA, appId: 22370 }, "C:\\Games\\Skyrim", "22370"),
+        steamEntry("C:\\Games\\Skyrim", "1946180"),
+        steamEntry("C:\\Games\\Skyrim", "22370"),
       ) as never,
     );
 
@@ -300,10 +348,9 @@ describe("emitStoreGameVersionEvent", () => {
     const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness, { discovered: { skyrimse: { path: "C:\\Games\\Skyrim", store: "steam" } } });
     vi.mocked(getGame).mockReturnValue({} as unknown as ReturnType<typeof getGame>);
+    await writeManifest({ ...INSTALL_DATA, appId: 22490 });
     vi.mocked(getGameStoresSafe).mockReturnValue(
-      withEntries(
-        steamEntry({ ...INSTALL_DATA, appId: 22490 }, "C:\\Games\\Skyrim", "22490"),
-      ) as never,
+      withEntries(steamEntry("C:\\Games\\Skyrim", "22490")) as never,
     );
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
@@ -319,9 +366,7 @@ describe("emitStoreGameVersionEvent", () => {
     expect(telemetryEvent).toHaveBeenCalledTimes(1);
 
     // state_flags and target_build_id flip on routine updates; the identity is unchanged
-    vi.mocked(getGameStoresSafe).mockReturnValue(
-      withEntries(steamEntry({ ...INSTALL_DATA, stateFlags: 8, targetBuildId: 17 })) as never,
-    );
+    await writeManifest({ ...INSTALL_DATA, stateFlags: 8, targetBuildId: 17 });
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
     expect(telemetryEvent).toHaveBeenCalledTimes(1);
 
@@ -334,7 +379,7 @@ describe("emitStoreGameVersionEvent", () => {
     const harness = makeApi(undefined, [TELEMETRY_BINDING]);
     seed(harness);
     vi.mocked(getGameStoresSafe).mockReturnValue(
-      withEntries(steamEntry(INSTALL_DATA), "D:\\somewhere-else") as never,
+      withEntries(steamEntry("D:\\somewhere-else")) as never,
     );
 
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
@@ -398,11 +443,16 @@ describe("emitStoreGameVersionEvent", () => {
     vi.mocked(getGameStoresSafe).mockReturnValue(withEntries() as never);
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
 
-    // store entry present, but the manifest lacked the install fields
-    vi.mocked(getGameStoresSafe).mockReturnValue(withEntries(steamEntry(undefined)) as never);
+    // store entry present, but the manifest lacks the install fields
+    await writeStoreFile(manifestPathOf("489830"), '"AppState"\n{\n  "appid" "489830"\n}');
+    vi.mocked(getGameStoresSafe).mockReturnValue(withEntries(steamEntry()) as never);
     await emitStoreGameVersionEvent(harness.api, "skyrimse");
 
-    const [missed, unparsed] = telemetryEvent.mock.calls.map((call) => call[2].payload);
+    // the manifest is gone since the scan: the game was uninstalled or moved
+    await window.api.fs.delete(QualifiedPath.fromNative(manifestPathOf("489830")));
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    const [missed, unparsed, gone] = telemetryEvent.mock.calls.map((call) => call[2].payload);
     expect(missed).toMatchObject({
       store: "steam",
       steam: null,
@@ -413,7 +463,24 @@ describe("emitStoreGameVersionEvent", () => {
       steam: null,
       failure_reason: "acf-parse-failed",
     });
+    expect(gone).toMatchObject({ steam: null, failure_reason: "store-entry-not-found" });
     expect(missed).toMatchObject({ exe_version: "1.6.1170.0" });
+  });
+
+  test("keeps the last manifest while Steam holds it locked", async ({ makeApi }) => {
+    const harness = makeApi(undefined, [TELEMETRY_BINDING]);
+    seed(harness);
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+
+    // Steam rewrites the manifest and still has it open: nothing is sent until it reads
+    await writeManifest({ ...INSTALL_DATA, buildId: 16659741 });
+    vi.spyOn(window.api.fs, "readFile").mockRejectedValueOnce(new Error("EBUSY"));
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(1);
+
+    await emitStoreGameVersionEvent(harness.api, "skyrimse");
+    expect(telemetryEvent).toHaveBeenCalledTimes(2);
+    expect(telemetryEvent.mock.calls[1][2].payload.steam.build_id).toBe(16659741);
   });
 
   test("skips games without a resolvable numeric nexus id", async ({ makeApi }) => {
@@ -478,7 +545,7 @@ describe("emitStoreGameVersions", () => {
     name: "Skyrim VR",
     gamePath: "C:\\Games\\SkyrimVR",
     gameStoreId: "steam",
-    installData: VARIANT,
+    manifestPath: manifestPathOf("489831"),
   };
 
   const GOG_ENTRY = { appid: GOG_ID, name: "Witcher 3", gamePath: GOG_PATH, gameStoreId: "gog" };
@@ -494,9 +561,9 @@ describe("emitStoreGameVersions", () => {
     },
   ];
 
-  let restoreFs: () => void;
+  const GOG_INFO_PATH = path.join(GOG_PATH, `goggame-${GOG_ID}.info`);
 
-  beforeEach(() => {
+  beforeEach(async () => {
     telemetryEvent.mockReset().mockResolvedValue({ accepted: 1, rejected: [] });
     vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
       telemetryEvent,
@@ -507,19 +574,13 @@ describe("emitStoreGameVersions", () => {
       return numeric === undefined ? null : GameId(numeric);
     });
 
-    restoreFs = installInMemoryFS((builder) => {
-      builder.file(QualifiedPath.fromNative(path.join(GOG_PATH, `goggame-${GOG_ID}.info`)), {
-        type: "text",
-        data: JSON.stringify({
-          rootGameId: 1207658924,
-          buildId: 55136646198962190,
-          languages: ["en-US"],
-        }),
-      });
-    }).restore;
+    await writeStoreFile(
+      GOG_INFO_PATH,
+      JSON.stringify({ rootGameId: 1207658924, buildId: 55136646198962190, languages: ["en-US"] }),
+    );
+    await writeManifest(INSTALL_DATA);
+    await writeManifest(VARIANT);
   });
-
-  afterEach(() => restoreFs());
 
   const harnessWithVersionLookups = (
     makeApi: (overrides?: object, extraReducers?: IHarnessReducerBinding[]) => IApiHarness,
@@ -556,7 +617,7 @@ describe("emitStoreGameVersions", () => {
     const exeCalls: Record<string, number> = {};
     const harness = harnessWithVersionLookups(makeApi, exeCalls);
 
-    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry()) as never);
 
     await emitStoreGameVersions(harness.api);
 
@@ -565,9 +626,7 @@ describe("emitStoreGameVersions", () => {
     expect(gameIds).toEqual(["1704", "1705", "1720"]);
 
     // only skyrimse's install identity changes (a steam update wrote a new build id)
-    vi.mocked(getGameStoresSafe).mockReturnValue(
-      steamStoreWith(steamEntry({ ...INSTALL_DATA, buildId: 16659741 })) as never,
-    );
+    await writeManifest({ ...INSTALL_DATA, buildId: 16659741 });
 
     await emitStoreGameVersions(harness.api);
 
@@ -587,7 +646,7 @@ describe("emitStoreGameVersions", () => {
     const exeCalls: Record<string, number> = {};
     const harness = harnessWithVersionLookups(makeApi, exeCalls);
 
-    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry()) as never);
 
     telemetryEvent.mockRejectedValueOnce(new Error("socket reset"));
     await emitStoreGameVersions(harness.api);
@@ -604,7 +663,7 @@ describe("emitStoreGameVersions", () => {
     const exeCalls: Record<string, number> = {};
     const harness = harnessWithVersionLookups(makeApi, exeCalls);
 
-    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry()) as never);
     vi.mocked(numericNexusGameId).mockImplementation((gameId) =>
       gameId === "witcher3" ? null : GameId(1704),
     );
@@ -620,7 +679,7 @@ describe("emitStoreGameVersions", () => {
     const exeCalls: Record<string, number> = {};
     const harness = harnessWithVersionLookups(makeApi, exeCalls, { unmanaged: ["witcher3"] });
 
-    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry()) as never);
 
     await emitStoreGameVersions(harness.api);
     expect(telemetryEvent).toHaveBeenCalledTimes(2);
@@ -633,7 +692,7 @@ describe("emitStoreGameVersions", () => {
     const exeCalls: Record<string, number> = {};
     const harness = harnessWithVersionLookups(makeApi, exeCalls);
 
-    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry()) as never);
 
     await emitStoreGameVersions(harness.api);
     expect(telemetryEvent).toHaveBeenCalledTimes(3);
@@ -655,7 +714,7 @@ describe("emitStoreGameVersions", () => {
     const exeCalls: Record<string, number> = {};
     const harness = harnessWithVersionLookups(makeApi, exeCalls);
 
-    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry()) as never);
 
     await emitStoreGameVersions(harness.api);
     expect(telemetryEvent).toHaveBeenCalledTimes(3);
@@ -668,9 +727,7 @@ describe("emitStoreGameVersions", () => {
     });
 
     // skyrimse's steam update moved its build id
-    vi.mocked(getGameStoresSafe).mockReturnValue(
-      steamStoreWith(steamEntry({ ...INSTALL_DATA, buildId: 16659741 })) as never,
-    );
+    await writeManifest({ ...INSTALL_DATA, buildId: 16659741 });
 
     await emitStoreGameVersions(next.api);
     expect(telemetryEvent).toHaveBeenCalledTimes(4);
@@ -691,20 +748,17 @@ describe("emitStoreGameVersions", () => {
       gogEntries: object[],
       infoFiles: Record<string, string>,
     ): Promise<unknown> => {
-      restoreFs();
-      restoreFs = installInMemoryFS((builder) => {
-        for (const [productId, rootGameId] of Object.entries(infoFiles)) {
-          builder.file(QualifiedPath.fromNative(path.join(GOG_PATH, `goggame-${productId}.info`)), {
-            type: "text",
-            data: `{"gameId": "${productId}", "rootGameId": "${rootGameId}", "buildId": "1"}`,
-          });
-        }
-      }).restore;
+      for (const [productId, rootGameId] of Object.entries(infoFiles)) {
+        await writeStoreFile(
+          path.join(GOG_PATH, `goggame-${productId}.info`),
+          `{"gameId": "${productId}", "rootGameId": "${rootGameId}", "buildId": "1"}`,
+        );
+      }
       vi.mocked(getGameStoresSafe).mockReturnValue([
         {
           id: "steam",
           snapshot: () => ({
-            entries: [steamEntry(INSTALL_DATA), SKYRIMVR_ENTRY],
+            entries: [steamEntry(), SKYRIMVR_ENTRY],
             isInstalled: true,
           }),
         },
@@ -743,6 +797,7 @@ describe("emitStoreGameVersions", () => {
     // Galaxy was uninstalled, or Windows reset: the game kept its .info files
     test("found by its folder's .info files when the registry lists none", async ({ makeApi }) => {
       const harness = harnessWithVersionLookups(makeApi, {});
+      const listings = vi.spyOn(window.api.fs, "enumerateDirectory");
 
       const witcher = await emitWithGogFolder(harness, [], {
         [DLC_ID]: GOG_ID,
@@ -750,6 +805,9 @@ describe("emitStoreGameVersions", () => {
       });
 
       expect(witcher).toMatchObject({ failure_reason: null, gog: { product_id: GOG_ID } });
+      // the next deploy doesn't list the folder again
+      await emitStoreGameVersions(harness.api);
+      expect(listings).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -757,19 +815,16 @@ describe("emitStoreGameVersions", () => {
     const exeCalls: Record<string, number> = {};
     const harness = harnessWithVersionLookups(makeApi, exeCalls);
 
-    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry(INSTALL_DATA)) as never);
+    vi.mocked(getGameStoresSafe).mockReturnValue(steamStoreWith(steamEntry()) as never);
 
     await emitStoreGameVersions(harness.api);
     expect(telemetryEvent).toHaveBeenCalledTimes(3);
 
     // a GOG update rewrites the .info with the new build id
-    restoreFs();
-    restoreFs = installInMemoryFS((builder) => {
-      builder.file(QualifiedPath.fromNative(path.join(GOG_PATH, `goggame-${GOG_ID}.info`)), {
-        type: "text",
-        data: '{"rootGameId": 1207658924, "buildId": "58219005939443187", "languages": ["en-US"]}',
-      });
-    }).restore;
+    await writeStoreFile(
+      GOG_INFO_PATH,
+      '{"rootGameId": 1207658924, "buildId": "58219005939443187", "languages": ["en-US"]}',
+    );
 
     await emitStoreGameVersions(harness.api);
     expect(telemetryEvent).toHaveBeenCalledTimes(4);

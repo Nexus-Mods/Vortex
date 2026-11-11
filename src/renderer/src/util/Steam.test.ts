@@ -11,7 +11,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { installInMemoryFS } from "../test-utils/fsApi";
 import { GameEntryNotFound } from "../types/IGameStore";
-import { Steam } from "./Steam";
+import { installDataFromManifest, Steam } from "./Steam";
 
 // Steam.ts builds its singleton at import time, and on Linux that constructor calls
 // findLinuxSteamPath straight away - before any binding declared below this file's
@@ -295,10 +295,18 @@ describe("Steam.allGames", () => {
     ]);
   });
 
-  it("keeps the InstalledDepots file order, which depot-id sort would lose", async () => {
-    const entries = await scanAllGames(DEPOT_MANIFEST);
+  it("records the manifest each entry was read from", async () => {
+    const entries = await scanAllGames();
 
-    expect(entries[0]?.installData).toEqual({
+    expect(entries[0]?.manifestPath).toBe(
+      path.join(BASE_FOLDER, "steamapps", "appmanifest_42.acf"),
+    );
+  });
+});
+
+describe("installDataFromManifest", () => {
+  it("keeps the InstalledDepots file order, which depot-id sort would lose", () => {
+    expect(installDataFromManifest(DEPOT_MANIFEST)).toEqual({
       appId: 42,
       buildId: 12345,
       stateFlags: 4,
@@ -314,15 +322,11 @@ describe("Steam.allGames", () => {
     });
   });
 
-  it("normalizes the default branch to null", async () => {
-    const entries = await scanAllGames(DEPOT_MANIFEST.replace("beta-2", "public"));
-
-    expect(entries[0]?.installData?.branch).toBeNull();
+  it("normalizes the default branch to null", () => {
+    expect(installDataFromManifest(DEPOT_MANIFEST.replace("beta-2", "public"))?.branch).toBeNull();
   });
 
-  it("skips install data when the manifest lacks build or state fields", async () => {
-    const entries = await scanAllGames();
-
-    expect(entries[0]?.installData).toBeUndefined();
+  it("skips install data when the manifest lacks build or state fields", () => {
+    expect(installDataFromManifest(MANIFEST)).toBeUndefined();
   });
 });
