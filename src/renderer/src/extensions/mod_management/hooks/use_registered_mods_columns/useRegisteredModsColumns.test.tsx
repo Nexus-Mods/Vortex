@@ -1,4 +1,4 @@
-import { act, render, renderHook, screen, waitFor } from "@testing-library/react";
+import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +7,14 @@ const { registered } = vi.hoisted(() => ({ registered: { attributes: [] as unkno
 
 vi.mock("@/ExtensionProvider", () => ({
   useExtensionObjects: () => registered.attributes,
+}));
+
+// The gate attaches an extension's reactive props, and its fallback needs the app's icon files;
+// the tests see only which gate a cell is drawn in.
+vi.mock("@/controls/ExtensionGate", () => ({
+  default: ({ id, children }: { id: string; children: React.ReactNode }) => (
+    <div data-testid={`gate-${id}`}>{children}</div>
+  ),
 }));
 
 // The same `t` on every render, as the app's is until the language changes, so a redraw
@@ -161,6 +169,58 @@ describe("useRegisteredModsColumns", () => {
     const { defaultShown } = renderRegistered(new Set(["category"]));
 
     expect(defaultShown).toEqual(["endorsed", "content"]);
+  });
+
+  describe("a cell of the extension's own", () => {
+    it("is drawn by its renderer, given the mod, in place of the value", () => {
+      const customRenderer = vi.fn((mod: IModWithState) => (
+        <button type="button">{`Endorse ${mod.id}`}</button>
+      ));
+      registered.attributes = [attribute({ calc: () => "Undecided", customRenderer })];
+
+      const { cell } = renderCell();
+
+      expect(within(cell()).getByRole("button", { name: "Endorse a" })).toBeInTheDocument();
+      expect(cell()).not.toHaveTextContent("Undecided");
+      expect(customRenderer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "a" }),
+        false,
+        expect.any(Function),
+        expect.objectContaining({ onHighlight: expect.any(Function) }),
+      );
+    });
+
+    // As in the legacy table, by the same id, so a broken control shows the gate's warning.
+    it("is drawn in the extension gate for its mod and column", () => {
+      registered.attributes = [
+        attribute({ id: "endorsed", customRenderer: () => <button type="button">Endorse</button> }),
+      ];
+
+      const { cell } = renderCell();
+
+      expect(
+        within(within(cell()).getByTestId("gate-extension-a-endorsed")).getByRole("button"),
+      ).toBeInTheDocument();
+    });
+
+    // A renderer that throws as it's called, which in the legacy table takes the page down.
+    it("draws nothing when its renderer fails", () => {
+      registered.attributes = [
+        attribute({
+          customRenderer: () => {
+            throw new Error("broken");
+          },
+        }),
+      ];
+
+      expect(renderCell().cell()).toBeEmptyDOMElement();
+    });
+
+    it("draws nothing, in no gate, when its renderer draws nothing", () => {
+      registered.attributes = [attribute({ customRenderer: () => null })];
+
+      expect(renderCell().cell()).toBeEmptyDOMElement();
+    });
   });
 
   describe("a value", () => {

@@ -3,10 +3,11 @@ import React, { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import ExtensionGate from "@/controls/ExtensionGate";
 import { registerTableAttribute } from "@/controls/table/registerTableAttribute";
 import { useExtensionObjects } from "@/ExtensionProvider";
 import type { IState } from "@/types/IState";
-import type { ITableAttribute } from "@/types/ITableAttribute";
+import type { ICustomProps, ITableAttribute } from "@/types/ITableAttribute";
 import { Icon } from "@/ui/components/icon/Icon";
 import { getCurrentLanguage, preT, type TFunction } from "@/util/i18n";
 import { log } from "@/util/log";
@@ -41,8 +42,15 @@ const valueCell = (value: unknown, header: string): ReactNode => {
 const isThenable = (value: unknown): value is PromiseLike<unknown> =>
   typeof (value as PromiseLike<unknown> | undefined)?.then === "function";
 
-const logCalcFailure = (attribute: ITableAttribute, mod: IModWithState, err: unknown) =>
-  log("error", "failed to calculate attribute value", {
+const CALC_FAILED = "failed to calculate attribute value";
+
+const logFailure = (
+  message: string,
+  attribute: ITableAttribute,
+  mod: IModWithState,
+  err: unknown,
+) =>
+  log("error", message, {
     attribute: attribute.id,
     row: mod.id,
     error: getErrorMessageOrDefault(err),
@@ -75,7 +83,7 @@ const RegisteredValue = ({
     try {
       return attribute.calc?.(mod, t);
     } catch (err) {
-      logCalcFailure(attribute, mod, err);
+      logFailure(CALC_FAILED, attribute, mod, err);
       return undefined;
     }
   }, [attribute, mod, t, version, volatileMods]);
@@ -92,7 +100,7 @@ const RegisteredValue = ({
           setSettled(value);
         }
       },
-      (err: unknown) => logCalcFailure(attribute, mod, err),
+      (err: unknown) => logFailure(CALC_FAILED, attribute, mod, err),
     );
     return () => {
       current = false;
@@ -100,6 +108,32 @@ const RegisteredValue = ({
   }, [attribute, mod, result]);
 
   return valueCell(isThenable(result) ? settled : result, header);
+};
+
+// Only the Dependencies column highlights its row, while its icon is dragged over it, which
+// comes with dragging to make rules (LAZ-1589).
+const NO_HIGHLIGHT: ICustomProps = { onHighlight: () => undefined };
+
+interface ICustomCellProps {
+  attribute: ITableAttribute;
+  mod: IModWithState;
+  t: TFunction;
+}
+
+/**
+ * A cell an extension draws itself, with its `customRenderer`, called and gated as the legacy
+ * table does: the gate keeps the control's reactive props current, by the legacy cell's id.
+ */
+const CustomCell = ({ attribute, mod, t }: ICustomCellProps) => {
+  let control: ReactNode = null;
+  try {
+    control = attribute.customRenderer?.(mod, false, t, NO_HIGHLIGHT) ?? null;
+  } catch (err) {
+    logFailure("failed to render attribute", attribute, mod, err);
+  }
+  return control === null ? null : (
+    <ExtensionGate id={`extension-${mod.id}-${attribute.id}`}>{control}</ExtensionGate>
+  );
 };
 
 const isNewTableShown = (state: IState) => state.settings.mods?.betaTable === true;
@@ -159,16 +193,19 @@ export const useRegisteredModsColumns = (
         header,
         isToggleable: true,
         position: attribute.position,
-        cell: ({ mod }) => (
-          <RegisteredValue
-            attribute={attribute}
-            header={header}
-            mod={mod}
-            t={t}
-            version={versions[attribute.id] ?? 0}
-            volatileMods={attribute.isVolatile ? mods : undefined}
-          />
-        ),
+        cell: ({ mod }) =>
+          attribute.customRenderer !== undefined ? (
+            <CustomCell attribute={attribute} mod={mod} t={t} />
+          ) : (
+            <RegisteredValue
+              attribute={attribute}
+              header={header}
+              mod={mod}
+              t={t}
+              version={versions[attribute.id] ?? 0}
+              volatileMods={attribute.isVolatile ? mods : undefined}
+            />
+          ),
       };
     });
 
