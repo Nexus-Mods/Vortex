@@ -181,43 +181,6 @@ describe("ModList", () => {
     }
   });
 
-  it("asks to move focus to the details pane on Right from a card", async () => {
-    const { onFocusDetails } = renderComponent({ activeModId: "1", mods: [mod("1")] });
-
-    act(() => screen.getByRole("button", { name: /Mod 1/ }).focus());
-    await userEvent.keyboard("{ArrowRight}");
-
-    expect(onFocusDetails).toHaveBeenCalled();
-  });
-
-  it.each([
-    ["{ArrowDown}", "1"],
-    ["{Home}", "1"],
-    ["{ArrowUp}", "3"],
-    ["{End}", "3"],
-  ])("picks a mod from the list itself with %s", async (key, id) => {
-    const { onSelectMod } = renderComponent({ mods: modsUpTo(3) });
-    act(() => list().focus());
-
-    await userEvent.keyboard(key);
-
-    expect(onSelectMod).toHaveBeenCalledWith(id, "keyboard");
-    expect(screen.getByRole("button", { name: new RegExp(`Mod ${id}`) })).toHaveFocus();
-  });
-
-  it.each([
-    ["{ArrowDown}", "2"],
-    ["{ArrowUp}", "1"],
-  ])("moves to the next mod with %s from a card", async (key, id) => {
-    render(<PickingList mods={modsUpTo(3)} />);
-    act(() => list().focus());
-    await userEvent.keyboard("{ArrowDown}");
-
-    await userEvent.keyboard(key);
-
-    expect(screen.getByRole("button", { name: new RegExp(`^Mod ${id}`) })).toHaveFocus();
-  });
-
   it("goes to the last mod loaded with End, however far out of view", async () => {
     render(<PickingList mods={modsUpTo(50)} />);
     act(() => list().focus());
@@ -263,15 +226,6 @@ describe("ModList", () => {
 
     expect(screen.getByRole("button", { name: /^Mod 31/ })).toBeInTheDocument();
     vi.unstubAllGlobals();
-  });
-
-  it("picks nothing from the keys while another search's first page loads", async () => {
-    const { onSelectMod } = renderComponent({ mods: modsUpTo(3), isLoading: true });
-    act(() => list().focus());
-
-    await userEvent.keyboard("{ArrowDown}{End}");
-
-    expect(onSelectMod).not.toHaveBeenCalled();
   });
 
   it("picks a mod clicked, saying it was the pointer", async () => {

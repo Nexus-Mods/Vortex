@@ -1,19 +1,12 @@
-import React, {
-  type KeyboardEvent,
-  type ReactNode,
-  type RefObject,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-} from "react";
+import React, { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { Listing } from "@/ui/components/listing/Listing";
-import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import type { SelectionInput } from "../../../hooks/browse_mods_tracking/browseModsTracker";
+import { useModListKeyboard } from "../../../hooks/use_mod_list_keyboard/useModListKeyboard.hook";
 import { useModListVirtualizer } from "../../../hooks/use_mod_list_virtualizer/useModListVirtualizer.hook";
 import { ModCard } from "../mod_card/ModCard";
 import { ModCardSkeleton } from "../mod_card/ModCard.skeleton";
@@ -51,22 +44,6 @@ interface IModListProps {
   listRef?: RefObject<HTMLDivElement>;
 }
 
-/** Which mod each key picks from the list itself, rather than from a mod. */
-const FROM_LIST: Partial<Record<string, "first" | "last">> = {
-  ArrowDown: "first",
-  Home: "first",
-  ArrowUp: "last",
-  End: "last",
-};
-
-/** Which mod each key moves to from the one at `at`, of the mods up to `last`. */
-const FROM_CARD: Partial<Record<string, (at: number, last: number) => number>> = {
-  ArrowDown: (at) => at + 1,
-  ArrowUp: (at) => at - 1,
-  Home: () => 0,
-  End: (_, last) => last,
-};
-
 /**
  * Browse's list of mods, loading more as its end scrolls into view, and rendering only the cards
  * near it. A later page that fails offers to try again where it would go. One Tab stop, the open
@@ -97,7 +74,6 @@ export const ModList = ({
     !!mods.length && !hasMore && !isLoading && !isLoadingMore && !isLoadMoreError;
   const ownScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = listRef ?? ownScrollRef;
-  const focusTargetRef = useRef<number>();
   const activeIndex = mods.findIndex((mod) => mod.id === activeModId);
   const tabStop = activeIndex >= 0 ? activeIndex : 0;
   const virtualizer = useModListVirtualizer({
@@ -112,75 +88,18 @@ export const ModList = ({
   useLayoutEffect(() => {
     if (shownSearchRef.current !== searchKey) {
       shownSearchRef.current = searchKey;
-      focusTargetRef.current = undefined;
       scrollToTop();
     }
   }, [searchKey, scrollToTop]);
 
-  /** Focuses the card the keyboard last moved to, once it's rendered, and forgets it. */
-  const focusTarget = () => {
-    if (focusTargetRef.current === undefined) {
-      return;
-    }
-
-    const card = scrollRef.current?.querySelector<HTMLElement>(
-      `[data-index="${focusTargetRef.current}"] [data-mod-card]`,
-    );
-
-    if (card) {
-      card.focus();
-      focusTargetRef.current = undefined;
-    }
-  };
-
-  useLayoutEffect(focusTarget);
-
-  /** Picks the mod at `index` and focuses it. */
-  const moveTo = (event: KeyboardEvent<HTMLDivElement>, index: number) => {
-    event.preventDefault();
-
-    if (!mods[index]) {
-      return;
-    }
-
-    focusTargetRef.current = index;
-    onSelectMod(mods[index].id, "keyboard");
-    focusTarget();
-  };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (hasModifierKey(event) || !mods.length || isLoading) {
-      return;
-    }
-
-    const last = mods.length - 1;
-    const at =
-      event.target instanceof HTMLElement
-        ? event.target.closest<HTMLElement>("[data-index]")?.dataset.index
-        : undefined;
-
-    if (event.target === event.currentTarget) {
-      const end = FROM_LIST[event.key];
-
-      if (end) {
-        moveTo(event, end === "last" ? last : 0);
-      }
-
-      return;
-    }
-
-    const step = at === undefined ? undefined : FROM_CARD[event.key];
-
-    if (step) {
-      moveTo(event, Math.min(Math.max(step(Number(at), last), 0), last));
-      return;
-    }
-
-    if (event.key === "ArrowRight" && at !== undefined) {
-      event.preventDefault();
-      onFocusDetails();
-    }
-  };
+  const onKeyDown = useModListKeyboard({
+    scrollRef,
+    mods,
+    searchKey,
+    isLoading,
+    onSelectMod,
+    onFocusDetails,
+  });
 
   return (
     <div className="scrollbar-inset-6 mr-1 flex min-w-0 flex-1 flex-col focus-ring-inset">
