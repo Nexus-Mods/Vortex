@@ -16,6 +16,9 @@ import type { IGameStored, IGameStoredExt } from "../../gamemode_management/type
 /**
  * get the nexus page id for a game
  * TODO: some games have hard-coded transformations here, should move all of that to game.details
+ *
+ * @deprecated Use `convertId(gameData(state), { vortexGameId }, "gameDomain")`. This helper guesses
+ * a domain from the game id when the game declares none; `convertId` returns `undefined` instead.
  */
 export function nexusGameId(
   game: IGameStored | IGame,
@@ -59,6 +62,9 @@ export function nexusGameId(
 
 /**
  * get our internal game id for a nexus page id
+ *
+ * @deprecated Use `convertId(gameData(state), { gameDomain }, "vortexGameId")`. This helper falls
+ * back to the input as a game id when no known game matches; `convertId` returns `undefined` instead.
  */
 export function convertGameIdReverse(knownGames: IGameStored[], input: string): VortexGameId {
   // an empty string is no game id either, and branding one would throw
