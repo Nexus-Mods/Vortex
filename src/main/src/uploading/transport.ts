@@ -221,16 +221,3 @@ export async function postBody(
     session.abortSignal,
   );
 }
-
-/**
- * PUTs the whole file to a single URL.
- */
-export async function uploadFile(
-  url: string,
-  filePath: string,
-  fileSize: number,
-  options?: UploadOptions,
-): Promise<void> {
-  const session = createSession(options);
-  await putFile(session, url, filePath, fileSize, "whole file", undefined, options?.onProgress);
-}

@@ -7,7 +7,8 @@ vi.mock("../../../logging", () => ({
 import type { NexusV3Client } from "@vortex/nexus-api-v3";
 import type { WireUploadProgress } from "@vortex/shared/ipc";
 
-import { uploadFile, uploadS3Multipart, pollUploadAvailable } from "./uploadV3";
+import type { UploadOptions } from "./uploadV3";
+import { uploadS3Multipart, pollUploadAvailable } from "./uploadV3";
 
 function makeClient(overrides: Partial<NexusV3Client> = {}): NexusV3Client {
   return {
@@ -86,18 +87,27 @@ describe("pollUploadAvailable", () => {
 // The transfers themselves run in the main process; these cover the hand-off
 // (see src/main/src/uploading for the retry/network behaviour).
 describe("transfer hand-off to main", () => {
-  const file = vi.fn<(request: { fileSize: number; uploadId: number }) => Promise<void>>();
-  const s3Multipart = vi.fn();
+  const s3Multipart = vi.fn<(request: { fileSize: number; uploadId: number }) => Promise<void>>();
   const getProgress = vi.fn<(uploadId: number) => Promise<WireUploadProgress | null>>();
   const cancel = vi.fn<(uploadId: number) => Promise<void>>();
 
   /** One poll tick, matching the interval `withProgress` waits. */
   const POLL_TICK = 200;
 
+  const LAYOUT = {
+    part_size_bytes: 1024,
+    part_presigned_urls: ["https://s3.example.com/part1"],
+    complete_presigned_url: "https://s3.example.com/complete",
+  };
+
+  function upload(fileSize: number, options?: UploadOptions) {
+    return uploadS3Multipart(LAYOUT, "/tmp/file.zip", fileSize, options);
+  }
+
   /** Holds the upload open so poll ticks can be driven deliberately. */
   function pendingUpload() {
     let settle!: (err?: Error) => void;
-    file.mockImplementation(
+    s3Multipart.mockImplementation(
       () =>
         new Promise<void>((resolve, reject) => {
           settle = (err) => (err === undefined ? resolve() : reject(err));
@@ -109,28 +119,15 @@ describe("transfer hand-off to main", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    file.mockResolvedValue(undefined);
     s3Multipart.mockResolvedValue(undefined);
     getProgress.mockResolvedValue(null);
     cancel.mockResolvedValue(undefined);
     (window as unknown as { api: unknown }).api = {
-      uploader: { file, s3Multipart, getProgress, cancel },
+      uploader: { s3Multipart, getProgress, cancel },
     };
   });
 
   afterEach(() => vi.useRealTimers());
-
-  it("forwards a whole-file upload with a correlation id", async () => {
-    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024);
-
-    expect(file).toHaveBeenCalledWith({
-      url: "https://s3.example.com/upload",
-      filePath: "/tmp/file.zip",
-      fileSize: 1024,
-      uploadId: expect.any(Number),
-      headers: undefined,
-    });
-  });
 
   it("passes the signed headers through to main", async () => {
     const headers = {
@@ -138,12 +135,12 @@ describe("transfer hand-off to main", () => {
       contentDisposition: 'attachment; filename="collection_1.7z"',
     };
 
-    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, { headers });
+    await upload(1024, { headers });
 
-    expect(file).toHaveBeenCalledWith(expect.objectContaining({ headers }));
+    expect(s3Multipart).toHaveBeenCalledWith(expect.objectContaining({ headers }));
   });
 
-  it("maps the v3 multipart layout onto the wire shape", async () => {
+  it("maps the v3 multipart layout onto the wire shape, with a correlation id", async () => {
     await uploadS3Multipart(
       {
         part_size_bytes: 100,
@@ -168,9 +165,9 @@ describe("transfer hand-off to main", () => {
   });
 
   it("propagates a failure from main", async () => {
-    file.mockRejectedValue(new Error("Server returned 403"));
+    s3Multipart.mockRejectedValue(new Error("Server returned 403"));
 
-    await expect(uploadFile("https://s3.example.com/x", "/tmp/f.zip", 1)).rejects.toThrow(/403/);
+    await expect(upload(1)).rejects.toThrow(/403/);
   });
 
   it("polls main for progress while the transfer runs", async () => {
@@ -180,7 +177,7 @@ describe("transfer hand-off to main", () => {
       .mockResolvedValueOnce({ transferred: 1024, total: 1024 });
     const settle = pendingUpload();
 
-    const promise = uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, {
+    const promise = upload(1024, {
       onProgress: (transferred, total) => reported.push([transferred, total]),
     });
 
@@ -198,14 +195,14 @@ describe("transfer hand-off to main", () => {
   it("polls for its own upload id", async () => {
     const settle = pendingUpload();
 
-    const promise = uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, {
+    const promise = upload(1024, {
       onProgress: () => {},
     });
     await vi.advanceTimersByTimeAsync(POLL_TICK);
     settle()();
     await promise;
 
-    const { uploadId } = file.mock.calls[0]![0];
+    const { uploadId } = s3Multipart.mock.calls[0]![0];
     expect(getProgress).toHaveBeenCalledWith(uploadId);
   });
 
@@ -214,7 +211,7 @@ describe("transfer hand-off to main", () => {
     getProgress.mockResolvedValue(null);
     const settle = pendingUpload();
 
-    const promise = uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, {
+    const promise = upload(1024, {
       onProgress: (transferred, total) => reported.push([transferred, total]),
     });
     await vi.advanceTimersByTimeAsync(POLL_TICK);
@@ -225,11 +222,9 @@ describe("transfer hand-off to main", () => {
   });
 
   it("stops polling once the upload settles, including on failure", async () => {
-    file.mockRejectedValue(new Error("Server returned 500"));
+    s3Multipart.mockRejectedValue(new Error("Server returned 500"));
 
-    await expect(
-      uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1, { onProgress: () => {} }),
-    ).rejects.toThrow();
+    await expect(upload(1, { onProgress: () => {} })).rejects.toThrow();
 
     const callsAtSettle = getProgress.mock.calls.length;
     await vi.advanceTimersByTimeAsync(POLL_TICK * 5);
@@ -240,7 +235,7 @@ describe("transfer hand-off to main", () => {
     getProgress.mockRejectedValue(new Error("channel closed"));
     const settle = pendingUpload();
 
-    const promise = uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1, {
+    const promise = upload(1, {
       onProgress: () => {},
     });
     await vi.advanceTimersByTimeAsync(POLL_TICK);
@@ -253,12 +248,12 @@ describe("transfer hand-off to main", () => {
     const controller = new AbortController();
     const settle = pendingUpload();
 
-    const promise = uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, {
+    const promise = upload(1024, {
       abortSignal: controller.signal,
     });
     controller.abort();
 
-    const { uploadId } = file.mock.calls[0]![0];
+    const { uploadId } = s3Multipart.mock.calls[0]![0];
     expect(cancel).toHaveBeenCalledWith(uploadId);
 
     // Main rejects the transfer once it tears the request down.
@@ -271,7 +266,7 @@ describe("transfer hand-off to main", () => {
     controller.abort();
     const settle = pendingUpload();
 
-    const promise = uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, {
+    const promise = upload(1024, {
       abortSignal: controller.signal,
     });
 
@@ -283,7 +278,7 @@ describe("transfer hand-off to main", () => {
   it("stops listening to the signal once the upload settles", async () => {
     const controller = new AbortController();
 
-    await uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1024, {
+    await upload(1024, {
       abortSignal: controller.signal,
     });
     controller.abort();
@@ -295,7 +290,7 @@ describe("transfer hand-off to main", () => {
   it("does not poll when no progress handler is given", async () => {
     const settle = pendingUpload();
 
-    const promise = uploadFile("https://s3.example.com/upload", "/tmp/file.zip", 1);
+    const promise = upload(1);
     await vi.advanceTimersByTimeAsync(POLL_TICK * 3);
     settle()();
     await promise;

@@ -257,7 +257,6 @@ try {
     },
 
     uploader: {
-      file: (request) => betterIpcRenderer.invoke("upload:file", request),
       s3Multipart: (request) => betterIpcRenderer.invoke("upload:s3-multipart", request),
       getProgress: (uploadId) => betterIpcRenderer.invoke("upload:getProgress", uploadId),
       cancel: (uploadId) => betterIpcRenderer.invoke("upload:cancel", uploadId),

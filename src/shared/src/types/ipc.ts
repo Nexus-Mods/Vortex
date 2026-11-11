@@ -191,15 +191,6 @@ export type WireUploadHeaders = {
   contentDisposition?: string;
 };
 
-export type WireUploadRequest = {
-  url: string;
-  filePath: string;
-  fileSize: number;
-  /** Tags the `upload:progress` events emitted while this transfer runs. */
-  uploadId: number;
-  headers?: WireUploadHeaders;
-};
-
 export type WireS3MultipartRequest = {
   layout: WireS3MultipartLayout;
   filePath: string;
@@ -533,7 +524,6 @@ export interface InvokeChannels {
   }) => Promise<void>;
 
   // Upload channels
-  "upload:file": (request: WireUploadRequest) => Promise<void>;
   "upload:s3-multipart": (request: WireS3MultipartRequest) => Promise<void>;
   /** Byte progress for a running upload, or null once it has settled. */
   "upload:getProgress": (uploadId: number) => Promise<WireUploadProgress | null>;

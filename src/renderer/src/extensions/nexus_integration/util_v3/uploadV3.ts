@@ -165,32 +165,14 @@ async function withProgress(
 }
 
 /**
+ * `/uploads/multipart` sessions are defined against the Amazon S3 multipart
+ * specification, so the transfer follows that protocol in main. This only
+ * restates the session layout in the wire shape.
+ *
  * The byte transfers run in the main process (see `src/main/src/uploading`),
  * which owns the got-based network stack and the shared retry strategy. The
  * renderer only holds the authenticated v3 session, so it drives the API calls
  * either side of the transfer.
- */
-export function uploadFile(
-  url: string,
-  filePath: string,
-  fileSize: number,
-  options?: UploadOptions,
-): Promise<void> {
-  return withProgress(options, (uploadId) =>
-    window.api.uploader.file({
-      url,
-      filePath,
-      fileSize,
-      uploadId,
-      headers: options?.headers,
-    }),
-  );
-}
-
-/**
- * `/uploads/multipart` sessions are defined against the Amazon S3 multipart
- * specification, so the transfer follows that protocol in main. This only
- * restates the session layout in the wire shape.
  */
 export function uploadS3Multipart(
   layout: {

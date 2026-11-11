@@ -58,22 +58,9 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
     ...client,
 
     /**
-     * Creates a single-part upload session. The returned `presigned_url` is
-     * signed over headers it does not report — see `uploadHeadersFor` for the
-     * values the subsequent PUT has to carry.
-     */
-    async createUpload(sizeBytes: number, filename: string) {
-      const { data, error, response } = await client.POST("/uploads", {
-        body: { size_bytes: sizeBytes, filename },
-      });
-      if (error) throw toV3Error(error, response);
-      return data.data;
-    },
-
-    /**
      * Creates a multipart upload session, following the Amazon S3 multipart
-     * specification. Its presigned URLs carry the same unreported signed
-     * headers as `createUpload` — see `uploadHeadersFor`.
+     * specification. Its presigned URLs are signed over headers they do not
+     * report — see `uploadHeadersFor` for the values each PUT has to carry.
      */
     async createMultipartUpload(sizeBytes: number, filename: string) {
       const { data, error, response } = await client.POST("/uploads/multipart", {

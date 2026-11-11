@@ -6,12 +6,11 @@ import { uploadHeadersFor } from "@vortex/nexus-api-v3";
 
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
-import { MULTIPART_THRESHOLD } from "../constants";
 import { createVortexNexusV3Client } from "../nexusV3Client";
 import { isLoggedIn } from "../selectors";
 import { toV3CollectionPayload } from "./manifestMapping";
 import type { UploadProgressHandler } from "./uploadV3";
-import { pollUploadAvailable, uploadFile, uploadS3Multipart } from "./uploadV3";
+import { pollUploadAvailable, uploadS3Multipart } from "./uploadV3";
 
 export type SubmitCollectionOptions = {
   onProgress?: UploadProgressHandler;
@@ -36,7 +35,6 @@ export async function submitCollectionV3(
 
   log("info", "submitting collection via V3 API", {
     fileSize,
-    isMultipart: fileSize > MULTIPART_THRESHOLD,
     isNewCollection: collectionId === undefined,
   });
 
@@ -47,30 +45,19 @@ export async function submitCollectionV3(
   // create, create-multipart, finalise and get). An abandoned session is never
   // finalised, so it stays `created` and is never referenced by a collection;
   // any parts already written rely on the storage's own cleanup.
-  let uploadId: string;
+  const multipart = await client.createMultipartUpload(fileSize, filename);
+  const uploadId = multipart.id;
 
   // The session is presigned against these header values; they have to be sent
   // back verbatim on the transfer.
   const headers = uploadHeadersFor(filename);
   const { onProgress, abortSignal } = options;
 
-  if (fileSize <= MULTIPART_THRESHOLD) {
-    const upload = await client.createUpload(fileSize, filename);
-    uploadId = upload.id;
-    await uploadFile(upload.presigned_url, assetFilePath, fileSize, {
-      headers,
-      onProgress,
-      abortSignal,
-    });
-  } else {
-    const multipart = await client.createMultipartUpload(fileSize, filename);
-    uploadId = multipart.id;
-    await uploadS3Multipart(multipart, assetFilePath, fileSize, {
-      headers,
-      onProgress,
-      abortSignal,
-    });
-  }
+  await uploadS3Multipart(multipart, assetFilePath, fileSize, {
+    headers,
+    onProgress,
+    abortSignal,
+  });
 
   // Step 2: Finalise and wait for availability
   await client.finaliseUpload(uploadId);
