@@ -173,6 +173,13 @@ import {
 import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
+export {
+  convertId,
+  findGame,
+  type GameQuery,
+  type IGameData,
+} from "../extensions/gamemode_management/queries";
+
 export { request, rawRequest, upload, jsonRequest } from "./network";
 export type { IRequestOptions, Method } from "./network";
 export {
