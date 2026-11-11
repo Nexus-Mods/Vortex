@@ -1339,7 +1339,10 @@ class InstallManager {
                   const state = api.getState();
                   const games = knownGames(state);
                   const convertedGameId = convertGameIdReverse(games, gameId);
-                  installGameId = convertedGameId || VortexGameId(gameId); // Use converted ID or fallback to original
+                  // Use the converted id, or fall back to the original. queryGameId yields no id
+                  // when no game is active, which the check below reports to the user, so only
+                  // brand an id that's actually there.
+                  installGameId = convertedGameId || (gameId ? VortexGameId(gameId) : undefined);
 
                   if (installGameId === undefined) {
                     return Promise.reject(

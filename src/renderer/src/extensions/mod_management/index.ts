@@ -1870,9 +1870,9 @@ function openDuplicateLocation(api: IExtensionApi, modId: string) {
   const modPath = path.join(installPath, modId);
   window.api.shell.openFile(modPath);
 }
-function getModInfo(api: IExtensionApi, gameMode: VortexGameId, modId: string) {
+function getModInfo(api: IExtensionApi, gameMode: VortexGameId | undefined, modId: string) {
   const state = api.getState();
-  const mods = state.persistent.mods[gameMode] ?? {};
+  const mods = (gameMode === undefined ? undefined : state.persistent.mods[gameMode]) ?? {};
   const profiles = state.persistent.profiles ?? {};
   const mod = Object.values(mods).find((mod) => mod.id === modId);
   const version = getSafe(mod, ["attributes", "version"], "Unknown");
@@ -2346,8 +2346,9 @@ function init(context: IExtensionContext): boolean {
         }
       },
       openDuplicateLocation: (modId: string) => openDuplicateLocation(context.api, modId),
+      // extensions may call this without an active game
       getModInfo: (gameMode: string, modId: string) =>
-        getModInfo(context.api, VortexGameId(gameMode), modId),
+        getModInfo(context.api, gameMode ? VortexGameId(gameMode) : undefined, modId),
     }),
   );
 
