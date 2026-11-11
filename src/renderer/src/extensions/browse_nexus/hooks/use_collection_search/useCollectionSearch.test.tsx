@@ -83,7 +83,7 @@ describe("useCollectionSearch", () => {
 
     act(() => result.current.setCurrentPage(2));
 
-    await waitFor(() => expect(result.current.loading).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("loading"));
     expect(result.current.totalCount).toBe(45);
   });
 
@@ -112,8 +112,8 @@ describe("useCollectionSearch", () => {
 
     await fail("Network down");
 
-    // Within waitFor's second: a retry would hold the error back for its first second's delay.
-    await waitFor(() => expect(result.current.error?.message).toBe("Network down"));
+    // Within waitFor's second: a retry would hold the failure back for its first second's delay.
+    await waitFor(() => expect(result.current.status).toBe("failed"));
     expect(requestCount).toBe(2);
   });
 
@@ -126,7 +126,7 @@ describe("useCollectionSearch", () => {
 
     await fail("Network down");
 
-    await waitFor(() => expect(result.current.error?.message).toBe("Network down"));
+    await waitFor(() => expect(result.current.status).toBe("failed"));
     expect(result.current.totalCount).toBe(45);
   });
 
@@ -143,11 +143,13 @@ describe("useCollectionSearch", () => {
     await waitFor(() =>
       expect(result.current.searchValidationError).toBe("collection:browse.searchTooShort"),
     );
-    await waitFor(() => expect(result.current.error).toBeNull());
+    await waitFor(() => expect(result.current.status).not.toBe("failed"));
     expect(result.current.totalCount).toBe(45);
     expect(result.current.searchQuery).toBe("a*");
-    expect(renders.filter((search) => search.error)).toEqual([]);
-    expect(renders.filter((search) => !search.loading && !search.collections.length)).toEqual([]);
+    expect(renders.filter((search) => search.status === "failed")).toEqual([]);
+    expect(
+      renders.filter((search) => search.status !== "loading" && !search.collections.length),
+    ).toEqual([]);
 
     act(() => result.current.handleSearchQueryChange("a*b"));
 
@@ -183,7 +185,7 @@ describe("useCollectionSearch", () => {
 
     act(() => result.current.handleRefresh());
 
-    await waitFor(() => expect(result.current.loading).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("loading"));
     expect(requestCount).toBe(2);
     await respond(46);
     await waitFor(() => expect(result.current.totalCount).toBe(46));

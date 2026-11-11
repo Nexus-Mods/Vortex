@@ -9,6 +9,7 @@ import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { Listing } from "./Listing";
+import type { ListingStatus } from "./listing_status/listingStatus";
 
 const SkeletonTile = () => (
   <div className="animate-pulse space-y-2.5 rounded-sm bg-surface-high p-4">
@@ -42,6 +43,48 @@ const MORE_TOTAL = 30;
 
 /** How many items the loading-more example starts with, and goes back to on reset. */
 const MORE_START = 6;
+
+interface ILoadMoreStatusOptions {
+  /** Whether more items are loading. */
+  isLoadingMore: boolean;
+  /** Whether loading more failed. */
+  isLoadMoreError: boolean;
+  /** How many items it has. */
+  count: number;
+}
+
+/** The loading-more example's status, from what it's doing and how many items it has. */
+const loadMoreStatus = ({
+  isLoadingMore,
+  isLoadMoreError,
+  count,
+}: ILoadMoreStatusOptions): ListingStatus => {
+  if (isLoadingMore) {
+    return "loading_more";
+  }
+
+  if (isLoadMoreError) {
+    return "load_more_failed";
+  }
+
+  return count < MORE_TOTAL ? "idle" : "done";
+};
+
+interface IToggledStatusOptions {
+  /** Whether the Loading toggle is on. */
+  isLoading: boolean;
+  /** Whether the Error toggle is on. */
+  isError: boolean;
+}
+
+/** The interactive example's status, from its toggles. */
+const toggledStatus = ({ isLoading, isError }: IToggledStatusOptions): ListingStatus => {
+  if (isLoading) {
+    return "loading";
+  }
+
+  return isError ? "failed" : "done";
+};
 
 /**
  * A list in its own scroller that loads six more items as its end nears, until there are 30. Reset
@@ -102,12 +145,10 @@ const LoadMoreExample = () => {
           className="flex flex-col gap-y-2"
           entityCount={count}
           errorTitle="Something went wrong"
-          hasMore={count < MORE_TOTAL}
-          isLoadingMore={isLoadingMore}
-          isLoadMoreError={isLoadMoreError}
           loadMoreErrorMessage="More items couldn't be loaded. Try again."
           scrollRef={scrollRef}
           SkeletonTile={SkeletonTile}
+          status={loadMoreStatus({ isLoadingMore, isLoadMoreError, count })}
           onLoadMore={loadMore}
           onRetry={loadMore}
         >
@@ -191,11 +232,10 @@ export const ListingDemo = () => {
         <div className="rounded-sm border border-stroke-weak p-4">
           <Listing
             className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-4"
-            entityCount={isError ? 0 : visibleItems.length}
-            isError={isError}
-            isLoading={isLoading}
+            entityCount={visibleItems.length}
             skeletonCount={6}
             SkeletonTile={SkeletonTile}
+            status={toggledStatus({ isLoading, isError })}
           >
             {visibleItems.map((title) => (
               <ExampleTile key={title} title={title} />
@@ -206,22 +246,21 @@ export const ListingDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
-          Append Loader
+          Loading More Tiles
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          With appendLoader, existing content stays visible while skeleton tiles appear below —
-          useful for infinite scroll or "load more" patterns.
+          While the status is loading_more, the items stay on screen and loadMoreSkeletonCount tiles
+          are drawn after them. Default is 2.
         </Typography>
 
         <div className="rounded-sm border border-stroke-weak p-4">
           <Listing
-            appendLoader={true}
             className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-4"
             entityCount={3}
-            isLoading={true}
-            skeletonCount={3}
+            loadMoreSkeletonCount={3}
             SkeletonTile={SkeletonTile}
+            status="loading_more"
           >
             {items.slice(0, 3).map((title) => (
               <ExampleTile key={title} title={title} />
@@ -243,9 +282,9 @@ export const ListingDemo = () => {
         <div className="rounded-sm border border-stroke-weak p-4">
           <Listing
             className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-4"
-            isLoading={true}
             skeletonCount={8}
             SkeletonTile={SkeletonTile}
+            status="loading"
           />
         </div>
       </div>
@@ -256,10 +295,11 @@ export const ListingDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          For a list that loads a page at a time, such as an infinite query: with hasMore and
-          onLoadMore, the Listing asks for more as the end of the items comes within 320px of its
-          scroller&apos;s view. isLoadingMore draws tiles after the items while more load, and
-          isLoadMoreError offers onRetry after them, keeping the items already shown.
+          For a list that loads a page at a time, such as an infinite query: while its status is
+          idle, with onLoadMore, the Listing asks for more as the end of the items comes within
+          320px of its scroller&apos;s view. loading_more draws tiles after the items while more
+          load, and load_more_failed offers onRetry after them, keeping the items already shown.
+          getListingStatus turns a React Query result into a status.
         </Typography>
 
         <LoadMoreExample />
@@ -272,8 +312,8 @@ export const ListingDemo = () => {
 
         <Typography appearance="subdued" typographyType="body-sm">
           Use the errorTitle and errorMessage props to display API errors or other failure messages.
-          The default error icon and "Contact support" link are shown automatically when isError is
-          true.
+          The default error icon and "Contact support" link are shown automatically when the status
+          is failed.
         </Typography>
 
         <div className="rounded-sm border border-stroke-weak p-4">
@@ -281,8 +321,8 @@ export const ListingDemo = () => {
             entityCount={0}
             errorMessage="GET /v2/collections returned 503: The server is temporarily unavailable. Please try again later."
             errorTitle="Failed to load collections"
-            isError={true}
             SkeletonTile={SkeletonTile}
+            status="failed"
           />
         </div>
       </div>
@@ -293,7 +333,10 @@ export const ListingDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" as="ul" className="list-inside list-disc space-y-2">
-          <li>Listing renders one of three states: loading/content, error, or no results</li>
+          <li>
+            Listing draws what its status says: loading, failed, or the items with more loading,
+            failed, left to load or done; with no items once done, the no results state
+          </li>
 
           <li>
             SkeletonTile is a required prop — provide a component that matches the shape of your

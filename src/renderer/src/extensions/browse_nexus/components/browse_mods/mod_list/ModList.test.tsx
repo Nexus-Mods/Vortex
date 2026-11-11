@@ -40,11 +40,7 @@ const modsUpTo = (count: number) => Array.from({ length: count }, (_, i) => mod(
 const defaults = (): IModListProps => ({
   activeModId: undefined,
   onFocusDetails: vi.fn(),
-  isError: false,
-  isLoading: false,
-  hasMore: false,
-  isLoadingMore: false,
-  isLoadMoreError: false,
+  status: "done",
   mods: [],
   searchKey: "trending",
   onLoadMore: vi.fn(),
@@ -98,7 +94,7 @@ describe("ModList", () => {
   });
 
   it("offers to try a failed first page again", async () => {
-    const { onRetry } = renderComponent({ isError: true });
+    const { onRetry } = renderComponent({ status: "failed" });
 
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
 
@@ -106,7 +102,7 @@ describe("ModList", () => {
   });
 
   it("offers to try a failed later page again under the mods it has", async () => {
-    const { onRetry } = renderComponent({ mods: modsUpTo(2), isLoadMoreError: true });
+    const { onRetry } = renderComponent({ mods: modsUpTo(2), status: "load_more_failed" });
 
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
 
@@ -115,7 +111,7 @@ describe("ModList", () => {
   });
 
   it("leaves focus on the list after Try again, as the button goes", async () => {
-    const { onRetry } = renderComponent({ mods: modsUpTo(2), isLoadMoreError: true });
+    const { onRetry } = renderComponent({ mods: modsUpTo(2), status: "load_more_failed" });
 
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
 
@@ -151,7 +147,10 @@ describe("ModList", () => {
         disconnect() {}
       },
     );
-    const { onLoadMore } = renderComponent({ mods: modsUpTo(50), hasMore });
+    const { onLoadMore } = renderComponent({
+      mods: modsUpTo(50),
+      status: hasMore ? "idle" : "done",
+    });
 
     act(() => reports.forEach((report) => report([{ isIntersecting: true }])));
 
@@ -216,7 +215,7 @@ describe("ModList", () => {
     const { rerender } = renderComponent({ mods: modsUpTo(50) });
     act(() => resized.forEach((report) => report([])));
 
-    rerender({ mods: [], isLoading: true });
+    rerender({ mods: [], status: "loading" });
     rerender({ mods: modsUpTo(50), searchKey: "popular" });
     scrollTop = 160 * 30;
     act(() => {
@@ -243,27 +242,27 @@ describe("ModList", () => {
     });
 
     it("ends the last page with the end of results", () => {
-      renderComponent({ mods: modsUpTo(3), hasMore: false });
+      renderComponent({ mods: modsUpTo(3), status: "done" });
       expect(screen.getByTestId("end-of-results")).toBeInTheDocument();
     });
 
     it("holds the end of results while more load", () => {
-      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoadingMore: true });
+      renderComponent({ mods: modsUpTo(3), status: "loading_more" });
       expect(screen.queryByTestId("end-of-results")).toBeNull();
     });
 
     it("holds the end of results after loading more failed", () => {
-      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoadMoreError: true });
+      renderComponent({ mods: modsUpTo(3), status: "load_more_failed" });
       expect(screen.queryByTestId("end-of-results")).toBeNull();
     });
 
     it("holds the end of results while the first page loads again", () => {
-      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoading: true });
+      renderComponent({ mods: modsUpTo(3), status: "loading" });
       expect(screen.queryByTestId("end-of-results")).toBeNull();
     });
 
     it("holds the end of results while there are more pages", () => {
-      renderComponent({ mods: modsUpTo(3), hasMore: true });
+      renderComponent({ mods: modsUpTo(3), status: "idle" });
       expect(screen.queryByTestId("end-of-results")).toBeNull();
     });
 

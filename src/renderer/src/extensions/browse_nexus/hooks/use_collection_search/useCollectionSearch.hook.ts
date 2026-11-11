@@ -12,6 +12,7 @@ import {
   collectionSearchQuery,
 } from "@/extensions/nexus_integration/queries/collection_search/collectionSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { getListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
 
 import { collectionT } from "../../util/collectionT";
 import { useGameDomainName } from "../use_game_domain_name/useGameDomainName.hook";
@@ -161,8 +162,7 @@ export const useCollectionSearch = (api: IExtensionApi) => {
     collections: collections.data?.nodes ?? [],
     totalCount: (isSearchRejected ? allCollections.data : pageTotal) ?? 0,
     allCollectionsTotal: allCollections.data ?? 0,
-    loading: collections.isFetching || isSearchRejected,
-    error: isSearchRejected ? null : collections.error,
+    status: isSearchRejected ? ("loading" as const) : getListingStatus(collections),
     sortBy,
     searchQuery,
     currentPage,
