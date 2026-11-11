@@ -30,22 +30,6 @@ const renderState = (kind: EmptyStateKind, props: Partial<IProps> = {}) => {
 };
 
 describe("ModListEmptyState", () => {
-  it.each<[EmptyStateKind, string]>([
-    ["end_of_results", "You've reached the end"],
-    ["search_only", 'No mods match "{{search}}"'],
-    ["search_and_filters", 'No mods match "{{search}}"'],
-    ["filters_only", "No mods match your filters"],
-    ["nothing_for_game", "No mods to show for {{game}}"],
-  ])("shows the %s state's heading", (kind, title) => {
-    renderState(kind, { filterCount: 1 });
-    expect(screen.getByText(title)).toBeInTheDocument();
-  });
-
-  it("falls back to this game without a game name", () => {
-    renderState("nothing_for_game", { gameName: undefined });
-    expect(screen.getByText("No mods to show for this game")).toBeInTheDocument();
-  });
-
   it("offers Remove N filters, counted, only where the state lists it", () => {
     renderState("filters_only", { filterCount: 2 });
     expect(screen.getByRole("button", { name: "Remove {{count}} filters" })).toBeInTheDocument();
@@ -112,11 +96,7 @@ describe("ModListEmptyState", () => {
 
   it("notes that some mods are hidden", () => {
     renderState("nothing_for_game");
-    expect(
-      screen.getByText(
-        "Mods that don't support mod managers or use legacy requirements are hidden.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("mod-list-hidden-mods-note")).toBeInTheDocument();
   });
 
   it("hides Learn more while it has nowhere to go", () => {

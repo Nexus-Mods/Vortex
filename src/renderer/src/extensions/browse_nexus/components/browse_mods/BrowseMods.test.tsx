@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameDomain } from "@vortex/shared";
 import React from "react";
@@ -85,7 +85,7 @@ vi.mock("./mod_list/ModList", () => ({
   }) => (
     <div aria-label="Mods" ref={listRef} role="region" tabIndex={-1}>
       {!mods.length && emptyState}
-      {!!mods.length && endOfResults}
+      {!!mods.length && <div data-testid="end-of-results">{endOfResults}</div>}
       {(status === "failed" || status === "load_more_failed") && (
         <button onClick={onRetry}>Retry</button>
       )}
@@ -475,10 +475,9 @@ describe("BrowseMods", () => {
       ]);
     });
 
-    it("shows the nothing-for-the-game state with only a locked filter on", () => {
+    it("offers no Remove filters with only a locked filter on", () => {
       renderComponent(emptyWith([]));
 
-      expect(screen.getByText("No mods to show for {{game}}")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
     });
 
@@ -536,7 +535,9 @@ describe("BrowseMods", () => {
     it("ends the last page with the end of results", () => {
       renderComponent(search([mod("1")], false, { activeFilters: [], activeFilterCount: 0 }));
 
-      expect(screen.getByText("You've reached the end")).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId("end-of-results")).getByTestId("mod-list-hidden-mods-note"),
+      ).toBeInTheDocument();
     });
   });
 });

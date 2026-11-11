@@ -114,7 +114,9 @@ export const ModListEmptyState = ({
       className="rounded-sm bg-translucent-dark-200 p-8"
       footnote={
         <>
-          {t("Mods that don't support mod managers or use legacy requirements are hidden.")}
+          <span data-testid="mod-list-hidden-mods-note">
+            {t("Mods that don't support mod managers or use legacy requirements are hidden.")}
+          </span>
 
           {!!LEARN_MORE_URL && (
             <>
