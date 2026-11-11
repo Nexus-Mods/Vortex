@@ -23,6 +23,8 @@ export interface ISearchProps {
   maxLength?: number;
   /** Says why the text can't be searched for, in a tooltip under the box, while it's set. */
   errorMessage?: string;
+  /** Called as focus leaves the box. */
+  onBlur?: () => void;
 }
 
 /**
@@ -39,6 +41,7 @@ export const Search = ({
   className,
   maxLength,
   errorMessage,
+  onBlur,
 }: ISearchProps) => {
   const { t } = useTranslation();
   const fieldRef = useRef<HTMLDivElement>(null);
@@ -72,6 +75,7 @@ export const Search = ({
             placeholder={placeholder}
             value={value}
             onChange={(evt) => onChange(evt.target.value)}
+            onBlur={onBlur}
             onKeyDown={(evt) => {
               if (evt.key !== "Escape" || !value) {
                 return;

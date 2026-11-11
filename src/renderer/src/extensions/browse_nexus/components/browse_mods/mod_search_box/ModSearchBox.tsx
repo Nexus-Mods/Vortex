@@ -6,9 +6,9 @@ import { Search } from "@/ui/components/search/Search";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import {
   type IModSearch,
-  isSearchable,
   MAX_QUERY_LENGTH,
   MIN_QUERY_CHARACTERS,
+  searchQueryFor,
 } from "../../../hooks/use_mod_search/useModSearch.hook";
 
 interface IModSearchBoxProps {
@@ -18,8 +18,9 @@ interface IModSearchBoxProps {
 
 /**
  * The box that searches Browse's mods by name. It searches on Enter, or says the text is too short
- * to, and clears the search at once when emptied. It goes back to the text searched for whenever
- * that changes or another view opens, dropping an edit not yet searched. Counts each search and
+ * to until it changes or focus leaves. It clears the search at once when emptied, or on Enter with
+ * only spaces. It goes back to the text searched for whenever that changes or another view opens,
+ * dropping an edit not yet searched. Counts each search that changes what's searched, and each
  * clear.
  */
 export const ModSearchBox = ({ search }: IModSearchBoxProps) => {
@@ -55,18 +56,30 @@ export const ModSearchBox = ({ search }: IModSearchBoxProps) => {
           tracker.trackSearchCleared({ view, source: "box" });
         }
       }}
+      onBlur={() => setIsTooShort(false)}
       onSubmit={() => {
+        const query = searchQueryFor(draft);
+
         if (!draft.trim()) {
+          if (search.searchText) {
+            search.setSearchText("");
+            tracker.trackSearchCleared({ view, source: "box" });
+          }
+
           return;
         }
 
-        if (!isSearchable(draft)) {
+        if (!query) {
           setIsTooShort(true);
           return;
         }
 
+        if (query === searchQueryFor(search.searchText)) {
+          return;
+        }
+
         search.setSearchText(draft);
-        tracker.trackSearchSubmitted({ view, query_length: draft.trim().length });
+        tracker.trackSearchSubmitted({ view, query_length: query.length });
       }}
     />
   );

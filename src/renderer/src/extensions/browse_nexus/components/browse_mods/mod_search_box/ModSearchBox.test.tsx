@@ -60,6 +60,38 @@ describe("ModSearchBox", () => {
     expect(box()).not.toHaveAttribute("aria-invalid", "true");
   });
 
+  it("drops the too-short hint once focus leaves the box", async () => {
+    renderBox(searching(""));
+    await userEvent.type(box(), "a{Enter}");
+
+    await userEvent.tab();
+
+    expect(box()).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("clears the search on Enter with only spaces, counting it", async () => {
+    const search = searching("chest");
+    const { propertiesOf } = renderBox(search);
+
+    await userEvent.type(box(), "   {Enter}", { initialSelectionStart: 0, initialSelectionEnd: 5 });
+
+    expect(search.setSearchText).toHaveBeenCalledWith("");
+    expect(propertiesOf("browse_mods_search_cleared")).toEqual([
+      { view: "trending", source: "box" },
+    ]);
+  });
+
+  it("neither searches nor counts Enter on what's already searched for", async () => {
+    const search = searching("chest");
+    const { propertiesOf } = renderBox(search);
+
+    await userEvent.type(box(), " {Enter}");
+
+    expect(search.setSearchText).not.toHaveBeenCalled();
+    expect(propertiesOf("browse_mods_search_submitted")).toEqual([]);
+  });
+
   it("clears the search at once when the box is emptied, counting it", async () => {
     const search = searching("skyui");
     const { propertiesOf } = renderBox(search);

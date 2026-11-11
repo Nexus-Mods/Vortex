@@ -52,7 +52,7 @@ export const MAX_QUERY_LENGTH = 100;
  * The name search the API is sent for the text entered: trimmed and cut to its limit, or none
  * when it has too few characters other than spaces for the API to take.
  */
-const queryFor = (text: string | undefined) => {
+export const searchQueryFor = (text: string | undefined) => {
   const query = text?.trim().slice(0, MAX_QUERY_LENGTH);
 
   if (!query || query.replace(/\s/g, "").length < MIN_QUERY_CHARACTERS) {
@@ -61,9 +61,6 @@ const queryFor = (text: string | undefined) => {
 
   return query;
 };
-
-/** Whether the text entered is long enough to search for; empty text clears the search instead. */
-export const isSearchable = (text: string) => !!queryFor(text);
 
 interface IModsSearch {
   /** The game whose mods to search; none searches nothing. */
@@ -169,7 +166,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
   const [restarts, setRestarts] = useState(0);
   const dispatch = useDispatch();
   const searchText = useSelector(modSearchText) ?? "";
-  const searchQuery = queryFor(searchText);
+  const searchQuery = searchQueryFor(searchText);
 
   const search = modSearchQuery(
     api,

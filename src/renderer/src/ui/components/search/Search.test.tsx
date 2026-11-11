@@ -137,4 +137,13 @@ describe("Search", () => {
 
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
+
+  it("says when focus leaves the box", () => {
+    const onBlur = vi.fn();
+    renderComponent({ onBlur });
+
+    fireEvent.blur(screen.getByTestId("search-input"));
+
+    expect(onBlur).toHaveBeenCalled();
+  });
 });

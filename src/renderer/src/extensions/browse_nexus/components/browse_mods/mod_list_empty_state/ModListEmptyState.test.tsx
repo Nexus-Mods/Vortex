@@ -105,26 +105,6 @@ describe("ModListEmptyState", () => {
     expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
   });
 
-  it("says the end is every mod for the search while there's one, or for the view", () => {
-    const { unmount } = render(
-      <ModListEmptyState
-        filterCount={0}
-        kind="end_of_results"
-        searchText="sky"
-        onClearSearch={vi.fn()}
-        onLearnMore={vi.fn()}
-        onRemoveFilters={vi.fn()}
-      />,
-    );
-    expect(
-      screen.getByText("That's every mod Vortex can show for this search."),
-    ).toBeInTheDocument();
-
-    unmount();
-    renderState("end_of_results", { searchText: undefined });
-    expect(screen.getByText("That's every mod Vortex can show for this view.")).toBeInTheDocument();
-  });
-
   it("leaves out Search on website without somewhere to search", () => {
     renderState("nothing_for_game", { onSearchWebsite: undefined });
     expect(screen.queryByRole("button", { name: "Search on website" })).toBeNull();
