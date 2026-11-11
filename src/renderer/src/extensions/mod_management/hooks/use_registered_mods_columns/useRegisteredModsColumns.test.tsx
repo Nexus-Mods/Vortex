@@ -171,6 +171,34 @@ describe("useRegisteredModsColumns", () => {
     expect(defaultShown).toEqual(["endorsed", "content"]);
   });
 
+  // As the legacy table asks every attribute, the table's own columns and those not in it too.
+  it("gives a row the classes extensions add to it, telling each whether its column is shown", () => {
+    const highlight = vi.fn((_mod: IModWithState, enabled: boolean) =>
+      enabled ? "highlighted" : undefined,
+    );
+    registered.attributes = [
+      attribute({ id: "modType", cssClass: (mod) => `mod-modtype-${mod.type}` }),
+      attribute({ id: "modHighlight", cssClass: highlight }),
+      attribute({ id: "notes", placement: "detail", cssClass: () => "has-notes" }),
+      attribute({ id: "plain" }),
+    ];
+
+    const { rowClassName } = renderRegistered(new Set(["modType"]));
+    const collectionRow = row({ type: "collection" });
+
+    expect(rowClassName(collectionRow, (id) => id === "modHighlight")).toBe(
+      "mod-modtype-collection highlighted has-notes",
+    );
+    expect(rowClassName(collectionRow, () => false)).toBe("mod-modtype-collection has-notes");
+    expect(highlight).toHaveBeenLastCalledWith(collectionRow.mod, false);
+  });
+
+  it("gives a row no classes when no extension adds any", () => {
+    registered.attributes = [attribute({ id: "plain" })];
+
+    expect(renderRegistered().rowClassName(row(), () => true)).toBeUndefined();
+  });
+
   describe("a cell of the extension's own", () => {
     it("is drawn by its renderer, given the mod, in place of the value", () => {
       const customRenderer = vi.fn((mod: IModWithState) => (

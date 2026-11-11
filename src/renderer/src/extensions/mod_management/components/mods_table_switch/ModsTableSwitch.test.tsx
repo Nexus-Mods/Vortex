@@ -849,6 +849,23 @@ describe("ModsTableSwitch", () => {
         ]);
         expect(screen.getByRole("gridcell", { name: "Undecided" })).toBeInTheDocument();
       });
+
+      it("adds its classes to a mod's row, told whether it's shown", () => {
+        mocks.registeredColumns = [
+          {
+            id: "modType",
+            placement: "both",
+            cssClass: (row: IModWithState, shown: boolean) =>
+              `mod-modtype-${row.type}${shown ? "-shown" : ""}`,
+            edit: {},
+          },
+        ];
+
+        renderSwitch({ a: mod("a", "Alpha", true, { type: "dinput" }) });
+
+        const [row] = bodyRows(screen.getByRole("grid"));
+        expect(row).toHaveClass("mod-modtype-dinput");
+      });
     });
 
     it("adds a column chosen from the display options", async () => {

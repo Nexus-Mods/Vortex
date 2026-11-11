@@ -81,6 +81,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columnWidths,
   onColumnWidthsChange,
   className,
+  getRowClassName,
   selectable = false,
   getRowLabel,
   selectedIds,
@@ -379,6 +380,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
             ? selection.checkbox({ key: item.key, id: getRowId(item.row) }, getRowLabel?.(item.row))
             : undefined
         }
+        className={getRowClassName?.(item.row)}
         columns={columns}
         index={index}
         level={item.level}

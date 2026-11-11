@@ -76,6 +76,8 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   defaultSort?: ITableSort;
   /** Classes for the table's grid element. */
   className?: string;
+  /** Classes for an item's row, beside its own; unset or `undefined`, none. */
+  getRowClassName?: (row: T) => string | undefined;
   /** Lets rows be selected, each from a checkbox at its start, every row from the header's. */
   selectable?: boolean;
   /** A row's name, for its checkbox. */

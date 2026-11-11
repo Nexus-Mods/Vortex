@@ -436,6 +436,7 @@ export const ModsTableSwitch = ({
     columnWidths,
     onColumnWidthsChange: setColumnWidths,
     getRowId: ({ mod }: IModRow) => mod.id,
+    getRowClassName: (row: IModRow) => registered.rowClassName(row, isColumnShown),
     label: t("modsTable::label"),
     selectable: true,
     getRowLabel: ({ name }: IModRow) => name,

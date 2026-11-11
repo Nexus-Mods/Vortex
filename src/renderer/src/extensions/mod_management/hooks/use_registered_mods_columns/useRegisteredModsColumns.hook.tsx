@@ -1,5 +1,5 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
-import React, { type ReactNode, useEffect, useMemo, useState } from "react";
+import React, { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -14,6 +14,7 @@ import { log } from "@/util/log";
 import { activeGameId } from "@/util/selectors";
 
 import type { IModWithState } from "../../types/IModProps";
+import type { IModRow } from "../../util/mods_table_views/modsTableViews";
 import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
 
 /** A `calc` value as text, a date in the user's language; none for one that has no text to show. */
@@ -181,7 +182,20 @@ export const useRegisteredModsColumns = (
     };
   }, [attributes, isShown]);
 
-  return useMemo(() => {
+  /**
+   * The classes extensions add to a row: from every attribute, as the legacy table asks them,
+   * each told whether its column is shown.
+   */
+  const rowClassName = useCallback(
+    ({ mod }: IModRow, isShown: (columnId: string) => boolean) =>
+      attributes
+        .map((attribute) => attribute.cssClass?.(mod, isShown(attribute.id)))
+        .filter(Boolean)
+        .join(" ") || undefined,
+    [attributes],
+  );
+
+  const registered = useMemo(() => {
     const shown = attributes.filter(
       (attribute) =>
         isInTable(attribute) && !ownIds.has(attribute.id) && (attribute.condition?.() ?? true),
@@ -216,4 +230,6 @@ export const useRegisteredModsColumns = (
     return { columns, defaultShown };
     // A condition is mostly which game is active, so it's asked again when that changes.
   }, [attributes, gameId, mods, ownIds, t, versions]);
+
+  return { ...registered, rowClassName };
 };
