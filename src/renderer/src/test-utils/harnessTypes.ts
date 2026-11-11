@@ -31,6 +31,7 @@ import type { HealthCheckRegistry } from "../extensions/health_check/core/Health
 import type { IHistoryEvent } from "../extensions/history_management/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
+import type { IActiveInstallation } from "../extensions/mod_management/InstallManager";
 import type {
   IDeployedFile,
   IDeploymentMethod,
@@ -364,6 +365,10 @@ export interface IManagerInternals {
   mPendingInstalls: Map<string, unknown>;
   // the per-collection cancel callback the completion poll checks, keyed by collection mod id
   mDependencyInstalls: Record<string, () => void>;
+  // running installs, keyed by `${sourceModId}:${downloadId}` (`undefined:<id>` outside a collection)
+  mActiveInstalls: Map<string, IActiveInstallation>;
+  // the install a queued dependency runs; stubbed to model its outcome
+  installModAsync: (...args: unknown[]) => Promise<string>;
 }
 
 /** What a profile switch test arranges. */
