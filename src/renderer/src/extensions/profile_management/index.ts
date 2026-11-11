@@ -64,6 +64,7 @@ import {
   emitGameUnmanaged,
 } from "../analytics/mixpanel/gameManageAnalytics";
 import { clearGameAddStore } from "../gamemode_management/actions/session";
+import { tierZeroGameFor } from "../gamemode_management/tiered/tierZero";
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
 import {
   getGame,
@@ -73,7 +74,6 @@ import {
 import { ensureStagingDirectory } from "../mod_management/stagingDirectory";
 import { purgeMods } from "../mod_management/util/deploy";
 import { NoDeployment } from "../mod_management/util/exceptions";
-import { extensionlessGameId } from "../nexus_integration/util/convertGameId";
 import {
   removeProfile,
   setProfile,
@@ -898,11 +898,9 @@ function unmanageGame(
             emitGameUnmanaged(api, gameId);
             // tear-down runs without the flag: un-managing is the cleanup path,
             // it has to work no matter what the feature flag says
-            const tierZeroGameId = Object.values(state.persistent.gameMode?.tier0 ?? {}).find(
-              (entry) => extensionlessGameId(entry.domain) === gameId,
-            )?.gameId;
-            if (tierZeroGameId !== undefined) {
-              void api.emitAndAwait("remove-tier-zero-game", tierZeroGameId);
+            const tierZeroNumericId = tierZeroGameFor(state, gameId)?.gameId;
+            if (tierZeroNumericId !== undefined) {
+              void api.emitAndAwait("remove-tier-zero-game", tierZeroNumericId);
             }
           })
           .catch((err) => {

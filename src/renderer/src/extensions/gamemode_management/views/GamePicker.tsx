@@ -20,7 +20,7 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId } from "../../../util/selectors";
-import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { convertGameIdReverse, nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setShowHiddenGames } from "../actions/session";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
@@ -39,7 +39,10 @@ import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 import { detectedInternalId } from "../util/detected_games/detectedInternalId";
 import { detectedStore } from "../util/detected_games/detectedStore";
-import { isListableDetectedGame } from "../util/detected_games/listableDetectedIds";
+import {
+  isListableDetectedGame,
+  tierZeroCandidateId,
+} from "../util/detected_games/listableDetectedIds";
 import { locallyDetectedGames } from "../util/detected_games/locallyDetectedGames";
 
 const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
@@ -312,11 +315,11 @@ const GamePicker = ({
       }
       // profiles and actions know games by their internal id, which is usually the
       // nexus domain but not always, and is the installed one where games share a domain
-      const internalId = detectedInternalId(
-        knownGames,
-        discoveredGames,
-        GameDomain(nexusGame.domain_name),
-      );
+      const domain = GameDomain(nexusGame.domain_name);
+      const internalId =
+        detectedInternalId(knownGames, discoveredGames, domain) ??
+        tierZeroCandidateId(game, detectedListOptions) ??
+        convertGameIdReverse(knownGames, domain);
       if (profileGames.has(internalId)) {
         return undefined;
       }

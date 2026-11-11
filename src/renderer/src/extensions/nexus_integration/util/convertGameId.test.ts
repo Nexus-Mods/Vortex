@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { makeGameStored } from "@/test-utils/builders";
 
-import { convertGameIdReverse, convertNXMIdReverse, extensionlessGameId } from "./convertGameId";
+import { convertGameIdReverse, convertNXMIdReverse } from "./convertGameId";
 
 // skyrimvr shares skyrimse's nexus page, the way the bundled extensions register them
 const known = [
@@ -51,11 +51,5 @@ describe("convertNXMIdReverse", () => {
   it("has no id for an empty or missing input", () => {
     expect(convertNXMIdReverse(known, "")).toBeUndefined();
     expect(convertNXMIdReverse(known, undefined)).toBeUndefined();
-  });
-});
-
-describe("extensionlessGameId", () => {
-  it("is the game's nexus domain", () => {
-    expect(extensionlessGameId(GameDomain("hollowknight"))).toBe("hollowknight");
   });
 });

@@ -3,6 +3,8 @@ import type { GameId, VortexGameId } from "@vortex/shared";
 import type { IGameStored } from "@/types/IState";
 
 import { numericGameIdToDomainName } from "../../../nexus_integration/util";
+import { convertGameIdReverse } from "../../../nexus_integration/util/convertGameId";
+import { tierZeroGameId } from "../../tiered/tierZero";
 import type { IDetectedGame } from "../../types/IDetectedGame";
 import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 import { detectedInternalId } from "./detectedInternalId";
@@ -25,6 +27,20 @@ export function isTierZeroCandidate(
   extensionGameIds: ReadonlySet<GameId>,
 ): boolean {
   return entry.extension === undefined && !extensionGameIds.has(entry.gameId);
+}
+
+/**
+ * The id a detected game registers under when it is managed without an extension, undefined
+ * when it may not be.
+ */
+export function tierZeroCandidateId(
+  entry: IDetectedGame,
+  options: IListableOptions,
+): VortexGameId | undefined {
+  return options.allowTierZero === true &&
+    isTierZeroCandidate(entry, options.extensionGameIds ?? new Set())
+    ? tierZeroGameId(entry.gameId)
+    : undefined;
 }
 
 /**
@@ -65,7 +81,11 @@ export function listableDetectedIds(
   for (const game of detected) {
     const domain = numericGameIdToDomainName(game.gameId);
     const internalId =
-      domain === undefined ? undefined : detectedInternalId(knownGames, discovered, domain);
+      domain === undefined
+        ? undefined
+        : (detectedInternalId(knownGames, discovered, domain) ??
+          tierZeroCandidateId(game, options) ??
+          convertGameIdReverse(knownGames, domain));
     if (isListableDetectedGame(game, internalId, knownGames, options)) {
       ids.push(game.gameUid);
       if (internalId !== undefined) {

@@ -5,10 +5,11 @@ vi.mock("../../../nexus_integration/util", () => ({
   nexusGames: () => [{ id: 4242, domain_name: "emberville", name: "Emberville" }],
 }));
 
-import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import { GameDomain, GameId } from "@vortex/shared";
 
-import type { ITierZeroGame, IState } from "@/types/IState";
+import type { IState } from "@/types/IState";
 
+import { tierZeroGameId } from "../../tiered/tierZero";
 import type { IDetectedGame } from "../../types/IDetectedGame";
 import { tierZeroEntry } from "./tierZeroEntry";
 
@@ -37,7 +38,7 @@ describe("tierZeroEntry", () => {
   it("builds the entry from the store listings the endpoint matched", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(4242, false)] }),
-      VortexGameId("emberville"),
+      tierZeroGameId(GameId(4242)),
     );
 
     expect(entry).toEqual({
@@ -50,8 +51,8 @@ describe("tierZeroEntry", () => {
 
   it("is undefined when Vortex knows the game", () => {
     const entry = tierZeroEntry(
-      state({ known: [{ id: "emberville" }], detected: [detected(4242, false)] }),
-      VortexGameId("emberville"),
+      state({ known: [{ id: "tier-0-4242" }], detected: [detected(4242, false)] }),
+      tierZeroGameId(GameId(4242)),
     );
 
     expect(entry).toBeUndefined();
@@ -60,7 +61,7 @@ describe("tierZeroEntry", () => {
   it("is undefined when the endpoint returned an extension for the game", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(4242, true)] }),
-      VortexGameId("emberville"),
+      tierZeroGameId(GameId(4242)),
     );
 
     expect(entry).toBeUndefined();
@@ -69,16 +70,25 @@ describe("tierZeroEntry", () => {
   it("is undefined when an extension in the catalog provides support", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(4242, false)], catalog: [{ gameId: 4242 }] }),
-      VortexGameId("emberville"),
+      tierZeroGameId(GameId(4242)),
     );
 
     expect(entry).toBeUndefined();
   });
 
-  it("leaves the domain of another unique game alone but degrades the name to the id", () => {
+  it("is undefined for the id of a game the endpoint didn't detect", () => {
+    const entry = tierZeroEntry(
+      state({ detected: [detected(4242, false)] }),
+      tierZeroGameId(GameId(100)),
+    );
+
+    expect(entry).toBeUndefined();
+  });
+
+  it("degrades the name to the domain for a game missing from the nexus games list", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(100, false)] }),
-      VortexGameId("moddable"),
+      tierZeroGameId(GameId(100)),
     );
 
     expect(entry?.name).toBe("moddable");

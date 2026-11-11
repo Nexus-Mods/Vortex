@@ -65,7 +65,7 @@ describe("GameModeManager addGames", () => {
     manager.addGames([game]);
 
     const known = dispatchedKnownGames(dispatched);
-    expect(known.map((iter) => iter.id)).toEqual(["existing", "somegame"]);
+    expect(known.map((iter) => iter.id)).toEqual(["existing", "tier-0-1234"]);
     // the synthesized game passes the validity shape check despite the
     // empty placeholder executable
     expect(known[1].executable).toBe("");

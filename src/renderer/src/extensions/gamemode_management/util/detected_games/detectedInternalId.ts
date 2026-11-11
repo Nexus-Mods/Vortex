@@ -12,22 +12,26 @@ import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
  * `convertGameIdReverse` takes the first registered, which needn't be the one installed.
  * Taking the one discovery found instead puts the response's card on the game the user has,
  * so the detected section doesn't list that game again from discovery.
+ *
+ * undefined when no known game matches the domain, for the caller to decide what id the game
+ * will get.
  */
 export function detectedInternalId(
   knownGames: IGameStored[],
   discovered: Record<VortexGameId, IDiscoveryResult>,
   domain: GameDomain,
-): VortexGameId {
+): VortexGameId | undefined {
   const lowered = domain.toLowerCase();
+  const matches = (game: IGameStored) =>
+    game.id === lowered || game.details?.nexusPageId === domain;
   const installed = knownGames.filter(
-    (game) =>
-      (game.id === lowered || game.details?.nexusPageId === domain) &&
-      discovered[VortexGameId(game.id)]?.path !== undefined,
+    (game) => matches(game) && discovered[VortexGameId(game.id)]?.path !== undefined,
   );
 
-  return VortexGameId(
-    installed.find((game) => game.id === lowered)?.id ??
-      installed[0]?.id ??
-      convertGameIdReverse(knownGames, domain),
-  );
+  const installedId = installed.find((game) => game.id === lowered)?.id ?? installed[0]?.id;
+  if (installedId !== undefined) {
+    return VortexGameId(installedId);
+  }
+
+  return knownGames.some(matches) ? convertGameIdReverse(knownGames, domain) : undefined;
 }
