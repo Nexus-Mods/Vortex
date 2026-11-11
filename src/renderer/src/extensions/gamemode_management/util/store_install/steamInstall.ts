@@ -2,7 +2,8 @@ import { QualifiedPath } from "@vortex/shared/filesystem";
 
 import type { IGame } from "@/types/IGame";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
-import { installDataFromManifest, type ISteamEntry } from "@/util/Steam";
+import type { ISteamEntry } from "@/util/Steam";
+import { installDataFromManifest } from "@/util/steamManifest";
 import { normalizeStoreQuery } from "@/util/storeQuery";
 
 import { cachedFileParser } from "./cachedFileParser";
