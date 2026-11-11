@@ -271,7 +271,8 @@ describe("findGame", () => {
   });
 });
 
-// the lookups themselves are covered by findGame, this is only the id it hands back
+// converting to a vortexGameId is findGame's lookup, covered above, so only the id it hands
+// back is tested. The other targets read the data themselves and are tested in full.
 describe("convertId", () => {
   const data = gameData({
     known: [game(gameA, domainA), game(gameB, domainB)],
@@ -286,5 +287,48 @@ describe("convertId", () => {
   it("is undefined when no game is found", () => {
     expect(convertId(data, { gameDomain: tierZeroDomain }, "vortexGameId")).toBeUndefined();
     expect(convertId(data, { gameId: numericTierZero }, "vortexGameId")).toBeUndefined();
+  });
+
+  describe("to gameDomain", () => {
+    it("converts a vortexGameId to the nexus page the game declares", () => {
+      expect(convertId(data, { vortexGameId: gameB }, "gameDomain")).toBe(domainB);
+    });
+
+    it("is undefined for a game that declares no nexus page, whatever its id", () => {
+      const noPage = gameData({ known: [game(VortexGameId("domain-a"))] });
+
+      expect(
+        convertId(noPage, { vortexGameId: VortexGameId("domain-a") }, "gameDomain"),
+      ).toBeUndefined();
+    });
+
+    it("is undefined for a vortexGameId no known game has", () => {
+      expect(convertId(data, { vortexGameId: tierZeroGame }, "gameDomain")).toBeUndefined();
+    });
+
+    it("converts a GameId through the games list", () => {
+      expect(convertId(data, { gameId: numericB }, "gameDomain")).toBe(domainB);
+    });
+
+    it("converts the GameId of a Tier 0 entry without the games list", () => {
+      const tierZero = gameData({
+        tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+      });
+
+      expect(convertId(tierZero, { gameId: numericTierZero }, "gameDomain")).toBe(tierZeroDomain);
+    });
+
+    it("prefers the domain a Tier 0 entry is managed under to the games list's", () => {
+      const renamed = gameData({
+        tier0: { [numericA]: tierZeroEntry(numericA, domainB) },
+        nexusGames: [listed(numericA, domainA)],
+      });
+
+      expect(convertId(renamed, { gameId: numericA }, "gameDomain")).toBe(domainB);
+    });
+
+    it("is undefined for a GameId neither a Tier 0 entry nor the games list has", () => {
+      expect(convertId(data, { gameId: numericTierZero }, "gameDomain")).toBeUndefined();
+    });
   });
 });

@@ -71,17 +71,25 @@ export function findGame(data: IGameData, query: GameQuery): IGameStored | undef
       ? undefined
       : findGame(data, { gameDomain: GameDomain(listed.domain_name), discovered });
   } else {
-    const unhandled: never = query;
-    throw new VortexError(`Unhandled game query: ${JSON.stringify(unhandled)}`, {
-      kind: "argument-invalid",
-      argument: "query",
-    });
+    return unsupportedQuery(query);
   }
 }
 
+function unsupportedQuery(query: unknown): never {
+  throw new VortexError(`Unhandled game query: ${JSON.stringify(query)}`, {
+    kind: "argument-invalid",
+    argument: "query",
+  });
+}
+
 /**
- * Convert an id to the id of a registered game. `undefined` means no known game matches,
- * the answer is never a guess at the id an extension might register one under.
+ * Convert an id to the id of another kind. `undefined` means nothing known matches, the
+ * answer is never a guess.
+ *
+ * - `vortexGameId` is the id of a registered game, so it is `findGame`'s game.
+ * - `gameDomain` is a fact the data holds without a registered game: the game's
+ *   `details.nexusPageId`, or for a `GameId` the Tier 0 entry managed under it, else the
+ *   Nexus Mods games list.
  *
  * Converting an id to its own kind is a type error, there is nothing to look up.
  */
@@ -89,7 +97,36 @@ export function convertId(
   data: IGameData,
   query: Exclude<GameQuery, { vortexGameId: VortexGameId }>,
   to: "vortexGameId",
-): VortexGameId | undefined {
-  const game = findGame(data, query);
-  return game === undefined ? undefined : VortexGameId(game.id);
+): VortexGameId | undefined;
+export function convertId(
+  data: IGameData,
+  query: Exclude<GameQuery, { gameDomain: GameDomain }>,
+  to: "gameDomain",
+): GameDomain | undefined;
+export function convertId(
+  data: IGameData,
+  query: GameQuery,
+  to: "vortexGameId" | "gameDomain",
+): VortexGameId | GameDomain | undefined {
+  if (to === "vortexGameId") {
+    const game = findGame(data, query);
+    return game === undefined ? undefined : VortexGameId(game.id);
+  }
+
+  if ("vortexGameId" in query) {
+    const nexusPageId: unknown = findGame(data, query)?.details?.nexusPageId;
+    return typeof nexusPageId === "string" && nexusPageId !== ""
+      ? GameDomain(nexusPageId)
+      : undefined;
+  } else if ("gameId" in query) {
+    const tierZero = data.tier0[query.gameId];
+    if (tierZero !== undefined) {
+      return tierZero.domain;
+    }
+
+    const listed = data.nexusGames.find((entry) => entry.id === query.gameId);
+    return listed === undefined ? undefined : GameDomain(listed.domain_name);
+  } else {
+    return unsupportedQuery(query);
+  }
 }
