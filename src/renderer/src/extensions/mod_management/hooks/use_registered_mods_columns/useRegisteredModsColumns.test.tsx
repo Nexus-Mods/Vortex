@@ -193,6 +193,19 @@ describe("useRegisteredModsColumns", () => {
     expect(highlight).toHaveBeenLastCalledWith(collectionRow.mod, false);
   });
 
+  // As the legacy table tells one that isn't a column whether it would be shown by default.
+  it("tells an attribute that isn't a column here it's shown, unless it's hidden by default", () => {
+    const cssClass = vi.fn((_mod: IModWithState, _enabled: boolean) => "");
+    registered.attributes = [
+      attribute({ id: "notes", placement: "detail", cssClass }),
+      attribute({ id: "sdv", condition: () => false, isDefaultVisible: false, cssClass }),
+    ];
+
+    renderRegistered().rowClassName(row(), () => false);
+
+    expect(cssClass.mock.calls.map(([, enabled]) => enabled)).toEqual([true, false]);
+  });
+
   it("gives a row no classes when no extension adds any", () => {
     registered.attributes = [attribute({ id: "plain" })];
 
@@ -246,6 +259,15 @@ describe("useRegisteredModsColumns", () => {
 
     it("draws nothing, in no gate, when its renderer draws nothing", () => {
       registered.attributes = [attribute({ customRenderer: () => null })];
+
+      expect(renderCell().cell()).toBeEmptyDOMElement();
+    });
+
+    // As `shown && <Control />` gives, which the gate would take for a broken control.
+    it.each([false, "", 0])("draws nothing, in no gate, when its renderer gives %j", (drawn) => {
+      registered.attributes = [
+        attribute({ customRenderer: () => drawn as unknown as JSX.Element }),
+      ];
 
       expect(renderCell().cell()).toBeEmptyDOMElement();
     });

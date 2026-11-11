@@ -128,7 +128,9 @@ interface ICustomCellProps {
 const CustomCell = ({ attribute, mod, t }: ICustomCellProps) => {
   let control: ReactNode = null;
   try {
-    control = attribute.customRenderer?.(mod, false, t, NO_HIGHLIGHT) ?? null;
+    // `||` as the legacy table has it: `shown && <Control />` gives false, which the gate
+    // would take for a broken control.
+    control = attribute.customRenderer?.(mod, false, t, NO_HIGHLIGHT) || null;
   } catch (err) {
     logFailure("failed to render attribute", attribute, mod, err);
   }
@@ -140,6 +142,35 @@ const CustomCell = ({ attribute, mod, t }: ICustomCellProps) => {
 const isNewTableShown = (state: IState) => state.settings.mods?.betaTable === true;
 
 const isInTable = ({ placement }: ITableAttribute) => placement === "table" || placement === "both";
+
+/**
+ * How many times each attribute's `externalData` has said the data it's from changed, by id:
+ * the legacy table's way to hear of changes to data outside the mods. Extensions give no way to
+ * stop listening, so once unmounted, their calls are ignored, and some keep only the last
+ * listener, so it listens only while the new table is shown, leaving them to the legacy one.
+ */
+const useExternalDataVersions = (attributes: ITableAttribute[], isNewTable: boolean) => {
+  const [versions, setVersions] = useState<{ [attributeId: string]: number }>({});
+
+  useEffect(() => {
+    if (!isNewTable) {
+      return undefined;
+    }
+    let mounted = true;
+    for (const { id, externalData } of attributes) {
+      externalData?.(() => {
+        if (mounted) {
+          setVersions((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
+        }
+      });
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [attributes, isNewTable]);
+
+  return versions;
+};
 
 /**
  * The columns extensions register on the legacy Mods table, with `registerTableAttribute("mods", …)`,
@@ -154,53 +185,20 @@ export const useRegisteredModsColumns = (
 ) => {
   const { t } = useTranslation("common");
   const gameId = useSelector(activeGameId);
-  const isShown = useSelector(isNewTableShown);
-  const [versions, setVersions] = useState<{ [attributeId: string]: number }>({});
+  const isNewTable = useSelector(isNewTableShown);
   const attributes = useExtensionObjects<ITableAttribute>(
     registerTableAttribute as (...args: unknown[]) => ITableAttribute | undefined,
     undefined,
     "mods",
   );
-
-  // The legacy table's way to hear of changes to data outside the mods. Extensions give no way
-  // to stop listening, so once unmounted, their calls are ignored, and some keep only the last
-  // listener, so it listens only while it's the table shown, leaving them to the legacy one.
-  useEffect(() => {
-    if (!isShown) {
-      return undefined;
-    }
-    let mounted = true;
-    for (const { id, externalData } of attributes) {
-      externalData?.(() => {
-        if (mounted) {
-          setVersions((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
-        }
-      });
-    }
-    return () => {
-      mounted = false;
-    };
-  }, [attributes, isShown]);
-
-  /**
-   * The classes extensions add to a row: from every attribute, as the legacy table asks them,
-   * each told whether its column is shown.
-   */
-  const rowClassName = useCallback(
-    ({ mod }: IModRow, isShown: (columnId: string) => boolean) =>
-      attributes
-        .map((attribute) => attribute.cssClass?.(mod, isShown(attribute.id)))
-        .filter(Boolean)
-        .join(" ") || undefined,
-    [attributes],
-  );
+  const versions = useExternalDataVersions(attributes, isNewTable);
 
   const registered = useMemo(() => {
-    const shown = attributes.filter(
+    const offered = attributes.filter(
       (attribute) =>
         isInTable(attribute) && !ownIds.has(attribute.id) && (attribute.condition?.() ?? true),
     );
-    const columns = shown.map((attribute): IModsTableColumn => {
+    const columns = offered.map((attribute): IModsTableColumn => {
       const header = preT(t, attribute.name);
       return {
         id: attribute.id,
@@ -223,13 +221,39 @@ export const useRegisteredModsColumns = (
       };
     });
 
-    const defaultShown = shown
+    const defaultShown = offered
       .filter((attribute) => attribute.isDefaultVisible ?? true)
       .map(({ id }) => id);
 
     return { columns, defaultShown };
     // A condition is mostly which game is active, so it's asked again when that changes.
   }, [attributes, gameId, mods, ownIds, t, versions]);
+
+  /**
+   * The classes extensions add to a row: from every attribute, as the legacy table asks them,
+   * each told whether its column is shown, or, for one that isn't a column here, whether it
+   * would be by default.
+   */
+  const rowClassName = useCallback(
+    ({ mod }: IModRow, isColumnShown: (columnId: string) => boolean) => {
+      const isColumn = (id: string) =>
+        ownIds.has(id) || registered.columns.some((column) => column.id === id);
+      return (
+        attributes
+          .map((attribute) =>
+            attribute.cssClass?.(
+              mod,
+              isColumn(attribute.id)
+                ? isColumnShown(attribute.id)
+                : (attribute.isDefaultVisible ?? true),
+            ),
+          )
+          .filter(Boolean)
+          .join(" ") || undefined
+      );
+    },
+    [attributes, ownIds, registered.columns],
+  );
 
   return { ...registered, rowClassName };
 };

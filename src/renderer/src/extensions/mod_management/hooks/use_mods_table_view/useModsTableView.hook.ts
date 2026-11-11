@@ -26,7 +26,6 @@ import { useModsTableAnalytics } from "../use_mods_table_analytics/useModsTableA
 const NO_CUSTOM: IModsTableCustomView[] = [];
 const NO_CHANGES: IModsTableViewChanges = {};
 const NO_WIDTHS: { [columnId: string]: number } = {};
-const NO_DEFAULT_SHOWN: readonly string[] = [];
 
 const viewsState = (state: IState) => state.settings.modsTableViews;
 
@@ -42,7 +41,7 @@ const viewsState = (state: IState) => state.settings.modsTableViews;
  */
 export const useModsTableView = (
   mods: { [id: string]: IModWithState },
-  defaultShown: readonly string[] = NO_DEFAULT_SHOWN,
+  defaultShown: readonly string[],
 ) => {
   const dispatch = useDispatch();
   const analytics = useModsTableAnalytics();
