@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { makeInstalledCollection, makeMod, makeRule } from "../../../../test-utils/builders";
@@ -17,7 +18,7 @@ vi.mock("../collection_update_prompt/collectionUpdatePrompt", () => ({
   askCollectionUpdate: vi.fn(),
 }));
 
-const GAME = "skyrimse";
+const GAME = VortexGameId("skyrimse");
 
 const ask = vi.mocked(askCollectionUpdate);
 const userChooses = (choice: CollectionUpdateChoice) => ask.mockResolvedValue(choice);

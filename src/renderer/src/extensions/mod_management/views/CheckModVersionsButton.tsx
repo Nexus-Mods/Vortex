@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import _ from "lodash";
 import * as React from "react";
 
@@ -21,7 +22,7 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   mods: { [modId: string]: IModWithState };
-  gameMode: string;
+  gameMode: VortexGameId;
   updateRunning: boolean;
   isPremium: boolean;
 }

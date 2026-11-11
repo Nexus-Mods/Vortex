@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../logging", () => {
@@ -10,7 +11,7 @@ import type { IMod } from "../../mod_management/types/IMod";
 import type { IProfileMod } from "../types/IProfile";
 import { sanitizeProfile } from "./sanitizeProfile";
 
-const GAME = "cyberpunk2077";
+const GAME = VortexGameId("cyberpunk2077");
 
 /**
  * `mods` is the whole persistent.mods slice, so a test can tell the game entry

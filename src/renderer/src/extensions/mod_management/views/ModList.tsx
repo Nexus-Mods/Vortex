@@ -1,5 +1,6 @@
 import path from "path";
 
+import type { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import * as React from "react";
@@ -148,7 +149,7 @@ interface IBaseProps {
 }
 
 interface IConnectedProps extends IModProps {
-  gameMode: string;
+  gameMode: VortexGameId;
   profileId: string;
   language: string;
   installPath: string;

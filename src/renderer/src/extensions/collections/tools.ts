@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { VortexGameId } from "@vortex/shared";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as React from "react";
 import { generate as shortid } from "shortid";
@@ -132,7 +133,7 @@ async function cloneTools(
 
 async function setUpTools(
   api: IExtensionApi,
-  gameId: string,
+  gameId: VortexGameId,
   tools: ICollectionTool[],
 ): Promise<void> {
   const knownTools = api.getState().settings.gameMode.discovered[gameId].tools;
@@ -237,7 +238,7 @@ function init(context: IExtensionContext) {
     "tools",
     (gameId: string, includedMods: string[], mod: IMod) => generateTools(context.api, gameId, mod),
     (gameId: string, collection: ICollection, mod: IMod) =>
-      setUpTools(context.api, gameId, collection["tools"]),
+      setUpTools(context.api, VortexGameId(gameId), collection["tools"]),
     (gameId: string, collection: ICollection, from: IMod, to: IMod) =>
       cloneTools(context.api, gameId, collection["tools"], from, to),
     () => "Tools",

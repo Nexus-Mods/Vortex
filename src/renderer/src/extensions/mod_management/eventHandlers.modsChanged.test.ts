@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 // util/Steam reaches this at import time, through the eventHandlers graph, and
@@ -10,7 +11,7 @@ import { onModsChanged } from "./eventHandlers";
 import { deploymentReducer } from "./reducers/deployment";
 import type { IModRule } from "./types/IMod";
 
-const GAME = "skyrimse";
+const GAME = VortexGameId("skyrimse");
 const MOD_ID = "mod-1";
 
 const beforeRule = makeRule({ type: "before", reference: makeExactRef({ id: "mod-2" }) });

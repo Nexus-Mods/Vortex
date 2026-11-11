@@ -25,7 +25,7 @@ export function detectedInternalId(
   const matches = (game: IGameStored) =>
     game.id === lowered || game.details?.nexusPageId === domain;
   const installed = knownGames.filter(
-    (game) => matches(game) && discovered[VortexGameId(game.id)]?.path !== undefined,
+    (game) => matches(game) && discovered[game.id]?.path !== undefined,
   );
 
   const installedId = installed.find((game) => game.id === lowered)?.id ?? installed[0]?.id;

@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { VortexGameId } from "@vortex/shared";
 import React from "react";
 import type * as ReactReduxTypes from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -66,7 +67,7 @@ vi.mock("@/ui/components/game_tile/GameTile", () => ({
 import { GameCard } from "./GameCard";
 
 const skyrim: IGameStored = {
-  id: "skyrimse",
+  id: VortexGameId("skyrimse"),
   name: "Skyrim Special Edition",
   executable: undefined,
   extensionPath: undefined,

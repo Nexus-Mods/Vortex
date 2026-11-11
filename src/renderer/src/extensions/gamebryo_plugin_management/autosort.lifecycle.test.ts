@@ -9,6 +9,7 @@
 import { writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
+import { VortexGameId } from "@vortex/shared";
 import { describe, expect, onTestFinished, vi } from "vitest";
 
 import { startActivity, stopActivity } from "../../actions/session";
@@ -84,7 +85,7 @@ describe("LootInterface libloot lifecycle", () => {
   test("leaves LOOT unstarted for a game without a discovered path", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     harness.setState((draft) => {
-      delete draft.settings.gameMode.discovered.skyrimse;
+      delete draft.settings.gameMode.discovered[VortexGameId("skyrimse")];
     });
 
     // only setTimeout is faked: Bluebird schedules on setImmediate, which flushAsync drains
@@ -108,7 +109,10 @@ describe("LootInterface libloot lifecycle", () => {
   test("leaves LOOT unstarted for a game whose folder is gone", async ({ makeLoot }) => {
     const harness = await makeLoot(LootInterface);
     harness.setState((draft) => {
-      draft.settings.gameMode.discovered.skyrimse.path = path.join(harness.dataDir, "gone");
+      draft.settings.gameMode.discovered[VortexGameId("skyrimse")].path = path.join(
+        harness.dataDir,
+        "gone",
+      );
     });
 
     harness.restartHelpers();

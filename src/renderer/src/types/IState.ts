@@ -1,5 +1,5 @@
 import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { GameDomain, GameId, VortexGameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -242,10 +242,10 @@ export interface ISettingsInterface {
   usage: { [usageId: string]: boolean };
   tools?: {
     addToolsToTitleBar: boolean;
-    order?: { [gameId: string]: string[] };
-    pinned?: { [gameId: string]: { [toolId: string]: boolean } };
+    order?: Record<VortexGameId, string[]>;
+    pinned?: Record<VortexGameId, { [toolId: string]: boolean }>;
   };
-  primaryTool?: { [gameId: string]: string };
+  primaryTool?: Record<VortexGameId, string>;
 }
 
 export interface ISettingsAutomation {
@@ -259,11 +259,11 @@ export interface ISettingsAutomation {
 export interface ISettingsProfiles {
   activeProfileId: string;
   nextProfileId: string;
-  lastActiveProfile: { [gameId: string]: string };
+  lastActiveProfile: Record<VortexGameId, string>;
 }
 
 export interface ISettingsGameMode {
-  discovered: { [id: string]: IDiscoveryResult };
+  discovered: Record<VortexGameId, IDiscoveryResult>;
   searchPaths: string[];
   pickerLayout: "list" | "small" | "large";
   sortManaged: string;
@@ -294,9 +294,9 @@ export interface IStatePaths {
 export type InstallPathMode = "userData" | "suggested";
 
 export interface ISettingsMods {
-  installPath: { [gameId: string]: string };
+  installPath: Record<VortexGameId, string>;
   modlistState: { [id: string]: IAttributeState };
-  activator: { [gameId: string]: string };
+  activator: Record<VortexGameId, string>;
   installPathMode: InstallPathMode;
   suggestInstallPathDirectory: string;
   showDropzone: boolean;
@@ -393,11 +393,7 @@ export interface IManualInstallerPreferences {
 }
 
 export interface IStateGameMode {
-  gameInfo: {
-    [gameId: string]: {
-      [key: string]: IGameInfoEntry;
-    };
-  };
+  gameInfo: Record<VortexGameId, { [key: string]: IGameInfoEntry }>;
 
   /** games managed without a game extension, keyed by numeric nexus game id
    * (immutable across domain renames; the entry also carries the domain) */
@@ -411,11 +407,7 @@ export interface IBrowserState {
   skippable: boolean;
 }
 
-export interface IModTable {
-  [gameId: string]: {
-    [modId: string]: IMod;
-  };
-}
+export type IModTable = Record<VortexGameId, { [modId: string]: IMod }>;
 
 export interface IOverlay {
   title: string;
@@ -473,13 +465,13 @@ export interface IPersistentState {
   mods: IModTable;
   downloads: IStateDownloads;
   collections: ICollectionsPersistentState;
-  categories: { [gameId: string]: ICategoryDictionary };
+  categories: Record<VortexGameId, ICategoryDictionary>;
   gameMode: IStateGameMode;
   deployment: {
-    needToDeploy: { [gameId: string]: boolean };
+    needToDeploy: Record<VortexGameId, boolean>;
     /** Games whose mods were purged and haven't been deployed since. */
-    purged: { [gameId: string]: boolean };
-    deploymentCounter: { [gameId: string]: number };
+    purged: Record<VortexGameId, boolean>;
+    deploymentCounter: Record<VortexGameId, number>;
   };
   transactions: IStateTransactions;
   history: IHistoryPersistent;

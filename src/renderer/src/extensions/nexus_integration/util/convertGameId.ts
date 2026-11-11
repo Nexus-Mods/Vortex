@@ -76,7 +76,7 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
   const game = validGames.find((iter) => iter.id === input.toLowerCase());
   // the stored games are keyed by the id their extension registered
   if (game !== undefined) {
-    return VortexGameId(game.id);
+    return game.id;
   }
 
   // Alternatively - there may be a nexus page id match.
@@ -123,7 +123,7 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): V
   );
 
   if (game !== undefined) {
-    return VortexGameId(game.id);
+    return game.id;
   }
 
   return VortexGameId(input.toLowerCase());

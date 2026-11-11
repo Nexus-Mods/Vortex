@@ -1,5 +1,6 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain, GameId, VortexError, VortexGameId } from "@vortex/shared";
+import type { VortexGameId } from "@vortex/shared";
+import { GameDomain, GameId, VortexError } from "@vortex/shared";
 
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
 
@@ -49,9 +50,7 @@ export function findGame(data: IGameData, query: GameQuery): IGameStored | undef
     const { gameDomain, discovered } = query;
 
     const matches = data.known.filter((game) => game.details?.nexusPageId === gameDomain);
-    const installed = matches.find(
-      (game) => discovered?.[VortexGameId(game.id)]?.path !== undefined,
-    );
+    const installed = matches.find((game) => discovered?.[game.id]?.path !== undefined);
 
     return installed ?? matches[0];
   } else if ("gameId" in query) {
@@ -117,7 +116,7 @@ export function convertId(
 ): VortexGameId | GameDomain | GameId | undefined {
   if (to === "vortexGameId") {
     const game = findGame(data, query);
-    return game === undefined ? undefined : VortexGameId(game.id);
+    return game === undefined ? undefined : game.id;
   }
 
   if (to === "gameId") {

@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain } from "@vortex/shared";
+import { GameDomain, VortexGameId } from "@vortex/shared";
 import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
 import React, { type ComponentClass, useMemo, useRef, useState } from "react";
@@ -45,7 +45,7 @@ import {
 } from "../util/detected_games/listableDetectedIds";
 import { locallyDetectedGames } from "../util/detected_games/locallyDetectedGames";
 
-const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
+const gameFromDiscovery = (id: VortexGameId, discovered: IDiscoveryResult): IGameStored => ({
   id,
   name: discovered.name ?? id,
   shortName: discovered.shortName,
@@ -253,7 +253,7 @@ const GamePicker = ({
       ? knownGames
       : knownGames.filter((game: IGameStored) => !(discoveredGames[game.id]?.hidden ?? false));
 
-  const profileGames = new Set<string>(
+  const profileGames = new Set<VortexGameId>(
     Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId),
   );
 
@@ -274,7 +274,9 @@ const GamePicker = ({
   supportedGameList.push(
     ...extensionsUninstalled
       .map((ext) => ({
-        id: ext.gameDomain || ext.name,
+        // The extension isn't installed, so its real game id is unknown. Games without an
+        // extension are keyed by their nexus domain, so that's the closest stand-in.
+        id: VortexGameId(ext.gameDomain || ext.name),
         name: ext.gameName || ext.name,
         extensionPath: undefined,
         imageURL: ext.image,
@@ -285,16 +287,18 @@ const GamePicker = ({
       .filter((ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false)),
   );
 
-  Object.keys(discoveredGames).forEach((gameId) => {
-    if (knownGames.find((game) => game.id === gameId) === undefined) {
-      if (discoveredGames[gameId].extensionPath === undefined) {
-        return;
+  Object.keys(discoveredGames)
+    .map(VortexGameId)
+    .forEach((gameId) => {
+      if (knownGames.find((game) => game.id === gameId) === undefined) {
+        if (discoveredGames[gameId].extensionPath === undefined) {
+          return;
+        }
+        if (profileGames.has(gameId)) {
+          managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
+        }
       }
-      if (profileGames.has(gameId)) {
-        managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
-      }
-    }
-  });
+    });
 
   // The detected section is fed by the detected-games response, which names the user's
   // store-installed games, and then by discovery. A response game is listable when the

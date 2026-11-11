@@ -1,4 +1,4 @@
-import { VortexProfileId } from "@vortex/shared";
+import { VortexProfileId, VortexGameId } from "@vortex/shared";
 import { UserCanceled } from "@vortex/shared/errors";
 import { describe, expect } from "vitest";
 
@@ -47,9 +47,9 @@ const trackedEvents = (harness: IProfileSwitchHarness) => {
 };
 
 const profiles = [
-  makeProfile({ id: "skyrim1", gameId: "skyrimse" }),
-  makeProfile({ id: "skyrim2", gameId: "skyrimse" }),
-  makeProfile({ id: "stardew1", gameId: "stardewvalley" }),
+  makeProfile({ id: "skyrim1", gameId: VortexGameId("skyrimse") }),
+  makeProfile({ id: "skyrim2", gameId: VortexGameId("skyrimse") }),
+  makeProfile({ id: "stardew1", gameId: VortexGameId("stardewvalley") }),
 ];
 const lastActive = { skyrimse: "skyrim1", stardewvalley: "stardew1" };
 const skyrimPending = { profiles, lastActive, needToDeploy: { skyrimse: true } };
@@ -79,7 +79,9 @@ describe("profile switch", () => {
     await harness.switchTo("stardew1");
 
     expect(harness.deployed).toEqual([]);
-    expect(harness.getState().persistent.deployment.needToDeploy.skyrimse).toBe(true);
+    expect(harness.getState().persistent.deployment.needToDeploy[VortexGameId("skyrimse")]).toBe(
+      true,
+    );
     expect(
       harness.loggedMessages().filter((message) => /^(will|did) deploy/.test(message)),
     ).toEqual([]);
@@ -93,7 +95,9 @@ describe("profile switch", () => {
     await harness.switchTo("skyrim1");
 
     expect(harness.deployed).toEqual([]);
-    expect(harness.getState().persistent.deployment.needToDeploy.skyrimse).toBe(true);
+    expect(harness.getState().persistent.deployment.needToDeploy[VortexGameId("skyrimse")]).toBe(
+      true,
+    );
   });
 
   test("keeps the last active profile's pending changes when switching to another of its profiles", async ({
@@ -189,7 +193,7 @@ describe("profile switch", () => {
   }) => {
     const harness = await makeProfileSwitch({ ...skyrimPending, activeProfileId: "skyrim1" });
     harness.setState((draft) => {
-      draft.settings.gameMode.discovered.stardewvalley.store = "gog";
+      draft.settings.gameMode.discovered[VortexGameId("stardewvalley")].store = "gog";
     });
     const events = trackedEvents(harness);
 
@@ -217,9 +221,13 @@ describe("profile switch", () => {
   test("leaves a profile's first activation to app_game_manage", async ({ makeProfileSwitch }) => {
     const harness = await makeProfileSwitch({
       profiles: [
-        makeProfile({ id: "skyrim1", gameId: "skyrimse" }),
+        makeProfile({ id: "skyrim1", gameId: VortexGameId("skyrimse") }),
         // a profile manageGame just created has never been active
-        makeProfile({ id: "stardew1", gameId: "stardewvalley", lastActivated: undefined }),
+        makeProfile({
+          id: "stardew1",
+          gameId: VortexGameId("stardewvalley"),
+          lastActivated: undefined,
+        }),
       ],
       lastActive: { skyrimse: "skyrim1" },
       activeProfileId: "skyrim1",

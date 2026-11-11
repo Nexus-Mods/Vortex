@@ -5,7 +5,7 @@
  * exit; the id resolution is mock-fixed here and supportTier reads real state (the function
  * itself is covered by supportTier.test.ts).
  */
-import { GameDomain, GameId } from "@vortex/shared";
+import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import type {
@@ -109,7 +109,10 @@ describe("game launch analytics", () => {
   it("carries the game store from the launch to its paired exit event", () => {
     const h = harness();
     h.base.setState((draft) => {
-      draft.settings.gameMode.discovered.skyrimse = { path: "C:/games/skyrimse", store: "xbox" };
+      draft.settings.gameMode.discovered[VortexGameId("skyrimse")] = {
+        path: "C:/games/skyrimse",
+        store: "xbox",
+      };
     });
     // a direct exe launch still reports the store the game was installed from
     const info = makeStarterInfo({ exePath: "C:/g/store.exe" });
@@ -119,7 +122,7 @@ describe("game launch analytics", () => {
 
     // captured at launch, so the paired exit reports it even if the discovery changed meanwhile
     h.base.setState((draft) => {
-      delete draft.settings.gameMode.discovered.skyrimse;
+      delete draft.settings.gameMode.discovered[VortexGameId("skyrimse")];
     });
     emitExitsForStoppedTools(h.api, { [makeExeId(info.exePath)]: { started: 0 } }, {});
 
@@ -196,7 +199,7 @@ describe("exit detection for launches that hand off to the game", () => {
     const state = h.api.getState() as unknown as {
       settings: { gameMode: { discovered: Record<string, unknown> } };
     };
-    state.settings.gameMode.discovered.skyrimse = {
+    state.settings.gameMode.discovered[VortexGameId("skyrimse")] = {
       executable: "SkyrimSE.exe",
       path: "C:/games/skyrimse",
     };

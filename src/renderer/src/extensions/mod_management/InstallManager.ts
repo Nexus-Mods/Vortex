@@ -1,11 +1,11 @@
+import * as os from "os";
 /**
  * @see docs/mod-management/collections.md - For collections & phased installation documentation
  */
-
-import * as os from "os";
 import * as path from "path";
 
 import { HTTPError } from "@nexusmods/nexus-api";
+import { VortexGameId } from "@vortex/shared";
 import {
   getErrorCode,
   getErrorMessage,
@@ -1288,7 +1288,7 @@ class InstallManager {
           api.dismissNotification(`ready-to-install-${archiveId ?? dummyArchiveId}`);
           let installProfile = currentProfile;
           let modId = baseName;
-          let installGameId: string;
+          let installGameId: VortexGameId;
           let installContext: InstallContext;
           let archiveMD5: string;
           let archiveSize: number;
@@ -1339,7 +1339,7 @@ class InstallManager {
                   const state = api.getState();
                   const games = knownGames(state);
                   const convertedGameId = convertGameIdReverse(games, gameId);
-                  installGameId = convertedGameId || gameId; // Use converted ID or fallback to original
+                  installGameId = convertedGameId || VortexGameId(gameId); // Use converted ID or fallback to original
 
                   if (installGameId === undefined) {
                     return Promise.reject(
@@ -2621,7 +2621,11 @@ class InstallManager {
 
             // Superseded variants disabled here; the same set is disabled in every affected
             // profile, so it's computed once for both the dispatch and the analytics emit.
-            const supersededVariantIds = this.checkModVariantsExist(api, gameId, downloadId);
+            const supersededVariantIds = this.checkModVariantsExist(
+              api,
+              VortexGameId(gameId),
+              downloadId,
+            );
             if (targetProfile) {
               // Only modify the target profile - disable other variants and enable this one
               for (const otherModId of supersededVariantIds) {
@@ -4791,7 +4795,11 @@ class InstallManager {
       });
   }
 
-  private checkModVariantsExist(api: IExtensionApi, gameMode: string, archiveId: string): string[] {
+  private checkModVariantsExist(
+    api: IExtensionApi,
+    gameMode: VortexGameId,
+    archiveId: string,
+  ): string[] {
     if (archiveId == null) {
       return [];
     }
@@ -4800,7 +4808,11 @@ class InstallManager {
     return mods.filter((mod) => mod.archiveId === archiveId).map((mod) => mod.id);
   }
 
-  private checkModNameExists(installName: string, api: IExtensionApi, gameMode: string): string[] {
+  private checkModNameExists(
+    installName: string,
+    api: IExtensionApi,
+    gameMode: VortexGameId,
+  ): string[] {
     const state = api.getState();
     const mods = Object.values(state.persistent.mods[gameMode] || []);
     // Yes I know that only 1 mod id can ever match the install name, but it's more consistent
@@ -4974,7 +4986,7 @@ class InstallManager {
   private queryUserReplace(
     api: IExtensionApi,
     modIds: string[],
-    gameId: string,
+    gameId: VortexGameId,
     installOptions: IInstallOptions,
   ) {
     return new Promise<IReplaceChoice>((resolve, reject) => {
@@ -5930,7 +5942,11 @@ class InstallManager {
 
             // Superseded variants disabled here; the same set is disabled in every affected
             // profile, so it's computed once for both the dispatch and the analytics emit.
-            const supersededVariantIds = this.checkModVariantsExist(api, gameId, downloadId);
+            const supersededVariantIds = this.checkModVariantsExist(
+              api,
+              VortexGameId(gameId),
+              downloadId,
+            );
             if (targetProfile) {
               // Only modify the target profile - disable other variants and enable this one
               for (const otherModId of supersededVariantIds) {

@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { VortexGameId } from "@vortex/shared";
 import React from "react";
 import type * as ReactReduxTypes from "react-redux";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -52,7 +53,7 @@ type Props = React.ComponentProps<typeof SupportedGames>;
 
 const games = (count: number): IGameStored[] =>
   Array.from({ length: count }, (_unused, idx) => ({
-    id: `game${idx}`,
+    id: VortexGameId(`game${idx}`),
     name: `game${idx}`,
     executable: undefined,
     extensionPath: undefined,
