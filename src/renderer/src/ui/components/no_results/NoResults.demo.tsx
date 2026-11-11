@@ -92,26 +92,25 @@ export const NoResultsDemo = () => (
     </Section>
 
     <Section
-      description="Browse's mod list wraps it in a dark panel, widens it, and pulls the footnote closer to the actions."
+      description="Browse's mod list gives it a dark panel through className."
       title="In a panel"
     >
-      <div className="rounded-sm bg-translucent-dark-200 p-8 [&>div]:max-w-none [&>div>:last-child]:-mt-2">
-        <NoResults
-          footnote="Mods that don't support mod managers or use legacy requirements are hidden."
-          message="Try a different search or remove filters."
-          title={'No mods match "SkyUI"'}
-        >
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button appearance="moderate" brand="neutral" leftIcon="close">
-              Remove 3 filters
-            </Button>
+      <NoResults
+        className="rounded-sm bg-translucent-dark-200 p-8"
+        footnote="Mods that don't support mod managers or use legacy requirements are hidden."
+        message="Try a different search or remove filters."
+        title={'No mods match "SkyUI"'}
+      >
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button appearance="moderate" brand="neutral" leftIcon="close">
+            Remove 3 filters
+          </Button>
 
-            <Button appearance="moderate" brand="neutral" rightIcon="open_in_new">
-              Search on website
-            </Button>
-          </div>
-        </NoResults>
-      </div>
+          <Button appearance="moderate" brand="neutral" rightIcon="open_in_new">
+            Search on website
+          </Button>
+        </div>
+      </NoResults>
     </Section>
   </div>
 );

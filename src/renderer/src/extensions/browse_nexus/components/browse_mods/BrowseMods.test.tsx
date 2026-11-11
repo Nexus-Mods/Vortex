@@ -84,8 +84,7 @@ vi.mock("./mod_list/ModList", () => ({
     emptyState: React.ReactNode;
     endOfResults: React.ReactNode;
   }) => (
-    <div ref={listRef}>
-      <div aria-label="Mods" role="region" tabIndex={-1} />
+    <div aria-label="Mods" ref={listRef} role="region" tabIndex={-1}>
       {!mods.length && emptyState}
       {!!mods.length && endOfResults}
       {(isError || isLoadMoreError) && <button onClick={onRetry}>Retry</button>}

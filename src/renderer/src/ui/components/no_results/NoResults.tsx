@@ -33,7 +33,7 @@ export const NoResults = ({
   appearance?: IAppearance;
   /** Classes for the container, such as its padding. */
   className?: string;
-  /** A note under the actions, by an info icon, in small text. */
+  /** A note just under the actions, by an info icon, in small text. */
   footnote?: ReactNode;
   /** The icon over the title; an error shows one without it. */
   icon?: IIconSource;
@@ -48,8 +48,8 @@ export const NoResults = ({
   /** What it's about, in bold. */
   title: string;
 }>) => (
-  <div className={joinClasses(["mx-auto flex max-w-md flex-col items-center gap-y-4", className])}>
-    <div className="flex flex-col items-center gap-y-2">
+  <div className={joinClasses(["mx-auto flex flex-col items-center gap-y-4", className])}>
+    <div className="flex max-w-md flex-col items-center gap-y-2">
       {(!!icon || isError) && (
         <Icon
           {...getIconProps(icon ?? "error")}
@@ -91,7 +91,12 @@ export const NoResults = ({
         )}
 
     {!!footnote && (
-      <Typography appearance="subdued" as="div" className="text-center" typographyType="body-sm">
+      <Typography
+        appearance="subdued"
+        as="div"
+        className="-mt-2 text-center"
+        typographyType="body-sm"
+      >
         <Icon
           className="relative top-px mr-2 align-text-bottom text-neutral-subdued"
           name="info"

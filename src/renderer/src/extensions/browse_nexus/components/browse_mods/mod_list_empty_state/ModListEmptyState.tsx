@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/ui/components/button/Button";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 
-import type { EmptyStateKind } from "../../../hooks/browse_mods_tracking/browseModsTracker";
+import type { EmptyStateKind } from "../../../util/empty_state_kind/emptyStateKind";
 
 // TODO: where "Learn more" goes isn't decided; the link shows once this is set.
 export const LEARN_MORE_URL = "";
@@ -94,60 +94,60 @@ export const ModListEmptyState = ({
   const canRemoveFilters = filterCount > 0 && OFFERS_REMOVE_FILTERS.includes(kind);
 
   return (
-    <div className="rounded-sm bg-translucent-dark-200 p-8 [&>div]:max-w-none [&>div>:last-child]:-mt-2">
-      <NoResults
-        footnote={
-          <>
-            {t("Mods that don't support mod managers or use legacy requirements are hidden.")}
+    <NoResults
+      className="rounded-sm bg-translucent-dark-200 p-8"
+      footnote={
+        <>
+          {t("Mods that don't support mod managers or use legacy requirements are hidden.")}
 
-            {!!LEARN_MORE_URL && (
-              <>
-                {" "}
-                <a
-                  className="underline"
-                  href={LEARN_MORE_URL}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    onLearnMore();
-                  }}
-                >
-                  {t("Learn more")}
-                </a>
-              </>
-            )}
-          </>
-        }
-        message={message}
-        title={title}
-      >
-        {(canRemoveFilters || !!onSearchWebsite) && (
-          <div className="flex flex-wrap justify-center gap-2">
-            {canRemoveFilters && (
-              <Button
-                appearance="moderate"
-                brand="neutral"
-                leftIcon="close"
-                onClick={onRemoveFilters}
-              >
-                {filterCount === 1
-                  ? t("Remove 1 filter")
-                  : t("Remove {{count}} filters", { count: filterCount })}
-              </Button>
-            )}
+          {!!LEARN_MORE_URL && (
+            <>
+              {` `}
 
-            {!!onSearchWebsite && (
-              <Button
-                appearance="moderate"
-                brand="neutral"
-                rightIcon="open_in_new"
-                onClick={onSearchWebsite}
+              <a
+                className="underline"
+                href={LEARN_MORE_URL}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onLearnMore();
+                }}
               >
-                {t("Search on website")}
-              </Button>
-            )}
-          </div>
-        )}
-      </NoResults>
-    </div>
+                {t("Learn more")}
+              </a>
+            </>
+          )}
+        </>
+      }
+      message={message}
+      title={title}
+    >
+      {(canRemoveFilters || !!onSearchWebsite) && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {canRemoveFilters && (
+            <Button
+              appearance="moderate"
+              brand="neutral"
+              leftIcon="close"
+              onClick={onRemoveFilters}
+            >
+              {filterCount === 1
+                ? t("Remove 1 filter")
+                : t("Remove {{count}} filters", { count: filterCount })}
+            </Button>
+          )}
+
+          {!!onSearchWebsite && (
+            <Button
+              appearance="moderate"
+              brand="neutral"
+              rightIcon="open_in_new"
+              onClick={onSearchWebsite}
+            >
+              {t("Search on website")}
+            </Button>
+          )}
+        </div>
+      )}
+    </NoResults>
   );
 };

@@ -17,15 +17,13 @@ import {
 } from "../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useBrowseModsViews } from "../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
-import {
-  clearActiveFilters,
-  useChangeModFilters,
-} from "../../hooks/use_change_mod_filters/useChangeModFilters.hook";
+import { useChangeModFilters } from "../../hooks/use_change_mod_filters/useChangeModFilters.hook";
 import { useGameDomainName } from "../../hooks/use_game_domain_name/useGameDomainName.hook";
 import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { useSettledPick } from "../../hooks/use_settled_pick/useSettledPick.hook";
 import { emptyStateKind, type IEmptyStateInput } from "../../util/empty_state_kind/emptyStateKind";
+import { clearActiveFilters } from "../../util/mod_filters/clear_active_filters/clearActiveFilters";
 import { filterEventProps } from "../../util/mod_filters/modFilterList";
 import { websiteModSearchUrl } from "../../util/website_mod_search_url/websiteModSearchUrl";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
@@ -115,7 +113,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
             filter_count: search.activeFilterCount,
           });
           changeFilters(clearActiveFilters(search), "empty_state");
-          listRef.current?.querySelector<HTMLElement>('[role="region"]')?.focus();
+          listRef.current?.focus();
         }}
         onSearchWebsite={
           domain

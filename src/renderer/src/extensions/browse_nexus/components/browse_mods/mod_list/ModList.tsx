@@ -47,7 +47,7 @@ interface IModListProps {
   emptyState: ReactNode;
   /** Shown after the last card once the last page has loaded. */
   endOfResults: ReactNode;
-  /** The list itself, for the details pane's Left to move focus back to. */
+  /** The list's scrolling region, for moving focus back into the list. */
   listRef?: RefObject<HTMLDivElement>;
 }
 
@@ -95,7 +95,8 @@ export const ModList = ({
   const { t } = useTranslation();
   const isLastPageLoaded =
     !!mods.length && !hasMore && !isLoading && !isLoadingMore && !isLoadMoreError;
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const ownScrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = listRef ?? ownScrollRef;
   const focusTargetRef = useRef<number>();
   const activeIndex = mods.findIndex((mod) => mod.id === activeModId);
   const tabStop = activeIndex >= 0 ? activeIndex : 0;
@@ -182,10 +183,7 @@ export const ModList = ({
   };
 
   return (
-    <div
-      className="scrollbar-inset-6 mr-1 flex min-w-0 flex-1 flex-col focus-ring-inset"
-      ref={listRef}
-    >
+    <div className="scrollbar-inset-6 mr-1 flex min-w-0 flex-1 flex-col focus-ring-inset">
       <PageScroll
         isFullWidth
         aria-label={t("Mods")}
@@ -199,6 +197,7 @@ export const ModList = ({
       >
         <Listing
           className="flex flex-col gap-y-3.5"
+          customNoResults={emptyState}
           entityCount={mods.length}
           errorMessage={t("The mods couldn't be loaded. Try again.")}
           errorTitle={t("Something went wrong")}
@@ -208,7 +207,6 @@ export const ModList = ({
           isLoadingMore={isLoadingMore}
           isLoadMoreError={isLoadMoreError}
           loadMoreErrorMessage={t("More mods couldn't be loaded. Try again.")}
-          customNoResults={emptyState}
           scrollRef={scrollRef}
           skeletonCount={6}
           SkeletonTile={ModCardSkeleton}

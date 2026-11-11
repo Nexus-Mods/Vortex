@@ -1,4 +1,13 @@
-import type { EmptyStateKind } from "../../hooks/browse_mods_tracking/browseModsTracker";
+/**
+ * Which of the mod list's empty states it is: the end of the last page, or an empty list with a
+ * search, a search and filters, filters, or neither.
+ */
+export type EmptyStateKind =
+  | "end_of_results"
+  | "search_only"
+  | "search_and_filters"
+  | "filters_only"
+  | "nothing_for_game";
 
 /** What the mod list's empty state is about. */
 export interface IEmptyStateInput {

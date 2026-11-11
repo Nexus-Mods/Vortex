@@ -1,5 +1,5 @@
 import { MOD_FILTERS } from "../../util/mod_filters/modFilterList";
-import { type IModFilters, NO_FILTERS } from "../../util/mod_views/modViews";
+import type { IModFilters } from "../../util/mod_views/modViews";
 import type { FilterSource } from "../browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../browse_mods_tracking/BrowseModsTracking.context";
 import type { IModSearch } from "../use_mod_search/useModSearch.hook";
@@ -30,12 +30,3 @@ export const useChangeModFilters = (search: IModSearch) => {
     );
   };
 };
-
-/**
- * The change that clears every filter narrowing the mods, a view's own too. A locked filter isn't
- * among them, so it's never touched.
- */
-export const clearActiveFilters = ({
-  activeFilters,
-}: Pick<IModSearch, "activeFilters">): Partial<IModFilters> =>
-  Object.fromEntries(activeFilters.map((key) => [key, NO_FILTERS[key]]));

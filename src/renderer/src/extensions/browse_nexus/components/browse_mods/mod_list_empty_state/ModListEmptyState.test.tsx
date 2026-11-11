@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { EmptyStateKind } from "../../../hooks/browse_mods_tracking/browseModsTracker";
+import type { EmptyStateKind } from "../../../util/empty_state_kind/emptyStateKind";
 import { ModListEmptyState } from "./ModListEmptyState";
 
 type IProps = React.ComponentProps<typeof ModListEmptyState>;

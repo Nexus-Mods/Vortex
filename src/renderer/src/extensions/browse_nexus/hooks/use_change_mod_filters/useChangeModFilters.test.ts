@@ -5,7 +5,7 @@ import { browseModsTracking } from "@/test-utils/browseModsTracking";
 
 import { type IModFilters, NO_FILTERS } from "../../util/mod_views/modViews";
 import type { IModSearch } from "../use_mod_search/useModSearch.hook";
-import { clearActiveFilters, useChangeModFilters } from "./useChangeModFilters.hook";
+import { useChangeModFilters } from "./useChangeModFilters.hook";
 
 /** A Trending search with these filters, over no filters. */
 const searchWith = (filters: Partial<IModFilters>) =>
@@ -44,11 +44,5 @@ describe("useChangeModFilters", () => {
 
     expect(search.setFilters).not.toHaveBeenCalled();
     expect(tracked()).toEqual([]);
-  });
-});
-
-describe("clearActiveFilters", () => {
-  it("clears a preset's own filter, and nothing locked", () => {
-    expect(clearActiveFilters({ activeFilters: ["timeRange"] })).toEqual({ timeRange: "all" });
   });
 });

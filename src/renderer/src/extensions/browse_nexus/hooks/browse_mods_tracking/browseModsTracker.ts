@@ -1,6 +1,7 @@
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
+import type { EmptyStateKind } from "../../util/empty_state_kind/emptyStateKind";
 import type {
   TrackedView,
   ModAdultContent,
@@ -19,17 +20,6 @@ export type FilterSource =
   | "applied_filter"
   | "applied_filter_clear"
   | "empty_state";
-
-/**
- * Which of the mod list's empty states an action came from: the end of the last page, or an empty
- * list with a search, a search and filters, filters, or neither.
- */
-export type EmptyStateKind =
-  | "end_of_results"
-  | "search_only"
-  | "search_and_filters"
-  | "filters_only"
-  | "nothing_for_game";
 
 /** How a mod or picture was picked: clicked, or moved to with the keys. */
 export type SelectionInput = "pointer" | "keyboard";
