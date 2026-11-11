@@ -1,7 +1,14 @@
 import * as path from "node:path";
 
 import { KeptReason, type Operation } from "@nexusmods/mod-pipeline";
-import { InMemoryFSBuilder, QualifiedPath, type FileSystem } from "@vortex/shared/filesystem";
+import { getErrorMessageOrDefault } from "@vortex/shared";
+import {
+  InMemoryFS,
+  InMemoryFSBuilder,
+  QualifiedPath,
+  type FileSystem,
+  type StatResult,
+} from "@vortex/shared/filesystem";
 import { describe, expect, test } from "vitest";
 
 import { startJournal } from "@/test-utils/journal";
@@ -25,7 +32,6 @@ import {
   type StagedFiles,
 } from "./apply/apply";
 import { JournalReadStatus, readJournal, type JournalStorage } from "./apply/journal";
-import { applyFilesOn } from "./applyFiles";
 import { journalStorageAt } from "./journalStorage";
 
 const ROOT = "/fixture-root";
@@ -33,6 +39,7 @@ const GAME = `${ROOT}/game`;
 const STAGING = `${ROOT}/staging`;
 const WORK = `${ROOT}/work`;
 const KEPT = `${WORK}/kept`;
+const OTHER_DRIVE = `${ROOT}/other-drive`;
 const RUN_ID = "fixture-run";
 
 const qualified = (filePath: string) => QualifiedPath.fromNative(filePath);
@@ -67,7 +74,7 @@ interface Setup {
   other?: Record<string, string>;
 }
 
-function seed({ staged = [], other = {} }: Setup): FileSystem {
+function seeded({ staged = [], other = {} }: Setup): InMemoryFSBuilder {
   const builder = new InMemoryFSBuilder().dir(qualified(GAME)).dir(qualified(WORK));
   for (const name of staged) {
     builder.file(qualified(inStaging(name)), { type: "text", data: `staged ${name}` });
@@ -75,7 +82,22 @@ function seed({ staged = [], other = {} }: Setup): FileSystem {
   for (const [filePath, data] of Object.entries(other)) {
     builder.file(qualified(filePath), { type: "text", data });
   }
-  return builder.build();
+  return builder;
+}
+
+const seed = (setup: Setup): FileSystem => seeded(setup).build();
+
+/** `OTHER_DRIVE` is on a second drive. */
+class TwoDrivesFS extends InMemoryFS {
+  override async stat(
+    filePath: QualifiedPath,
+    options?: { parseSymLink: boolean },
+  ): Promise<StatResult> {
+    const status = await super.stat(filePath, options);
+    return status.exists && filePath.path.startsWith(OTHER_DRIVE)
+      ? { ...status, deviceId: status.deviceId + 1n }
+      : status;
+  }
 }
 
 /** Files as `contents#id`, folders as `folder`. */
@@ -96,10 +118,7 @@ async function snapshot(fs: FileSystem): Promise<Record<string, string>> {
   return entries;
 }
 
-const optionsOn = (fs: FileSystem, journal: JournalStorage): RunOptions => ({
-  files: applyFilesOn(fs),
-  journal,
-});
+const optionsOn = (fs: FileSystem, journal: JournalStorage): RunOptions => ({ fs, journal });
 
 const runApply = (fs: FileSystem, operations: readonly Operation[], journal: JournalStorage) =>
   apply(operations, {
@@ -131,6 +150,26 @@ describe("apply", () => {
     expect(after[inGame("a.dll")]).toBe(after[inStaging("a.dll")]);
     expectStatus(await resumeApply(optionsOn(fs, journal)), ApplyStatus.Applied);
     expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
+  });
+
+  test.each([
+    ["a folder there", `${OTHER_DRIVE}/a.dll`],
+    ["a folder not made yet", `${OTHER_DRIVE}/new/a.dll`],
+  ])("rolls back a move into %s on another drive", async (_, keptPath) => {
+    const builder = seeded({ staged: ["a.dll"], other: { [inGame("a.dll")]: "my edit" } });
+    const fs = new TwoDrivesFS(builder.dir(qualified(OTHER_DRIVE)).store);
+    const before = await snapshot(fs);
+
+    const result = await apply([unlink("a.dll")], {
+      ...optionsOn(fs, await newJournal()),
+      backupPathOf,
+      keptPathOf: () => keptPath,
+      stagedFiles,
+    });
+
+    expectStatus(result, ApplyStatus.RolledBack);
+    expect(getErrorMessageOrDefault(result.failedAt?.cause)).toContain("another drive");
+    expect(await snapshot(fs)).toEqual(before);
   });
 
   describe("refuses, changing nothing", () => {

@@ -172,7 +172,7 @@ export class InMemoryFS implements FileSystem {
 
     const node = lookup.node;
     if (node.type !== "symlink") {
-      return { exists: true, isSymLink: false, ...statusOf(node) };
+      return { exists: true, isSymLink: false, ...statusOf(node, this.#store) };
     }
 
     const resolved = this.#store.lookup(node.target);
@@ -185,7 +185,7 @@ export class InMemoryFS implements FileSystem {
       exists: true,
       isSymLink: true,
       symLinkData: node.times,
-      ...statusOf(resolved.node),
+      ...statusOf(resolved.node, this.#store),
     } satisfies StatResult;
   }
 
@@ -482,14 +482,14 @@ function throwFsFailure(failure: WalkFailure): never {
 }
 
 /** Derives the {@link StatResult} status fields for a node. */
-function statusOf(node: Node): FileStatus | DirectoryStatus {
+function statusOf(node: Node, store: InMemoryStore): FileStatus | DirectoryStatus {
   if (node.type === "file") {
     return {
       isFile: true,
       size: node.contents.length,
       id: node.id,
       deviceId: 0n,
-      hardlinkCount: 1,
+      hardlinkCount: store.linkCountOf(node),
       ...node.times,
     } satisfies FileStatus;
   }

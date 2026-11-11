@@ -1,13 +1,14 @@
 import { readdirSync, readFileSync } from "node:fs";
 import * as path from "node:path";
 
+import { InMemoryFS } from "@vortex/shared/filesystem";
 import { describe, expect, test } from "vitest";
 
 import { apply, ApplyStatus, resumeApply, rollback, type ApplyOptions } from "./apply";
 import type { ApplyFixture } from "./applyFixture";
 import { ApplyFixtureSchema } from "./applyFixture";
+import { fixtureStore, killAfter, snapshotOf } from "./fixtureDisk";
 import { JournalReadStatus, readJournal, type JournalStorage } from "./journal";
-import { killAfter, MemoryDisk } from "./testApplyFiles";
 import { memoryJournalStorage } from "./testJournalStorage";
 
 const fixtureDir = path.join(__dirname, "fixtures");
@@ -25,7 +26,7 @@ const fixtures = readdirSync(fixtureDir)
   });
 
 /** Fixtures name a destination's backup by this suffix, and keep a set-aside file by its entry. */
-const optionsFor = (fixture: ApplyFixture): Omit<ApplyOptions, "files" | "journal"> => ({
+const optionsFor = (fixture: ApplyFixture): Omit<ApplyOptions, "fs" | "journal"> => ({
   stagedFiles: { pathOf: (file) => fixture.staged[file.fileHash] },
   backupPathOf: (destinationPath) => `${destinationPath}.backup`,
   keptPathOf: (_destinationPath, _runId, entryIndex) => `/fixture-root/kept/${entryIndex}`,
@@ -50,15 +51,15 @@ function resultOf({ expected }: ApplyFixture) {
 }
 
 async function killedRun(fixture: ApplyFixture, calls: number) {
-  const disk = new MemoryDisk(fixture.disk);
+  const store = await fixtureStore(fixture.disk);
   const journal = memoryJournalStorage();
   const kill = killAfter(calls);
   await apply(fixture.operations, {
     ...optionsFor(fixture),
-    files: kill.files(disk.files()),
+    fs: kill.fs(store),
     journal: kill.journal(journal),
   });
-  return { disk, journal, callsUsed: kill.callsUsed() };
+  return { fs: new InMemoryFS(store), journal, callsUsed: kill.callsUsed() };
 }
 
 const killPoints = async (fixture: ApplyFixture) => {
@@ -71,22 +72,18 @@ test("the apply fixtures are present", () => {
 });
 
 describe.each(fixtures)("$name", async (fixture) => {
-  const before = new MemoryDisk(fixture.disk).snapshot();
+  const before = await snapshotOf(new InMemoryFS(await fixtureStore(fixture.disk)));
   /** a run that doesn't apply leaves the disk as it found it */
   const after = fixture.expected.status === ApplyStatus.Applied ? fixture.expected.disk : before;
 
   test("the run ends as expected", async () => {
-    const disk = new MemoryDisk(fixture.disk);
+    const fs = new InMemoryFS(await fixtureStore(fixture.disk));
     const journal = memoryJournalStorage();
 
-    const result = await apply(fixture.operations, {
-      ...optionsFor(fixture),
-      files: disk.files(),
-      journal,
-    });
+    const result = await apply(fixture.operations, { ...optionsFor(fixture), fs, journal });
 
     expect(result).toMatchObject(resultOf(fixture));
-    expect(disk.snapshot()).toEqual(after);
+    expect(await snapshotOf(fs)).toEqual(after);
     expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
   });
 
@@ -96,27 +93,27 @@ describe.each(fixtures)("$name", async (fixture) => {
   const kills = await killPoints(fixture);
 
   test.each(kills)("resuming settles a run killed at call %i", async (calls) => {
-    const { disk, journal } = await killedRun(fixture, calls);
+    const { fs, journal } = await killedRun(fixture, calls);
     const started = (await journalStatusOf(journal)) === JournalReadStatus.Found;
 
-    const result = await resumeApply({ files: disk.files(), journal });
+    const result = await resumeApply({ fs, journal });
 
     expect(result.status).toBe(started ? fixture.expected.status : ApplyStatus.NothingToDo);
     // a run killed before its journal holds nothing, and one killed after it ends is done
     const settled = started ? [after] : [before, after];
-    expect(settled).toContainEqual(disk.snapshot());
+    expect(settled).toContainEqual(await snapshotOf(fs));
     expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
   });
 
   test.each(kills)("rolling back undoes a run killed at call %i", async (calls) => {
-    const { disk, journal } = await killedRun(fixture, calls);
+    const { fs, journal } = await killedRun(fixture, calls);
     const started = (await journalStatusOf(journal)) === JournalReadStatus.Found;
 
-    const result = await rollback({ files: disk.files(), journal });
+    const result = await rollback({ fs, journal });
 
     expect(result.status).toBe(started ? ApplyStatus.RolledBack : ApplyStatus.NothingToDo);
     const settled = started ? [before] : [before, after];
-    expect(settled).toContainEqual(disk.snapshot());
+    expect(settled).toContainEqual(await snapshotOf(fs));
     expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
   });
 });

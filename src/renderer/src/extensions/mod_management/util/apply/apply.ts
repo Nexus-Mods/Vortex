@@ -6,7 +6,10 @@ import {
   type FileSource,
   type Operation,
 } from "@nexusmods/mod-pipeline";
+import { VortexError } from "@vortex/shared";
+import { QualifiedPath, type FileSystem, type StatResult } from "@vortex/shared/filesystem";
 
+import { entryIdOf } from "../diskScan";
 import {
   continueJournal,
   createJournal,
@@ -20,28 +23,13 @@ import {
   type JournalWriter,
 } from "./journal";
 
-/** The file work a run needs, provided by the caller. */
-export interface ApplyFiles {
-  /** an id shared by a file's hardlinks, and its link count; undefined when nothing is there */
-  statusAt(path: string): Promise<{ id: string; linkCount: number } | undefined>;
-  /** fails when `to` is taken or on another drive */
-  move(from: string, to: string): Promise<void>;
-  /** hardlinks `from` at `to`; fails when `to` is taken */
-  link(from: string, to: string): Promise<void>;
-  remove(path: string): Promise<void>;
-  /** makes a folder and those above it; does nothing when it is there */
-  createFolder(path: string): Promise<void>;
-  /** does nothing when the folder is missing or holds anything, or a file is there */
-  removeEmptyFolder(path: string): Promise<void>;
-}
-
 /** Where Stage keeps a lockfile's files. */
 export interface StagedFiles {
   pathOf(file: FileSource): string | undefined;
 }
 
 export interface RunOptions {
-  files: ApplyFiles;
+  fs: FileSystem;
   journal: JournalStorage;
 }
 
@@ -149,8 +137,53 @@ function backupPathIn({ operation, backupPath }: JournalEntry): string {
   return backupPath;
 }
 
-/** The id at a path, shared by a file's hardlinks. */
-const idAt = async (files: ApplyFiles, path: string) => (await files.statusAt(path))?.id;
+const qualified = (path: string) => QualifiedPath.fromNative(path);
+
+const statusAt = (fs: FileSystem, path: string) => fs.stat(qualified(path), { parseSymLink: true });
+
+/** The id of what a status describes, shared by a file's hardlinks. */
+const idOf = (status: StatResult) => (status.exists ? entryIdOf(status) : undefined);
+
+const idAt = async (fs: FileSystem, path: string) => idOf(await statusAt(fs, path));
+
+/** The status of `folder`, or of the nearest folder above it that exists. */
+async function existingFolderAt(fs: FileSystem, folder: QualifiedPath): Promise<StatResult> {
+  const status = await fs.stat(folder, { parseSymLink: true });
+  return status.exists || folder.path === folder.root
+    ? status
+    : existingFolderAt(fs, folder.parent());
+}
+
+/** Fails when `to` is taken or on another drive. */
+async function moveOnDrive(fs: FileSystem, from: string, to: string): Promise<void> {
+  const [source, targetFolder] = await Promise.all([
+    statusAt(fs, from),
+    existingFolderAt(fs, qualified(to).parent()),
+  ]);
+  // FileSystem.move copies across drives, which a kill can leave half done
+  if (source.exists && targetFolder.exists && source.deviceId !== targetFolder.deviceId) {
+    throw new VortexError(`${to} is on another drive than ${from}`, {
+      kind: "os:generic",
+      originalCode: "EXDEV",
+    });
+  }
+  await fs.move(qualified(from), qualified(to));
+}
+
+/** Does nothing when the folder is missing or holds anything, or a file is there. */
+async function removeEmptyFolder(fs: FileSystem, path: string): Promise<void> {
+  const status = await statusAt(fs, path);
+  if (!status.exists || status.isFile) {
+    return;
+  }
+  const folder = qualified(path);
+  const listing = await fs.enumerateDirectory(folder);
+  const { done } = await listing.next();
+  await listing.return?.();
+  if (done === true) {
+    await fs.deleteRecursive(folder);
+  }
+}
 
 const destinationOf = (operation: Operation) =>
   "file" in operation ? operation.file.destinationPath : operation.destinationPath;
@@ -163,7 +196,7 @@ const refused = (reason: RefusalReason, details: Partial<RefusedResult> = {}): R
 
 /** A run's state, kept as its journal records it. */
 interface Run {
-  files: ApplyFiles;
+  fs: FileSystem;
   writer: JournalWriter;
   entries: readonly JournalEntry[];
   phase: JournalPhase;
@@ -253,7 +286,7 @@ async function markChanging(run: Run, index: number): Promise<void> {
 async function createParents(run: Run, index: number, destinationPath: string): Promise<void> {
   const missing: string[] = [];
   for (const folder of parentFolders(destinationPath)) {
-    if ((await idAt(run.files, folder)) !== undefined) {
+    if ((await idAt(run.fs, folder)) !== undefined) {
       break;
     }
     missing.push(folder);
@@ -266,17 +299,17 @@ async function createParents(run: Run, index: number, destinationPath: string): 
     await run.writer.recordFolder(index, folder);
     addFolder(run.createdFolders, index, folder);
   }
-  await run.files.createFolder(deepest);
+  await run.fs.createDirectory(qualified(deepest));
 }
 
 /** Moves a file, making and recording any missing folders. */
 async function moveInto(run: Run, index: number, from: string, to: string): Promise<void> {
   try {
-    await run.files.move(from, to);
+    await moveOnDrive(run.fs, from, to);
   } catch {
     // a missing folder; a real failure recurs
     await createParents(run, index, to);
-    await run.files.move(from, to);
+    await moveOnDrive(run.fs, from, to);
   }
 }
 
@@ -290,7 +323,7 @@ async function setAside(
 ): Promise<void> {
   if (fromId === undefined) {
     // set aside already, when a kill came between the move and its mark
-    if ((await idAt(run.files, keptPath)) !== undefined) {
+    if ((await idAt(run.fs, keptPath)) !== undefined) {
       run.kept.add(index);
     }
     return;
@@ -302,13 +335,13 @@ async function setAside(
 
 /** Whether the file a destination holds, by its id, is the staged file. */
 const isStagedFile = async (
-  files: ApplyFiles,
+  fs: FileSystem,
   destinationId: string | undefined,
   stagedPath: string | undefined,
 ) =>
   destinationId !== undefined &&
   stagedPath !== undefined &&
-  destinationId === (await idAt(files, stagedPath));
+  destinationId === (await idAt(fs, stagedPath));
 
 /** Settles a LINK that couldn't link straight away, from what was at its destination. */
 async function linkFromDisk(
@@ -318,36 +351,36 @@ async function linkFromDisk(
   stagedPath: string,
   destinationId: string | undefined,
 ): Promise<void> {
-  const { files } = run;
+  const { fs } = run;
   if (destinationId !== undefined) {
     await run.writer.recordRemovedFolder(index);
     run.removedFolders.add(index);
-    await files.removeEmptyFolder(destinationPath);
-    if ((await idAt(files, destinationPath)) !== undefined) {
+    await removeEmptyFolder(fs, destinationPath);
+    if ((await idAt(fs, destinationPath)) !== undefined) {
       throw new Error(`something else is at ${destinationPath}`);
     }
   }
   await createParents(run, index, destinationPath);
-  await files.link(stagedPath, destinationPath);
+  await fs.createLink(qualified(stagedPath), qualified(destinationPath), "hardlink");
 }
 
 /** Runs one entry, checking the disk first, so it is safe to repeat. */
 async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise<void> {
-  const { files } = run;
+  const { fs } = run;
   const { operation, stagedPath } = entry;
   const destinationPath = destinationOf(operation);
   switch (operation.kind) {
     case OperationKind.Backup: {
-      const destination = await files.statusAt(destinationPath);
+      const destination = await statusAt(fs, destinationPath);
       if (entry.keptPath !== undefined) {
-        await setAside(run, index, destinationPath, destination?.id, entry.keptPath);
+        await setAside(run, index, destinationPath, idOf(destination), entry.keptPath);
         return;
       }
-      if (destination === undefined) {
+      if (!destination.exists) {
         return;
       }
       // a file linked elsewhere isn't the game's original
-      if (destination.linkCount !== 1) {
+      if (destination.hardlinkCount !== 1) {
         throw new Error(`${destinationPath} has another hardlink, so it isn't the game's original`);
       }
       await markChanging(run, index);
@@ -355,10 +388,10 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
       return;
     }
     case OperationKind.Unlink: {
-      const destinationId = await idAt(files, destinationPath);
-      if (await isStagedFile(files, destinationId, stagedPath)) {
+      const destinationId = await idAt(fs, destinationPath);
+      if (await isStagedFile(fs, destinationId, stagedPath)) {
         await markChanging(run, index);
-        await files.remove(destinationPath);
+        await fs.delete(qualified(destinationPath));
         return;
       }
       await setAside(run, index, destinationPath, destinationId, keptPathIn(entry));
@@ -366,9 +399,9 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
     }
     case OperationKind.Restore: {
       const backupPath = backupPathIn(entry);
-      if ((await idAt(files, backupPath)) !== undefined) {
+      if ((await idAt(fs, backupPath)) !== undefined) {
         await markChanging(run, index);
-        await files.move(backupPath, destinationPath);
+        await moveOnDrive(fs, backupPath, destinationPath);
       }
       return;
     }
@@ -376,13 +409,13 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
       if (stagedPath === undefined) {
         throw new Error(`no staged file to link at ${destinationPath}`);
       }
-      const destinationId = await idAt(files, destinationPath);
-      if (await isStagedFile(files, destinationId, stagedPath)) {
+      const destinationId = await idAt(fs, destinationPath);
+      if (await isStagedFile(fs, destinationId, stagedPath)) {
         return;
       }
       await markChanging(run, index);
       try {
-        await files.link(stagedPath, destinationPath);
+        await fs.createLink(qualified(stagedPath), qualified(destinationPath), "hardlink");
       } catch {
         // a taken destination or a missing folder; a real failure recurs
         await linkFromDisk(run, index, destinationPath, stagedPath, destinationId);
@@ -398,17 +431,17 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
 
 /** Undoes one entry, which may not have run, as the disk shows. */
 async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<void> {
-  const { files } = run;
+  const { fs } = run;
   const { operation, stagedPath } = entry;
   const destinationPath = destinationOf(operation);
   switch (operation.kind) {
     case OperationKind.Link: {
-      const destinationId = await idAt(files, destinationPath);
+      const destinationId = await idAt(fs, destinationPath);
       if (destinationId === undefined) {
         return;
       }
-      if (await isStagedFile(files, destinationId, stagedPath)) {
-        await files.remove(destinationPath);
+      if (await isStagedFile(fs, destinationId, stagedPath)) {
+        await fs.delete(qualified(destinationPath));
       } else if (
         run.done.has(index) &&
         // a folder this LINK removed, put back by an undo a kill cut short
@@ -421,32 +454,32 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
     case OperationKind.Restore: {
       const backupPath = backupPathIn(entry);
       if (
-        (await idAt(files, backupPath)) === undefined &&
-        (await idAt(files, destinationPath)) !== undefined
+        (await idAt(fs, backupPath)) === undefined &&
+        (await idAt(fs, destinationPath)) !== undefined
       ) {
-        await files.move(destinationPath, backupPath);
+        await moveOnDrive(fs, destinationPath, backupPath);
       }
       return;
     }
     case OperationKind.Unlink: {
       const keptPath = keptPathIn(entry);
-      if ((await idAt(files, keptPath)) !== undefined) {
-        await files.move(keptPath, destinationPath);
-      } else if (stagedPath !== undefined && (await idAt(files, destinationPath)) === undefined) {
-        await files.link(stagedPath, destinationPath);
+      if ((await idAt(fs, keptPath)) !== undefined) {
+        await moveOnDrive(fs, keptPath, destinationPath);
+      } else if (stagedPath !== undefined && (await idAt(fs, destinationPath)) === undefined) {
+        await fs.createLink(qualified(stagedPath), qualified(destinationPath), "hardlink");
       }
       return;
     }
     case OperationKind.Backup: {
       const movedTo = entry.keptPath ?? backupPathIn(entry);
-      if ((await idAt(files, movedTo)) === undefined) {
+      if ((await idAt(fs, movedTo)) === undefined) {
         return;
       }
       // it never moved, so what is at its backup name isn't its file
-      if (!run.done.has(index) && (await idAt(files, destinationPath)) !== undefined) {
+      if (!run.done.has(index) && (await idAt(fs, destinationPath)) !== undefined) {
         return;
       }
-      await files.move(movedTo, destinationPath);
+      await moveOnDrive(fs, movedTo, destinationPath);
       return;
     }
     default: {
@@ -461,13 +494,13 @@ async function undoFolders(run: Run, index: number, entry: JournalEntry): Promis
   const created = run.createdFolders.get(index);
   if (created !== undefined) {
     for (const folder of created) {
-      await run.files.removeEmptyFolder(folder);
+      await removeEmptyFolder(run.fs, folder);
     }
   }
   if (run.removedFolders.has(index)) {
     const folder = destinationOf(entry.operation);
-    if ((await idAt(run.files, folder)) === undefined) {
-      await run.files.createFolder(folder);
+    if ((await idAt(run.fs, folder)) === undefined) {
+      await run.fs.createDirectory(qualified(folder));
     }
   }
 }
@@ -546,8 +579,8 @@ async function runForward(run: Run): Promise<ApplyResult> {
   }
 }
 
-const runOf = (files: ApplyFiles, writer: JournalWriter, journal: Omit<Journal, "runId">): Run => ({
-  files,
+const runOf = (fs: FileSystem, writer: JournalWriter, journal: Omit<Journal, "runId">): Run => ({
+  fs,
   writer,
   entries: journal.entries,
   phase: journal.phase,
@@ -602,7 +635,7 @@ export async function apply(
   if (writer === undefined) {
     return refused(RefusalReason.JournalExists);
   }
-  const run = runOf(options.files, writer, {
+  const run = runOf(options.fs, writer, {
     entries,
     phase: JournalPhase.Applying,
     changing: new Set(),
@@ -617,7 +650,7 @@ export async function apply(
 
 /** Runs `work` on the run a journal left. */
 async function settle<R>(
-  { files, journal }: RunOptions,
+  { fs, journal }: RunOptions,
   work: (run: Run) => Promise<R>,
 ): Promise<R | RefusedResult | NothingToDoResult> {
   let run: Run;
@@ -629,7 +662,7 @@ async function settle<R>(
     if (read.status === JournalReadStatus.Invalid) {
       return refused(RefusalReason.JournalUnavailable);
     }
-    run = runOf(files, await continueJournal(journal, read), read.journal);
+    run = runOf(fs, await continueJournal(journal, read), read.journal);
   } catch (cause) {
     return refused(RefusalReason.JournalUnavailable, { cause });
   }
