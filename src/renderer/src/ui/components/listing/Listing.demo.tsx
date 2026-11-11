@@ -252,34 +252,6 @@ export const ListingDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
-          Custom No Results
-        </Typography>
-
-        <Typography appearance="subdued" typographyType="body-sm">
-          Use the customNoResults prop to replace the default empty state with your own content.
-        </Typography>
-
-        <div className="rounded-sm border border-stroke-weak p-4">
-          <Listing
-            customNoResults={
-              <div className="flex flex-col items-center gap-y-4 py-16">
-                <Typography appearance="subdued" typographyType="body-md">
-                  No mods installed yet
-                </Typography>
-
-                <Button brand="neutral" appearance="subdued">
-                  Browse mods
-                </Button>
-              </div>
-            }
-            entityCount={0}
-            SkeletonTile={SkeletonTile}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Typography as="h3" typographyType="heading-xs">
           Loading More
         </Typography>
 

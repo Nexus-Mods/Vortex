@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { GameDomain } from "@vortex/shared";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -12,6 +13,7 @@ import { queryClient } from "@/util/queryClient";
 
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { NO_FILTERS } from "../../util/mod_views/modViews";
+import { websiteModSearchUrl } from "../../util/website_mod_search_url/websiteModSearchUrl";
 
 // The list, bar, backdrop and details are stood in for: these test which mod the details show.
 vi.mock("./browse_mods_bar/BrowseModsBar", () => ({ BrowseModsBar: () => null }));
@@ -68,6 +70,8 @@ vi.mock("./mod_list/ModList", () => ({
     onFocusDetails,
     onRetry,
     onSelectMod,
+    emptyState,
+    endOfResults,
   }: {
     mods: ModSummary[];
     activeModId: string;
@@ -77,8 +81,12 @@ vi.mock("./mod_list/ModList", () => ({
     onFocusDetails: () => void;
     onRetry: () => void;
     onSelectMod: (id: string, input: string) => void;
+    emptyState: React.ReactNode;
+    endOfResults: React.ReactNode;
   }) => (
-    <div ref={listRef}>
+    <div aria-label="Mods" ref={listRef} role="region" tabIndex={-1}>
+      {!mods.length && emptyState}
+      {!!mods.length && endOfResults}
       {(isError || isLoadMoreError) && <button onClick={onRetry}>Retry</button>}
       {mods.map((mod) => (
         <button
@@ -100,6 +108,15 @@ vi.mock("./mod_list/ModList", () => ({
       ))}
     </div>
   ),
+}));
+
+// The active game, by its name and Nexus Mods domain.
+vi.mock("react-redux", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useSelector: () => ({ name: "Skyrim Special Edition" }),
+}));
+vi.mock("../../hooks/use_game_domain_name/useGameDomainName.hook", () => ({
+  useGameDomainName: () => "skyrimspecialedition",
 }));
 
 import { BrowseMods } from "./BrowseMods";
@@ -402,5 +419,69 @@ describe("BrowseMods", () => {
     rerender(search([]), true);
 
     expect(propertiesOf("browse_mods_no_results")).toEqual([searched]);
+  });
+
+  describe("empty states", () => {
+    /** An empty search with these filters on, over the Trending preset's. */
+    const emptyWith = (activeFilters: Array<"timeRange" | "adult">) =>
+      search([], false, {
+        activeFilters,
+        activeFilterCount: activeFilters.length,
+        setFilters: vi.fn(),
+      });
+
+    it("clears the filters on, and counts it from the empty state", async () => {
+      const empty = emptyWith(["timeRange"]);
+      const { propertiesOf } = renderComponent(empty);
+
+      await userEvent.click(screen.getByRole("button", { name: "Remove 1 filter" }));
+
+      expect(empty.setFilters).toHaveBeenCalledWith({ timeRange: "all" });
+      expect(propertiesOf("browse_mods_time_range_changed")).toEqual([
+        { view: "trending", time_range: "all", previous_time_range: "7", source: "empty_state" },
+      ]);
+      expect(propertiesOf("browse_mods_empty_state_filters_removed")).toEqual([
+        { view: "trending", state: "filters_only", filter_count: 1 },
+      ]);
+    });
+
+    it("keeps keyboard focus in the list after removing the filters", async () => {
+      renderComponent(emptyWith(["timeRange"]));
+      const remove = screen.getByRole("button", { name: "Remove 1 filter" });
+
+      remove.focus();
+      await userEvent.keyboard("{Enter}");
+
+      expect(screen.getByRole("region", { name: "Mods" })).toHaveFocus();
+    });
+
+    it("opens the same search on Nexus Mods, and counts it", async () => {
+      const openUrl = vi.fn();
+      vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+      const { propertiesOf } = renderComponent(emptyWith(["timeRange"]));
+
+      await userEvent.click(screen.getByRole("button", { name: "Search on website" }));
+
+      expect(openUrl).toHaveBeenCalledWith(
+        websiteModSearchUrl(GameDomain("skyrimspecialedition"), { sort: SORT, filters: FILTERS }),
+      );
+      expect(propertiesOf("browse_mods_empty_state_website_search_opened")).toEqual([
+        { view: "trending", state: "filters_only" },
+      ]);
+      vi.unstubAllGlobals();
+    });
+
+    it("shows the nothing-for-the-game state with only a locked filter on", () => {
+      renderComponent(emptyWith([]));
+
+      expect(screen.getByText("No mods to show for {{game}}")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
+    });
+
+    it("ends the last page with the end of results", () => {
+      renderComponent(search([mod("1")], false, { activeFilters: [], activeFilterCount: 0 }));
+
+      expect(screen.getByText("You've reached the end")).toBeInTheDocument();
+    });
   });
 });

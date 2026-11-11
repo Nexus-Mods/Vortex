@@ -131,4 +131,19 @@ describe("NoResults", () => {
     renderComponent({ className: "my-class" });
     expect(document.querySelector(".my-class")).toBeInTheDocument();
   });
+
+  describe("footnote", () => {
+    it("shows a footnote under the actions", () => {
+      renderComponent({
+        children: <button type="button">Act</button>,
+        footnote: <span>Hidden mods</span>,
+      });
+
+      const action = screen.getByRole("button", { name: "Act" });
+      const footnote = screen.getByText("Hidden mods");
+      expect(
+        action.compareDocumentPosition(footnote) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+  });
 });

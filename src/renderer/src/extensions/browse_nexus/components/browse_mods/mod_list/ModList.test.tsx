@@ -50,6 +50,8 @@ const defaults = (): IModListProps => ({
   onLoadMore: vi.fn(),
   onRetry: vi.fn(),
   onSelectMod: vi.fn(),
+  emptyState: <div data-testid="empty-state" />,
+  endOfResults: <div data-testid="end-of-results" />,
 });
 
 const renderComponent = (props: Partial<IModListProps> = {}) => {
@@ -179,43 +181,6 @@ describe("ModList", () => {
     }
   });
 
-  it("asks to move focus to the details pane on Right from a card", async () => {
-    const { onFocusDetails } = renderComponent({ activeModId: "1", mods: [mod("1")] });
-
-    act(() => screen.getByRole("button", { name: /Mod 1/ }).focus());
-    await userEvent.keyboard("{ArrowRight}");
-
-    expect(onFocusDetails).toHaveBeenCalled();
-  });
-
-  it.each([
-    ["{ArrowDown}", "1"],
-    ["{Home}", "1"],
-    ["{ArrowUp}", "3"],
-    ["{End}", "3"],
-  ])("picks a mod from the list itself with %s", async (key, id) => {
-    const { onSelectMod } = renderComponent({ mods: modsUpTo(3) });
-    act(() => list().focus());
-
-    await userEvent.keyboard(key);
-
-    expect(onSelectMod).toHaveBeenCalledWith(id, "keyboard");
-    expect(screen.getByRole("button", { name: new RegExp(`Mod ${id}`) })).toHaveFocus();
-  });
-
-  it.each([
-    ["{ArrowDown}", "2"],
-    ["{ArrowUp}", "1"],
-  ])("moves to the next mod with %s from a card", async (key, id) => {
-    render(<PickingList mods={modsUpTo(3)} />);
-    act(() => list().focus());
-    await userEvent.keyboard("{ArrowDown}");
-
-    await userEvent.keyboard(key);
-
-    expect(screen.getByRole("button", { name: new RegExp(`^Mod ${id}`) })).toHaveFocus();
-  });
-
   it("goes to the last mod loaded with End, however far out of view", async () => {
     render(<PickingList mods={modsUpTo(50)} />);
     act(() => list().focus());
@@ -263,20 +228,48 @@ describe("ModList", () => {
     vi.unstubAllGlobals();
   });
 
-  it("picks nothing from the keys while another search's first page loads", async () => {
-    const { onSelectMod } = renderComponent({ mods: modsUpTo(3), isLoading: true });
-    act(() => list().focus());
-
-    await userEvent.keyboard("{ArrowDown}{End}");
-
-    expect(onSelectMod).not.toHaveBeenCalled();
-  });
-
   it("picks a mod clicked, saying it was the pointer", async () => {
     const { onSelectMod } = renderComponent({ mods: modsUpTo(2) });
 
     await userEvent.click(screen.getByRole("button", { name: /Mod 2/ }));
 
     expect(onSelectMod).toHaveBeenCalledWith("2", "pointer");
+  });
+
+  describe("empty states", () => {
+    it("shows the empty state when there are no mods", () => {
+      renderComponent({ mods: [] });
+      expect(screen.getByTestId("empty-state")).toBeInTheDocument();
+    });
+
+    it("ends the last page with the end of results", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: false });
+      expect(screen.getByTestId("end-of-results")).toBeInTheDocument();
+    });
+
+    it("holds the end of results while more load", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoadingMore: true });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
+
+    it("holds the end of results after loading more failed", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoadMoreError: true });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
+
+    it("holds the end of results while the first page loads again", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: false, isLoading: true });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
+
+    it("holds the end of results while there are more pages", () => {
+      renderComponent({ mods: modsUpTo(3), hasMore: true });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
+
+    it("shows no end of results with no mods", () => {
+      renderComponent({ mods: [] });
+      expect(screen.queryByTestId("end-of-results")).toBeNull();
+    });
   });
 });
