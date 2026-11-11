@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain, VortexError, VortexGameId, type GameId } from "@vortex/shared";
+import { GameDomain, GameId, VortexError, VortexGameId } from "@vortex/shared";
 
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
 
@@ -90,6 +90,8 @@ function unsupportedQuery(query: unknown): never {
  * - `gameDomain` is a fact the data holds without a registered game: the game's
  *   `details.nexusPageId`, or for a `GameId` the Tier 0 entry managed under it, else the
  *   Nexus Mods games list.
+ * - `gameId` goes through the domain, to the Tier 0 entry managed under it, else the Nexus
+ *   Mods games list.
  *
  * Converting an id to its own kind is a type error, there is nothing to look up.
  */
@@ -105,12 +107,40 @@ export function convertId(
 ): GameDomain | undefined;
 export function convertId(
   data: IGameData,
+  query: Exclude<GameQuery, { gameId: GameId }>,
+  to: "gameId",
+): GameId | undefined;
+export function convertId(
+  data: IGameData,
   query: GameQuery,
-  to: "vortexGameId" | "gameDomain",
-): VortexGameId | GameDomain | undefined {
+  to: "vortexGameId" | "gameDomain" | "gameId",
+): VortexGameId | GameDomain | GameId | undefined {
   if (to === "vortexGameId") {
     const game = findGame(data, query);
     return game === undefined ? undefined : VortexGameId(game.id);
+  }
+
+  if (to === "gameId") {
+    let gameDomain: GameDomain | undefined;
+    if ("vortexGameId" in query) {
+      gameDomain = convertId(data, query, "gameDomain");
+    } else if ("gameDomain" in query) {
+      gameDomain = query.gameDomain;
+    } else {
+      return unsupportedQuery(query);
+    }
+
+    if (gameDomain === undefined) {
+      return undefined;
+    }
+
+    const tierZero = Object.values(data.tier0).find((entry) => entry.domain === gameDomain);
+    if (tierZero !== undefined) {
+      return tierZero.gameId;
+    }
+
+    const listed = data.nexusGames.find((entry) => entry.domain_name === gameDomain);
+    return listed === undefined ? undefined : GameId(listed.id);
   }
 
   if ("vortexGameId" in query) {

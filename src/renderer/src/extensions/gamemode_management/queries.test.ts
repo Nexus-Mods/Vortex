@@ -331,4 +331,55 @@ describe("convertId", () => {
       expect(convertId(data, { gameId: numericTierZero }, "gameDomain")).toBeUndefined();
     });
   });
+
+  describe("to gameId", () => {
+    it("converts a domain through the games list", () => {
+      expect(convertId(data, { gameDomain: domainB }, "gameId")).toBe(numericB);
+    });
+
+    it("converts the domain of a Tier 0 entry without the games list", () => {
+      const tierZero = gameData({
+        tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+      });
+
+      expect(convertId(tierZero, { gameDomain: tierZeroDomain }, "gameId")).toBe(numericTierZero);
+    });
+
+    it("prefers the GameId a Tier 0 entry is managed under to the games list's", () => {
+      const renumbered = gameData({
+        tier0: { [numericB]: tierZeroEntry(numericB, domainA) },
+        nexusGames: [listed(numericA, domainA)],
+      });
+
+      expect(convertId(renumbered, { gameDomain: domainA }, "gameId")).toBe(numericB);
+    });
+
+    it("is undefined for a domain neither a Tier 0 entry nor the games list has", () => {
+      expect(convertId(data, { gameDomain: tierZeroDomain }, "gameId")).toBeUndefined();
+    });
+
+    it("converts a vortexGameId through the nexus page the game declares", () => {
+      expect(convertId(data, { vortexGameId: gameB }, "gameId")).toBe(numericB);
+    });
+
+    it("converts the vortexGameId of a registered Tier 0 game without the games list", () => {
+      const tierZero = gameData({
+        known: [game(tierZeroGame, tierZeroDomain)],
+        tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+      });
+
+      expect(convertId(tierZero, { vortexGameId: tierZeroGame }, "gameId")).toBe(numericTierZero);
+    });
+
+    it("is undefined for a game that declares no nexus page, whatever its id", () => {
+      const noPage = gameData({
+        known: [game(VortexGameId("domain-a"))],
+        nexusGames: [listed(numericA, domainA)],
+      });
+
+      expect(
+        convertId(noPage, { vortexGameId: VortexGameId("domain-a") }, "gameId"),
+      ).toBeUndefined();
+    });
+  });
 });
