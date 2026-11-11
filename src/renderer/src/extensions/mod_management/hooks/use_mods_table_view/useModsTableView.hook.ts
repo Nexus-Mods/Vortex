@@ -26,6 +26,7 @@ import { useModsTableAnalytics } from "../use_mods_table_analytics/useModsTableA
 const NO_CUSTOM: IModsTableCustomView[] = [];
 const NO_CHANGES: IModsTableViewChanges = {};
 const NO_WIDTHS: { [columnId: string]: number } = {};
+const NO_DEFAULT_SHOWN: readonly string[] = [];
 
 const viewsState = (state: IState) => state.settings.modsTableViews;
 
@@ -35,8 +36,14 @@ const viewsState = (state: IState) => state.settings.modsTableViews;
  * their own can't, having none. A built-in view that groups keeps to its grouping, which is
  * what it's for. An open view that's no longer offered, such as Updates once there are none,
  * gives way to the first.
+ *
+ * @param defaultShown Columns every view shows until the user hides them: the extensions'
+ *   columns that ask to be shown by default.
  */
-export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
+export const useModsTableView = (
+  mods: { [id: string]: IModWithState },
+  defaultShown: readonly string[] = NO_DEFAULT_SHOWN,
+) => {
   const dispatch = useDispatch();
   const analytics = useModsTableAnalytics();
   const state = useSelector(viewsState);
@@ -62,9 +69,15 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
     ? view.defaults.grouping
     : (changes.grouping ?? view.defaults.grouping);
 
+  const isShownByDefault = useCallback(
+    (columnId: string) =>
+      view.defaults.columns.includes(columnId) || defaultShown.includes(columnId),
+    [defaultShown, view],
+  );
+
   const isColumnShown = useCallback(
-    (columnId: string) => changes.columns?.[columnId] ?? view.defaults.columns.includes(columnId),
-    [changes, view],
+    (columnId: string) => changes.columns?.[columnId] ?? isShownByDefault(columnId),
+    [changes, isShownByDefault],
   );
 
   const columnWidths = changes.widths ?? NO_WIDTHS;
@@ -73,7 +86,7 @@ export const useModsTableView = (mods: { [id: string]: IModWithState }) => {
     !view.isCustom &&
     (grouping !== view.defaults.grouping ||
       Object.entries(changes.columns ?? {}).some(
-        ([columnId, shown]) => shown !== view.defaults.columns.includes(columnId),
+        ([columnId, shown]) => shown !== isShownByDefault(columnId),
       ));
 
   const select = useCallback(

@@ -47,6 +47,7 @@ import {
 import { useModsTableNameFilter } from "../../hooks/use_mods_table_name_filter/useModsTableNameFilter.hook";
 import { useModsTableSearch } from "../../hooks/use_mods_table_search/useModsTableSearch.hook";
 import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
+import { useRegisteredModsColumns } from "../../hooks/use_registered_mods_columns/useRegisteredModsColumns.hook";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
@@ -135,23 +136,6 @@ export const ModsTableSwitch = ({
   const { t } = useTranslation("mod_management");
   const newTable = useSelector(betaTable);
 
-  const {
-    views,
-    view,
-    grouping,
-    groupingLocked,
-    isColumnShown,
-    columnWidths,
-    canReset,
-    select: selectView,
-    setGrouping,
-    setColumnVisible,
-    setColumnWidths,
-    reset: resetView,
-    addView,
-    renameView,
-    removeView,
-  } = useModsTableView(mods);
   // The legacy table builds its own rows and groups, so build none for it.
   const tableMods = newTable ? mods : NO_MODS;
   const rows = useMemo(() => allModRows(tableMods), [tableMods]);
@@ -175,7 +159,6 @@ export const ModsTableSwitch = ({
   const analytics = useModsTableAnalytics();
   const rowTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
   const selectionTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.selection);
-  const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
 
   const collectionActions = useCollectionGroupActions(actionsFor);
 
@@ -335,7 +318,34 @@ export const ModsTableSwitch = ({
     ],
   );
 
-  const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
+  const ownIds = useMemo(() => new Set(columns.map(({ id }) => id)), [columns]);
+  const registered = useRegisteredModsColumns(ownIds);
+  const allColumns = useMemo(
+    () => [...columns, ...registered.columns],
+    [columns, registered.columns],
+  );
+
+  const {
+    views,
+    view,
+    grouping,
+    groupingLocked,
+    isColumnShown,
+    columnWidths,
+    canReset,
+    select: selectView,
+    setGrouping,
+    setColumnVisible,
+    setColumnWidths,
+    reset: resetView,
+    addView,
+    renameView,
+    removeView,
+  } = useModsTableView(mods, registered.defaultShown);
+
+  const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
+
+  const { visibleColumns, toggles, groupable } = useModsTableColumns(allColumns, isColumnShown);
 
   const groups = useModsTableGroups(tableMods, grouping, groupable, memberships, t);
 

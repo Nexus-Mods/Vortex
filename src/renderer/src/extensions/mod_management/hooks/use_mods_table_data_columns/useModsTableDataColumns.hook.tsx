@@ -50,8 +50,8 @@ const textColumn = (
 
 /**
  * The toggleable columns that show a value of the mod's. Ids and positions are the legacy
- * table's, whose column choices and order these share. The comments mark the columns
- * still to come, each needing more than a value: they're ported one at a time.
+ * table's, whose column choices and order these share. The columns other extensions register
+ * come through useRegisteredModsColumns, which leaves out those with an id taken here.
  */
 export const useModsTableDataColumns = (memberships: {
   [modId: string]: IMod[];
@@ -161,10 +161,6 @@ export const useModsTableDataColumns = (memberships: {
           getModSources().find((source) => source.id === mod.attributes?.source)?.name ?? "",
         t("modsTable::groups::noSource"),
       ),
-      // Endorsed (`endorsed`, nexus_integration): the endorse button, which needs the
-      // user's Nexus account and the mod's collection.
-      // Tracking (`tracked`, nexus_integration): the mods a user tracks are fetched from
-      // Nexus and kept outside the store.
       {
         ...textColumn(
           "collection",
@@ -178,17 +174,6 @@ export const useModsTableDataColumns = (memberships: {
           t("modsTable::groups::noCollection"),
         ),
       },
-      // Content (`content`, mod-content): icons for what a mod holds, scanned from its
-      // staging folder when first shown.
-      // Deploy order (`loadOrder`, mod-dependency-manager): computed from the dependency
-      // sort, outside the store.
-      // Dependencies (`dependencies`, mod-dependency-manager): its icon is dragged between
-      // rows to make rules, and needs the extension's dependency state.
-      // Highlight (`modHighlight`, mod-highlight): the colour and icon picker, and notes.
-      // Game-specific, each needing per-game `condition` support first:
-      // Compatibility (`sdv-compatibility`, game-stardewvalley): Stardew Valley only.
-      // Game(s) (`gameType`, game-masterchiefcollection): Halo: MCC only.
-      // Extender Error (`script-extender-error-check`): script-extender games, not toggleable.
       {
         ...timeColumn(
           "installTime",
