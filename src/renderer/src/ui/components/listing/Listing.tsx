@@ -5,11 +5,13 @@ import React, {
   type RefObject,
 } from "react";
 
+import { Button } from "@/ui/components/button/Button";
 import type { IIconSource } from "@/ui/components/icon/Icon";
 import { ListingLoader } from "@/ui/components/listing_loader/ListingLoader";
 import { NoResults } from "@/ui/components/no_results/NoResults";
+import { Typography } from "@/ui/components/typography/Typography";
 
-import type { ListingStatus } from "./listing_status/listingStatus";
+import type { ListingStatus, LoadMoreSource } from "./listing_status/listingStatus";
 import { LoadMoreMarker } from "./LoadMoreMarker";
 
 /** How far below the view, in pixels, the end of a list starts loading more. */
@@ -25,7 +27,11 @@ export const Listing = ({
   errorMessage,
   errorTitle,
   loadMoreErrorMessage = "More couldn't be loaded. Try again.",
+  loadMoreLabel = "Load more",
+  loadMoreNote,
+  loadMoreRef,
   loadMoreSkeletonCount = 2,
+  loadMoreSummary,
   noResultsClassName = "py-16",
   noResultsIcon = "zoom_out",
   noResultsIconClassName,
@@ -57,8 +63,16 @@ export const Listing = ({
   errorTitle?: string;
   /** What to say when loading more failed. */
   loadMoreErrorMessage?: string;
+  /** The Load more button's label, while paused. */
+  loadMoreLabel?: string;
+  /** A line over the summary, while paused, such as a nudge after a long time loading. */
+  loadMoreNote?: string;
+  /** The Load more button, while paused, for the list's keys to move focus to. */
+  loadMoreRef?: RefObject<HTMLButtonElement>;
   /** How many tiles stand for what's loading after the items. */
   loadMoreSkeletonCount?: number;
+  /** A line over the Load more button, while paused, such as how many have loaded. */
+  loadMoreSummary?: string;
   /** Classes for the empty state and the error. */
   noResultsClassName?: string;
   /** Shown under the empty state's message, such as an action. */
@@ -71,8 +85,8 @@ export const Listing = ({
   noResultsMessage?: string;
   /** The empty state's title. */
   noResultsTitle?: string;
-  /** Asks for more, as the end of the items nears the view while `idle`. */
-  onLoadMore?: () => void;
+  /** Asks for more: as the items' end nears the view while `idle`, or from Load more while `paused`. */
+  onLoadMore?: (source: LoadMoreSource) => void;
   /** Asks again for what failed, the items or more of them; offers Try again when given. */
   onRetry?: () => void;
   /** The element the list scrolls in, which loading more watches; the window's view without one. */
@@ -127,8 +141,44 @@ export const Listing = ({
           <LoadMoreMarker
             distance={LOAD_MORE_DISTANCE}
             scrollRef={scrollRef}
-            onVisible={onLoadMore}
+            onVisible={() => onLoadMore("scroll")}
           />
+        )}
+
+        {status === "paused" && !!onLoadMore && (
+          <div className="flex flex-col items-center gap-y-3 border-t border-stroke-weak px-3 py-4">
+            {!!loadMoreNote && (
+              <Typography
+                appearance="moderate"
+                brand="neutral-translucent"
+                className="text-center"
+                data-testid="listing-load-more-note"
+                typographyType="body-sm"
+              >
+                {loadMoreNote}
+              </Typography>
+            )}
+
+            {!!loadMoreSummary && (
+              <Typography
+                appearance="moderate"
+                brand="neutral-translucent"
+                className="text-center"
+                data-testid="listing-load-more-summary"
+                typographyType="body-sm"
+              >
+                {loadMoreSummary}
+              </Typography>
+            )}
+
+            <Button
+              data-testid="listing-load-more"
+              ref={loadMoreRef}
+              onClick={() => onLoadMore("button")}
+            >
+              {loadMoreLabel}
+            </Button>
+          </div>
         )}
 
         {status === "load_more_failed" && (

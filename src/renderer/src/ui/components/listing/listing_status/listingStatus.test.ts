@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { getListingStatus, type IInfiniteListingQuery, type IListingQuery } from "./listingStatus";
+import {
+  getListingStatus,
+  type IInfiniteListingQuery,
+  type IListingQuery,
+  PAGES_BEFORE_PAUSE,
+} from "./listingStatus";
 
 const NETWORK_DOWN = new Error("Network down");
 
@@ -102,6 +107,21 @@ describe("getListingStatus", () => {
 
     it("is load more failed when a fetch fails", () => {
       expect(infiniteStatus({ hasNextPage: true, error: NETWORK_DOWN })).toBe("load_more_failed");
+    });
+
+    it.each([1, 2, 3])("pauses after %i times the pages it loads before pausing", (times) => {
+      const pages = Array(PAGES_BEFORE_PAUSE * times).fill([]);
+      expect(infiniteStatus({ data: { pages }, hasNextPage: true })).toBe("paused");
+    });
+
+    it.each([-1, 1])("is idle %i page from a pause", (offset) => {
+      const pages = Array(PAGES_BEFORE_PAUSE + offset).fill([]);
+      expect(infiniteStatus({ data: { pages }, hasNextPage: true })).toBe("idle");
+    });
+
+    it("is done, not paused, when its last page lands on a pause", () => {
+      const pages = Array(PAGES_BEFORE_PAUSE).fill([]);
+      expect(infiniteStatus({ data: { pages } })).toBe("done");
     });
 
     it("is failed when a fetch fails with no items to show", () => {

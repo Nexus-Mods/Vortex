@@ -43,6 +43,7 @@ const defaults = (): IModListProps => ({
   status: "done",
   mods: [],
   searchKey: "trending",
+  totalCount: 0,
   onLoadMore: vi.fn(),
   onRetry: vi.fn(),
   onSelectMod: vi.fn(),
@@ -225,6 +226,44 @@ describe("ModList", () => {
 
     expect(screen.getByRole("button", { name: /^Mod 31/ })).toBeInTheDocument();
     vi.unstubAllGlobals();
+  });
+
+  it.each(["3", "1"])(
+    "loads more mods while paused, putting focus on the last card with mod %s open",
+    async (activeModId) => {
+      const { onLoadMore, onSelectMod } = renderComponent({
+        activeModId,
+        mods: modsUpTo(3),
+        status: "paused",
+        totalCount: 2438,
+      });
+      const loadMore = screen.getByTestId("listing-load-more");
+
+      loadMore.focus();
+      await userEvent.keyboard(" ");
+
+      expect(onLoadMore).toHaveBeenCalledExactlyOnceWith("button");
+      expect(screen.getByTestId("mod-card-3")).toHaveFocus();
+      expect(onSelectMod).not.toHaveBeenCalled();
+    },
+  );
+
+  it("moves focus from the last mod to Load more on Down while paused", async () => {
+    renderComponent({ mods: modsUpTo(3), status: "paused", activeModId: "3", totalCount: 2438 });
+    act(() => screen.getByTestId("mod-card-3").focus());
+
+    await userEvent.keyboard("{ArrowDown}");
+
+    expect(screen.getByTestId("listing-load-more")).toHaveFocus();
+  });
+
+  it.each([
+    [599, false],
+    [600, true],
+  ])("nudges the user back to their game at Load more with %i mods: %s", (count, isShown) => {
+    renderComponent({ mods: modsUpTo(count), status: "paused", totalCount: 2438 });
+
+    expect(!!screen.queryByTestId("listing-load-more-note")).toBe(isShown);
   });
 
   it("picks a mod clicked, saying it was the pointer", async () => {

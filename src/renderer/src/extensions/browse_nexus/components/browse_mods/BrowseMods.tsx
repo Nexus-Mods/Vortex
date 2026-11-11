@@ -30,7 +30,7 @@ import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
 import { ModDetails } from "./mod_details/ModDetails";
 import { ModDetailsSkeleton } from "./mod_details/ModDetails.skeleton";
-import { ModList } from "./mod_list/ModList";
+import { type IModListHandle, ModList } from "./mod_list/ModList";
 import { LEARN_MORE_URL, ModListEmptyState } from "./mod_list_empty_state/ModListEmptyState";
 
 interface IBrowseModsProps {
@@ -57,6 +57,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     pickOnceSettled,
     pickNow,
     settleNow,
+    cancelPick,
     startWith,
   } = useSettledPick<ModSummary>();
 
@@ -74,7 +75,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       detailsRef.current?.focus();
     }
   }, [shownMod]);
-  const listRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<IModListHandle>(null);
   const [split, setSplit] = useSavedSplit("browse-mods");
   const tracker = useBrowseModsTracker();
   const filtersPanelRef = useRef<IToolbarPanelHandle>(null);
@@ -178,10 +179,6 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     );
   };
 
-  /** Moves focus to the list's Tab stop, for the details' Left, as Right moves it into them. */
-  const focusList = () =>
-    listRef.current?.querySelector<HTMLElement>('[data-mod-card][tabindex="0"]')?.focus();
-
   /**
    * Moves focus into the details, for Right from the list: the picked mod's, shown first if it's
    * still waiting, and focused once they've opened, as the details shown until then go.
@@ -223,7 +220,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
         key={shownMod.id}
         mod={shownMod}
         ref={detailsRef}
-        onFocusList={focusList}
+        onFocusList={() => listRef.current?.focusOpenMod()}
         onPick={setBackdrop}
       />
     );
@@ -255,14 +252,22 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
               listRef={listRef}
               mods={mods}
               searchKey={search.searchKey}
+              status={status}
+              totalCount={search.totalCount}
               onFocusDetails={focusDetails}
-              onLoadMore={search.loadMore}
+              onPassLastMod={cancelPick}
+              onLoadMore={(source) => {
+                if (source === "button") {
+                  tracker.trackLoadMoreClicked({ ...searched, pages_loaded: search.pagesLoaded });
+                }
+
+                search.loadMore();
+              }}
               onRetry={() => {
                 search.retry();
                 tracker.trackRetryClicked({ ...searched, pages_loaded: search.pagesLoaded });
               }}
               onSelectMod={selectMod}
-              status={status}
             />
           }
           valueText={(percent) => t("List {{percent}}%", { percent })}

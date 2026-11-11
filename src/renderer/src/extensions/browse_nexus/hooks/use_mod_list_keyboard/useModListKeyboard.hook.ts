@@ -22,8 +22,8 @@ const FROM_CARD: Partial<Record<string, (at: number, last: number) => number>> =
 };
 
 interface IModListKeyboardOptions {
-  /** The list's scroller, which the cards render in. */
-  scrollRef: RefObject<HTMLDivElement>;
+  /** The cards rendered, by their mods' index; the virtualiser leaves the rest out. */
+  cards: ReadonlyMap<number, HTMLElement>;
   /** The mods loaded so far, in order. */
   mods: ModSummary[];
   /** Which search they're from; a change drops a focus still waiting. */
@@ -34,20 +34,28 @@ interface IModListKeyboardOptions {
   onSelectMod: (id: string, input: SelectionInput) => void;
   /** Moves focus into the details pane, for Right from a card. */
   onFocusDetails: () => void;
+  /** Something after the last card, such as Load more, that Down moves focus to and Up back from. */
+  afterLastCardRef?: RefObject<HTMLElement>;
+  /** Called as Down moves focus past the last card, which it passed rather than stopped on. */
+  onPassLastCard?: () => void;
 }
 
 /**
  * The mod list's keys: Up, Down, Home and End pick a mod, from the list itself or a card, and
- * Right moves focus into the details. A mod picked from the keyboard is focused once its card
- * renders, unless the search changes first. Returns the list's `onKeyDown`.
+ * Right moves focus into the details. Down from the last card moves focus to what's after it,
+ * while there's something there. From that, Up picks the last mod again, and Home and End pick
+ * the first and last. A mod picked from the keyboard is focused
+ * once its card renders, unless the search changes first. Returns the list's `onKeyDown`.
  */
 export const useModListKeyboard = ({
-  scrollRef,
+  cards,
   mods,
   searchKey,
   isLoading,
   onSelectMod,
   onFocusDetails,
+  afterLastCardRef,
+  onPassLastCard,
 }: IModListKeyboardOptions) => {
   const focusTargetRef = useRef<number>();
   const shownSearchRef = useRef(searchKey);
@@ -65,9 +73,7 @@ export const useModListKeyboard = ({
       return;
     }
 
-    const card = scrollRef.current?.querySelector<HTMLElement>(
-      `[data-index="${focusTargetRef.current}"] [data-mod-card]`,
-    );
+    const card = cards.get(focusTargetRef.current);
 
     if (card) {
       card.focus();
@@ -108,6 +114,32 @@ export const useModListKeyboard = ({
         moveTo(event, end === "last" ? last : 0);
       }
 
+      return;
+    }
+
+    const afterLastCard = afterLastCardRef?.current;
+
+    if (!!afterLastCard && event.target === afterLastCard) {
+      if (event.key === "ArrowUp") {
+        moveTo(event, last);
+        return;
+      }
+
+      if (event.key === "Home") {
+        moveTo(event, 0);
+      }
+
+      if (event.key === "End") {
+        moveTo(event, last);
+      }
+
+      return;
+    }
+
+    if (event.key === "ArrowDown" && Number(at) === last && afterLastCard) {
+      event.preventDefault();
+      afterLastCard.focus();
+      onPassLastCard?.();
       return;
     }
 
