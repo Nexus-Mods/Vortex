@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0-beta.4] - 2026-11-11
+
+### Fixed
+
+- Stubbed game picked from a store not going on to its extension download ([#24827](https://github.com/Nexus-Mods/Vortex/pull/24827))
+
 ## [2.11.0-beta.3] - 2026-11-10
 
 ### Added
@@ -2723,6 +2729,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.11.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.4
 [2.11.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.3
 [2.11.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.2
 [2.11.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.1
