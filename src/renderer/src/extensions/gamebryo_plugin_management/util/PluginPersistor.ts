@@ -1,5 +1,15 @@
 import { watch, type FSWatcher } from "node:fs";
-import { mkdir, readdir, readFile, stat, utimes, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  open,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  stat,
+  utimes,
+  writeFile,
+} from "node:fs/promises";
 import * as path from "path";
 
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
@@ -38,32 +48,74 @@ interface IPluginMap {
 
 const retryCount = 3;
 
-/** How long to wait before another attempt. */
+/** How often a file operation is attempted before its failure is reported. */
+const FILE_ATTEMPTS = 5;
+
+/** How long to wait before the second attempt; each later wait doubles. */
 const RETRY_DELAY_MS = 100;
 
 /** How long writes are collected before they go to disk together. */
 const SERIALIZE_DELAY_MS = 200;
 
 /**
- * Codes that mean another process holds the file, rather than that the operation is wrong. The
- * same set the elevated file operations retry on (symlink_activator_elevate/remoteCode.ts).
+ * Codes that mean the operation may work a moment later, rather than that it is wrong: another
+ * process holds the file, or this one is briefly out of file handles (a deployment opens
+ * thousands of files at once).
  */
-const TRANSIENT_CODES = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "UNKNOWN"]);
+const TRANSIENT_CODES = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "EMFILE", "ENFILE", "UNKNOWN"]);
+
+/** Codes a rename gets when another process holds the file it would replace. */
+const HELD_CODES = new Set(["EPERM", "EBUSY", "EACCES"]);
 
 /**
  * Runs a file operation, retrying while another process is holding the file. The game, another
  * mod manager or an antivirus scanner all touch these files, so a first failure says little.
+ * The wait doubles each time, which gives a shortage of file handles time to pass.
  */
 export async function withFileRetry<T>(operation: () => Promise<T>): Promise<T> {
   for (let attempt = 1; ; attempt += 1) {
     try {
       return await operation();
     } catch (err) {
-      if (attempt >= retryCount || !TRANSIENT_CODES.has(getErrorCode(err) ?? "")) {
+      if (attempt >= FILE_ATTEMPTS || !TRANSIENT_CODES.has(getErrorCode(err) ?? "")) {
         throw err;
       }
-      await delayed(RETRY_DELAY_MS);
+      await delayed(RETRY_DELAY_MS * 2 ** (attempt - 1));
     }
+  }
+}
+
+/**
+ * Replaces a file's content without ever leaving it empty or half written: the content goes to
+ * a temporary file next to it, which then takes its place. A write that is interrupted, or that
+ * cannot even open its file, leaves the previous content where it was.
+ */
+export async function replaceFile(
+  filePath: string,
+  content: string,
+  encoding: BufferEncoding,
+): Promise<void> {
+  const tmpPath = `${filePath}.vortex-tmp`;
+  try {
+    const handle = await open(tmpPath, "w");
+    try {
+      await handle.writeFile(content, { encoding });
+      // not every file system can flush, and the content is written either way
+      await handle.sync().catch(() => undefined);
+    } finally {
+      await handle.close();
+    }
+    try {
+      await rename(tmpPath, filePath);
+    } catch (err) {
+      if (!HELD_CODES.has(getErrorCode(err) ?? "")) {
+        throw err;
+      }
+      // whoever holds the file may still let it be written in place
+      await writeFile(filePath, content, { encoding });
+    }
+  } finally {
+    await rm(tmpPath, { force: true }).catch(() => undefined);
   }
 }
 
@@ -95,6 +147,8 @@ class PluginPersistor implements IPersistor {
   // plugin ids of Blueprint plugins (Starfield-only) — these are managed by
   // the game itself and must not be written to plugins.txt / loadorder.txt.
   private mBlueprintPluginIds: Set<string> = new Set();
+  // plugin ids that come from a mod Vortex manages, rather than from the game or its DLC
+  private mModPluginIds: Set<string> = new Set();
   private mInstalledNative: string[] = [];
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
@@ -103,6 +157,7 @@ class PluginPersistor implements IPersistor {
   private mControlOrder: () => boolean;
   private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
   private mExternalChoicePending: boolean = false;
+  private mOnEmptyList: (() => void) | undefined;
   // the entries of each plugin file as this persistor last wrote them
   private mWritten: { loadorder: string[]; plugins: string[] } | undefined;
   private mRecord: typeof recordErrorSpan;
@@ -183,13 +238,18 @@ class PluginPersistor implements IPersistor {
    * causes the game to strip them on launch. Passing both in a single call
    * guarantees the serializer never observes a state where known plugins have
    * been updated but the Blueprint filter has not.
+   *
+   * modPluginIds names the plugins that come from a mod. Only those make an emptied plugins.txt
+   * a lost load order: a game with nothing but its own plugins and DLC has none to lose.
    */
   public setKnownPlugins(
     knownPlugins: { [pluginId: string]: string },
     blueprintPluginIds: Set<string> = new Set(),
+    modPluginIds: Set<string> = new Set(),
   ) {
     this.mKnownPlugins = knownPlugins;
     this.mBlueprintPluginIds = blueprintPluginIds;
+    this.mModPluginIds = modPluginIds;
     this.updateNative();
     void this.serialize();
   }
@@ -206,6 +266,14 @@ class PluginPersistor implements IPersistor {
     cb: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">,
   ) {
     this.mOnExternalChange = cb;
+  }
+
+  /**
+   * Called when plugins.txt turned up empty and Vortex held no load order of its own, so the
+   * order was rebuilt from loadorder.txt with every plugin disabled.
+   */
+  public setEmptyListCallback(cb: () => void) {
+    this.mOnEmptyList = cb;
   }
 
   /**
@@ -518,16 +586,18 @@ class PluginPersistor implements IPersistor {
     // this mkdir should not be necessary
     await mkdir(destPath, { recursive: true });
     await withFileRetry(() =>
-      writeFile(loadOrderFile, "# Automatically generated by Vortex\r\n" + sorted.join("\r\n"), {
-        encoding: "utf8",
-      }),
+      replaceFile(
+        loadOrderFile,
+        "# Automatically generated by Vortex\r\n" + sorted.join("\r\n"),
+        "utf8",
+      ),
     );
     const filtered: string[] = this.toPluginList(sorted);
     await withFileRetry(() =>
-      writeFile(
+      replaceFile(
         pluginsFile,
         "# Automatically generated by Vortex\r\n" + filtered.join("\r\n") + "\r\n",
-        { encoding: "latin1" },
+        "latin1",
       ),
     );
     this.mWritten = { loadorder: sorted, plugins: filtered };
@@ -692,22 +762,12 @@ class PluginPersistor implements IPersistor {
     return phaseOne
       .then((data: Buffer) => {
         if (data.length === 0) {
-          // not even a header? I don't trust this. Read once more in case we caught a write
-          // mid-flight, then leave the current state alone: a truncated file is not a
+          // not even a header? I don't trust this. Read once more, a moment later, in case we
+          // caught a write mid-flight; an empty file is never the user's load order
           if (retry) {
-            // still empty on the second read, so nobody was mid-write; a game with only its own
-            // plugins leaves the file empty, so it only held a load order if mods add plugins
-            if (Object.keys(this.mKnownPlugins).length > this.mInstalledNative.length) {
-              this.recordFailure(
-                "the plugin list on disk is empty",
-                new Error("plugins.txt has no content, not even a header"),
-              );
-            }
-            // The persistor must still count as loaded, or serialize() drops every write
-            this.mLoaded = true;
-            return Promise.resolve();
+            return this.recoverFromEmptyList(newPlugins);
           }
-          return this.deserialize(true, adoptForeign);
+          return delayed(RETRY_DELAY_MS).then(() => this.deserialize(true, adoptForeign));
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
         this.initFromKeyList(newPlugins, keys, true, offset);
@@ -751,6 +811,55 @@ class PluginPersistor implements IPersistor {
           }
         }
       });
+  }
+
+  /**
+   * plugins.txt is still empty on the second read, so nobody was mid-write. What Vortex holds
+   * in memory goes back to disk; with nothing in memory, loadorder.txt still has the order,
+   * though not which plugins were enabled.
+   */
+  private async recoverFromEmptyList(newPlugins: IPluginMap): Promise<void> {
+    // a game with only its own plugins and DLC leaves the file empty, so it only held a load
+    // order if mods add plugins
+    const lostLoadOrder = Object.keys(this.mKnownPlugins ?? {}).some((pluginId) =>
+      this.mModPluginIds.has(pluginId),
+    );
+    if (lostLoadOrder) {
+      this.recordFailure(
+        "the plugin list on disk is empty",
+        new Error("plugins.txt has no content, not even a header"),
+      );
+    }
+
+    if (Object.keys(this.mPlugins).length > 0) {
+      // The persistor must still count as loaded, or serialize() drops every write
+      this.mLoaded = true;
+      void this.serialize();
+      return;
+    }
+
+    if (this.mPluginFormat !== "original") {
+      // the old format has read loadorder.txt already
+      try {
+        const data = await withFileRetry(() =>
+          readFile(path.join(this.mPluginPath, "loadorder.txt")),
+        );
+        const keys = this.filterFileData(data.toString("utf-8"), false);
+        this.initFromKeyList(newPlugins, keys, false, 0);
+      } catch (err) {
+        log("info", "no load order to recover the emptied plugin list from", {
+          error: getErrorMessageOrDefault(err),
+        });
+      }
+    }
+    if (Object.keys(newPlugins).length === 0) {
+      this.mLoaded = true;
+      return;
+    }
+    this.adoptParsed(newPlugins);
+    if (lostLoadOrder) {
+      this.mOnEmptyList?.();
+    }
   }
 
   private scheduleRefresh(timeout: number) {
