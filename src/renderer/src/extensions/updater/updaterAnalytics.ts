@@ -24,8 +24,8 @@ import {
  * updater extension once per state change (progress ticks and identical
  * re-renders are filtered out before it gets here). Button presses call the
  * small emitters. Everything goes over the analytics bus; consent is the
- * tracker's job (it queues anything emitted before it has started), so
- * nothing here checks it.
+ * tracker's job (it drops anything fired without consent and holds consented
+ * events until login restores), so nothing here checks it.
  */
 export interface UpdaterAnalytics {
   onTransition(prev: UpdaterState | null, next: UpdaterState): void;
