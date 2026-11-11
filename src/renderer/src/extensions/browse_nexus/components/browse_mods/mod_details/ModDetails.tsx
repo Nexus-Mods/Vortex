@@ -191,6 +191,16 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                   </div>
                 </div>
 
+                <Typography
+                  appearance="strong"
+                  as="h2"
+                  className="font-semibold"
+                  data-testid="mod-details-title"
+                  typographyType="body-xl"
+                >
+                  {mod.name}
+                </Typography>
+
                 <div className="flex flex-wrap items-center gap-x-1 gap-y-2">
                   <Typography
                     appearance="moderate"

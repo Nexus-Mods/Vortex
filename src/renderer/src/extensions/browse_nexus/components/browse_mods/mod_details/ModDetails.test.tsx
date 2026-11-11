@@ -114,6 +114,14 @@ describe("ModDetails", () => {
     expect(screen.queryByText("better")).not.toBeInTheDocument();
   });
 
+  it("titles the details with the mod's name, as a heading", () => {
+    renderComponent();
+
+    const title = screen.getByTestId("mod-details-title");
+    expect(title.tagName).toBe("H2");
+    expect(title).toHaveTextContent(summary.name);
+  });
+
   it("holds the gallery's place, pulsing, until the mod's pictures load", async () => {
     renderComponent();
     const placeholders = () => document.querySelectorAll("[data-gallery-placeholder]");
