@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameDomain } from "@vortex/shared";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Mod } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -85,7 +85,7 @@ vi.mock("./mod_list/ModList", () => ({
   }) => (
     <div aria-label="Mods" ref={listRef} role="region" tabIndex={-1}>
       {!mods.length && emptyState}
-      {!!mods.length && endOfResults}
+      {!!mods.length && <div data-testid="end-of-results">{endOfResults}</div>}
       {(status === "failed" || status === "load_more_failed") && (
         <button onClick={onRetry}>Retry</button>
       )}
@@ -160,6 +160,7 @@ const searched = {
   view: "trending",
   sort_field: "endorsements",
   sort_direction: "desc",
+  has_search: false,
   time_range: "7",
   adult: "include",
 };
@@ -422,6 +423,10 @@ describe("BrowseMods", () => {
   });
 
   describe("empty states", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
     /** An empty search with these filters on, over the Trending preset's. */
     const emptyWith = (activeFilters: Array<"timeRange" | "adult">) =>
       search([], false, {
@@ -468,20 +473,71 @@ describe("BrowseMods", () => {
       expect(propertiesOf("browse_mods_empty_state_website_search_opened")).toEqual([
         { view: "trending", state: "filters_only" },
       ]);
-      vi.unstubAllGlobals();
     });
 
-    it("shows the nothing-for-the-game state with only a locked filter on", () => {
+    it("offers no Remove filters with only a locked filter on", () => {
       renderComponent(emptyWith([]));
 
-      expect(screen.getByText("No mods to show for {{game}}")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
+    });
+
+    it("clears a search nothing matches, keeping focus in the list, and counts it", async () => {
+      const empty = { ...emptyWith([]), searchQuery: "sky", setSearchText: vi.fn() } as IModSearch;
+      const { propertiesOf } = renderComponent(empty);
+      const clear = screen.getByRole("button", { name: "Clear search" });
+
+      clear.focus();
+      await userEvent.keyboard("{Enter}");
+
+      expect(empty.setSearchText).toHaveBeenCalledWith("");
+      expect(screen.getByRole("region", { name: "Mods" })).toHaveFocus();
+      expect(propertiesOf("browse_mods_search_cleared")).toEqual([
+        { view: "trending", source: "empty_state" },
+      ]);
+    });
+
+    it("counts a search of the mods' names that comes back empty as one", () => {
+      const { propertiesOf } = renderComponent({
+        ...emptyWith([]),
+        searchQuery: "sky",
+      } as IModSearch);
+
+      expect(propertiesOf("browse_mods_no_results")).toEqual([{ ...searched, has_search: true }]);
+    });
+
+    it("counts each empty search of the mods' names, one after another", () => {
+      const { rerender, propertiesOf } = renderComponent({
+        ...emptyWith([]),
+        searchQuery: "sky",
+      } as IModSearch);
+
+      rerender({ ...emptyWith([]), searchQuery: "skyui" } as IModSearch);
+
+      expect(propertiesOf("browse_mods_no_results")).toHaveLength(2);
+    });
+
+    it("searches the website for the same text", async () => {
+      const openUrl = vi.fn();
+      vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+      renderComponent({ ...emptyWith([]), searchQuery: "sky" } as IModSearch);
+
+      await userEvent.click(screen.getByRole("button", { name: "Search on website" }));
+
+      expect(openUrl).toHaveBeenCalledWith(
+        websiteModSearchUrl(GameDomain("skyrimspecialedition"), {
+          text: "sky",
+          sort: SORT,
+          filters: FILTERS,
+        }),
+      );
     });
 
     it("ends the last page with the end of results", () => {
       renderComponent(search([mod("1")], false, { activeFilters: [], activeFilterCount: 0 }));
 
-      expect(screen.getByText("You've reached the end")).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId("end-of-results")).getByTestId("mod-list-hidden-mods-note"),
+      ).toBeInTheDocument();
     });
   });
 });

@@ -3797,6 +3797,15 @@ components:
       description: A mod search. Every field is optional.
       additionalProperties: false
       properties:
+        query:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: |
+            Text to find in mod names, with at least 2 characters other than spaces. Each
+            space-separated word must appear in the name, as typed: punctuation matches as written.
+            Case is ignored for the letters A to Z only. Combines with `filters`. Mods are not
+            searched by name when left out.
         filters:
           allOf:
             - "$ref": "#/components/schemas/ModsSearchFilters"

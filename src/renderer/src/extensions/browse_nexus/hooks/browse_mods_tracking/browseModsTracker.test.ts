@@ -85,4 +85,26 @@ describe("createBrowseModsTracker", () => {
       properties: { view: "custom", state: "nothing_for_game" },
     });
   });
+
+  it("counts a search by how long it is, not what it says", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackSearchSubmitted({ view: "trending", query_length: 6 });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_search_submitted",
+      properties: { view: "trending", query_length: 6 },
+    });
+  });
+
+  it("counts clearing the search, by where it was cleared from", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackSearchCleared({ view: "new", source: "empty_state" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_search_cleared",
+      properties: { view: "new", source: "empty_state" },
+    });
+  });
 });

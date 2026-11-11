@@ -49,6 +49,8 @@ const searchWith = (
     resetSort: vi.fn(),
     setFilters: vi.fn(),
     resetFilters: vi.fn(),
+    searchText: "",
+    setSearchText: vi.fn(),
   } as unknown as IModSearch;
 };
 

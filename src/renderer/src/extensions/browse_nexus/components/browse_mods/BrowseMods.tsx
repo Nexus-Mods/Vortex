@@ -91,17 +91,27 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
 
   /**
    * The list's empty state, or its end of results, with its actions counted. Removing the filters
-   * keeps focus in the list, as the button goes while the mods load. There's no search text yet;
-   * it's passed here once Browse has a search box.
+   * or clearing the search keeps focus in the list, as the button goes while the mods load. The
+   * search text is what's actually searched, so a search too short to send reads as none.
    */
   const emptyState = ({ isEnd }: Pick<IEmptyStateInput, "isEnd">) => {
-    const state = emptyStateKind({ isEnd, filterCount: search.activeFilterCount });
+    const state = emptyStateKind({
+      isEnd,
+      searchText: search.searchQuery,
+      filterCount: search.activeFilterCount,
+    });
 
     return (
       <ModListEmptyState
         filterCount={search.activeFilterCount}
         gameName={gameName}
         kind={state}
+        searchText={search.searchQuery}
+        onClearSearch={() => {
+          tracker.trackSearchCleared({ view: trackedView, source: "empty_state" });
+          search.setSearchText("");
+          listRef.current?.focus();
+        }}
         onLearnMore={() => {
           tracker.trackEmptyStateLearnMoreOpened({ view: trackedView, state });
           window.api.shell.openUrl(LEARN_MORE_URL);
@@ -119,24 +129,29 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
           domain
             ? () => {
                 tracker.trackEmptyStateWebsiteSearchOpened({ view: trackedView, state });
-                window.api.shell.openUrl(websiteModSearchUrl(domain, { sort, filters }));
+                window.api.shell.openUrl(
+                  websiteModSearchUrl(domain, { text: search.searchQuery, sort, filters }),
+                );
               }
             : undefined
         }
       />
     );
   };
+
   const isEmpty = status !== "loading" && status !== "failed" && !mods.length;
 
   /**
    * The search the results came from, as its events describe it, kept as a string so it only
    * changes when a value does, not when the view's objects are rebuilt, as renaming it does. An
-   * empty search is counted once, and again for another view, even one of the user's own alike.
+   * empty search is counted once, and again for another view, even one of the user's own alike,
+   * or another search of the mods' names.
    */
   const searchedKey = JSON.stringify({
     view: trackedView,
     sort_field: sort.field,
     sort_direction: sort.direction,
+    has_search: !!search.searchQuery,
     ...filterEventProps(filters),
   });
 
@@ -146,7 +161,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     if (isEmpty && isShown) {
       tracker.trackNoResults(searched);
     }
-  }, [isEmpty, isShown, searched, tracker, search.viewId]);
+  }, [isEmpty, isShown, searched, tracker, search.viewId, search.searchQuery]);
 
   /** Picks another mod and counts it, shown at once if clicked, else once the keys settle. */
   const selectMod = (id: string, input: SelectionInput) => {

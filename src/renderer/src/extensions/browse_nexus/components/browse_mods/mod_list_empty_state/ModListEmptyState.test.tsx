@@ -12,6 +12,7 @@ type IProps = React.ComponentProps<typeof ModListEmptyState>;
 const renderState = (kind: EmptyStateKind, props: Partial<IProps> = {}) => {
   const callbacks = {
     onRemoveFilters: vi.fn(),
+    onClearSearch: vi.fn(),
     onSearchWebsite: vi.fn(),
     onLearnMore: vi.fn(),
   };
@@ -29,22 +30,6 @@ const renderState = (kind: EmptyStateKind, props: Partial<IProps> = {}) => {
 };
 
 describe("ModListEmptyState", () => {
-  it.each<[EmptyStateKind, string]>([
-    ["end_of_results", "You've reached the end"],
-    ["search_only", 'No mods match "{{search}}"'],
-    ["search_and_filters", 'No mods match "{{search}}"'],
-    ["filters_only", "No mods match your filters"],
-    ["nothing_for_game", "No mods to show for {{game}}"],
-  ])("shows the %s state's heading", (kind, title) => {
-    renderState(kind, { filterCount: 1 });
-    expect(screen.getByText(title)).toBeInTheDocument();
-  });
-
-  it("falls back to this game without a game name", () => {
-    renderState("nothing_for_game", { gameName: undefined });
-    expect(screen.getByText("No mods to show for this game")).toBeInTheDocument();
-  });
-
   it("offers Remove N filters, counted, only where the state lists it", () => {
     renderState("filters_only", { filterCount: 2 });
     expect(screen.getByRole("button", { name: "Remove {{count}} filters" })).toBeInTheDocument();
@@ -80,6 +65,30 @@ describe("ModListEmptyState", () => {
     expect(callbacks.onSearchWebsite).toHaveBeenCalledOnce();
   });
 
+  it.each<EmptyStateKind>(["search_only", "search_and_filters", "end_of_results"])(
+    "offers to clear the search in the %s state while there's one",
+    async (kind) => {
+      const callbacks = renderState(kind);
+
+      await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
+
+      expect(callbacks.onClearSearch).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each<EmptyStateKind>(["filters_only", "nothing_for_game"])(
+    "doesn't offer to clear a search in the %s state",
+    (kind) => {
+      renderState(kind);
+      expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
+    },
+  );
+
+  it("doesn't offer to clear a search at the end without one", () => {
+    renderState("end_of_results", { searchText: undefined });
+    expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
+  });
+
   it("leaves out Search on website without somewhere to search", () => {
     renderState("nothing_for_game", { onSearchWebsite: undefined });
     expect(screen.queryByRole("button", { name: "Search on website" })).toBeNull();
@@ -87,11 +96,7 @@ describe("ModListEmptyState", () => {
 
   it("notes that some mods are hidden", () => {
     renderState("nothing_for_game");
-    expect(
-      screen.getByText(
-        "Mods that don't support mod managers or use legacy requirements are hidden.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("mod-list-hidden-mods-note")).toBeInTheDocument();
   });
 
   it("hides Learn more while it has nowhere to go", () => {

@@ -853,4 +853,80 @@ describe("useModSearch's views", () => {
     expect(result.current.isEdited).toBe(false);
     expect(result.current.rangeFrom).toBe(later);
   });
+
+  describe("searching by name", () => {
+    it("searches mod names for the search text, trimmed, with the view's sort and filters", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+
+      act(() => result.current.setSearchText("  sky ui  "));
+
+      await waitFor(() => expect(mocks.pending).toHaveLength(1));
+      expect(mocks.pending[0].search).toMatchObject({
+        query: "sky ui",
+        filters: { created_at: { gte: daysBack(7) } },
+        sort: { field: "endorsements", direction: "desc" },
+      });
+      expect(result.current.searchText).toBe("  sky ui  ");
+      expect(result.current.searchQuery).toBe("sky ui");
+    });
+
+    it("searches nothing by name with under 2 characters other than spaces", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+
+      act(() => result.current.setSearchText(" s "));
+
+      expect(result.current.searchText).toBe(" s ");
+      expect(result.current.searchQuery).toBeUndefined();
+      expect(mocks.pending).toHaveLength(0);
+    });
+
+    it("cuts the search to the API's 100 characters", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+
+      act(() => result.current.setSearchText("a".repeat(120)));
+
+      expect(result.current.searchQuery).toBe("a".repeat(100));
+    });
+
+    it("keeps the search when switching views", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+      act(() => result.current.setSearchText("sky"));
+      await waitFor(() => expect(mocks.pending).toHaveLength(1));
+      await respond("endorsements", 3);
+
+      act(() => result.current.selectView("popular"));
+
+      await waitFor(() => expect(mocks.pending).toHaveLength(1));
+      expect(mocks.pending[0].search).toMatchObject({
+        query: "sky",
+        sort: { field: "downloads" },
+      });
+    });
+
+    it("counts the tab from every mod, whatever the search", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+
+      act(() => result.current.setSearchText("sky"));
+
+      await waitFor(() => expect(mocks.pending).toHaveLength(1));
+      expect(mocks.pending[0].search.sort.field).toBe("endorsements");
+      expect(result.current.allModsTotal).toBe(900);
+    });
+
+    it("clears the search", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+      act(() => result.current.setSearchText("sky"));
+
+      act(() => result.current.setSearchText(""));
+
+      expect(result.current.searchText).toBe("");
+      expect(result.current.searchQuery).toBeUndefined();
+    });
+  });
 });

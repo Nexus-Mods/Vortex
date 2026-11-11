@@ -10,6 +10,7 @@ import { useFlag } from "@/contexts/FlagsContext";
 import type { IAvailableExtension } from "@/types/extensions";
 import type { IExtensionState } from "@/types/IState";
 import type { IState } from "@/types/IState";
+import { Search } from "@/ui/components/search/Search";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
@@ -26,7 +27,6 @@ import { setShowHiddenGames } from "../actions/session";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
 import { AddedGames } from "../components/added_games/AddedGames";
 import { DetectedGames } from "../components/detected_games/DetectedGames";
-import { Search } from "../components/search/Search";
 import { Section } from "../components/section/Section";
 import { SupportedGames } from "../components/supported_games/SupportedGames";
 import {
