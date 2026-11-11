@@ -2185,20 +2185,12 @@ export function nexusGamesProm(): BluebirdPromise<IGameListEntry[]> {
   return cachePromise.then(() => nexusGamesCache);
 }
 
-/**
- * @deprecated Use `convertId(gameData(state), { gameId }, "gameDomain")`. That also answers for
- * Tier 0 games, which this lookup over the Nexus games cache alone does not.
- */
 export function numericGameIdToDomainName(gameId: GameId): GameDomain | undefined {
   const domain = nexusGamesCache.find((g) => g.id === gameId)?.domain_name;
   if (domain === undefined) return undefined;
   return GameDomain(domain);
 }
 
-/**
- * @deprecated Use `convertId(gameData(state), { gameDomain }, "gameId")`. That also answers for
- * Tier 0 games, which this lookup over the Nexus games cache alone does not.
- */
 export function domainToNumericGameId(domain: GameDomain): GameId | undefined {
   const lowered = domain.toLowerCase();
   const id = nexusGamesCache.find((g) => g.domain_name.toLowerCase() === lowered)?.id;
