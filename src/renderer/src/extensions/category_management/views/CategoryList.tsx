@@ -62,6 +62,8 @@ export default function CategoryList() {
     onRenameCategory,
   } = useCategoryTree();
 
+  const categoryCount = filteredTreeData?.length ?? 0;
+
   const fetch = () => {
     if (isFetching) return;
     importCategoriesFromNexusMods().catch(() => undefined);
@@ -115,13 +117,13 @@ export default function CategoryList() {
               t={t}
             />
           }
-          entityCount={filteredTreeData?.length ?? 0}
+          entityCount={categoryCount}
           skeletonCount={10}
           SkeletonTile={CategoryListSkeletonTile}
           status={listStatus({
             isFetching,
             isFetchError,
-            count: filteredTreeData?.length ?? 0,
+            count: categoryCount,
           })}
         >
           {filteredTreeData?.map((c) => (

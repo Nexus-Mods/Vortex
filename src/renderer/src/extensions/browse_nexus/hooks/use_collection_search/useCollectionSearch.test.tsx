@@ -143,7 +143,8 @@ describe("useCollectionSearch", () => {
     await waitFor(() =>
       expect(result.current.searchValidationError).toBe("collection:browse.searchTooShort"),
     );
-    await waitFor(() => expect(result.current.status).not.toBe("failed"));
+    await waitFor(() => expect(result.current.status).toBe("done"));
+    expect(result.current.collections).toEqual([{ id: 45 }]);
     expect(result.current.totalCount).toBe(45);
     expect(result.current.searchQuery).toBe("a*");
     expect(renders.filter((search) => search.status === "failed")).toEqual([]);

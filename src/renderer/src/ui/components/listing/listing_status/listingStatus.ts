@@ -1,16 +1,19 @@
-/**
- * Where a list's loading is: its first items loading or failed, more of them loading or failed,
- * more left to load, or all of it loaded.
- */
+/** Where a list's loading is, which alone decides what `Listing` draws. */
 export type ListingStatus =
+  /** The items are loading, drawn as tiles in their place. */
   | "loading"
+  /** The items failed to load, so there are none to show: just the error. */
   | "failed"
+  /** More are loading, drawn as tiles after the items loaded. */
   | "loading_more"
+  /** Loading more failed: the items loaded stay, with the error and Try again after them. */
   | "load_more_failed"
+  /** There's more to load, asked for as the end of the items nears the view. */
   | "idle"
+  /** Everything's loaded, or there's nothing to load: the items, or the empty state. */
   | "done";
 
-/** What a React Query result says about a list's loading; an infinite query has `hasNextPage`. */
+/** What a React Query result says about a list's loading. */
 export interface IListingQuery {
   /** What's loaded, or the last search's while it's placeholder data. */
   data: unknown;
@@ -20,17 +23,26 @@ export interface IListingQuery {
   isFetching: boolean;
   /** Whether `data` is the last search's, shown while this one's loads. */
   isPlaceholderData: boolean;
-  /** Whether there's another page; an infinite query's only. */
-  hasNextPage?: boolean;
 }
+
+/** What an infinite query's result says, with whether there's another page. */
+export interface IInfiniteListingQuery extends IListingQuery {
+  /** Whether there's another page to load. */
+  hasNextPage: boolean;
+}
+
+/** The query to read, and whether it's an infinite one, loading and failing more after its pages. */
+export type ListingStatusOptions =
+  | { query: IListingQuery; isInfinite?: false }
+  | { query: IInfiniteListingQuery; isInfinite: true };
 
 /**
  * A query's `Listing` status. A new search still showing the last one's results is `loading`. An
  * infinite query with pages loads and fails more after them; an ordinary one with data is
  * `loading` while it fetches again and `done` if that fails, keeping what it has on screen.
  */
-export const getListingStatus = (query: IListingQuery): ListingStatus => {
-  const isInfinite = query.hasNextPage !== undefined;
+export const getListingStatus = (options: ListingStatusOptions): ListingStatus => {
+  const { query } = options;
   const hasData = !query.isPlaceholderData && query.data !== undefined;
 
   if (!hasData) {
@@ -38,10 +50,14 @@ export const getListingStatus = (query: IListingQuery): ListingStatus => {
       return "loading";
     }
 
-    return query.error ? "failed" : "done";
+    if (query.error) {
+      return "failed";
+    }
+
+    return "done";
   }
 
-  if (!isInfinite) {
+  if (!options.isInfinite) {
     return query.isFetching ? "loading" : "done";
   }
 
@@ -53,5 +69,5 @@ export const getListingStatus = (query: IListingQuery): ListingStatus => {
     return "load_more_failed";
   }
 
-  return query.hasNextPage ? "idle" : "done";
+  return options.query.hasNextPage ? "idle" : "done";
 };

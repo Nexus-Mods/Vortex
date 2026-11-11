@@ -12,7 +12,10 @@ import {
   collectionSearchQuery,
 } from "@/extensions/nexus_integration/queries/collection_search/collectionSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import { getListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
+import {
+  getListingStatus,
+  type ListingStatus,
+} from "@/ui/components/listing/listing_status/listingStatus";
 
 import { collectionT } from "../../util/collectionT";
 import { useGameDomainName } from "../use_game_domain_name/useGameDomainName.hook";
@@ -143,6 +146,9 @@ export const useCollectionSearch = (api: IExtensionApi) => {
     void queryClient.invalidateQueries({ queryKey: collectionSearchKeys.all });
 
   const isSearchRejected = isSearchTooShortError(collections.error);
+  const status: ListingStatus = isSearchRejected
+    ? "loading"
+    : getListingStatus({ query: collections });
 
   useEffect(() => {
     if (isSearchRejected) {
@@ -162,7 +168,7 @@ export const useCollectionSearch = (api: IExtensionApi) => {
     collections: collections.data?.nodes ?? [],
     totalCount: (isSearchRejected ? allCollections.data : pageTotal) ?? 0,
     allCollectionsTotal: allCollections.data ?? 0,
-    status: isSearchRejected ? ("loading" as const) : getListingStatus(collections),
+    status,
     sortBy,
     searchQuery,
     currentPage,
