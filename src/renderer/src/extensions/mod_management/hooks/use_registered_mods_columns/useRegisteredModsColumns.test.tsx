@@ -1,4 +1,4 @@
-import { render, renderHook, screen } from "@testing-library/react";
+import { act, render, renderHook, screen, waitFor } from "@testing-library/react";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +8,16 @@ const { registered } = vi.hoisted(() => ({ registered: { attributes: [] as unkno
 vi.mock("@/ExtensionProvider", () => ({
   useExtensionObjects: () => registered.attributes,
 }));
+
+// The same `t` on every render, as the app's is until the language changes, so a redraw
+// alone doesn't work a value out again. The shared stub makes a new one each time.
+vi.mock("react-i18next", async (importOriginal) => {
+  const t = (key: string) => key;
+  return {
+    ...(await importOriginal<object>()),
+    useTranslation: () => Object.assign([t, undefined, true], { t, i18n: undefined, ready: true }),
+  };
+});
 
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { ITableAttribute } from "@/types/ITableAttribute";
@@ -27,16 +37,48 @@ const row = (mod: object = {}): IModRow => ({
   name: "Alpha",
 });
 
+type Mods = { [id: string]: IModWithState };
+
+const NO_MODS: Mods = {};
+
 const renderRegistered = (ownIds: ReadonlySet<string> = new Set()) => {
   const store = makeModsTableStore();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  return renderHook(() => useRegisteredModsColumns(ownIds), { wrapper }).result.current;
+  return renderHook(() => useRegisteredModsColumns(ownIds, NO_MODS), { wrapper }).result.current;
 };
 
 const cellText = (column: IModsTableColumn, modRow: IModRow = row()) =>
   render(<>{column.cell(modRow)}</>).container.textContent;
+
+const NO_IDS = new Set<string>();
+
+/** The first registered column's cell for a row, as the table draws it while the mods change. */
+const CellHarness = ({ modRow, mods }: { modRow: IModRow; mods: Mods }) => {
+  const { columns } = useRegisteredModsColumns(NO_IDS, mods);
+  return <div data-testid="cell">{columns[0].cell(modRow)}</div>;
+};
+
+/** Renders a registered column's cell, and draws it again as the table would. */
+const renderCell = (modRow: IModRow = row()) => {
+  const store = makeModsTableStore();
+  const view = render(
+    <Provider store={store}>
+      <CellHarness modRow={modRow} mods={NO_MODS} />
+    </Provider>,
+  );
+  return {
+    cell: () => screen.getByTestId("cell"),
+    /** Draws it again, for these mods, as the table does when any of them changes. */
+    redraw: (mods: Mods = NO_MODS) =>
+      view.rerender(
+        <Provider store={store}>
+          <CellHarness modRow={modRow} mods={mods} />
+        </Provider>,
+      ),
+  };
+};
 
 // --- Tests ---
 
@@ -87,7 +129,9 @@ describe("useRegisteredModsColumns", () => {
       <Provider store={store}>{children}</Provider>
     );
     const ownIds = new Set<string>();
-    const { result, rerender } = renderHook(() => useRegisteredModsColumns(ownIds), { wrapper });
+    const { result, rerender } = renderHook(() => useRegisteredModsColumns(ownIds, NO_MODS), {
+      wrapper,
+    });
     expect(result.current.columns.map(({ id }) => id)).toEqual(["sdv"]);
 
     game = "skyrimse";
@@ -141,6 +185,86 @@ describe("useRegisteredModsColumns", () => {
       expect(cellText(shown(undefined))).toBe("");
       expect(cellText(shown(null))).toBe("");
       expect(cellText(shown({ status: "ok" }))).toBe("");
+    });
+
+    it("shows a value worked out asynchronously once it's ready", async () => {
+      registered.attributes = [attribute({ calc: () => Promise.resolve("Compatible") })];
+
+      const { cell } = renderCell();
+
+      await waitFor(() => expect(cell()).toHaveTextContent("Compatible"));
+    });
+
+    // As the legacy table logs it and carries on, an extension's bug doesn't take the table down.
+    it("shows nothing for one that fails to be worked out", () => {
+      registered.attributes = [
+        attribute({
+          calc: () => {
+            throw new Error("broken");
+          },
+        }),
+      ];
+
+      expect(renderCell().cell()).toBeEmptyDOMElement();
+    });
+
+    it("shows nothing for one that fails to be worked out asynchronously", async () => {
+      registered.attributes = [attribute({ calc: () => Promise.reject(new Error("broken")) })];
+
+      const { cell } = renderCell();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(cell()).toBeEmptyDOMElement();
+    });
+
+    // Such as the Deploy order, which the dependency manager keeps outside the mods.
+    it("is worked out again when the extension says the data it's from changed", () => {
+      let order = 1;
+      let changed = () => {};
+      registered.attributes = [
+        attribute({
+          calc: () => order,
+          externalData: (onChanged) => {
+            changed = onChanged;
+          },
+        }),
+      ];
+      const { cell, redraw } = renderCell();
+      expect(cell()).toHaveTextContent("1");
+
+      order = 2;
+      redraw({ b: row({ id: "b" }).mod });
+      expect(cell()).toHaveTextContent("1");
+
+      act(() => changed());
+      expect(cell()).toHaveTextContent("2");
+    });
+
+    // Some extensions keep only the last listener, which the legacy table needs while it's shown.
+    it("isn't listened for while the new table isn't the one shown", () => {
+      const externalData = vi.fn();
+      registered.attributes = [attribute({ externalData })];
+      const store = makeModsTableStore({ betaTable: false });
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+      renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS), { wrapper });
+
+      expect(externalData).not.toHaveBeenCalled();
+    });
+
+    // As one worked out from other mods than its own, which the legacy table works out again
+    // whenever the mods change.
+    it("is worked out again when any mod changes, if it says it's volatile", () => {
+      let count = 1;
+      registered.attributes = [attribute({ calc: () => count, isVolatile: true })];
+      const { cell, redraw } = renderCell();
+
+      count = 2;
+      redraw({ b: row({ id: "b" }).mod });
+
+      expect(cell()).toHaveTextContent("2");
     });
 
     it("marks a true value with a tick named by the column, and a false one with nothing", () => {

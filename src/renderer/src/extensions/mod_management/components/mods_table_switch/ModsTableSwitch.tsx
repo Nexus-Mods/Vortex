@@ -319,7 +319,7 @@ export const ModsTableSwitch = ({
   );
 
   const ownIds = useMemo(() => new Set(columns.map(({ id }) => id)), [columns]);
-  const registered = useRegisteredModsColumns(ownIds);
+  const registered = useRegisteredModsColumns(ownIds, tableMods);
   const allColumns = useMemo(
     () => [...columns, ...registered.columns],
     [columns, registered.columns],
