@@ -161,7 +161,11 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import { registerLockfileContribution, registerResolveLockFile } from "./util/resolveLockFile";
+import {
+  planDeployment,
+  registerLockfileContribution,
+  registerResolveLockFile,
+} from "./util/resolveLockFile";
 import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
@@ -856,11 +860,12 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 log("warn", "profile no longer found?", profileId);
               }
 
+              const deployingProfileId = VortexProfileId(profile.id);
               progress(t("Checking for external changes"), 5);
               await dealWithExternalChanges(
                 api,
                 activator,
-                VortexProfileId(profile.id),
+                deployingProfileId,
                 VortexStagingFolder(stagingPath),
                 modPaths,
                 lastDeployment,
@@ -883,6 +888,11 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 modPaths,
                 lastDeployment,
               );
+
+              // dev builds only; plans the disk as external changes left it
+              if (process.env.NODE_ENV === "development") {
+                await planDeployment(api, deployingProfileId);
+              }
 
               progress(t("Starting deployment"), 35);
               resetDeploymentFailures(api, game.id);

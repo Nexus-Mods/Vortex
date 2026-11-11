@@ -81,6 +81,7 @@ import type {
 import { ModFileCategory } from "../extensions/health_check/types";
 import type { IHistoryEvent } from "../extensions/history_management/types";
 import { setDeploymentNecessary } from "../extensions/mod_management/actions/deployment";
+import type { IDeploymentFailure } from "../extensions/mod_management/actions/session";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
 import { deploymentReducer } from "../extensions/mod_management/reducers/deployment";
@@ -299,6 +300,18 @@ export function makeFileChange(overrides: Partial<IFileChange> = {}): IFileChang
     sourceTime: new Date(0),
     destTime: new Date(0),
     changeType: "refchange",
+    ...overrides,
+  };
+}
+
+/** A file a deployment couldn't place. */
+export function makeDeploymentFailure(
+  overrides: Partial<IDeploymentFailure> = {},
+): IDeploymentFailure {
+  return {
+    source: "mod-1",
+    relPath: "plugin.esp",
+    outputPath: "plugin.esp",
     ...overrides,
   };
 }

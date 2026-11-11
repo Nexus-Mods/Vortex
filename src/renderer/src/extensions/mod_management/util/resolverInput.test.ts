@@ -10,7 +10,7 @@ import {
   type Lockfile,
   type FileEntry,
 } from "@nexusmods/mod-pipeline";
-import { VortexGameId, VortexModId } from "@vortex/shared";
+import { VortexGameId, VortexModId, VortexProfileId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { expect, onTestFinished, vi } from "vitest";
 
@@ -195,7 +195,8 @@ async function deployedFiles(game: IDeployedGameHarness): Promise<FileEntry[]> {
 
 async function expectResolvedAsDeployed(game: IDeployedGameHarness): Promise<Lockfile> {
   const lockfile = resolve(
-    await gatherResolverInput(game.api, VortexGameId(game.gameId), hashFile, noArchiveFiles),
+    (await gatherResolverInput(game.api, VortexProfileId(game.profileId), hashFile, noArchiveFiles))
+      .input,
   );
 
   const deployed = await deployedFiles(game);
@@ -245,12 +246,49 @@ test("the resolver deploys each file where today's deployment does, from the sam
   ]);
 });
 
+test("each destination's staged file is its winning mod's copy, in portable form", async () => {
+  const game = await makeResolvableGame();
+  const rockPath = path.join("meshes", "rock.nif");
+  await installMods(game, [
+    { mod: makeStagedMod(MOD_A), relPaths: ["ModA.esp", "shared.txt"] },
+    {
+      mod: makeStagedMod(MOD_B, { rules: [{ type: "after", reference: { id: MOD_A } }] }),
+      relPaths: ["shared.txt", rockPath],
+    },
+    {
+      mod: makeStagedMod(MOD_C, {
+        fileOverrides: [path.join(game.dataPath, rockPath)],
+        rules: [{ type: "after", reference: { id: MOD_B } }],
+      }),
+      relPaths: [rockPath],
+    },
+  ]);
+  // the same bytes in both copies, so only the mod that wins tells them apart
+  await writeFile(path.join(game.stagingPath, MOD_A, "shared.txt"), "same");
+  await writeFile(path.join(game.stagingPath, MOD_B, "shared.txt"), "same");
+
+  const { input, stagedFiles } = await gatherResolverInput(
+    game.api,
+    VortexProfileId(game.profileId),
+    hashFile,
+    noArchiveFiles,
+  );
+
+  const stagedPathOf = (modId: VortexModId, relPath: string) =>
+    toPortablePath(path.join(game.stagingPath, modId, relPath));
+  expect(resolve(input).files.map((file) => stagedFiles.pathOf(file))).toEqual([
+    stagedPathOf(MOD_A, "ModA.esp"),
+    stagedPathOf(MOD_B, rockPath),
+    stagedPathOf(MOD_B, "shared.txt"),
+  ]);
+});
+
 test("the lockfile identifies a Steam install by its app, build and depot manifests", async () => {
   const game = await makeResolvableGame();
 
-  const input = await gatherResolverInput(
+  const { input } = await gatherResolverInput(
     game.api,
-    VortexGameId(game.gameId),
+    VortexProfileId(game.profileId),
     hashFile,
     noArchiveFiles,
   );
@@ -356,12 +394,14 @@ test("a Nexus file takes its hash from the archive entries of its size at its pa
   const hashStagedFile = vi.fn(hashFile);
 
   const lockfile = resolve(
-    await gatherResolverInput(
-      game.api,
-      VortexGameId(game.gameId),
-      hashStagedFile,
-      lookupArchiveFiles,
-    ),
+    (
+      await gatherResolverInput(
+        game.api,
+        VortexProfileId(game.profileId),
+        hashStagedFile,
+        lookupArchiveFiles,
+      )
+    ).input,
   );
 
   expect(lookupArchiveFiles).toHaveBeenCalledWith([NEXUS_FILE_UID]);
@@ -414,7 +454,14 @@ test("an unchanged deployment seeds the lockfile the resolver gives", async () =
   expect(notes).toEqual([]);
   expect(resolve(input)).toEqual(
     resolve(
-      await gatherResolverInput(game.api, VortexGameId(game.gameId), hashFile, noArchiveFiles),
+      (
+        await gatherResolverInput(
+          game.api,
+          VortexProfileId(game.profileId),
+          hashFile,
+          noArchiveFiles,
+        )
+      ).input,
     ),
   );
 });

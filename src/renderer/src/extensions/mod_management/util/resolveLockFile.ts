@@ -3,24 +3,37 @@ import {
   FileSourceKind,
   inApplyOrder,
   OperationKind,
+  pathKeyOf,
   planDestinations,
   resolve,
+  sameOrigin,
   type DiskScan,
+  type FileSource,
   type Lockfile,
   type PlannedDestination,
 } from "@nexusmods/mod-pipeline";
 import type { ManifestDiff, PlannerOperationCounts } from "@vortex/nexus-api-v3";
-import { getErrorMessageOrDefault, parseError, VortexGameId } from "@vortex/shared";
+import {
+  getErrorMessageOrDefault,
+  parseError,
+  VortexGameId,
+  VortexProfileId,
+} from "@vortex/shared";
 
 import { log } from "../../../logging";
 import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
-import { emitPlannerPlanEvent } from "../../analytics/utils/plannerPlanEvent";
+import {
+  emitPlannerPlanEvent,
+  type PlannerPlanFigures,
+} from "../../analytics/utils/plannerPlanEvent";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
+import { gameIdOfProfile, lastActiveProfileForGame } from "../../profile_management/selectors";
 import { BACKUP_TAG } from "../LinkingDeployment";
+import type { StagedFiles } from "./apply/apply";
+import { deploymentFailures } from "./deploymentFailures";
 import { scanDeploymentTargets } from "./diskScan";
 import { addGeneratedFiles } from "./generatedFiles";
 import { keepLastPlan } from "./lastPlans";
@@ -33,14 +46,22 @@ import { countByOperation } from "./planTree";
 import { gatherDeployedInput, gatherDeployedOrigins, gatherResolverInput } from "./resolverInput";
 import { compareWithDeployment } from "./shadowComparison";
 
-/** The games whose lockfile is resolved after each plugin sort. */
-const RESOLVED_GAMES: ReadonlySet<string> = new Set(["skyrimse"]);
+/** The games whose deployments are planned. */
+const RESOLVED_GAMES: ReadonlySet<VortexGameId> = new Set([VortexGameId("skyrimse")]);
 
-/** Prevoius lockfile, empty on first run */
-let previousLockfile: Lockfile;
+/** A lockfile, and where its files are staged. */
+interface StagedLockfile {
+  lockfile: Lockfile;
+  stagedFiles: StagedFiles;
+}
 
-/** The disk as it was before the first deployment since the last plan, and whether a deployment has run since */
-let scanBeforeDeployment: { diskScan: DiskScan; scanMs: number; deployed: boolean } | undefined;
+/** By game, the lockfile its last deployment deployed; seeded from the manifests while unknown */
+const previousLockfiles = new Map<VortexGameId, StagedLockfile>();
+
+/** The plan of the deployment in progress, until it finishes */
+let pendingPlan:
+  | { gameMode: VortexGameId; current: StagedLockfile; figures: PlannerPlanFigures }
+  | undefined;
 
 const registeredContributions = new LockfileContributions();
 
@@ -66,14 +87,11 @@ export function registerLockfileContribution(
 async function withGeneratedFiles(
   state: IState,
   gameMode: VortexGameId,
+  profileId: VortexProfileId,
   contributions: LockfileContributions,
   lockfile: Lockfile,
 ): Promise<Lockfile> {
-  const generatedFiles = await contributions.generatedFiles(
-    state,
-    gameMode,
-    lastActiveProfileForGame(state, gameMode),
-  );
+  const generatedFiles = await contributions.generatedFiles(state, gameMode, profileId);
   return addGeneratedFiles(lockfile, generatedFiles);
 }
 
@@ -85,8 +103,9 @@ export async function resolveLockfile(
   hashFile: (filePath: string) => Promise<string>,
 ): Promise<Lockfile> {
   const state = api.getState();
-  const input = await gatherResolverInput(api, gameMode, hashFile);
-  return withGeneratedFiles(state, gameMode, contributions, resolve(input));
+  const profileId = VortexProfileId(lastActiveProfileForGame(state, gameMode));
+  const { input } = await gatherResolverInput(api, profileId, hashFile);
+  return withGeneratedFiles(state, gameMode, profileId, contributions, resolve(input));
 }
 
 const elapsedMsSince = (startedAt: Temporal.Instant) =>
@@ -159,125 +178,207 @@ async function compareWithManifests(
   }
 }
 
-/**
- * Scans the deployment targets before a deployment, then resolves and plans the lockfile once a
- * plugin sort has run after it.
- */
-export function registerResolveLockFile(
-  api: IExtensionApi,
-  hashFile: (filePath: string) => Promise<string> = fileMD5,
-): void {
-  const scanBeforeDiskChange = async (gameId: string | undefined) => {
-    // disk changes before the next plan, as a collection install makes, keep the first scan
-    if (!RESOLVED_GAMES.has(gameId) || scanBeforeDeployment !== undefined) {
-      return;
-    }
-    const gameMode = VortexGameId(gameId);
-    try {
-      if (previousLockfile === undefined) {
-        const startedAt = Temporal.Now.instant();
-        const state = api.getState();
-        const { input, notes } = await gatherDeployedInput(api, gameMode, hashFile);
-        previousLockfile = await withGeneratedFiles(
-          state,
-          gameMode,
-          registeredContributions,
-          resolve(input),
-        );
-        log("info", "seeded previous lockfile from manifest", {
-          gameMode,
-          files: previousLockfile.files.length,
-          notes: notes.length,
-          firstNotes: notes.slice(0, 5),
-          elapsedMs: elapsedMsSince(startedAt),
-        });
-      }
+/** A deployment's plan: its lockfile, every destination as planned, and where its files are staged. */
+export interface DeploymentPlan {
+  lockfile: Lockfile;
+  destinations: PlannedDestination[];
+  stagedFiles: StagedFiles;
+}
 
-      // Get the disk state before the deployment changes it
-      const game = getGame(gameMode);
-      const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
-      const scanStartedAt = Temporal.Now.instant();
-      const diskScan = await scanDeploymentTargets(
-        Object.values(game.getModPaths(gamePath)),
-        previousLockfile.files.map(({ destinationPath }) => destinationPath),
-      );
-      scanBeforeDeployment = { diskScan, scanMs: elapsedMsSince(scanStartedAt), deployed: false };
-    } catch (err) {
-      log("warn", "failed to scan before deployment", {
-        gameMode,
-        error: getErrorMessageOrDefault(err),
-      });
-      void emitPlannerPlanEvent(api, gameMode, () => ({ error_kind: parseError(err).data.kind }));
+/** `hashFile`, hashing each path once. */
+function hashingOnce(
+  hashFile: (filePath: string) => Promise<string>,
+): (filePath: string) => Promise<string> {
+  const hashes = new Map<string, Promise<string>>();
+  return (filePath) => {
+    let hash = hashes.get(filePath);
+    if (hash === undefined) {
+      hash = hashFile(filePath);
+      hashes.set(filePath, hash);
     }
+    return hash;
   };
+}
 
-  api.onAsync<"will-deploy">("will-deploy", (profileId) =>
-    scanBeforeDiskChange(profileById(api.getState(), profileId)?.gameId),
-  );
-  // removing mods and deploying a single mod change the disk outside a deployment
-  api.onAsync<"will-remove-mods">("will-remove-mods", scanBeforeDiskChange);
-  api.onAsync<"will-deploy-single-mod">("will-deploy-single-mod", scanBeforeDiskChange);
+/** What `run` returns, and how long it took. */
+async function timed<T>(run: () => Promise<T>): Promise<{ result: T; ms: number }> {
+  const startedAt = Temporal.Now.instant();
+  const result = await run();
+  return { result, ms: elapsedMsSince(startedAt) };
+}
 
-  api.onAsync<"did-deploy">("did-deploy", (profileId) => {
-    if (
-      scanBeforeDeployment &&
-      RESOLVED_GAMES.has(profileById(api.getState(), profileId)?.gameId)
-    ) {
-      scanBeforeDeployment.deployed = true;
+/** The lockfile the deployment manifests list, without generated files. */
+async function seededLockfile(
+  api: IExtensionApi,
+  gameMode: VortexGameId,
+  hashFile: (filePath: string) => Promise<string>,
+): Promise<StagedLockfile> {
+  const startedAt = Temporal.Now.instant();
+  const { input, notes, stagedFiles } = await gatherDeployedInput(api, gameMode, hashFile);
+  const lockfile = resolve(input);
+  log("info", "seeded previous lockfile from manifest", {
+    gameMode,
+    files: lockfile.files.length,
+    notes: notes.length,
+    firstNotes: notes.slice(0, 5),
+    elapsedMs: elapsedMsSince(startedAt),
+  });
+  return { lockfile, stagedFiles };
+}
+
+// the planner's file identity (sameFile in the package's plan.ts): the same content from the same origin
+const sameFile = (lhs: FileSource, rhs: FileSource) =>
+  lhs.hashType === rhs.hashType && lhs.fileHash === rhs.fileHash && sameOrigin(lhs, rhs);
+
+/**
+ * Where a plan's files are staged: a LINK's file where the current lockfile says, an UNLINK's where
+ * the previous one does. Indexed on first use, so a plan Apply never runs costs nothing.
+ */
+function stagedFilesOfPlan(current: StagedLockfile, previous: StagedLockfile): StagedFiles {
+  let listings: { fileByKey: Map<string, FileSource>; stagedFiles: StagedFiles }[] | undefined;
+  return {
+    pathOf: (file) => {
+      listings ??= [current, previous].map(({ lockfile, stagedFiles }) => ({
+        fileByKey: new Map(
+          lockfile.files.map((listed) => [pathKeyOf(listed.destinationPath), listed]),
+        ),
+        stagedFiles,
+      }));
+      const key = pathKeyOf(file.destinationPath);
+      const listing = listings.find(({ fileByKey }) => {
+        const listed = fileByKey.get(key);
+        return listed !== undefined && sameFile(listed, file);
+      });
+      return listing?.stagedFiles.pathOf(file);
+    },
+  };
+}
+
+/**
+ * Plans the deployment of a resolved game's profile against the game's last deployed lockfile,
+ * before the disk changes. Undefined for other games and on a failure, which is logged and reported.
+ */
+export async function planDeployment(
+  api: IExtensionApi,
+  profileId: VortexProfileId,
+  hashFile: (filePath: string) => Promise<string> = fileMD5,
+): Promise<DeploymentPlan | undefined> {
+  pendingPlan = undefined;
+  const gameMode = gameIdOfProfile(api.getState(), profileId);
+  if (gameMode === undefined || !RESOLVED_GAMES.has(gameMode)) {
+    return undefined;
+  }
+  const figures: PlannerPlanFigures = {};
+  // a seed and the resolve that follows it hash mostly the same staged files
+  const hashOnce = hashingOnce(hashFile);
+  try {
+    const previous =
+      previousLockfiles.get(gameMode) ?? (await seededLockfile(api, gameMode, hashOnce));
+    // out until did-deploy confirms a deployment: one that fails or never finishes may have changed
+    // the disk, and the next plan then reseeds
+    // TODO(MOD-134): keep it through a run Apply rolls back, which leaves the disk as it describes
+    previousLockfiles.delete(gameMode);
+
+    const game = getGame(gameMode);
+    const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
+    // TODO(MOD-144): add Vortex-generated files (plugins.txt, loadorder.txt) to both lockfiles with
+    // withGeneratedFiles once Apply can write them; the plugin persistor writes them until then
+    const [resolved, scanned] = await Promise.all([
+      timed(async () => {
+        const { input, stagedFiles } = await gatherResolverInput(api, profileId, hashOnce);
+        return { lockfile: resolve(input), stagedFiles };
+      }),
+      timed(() =>
+        scanDeploymentTargets(
+          Object.values(game.getModPaths(gamePath)),
+          previous.lockfile.files.map(({ destinationPath }) => destinationPath),
+        ),
+      ),
+    ]);
+    const { result: current } = resolved;
+    const { lockfile } = current;
+    const diskScan = scanned.result;
+    figures.resolve_ms = resolved.ms;
+    figures.lockfile_files = lockfile.files.length;
+    figures.generated_files = lockfile.files.filter(
+      (file) => file.source === FileSourceKind.VortexGenerated,
+    ).length;
+    figures.scan_ms = scanned.ms;
+    figures.disk_entries = diskScan.entries.length;
+    figures.scan_roots = diskScan.roots.length;
+
+    const { planMs, counts, destinations } = planAndLogOperations(
+      gameMode,
+      lockfile,
+      previous.lockfile,
+      diskScan,
+      scanned.ms,
+    );
+    figures.plan_ms = planMs;
+    figures.operations = counts;
+    keepLastPlan(gameMode, { plannedAt: Temporal.Now.instant(), destinations });
+    pendingPlan = { gameMode, current, figures };
+    return { lockfile, destinations, stagedFiles: stagedFilesOfPlan(current, previous) };
+  } catch (err) {
+    log("warn", "failed to plan deployment", { gameMode, error: getErrorMessageOrDefault(err) });
+    void emitPlannerPlanEvent(api, gameMode, () => ({
+      ...figures,
+      error_kind: parseError(err).data.kind,
+    }));
+    return undefined;
+  }
+}
+
+/** Keeps a finished deployment's lockfile as its last deployed one and reports the plan run. */
+export function registerResolveLockFile(api: IExtensionApi): void {
+  previousLockfiles.clear();
+  pendingPlan = undefined;
+
+  // the disk changed outside a deployment, so the next plan reseeds from the manifests and a
+  // deployment in progress doesn't keep its lockfile
+  const forgetPreviousLockfile = (gameMode: VortexGameId | undefined) => {
+    if (gameMode !== undefined) {
+      previousLockfiles.delete(gameMode);
+      if (pendingPlan?.gameMode === gameMode) {
+        pendingPlan = undefined;
+      }
     }
     return Promise.resolve();
-  });
+  };
+  const forgetProfileGame = (profileId: string) =>
+    forgetPreviousLockfile(gameIdOfProfile(api.getState(), VortexProfileId(profileId)));
 
-  api.events.on("did-sort-plugins", async (gameId: string) => {
-    // only a sort after a deployment plans; changes not deployed yet stay for the next one
-    if (!RESOLVED_GAMES.has(gameId) || scanBeforeDeployment?.deployed !== true) {
+  api.onAsync<"did-deploy">("did-deploy", async (profileId) => {
+    const gameMode = gameIdOfProfile(api.getState(), VortexProfileId(profileId));
+    const plan = pendingPlan;
+    if (plan === undefined || plan.gameMode !== gameMode) {
       return;
     }
-    const gameMode = VortexGameId(gameId);
-    const { diskScan, scanMs } = scanBeforeDeployment;
-    scanBeforeDeployment = undefined;
-    const scanFigures = {
-      disk_entries: diskScan.entries.length,
-      scan_roots: diskScan.roots.length,
-      scan_ms: scanMs,
-    };
-    try {
-      // Create the current lockfile from state
-      const resolveStartedAt = Temporal.Now.instant();
-      const currentLockfile = await resolveLockfile(
-        api,
-        gameMode,
-        registeredContributions,
-        hashFile,
-      );
-      const resolveMs = elapsedMsSince(resolveStartedAt);
-      const { planMs, counts, destinations } = planAndLogOperations(
-        gameMode,
-        currentLockfile,
-        previousLockfile,
-        diskScan,
-        scanMs,
-      );
-      keepLastPlan(gameMode, { plannedAt: Temporal.Now.instant(), destinations });
-      previousLockfile = currentLockfile;
-      const manifestDiff = await compareWithManifests(api, gameMode, currentLockfile);
-      void emitPlannerPlanEvent(api, gameMode, () => ({
-        ...scanFigures,
-        resolve_ms: resolveMs,
-        lockfile_files: currentLockfile.files.length,
-        generated_files: currentLockfile.files.filter(
-          (file) => file.source === FileSourceKind.VortexGenerated,
-        ).length,
-        plan_ms: planMs,
-        operations: counts,
-        manifest_diff: manifestDiff,
-      }));
-    } catch (err) {
-      log("warn", "failed to plan lockfile", { gameMode, error: getErrorMessageOrDefault(err) });
-      void emitPlannerPlanEvent(api, gameMode, () => ({
-        ...scanFigures,
-        error_kind: parseError(err).data.kind,
-      }));
+    const { current, figures } = plan;
+    pendingPlan = undefined;
+    // the lockfile is only what's deployed when every file was placed
+    // TODO(MOD-134): remove the failures check once Apply replaces today's deploy; an applied run
+    // placed every file
+    if (deploymentFailures(api, plan.gameMode).length === 0) {
+      previousLockfiles.set(plan.gameMode, current);
     }
+    const manifestDiff = await compareWithManifests(api, plan.gameMode, current.lockfile);
+    void emitPlannerPlanEvent(api, plan.gameMode, () => ({
+      ...figures,
+      manifest_diff: manifestDiff,
+    }));
   });
+
+  // TODO(MOD-150): remove these two listeners once deploy-single-mod and mod removal run a full
+  // Apply deploy
+  api.onAsync<"will-remove-mods">("will-remove-mods", (gameId) =>
+    forgetPreviousLockfile(VortexGameId(gameId)),
+  );
+  api.onAsync<"will-deploy-single-mod">("will-deploy-single-mod", (gameId) =>
+    forgetPreviousLockfile(VortexGameId(gameId)),
+  );
+  // TODO(MOD-149): remove these two listeners once purge runs through Apply; a failed purge emits
+  // only will-purge, a purge of one mod type only did-purge
+  api.onAsync<"will-purge">("will-purge", forgetProfileGame);
+  api.onAsync<"did-purge">("did-purge", forgetProfileGame);
 }
