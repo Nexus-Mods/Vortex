@@ -44,47 +44,15 @@ const MORE_TOTAL = 30;
 /** How many items the loading-more example starts with, and goes back to on reset. */
 const MORE_START = 6;
 
-interface ILoadMoreStatusOptions {
-  /** Whether more items are loading. */
-  isLoadingMore: boolean;
-  /** Whether loading more failed. */
-  isLoadMoreError: boolean;
-  /** How many items it has. */
-  count: number;
-}
-
-/** The loading-more example's status, from what it's doing and how many items it has. */
-const loadMoreStatus = ({
-  isLoadingMore,
-  isLoadMoreError,
-  count,
-}: ILoadMoreStatusOptions): ListingStatus => {
-  if (isLoadingMore) {
-    return "loading_more";
-  }
-
-  if (isLoadMoreError) {
-    return "load_more_failed";
-  }
-
-  return count < MORE_TOTAL ? "idle" : "done";
-};
-
-interface IToggledStatusOptions {
-  /** Whether the Loading toggle is on. */
-  isLoading: boolean;
-  /** Whether the Error toggle is on. */
-  isError: boolean;
-}
-
-/** The interactive example's status, from its toggles. */
-const toggledStatus = ({ isLoading, isError }: IToggledStatusOptions): ListingStatus => {
-  if (isLoading) {
-    return "loading";
-  }
-
-  return isError ? "failed" : "done";
-};
+/** Every status, for the interactive example's buttons. */
+const STATUSES: ListingStatus[] = [
+  "loading",
+  "failed",
+  "loading_more",
+  "load_more_failed",
+  "idle",
+  "done",
+];
 
 /**
  * A list in its own scroller that loads six more items as its end nears, until there are 30. Reset
@@ -92,8 +60,7 @@ const toggledStatus = ({ isLoading, isError }: IToggledStatusOptions): ListingSt
  */
 const LoadMoreExample = () => {
   const [count, setCount] = useState(MORE_START);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isLoadMoreError, setIsLoadMoreError] = useState(false);
+  const [status, setStatus] = useState<ListingStatus>("idle");
   const [failNext, setFailNext] = useState(false);
   const failNextRef = useRef(failNext);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -101,26 +68,24 @@ const LoadMoreExample = () => {
   failNextRef.current = failNext;
 
   const loadMore = () => {
-    setIsLoadingMore(true);
-    setIsLoadMoreError(false);
+    setStatus("loading_more");
     loadRef.current = setTimeout(() => {
-      setIsLoadingMore(false);
-
       if (failNextRef.current) {
         setFailNext(false);
-        setIsLoadMoreError(true);
+        setStatus("load_more_failed");
         return;
       }
 
-      setCount((current) => Math.min(current + 6, MORE_TOTAL));
+      const next = Math.min(count + 6, MORE_TOTAL);
+      setCount(next);
+      setStatus(next < MORE_TOTAL ? "idle" : "done");
     }, 800);
   };
 
   const reset = () => {
     clearTimeout(loadRef.current);
     setCount(MORE_START);
-    setIsLoadingMore(false);
-    setIsLoadMoreError(false);
+    setStatus("idle");
     setFailNext(false);
     scrollRef.current?.scrollTo({ top: 0 });
   };
@@ -148,7 +113,7 @@ const LoadMoreExample = () => {
           loadMoreErrorMessage="More items couldn't be loaded. Try again."
           scrollRef={scrollRef}
           SkeletonTile={SkeletonTile}
-          status={loadMoreStatus({ isLoadingMore, isLoadMoreError, count })}
+          status={status}
           onLoadMore={loadMore}
           onRetry={loadMore}
         >
@@ -162,8 +127,7 @@ const LoadMoreExample = () => {
 };
 
 export const ListingDemo = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const [status, setStatus] = useState<ListingStatus>("done");
   const [isEmpty, setIsEmpty] = useState(false);
 
   const visibleItems = isEmpty ? [] : items;
@@ -187,45 +151,27 @@ export const ListingDemo = () => {
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          Toggle the state controls to see how Listing handles each scenario.
+          Pick a status to see what Listing draws for it, with the items or with none.
         </Typography>
 
         <div className="flex flex-wrap gap-2">
-          <Button
-            brand="neutral"
-            appearance="subdued"
-            {...(isLoading ? { appearance: "strong" } : {})}
-            onClick={() => {
-              setIsLoading(!isLoading);
-              setIsError(false);
-            }}
-          >
-            {isLoading ? "Loading: On" : "Loading: Off"}
-          </Button>
+          {STATUSES.map((option) => (
+            <Button
+              appearance={option === status ? "strong" : "subdued"}
+              brand="neutral"
+              key={option}
+              onClick={() => setStatus(option)}
+            >
+              {option}
+            </Button>
+          ))}
 
           <Button
+            appearance={isEmpty ? "strong" : "subdued"}
             brand="neutral"
-            appearance="subdued"
-            {...(isError ? { appearance: "strong" } : {})}
-            onClick={() => {
-              setIsError(!isError);
-              setIsLoading(false);
-            }}
+            onClick={() => setIsEmpty(!isEmpty)}
           >
-            {isError ? "Error: On" : "Error: Off"}
-          </Button>
-
-          <Button
-            brand="neutral"
-            appearance="subdued"
-            {...(isEmpty ? { appearance: "strong" } : {})}
-            onClick={() => {
-              setIsEmpty(!isEmpty);
-              setIsError(false);
-              setIsLoading(false);
-            }}
-          >
-            {isEmpty ? "Empty: On" : "Empty: Off"}
+            {isEmpty ? "Items: None" : "Items: Six"}
           </Button>
         </div>
 
@@ -235,7 +181,7 @@ export const ListingDemo = () => {
             entityCount={visibleItems.length}
             skeletonCount={6}
             SkeletonTile={SkeletonTile}
-            status={toggledStatus({ isLoading, isError })}
+            status={status}
           >
             {visibleItems.map((title) => (
               <ExampleTile key={title} title={title} />

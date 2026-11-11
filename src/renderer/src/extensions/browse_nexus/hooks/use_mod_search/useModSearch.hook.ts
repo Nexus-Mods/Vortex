@@ -161,7 +161,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
 
   const pages = mods.isPlaceholderData ? undefined : mods.data?.pages;
   const loaded = useMemo(() => uniqueMods(mods.data?.pages), [mods.data?.pages]);
-  const status = getListingStatus({ query: mods, isInfinite: true });
+  const status = getListingStatus({ query: mods, isInfinite: true, itemCount: loaded.length });
 
   return {
     ...views,

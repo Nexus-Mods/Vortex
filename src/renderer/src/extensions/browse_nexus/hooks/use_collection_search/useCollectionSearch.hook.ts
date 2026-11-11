@@ -148,7 +148,7 @@ export const useCollectionSearch = (api: IExtensionApi) => {
   const isSearchRejected = isSearchTooShortError(collections.error);
   const status: ListingStatus = isSearchRejected
     ? "loading"
-    : getListingStatus({ query: collections });
+    : getListingStatus({ query: collections, itemCount: collections.data?.nodes.length ?? 0 });
 
   useEffect(() => {
     if (isSearchRejected) {

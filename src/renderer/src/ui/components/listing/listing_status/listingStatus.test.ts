@@ -2,16 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import { getListingStatus, type IInfiniteListingQuery, type IListingQuery } from "./listingStatus";
 
-/** An ordinary query's status, settled with no data, as these states change it. */
-const queryStatus = (state: Partial<IListingQuery> = {}) =>
+const NETWORK_DOWN = new Error("Network down");
+
+/** An ordinary query's status, settled with no data and no items, as these change it. */
+const queryStatus = (state: Partial<IListingQuery> = {}, itemCount = 0) =>
   getListingStatus({
+    itemCount,
     query: { data: undefined, error: null, isFetching: false, isPlaceholderData: false, ...state },
   });
 
-/** An infinite query's status, with a page and no more, as these states change it. */
-const infiniteStatus = (state: Partial<IInfiniteListingQuery> = {}) =>
+/** An infinite query's status, with a page of 20 items and no more, as these change it. */
+const infiniteStatus = (state: Partial<IInfiniteListingQuery> = {}, itemCount = 20) =>
   getListingStatus({
     isInfinite: true,
+    itemCount,
     query: {
       data: { pages: [[]] },
       error: null,
@@ -29,35 +33,51 @@ describe("getListingStatus", () => {
     });
 
     it("is failed once a fetch fails", () => {
-      expect(queryStatus({ error: new Error("Network down") })).toBe("failed");
+      expect(queryStatus({ error: NETWORK_DOWN })).toBe("failed");
     });
 
     it("is loading while it fetches again after failing", () => {
-      expect(queryStatus({ error: new Error("Network down"), isFetching: true })).toBe("loading");
+      expect(queryStatus({ error: NETWORK_DOWN, isFetching: true })).toBe("loading");
     });
 
     it("is done when it asks for nothing", () => {
       expect(queryStatus()).toBe("done");
     });
+  });
 
-    it("is loading while it shows the last search's results", () => {
+  describe("showing the last search's results", () => {
+    it("is loading for an infinite query", () => {
       expect(infiniteStatus({ isPlaceholderData: true, isFetching: true, hasNextPage: true })).toBe(
         "loading",
       );
+    });
+
+    it("is loading for an ordinary query", () => {
+      expect(queryStatus({ data: [], isPlaceholderData: true, isFetching: true }, 12)).toBe(
+        "loading",
+      );
+    });
+
+    it("is done with nothing fetching", () => {
+      expect(queryStatus({ data: [], isPlaceholderData: true }, 12)).toBe("done");
     });
   });
 
   describe("an ordinary query with data", () => {
     it("is done", () => {
-      expect(queryStatus({ data: [] })).toBe("done");
+      expect(queryStatus({ data: [] }, 12)).toBe("done");
     });
 
     it("is loading while it fetches again", () => {
-      expect(queryStatus({ data: [], isFetching: true })).toBe("loading");
+      expect(queryStatus({ data: [], isFetching: true }, 12)).toBe("loading");
     });
 
-    it("is done, keeping its data, when fetching again fails", () => {
-      expect(queryStatus({ data: [], error: new Error("Network down") })).toBe("done");
+    it("is done, keeping its items, when fetching again fails", () => {
+      expect(queryStatus({ data: [], error: NETWORK_DOWN }, 12)).toBe("done");
+    });
+
+    it("is failed when fetching again fails with no items to keep", () => {
+      expect(queryStatus({ data: [], error: NETWORK_DOWN }, 0)).toBe("failed");
     });
   });
 
@@ -74,10 +94,18 @@ describe("getListingStatus", () => {
       expect(infiniteStatus({ hasNextPage: true, isFetching: true })).toBe("loading_more");
     });
 
-    it("is load more failed when a fetch fails", () => {
-      expect(infiniteStatus({ hasNextPage: true, error: new Error("Network down") })).toBe(
-        "load_more_failed",
+    it("is loading more while it retries a page that failed", () => {
+      expect(infiniteStatus({ hasNextPage: true, error: NETWORK_DOWN, isFetching: true })).toBe(
+        "loading_more",
       );
+    });
+
+    it("is load more failed when a fetch fails", () => {
+      expect(infiniteStatus({ hasNextPage: true, error: NETWORK_DOWN })).toBe("load_more_failed");
+    });
+
+    it("is failed when a fetch fails with no items to show", () => {
+      expect(infiniteStatus({ hasNextPage: true, error: NETWORK_DOWN }, 0)).toBe("failed");
     });
   });
 });

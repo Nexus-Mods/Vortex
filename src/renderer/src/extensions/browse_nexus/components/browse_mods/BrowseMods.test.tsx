@@ -9,6 +9,7 @@ import type { Mod } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { ListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
 import { queryClient } from "@/util/queryClient";
 
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
@@ -75,7 +76,7 @@ vi.mock("./mod_list/ModList", () => ({
     mods: ModSummary[];
     activeModId: string;
     listRef: React.RefObject<HTMLDivElement>;
-    status: string;
+    status: ListingStatus;
     onFocusDetails: () => void;
     onRetry: () => void;
     onSelectMod: (id: string, input: string) => void;
