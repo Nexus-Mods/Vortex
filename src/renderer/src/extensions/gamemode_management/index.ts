@@ -63,9 +63,9 @@ import { catalogExtensionGameIds } from "./selectors";
 import {
   makeTierZeroGame,
   synthesizePersistedTierZeroGames,
-  tierZeroGameId,
   unregisterTierZeroGame,
 } from "./tiered/tierZero";
+import { tierZeroGameId } from "./tiered/tierZeroGameId";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IModType } from "./types/IModType";

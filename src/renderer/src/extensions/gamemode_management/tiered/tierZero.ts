@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import { VortexGameId, type GameDomain, type GameId } from "@vortex/shared";
+import type { GameDomain, GameId, VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 
 import type { IGame } from "@/types/IGame";
@@ -10,21 +10,13 @@ import type { IQueryArgEntry } from "@/util/storeQuery";
 
 import { nexusGameId } from "../../nexus_integration/util/convertGameId";
 import { getGameStore } from "../util/getGame";
+import { tierZeroGameId } from "./tierZeroGameId";
 
 const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
 
 /** game ids of games managed without a game extension. Provenance is kept here
  * and not on IGame so nothing about the synthesized object gives it away. */
 const tierZeroGameIds = new Set<GameId>();
-
-/**
- * the id Vortex gives a game it manages without an extension, `tier-0-{gameId}`.
- * Deliberately not the game's nexus domain, so it can't be mistaken for one or collide with
- * the id of an extension game. The domain of such a game is its `details.nexusPageId`.
- */
-export function tierZeroGameId(gameId: GameId): VortexGameId {
-  return VortexGameId(`tier-0-${gameId}`);
-}
 
 export function isTierZeroGame(gameId: GameId): boolean {
   return tierZeroGameIds.has(gameId);
