@@ -84,7 +84,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     [],
   );
   const { viewPicker, editedViewStrip } = useBrowseModsViews(search, panelRefs);
-  const { trackedView, sort, filters, error } = search;
+  const { trackedView, sort, filters, status } = search;
   const changeFilters = useChangeModFilters(search);
   const gameName = useSelector(currentGame)?.name;
   const domain = useGameDomainName();
@@ -126,7 +126,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       />
     );
   };
-  const isEmpty = !search.loading && !error && !mods.length;
+  const isEmpty = status !== "loading" && status !== "failed" && !mods.length;
 
   /**
    * The search the results came from, as its events describe it, kept as a string so it only
@@ -186,7 +186,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
    * level with the list's own empty state: its scroll area's 24px and the listing's 64px.
    */
   const details = () => {
-    if (!shownMod && search.loading) {
+    if (!shownMod && status === "loading") {
       return <ModDetailsSkeleton />;
     }
 
@@ -237,11 +237,6 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
               activeModId={activeMod?.id}
               emptyState={emptyState({ isEnd: false })}
               endOfResults={emptyState({ isEnd: true })}
-              hasMore={search.hasMore}
-              isError={!!error}
-              isLoading={search.loading}
-              isLoadingMore={search.isLoadingMore}
-              isLoadMoreError={!!search.loadMoreError}
               listRef={listRef}
               mods={mods}
               searchKey={search.searchKey}
@@ -252,6 +247,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
                 tracker.trackRetryClicked({ ...searched, pages_loaded: search.pagesLoaded });
               }}
               onSelectMod={selectMod}
+              status={status}
             />
           }
           valueText={(percent) => t("List {{percent}}%", { percent })}

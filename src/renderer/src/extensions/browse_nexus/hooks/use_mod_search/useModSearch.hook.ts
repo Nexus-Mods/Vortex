@@ -14,6 +14,10 @@ import {
   modSearchQuery,
 } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import {
+  getListingStatus,
+  type ListingStatus,
+} from "@/ui/components/listing/listing_status/listingStatus";
 
 import { filtersToSearch } from "../../util/mod_filters/modFilterList";
 import {
@@ -105,19 +109,11 @@ export interface IModSearch extends ReturnType<typeof useModViews> {
   totalCount: number;
   /** How many of the game's mods a mod manager can install, over all time, whatever the view. */
   allModsTotal: number;
-  /** Whether the first page is loading with nothing of it to show; asking again keeps the mods. */
-  loading: boolean;
-  /** Why the first page failed to load, with no mods to show. */
-  error: Error | null;
-  /** Whether a page is loading with mods on screen: the next, or the first again. */
-  isLoadingMore: boolean;
-  /** Why a page failed with mods to show, until it's asked for again. */
-  loadMoreError: Error | null;
-  /** Whether there are pages left to load, and nothing loading that would keep one from loading. */
-  hasMore: boolean;
+  /** Where the pages' loading is; asking for them again keeps the mods on screen. */
+  status: ListingStatus;
   /** How many pages have loaded. */
   pagesLoaded: number;
-  /** Loads the next page, unless one is loading, it's failed, or there are none left. */
+  /** Loads the next page, while the list is `idle`. */
   loadMore: () => void;
   /** Asks for the failed page again; a refused cursor starts the list again from the top. */
   retry: () => void;
@@ -165,7 +161,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
 
   const pages = mods.isPlaceholderData ? undefined : mods.data?.pages;
   const loaded = useMemo(() => uniqueMods(mods.data?.pages), [mods.data?.pages]);
-  const isFirstPageLoading = mods.isFetching && !mods.isFetchingNextPage && !pages;
+  const status = getListingStatus({ query: mods, isInfinite: true, itemCount: loaded.length });
 
   return {
     ...views,
@@ -173,14 +169,10 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
     mods: loaded,
     totalCount: mods.data?.pages[0]?.meta.total_count ?? 0,
     allModsTotal: allMods.data ?? 0,
-    loading: isFirstPageLoading,
-    error: pages ? null : mods.error,
-    isLoadingMore: !!pages && mods.isFetching,
-    loadMoreError: pages && !mods.isFetching ? mods.error : null,
-    hasMore: !!pages && mods.hasNextPage && !mods.isFetching,
+    status,
     pagesLoaded: pages?.length ?? 0,
     loadMore: () => {
-      if (pages && mods.hasNextPage && !mods.isFetching && !mods.isFetchNextPageError) {
+      if (status === "idle") {
         void mods.fetchNextPage();
       }
     },

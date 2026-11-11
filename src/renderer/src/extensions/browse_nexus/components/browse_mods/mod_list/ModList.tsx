@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { Listing } from "@/ui/components/listing/Listing";
+import type { ListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import type { SelectionInput } from "../../../hooks/browse_mods_tracking/browseModsTracker";
@@ -20,17 +21,9 @@ interface IModListProps {
   activeModId: string | undefined;
   /** Picks another mod, by id, told how it was picked. */
   onSelectMod: (id: string, input: SelectionInput) => void;
-  /** Whether the first page is loading. */
-  isLoading: boolean;
-  /** Whether the first page failed to load. */
-  isError: boolean;
-  /** Whether there are more mods to load. */
-  hasMore: boolean;
-  /** Whether a page is loading with mods on screen: the next, or the first again. */
-  isLoadingMore: boolean;
-  /** Whether a later page failed to load. */
-  isLoadMoreError: boolean;
-  /** Asks for the next page, if there is one and nothing's loading. */
+  /** Where the pages' loading is. */
+  status: ListingStatus;
+  /** Asks for the next page, while the list is `idle`. */
   onLoadMore: () => void;
   /** Asks for the page that failed again; focus goes to the list, as the Try again button goes. */
   onRetry: () => void;
@@ -59,19 +52,14 @@ export const ModList = ({
   onSelectMod,
   onFocusDetails,
   listRef,
-  isLoading,
-  isError,
-  hasMore,
-  isLoadingMore,
-  isLoadMoreError,
+  status,
   onLoadMore,
   onRetry,
   emptyState,
   endOfResults,
 }: IModListProps) => {
   const { t } = useTranslation();
-  const isLastPageLoaded =
-    !!mods.length && !hasMore && !isLoading && !isLoadingMore && !isLoadMoreError;
+  const isLastPageLoaded = !!mods.length && status === "done";
   const ownScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = listRef ?? ownScrollRef;
   const activeIndex = mods.findIndex((mod) => mod.id === activeModId);
@@ -96,7 +84,7 @@ export const ModList = ({
     scrollRef,
     mods,
     searchKey,
-    isLoading,
+    isLoading: status === "loading",
     onSelectMod,
     onFocusDetails,
   });
@@ -120,15 +108,11 @@ export const ModList = ({
           entityCount={mods.length}
           errorMessage={t("The mods couldn't be loaded. Try again.")}
           errorTitle={t("Something went wrong")}
-          hasMore={hasMore}
-          isError={isError}
-          isLoading={isLoading}
-          isLoadingMore={isLoadingMore}
-          isLoadMoreError={isLoadMoreError}
           loadMoreErrorMessage={t("More mods couldn't be loaded. Try again.")}
           scrollRef={scrollRef}
           skeletonCount={6}
           SkeletonTile={ModCardSkeleton}
+          status={status}
           onLoadMore={onLoadMore}
           onRetry={() => {
             onRetry();

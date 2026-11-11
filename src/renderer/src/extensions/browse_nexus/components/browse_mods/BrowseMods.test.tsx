@@ -9,6 +9,7 @@ import type { Mod } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { ListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
 import { queryClient } from "@/util/queryClient";
 
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
@@ -65,8 +66,7 @@ vi.mock("./mod_list/ModList", () => ({
     mods,
     activeModId,
     listRef,
-    isError,
-    isLoadMoreError,
+    status,
     onFocusDetails,
     onRetry,
     onSelectMod,
@@ -76,8 +76,7 @@ vi.mock("./mod_list/ModList", () => ({
     mods: ModSummary[];
     activeModId: string;
     listRef: React.RefObject<HTMLDivElement>;
-    isError: boolean;
-    isLoadMoreError: boolean;
+    status: ListingStatus;
     onFocusDetails: () => void;
     onRetry: () => void;
     onSelectMod: (id: string, input: string) => void;
@@ -87,7 +86,9 @@ vi.mock("./mod_list/ModList", () => ({
     <div aria-label="Mods" ref={listRef} role="region" tabIndex={-1}>
       {!mods.length && emptyState}
       {!!mods.length && endOfResults}
-      {(isError || isLoadMoreError) && <button onClick={onRetry}>Retry</button>}
+      {(status === "failed" || status === "load_more_failed") && (
+        <button onClick={onRetry}>Retry</button>
+      )}
       {mods.map((mod) => (
         <button
           data-mod-card
@@ -142,8 +143,7 @@ const FILTERS = { ...NO_FILTERS, timeRange: "7" } as const;
 const search = (mods: ModSummary[], loading = false, overrides: Partial<IModSearch> = {}) =>
   ({
     mods,
-    loading,
-    error: null,
+    status: loading ? "loading" : "done",
     retry: vi.fn(),
     viewId: "trending",
     trackedView: "trending",
@@ -388,7 +388,7 @@ describe("BrowseMods", () => {
   });
 
   it("counts retrying a search that failed", async () => {
-    const failed = search([], false, { error: new Error("offline") });
+    const failed = search([], false, { status: "failed" });
     const { propertiesOf } = renderComponent(failed);
 
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -400,7 +400,7 @@ describe("BrowseMods", () => {
 
   it("counts retrying a later page that failed, with how many pages had loaded", async () => {
     const failed = search([mod("1"), mod("2")], false, {
-      loadMoreError: new Error("offline"),
+      status: "load_more_failed",
       pagesLoaded: 2,
     });
     const { propertiesOf } = renderComponent(failed);
