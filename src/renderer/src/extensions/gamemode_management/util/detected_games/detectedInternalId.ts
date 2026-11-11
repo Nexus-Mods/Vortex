@@ -15,6 +15,9 @@ import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
  *
  * undefined when no known game matches the domain, for the caller to decide what id the game
  * will get.
+ *
+ * @deprecated Use `convertId(gameData(state), { gameDomain, discovered }, "vortexGameId")`, which
+ * prefers the installed game among those sharing a domain and returns `undefined` when none match.
  */
 export function detectedInternalId(
   knownGames: IGameStored[],
