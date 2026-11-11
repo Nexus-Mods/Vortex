@@ -262,6 +262,7 @@ describe("ModList", () => {
     [27, false],
     [30, true],
     [33, false],
+    [60, true],
   ])("nudges the user back to their game at Load more after %i pages: %s", (pages, isShown) => {
     renderComponent({ mods: modsUpTo(3), pagesLoaded: pages, status: "paused", totalCount: 2438 });
 

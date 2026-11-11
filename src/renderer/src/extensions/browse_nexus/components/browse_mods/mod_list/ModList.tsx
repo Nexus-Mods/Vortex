@@ -26,8 +26,8 @@ import { isBreakNudgePause } from "../../../util/break_nudge/breakNudge";
 import { ModCard } from "../mod_card/ModCard";
 import { ModCardSkeleton } from "../mod_card/ModCard.skeleton";
 
-/** How many mods Load more nudges the user back to their game at, once, at the first pause past. */
-const NUDGE_AT_MODS = 600;
+/** How often, in mods, Load more nudges the user back to their game, at the first pause past. */
+const NUDGE_EVERY_MODS = 600;
 
 interface IModListProps {
   /** The mods loaded so far, in order. */
@@ -160,7 +160,7 @@ export const ModList = ({
           loadMoreNote={
             isBreakNudgePause({
               loaded: pagedCount,
-              threshold: NUDGE_AT_MODS,
+              every: NUDGE_EVERY_MODS,
               perPause: PAGES_BEFORE_PAUSE * MODS_PER_PAGE,
             })
               ? t("{{loaded}} mods later... remember the game you were going to play?", {
