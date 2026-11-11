@@ -11,20 +11,23 @@ import { useTranslation } from "react-i18next";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { Listing } from "@/ui/components/listing/Listing";
-import type {
-  ListingStatus,
-  LoadMoreSource,
+import {
+  type ListingStatus,
+  type LoadMoreSource,
+  PAGES_BEFORE_PAUSE,
 } from "@/ui/components/listing/listing_status/listingStatus";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import type { SelectionInput } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { useModListKeyboard } from "../../../hooks/use_mod_list_keyboard/useModListKeyboard.hook";
 import { useModListVirtualizer } from "../../../hooks/use_mod_list_virtualizer/useModListVirtualizer.hook";
+import { MODS_PER_PAGE } from "../../../hooks/use_mod_search/useModSearch.hook";
+import { isBreakNudgePause } from "../../../util/break_nudge/breakNudge";
 import { ModCard } from "../mod_card/ModCard";
 import { ModCardSkeleton } from "../mod_card/ModCard.skeleton";
 
-/** How many mods loaded before Load more nudges the user back to their game. */
-const NUDGE_AFTER_MODS = 600;
+/** How many mods Load more nudges the user back to their game at, once, at the first pause past. */
+const NUDGE_AT_MODS = 600;
 
 interface IModListProps {
   /** The mods loaded so far, in order. */
@@ -39,13 +42,15 @@ interface IModListProps {
   status: ListingStatus;
   /** How many mods the search found, for the count over Load more. */
   totalCount: number;
+  /** How many pages have loaded, for the note over Load more, which counts them in full pages. */
+  pagesLoaded: number;
   /** Asks for the next page: as the list's end nears, or from Load more, back on the last card. */
   onLoadMore: (source: LoadMoreSource) => void;
   /** Asks for the page that failed again; focus goes to the list, as the Try again button goes. */
   onRetry: () => void;
   /** Moves focus into the details pane, for Right from a card. */
   onFocusDetails: () => void;
-  /** Called as Down moves focus past the last mod onto Load more, passing it rather than stopping. */
+  /** Called as Down moves focus past the last mod onto Load more, passing rather than stopping. */
   onPassLastMod?: () => void;
   /** Shown in place of the mods when there are none. */
   emptyState: ReactNode;
@@ -81,6 +86,7 @@ export const ModList = ({
   listRef,
   status,
   totalCount,
+  pagesLoaded,
   onLoadMore,
   onRetry,
   emptyState,
@@ -89,6 +95,7 @@ export const ModList = ({
   const { t } = useTranslation();
   const isLastPageLoaded = !!mods.length && status === "done";
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pagedCount = pagesLoaded * MODS_PER_PAGE;
   const cards = useRef(new Map<number, HTMLElement>()).current;
   const loadMoreRef = useRef<HTMLButtonElement>(null);
   const activeIndex = mods.findIndex((mod) => mod.id === activeModId);
@@ -151,9 +158,13 @@ export const ModList = ({
           loadMoreErrorMessage={t("More mods couldn't be loaded. Try again.")}
           loadMoreLabel={t("Load more mods")}
           loadMoreNote={
-            mods.length >= NUDGE_AFTER_MODS
+            isBreakNudgePause({
+              loaded: pagedCount,
+              threshold: NUDGE_AT_MODS,
+              perPause: PAGES_BEFORE_PAUSE * MODS_PER_PAGE,
+            })
               ? t("{{loaded}} mods later... remember the game you were going to play?", {
-                  loaded: numeral(mods.length).format("0,0"),
+                  loaded: numeral(pagedCount).format("0,0"),
                 })
               : undefined
           }
@@ -169,9 +180,18 @@ export const ModList = ({
           onLoadMore={(source) => {
             onLoadMore(source);
 
-            if (source === "button") {
-              cards.get(mods.length - 1)?.focus({ preventScroll: true });
+            if (source !== "button") {
+              return;
             }
+
+            const lastCard = cards.get(mods.length - 1);
+
+            if (lastCard) {
+              lastCard.focus({ preventScroll: true });
+              return;
+            }
+
+            scrollRef.current?.focus();
           }}
           onRetry={() => {
             onRetry();

@@ -484,6 +484,23 @@ describe("useModSearch", () => {
     expect(result.current.status).toBe("idle");
   });
 
+  it("starts again from page 1 for a new sort while paused", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("endorsements", 45, { ids: ["3"], next: "page-4" });
+    await waitFor(() => expect(result.current.status).toBe("paused"));
+
+    act(() => result.current.setSort({ field: "downloads" }));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("downloads", 45, { ids: ["a"], next: "d-2" });
+
+    await waitFor(() => expect(idsOf(result.current.mods)).toEqual(["a"]));
+    expect(result.current.pagesLoaded).toBe(1);
+    expect(result.current.status).toBe("idle");
+  });
+
   it("asks for the next page once when Load more is pressed twice before it re-renders", async () => {
     const { result } = render();
     await loadTwoPages(result, "page-3");

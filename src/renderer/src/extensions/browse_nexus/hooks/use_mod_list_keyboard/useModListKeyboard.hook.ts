@@ -13,6 +13,13 @@ const FROM_LIST: Partial<Record<string, "first" | "last">> = {
   End: "last",
 };
 
+/** Which mod each key picks from what's after the last card, such as Load more. */
+const FROM_AFTER_LAST: Partial<Record<string, "first" | "last">> = {
+  ArrowUp: "last",
+  Home: "first",
+  End: "last",
+};
+
 /** Which mod each key moves to from the one at `at`, of the mods up to `last`. */
 const FROM_CARD: Partial<Record<string, (at: number, last: number) => number>> = {
   ArrowDown: (at) => at + 1,
@@ -96,63 +103,65 @@ export const useModListKeyboard = ({
     focusTarget();
   };
 
-  return (event: KeyboardEvent<HTMLDivElement>) => {
-    if (hasModifierKey(event) || !mods.length || isLoading) {
-      return;
-    }
+  /** Picks the first or last mod, as `ends` says for the key, if it says anything. */
+  const moveToEnd = (
+    event: KeyboardEvent<HTMLDivElement>,
+    ends: Partial<Record<string, "first" | "last">>,
+  ) => {
+    const end = ends[event.key];
 
+    if (end) {
+      moveTo(event, end === "last" ? mods.length - 1 : 0);
+    }
+  };
+
+  /** Moves from the card at `at`: past the last card, to another, or into the details. */
+  const moveFromCard = (event: KeyboardEvent<HTMLDivElement>, at: number) => {
     const last = mods.length - 1;
-    const at =
-      event.target instanceof HTMLElement
-        ? event.target.closest<HTMLElement>("[data-index]")?.dataset.index
-        : undefined;
-
-    if (event.target === event.currentTarget) {
-      const end = FROM_LIST[event.key];
-
-      if (end) {
-        moveTo(event, end === "last" ? last : 0);
-      }
-
-      return;
-    }
-
     const afterLastCard = afterLastCardRef?.current;
 
-    if (!!afterLastCard && event.target === afterLastCard) {
-      if (event.key === "ArrowUp") {
-        moveTo(event, last);
-        return;
-      }
-
-      if (event.key === "Home") {
-        moveTo(event, 0);
-      }
-
-      if (event.key === "End") {
-        moveTo(event, last);
-      }
-
-      return;
-    }
-
-    if (event.key === "ArrowDown" && Number(at) === last && afterLastCard) {
+    if (event.key === "ArrowDown" && at === last && afterLastCard) {
       event.preventDefault();
       afterLastCard.focus();
       onPassLastCard?.();
       return;
     }
 
-    const step = at === undefined ? undefined : FROM_CARD[event.key];
+    const step = FROM_CARD[event.key];
 
     if (step) {
-      moveTo(event, Math.min(Math.max(step(Number(at), last), 0), last));
+      moveTo(event, Math.min(Math.max(step(at, last), 0), last));
       return;
     }
 
-    if (event.key === "ArrowRight" && at !== undefined) {
+    if (event.key === "ArrowRight") {
       event.preventDefault();
       onFocusDetails();
+    }
+  };
+
+  return (event: KeyboardEvent<HTMLDivElement>) => {
+    if (hasModifierKey(event) || !mods.length || isLoading) {
+      return;
+    }
+
+    if (event.target === event.currentTarget) {
+      moveToEnd(event, FROM_LIST);
+      return;
+    }
+
+    if (event.target === afterLastCardRef?.current) {
+      moveToEnd(event, FROM_AFTER_LAST);
+      return;
+    }
+
+    const at =
+      event.target instanceof HTMLElement
+        ? event.target.closest<HTMLElement>("[data-index]")?.dataset.index
+        : undefined;
+
+    if (at !== undefined) {
+      moveFromCard(event, Number(at));
     }
   };
 };

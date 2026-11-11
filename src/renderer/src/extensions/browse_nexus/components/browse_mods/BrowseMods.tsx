@@ -253,6 +253,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
               mods={mods}
               searchKey={search.searchKey}
               status={status}
+              pagesLoaded={search.pagesLoaded}
               totalCount={search.totalCount}
               onFocusDetails={focusDetails}
               onPassLastMod={cancelPick}

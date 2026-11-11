@@ -147,27 +147,19 @@ export const Listing = ({
 
         {status === "paused" && !!onLoadMore && (
           <div className="flex flex-col items-center gap-y-3 border-t border-stroke-weak px-3 py-4">
-            {!!loadMoreNote && (
+            {(!!loadMoreNote || !!loadMoreSummary) && (
               <Typography
                 appearance="moderate"
+                as="div"
                 brand="neutral-translucent"
-                className="text-center"
-                data-testid="listing-load-more-note"
+                className="space-y-3 text-center"
                 typographyType="body-sm"
               >
-                {loadMoreNote}
-              </Typography>
-            )}
+                {!!loadMoreNote && <p data-testid="listing-load-more-note">{loadMoreNote}</p>}
 
-            {!!loadMoreSummary && (
-              <Typography
-                appearance="moderate"
-                brand="neutral-translucent"
-                className="text-center"
-                data-testid="listing-load-more-summary"
-                typographyType="body-sm"
-              >
-                {loadMoreSummary}
+                {!!loadMoreSummary && (
+                  <p data-testid="listing-load-more-summary">{loadMoreSummary}</p>
+                )}
               </Typography>
             )}
 

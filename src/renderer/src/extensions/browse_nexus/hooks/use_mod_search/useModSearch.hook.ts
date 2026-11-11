@@ -45,7 +45,7 @@ const modSearchText = (state: IState) => state.session.browse?.modSearchText;
 export const MODS_PER_PAGE = 20;
 
 /** The statuses `loadMore` asks for the next page in: loading as it scrolls, or paused. */
-const CAN_LOAD_MORE: readonly ListingStatus[] = ["idle", "paused"];
+const LOAD_MORE_STATUSES: readonly ListingStatus[] = ["idle", "paused"];
 
 /** The API's bounds on a name search: characters other than spaces at least, and in all. */
 export const MIN_QUERY_CHARACTERS = 2;
@@ -215,7 +215,7 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
     status,
     pagesLoaded: pages?.length ?? 0,
     loadMore: () => {
-      if (CAN_LOAD_MORE.includes(status)) {
+      if (LOAD_MORE_STATUSES.includes(status)) {
         void mods.fetchNextPage({ cancelRefetch: false });
       }
     },
