@@ -12,6 +12,7 @@ type IProps = React.ComponentProps<typeof ModListEmptyState>;
 const renderState = (kind: EmptyStateKind, props: Partial<IProps> = {}) => {
   const callbacks = {
     onRemoveFilters: vi.fn(),
+    onClearSearch: vi.fn(),
     onSearchWebsite: vi.fn(),
     onLearnMore: vi.fn(),
   };
@@ -78,6 +79,50 @@ describe("ModListEmptyState", () => {
 
     expect(callbacks.onRemoveFilters).toHaveBeenCalledOnce();
     expect(callbacks.onSearchWebsite).toHaveBeenCalledOnce();
+  });
+
+  it.each<EmptyStateKind>(["search_only", "search_and_filters", "end_of_results"])(
+    "offers to clear the search in the %s state while there's one",
+    async (kind) => {
+      const callbacks = renderState(kind);
+
+      await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
+
+      expect(callbacks.onClearSearch).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each<EmptyStateKind>(["filters_only", "nothing_for_game"])(
+    "doesn't offer to clear a search in the %s state",
+    (kind) => {
+      renderState(kind);
+      expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
+    },
+  );
+
+  it("doesn't offer to clear a search at the end without one", () => {
+    renderState("end_of_results", { searchText: undefined });
+    expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
+  });
+
+  it("says the end is every mod for the search while there's one, or for the view", () => {
+    const { unmount } = render(
+      <ModListEmptyState
+        filterCount={0}
+        kind="end_of_results"
+        searchText="sky"
+        onClearSearch={vi.fn()}
+        onLearnMore={vi.fn()}
+        onRemoveFilters={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByText("That's every mod Vortex can show for this search."),
+    ).toBeInTheDocument();
+
+    unmount();
+    renderState("end_of_results", { searchText: undefined });
+    expect(screen.getByText("That's every mod Vortex can show for this view.")).toBeInTheDocument();
   });
 
   it("leaves out Search on website without somewhere to search", () => {

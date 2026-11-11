@@ -311,41 +311,4 @@ describe("BrowseModsBar", () => {
       expect.objectContaining({ action: "view-options", toolbar: "browse_mods" }),
     ]);
   });
-
-  describe("search", () => {
-    const searchField = () => screen.getByRole("textbox", { name: "Search mods..." });
-
-    it("searches the mods' names on Enter", async () => {
-      const search = searchWith({});
-      renderBar(search);
-
-      await userEvent.type(searchField(), "sky{Enter}");
-
-      expect(search.setSearchText).toHaveBeenCalledExactlyOnceWith("sky");
-    });
-
-    it("doesn't search while typing", async () => {
-      const search = searchWith({});
-      renderBar(search);
-
-      await userEvent.type(searchField(), "sky");
-
-      expect(search.setSearchText).not.toHaveBeenCalled();
-    });
-
-    it("shows the search the mods are searched for", () => {
-      renderBar({ ...searchWith({}), searchText: "sky" });
-
-      expect(searchField()).toHaveValue("sky");
-    });
-
-    it("clears the search at once", async () => {
-      const search = { ...searchWith({}), searchText: "sky" };
-      renderBar(search);
-
-      await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
-
-      expect(search.setSearchText).toHaveBeenCalledExactlyOnceWith("");
-    });
-  });
 });

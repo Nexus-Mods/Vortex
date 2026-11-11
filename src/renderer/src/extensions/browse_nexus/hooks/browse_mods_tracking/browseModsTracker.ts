@@ -33,12 +33,16 @@ export type IFilterEventProps = {
   adult: ModAdultContent;
 };
 
-/** The search a results event is about: its view, sort and filters. */
+/** The search a results event is about: its view, sort and filters, and whether names were searched. */
 export type ISearchEventProps = {
   view: TrackedView;
   sort_field: ModSortField;
   sort_direction: ModSortDirection;
+  has_search: boolean;
 } & IFilterEventProps;
+
+/** Where a search was cleared from: the search box, or an empty state's Clear search. */
+export type SearchClearSource = "box" | "empty_state";
 
 /** The mod a 1-click upsell is for, and what the click would have done: install, download or update. */
 type OneClickUpsellProps = { mod_uid: string; action: "install" | "download" | "update" };
@@ -189,6 +193,15 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
 
     trackGalleryPaged: (props: { mod_uid: string; direction: GalleryDirection }) =>
       track("browse_mods_gallery_paged", props),
+
+    // A search of the mods' names, on Enter; `query_length` is how long it is, never what it says.
+    trackSearchSubmitted: (props: { view: TrackedView; query_length: number }) =>
+      track("browse_mods_search_submitted", props),
+
+    // The box emptied, by its clear button, Escape or deleting the text, or an empty state's Clear
+    // search.
+    trackSearchCleared: (props: { view: TrackedView; source: SearchClearSource }) =>
+      track("browse_mods_search_cleared", props),
 
     // Once per search that comes back empty.
     trackNoResults: (props: ISearchEventProps) => track("browse_mods_no_results", props),

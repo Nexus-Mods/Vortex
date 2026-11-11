@@ -1,5 +1,5 @@
 import numeral from "numeral";
-import React, { type ReactNode, useState } from "react";
+import React, { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
@@ -9,12 +9,11 @@ import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics
 import { Typography } from "@/ui/components/typography/Typography";
 import { PageContent } from "@/views/components/Page/PageContent";
 
-import { Search } from "../../../../gamemode_management/components/search/Search";
 import type { FilterSource } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import type { IBrowseModsPanelRefs } from "../../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
 import { useChangeModFilters } from "../../../hooks/use_change_mod_filters/useChangeModFilters.hook";
-import { type IModSearch } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { IModSearch } from "../../../hooks/use_mod_search/useModSearch.hook";
 import { MOD_FILTERS } from "../../../util/mod_filters/modFilterList";
 import {
   type IModFilters,
@@ -25,6 +24,7 @@ import {
 } from "../../../util/mod_views/modViews";
 import { ModFilterChip } from "../mod_filters/ModFilterChip";
 import { ModFilters } from "../mod_filters/ModFilters";
+import { ModSearchBox } from "../mod_search_box/ModSearchBox";
 import { ModSortOptions } from "../mod_sort_options/ModSortOptions";
 
 interface IBrowseModsBarProps {
@@ -38,12 +38,11 @@ interface IBrowseModsBarProps {
 
 /**
  * The bar over Browse's mods: its views, results count, a chip for each filter while it narrows
- * the mods or is locked, filter and view options, and the search. The search applies on Enter,
- * and clears at once when emptied. Counts each change, and the toolbar's clicks.
+ * the mods or is locked, filter and view options, and the search box. Counts each change, and the
+ * toolbar's clicks.
  */
 export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarProps) => {
   const { t } = useTranslation();
-  const [searchDraft, setSearchDraft] = useState(search.searchText);
   const tracker = useBrowseModsTracker();
   const toolbarTracking = useToolbarAnalytics("browse_mods");
   const view = search.trackedView;
@@ -166,18 +165,7 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
               />
             </Toolbar>
 
-            <Search
-              placeholder={t("Search mods...")}
-              value={searchDraft}
-              onChange={(text) => {
-                setSearchDraft(text);
-
-                if (!text) {
-                  search.setSearchText("");
-                }
-              }}
-              onSubmit={() => search.setSearchText(searchDraft)}
-            />
+            <ModSearchBox search={search} />
           </div>
         </div>
       </PageContent>

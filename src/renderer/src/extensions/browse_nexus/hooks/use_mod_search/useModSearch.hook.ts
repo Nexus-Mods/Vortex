@@ -45,8 +45,8 @@ const modSearchText = (state: IState) => state.session.browse?.modSearchText;
 export const MODS_PER_PAGE = 20;
 
 /** The API's bounds on a name search: characters other than spaces at least, and in all. */
-const MIN_QUERY_CHARACTERS = 2;
-const MAX_QUERY_LENGTH = 100;
+export const MIN_QUERY_CHARACTERS = 2;
+export const MAX_QUERY_LENGTH = 100;
 
 /**
  * The name search the API is sent for the text entered: trimmed and cut to its limit, or none
@@ -61,6 +61,9 @@ const queryFor = (text: string | undefined) => {
 
   return query;
 };
+
+/** Whether the text entered is long enough to search for; empty text clears the search instead. */
+export const isSearchable = (text: string) => !!queryFor(text);
 
 interface IModsSearch {
   /** The game whose mods to search; none searches nothing. */
