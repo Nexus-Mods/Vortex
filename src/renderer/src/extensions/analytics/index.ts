@@ -8,6 +8,7 @@ import { getCPUArch } from "@/util/nativeArch";
 
 import { isHidpiDisplay } from "../../contexts/WindowContext";
 import { activeGameId, activeProfileId } from "../../util/selectors";
+import { isLoggedIn } from "../nexus_integration/selectors";
 import { nexusGamesProm } from "../nexus_integration/util";
 import { zoomFromState } from "../settings_interface/utils/zoom";
 import { setAnalytics } from "./actions/analytics.action";
@@ -28,6 +29,13 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "analytics"], settingsReducer);
   context.registerReducer(["persistent", "analyticsTelemetry"], telemetryReducer);
   context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
+
+  // Set in init, not once, so the check is in place before any other
+  // extension's startup code tracks an event. The store isn't set until after
+  // every init has run, hence the optional chain.
+  AnalyticsMixpanel.setConsentGetter(
+    () => context.api.store?.getState().settings.analytics?.enabled,
+  );
 
   context.once(() => {
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
@@ -215,9 +223,10 @@ function init(context: IExtensionContext): boolean {
                     {
                       label: "Yes, share anonymous data",
                       action: () => {
-                        startAnalytics();
+                        // Save consent before starting, or the tracker drops app_launched.
                         ignoreNextAnalyticsStateChange = true;
                         context.api.store.dispatch(setAnalytics(true));
+                        startAnalytics();
                       },
                       default: true,
                     },
@@ -231,6 +240,12 @@ function init(context: IExtensionContext): boolean {
           },
         ],
       });
+    }
+
+    if (!isLoggedIn(context.api.getState())) {
+      // Launched logged out: there's no login to restore, so close the startup
+      // queue rather than hold events for whoever logs in next.
+      AnalyticsMixpanel.stop();
     }
 
     if (enabled() === undefined && !!getUserInfo()) {
