@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
 
 import { makeGameStored } from "../../test-utils/builders";
-import { findGame, type IGameData } from "./queries";
+import { convertId, findGame, type IGameData } from "./queries";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 
 // Dummy games. A and B are extension games, the tier zero game is managed without an
@@ -268,5 +268,23 @@ describe("findGame", () => {
         expect(result?.id).toBe(sharedB);
       });
     });
+  });
+});
+
+// the lookups themselves are covered by findGame, this is only the id it hands back
+describe("convertId", () => {
+  const data = gameData({
+    known: [game(gameA, domainA), game(gameB, domainB)],
+    nexusGames: [listed(numericA, domainA), listed(numericB, domainB)],
+  });
+
+  it("converts to the id of the game found", () => {
+    expect(convertId(data, { gameDomain: domainB }, "vortexGameId")).toBe(gameB);
+    expect(convertId(data, { gameId: numericB }, "vortexGameId")).toBe(gameB);
+  });
+
+  it("is undefined when no game is found", () => {
+    expect(convertId(data, { gameDomain: tierZeroDomain }, "vortexGameId")).toBeUndefined();
+    expect(convertId(data, { gameId: numericTierZero }, "vortexGameId")).toBeUndefined();
   });
 });

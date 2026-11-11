@@ -78,3 +78,18 @@ export function findGame(data: IGameData, query: GameQuery): IGameStored | undef
     });
   }
 }
+
+/**
+ * Convert an id to the id of a registered game. `undefined` means no known game matches,
+ * the answer is never a guess at the id an extension might register one under.
+ *
+ * Converting an id to its own kind is a type error, there is nothing to look up.
+ */
+export function convertId(
+  data: IGameData,
+  query: Exclude<GameQuery, { vortexGameId: VortexGameId }>,
+  to: "vortexGameId",
+): VortexGameId | undefined {
+  const game = findGame(data, query);
+  return game === undefined ? undefined : VortexGameId(game.id);
+}
