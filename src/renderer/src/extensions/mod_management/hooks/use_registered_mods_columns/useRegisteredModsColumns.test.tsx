@@ -37,8 +37,16 @@ import { useRegisteredModsColumns } from "./useRegisteredModsColumns.hook";
 
 // --- Helpers ---
 
+// Toggleable, as most extensions' columns are.
 const attribute = (attr: Partial<ITableAttribute<IModWithState>>): ITableAttribute =>
-  ({ id: "extra", name: "Extra", placement: "table", edit: {}, ...attr }) as ITableAttribute;
+  ({
+    id: "extra",
+    name: "Extra",
+    placement: "table",
+    isToggleable: true,
+    edit: {},
+    ...attr,
+  }) as ITableAttribute;
 
 const row = (mod: object = {}): IModRow => ({
   mod: { id: "a", type: "", attributes: {}, ...mod } as unknown as IModWithState,
@@ -149,12 +157,38 @@ describe("useRegisteredModsColumns", () => {
     expect(result.current.columns).toEqual([]);
   });
 
-  it("keeps its position, which places it among the table's own", () => {
+  it("keeps its position, or the legacy default, which places it among the table's own", () => {
     registered.attributes = [attribute({ id: "loadOrder", position: 30 }), attribute({})];
 
     const { columns } = renderRegistered();
 
-    expect(columns.map(({ position }) => position)).toEqual([30, undefined]);
+    expect(columns.map(({ position }) => position)).toEqual([30, 100]);
+  });
+
+  // As the legacy table shows a game's Compatibility column, which says nothing of toggling.
+  it("always shows a column the user can't toggle, if it's shown by default", () => {
+    registered.attributes = [attribute({ id: "sdv-compatibility", isToggleable: undefined })];
+
+    const { columns, defaultShown } = renderRegistered();
+
+    expect(columns).toMatchObject([{ id: "sdv-compatibility", isToggleable: false }]);
+    expect(defaultShown).toEqual([]);
+  });
+
+  // As the script extender's Extender Error, which its extension shows itself (LAZ-1579).
+  it("leaves out a column the user can't toggle that's hidden by default", () => {
+    registered.attributes = [
+      attribute({
+        id: "script-extender-error-check",
+        isToggleable: false,
+        isDefaultVisible: false,
+      }),
+    ];
+
+    const { columns, defaultShown } = renderRegistered();
+
+    expect(columns).toEqual([]);
+    expect(defaultShown).toEqual([]);
   });
 
   // As in the legacy table, a column is shown unless it says not to be.
@@ -199,6 +233,18 @@ describe("useRegisteredModsColumns", () => {
     registered.attributes = [
       attribute({ id: "notes", placement: "detail", cssClass }),
       attribute({ id: "sdv", condition: () => false, isDefaultVisible: false, cssClass }),
+    ];
+
+    renderRegistered().rowClassName(row(), () => false);
+
+    expect(cssClass.mock.calls.map(([, enabled]) => enabled)).toEqual([true, false]);
+  });
+
+  it("tells a column the user can't toggle whether it's shown by default, whatever the view", () => {
+    const cssClass = vi.fn((_mod: IModWithState, _enabled: boolean) => "");
+    registered.attributes = [
+      attribute({ id: "fixed", isToggleable: false, cssClass }),
+      attribute({ id: "error", isToggleable: false, isDefaultVisible: false, cssClass }),
     ];
 
     renderRegistered().rowClassName(row(), () => false);
@@ -257,6 +303,27 @@ describe("useRegisteredModsColumns", () => {
       expect(renderCell().cell()).toBeEmptyDOMElement();
     });
 
+    // Such as the Dependencies column, whose rules the dependency manager keeps outside the mods.
+    it("is drawn again when the extension says the data it's from changed", () => {
+      let label = "No rules";
+      let changed = () => {};
+      registered.attributes = [
+        attribute({
+          customRenderer: () => <span>{label}</span>,
+          externalData: (onChanged) => {
+            changed = onChanged;
+          },
+        }),
+      ];
+      const { cell } = renderCell();
+      expect(cell()).toHaveTextContent("No rules");
+
+      label = "1 rule";
+      act(() => changed());
+
+      expect(cell()).toHaveTextContent("1 rule");
+    });
+
     it("draws nothing, in no gate, when its renderer draws nothing", () => {
       registered.attributes = [attribute({ customRenderer: () => null })];
 
@@ -303,6 +370,23 @@ describe("useRegisteredModsColumns", () => {
       const { cell } = renderCell();
 
       await waitFor(() => expect(cell()).toHaveTextContent("Compatible"));
+    });
+
+    it("ignores one worked out asynchronously that a later one has replaced", async () => {
+      const resolvers: Array<(value: string) => void> = [];
+      registered.attributes = [
+        attribute({
+          isVolatile: true,
+          calc: () => new Promise<string>((resolve) => resolvers.push(resolve)),
+        }),
+      ];
+      const { cell, redraw } = renderCell();
+      redraw({ b: row({ id: "b" }).mod });
+
+      await act(async () => resolvers[1]("Current"));
+      await act(async () => resolvers[0]("Stale"));
+
+      expect(cell()).toHaveTextContent("Current");
     });
 
     // As the legacy table logs it and carries on, an extension's bug doesn't take the table down.

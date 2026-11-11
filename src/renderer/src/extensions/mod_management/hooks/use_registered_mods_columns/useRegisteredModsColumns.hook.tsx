@@ -15,7 +15,10 @@ import { activeGameId } from "@/util/selectors";
 
 import type { IModWithState } from "../../types/IModProps";
 import type { IModRow } from "../../util/mods_table_views/modsTableViews";
-import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
+import {
+  DEFAULT_POSITION,
+  type IModsTableColumn,
+} from "../use_mods_table_columns/useModsTableColumns.hook";
 
 /** A `calc` value as text, a date in the user's language; none for one that has no text to show. */
 const valueText = (value: unknown): string | undefined => {
@@ -143,6 +146,16 @@ const isNewTableShown = (state: IState) => state.settings.mods?.betaTable === tr
 
 const isInTable = ({ placement }: ITableAttribute) => placement === "table" || placement === "both";
 
+/** Whether the legacy table shows an attribute's column before the user, or the extension, says. */
+const isDefaultVisible = (attribute: ITableAttribute) => attribute.isDefaultVisible ?? true;
+
+/**
+ * Whether it's a column here: one the user can't toggle shows only if it does by default, as
+ * the legacy table leaves one that doesn't for its extension to show (LAZ-1579).
+ */
+const isOffered = (attribute: ITableAttribute) =>
+  isInTable(attribute) && (attribute.isToggleable === true || isDefaultVisible(attribute));
+
 /**
  * How many times each attribute's `externalData` has said the data it's from changed, by id:
  * the legacy table's way to hear of changes to data outside the mods. Extensions give no way to
@@ -196,15 +209,17 @@ export const useRegisteredModsColumns = (
   const registered = useMemo(() => {
     const offered = attributes.filter(
       (attribute) =>
-        isInTable(attribute) && !ownIds.has(attribute.id) && (attribute.condition?.() ?? true),
+        isOffered(attribute) && !ownIds.has(attribute.id) && (attribute.condition?.() ?? true),
     );
+    const toggleable = offered.filter((attribute) => attribute.isToggleable === true);
     const columns = offered.map((attribute): IModsTableColumn => {
       const header = preT(t, attribute.name);
       return {
         id: attribute.id,
         header,
-        isToggleable: true,
-        position: attribute.position,
+        isToggleable: attribute.isToggleable === true,
+        // Always one, so a column the user can't toggle takes its place too, not the front.
+        position: attribute.position ?? DEFAULT_POSITION,
         cell: ({ mod }) =>
           attribute.customRenderer !== undefined ? (
             <CustomCell attribute={attribute} mod={mod} t={t} />
@@ -221,39 +236,35 @@ export const useRegisteredModsColumns = (
       };
     });
 
-    const defaultShown = offered
-      .filter((attribute) => attribute.isDefaultVisible ?? true)
-      .map(({ id }) => id);
+    const defaultShown = toggleable.filter(isDefaultVisible).map(({ id }) => id);
+    const toggleableIds = new Set(toggleable.map(({ id }) => id));
 
-    return { columns, defaultShown };
+    return { columns, defaultShown, toggleableIds };
     // A condition is mostly which game is active, so it's asked again when that changes.
   }, [attributes, gameId, mods, ownIds, t, versions]);
 
+  const { columns, defaultShown, toggleableIds } = registered;
+
   /**
    * The classes extensions add to a row: from every attribute, as the legacy table asks them,
-   * each told whether its column is shown, or, for one that isn't a column here, whether it
-   * would be by default.
+   * each told whether its column is shown: as the view says, for one the user toggles, and
+   * otherwise whether it is by default.
    */
   const rowClassName = useCallback(
-    ({ mod }: IModRow, isColumnShown: (columnId: string) => boolean) => {
-      const isColumn = (id: string) =>
-        ownIds.has(id) || registered.columns.some((column) => column.id === id);
-      return (
-        attributes
-          .map((attribute) =>
-            attribute.cssClass?.(
-              mod,
-              isColumn(attribute.id)
-                ? isColumnShown(attribute.id)
-                : (attribute.isDefaultVisible ?? true),
-            ),
-          )
-          .filter(Boolean)
-          .join(" ") || undefined
-      );
-    },
-    [attributes, ownIds, registered.columns],
+    ({ mod }: IModRow, isColumnShown: (columnId: string) => boolean) =>
+      attributes
+        .map((attribute) =>
+          attribute.cssClass?.(
+            mod,
+            ownIds.has(attribute.id) || toggleableIds.has(attribute.id)
+              ? isColumnShown(attribute.id)
+              : isDefaultVisible(attribute),
+          ),
+        )
+        .filter(Boolean)
+        .join(" ") || undefined,
+    [attributes, ownIds, toggleableIds],
   );
 
-  return { ...registered, rowClassName };
+  return { columns, defaultShown, rowClassName };
 };

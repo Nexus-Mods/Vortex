@@ -830,12 +830,20 @@ describe("ModsTableSwitch", () => {
             id: "endorsed",
             name: "Endorsed",
             placement: "table",
+            isToggleable: true,
             position: 45,
             calc: () => "Undecided",
             edit: {},
           },
           { id: "category", name: "Category", placement: "table", edit: {} },
-          { id: "tracked", name: "Tracked", placement: "table", isDefaultVisible: false, edit: {} },
+          {
+            id: "tracked",
+            name: "Tracked",
+            placement: "table",
+            isToggleable: true,
+            isDefaultVisible: false,
+            edit: {},
+          },
         ];
 
         renderSwitch({ a: mod("a", "Alpha", true) });
