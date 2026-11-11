@@ -7,6 +7,19 @@ import { makeGameStored } from "../../test-utils/builders";
 import { findGame, type IGameData } from "./queries";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 
+// Dummy games. A and B are extension games, the tier zero game is managed without an
+// extension, and the two shared games are on one Nexus Mods page.
+const gameA = VortexGameId("game-a");
+const gameB = VortexGameId("game-b");
+const tierZeroGame = VortexGameId("tier-0-1001");
+const sharedA = VortexGameId("shared-a");
+const sharedB = VortexGameId("shared-b");
+
+const domainA = GameDomain("domain-a");
+const domainB = GameDomain("domain-b");
+const tierZeroDomain = GameDomain("tier-zero-domain");
+const sharedDomain = GameDomain("shared-domain");
+
 const data = (...ids: VortexGameId[]): IGameData => ({
   known: ids.map((id) => makeGameStored({ id, name: id })),
 });
@@ -14,50 +27,31 @@ const data = (...ids: VortexGameId[]): IGameData => ({
 describe("findGame", () => {
   describe("by vortexId", () => {
     it("finds the game registered under the id", () => {
-      const result = findGame(data(VortexGameId("skyrimse"), VortexGameId("fallout4")), {
-        vortexGameId: VortexGameId("fallout4"),
-      });
+      const result = findGame(data(gameA, gameB), { vortexGameId: gameB });
 
-      expect(result?.id).toBe("fallout4");
+      expect(result?.id).toBe(gameB);
     });
 
     it("finds a Tier 0 game by its tier-0 id", () => {
-      const result = findGame(data(VortexGameId("skyrimse"), VortexGameId("tier-0-1303")), {
-        vortexGameId: VortexGameId("tier-0-1303"),
-      });
+      const result = findGame(data(gameA, tierZeroGame), { vortexGameId: tierZeroGame });
 
-      expect(result?.id).toBe("tier-0-1303");
+      expect(result?.id).toBe(tierZeroGame);
     });
 
     it("is undefined when no known game has the id", () => {
-      expect(
-        findGame(data(VortexGameId("skyrimse")), { vortexGameId: VortexGameId("fallout4") }),
-      ).toBeUndefined();
+      expect(findGame(data(gameA), { vortexGameId: gameB })).toBeUndefined();
     });
 
     it("is undefined when nothing is known", () => {
-      expect(findGame(data(), { vortexGameId: VortexGameId("skyrimse") })).toBeUndefined();
+      expect(findGame(data(), { vortexGameId: gameA })).toBeUndefined();
     });
 
     it("does not match on the id's case", () => {
-      expect(
-        findGame(data(VortexGameId("skyrimse")), { vortexGameId: VortexGameId("SkyrimSE") }),
-      ).toBeUndefined();
+      expect(findGame(data(gameA), { vortexGameId: VortexGameId("GAME-A") })).toBeUndefined();
     });
   });
 
   describe("by gameDomain", () => {
-    const skyrimse = VortexGameId("skyrimse");
-    const fallout4 = VortexGameId("fallout4");
-    const emberville = VortexGameId("tier-0-1303");
-    const nwn = VortexGameId("nwn");
-    const nwnee = VortexGameId("nwnee");
-
-    const skyrimDomain = GameDomain("skyrimspecialedition");
-    const fallout4Domain = GameDomain("fallout4");
-    const embervilleDomain = GameDomain("emberville");
-    const neverwinterDomain = GameDomain("neverwinter");
-
     const game = (id: VortexGameId, nexusPageId?: GameDomain): IGameStored =>
       makeGameStored({
         id,
@@ -69,69 +63,69 @@ describe("findGame", () => {
       Object.fromEntries(ids.map((id) => [id, { path: `C:/Games/${id}` }]));
 
     it("finds the game that declares the domain as its nexus page", () => {
-      const known = [game(skyrimse, skyrimDomain), game(fallout4, fallout4Domain)];
+      const known = [game(gameA, domainA), game(gameB, domainB)];
 
-      expect(findGame({ known }, { gameDomain: skyrimDomain })?.id).toBe(skyrimse);
+      expect(findGame({ known }, { gameDomain: domainA })?.id).toBe(gameA);
     });
 
     it("finds a Tier 0 game by the domain it is managed under", () => {
-      const known = [game(skyrimse, skyrimDomain), game(emberville, embervilleDomain)];
+      const known = [game(gameA, domainA), game(tierZeroGame, tierZeroDomain)];
 
-      expect(findGame({ known }, { gameDomain: embervilleDomain })?.id).toBe(emberville);
+      expect(findGame({ known }, { gameDomain: tierZeroDomain })?.id).toBe(tierZeroGame);
     });
 
     it("is undefined when no known game declares the domain", () => {
-      const known = [game(skyrimse, skyrimDomain)];
+      const known = [game(gameA, domainA)];
 
-      expect(findGame({ known }, { gameDomain: embervilleDomain })).toBeUndefined();
+      expect(findGame({ known }, { gameDomain: domainB })).toBeUndefined();
     });
 
     it("is undefined when nothing is known", () => {
-      expect(findGame({ known: [] }, { gameDomain: embervilleDomain })).toBeUndefined();
+      expect(findGame({ known: [] }, { gameDomain: domainA })).toBeUndefined();
     });
 
     it("does not find a game by an id that happens to equal the domain", () => {
-      const known = [game(VortexGameId("emberville"))];
+      const known = [game(VortexGameId("domain-a"))];
 
-      expect(findGame({ known }, { gameDomain: embervilleDomain })).toBeUndefined();
+      expect(findGame({ known }, { gameDomain: domainA })).toBeUndefined();
     });
 
     it("does not match on the domain's case", () => {
-      const known = [game(fallout4, fallout4Domain)];
+      const known = [game(gameA, domainA)];
 
-      expect(findGame({ known }, { gameDomain: GameDomain("Fallout4") })).toBeUndefined();
+      expect(findGame({ known }, { gameDomain: GameDomain("DOMAIN-A") })).toBeUndefined();
     });
 
     describe("when games share the domain", () => {
-      const known = [game(nwn, neverwinterDomain), game(nwnee, neverwinterDomain)];
-      const gameDomain = neverwinterDomain;
+      const known = [game(sharedA, sharedDomain), game(sharedB, sharedDomain)];
+      const gameDomain = sharedDomain;
 
       it("is the first registered when no discovery results are given", () => {
-        expect(findGame({ known }, { gameDomain })?.id).toBe(nwn);
+        expect(findGame({ known }, { gameDomain })?.id).toBe(sharedA);
       });
 
       it("is the first registered when none is installed", () => {
-        expect(findGame({ known }, { gameDomain, discovered: {} })?.id).toBe(nwn);
+        expect(findGame({ known }, { gameDomain, discovered: {} })?.id).toBe(sharedA);
       });
 
       it("prefers the installed one", () => {
-        const result = findGame({ known }, { gameDomain, discovered: installed(nwnee) });
+        const result = findGame({ known }, { gameDomain, discovered: installed(sharedB) });
 
-        expect(result?.id).toBe(nwnee);
+        expect(result?.id).toBe(sharedB);
       });
 
       it("is the first registered of several installed", () => {
-        const result = findGame({ known }, { gameDomain, discovered: installed(nwnee, nwn) });
+        const result = findGame({ known }, { gameDomain, discovered: installed(sharedB, sharedA) });
 
-        expect(result?.id).toBe(nwn);
+        expect(result?.id).toBe(sharedA);
       });
 
       it("does not count a discovery result without a path as installed", () => {
         const discovered: Record<VortexGameId, IDiscoveryResult> = {
-          [nwnee]: { hidden: true },
+          [sharedB]: { hidden: true },
         };
 
-        expect(findGame({ known }, { gameDomain, discovered })?.id).toBe(nwn);
+        expect(findGame({ known }, { gameDomain, discovered })?.id).toBe(sharedA);
       });
     });
   });
