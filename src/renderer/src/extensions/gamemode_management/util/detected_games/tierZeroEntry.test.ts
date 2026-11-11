@@ -9,7 +9,7 @@ import { GameDomain, GameId } from "@vortex/shared";
 
 import type { IState } from "@/types/IState";
 
-import { tierZeroGameId } from "../../tiered/tierZero";
+import { tierZeroGameId } from "../../tiered/tierZeroGameId";
 import type { IDetectedGame } from "../../types/IDetectedGame";
 import { tierZeroEntry } from "./tierZeroEntry";
 

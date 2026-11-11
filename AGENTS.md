@@ -67,7 +67,7 @@ them.
 - Don't accept or produce raw `string`/`number` where a branded type applies. Brand at the boundary from data that genuinely is that kindand keep the brand flowing.
 - Don't cast across brands (`GameDomain(someVortexGameId)`). A branded type says where the value came from; guessing the origin defeats it.
 - Comparisons between different brands are a type error **on purpose**. When you hit one, it means "find the real join", not "cast it", the type checker is pointing at data you don't actually have.
-- Don't write ad-hoc lookups over the games list for an id you already have a helper for; if a join is missing, add it next to the existing ones.
+- Look games up and convert between the three with `findGame` and `convertId` (`src/renderer/src/extensions/gamemode_management/queries.ts`, see `docs/state.md`). Don't write ad-hoc lookups over the games list; if a join is missing, add it there.
 
 ## Which doc to read
 

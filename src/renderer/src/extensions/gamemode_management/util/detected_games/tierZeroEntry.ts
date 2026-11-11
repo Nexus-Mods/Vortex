@@ -5,7 +5,7 @@ import type { ITierZeroGame } from "@/types/IState";
 import type { IState } from "@/types/IState";
 
 import { catalogExtensionGameIds } from "../../selectors";
-import { tierZeroGameId } from "../../tiered/tierZero";
+import { tierZeroGameId } from "../../tiered/tierZeroGameId";
 import { isTierZeroCandidate } from "./listableDetectedIds";
 
 /**
