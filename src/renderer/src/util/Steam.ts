@@ -37,7 +37,7 @@ export interface ISteamEntry extends IGameStoreEntry {
       fields are missing. Vortex reads the current manifest through `manifestPath` instead,
       as Steam may update the game while Vortex runs. */
   installData?: ISteamInstallData;
-  /** The appmanifest_<appid>.acf the entry was read from. */
+  /** Absolute native path of the appmanifest_<appid>.acf the entry was read from. */
   manifestPath: string;
   usesProton?: boolean;
   compatDataPath?: string;
