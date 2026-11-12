@@ -237,6 +237,7 @@ export interface ISettingsInterface {
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
   alwaysCompactHeaders: boolean;
+  showGameArt: boolean;
   reduceMotion?: boolean;
   dashboardLayout: string[];
   foregroundDL: boolean;

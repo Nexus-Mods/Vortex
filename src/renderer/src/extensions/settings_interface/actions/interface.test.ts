@@ -42,6 +42,16 @@ describe("setAlwaysCompactHeaders", () => {
   });
 });
 
+describe("setShowGameArt", () => {
+  it("creates the correct action", () => {
+    expect(interfaceActions.setShowGameArt(false)).toEqual({
+      error: false,
+      type: "SET_SHOW_GAME_ART",
+      payload: false,
+    });
+  });
+});
+
 describe("setReduceMotion", () => {
   it("creates the correct action", () => {
     expect(interfaceActions.setReduceMotion(true)).toEqual({

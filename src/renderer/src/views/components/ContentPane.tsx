@@ -1,19 +1,20 @@
 import React, { type FC } from "react";
+import { useSelector } from "react-redux";
 
 import { usePagesContext } from "@/contexts";
 import { usePageRendering } from "@/hooks";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { DNDContainer } from "../DNDContainer";
-import { useGameArt } from "./game_art/GameArt.context";
+import { showsGameArt } from "./game_art/showsGameArt";
 
 export const ModernContentPane: FC<React.PropsWithChildren<unknown>> = () => {
   const { mainPages } = usePagesContext();
 
   const { mainPage, renderPage } = usePageRendering();
-  const { isEnabled: showsGameArt } = useGameArt();
+  const hasGameArt = useSelector(showsGameArt);
   const isTranslucent =
-    showsGameArt && !!mainPages.find((page) => page.id === mainPage)?.isTranslucent;
+    hasGameArt && !!mainPages.find((page) => page.id === mainPage)?.isTranslucent;
 
   return (
     <div
