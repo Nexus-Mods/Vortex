@@ -33,7 +33,12 @@ vi.mock("react-redux", async () => {
   };
 });
 
-import { setGameAddExtension, setGameAddOrigin, setGameAddStore } from "../../actions/session";
+import {
+  clearGameAddStore,
+  setGameAddExtension,
+  setGameAddOrigin,
+  setGameAddStore,
+} from "../../actions/session";
 import type { GameSource } from "../../types/GameSource";
 import { useGameCardActions } from "./useGameCardActions.hook";
 
@@ -281,6 +286,15 @@ describe("useGameCardActions", () => {
       leadWith(emberville)?.onClick();
 
       expect(dispatch).toHaveBeenCalledWith(setGameAddExtension(emberville));
+    });
+
+    it("is recorded after the pick of an earlier tile is forgotten", () => {
+      leadWith(emberville)?.onClick();
+
+      const kinds = dispatch.mock.calls.map(([action]) => action.type);
+      expect(kinds.indexOf(clearGameAddStore.getType())).toBeLessThan(
+        kinds.indexOf(setGameAddExtension.getType()),
+      );
     });
 
     it("is cleared by a click on a tile that carries none, so an earlier tile's isn't offered", () => {

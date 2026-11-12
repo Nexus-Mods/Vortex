@@ -12,7 +12,12 @@ import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { getIcon } from "@/views/components/icon_map/iconMap";
 
-import { setGameAddExtension, setGameAddOrigin, setGameAddStore } from "../../actions/session";
+import {
+  clearGameAddStore,
+  setGameAddExtension,
+  setGameAddOrigin,
+  setGameAddStore,
+} from "../../actions/session";
 import { setGameHidden } from "../../actions/settings";
 import type { GameSource } from "../../types/GameSource";
 
@@ -215,8 +220,10 @@ export const useGameCardActions = (
           ? {
               label: sorted[0].action.label,
               onClick: () => {
+                // Every click starts a new pick, so an earlier tile's store or extension isn't
+                // used for this one
+                dispatch(clearGameAddStore());
                 dispatch(setGameAddOrigin(gameId, source));
-                // Set or cleared on every click, so an earlier tile's isn't offered for this one
                 dispatch(setGameAddExtension(extension ?? null));
                 // A tile of the detected list names the store the user is picking; the
                 // add manages that store's install, so discovery mustn't choose another.
