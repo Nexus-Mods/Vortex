@@ -369,6 +369,10 @@ async function installExtensionImpl(
 
         modId,
         fileId,
+        nexus:
+          data?.catalogEntry?.gameId !== undefined && data.catalogEntry.gameDomain !== undefined
+            ? { gameId: data.catalogEntry.gameId, gameDomain: data.catalogEntry.gameDomain }
+            : undefined,
         type: data?.catalogEntry?.type ?? guessedType,
       };
 

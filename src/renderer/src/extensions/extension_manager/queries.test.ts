@@ -1,3 +1,4 @@
+import { GameDomain, GameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { ExtensionInfo, IRegisteredExtension } from "@/types/extensions";
@@ -14,6 +15,7 @@ import {
   findInCatalog,
   findInstalled,
   findLinkCandidates,
+  findNexusBackfill,
   findPreviousVersions,
   findUpdatableExtensions,
   getMissingOptionalExtensions,
@@ -434,6 +436,78 @@ describe("getMissingOptionalExtensions", () => {
   });
 });
 
+describe("findNexusBackfill", () => {
+  const numericA = GameId(1);
+  const numericB = GameId(2);
+  const domainA = GameDomain("domain-a");
+  const domainB = GameDomain("domain-b");
+
+  const catalogEntry = makeAvailableExtension({
+    modId: 196,
+    type: "game",
+    gameId: numericA,
+    gameDomain: domainA,
+  });
+
+  it("fills in an extension that has no game yet", () => {
+    const installed = makeExtensionState({ modId: 196 });
+
+    expect(findNexusBackfill({ "ext-1": installed }, [catalogEntry])).toEqual([
+      { key: "ext-1", nexus: { gameId: numericA, gameDomain: domainA } },
+    ]);
+  });
+
+  it("corrects an extension whose stored game differs from the catalog's", () => {
+    const installed = makeExtensionState({
+      modId: 196,
+      nexus: { gameId: numericB, gameDomain: domainB },
+    });
+
+    expect(findNexusBackfill({ "ext-1": installed }, [catalogEntry])).toEqual([
+      { key: "ext-1", nexus: { gameId: numericA, gameDomain: domainA } },
+    ]);
+  });
+
+  it("leaves an extension whose stored game already matches", () => {
+    const installed = makeExtensionState({
+      modId: 196,
+      nexus: { gameId: numericA, gameDomain: domainA },
+    });
+
+    expect(findNexusBackfill({ "ext-1": installed }, [catalogEntry])).toEqual([]);
+  });
+
+  it("skips an extension with no mod id, which the catalog can't name", () => {
+    expect(findNexusBackfill({ "ext-1": makeExtensionState() }, [catalogEntry])).toEqual([]);
+  });
+
+  it("skips an extension the catalog doesn't list", () => {
+    const installed = makeExtensionState({ modId: 999 });
+
+    expect(findNexusBackfill({ "ext-1": installed }, [catalogEntry])).toEqual([]);
+  });
+
+  it("skips an extension pending removal", () => {
+    const installed = makeExtensionState({ modId: 196, remove: true });
+
+    expect(findNexusBackfill({ "ext-1": installed }, [catalogEntry])).toEqual([]);
+  });
+
+  it("skips a catalog entry that names no domain, as before the games list has loaded", () => {
+    const installed = makeExtensionState({ modId: 196 });
+    const unresolved = makeAvailableExtension({ modId: 196, type: "game", gameId: numericA });
+
+    expect(findNexusBackfill({ "ext-1": installed }, [unresolved])).toEqual([]);
+  });
+
+  it("skips a catalog entry for an extension that isn't for a game", () => {
+    const installed = makeExtensionState({ modId: 196 });
+    const tool = makeAvailableExtension({ modId: 196 });
+
+    expect(findNexusBackfill({ "ext-1": installed }, [tool])).toEqual([]);
+  });
+});
+
 describe("findLinkCandidates", () => {
   const extPath = "/plugins/Cyberpunk 2077 Support 0.13.0";
   const games = [{ extensionPath: extPath, domain: "cyberpunk2077" }];
@@ -442,7 +516,7 @@ describe("findLinkCandidates", () => {
     modId: 196,
     version: "0.13.1",
     type: "game",
-    gameDomain: "cyberpunk2077",
+    gameDomain: GameDomain("cyberpunk2077"),
   });
 
   it("matches an unlinked game extension through the domain of the game it registers", () => {
@@ -481,7 +555,7 @@ describe("findLinkCandidates", () => {
       modId: 197,
       version: "1.0.0",
       type: "game",
-      gameDomain: "cyberpunk2077demo",
+      gameDomain: GameDomain("cyberpunk2077demo"),
     });
     expect(findLinkCandidates({ "ext-1": unlinked }, twoGames, [catalogEntry, other])).toEqual([]);
   });

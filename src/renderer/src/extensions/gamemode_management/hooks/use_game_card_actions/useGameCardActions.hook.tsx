@@ -5,13 +5,19 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { registerAction } from "@/controls/ActionControl";
 import { useExtensionObjects } from "@/ExtensionProvider";
+import type { IAvailableExtension } from "@/types/extensions";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { getIcon } from "@/views/components/icon_map/iconMap";
 
-import { setGameAddOrigin, setGameAddStore } from "../../actions/session";
+import {
+  clearGameAddStore,
+  setGameAddExtension,
+  setGameAddOrigin,
+  setGameAddStore,
+} from "../../actions/session";
 import { setGameHidden } from "../../actions/settings";
 import type { GameSource } from "../../types/GameSource";
 
@@ -121,6 +127,7 @@ export const useGameCardActions = (
   source?: GameSource,
   onMenuAction?: (action: string) => void,
   store?: string,
+  extension?: IAvailableExtension,
 ): IGameCardActions => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -213,7 +220,11 @@ export const useGameCardActions = (
           ? {
               label: sorted[0].action.label,
               onClick: () => {
+                // Every click starts a new pick, so an earlier tile's store or extension isn't
+                // used for this one
+                dispatch(clearGameAddStore());
                 dispatch(setGameAddOrigin(gameId, source));
+                dispatch(setGameAddExtension(extension ?? null));
                 // A tile of the detected list names the store the user is picking; the
                 // add manages that store's install, so discovery mustn't choose another.
                 if (source === "detected_list" && store !== undefined) {
@@ -226,5 +237,16 @@ export const useGameCardActions = (
             ? { label: sorted[0].action.label, onClick: () => sorted[0].action.onClick?.() }
             : undefined,
     };
-  }, [dispatch, gameId, hidden, onMenuAction, onShowDetails, registered, source, store, t]);
+  }, [
+    dispatch,
+    extension,
+    gameId,
+    hidden,
+    onMenuAction,
+    onShowDetails,
+    registered,
+    source,
+    store,
+    t,
+  ]);
 };

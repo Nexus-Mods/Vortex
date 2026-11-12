@@ -980,7 +980,10 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   // a structurally-partial IState holding only the slices the driver reads; the single cast
   // mirrors test-utils/sessionStore.asIState (a full IState is impractical to construct)
   return {
+    // storing a game reads the installed extensions, and gameData the Tier 0 games
+    app: { extensions: {} },
     persistent: {
+      gameMode: { tier0: {} },
       mods: slices.mods,
       downloads: { files: slices.downloads },
       profiles: slices.profiles,
