@@ -41,7 +41,11 @@ import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
 import { parseExtensionInfo } from "./extensions/extension_manager/extensionInfo";
-import { extensionStateFromScan, findInstalled } from "./extensions/extension_manager/queries";
+import {
+  extensionStateFromScan,
+  findInstalled,
+  isSupersededBundledExtension,
+} from "./extensions/extension_manager/queries";
 import _sessionReducer from "./extensions/extension_manager/reducers";
 import type { IModReference, IModRepoId } from "./extensions/mod_management/types/IMod";
 import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
@@ -2906,6 +2910,7 @@ class ExtensionManager {
     extension: { path: string; bundled: boolean },
     loadedExtensions: Set<string>,
     alreadyLoaded: IRegisteredExtension[],
+    coreExtensionNames: ReadonlySet<string> = new Set(),
   ): IRegisteredExtension[] {
     if (!fs.existsSync(extension.path)) {
       log("info", "failed to load dynamic extensions, path doesn't exist", extension.path);
@@ -2930,6 +2935,13 @@ class ExtensionManager {
         // native-addon errors.
         if (/\.installing$/i.test(name) || /\.bak-/i.test(name)) {
           log("debug", "skipping transient extension directory", { name });
+          return false;
+        }
+        // An update can leave behind the folder of a bundled extension that has since moved
+        // into core. Loaded next to core, it would run a second copy of the same reducers and
+        // persistors against the same state and files.
+        if (extension.bundled && isSupersededBundledExtension(name, coreExtensionNames)) {
+          log("warn", "skipping leftover bundled extension that is now part of core", { name });
           return false;
         }
         return true;
@@ -3115,6 +3127,7 @@ class ExtensionManager {
       { path: getVortexPath("bundledPlugins"), bundled: true },
       loadedExtensions,
       dynamicallyLoaded,
+      new Set(Object.keys(staticExtensions)),
     );
 
     // forgetExtension reaches the store but not disk; main drains its persist
