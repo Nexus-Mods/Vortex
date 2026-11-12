@@ -98,6 +98,22 @@ describe("GameModeManager stored games' Nexus Mods game", () => {
       gameDomain: domainA,
     });
   });
+
+  it("takes the game an extension is given after the games were stored, once stored again", () => {
+    const extension = makeExtensionState({ path: extensionPath });
+    const { manager, dispatched } = makeManager([makeKnownGame("game-a", { extensionPath })], {
+      "ext-a": extension,
+    });
+    expect(dispatchedKnownGames(dispatched)[0].nexus).toBeUndefined();
+
+    extension.nexus = { gameId: numericA, gameDomain: domainA };
+    manager.dispatchKnownGames();
+
+    expect(dispatchedKnownGames(dispatched)[0].nexus).toEqual({
+      gameId: numericA,
+      gameDomain: domainA,
+    });
+  });
 });
 
 describe("GameModeManager addGames", () => {

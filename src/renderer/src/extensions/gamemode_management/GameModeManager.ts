@@ -122,7 +122,11 @@ export class GameModeManager {
     // didn't
   }
 
-  private dispatchKnownGames(): void {
+  /**
+   * store the registered games again, for what they are stored with that arrived after they were,
+   * such as the Nexus Mods game of an extension
+   */
+  public dispatchKnownGames(): void {
     if (this.mStore === null) {
       return;
     }
