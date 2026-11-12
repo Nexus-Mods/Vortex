@@ -6,7 +6,6 @@ import type { IState } from "@/types/IState";
 import { getCollectionActiveSession } from "@/util/collectionInstallSessionSelectors";
 
 import {
-  ACTIVE_DOWNLOAD_STATES,
   downloadByteProgress,
   downloadedMemberIds,
 } from "./download_byte_progress/downloadByteProgress";
@@ -61,17 +60,16 @@ export const useDownloadProgress = (): IDownloadProgress => {
   const alreadyDownloaded = baseline?.alreadyDownloaded;
 
   return useMemo(() => {
-    const allDownloads = Object.entries(files);
-
-    const active = allDownloads.filter(([, dl]) => ACTIVE_DOWNLOAD_STATES.includes(dl.state));
-    const paused = allDownloads.filter(([, dl]) => dl.state === "paused");
-
-    const { received, total } = downloadByteProgress(files, session, alreadyDownloaded);
+    const { received, total, activeIds, pausedIds } = downloadByteProgress(
+      files,
+      session,
+      alreadyDownloaded,
+    );
     const remainingBytes = total - received;
 
     // A collection with mods left to download keeps the ring up between downloads (free users
     // start each one by hand), rather than flicking back to the icon each time.
-    if (active.length === 0 && paused.length === 0 && remainingBytes <= 0) {
+    if (activeIds.length === 0 && pausedIds.length === 0 && remainingBytes <= 0) {
       return {
         activeIds: [],
         estimatedMins: 0,
@@ -82,16 +80,18 @@ export const useDownloadProgress = (): IDownloadProgress => {
       };
     }
 
-    // Paused downloads still have received bytes to report.
-    const relevant = [...active, ...paused];
+    // The download adapter's last speed report, sent as the final download ends, is usually
+    // non-zero and nothing replaces it until bytes move again, so it's stale between downloads.
+    const currentSpeed = activeIds.length > 0 ? speed : 0;
 
     return {
-      activeIds: relevant.map(([id]) => id),
-      estimatedMins: speed > 0 ? remainingBytes / speed / 60 : 0,
+      // Paused downloads still have received bytes to report.
+      activeIds: [...activeIds, ...pausedIds],
+      estimatedMins: currentSpeed > 0 ? remainingBytes / currentSpeed / 60 : 0,
       isDownloading: true,
-      isPaused: active.length === 0 && paused.length > 0,
+      isPaused: activeIds.length === 0 && pausedIds.length > 0,
       progress: total > 0 ? (received * 100) / total : 0,
-      speedMBps: speed / (1024 * 1024),
+      speedMBps: currentSpeed / (1024 * 1024),
     };
   }, [alreadyDownloaded, files, session, speed]);
 };

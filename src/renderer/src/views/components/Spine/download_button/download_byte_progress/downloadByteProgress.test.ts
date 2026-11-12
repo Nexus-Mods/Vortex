@@ -31,6 +31,12 @@ const sessionWith = (members: IMemberFixture[]): ICollectionInstallSession =>
     ),
   });
 
+/** Just the byte figures, for the tests about what the ring counts. */
+const bytes = (...args: Parameters<typeof downloadByteProgress>) => {
+  const { received, total } = downloadByteProgress(...args);
+  return { received, total };
+};
+
 /** A download claimed by the member with this tag, as the collection install stamps it. */
 const memberDownload = (tag: string, overrides: Partial<IDownload> = {}): IDownload =>
   makeDownload({ modInfo: { referenceTags: [tag] }, ...overrides });
@@ -43,7 +49,7 @@ describe("downloadByteProgress", () => {
       done: makeDownload({ state: "finished", size: 100, received: 100 }),
     };
 
-    expect(downloadByteProgress(files, undefined)).toEqual({ received: 50, total: 200 });
+    expect(bytes(files, undefined)).toEqual({ received: 50, total: 200 });
   });
 
   it("counts a downloaded, installing or installed member as fully done", () => {
@@ -53,14 +59,14 @@ describe("downloadByteProgress", () => {
       { tag: "c", status: "installed", fileSize: 100 },
     ]);
 
-    expect(downloadByteProgress({}, session)).toEqual({ received: 300, total: 300 });
+    expect(bytes({}, session)).toEqual({ received: 300, total: 300 });
   });
 
   it("counts a downloading member's received bytes, paired by tag", () => {
     const session = sessionWith([{ tag: "a", status: "downloading", fileSize: 100 }]);
     const files = { dl: memberDownload("a", { size: 100, received: 30 }) };
 
-    expect(downloadByteProgress(files, session)).toEqual({ received: 30, total: 100 });
+    expect(bytes(files, session)).toEqual({ received: 30, total: 100 });
   });
 
   it("pairs a download carrying only the legacy referenceTag", () => {
@@ -69,18 +75,18 @@ describe("downloadByteProgress", () => {
       dl: makeDownload({ modInfo: { referenceTag: "a" }, size: 100, received: 30 }),
     };
 
-    expect(downloadByteProgress(files, session)).toEqual({ received: 30, total: 100 });
+    expect(bytes(files, session)).toEqual({ received: 30, total: 100 });
   });
 
   it("keeps rising as one member finishes and the next starts", () => {
-    const before = downloadByteProgress(
+    const before = bytes(
       { dl1: memberDownload("m1", { size: 100, received: 50 }) },
       sessionWith([
         { tag: "m1", status: "downloading", fileSize: 100 },
         { tag: "m2", status: "pending", fileSize: 100 },
       ]),
     );
-    const after = downloadByteProgress(
+    const after = bytes(
       {
         dl1: memberDownload("m1", { state: "finished", size: 100, received: 100 }),
         dl2: memberDownload("m2", { size: 100, received: 0 }),
@@ -103,17 +109,47 @@ describe("downloadByteProgress", () => {
       { tag: "d", status: "optional", fileSize: 100, type: "recommends" },
     ]);
 
-    expect(downloadByteProgress({}, session)).toEqual({ received: 100, total: 100 });
+    expect(bytes({}, session)).toEqual({ received: 100, total: 100 });
   });
 
-  it("leaves out a member whose download failed while the session still says downloading", () => {
+  it("counts a member whose download failed as done at the bytes it got", () => {
+    // The session keeps a failed download's member on "downloading".
     const session = sessionWith([
       { tag: "a", status: "installed", fileSize: 100 },
       { tag: "b", status: "downloading", fileSize: 100 },
     ]);
     const files = { dl: memberDownload("b", { state: "failed", size: 100, received: 20 }) };
 
-    expect(downloadByteProgress(files, session)).toEqual({ received: 100, total: 100 });
+    expect(bytes(files, session)).toEqual({ received: 120, total: 120 });
+  });
+
+  it("doesn't go backwards when a member's download fails", () => {
+    const session = sessionWith([
+      { tag: "a", status: "installed", fileSize: 100 },
+      { tag: "b", status: "downloading", fileSize: 1000 },
+      { tag: "c", status: "pending", fileSize: 1000 },
+    ]);
+    const progress = (state: "started" | "failed") => {
+      const { received, total } = bytes(
+        { dl: memberDownload("b", { state, size: 1000, received: 900 }) },
+        session,
+      );
+      return received / total;
+    };
+
+    expect(progress("failed")).toBeGreaterThanOrEqual(progress("started"));
+  });
+
+  it("counts an archive that satisfies several members once", () => {
+    const session = sessionWith([
+      { tag: "a", status: "downloading", fileSize: 100 },
+      { tag: "b", status: "downloading", fileSize: 100 },
+    ]);
+    const files = {
+      dl: makeDownload({ modInfo: { referenceTags: ["a", "b"] }, size: 100, received: 30 }),
+    };
+
+    expect(bytes(files, session)).toEqual({ received: 30, total: 100 });
   });
 
   it("uses the download's size when the rule has no fileSize, and skips a member with neither", () => {
@@ -123,14 +159,14 @@ describe("downloadByteProgress", () => {
     ]);
     const files = { dl: memberDownload("a", { size: 80, received: 20 }) };
 
-    expect(downloadByteProgress(files, session)).toEqual({ received: 20, total: 80 });
+    expect(bytes(files, session)).toEqual({ received: 20, total: 80 });
   });
 
   it("uses the largest of fileSize, size and received", () => {
     const session = sessionWith([{ tag: "a", status: "downloading", fileSize: 100 }]);
     const files = { dl: memberDownload("a", { size: 0, received: 120 }) };
 
-    expect(downloadByteProgress(files, session)).toEqual({ received: 120, total: 120 });
+    expect(bytes(files, session)).toEqual({ received: 120, total: 120 });
   });
 
   it("adds a download outside the collection on top, without counting a member's download twice", () => {
@@ -140,7 +176,7 @@ describe("downloadByteProgress", () => {
       other: makeDownload({ state: "started", size: 300, received: 100 }),
     };
 
-    expect(downloadByteProgress(files, session)).toEqual({ received: 150, total: 400 });
+    expect(bytes(files, session)).toEqual({ received: 150, total: 400 });
   });
 
   it("leaves out members that were already downloaded when the install started", () => {
@@ -150,7 +186,7 @@ describe("downloadByteProgress", () => {
     ]);
     const files = { dl: memberDownload("b", { size: 100, received: 50 }) };
 
-    expect(downloadByteProgress(files, session, new Set(["a"]))).toEqual({
+    expect(bytes(files, session, new Set(["a"]))).toEqual({
       received: 50,
       total: 100,
     });
@@ -166,14 +202,32 @@ describe("downloadByteProgress", () => {
       retry: memberDownload("a", { state: "finished", size: 100, received: 100 }),
     };
 
-    expect(downloadByteProgress(files, session)).toEqual({ received: 100, total: 200 });
+    expect(bytes(files, session)).toEqual({ received: 100, total: 200 });
   });
 
   it("counts an excluded member's still-running download as an unrelated one", () => {
     const session = sessionWith([{ tag: "a", status: "failed", fileSize: 100 }]);
     const files = { dl: memberDownload("a", { state: "started", size: 100, received: 20 }) };
 
-    expect(downloadByteProgress(files, session)).toEqual({ received: 20, total: 100 });
+    expect(bytes(files, session)).toEqual({ received: 20, total: 100 });
+  });
+
+  it("names the active downloads and the paused ones, whatever the session", () => {
+    const files = {
+      init: makeDownload({ state: "init" }),
+      started: makeDownload({ state: "started" }),
+      finalizing: makeDownload({ state: "finalizing" }),
+      paused: makeDownload({ state: "paused" }),
+      done: makeDownload({ state: "finished" }),
+      failed: makeDownload({ state: "failed" }),
+    };
+    const session = sessionWith([{ tag: "a", status: "downloading", fileSize: 100 }]);
+
+    for (const s of [undefined, session]) {
+      const { activeIds, pausedIds } = downloadByteProgress(files, s);
+      expect(activeIds).toEqual(["init", "started", "finalizing"]);
+      expect(pausedIds).toEqual(["paused"]);
+    }
   });
 });
 

@@ -56,6 +56,27 @@ export function downloadReferenceTags(download: IDownload | undefined): string[]
   return Array.from(tags);
 }
 
+/**
+ * Download ids by every collection-rule tag they carry, so a rule resolves its archive in O(1).
+ * On a shared tag the first download wins, except that a failed one gives way: a retry is a new
+ * download carrying the same tag.
+ */
+export function downloadIdsByTag(files: Record<string, IDownload>): Map<string, string> {
+  const byTag = new Map<string, string>();
+  for (const [id, download] of Object.entries(files)) {
+    for (const tag of downloadReferenceTags(download)) {
+      const current = byTag.get(tag);
+      if (
+        current === undefined ||
+        (files[current].state === "failed" && download.state !== "failed")
+      ) {
+        byTag.set(tag, id);
+      }
+    }
+  }
+  return byTag;
+}
+
 /** Whether a download satisfies this collection-rule tag. Runs inside per-download scans. */
 export function downloadHasReferenceTag(
   download: IDownload | undefined,

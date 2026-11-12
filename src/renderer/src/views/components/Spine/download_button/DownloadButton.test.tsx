@@ -240,12 +240,14 @@ describe("DownloadButton", () => {
       setStore([tagged("a", 50)], 1, members("downloading"));
       const { container, rerender } = render(<DownloadButton />);
 
-      setStore([tagged("a", 100, "finished")], 0, members("downloaded"));
+      // The adapter's last speed report, from the final tick of "a", is still in the store.
+      setStore([tagged("a", 100, "finished")], 12, members("downloaded"));
       rerender(<DownloadButton />);
 
       const button = within(container).getByRole("button", { name: "Downloads" });
       expect(offset(container)).toBeCloseTo(CIRCUMFERENCE * 0.5, 3);
-      expect(button).toHaveTextContent("mb/s");
+      // Nothing is downloading, so the speed reads 0 rather than the stale 12.
+      expect(button).toHaveTextContent("0.0mb/s");
       expect(button).not.toHaveTextContent("paused");
     });
 
