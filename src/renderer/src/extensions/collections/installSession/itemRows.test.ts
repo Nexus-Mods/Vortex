@@ -347,6 +347,23 @@ describe("buildCollectionItemRows", () => {
     expect(rows[modRuleId(rule)].status).toBe("failed");
   });
 
+  it("shows a member's retried download over its earlier failed one", () => {
+    const rule = requiresRule({ reference: { tag: "ref-retry" } });
+    const failed = makeDownload({ state: "failed", modInfo: { referenceTag: "ref-retry" } });
+    const retry = makeDownload({ state: "finished", modInfo: { referenceTag: "ref-retry" } });
+
+    const rows = buildCollectionItemRows({
+      rules: [rule],
+      mods: {},
+      downloads: { dlFailed: failed, dlRetry: retry },
+      modState: {},
+      sessionMods: {},
+    });
+
+    expect(rows[modRuleId(rule)].id).toBe("dlRetry");
+    expect(rows[modRuleId(rule)].status).not.toBe("failed");
+  });
+
   it("reconstructs status from persistent state for rules outside the session", () => {
     const rule = requiresRule({ reference: { id: "mod-1" } });
     // a session entry for a different rule must not bleed into this row

@@ -28,7 +28,13 @@ import type {
 } from "../../types/IExtensionContext";
 import type { IGame } from "../../types/IGame";
 import type { NotificationDismiss } from "../../types/INotification";
-import type { IProfile, IRunningTool, IState, ITierZeroGame } from "../../types/IState";
+import type {
+  IExtensionState,
+  IProfile,
+  IRunningTool,
+  IState,
+  ITierZeroGame,
+} from "../../types/IState";
 import type { IEditChoice, ITableAttribute } from "../../types/ITableAttribute";
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from "../../util/CustomErrors";
 import * as fs from "../../util/fs";
@@ -42,7 +48,7 @@ import { batchDispatch } from "../../util/util";
 import { setModType } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/views/CheckModVersionsButton";
 import { isLoggedIn } from "../nexus_integration/selectors";
-import { nexusGames } from "../nexus_integration/util";
+import { nexusGames, nexusGamesProm } from "../nexus_integration/util";
 import { setNextProfile } from "../profile_management/actions/settings";
 import { removeTierZeroGame, setGameInfo, setTierZeroGame } from "./actions/persistent";
 import { clearFavouriteGames, setDetectedGamesStatus } from "./actions/session";
@@ -1007,6 +1013,25 @@ function init(context: IExtensionContext): boolean {
     });
 
     $.gameModeManager.attachToStore(store);
+
+    // a stored game's Nexus Mods game comes from the installed extension, which the catalog
+    // backfills once it has loaded, and from the Nexus Mods games list; store the games again
+    // when either arrives
+    context.api.onStateChange(
+      ["app", "extensions"],
+      (prev: Record<string, IExtensionState>, current: Record<string, IExtensionState>) => {
+        const changed = Object.entries(current ?? {}).some(
+          ([key, extension]) =>
+            extension.nexus?.gameId !== prev?.[key]?.nexus?.gameId ||
+            extension.nexus?.gameDomain !== prev?.[key]?.nexus?.gameDomain,
+        );
+        if (changed) {
+          gameModeManager.dispatchKnownGames();
+        }
+      },
+    );
+    void nexusGamesProm().then(() => gameModeManager.dispatchKnownGames());
+
     // kick the first store scan eagerly; store snapshots are then populated
     // independently of quick discovery (which triggers its own reload)
     void $.gameModeManager.startInitialScan();

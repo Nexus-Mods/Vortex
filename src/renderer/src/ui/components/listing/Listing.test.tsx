@@ -173,7 +173,7 @@ describe("Listing", () => {
       expect(onLoadMore).not.toHaveBeenCalled();
 
       act(() => observed[0].report(true));
-      expect(onLoadMore).toHaveBeenCalledTimes(1);
+      expect(onLoadMore).toHaveBeenCalledExactlyOnceWith("scroll");
     });
 
     it("watches the window's view when it's given no scroller", () => {
@@ -187,6 +187,7 @@ describe("Listing", () => {
       ["more is loading", "loading_more"],
       ["loading more failed", "load_more_failed"],
       ["the first items are loading", "loading"],
+      ["it's paused", "paused"],
     ])("asks for no more while %s", (_, status) => {
       renderComponent({ children: items, entityCount: 2, onLoadMore: vi.fn(), status });
 
@@ -208,6 +209,72 @@ describe("Listing", () => {
 
       expect(observed).toHaveLength(2);
       expect(props.onLoadMore).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("paused", () => {
+    const items = <div data-testid="content" />;
+
+    it("offers to load more after the items, with a summary over the button", async () => {
+      const onLoadMore = vi.fn();
+      renderComponent({
+        children: items,
+        entityCount: 2,
+        loadMoreLabel: "Load more mods",
+        loadMoreSummary: "Showing 60 of 2,438 mods",
+        onLoadMore,
+        status: "paused",
+      });
+
+      expect(screen.getByTestId("content")).toBeInTheDocument();
+      expect(screen.getByTestId("listing-load-more-summary")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByTestId("listing-load-more"));
+
+      expect(onLoadMore).toHaveBeenCalledExactlyOnceWith("button");
+    });
+
+    it("gives out the Load more button, for the list's keys", () => {
+      const loadMoreRef = { current: null as HTMLButtonElement | null };
+      renderComponent({
+        children: items,
+        entityCount: 2,
+        loadMoreRef,
+        onLoadMore: vi.fn(),
+        status: "paused",
+      });
+
+      expect(loadMoreRef.current).toBe(screen.getByTestId("listing-load-more"));
+    });
+
+    it("shows a note over the summary when given one", () => {
+      renderComponent({
+        children: items,
+        entityCount: 2,
+        loadMoreNote: "600 mods later",
+        onLoadMore: vi.fn(),
+        status: "paused",
+      });
+
+      expect(screen.getByTestId("listing-load-more-note")).toBeInTheDocument();
+    });
+
+    it("shows no note without one", () => {
+      renderComponent({ children: items, entityCount: 2, onLoadMore: vi.fn(), status: "paused" });
+
+      expect(screen.queryByTestId("listing-load-more-note")).toBeNull();
+    });
+
+    it("shows no line over the button without a summary", () => {
+      renderComponent({ children: items, entityCount: 2, onLoadMore: vi.fn(), status: "paused" });
+
+      expect(screen.queryByTestId("listing-load-more-summary")).toBeNull();
+    });
+
+    it("offers nothing to load more with nowhere to ask for it", () => {
+      renderComponent({ children: items, entityCount: 2, status: "paused" });
+
+      expect(screen.queryByTestId("listing-load-more")).toBeNull();
     });
   });
 });

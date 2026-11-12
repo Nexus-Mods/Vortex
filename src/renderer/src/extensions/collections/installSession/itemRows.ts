@@ -9,7 +9,7 @@ import type { IDownload } from "../../download_management/types/IDownload";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findDownloadByRef } from "../../mod_management/util/dependencies";
 import { renderModReference } from "../../mod_management/util/modName";
-import { isDependencyRule } from "../../mod_management/util/testModReference";
+import { downloadIdsByTag, isDependencyRule } from "../../mod_management/util/testModReference";
 import type { IProfileMod } from "../../profile_management/types/IProfile";
 import {
   resolveCollectionMods,
@@ -154,20 +154,9 @@ export function buildCollectionItemRows(
   const result: Record<string, ICollectionItemRow> = {};
   let changed = false;
 
-  // downloads by every reference tag, built once so each rule resolves its archive in O(1); first
-  // entry wins on the (rare) duplicate, matching findDownloadByRef's first-match
-  const downloadIdByTag = new Map<string, string>();
-  for (const [dlId, download] of Object.entries(downloads)) {
-    const { referenceTag, referenceTags } = download.modInfo ?? {};
-    if (typeof referenceTag === "string" && !downloadIdByTag.has(referenceTag)) {
-      downloadIdByTag.set(referenceTag, dlId);
-    }
-    for (const tag of referenceTags ?? []) {
-      if (!downloadIdByTag.has(tag)) {
-        downloadIdByTag.set(tag, dlId);
-      }
-    }
-  }
+  // built once so each rule resolves its archive in O(1); shared with the spine's download ring,
+  // so both pick the same download for a member
+  const downloadIdByTag = downloadIdsByTag(downloads);
 
   (rules ?? []).filter(isDependencyRule).forEach((rule) => {
     const id = modRuleId(rule);

@@ -34,7 +34,6 @@ catalog:
   "@floating-ui/react": 0.27.20
   "@headlessui/react": 2.2.10
   "@iarna/toml": 2.2.5
-  "@microsoft/api-extractor": 7.58.9
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.4
   "@nexusmods/fomod-installer-native": 0.13.4
@@ -142,7 +141,7 @@ catalog:
   dnd-core: 9.5.1
   draggabilly: 2.4.1
   drivelist: github:TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
-  electron: 45.2.3
+  electron: 45.3.0
   electron-builder: 24.13.3
   electron-context-menu: 3.6.1
   electron-extension-installer: 2.0.1

@@ -980,7 +980,10 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   // a structurally-partial IState holding only the slices the driver reads; the single cast
   // mirrors test-utils/sessionStore.asIState (a full IState is impractical to construct)
   return {
+    // storing a game reads the installed extensions, and gameData the Tier 0 games
+    app: { extensions: {} },
     persistent: {
+      gameMode: { tier0: {} },
       mods: slices.mods,
       downloads: { files: slices.downloads },
       profiles: slices.profiles,
@@ -1259,6 +1262,13 @@ export function makeApiHarness(
     lookupModMeta: () => Promise.resolve([]),
   } as unknown as IExtensionApi;
 
+  const setState = (mutate: (draft: IState) => void) => {
+    // copy-on-write
+    const draft = structuredClone(store.getState());
+    mutate(draft);
+    store.dispatch({ type: REPLACE_TYPE, payload: draft });
+  };
+
   return {
     api,
     dispatched,
@@ -1270,14 +1280,29 @@ export function makeApiHarness(
       await Promise.all(listeners.map((listener) => listener(...args)));
     },
     getState: () => store.getState(),
-    setState: (mutate: (draft: IState) => void) => {
-      // copy-on-write
-      const draft = structuredClone(store.getState());
-      mutate(draft);
-      store.dispatch({ type: REPLACE_TYPE, payload: draft });
-    },
+    setState,
     setNextDialog: (result: IDialogResult) => {
       nextDialog = result;
+    },
+    openModalDialog: (id: string = "harness-dialog") => {
+      setState((draft) => {
+        draft.session.notifications = {
+          notifications: [],
+          global_notifications: [],
+          ...draft.session.notifications,
+          dialogs: [
+            ...(draft.session.notifications?.dialogs ?? []),
+            { id, type: "question", title: "", content: {}, defaultAction: "", actions: [] },
+          ],
+        };
+      });
+    },
+    setFomodDialog: (activeInstanceId: string | null) => {
+      setState((draft) => {
+        Object.assign(draft.session, {
+          fomod: { installer: { dialog: { activeInstanceId, instances: {} } } },
+        });
+      });
     },
     dialogCalls,
     errorNotifications,

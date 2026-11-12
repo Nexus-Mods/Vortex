@@ -43,6 +43,8 @@ const defaults = (): IModListProps => ({
   status: "done",
   mods: [],
   searchKey: "trending",
+  totalCount: 0,
+  pagesLoaded: 0,
   onLoadMore: vi.fn(),
   onRetry: vi.fn(),
   onSelectMod: vi.fn(),
@@ -225,6 +227,63 @@ describe("ModList", () => {
 
     expect(screen.getByRole("button", { name: /^Mod 31/ })).toBeInTheDocument();
     vi.unstubAllGlobals();
+  });
+
+  it.each(["3", "1"])(
+    "loads more mods while paused, putting focus on the last card with mod %s open",
+    async (activeModId) => {
+      const { onLoadMore, onSelectMod } = renderComponent({
+        activeModId,
+        mods: modsUpTo(3),
+        status: "paused",
+        totalCount: 2438,
+      });
+      const loadMore = screen.getByTestId("listing-load-more");
+
+      loadMore.focus();
+      await userEvent.keyboard(" ");
+
+      expect(onLoadMore).toHaveBeenCalledExactlyOnceWith("button");
+      expect(screen.getByTestId("mod-card-3")).toHaveFocus();
+      expect(onSelectMod).not.toHaveBeenCalled();
+    },
+  );
+
+  it("moves focus from the last mod to Load more on Down while paused", async () => {
+    renderComponent({ mods: modsUpTo(3), status: "paused", activeModId: "3", totalCount: 2438 });
+    act(() => screen.getByTestId("mod-card-3").focus());
+
+    await userEvent.keyboard("{ArrowDown}");
+
+    expect(screen.getByTestId("listing-load-more")).toHaveFocus();
+  });
+
+  it.each([
+    [27, false],
+    [30, true],
+    [33, false],
+    [60, true],
+  ])("nudges the user back to their game at Load more after %i pages: %s", (pages, isShown) => {
+    renderComponent({ mods: modsUpTo(3), pagesLoaded: pages, status: "paused", totalCount: 2438 });
+
+    expect(!!screen.queryByTestId("listing-load-more-note")).toBe(isShown);
+  });
+
+  it("puts focus on the last card once Load more goes, as the next page loads", async () => {
+    const { rerender } = renderComponent({ mods: modsUpTo(3), status: "paused", totalCount: 2438 });
+    await userEvent.click(screen.getByTestId("listing-load-more"));
+
+    rerender({ mods: modsUpTo(3), status: "loading_more", totalCount: 2438 });
+
+    expect(screen.queryByTestId("listing-load-more")).toBeNull();
+    expect(screen.getByTestId("mod-card-3")).toHaveFocus();
+  });
+
+  it("puts focus on the list after Load more when the last card isn't rendered", async () => {
+    renderComponent({ mods: modsUpTo(60), status: "paused", totalCount: 2438 });
+    await userEvent.click(screen.getByTestId("listing-load-more"));
+
+    expect(list()).toHaveFocus();
   });
 
   it("picks a mod clicked, saying it was the pointer", async () => {

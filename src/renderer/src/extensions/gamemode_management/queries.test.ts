@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
 
 import { makeGameStored } from "../../test-utils/builders";
-import { convertId, findGame, type IGameData } from "./queries";
+import { convertId, findGame, type IGameData, nexusGameData } from "./queries";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 
 // Dummy games. A and B are extension games, the tier zero game is managed without an
@@ -34,15 +34,17 @@ const gameData = (overrides: Partial<IGameData> = {}): IGameData => ({
   ...overrides,
 });
 
-/** A known game, declaring the Nexus Mods page it belongs to if it has one. */
-const game = (id: VortexGameId, nexusPageId?: GameDomain): IGameStored =>
-  makeGameStored({
-    id,
-    name: id,
-    details: nexusPageId === undefined ? undefined : { nexusPageId },
-  });
+// The Nexus Mods game each dummy game is for.
+const nexusA = { gameId: numericA, gameDomain: domainA };
+const nexusB = { gameId: numericB, gameDomain: domainB };
+const nexusTierZero = { gameId: numericTierZero, gameDomain: tierZeroDomain };
+const nexusShared = { gameId: numericShared, gameDomain: sharedDomain };
 
-/** Data that knows games with these ids, none of which declares a Nexus Mods page. */
+/** A known game, with the Nexus Mods game it is for if it is for one. */
+const game = (id: VortexGameId, nexus?: IGameStored["nexus"]): IGameStored =>
+  makeGameStored({ id, name: id, nexus });
+
+/** Data that knows games with these ids, none of which is for a Nexus Mods game. */
 const knownGames = (...ids: VortexGameId[]): IGameData =>
   gameData({ known: ids.map((id) => game(id)) });
 
@@ -100,20 +102,20 @@ describe("findGame", () => {
   });
 
   describe("by gameDomain", () => {
-    it("finds the game that declares the domain as its nexus page", () => {
-      const known = [game(gameA, domainA), game(gameB, domainB)];
+    it("finds the game that is for the domain", () => {
+      const known = [game(gameA, nexusA), game(gameB, nexusB)];
 
       expect(findGame(gameData({ known }), { gameDomain: domainA })?.id).toBe(gameA);
     });
 
     it("finds a Tier 0 game by the domain it is managed under", () => {
-      const known = [game(gameA, domainA), game(tierZeroGame, tierZeroDomain)];
+      const known = [game(gameA, nexusA), game(tierZeroGame, nexusTierZero)];
 
       expect(findGame(gameData({ known }), { gameDomain: tierZeroDomain })?.id).toBe(tierZeroGame);
     });
 
-    it("is undefined when no known game declares the domain", () => {
-      const known = [game(gameA, domainA)];
+    it("is undefined when no known game is for the domain", () => {
+      const known = [game(gameA, nexusA)];
 
       expect(findGame(gameData({ known }), { gameDomain: domainB })).toBeUndefined();
     });
@@ -129,13 +131,13 @@ describe("findGame", () => {
     });
 
     it("does not match on the domain's case", () => {
-      const known = [game(gameA, domainA)];
+      const known = [game(gameA, nexusA)];
 
       expect(findGame(gameData({ known }), { gameDomain: GameDomain("DOMAIN-A") })).toBeUndefined();
     });
 
     describe("when games share the domain", () => {
-      const known = [game(sharedA, sharedDomain), game(sharedB, sharedDomain)];
+      const known = [game(sharedA, nexusShared), game(sharedB, nexusShared)];
       const gameDomain = sharedDomain;
 
       it("is the first registered when no discovery results are given", () => {
@@ -175,85 +177,47 @@ describe("findGame", () => {
   });
 
   describe("by gameId", () => {
-    it("finds an extension game through the domain the games list gives the id", () => {
-      const data = gameData({
-        known: [game(gameA, domainA), game(gameB, domainB)],
-        nexusGames: [listed(numericA, domainA), listed(numericB, domainB)],
-      });
+    it("finds the game that is for the id", () => {
+      const data = gameData({ known: [game(gameA, nexusA), game(gameB, nexusB)] });
 
       expect(findGame(data, { gameId: numericB })?.id).toBe(gameB);
     });
 
-    it("finds a Tier 0 game through its entry, without the games list", () => {
-      const data = gameData({
-        known: [game(gameA, domainA), game(tierZeroGame, tierZeroDomain)],
-        tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
-      });
+    it("finds a Tier 0 game by the id it is managed under", () => {
+      const data = gameData({ known: [game(gameA, nexusA), game(tierZeroGame, nexusTierZero)] });
 
       expect(findGame(data, { gameId: numericTierZero })?.id).toBe(tierZeroGame);
     });
 
-    it("finds the extension game that has taken over a Tier 0 entry's domain", () => {
-      const data = gameData({
-        known: [game(gameA, domainA)],
-        tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, domainA) },
-        nexusGames: [listed(numericTierZero, domainA)],
-      });
-
-      expect(findGame(data, { gameId: numericTierZero })?.id).toBe(gameA);
-    });
-
-    it("is undefined for a Tier 0 entry whose game is not registered and is not listed", () => {
-      const data = gameData({
-        known: [game(gameA, domainA)],
-        tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
-      });
-
-      expect(findGame(data, { gameId: numericTierZero })).toBeUndefined();
-    });
-
-    it("does not take a game registered under a tier-0 id for a Tier 0 game without an entry", () => {
-      const data = gameData({ known: [game(tierZeroGame, tierZeroDomain)] });
-
-      expect(findGame(data, { gameId: numericTierZero })).toBeUndefined();
-    });
-
-    it("is undefined when the games list does not have the id", () => {
-      const data = gameData({
-        known: [game(gameA, domainA)],
-        nexusGames: [listed(numericA, domainA)],
-      });
+    it("is undefined when no known game is for the id", () => {
+      const data = gameData({ known: [game(gameA, nexusA)] });
 
       expect(findGame(data, { gameId: numericB })).toBeUndefined();
     });
 
-    it("is undefined when no known game declares the listed domain", () => {
-      const data = gameData({
-        known: [game(gameB, domainB)],
-        nexusGames: [listed(numericA, domainA)],
-      });
+    it("does not take a game registered under a tier-0 id for a game with that id", () => {
+      const data = gameData({ known: [game(tierZeroGame)] });
 
-      expect(findGame(data, { gameId: numericA })).toBeUndefined();
+      expect(findGame(data, { gameId: numericTierZero })).toBeUndefined();
     });
 
-    it("does not find a game by an id that happens to equal the listed domain", () => {
+    it("does not look the id up in the games list or the Tier 0 entries", () => {
       const data = gameData({
-        known: [game(VortexGameId("domain-a"))],
+        known: [game(gameA)],
+        tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, domainA) },
         nexusGames: [listed(numericA, domainA)],
       });
 
       expect(findGame(data, { gameId: numericA })).toBeUndefined();
+      expect(findGame(data, { gameId: numericTierZero })).toBeUndefined();
     });
 
     it("is undefined when nothing is known", () => {
       expect(findGame(gameData(), { gameId: numericA })).toBeUndefined();
     });
 
-    describe("when games share the id's domain", () => {
-      const data = gameData({
-        known: [game(sharedA, sharedDomain), game(sharedB, sharedDomain)],
-        nexusGames: [listed(numericShared, sharedDomain)],
-      });
+    describe("when games are for the same id", () => {
+      const data = gameData({ known: [game(sharedA, nexusShared), game(sharedB, nexusShared)] });
 
       it("is the first registered when none is installed", () => {
         expect(findGame(data, { gameId: numericShared })?.id).toBe(sharedA);
@@ -275,7 +239,7 @@ describe("findGame", () => {
 // back is tested. The other targets read the data themselves and are tested in full.
 describe("convertId", () => {
   const data = gameData({
-    known: [game(gameA, domainA), game(gameB, domainB)],
+    known: [game(gameA, nexusA), game(gameB, nexusB)],
     nexusGames: [listed(numericA, domainA), listed(numericB, domainB)],
   });
 
@@ -290,15 +254,15 @@ describe("convertId", () => {
   });
 
   describe("to gameDomain", () => {
-    it("converts a vortexGameId to the nexus page the game declares", () => {
+    it("converts a vortexGameId to the domain of the game it is for", () => {
       expect(convertId(data, { vortexGameId: gameB }, "gameDomain")).toBe(domainB);
     });
 
-    it("is undefined for a game that declares no nexus page, whatever its id", () => {
-      const noPage = gameData({ known: [game(VortexGameId("domain-a"))] });
+    it("is undefined for a game that is for no Nexus Mods game, whatever its id", () => {
+      const noNexus = gameData({ known: [game(VortexGameId("domain-a"))] });
 
       expect(
-        convertId(noPage, { vortexGameId: VortexGameId("domain-a") }, "gameDomain"),
+        convertId(noNexus, { vortexGameId: VortexGameId("domain-a") }, "gameDomain"),
       ).toBeUndefined();
     });
 
@@ -358,28 +322,69 @@ describe("convertId", () => {
       expect(convertId(data, { gameDomain: tierZeroDomain }, "gameId")).toBeUndefined();
     });
 
-    it("converts a vortexGameId through the nexus page the game declares", () => {
+    it("converts a vortexGameId to the id of the game it is for", () => {
       expect(convertId(data, { vortexGameId: gameB }, "gameId")).toBe(numericB);
     });
 
-    it("converts the vortexGameId of a registered Tier 0 game without the games list", () => {
-      const tierZero = gameData({
-        known: [game(tierZeroGame, tierZeroDomain)],
-        tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
-      });
-
-      expect(convertId(tierZero, { vortexGameId: tierZeroGame }, "gameId")).toBe(numericTierZero);
-    });
-
-    it("is undefined for a game that declares no nexus page, whatever its id", () => {
-      const noPage = gameData({
+    it("is undefined for a game that is for no Nexus Mods game, whatever its id", () => {
+      const noNexus = gameData({
         known: [game(VortexGameId("domain-a"))],
         nexusGames: [listed(numericA, domainA)],
       });
 
       expect(
-        convertId(noPage, { vortexGameId: VortexGameId("domain-a") }, "gameId"),
+        convertId(noNexus, { vortexGameId: VortexGameId("domain-a") }, "gameId"),
       ).toBeUndefined();
     });
+  });
+});
+
+describe("nexusGameData", () => {
+  it("is the Tier 0 entry's own game for a Tier 0 game", () => {
+    const tierZero = gameData({
+      tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+    });
+
+    expect(nexusGameData(tierZero, tierZeroGame)).toEqual({
+      gameId: numericTierZero,
+      gameDomain: tierZeroDomain,
+    });
+  });
+
+  it("prefers the Tier 0 entry over a declared domain", () => {
+    const tierZero = gameData({
+      tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+      nexusGames: [listed(numericA, domainA)],
+    });
+
+    expect(nexusGameData(tierZero, tierZeroGame, domainA)).toEqual({
+      gameId: numericTierZero,
+      gameDomain: tierZeroDomain,
+    });
+  });
+
+  it("looks the declared domain up in the Nexus Mods games list", () => {
+    const data = gameData({ nexusGames: [listed(numericA, domainA), listed(numericB, domainB)] });
+
+    expect(nexusGameData(data, gameB, domainB)).toEqual({
+      gameId: numericB,
+      gameDomain: domainB,
+    });
+  });
+
+  it("is undefined when the declared domain isn't in the games list, as before it has loaded", () => {
+    expect(nexusGameData(gameData(), gameA, domainA)).toBeUndefined();
+  });
+
+  it("is undefined for a game that declares no domain and has no Tier 0 entry", () => {
+    expect(
+      nexusGameData(gameData({ nexusGames: [listed(numericA, domainA)] }), gameA),
+    ).toBeUndefined();
+  });
+
+  it("does not take a domain from a game id that happens to equal a listed domain", () => {
+    const data = gameData({ nexusGames: [listed(numericA, domainA)] });
+
+    expect(nexusGameData(data, VortexGameId("domain-a"))).toBeUndefined();
   });
 });

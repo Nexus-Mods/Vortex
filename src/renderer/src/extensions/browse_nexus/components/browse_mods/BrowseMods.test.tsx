@@ -68,6 +68,8 @@ vi.mock("./mod_list/ModList", () => ({
     listRef,
     status,
     onFocusDetails,
+    onPassLastMod,
+    onLoadMore,
     onRetry,
     onSelectMod,
     emptyState,
@@ -75,40 +77,61 @@ vi.mock("./mod_list/ModList", () => ({
   }: {
     mods: ModSummary[];
     activeModId: string;
-    listRef: React.RefObject<HTMLDivElement>;
+    listRef: React.Ref<{ focus: () => void; focusOpenMod: () => void }>;
     status: ListingStatus;
+    onLoadMore: (source: "scroll" | "button") => void;
     onFocusDetails: () => void;
+    onPassLastMod: () => void;
     onRetry: () => void;
     onSelectMod: (id: string, input: string) => void;
     emptyState: React.ReactNode;
     endOfResults: React.ReactNode;
-  }) => (
-    <div aria-label="Mods" ref={listRef} role="region" tabIndex={-1}>
-      {!mods.length && emptyState}
-      {!!mods.length && <div data-testid="end-of-results">{endOfResults}</div>}
-      {(status === "failed" || status === "load_more_failed") && (
-        <button onClick={onRetry}>Retry</button>
-      )}
-      {mods.map((mod) => (
-        <button
-          data-mod-card
-          key={mod.id}
-          tabIndex={mod.id === activeModId ? 0 : -1}
-          onClick={() => onSelectMod(mod.id, "pointer")}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              onSelectMod(mod.id, "keyboard");
-            }
-            if (event.key === "ArrowRight") {
-              onFocusDetails();
-            }
-          }}
-        >
-          {mod.name}
+  }) => {
+    const regionRef = React.useRef<HTMLDivElement>(null);
+    const openModRef = React.useRef<HTMLButtonElement>(null);
+
+    React.useImperativeHandle(listRef, () => ({
+      focus: () => regionRef.current?.focus(),
+      focusOpenMod: () => openModRef.current?.focus(),
+    }));
+
+    return (
+      <div aria-label="Mods" ref={regionRef} role="region" tabIndex={-1}>
+        {!mods.length && emptyState}
+        {!!mods.length && <div data-testid="end-of-results">{endOfResults}</div>}
+        <button data-testid="pass-last-mod" onClick={onPassLastMod}>
+          Pass the last mod
         </button>
-      ))}
-    </div>
-  ),
+        {status === "paused" && (
+          <button data-testid="load-more" onClick={() => onLoadMore("button")}>
+            Load more
+          </button>
+        )}
+        {(status === "failed" || status === "load_more_failed") && (
+          <button onClick={onRetry}>Retry</button>
+        )}
+        {mods.map((mod) => (
+          <button
+            data-testid={`mock-card-${mod.id}`}
+            key={mod.id}
+            ref={mod.id === activeModId ? openModRef : undefined}
+            tabIndex={mod.id === activeModId ? 0 : -1}
+            onClick={() => onSelectMod(mod.id, "pointer")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                onSelectMod(mod.id, "keyboard");
+              }
+              if (event.key === "ArrowRight") {
+                onFocusDetails();
+              }
+            }}
+          >
+            {mod.name}
+          </button>
+        ))}
+      </div>
+    );
+  },
 }));
 
 // The active game, by its name and Nexus Mods domain.
@@ -320,6 +343,26 @@ describe("BrowseMods", () => {
     }
   });
 
+  it("shows and counts no mod picked on the way past the last one", () => {
+    vi.useFakeTimers();
+    const { propertiesOf } = renderComponent(search([mod("1"), mod("2")]));
+
+    try {
+      fireEvent.keyDown(screen.getByTestId("mock-card-2"), { key: "Enter" });
+      fireEvent.click(screen.getByTestId("pass-last-mod"));
+      fireEvent.keyUp(window, { key: "Enter" });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 1");
+      expect(screen.getByTestId("mock-card-1")).toHaveAttribute("tabindex", "0");
+      expect(propertiesOf("browse_mods_mod_selected")).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("shows a mod waiting from the keyboard at once when it's clicked", () => {
     vi.useFakeTimers();
     renderComponent(search([mod("1"), mod("2")]));
@@ -410,6 +453,22 @@ describe("BrowseMods", () => {
 
     expect(failed.retry).toHaveBeenCalled();
     expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, pages_loaded: 2 }]);
+  });
+
+  it("loads more from Load more, counting how many pages it had paused after", async () => {
+    const paused = search([mod("1"), mod("2")], false, {
+      status: "paused",
+      pagesLoaded: 3,
+      loadMore: vi.fn(),
+    });
+    const { propertiesOf } = renderComponent(paused);
+
+    await userEvent.click(screen.getByTestId("load-more"));
+
+    expect(paused.loadMore).toHaveBeenCalled();
+    expect(propertiesOf("browse_mods_load_more_clicked")).toEqual([
+      { ...searched, pages_loaded: 3 },
+    ]);
   });
 
   it("counts an empty search only once the user can see it", () => {

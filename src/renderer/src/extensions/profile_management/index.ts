@@ -647,6 +647,73 @@ export async function discoverPickedGame(
   }
 }
 
+/**
+ * Offers to download the extension that provides a game, and restarts into it once it is
+ * installed. `store` is the store the user picked the game from, which the restart is held to.
+ */
+function offerGameExtension(
+  api: IExtensionApi,
+  extension: IExtensionDownloadInfo,
+  store: string | undefined,
+): PromiseBB<void> {
+  return api
+    .showDialog(
+      "question",
+      "Game support not installed",
+      {
+        text:
+          "Support for this game is provided through an extension. To use it you have to " +
+          "download that extension and restart Vortex.",
+      },
+      [
+        { label: "Cancel" },
+        {
+          label: "Download",
+          action: () => {
+            api.store.dispatch(
+              setUIBlocker(
+                "installing-game",
+                "download",
+                "Installing Game, Vortex will restart upon completion.",
+                true,
+              ),
+            );
+
+            api.ext
+              .ensureLoggedIn()
+              .then(() => api.emitAndAwait("install-extension", extension))
+              .then((results: boolean[]) => {
+                if (results.includes(true)) {
+                  relaunch(
+                    store !== undefined
+                      ? ["--game", extension.name, "--game-store", store]
+                      : ["--game", extension.name],
+                  );
+                }
+              })
+              .finally(() => {
+                api.store.dispatch(clearUIBlocker("installing-game"));
+              })
+              .catch((err) => {
+                if (err instanceof UserCanceled) {
+                  return PromiseBB.resolve();
+                }
+
+                const allowReport =
+                  !(err instanceof ProcessCanceled) &&
+                  !(err instanceof ServiceTemporarilyUnavailable);
+                api.showErrorNotification("Log-in failed", err, {
+                  id: "failed-get-nexus-key",
+                  allowReport,
+                });
+              });
+          },
+        },
+      ],
+    )
+    .then(() => PromiseBB.resolve());
+}
+
 function manageGameUndiscovered(api: IExtensionApi, gameId: VortexGameId): PromiseBB<void> {
   let state: IState = api.store.getState();
   // read now: the add that recorded it clears it as soon as this returns, and the
@@ -656,75 +723,13 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: VortexGameId): Promi
   const gameStored = knownGames.find((game) => game.id === gameId);
 
   if (gameStored === undefined) {
-    const stubDownloadInfo = getGameStubDownloadInfo(gameId);
-    let extension: IExtensionDownloadInfo;
-    if (stubDownloadInfo !== undefined) {
-      extension = stubDownloadInfo;
-    } else {
-      extension = state.session.extensions.available.find(
-        (ext) => ext?.gameDomain === gameId || ext.name === gameId,
-      );
-    }
+    // a game with a stub names the extension that provides it
+    const extension = getGameStubDownloadInfo(gameId);
     if (extension === undefined) {
       throw new ProcessCanceled(`Invalid game id "${gameId}"`);
     }
 
-    return api
-      .showDialog(
-        "question",
-        "Game support not installed",
-        {
-          text:
-            "Support for this game is provided through an extension. To use it you have to " +
-            "download that extension and restart Vortex.",
-        },
-        [
-          { label: "Cancel" },
-          {
-            label: "Download",
-            action: () => {
-              api.store.dispatch(
-                setUIBlocker(
-                  "installing-game",
-                  "download",
-                  "Installing Game, Vortex will restart upon completion.",
-                  true,
-                ),
-              );
-
-              api.ext
-                .ensureLoggedIn()
-                .then(() => api.emitAndAwait("install-extension", extension))
-                .then((results: boolean[]) => {
-                  if (results.includes(true)) {
-                    relaunch(
-                      store !== undefined
-                        ? ["--game", extension.name, "--game-store", store]
-                        : ["--game", extension.name],
-                    );
-                  }
-                })
-                .finally(() => {
-                  api.store.dispatch(clearUIBlocker("installing-game"));
-                })
-                .catch((err) => {
-                  if (err instanceof UserCanceled) {
-                    return PromiseBB.resolve();
-                  }
-
-                  const allowReport =
-                    !(err instanceof ProcessCanceled) &&
-                    !(err instanceof ServiceTemporarilyUnavailable);
-                  api.showErrorNotification("Log-in failed", err, {
-                    id: "failed-get-nexus-key",
-                    allowReport,
-                  });
-                });
-            },
-          },
-        ],
-      )
-      .then(() => PromiseBB.resolve());
+    return offerGameExtension(api, extension, store);
   }
 
   return api
@@ -791,6 +796,43 @@ function manageGame(api: IExtensionApi, gameId: VortexGameId): PromiseLike<void>
   } else {
     return manageGameUndiscovered(api, gameId);
   }
+}
+
+/**
+ * What Manage does on the tile of a game: the Tier 0 opt-in for a game nothing provides an
+ * extension for, discovery held to the store the user picked it from, then managing it.
+ */
+function manageTile(api: IExtensionApi, gameId: VortexGameId): Promise<void> {
+  // Managing a game nothing provides an extension for is the Tier 0 opt-in; the
+  // game has to be registered before discovery, whose path resolution reads the
+  // synthesized game's queryArgs. Any other Manage behaves exactly as before.
+  const tierZero =
+    FlagService.instance?.getFlag("vortex-tier-0-game-support") !== undefined
+      ? tierZeroEntry(api.getState(), gameId)
+      : undefined;
+
+  const registerStep =
+    tierZero !== undefined
+      ? confirmTierZero(api).then(() => api.emitAndAwait("register-tier-zero-game", tierZero))
+      : Promise.resolve();
+
+  // what the user picked the game from, which discovery is held to
+  const store = pickedStore(api.getState(), gameId);
+
+  return registerStep
+    .then(() => discoverPickedGame(api, gameId, store))
+    .then(() => Promise.resolve(checkOverridden(api, gameId)))
+    .then(() => {
+      const state = api.getState();
+      // Mirrors the guard in manageGame: discovery can outlive the
+      // registering extension.
+      const manageFunc =
+        state.settings.gameMode.discovered[gameId]?.path !== undefined && isGameRegistered(gameId)
+          ? manageGameDiscovered
+          : manageGameUndiscovered;
+
+      return Promise.resolve(manageFunc(api, gameId));
+    });
 }
 
 function removeProfileImpl(api: IExtensionApi, profileId: string) {
@@ -1005,41 +1047,21 @@ function init(context: IExtensionContext): boolean {
     },
     "Manage",
     (instanceIds: string[]) => {
-      const gameId = VortexGameId(instanceIds[0]);
+      const state = context.api.getState();
+      // The tile of a game nothing is registered for carries the extension the catalog has for
+      // it, recorded when it was clicked. There is no game to manage yet, only the extension.
+      const { gameAddExtension } = state.session.gameMode;
 
-      // Managing a game nothing provides an extension for is the Tier 0 opt-in; the
-      // game has to be registered before discovery, whose path resolution reads the
-      // synthesized game's queryArgs. Any other Manage behaves exactly as before.
-      const tierZero =
-        FlagService.instance?.getFlag("vortex-tier-0-game-support") !== undefined
-          ? tierZeroEntry(context.api.getState(), gameId)
-          : undefined;
-
-      const registerStep =
-        tierZero !== undefined
-          ? confirmTierZero(context.api).then(() =>
-              context.api.emitAndAwait("register-tier-zero-game", tierZero),
-            )
-          : Promise.resolve();
-
-      // what the user picked the game from, which discovery is held to
-      const store = pickedStore(context.api.getState(), gameId);
-
-      registerStep
-        .then(() => discoverPickedGame(context.api, gameId, store))
-        .then(() => Promise.resolve(checkOverridden(context.api, gameId)))
-        .then(() => {
-          const state = context.api.getState();
-          // Mirrors the guard in manageGame: discovery can outlive the
-          // registering extension.
-          const manageFunc =
-            state.settings.gameMode.discovered[gameId]?.path !== undefined &&
-            isGameRegistered(gameId)
-              ? manageGameDiscovered
-              : manageGameUndiscovered;
-
-          return Promise.resolve(manageFunc(context.api, gameId));
-        })
+      (gameAddExtension !== null
+        ? Promise.resolve(
+            offerGameExtension(
+              context.api,
+              gameAddExtension,
+              state.session.gameMode.gameAddStore?.store,
+            ),
+          )
+        : manageTile(context.api, VortexGameId(instanceIds[0]))
+      )
         .catch((err) => {
           if (!(err instanceof UserCanceled)) {
             // a game missing from the store the user picked isn't a bug to report

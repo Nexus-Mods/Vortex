@@ -161,6 +161,12 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
 
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
 
+    // From the details' … menu: the mod's page link copied, and its page opened to report it.
+    trackModLinkCopied: (props: { mod_uid: string }) => track("browse_mods_mod_link_copied", props),
+
+    trackModReportOpened: (props: { mod_uid: string }) =>
+      track("browse_mods_mod_report_opened", props),
+
     // `image_index` counts from 1, as `position` does; the keys on the strip pick too, counted as
     // `keyboard`.
     trackGalleryImageSelected: (props: {
@@ -218,6 +224,10 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
 
     trackEmptyStateLearnMoreOpened: (props: { view: TrackedView; state: EmptyStateKind }) =>
       track("browse_mods_empty_state_learn_more_opened", props),
+
+    // Load more, while the list's paused; `pages_loaded` is how many pages it had paused after.
+    trackLoadMoreClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
+      track("browse_mods_load_more_clicked", props),
 
     // `pages_loaded` is how many pages were loaded when Try again was clicked, 0 when none were.
     trackRetryClicked: (props: ISearchEventProps & { pages_loaded: number }) =>

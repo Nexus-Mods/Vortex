@@ -6,6 +6,10 @@ import { NEXUS_BASE_URL } from "../../constants";
 export const nexusModPageUrl = (domain: GameDomain, modId: number | string) =>
   [NEXUS_BASE_URL, domain, "mods", modId].join("/");
 
+/** A mod's page, asking the site to open its report dialog for a logged-in user. */
+export const nexusModReportUrl = (domain: GameDomain, modId: number | string) =>
+  `${nexusModPageUrl(domain, modId)}?report=1`;
+
 /** A mod in Nexus Mods' site section, which isn't for a game, such as a Vortex extension. */
 export const nexusSiteModPageUrl = (modId: number | string) =>
   [NEXUS_BASE_URL, "site", "mods", modId].join("/");

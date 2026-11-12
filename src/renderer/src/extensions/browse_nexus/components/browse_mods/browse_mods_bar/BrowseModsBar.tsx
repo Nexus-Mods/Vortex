@@ -62,11 +62,9 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
     panelHandle: panelRefs.filters,
     label: t("Filter"),
     icon: "filter_list",
-    hasPip: !!search.activeFilterCount,
     panelRole: "menu",
     panel: ({ dismiss }) => (
       <ModFilters
-        activeFilters={search.activeFilters}
         canSeeAdult={search.canSeeAdult}
         changedFilters={search.changedFilters}
         filters={search.filters}

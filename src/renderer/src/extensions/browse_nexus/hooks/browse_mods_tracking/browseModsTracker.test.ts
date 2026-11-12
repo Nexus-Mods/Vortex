@@ -107,4 +107,18 @@ describe("createBrowseModsTracker", () => {
       properties: { view: "new", source: "empty_state" },
     });
   });
+
+  it.each([
+    ["trackModLinkCopied", "browse_mods_mod_link_copied"],
+    ["trackModReportOpened", "browse_mods_mod_report_opened"],
+  ] as const)("counts %s from the details' menu, by its mod", (method, eventName) => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker[method]({ mod_uid: "1704-1" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName,
+      properties: { mod_uid: "1704-1" },
+    });
+  });
 });
