@@ -43,6 +43,15 @@
     }
 }
 
+.nxm-table-cell .icon-button:not([disabled]) {
+    cursor: pointer;
+
+    // It's dragged as well as clicked.
+    &.btn-dependency:active {
+        cursor: default;
+    }
+}
+
 // button inside a (input- or list-) line  pulled to the right
 .btn-line-right {
     position: absolute;
