@@ -1,7 +1,11 @@
 import { matchMutation, MutationCache, QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 
-import { oneClickFileInstallKey, oneClickInstallKey } from "./oneClickInstall";
+import {
+  oneClickFileInstallKey,
+  oneClickFileInstallsKey,
+  oneClickInstallKey,
+} from "./oneClickInstall";
 
 /** A mutation under `mutationKey`, as React Query sees it when matching filters. */
 const mutationUnder = (mutationKey: readonly unknown[]) =>
@@ -27,5 +31,21 @@ describe("oneClickFileInstallKey", () => {
     const key = oneClickFileInstallKey({ modId: "1704-12604", fileId: 42 });
 
     expect(matchMutation({ mutationKey: key }, other)).toBe(false);
+  });
+});
+
+describe("oneClickFileInstallsKey", () => {
+  it("matches a card's install of a file of the mod", () => {
+    const card = mutationUnder(oneClickFileInstallKey({ modId: "1704-12604", fileId: 42 }));
+
+    expect(matchMutation({ mutationKey: oneClickFileInstallsKey("1704-12604") }, card)).toBe(true);
+  });
+
+  it("doesn't match a card's install of another mod's file", () => {
+    const other = mutationUnder(oneClickFileInstallKey({ modId: "1704-12605", fileId: 42 }));
+
+    expect(matchMutation({ mutationKey: oneClickFileInstallsKey("1704-12604") }, other)).toBe(
+      false,
+    );
   });
 });

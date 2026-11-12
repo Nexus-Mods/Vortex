@@ -223,6 +223,18 @@ describe("modInstallState for one file", () => {
     });
   });
 
+  it("counts repeat downloads of a file once", () => {
+    expect(stateOf({}, { one: file(1), again: file(1) })).toMatchObject({ downloadCount: 1 });
+  });
+
+  it("counts downloads of different files apart", () => {
+    expect(stateOf({}, { one: file(1), two: file(2) })).toMatchObject({ downloadCount: 2 });
+  });
+
+  it("counts each download without a file id as its own", () => {
+    expect(stateOf({}, { a: download(), b: download() })).toMatchObject({ downloadCount: 2 });
+  });
+
   it("counts only the file's own installed versions", () => {
     const one = mod("one", { fileId: 1 });
 

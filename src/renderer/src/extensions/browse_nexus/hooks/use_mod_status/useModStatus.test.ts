@@ -4,15 +4,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 
 import type { INexusModRef, ModInstallState } from "../../util/mod_install_state/modInstallState";
+import {
+  oneClickFileInstallsKey,
+  oneClickInstallKey,
+} from "../../util/one_click_install/oneClickInstall";
 import { useModStatus } from "./useModStatus.hook";
 
 const mocks = vi.hoisted(() => ({
   installState: { kind: "none" } as ModInstallState,
   lookedUp: [] as INexusModRef[],
-  mutating: 0,
+  mutatingKey: [] as unknown[],
 }));
 
-vi.mock("@tanstack/react-query", () => ({ useIsMutating: () => mocks.mutating }));
+vi.mock("@tanstack/react-query", () => ({
+  useIsMutating: ({ mutationKey }: { mutationKey: unknown[] }) =>
+    JSON.stringify(mutationKey) === JSON.stringify(mocks.mutatingKey) ? 1 : 0,
+}));
 vi.mock("../use_mod_install_state/useModInstallState.hook", () => ({
   useModInstallState: (ref: INexusModRef) => {
     mocks.lookedUp.push(ref);
@@ -30,7 +37,7 @@ describe("useModStatus", () => {
   beforeEach(() => {
     mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 1 };
     mocks.lookedUp = [];
-    mocks.mutating = 0;
+    mocks.mutatingKey = [];
   });
 
   it("looks the mod up by its game's domain and its id", () => {
@@ -46,7 +53,14 @@ describe("useModStatus", () => {
   });
 
   it("gives no status while a 1-click install of it runs", () => {
-    mocks.mutating = 1;
+    mocks.mutatingKey = oneClickInstallKey(MOD.id);
+    const { result } = renderHook(() => useModStatus(MOD));
+
+    expect(result.current.status).toBeUndefined();
+  });
+
+  it("gives no status while a picker card's 1-click install of one of its files runs", () => {
+    mocks.mutatingKey = oneClickFileInstallsKey(MOD.id);
     const { result } = renderHook(() => useModStatus(MOD));
 
     expect(result.current.status).toBeUndefined();
