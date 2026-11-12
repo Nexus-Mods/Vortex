@@ -9,7 +9,6 @@ import { ZoomHotkeyIndicator } from "../extensions/settings_interface/components
 import type { IState } from "../types/IState";
 import { MutexProvider } from "../util/MutexContext";
 import { DevToolsMenu } from "./components/dev_tools/DevToolsMenu";
-import { GameArtProvider } from "./components/game_art/GameArt.context";
 import { ClassicLayout, ModernLayout } from "./layout";
 
 addStyle(ReactButton, "secondary");
@@ -31,15 +30,13 @@ export const AppLayout: FC<React.PropsWithChildren<IBaseProps>> = () => {
         <MenuLayerProvider>
           <MainProvider>
             <PagesProvider>
-              <GameArtProvider>
-                <MutexProvider>
-                  {useModernLayout ? <ModernLayout /> : <ClassicLayout />}
-                </MutexProvider>
+              <MutexProvider>
+                {useModernLayout ? <ModernLayout /> : <ClassicLayout />}
+              </MutexProvider>
 
-                <ZoomHotkeyIndicator />
+              <ZoomHotkeyIndicator />
 
-                {process.env.NODE_ENV === "development" && <DevToolsMenu />}
-              </GameArtProvider>
+              {process.env.NODE_ENV === "development" && <DevToolsMenu />}
             </PagesProvider>
           </MainProvider>
         </MenuLayerProvider>
