@@ -1,5 +1,6 @@
 import * as path from "node:path";
 
+import type { GameDomain, GameId } from "@vortex/shared";
 import * as semver from "semver";
 
 import type { IAvailableExtension, IRegisteredExtension } from "@/types/extensions";
@@ -165,6 +166,34 @@ export function findUpdatableExtensions(
     const available = findInCatalog(catalog, { modId: installed.modId });
     if (available !== undefined && isNewer(installed, available)) {
       result.push({ key, installed, available });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Find installed extensions whose Nexus Mods game is missing or differs from what the catalog
+ * names for their mod. Only entries that name both the game's id and its domain count, as the
+ * domain is empty until the games list has loaded.
+ */
+export function findNexusBackfill(
+  installedExtensions: Record<string, IExtensionState>,
+  catalog: IAvailableExtension[],
+): Array<{ key: string; nexus: { gameId: GameId; gameDomain: GameDomain } }> {
+  const result: Array<{ key: string; nexus: { gameId: GameId; gameDomain: GameDomain } }> = [];
+
+  for (const [key, installed] of Object.entries(installedExtensions)) {
+    if (installed.modId === undefined || installed.remove) continue;
+
+    const available = findInCatalog(catalog, { modId: installed.modId });
+    if (available?.gameId === undefined || available.gameDomain === undefined) continue;
+
+    if (
+      installed.nexus?.gameId !== available.gameId ||
+      installed.nexus?.gameDomain !== available.gameDomain
+    ) {
+      result.push({ key, nexus: { gameId: available.gameId, gameDomain: available.gameDomain } });
     }
   }
 
