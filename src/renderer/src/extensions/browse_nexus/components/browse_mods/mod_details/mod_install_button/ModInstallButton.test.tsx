@@ -538,7 +538,7 @@ describe("ModInstallButton", () => {
       expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
       expect(mocks.fetchFiles).toHaveBeenCalledWith("skyrimspecialedition", 1);
       expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual([
-        { mod_uid: "7340033", file_count: 3, source: "install" },
+        { mod_uid: "7340033", file_count: 3, source: "one_click" },
       ]);
       expect(mocks.install).not.toHaveBeenCalled();
     });
@@ -682,7 +682,7 @@ describe("ModInstallButton", () => {
         expect(mocks.show).not.toHaveBeenCalled();
         expect(tracking.tracked("browse_mods_view_installed_clicked")).toEqual([]);
         expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
-          [{ mod_uid: "7340033", file_count: 2, source: "several" }],
+          [{ mod_uid: "7340033", file_count: 2, source: "split_button" }],
         );
         await settleTransitions();
       });
@@ -719,7 +719,7 @@ describe("ModInstallButton", () => {
         expect(emit).not.toHaveBeenCalledWith("start-install-download", expect.anything());
         expect(tracking.tracked("browse_mods_install_clicked")).toEqual([]);
         expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
-          [{ mod_uid: "7340033", file_count: 2, source: "several" }],
+          [{ mod_uid: "7340033", file_count: 2, source: "split_button" }],
         );
         await settleTransitions();
       });
@@ -732,7 +732,7 @@ describe("ModInstallButton", () => {
 
         expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
         expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
-          [{ mod_uid: "7340033", file_count: 2, source: "menu" }],
+          [{ mod_uid: "7340033", file_count: 2, source: "split_menu" }],
         );
         expect(
           within(screen.getByRole("dialog")).getAllByTestId(/^main-file-card-\d+$/),
@@ -748,7 +748,7 @@ describe("ModInstallButton", () => {
 
         expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
         expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
-          [{ mod_uid: "7340033", file_count: 1, source: "menu" }],
+          [{ mod_uid: "7340033", file_count: 1, source: "split_menu" }],
         );
         expect(mocks.install).not.toHaveBeenCalled();
         await settleTransitions();
@@ -819,7 +819,7 @@ describe("ModInstallButton", () => {
 
         expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
         expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
-          [{ mod_uid: "7340033", file_count: 2, source: "menu" }],
+          [{ mod_uid: "7340033", file_count: 2, source: "split_menu" }],
         );
         expect(mocks.update).not.toHaveBeenCalled();
         await settleTransitions();
