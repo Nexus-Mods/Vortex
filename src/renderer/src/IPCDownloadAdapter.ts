@@ -524,7 +524,16 @@ export class IPCDownloadAdapter {
             await rm(tempPath, { force: true }).catch((err) => {
               log("warn", "failed to remove duplicate download", { downloadId, err });
             });
-            activeDownload?.callback?.(new AlreadyDownloaded(finalName, ownerId));
+            // The request settles on the record that already tracks the archive, as if that were
+            // the download it started. Failing here instead would strand callers the pre-download
+            // check can't cover (collections, requirement helpers): the archive stays on disk, so
+            // every retry would fail the same way.
+            log("info", "download duplicates a tracked archive, reusing it", {
+              downloadId,
+              ownerId,
+              finalName,
+            });
+            this.#settleCompleted(ownerId, reduxState, download, activeDownload);
             return;
           }
           // the fresh copy replaces the archive and finishes under the record that tracks it
@@ -566,6 +575,18 @@ export class IPCDownloadAdapter {
     // Notify listeners that the download completed. InstallManager listens
     // for this to trigger auto-install when automation is enabled.
     this.#api.events.emit("did-finish-download", downloadId, "finished");
+    this.#settleCompleted(downloadId, reduxState, download, activeDownload);
+  }
+
+  // Hands a finished download to whoever requested it: `downloadId` is the record that holds the
+  // archive, `requested` the record the request ran under (the same one unless the request ended
+  // up reusing an archive another record tracks).
+  #settleCompleted(
+    downloadId: string,
+    state: IState,
+    requested: IDownload | undefined,
+    activeDownload?: ActiveDownload,
+  ): void {
     // Fire the start-download callback now that the file is on disk. Callers
     // (e.g. nexus_integration collection download) rely on the callback firing
     // after completion to trigger installation, matching DownloadObserver behaviour.
@@ -574,7 +595,7 @@ export class IPCDownloadAdapter {
     const allowInstall = activeDownload?.allowInstall;
 
     const autoInstall =
-      reduxState.settings.automation?.install || download?.modInfo?.["startedAsUpdate"] === true;
+      state.settings.automation?.install || requested?.modInfo?.["startedAsUpdate"] === true;
 
     // Trigger auto-install respecting the per-download allowInstall override.
     // "force" (stored as true) → always install; false → never; undefined → automation setting.

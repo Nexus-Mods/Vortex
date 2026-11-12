@@ -287,6 +287,7 @@ describe("duplicate archives", () => {
     h: IDownloadAdapterHarness,
     redownload: string | undefined,
     modInfo: Record<string, unknown> = {},
+    options?: { allowInstall?: boolean | "force" },
   ): Promise<{ err: unknown; id?: string }> {
     const done = new Promise<{ err: unknown; id?: string }>((resolve) => {
       h.events.emit(
@@ -296,6 +297,7 @@ describe("duplicate archives", () => {
         "Display Name",
         (err: unknown, id?: string) => resolve({ err, id }),
         redownload,
+        options,
       );
     });
     await h.started.promise;
@@ -349,13 +351,46 @@ describe("duplicate archives", () => {
   }) => {
     const { h, dlPath } = await setup(makeDownloadAdapter);
 
-    const { err } = await download(h, undefined);
+    const { err, id } = await download(h, undefined);
 
-    expect(err).toBeInstanceOf(AlreadyDownloaded);
-    expect((err as AlreadyDownloaded).downloadId).toBe("dl-0");
+    // settles as a success on the tracking record: callers that don't special-case
+    // AlreadyDownloaded (adding a collection, requirement helpers) would otherwise fail on every
+    // retry while the archive stays on disk
+    expect(err).toBeNull();
+    expect(id).toBe("dl-0");
     expect(h.getState().persistent.downloads.files["new-0"]).toBeUndefined();
     expect(await readdir(dlPath)).toEqual(["file.bin"]);
     await expect(readFile(path.join(dlPath, "file.bin"), "utf8")).resolves.toBe("original");
+  });
+
+  test("a reused archive is installed when the request forces install", async ({
+    makeDownloadAdapter,
+  }) => {
+    const { h } = await setup(makeDownloadAdapter);
+    const installSpy = vi.fn();
+    h.events.on("start-install-download", installSpy);
+
+    const { err, id } = await download(h, undefined, {}, { allowInstall: "force" });
+
+    expect(err).toBeNull();
+    expect(id).toBe("dl-0");
+    expect(installSpy).toHaveBeenCalledWith("dl-0");
+  });
+
+  test("a reused archive is not installed when the request disallows install", async ({
+    makeDownloadAdapter,
+  }) => {
+    const { h } = await setup(makeDownloadAdapter);
+    h.setState((draft) => {
+      draft.settings.automation.install = true;
+    });
+    const installSpy = vi.fn();
+    h.events.on("start-install-download", installSpy);
+
+    const { id } = await download(h, "never", {}, { allowInstall: false });
+
+    expect(id).toBe("dl-0");
+    expect(installSpy).not.toHaveBeenCalled();
   });
 
   test("replace overwrites the archive under the record that tracks it", async ({
