@@ -44,6 +44,7 @@ import { parseExtensionInfo } from "./extensions/extension_manager/extensionInfo
 import { extensionStateFromScan, findInstalled } from "./extensions/extension_manager/queries";
 import _sessionReducer from "./extensions/extension_manager/reducers";
 import type { IModReference, IModRepoId } from "./extensions/mod_management/types/IMod";
+import { nexusGames } from "./extensions/nexus_integration/util";
 import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
 import { log } from "./logging";
 import type { SanityCheck } from "./store/reduxSanity";
@@ -2966,7 +2967,9 @@ class ExtensionManager {
               installedExtension !== undefined ||
               this.mPendingAdds.some((add) => add.name === loadedExtension.name);
             if (!claimed) {
-              this.mPendingAdds.push(extensionStateFromScan(loadedExtension, recorded));
+              this.mPendingAdds.push(
+                extensionStateFromScan(loadedExtension, recorded, nexusGames()),
+              );
             }
             if (recorded.enabled === false || recorded.remove) {
               log("debug", "extension disabled", { name: loadedExtension.name });
@@ -3189,7 +3192,7 @@ class ExtensionManager {
 
       // a replaced entry already has its own queued; this one is new
       if (this.mExtensionState[ext.name] === undefined) {
-        this.mPendingAdds.push(extensionStateFromScan(ext));
+        this.mPendingAdds.push(extensionStateFromScan(ext, undefined, nexusGames()));
       }
 
       result.push(ext);
