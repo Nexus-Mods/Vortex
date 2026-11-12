@@ -1,9 +1,10 @@
 {
   "mcpServers": {
     "chrome-devtools": {
-      "command": "pnpx",
+      "command": "pnpm",
       "args": [
-        "chrome-devtools-mcp@latest",
+        "dlx",
+        "chrome-devtools-mcp@1",
         "--no-usage-statistics",
         "--no-performance-crux",
         "--browserUrl",
