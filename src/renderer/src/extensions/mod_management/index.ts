@@ -152,6 +152,7 @@ import {
   getSupportedActivators,
   registerDeploymentMethod,
 } from "./util/deploymentMethods";
+import { registerDeployOrchestrator, type DeployOrchestrator } from "./util/DeployOrchestrator";
 import { NoDeployment } from "./util/exceptions";
 import extendApi from "./util/extendAPI";
 import { dealWithExternalChanges } from "./util/externalChanges";
@@ -161,11 +162,7 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import {
-  planDeployment,
-  registerLockfileContribution,
-  registerResolveLockFile,
-} from "./util/resolveLockFile";
+import { registerLockfileContribution } from "./util/resolveLockFile";
 import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
@@ -221,6 +218,8 @@ const appContext: IAppContext = {
 };
 
 let installManager: InstallManager;
+/** set in dev builds only */
+let deployOrchestrator: DeployOrchestrator | undefined;
 
 interface IInstaller {
   id: string;
@@ -890,9 +889,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               );
 
               // dev builds only; plans the disk as external changes left it
-              if (process.env.NODE_ENV === "development") {
-                await planDeployment(api, deployingProfileId);
-              }
+              await deployOrchestrator?.plan(deployingProfileId);
 
               progress(t("Starting deployment"), 35);
               resetDeploymentFailures(api, game.id);
@@ -1766,7 +1763,7 @@ function once(api: IExtensionApi) {
 
   // hashes every staged file, so only dev builds resolve the lockfile for now
   if (process.env.NODE_ENV === "development") {
-    registerResolveLockFile(api);
+    deployOrchestrator = registerDeployOrchestrator(api);
   }
 
   api.events.on("profile-will-change", () => {
@@ -2205,7 +2202,7 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
-  // the planner only runs in dev builds, see registerResolveLockFile
+  // the planner only runs in dev builds, see registerDeployOrchestrator
   if (process.env.NODE_ENV === "development") {
     context.registerMainPage(
       "account_tree",

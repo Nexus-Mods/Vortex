@@ -1,12 +1,14 @@
 import { existsSync } from "node:fs";
-import { mkdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
+import { sessionReducer } from "../extensions/mod_management/reducers/session";
 import { STAGING_DIR_TAG } from "../extensions/mod_management/stagingDirectory";
 import type { IDeployedFile } from "../extensions/mod_management/types/IDeploymentMethod";
 import { getManifest, saveActivation } from "../extensions/mod_management/util/activationStore";
 import BlacklistSet from "../extensions/mod_management/util/BlacklistSet";
 import { deployedFilePath } from "../extensions/mod_management/util/deployedFilePath";
+import { checksum } from "../util/checksum";
 import getNormalizeFunc from "../util/getNormalizeFunc";
 import {
   makeBlacklistGame,
@@ -103,6 +105,23 @@ export async function makeDeployedGame(
       (await getManifest(harness.api, "", harness.gameId)).files.map((file) => file.relPath),
     isDeployed: (file) => existsSync(deployedFilePath(harness.dataPath, file.target, file.relPath)),
   };
+}
+
+/** The checksum of a file on disk, for the resolver to hash staged files with. */
+export const hashFile = async (filePath: string): Promise<string> =>
+  checksum(await readFile(filePath));
+
+/** A hardlink-deployed game the resolver accepts, with the mod session slice. */
+export async function makeResolvableGame(): Promise<IDeployedGameHarness> {
+  const game = await makeDeployedGame({
+    methodId: "hardlink_activator",
+    extraReducers: [{ path: ["session", "mods"], reducer: sessionReducer }],
+  });
+  // a store whose install carries no ids, so no store library is scanned
+  game.setState((draft) => {
+    draft.settings.gameMode.discovered[game.gameId].store = "epic";
+  });
+  return game;
 }
 
 /** A game whose purge left left-behind.esp and removed purged.esp; the manifest lists both. */

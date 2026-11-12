@@ -1,5 +1,3 @@
-import * as path from "node:path";
-
 import { KeptReason, type Operation } from "@nexusmods/mod-pipeline";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import {
@@ -11,14 +9,13 @@ import {
 } from "@vortex/shared/filesystem";
 import { describe, expect, test } from "vitest";
 
-import { startJournal } from "@/test-utils/journal";
+import { newJournal, startJournal, unreadableJournal } from "@/test-utils/journal";
 import { makeNexusFileSource } from "@/test-utils/lockfileBuilders";
 import {
   makeLinkOperation,
   makeRestoreOperation,
   makeUnlinkOperation,
 } from "@/test-utils/operationBuilders";
-import { makeTempDir } from "@/test-utils/tempDir";
 
 import { BACKUP_TAG } from "../LinkingDeployment";
 import {
@@ -32,7 +29,6 @@ import {
   type StagedFiles,
 } from "./apply/apply";
 import { JournalReadStatus, readJournal, type JournalStorage } from "./apply/journal";
-import { journalStorageAt } from "./journalStorage";
 
 const ROOT = "/fixture-root";
 const GAME = `${ROOT}/game`;
@@ -57,15 +53,6 @@ const unlink = (name: string) => makeUnlinkOperation({ file: fileNamed(name) });
 const link = (name: string) => makeLinkOperation({ file: fileNamed(name) });
 
 const stagedFiles: StagedFiles = { pathOf: (file) => inStaging(file.fileHash) };
-
-const newJournal = async () =>
-  journalStorageAt(path.join(await makeTempDir("apply-journal-"), "journal.ndjson"));
-
-const unreadableJournal = async () => {
-  const journal = await newJournal();
-  await journal.write(new TextEncoder().encode("{ not json\n"));
-  return journal;
-};
 
 interface Setup {
   /** files only in staging */
