@@ -110,7 +110,7 @@ describe("createBrowseModsTracker", () => {
 
   it.each([
     ["trackModLinkCopied", "browse_mods_mod_link_copied"],
-    ["trackReportOpened", "browse_mods_report_opened"],
+    ["trackModReportOpened", "browse_mods_mod_report_opened"],
   ] as const)("counts %s from the details' menu, by its mod", (method, eventName) => {
     const { emit, tracker } = trackerOnSpy();
 

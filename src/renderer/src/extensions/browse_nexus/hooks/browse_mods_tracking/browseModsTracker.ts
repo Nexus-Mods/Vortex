@@ -164,7 +164,8 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     // From the details' … menu: the mod's page link copied, and its page opened to report it.
     trackModLinkCopied: (props: { mod_uid: string }) => track("browse_mods_mod_link_copied", props),
 
-    trackReportOpened: (props: { mod_uid: string }) => track("browse_mods_report_opened", props),
+    trackModReportOpened: (props: { mod_uid: string }) =>
+      track("browse_mods_mod_report_opened", props),
 
     // `image_index` counts from 1, as `position` does; the keys on the strip pick too, counted as
     // `keyboard`.

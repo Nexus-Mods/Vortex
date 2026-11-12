@@ -24,7 +24,14 @@ const renderOpenMenu = async (writeText = vi.fn().mockResolvedValue(undefined)) 
     showErrorNotification: vi.fn(),
   } as unknown as IExtensionApi;
   const tracking = browseModsTracking();
-  render(<ModMenu api={api} mod={mod} />, { wrapper: tracking.wrapper });
+  render(
+    <ModMenu
+      api={api}
+      mod={mod}
+      modPageUrl="https://www.nexusmods.com/skyrimspecialedition/mods/12604"
+    />,
+    { wrapper: tracking.wrapper },
+  );
 
   await userEvent.click(screen.getByTestId("mod-menu"));
 
@@ -84,14 +91,22 @@ describe("ModMenu", () => {
     expect(openUrl).toHaveBeenCalledWith(
       "https://www.nexusmods.com/skyrimspecialedition/mods/12604?report=1",
     );
-    expect(propertiesOf("browse_mods_report_opened")).toEqual([{ mod_uid: "1704-12604" }]);
+    expect(propertiesOf("browse_mods_mod_report_opened")).toEqual([{ mod_uid: "1704-12604" }]);
   });
 
-  it("closes the menu once an item's picked", async () => {
+  it("closes the menu once the link's copied", async () => {
+    await renderOpenMenu();
+
+    await userEvent.click(screen.getByTestId("mod-menu-copy-link"));
+
+    await waitFor(() => expect(screen.queryByTestId("mod-menu-copy-link")).toBeNull());
+  });
+
+  it("closes the menu once Report mod is picked", async () => {
     await renderOpenMenu();
 
     await userEvent.click(screen.getByTestId("mod-menu-report"));
 
-    expect(screen.queryByTestId("mod-menu-copy-link")).toBeNull();
+    expect(screen.queryByTestId("mod-menu-report")).toBeNull();
   });
 });

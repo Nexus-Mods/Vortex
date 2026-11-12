@@ -125,7 +125,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
             </TabBar>
 
             <div className="flex items-center gap-x-2">
-              <ModMenu api={api} mod={mod} />
+              <ModMenu api={api} mod={mod} modPageUrl={modPageUrl} />
 
               <Tooltip content={t("Open mod page")}>
                 <Button
