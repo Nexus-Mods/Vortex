@@ -579,8 +579,8 @@ catalogs:
       specifier: github:TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
       version: 10.0.2
     electron:
-      specifier: 45.2.3
-      version: 45.2.3
+      specifier: 45.3.0
+      version: 45.3.0
     electron-builder:
       specifier: 24.13.3
       version: 24.13.3
@@ -2438,7 +2438,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.3
+        version: 45.3.0
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -3109,7 +3109,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.3
+        version: 45.3.0
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3613,7 +3613,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.3
+        version: 45.3.0
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3835,7 +3835,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-        version: 45.2.3
+        version: 45.3.0
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -4017,7 +4017,7 @@ importers:
         version: 3.6.0
       electron:
         specifier: 'catalog:'
-        version: 45.2.3
+        version: 45.3.0
       i18next:
         specifier: 'catalog:'
         version: 21.10.0
@@ -4050,7 +4050,7 @@ importers:
         version: 1.5.1-r.1
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@45.2.3)
+        version: 2.1.3(electron@45.3.0)
       '@floating-ui/react':
         specifier: 'catalog:'
         version: 0.27.20(react-dom@18.3.1)(react@18.3.1)
@@ -4552,13 +4552,13 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 45.2.3
+        version: 45.3.0
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
       electron-extension-installer:
         specifier: 'catalog:'
-        version: 2.0.1(electron@45.2.3)
+        version: 2.0.1(electron@45.3.0)
       openapi-typescript:
         specifier: 'catalog:'
         version: 7.13.0(typescript@6.0.3)
@@ -4579,7 +4579,7 @@ importers:
         version: link:../shared
       electron:
         specifier: 'catalog:'
-        version: 45.2.3
+        version: 45.3.0
 
   src/renderer:
     dependencies:
@@ -4607,7 +4607,7 @@ importers:
         version: 7.16.8(@babel/core@7.29.7)
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@45.2.3)
+        version: 2.1.3(electron@45.3.0)
       '@floating-ui/react':
         specifier: 'catalog:'
         version: 0.27.20(react-dom@18.3.1)(react@18.3.1)
@@ -4886,7 +4886,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 45.2.3
+        version: 45.3.0
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -9458,8 +9458,8 @@ packages:
   electron-updater@6.8.9:
     resolution: {integrity: sha512-ZhVxM9iGONUpZGI1FxdMRgJjUFXi7AYGVa5PwKlO1tV1/4zDxQmfKpXOHVztKrd6L9rLcFjERvi1Mf2vxyTkig==}
 
-  electron@45.2.3:
-    resolution: {integrity: sha512-Vurzu5UOA5nTGT4LqIwXD16QFGrOZdiXxF+1UP4KNsAOo/YtDcT3/u0jhP4WSwNJ0iLrLDi85hzBJ0arnGDhyw==}
+  electron@45.3.0:
+    resolution: {integrity: sha512-JpSzTaZkNaai4B3pUSICIfXiKwl+a7XyvHpWmA3O7SZbWDXNgYSyc7cmhNhlAARMzNAh9nOdZq5DgTZ/T9rlfA==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -11087,6 +11087,7 @@ packages:
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    deprecated: This package is no longer needed on supported Node.js versions. Node.js 16+ includes AbortController and AbortSignal as built-in globals. All Node.js versions requiring this polyfill are end-of-life. Use the built-in globals instead.
 
   node-addon-api@8.5.0:
     resolution: {integrity: sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A==}
@@ -14247,9 +14248,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@45.2.3)':
+  '@electron/remote@2.1.3(electron@45.3.0)':
     dependencies:
-      electron: 45.2.3
+      electron: 45.3.0
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -17692,9 +17693,9 @@ snapshots:
       pupa: 2.1.1
       unused-filename: 2.1.0
 
-  electron-extension-installer@2.0.1(electron@45.2.3):
+  electron-extension-installer@2.0.1(electron@45.3.0):
     dependencies:
-      electron: 45.2.3
+      electron: 45.3.0
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -17734,7 +17735,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@45.2.3:
+  electron@45.3.0:
     dependencies:
       '@electron-internal/extract-zip': 1.0.4
       '@electron/get': 5.0.0
