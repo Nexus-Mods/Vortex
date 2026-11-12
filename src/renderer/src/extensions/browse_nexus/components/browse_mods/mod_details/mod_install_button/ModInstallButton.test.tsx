@@ -1,5 +1,6 @@
+import type { IFileInfo } from "@nexusmods/nexus-api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { VortexError } from "@vortex/shared/errors";
 import React from "react";
@@ -9,6 +10,7 @@ import type { IMod } from "@/extensions/mod_management/types/IMod";
 import type { ModMainFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
+import { settleTransitions } from "@/test-utils/transitions";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
 
@@ -22,6 +24,7 @@ const mocks = vi.hoisted(() => {
     download: vi.fn(),
     update: vi.fn(),
     show: vi.fn(),
+    fetchFiles: vi.fn(),
     installState: { kind: "none" } as ModInstallState,
   };
 
@@ -37,7 +40,7 @@ const mocks = vi.hoisted(() => {
 vi.mock("react-redux", () => ({
   useSelector: (selector: (state: unknown) => unknown) =>
     selector({
-      settings: { automation: { install: mocks.installs } },
+      settings: { automation: { install: mocks.installs }, interface: {} },
     }),
 }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({
@@ -57,13 +60,17 @@ vi.mock("@/extensions/nexus_integration/util/download_and_install/downloadAndIns
   downloadAndInstallNexusFile: mocks.install,
   downloadNexusFile: mocks.download,
 }));
+vi.mock("@/util/useRelativeTime", () => ({ useRelativeTime: () => "2 days ago" }));
+vi.mock("../../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
+  useModInstallState: () => ({ kind: "none" }),
+}));
 
 import { ModInstallButton } from "./ModInstallButton";
 
 const mod = {
   id: "7340033",
   game_scoped_id: "1",
-  game: { domain_name: "skyrimspecialedition" },
+  game: { id: "1704", domain_name: "skyrimspecialedition" },
   name: "SkyUI",
 } as unknown as ModSummary;
 
@@ -76,6 +83,7 @@ const mainFile: ModMainFileVersion = {
 
 let tracking: ReturnType<typeof browseModsTracking>;
 let showErrorNotification: ReturnType<typeof vi.fn>;
+let sendNotification: ReturnType<typeof vi.fn>;
 let openUrl: ReturnType<typeof vi.fn>;
 let emit: ReturnType<typeof vi.fn>;
 let dispatch: ReturnType<typeof vi.fn>;
@@ -84,6 +92,7 @@ const renderButton = (file?: ModMainFileVersion | null, isError = false) => {
   const client = new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
   tracking = browseModsTracking();
   showErrorNotification = vi.fn();
+  sendNotification = vi.fn();
   emit = vi.fn();
   dispatch = vi.fn();
 
@@ -93,8 +102,10 @@ const renderButton = (file?: ModMainFileVersion | null, isError = false) => {
         api={
           {
             showErrorNotification,
+            sendNotification,
             events: { emit },
             store: { dispatch },
+            ext: { nexusFetchModFiles: mocks.fetchFiles },
           } as unknown as IExtensionApi
         }
         installState={mocks.installState}
@@ -126,6 +137,7 @@ describe("ModInstallButton", () => {
     mocks.download.mockReset();
     mocks.update.mockReset();
     mocks.show.mockReset();
+    mocks.fetchFiles.mockReset();
     mocks.installState = { kind: "none" };
     openUrl = vi.fn();
     window.api.shell = { openUrl } as unknown as typeof window.api.shell;
@@ -137,7 +149,9 @@ describe("ModInstallButton", () => {
 
     await userEvent.click(button());
 
-    expect(screen.getByText("Skip the website and install instantly.")).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Skip the website and install instantly." }),
+    ).toBeInTheDocument();
     expect(mocks.install).not.toHaveBeenCalled();
     expect(tracking.tracked("browse_mods_one_click_clicked")).toEqual([]);
     expect(upsellEvents()).toEqual([
@@ -176,34 +190,10 @@ describe("ModInstallButton", () => {
     ]);
   });
 
-  it("doesn't upsell a mod it couldn't install anyway", async () => {
-    mocks.isPremium = false;
-    renderButton(null);
-
-    await userEvent.click(button());
-
-    expect(screen.queryByText("Skip the website and install instantly.")).not.toBeInTheDocument();
-  });
-
   it("is off while the mod's details load", () => {
     renderButton(undefined);
 
     expect(button()).toBeDisabled();
-  });
-
-  it("can't install a mod without a main file, and says why", async () => {
-    renderButton(null);
-
-    await userEvent.click(button());
-    await userEvent.hover(button());
-
-    expect(button()).toHaveAttribute("aria-disabled", "true");
-    expect(mocks.install).not.toHaveBeenCalled();
-    expect(
-      await screen.findByText(
-        "This mod isn't available through Vortex. Download it from Nexus Mods instead.",
-      ),
-    ).toBeInTheDocument();
   });
 
   it("can't install a mod whose details failed to load, and says why", async () => {
@@ -214,7 +204,7 @@ describe("ModInstallButton", () => {
 
     expect(button()).toHaveAttribute("aria-disabled", "true");
     expect(mocks.install).not.toHaveBeenCalled();
-    expect(await screen.findByText("Couldn't load this mod's files")).toBeInTheDocument();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Couldn't load this mod's files");
   });
 
   it("installs the main file, counting it and showing progress until it's done", async () => {
@@ -232,6 +222,7 @@ describe("ModInstallButton", () => {
     });
     expect(button()).toHaveTextContent("1-click install");
     expect(mocks.download).not.toHaveBeenCalled();
+    expect(mocks.fetchFiles).not.toHaveBeenCalled();
     expect(tracking.tracked("browse_mods_one_click_clicked").map((e) => e.properties)).toEqual([
       { mod_uid: "7340033", file_uid: "7340074", action: "install" },
     ]);
@@ -289,7 +280,7 @@ describe("ModInstallButton", () => {
         id: "skyui",
         attributes: { source: "nexus", modId: 1, fileId: 7, downloadGame: "skyrimse" },
       } as unknown as IMod;
-      mocks.installState = { kind: "installed", mod: skyui, update };
+      mocks.installState = { kind: "installed", mod: skyui, update, installedCount: 1 };
     };
 
     const clicks = (eventName: string) => tracking.tracked(eventName).map((e) => e.properties);
@@ -335,7 +326,9 @@ describe("ModInstallButton", () => {
       const { rerender } = renderButton(mainFile);
 
       await userEvent.click(button());
-      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "Skip the website and update instantly." }),
+      ).toBeInTheDocument();
 
       mocks.isPremium = true;
       rerender();
@@ -357,7 +350,9 @@ describe("ModInstallButton", () => {
       expect(button()).not.toHaveAttribute("aria-disabled", "true");
       await userEvent.click(button());
 
-      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "Skip the website and update instantly." }),
+      ).toBeInTheDocument();
     });
 
     it("upsells a free user 1-click for an update while its details load", async () => {
@@ -368,7 +363,9 @@ describe("ModInstallButton", () => {
       expect(button()).not.toBeDisabled();
       await userEvent.click(button());
 
-      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "Skip the website and update instantly." }),
+      ).toBeInTheDocument();
     });
 
     it("upsells a free user an update in words of updating", async () => {
@@ -378,8 +375,12 @@ describe("ModInstallButton", () => {
 
       await userEvent.click(button());
 
-      expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
-      expect(screen.getByText("Update via mod page (free)")).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "Skip the website and update instantly." }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Update via mod page (free)" }),
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Unlock 1-click updates" })).toBeInTheDocument();
     });
 
@@ -419,7 +420,7 @@ describe("ModInstallButton", () => {
       const { rerender } = renderButton(mainFile);
 
       await userEvent.click(button());
-      mocks.installState = { kind: "downloaded", downloadId: "dl" };
+      mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 1 };
       rerender();
 
       await waitFor(() => expect(button()).toBeDisabled());
@@ -440,13 +441,394 @@ describe("ModInstallButton", () => {
 
     it("installs a download that isn't installed, for free users too", async () => {
       mocks.isPremium = false;
-      mocks.installState = { kind: "downloaded", downloadId: "dl" };
+      mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 1 };
       renderButton(mainFile);
 
       await userEvent.click(screen.getByRole("button", { name: "Install" }));
 
       expect(emit).toHaveBeenCalledWith("start-install-download", "dl");
       expect(clicks("browse_mods_install_clicked")).toEqual([{ mod_uid: "7340033" }]);
+    });
+  });
+
+  describe("for a mod without a primary file", () => {
+    /** A Main file of the mod, newer as its id grows. */
+    const mainFiles = (...ids: number[]) =>
+      ids.map(
+        (file_id) =>
+          ({
+            file_id,
+            category_id: 1,
+            name: `File ${file_id}`,
+            version: "1.0",
+            description: "",
+            size_kb: 1,
+            uploaded_timestamp: file_id,
+            is_primary: false,
+          }) as IFileInfo,
+      );
+
+    const pickerClose = () => screen.queryByTestId("main-file-picker-close");
+
+    it("opens the picker on its Main files, counting it", async () => {
+      mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12, 13));
+      renderButton(null);
+
+      await userEvent.click(button());
+
+      expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+      expect(mocks.fetchFiles).toHaveBeenCalledWith("skyrimspecialedition", 1);
+      expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual([
+        { mod_uid: "7340033", file_count: 3, source: "install" },
+      ]);
+      expect(mocks.install).not.toHaveBeenCalled();
+    });
+
+    it("installs its one Main file without asking", async () => {
+      mocks.fetchFiles.mockResolvedValue(mainFiles(11));
+      mocks.install.mockReturnValue(new Promise(() => undefined));
+      renderButton(null);
+
+      await userEvent.click(button());
+
+      await waitFor(() =>
+        expect(mocks.install).toHaveBeenCalledWith(expect.anything(), {
+          gameDomain: "skyrimspecialedition",
+          gameId: "skyrimse",
+          modId: "1",
+          fileId: "11",
+          name: "SkyUI",
+        }),
+      );
+      expect(tracking.tracked("browse_mods_one_click_clicked").map((e) => e.properties)).toEqual([
+        { mod_uid: "7340033", file_uid: "7318624272395", action: "install" },
+      ]);
+      expect(pickerClose()).not.toBeInTheDocument();
+      await waitFor(() => expect(button()).toBeDisabled());
+    });
+
+    it("says it couldn't load the files, and tries again on the next click", async () => {
+      mocks.fetchFiles.mockRejectedValue(new Error("offline"));
+      renderButton(null);
+
+      await userEvent.click(button());
+      await waitFor(() => expect(button()).toBeEnabled());
+      await userEvent.hover(button());
+
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(
+        "Couldn't load this mod's files",
+      );
+      expect(button()).not.toHaveAttribute("aria-disabled", "true");
+
+      await userEvent.click(button());
+
+      await waitFor(() => expect(mocks.fetchFiles).toHaveBeenCalledTimes(2));
+    });
+
+    it("can't install a mod with no Main files, and says why", async () => {
+      mocks.fetchFiles.mockResolvedValue([]);
+      renderButton(null);
+
+      await userEvent.click(button());
+      await waitFor(() => expect(button()).toHaveAttribute("aria-disabled", "true"));
+      await userEvent.hover(button());
+
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(
+        "This mod isn't available through Vortex. Download it from Nexus Mods instead.",
+      );
+      expect(mocks.install).not.toHaveBeenCalled();
+    });
+
+    it("upsells a free user first, opening the picker once they unlock Premium", async () => {
+      mocks.isPremium = false;
+      mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
+      const { rerender } = renderButton(null);
+
+      await userEvent.click(button());
+
+      expect(mocks.fetchFiles).not.toHaveBeenCalled();
+      expect(upsellEvents()).toEqual([
+        ["browse_mods_premium_modal_shown", { mod_uid: "7340033", action: "install" }],
+      ]);
+
+      mocks.isPremium = true;
+      rerender();
+
+      expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+      expect(mocks.install).not.toHaveBeenCalled();
+    });
+
+    it("returns focus to the button when the picker closes", async () => {
+      mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12, 13));
+      renderButton(null);
+
+      await userEvent.click(button());
+      await userEvent.click(await screen.findByTestId("main-file-picker-close"));
+
+      await waitFor(() => expect(pickerClose()).not.toBeInTheDocument());
+      await waitFor(() => expect(button()).toHaveFocus());
+    });
+
+    describe("once the user has it", () => {
+      /** Opens the split button's menu and picks View all main files. */
+      const viewAllFiles = async () => {
+        await userEvent.click(screen.getByTestId("mod-install-options"));
+        await userEvent.click(await screen.findByTestId("mod-install-view-all-files"));
+      };
+
+      beforeEach(() => {
+        mocks.installState = {
+          kind: "installed",
+          mod: { id: "skyui", attributes: {} } as unknown as IMod,
+          installedCount: 1,
+        };
+      });
+
+      it("keeps showing the installed mod from the split button's main part", async () => {
+        renderButton(null);
+
+        await userEvent.click(screen.getByTestId("mod-install-main"));
+
+        expect(mocks.show).toHaveBeenCalledWith(expect.anything(), "skyui");
+        expect(mocks.fetchFiles).not.toHaveBeenCalled();
+      });
+
+      it("shows a free user's installed mod however many of its files are installed", async () => {
+        mocks.isPremium = false;
+        mocks.installState = {
+          kind: "installed",
+          mod: { id: "skyui", attributes: {} } as unknown as IMod,
+          installedCount: 2,
+        };
+        renderButton(null);
+
+        await userEvent.click(screen.getByTestId("mod-install-main"));
+
+        expect(mocks.show).toHaveBeenCalledWith(expect.anything(), "skyui");
+        expect(mocks.fetchFiles).not.toHaveBeenCalled();
+      });
+
+      it("opens the picker from View installed mod when several of its files are installed", async () => {
+        mocks.installState = {
+          kind: "installed",
+          mod: { id: "skyui", attributes: {} } as unknown as IMod,
+          installedCount: 2,
+        };
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
+        renderButton(null);
+
+        await userEvent.click(screen.getByTestId("mod-install-main"));
+
+        expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+        expect(mocks.show).not.toHaveBeenCalled();
+        expect(tracking.tracked("browse_mods_view_installed_clicked")).toEqual([]);
+        expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
+          [{ mod_uid: "7340033", file_count: 2, source: "install" }],
+        );
+        await settleTransitions();
+      });
+
+      it("installs a download that isn't installed from the split button's main part", async () => {
+        mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 1 };
+        renderButton(null);
+
+        await userEvent.click(screen.getByTestId("mod-install-main"));
+
+        expect(emit).toHaveBeenCalledWith("start-install-download", "dl");
+        expect(mocks.fetchFiles).not.toHaveBeenCalled();
+      });
+
+      it("installs a free user's first download however many there are", async () => {
+        mocks.isPremium = false;
+        mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 2 };
+        renderButton(null);
+
+        await userEvent.click(screen.getByTestId("mod-install-main"));
+
+        expect(emit).toHaveBeenCalledWith("start-install-download", "dl");
+        expect(mocks.fetchFiles).not.toHaveBeenCalled();
+      });
+
+      it("opens the picker from Install when several of its files are downloaded", async () => {
+        mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 2 };
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
+        renderButton(null);
+
+        await userEvent.click(screen.getByTestId("mod-install-main"));
+
+        expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+        expect(emit).not.toHaveBeenCalledWith("start-install-download", expect.anything());
+        expect(tracking.tracked("browse_mods_install_clicked")).toEqual([]);
+        expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
+          [{ mod_uid: "7340033", file_count: 2, source: "install" }],
+        );
+        await settleTransitions();
+      });
+
+      it("opens the picker from View all main files, counting it", async () => {
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
+        renderButton(null);
+
+        await viewAllFiles();
+
+        expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+        expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
+          [{ mod_uid: "7340033", file_count: 2, source: "menu" }],
+        );
+        expect(
+          within(screen.getByRole("dialog")).getAllByTestId(/^main-file-card-\d+$/),
+        ).toHaveLength(2);
+        await settleTransitions();
+      });
+
+      it("opens the picker on its one Main file from View all main files", async () => {
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11));
+        renderButton(null);
+
+        await viewAllFiles();
+
+        expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+        expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
+          [{ mod_uid: "7340033", file_count: 1, source: "menu" }],
+        );
+        expect(mocks.install).not.toHaveBeenCalled();
+        await settleTransitions();
+      });
+
+      it("spins the split button while View all main files loads them", async () => {
+        mocks.fetchFiles.mockReturnValue(new Promise(() => undefined));
+        renderButton(null);
+
+        await viewAllFiles();
+
+        await waitFor(() => expect(screen.getByTestId("mod-install-main")).toBeDisabled());
+        expect(screen.getByTestId("mod-install-options")).toBeDisabled();
+      });
+
+      it("says in a notification when View all main files can't load them", async () => {
+        const error = new Error("offline");
+        mocks.fetchFiles.mockRejectedValue(error);
+        renderButton(null);
+
+        await viewAllFiles();
+
+        await waitFor(() =>
+          expect(showErrorNotification).toHaveBeenCalledWith(
+            "Couldn't load this mod's files",
+            error,
+            { allowReport: false },
+          ),
+        );
+        expect(pickerClose()).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.getByTestId("mod-install-main")).toBeEnabled());
+      });
+
+      it("says in a notification when View all main files finds none", async () => {
+        mocks.fetchFiles.mockResolvedValue([]);
+        renderButton(null);
+
+        await viewAllFiles();
+
+        await waitFor(() =>
+          expect(sendNotification).toHaveBeenCalledWith({
+            type: "info",
+            message:
+              "This mod isn't available through Vortex. Download it from Nexus Mods instead.",
+          }),
+        );
+        expect(pickerClose()).not.toBeInTheDocument();
+      });
+
+      it("upsells a free user View all main files, opening the picker once they unlock", async () => {
+        mocks.isPremium = false;
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
+        const { rerender } = renderButton(null);
+
+        await viewAllFiles();
+
+        expect(mocks.fetchFiles).not.toHaveBeenCalled();
+        expect(pickerClose()).not.toBeInTheDocument();
+        expect(upsellEvents()).toEqual([
+          ["browse_mods_premium_modal_shown", { mod_uid: "7340033", action: "install" }],
+        ]);
+
+        mocks.isPremium = true;
+        rerender();
+
+        expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+        expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
+          [{ mod_uid: "7340033", file_count: 2, source: "menu" }],
+        );
+        expect(mocks.update).not.toHaveBeenCalled();
+        await settleTransitions();
+      });
+
+      it("returns focus to the main part when the picker closes", async () => {
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
+        renderButton(null);
+
+        await viewAllFiles();
+        await userEvent.click(await screen.findByTestId("main-file-picker-close"));
+
+        await waitFor(() => expect(pickerClose()).not.toBeInTheDocument());
+        await waitFor(() => expect(screen.getByTestId("mod-install-main")).toHaveFocus());
+      });
+
+      it("keeps a mod with a primary file to its one button", () => {
+        renderButton(mainFile);
+
+        expect(screen.queryByTestId("mod-install-options")).not.toBeInTheDocument();
+      });
+    });
+
+    describe("whose file from v3 isn't its primary", () => {
+      /** The newest Main file, which v3 gives a mod with several and no primary. */
+      const newestFile: ModMainFileVersion = { ...mainFile, is_primary: false };
+
+      it("opens the picker on its Main files", async () => {
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12, 13));
+        renderButton(newestFile);
+
+        await userEvent.click(button());
+
+        expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+        expect(mocks.install).not.toHaveBeenCalled();
+        expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual(
+          [{ mod_uid: "7340033", file_count: 3, source: "install" }],
+        );
+      });
+
+      it("installs the one Main file v1 lists, not v3's", async () => {
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11));
+        mocks.install.mockReturnValue(new Promise(() => undefined));
+        renderButton(newestFile);
+
+        await userEvent.click(button());
+
+        await waitFor(() =>
+          expect(mocks.install).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ fileId: "11" }),
+          ),
+        );
+        expect(pickerClose()).not.toBeInTheDocument();
+      });
+
+      it("offers View all main files once the user has it", async () => {
+        mocks.installState = {
+          kind: "installed",
+          mod: { id: "skyui", attributes: {} } as unknown as IMod,
+          installedCount: 1,
+        };
+        mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
+        renderButton(newestFile);
+
+        await userEvent.click(screen.getByTestId("mod-install-options"));
+        await userEvent.click(await screen.findByTestId("mod-install-view-all-files"));
+
+        expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
+        await settleTransitions();
+      });
     });
   });
 });
