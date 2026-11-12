@@ -22,12 +22,16 @@ export type ModInstallState =
       mod: IMod;
       /** The update the Mods page offers for it: a known file, or one to pick on the site. */
       update?: "update" | "update-site";
+      /** How many versions of it the Mods page shows; more than one when several files are. */
+      installedCount: number;
     }
   | {
       /** Downloaded, but not installed. */
       kind: "downloaded";
       /** One of its downloads, none of them installed. */
       downloadId: string;
+      /** How many finished downloads of it there are; more than one when several files are. */
+      downloadCount: number;
     }
   | {
       /** Neither downloaded nor installed. */
@@ -40,6 +44,8 @@ export interface INexusModRef {
   domain: GameDomain;
   /** The mod's game-scoped id on Nexus Mods. */
   modId: number;
+  /** The file's game-scoped id; with it, only that file's downloads and installs count. */
+  fileId?: number;
 }
 
 /** What `modInstallState` looks through. */
@@ -112,7 +118,9 @@ export const modInstallState = (
   ref: INexusModRef,
 ): ModInstallState => {
   const key = modKey(ref.domain, ref.modId);
-  const isOf = (download: IDownload | undefined) => downloadKey(download, domainOf) === key;
+  const isFile = (fileId: unknown) => !ref.fileId || Number(fileId) === ref.fileId;
+  const isOf = (download: IDownload | undefined) =>
+    downloadKey(download, domainOf) === key && isFile(download?.modInfo?.nexus?.ids?.fileId);
   const all = Object.values(mods).filter((mod) => mod.type !== COLLECTION_TYPE);
 
   const isInstalling = all.some(
@@ -125,6 +133,7 @@ export const modInstallState = (
 
   const installed: IModWithState[] = all
     .filter((mod) => nexusModKey(mod, gameId, domainOf) === key)
+    .filter((mod) => isFile(mod.attributes?.fileId))
     .map((mod) => ({ ...mod, ...modState[mod.id] }));
 
   const shown = groupMods(installed, { groupBy: "file", multipleEnabled: false }).map(
@@ -134,20 +143,24 @@ export const modInstallState = (
   for (const mod of shown) {
     const update = updateState(mod.attributes ?? {});
     if (isOffered(update)) {
-      return { kind: "installed", mod, update };
+      return { kind: "installed", mod, update, installedCount: shown.length };
     }
   }
 
   if (shown.length) {
-    return { kind: "installed", mod: shown[0] };
+    return { kind: "installed", mod: shown[0], installedCount: shown.length };
   }
 
-  const downloadId = Object.keys(downloads).find(
+  const finished = Object.keys(downloads).filter(
     (id) =>
       downloads[id].state === "finished" &&
       !!downloads[id].game?.includes(gameId) &&
       isOf(downloads[id]),
   );
 
-  return downloadId ? { kind: "downloaded", downloadId } : { kind: "none" };
+  if (!finished.length) {
+    return { kind: "none" };
+  }
+
+  return { kind: "downloaded", downloadId: finished[0], downloadCount: finished.length };
 };

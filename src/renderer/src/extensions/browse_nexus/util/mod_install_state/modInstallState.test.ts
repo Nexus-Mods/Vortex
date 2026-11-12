@@ -41,6 +41,7 @@ const stateOf = (
   mods: Record<string, IMod> = {},
   downloads: Record<string, IDownload> = {},
   modState: Record<string, IProfileMod> = {},
+  fileId?: number,
 ) => {
   const sources: IModInstallSources = {
     mods,
@@ -50,7 +51,7 @@ const stateOf = (
     domainOf: (id) => GameDomain(id === "skyrimse" ? "skyrimspecialedition" : id),
   };
 
-  const ref = { domain: DOMAIN, modId: SKYUI };
+  const ref = { domain: DOMAIN, modId: SKYUI, fileId };
   const state = modInstallState(sources, ref);
 
   const keys = downloadKeysOf(downloads, sources.domainOf);
@@ -64,19 +65,29 @@ describe("modInstallState", () => {
   it("is installed, without an update while it's current", () => {
     const skyui = mod("skyui", { fileId: 1, newestFileId: 1 });
 
-    expect(stateOf({ skyui })).toEqual({ kind: "installed", mod: skyui });
+    expect(stateOf({ skyui })).toEqual({ kind: "installed", mod: skyui, installedCount: 1 });
   });
 
   it("offers the update the update check found", () => {
     const skyui = mod("skyui", { fileId: 1, newestFileId: 2 });
 
-    expect(stateOf({ skyui })).toEqual({ kind: "installed", mod: skyui, update: "update" });
+    expect(stateOf({ skyui })).toEqual({
+      kind: "installed",
+      mod: skyui,
+      update: "update",
+      installedCount: 1,
+    });
   });
 
   it("offers a pick on the site when the newest file isn't known", () => {
     const skyui = mod("skyui", { fileId: 1, newestFileId: "unknown" });
 
-    expect(stateOf({ skyui })).toEqual({ kind: "installed", mod: skyui, update: "update-site" });
+    expect(stateOf({ skyui })).toEqual({
+      kind: "installed",
+      mod: skyui,
+      update: "update-site",
+      installedCount: 1,
+    });
   });
 
   it("goes by the version of a file the Mods page shows, the enabled one", () => {
@@ -86,6 +97,7 @@ describe("modInstallState", () => {
     expect(stateOf({ old, current }, {}, { current: { enabled: true, enabledTime: 1 } })).toEqual({
       kind: "installed",
       mod: current,
+      installedCount: 1,
     });
   });
 
@@ -93,7 +105,12 @@ describe("modInstallState", () => {
     const main = mod("main", { fileId: 1, logicalFileName: "Main", newestFileId: 1 });
     const patch = mod("patch", { fileId: 3, logicalFileName: "Patch", newestFileId: 4 });
 
-    expect(stateOf({ main, patch })).toEqual({ kind: "installed", mod: patch, update: "update" });
+    expect(stateOf({ main, patch })).toEqual({
+      kind: "installed",
+      mod: patch,
+      update: "update",
+      installedCount: 2,
+    });
   });
 
   it("is installing while a download of it is being installed", () => {
@@ -119,7 +136,11 @@ describe("modInstallState", () => {
   it("is installed over downloaded", () => {
     const skyui = mod("skyui");
 
-    expect(stateOf({ skyui }, { dl: download() })).toEqual({ kind: "installed", mod: skyui });
+    expect(stateOf({ skyui }, { dl: download() })).toEqual({
+      kind: "installed",
+      mod: skyui,
+      installedCount: 1,
+    });
   });
 
   it("ignores other mods, collections, and mods from elsewhere", () => {
@@ -142,13 +163,21 @@ describe("modInstallState", () => {
   });
 
   it("is downloaded when only a finished download of it is in this game", () => {
-    expect(stateOf({}, { dl: download() })).toEqual({ kind: "downloaded", downloadId: "dl" });
+    expect(stateOf({}, { dl: download() })).toEqual({
+      kind: "downloaded",
+      downloadId: "dl",
+      downloadCount: 1,
+    });
   });
 
   it("is downloaded before the lookup finds the download's domain, by its game's", () => {
     const fresh = download({ modInfo: { nexus: { ids: { modId: SKYUI } } } });
 
-    expect(stateOf({}, { dl: fresh })).toEqual({ kind: "downloaded", downloadId: "dl" });
+    expect(stateOf({}, { dl: fresh })).toEqual({
+      kind: "downloaded",
+      downloadId: "dl",
+      downloadCount: 1,
+    });
   });
 
   it("goes by the download's own domain over its game's", () => {
@@ -164,6 +193,87 @@ describe("modInstallState", () => {
     };
 
     expect(stateOf({}, downloads)).toEqual({ kind: "none" });
+  });
+});
+
+describe("modInstallState for one file", () => {
+  const file = (fileId: number) =>
+    download({ modInfo: { nexus: { ids: { gameId: DOMAIN, modId: SKYUI, fileId } } } });
+  const downloads = { one: file(1), two: file(2) };
+  const two = mod("two", { fileId: 2 });
+
+  it("is downloaded for a file that's only downloaded", () => {
+    expect(stateOf({ two }, downloads, {}, 1)).toEqual({
+      kind: "downloaded",
+      downloadId: "one",
+      downloadCount: 1,
+    });
+  });
+
+  it("counts only the file's own downloads", () => {
+    expect(stateOf({}, downloads)).toEqual({
+      kind: "downloaded",
+      downloadId: "one",
+      downloadCount: 2,
+    });
+    expect(stateOf({}, downloads, {}, 2)).toEqual({
+      kind: "downloaded",
+      downloadId: "two",
+      downloadCount: 1,
+    });
+  });
+
+  it("counts only the file's own installed versions", () => {
+    const one = mod("one", { fileId: 1 });
+
+    expect(stateOf({ one, two })).toMatchObject({ kind: "installed", installedCount: 2 });
+    expect(stateOf({ one, two }, {}, {}, 2)).toEqual({
+      kind: "installed",
+      mod: two,
+      installedCount: 1,
+    });
+  });
+
+  it("is installed for the file that's installed", () => {
+    expect(stateOf({ two }, downloads, {}, 2)).toEqual({
+      kind: "installed",
+      mod: two,
+      installedCount: 1,
+    });
+  });
+
+  it("is installed for the mod without a file", () => {
+    expect(stateOf({ two }, downloads)).toEqual({ kind: "installed", mod: two, installedCount: 1 });
+  });
+
+  it("is installed by a file id kept as a string", () => {
+    const text = mod("text", { fileId: "2" });
+
+    expect(stateOf({ text }, {}, {}, 2)).toEqual({
+      kind: "installed",
+      mod: text,
+      installedCount: 1,
+    });
+  });
+
+  it("marks neither file for a mod installed from another", () => {
+    const three = mod("three", { fileId: 3 });
+
+    expect(stateOf({ three }, downloads, {}, 1)).toEqual({
+      kind: "downloaded",
+      downloadId: "one",
+      downloadCount: 1,
+    });
+    expect(stateOf({ three }, {}, {}, 2)).toEqual({ kind: "none" });
+  });
+
+  it("is installing only for the file being installed", () => {
+    const sources = { dl: file(1) };
+
+    expect(stateOf({ new: installing("new", "dl") }, sources, {}, 1)).toEqual({
+      kind: "installing",
+    });
+    expect(stateOf({ new: installing("new", "dl") }, sources, {}, 2)).toEqual({ kind: "none" });
   });
 });
 

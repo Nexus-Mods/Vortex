@@ -28,7 +28,7 @@ const MOD = {
 
 describe("useModStatus", () => {
   beforeEach(() => {
-    mocks.installState = { kind: "downloaded", downloadId: "dl" };
+    mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 1 };
     mocks.lookedUp = [];
     mocks.mutating = 0;
   });
