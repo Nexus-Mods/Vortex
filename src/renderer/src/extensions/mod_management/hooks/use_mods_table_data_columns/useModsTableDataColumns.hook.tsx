@@ -26,6 +26,13 @@ const categoryId = (category: string | number | undefined) =>
 const timeOf = (value: string | number | Date | undefined) =>
   value === undefined ? undefined : new Date(value).getTime() || undefined;
 
+/** A value in the Version column's grey, so none stands out beside it; brighter while sorted by. */
+const ValueText = ({ children }: { children: string }) => (
+  <span className="truncate text-translucent-subdued in-data-sorted:text-neutral-moderate">
+    {children}
+  </span>
+);
+
 /**
  * A toggleable column showing a line of text, sorted, grouped and searched by it; `noValue`
  * names the group of rows with none.
@@ -45,7 +52,7 @@ const textColumn = (
   groupBy: text,
   noValueLabel: noValue,
   searchText: text,
-  cell: (row) => <span className="truncate">{text(row)}</span>,
+  cell: (row) => <ValueText>{text(row)}</ValueText>,
 });
 
 /**
@@ -82,7 +89,7 @@ export const useModsTableDataColumns = (memberships: {
         isToggleable: true,
         sort: (a, b) => (time(a) ?? 0) - (time(b) ?? 0),
         searchText: text,
-        cell: (row) => <span className="truncate">{text(row)}</span>,
+        cell: (row) => <ValueText>{text(row)}</ValueText>,
       };
     };
 
@@ -104,7 +111,7 @@ export const useModsTableDataColumns = (memberships: {
       isToggleable: true,
       sort: (a, b) => (size(a) ?? -1) - (size(b) ?? -1),
       searchText: sizeText,
-      cell: (row) => <span className="truncate">{sizeText(row)}</span>,
+      cell: (row) => <ValueText>{sizeText(row)}</ValueText>,
     };
 
     return [
