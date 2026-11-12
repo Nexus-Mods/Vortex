@@ -3,10 +3,9 @@ import { VortexGameId } from "@vortex/shared";
 import { shallowEqual } from "react-redux";
 import { createSelector } from "reselect";
 
-import { knownGames } from "@/extensions/gamemode_management/selectors";
-import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
+import { gameData } from "@/extensions/gamemode_management/gameData";
+import { convertId } from "@/extensions/gamemode_management/queries";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
-import { nexusGameId } from "@/extensions/nexus_integration/util/convertGameId";
 import type { IState } from "@/types/IState";
 import { activeGameId } from "@/util/selectors";
 
@@ -18,26 +17,17 @@ import type { IModInstallSources } from "../../util/mod_install_state/modInstall
 
 const NO_MODS: { [modId: string]: IMod } = {};
 
-/** Looks games' Nexus Mods domains up by id, each once, from the known games. */
-const domainLookup = (games: IGameStored[]): IModInstallSources["domainOf"] => {
+/** The games' domains, looked up once each until the game data changes. */
+export const gameDomains = createSelector(gameData, (data): IModInstallSources["domainOf"] => {
   const domains = new Map<VortexGameId, GameDomain | undefined>();
 
   return (id) => {
     if (!domains.has(id)) {
-      domains.set(
-        id,
-        nexusGameId(
-          games.find((game) => game.id === id),
-          id,
-        ),
-      );
+      domains.set(id, convertId(data, { vortexGameId: id }, "gameDomain"));
     }
     return domains.get(id);
   };
-};
-
-/** The known games' domains, looked up once each until the games change. */
-export const gameDomains = createSelector(knownGames, domainLookup);
+});
 
 /**
  * Each download's key. The same object until a key changes, so a download's progress, which

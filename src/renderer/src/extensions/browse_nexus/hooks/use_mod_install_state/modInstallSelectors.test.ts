@@ -23,7 +23,7 @@ describe("downloadKeys", () => {
   /** The state the keys are read from: these downloads, and no known games. */
   const stateWith = (files: Record<string, IDownload>) =>
     ({
-      persistent: { downloads: { files } },
+      persistent: { downloads: { files }, gameMode: { tier0: {} } },
       session: { gameMode: { known: [] } },
     }) as unknown as IState;
 
