@@ -198,6 +198,7 @@ import { InstallationTimeoutError } from "./util/exceptions";
 import filterModInfo from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
 import { toPosixSeparators } from "./util/installerHelpers";
+import { InstallListeners } from "./util/installListeners";
 import { InstallPhaseTracker, type IDeploymentDetails } from "./util/InstallPhaseTracker";
 import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
@@ -230,17 +231,16 @@ export interface IActiveInstallation {
   archivePath: string;
   modId: string;
   gameId: string;
-  callback: (error: Error, id: string) => void;
+  // who hears what happens to the install: the caller's callback, the slot it holds on
+  // mInstallLimit, and for a collection member its orchestration
+  listeners: InstallListeners;
   startTime: number;
   baseName: string;
-  // set when the stall watchdog failed this install: its callback has fired, but the work wasn't
-  // cancelled and may still finish
+  // set when the stall watchdog failed this install: its listeners have been told, but the work
+  // wasn't cancelled and may still finish
   abandoned?: boolean;
-  // gives back the install's slot on mInstallLimit without waiting for the work to end. Set once
-  // the install holds a slot.
-  releaseSlot?: (err: Error) => void;
-  // run in place of `callback` when an abandoned install succeeds after all
-  onLateSuccess?: (modId: string) => void;
+  // set on the entry a collection member's orchestration tracks until install() takes it over
+  awaitingInstall?: boolean;
 }
 
 interface IInvalidInstruction {
@@ -995,8 +995,9 @@ class InstallManager {
 
   /**
    * Fail the member installs of a stalled collection. The underlying work can't be cancelled, so
-   * each install is marked abandoned: it gives its install slot back, and if it finishes later it
-   * doesn't call back a second time (a late success goes to onLateSuccess instead).
+   * each install is marked abandoned and its listeners are told: the caller gets the failure and
+   * the install slot is given back. If the install finishes later it doesn't report a second
+   * outcome (its listeners hear of a late success instead).
    * @param sourceModId - the collection whose stall this is; other installs are left alone
    * @param minAgeMs - installs younger than this are left alone
    */
@@ -1014,12 +1015,14 @@ class InstallManager {
     );
 
     stuckInstalls.forEach((install) => {
-      const { installId, modId, callback } = install;
+      const { installId, modId, listeners } = install;
       install.abandoned = true;
       this.mActiveInstalls.delete(installId);
       const timeoutError = new InstallationTimeoutError(now - install.startTime);
       try {
-        callback(timeoutError, modId);
+        // this also gives the install's slot back. A hung install would otherwise hold it forever,
+        // and once every slot is held nothing else can install for the rest of the session.
+        listeners.emit({ type: "abandoned", error: timeoutError, modId });
         log("info", "InstallManager: Called callback for stuck installation", {
           installId,
           modId,
@@ -1032,9 +1035,6 @@ class InstallManager {
           error: getErrorMessageOrDefault(callbackError),
         });
       }
-      // a hung install would otherwise hold its slot forever, and once every slot is held nothing
-      // else can install for the rest of the session
-      install.releaseSlot?.(timeoutError);
 
       // Try to dismiss any lingering notifications
       try {
@@ -1223,18 +1223,25 @@ class InstallManager {
     const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || "EMPTY_NAME";
     const installId = this.generateDependencyInstallKey(sourceModId, archiveId);
     const dummyArchiveId = archiveId || "direct-install-" + shortid();
+    // a collection member's orchestration tracks the member under this key before its install
+    // starts. The install takes the entry over, and the orchestration keeps listening.
+    const tracked = this.mActiveInstalls.get(installId);
+    const listeners = tracked?.awaitingInstall ? tracked.listeners : new InstallListeners();
+    listeners.add((event) => {
+      // a late success isn't a second outcome for the caller, who was already told of the failure
+      if (event.type !== "late-success") {
+        callback?.(event.error, event.modId);
+      }
+    });
     const installInfo: IActiveInstallation = {
       installId,
       archiveId: archiveId || dummyArchiveId,
       archivePath,
       modId: baseName, // Will be updated when final modId is determined
       gameId: "", // Will be updated when gameId is determined
-      callback,
+      listeners,
       startTime: Date.now(),
       baseName,
-      // a collection member's orchestration tracks the member under this key before its install
-      // starts; the install takes the entry over
-      onLateSuccess: this.mActiveInstalls.get(installId)?.onLateSuccess,
     };
     this.mActiveInstalls.set(installId, installInfo);
 
@@ -1247,8 +1254,8 @@ class InstallManager {
     // Wrap callback to ensure proper cleanup and tracking
     const trackedCallback = (err: Error, id: string) => {
       if (installInfo.abandoned) {
-        // the stall watchdog already failed this install and fired its callback; the work kept
-        // running and has now finished. Calling back again would report a second outcome.
+        // the stall watchdog already failed this install and told its listeners; the work kept
+        // running and has now finished. Reporting it as finished would be a second outcome.
         log("info", "Install finished after the stall watchdog gave up on it", {
           installId,
           modId: id,
@@ -1256,7 +1263,7 @@ class InstallManager {
         });
         if (!err && id) {
           this.markRecentInstall(id, installInfo.gameId);
-          installInfo.onLateSuccess?.(id);
+          listeners.emit({ type: "late-success", modId: id });
         }
         return;
       }
@@ -1273,8 +1280,7 @@ class InstallManager {
         }
       }
 
-      // Call the original callback
-      callback?.(err, id);
+      listeners.emit({ type: "finished", error: err, modId: id });
 
       // Clean up tracking
       if (ownsEntry()) {
@@ -1324,7 +1330,12 @@ class InstallManager {
             reject(error);
             return;
           }
-          installInfo.releaseSlot = reject;
+          // gives the slot back without waiting for the work to end
+          listeners.add((event) => {
+            if (event.type === "abandoned") {
+              reject(event.error);
+            }
+          });
 
           api.dismissNotification(`ready-to-install-${archiveId ?? dummyArchiveId}`);
           let installProfile = currentProfile;
@@ -2214,8 +2225,8 @@ class InstallManager {
         });
       })
       .catch((err) => {
-        // an abandoned install has already called back, and its slot was released by rejecting
-        // with the watchdog's own error
+        // an abandoned install has already reported its failure, and its slot was released by
+        // rejecting with the watchdog's own error
         if (!installInfo.abandoned) {
           trackedCallback?.(unknownToError(err), null);
         }
@@ -2624,6 +2635,22 @@ class InstallManager {
         // only raced against the install below; unobserved when the watchdog fires at another time
         memberFailed.catch(() => undefined);
 
+        // the install of this member, once started, and what to do if it succeeds only after the
+        // stall watchdog has failed the member
+        let memberInstall: Promise<string> | undefined;
+        let adoptLateInstall: ((lateModId: string) => void) | undefined;
+
+        const memberListeners = new InstallListeners();
+        memberListeners.add((event) => {
+          if (event.type === "abandoned") {
+            // the stall watchdog failed the member. That has to end the orchestration itself,
+            // which may be stuck before the install starts.
+            failMember(event.error);
+          } else if (event.type === "late-success") {
+            adoptLateInstall?.(event.modId);
+          }
+        });
+
         // Track this dependency installation
         const depInstallInfo: IActiveInstallation = {
           installId: installKey,
@@ -2631,22 +2658,12 @@ class InstallManager {
           archivePath: "", // Will be updated when known
           modId: renderModReference(dep.reference),
           gameId,
-          // the stall watchdog fails a tracked install through its callback. Until install()
-          // takes this entry over that has to end the orchestration itself, which may be stuck
-          // before the install starts.
-          callback: (error) => {
-            if (error != null) {
-              failMember(error);
-            }
-          },
+          listeners: memberListeners,
+          awaitingInstall: true,
           startTime,
           baseName: renderModReference(dep.reference),
         };
         this.mActiveInstalls.set(installKey, depInstallInfo);
-        // the install of this member, once started, and what to do if it succeeds only after the
-        // stall watchdog has failed the member
-        let memberInstall: Promise<string> | undefined;
-        let adoptLateInstall: ((lateModId: string) => void) | undefined;
         try {
           // Check if installation is still needed
           if (!this.mPendingInstalls.has(installKey)) {
@@ -2725,7 +2742,6 @@ class InstallManager {
                 });
               }
             };
-            depInstallInfo.onLateSuccess = adoptLateInstall;
             memberInstall = this.withInstructions(
               api,
               modName(sourceMod),
@@ -2774,8 +2790,8 @@ class InstallManager {
           if (unknownError instanceof InstallationTimeoutError) {
             // Reached when the watchdog failed the member before install() took its tracking
             // over, which leaves the work pending: it can still go on to install the mod. (An
-            // install it failed later has already rejected, and reports a late success through
-            // onLateSuccess.)
+            // install it failed later has already rejected, and reports a late success to the
+            // member's listeners.)
             memberInstall?.then(
               (lateModId) => {
                 if (lateModId) {
@@ -3008,8 +3024,9 @@ class InstallManager {
               pendingInstalls: this.mPendingInstalls.size,
             });
             // Every member still installing is about to be settled as failed. Abandon those
-            // installs first, or one that finishes later would call back and be recorded as
-            // installed on a collection already reported as stalled.
+            // installs first, or one that finishes later would call back into an orchestration
+            // that has already reported its outcome. (A late success still settles the member
+            // as installed.)
             this.forceCleanupStuckInstalls(api, sourceModId, 0);
             // cleanupPendingInstalls resyncs the session from reality, so it must run before the
             // settle or it would overwrite it

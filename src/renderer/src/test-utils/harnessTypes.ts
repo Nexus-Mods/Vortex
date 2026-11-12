@@ -97,6 +97,11 @@ export interface IApiHarness {
   setState: (mutate: (draft: IState) => void) => void;
   // configure what the next showDialog call resolves to
   setNextDialog: (result: IDialogResult) => void;
+  // put a modal dialog in the state's dialog queue (state.session.notifications.dialogs), as an
+  // open prompt would be. showDialog itself resolves at once and never touches the state.
+  openModalDialog: (id?: string) => void;
+  // set the FOMOD installer dialog's active instance (state.session.fomod); null closes it
+  setFomodDialog: (activeInstanceId: string | null) => void;
   // showDialog calls, recorded in order
   dialogCalls: Array<{ type: DialogType; title: string }>;
   // showErrorNotification calls, recorded in order. allowReport matters: a false here is what

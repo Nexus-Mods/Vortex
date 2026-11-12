@@ -26,6 +26,7 @@ import { generateCollectionSessionId, modRuleId } from "../../util/collectionIns
 import { MOD_TYPE } from "../collections/constants";
 import type { IActiveInstallation } from "./InstallManager";
 import { InstallationTimeoutError } from "./util/exceptions";
+import { type InstallEvent, InstallListeners } from "./util/installListeners";
 import { DIALOG_WAIT_LIMIT_MS } from "./util/stallWatchdog";
 
 vi.mock("../../util/log", () => {
@@ -111,52 +112,28 @@ function makeInstallingCollection(
   return { h, mgr };
 }
 
+/** Tracks a running install and records every event its listeners are told. */
 function trackInstall(
   installs: Map<string, IActiveInstallation>,
   installId: string,
-): IActiveInstallation & {
-  callback: ReturnType<typeof vi.fn>;
-  releaseSlot: ReturnType<typeof vi.fn>;
-} {
+): IActiveInstallation & { events: InstallEvent[] } {
+  const events: InstallEvent[] = [];
+  const listeners = new InstallListeners();
+  listeners.add((event) => events.push(event));
   const entry = {
     installId,
     archiveId: installId.split(":")[1],
     archivePath: "",
     modId: installId,
     gameId: GAME,
-    callback: vi.fn(),
-    releaseSlot: vi.fn(),
+    listeners,
+    events,
     startTime: Date.now(),
     baseName: installId,
   };
   installs.set(installId, entry);
   return entry;
 }
-
-const openModalDialog = (h: IInstallManagerHarness) =>
-  h.setState((draft) => {
-    draft.session.notifications = {
-      notifications: [],
-      global_notifications: [],
-      dialogs: [
-        {
-          id: "replace-prompt",
-          type: "question",
-          title: "",
-          content: {},
-          defaultAction: "",
-          actions: [],
-        },
-      ],
-    };
-  });
-
-const setFomodDialog = (h: IInstallManagerHarness, activeInstanceId: string | null) =>
-  h.setState((draft) => {
-    Object.assign(draft.session, {
-      fomod: { installer: { dialog: { activeInstanceId, instances: {} } } },
-    });
-  });
 
 describe("the collection stall watchdog", () => {
   beforeEach(() => {
@@ -176,17 +153,20 @@ describe("the collection stall watchdog", () => {
       const polling = mgr.pollAllPhasesComplete(h.api, COLLECTION);
       await vi.advanceTimersByTimeAsync(5 * MINUTE + 1000);
 
-      expect(member.callback).toHaveBeenCalledTimes(1);
-      const [error] = member.callback.mock.calls[0];
-      expect(error).toBeInstanceOf(InstallationTimeoutError);
-      expect(error.message).toBe("Installation timed out after 5 minutes");
+      // one event tells every listener: the caller fails, and the hung install gives its slot
+      // back, or installs queued behind it would never start
+      expect(member.events).toEqual([
+        { type: "abandoned", error: expect.any(InstallationTimeoutError), modId: memberKey },
+      ]);
+      expect(member.events[0]).toHaveProperty(
+        "error.message",
+        "Installation timed out after 5 minutes",
+      );
       expect(member.abandoned).toBe(true);
       expect(mgr.mActiveInstalls.has(memberKey)).toBe(false);
-      // the hung install gives its slot back, or installs queued behind it would never start
-      expect(member.releaseSlot).toHaveBeenCalledWith(error);
 
       // the collection archive's install isn't part of this collection's stall
-      expect(collectionArchive.callback).not.toHaveBeenCalled();
+      expect(collectionArchive.events).toEqual([]);
       expect(mgr.mActiveInstalls.get(collectionArchiveKey)).toBe(collectionArchive);
 
       delete mgr.mDependencyInstalls[COLLECTION];
@@ -206,8 +186,9 @@ describe("the collection stall watchdog", () => {
       const member = trackInstall(mgr.mActiveInstalls, memberKey);
       await vi.advanceTimersByTimeAsync(3 * MINUTE + 1000);
 
-      expect(member.callback).toHaveBeenCalledTimes(1);
-      expect(member.callback.mock.calls[0][0]).toBeInstanceOf(InstallationTimeoutError);
+      expect(member.events).toEqual([
+        expect.objectContaining({ type: "abandoned", error: expect.any(InstallationTimeoutError) }),
+      ]);
 
       delete mgr.mDependencyInstalls[COLLECTION];
       await vi.advanceTimersByTimeAsync(1000);
@@ -224,13 +205,13 @@ describe("the collection stall watchdog", () => {
       await vi.advanceTimersByTimeAsync(5 * MINUTE - 10 * 1000);
       const member = trackInstall(mgr.mActiveInstalls, memberKey);
       await vi.advanceTimersByTimeAsync(11 * 1000);
-      expect(member.callback).not.toHaveBeenCalled();
+      expect(member.events).toEqual([]);
 
       // giving up settles every outstanding member as failed, so the install is abandoned too:
       // finishing later must not report a second outcome
       await vi.advanceTimersByTimeAsync(5 * MINUTE + 1000);
       await polling;
-      expect(member.callback).toHaveBeenCalledTimes(1);
+      expect(member.events.map((event) => event.type)).toEqual(["abandoned"]);
       expect(member.abandoned).toBe(true);
       expect(mgr.mActiveInstalls.has(memberKey)).toBe(false);
     },
@@ -241,20 +222,20 @@ describe("the collection stall watchdog", () => {
     async ({ makeInstallManager }) => {
       const { h, mgr } = makeInstallingCollection(makeInstallManager);
       const member = trackInstall(mgr.mActiveInstalls, memberKey);
-      setFomodDialog(h, "fomod-1");
+      h.setFomodDialog("fomod-1");
 
       const polling = mgr.pollAllPhasesComplete(h.api, COLLECTION);
       // well past both the rescue and the give-up timeouts
       await vi.advanceTimersByTimeAsync(15 * MINUTE);
-      expect(member.callback).not.toHaveBeenCalled();
+      expect(member.events).toEqual([]);
       expect(mgr.mActiveInstalls.get(memberKey)).toBe(member);
 
       // the stall clock starts once the user has answered
-      setFomodDialog(h, null);
+      h.setFomodDialog(null);
       await vi.advanceTimersByTimeAsync(4 * MINUTE);
-      expect(member.callback).not.toHaveBeenCalled();
+      expect(member.events).toEqual([]);
       await vi.advanceTimersByTimeAsync(1 * MINUTE + 1000);
-      expect(member.callback).toHaveBeenCalledTimes(1);
+      expect(member.events.map((event) => event.type)).toEqual(["abandoned"]);
 
       delete mgr.mDependencyInstalls[COLLECTION];
       await vi.advanceTimersByTimeAsync(1000);
@@ -267,16 +248,16 @@ describe("the collection stall watchdog", () => {
     async ({ makeInstallManager }) => {
       const { h, mgr } = makeInstallingCollection(makeInstallManager);
       const member = trackInstall(mgr.mActiveInstalls, memberKey);
-      openModalDialog(h);
+      h.openModalDialog();
 
       const polling = mgr.pollAllPhasesComplete(h.api, COLLECTION);
       await vi.advanceTimersByTimeAsync(15 * MINUTE);
 
-      expect(member.callback).not.toHaveBeenCalled();
+      expect(member.events).toEqual([]);
 
       // the dialog may have nothing to do with the install, so it only holds the clock for so long
       await vi.advanceTimersByTimeAsync(DIALOG_WAIT_LIMIT_MS - 15 * MINUTE + 5 * MINUTE + 1000);
-      expect(member.callback).toHaveBeenCalledTimes(1);
+      expect(member.events.map((event) => event.type)).toEqual(["abandoned"]);
 
       delete mgr.mDependencyInstalls[COLLECTION];
       await vi.advanceTimersByTimeAsync(1000);
