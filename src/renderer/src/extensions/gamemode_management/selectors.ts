@@ -1,4 +1,4 @@
-import { GameId } from "@vortex/shared";
+import type { GameId } from "@vortex/shared";
 import memoizeOne from "memoize-one";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
@@ -21,11 +21,11 @@ export function discovered(state: IState): { [id: string]: IDiscoveryResult } {
 
 // memoized on the available-list identity: the catalog array is only replaced
 // when its data changes, so the returned Set is stable between those
-const cachedExtensionGameIds = memoizeOne((available: { gameId?: number }[]) => {
+const cachedExtensionGameIds = memoizeOne((available: { gameId?: GameId }[]) => {
   const gameIds = new Set<GameId>();
   for (const ext of available) {
     if (ext.gameId !== undefined) {
-      gameIds.add(GameId(ext.gameId));
+      gameIds.add(ext.gameId);
     }
   }
   return gameIds;

@@ -1,3 +1,4 @@
+import { GameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { makeAvailableExtension } from "../../test-utils/builders";
@@ -122,14 +123,18 @@ describe("mapAvailableExtensions", () => {
 });
 
 describe("dedupeGameExtensions", () => {
-  const contender = (modId: number, gameId: number, timestamp = 0) =>
+  const soloGame = GameId(7);
+  const contestedGame = GameId(8);
+  const anotherSoloGame = GameId(9);
+
+  const contender = (modId: number, gameId: GameId, timestamp = 0) =>
     makeAvailableExtension({ name: `ext-${modId}`, modId, type: "game", gameId, timestamp });
 
   it("keeps uncontested games and preserves order", () => {
-    const solo = contender(1, 7);
-    const winner = contender(2, 8);
-    const loser = contender(3, 8);
-    const anotherSolo = contender(4, 9);
+    const solo = contender(1, soloGame);
+    const winner = contender(2, contestedGame);
+    const loser = contender(3, contestedGame);
+    const anotherSolo = contender(4, anotherSoloGame);
 
     const result = dedupeGameExtensions([solo, winner, loser, anotherSolo]);
     expect(result).toEqual([solo, winner, anotherSolo]);

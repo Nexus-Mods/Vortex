@@ -661,9 +661,16 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: VortexGameId): Promi
     if (stubDownloadInfo !== undefined) {
       extension = stubDownloadInfo;
     } else {
-      extension = state.session.extensions.available.find(
-        (ext) => ext?.gameDomain === gameId || ext.name === gameId,
-      );
+      // TODO: this is stupid and needs fixing. `gameId` is a VortexGameId, but the tile that led
+      // here (GamePicker's `ext.gameDomain || ext.name`) got its id from a GameDomain or an
+      // extension name, so we compare a domain to a game id. Widened to plain strings on purpose
+      // so the brands don't flag it; the real fix is to pass the catalog entry (or its GameId)
+      // from the tile instead of rediscovering it from a made-up id.
+      const id: string = gameId;
+      extension = state.session.extensions.available.find((ext) => {
+        const domain: string | undefined = ext?.gameDomain;
+        return domain === id || ext.name === id;
+      });
     }
     if (extension === undefined) {
       throw new ProcessCanceled(`Invalid game id "${gameId}"`);

@@ -1,3 +1,4 @@
+import { GameDomain } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { ExtensionInfo, IRegisteredExtension } from "@/types/extensions";
@@ -442,7 +443,7 @@ describe("findLinkCandidates", () => {
     modId: 196,
     version: "0.13.1",
     type: "game",
-    gameDomain: "cyberpunk2077",
+    gameDomain: GameDomain("cyberpunk2077"),
   });
 
   it("matches an unlinked game extension through the domain of the game it registers", () => {
@@ -481,7 +482,7 @@ describe("findLinkCandidates", () => {
       modId: 197,
       version: "1.0.0",
       type: "game",
-      gameDomain: "cyberpunk2077demo",
+      gameDomain: GameDomain("cyberpunk2077demo"),
     });
     expect(findLinkCandidates({ "ext-1": unlinked }, twoGames, [catalogEntry, other])).toEqual([]);
   });
