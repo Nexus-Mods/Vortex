@@ -17,7 +17,19 @@ import { NO_FILTERS } from "../../util/mod_views/modViews";
 import { websiteModSearchUrl } from "../../util/website_mod_search_url/websiteModSearchUrl";
 
 // The list, bar, backdrop and details are stood in for: these test which mod the details show.
-vi.mock("./browse_mods_bar/BrowseModsBar", () => ({ BrowseModsBar: () => null }));
+const openFeedback = vi.hoisted(() => vi.fn());
+vi.mock("./browse_mods_bar/BrowseModsBar", () => ({
+  BrowseModsBar: ({ feedback }: { feedback: { onOpen: () => void } }) => (
+    <button data-testid="browse-mods-feedback" onClick={feedback.onOpen} />
+  ),
+}));
+vi.mock("../../hooks/use_mod_browsing_feedback/useModBrowsingFeedback.hook", () => ({
+  useModBrowsingFeedback: () => ({
+    hasGiven: false,
+    open: openFeedback,
+    modal: <p data-testid="feedback-modal" />,
+  }),
+}));
 vi.mock("./mod_backdrop/ModBackdrop", () => ({
   ModBackdrop: ({ src, blurredSrc }: { src?: string; blurredSrc?: string }) => (
     <p data-testid="backdrop">{`${src} ${blurredSrc}`}</p>
@@ -74,6 +86,7 @@ vi.mock("./mod_list/ModList", () => ({
     onSelectMod,
     emptyState,
     endOfResults,
+    loadMoreFooter,
   }: {
     mods: ModSummary[];
     activeModId: string;
@@ -86,6 +99,7 @@ vi.mock("./mod_list/ModList", () => ({
     onSelectMod: (id: string, input: string) => void;
     emptyState: React.ReactNode;
     endOfResults: React.ReactNode;
+    loadMoreFooter: React.ReactNode;
   }) => {
     const regionRef = React.useRef<HTMLDivElement>(null);
     const openModRef = React.useRef<HTMLButtonElement>(null);
@@ -107,6 +121,7 @@ vi.mock("./mod_list/ModList", () => ({
             Load more
           </button>
         )}
+        {status === "paused" && loadMoreFooter}
         {(status === "failed" || status === "load_more_failed") && (
           <button onClick={onRetry}>Retry</button>
         )}
@@ -206,6 +221,30 @@ const renderComponent = (initial: IModSearch, isInitiallyShown = true) => {
 };
 
 describe("BrowseMods", () => {
+  it("renders the feedback modal", () => {
+    renderComponent(search([mod("1")]));
+
+    expect(screen.getByTestId("feedback-modal")).toBeInTheDocument();
+  });
+
+  it("opens the feedback from the toolbar", async () => {
+    openFeedback.mockClear();
+    renderComponent(search([mod("1")]));
+
+    await userEvent.click(screen.getByTestId("browse-mods-feedback"));
+
+    expect(openFeedback).toHaveBeenCalledWith("toolbar");
+  });
+
+  it("opens the feedback from a thumb under Load more with its sentiment", async () => {
+    openFeedback.mockClear();
+    renderComponent(search([mod("1")], false, { status: "paused", loadMore: vi.fn() }));
+
+    await userEvent.click(screen.getByTestId("load-more-feedback-negative"));
+
+    expect(openFeedback).toHaveBeenCalledWith("load_more", "negative");
+  });
+
   it("shows the first mod until another's picked", async () => {
     renderComponent(search([mod("1"), mod("2")]));
     expect(screen.getByTestId("details")).toHaveTextContent("Mod 1");

@@ -1,15 +1,33 @@
+import type { TFunction } from "i18next";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { Severity } from "@/extensions/health_check/utils/shared/severityStyles";
 import { Button } from "@/ui/components/button/Button";
+import { FeedbackModal } from "@/ui/components/feedback_modal/FeedbackModal";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
-import { FeedbackModal } from "../feedback_modal/FeedbackModal";
+
+/** The not-helpful reasons, each key with its label's static key for extraction. */
+const feedbackReasons = (t: TFunction) => [
+  {
+    key: "incorrect_requirement",
+    label: t("detail::feedback_modal::options::incorrect_requirement"),
+  },
+  {
+    key: "requirement_already_installed",
+    label: t("detail::feedback_modal::options::requirement_already_installed"),
+  },
+  {
+    key: "explanation_was_unclear",
+    label: t("detail::feedback_modal::options::explanation_was_unclear"),
+  },
+  { key: "other", label: t("detail::feedback_modal::options::other") },
+];
 
 interface IEntryActionsProps {
   variant: "listing" | "detail";
@@ -37,6 +55,11 @@ export function EntryActions({
     useIssueTracking();
 
   const appearance = variant === "listing" ? "weak" : "subdued";
+
+  const dismissFeedback = () => {
+    trackFeedbackDismissed({ issue_type: issueType });
+    setShowFeedbackModal(false);
+  };
 
   const handle = (fn: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -105,11 +128,16 @@ export function EntryActions({
 
       <FeedbackModal
         isOpen={showFeedbackModal}
-        onClose={() => {
-          trackFeedbackDismissed({ issue_type: issueType });
-          setShowFeedbackModal(false);
+        negative={{
+          title: t("detail::feedback_modal::title"),
+          body: t("detail::feedback_modal::description"),
+          reasons: feedbackReasons(t),
         }}
-        onSuccess={(reasons) => {
+        preselectedSentiment="negative"
+        sendLabel={t("detail::feedback_modal::buttons::confirm")}
+        skipLabel={t("detail::feedback_modal::buttons::cancel")}
+        onDismiss={dismissFeedback}
+        onSend={({ reasons }) => {
           trackFeedbackNotHelpful({
             issue_type: issueType,
             resolution_type: resolutionType,
@@ -118,6 +146,7 @@ export function EntryActions({
           onNotHelpful(reasons);
           setShowFeedbackModal(false);
         }}
+        onSkip={dismissFeedback}
       />
     </div>
   );

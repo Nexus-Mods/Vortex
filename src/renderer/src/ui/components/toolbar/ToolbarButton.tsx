@@ -1,28 +1,27 @@
-import React, { forwardRef, type ForwardRefExoticComponent, type RefAttributes } from "react";
+import React, {
+  forwardRef,
+  type ForwardRefExoticComponent,
+  type ReactNode,
+  type RefAttributes,
+} from "react";
 
 import { Button, type IButtonProps } from "@/ui/components/button/Button";
 import { Tooltip, type ITooltipPlacement } from "@/ui/components/tooltip/Tooltip";
 
 export type IToolbarButtonProps = IButtonProps & {
-  /**
-   * The control to render. Defaults to `Button`; pass `PopoverButton` for a
-   * control that opens a panel. Anything that takes `IButtonProps` and forwards
-   * its ref to the `button` will do.
-   *
-   * It has to go inside the tooltip rather than around it: Headless UI returns
-   * focus to its button after a click, and a tooltip nested within one reads
-   * that as a reason to reopen — over the panel the same click just opened.
-   */
+  /** The control, `Button` by default; it sits inside the tooltip so focus can't reopen it. */
   as?: ForwardRefExoticComponent<IButtonProps & RefAttributes<HTMLButtonElement>>;
+  /** What it does: its tooltip, accessible name, and text when `showLabel` is set. */
   label: string;
   /** Said under the label in the tooltip, and as the control's accessible description. */
   description?: string;
+  /** Turns it off but keeps it hoverable; this is its tooltip and description, labelled or not. */
+  disabledReason?: string;
+  /** Shows the label as text beside the icon, in place of the tooltip. */
   showLabel?: boolean;
+  /** Where the tooltip sits; below by default. */
   placement?: ITooltipPlacement;
-  /**
-   * Holds the tooltip back while the control has already said what it does some
-   * other way — a panel it just opened, which the tooltip would otherwise cover.
-   */
+  /** Hides the tooltip while something else says what it does, such as its open panel. */
   tooltipDisabled?: boolean;
 };
 
@@ -52,6 +51,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, IToolbarButtonProps>(
     {
       as: Control = Button,
       description,
+      disabledReason,
       label,
       placement = "bottom",
       showLabel = false,
@@ -59,24 +59,33 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, IToolbarButtonProps>(
       ...props
     },
     ref,
-  ) => (
-    <Tooltip
-      disabled={showLabel || tooltipDisabled}
-      placement={placement}
-      {...(description === undefined
-        ? { content: label }
-        : { customContent: <TitledTooltip body={description} title={label} /> })}
-    >
-      <Control
-        {...props}
-        aria-description={description}
-        aria-label={showLabel ? undefined : label}
-        ref={ref}
+  ) => {
+    let tooltipProps: { content: string } | { customContent: ReactNode } = { content: label };
+    if (disabledReason) {
+      tooltipProps = { content: disabledReason };
+    } else if (description !== undefined) {
+      tooltipProps = { customContent: <TitledTooltip body={description} title={label} /> };
+    }
+
+    return (
+      <Tooltip
+        disabled={(showLabel && !disabledReason) || tooltipDisabled}
+        placement={placement}
+        {...tooltipProps}
       >
-        {showLabel && label}
-      </Control>
-    </Tooltip>
-  ),
+        <Control
+          {...props}
+          aria-description={disabledReason ?? description}
+          aria-disabled={disabledReason ? true : props["aria-disabled"]}
+          aria-label={showLabel ? undefined : label}
+          ref={ref}
+          onClick={disabledReason ? undefined : props.onClick}
+        >
+          {showLabel && label}
+        </Control>
+      </Tooltip>
+    );
+  },
 );
 
 ToolbarButton.displayName = "ToolbarButton";

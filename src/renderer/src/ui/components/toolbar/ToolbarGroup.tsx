@@ -33,6 +33,8 @@ export type IToolbarAction = IMenuAction & {
   showLabel?: boolean;
   /** Said under the label in its tooltip on the bar, where there's more to say than its name. */
   description?: string;
+  /** Turns it off, keeping its tooltip, which says this instead; not for panel actions. */
+  disabledReason?: string;
   /** A `data-testid` for its control on the bar. */
   testId?: string;
   /** For a panel action: filled with a way to open its panel, while it's on the bar. */
@@ -178,6 +180,7 @@ const ToolbarControl = ({ action, onClick }: { action: IToolbarAction; onClick?:
     <ToolbarButton
       {...controlProps(action)}
       {...{ [TOOLBAR_CONTROL_ATTRIBUTE]: true }}
+      disabledReason={action.disabledReason}
       onClick={action.onClick}
     />
   );
