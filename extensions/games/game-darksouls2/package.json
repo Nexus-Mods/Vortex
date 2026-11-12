@@ -14,7 +14,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Dark Souls II"
+    "game": "Dark Souls II",
+    "gameId": 482
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*",

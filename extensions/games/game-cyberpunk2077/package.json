@@ -7,7 +7,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Cyberpunk 2077"
+    "game": "Cyberpunk 2077",
+    "gameId": 3333
   },
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

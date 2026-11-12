@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "The Elder Scrolls Online"
+    "game": "The Elder Scrolls Online",
+    "gameId": 419
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

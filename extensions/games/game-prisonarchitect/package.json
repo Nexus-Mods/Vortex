@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Prison Architect"
+    "game": "Prison Architect",
+    "gameId": 1591
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

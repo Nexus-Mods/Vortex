@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Mount and Blade"
+    "game": "Mount and Blade",
+    "gameId": 190
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

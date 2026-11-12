@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Galactic Civilizations III"
+    "game": "Galactic Civilizations III",
+    "gameId": 965
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

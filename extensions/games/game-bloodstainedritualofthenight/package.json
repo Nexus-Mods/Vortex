@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Bloodstained: Ritual of the Night"
+    "game": "Bloodstained: Ritual of the Night",
+    "gameId": 2874
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*",

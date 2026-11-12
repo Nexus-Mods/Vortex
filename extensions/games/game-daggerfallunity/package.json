@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Daggerfall Unity"
+    "game": "Daggerfall Unity",
+    "gameId": 2927
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

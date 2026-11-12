@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Skyrim"
+    "game": "Skyrim",
+    "gameId": 110
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

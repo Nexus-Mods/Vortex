@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Pillars of Eternity 2: Deadfire"
+    "game": "Pillars of Eternity 2: Deadfire",
+    "gameId": 2176
   },
   "devDependencies": {
     "@types/bluebird": "catalog:",

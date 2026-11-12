@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Kerbal Space Program"
+    "game": "Kerbal Space Program",
+    "gameId": 272
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

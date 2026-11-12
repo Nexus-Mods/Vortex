@@ -7,7 +7,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "7 Days to Die"
+    "game": "7 Days to Die",
+    "gameId": 1059
   },
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

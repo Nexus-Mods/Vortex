@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Fallout: New Vegas"
+    "game": "Fallout: New Vegas",
+    "gameId": 130
   },
   "devDependencies": {
     "@nexusmods/nexus-api": "catalog:",

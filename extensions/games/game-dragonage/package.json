@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Dragon Age: Origins"
+    "game": "Dragon Age: Origins",
+    "gameId": 140
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

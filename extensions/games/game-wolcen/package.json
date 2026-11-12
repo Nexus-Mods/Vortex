@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Wolcen: Lords of Mayhem"
+    "game": "Wolcen: Lords of Mayhem",
+    "gameId": 3169
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Microsoft Flight Simulator"
+    "game": "Microsoft Flight Simulator",
+    "gameId": 3400
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

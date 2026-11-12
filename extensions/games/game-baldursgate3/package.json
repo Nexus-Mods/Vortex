@@ -7,7 +7,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Baldur's Gate 3"
+    "game": "Baldur's Gate 3",
+    "gameId": 3474
   },
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist && copyfiles -u 1 -f ./tools/* dist/tools",

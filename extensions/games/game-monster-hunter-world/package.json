@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Monster Hunter: World"
+    "game": "Monster Hunter: World",
+    "gameId": 2531
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"
