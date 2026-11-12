@@ -121,4 +121,26 @@ describe("createBrowseModsTracker", () => {
       properties: { mod_uid: "1704-1" },
     });
   });
+
+  it("counts feedback skipped, with no reasons", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFeedbackGiven({ sentiment: "positive", source: "toolbar" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_feedback_given",
+      properties: { sentiment: "positive", source: "toolbar" },
+    });
+  });
+
+  it("counts feedback sent, with its reasons", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFeedbackGiven({ sentiment: "negative", source: "load_more", reasons: ["slow"] });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_feedback_given",
+      properties: { sentiment: "negative", source: "load_more", reasons: ["slow"] },
+    });
+  });
 });

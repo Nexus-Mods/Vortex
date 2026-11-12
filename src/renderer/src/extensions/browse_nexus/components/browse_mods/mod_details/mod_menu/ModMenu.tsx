@@ -10,9 +10,11 @@ import { DropdownButton } from "@/ui/components/dropdown/DropdownButton";
 import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
-import { calcDuration } from "@/util/message";
 
 import { useBrowseModsTracker } from "../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
+
+/** How long its toast shows: up to 5s is shown as a toast, longer goes to notifications. */
+const TOAST_MS = 3000;
 
 interface IModMenuProps {
   api: IExtensionApi;
@@ -57,14 +59,12 @@ export const ModMenu = ({ api, mod, modPageUrl }: IModMenuProps) => {
               });
               return;
             }
-
-            const message = t("Mod link copied");
             tracker.trackModLinkCopied({ mod_uid: mod.id });
             api.sendNotification?.({
               id: "browse-mods-mod-link-copied",
               type: "success",
-              message,
-              displayMS: calcDuration(message.length),
+              message: t("Mod link copied"),
+              displayMS: TOAST_MS,
             });
           }}
         >

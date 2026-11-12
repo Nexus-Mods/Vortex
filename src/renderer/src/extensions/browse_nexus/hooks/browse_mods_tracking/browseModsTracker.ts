@@ -1,5 +1,6 @@
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { FeedbackSentiment } from "@/ui/components/feedback_modal/FeedbackModal";
 
 import type { EmptyStateKind } from "../../util/empty_state_kind/emptyStateKind";
 import type {
@@ -43,6 +44,9 @@ export type ISearchEventProps = {
 
 /** Where a search was cleared from: the search box, or an empty state's Clear search. */
 export type SearchClearSource = "box" | "empty_state";
+
+/** Where Browse's feedback was opened from: the toolbar's button, or under Load more. */
+export type FeedbackSource = "toolbar" | "load_more";
 
 /** The mod a 1-click upsell is for, and what the click would have done: install, download or update. */
 type OneClickUpsellProps = { mod_uid: string; action: "install" | "download" | "update" };
@@ -232,6 +236,13 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     // `pages_loaded` is how many pages were loaded when Try again was clicked, 0 when none were.
     trackRetryClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
       track("browse_mods_retry_clicked", props),
+
+    // A thumb given, once per modal; `reasons` only when sent, empty if nothing was ticked.
+    trackFeedbackGiven: (props: {
+      sentiment: FeedbackSentiment;
+      source: FeedbackSource;
+      reasons?: string[];
+    }) => track("browse_mods_feedback_given", props),
   };
 };
 

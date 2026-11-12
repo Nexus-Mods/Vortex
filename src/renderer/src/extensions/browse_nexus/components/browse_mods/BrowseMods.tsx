@@ -19,6 +19,7 @@ import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseMod
 import { useBrowseModsViews } from "../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
 import { useChangeModFilters } from "../../hooks/use_change_mod_filters/useChangeModFilters.hook";
 import { useGameDomainName } from "../../hooks/use_game_domain_name/useGameDomainName.hook";
+import { useModBrowsingFeedback } from "../../hooks/use_mod_browsing_feedback/useModBrowsingFeedback.hook";
 import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { useSettledPick } from "../../hooks/use_settled_pick/useSettledPick.hook";
@@ -27,6 +28,7 @@ import { clearActiveFilters } from "../../util/mod_filters/clear_active_filters/
 import { filterEventProps } from "../../util/mod_filters/modFilterList";
 import { websiteModSearchUrl } from "../../util/website_mod_search_url/websiteModSearchUrl";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
+import { LoadMoreFeedback } from "./load_more_feedback/LoadMoreFeedback";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
 import { ModDetails } from "./mod_details/ModDetails";
 import { ModDetailsSkeleton } from "./mod_details/ModDetails.skeleton";
@@ -89,6 +91,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   const changeFilters = useChangeModFilters(search);
   const gameName = useSelector(currentGame)?.name;
   const domain = useGameDomainName();
+  const feedback = useModBrowsingFeedback(api);
 
   /**
    * The list's empty state, or its end of results, with its actions counted. Removing the filters
@@ -228,7 +231,12 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
 
   return (
     <>
-      <BrowseModsBar panelRefs={panelRefs} search={search} viewPicker={viewPicker} />
+      <BrowseModsBar
+        feedback={{ hasGiven: feedback.hasGiven, onOpen: () => feedback.open("toolbar") }}
+        panelRefs={panelRefs}
+        search={search}
+        viewPicker={viewPicker}
+      />
 
       {editedViewStrip}
 
@@ -250,13 +258,19 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
               emptyState={emptyState({ isEnd: false })}
               endOfResults={emptyState({ isEnd: true })}
               listRef={listRef}
+              loadMoreFooter={
+                <LoadMoreFeedback
+                  hasGiven={feedback.hasGiven}
+                  key={search.searchKey}
+                  onVote={(sentiment) => feedback.open("load_more", sentiment)}
+                />
+              }
               mods={mods}
+              pagesLoaded={search.pagesLoaded}
               searchKey={search.searchKey}
               status={status}
-              pagesLoaded={search.pagesLoaded}
               totalCount={search.totalCount}
               onFocusDetails={focusDetails}
-              onPassLastMod={cancelPick}
               onLoadMore={(source) => {
                 if (source === "button") {
                   tracker.trackLoadMoreClicked({ ...searched, pages_loaded: search.pagesLoaded });
@@ -264,6 +278,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
 
                 search.loadMore();
               }}
+              onPassLastMod={cancelPick}
               onRetry={() => {
                 search.retry();
                 tracker.trackRetryClicked({ ...searched, pages_loaded: search.pagesLoaded });
@@ -275,6 +290,8 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
           onSplitChange={setSplit}
         />
       </div>
+
+      {feedback.modal}
     </>
   );
 };
