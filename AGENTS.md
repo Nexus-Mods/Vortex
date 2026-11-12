@@ -32,6 +32,12 @@ typecheck` and `pnpm run lint`, plus `pnpm exec vitest run <file>` from inside
 the owning project directory for a single test. `pnpm run format` is safe. Save
 `verify` for the end.
 
+When a change is something a user can see or trigger, offer to test it in the
+running app with the `live-test` skill, which collects screenshots or video for
+the PR's reviewers and sets up a fake game folder, so no real game install is
+needed. Offer it once when the change is done; run it only when the user says
+yes or asked for it up front.
+
 Formatting, import order and Tailwind class order are owned by oxfmt and oxlint.
 Don't hand-fix them; let the formatter win.
 
