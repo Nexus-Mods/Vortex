@@ -298,7 +298,7 @@ export async function checkForUpdates(
       api.showErrorNotification("Unable to update BepInEx", err, {
         allowReport: false,
       });
-      util.opn(BIX_RELEASES).catch(() => null);
+      api.openUrl(BIX_RELEASES);
       return Promise.resolve(currentVersion);
     });
 }
@@ -321,7 +321,7 @@ export async function downloadFromGithub(
         api.showErrorNotification("Unable to download/install BepInEx - do it manually", err, {
           allowReport: false,
         });
-        util.opn(BIX_RELEASES).catch(() => null);
+        api.openUrl(BIX_RELEASES);
       }
       return Promise.resolve();
     });

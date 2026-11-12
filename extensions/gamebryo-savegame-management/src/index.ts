@@ -161,7 +161,7 @@ function openSavegamesDirectory(api: types.IExtensionApi, profileId?: string) {
     ? path.join(mygamesPath(profile.gameId), "Saves", profile.id)
     : path.join(mygamesPath(profile.gameId), "Saves");
   fs.ensureDirAsync(profileSavesPath)
-    .then(() => util.opn(profileSavesPath))
+    .then(() => api.openFile(profileSavesPath))
     .catch((err) =>
       api.showErrorNotification("Failed to open savegame directory", err, {
         allowReport: (err as any).code !== "ENOENT",
@@ -301,7 +301,7 @@ function once(context: types.IExtensionContext, update: util.Debouncer) {
               {
                 label: "Open Directory",
                 action: () => {
-                  util.opn(savesPath);
+                  context.api.openFile(savesPath);
                 },
               },
             ],

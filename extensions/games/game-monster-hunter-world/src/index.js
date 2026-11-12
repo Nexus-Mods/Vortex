@@ -91,9 +91,7 @@ function prepareForModding(discovery, api) {
                 {
                   label: "Go to Stracker's Loader mod page",
                   action: (dismiss) => {
-                    util
-                      .opn("https://www.nexusmods.com/monsterhunterworld/mods/1982")
-                      .catch((err) => undefined);
+                    api.openUrl("https://www.nexusmods.com/monsterhunterworld/mods/1982");
                     dismiss();
                   },
                 },
@@ -143,7 +141,7 @@ function main(context) {
             {
               label: "Download ReShade",
               action: () => {
-                util.opn("https://reshade.me").catch((err) => undefined);
+                api.openUrl("https://reshade.me");
                 resolve();
               },
             },

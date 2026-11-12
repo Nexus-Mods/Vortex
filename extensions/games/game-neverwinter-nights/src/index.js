@@ -142,7 +142,7 @@ function prepareForModding(discovery, context) {
               [
                 {
                   label: "Go to Documents Folder",
-                  action: () => util.opn(path.dirname(modPathEE())).catch(() => null),
+                  action: () => context.api.openFile(path.dirname(modPathEE())),
                 },
                 { label: "Close" },
               ],

@@ -324,7 +324,7 @@ function dialogActions(
       label: "Open in browser",
       action: () => {
         // Open the script extender site in Vortex.
-        util.opn(gameSupportData.website).catch(() => undefined);
+        api.openUrl(gameSupportData.website);
         dismiss();
       },
     },

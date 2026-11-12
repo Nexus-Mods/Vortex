@@ -46,7 +46,9 @@ class TW3LoadOrder implements types.ILoadOrderGameInfo {
     this.toggleableEntries = true;
     this.uniformRowHeight = true;
     this.noCollectionGeneration = true;
-    this.usageInstructions = () => <InfoComponent onToggleModsState={props.onToggleModsState} />;
+    this.usageInstructions = () => (
+      <InfoComponent api={props.api} onToggleModsState={props.onToggleModsState} />
+    );
     this.customItemRenderer = (props) => {
       return <ItemRenderer className={props.className} item={props.item} />;
     };

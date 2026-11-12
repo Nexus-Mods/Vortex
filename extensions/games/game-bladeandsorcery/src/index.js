@@ -548,7 +548,7 @@ function main(context) {
         log("debug", "Game is not discovered");
         return;
       }
-      util.opn(path.join(discoveryPath, streamingAssetsPath(), "Mods")).catch((err) => null);
+      context.api.openFile(path.join(discoveryPath, streamingAssetsPath(), "Mods"));
     },
     () => {
       const state = context.api.getState();

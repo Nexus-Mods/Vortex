@@ -1,4 +1,4 @@
-import { ComponentEx, Icon } from "@nexusmods/vortex-api";
+import { ComponentEx, Icon, types } from "@nexusmods/vortex-api";
 import * as React from "react";
 import { DropdownButton } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
@@ -12,6 +12,7 @@ interface IComponentState {
 }
 
 interface IBaseProps {
+  api: types.IExtensionApi;
   groupName: string;
   videos: IYoutubeInfo[];
 }
@@ -30,7 +31,7 @@ class TutorialDropdown extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { show } = this.state;
-    const { t, groupName, videos } = this.props;
+    const { t, api, groupName, videos } = this.props;
 
     let titleContent: JSX.Element;
     titleContent = (
@@ -51,6 +52,7 @@ class TutorialDropdown extends ComponentEx<IProps, IComponentState> {
       >
         {videos.map((video) => (
           <TutorialButton
+            api={api}
             onClick={this.onToggle}
             container={this.mRef}
             key={video.group + video.id}
