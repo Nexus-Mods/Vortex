@@ -855,6 +855,13 @@ export function onGetModFiles(
   };
 }
 
+/** Like `onGetModFiles`, but rejects when the files can't be fetched. */
+export function onFetchModFiles(
+  nexus: Nexus,
+): (domain: GameDomain, modId: number) => Promise<IFileInfo[]> {
+  return async (domain, modId) => (await nexus.getModFiles(modId, domain)).files;
+}
+
 export function onModFileContents(
   api: IExtensionApi,
   nexus: Nexus,
