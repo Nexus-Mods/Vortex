@@ -111,7 +111,7 @@ export const ModListEmptyState = ({
 
   return (
     <NoResults
-      className="rounded-sm bg-translucent-dark-200 p-8"
+      className="w-full rounded-sm bg-translucent-dark-200 p-8"
       footnote={
         <>
           <span data-testid="mod-list-hidden-mods-note">
