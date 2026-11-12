@@ -27,6 +27,7 @@ import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
 import { modStatusDisplay } from "../../../util/mod_status/modStatus";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModInstallButton } from "./mod_install_button/ModInstallButton";
+import { ModMenu } from "./mod_menu/ModMenu";
 import { ModTags } from "./mod_tags/ModTags";
 import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton";
 
@@ -124,6 +125,8 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
             </TabBar>
 
             <div className="flex items-center gap-x-2">
+              <ModMenu api={api} mod={mod} modPageUrl={modPageUrl} />
+
               <Tooltip content={t("Open mod page")}>
                 <Button
                   appearance="moderate"

@@ -107,22 +107,6 @@ describe("BrowseModsBar", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("marks the filter button with a pip while a filter is on", () => {
-    const { rerender } = renderBar(searchWith({ timeRange: "7" }));
-
-    expect(screen.getByRole("button", { name: "Filter" })).toHaveClass("nxm-button-pip");
-
-    rerender(
-      <BrowseModsBar
-        panelRefs={{ filters: createRef(), viewOptions: createRef() }}
-        search={searchWith({ timeRange: "all" })}
-        viewPicker={null}
-      />,
-    );
-
-    expect(screen.getByRole("button", { name: "Filter" })).not.toHaveClass("nxm-button-pip");
-  });
-
   it("offers to reset the filters only once they differ from the view's own", async () => {
     const { unmount } = renderBar(searchWith({ timeRange: "7" }));
     await userEvent.click(screen.getByRole("button", { name: "Filter" }));

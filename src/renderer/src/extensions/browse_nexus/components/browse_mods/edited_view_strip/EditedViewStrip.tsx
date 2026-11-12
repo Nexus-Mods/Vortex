@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { PageContent } from "@/views/components/Page/PageContent";
 
@@ -17,7 +18,7 @@ interface IEditedViewStripProps {
 
 /**
  * Says the open preset has been edited, in a band under Browse's mods bar, with buttons to put it
- * back or save it as a view of the user's own.
+ * back or save it as a new view of the user's own.
  */
 export const EditedViewStrip = ({ viewLabel, onReset, onSave }: IEditedViewStripProps) => {
   const { t } = useTranslation();
@@ -38,13 +39,19 @@ export const EditedViewStrip = ({ viewLabel, onReset, onSave }: IEditedViewStrip
         </Typography>
 
         <span className="flex items-center gap-x-2">
-          <Button appearance="subdued" brand="neutral" size="sm" onClick={onReset}>
-            {t("Reset to default")}
-          </Button>
+          <Tooltip content={t("Discards your changes and returns this view to its defaults.")}>
+            <Button appearance="subdued" brand="neutral" size="sm" onClick={onReset}>
+              {t("Reset to default")}
+            </Button>
+          </Tooltip>
 
-          <Button appearance="moderate" brand="neutral" leftIcon="add" size="sm" onClick={onSave}>
-            {t("Save view")}
-          </Button>
+          <Tooltip
+            content={t("Saves your current filters and sorting as a view you can return to.")}
+          >
+            <Button appearance="moderate" brand="neutral" leftIcon="add" size="sm" onClick={onSave}>
+              {t("Save as new view")}
+            </Button>
+          </Tooltip>
         </span>
       </PageContent>
     </div>

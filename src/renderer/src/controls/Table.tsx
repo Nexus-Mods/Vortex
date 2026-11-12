@@ -184,6 +184,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mNextVisibility: { [id: string]: boolean } = {};
   private mDelayedVisibility: { [id: string]: boolean } = {};
   private mDelayedVisibilityTimer: NodeJS.Timeout;
+  private mScrollRetryTimer: NodeJS.Timeout | undefined;
   private mProxyHeaderRef: HTMLElement;
   private mVisibleHeaderRef: HTMLElement;
   private mHeaderUpdateDebouncer: Debouncer;
@@ -279,6 +280,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.detachScrollListeners();
     this.mMounted = false;
     this.mColumnReportDebouncer.clear();
+    clearTimeout(this.mScrollRetryTimer);
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -1301,7 +1303,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           // workaround: since we're not rendering off-screen rows it's possible for row heights to
           //  change as we scroll and then the offset we calculated might not be in the visible
           //  range after all.
-          setTimeout(() => {
+          clearTimeout(this.mScrollRetryTimer);
+          this.mScrollRetryTimer = setTimeout(() => {
             this.scrollToItem(item, smooth, iterations - 1);
           }, 100);
         }
