@@ -45,6 +45,12 @@ import {
 } from "../util/detected_games/listableDetectedIds";
 import { locallyDetectedGames } from "../util/detected_games/locallyDetectedGames";
 
+/**
+ * A tile on the page. One for a game nothing is registered for carries the extension the
+ * catalog has for it, to offer for download.
+ */
+type GameTile = IGameStored & { extension?: IAvailableExtension };
+
 const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
   id,
   name: discovered.name ?? id,
@@ -258,7 +264,7 @@ const GamePicker = ({
   );
 
   const managedGameList: IGameStored[] = [];
-  const supportedGameList: IGameStored[] = [];
+  const supportedGameList: GameTile[] = [];
 
   displayedGames.forEach((game: IGameStored) => {
     if (discoveredGames[game.id]?.path !== undefined) {
@@ -281,6 +287,7 @@ const GamePicker = ({
         requiredFiles: [],
         executable: undefined,
         contributed: isContributed(ext.author) ? ext.author : undefined,
+        extension: ext,
       }))
       .filter((ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false)),
   );
@@ -307,8 +314,8 @@ const GamePicker = ({
   const favouriteGameIds: string[] = [];
   const detectedStores: Record<string, string> = {};
   const listedIds = new Set<string>();
-  const detectedGameList: IGameStored[] = detectedGames
-    .map<IGameStored | undefined>((game) => {
+  const detectedGameList: GameTile[] = detectedGames
+    .map<GameTile | undefined>((game) => {
       const nexusGame = nexusGameByNexusIdMap.get(game.gameId);
       if (nexusGame === undefined) {
         return undefined;
@@ -352,9 +359,11 @@ const GamePicker = ({
         imageURL: game.imageUrl,
         requiredFiles: [],
         executable: undefined,
+        // nothing registers the game: the response's extension is what Manage offers
+        extension: knownGames.some((known) => known.id === internalId) ? undefined : game.extension,
       };
     })
-    .filter((game): game is IGameStored => game !== undefined);
+    .filter((game): game is GameTile => game !== undefined);
 
   // Discovery adds the games the response can't name: ones on stores it doesn't cover
   // (Xbox, EA, Ubisoft), ones Nexus Mods doesn't list, such as an extension still in
