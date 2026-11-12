@@ -41,6 +41,12 @@ export type ISearchEventProps = {
   has_search: boolean;
 } & IFilterEventProps;
 
+/**
+ * What opened the main file picker: 1-click install on a mod with no primary file, the split
+ * button's main part with several files downloaded or installed, or its View all main files.
+ */
+export type FilePickerSource = "one_click" | "split_button" | "split_menu";
+
 /** Where a search was cleared from: the search box, or an empty state's Clear search. */
 export type SearchClearSource = "box" | "empty_state";
 
@@ -169,13 +175,12 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackViewInstalledClicked: (props: { mod_uid: string }) =>
       track("browse_mods_view_installed_clicked", props),
 
-    // The main file picker opened on a mod's Main files; `file_count` is how many. `source` is
-    // `install` for 1-click on a mod with no primary file, `several` for the split button's main
-    // part with several files downloaded or installed, and `menu` for its View all main files.
+    // The main file picker opened on a mod's Main files; `file_count` is how many, and `source`
+    // the control that opened it.
     trackFilePickerOpened: (props: {
       mod_uid: string;
       file_count: number;
-      source: "install" | "several" | "menu";
+      source: FilePickerSource;
     }) => track("browse_mods_file_picker_opened", props),
 
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),

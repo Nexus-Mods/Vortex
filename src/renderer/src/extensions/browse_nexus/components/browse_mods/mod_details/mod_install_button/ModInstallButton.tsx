@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { MainFilePicker } from "@/extensions/browse_nexus/components/browse_mods/mod_details/main_file_picker/MainFilePicker";
+import type { FilePickerSource } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { mainFilesQuery } from "@/extensions/browse_nexus/queries/main_files/mainFiles.query";
 import { fileUidOf } from "@/extensions/browse_nexus/util/file_uid/fileUid";
@@ -192,8 +193,8 @@ export const ModInstallButton = ({
    * the split button the picker opens on any, and a failure or no files is said in a notification.
    * `source` is what the picker's opening is tracked as.
    */
-  const chooseFile = (source: "install" | "several" | "menu") => {
-    const fromSplit = source !== "install";
+  const chooseFile = (source: FilePickerSource) => {
+    const fromSplit = source !== "one_click";
 
     if (!gameId) {
       return;
@@ -287,7 +288,7 @@ export const ModInstallButton = ({
           }
 
           if (choosesFile) {
-            chooseFile("install");
+            chooseFile("one_click");
             return;
           }
 
@@ -335,7 +336,7 @@ export const ModInstallButton = ({
                           return;
                         }
 
-                        chooseFile("menu");
+                        chooseFile("split_menu");
                       },
                     },
                   ],
@@ -385,7 +386,7 @@ export const ModInstallButton = ({
       };
 
       if (choosesFile && installState.installedCount > 1 && isPremiumUser) {
-        return split(t("View installed mod"), () => chooseFile("several"), "installed");
+        return split(t("View installed mod"), () => chooseFile("split_button"), "installed");
       }
 
       if (choosesFile) {
@@ -422,7 +423,7 @@ export const ModInstallButton = ({
       };
 
       if (choosesFile && downloadCount > 1 && isPremiumUser) {
-        return split(t("Install"), () => chooseFile("several"), "downloaded");
+        return split(t("Install"), () => chooseFile("split_button"), "downloaded");
       }
 
       if (choosesFile) {
@@ -473,7 +474,7 @@ export const ModInstallButton = ({
         }}
         onPremiumUnlocked={() => {
           if (upsellFor === "menu") {
-            chooseFile("menu");
+            chooseFile("split_menu");
             return;
           }
 
@@ -483,7 +484,7 @@ export const ModInstallButton = ({
           }
 
           if (choosesFile) {
-            chooseFile("install");
+            chooseFile("one_click");
             return;
           }
 
