@@ -1,3 +1,7 @@
+import { access, mkdir, mkdtemp, readdir, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
+
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
 import type { IInstallerSpec } from "../types/IInstallerSpec";
@@ -8,6 +12,7 @@ import {
   findCommonRootDir,
   makeInstallerFromSpec,
   matchesAnyStopPattern,
+  splitBackslashNames,
   toPosixSeparators,
 } from "./installerHelpers";
 
@@ -322,5 +327,45 @@ describe("toPosixSeparators", () => {
       type: "setmodtype",
       value: "dinput",
     });
+  });
+});
+
+describe("splitBackslashNames", () => {
+  test.skipIf(process.platform === "win32")("moves backslash names into directories", async () => {
+    const basePath = await mkdtemp(path.join(tmpdir(), "vortex-backslash-"));
+    await mkdir(path.join(basePath, "archive\\pc\\"));
+    await writeFile(path.join(basePath, "archive\\pc\\mod\\hair.archive"), "data");
+    await writeFile(path.join(basePath, "readme.txt"), "text");
+
+    await splitBackslashNames(basePath);
+
+    expect((await readdir(basePath, { recursive: true })).sort()).toEqual([
+      "archive",
+      "archive/pc",
+      "archive/pc/mod",
+      "archive/pc/mod/hair.archive",
+      "readme.txt",
+    ]);
+  });
+
+  test.skipIf(process.platform === "win32")("refuses names that leave the mod", async () => {
+    const basePath = await mkdtemp(path.join(tmpdir(), "vortex-backslash-"));
+    await mkdir(path.join(basePath, "mod"));
+    await writeFile(path.join(basePath, "mod", "..\\..\\escaped.txt"), "data");
+
+    await expect(splitBackslashNames(path.join(basePath, "mod"))).rejects.toThrow(
+      "outside the mod",
+    );
+    await expect(access(path.join(basePath, "..", "escaped.txt"))).rejects.toThrow();
+  });
+
+  test.skipIf(process.platform === "win32")("refuses names that go through a symlink", async () => {
+    const basePath = await mkdtemp(path.join(tmpdir(), "vortex-backslash-"));
+    const outside = await mkdtemp(path.join(tmpdir(), "vortex-outside-"));
+    await symlink(outside, path.join(basePath, "link"));
+    await writeFile(path.join(basePath, "link\\escaped.txt"), "data");
+
+    await expect(splitBackslashNames(basePath)).rejects.toThrow("outside the mod");
+    expect(await readdir(outside)).toEqual([]);
   });
 });
