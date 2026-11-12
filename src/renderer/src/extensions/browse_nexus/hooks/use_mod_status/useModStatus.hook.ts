@@ -1,15 +1,14 @@
 import { useIsMutating } from "@tanstack/react-query";
 import { GameDomain } from "@vortex/shared";
 
-import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
-
-import type { ModInstallState } from "../../util/mod_install_state/modInstallState";
-import { type ModStatus, modStatus } from "../../util/mod_status/modStatus";
+import { useModInstallState } from "@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallState.hook";
+import type { ModInstallState } from "@/extensions/browse_nexus/util/mod_install_state/modInstallState";
+import { type ModStatus, modStatus } from "@/extensions/browse_nexus/util/mod_status/modStatus";
 import {
   oneClickFileInstallsKey,
   oneClickInstallKey,
-} from "../../util/one_click_install/oneClickInstall";
-import { useModInstallState } from "../use_mod_install_state/useModInstallState.hook";
+} from "@/extensions/browse_nexus/util/one_click_install/oneClickInstall";
+import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 
 /** What the user has of a mod, and the status Browse shows for it. */
 export interface IModStatusResult {

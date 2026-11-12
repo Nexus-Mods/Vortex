@@ -1,13 +1,16 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
-
-import type { INexusModRef, ModInstallState } from "../../util/mod_install_state/modInstallState";
+import type {
+  INexusModRef,
+  ModInstallState,
+} from "@/extensions/browse_nexus/util/mod_install_state/modInstallState";
 import {
   oneClickFileInstallsKey,
   oneClickInstallKey,
-} from "../../util/one_click_install/oneClickInstall";
+} from "@/extensions/browse_nexus/util/one_click_install/oneClickInstall";
+import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
+
 import { useModStatus } from "./useModStatus.hook";
 
 const mocks = vi.hoisted(() => ({
@@ -20,7 +23,7 @@ vi.mock("@tanstack/react-query", () => ({
   useIsMutating: ({ mutationKey }: { mutationKey: unknown[] }) =>
     JSON.stringify(mutationKey) === JSON.stringify(mocks.mutatingKey) ? 1 : 0,
 }));
-vi.mock("../use_mod_install_state/useModInstallState.hook", () => ({
+vi.mock("@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallState.hook", () => ({
   useModInstallState: (ref: INexusModRef) => {
     mocks.lookedUp.push(ref);
     return mocks.installState;

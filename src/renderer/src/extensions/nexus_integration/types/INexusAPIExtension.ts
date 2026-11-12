@@ -20,7 +20,8 @@ import type {
 } from "@nexusmods/nexus-api";
 import type { GameDomain } from "@vortex/shared";
 
-import type { IMod } from "../../mod_management/types/IMod";
+import type { IMod } from "@/extensions/mod_management/types/IMod";
+
 import type { IValidateKeyDataV2 } from "./IValidateKeyData";
 
 export interface INexusAPIExtension {

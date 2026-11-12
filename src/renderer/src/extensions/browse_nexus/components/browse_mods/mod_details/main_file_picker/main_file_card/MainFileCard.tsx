@@ -6,6 +6,16 @@ import React, { useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { useBrowseModsTracker } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/BrowseModsTracking.context";
+import { useModInstallState } from "@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallState.hook";
+import { fileUidOf } from "@/extensions/browse_nexus/util/file_uid/fileUid";
+import {
+  installNexusFile,
+  installsWhenDownloaded,
+  reportInstallFailure,
+} from "@/extensions/browse_nexus/util/install_nexus_file/installNexusFile";
+import { modStatusDisplay } from "@/extensions/browse_nexus/util/mod_status/modStatus";
+import { oneClickFileInstallKey } from "@/extensions/browse_nexus/util/one_click_install/oneClickInstall";
 import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { nexusFilePageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
@@ -20,17 +30,6 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { nxmModOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 import { useRelativeTime } from "@/util/useRelativeTime";
-
-import { useBrowseModsTracker } from "../../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
-import { useModInstallState } from "../../../../../hooks/use_mod_install_state/useModInstallState.hook";
-import { fileUidOf } from "../../../../../util/file_uid/fileUid";
-import {
-  installNexusFile,
-  installsWhenDownloaded,
-  reportInstallFailure,
-} from "../../../../../util/install_nexus_file/installNexusFile";
-import { modStatusDisplay } from "../../../../../util/mod_status/modStatus";
-import { oneClickFileInstallKey } from "../../../../../util/one_click_install/oneClickInstall";
 
 interface IMainFileCardProps {
   api: IExtensionApi;

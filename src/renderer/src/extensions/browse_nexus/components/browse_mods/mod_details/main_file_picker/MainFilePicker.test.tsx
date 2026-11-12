@@ -24,7 +24,7 @@ vi.mock("@/extensions/nexus_integration/util/download_and_install/downloadAndIns
 }));
 vi.mock("@/extensions/nexus_integration/util/UIDs", () => ({ makeFileUID: () => "uid" }));
 vi.mock("@/util/useRelativeTime", () => ({ useRelativeTime: () => "2 days ago" }));
-vi.mock("../../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
+vi.mock("@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallState.hook", () => ({
   useModInstallState: () => ({ kind: "none" }),
 }));
 
