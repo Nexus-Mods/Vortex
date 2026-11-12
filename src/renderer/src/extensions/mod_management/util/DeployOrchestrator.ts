@@ -1,4 +1,4 @@
-import { FileSourceKind } from "@nexusmods/mod-pipeline";
+import { FileSourceKind, resolve, type Lockfile } from "@nexusmods/mod-pipeline";
 import {
   getErrorMessageOrDefault,
   parseError,
@@ -7,13 +7,15 @@ import {
 } from "@vortex/shared";
 
 import { log } from "../../../logging";
+import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
 import {
   emitPlannerPlanEvent,
   type PlannerPlanFigures,
 } from "../../analytics/utils/plannerPlanEvent";
-import { gameIdOfProfile } from "../../profile_management/selectors";
+import { gameIdOfProfile, lastActiveProfileForGame } from "../../profile_management/selectors";
 import { ApplyStatus, type ApplyResult } from "./apply/apply";
 import { deploymentFailures } from "./deploymentFailures";
 import {
@@ -27,11 +29,51 @@ import {
   type DeploymentPlan,
   type StagedLockfile,
 } from "./deploymentPlan";
+import { addGeneratedFiles } from "./generatedFiles";
 import { keepLastPlan } from "./lastPlans";
+import {
+  LockfileContributions,
+  type LockfileContribution,
+  type LockfileContributionCondition,
+} from "./lockfileContributions";
+import { gatherResolverInput } from "./resolverInput";
 import { compareWithManifests } from "./shadowComparison";
 
 /** The games whose deployments are planned. */
 const RESOLVED_GAMES: ReadonlySet<VortexGameId> = new Set([VortexGameId("skyrimse")]);
+
+// extensions register at init, before an orchestrator exists
+const registeredContributions = new LockfileContributions();
+
+/** The name a contribution is reported under: its extension's name, else its path. */
+export function contributorOf(
+  extensionPath?: string,
+  extInfo?: Partial<IRegisteredExtension>,
+): string {
+  return extInfo?.name ?? extensionPath ?? "unknown";
+}
+
+/** Registers a contribution; the extension manager appends the caller's path and info. */
+export function registerLockfileContribution(
+  condition: LockfileContributionCondition,
+  generate: LockfileContribution,
+  extensionPath?: string,
+  extInfo?: Partial<IRegisteredExtension>,
+): void {
+  registeredContributions.register(contributorOf(extensionPath, extInfo), condition, generate);
+}
+
+/** Adds the files contributions declare for the state the lockfile was resolved from. */
+async function withGeneratedFiles(
+  state: IState,
+  gameMode: VortexGameId,
+  profileId: VortexProfileId,
+  contributions: LockfileContributions,
+  lockfile: Lockfile,
+): Promise<Lockfile> {
+  const generatedFiles = await contributions.generatedFiles(state, gameMode, profileId);
+  return addGeneratedFiles(lockfile, generatedFiles);
+}
 
 /** A planned deployment that hasn't finished: the lockfile it deploys, and its plan run's figures. */
 interface PendingDeployment {
@@ -47,6 +89,7 @@ interface PendingDeployment {
 export class DeployOrchestrator {
   readonly #api: IExtensionApi;
   readonly #hashFile: (filePath: string) => Promise<string>;
+  readonly #contributions: LockfileContributions;
   /** By game, the lockfile its last deployment deployed; seeded from the manifests while unknown */
   readonly #previousLockfiles = new Map<VortexGameId, StagedLockfile>();
   #pending: PendingDeployment | undefined;
@@ -54,9 +97,19 @@ export class DeployOrchestrator {
   public constructor(
     api: IExtensionApi,
     hashFile: (filePath: string) => Promise<string> = fileMD5,
+    contributions: LockfileContributions = registeredContributions,
   ) {
     this.#api = api;
     this.#hashFile = hashFile;
+    this.#contributions = contributions;
+  }
+
+  /** The game's lockfile: its enabled mods' files, then the files contributions declare. */
+  public async resolveWithGeneratedFiles(gameMode: VortexGameId): Promise<Lockfile> {
+    const state = this.#api.getState();
+    const profileId = VortexProfileId(lastActiveProfileForGame(state, gameMode));
+    const { input } = await gatherResolverInput(this.#api, profileId, this.#hashFile);
+    return withGeneratedFiles(state, gameMode, profileId, this.#contributions, resolve(input));
   }
 
   /**

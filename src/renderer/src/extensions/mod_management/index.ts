@@ -152,7 +152,11 @@ import {
   getSupportedActivators,
   registerDeploymentMethod,
 } from "./util/deploymentMethods";
-import { registerDeployOrchestrator, type DeployOrchestrator } from "./util/DeployOrchestrator";
+import {
+  registerDeployOrchestrator,
+  registerLockfileContribution,
+  type DeployOrchestrator,
+} from "./util/DeployOrchestrator";
 import { NoDeployment } from "./util/exceptions";
 import extendApi from "./util/extendAPI";
 import { dealWithExternalChanges } from "./util/externalChanges";
@@ -162,7 +166,6 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import { registerLockfileContribution } from "./util/resolveLockFile";
 import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
