@@ -18,6 +18,9 @@ vi.mock("../../../util/selectors", async (importOriginal) => ({
   knownGames: () => [],
   profiles: () => ({}),
 }));
+vi.mock("../../../extensions/gamemode_management/gameData", () => ({
+  gameData: () => ({ known: [], tier0: {}, nexusGames: [] }),
+}));
 vi.mock("react-redux", () => ({
   useSelector: (selector: (state: unknown) => unknown) => selector({}),
 }));

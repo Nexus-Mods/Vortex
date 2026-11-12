@@ -2,13 +2,12 @@ import { readFileSync } from "fs";
 import * as path from "path";
 import * as url from "url";
 
-import { getErrorCode } from "@vortex/shared";
+import { getErrorCode, VortexGameId } from "@vortex/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { convertId, type IGameData } from "../../../extensions/gamemode_management/queries";
 import type { IDiscoveryResult } from "../../../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../../../extensions/gamemode_management/types/IGameStored";
-import { nexusGames } from "../../../extensions/nexus_integration/util";
-import { nexusGameId } from "../../../extensions/nexus_integration/util/convertGameId";
 import { log } from "../../../logging";
 import { ensureDirWritableAsync, writeFileAsync } from "../../../util/fs";
 import getVortexPath from "../../../util/getVortexPath";
@@ -108,11 +107,6 @@ const downloadImage = async (imageUrl: string, gameId: string): Promise<string> 
 // URL resolution
 // ---------------------------------------------------------------------------
 
-const getNexusNumericId = (game: IGameStored): number | undefined => {
-  const domainName = nexusGameId(game);
-  return nexusGames().find((g) => g.domain_name === domainName)?.id;
-};
-
 export interface GameImageUrls {
   cacheKey: string;
   /** All sources in priority order: local logo, imageURL, remote thumbnail. */
@@ -124,6 +118,7 @@ export interface GameImageUrls {
 export const getGameImageUrls = (
   game: IGameStored,
   discovery: IDiscoveryResult | undefined,
+  data: IGameData,
 ): GameImageUrls => {
   const sources: string[] = [];
   let preferred: string | undefined;
@@ -141,7 +136,7 @@ export const getGameImageUrls = (
   }
 
   // 3. Nexus thumbnail (also background-probed)
-  const numericId = getNexusNumericId(game);
+  const numericId = convertId(data, { vortexGameId: VortexGameId(game.id) }, "gameId");
   if (numericId !== undefined) {
     preferred = `https://images.nexusmods.com/images/games/v2/${numericId}/thumbnail.jpg`;
     sources.push(preferred);

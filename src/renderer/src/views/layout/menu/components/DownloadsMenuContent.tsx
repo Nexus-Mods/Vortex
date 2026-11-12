@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { useWindowContext } from "@/contexts";
+import { gameData } from "@/extensions/gamemode_management/gameData";
 import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
 import type { IState } from "@/types/IState";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
@@ -53,7 +54,8 @@ const GameMenuEntry: FC<
 > = ({ game, isActive, onClick }) => {
   const { menuIsCollapsed } = useWindowContext();
   const discoveredGames = useSelector(discoveredGamesSelector);
-  const { cacheKey, sources, preferred } = getGameImageUrls(game, discoveredGames[game.id]);
+  const data = useSelector(gameData);
+  const { cacheKey, sources, preferred } = getGameImageUrls(game, discoveredGames[game.id], data);
   const { src, exhausted, onError, onLoad } = useGameImage(cacheKey, sources, preferred);
 
   return (

@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { TooltipDelayGroup } from "@/ui/components/tooltip/TooltipDelayGroup";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
+import { gameData } from "../../../extensions/gamemode_management/gameData";
 import {
   discovered as discoveredGamesSelector,
   knownGames as knownGamesSelector,
@@ -23,6 +24,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const knownGames = useSelector(knownGamesSelector);
+  const data = useSelector(gameData);
   const discoveredGames = useSelector(discoveredGamesSelector);
   const allProfiles = useSelector(profilesSelector);
 
@@ -88,6 +90,7 @@ export const Spine: FC<React.PropsWithChildren<unknown>> = () => {
               const { cacheKey, sources, preferred } = getGameImageUrls(
                 game,
                 discoveredGames[game.id],
+                data,
               );
               return (
                 <GameButton
