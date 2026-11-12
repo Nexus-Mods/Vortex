@@ -1,4 +1,5 @@
 import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -165,6 +166,15 @@ describe("useRegisteredModsColumns", () => {
     expect(columns.map(({ position }) => position)).toEqual([30, 100]);
   });
 
+  // Most show an icon or two, so they start as narrow as their header, not as wide as Name.
+  it("starts narrow, at a width its header fits in", () => {
+    registered.attributes = [attribute({ id: "endorsed" }), attribute({ id: "content" })];
+
+    const { columns } = renderRegistered();
+
+    expect(columns.map(({ width }) => width)).toEqual(["96px", "96px"]);
+  });
+
   // As the legacy table shows a game's Compatibility column, which says nothing of toggling.
   it("always shows a column the user can't toggle, if it's shown by default", () => {
     registered.attributes = [attribute({ id: "sdv-compatibility", isToggleable: undefined })];
@@ -288,6 +298,27 @@ describe("useRegisteredModsColumns", () => {
       expect(
         within(within(cell()).getByTestId("gate-extension-a-endorsed")).getByRole("button"),
       ).toBeInTheDocument();
+    });
+
+    // Extensions' legacy controls name themselves with a title, which the browser would show.
+    it("shows its controls' titles in the table's own tooltip", async () => {
+      registered.attributes = [
+        attribute({
+          customRenderer: () => (
+            <button title="Undecided" type="button">
+              <svg />
+            </button>
+          ),
+        }),
+      ];
+
+      const { cell } = renderCell();
+      await userEvent.hover(within(cell()).getByRole("button"));
+
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Undecided");
+      expect(within(cell()).getByRole("button", { name: "Undecided" })).not.toHaveAttribute(
+        "title",
+      );
     });
 
     // A renderer that throws as it's called, which in the legacy table takes the page down.

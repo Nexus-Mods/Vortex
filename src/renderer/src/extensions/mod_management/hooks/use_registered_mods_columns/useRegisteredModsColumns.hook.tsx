@@ -9,6 +9,7 @@ import { useExtensionObjects } from "@/ExtensionProvider";
 import type { IState } from "@/types/IState";
 import type { ICustomProps, ITableAttribute } from "@/types/ITableAttribute";
 import { Icon } from "@/ui/components/icon/Icon";
+import { LegacyTitleTooltips } from "@/ui/components/tooltip/legacy_title_tooltips/LegacyTitleTooltips";
 import { getCurrentLanguage, preT, type TFunction } from "@/util/i18n";
 import { log } from "@/util/log";
 import { activeGameId } from "@/util/selectors";
@@ -137,10 +138,19 @@ const CustomCell = ({ attribute, mod, t }: ICustomCellProps) => {
   } catch (err) {
     logFailure("failed to render attribute", attribute, mod, err);
   }
+  // Legacy controls name themselves with a title, shown here in the table's own tooltip.
   return control === null ? null : (
-    <ExtensionGate id={`extension-${mod.id}-${attribute.id}`}>{control}</ExtensionGate>
+    <LegacyTitleTooltips>
+      <ExtensionGate id={`extension-${mod.id}-${attribute.id}`}>{control}</ExtensionGate>
+    </LegacyTitleTooltips>
   );
 };
+
+/**
+ * Extensions don't say how wide their columns are, and most show an icon or two, so each starts
+ * as wide as the widest bundled one's header needs (Dependencies), not the table's default.
+ */
+const REGISTERED_COLUMN_WIDTH = "96px";
 
 const isNewTableShown = (state: IState) => state.settings.mods?.betaTable === true;
 
@@ -217,6 +227,7 @@ export const useRegisteredModsColumns = (
       return {
         id: attribute.id,
         header,
+        width: REGISTERED_COLUMN_WIDTH,
         isToggleable: attribute.isToggleable === true,
         // Always one, so a column the user can't toggle takes its place too, not the front.
         position: attribute.position ?? DEFAULT_POSITION,

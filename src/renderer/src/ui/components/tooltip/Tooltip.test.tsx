@@ -245,6 +245,54 @@ describe("Tooltip", () => {
   });
 });
 
+describe("Tooltip with an anchor", () => {
+  /** A trigger holding two icons, the second laid out at 200,100, as jsdom lays out nothing. */
+  const renderAnchored = (anchorSecond: boolean) => {
+    const Anchored = () => {
+      const [second, setSecond] = React.useState<HTMLElement | null>(null);
+      return (
+        <Tooltip anchor={anchorSecond ? second : null} content="Textures" delay={0}>
+          <span data-testid="trigger">
+            <i>first</i>
+            <i ref={setSecond}>second</i>
+          </span>
+        </Tooltip>
+      );
+    };
+    render(<Anchored />);
+    const second = screen.getByText("second");
+    second.getBoundingClientRect = () => new DOMRect(200, 100, 20, 20);
+    return { trigger: screen.getByTestId("trigger") };
+  };
+
+  /** How far across the tooltip is placed, from its transform. */
+  const placedX = () => {
+    const positioner = screen.getByRole("tooltip").closest<HTMLElement>(".nxm-tooltip-positioner");
+    return Number(/^translate\((-?[\d.]+)px,/.exec(positioner?.style.transform ?? "")?.[1]);
+  };
+
+  it("points at its anchor, not its whole trigger", async () => {
+    const { trigger } = renderAnchored(true);
+
+    await userEvent.hover(trigger);
+    await screen.findByRole("tooltip");
+
+    // Over the anchor's 200–220; jsdom gives the tooltip no width to centre by.
+    await waitFor(() => expect(placedX()).toBeGreaterThanOrEqual(200));
+    expect(placedX()).toBeLessThanOrEqual(220);
+  });
+
+  it("points at its trigger while it has no anchor", async () => {
+    const { trigger } = renderAnchored(false);
+
+    await userEvent.hover(trigger);
+    await screen.findByRole("tooltip");
+
+    // The trigger, which jsdom lays out at 0.
+    await waitFor(() => expect(placedX()).toBe(0));
+  });
+});
+
 describe("Tooltip with a controlled open state", () => {
   const renderControlled = (
     open: boolean,
