@@ -35,7 +35,7 @@ export type IToolbarAction = IMenuAction & {
   description?: string;
   /** Turns it off, keeping its tooltip, which says this instead; not for panel actions. */
   disabledReason?: string;
-  /** A `data-testid` for its control on the bar. */
+  /** A `data-testid` for its control on the bar; its overflow menu row has none. */
   testId?: string;
   /** For a panel action: filled with a way to open its panel, while it's on the bar. */
   panelHandle?: Ref<IToolbarPanelHandle>;

@@ -64,6 +64,7 @@ export const PopoverMenuPanelItem = forwardRef<
               "nxm-dropdown-item-active": !!action.active,
               "nxm-dropdown-item-focus": hasFocus || open,
             })}
+            data-testid={action.testId}
             disabled={disabled && !keepsPin}
             ref={(element: HTMLButtonElement | null) => {
               buttonRef.current = element;
