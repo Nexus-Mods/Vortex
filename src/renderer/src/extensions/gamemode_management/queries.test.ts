@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
 
 import { makeGameStored } from "../../test-utils/builders";
-import { convertId, findGame, type IGameData } from "./queries";
+import { convertId, findGame, type IGameData, nexusGameData } from "./queries";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 
 // Dummy games. A and B are extension games, the tier zero game is managed without an
@@ -381,5 +381,55 @@ describe("convertId", () => {
         convertId(noPage, { vortexGameId: VortexGameId("domain-a") }, "gameId"),
       ).toBeUndefined();
     });
+  });
+});
+
+describe("nexusGameData", () => {
+  it("is the Tier 0 entry's own game for a Tier 0 game", () => {
+    const tierZero = gameData({
+      tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+    });
+
+    expect(nexusGameData(tierZero, tierZeroGame)).toEqual({
+      gameId: numericTierZero,
+      gameDomain: tierZeroDomain,
+    });
+  });
+
+  it("prefers the Tier 0 entry over a declared domain", () => {
+    const tierZero = gameData({
+      tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+      nexusGames: [listed(numericA, domainA)],
+    });
+
+    expect(nexusGameData(tierZero, tierZeroGame, domainA)).toEqual({
+      gameId: numericTierZero,
+      gameDomain: tierZeroDomain,
+    });
+  });
+
+  it("looks the declared domain up in the Nexus Mods games list", () => {
+    const data = gameData({ nexusGames: [listed(numericA, domainA), listed(numericB, domainB)] });
+
+    expect(nexusGameData(data, gameB, domainB)).toEqual({
+      gameId: numericB,
+      gameDomain: domainB,
+    });
+  });
+
+  it("is undefined when the declared domain isn't in the games list, as before it has loaded", () => {
+    expect(nexusGameData(gameData(), gameA, domainA)).toBeUndefined();
+  });
+
+  it("is undefined for a game that declares no domain and has no Tier 0 entry", () => {
+    expect(
+      nexusGameData(gameData({ nexusGames: [listed(numericA, domainA)] }), gameA),
+    ).toBeUndefined();
+  });
+
+  it("does not take a domain from a game id that happens to equal a listed domain", () => {
+    const data = gameData({ nexusGames: [listed(numericA, domainA)] });
+
+    expect(nexusGameData(data, VortexGameId("domain-a"))).toBeUndefined();
   });
 });

@@ -75,6 +75,34 @@ export function findGame(data: IGameData, query: GameQuery): IGameStored | undef
   }
 }
 
+/**
+ * The Nexus Mods game a game is for, `undefined` when nothing known says. A Tier 0 game
+ * carries its own entry. Otherwise `declared`, the domain the game says it belongs to, is
+ * looked up in the Nexus Mods games list, which is empty until it has loaded.
+ *
+ * `declared` is passed in because this is also asked while the game is being stored, when
+ * it isn't in `data.known` yet.
+ */
+export function nexusGameData(
+  data: IGameData,
+  vortexGameId: VortexGameId,
+  declared?: GameDomain,
+): { gameId: GameId; gameDomain: GameDomain } | undefined {
+  const tierZero = Object.values(data.tier0).find(
+    (entry) => tierZeroGameId(entry.gameId) === vortexGameId,
+  );
+  if (tierZero !== undefined) {
+    return { gameId: tierZero.gameId, gameDomain: tierZero.domain };
+  }
+
+  if (declared === undefined) {
+    return undefined;
+  }
+
+  const listed = data.nexusGames.find((entry) => entry.domain_name === declared);
+  return listed === undefined ? undefined : { gameId: GameId(listed.id), gameDomain: declared };
+}
+
 function unsupportedQuery(query: unknown): never {
   throw new VortexError(`Unhandled game query: ${JSON.stringify(query)}`, {
     kind: "argument-invalid",
