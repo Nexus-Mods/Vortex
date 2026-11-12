@@ -241,6 +241,8 @@ describe("updatePluginList", () => {
     expect(persistor.setKnownPlugins).toHaveBeenCalledWith(
       { "snowfix.esp": "SnowFix.ESP", "vanilla.esm": "Vanilla.esm" },
       undefined,
+      // only the staged plugin comes from a mod
+      new Set(["snowfix.esp"]),
     );
   });
 
