@@ -37,6 +37,35 @@ export function findInstalled(
   return { key, extension };
 }
 
+/**
+ * Bundled extensions that no longer ship: each was folded into core or dropped. An update can
+ * leave their folders behind in bundledPlugins.
+ */
+const RETIRED_BUNDLED_EXTENSIONS = new Set([
+  "gamebryo-archive-check",
+  "gamebryo-ba2-support",
+  "gamebryo-bsa-support",
+  "gamebryo-plugin-indexlock",
+  "gameinfo-steam",
+  "gamestore-gog",
+  "gamestore-origin",
+  "gamestore-uplay",
+  "gamestore-xbox",
+  "gameversion-hash",
+]);
+
+/**
+ * Whether a folder in bundledPlugins is a leftover from an older release: core now does its job,
+ * under the same name or as part of another extension. Loading it would run that job twice.
+ */
+export function isSupersededBundledExtension(
+  directoryName: string,
+  coreExtensionNames: ReadonlySet<string>,
+): boolean {
+  const name = directoryName.toLowerCase();
+  return coreExtensionNames.has(name) || RETIRED_BUNDLED_EXTENSIONS.has(name);
+}
+
 /** Checks whether the given entry matches the query. */
 export function matchesQuery(
   query: { modId: number; fileId?: number },
