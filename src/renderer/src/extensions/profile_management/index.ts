@@ -22,6 +22,7 @@ import {
   getErrorMessageOrDefault,
   isEnvironmentalError,
   VortexError,
+  VortexGameId,
   VortexProfileId,
 } from "@vortex/shared";
 import { VortexGameId } from "@vortex/shared";
@@ -58,6 +59,7 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
+import { queueGameFolderCheck } from "../analytics/gameFolderCheck";
 import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
 import { clearGameAddStore } from "../gamemode_management/actions/session";
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
@@ -590,6 +592,7 @@ function manageGameDiscovered(api: IExtensionApi, gameId: string) {
       );
       api.store.dispatch(setNextProfile(profileId));
       emitGameManaged(api, gameId);
+      queueGameFolderCheck(api, VortexGameId(gameId));
     })
     .catch((err) => {
       const instPath = installPathForGame(api.store.getState(), gameId);

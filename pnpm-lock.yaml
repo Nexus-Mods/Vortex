@@ -909,8 +909,8 @@ catalogs:
       specifier: 4.23.0
       version: 4.23.0
     turbowalk:
-      specifier: github:Nexus-Mods/node-turbowalk#3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
-      version: 3.1.1
+      specifier: github:Nexus-Mods/node-turbowalk#c8d9be07cc658aecdca63af2508df929990cd583
+      version: 3.2.0
     typescript:
       specifier: 6.0.3
       version: 6.0.3
@@ -980,7 +980,7 @@ overrides:
   node-abi: 4.35.0
   '@types/node': 24.12.2
   react-dnd: 14.0.5
-  winapi-bindings: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
+  winapi-bindings: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
 
 importers:
 
@@ -1385,7 +1385,7 @@ importers:
         version: 2.4.2(redux@4.2.1)
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -1444,8 +1444,8 @@ importers:
         specifier: 'catalog:'
         version: 0.1.0
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   extensions/fnis-integration:
     devDependencies:
@@ -1516,8 +1516,8 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   extensions/gamebryo-archive-invalidation:
     devDependencies:
@@ -1683,7 +1683,7 @@ importers:
         version: 2.4.2(redux@4.2.1)
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
@@ -1770,7 +1770,7 @@ importers:
         version: 7.7.4
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       xml2js:
         specifier: 'catalog:'
         version: 0.5.0
@@ -1840,7 +1840,7 @@ importers:
         version: 2.2.17
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       vitest:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.9)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(vite@8.1.3)
@@ -1879,7 +1879,7 @@ importers:
         version: 7.7.4
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
 
   extensions/games/game-breakingwheel:
     devDependencies:
@@ -1906,7 +1906,7 @@ importers:
         version: 7.7.4
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
 
   extensions/games/game-conanexiles:
     devDependencies:
@@ -2031,8 +2031,8 @@ importers:
         specifier: 'catalog:'
         version: 7.7.4
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   extensions/games/game-galciv3:
     devDependencies:
@@ -2160,8 +2160,8 @@ importers:
         specifier: 'catalog:'
         version: 7.2.9(react-dom@18.3.1)(react@18.3.1)
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   extensions/games/game-mount-and-blade:
     devDependencies:
@@ -2371,7 +2371,7 @@ importers:
         version: 7.7.4
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
 
   extensions/games/game-starbound:
     devDependencies:
@@ -2407,7 +2407,7 @@ importers:
         version: 7.7.4
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
     devDependencies:
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
@@ -2438,7 +2438,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.1
+        version: 45.2.1(supports-color@10.2.2)
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -2616,13 +2616,13 @@ importers:
         version: 2.2.17
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       vortex-parse-ini:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
       xml2js:
         specifier: 'catalog:'
         version: 0.5.0
@@ -2935,7 +2935,7 @@ importers:
         version: 4.2.1
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
 
   extensions/mod-dependency-manager:
     devDependencies:
@@ -3055,7 +3055,7 @@ importers:
         version: 2.2.17
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
 
   extensions/mod-highlight:
     devDependencies:
@@ -3109,10 +3109,10 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.1
+        version: 45.2.1(supports-color@10.2.2)
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -3247,8 +3247,8 @@ importers:
         specifier: 'catalog:'
         version: 2.4.2(redux@4.2.1)
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   extensions/modtype-umm:
     dependencies:
@@ -3290,8 +3290,8 @@ importers:
         specifier: 'catalog:'
         version: 7.7.4
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   extensions/morrowind-plugin-management:
     devDependencies:
@@ -3396,7 +3396,7 @@ importers:
         version: 4.2.1
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -3476,8 +3476,8 @@ importers:
         specifier: 'catalog:'
         version: 2.2.17
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   extensions/open-directory:
     devDependencies:
@@ -3579,7 +3579,7 @@ importers:
         version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
 
   extensions/script-extender-installer:
     dependencies:
@@ -3613,7 +3613,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.2.1
+        version: 45.2.1(supports-color@10.2.2)
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3712,10 +3712,10 @@ importers:
         version: 0.33.1(react-dom@18.3.1)(react@18.3.1)
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   extensions/theme-switcher:
     devDependencies:
@@ -3835,7 +3835,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-        version: 45.2.1
+        version: 45.2.1(supports-color@10.2.2)
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -4004,7 +4004,7 @@ importers:
         version: 3.6.0
       electron:
         specifier: 'catalog:'
-        version: 45.2.1
+        version: 45.2.1(supports-color@10.2.2)
       i18next:
         specifier: 'catalog:'
         version: 21.10.0
@@ -4391,7 +4391,7 @@ importers:
         version: 6.0.1
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       universal-analytics:
         specifier: 'catalog:'
         version: 0.4.23(supports-color@10.2.2)
@@ -4405,8 +4405,8 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
       winston:
         specifier: 'catalog:'
         version: 2.4.7
@@ -4536,7 +4536,7 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 45.2.1
+        version: 45.2.1(supports-color@10.2.2)
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -4563,7 +4563,7 @@ importers:
         version: link:../shared
       electron:
         specifier: 'catalog:'
-        version: 45.2.1
+        version: 45.2.1(supports-color@10.2.2)
 
   src/renderer:
     dependencies:
@@ -4867,7 +4867,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 45.2.1
+        version: 45.2.1(supports-color@10.2.2)
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -5086,7 +5086,7 @@ importers:
         version: 0.1.0
       turbowalk:
         specifier: 'catalog:'
-        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
+        version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
       universal-analytics:
         specifier: 'catalog:'
         version: 0.4.23(supports-color@10.2.2)
@@ -5100,8 +5100,8 @@ importers:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af
       winapi-bindings:
-        specifier: github:Nexus-Mods/node-winapi-bindings#faa92afe3320731e98abc15b3f5f19c60896d7c1
-        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+        specifier: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
+        version: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
       winston:
         specifier: 'catalog:'
         version: 2.4.7
@@ -12729,9 +12729,9 @@ packages:
     resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
     engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
 
-  turbowalk@https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f:
-    resolution: {gitHosted: true, integrity: sha512-GPt3rDAkgrD72xxVLWKVXuLhcTP0Wg6Pt3S8t97WZ9S9O1ifZ2QOoMhLocKStHTkLlAEkisnB81QidQ/PxsdZA==, tarball: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f}
-    version: 3.1.1
+  turbowalk@https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583:
+    resolution: {gitHosted: true, integrity: sha512-YL6hfHR/iBEotwAiZ7gts6Bqk0Aj8xErEUTlGaXmtQBi6PfotXUrF/3/ZbFLFOof6PZHxrDKubD0xGRm/CHfLA==, tarball: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583}
+    version: 3.2.0
 
   tweetnacl@0.14.5:
     resolution: {integrity: sha512-KXXFFdAbFXY4geFIwoyNK+f5Z1b7swfXABfL7HXCmoIWMKU3dmS26672A4EeQtDzLKy7SXmfBu51JolvEKwtGA==}
@@ -13162,9 +13162,9 @@ packages:
   wildcard@2.0.1:
     resolution: {integrity: sha512-CC1bOL87PIWSBhDcTrdeLo6eGT7mCFtrg0uIJtqJUFyK+eJnzl8A1niH56uu7KMa5XFrtiV+AQuHO3n7DsHnLQ==}
 
-  winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1:
-    resolution: {gitHosted: true, integrity: sha512-6EWxHP64L7nc/VBb/szJflKBvG2VnZ5cSd//R8ocau7UgrtMINm7MMHxcw8+EX9Z4BU+L0dF4rz6yQpwt5/Alw==, tarball: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1}
-    version: 2.7.3
+  winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788:
+    resolution: {gitHosted: true, integrity: sha512-pEYgzYtX7yAP6GyWrZFVJ8R5LF3loiCqyBQGXIiZYHVJonzh7sllmUz3g5VacyOxGln9evCS5ZNr5crVrOVckQ==, tarball: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788}
+    version: 2.8.0
 
   winston@2.4.7:
     resolution: {integrity: sha512-vLB4BqzCKDnnZH9PHGoS2ycawueX4HLqENXQitvFHczhgW2vFpSOn31LZtVr1KU8YTw7DS4tM+cqyovxo8taVg==}
@@ -14185,14 +14185,14 @@ snapshots:
       glob: 7.2.3
       minimatch: 3.1.5
 
-  '@electron/get@5.0.0':
+  '@electron/get@5.0.0(supports-color@10.2.2)':
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       env-paths: 3.0.0
       graceful-fs: 4.2.11
       progress: 2.0.3
       semver: 7.8.5
-      sumchecker: 3.0.1
+      sumchecker: 3.0.1(supports-color@10.2.2)
     optionalDependencies:
       undici: 7.29.0
     transitivePeerDependencies:
@@ -14230,7 +14230,7 @@ snapshots:
 
   '@electron/remote@2.1.3(electron@45.2.1)':
     dependencies:
-      electron: 45.2.1
+      electron: 45.2.1(supports-color@10.2.2)
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -17675,7 +17675,7 @@ snapshots:
 
   electron-extension-installer@2.0.1(electron@45.2.1):
     dependencies:
-      electron: 45.2.1
+      electron: 45.2.1(supports-color@10.2.2)
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -17715,10 +17715,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@45.2.1:
+  electron@45.2.1(supports-color@10.2.2):
     dependencies:
       '@electron-internal/extract-zip': 1.0.4
-      '@electron/get': 5.0.0
+      '@electron/get': 5.0.0(supports-color@10.2.2)
       '@types/node': 24.12.2
     transitivePeerDependencies:
       - supports-color
@@ -19801,7 +19801,7 @@ snapshots:
 
   permissions@https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/7c1b6f1d6437f2238be51316de823b0fbd63e4c0:
     dependencies:
-      winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+      winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   picocolors@1.1.1: {}
 
@@ -20848,7 +20848,7 @@ snapshots:
     dependencies:
       inline-style-parser: 0.1.1
 
-  sumchecker@3.0.1:
+  sumchecker@3.0.1(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -21108,10 +21108,10 @@ snapshots:
 
   tunnel@0.0.6: {}
 
-  turbowalk@https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f:
+  turbowalk@https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583:
     dependencies:
       fs-extra: 8.1.0
-      winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+      winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   tweetnacl@0.14.5: {}
 
@@ -21395,7 +21395,7 @@ snapshots:
   vortex-parse-ini@https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/2425af99d1cff2331ccf3aacfa892c314e99e18d:
     dependencies:
       lodash: 4.17.23
-      winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+      winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   warning@3.0.0:
     dependencies:
@@ -21505,7 +21505,7 @@ snapshots:
 
   wholocks@https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/28da3bcf312312e577d7c636799a59011998b4af:
     dependencies:
-      winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1
+      winapi-bindings: https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788
 
   why-is-node-running@2.3.0:
     dependencies:
@@ -21518,7 +21518,7 @@ snapshots:
 
   wildcard@2.0.1: {}
 
-  winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/faa92afe3320731e98abc15b3f5f19c60896d7c1:
+  winapi-bindings@https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/c4acf3b84185ef357ef77e7c724174d52ccd1788:
     dependencies:
       autogypi: 0.2.2
       node-addon-api: 8.5.0

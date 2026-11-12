@@ -15,7 +15,12 @@ export {
 } from "./client";
 export { V3ApiError } from "./errors";
 export type {
+  EventGameFolderState,
   EventStoreGameVersion,
+  GameFolderDepot,
+  GameFolderFileCount,
+  GameFolderPartStatus,
+  GameFolderStatePayload,
   GogInstall,
   SteamDepot,
   SteamInstall,

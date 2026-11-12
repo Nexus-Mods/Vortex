@@ -63,6 +63,7 @@ import { NodeFileSystemBackendImpl } from "./filesystem/backend";
 import { NodeFileSystemImpl } from "./filesystem/filesystem-impl";
 import { initFileSystem } from "./filesystem/instance";
 import { PathResolverRegistryImpl } from "./filesystem/path-resolver-registry";
+import { initGameFolderCheckIpc } from "./gameFolderCheck/ipc";
 import { getVortexPath } from "./getVortexPath";
 import { init as initIpcHandlers } from "./ipcHandlers";
 import { log } from "./logging";
@@ -322,6 +323,7 @@ async function main(): Promise<void> {
   initDownloadIpc(downloadManager);
   initUploadIpc(uploadManager);
   initTelemetryIpcHandler();
+  initGameFolderCheckIpc();
 
   StylesheetCompiler.init();
 

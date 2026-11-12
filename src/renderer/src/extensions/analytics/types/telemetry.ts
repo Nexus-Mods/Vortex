@@ -7,3 +7,9 @@ export interface IStoreGameVersionCacheEntry {
   /** Full change key of the payload from the last successful send. */
   fullKey: string;
 }
+
+/** Per-game state of the game folder check (MOD-80), persisted so each game is checked once.
+    A check stays pending until its result is sent; a cancelled or failed one runs again. */
+export type IGameFolderCheckMarker =
+  | { state: "pending"; managedAt: number }
+  | { state: "done"; status: string; at: number };
