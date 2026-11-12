@@ -1,0 +1,53 @@
+# Builds the Vortex checkout this file sits in. See docs/packaging/archlinux.md.
+
+_repo="$(realpath "${startdir}/..")"
+# src/main/package.json only holds the 1.0.0 placeholder, so take the current
+# release from the newest numbered CHANGELOG.md entry, which every release adds
+# to master. build() stamps the app with it too, so the package and the running
+# app report the same version. pacman versions can't contain "-", so
+# 2.9.0-beta.4 becomes 2.9.0beta.4, which still sorts before 2.9.0.
+_version="$(sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' "${_repo}/CHANGELOG.md" | head -n 1)"
+
+pkgname=vortex
+pkgver="${_version//-/}"
+pkgrel=1
+pkgdesc="The elegant, powerful, and open-source mod manager from Nexus Mods"
+arch=('x86_64')
+url="https://github.com/Nexus-Mods/Vortex"
+license=('GPL-3.0-only')
+depends=('gtk3' 'nss' 'alsa-lib' 'libxss' 'libnotify' 'libsecret' 'xdg-utils')
+# tools/dotnetprobe targets net9.0, which any SDK from 9.0 up can build.
+makedepends=('git' 'python' 'python-setuptools' 'dotnet-sdk>=9.0')
+optdepends=('libayatana-appindicator: tray icon')
+options=('!strip' '!debug')
+
+build() {
+  cd "${_repo}"
+  export NODE_ENV=production
+  export VORTEX_ELECTRON_REBUILD=defer
+
+  pnpm install --frozen-lockfile
+  pnpm --filter @vortex/main exec electron-rebuild
+  # Builds the app and deploys it with its runtime dependencies to src/main/dist.
+  pnpm nx run @vortex/main:publish
+
+  # Call electron-builder directly: through pnpm, the dependency check run before
+  # scripts reinstalls src/main/dist with a different linker and breaks it.
+  cd src/main/dist
+  ./node_modules/.bin/electron-builder --config ./electron-builder.config.json \
+    --linux dir --x64 --publish never -c.extraMetadata.version="${_version}"
+}
+
+package() {
+  install -d "${pkgdir}/opt/vortex"
+  cp -a "${_repo}/dist/linux-unpacked/." "${pkgdir}/opt/vortex/"
+  # Electron's setuid sandbox helper.
+  chmod 4755 "${pkgdir}/opt/vortex/chrome-sandbox"
+
+  install -Dm755 "${startdir}/vortex.sh" "${pkgdir}/usr/bin/vortex"
+  install -Dm644 "${startdir}/com.nexusmods.vortex.desktop" \
+    "${pkgdir}/usr/share/applications/com.nexusmods.vortex.desktop"
+  install -Dm644 "${_repo}/assets/images/vortex.png" \
+    "${pkgdir}/usr/share/icons/hicolor/256x256/apps/com.nexusmods.vortex.png"
+  install -Dm644 "${_repo}/LICENSE.md" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.md"
+}
