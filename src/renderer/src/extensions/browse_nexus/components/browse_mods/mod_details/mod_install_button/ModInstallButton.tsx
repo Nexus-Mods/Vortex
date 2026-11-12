@@ -14,7 +14,6 @@ import type { ModMainFileVersion } from "@/extensions/nexus_integration/queries/
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { isPremium } from "@/extensions/nexus_integration/selectors";
 import { nexusModFilesUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
-import { makeFileUID } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Button } from "@/ui/components/button/Button";
@@ -29,13 +28,17 @@ import { Content } from "@/util/util";
 
 import { useBrowseModsTracker } from "../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { mainFilesQuery } from "../../../../queries/main_files/mainFiles.query";
+import { fileUidOf } from "../../../../util/file_uid/fileUid";
 import {
   installNexusFile,
   installsWhenDownloaded,
   reportInstallFailure,
 } from "../../../../util/install_nexus_file/installNexusFile";
 import type { ModInstallState } from "../../../../util/mod_install_state/modInstallState";
-import { oneClickInstallKey } from "../../../../util/one_click_install/oneClickInstall";
+import {
+  oneClickFileInstallsKey,
+  oneClickInstallKey,
+} from "../../../../util/one_click_install/oneClickInstall";
 import { MainFilePicker } from "../main_file_picker/MainFilePicker";
 
 /** The file 1-click installs: its UID, for tracking, and its id within the mod. */
@@ -91,11 +94,28 @@ const oneClickText = (t: TFunction, isUpdate: boolean) =>
         unlockLabel: undefined,
       };
 
+/** What an upsell is tracked as: View all main files, an update, or what 1-click would do. */
+const upsellActionOf = (
+  isMenu: boolean,
+  hasUpdate: boolean,
+  action: "install" | "download",
+): "view_files" | "update" | "install" | "download" => {
+  if (isMenu) {
+    return "view_files";
+  }
+
+  if (hasUpdate) {
+    return "update";
+  }
+
+  return action;
+};
+
 interface IModInstallButtonProps {
   api: IExtensionApi;
   /** The mod to download, and install. */
   mod: ModSummary;
-  /** Its file from v3; null or not primary when the user chooses; absent while it loads. */
+  /** Its file from v3: not primary to choose, null when it has none, absent while loading. */
   mainFile?: ModMainFileVersion | null;
   /** Whether its details failed to load, so whether it has a main file isn't known. */
   isError?: boolean;
@@ -111,8 +131,9 @@ interface IModInstallButtonProps {
  * events saying which. Progress survives switching mods.
  *
  * A mod with no primary file has its Main files fetched on click: one is installed, more open the
- * picker. Once the user has the mod, its button splits, its menu reaching the picker again; with
- * several of its files downloaded or installed, a Premium user's main action opens the picker too.
+ * picker; v3 giving it no file at all means it isn't available through Vortex. Once the user has
+ * the mod, its button splits, its menu reaching the picker again; with several of its files
+ * downloaded or installed, a Premium user's main action opens the picker too.
  */
 export const ModInstallButton = ({
   api,
@@ -132,15 +153,19 @@ export const ModInstallButton = ({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const mainButtonRef = useRef<HTMLButtonElement>(null);
   const installKey = oneClickInstallKey(mod.id);
-  const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
+  const isOneClicking = useIsMutating({ mutationKey: installKey }) > 0;
+  const isCardInstalling = useIsMutating({ mutationKey: oneClickFileInstallsKey(mod.id) }) > 0;
+  const isInstalling = isOneClicking || isCardInstalling;
   const domain = GameDomain(mod.game.domain_name);
   const action = shouldInstall ? "install" : "download";
   const hasUpdate = installState.kind === "installed" && !!installState.update;
   const isLoadingFile = !hasUpdate && mainFile === undefined && !isError;
-  /** v3 gives a mod with no primary its newest Main file, not primary; either way, choose. */
-  const choosesFile = mainFile === null || mainFile?.is_primary === false;
-  const upsellAction = hasUpdate ? "update" : action;
+  /** v3 gives a mod with no primary its newest Main file, not primary, to choose from. */
+  const choosesFile = mainFile?.is_primary === false;
   const { button: oneClickLabel, ...upsellText } = oneClickText(t, hasUpdate);
+  const isMenuUpsell = upsellFor === "menu";
+  const upsellAction = upsellActionOf(isMenuUpsell, hasUpdate, action);
+  const upsellTitle = isMenuUpsell ? t("Choose a file to install with Premium.") : upsellText.title;
 
   const install = useMutation({
     mutationKey: installKey,
@@ -159,7 +184,7 @@ export const ModInstallButton = ({
   const mainFiles = useMutation({
     mutationFn: () => queryClient.fetchQuery(mainFilesQuery(api, { mod })),
   });
-  const hasNoFiles = mainFiles.data?.length === 0;
+  const hasNoFiles = mainFile === null || mainFiles.data?.length === 0;
   const unavailable = unavailableReason(t, isError, hasNoFiles, hasUpdate);
   const filesError = mainFiles.isError ? t("Couldn't load this mod's files") : undefined;
 
@@ -168,7 +193,9 @@ export const ModInstallButton = ({
    * the split button the picker opens on any, and a failure or no files is said in a notification.
    * `source` is what the picker's opening is tracked as.
    */
-  const chooseFile = (source: "install" | "menu", fromSplit = source === "menu") => {
+  const chooseFile = (source: "install" | "several" | "menu") => {
+    const fromSplit = source !== "install";
+
     if (!gameId) {
       return;
     }
@@ -197,7 +224,7 @@ export const ModInstallButton = ({
         if (files.length === 1 && !fromSplit) {
           install.mutate({
             file: {
-              id: makeFileUID({ gameId: String(mod.game.id), fileId: String(only.file_id) }),
+              id: fileUidOf(mod, only.file_id),
               game_scoped_id: String(only.file_id),
             },
             game: gameId,
@@ -335,7 +362,8 @@ export const ModInstallButton = ({
   /**
    * The button for what the user has of the mod; the upsell beside it stays put as it changes.
    * 1-click install holds while it runs, as between its download finishing and its install
-   * starting the mod reads as downloaded.
+   * starting the mod reads as downloaded; a picker card's 1-click install of one of its files
+   * holds it alike.
    */
   const control = () => {
     if (isInstalling) {
@@ -358,7 +386,7 @@ export const ModInstallButton = ({
       };
 
       if (choosesFile && installState.installedCount > 1 && isPremiumUser) {
-        return split(t("View installed mod"), () => chooseFile("install", true), "installed");
+        return split(t("View installed mod"), () => chooseFile("several"), "installed");
       }
 
       if (choosesFile) {
@@ -395,7 +423,7 @@ export const ModInstallButton = ({
       };
 
       if (choosesFile && downloadCount > 1 && isPremiumUser) {
-        return split(t("Install"), () => chooseFile("install", true), "downloaded");
+        return split(t("Install"), () => chooseFile("several"), "downloaded");
       }
 
       if (choosesFile) {
@@ -430,6 +458,7 @@ export const ModInstallButton = ({
       <PremiumUpsellModal
         {...upsellText}
         api={api}
+        title={upsellTitle}
         content={Content.BrowseModsAd}
         fallbackIcon="open_in_new"
         isOpen={!!upsellFor}

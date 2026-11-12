@@ -30,7 +30,7 @@ export type ModInstallState =
       kind: "downloaded";
       /** One of its downloads, none of them installed. */
       downloadId: string;
-      /** How many finished downloads of it there are; more than one when several files are. */
+      /** How many of its files have finished downloads; each without a file id counts alone. */
       downloadCount: number;
     }
   | {
@@ -162,5 +162,12 @@ export const modInstallState = (
     return { kind: "none" };
   }
 
-  return { kind: "downloaded", downloadId: finished[0], downloadCount: finished.length };
+  const files = new Set(
+    finished.map((id) => {
+      const fileId = downloads[id].modInfo?.nexus?.ids?.fileId;
+      return fileId ? `file:${fileId}` : `download:${id}`;
+    }),
+  );
+
+  return { kind: "downloaded", downloadId: finished[0], downloadCount: files.size };
 };

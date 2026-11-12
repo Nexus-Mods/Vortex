@@ -51,6 +51,28 @@ describe("createBrowseModsTracker", () => {
     });
   });
 
+  it("counts a picker opened from the split button with several files, as such", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFilePickerOpened({ mod_uid: "7340033", file_count: 2, source: "several" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_file_picker_opened",
+      properties: { mod_uid: "7340033", file_count: 2, source: "several" },
+    });
+  });
+
+  it("counts View all main files' upsell by its own action", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackPremiumModalShown({ mod_uid: "7340033", action: "view_files" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_premium_modal_shown",
+      properties: { mod_uid: "7340033", action: "view_files" },
+    });
+  });
+
   it("sends an event without properties with none", () => {
     const { emit, tracker } = trackerOnSpy();
 

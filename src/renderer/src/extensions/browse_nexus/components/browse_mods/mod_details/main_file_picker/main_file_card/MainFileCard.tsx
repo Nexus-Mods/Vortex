@@ -9,7 +9,6 @@ import { useSelector } from "react-redux";
 import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { nexusFilePageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
-import { makeFileUID } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
@@ -24,6 +23,7 @@ import { useRelativeTime } from "@/util/useRelativeTime";
 
 import { useBrowseModsTracker } from "../../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useModInstallState } from "../../../../../hooks/use_mod_install_state/useModInstallState.hook";
+import { fileUidOf } from "../../../../../util/file_uid/fileUid";
 import {
   installNexusFile,
   installsWhenDownloaded,
@@ -87,7 +87,7 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
     onMutate: () =>
       tracker.trackOneClickClicked({
         mod_uid: mod.id,
-        file_uid: makeFileUID({ gameId: String(mod.game.id), fileId: String(file.file_id) }),
+        file_uid: fileUidOf(mod, file.file_id),
         action: shouldInstall ? "install" : "download",
       }),
     onError: (error) => reportInstallFailure(api, { t, mod, shouldInstall, error }),
