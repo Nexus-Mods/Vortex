@@ -163,6 +163,14 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackViewInstalledClicked: (props: { mod_uid: string }) =>
       track("browse_mods_view_installed_clicked", props),
 
+    // The main file picker opened on a mod's Main files; `file_count` is how many, `source` is
+    // whether Install opened it (several files) or the split button's menu (any number).
+    trackFilePickerOpened: (props: {
+      mod_uid: string;
+      file_count: number;
+      source: "install" | "menu";
+    }) => track("browse_mods_file_picker_opened", props),
+
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
 
     // From the details' … menu: the mod's page link copied, and its page opened to report it.

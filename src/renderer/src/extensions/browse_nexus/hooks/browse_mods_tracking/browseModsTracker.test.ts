@@ -40,6 +40,17 @@ describe("createBrowseModsTracker", () => {
     });
   });
 
+  it("sends the file picker opening with its mod, how many files it lists, and from where", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFilePickerOpened({ mod_uid: "7340033", file_count: 3, source: "menu" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_file_picker_opened",
+      properties: { mod_uid: "7340033", file_count: 3, source: "menu" },
+    });
+  });
+
   it("sends an event without properties with none", () => {
     const { emit, tracker } = trackerOnSpy();
 
