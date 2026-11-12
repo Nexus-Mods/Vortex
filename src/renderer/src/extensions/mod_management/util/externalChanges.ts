@@ -395,10 +395,12 @@ export function dealWithExternalChanges(
       const state = api.getState();
       const gameId = profileById(state, profileId)?.gameId ?? activeGameId(state);
       const modIdByFolder = new Map(
-        Object.values(modsForGame(state, gameId))
-          .filter((mod) => mod.installationPath !== undefined && mod.installationPath !== "")
+        // the record key is the mod id; the id leaf can be lost to a partial write
+        Object.entries(modsForGame(state, gameId))
+          .filter(([, mod]) => mod.installationPath !== undefined && mod.installationPath !== "")
           .map(
-            (mod) => [VortexModStagingFolder(mod.installationPath), VortexModId(mod.id)] as const,
+            ([modId, mod]) =>
+              [VortexModStagingFolder(mod.installationPath), VortexModId(modId)] as const,
           ),
       );
       const results: IDeployedFile[][] = [];

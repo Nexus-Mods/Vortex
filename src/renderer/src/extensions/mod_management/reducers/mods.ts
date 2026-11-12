@@ -27,6 +27,15 @@ function isUnusableModId(modId: string): boolean {
   return isClobberedKeySegment(modId);
 }
 
+// A mod record's map key is its mod id, so a lost leaf that mirrors it can be
+// rebuilt from the key. A record whose key is itself unusable is dropped.
+function modIdFromRecordKey(modId: string | undefined): string {
+  if (typeof modId === "string" && modId.length > 0 && !isUnusableModId(modId)) {
+    return modId;
+  }
+  throw new VerifierDropParent();
+}
+
 function reduceRule(input: IRule): IRule {
   if (input === undefined) {
     return undefined;
@@ -310,13 +319,19 @@ export const modsReducer: IReducerSpec = {
               // write / bit-rot leaves U+FFFD replacement chars or control chars,
               // producing a phantom that would otherwise nag "Mods changed on
               // disk" every launch.
-              repair: (_input, _def, context) => {
-                const modId = context?.parentKey;
-                if (typeof modId === "string" && modId.length > 0 && !isUnusableModId(modId)) {
-                  return modId;
-                }
-                throw new VerifierDropParent();
-              },
+              repair: (_input, _def, context) => modIdFromRecordKey(context?.parentKey),
+            },
+            id: {
+              type: "string",
+              description: () => "Mod with invalid id will be self-healed from its record key.",
+              noUndefined: true,
+              noNull: true,
+              noEmpty: true,
+              required: true,
+              // The id leaf can be lost to the same partial write as installationPath.
+              // Code that brands mod.id throws on such a record, which fails every
+              // deploy and conflict check until it is repaired.
+              repair: (_input, _def, context) => modIdFromRecordKey(context?.parentKey),
             },
             attributes: {
               type: "object",
