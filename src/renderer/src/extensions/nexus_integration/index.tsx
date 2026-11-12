@@ -28,27 +28,34 @@ import { Button } from "react-bootstrap";
 import type { Action } from "redux";
 import {} from "uuid";
 
-import { setDownloadModInfo, setForcedLogout, setModAttribute } from "../../actions";
-import type { IDialogResult } from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
-import FlexLayout from "../../controls/FlexLayout";
-import Image from "../../controls/Image";
-import LazyComponent from "../../controls/LazyComponent";
-import { log } from "../../logging";
-import type { IComponentContext } from "../../types/IComponentContext";
-import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
-import type { IModLookupResult } from "../../types/IModLookupResult";
-import type { IState } from "../../types/IState";
-import { Pictogram } from "../../ui/components/pictogram/Pictogram";
-import { getApplication } from "../../util/application";
-import { ProcessCanceled } from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import type { LogLevel } from "../../util/log";
-import { showError } from "../../util/message";
-import { activeGameId, downloadPathForGame, gameById } from "../../util/selectors";
-import { currentGame, getSafe } from "../../util/storeHelper";
+import { setDownloadModInfo, setForcedLogout, setModAttribute } from "@/actions";
+import type { IDialogResult } from "@/actions/notifications";
+import { showDialog } from "@/actions/notifications";
+import FlexLayout from "@/controls/FlexLayout";
+import Image from "@/controls/Image";
+import LazyComponent from "@/controls/LazyComponent";
+import type { ICategoryDictionary } from "@/extensions/category_management/types/ICategoryDictionary";
+import type { IDownload } from "@/extensions/download_management/types/IDownload";
+import { SITE_ID } from "@/extensions/gamemode_management/constants";
+import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
+import { getGame } from "@/extensions/gamemode_management/util/getGame";
+import type { IMod, IModRepoId } from "@/extensions/mod_management/types/IMod";
+import { isDownloadIdValid, isIdValid } from "@/extensions/mod_management/util/modUpdateState";
+import { log } from "@/logging";
+import type { IComponentContext } from "@/types/IComponentContext";
+import type { IExtensionApi, IExtensionContext } from "@/types/IExtensionContext";
+import type { IModLookupResult } from "@/types/IModLookupResult";
+import type { IState } from "@/types/IState";
+import { Pictogram } from "@/ui/components/pictogram/Pictogram";
+import { getApplication } from "@/util/application";
+import { ProcessCanceled } from "@/util/CustomErrors";
+import Debouncer from "@/util/Debouncer";
+import * as fs from "@/util/fs";
+import getVortexPath from "@/util/getVortexPath";
+import type { LogLevel } from "@/util/log";
+import { showError } from "@/util/message";
+import { activeGameId, downloadPathForGame, gameById } from "@/util/selectors";
+import { currentGame, getSafe } from "@/util/storeHelper";
 import {
   batchDispatch,
   decodeHTML,
@@ -57,15 +64,9 @@ import {
   truthy,
   Content,
   Campaign,
-} from "../../util/util";
-import { MainContext } from "../../views/MainWindow";
-import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
-import type { IDownload } from "../download_management/types/IDownload";
-import { SITE_ID } from "../gamemode_management/constants";
-import type { IGameStored } from "../gamemode_management/types/IGameStored";
-import { getGame } from "../gamemode_management/util/getGame";
-import type { IMod, IModRepoId } from "../mod_management/types/IMod";
-import { isDownloadIdValid, isIdValid } from "../mod_management/util/modUpdateState";
+} from "@/util/util";
+import { MainContext } from "@/views/MainWindow";
+
 import { setNewestVersion } from "./actions/persistent";
 import { setAssociatedWithNXMURLs } from "./actions/settings";
 import {

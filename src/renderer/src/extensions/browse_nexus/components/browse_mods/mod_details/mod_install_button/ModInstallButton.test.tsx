@@ -6,6 +6,8 @@ import { VortexError } from "@vortex/shared/errors";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ModInstallState } from "@/extensions/browse_nexus/util/mod_install_state/modInstallState";
+import { oneClickFileInstallKey } from "@/extensions/browse_nexus/util/one_click_install/oneClickInstall";
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import type { ModMainFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -13,9 +15,6 @@ import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import { settleTransitions } from "@/test-utils/transitions";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
-
-import type { ModInstallState } from "../../../../util/mod_install_state/modInstallState";
-import { oneClickFileInstallKey } from "../../../../util/one_click_install/oneClickInstall";
 
 const mocks = vi.hoisted(() => {
   const state = {
@@ -62,7 +61,7 @@ vi.mock("@/extensions/nexus_integration/util/download_and_install/downloadAndIns
   downloadNexusFile: mocks.download,
 }));
 vi.mock("@/util/useRelativeTime", () => ({ useRelativeTime: () => "2 days ago" }));
-vi.mock("../../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
+vi.mock("@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallState.hook", () => ({
   useModInstallState: () => ({ kind: "none" }),
 }));
 

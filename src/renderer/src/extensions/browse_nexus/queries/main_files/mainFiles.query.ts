@@ -1,10 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import { GameDomain } from "@vortex/shared";
 
+import { mainFilesOf } from "@/extensions/browse_nexus/util/main_files/mainFiles";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-
-import { mainFilesOf } from "../../util/main_files/mainFiles";
 
 /** Which mod's Main files to fetch. */
 interface IMainFilesQueryArgs {

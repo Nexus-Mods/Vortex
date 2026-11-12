@@ -7,6 +7,20 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { MainFilePicker } from "@/extensions/browse_nexus/components/browse_mods/mod_details/main_file_picker/MainFilePicker";
+import { useBrowseModsTracker } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/BrowseModsTracking.context";
+import { mainFilesQuery } from "@/extensions/browse_nexus/queries/main_files/mainFiles.query";
+import { fileUidOf } from "@/extensions/browse_nexus/util/file_uid/fileUid";
+import {
+  installNexusFile,
+  installsWhenDownloaded,
+  reportInstallFailure,
+} from "@/extensions/browse_nexus/util/install_nexus_file/installNexusFile";
+import type { ModInstallState } from "@/extensions/browse_nexus/util/mod_install_state/modInstallState";
+import {
+  oneClickFileInstallsKey,
+  oneClickInstallKey,
+} from "@/extensions/browse_nexus/util/one_click_install/oneClickInstall";
 import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage";
 import { updateMod } from "@/extensions/mod_management/util/update_mod/updateMod";
 import { PremiumUpsellModal } from "@/extensions/nexus_integration/components/premium_upsell_modal/PremiumUpsellModal";
@@ -25,21 +39,6 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { nxmModOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 import { Content } from "@/util/util";
-
-import { useBrowseModsTracker } from "../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
-import { mainFilesQuery } from "../../../../queries/main_files/mainFiles.query";
-import { fileUidOf } from "../../../../util/file_uid/fileUid";
-import {
-  installNexusFile,
-  installsWhenDownloaded,
-  reportInstallFailure,
-} from "../../../../util/install_nexus_file/installNexusFile";
-import type { ModInstallState } from "../../../../util/mod_install_state/modInstallState";
-import {
-  oneClickFileInstallsKey,
-  oneClickInstallKey,
-} from "../../../../util/one_click_install/oneClickInstall";
-import { MainFilePicker } from "../main_file_picker/MainFilePicker";
 
 /** The file 1-click installs: its UID, for tracking, and its id within the mod. */
 type IInstallFile = Pick<ModMainFileVersion, "id" | "game_scoped_id">;

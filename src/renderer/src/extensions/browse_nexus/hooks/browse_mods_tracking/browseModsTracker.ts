@@ -1,15 +1,14 @@
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
-import type { IExtensionApi } from "@/types/IExtensionContext";
-import type { FeedbackSentiment } from "@/ui/components/feedback_modal/FeedbackModal";
-
-import type { EmptyStateKind } from "../../util/empty_state_kind/emptyStateKind";
+import type { EmptyStateKind } from "@/extensions/browse_nexus/util/empty_state_kind/emptyStateKind";
 import type {
   TrackedView,
   ModAdultContent,
   ModSortDirection,
   ModSortField,
   ModTimeRange,
-} from "../../util/mod_views/modViews";
+} from "@/extensions/browse_nexus/util/mod_views/modViews";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { FeedbackSentiment } from "@/ui/components/feedback_modal/FeedbackModal";
 
 /**
  * Where a filter was changed from: its submenu or its reset there, the chip the bar shows while

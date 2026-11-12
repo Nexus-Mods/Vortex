@@ -5,12 +5,11 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ModInstallState } from "@/extensions/browse_nexus/util/mod_install_state/modInstallState";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { queryClient } from "@/util/queryClient";
-
-import type { ModInstallState } from "../../../../../util/mod_install_state/modInstallState";
 
 const mocks = vi.hoisted(() => ({
   installs: true,
@@ -37,7 +36,7 @@ vi.mock("@/extensions/nexus_integration/util/UIDs", () => ({
   makeFileUID: ({ gameId, fileId }: { gameId: string; fileId: string }) => `${gameId}-${fileId}`,
 }));
 vi.mock("@/util/useRelativeTime", () => ({ useRelativeTime: () => "2 days ago" }));
-vi.mock("../../../../../hooks/use_mod_install_state/useModInstallState.hook", () => ({
+vi.mock("@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallState.hook", () => ({
   useModInstallState: ({ fileId }: { fileId: number }) => mocks.states[fileId] ?? { kind: "none" },
 }));
 
