@@ -1,18 +1,9 @@
 import { watch, type FSWatcher } from "node:fs";
-import {
-  mkdir,
-  open,
-  readdir,
-  readFile,
-  rename,
-  rm,
-  stat,
-  utimes,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, utimes } from "node:fs/promises";
 import * as path from "path";
 
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
+import { QualifiedPath } from "@vortex/shared/filesystem";
 import update from "immutability-helper";
 
 import { log } from "../../../logging";
@@ -68,6 +59,20 @@ const TRANSIENT_CODES = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "EMFILE", "EN
 const HELD_CODES = new Set(["EPERM", "EBUSY", "EACCES"]);
 
 /**
+ * The OS code behind a failed file operation. Node puts it on the error itself, the FileSystem
+ * API keeps it in the data of the error it raises instead.
+ */
+function fileErrorCode(err: unknown): string | undefined {
+  const code = getErrorCode(err);
+  if (code !== null) {
+    return code;
+  }
+  const { data } = parseError(err);
+  const originalCode: unknown = "originalCode" in data ? data.originalCode : undefined;
+  return typeof originalCode === "string" ? originalCode : undefined;
+}
+
+/**
  * Runs a file operation, retrying while another process is holding the file. The game, another
  * mod manager or an antivirus scanner all touch these files, so a first failure says little.
  * The wait doubles each time, which gives a shortage of file handles time to pass.
@@ -77,7 +82,7 @@ export async function withFileRetry<T>(operation: () => Promise<T>): Promise<T> 
     try {
       return await operation();
     } catch (err) {
-      if (attempt >= FILE_ATTEMPTS || !TRANSIENT_CODES.has(getErrorCode(err) ?? "")) {
+      if (attempt >= FILE_ATTEMPTS || !TRANSIENT_CODES.has(fileErrorCode(err) ?? "")) {
         throw err;
       }
       await delayed(RETRY_DELAY_MS * 2 ** (attempt - 1));
@@ -95,27 +100,27 @@ export async function replaceFile(
   content: string,
   encoding: BufferEncoding,
 ): Promise<void> {
-  const tmpPath = `${filePath}.vortex-tmp`;
+  const fs = window.api.fs;
+  const target = QualifiedPath.fromNative(filePath);
+  const tmp = QualifiedPath.fromNative(`${filePath}.vortex-tmp`);
+  const bytes = Buffer.from(content, encoding);
+  let moved = false;
   try {
-    const handle = await open(tmpPath, "w");
+    await fs.writeFile(tmp, bytes);
     try {
-      await handle.writeFile(content, { encoding });
-      // not every file system can flush, and the content is written either way
-      await handle.sync().catch(() => undefined);
-    } finally {
-      await handle.close();
-    }
-    try {
-      await rename(tmpPath, filePath);
+      await fs.move(tmp, target, { overwrite: true });
+      moved = true;
     } catch (err) {
-      if (!HELD_CODES.has(getErrorCode(err) ?? "")) {
+      if (!HELD_CODES.has(fileErrorCode(err) ?? "")) {
         throw err;
       }
       // whoever holds the file may still let it be written in place
-      await writeFile(filePath, content, { encoding });
+      await fs.writeFile(target, bytes);
     }
   } finally {
-    await rm(tmpPath, { force: true }).catch(() => undefined);
+    if (!moved) {
+      await fs.delete(tmp).catch(() => undefined);
+    }
   }
 }
 
@@ -423,7 +428,7 @@ class PluginPersistor implements IPersistor {
     this.mRecord(
       message,
       detail,
-      definedAttributes({ [SpanAttribute.ErrorCode]: getErrorCode(detail) ?? undefined }),
+      definedAttributes({ [SpanAttribute.ErrorCode]: fileErrorCode(detail) }),
     );
   }
 
@@ -556,7 +561,7 @@ class PluginPersistor implements IPersistor {
         this.mLastWriteTime = writtenAt;
       })
       .catch((err: unknown) => {
-        const code = getErrorCode(err);
+        const code = fileErrorCode(err);
         if (code === "EBUSY") {
           // the file is held by another process, quite possibly the game itself
           return;
@@ -841,10 +846,11 @@ class PluginPersistor implements IPersistor {
     if (this.mPluginFormat !== "original") {
       // the old format has read loadorder.txt already
       try {
-        const data = await withFileRetry(() =>
-          readFile(path.join(this.mPluginPath, "loadorder.txt")),
+        const loadOrderFile = QualifiedPath.fromNative(
+          path.join(this.mPluginPath, "loadorder.txt"),
         );
-        const keys = this.filterFileData(data.toString("utf-8"), false);
+        const data = await withFileRetry(() => window.api.fs.readFile(loadOrderFile));
+        const keys = this.filterFileData(Buffer.from(data).toString("utf-8"), false);
         this.initFromKeyList(newPlugins, keys, false, 0);
       } catch (err) {
         log("info", "no load order to recover the emptied plugin list from", {

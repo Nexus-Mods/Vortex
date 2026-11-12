@@ -2,6 +2,7 @@ import * as nodeFs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { ChaosFS, QualifiedPath, type ChaosRule } from "@vortex/shared/filesystem";
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 const paths = vi.hoisted(() => ({
@@ -30,6 +31,7 @@ vi.mock("node:fs", async (importOriginal) => {
 });
 
 import { settle } from "../../../test-utils/async";
+import { installDiskFS, installInMemoryFS } from "../../../test-utils/fsApi";
 import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import PluginPersistor, { PluginFileConflict, replaceFile, withFileRetry } from "./PluginPersistor";
 
@@ -74,7 +76,11 @@ describe("PluginPersistor", () => {
     return made;
   };
 
+  // the persistor writes its files through window.api.fs and reads them back through node
+  let restoreFs: () => void;
+
   beforeEach(async () => {
+    restoreFs = installDiskFS().restore;
     paths.pluginDir = tmpDir("plugin-persistor-");
     paths.dataDir = tmpDir("plugin-data-");
     paths.native = [];
@@ -104,6 +110,7 @@ describe("PluginPersistor", () => {
     for (const dir of tmpDirs.splice(0)) {
       nodeFs.rmSync(dir, { recursive: true, force: true });
     }
+    restoreFs();
   });
 
   it("does not rehydrate state from a known-plugins refresh", async () => {
@@ -900,32 +907,59 @@ describe("withFileRetry", () => {
 });
 
 describe("replaceFile", () => {
-  let dir: string;
+  const filePath = path.join(os.tmpdir(), "plugin-replace", "plugins.txt");
+  const target = QualifiedPath.fromNative(filePath);
+  const tmp = QualifiedPath.fromNative(`${filePath}.vortex-tmp`);
+
+  let restore: () => void;
+  // faults for the next calls, emptied after each test
+  const faults: ChaosRule[] = [];
+
+  const content = async () => Buffer.from(await window.api.fs.readFile(target)).toString("latin1");
+
   beforeEach(() => {
-    dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), "plugin-replace-"));
+    const installed = installInMemoryFS((builder) => {
+      builder.file(target, { type: "text", data: "before" });
+    });
+    restore = installed.restore;
+    window.api = { ...window.api, fs: new ChaosFS(installed.fs, faults) };
   });
   afterEach(() => {
-    nodeFs.rmSync(dir, { recursive: true, force: true });
+    faults.length = 0;
+    restore();
   });
 
   it("replaces the content and leaves no temporary file behind", async () => {
-    const target = path.join(dir, "plugins.txt");
-    nodeFs.writeFileSync(target, "before");
+    await replaceFile(filePath, "after", "latin1");
 
-    await replaceFile(target, "after", "latin1");
-
-    expect(nodeFs.readFileSync(target, "latin1")).toBe("after");
-    expect(nodeFs.readdirSync(dir)).toEqual(["plugins.txt"]);
+    expect(await content()).toBe("after");
+    expect((await window.api.fs.stat(tmp)).exists).toBe(false);
   });
 
-  // the temporary file cannot be created where a directory already has its name
+  // running out of file handles is what used to leave the file truncated
   it("leaves the previous content alone when the write cannot start", async () => {
-    const target = path.join(dir, "plugins.txt");
-    nodeFs.writeFileSync(target, "before");
-    nodeFs.mkdirSync(`${target}.vortex-tmp`);
+    faults.push({ op: "writeFile", fault: { kind: "os:generic", originalCode: "EMFILE" } });
 
-    await expect(replaceFile(target, "after", "latin1")).rejects.toThrow();
+    await expect(replaceFile(filePath, "after", "latin1")).rejects.toThrow();
 
-    expect(nodeFs.readFileSync(target, "latin1")).toBe("before");
+    expect(await content()).toBe("before");
+  });
+
+  it("writes in place when the file is held and cannot be swapped", async () => {
+    faults.push({ op: "move", fault: { kind: "os:generic", originalCode: "EBUSY" } });
+
+    await replaceFile(filePath, "after", "latin1");
+
+    expect(await content()).toBe("after");
+    expect((await window.api.fs.stat(tmp)).exists).toBe(false);
+  });
+
+  it("gives up on a swap that fails for another reason", async () => {
+    faults.push({ op: "move", fault: { kind: "fs:no-space" } });
+
+    await expect(replaceFile(filePath, "after", "latin1")).rejects.toThrow();
+
+    expect(await content()).toBe("before");
+    expect((await window.api.fs.stat(tmp)).exists).toBe(false);
   });
 });
