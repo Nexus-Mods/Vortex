@@ -59,6 +59,8 @@ export const appReducer = actionsToReducerSpec(
       updateExtension(state, payload.extensionId, { endorsed: payload.endorsed }),
     setExtensionModId: (state, payload) =>
       updateExtension(state, payload.extensionId, { modId: payload.modId }),
+    setExtensionNexusGame: (state, payload) =>
+      updateExtension(state, payload.extensionId, { nexus: payload.nexus }),
     declineExtensionNexusLink: (state, payload) =>
       updateExtension(state, payload, { nexusLinkDeclined: true }),
     removeExtension: (state, payload) => updateExtension(state, payload, { remove: true }),
