@@ -173,6 +173,7 @@ import {
 import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
+export { gameData } from "../extensions/gamemode_management/gameData";
 export {
   convertId,
   findGame,
