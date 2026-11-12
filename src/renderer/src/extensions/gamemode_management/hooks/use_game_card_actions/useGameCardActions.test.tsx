@@ -4,6 +4,7 @@ import type * as React from "react";
 import type * as ReactReduxTypes from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
+import type { IAvailableExtension } from "@/types/extensions";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 
 const { dispatch, hidden, objects } = vi.hoisted(() => ({
@@ -32,9 +33,13 @@ vi.mock("react-redux", async () => {
   };
 });
 
-import { setGameAddOrigin, setGameAddStore } from "../../actions/session";
+import { setGameAddExtension, setGameAddOrigin, setGameAddStore } from "../../actions/session";
 import type { GameSource } from "../../types/GameSource";
 import { useGameCardActions } from "./useGameCardActions.hook";
+
+/** The calls dispatched with an action of this kind. */
+const dispatched = (action: { getType: () => string }) =>
+  dispatch.mock.calls.filter(([dispatchedAction]) => dispatchedAction.type === action.getType());
 
 const definition = (over: Partial<IActionDefinition>): IActionDefinition =>
   ({
@@ -228,8 +233,8 @@ describe("useGameCardActions", () => {
 
       primary?.onClick();
 
-      expect(dispatch).toHaveBeenCalledOnce();
       expect(dispatch).toHaveBeenCalledWith(setGameAddOrigin("skyrimse", "detected_list"));
+      expect(dispatched(setGameAddStore)).toEqual([]);
     });
 
     it("is not recorded for a game added from the list of every supported game", () => {
@@ -237,8 +242,51 @@ describe("useGameCardActions", () => {
 
       primary?.onClick();
 
-      expect(dispatch).toHaveBeenCalledOnce();
       expect(dispatch).toHaveBeenCalledWith(setGameAddOrigin("skyrimse", "all_games"));
+      expect(dispatched(setGameAddStore)).toEqual([]);
+    });
+  });
+
+  describe("the extension a tile carries", () => {
+    const emberville = {
+      name: "Emberville",
+      modId: 1,
+      fileId: 1,
+      author: "tester",
+      version: "1.0.0",
+      timestamp: 0,
+    };
+
+    const leadWith = (extension: IAvailableExtension | undefined) => {
+      objects.current = [
+        definition({ title: "Manage", position: 50, icon: "activate", action: vi.fn() }),
+      ];
+      dispatch.mockClear();
+      const { result } = renderHook(() =>
+        useGameCardActions(
+          "skyrimse",
+          "managed",
+          () => {},
+          "all_games",
+          undefined,
+          undefined,
+          extension,
+        ),
+      );
+
+      return result.current.primary;
+    };
+
+    it("is recorded before the add runs, so it can be offered", () => {
+      leadWith(emberville)?.onClick();
+
+      expect(dispatch).toHaveBeenCalledWith(setGameAddExtension(emberville));
+    });
+
+    it("is cleared by a click on a tile that carries none, so an earlier tile's isn't offered", () => {
+      leadWith(undefined)?.onClick();
+
+      expect(dispatch).toHaveBeenCalledWith(setGameAddExtension(null));
     });
   });
 });

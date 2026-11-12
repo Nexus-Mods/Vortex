@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 
 import { useMainContext } from "@/contexts";
 import { numericNexusGameId } from "@/extensions/analytics/mixpanel/numericGameId";
+import type { IAvailableExtension } from "@/types/extensions";
 import type { IState } from "@/types/IState";
 import type { IButtonBrand } from "@/ui/components/button/Button";
 import { Button } from "@/ui/components/button/Button";
@@ -36,7 +37,8 @@ export interface IGameCardProps {
    * finds the game and names the store itself.
    */
   detectedStore?: string;
-  game: IGameStored;
+  /** A tile for a game nothing is registered for carries the catalog's extension for it */
+  game: IGameStored & { extension?: IAvailableExtension };
   section: IGameSection;
   onRefreshGameInfo?: (gameId: string) => PromiseLike<void>;
 }
@@ -93,6 +95,7 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
     source,
     reportMenuAction,
     store,
+    game.extension,
   );
   const name = game.name.replace(/\t/g, " ");
 

@@ -1,6 +1,8 @@
 import type { VortexGameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
+import type { IAvailableExtension } from "@/types/extensions";
+
 import type { GameSource } from "../types/GameSource";
 import type { DetectedGamesStatus, IDetectedGame } from "../types/IDetectedGame";
 import type { IGameStored } from "../types/IGameStored";
@@ -62,5 +64,14 @@ export const setGameAddStore = createAction(
   (gameId: VortexGameId, store: string) => ({ gameId, store }),
 );
 
-/** forgets the store picked for an add, once the add has finished or failed */
+/**
+ * records the extension of the tile the user is adding a game from, `null` for a tile with
+ * none, so the add can offer to download it instead of finding it again
+ */
+export const setGameAddExtension = createAction(
+  "SET_GAME_ADD_EXTENSION",
+  (extension: IAvailableExtension | null) => ({ extension }),
+);
+
+/** forgets the store and extension picked for an add, once the add has finished or failed */
 export const clearGameAddStore = createAction("CLEAR_GAME_ADD_STORE");
