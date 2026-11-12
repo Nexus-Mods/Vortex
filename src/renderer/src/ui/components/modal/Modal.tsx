@@ -61,7 +61,7 @@ export const ModalPanel = ({
     )}
 
     {showCloseButton && (
-      <button className="nxm-modal-close" onClick={onClose}>
+      <button aria-label="Close" className="nxm-modal-close" onClick={onClose}>
         <Icon name="close" />
       </button>
     )}
