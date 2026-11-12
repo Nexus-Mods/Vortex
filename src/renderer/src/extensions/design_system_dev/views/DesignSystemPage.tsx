@@ -12,6 +12,7 @@ import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { ContextMenuDemo } from "@/ui/components/context_menu/ContextMenu.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
+import { FeedbackModalDemo } from "@/ui/components/feedback_modal/FeedbackModal.demo";
 import { FileTreeDemo } from "@/ui/components/file_tree/FileTree.demo";
 import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
 import { RadioGroupFieldDemo } from "@/ui/components/form/radio_group_field/RadioGroupField.demo";
@@ -31,6 +32,7 @@ import { PickerDemo } from "@/ui/components/picker/Picker.demo";
 import { PillDemo } from "@/ui/components/pill/Pill.demo";
 import { PopoverDemo } from "@/ui/components/popover/Popover.demo";
 import { ProseDemo } from "@/ui/components/prose/Prose.demo";
+import { SearchDemo } from "@/ui/components/search/Search.demo";
 import { SplitButtonDemo } from "@/ui/components/split_button/SplitButton.demo";
 import { TableDemo } from "@/ui/components/table/Table.demo";
 import { TabBar } from "@/ui/components/tabs/TabBar";
@@ -99,6 +101,7 @@ const DEMO_GROUPS: IDemoGroup[] = [
       { id: "switch-field", name: "Switch field", Demo: SwitchFieldDemo },
       { id: "radio-group-field", name: "Radio group field", Demo: RadioGroupFieldDemo },
       { id: "text-area-field", name: "Text area field", Demo: TextAreaFieldDemo },
+      { id: "search", name: "Search", Demo: SearchDemo },
     ],
   },
   {
@@ -120,6 +123,7 @@ const DEMO_GROUPS: IDemoGroup[] = [
       { id: "tooltip", name: "Tooltip", Demo: TooltipDemo },
       { id: "hover-card", name: "Hover card", Demo: HoverCardDemo },
       { id: "modal", name: "Modal", Demo: ModalDemo },
+      { id: "feedback-modal", name: "FeedbackModal", Demo: FeedbackModalDemo },
     ],
   },
   {

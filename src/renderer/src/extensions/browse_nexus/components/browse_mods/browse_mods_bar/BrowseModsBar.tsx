@@ -9,12 +9,10 @@ import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics
 import { Typography } from "@/ui/components/typography/Typography";
 import { PageContent } from "@/views/components/Page/PageContent";
 
-// import { Search } from "../../../../gamemode_management/components/search/Search";
-import type { FilterSource } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import type { IBrowseModsPanelRefs } from "../../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
 import { useChangeModFilters } from "../../../hooks/use_change_mod_filters/useChangeModFilters.hook";
-import { type IModSearch } from "../../../hooks/use_mod_search/useModSearch.hook";
+import type { IModSearch } from "../../../hooks/use_mod_search/useModSearch.hook";
 import { MOD_FILTERS } from "../../../util/mod_filters/modFilterList";
 import {
   type IModFilters,
@@ -25,6 +23,7 @@ import {
 } from "../../../util/mod_views/modViews";
 import { ModFilterChip } from "../mod_filters/ModFilterChip";
 import { ModFilters } from "../mod_filters/ModFilters";
+import { ModSearchBox } from "../mod_search_box/ModSearchBox";
 import { ModSortOptions } from "../mod_sort_options/ModSortOptions";
 
 interface IBrowseModsBarProps {
@@ -34,15 +33,17 @@ interface IBrowseModsBarProps {
   viewPicker: ReactNode;
   /** The Filter menu and View options, for a view's menu to open. */
   panelRefs: IBrowseModsPanelRefs;
+  /** Whether feedback has been given, which turns its button off, and how to open it. */
+  feedback: { hasGiven: boolean; onOpen: () => void };
 }
 
 /**
  * The bar over Browse's mods: its views, results count, a chip for each filter while it narrows
- * the mods or is locked, filter and view options. Counts each change, and the toolbar's clicks.
+ * the mods or is locked, filter and view options, and the search box. Counts each change, and the
+ * toolbar's clicks.
  */
-export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarProps) => {
+export const BrowseModsBar = ({ search, viewPicker, panelRefs, feedback }: IBrowseModsBarProps) => {
   const { t } = useTranslation();
-  // const [search, setSearch] = useState("");
   const tracker = useBrowseModsTracker();
   const toolbarTracking = useToolbarAnalytics("browse_mods");
   const view = search.trackedView;
@@ -57,16 +58,23 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
     changeFilters({ [key]: PRESET_FILTERS[view][key] }, "filter_reset");
   };
 
+  const feedbackAction: IToolbarAction = {
+    id: "feedback",
+    label: t("Give feedback"),
+    icon: "reviews",
+    testId: "browse-mods-feedback",
+    onClick: feedback.onOpen,
+    disabledReason: feedback.hasGiven ? t("Thanks for your feedback") : undefined,
+  };
+
   const filter: IToolbarAction = {
     id: "filter",
     panelHandle: panelRefs.filters,
     label: t("Filter"),
     icon: "filter_list",
-    hasPip: !!search.activeFilterCount,
     panelRole: "menu",
     panel: ({ dismiss }) => (
       <ModFilters
-        activeFilters={search.activeFilters}
         canSeeAdult={search.canSeeAdult}
         changedFilters={search.changedFilters}
         filters={search.filters}
@@ -155,16 +163,19 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
             </div>
           )}
 
-          {/* <Search placeholder={t("Search mods...")} value={search} onChange={setSearch} /> */}
+          <div className="flex items-center gap-x-2">
+            <Toolbar tracking={toolbarTracking}>
+              <ToolbarGroup
+                actions={[
+                  feedbackAction,
+                  filter,
+                  { ...displayOptions, id: "view-options", panelHandle: panelRefs.viewOptions },
+                ]}
+              />
+            </Toolbar>
 
-          <Toolbar tracking={toolbarTracking}>
-            <ToolbarGroup
-              actions={[
-                filter,
-                { ...displayOptions, id: "view-options", panelHandle: panelRefs.viewOptions },
-              ]}
-            />
-          </Toolbar>
+            <ModSearchBox search={search} />
+          </div>
         </div>
       </PageContent>
     </div>

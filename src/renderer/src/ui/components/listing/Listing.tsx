@@ -5,17 +5,19 @@ import React, {
   type RefObject,
 } from "react";
 
+import { Button } from "@/ui/components/button/Button";
 import type { IIconSource } from "@/ui/components/icon/Icon";
 import { ListingLoader } from "@/ui/components/listing_loader/ListingLoader";
 import { NoResults } from "@/ui/components/no_results/NoResults";
+import { Typography } from "@/ui/components/typography/Typography";
 
+import type { ListingStatus, LoadMoreSource } from "./listing_status/listingStatus";
 import { LoadMoreMarker } from "./LoadMoreMarker";
 
 /** How far below the view, in pixels, the end of a list starts loading more. */
 const LOAD_MORE_DISTANCE = 320;
 
 export const Listing = ({
-  appendLoader,
   children,
   className,
   customError,
@@ -24,13 +26,13 @@ export const Listing = ({
   errorIcon,
   errorMessage,
   errorTitle,
-  hasMore,
-  isError,
-  isLoading,
-  isLoadingMore,
-  isLoadMoreError,
   loadMoreErrorMessage = "More couldn't be loaded. Try again.",
+  loadMoreFooter,
+  loadMoreLabel = "Load more",
+  loadMoreNote,
+  loadMoreRef,
   loadMoreSkeletonCount = 2,
+  loadMoreSummary,
   noResultsClassName = "py-16",
   noResultsIcon = "zoom_out",
   noResultsIconClassName,
@@ -42,11 +44,10 @@ export const Listing = ({
   scrollRef,
   skeletonCount = 4,
   SkeletonTile,
+  status = "done",
 }: PropsWithChildren<{
   /** A placeholder in the shape of an item, drawn while items load. */
   SkeletonTile?: ComponentType<React.PropsWithChildren<unknown>>;
-  /** Whether a first load keeps the items shown and draws its tiles after them. */
-  appendLoader?: boolean;
   /** Classes for the items' container, such as a grid's. */
   className?: string;
   /** Shown in place of the default error when the items failed to load. */
@@ -61,20 +62,20 @@ export const Listing = ({
   errorMessage?: string;
   /** The error's title, for a first load or loading more. */
   errorTitle?: string;
-  /** Whether there's more to load after the items shown. */
-  hasMore?: boolean;
-  /** Whether the items failed to load. */
-  isError?: boolean;
-  /** Whether the items are loading, drawn as tiles in their place. */
-  isLoading?: boolean;
-  /** Whether more is loading after the items shown, drawn as tiles after them. */
-  isLoadingMore?: boolean;
-  /** Whether loading more failed, offering `onRetry` after the items instead of loading more. */
-  isLoadMoreError?: boolean;
   /** What to say when loading more failed. */
   loadMoreErrorMessage?: string;
+  /** Shown under the Load more button, while paused. */
+  loadMoreFooter?: ReactNode;
+  /** The Load more button's label, while paused. */
+  loadMoreLabel?: string;
+  /** A line over the summary, while paused, such as a nudge after a long time loading. */
+  loadMoreNote?: string;
+  /** The Load more button, while paused, for the list's keys to move focus to. */
+  loadMoreRef?: RefObject<HTMLButtonElement>;
   /** How many tiles stand for what's loading after the items. */
   loadMoreSkeletonCount?: number;
+  /** A line over the Load more button, while paused, such as how many have loaded. */
+  loadMoreSummary?: string;
   /** Classes for the empty state and the error. */
   noResultsClassName?: string;
   /** Shown under the empty state's message, such as an action. */
@@ -87,52 +88,29 @@ export const Listing = ({
   noResultsMessage?: string;
   /** The empty state's title. */
   noResultsTitle?: string;
-  /** Asks for more, as the end of the items nears the view while `hasMore`. */
-  onLoadMore?: () => void;
+  /** Asks for more: as the items' end nears the view while `idle`, or from Load more while `paused`. */
+  onLoadMore?: (source: LoadMoreSource) => void;
   /** Asks again for what failed, the items or more of them; offers Try again when given. */
   onRetry?: () => void;
   /** The element the list scrolls in, which loading more watches; the window's view without one. */
   scrollRef?: RefObject<HTMLElement>;
   /** How many tiles stand for the items while they load. */
   skeletonCount?: number;
+  /** Where its loading is; `done` without one, for a list that's always loaded. */
+  status?: ListingStatus;
 }>) => {
-  if (isLoading || !!entityCount) {
-    const canLoadMore = !isLoading && hasMore && !isLoadingMore && !isLoadMoreError;
-
+  if (status === "loading") {
     return (
-      <>
-        <ListingLoader
-          append={isLoading ? appendLoader : true}
-          className={className}
-          isLoading={isLoading || isLoadingMore}
-          skeletonCount={isLoading ? skeletonCount : loadMoreSkeletonCount}
-          SkeletonTile={SkeletonTile}
-        >
-          {children}
-        </ListingLoader>
-
-        {canLoadMore && !!onLoadMore && (
-          <LoadMoreMarker
-            distance={LOAD_MORE_DISTANCE}
-            scrollRef={scrollRef}
-            onVisible={onLoadMore}
-          />
-        )}
-
-        {!isLoading && !isLoadingMore && isLoadMoreError && (
-          <NoResults
-            className="py-6"
-            isError={true}
-            message={loadMoreErrorMessage}
-            title={errorTitle}
-            onRetry={onRetry}
-          />
-        )}
-      </>
+      <ListingLoader
+        isLoading
+        className={className}
+        skeletonCount={skeletonCount}
+        SkeletonTile={SkeletonTile}
+      />
     );
   }
 
-  if (isError) {
+  if (status === "failed") {
     return (
       <>
         {customError ?? (
@@ -141,6 +119,70 @@ export const Listing = ({
             icon={errorIcon}
             isError={true}
             message={errorMessage}
+            title={errorTitle}
+            onRetry={onRetry}
+          />
+        )}
+      </>
+    );
+  }
+
+  if (entityCount) {
+    return (
+      <>
+        <ListingLoader
+          append
+          className={className}
+          isLoading={status === "loading_more"}
+          skeletonCount={loadMoreSkeletonCount}
+          SkeletonTile={SkeletonTile}
+        >
+          {children}
+        </ListingLoader>
+
+        {status === "idle" && !!onLoadMore && (
+          <LoadMoreMarker
+            distance={LOAD_MORE_DISTANCE}
+            scrollRef={scrollRef}
+            onVisible={() => onLoadMore("scroll")}
+          />
+        )}
+
+        {status === "paused" && !!onLoadMore && (
+          <div className="flex flex-col items-center gap-y-3 border-t border-stroke-weak px-3 py-4">
+            {(!!loadMoreNote || !!loadMoreSummary) && (
+              <Typography
+                appearance="moderate"
+                as="div"
+                brand="neutral-translucent"
+                className="space-y-3 text-center"
+                typographyType="body-sm"
+              >
+                {!!loadMoreNote && <p data-testid="listing-load-more-note">{loadMoreNote}</p>}
+
+                {!!loadMoreSummary && (
+                  <p data-testid="listing-load-more-summary">{loadMoreSummary}</p>
+                )}
+              </Typography>
+            )}
+
+            <Button
+              data-testid="listing-load-more"
+              ref={loadMoreRef}
+              onClick={() => onLoadMore("button")}
+            >
+              {loadMoreLabel}
+            </Button>
+
+            {loadMoreFooter}
+          </div>
+        )}
+
+        {status === "load_more_failed" && (
+          <NoResults
+            className="py-6"
+            isError={true}
+            message={loadMoreErrorMessage}
             title={errorTitle}
             onRetry={onRetry}
           />

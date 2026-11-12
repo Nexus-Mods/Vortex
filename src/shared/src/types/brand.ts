@@ -19,7 +19,8 @@ export function make<B extends AnyBrand>(validate?: (value: BaseOf<B>) => void):
 }
 
 export function validateNonEmptyString(value: string): void {
-  if (value.length > 0) return;
+  // untyped state can hand us a non-string at runtime
+  if (typeof value === "string" && value.length > 0) return;
   throw new VortexError("Must be a non-empty string!", {
     kind: "argument-invalid",
     argument: "value",

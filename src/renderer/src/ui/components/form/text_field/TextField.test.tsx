@@ -85,6 +85,15 @@ describe("TextField", () => {
       expect(count()).toHaveTextContent("7 / 10");
     });
 
+    it("stops at maxLength without a count when it's hidden", async () => {
+      renderField({ maxLength: 3, hideCharacterCount: true });
+
+      await userEvent.type(getInput(), "abcd");
+
+      expect(getInput()).toHaveValue("abc");
+      expect(screen.queryByLabelText("remaining character count")).toBeNull();
+    });
+
     it("follows a controlled value set from outside", async () => {
       const Controlled = () => {
         const [value, setValue] = useState("abc");

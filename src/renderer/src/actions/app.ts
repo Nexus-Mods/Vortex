@@ -35,6 +35,11 @@ export const setExtensionModId = createAction(
   (extensionId: string, modId: number) => ({ extensionId, modId }),
 );
 
+export const setExtensionNexusGame = createAction(
+  "SET_EXTENSION_NEXUS_GAME",
+  (extensionId: string, nexus: NonNullable<IExtensionState["nexus"]>) => ({ extensionId, nexus }),
+);
+
 export const declineExtensionNexusLink = createAction("DECLINE_EXTENSION_NEXUS_LINK", id<string>);
 
 export const removeExtension = createAction("REMOVE_EXTENSION", id<string>);

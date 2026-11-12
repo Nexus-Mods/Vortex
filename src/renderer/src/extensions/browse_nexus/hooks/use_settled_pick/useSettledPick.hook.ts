@@ -23,7 +23,8 @@ export const TAPPING_WITHIN_MS = 500;
  * a list shows only where it stops. `latestPick` follows every pick at once, and `settledPick`
  * follows `pickOnceSettled` once its key's let go and it has rested since for `SETTLE_MS`, or
  * `TAPPING_SETTLE_MS` while tapping, so a quick tap after it lands in time to take its place.
- * `pickNow` and `settleNow` show at once, and `startWith` shows the first, safely while rendering.
+ * `pickNow` and `settleNow` show at once, `cancelPick` drops a pick before it's shown, and `startWith`
+ * shows the first, safely while rendering.
  */
 export const useSettledPick = <T>() => {
   const [latestPick, setLatestPick] = useState<T>();
@@ -122,11 +123,22 @@ export const useSettledPick = <T>() => {
     }
   };
 
+  /** Drops the pick waiting, if any, going back to the one shown, which it never replaced. */
+  const cancelPick = () => {
+    if (!pendingRef.current) {
+      return;
+    }
+
+    clearTimeout(timerRef.current);
+    pendingRef.current = undefined;
+    setLatestPick(settledRef.current);
+  };
+
   /** Shows `value` from the start, before any pick; it only sets state, so is safe in render. */
   const startWith = (value: T) => {
     setLatestPick(value);
     setSettledPick(value);
   };
 
-  return { latestPick, settledPick, pickOnceSettled, pickNow, settleNow, startWith };
+  return { latestPick, settledPick, pickOnceSettled, pickNow, settleNow, cancelPick, startWith };
 };

@@ -1,6 +1,7 @@
 import * as path from "path";
 
-import type { VortexGameId } from "@vortex/shared";
+import type { GameId } from "@vortex/shared";
+import { GameDomain, type VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type * as Redux from "redux";
@@ -30,10 +31,13 @@ import * as fs from "../../util/fs";
 import { activeProfile, discoveryByGame } from "../../util/selectors";
 import Steam from "../../util/Steam";
 import { normalizeStoreQuery } from "../../util/storeQuery";
+import { findInstalled } from "../extension_manager/queries";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 import { discoveryFinished, discoveryProgress, setPhaseCount } from "./actions/discovery";
 import { clearGameDisabled, setGameDisabled, setKnownGames } from "./actions/session";
 import { addDiscoveredGame, addDiscoveredTool, clearDiscoveredGame } from "./actions/settings";
+import { gameData } from "./gameData";
+import { nexusGameData } from "./queries";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 import type { IGameStored } from "./types/IGameStored";
 import type { IToolStored } from "./types/IToolStored";
@@ -118,7 +122,11 @@ export class GameModeManager {
     // didn't
   }
 
-  private dispatchKnownGames(): void {
+  /**
+   * store the registered games again, for what they are stored with that arrived after they were,
+   * such as the Nexus Mods game of an extension
+   */
+  public dispatchKnownGames(): void {
     if (this.mStore === null) {
       return;
     }
@@ -617,11 +625,35 @@ export class GameModeManager {
       executable: game.executable(),
       environment,
       details,
+      nexus: this.nexusGameOf(game),
       shell: game.shell,
       contributed: game.contributed,
       final: game.final,
     };
   };
+
+  /**
+   * The Nexus Mods game a game is for. The one the extension catalog named for the game's
+   * installed extension wins over what the game declares itself.
+   */
+  private nexusGameOf(game: IGame): { gameId: GameId; gameDomain: GameDomain } | undefined {
+    const state = this.mStore.getState();
+
+    const extension =
+      game.extensionPath === undefined
+        ? undefined
+        : findInstalled(state.app.extensions ?? {}, { path: game.extensionPath })?.extension;
+    if (extension?.nexus !== undefined) {
+      return extension.nexus;
+    }
+
+    const declared: unknown = game.details?.nexusPageId;
+    return nexusGameData(
+      gameData(state),
+      game.id,
+      typeof declared === "string" && declared !== "" ? GameDomain(declared) : undefined,
+    );
+  }
 
   private extractSteamId(game: IGame): string | undefined {
     const [first] = normalizeStoreQuery(game.queryArgs?.steam);

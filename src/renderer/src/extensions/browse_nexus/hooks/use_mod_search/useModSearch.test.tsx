@@ -108,7 +108,7 @@ const loadTwoPages = async (
   await waitFor(() => expect(mocks.pending).toHaveLength(2));
   await respond("endorsements", 45, { ids: ["1"], next: "page-2" });
   await respond("new", 900);
-  await waitFor(() => expect(result.current.hasMore).toBe(true));
+  await waitFor(() => expect(result.current.status).toBe("idle"));
   act(() => result.current.loadMore());
   await waitFor(() => expect(mocks.pending).toHaveLength(1));
   await respond("endorsements", 45, { ids: ["2"], next });
@@ -439,13 +439,12 @@ describe("useModSearch", () => {
     await waitFor(() => expect(mocks.pending).toHaveLength(2));
     await respond("endorsements", 45, { ids: ["1", "2"], next: "page-2" });
     await respond("new", 900);
-    await waitFor(() => expect(result.current.hasMore).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("idle"));
 
     act(() => result.current.loadMore());
 
-    await waitFor(() => expect(result.current.isLoadingMore).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("loading_more"));
     expect(cursorOf(mocks.pending[0].search)).toBe("page-2");
-    expect(result.current.loading).toBe(false);
     await respond("endorsements", 45, { ids: ["3"] });
 
     await waitFor(() => expect(idsOf(result.current.mods)).toEqual(["1", "2", "3"]));
@@ -458,13 +457,67 @@ describe("useModSearch", () => {
     await waitFor(() => expect(mocks.pending).toHaveLength(2));
     await respond("endorsements", 45, { ids: ["1", "2"], next: "page-2" });
     await respond("new", 900);
-    await waitFor(() => expect(result.current.hasMore).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("idle"));
 
     act(() => result.current.loadMore());
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     await respond("endorsements", 45, { ids: ["2", "3"] });
 
     await waitFor(() => expect(idsOf(result.current.mods)).toEqual(["1", "2", "3"]));
+  });
+
+  it("pauses after three pages, then loads the fourth when asked", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("endorsements", 45, { ids: ["3"], next: "page-4" });
+
+    await waitFor(() => expect(result.current.status).toBe("paused"));
+
+    act(() => result.current.loadMore());
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    expect(cursorOf(mocks.pending[0].search)).toBe("page-4");
+    await respond("endorsements", 45, { ids: ["4"], next: "page-5" });
+    await waitFor(() => expect(result.current.pagesLoaded).toBe(4));
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("starts again from page 1 for a new sort while paused", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("endorsements", 45, { ids: ["3"], next: "page-4" });
+    await waitFor(() => expect(result.current.status).toBe("paused"));
+
+    act(() => result.current.setSort({ field: "downloads" }));
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("downloads", 45, { ids: ["a"], next: "d-2" });
+
+    await waitFor(() => expect(idsOf(result.current.mods)).toEqual(["a"]));
+    expect(result.current.pagesLoaded).toBe(1);
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("asks for the next page once when Load more is pressed twice before it re-renders", async () => {
+    const { result } = render();
+    await loadTwoPages(result, "page-3");
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await respond("endorsements", 45, { ids: ["3"], next: "page-4" });
+    await waitFor(() => expect(result.current.status).toBe("paused"));
+    const { loadMore } = result.current;
+
+    act(() => {
+      loadMore();
+      loadMore();
+    });
+
+    await waitFor(() => expect(mocks.pending).toHaveLength(1));
+    await act(async () => {});
+    expect(mocks.pending).toHaveLength(1);
   });
 
   it("asks for nothing more after the last page", async () => {
@@ -476,7 +529,7 @@ describe("useModSearch", () => {
     act(() => result.current.loadMore());
     await act(async () => {});
 
-    expect(result.current.hasMore).toBe(false);
+    expect(result.current.status).toBe("done");
     expect(mocks.requestCount).toBe(requests);
   });
 
@@ -485,10 +538,10 @@ describe("useModSearch", () => {
     await waitFor(() => expect(mocks.pending).toHaveLength(2));
     await respond("endorsements", 45, { next: "page-2" });
     await respond("new", 900);
-    await waitFor(() => expect(result.current.hasMore).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("idle"));
 
     act(() => result.current.loadMore());
-    await waitFor(() => expect(result.current.isLoadingMore).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("loading_more"));
     act(() => result.current.loadMore());
     await act(async () => {});
 
@@ -550,9 +603,8 @@ describe("useModSearch", () => {
 
     await fail("Network down");
 
-    // Within waitFor's second: a retry would hold the error back for its first second's delay.
-    await waitFor(() => expect(result.current.error?.message).toBe("Network down"));
-    expect(result.current.loadMoreError).toBeNull();
+    // Within waitFor's second: a retry would hold the failure back for its first second's delay.
+    await waitFor(() => expect(result.current.status).toBe("failed"));
     expect(mocks.requestCount).toBe(2);
   });
 
@@ -564,8 +616,7 @@ describe("useModSearch", () => {
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
-    expect(result.current.loading).toBe(false);
-    expect(result.current.isLoadingMore).toBe(true);
+    expect(result.current.status).toBe("loading_more");
     expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
   });
 
@@ -574,18 +625,18 @@ describe("useModSearch", () => {
     await waitFor(() => expect(mocks.pending).toHaveLength(2));
     await fail("Network down");
     await respond("new", 900);
-    await waitFor(() => expect(result.current.error).toBeTruthy());
+    await waitFor(() => expect(result.current.status).toBe("failed"));
 
     act(() => result.current.retry());
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
     await respond("endorsements", 45);
 
-    await waitFor(() => expect(result.current.error).toBeNull());
+    await waitFor(() => expect(result.current.status).toBe("done"));
     expect(result.current.mods).toEqual([{ id: "45" }]);
   });
 
-  it("keeps the mods loaded when a later page fails, as its own error, loading no more", async () => {
+  it("keeps the mods loaded when a later page fails, as a failure to load more, loading no more", async () => {
     const { result } = render();
     await loadTwoPages(result, "page-3");
     act(() => result.current.loadMore());
@@ -593,8 +644,7 @@ describe("useModSearch", () => {
 
     await fail("Network down");
 
-    await waitFor(() => expect(result.current.loadMoreError?.message).toBe("Network down"));
-    expect(result.current.error).toBeNull();
+    await waitFor(() => expect(result.current.status).toBe("load_more_failed"));
     expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
     expect(result.current.pagesLoaded).toBe(2);
     const requests = mocks.requestCount;
@@ -612,19 +662,17 @@ describe("useModSearch", () => {
     await act(async () =>
       mocks.pending.shift()!.reject(new V3ApiError({ status: 422, title: "Unprocessable Entity" })),
     );
-    await waitFor(() => expect(result.current.loadMoreError).toBeTruthy());
+    await waitFor(() => expect(result.current.status).toBe("load_more_failed"));
 
     act(() => result.current.retry());
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(cursorOf(mocks.pending[0].search)).toBeUndefined();
-    expect(result.current.loadMoreError).toBeNull();
-    expect(result.current.loading).toBe(false);
-    expect(result.current.isLoadingMore).toBe(true);
+    expect(result.current.status).toBe("loading_more");
     expect(idsOf(result.current.mods)).toEqual(["1"]);
     expect(result.current.searchKey).not.toBe(searchKey);
     await respond("endorsements", 45, { ids: ["1"], next: "fresh-2" });
-    await waitFor(() => expect(result.current.hasMore).toBe(true));
+    await waitFor(() => expect(result.current.status).toBe("idle"));
     expect(mocks.pending).toEqual([]);
   });
 
@@ -635,7 +683,7 @@ describe("useModSearch", () => {
     await act(async () =>
       mocks.pending.shift()!.reject(new V3ApiError({ status: 422, title: "Unprocessable Entity" })),
     );
-    await waitFor(() => expect(result.current.error).toBeTruthy());
+    await waitFor(() => expect(result.current.status).toBe("failed"));
 
     act(() => result.current.retry());
 
@@ -652,20 +700,19 @@ describe("useModSearch", () => {
 
     await fail("Network down");
 
-    await waitFor(() => expect(result.current.loadMoreError?.message).toBe("Network down"));
-    expect(result.current.error).toBeNull();
+    await waitFor(() => expect(result.current.status).toBe("load_more_failed"));
     expect(idsOf(result.current.mods)).toEqual(["1", "2"]);
   });
 
-  it("has no more to load while it's asking for its pages again, so it doesn't ask twice", async () => {
+  it("isn't idle while it's asking for its pages again, so it doesn't ask twice", async () => {
     const { result } = render();
     await loadTwoPages(result, "page-3");
-    expect(result.current.hasMore).toBe(true);
+    expect(result.current.status).toBe("idle");
 
     act(() => result.current.retry());
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
-    expect(result.current.hasMore).toBe(false);
+    expect(result.current.status).toBe("loading_more");
   });
 
   it("asks for a failed later page again from its cursor when retried", async () => {
@@ -674,17 +721,16 @@ describe("useModSearch", () => {
     act(() => result.current.loadMore());
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     await fail("Network down");
-    await waitFor(() => expect(result.current.loadMoreError).toBeTruthy());
+    await waitFor(() => expect(result.current.status).toBe("load_more_failed"));
 
     act(() => result.current.retry());
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(cursorOf(mocks.pending[0].search)).toBe("page-3");
-    expect(result.current.isLoadingMore).toBe(true);
-    expect(result.current.loadMoreError).toBeNull();
+    expect(result.current.status).toBe("loading_more");
     await respond("endorsements", 45, { ids: ["3"] });
     await waitFor(() => expect(idsOf(result.current.mods)).toEqual(["1", "2", "3"]));
-    expect(result.current.loadMoreError).toBeNull();
+    expect(result.current.status).toBe("done");
   });
 
   it("asks for nothing outside a game", async () => {
@@ -860,5 +906,81 @@ describe("useModSearch's views", () => {
     expect(result.current.filters).toEqual({ timeRange: "7", adult: "include" });
     expect(result.current.isEdited).toBe(false);
     expect(result.current.rangeFrom).toBe(later);
+  });
+
+  describe("searching by name", () => {
+    it("searches mod names for the search text, trimmed, with the view's sort and filters", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+
+      act(() => result.current.setSearchText("  sky ui  "));
+
+      await waitFor(() => expect(mocks.pending).toHaveLength(1));
+      expect(mocks.pending[0].search).toMatchObject({
+        query: "sky ui",
+        filters: { created_at: { gte: daysBack(7) } },
+        sort: { field: "endorsements", direction: "desc" },
+      });
+      expect(result.current.searchText).toBe("  sky ui  ");
+      expect(result.current.searchQuery).toBe("sky ui");
+    });
+
+    it("searches nothing by name with under 2 characters other than spaces", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+
+      act(() => result.current.setSearchText(" s "));
+
+      expect(result.current.searchText).toBe(" s ");
+      expect(result.current.searchQuery).toBeUndefined();
+      expect(mocks.pending).toHaveLength(0);
+    });
+
+    it("cuts the search to the API's 100 characters", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+
+      act(() => result.current.setSearchText("a".repeat(120)));
+
+      expect(result.current.searchQuery).toBe("a".repeat(100));
+    });
+
+    it("keeps the search when switching views", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+      act(() => result.current.setSearchText("sky"));
+      await waitFor(() => expect(mocks.pending).toHaveLength(1));
+      await respond("endorsements", 3);
+
+      act(() => result.current.selectView("popular"));
+
+      await waitFor(() => expect(mocks.pending).toHaveLength(1));
+      expect(mocks.pending[0].search).toMatchObject({
+        query: "sky",
+        sort: { field: "downloads" },
+      });
+    });
+
+    it("counts the tab from every mod, whatever the search", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+
+      act(() => result.current.setSearchText("sky"));
+
+      await waitFor(() => expect(mocks.pending).toHaveLength(1));
+      expect(mocks.pending[0].search.sort.field).toBe("endorsements");
+      expect(result.current.allModsTotal).toBe(900);
+    });
+
+    it("clears the search", async () => {
+      const { result } = render();
+      await respondToStart(45, 900);
+      act(() => result.current.setSearchText("sky"));
+
+      act(() => result.current.setSearchText(""));
+
+      expect(result.current.searchText).toBe("");
+      expect(result.current.searchQuery).toBeUndefined();
+    });
   });
 });

@@ -23,6 +23,7 @@ import {
   test,
 } from "../../../test-utils/externalChangesTest";
 import { MERGED_PATH } from "../modMerging";
+import type { IMod } from "../types/IMod";
 import { deployedFilePath } from "./deployedFilePath";
 import { changesBySource, changeToEntry, dealWithExternalChanges } from "./externalChanges";
 
@@ -213,6 +214,26 @@ describe("dealWithExternalChanges", () => {
     const h = await makeExternalChanges(
       [makeFileChange({ changeType: "srcdeleted", source: MOD_A_FOLDER })],
       MODS_WITH_A,
+    );
+    await h.stageFile(MOD_A_FOLDER, "other.esp");
+    const changed: Array<[string, string]> = [];
+    h.api.events.on("mod-content-changed", (gameId: string, modId: string) => {
+      changed.push([gameId, modId]);
+    });
+
+    await h.dealWithExternalChanges(new Set());
+
+    expect(changed).toEqual([[h.gameId, MOD_A]]);
+  });
+
+  test("reports changed content for a mod record that lost its id", async ({
+    makeExternalChanges,
+  }) => {
+    const { id: _lostId, ...withoutId } = MODS_WITH_A[MOD_A];
+    const h = await makeExternalChanges(
+      [makeFileChange({ changeType: "srcdeleted", source: MOD_A_FOLDER })],
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      { [MOD_A]: withoutId as IMod },
     );
     await h.stageFile(MOD_A_FOLDER, "other.esp");
     const changed: Array<[string, string]> = [];

@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameDomain } from "@vortex/shared";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Mod } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { ListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
 import { queryClient } from "@/util/queryClient";
 
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
@@ -16,7 +17,19 @@ import { NO_FILTERS } from "../../util/mod_views/modViews";
 import { websiteModSearchUrl } from "../../util/website_mod_search_url/websiteModSearchUrl";
 
 // The list, bar, backdrop and details are stood in for: these test which mod the details show.
-vi.mock("./browse_mods_bar/BrowseModsBar", () => ({ BrowseModsBar: () => null }));
+const openFeedback = vi.hoisted(() => vi.fn());
+vi.mock("./browse_mods_bar/BrowseModsBar", () => ({
+  BrowseModsBar: ({ feedback }: { feedback: { onOpen: () => void } }) => (
+    <button data-testid="browse-mods-feedback" onClick={feedback.onOpen} />
+  ),
+}));
+vi.mock("../../hooks/use_mod_browsing_feedback/useModBrowsingFeedback.hook", () => ({
+  useModBrowsingFeedback: () => ({
+    hasGiven: false,
+    open: openFeedback,
+    modal: <p data-testid="feedback-modal" />,
+  }),
+}));
 vi.mock("./mod_backdrop/ModBackdrop", () => ({
   ModBackdrop: ({ src, blurredSrc }: { src?: string; blurredSrc?: string }) => (
     <p data-testid="backdrop">{`${src} ${blurredSrc}`}</p>
@@ -65,49 +78,75 @@ vi.mock("./mod_list/ModList", () => ({
     mods,
     activeModId,
     listRef,
-    isError,
-    isLoadMoreError,
+    status,
     onFocusDetails,
+    onPassLastMod,
+    onLoadMore,
     onRetry,
     onSelectMod,
     emptyState,
     endOfResults,
+    loadMoreFooter,
   }: {
     mods: ModSummary[];
     activeModId: string;
-    listRef: React.RefObject<HTMLDivElement>;
-    isError: boolean;
-    isLoadMoreError: boolean;
+    listRef: React.Ref<{ focus: () => void; focusOpenMod: () => void }>;
+    status: ListingStatus;
+    onLoadMore: (source: "scroll" | "button") => void;
     onFocusDetails: () => void;
+    onPassLastMod: () => void;
     onRetry: () => void;
     onSelectMod: (id: string, input: string) => void;
     emptyState: React.ReactNode;
     endOfResults: React.ReactNode;
-  }) => (
-    <div aria-label="Mods" ref={listRef} role="region" tabIndex={-1}>
-      {!mods.length && emptyState}
-      {!!mods.length && endOfResults}
-      {(isError || isLoadMoreError) && <button onClick={onRetry}>Retry</button>}
-      {mods.map((mod) => (
-        <button
-          data-mod-card
-          key={mod.id}
-          tabIndex={mod.id === activeModId ? 0 : -1}
-          onClick={() => onSelectMod(mod.id, "pointer")}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              onSelectMod(mod.id, "keyboard");
-            }
-            if (event.key === "ArrowRight") {
-              onFocusDetails();
-            }
-          }}
-        >
-          {mod.name}
+    loadMoreFooter: React.ReactNode;
+  }) => {
+    const regionRef = React.useRef<HTMLDivElement>(null);
+    const openModRef = React.useRef<HTMLButtonElement>(null);
+
+    React.useImperativeHandle(listRef, () => ({
+      focus: () => regionRef.current?.focus(),
+      focusOpenMod: () => openModRef.current?.focus(),
+    }));
+
+    return (
+      <div aria-label="Mods" ref={regionRef} role="region" tabIndex={-1}>
+        {!mods.length && emptyState}
+        {!!mods.length && <div data-testid="end-of-results">{endOfResults}</div>}
+        <button data-testid="pass-last-mod" onClick={onPassLastMod}>
+          Pass the last mod
         </button>
-      ))}
-    </div>
-  ),
+        {status === "paused" && (
+          <button data-testid="load-more" onClick={() => onLoadMore("button")}>
+            Load more
+          </button>
+        )}
+        {status === "paused" && loadMoreFooter}
+        {(status === "failed" || status === "load_more_failed") && (
+          <button onClick={onRetry}>Retry</button>
+        )}
+        {mods.map((mod) => (
+          <button
+            data-testid={`mock-card-${mod.id}`}
+            key={mod.id}
+            ref={mod.id === activeModId ? openModRef : undefined}
+            tabIndex={mod.id === activeModId ? 0 : -1}
+            onClick={() => onSelectMod(mod.id, "pointer")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                onSelectMod(mod.id, "keyboard");
+              }
+              if (event.key === "ArrowRight") {
+                onFocusDetails();
+              }
+            }}
+          >
+            {mod.name}
+          </button>
+        ))}
+      </div>
+    );
+  },
 }));
 
 // The active game, by its name and Nexus Mods domain.
@@ -142,8 +181,7 @@ const FILTERS = { ...NO_FILTERS, timeRange: "7" } as const;
 const search = (mods: ModSummary[], loading = false, overrides: Partial<IModSearch> = {}) =>
   ({
     mods,
-    loading,
-    error: null,
+    status: loading ? "loading" : "done",
     retry: vi.fn(),
     viewId: "trending",
     trackedView: "trending",
@@ -160,6 +198,7 @@ const searched = {
   view: "trending",
   sort_field: "endorsements",
   sort_direction: "desc",
+  has_search: false,
   time_range: "7",
   adult: "include",
 };
@@ -182,6 +221,30 @@ const renderComponent = (initial: IModSearch, isInitiallyShown = true) => {
 };
 
 describe("BrowseMods", () => {
+  it("renders the feedback modal", () => {
+    renderComponent(search([mod("1")]));
+
+    expect(screen.getByTestId("feedback-modal")).toBeInTheDocument();
+  });
+
+  it("opens the feedback from the toolbar", async () => {
+    openFeedback.mockClear();
+    renderComponent(search([mod("1")]));
+
+    await userEvent.click(screen.getByTestId("browse-mods-feedback"));
+
+    expect(openFeedback).toHaveBeenCalledWith("toolbar");
+  });
+
+  it("opens the feedback from a thumb under Load more with its sentiment", async () => {
+    openFeedback.mockClear();
+    renderComponent(search([mod("1")], false, { status: "paused", loadMore: vi.fn() }));
+
+    await userEvent.click(screen.getByTestId("load-more-feedback-negative"));
+
+    expect(openFeedback).toHaveBeenCalledWith("load_more", "negative");
+  });
+
   it("shows the first mod until another's picked", async () => {
     renderComponent(search([mod("1"), mod("2")]));
     expect(screen.getByTestId("details")).toHaveTextContent("Mod 1");
@@ -319,6 +382,26 @@ describe("BrowseMods", () => {
     }
   });
 
+  it("shows and counts no mod picked on the way past the last one", () => {
+    vi.useFakeTimers();
+    const { propertiesOf } = renderComponent(search([mod("1"), mod("2")]));
+
+    try {
+      fireEvent.keyDown(screen.getByTestId("mock-card-2"), { key: "Enter" });
+      fireEvent.click(screen.getByTestId("pass-last-mod"));
+      fireEvent.keyUp(window, { key: "Enter" });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(screen.getByTestId("details")).toHaveTextContent("Mod 1");
+      expect(screen.getByTestId("mock-card-1")).toHaveAttribute("tabindex", "0");
+      expect(propertiesOf("browse_mods_mod_selected")).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("shows a mod waiting from the keyboard at once when it's clicked", () => {
     vi.useFakeTimers();
     renderComponent(search([mod("1"), mod("2")]));
@@ -388,7 +471,7 @@ describe("BrowseMods", () => {
   });
 
   it("counts retrying a search that failed", async () => {
-    const failed = search([], false, { error: new Error("offline") });
+    const failed = search([], false, { status: "failed" });
     const { propertiesOf } = renderComponent(failed);
 
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -400,7 +483,7 @@ describe("BrowseMods", () => {
 
   it("counts retrying a later page that failed, with how many pages had loaded", async () => {
     const failed = search([mod("1"), mod("2")], false, {
-      loadMoreError: new Error("offline"),
+      status: "load_more_failed",
       pagesLoaded: 2,
     });
     const { propertiesOf } = renderComponent(failed);
@@ -409,6 +492,22 @@ describe("BrowseMods", () => {
 
     expect(failed.retry).toHaveBeenCalled();
     expect(propertiesOf("browse_mods_retry_clicked")).toEqual([{ ...searched, pages_loaded: 2 }]);
+  });
+
+  it("loads more from Load more, counting how many pages it had paused after", async () => {
+    const paused = search([mod("1"), mod("2")], false, {
+      status: "paused",
+      pagesLoaded: 3,
+      loadMore: vi.fn(),
+    });
+    const { propertiesOf } = renderComponent(paused);
+
+    await userEvent.click(screen.getByTestId("load-more"));
+
+    expect(paused.loadMore).toHaveBeenCalled();
+    expect(propertiesOf("browse_mods_load_more_clicked")).toEqual([
+      { ...searched, pages_loaded: 3 },
+    ]);
   });
 
   it("counts an empty search only once the user can see it", () => {
@@ -422,6 +521,10 @@ describe("BrowseMods", () => {
   });
 
   describe("empty states", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
     /** An empty search with these filters on, over the Trending preset's. */
     const emptyWith = (activeFilters: Array<"timeRange" | "adult">) =>
       search([], false, {
@@ -468,20 +571,71 @@ describe("BrowseMods", () => {
       expect(propertiesOf("browse_mods_empty_state_website_search_opened")).toEqual([
         { view: "trending", state: "filters_only" },
       ]);
-      vi.unstubAllGlobals();
     });
 
-    it("shows the nothing-for-the-game state with only a locked filter on", () => {
+    it("offers no Remove filters with only a locked filter on", () => {
       renderComponent(emptyWith([]));
 
-      expect(screen.getByText("No mods to show for {{game}}")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
+    });
+
+    it("clears a search nothing matches, keeping focus in the list, and counts it", async () => {
+      const empty = { ...emptyWith([]), searchQuery: "sky", setSearchText: vi.fn() } as IModSearch;
+      const { propertiesOf } = renderComponent(empty);
+      const clear = screen.getByRole("button", { name: "Clear search" });
+
+      clear.focus();
+      await userEvent.keyboard("{Enter}");
+
+      expect(empty.setSearchText).toHaveBeenCalledWith("");
+      expect(screen.getByRole("region", { name: "Mods" })).toHaveFocus();
+      expect(propertiesOf("browse_mods_search_cleared")).toEqual([
+        { view: "trending", source: "empty_state" },
+      ]);
+    });
+
+    it("counts a search of the mods' names that comes back empty as one", () => {
+      const { propertiesOf } = renderComponent({
+        ...emptyWith([]),
+        searchQuery: "sky",
+      } as IModSearch);
+
+      expect(propertiesOf("browse_mods_no_results")).toEqual([{ ...searched, has_search: true }]);
+    });
+
+    it("counts each empty search of the mods' names, one after another", () => {
+      const { rerender, propertiesOf } = renderComponent({
+        ...emptyWith([]),
+        searchQuery: "sky",
+      } as IModSearch);
+
+      rerender({ ...emptyWith([]), searchQuery: "skyui" } as IModSearch);
+
+      expect(propertiesOf("browse_mods_no_results")).toHaveLength(2);
+    });
+
+    it("searches the website for the same text", async () => {
+      const openUrl = vi.fn();
+      vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+      renderComponent({ ...emptyWith([]), searchQuery: "sky" } as IModSearch);
+
+      await userEvent.click(screen.getByRole("button", { name: "Search on website" }));
+
+      expect(openUrl).toHaveBeenCalledWith(
+        websiteModSearchUrl(GameDomain("skyrimspecialedition"), {
+          text: "sky",
+          sort: SORT,
+          filters: FILTERS,
+        }),
+      );
     });
 
     it("ends the last page with the end of results", () => {
       renderComponent(search([mod("1")], false, { activeFilters: [], activeFilterCount: 0 }));
 
-      expect(screen.getByText("You've reached the end")).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId("end-of-results")).getByTestId("mod-list-hidden-mods-note"),
+      ).toBeInTheDocument();
     });
   });
 });

@@ -7,7 +7,10 @@ import { describe, expect, it } from "vitest";
 
 import { makeDownload } from "../../../test-utils/builders";
 import type { IDownload } from "../../download_management/types/IDownload";
-import { downloadReferenceTags } from "../../mod_management/util/testModReference";
+import {
+  downloadIdsByTag,
+  downloadReferenceTags,
+} from "../../mod_management/util/testModReference";
 import { stateReducer } from "../reducers/state";
 import { appendReferenceTagActions } from "./referenceTags";
 
@@ -76,5 +79,34 @@ describe("downloadReferenceTags", () => {
   it("reads an untagged or missing download as carrying no tags", () => {
     expect(downloadReferenceTags(makeDownload({ modInfo: {} }))).toEqual([]);
     expect(downloadReferenceTags(undefined)).toEqual([]);
+  });
+});
+
+describe("downloadIdsByTag", () => {
+  it("indexes a download under every tag it carries", () => {
+    const files = {
+      dl: makeDownload({ modInfo: { referenceTag: "tag-a", referenceTags: ["tag-a", "tag-b"] } }),
+    };
+
+    expect(Object.fromEntries(downloadIdsByTag(files))).toEqual({ "tag-a": "dl", "tag-b": "dl" });
+  });
+
+  it("keeps the first download on a shared tag", () => {
+    const files = {
+      first: makeDownload({ state: "finished", modInfo: { referenceTags: ["tag-a"] } }),
+      second: makeDownload({ state: "finished", modInfo: { referenceTags: ["tag-a"] } }),
+    };
+
+    expect(downloadIdsByTag(files).get("tag-a")).toBe("first");
+  });
+
+  it("gives a failed download's tag to a later retry", () => {
+    const files = {
+      first: makeDownload({ state: "failed", modInfo: { referenceTags: ["tag-a"] } }),
+      retry: makeDownload({ state: "started", modInfo: { referenceTags: ["tag-a"] } }),
+      again: makeDownload({ state: "failed", modInfo: { referenceTags: ["tag-a"] } }),
+    };
+
+    expect(downloadIdsByTag(files).get("tag-a")).toBe("retry");
   });
 });

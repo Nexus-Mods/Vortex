@@ -17,6 +17,13 @@ const OFFERS_REMOVE_FILTERS: EmptyStateKind[] = [
   "filters_only",
 ];
 
+/** Which states offer Clear search, while there's a search. */
+const OFFERS_CLEAR_SEARCH: EmptyStateKind[] = [
+  "end_of_results",
+  "search_only",
+  "search_and_filters",
+];
+
 /** Each state's heading and message, in its words. */
 const stateText = (
   t: TFunction,
@@ -25,11 +32,15 @@ const stateText = (
   gameName: string | undefined,
 ) => {
   switch (kind) {
-    case "end_of_results":
-      return {
-        title: t("You've reached the end"),
-        message: t("That's every mod Vortex can show for this view."),
-      };
+    case "end_of_results": {
+      const title = t("You've reached the end");
+
+      if (searchText) {
+        return { title, message: t("That's every mod Vortex can show for this search.") };
+      }
+
+      return { title, message: t("That's every mod Vortex can show for this view.") };
+    }
     case "search_only":
       return {
         title: t('No mods match "{{search}}"', { search: searchText }),
@@ -62,7 +73,7 @@ const stateText = (
 interface IModListEmptyStateProps {
   /** Which state it is. */
   kind: EmptyStateKind;
-  /** The search text, for the search states' headings. */
+  /** The search text, for the search states' headings, and the end's message; none for none. */
   searchText?: string;
   /** The active game's name; "this game" without one. */
   gameName?: string;
@@ -70,6 +81,8 @@ interface IModListEmptyStateProps {
   filterCount: number;
   /** Clears those filters. */
   onRemoveFilters: () => void;
+  /** Clears the search, offered with one on in the search states and at the end. */
+  onClearSearch: () => void;
   /** Opens the same search on Nexus Mods; Search on website is left out without it. */
   onSearchWebsite?: () => void;
   /** Opens where Learn more goes. */
@@ -78,7 +91,8 @@ interface IModListEmptyStateProps {
 
 /**
  * Why Browse's mod list is empty, or that it's reached its end, with the ways out: removing the
- * filters, or the same search on the website, on a dark panel. Notes that Vortex hides some mods.
+ * filters, clearing the search, or the same search on the website, on a dark panel. Notes that
+ * Vortex hides some mods.
  */
 export const ModListEmptyState = ({
   kind,
@@ -86,19 +100,23 @@ export const ModListEmptyState = ({
   gameName,
   filterCount,
   onRemoveFilters,
+  onClearSearch,
   onSearchWebsite,
   onLearnMore,
 }: IModListEmptyStateProps) => {
   const { t } = useTranslation();
   const { title, message } = stateText(t, kind, searchText, gameName);
   const canRemoveFilters = filterCount > 0 && OFFERS_REMOVE_FILTERS.includes(kind);
+  const canClearSearch = !!searchText && OFFERS_CLEAR_SEARCH.includes(kind);
 
   return (
     <NoResults
-      className="rounded-sm bg-translucent-dark-200 p-8"
+      className="w-full rounded-sm bg-translucent-dark-200 p-8"
       footnote={
         <>
-          {t("Mods that don't support mod managers or use legacy requirements are hidden.")}
+          <span data-testid="mod-list-hidden-mods-note">
+            {t("Mods that don't support mod managers or use legacy requirements are hidden.")}
+          </span>
 
           {!!LEARN_MORE_URL && (
             <>
@@ -121,7 +139,7 @@ export const ModListEmptyState = ({
       message={message}
       title={title}
     >
-      {(canRemoveFilters || !!onSearchWebsite) && (
+      {(canRemoveFilters || canClearSearch || !!onSearchWebsite) && (
         <div className="flex flex-wrap justify-center gap-2">
           {canRemoveFilters && (
             <Button
@@ -133,6 +151,12 @@ export const ModListEmptyState = ({
               {filterCount === 1
                 ? t("Remove 1 filter")
                 : t("Remove {{count}} filters", { count: filterCount })}
+            </Button>
+          )}
+
+          {canClearSearch && (
+            <Button appearance="moderate" brand="neutral" leftIcon="close" onClick={onClearSearch}>
+              {t("Clear search")}
             </Button>
           )}
 

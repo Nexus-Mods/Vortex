@@ -4,7 +4,7 @@ import type { IGameStored } from "@/types/IState";
 
 import { numericGameIdToDomainName } from "../../../nexus_integration/util";
 import { convertGameIdReverse } from "../../../nexus_integration/util/convertGameId";
-import { tierZeroGameId } from "../../tiered/tierZero";
+import { tierZeroGameId } from "../../tiered/tierZeroGameId";
 import type { IDetectedGame } from "../../types/IDetectedGame";
 import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 import { detectedInternalId } from "./detectedInternalId";

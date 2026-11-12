@@ -39,8 +39,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
   const {
     collections,
     totalCount,
-    loading,
-    error,
+    status,
     sortBy,
     searchQuery,
     currentPage,
@@ -110,8 +109,6 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
       <Listing
         className="grid grid-cols-[repeat(auto-fill,minmax(26rem,1fr))] gap-4"
         entityCount={collections?.length}
-        isError={!!error}
-        isLoading={loading}
         noResultsChildren={
           <Button
             appearance="moderate"
@@ -129,6 +126,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
         onRetry={handleRefresh}
         skeletonCount={12}
         SkeletonTile={CollectionTileSkeleton}
+        status={status}
       >
         {collections?.map((collection) => (
           <CollectionTile

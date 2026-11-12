@@ -62,6 +62,47 @@ consistent choice. Don't just mimic it: new code always uses the new style, and
 while you are in an old reducer, converting the helpers in the parts you touch
 (and fixing up related old issues) is welcome and moves the codebase forward.
 
+## Looking up games and converting game IDs
+
+A game has three IDs that are different things: `VortexGameId`, `GameDomain` and
+`GameId` (`src/shared/src/types/ids.ts`). Look a game up and convert between them with
+`findGame` and `convertId` from
+`src/renderer/src/extensions/gamemode_management/queries.ts`, on the data `gameData(state)`
+builds:
+
+```ts
+const game = findGame(gameData(state), { vortexGameId });
+const domain = convertId(gameData(state), { vortexGameId }, "gameDomain");
+```
+
+A query is `{ vortexGameId }`, `{ gameDomain }` or `{ gameId }`, and `convertId` targets
+`"vortexGameId"`, `"gameDomain"` or `"gameId"`.
+
+The Nexus Mods game a game is for is stored on it as `game.nexus` (`{ gameId, gameDomain }`),
+and on its installed extension as `extension.nexus` (`app.extensions`). The extension
+catalog fills the extension's, including for extensions installed before it existed, and
+`GameModeManager` copies it to the game when it stores the game, and again when the
+catalog or the Nexus Mods games list arrives late. The queries read `nexus`; a game without
+one (a bundled game that declares no `details.nexusPageId`, an extension with no Nexus Mods
+link) has no domain or `GameId`.
+
+Do:
+
+- Treat `undefined` as "not found". There is no fallback.
+- Read a game's domain or `GameId` with `convertId`, not from `details.nexusPageId`.
+- Pass `discovered` when games can share a domain (Skyrim SE and VR), so the installed
+  one is preferred.
+- Add a missing join to `queries.ts`.
+
+Don't:
+
+- Cast between the IDs, or treat a game's ID as its domain. A guess looks like a real
+  answer and is wrong for every game whose ID differs from its domain. Tier 0 games are
+  registered as `tier-0-{GameId}` so theirs never happens to match.
+- Write your own `known.find(...)` over the games list.
+- Add callers of `nexusGameId`, `convertGameIdReverse` or `convertNXMIdReverse`. They
+  predate this and still guess in places.
+
 ## Default game launcher
 
 `settings.interface.primaryTool[gameId]` records a launcher choice. An unset
@@ -82,12 +123,14 @@ when no selected tool has an executable. Selecting a launcher does not launch it
 
 ## Key Files
 
-| Path                                              | Purpose                                              |
-| ------------------------------------------------- | ---------------------------------------------------- |
-| `src/renderer/src/reducers/builder.ts`            | `actionsToReducerSpec`                               |
-| `src/renderer/src/reducers/app.ts`                | The reference reducer                                |
-| `src/renderer/src/reducers/index.ts`              | `buildReducerTree`, hydration, main-process pushes   |
-| `src/renderer/src/reducers/verify.ts`             | Verifier evaluation                                  |
-| `src/renderer/src/store/persistDiffMiddleware.ts` | Which hives persist, and the diff written to LevelDB |
-| `src/renderer/src/util/storeHelper.ts`            | The deprecated path helpers                          |
-| `src/renderer/src/types/IExtensionContext.ts`     | `IReducerSpec`, `IStateVerifier`, `registerReducer`  |
+| Path                                                          | Purpose                                              |
+| ------------------------------------------------------------- | ---------------------------------------------------- |
+| `src/renderer/src/reducers/builder.ts`                        | `actionsToReducerSpec`                               |
+| `src/renderer/src/reducers/app.ts`                            | The reference reducer                                |
+| `src/renderer/src/reducers/index.ts`                          | `buildReducerTree`, hydration, main-process pushes   |
+| `src/renderer/src/reducers/verify.ts`                         | Verifier evaluation                                  |
+| `src/renderer/src/store/persistDiffMiddleware.ts`             | Which hives persist, and the diff written to LevelDB |
+| `src/renderer/src/util/storeHelper.ts`                        | The deprecated path helpers                          |
+| `src/renderer/src/extensions/gamemode_management/queries.ts`  | `findGame`, `convertId`                              |
+| `src/renderer/src/extensions/gamemode_management/gameData.ts` | `gameData(state)`                                    |
+| `src/renderer/src/types/IExtensionContext.ts`                 | `IReducerSpec`, `IStateVerifier`, `registerReducer`  |

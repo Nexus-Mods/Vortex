@@ -1,8 +1,13 @@
+import { GameDomain, GameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import * as actions from "../actions/app";
 import { makeExtensionState, makeLegacyExtensionState } from "../test-utils/builders";
 import { appReducer } from "./app";
+
+// A dummy game's Nexus Mods domain and numeric id.
+const domainA = GameDomain("domain-a");
+const numericA = GameId(1);
 
 describe("app reducer extension field writes", () => {
   const base = { ...appReducer.defaults, extensions: { abc123: makeExtensionState() } };
@@ -24,6 +29,12 @@ describe("app reducer extension field writes", () => {
     expect(result.extensions.abc123.modId).toBe(196);
   });
 
+  it("applies setExtensionNexusGame to an existing entry", () => {
+    const nexus = { gameId: numericA, gameDomain: domainA };
+    const result = apply(actions.setExtensionNexusGame, { extensionId: "abc123", nexus });
+    expect(result.extensions.abc123.nexus).toEqual(nexus);
+  });
+
   // a write through a key naming no entry must not mint a partial one
   it.each([
     [
@@ -38,6 +49,11 @@ describe("app reducer extension field writes", () => {
       { extensionId: "missing", endorsed: "Endorsed" },
     ],
     ["setExtensionModId", actions.setExtensionModId, { extensionId: "missing", modId: 196 }],
+    [
+      "setExtensionNexusGame",
+      actions.setExtensionNexusGame,
+      { extensionId: "missing", nexus: { gameId: numericA, gameDomain: domainA } },
+    ],
     ["declineExtensionNexusLink", actions.declineExtensionNexusLink, "missing"],
     ["removeExtension", actions.removeExtension, "missing"],
   ])("ignores %s for an unknown key", (_name, action, payload) => {

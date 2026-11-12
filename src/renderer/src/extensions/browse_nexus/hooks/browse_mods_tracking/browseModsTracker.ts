@@ -1,5 +1,6 @@
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { FeedbackSentiment } from "@/ui/components/feedback_modal/FeedbackModal";
 
 import type { EmptyStateKind } from "../../util/empty_state_kind/emptyStateKind";
 import type {
@@ -33,12 +34,19 @@ export type IFilterEventProps = {
   adult: ModAdultContent;
 };
 
-/** The search a results event is about: its view, sort and filters. */
+/** The search a results event is about: its view, sort and filters, and whether names were searched. */
 export type ISearchEventProps = {
   view: TrackedView;
   sort_field: ModSortField;
   sort_direction: ModSortDirection;
+  has_search: boolean;
 } & IFilterEventProps;
+
+/** Where a search was cleared from: the search box, or an empty state's Clear search. */
+export type SearchClearSource = "box" | "empty_state";
+
+/** Where Browse's feedback was opened from: the toolbar's button, or under Load more. */
+export type FeedbackSource = "toolbar" | "load_more";
 
 /** The mod a 1-click upsell is for, and what the click would have done: install, download or update. */
 type OneClickUpsellProps = { mod_uid: string; action: "install" | "download" | "update" };
@@ -157,6 +165,12 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
 
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
 
+    // From the details' … menu: the mod's page link copied, and its page opened to report it.
+    trackModLinkCopied: (props: { mod_uid: string }) => track("browse_mods_mod_link_copied", props),
+
+    trackModReportOpened: (props: { mod_uid: string }) =>
+      track("browse_mods_mod_report_opened", props),
+
     // `image_index` counts from 1, as `position` does; the keys on the strip pick too, counted as
     // `keyboard`.
     trackGalleryImageSelected: (props: {
@@ -190,6 +204,15 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackGalleryPaged: (props: { mod_uid: string; direction: GalleryDirection }) =>
       track("browse_mods_gallery_paged", props),
 
+    // A search of the mods' names, on Enter; `query_length` is how long it is, never what it says.
+    trackSearchSubmitted: (props: { view: TrackedView; query_length: number }) =>
+      track("browse_mods_search_submitted", props),
+
+    // The box emptied, by its clear button, Escape or deleting the text, or an empty state's Clear
+    // search.
+    trackSearchCleared: (props: { view: TrackedView; source: SearchClearSource }) =>
+      track("browse_mods_search_cleared", props),
+
     // Once per search that comes back empty.
     trackNoResults: (props: ISearchEventProps) => track("browse_mods_no_results", props),
 
@@ -206,9 +229,24 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackEmptyStateLearnMoreOpened: (props: { view: TrackedView; state: EmptyStateKind }) =>
       track("browse_mods_empty_state_learn_more_opened", props),
 
+    // Load more, while the list's paused; `pages_loaded` is how many pages it had paused after.
+    trackLoadMoreClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
+      track("browse_mods_load_more_clicked", props),
+
     // `pages_loaded` is how many pages were loaded when Try again was clicked, 0 when none were.
     trackRetryClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
       track("browse_mods_retry_clicked", props),
+
+    // A thumb given, once per modal, with what was being browsed; `reasons` only when sent, empty
+    // if nothing was ticked.
+    trackFeedbackGiven: (
+      props: ISearchEventProps & {
+        pages_loaded: number;
+        sentiment: FeedbackSentiment;
+        source: FeedbackSource;
+        reasons?: string[];
+      },
+    ) => track("browse_mods_feedback_given", props),
   };
 };
 

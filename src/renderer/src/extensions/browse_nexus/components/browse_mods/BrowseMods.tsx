@@ -19,6 +19,7 @@ import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseMod
 import { useBrowseModsViews } from "../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
 import { useChangeModFilters } from "../../hooks/use_change_mod_filters/useChangeModFilters.hook";
 import { useGameDomainName } from "../../hooks/use_game_domain_name/useGameDomainName.hook";
+import { useModBrowsingFeedback } from "../../hooks/use_mod_browsing_feedback/useModBrowsingFeedback.hook";
 import { useModGallery } from "../../hooks/use_mod_gallery/useModGallery.hook";
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { useSettledPick } from "../../hooks/use_settled_pick/useSettledPick.hook";
@@ -27,10 +28,11 @@ import { clearActiveFilters } from "../../util/mod_filters/clear_active_filters/
 import { filterEventProps } from "../../util/mod_filters/modFilterList";
 import { websiteModSearchUrl } from "../../util/website_mod_search_url/websiteModSearchUrl";
 import { BrowseModsBar } from "./browse_mods_bar/BrowseModsBar";
+import { LoadMoreFeedback } from "./load_more_feedback/LoadMoreFeedback";
 import { ModBackdrop } from "./mod_backdrop/ModBackdrop";
 import { ModDetails } from "./mod_details/ModDetails";
 import { ModDetailsSkeleton } from "./mod_details/ModDetails.skeleton";
-import { ModList } from "./mod_list/ModList";
+import { type IModListHandle, ModList } from "./mod_list/ModList";
 import { LEARN_MORE_URL, ModListEmptyState } from "./mod_list_empty_state/ModListEmptyState";
 
 interface IBrowseModsProps {
@@ -57,6 +59,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     pickOnceSettled,
     pickNow,
     settleNow,
+    cancelPick,
     startWith,
   } = useSettledPick<ModSummary>();
 
@@ -74,7 +77,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       detailsRef.current?.focus();
     }
   }, [shownMod]);
-  const listRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<IModListHandle>(null);
   const [split, setSplit] = useSavedSplit("browse-mods");
   const tracker = useBrowseModsTracker();
   const filtersPanelRef = useRef<IToolbarPanelHandle>(null);
@@ -84,24 +87,34 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
     [],
   );
   const { viewPicker, editedViewStrip } = useBrowseModsViews(search, panelRefs);
-  const { trackedView, sort, filters, error } = search;
+  const { trackedView, sort, filters, status } = search;
   const changeFilters = useChangeModFilters(search);
   const gameName = useSelector(currentGame)?.name;
   const domain = useGameDomainName();
 
   /**
    * The list's empty state, or its end of results, with its actions counted. Removing the filters
-   * keeps focus in the list, as the button goes while the mods load. There's no search text yet;
-   * it's passed here once Browse has a search box.
+   * or clearing the search keeps focus in the list, as the button goes while the mods load. The
+   * search text is what's actually searched, so a search too short to send reads as none.
    */
   const emptyState = ({ isEnd }: Pick<IEmptyStateInput, "isEnd">) => {
-    const state = emptyStateKind({ isEnd, filterCount: search.activeFilterCount });
+    const state = emptyStateKind({
+      isEnd,
+      searchText: search.searchQuery,
+      filterCount: search.activeFilterCount,
+    });
 
     return (
       <ModListEmptyState
         filterCount={search.activeFilterCount}
         gameName={gameName}
         kind={state}
+        searchText={search.searchQuery}
+        onClearSearch={() => {
+          tracker.trackSearchCleared({ view: trackedView, source: "empty_state" });
+          search.setSearchText("");
+          listRef.current?.focus();
+        }}
         onLearnMore={() => {
           tracker.trackEmptyStateLearnMoreOpened({ view: trackedView, state });
           window.api.shell.openUrl(LEARN_MORE_URL);
@@ -119,34 +132,40 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
           domain
             ? () => {
                 tracker.trackEmptyStateWebsiteSearchOpened({ view: trackedView, state });
-                window.api.shell.openUrl(websiteModSearchUrl(domain, { sort, filters }));
+                window.api.shell.openUrl(
+                  websiteModSearchUrl(domain, { text: search.searchQuery, sort, filters }),
+                );
               }
             : undefined
         }
       />
     );
   };
-  const isEmpty = !search.loading && !error && !mods.length;
+
+  const isEmpty = status !== "loading" && status !== "failed" && !mods.length;
 
   /**
    * The search the results came from, as its events describe it, kept as a string so it only
    * changes when a value does, not when the view's objects are rebuilt, as renaming it does. An
-   * empty search is counted once, and again for another view, even one of the user's own alike.
+   * empty search is counted once, and again for another view, even one of the user's own alike,
+   * or another search of the mods' names.
    */
   const searchedKey = JSON.stringify({
     view: trackedView,
     sort_field: sort.field,
     sort_direction: sort.direction,
+    has_search: !!search.searchQuery,
     ...filterEventProps(filters),
   });
 
   const searched = useMemo(() => JSON.parse(searchedKey) as ISearchEventProps, [searchedKey]);
+  const feedback = useModBrowsingFeedback(api, { ...searched, pages_loaded: search.pagesLoaded });
 
   useEffect(() => {
     if (isEmpty && isShown) {
       tracker.trackNoResults(searched);
     }
-  }, [isEmpty, isShown, searched, tracker, search.viewId]);
+  }, [isEmpty, isShown, searched, tracker, search.viewId, search.searchQuery]);
 
   /** Picks another mod and counts it, shown at once if clicked, else once the keys settle. */
   const selectMod = (id: string, input: SelectionInput) => {
@@ -162,10 +181,6 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       tracker.trackModSelected({ mod_uid: id, view: trackedView, position: index + 1, input }),
     );
   };
-
-  /** Moves focus to the list's Tab stop, for the details' Left, as Right moves it into them. */
-  const focusList = () =>
-    listRef.current?.querySelector<HTMLElement>('[data-mod-card][tabindex="0"]')?.focus();
 
   /**
    * Moves focus into the details, for Right from the list: the picked mod's, shown first if it's
@@ -186,7 +201,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
    * level with the list's own empty state: its scroll area's 24px and the listing's 64px.
    */
   const details = () => {
-    if (!shownMod && search.loading) {
+    if (!shownMod && status === "loading") {
       return <ModDetailsSkeleton />;
     }
 
@@ -208,7 +223,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
         key={shownMod.id}
         mod={shownMod}
         ref={detailsRef}
-        onFocusList={focusList}
+        onFocusList={() => listRef.current?.focusOpenMod()}
         onPick={setBackdrop}
       />
     );
@@ -216,7 +231,12 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
 
   return (
     <>
-      <BrowseModsBar panelRefs={panelRefs} search={search} viewPicker={viewPicker} />
+      <BrowseModsBar
+        feedback={{ hasGiven: feedback.hasGiven, onOpen: () => feedback.open("toolbar") }}
+        panelRefs={panelRefs}
+        search={search}
+        viewPicker={viewPicker}
+      />
 
       {editedViewStrip}
 
@@ -237,16 +257,28 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
               activeModId={activeMod?.id}
               emptyState={emptyState({ isEnd: false })}
               endOfResults={emptyState({ isEnd: true })}
-              hasMore={search.hasMore}
-              isError={!!error}
-              isLoading={search.loading}
-              isLoadingMore={search.isLoadingMore}
-              isLoadMoreError={!!search.loadMoreError}
               listRef={listRef}
+              loadMoreFooter={
+                <LoadMoreFeedback
+                  hasGiven={feedback.hasGiven}
+                  key={search.searchKey}
+                  onVote={(sentiment) => feedback.open("load_more", sentiment)}
+                />
+              }
               mods={mods}
+              pagesLoaded={search.pagesLoaded}
               searchKey={search.searchKey}
+              status={status}
+              totalCount={search.totalCount}
               onFocusDetails={focusDetails}
-              onLoadMore={search.loadMore}
+              onLoadMore={(source) => {
+                if (source === "button") {
+                  tracker.trackLoadMoreClicked({ ...searched, pages_loaded: search.pagesLoaded });
+                }
+
+                search.loadMore();
+              }}
+              onPassLastMod={cancelPick}
               onRetry={() => {
                 search.retry();
                 tracker.trackRetryClicked({ ...searched, pages_loaded: search.pagesLoaded });
@@ -258,6 +290,8 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
           onSplitChange={setSplit}
         />
       </div>
+
+      {feedback.modal}
     </>
   );
 };

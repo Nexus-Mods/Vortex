@@ -13,9 +13,9 @@ import {
   makeTierZeroGame,
   synthesizePersistedTierZeroGames,
   tierZeroGameFor,
-  tierZeroGameId,
   unregisterTierZeroGame,
 } from "./tierZero";
+import { tierZeroGameId } from "./tierZeroGameId";
 
 const $ = local<{ gameModeManager: { gameStores: IGameStore[] } | undefined }>(
   "gamemode-management",
@@ -67,12 +67,6 @@ afterEach(() => {
   // the provenance set is module-level; drop what a test registered so the
   // next test starts clean
   unregisterTierZeroGame(GameId(1234));
-});
-
-describe("tierZeroGameId", () => {
-  it("is the game's numeric id behind the tier-0 prefix", () => {
-    expect(tierZeroGameId(GameId(1303))).toBe("tier-0-1303");
-  });
 });
 
 describe("tierZeroGameFor", () => {

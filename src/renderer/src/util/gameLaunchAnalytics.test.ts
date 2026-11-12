@@ -153,7 +153,7 @@ describe("game launch analytics", () => {
             author: "tester",
             version: "1.0.0",
             timestamp: 0,
-            gameId: 1704,
+            gameId: GameId(1704),
           },
         ],
         optional: {},

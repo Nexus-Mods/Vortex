@@ -1,5 +1,6 @@
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import React, { type PropsWithChildren, type RefObject } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/ui/components/icon/Icon";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -47,28 +48,32 @@ export const ModalPanel = ({
   showCloseButton = true,
   title,
   onClose,
-}: PropsWithChildren<IModalPanelProps>) => (
-  <DialogPanel className={joinClasses(["nxm-modal-panel", className])}>
-    {!!title && (
-      <DialogTitle
-        as="div"
-        className={joinClasses(["nxm-modal-title"], {
-          "mr-7": showCloseButton,
-        })}
-      >
-        {title}
-      </DialogTitle>
-    )}
+}: PropsWithChildren<IModalPanelProps>) => {
+  const { t } = useTranslation();
 
-    {showCloseButton && (
-      <button className="nxm-modal-close" onClick={onClose}>
-        <Icon name="close" />
-      </button>
-    )}
+  return (
+    <DialogPanel className={joinClasses(["nxm-modal-panel", className])}>
+      {!!title && (
+        <DialogTitle
+          as="div"
+          className={joinClasses(["nxm-modal-title"], {
+            "mr-7": showCloseButton,
+          })}
+        >
+          {title}
+        </DialogTitle>
+      )}
 
-    {children}
-  </DialogPanel>
-);
+      {showCloseButton && (
+        <button aria-label={t("Close")} className="nxm-modal-close" onClick={onClose}>
+          <Icon name="close" />
+        </button>
+      )}
+
+      {children}
+    </DialogPanel>
+  );
+};
 
 export const Modal = ({
   children,

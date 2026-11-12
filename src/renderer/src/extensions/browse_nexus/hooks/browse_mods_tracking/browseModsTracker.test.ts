@@ -2,7 +2,17 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { createBrowseModsTracker } from "./browseModsTracker";
+import { createBrowseModsTracker, type ISearchEventProps } from "./browseModsTracker";
+
+/** A search, as the search events send it. */
+const SEARCHED: ISearchEventProps = {
+  view: "trending",
+  sort_field: "endorsements",
+  sort_direction: "desc",
+  has_search: false,
+  time_range: "7",
+  adult: "exclude",
+};
 
 /** A tracker on a spied bus. */
 const trackerOnSpy = () => {
@@ -83,6 +93,81 @@ describe("createBrowseModsTracker", () => {
     expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
       eventName: "browse_mods_empty_state_learn_more_opened",
       properties: { view: "custom", state: "nothing_for_game" },
+    });
+  });
+
+  it("counts a search by how long it is, not what it says", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackSearchSubmitted({ view: "trending", query_length: 6 });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_search_submitted",
+      properties: { view: "trending", query_length: 6 },
+    });
+  });
+
+  it("counts clearing the search, by where it was cleared from", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackSearchCleared({ view: "new", source: "empty_state" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_search_cleared",
+      properties: { view: "new", source: "empty_state" },
+    });
+  });
+
+  it.each([
+    ["trackModLinkCopied", "browse_mods_mod_link_copied"],
+    ["trackModReportOpened", "browse_mods_mod_report_opened"],
+  ] as const)("counts %s from the details' menu, by its mod", (method, eventName) => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker[method]({ mod_uid: "1704-1" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName,
+      properties: { mod_uid: "1704-1" },
+    });
+  });
+
+  it("counts feedback skipped, with no reasons", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFeedbackGiven({
+      ...SEARCHED,
+      pages_loaded: 1,
+      sentiment: "positive",
+      source: "toolbar",
+    });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_feedback_given",
+      properties: { ...SEARCHED, pages_loaded: 1, sentiment: "positive", source: "toolbar" },
+    });
+  });
+
+  it("counts feedback sent, with its reasons", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFeedbackGiven({
+      ...SEARCHED,
+      pages_loaded: 3,
+      sentiment: "negative",
+      source: "load_more",
+      reasons: ["slow"],
+    });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_feedback_given",
+      properties: {
+        ...SEARCHED,
+        pages_loaded: 3,
+        sentiment: "negative",
+        source: "load_more",
+        reasons: ["slow"],
+      },
     });
   });
 });

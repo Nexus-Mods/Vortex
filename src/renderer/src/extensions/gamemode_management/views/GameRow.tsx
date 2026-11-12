@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 
 import Icon from "@/controls/Icon";
 import { numericNexusGameId } from "@/extensions/analytics/mixpanel/numericGameId";
+import type { IAvailableExtension } from "@/types/extensions";
 import { Image } from "@/ui/components/image/Image";
 import { Popover } from "@/ui/components/popover/Popover";
 import { PopoverButton } from "@/ui/components/popover/PopoverButton";
@@ -16,7 +17,12 @@ import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IMod } from "../../mod_management/types/IMod";
-import { setGameAddOrigin, setGameAddStore } from "../actions/session";
+import {
+  clearGameAddStore,
+  setGameAddExtension,
+  setGameAddOrigin,
+  setGameAddStore,
+} from "../actions/session";
 import type { IGameSection } from "../components/GameCard";
 import { TierZeroRowBadge } from "../components/TierZeroIndicator";
 import type { GameSource } from "../types/GameSource";
@@ -32,7 +38,8 @@ import GameInfoPopover from "./GameInfoPopover";
 
 export interface IProps {
   t: TFunction;
-  game: IGameStored;
+  /** A tile for a game nothing is registered for carries the catalog's extension for it */
+  game: IGameStored & { extension?: IAvailableExtension };
   discovery?: IDiscoveryResult;
   /**
    * The store the detected-games response matched the game on, named until discovery
@@ -181,7 +188,10 @@ class GameRow extends ComponentEx<IProps, {}> {
       return;
     }
     const { dispatch } = this.context.api.store;
+    // Every click starts a new pick, so an earlier tile's store or extension isn't used for this one
+    dispatch(clearGameAddStore());
     dispatch(setGameAddOrigin(game.id, source));
+    dispatch(setGameAddExtension(game.extension ?? null));
     // Discovery's store wins, as on the tile: it's the copy Vortex will manage.
     const store = discovery?.store ?? detectedStore;
     if (source === "detected_list" && store !== undefined) {

@@ -12,7 +12,7 @@
 
         &::placeholder {
             color: var(--color-neutral-subdued);
-            font-style: italic;
+            font-style: normal;
         }
     }
 
