@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,12 +12,22 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 import { useIssue, useIssueTracking } from "../../hooks/HealthCheckTracking.context";
 
-const FEEDBACK_OPTIONS = [
-  "incorrect_requirement",
-  "requirement_already_installed",
-  "explanation_was_unclear",
-  "other",
-] as const;
+/** The not-helpful reasons, each key with its label's static key for extraction. */
+const feedbackReasons = (t: TFunction) => [
+  {
+    key: "incorrect_requirement",
+    label: t("detail::feedback_modal::options::incorrect_requirement"),
+  },
+  {
+    key: "requirement_already_installed",
+    label: t("detail::feedback_modal::options::requirement_already_installed"),
+  },
+  {
+    key: "explanation_was_unclear",
+    label: t("detail::feedback_modal::options::explanation_was_unclear"),
+  },
+  { key: "other", label: t("detail::feedback_modal::options::other") },
+];
 
 interface IEntryActionsProps {
   variant: "listing" | "detail";
@@ -120,10 +131,7 @@ export function EntryActions({
         negative={{
           title: t("detail::feedback_modal::title"),
           body: t("detail::feedback_modal::description"),
-          reasons: FEEDBACK_OPTIONS.map((key) => ({
-            key,
-            label: t(`detail::feedback_modal::options::${key}`),
-          })),
+          reasons: feedbackReasons(t),
         }}
         preselectedSentiment="negative"
         sendLabel={t("detail::feedback_modal::buttons::confirm")}

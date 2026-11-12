@@ -19,7 +19,7 @@ export interface IFeedbackReason {
 export interface IFeedbackSentimentContent {
   /** The modal's heading when it opens on this sentiment. */
   title: string;
-  /** The line under the heading once this sentiment is open or picked. */
+  /** The line under the heading when it opens on this sentiment. */
   body: string;
   /** The checkboxes, in order. */
   reasons: IFeedbackReason[];
@@ -28,7 +28,7 @@ export interface IFeedbackSentimentContent {
 export interface IFeedbackPickContent {
   /** The modal's heading on the pick step, kept once a sentiment is picked. */
   heading: string;
-  /** The line under the heading until a sentiment is picked. */
+  /** The line under the heading on the pick step, kept once a sentiment is picked. */
   body: string;
   /** The positive thumb button's label. */
   positiveLabel: string;
@@ -36,17 +36,9 @@ export interface IFeedbackPickContent {
   negativeLabel: string;
 }
 
-export interface IFeedbackModalProps {
+interface IFeedbackModalBaseProps {
   /** Whether the modal is showing; each time it opens it starts clean. */
   isOpen: boolean;
-  /** The thumbs-up content; needed unless only negative is ever shown. */
-  positive?: IFeedbackSentimentContent;
-  /** The thumbs-down content. */
-  negative?: IFeedbackSentimentContent;
-  /** The pick step; needed when `preselectedSentiment` is unset. */
-  pick?: IFeedbackPickContent;
-  /** Opens straight on this sentiment's reasons, with no thumb buttons. */
-  preselectedSentiment?: FeedbackSentiment;
   /** The skip button's label. */
   skipLabel: string;
   /** The send button's label. */
@@ -58,6 +50,30 @@ export interface IFeedbackModalProps {
   /** Closed with the X, Escape or a click outside, which gives nothing. */
   onDismiss: () => void;
 }
+
+/** Opened on the pick step: both sentiments and the pick step's wording. */
+interface IFeedbackPickProps {
+  /** Unset, so it opens on the pick step. */
+  preselectedSentiment?: undefined;
+  /** The thumbs-up content. */
+  positive: IFeedbackSentimentContent;
+  /** The thumbs-down content. */
+  negative: IFeedbackSentimentContent;
+  /** The pick step's heading, body and thumb labels. */
+  pick: IFeedbackPickContent;
+}
+
+/** Opened straight on one sentiment's reasons, with no thumb buttons: that sentiment's content. */
+type IFeedbackPreselectedProps =
+  | ({ preselectedSentiment: "positive"; positive: IFeedbackSentimentContent } & Partial<
+      Omit<IFeedbackPickProps, "preselectedSentiment" | "positive">
+    >)
+  | ({ preselectedSentiment: "negative"; negative: IFeedbackSentimentContent } & Partial<
+      Omit<IFeedbackPickProps, "preselectedSentiment" | "negative">
+    >);
+
+export type IFeedbackModalProps = IFeedbackModalBaseProps &
+  (IFeedbackPickProps | IFeedbackPreselectedProps);
 
 interface IThumbButtonProps {
   /** Whether this is the sentiment picked. */
@@ -120,8 +136,8 @@ const FeedbackModalContent = ({
 
   return (
     <div className="flex flex-col gap-y-4">
-      <Typography appearance="subdued" typographyType="body-sm">
-        {content?.body ?? pick?.body}
+      <Typography appearance="subdued" data-testid="feedback-modal-body" typographyType="body-sm">
+        {preselectedSentiment ? content?.body : pick?.body}
       </Typography>
 
       {!preselectedSentiment && pick && (

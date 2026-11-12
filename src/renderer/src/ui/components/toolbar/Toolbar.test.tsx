@@ -9,6 +9,7 @@ import type { IToolbarStates } from "@/types/IState";
 
 import { Toolbar } from "./Toolbar";
 import type { IToolbarAnalytics } from "./Toolbar.context";
+import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarGroup, type IToolbarAction } from "./ToolbarGroup";
 import { fitVisibleActions, type IToolbarGroupMetrics } from "./useToolbarOverflow.hook";
 
@@ -274,6 +275,13 @@ describe("ToolbarGroup", () => {
       expect(button).not.toBeDisabled();
       expect(button).toHaveAccessibleDescription("Thanks for your feedback");
       await userEvent.click(button);
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it("runs nothing on a ToolbarButton used on its own", async () => {
+      const onClick = vi.fn();
+      render(<ToolbarButton disabledReason="Thanks" label="Give feedback" onClick={onClick} />);
+      await userEvent.click(screen.getByRole("button", { name: "Give feedback" }));
       expect(onClick).not.toHaveBeenCalled();
     });
 

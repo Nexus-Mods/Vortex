@@ -2,7 +2,17 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { createBrowseModsTracker } from "./browseModsTracker";
+import { createBrowseModsTracker, type ISearchEventProps } from "./browseModsTracker";
+
+/** A search, as the search events send it. */
+const SEARCHED: ISearchEventProps = {
+  view: "trending",
+  sort_field: "endorsements",
+  sort_direction: "desc",
+  has_search: false,
+  time_range: "7",
+  adult: "exclude",
+};
 
 /** A tracker on a spied bus. */
 const trackerOnSpy = () => {
@@ -125,22 +135,39 @@ describe("createBrowseModsTracker", () => {
   it("counts feedback skipped, with no reasons", () => {
     const { emit, tracker } = trackerOnSpy();
 
-    tracker.trackFeedbackGiven({ sentiment: "positive", source: "toolbar" });
+    tracker.trackFeedbackGiven({
+      ...SEARCHED,
+      pages_loaded: 1,
+      sentiment: "positive",
+      source: "toolbar",
+    });
 
     expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
       eventName: "browse_mods_feedback_given",
-      properties: { sentiment: "positive", source: "toolbar" },
+      properties: { ...SEARCHED, pages_loaded: 1, sentiment: "positive", source: "toolbar" },
     });
   });
 
   it("counts feedback sent, with its reasons", () => {
     const { emit, tracker } = trackerOnSpy();
 
-    tracker.trackFeedbackGiven({ sentiment: "negative", source: "load_more", reasons: ["slow"] });
+    tracker.trackFeedbackGiven({
+      ...SEARCHED,
+      pages_loaded: 3,
+      sentiment: "negative",
+      source: "load_more",
+      reasons: ["slow"],
+    });
 
     expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
       eventName: "browse_mods_feedback_given",
-      properties: { sentiment: "negative", source: "load_more", reasons: ["slow"] },
+      properties: {
+        ...SEARCHED,
+        pages_loaded: 3,
+        sentiment: "negative",
+        source: "load_more",
+        reasons: ["slow"],
+      },
     });
   });
 });

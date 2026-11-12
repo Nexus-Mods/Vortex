@@ -12,6 +12,17 @@ import type { FeedbackSentiment } from "@/ui/components/feedback_modal/FeedbackM
 import { modBrowsingReducer } from "../../reducers/mod_browsing/modBrowsing";
 import { useModBrowsingFeedback } from "./useModBrowsingFeedback.hook";
 
+/** The search the feedback is counted with. */
+const BROWSING = {
+  view: "trending",
+  sort_field: "endorsements",
+  sort_direction: "desc",
+  has_search: false,
+  time_range: "7",
+  adult: "exclude",
+  pages_loaded: 2,
+} as const;
+
 const setup = () => {
   const tracking = browseModsTracking();
   const sendNotification = vi.fn();
@@ -26,7 +37,7 @@ const setup = () => {
   );
 
   const Host = () => {
-    const { hasGiven, open, modal } = useModBrowsingFeedback(api);
+    const { hasGiven, open, modal } = useModBrowsingFeedback(api, BROWSING);
     return (
       <>
         <span data-testid="has-given">{String(hasGiven)}</span>
@@ -68,7 +79,7 @@ describe("useModBrowsingFeedback", () => {
     expect(store.getState().persistent.modBrowsing.hasGivenFeedback).toBe(true);
     expect(screen.getByTestId("has-given").textContent).toBe("true");
     expect(tracked("browse_mods_feedback_given").map(({ properties }) => properties)).toEqual([
-      { sentiment: "positive", source: "toolbar", reasons: ["fast"] },
+      { ...BROWSING, sentiment: "positive", source: "toolbar", reasons: ["fast"] },
     ]);
     expect(sendNotification).toHaveBeenCalledTimes(1);
     expect(sendNotification).toHaveBeenCalledWith(
@@ -88,7 +99,7 @@ describe("useModBrowsingFeedback", () => {
     await user.click(screen.getByTestId("feedback-modal-send"));
 
     expect(tracked("browse_mods_feedback_given").map(({ properties }) => properties)).toEqual([
-      { sentiment: "negative", source: "load_more", reasons: [] },
+      { ...BROWSING, sentiment: "negative", source: "load_more", reasons: [] },
     ]);
     expect(sendNotification).not.toHaveBeenCalled();
   });
@@ -102,7 +113,7 @@ describe("useModBrowsingFeedback", () => {
 
     expect(store.getState().persistent.modBrowsing.hasGivenFeedback).toBe(true);
     expect(tracked("browse_mods_feedback_given").map(({ properties }) => properties)).toEqual([
-      { sentiment: "positive", source: "load_more" },
+      { ...BROWSING, sentiment: "positive", source: "load_more" },
     ]);
     expect(sendNotification).not.toHaveBeenCalled();
   });
@@ -116,7 +127,7 @@ describe("useModBrowsingFeedback", () => {
     await user.click(screen.getByTestId("feedback-modal-skip"));
 
     expect(tracked("browse_mods_feedback_given").map(({ properties }) => properties)).toEqual([
-      { sentiment: "negative", source: "toolbar" },
+      { ...BROWSING, sentiment: "negative", source: "toolbar" },
     ]);
     expect(sendNotification).toHaveBeenCalledWith(
       expect.objectContaining({ id: "browse-mods-feedback-sent", type: "success" }),

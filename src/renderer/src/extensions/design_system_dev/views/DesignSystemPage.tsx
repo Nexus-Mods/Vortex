@@ -12,6 +12,7 @@ import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { ContextMenuDemo } from "@/ui/components/context_menu/ContextMenu.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
+import { FeedbackModalDemo } from "@/ui/components/feedback_modal/FeedbackModal.demo";
 import { FileTreeDemo } from "@/ui/components/file_tree/FileTree.demo";
 import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
 import { RadioGroupFieldDemo } from "@/ui/components/form/radio_group_field/RadioGroupField.demo";
@@ -122,6 +123,7 @@ const DEMO_GROUPS: IDemoGroup[] = [
       { id: "tooltip", name: "Tooltip", Demo: TooltipDemo },
       { id: "hover-card", name: "Hover card", Demo: HoverCardDemo },
       { id: "modal", name: "Modal", Demo: ModalDemo },
+      { id: "feedback-modal", name: "FeedbackModal", Demo: FeedbackModalDemo },
     ],
   },
   {

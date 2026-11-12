@@ -20,7 +20,11 @@ const generalActions: IToolbarAction[] = [
   { label: "History", icon: "history" },
   { label: "Refresh", icon: "refresh" },
   { label: "Categories", icon: "label" },
-  { label: "Manage rules", icon: "playlist_add_check" },
+  {
+    label: "Manage rules",
+    icon: "playlist_add_check",
+    disabledReason: "Install a mod to manage its rules",
+  },
 ];
 
 const contextualActions: IToolbarAction[] = [

@@ -237,12 +237,16 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackRetryClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
       track("browse_mods_retry_clicked", props),
 
-    // A thumb given, once per modal; `reasons` only when sent, empty if nothing was ticked.
-    trackFeedbackGiven: (props: {
-      sentiment: FeedbackSentiment;
-      source: FeedbackSource;
-      reasons?: string[];
-    }) => track("browse_mods_feedback_given", props),
+    // A thumb given, once per modal, with what was being browsed; `reasons` only when sent, empty
+    // if nothing was ticked.
+    trackFeedbackGiven: (
+      props: ISearchEventProps & {
+        pages_loaded: number;
+        sentiment: FeedbackSentiment;
+        source: FeedbackSource;
+        reasons?: string[];
+      },
+    ) => track("browse_mods_feedback_given", props),
   };
 };
 

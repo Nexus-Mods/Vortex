@@ -15,7 +15,7 @@ export type IToolbarButtonProps = IButtonProps & {
   label: string;
   /** Said under the label in the tooltip, and as the control's accessible description. */
   description?: string;
-  /** Turns it off but keeps it hoverable; this replaces its tooltip and description. */
+  /** Turns it off but keeps it hoverable; this is its tooltip and description, labelled or not. */
   disabledReason?: string;
   /** Shows the label as text beside the icon, in place of the tooltip. */
   showLabel?: boolean;
@@ -68,13 +68,18 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, IToolbarButtonProps>(
     }
 
     return (
-      <Tooltip disabled={showLabel || tooltipDisabled} placement={placement} {...tooltipProps}>
+      <Tooltip
+        disabled={(showLabel && !disabledReason) || tooltipDisabled}
+        placement={placement}
+        {...tooltipProps}
+      >
         <Control
           {...props}
           aria-description={disabledReason ?? description}
           aria-disabled={disabledReason ? true : props["aria-disabled"]}
           aria-label={showLabel ? undefined : label}
           ref={ref}
+          onClick={disabledReason ? undefined : props.onClick}
         >
           {showLabel && label}
         </Control>

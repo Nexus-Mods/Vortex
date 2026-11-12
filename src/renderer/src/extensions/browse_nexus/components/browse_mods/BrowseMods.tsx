@@ -91,7 +91,6 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   const changeFilters = useChangeModFilters(search);
   const gameName = useSelector(currentGame)?.name;
   const domain = useGameDomainName();
-  const feedback = useModBrowsingFeedback(api);
 
   /**
    * The list's empty state, or its end of results, with its actions counted. Removing the filters
@@ -160,6 +159,7 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
   });
 
   const searched = useMemo(() => JSON.parse(searchedKey) as ISearchEventProps, [searchedKey]);
+  const feedback = useModBrowsingFeedback(api, { ...searched, pages_loaded: search.pagesLoaded });
 
   useEffect(() => {
     if (isEmpty && isShown) {

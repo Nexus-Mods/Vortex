@@ -181,7 +181,7 @@ const ToolbarControl = ({ action, onClick }: { action: IToolbarAction; onClick?:
       {...controlProps(action)}
       {...{ [TOOLBAR_CONTROL_ATTRIBUTE]: true }}
       disabledReason={action.disabledReason}
-      onClick={action.disabledReason ? undefined : action.onClick}
+      onClick={action.onClick}
     />
   );
 

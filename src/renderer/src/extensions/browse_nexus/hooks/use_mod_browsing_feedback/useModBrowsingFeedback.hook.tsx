@@ -10,8 +10,11 @@ import {
 } from "@/ui/components/feedback_modal/FeedbackModal";
 
 import { setHasGivenFeedback } from "../../actions/modBrowsing";
-import type { FeedbackSource } from "../browse_mods_tracking/browseModsTracker";
+import type { FeedbackSource, ISearchEventProps } from "../browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../browse_mods_tracking/BrowseModsTracking.context";
+
+/** Whether mod browsing feedback has been given on this device. */
+const hasGivenFeedback = (state: IState) => state.persistent.modBrowsing.hasGivenFeedback;
 
 /** How long its toast shows: up to 5s is shown as a toast, longer goes to notifications. */
 const TOAST_MS = 3000;
@@ -25,10 +28,11 @@ interface IOpenFeedback {
 
 /**
  * Browse's feedback: whether the user has given it on this device, `open` to ask for it, and the
- * `modal` for the caller to render once.
+ * `modal` for the caller to render once. `browsing` is the search it's counted with.
  */
 export const useModBrowsingFeedback = (
   api: IExtensionApi,
+  browsing: ISearchEventProps & { pages_loaded: number },
 ): {
   hasGiven: boolean;
   open: (source: FeedbackSource, sentiment?: FeedbackSentiment) => void;
@@ -37,7 +41,7 @@ export const useModBrowsingFeedback = (
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const tracker = useBrowseModsTracker();
-  const hasGiven = useSelector((state: IState) => state.persistent.modBrowsing.hasGivenFeedback);
+  const hasGiven = useSelector(hasGivenFeedback);
   const [opened, setOpened] = useState<IOpenFeedback>();
 
   const close = () => setOpened(undefined);
@@ -52,7 +56,7 @@ export const useModBrowsingFeedback = (
     }
 
     dispatch(setHasGivenFeedback(true));
-    tracker.trackFeedbackGiven({ sentiment, source: opened.source, reasons });
+    tracker.trackFeedbackGiven({ ...browsing, sentiment, source: opened.source, reasons });
 
     if (opened.source === "toolbar") {
       api.sendNotification?.({

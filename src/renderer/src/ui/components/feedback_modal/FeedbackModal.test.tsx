@@ -3,9 +3,11 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { FeedbackModal, type IFeedbackModalProps } from "./FeedbackModal";
+import { settleTransitions } from "@/test-utils/transitions";
 
-const renderModal = (overrides: Partial<IFeedbackModalProps>) => {
+import { type FeedbackSentiment, FeedbackModal, type IFeedbackModalProps } from "./FeedbackModal";
+
+const renderModal = ({ preselectedSentiment }: { preselectedSentiment?: FeedbackSentiment }) => {
   const onSend = vi.fn();
   const onSkip = vi.fn();
   const onDismiss = vi.fn();
@@ -34,7 +36,7 @@ const renderModal = (overrides: Partial<IFeedbackModalProps>) => {
     onSend,
     onSkip,
     onDismiss,
-    ...overrides,
+    preselectedSentiment,
   };
   const { rerender } = render(<FeedbackModal {...props} />);
   return { onSend, onSkip, onDismiss, rerender, props };
@@ -74,6 +76,18 @@ describe("FeedbackModal", () => {
     await userEvent.click(screen.getByTestId("feedback-modal-positive"));
     expect(screen.getByTestId("feedback-modal-positive")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("feedback-modal-reason-easy")).toBeInTheDocument();
+  });
+
+  it("keeps the pick step's body once a sentiment is picked", async () => {
+    renderModal({});
+    await userEvent.click(screen.getByTestId("feedback-modal-negative"));
+    expect(screen.getByTestId("feedback-modal-body")).toHaveTextContent("Pick body");
+  });
+
+  it("shows the sentiment's body when opened on it", async () => {
+    renderModal({ preselectedSentiment: "negative" });
+    expect(screen.getByTestId("feedback-modal-body")).toHaveTextContent("Down body");
+    await settleTransitions();
   });
 
   it("swaps reasons and clears ticks when the sentiment changes", async () => {
