@@ -58,7 +58,7 @@ import { IPluginCombined, IPluginLoot, IPluginParsed, IPlugins } from "../types/
 import { isGhosted } from "../util/ghost";
 import GroupFilter from "../util/GroupFilter";
 import { mergeLoadOrder } from "../util/mergeLoadOrder";
-import { parseFailureAttributes } from "../util/parseFailure";
+import { parseFailureAttributes, ParseFailures } from "../util/parseFailure";
 import { pluginFlags } from "../util/pluginFlags";
 import toPluginId from "../util/toPluginId";
 import DependencyIcon from "./DependencyIcon";
@@ -76,6 +76,8 @@ interface IBaseProps {
   forceListUpdate: any;
   nativePlugins: string[];
   onRefreshPlugins: () => void;
+  // rescan the plugin list from disk; settles once the new list is in the store
+  rescanPlugins: () => Promise<void>;
   onSetPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void;
   onSetPluginLight: (pluginId: string, enable: boolean) => void;
   gameSupported: (gameMode: string) => boolean;
@@ -311,6 +313,9 @@ function nop() {
   // nop
 }
 
+// outlives the page, which re-parses the whole list every time it is opened
+const parseFailures = new ParseFailures();
+
 class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: IActionDefinition[];
   private pluginEnabledAttribute: ITableAttribute;
@@ -321,6 +326,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private mCachedGameMode: string;
   private mUpdateId: string;
   private updateDetailsDebouncer: Debouncer;
+  private rescanDebouncer: Debouncer;
 
   private installedNative: { [name: string]: number } = {};
 
@@ -529,6 +535,24 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           log("warn", "failed to update plugins", { error: err.message });
         });
     }, 2000);
+
+    this.rescanDebouncer = new Debouncer(() => {
+      if (this.props.modActivity !== undefined && this.props.modActivity.length > 0) {
+        // whatever is moving files rescans when it is done, and may still be moving them
+        this.rescanDebouncer.schedule();
+        return Promise.resolve();
+      }
+      const listed = new Set(Object.values(this.props.plugins ?? {}).map((plug) => plug.filePath));
+      const missing = parseFailures.awaitingRescan().filter((filePath) => listed.has(filePath));
+      if (missing.length === 0) {
+        // a rescan since the parse already dropped them
+        return Promise.resolve();
+      }
+      log("info", "the plugin list names files that are gone, rescanning", {
+        count: missing.length,
+      });
+      return this.props.rescanPlugins().then(() => parseFailures.rescanned(missing));
+    }, 2000);
   }
 
   public emptyPluginParsed(): { [plugin: string]: IPluginParsed } {
@@ -594,6 +618,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public componentWillUnmount() {
     this.mMounted = false;
+    this.rescanDebouncer.clear();
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
@@ -802,6 +827,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const pluginNames: string[] = Object.keys(pluginsIn ?? {});
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
+    parseFailures.retain(pluginNames.map((pluginName) => pluginsIn[pluginName].filePath));
 
     return Bluebird.each(pluginNames, async (pluginName: string) => {
       if (updateId !== this.mUpdateId) {
@@ -821,22 +847,31 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           masterList: esp.masterList,
           revision: (esp as any).revision,
         };
+        parseFailures.parsed(pluginsIn[pluginName].filePath);
       } catch (err) {
-        // the row shows no details at all, so this is a plugin the user cannot act on
-        log("warn", "failed to parse esp", {
-          path: pluginsIn[pluginName].filePath,
-          error: getErrorMessageOrDefault(err),
-        });
-        recordErrorSpan(
-          "A plugin could not be parsed",
-          unknownToError(err),
-          parseFailureAttributes(
-            pluginName,
-            pluginsIn[pluginName],
-            err,
-            this.context.api.getState(),
-          ),
-        );
+        const verdict = parseFailures.failed(pluginsIn[pluginName].filePath, err);
+        if (verdict !== "known") {
+          log("warn", "failed to parse esp", {
+            path: pluginsIn[pluginName].filePath,
+            error: getErrorMessageOrDefault(err),
+          });
+        }
+        if (verdict === "stale") {
+          // the file is gone, so the list is out of date; not a plugin that fails to parse
+          this.rescanDebouncer.schedule();
+        } else if (verdict === "report") {
+          // the row shows no details at all, so this is a plugin the user cannot act on
+          recordErrorSpan(
+            "A plugin could not be parsed",
+            unknownToError(err),
+            parseFailureAttributes(
+              pluginName,
+              pluginsIn[pluginName],
+              err,
+              this.context.api.getState(),
+            ),
+          );
+        }
         pluginsParsed[pluginName] = {
           isMaster: false,
           isLight: false,

@@ -4,7 +4,13 @@ import * as path from "node:path";
 import { describe, expect, vi } from "vitest";
 
 import { startActivity, stopActivity } from "../../../actions/session";
-import { makeFakePersistor, makeMod, makePlugin } from "../../../test-utils/builders";
+import {
+  makeFakePersistor,
+  makeMod,
+  makePlugin,
+  makeRealDeploymentMethod,
+  registerTestDeploymentMethod,
+} from "../../../test-utils/builders";
 import { seedPluginDir, test, type IGamebryoFixtures } from "../../../test-utils/gamebryoTest";
 import { makeTempDir } from "../../../test-utils/tempDir";
 import type { ThunkStore } from "../../../types/IExtensionContext";
@@ -12,6 +18,7 @@ import { recordErrorSpan } from "../../../util/errorHandling";
 import type * as ErrorHandling from "../../../util/errorHandling";
 import { setDeploymentNecessary } from "../../mod_management/actions/deployment";
 import type { IMod } from "../../mod_management/types/IMod";
+import moveInit from "../../move_activator";
 import { setPluginList } from "../actions/plugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { initGameSupport } from "./gameSupport";
@@ -32,6 +39,9 @@ interface IScenario {
   disabled?: string[];
   // fileOverrides per mod id
   fileOverrides?: Record<string, string[]>;
+  // plugins per mod that a move deployment took out of staging, leaving its placeholder behind;
+  // setting this makes move the game's deployment method
+  movedOut?: Record<string, string[]>;
 }
 
 async function arrange(makeGamebryo: IGamebryoFixtures["makeGamebryo"], spec: IScenario) {
@@ -47,7 +57,15 @@ async function arrange(makeGamebryo: IGamebryoFixtures["makeGamebryo"], spec: IS
       fileOverrides: spec.fileOverrides?.[modId],
     });
   }
-  const harness = makeGamebryo({ mods, installPath: { skyrimse: staging }, gamePath });
+  const harness = makeGamebryo({
+    mods,
+    installPath: { skyrimse: staging },
+    gamePath,
+    activatorId: spec.movedOut !== undefined ? "move_activator" : undefined,
+  });
+  if (spec.movedOut !== undefined) {
+    registerTestDeploymentMethod(makeRealDeploymentMethod(harness.api, moveInit));
+  }
   const { dataPath } = harness;
   if (dataPath === undefined) {
     throw new Error("the harness resolves a data path once it is given a gamePath");
@@ -58,6 +76,12 @@ async function arrange(makeGamebryo: IGamebryoFixtures["makeGamebryo"], spec: IS
     ...Object.entries(spec.staged)
       .filter((entry): entry is [string, string[]] => entry[1] !== null)
       .map(([modId, files]) => seedPluginDir(path.join(staging, modId), files)),
+    ...Object.entries(spec.movedOut ?? {}).map(([modId, files]) =>
+      seedPluginDir(
+        path.join(staging, modId),
+        files.map((name) => `${name}.vortex_lnk`),
+      ),
+    ),
   ]);
   const modList = Object.fromEntries(
     Object.keys(mods).map((modId) => [modId, { enabled: !(spec.disabled ?? []).includes(modId) }]),
@@ -106,6 +130,57 @@ describe("updatePluginList", () => {
         warnings: {},
         deployed: true,
       },
+    });
+  });
+
+  // move deployment leaves "One.esp.vortex_lnk" in staging and the plugin itself in the game
+  test("lists a plugin that move deployment took out of staging where it is now", async ({
+    makeGamebryo,
+  }) => {
+    const { harness, dataPath, scan } = await arrange(makeGamebryo, {
+      staged: { modX: ["Two.esp"] },
+      movedOut: { modX: ["One.esp"] },
+      deployed: ["One.esp"],
+    });
+
+    await scan();
+
+    expect(harness.pluginList()).toMatchObject({
+      "one.esp": { modId: "modX", filePath: path.join(dataPath, "One.esp"), deployed: true },
+      "two.esp": {
+        modId: "modX",
+        filePath: path.join(harness.stagingPath, "modX", "Two.esp"),
+        deployed: false,
+      },
+    });
+  });
+
+  // the placeholder outlives a game folder that was wiped or reinstalled
+  test("leaves out a moved plugin that is no longer in the game folder", async ({
+    makeGamebryo,
+  }) => {
+    const { harness, scan } = await arrange(makeGamebryo, {
+      staged: { modX: ["Two.esp"] },
+      movedOut: { modX: ["One.esp"] },
+    });
+
+    await scan();
+
+    expect(Object.keys(harness.pluginList())).toEqual(["two.esp"]);
+  });
+
+  test("lists a ghosted plugin under its plain id at its ghosted path", async ({
+    makeGamebryo,
+  }) => {
+    const { harness, dataPath, scan } = await arrange(makeGamebryo, {
+      staged: {},
+      deployed: ["One.esp.ghost"],
+    });
+
+    await scan();
+
+    expect(harness.pluginList()).toMatchObject({
+      "one.esp": { filePath: path.join(dataPath, "One.esp.ghost"), deployed: true },
     });
   });
 
