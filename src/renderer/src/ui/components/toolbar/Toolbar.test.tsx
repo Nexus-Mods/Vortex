@@ -253,6 +253,45 @@ describe("ToolbarGroup", () => {
     });
   });
 
+  describe("an action that's off with a reason", () => {
+    it("stays hoverable, says why, and runs nothing", async () => {
+      const onClick = vi.fn();
+      render(
+        <ToolbarGroup
+          actions={[
+            {
+              label: "Give feedback",
+              icon: { path: "mdi-test" },
+              onClick,
+              disabledReason: "Thanks for your feedback",
+              description: "Tell us what you think",
+            },
+          ]}
+        />,
+      );
+      const button = screen.getByRole("button", { name: "Give feedback" });
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveAccessibleDescription("Thanks for your feedback");
+      await userEvent.click(button);
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it("is a disabled row once overflowed", async () => {
+      const onClick = vi.fn();
+      const actions = [
+        ...makeActions(7),
+        { label: "Give feedback", icon: { path: "mdi-test" }, onClick, disabledReason: "Thanks" },
+      ];
+      render(<ToolbarGroup actions={actions} maxVisible={7} />);
+      await userEvent.click(getKebab());
+      const row = screen.getByRole("menuitem", { name: "Give feedback" });
+      expect(row).toBeDisabled();
+      await userEvent.click(row);
+      expect(onClick).not.toHaveBeenCalled();
+    });
+  });
+
   describe("overflow", () => {
     it("does not render a kebab when the action count is within maxVisible", () => {
       render(<ToolbarGroup actions={makeActions(7)} maxVisible={7} />);
