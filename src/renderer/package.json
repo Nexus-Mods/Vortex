@@ -64,7 +64,6 @@
     "@electron/remote": "catalog:",
     "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
-    "@microsoft/api-extractor": "catalog:",
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",

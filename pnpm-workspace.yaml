@@ -34,7 +34,6 @@ catalog:
   "@floating-ui/react": 0.27.20
   "@headlessui/react": 2.2.10
   "@iarna/toml": 2.2.5
-  "@microsoft/api-extractor": 7.58.9
   "@msgpack/msgpack": 2.8.0
   "@nexusmods/fomod-installer-ipc": 0.13.4
   "@nexusmods/fomod-installer-native": 0.13.4

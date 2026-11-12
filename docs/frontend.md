@@ -19,12 +19,8 @@ precedent.
 ## The public extension API
 
 If you change exported types in `types/api.ts` (for example
-`IMainPageOptions`), run `pnpm run api` and commit the regenerated
-`etc/vortex.api.md`. Add a one-line TSDoc `/** ... */` so the entry isn't
-`(undocumented)` in the report.
-
-This is the one renderer-specific step that isn't covered by the standard
-build/test/format loop.
+`IMainPageOptions`), run `pnpm run api` to confirm the public `.d.ts` still
+builds and typechecks.
 
 ## Files and structure
 

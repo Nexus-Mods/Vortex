@@ -51,7 +51,6 @@
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",
     "@eslint/js": "catalog:",
-    "@microsoft/api-extractor": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",
     "@tailwindcss/cli": "catalog:",
     "@types/copyfiles": "catalog:",

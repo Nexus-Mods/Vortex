@@ -62,7 +62,7 @@ Workspace packages under `packages/`:
 - `locales/` - Translations
 - `eslint-rules/` - Custom ESLint rules
 - `flatpak/` - Flatpak manifest and build scripts
-- `etc/` - Generated API report (`vortex.api.md`) and dependency report
+- `etc/` - Generated dependency report
 
 ## Start here
 
