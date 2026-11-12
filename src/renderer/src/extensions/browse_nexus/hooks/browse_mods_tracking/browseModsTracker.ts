@@ -219,6 +219,10 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackEmptyStateLearnMoreOpened: (props: { view: TrackedView; state: EmptyStateKind }) =>
       track("browse_mods_empty_state_learn_more_opened", props),
 
+    // Load more, while the list's paused; `pages_loaded` is how many pages it had paused after.
+    trackLoadMoreClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
+      track("browse_mods_load_more_clicked", props),
+
     // `pages_loaded` is how many pages were loaded when Try again was clicked, 0 when none were.
     trackRetryClicked: (props: ISearchEventProps & { pages_loaded: number }) =>
       track("browse_mods_retry_clicked", props),

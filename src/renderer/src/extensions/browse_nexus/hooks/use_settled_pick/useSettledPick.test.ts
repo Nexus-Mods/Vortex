@@ -199,4 +199,31 @@ describe("useSettledPick", () => {
     expect(result.current.settledPick).toBe("a");
     expect(onShown.mock.calls).toEqual([["a"]]);
   });
+
+  it("drops a pick waiting to be shown, going back to the one shown", () => {
+    const onShown = vi.fn();
+    const { result } = render();
+    act(() => result.current.pickNow("a"));
+    act(() => result.current.pickOnceSettled("b", onShown));
+    release();
+
+    act(() => result.current.cancelPick());
+    wait(TAPPING_DELAY);
+
+    expect(result.current.latestPick).toBe("a");
+    expect(result.current.settledPick).toBe("a");
+    expect(onShown).not.toHaveBeenCalled();
+  });
+
+  it("leaves a pick already shown when there's none waiting", () => {
+    const { result } = render();
+    act(() => result.current.pickOnceSettled("a"));
+    release();
+    wait(DELAY);
+
+    act(() => result.current.cancelPick());
+
+    expect(result.current.latestPick).toBe("a");
+    expect(result.current.settledPick).toBe("a");
+  });
 });

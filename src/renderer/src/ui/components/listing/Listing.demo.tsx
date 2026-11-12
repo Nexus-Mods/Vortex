@@ -9,7 +9,7 @@ import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { Listing } from "./Listing";
-import type { ListingStatus } from "./listing_status/listingStatus";
+import { type ListingStatus, PAGES_BEFORE_PAUSE } from "./listing_status/listingStatus";
 
 const SkeletonTile = () => (
   <div className="animate-pulse space-y-2.5 rounded-sm bg-surface-high p-4">
@@ -44,6 +44,19 @@ const MORE_TOTAL = 30;
 /** How many items the loading-more example starts with, and goes back to on reset. */
 const MORE_START = 6;
 
+/** The loading-more example's status once it has this many items: paused, idle or done. */
+const nextStatus = (count: number): ListingStatus => {
+  if (count >= MORE_TOTAL) {
+    return "done";
+  }
+
+  if ((count / MORE_START) % PAGES_BEFORE_PAUSE === 0) {
+    return "paused";
+  }
+
+  return "idle";
+};
+
 /** Every status, for the interactive example's buttons. */
 const STATUSES: ListingStatus[] = [
   "loading",
@@ -51,12 +64,14 @@ const STATUSES: ListingStatus[] = [
   "loading_more",
   "load_more_failed",
   "idle",
+  "paused",
   "done",
 ];
 
 /**
- * A list in its own scroller that loads six more items as its end nears, until there are 30. Reset
- * goes back to the first six, at the top, cancelling a load still on its way.
+ * A list in its own scroller that loads six more items, a page, as its end nears, until there are
+ * 30. It pauses every `PAGES_BEFORE_PAUSE` pages until Load more is clicked. Reset goes back to the
+ * first six, at the top, cancelling a load still on its way.
  */
 const LoadMoreExample = () => {
   const [count, setCount] = useState(MORE_START);
@@ -76,9 +91,9 @@ const LoadMoreExample = () => {
         return;
       }
 
-      const next = Math.min(count + 6, MORE_TOTAL);
+      const next = Math.min(count + MORE_START, MORE_TOTAL);
       setCount(next);
-      setStatus(next < MORE_TOTAL ? "idle" : "done");
+      setStatus(nextStatus(next));
     }, 800);
   };
 
@@ -111,6 +126,8 @@ const LoadMoreExample = () => {
           entityCount={count}
           errorTitle="Something went wrong"
           loadMoreErrorMessage="More items couldn't be loaded. Try again."
+          loadMoreLabel="Load more items"
+          loadMoreSummary={`Showing ${count} of ${MORE_TOTAL} items`}
           scrollRef={scrollRef}
           SkeletonTile={SkeletonTile}
           status={status}
@@ -182,6 +199,7 @@ export const ListingDemo = () => {
             skeletonCount={6}
             SkeletonTile={SkeletonTile}
             status={status}
+            onLoadMore={() => setStatus("loading_more")}
           >
             {visibleItems.map((title) => (
               <ExampleTile key={title} title={title} />
@@ -245,7 +263,9 @@ export const ListingDemo = () => {
           idle, with onLoadMore, the Listing asks for more as the end of the items comes within
           320px of its scroller&apos;s view. loading_more draws tiles after the items while more
           load, and load_more_failed offers onRetry after them, keeping the items already shown.
-          getListingStatus turns a React Query result into a status.
+          Every few pages it&apos;s paused instead: Load more, with loadMoreLabel and a
+          loadMoreSummary over it, asks for the next page, and loading as it scrolls picks up again.
+          getListingStatus turns a React Query result into a status, pausing it.
         </Typography>
 
         <LoadMoreExample />

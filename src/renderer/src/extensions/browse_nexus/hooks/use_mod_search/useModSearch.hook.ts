@@ -44,6 +44,9 @@ const modSearchText = (state: IState) => state.session.browse?.modSearchText;
 
 export const MODS_PER_PAGE = 20;
 
+/** The statuses `loadMore` asks for the next page in: loading as it scrolls, or paused. */
+const LOAD_MORE_STATUSES: readonly ListingStatus[] = ["idle", "paused"];
+
 /** The API's bounds on a name search: characters other than spaces at least, and in all. */
 export const MIN_QUERY_CHARACTERS = 2;
 export const MAX_QUERY_LENGTH = 100;
@@ -147,7 +150,7 @@ export interface IModSearch extends ReturnType<typeof useModViews> {
   status: ListingStatus;
   /** How many pages have loaded. */
   pagesLoaded: number;
-  /** Loads the next page, while the list is `idle`. */
+  /** Loads the next page, while the list is `idle`, or `paused` until asked. */
   loadMore: () => void;
   /** Asks for the failed page again; a refused cursor starts the list again from the top. */
   retry: () => void;
@@ -212,8 +215,8 @@ export const useModSearch = (api: IExtensionApi, { isEnabled }: IModSearchOption
     status,
     pagesLoaded: pages?.length ?? 0,
     loadMore: () => {
-      if (status === "idle") {
-        void mods.fetchNextPage();
+      if (LOAD_MORE_STATUSES.includes(status)) {
+        void mods.fetchNextPage({ cancelRefetch: false });
       }
     },
     retry: () => {

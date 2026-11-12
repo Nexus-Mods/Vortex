@@ -20,6 +20,9 @@ interface IKeyboardListProps {
   isLoading?: boolean;
   onSelectMod?: Parameters<typeof useModListKeyboard>[0]["onSelectMod"];
   onFocusDetails?: () => void;
+  /** Whether there's a button after the last card, as Load more is while the list's paused. */
+  hasAfterLastCard?: boolean;
+  onPassLastCard?: () => void;
 }
 
 /** A bare list with the hook's keys, rendering cards for only the first `rendered` mods. */
@@ -30,33 +33,56 @@ const KeyboardList = ({
   isLoading = false,
   onSelectMod = () => {},
   onFocusDetails = () => {},
+  hasAfterLastCard = false,
+  onPassLastCard,
 }: IKeyboardListProps) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const cards = useRef(new Map<number, HTMLElement>()).current;
+  const afterLastCardRef = useRef<HTMLButtonElement>(null);
   const onKeyDown = useModListKeyboard({
-    scrollRef,
+    cards,
     mods: modsUpTo(count),
     searchKey,
     isLoading,
     onSelectMod,
     onFocusDetails,
+    afterLastCardRef,
+    onPassLastCard,
   });
 
   return (
-    <div aria-label="Mods" ref={scrollRef} role="region" tabIndex={-1} onKeyDown={onKeyDown}>
+    <div aria-label="Mods" role="region" tabIndex={-1} onKeyDown={onKeyDown}>
       {modsUpTo(rendered).map(({ id }, index) => (
         <div data-index={index} key={id}>
-          <button data-mod-card tabIndex={-1} type="button">
+          <button
+            data-testid={`card-${id}`}
+            ref={(card) => {
+              if (card) {
+                cards.set(index, card);
+                return;
+              }
+
+              cards.delete(index);
+            }}
+            tabIndex={-1}
+            type="button"
+          >
             {`Mod ${id}`}
           </button>
         </div>
       ))}
+
+      {hasAfterLastCard && (
+        <button data-testid="after-last-card" ref={afterLastCardRef} type="button">
+          Load more
+        </button>
+      )}
     </div>
   );
 };
 
-const list = () => screen.getByRole("region", { name: "Mods" });
+const list = () => screen.getByRole("region");
 
-const card = (id: string) => screen.getByRole("button", { name: `Mod ${id}` });
+const card = (id: string) => screen.getByTestId(`card-${id}`);
 
 describe("useModListKeyboard", () => {
   it.each([
@@ -94,6 +120,60 @@ describe("useModListKeyboard", () => {
   it("stays on the last mod with Down from it", async () => {
     render(<KeyboardList count={3} />);
     act(() => card("3").focus());
+
+    await userEvent.keyboard("{ArrowDown}");
+
+    expect(card("3")).toHaveFocus();
+  });
+
+  it("moves focus past the last card on Down, while there's something after it", async () => {
+    const onSelectMod = vi.fn();
+    const onPassLastCard = vi.fn();
+    render(
+      <KeyboardList
+        hasAfterLastCard
+        count={3}
+        onPassLastCard={onPassLastCard}
+        onSelectMod={onSelectMod}
+      />,
+    );
+    act(() => card("3").focus());
+
+    await userEvent.keyboard("{ArrowDown}");
+
+    expect(screen.getByTestId("after-last-card")).toHaveFocus();
+    expect(onSelectMod).not.toHaveBeenCalled();
+    expect(onPassLastCard).toHaveBeenCalledOnce();
+  });
+
+  it("picks the last mod on Up from what's after the last card", async () => {
+    const onSelectMod = vi.fn();
+    render(<KeyboardList hasAfterLastCard count={3} onSelectMod={onSelectMod} />);
+    act(() => screen.getByTestId("after-last-card").focus());
+
+    await userEvent.keyboard("{ArrowUp}");
+
+    expect(onSelectMod).toHaveBeenCalledWith("3", "keyboard");
+    expect(card("3")).toHaveFocus();
+  });
+
+  it.each([
+    ["{Home}", "1"],
+    ["{End}", "3"],
+  ])("picks a mod with %s from what's after the last card", async (key, id) => {
+    const onSelectMod = vi.fn();
+    render(<KeyboardList hasAfterLastCard count={3} onSelectMod={onSelectMod} />);
+    act(() => screen.getByTestId("after-last-card").focus());
+
+    await userEvent.keyboard(key);
+
+    expect(onSelectMod).toHaveBeenCalledWith(id, "keyboard");
+    expect(card(id)).toHaveFocus();
+  });
+
+  it("moves focus past only the last card", async () => {
+    render(<KeyboardList hasAfterLastCard count={3} />);
+    act(() => card("2").focus());
 
     await userEvent.keyboard("{ArrowDown}");
 

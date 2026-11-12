@@ -1,16 +1,33 @@
-import React, { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef } from "react";
+import numeral from "numeral";
+import React, {
+  type ReactNode,
+  type Ref,
+  useCallback,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+} from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { Listing } from "@/ui/components/listing/Listing";
-import type { ListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
+import {
+  type ListingStatus,
+  type LoadMoreSource,
+  PAGES_BEFORE_PAUSE,
+} from "@/ui/components/listing/listing_status/listingStatus";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import type { SelectionInput } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { useModListKeyboard } from "../../../hooks/use_mod_list_keyboard/useModListKeyboard.hook";
 import { useModListVirtualizer } from "../../../hooks/use_mod_list_virtualizer/useModListVirtualizer.hook";
+import { MODS_PER_PAGE } from "../../../hooks/use_mod_search/useModSearch.hook";
+import { isBreakNudgePause } from "../../../util/break_nudge/breakNudge";
 import { ModCard } from "../mod_card/ModCard";
 import { ModCardSkeleton } from "../mod_card/ModCard.skeleton";
+
+/** How often, in mods, Load more nudges the user back to their game, at the first pause past. */
+const NUDGE_EVERY_MODS = 600;
 
 interface IModListProps {
   /** The mods loaded so far, in order. */
@@ -23,18 +40,32 @@ interface IModListProps {
   onSelectMod: (id: string, input: SelectionInput) => void;
   /** Where the pages' loading is. */
   status: ListingStatus;
-  /** Asks for the next page, while the list is `idle`. */
-  onLoadMore: () => void;
+  /** How many mods the search found, for the count over Load more. */
+  totalCount: number;
+  /** How many pages have loaded, for the note over Load more, which counts them in full pages. */
+  pagesLoaded: number;
+  /** Asks for the next page: as the list's end nears, or from Load more, back on the last card. */
+  onLoadMore: (source: LoadMoreSource) => void;
   /** Asks for the page that failed again; focus goes to the list, as the Try again button goes. */
   onRetry: () => void;
   /** Moves focus into the details pane, for Right from a card. */
   onFocusDetails: () => void;
+  /** Called as Down moves focus past the last mod onto Load more, passing rather than stopping. */
+  onPassLastMod?: () => void;
   /** Shown in place of the mods when there are none. */
   emptyState: ReactNode;
   /** Shown after the last card once the last page has loaded. */
   endOfResults: ReactNode;
-  /** The list's scrolling region, for moving focus back into the list. */
-  listRef?: RefObject<HTMLDivElement>;
+  /** The list, for moving focus back into it or onto its open mod. */
+  listRef?: Ref<IModListHandle>;
+}
+
+/** What the list lets its page do with focus. */
+export interface IModListHandle {
+  /** Focuses the list itself. */
+  focus: () => void;
+  /** Focuses the open mod's card, the list's Tab stop. */
+  focusOpenMod: () => void;
 }
 
 /**
@@ -51,8 +82,11 @@ export const ModList = ({
   activeModId,
   onSelectMod,
   onFocusDetails,
+  onPassLastMod,
   listRef,
   status,
+  totalCount,
+  pagesLoaded,
   onLoadMore,
   onRetry,
   emptyState,
@@ -60,8 +94,10 @@ export const ModList = ({
 }: IModListProps) => {
   const { t } = useTranslation();
   const isLastPageLoaded = !!mods.length && status === "done";
-  const ownScrollRef = useRef<HTMLDivElement>(null);
-  const scrollRef = listRef ?? ownScrollRef;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pagedCount = pagesLoaded * MODS_PER_PAGE;
+  const cards = useRef(new Map<number, HTMLElement>()).current;
+  const loadMoreRef = useRef<HTMLButtonElement>(null);
   const activeIndex = mods.findIndex((mod) => mod.id === activeModId);
   const tabStop = activeIndex >= 0 ? activeIndex : 0;
   const virtualizer = useModListVirtualizer({
@@ -80,13 +116,24 @@ export const ModList = ({
     }
   }, [searchKey, scrollToTop]);
 
+  useImperativeHandle(
+    listRef,
+    () => ({
+      focus: () => scrollRef.current?.focus(),
+      focusOpenMod: () => cards.get(tabStop)?.focus(),
+    }),
+    [cards, tabStop],
+  );
+
   const onKeyDown = useModListKeyboard({
-    scrollRef,
+    cards,
     mods,
     searchKey,
     isLoading: status === "loading",
     onSelectMod,
     onFocusDetails,
+    afterLastCardRef: loadMoreRef,
+    onPassLastCard: onPassLastMod,
   });
 
   return (
@@ -109,11 +156,43 @@ export const ModList = ({
           errorMessage={t("The mods couldn't be loaded. Try again.")}
           errorTitle={t("Something went wrong")}
           loadMoreErrorMessage={t("More mods couldn't be loaded. Try again.")}
+          loadMoreLabel={t("Load more mods")}
+          loadMoreNote={
+            isBreakNudgePause({
+              loaded: pagedCount,
+              every: NUDGE_EVERY_MODS,
+              perPause: PAGES_BEFORE_PAUSE * MODS_PER_PAGE,
+            })
+              ? t("{{loaded}} mods later... remember the game you were going to play?", {
+                  loaded: numeral(pagedCount).format("0,0"),
+                })
+              : undefined
+          }
+          loadMoreRef={loadMoreRef}
+          loadMoreSummary={t("Showing {{loaded}} of {{total}} mods", {
+            loaded: numeral(mods.length).format("0,0"),
+            total: numeral(totalCount).format("0,0"),
+          })}
           scrollRef={scrollRef}
           skeletonCount={6}
           SkeletonTile={ModCardSkeleton}
           status={status}
-          onLoadMore={onLoadMore}
+          onLoadMore={(source) => {
+            onLoadMore(source);
+
+            if (source !== "button") {
+              return;
+            }
+
+            const lastCard = cards.get(mods.length - 1);
+
+            if (lastCard) {
+              lastCard.focus({ preventScroll: true });
+              return;
+            }
+
+            scrollRef.current?.focus();
+          }}
           onRetry={() => {
             onRetry();
             scrollRef.current?.focus();
@@ -135,6 +214,14 @@ export const ModList = ({
                 <ModCard
                   isActive={mods[index].id === activeModId}
                   mod={mods[index]}
+                  ref={(card) => {
+                    if (card) {
+                      cards.set(index, card);
+                      return;
+                    }
+
+                    cards.delete(index);
+                  }}
                   tabIndex={index === tabStop ? 0 : -1}
                   onSelect={() => onSelectMod(mods[index].id, "pointer")}
                 />
