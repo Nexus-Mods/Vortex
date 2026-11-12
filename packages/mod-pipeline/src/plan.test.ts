@@ -7,6 +7,7 @@ import { FileSourceKind, HashType, type FileSource, type Lockfile } from "./lock
 import {
   DestinationState,
   inApplyOrder,
+  KeptReason,
   OperationKind,
   plan,
   planDestinations,
@@ -48,6 +49,9 @@ function diskEntry(name: string, kind: DiskEntryKind = DiskEntryKind.File): Disk
   };
 }
 
+const backupPathOf = (destinationPath: string) => `${destinationPath}.backup`;
+const options = { backupPathOf };
+
 function diskScan(...entries: DiskEntry[]): DiskScan {
   return { takenAt: Temporal.Instant.from("2026-10-21T09:00:00Z"), roots: [GAME_DIR], entries };
 }
@@ -56,7 +60,7 @@ describe("plan", () => {
   test.each(["../plugin.dll", "Data/../plugin.dll", "Data//plugin.dll", "C:/plugin.dll"])(
     "rejects the destination %s",
     (name) => {
-      expect(() => plan(lockfile([makeFileSource(name)]), undefined, diskScan())).toThrow(
+      expect(() => plan(lockfile([makeFileSource(name)]), undefined, diskScan(), options)).toThrow(
         "not a valid path under a scanned folder",
       );
     },
@@ -68,7 +72,7 @@ describe("plan", () => {
       destinationPath: "/fixture-root/other/plugin.dll",
     };
 
-    expect(() => plan(lockfile([outside]), undefined, diskScan())).toThrow(
+    expect(() => plan(lockfile([outside]), undefined, diskScan(), options)).toThrow(
       "not a valid path under a scanned folder",
     );
   });
@@ -76,7 +80,7 @@ describe("plan", () => {
   test("rejects a lockfile that lists a destination twice", () => {
     const plugin = makeFileSource("plugin.dll");
 
-    expect(() => plan(lockfile([plugin, plugin]), undefined, diskScan())).toThrow(
+    expect(() => plan(lockfile([plugin, plugin]), undefined, diskScan(), options)).toThrow(
       "a lockfile lists a destination twice",
     );
   });
@@ -87,7 +91,7 @@ describe("plan", () => {
       makeFileSource("Data/textures/sky.dds"),
     ]);
 
-    expect(() => plan(lockfileWithCaseTwins, undefined, diskScan())).toThrow(
+    expect(() => plan(lockfileWithCaseTwins, undefined, diskScan(), options)).toThrow(
       "a lockfile lists a destination twice",
     );
   });
@@ -99,13 +103,13 @@ describe("plan", () => {
       makeFileSource("Data/Café.esp"),
     ]);
 
-    expect(() => plan(lockfileWithCompositionTwins, undefined, diskScan())).toThrow(
+    expect(() => plan(lockfileWithCompositionTwins, undefined, diskScan(), options)).toThrow(
       "a lockfile lists a destination twice",
     );
   });
 
   test("rejects lockfiles for different games", () => {
-    expect(() => plan(lockfile([]), lockfile([], NexusGameId(1100)), diskScan())).toThrow(
+    expect(() => plan(lockfile([]), lockfile([], NexusGameId(1100)), diskScan(), options)).toThrow(
       "the lockfiles are for games 1100 and 1704",
     );
   });
@@ -115,7 +119,7 @@ describe("plan", () => {
     ["duplicated", ["a.esp", "a.esp"]],
   ])("rejects a disk scan with %s entries", (_, names) => {
     expect(() =>
-      plan(lockfile([]), undefined, diskScan(...names.map((name) => diskEntry(name)))),
+      plan(lockfile([]), undefined, diskScan(...names.map((name) => diskEntry(name))), options),
     ).toThrow("the disk scan is not sorted by path");
   });
 
@@ -125,6 +129,7 @@ describe("plan", () => {
         lockfile([makeFileSource("Data/SKSE")]),
         undefined,
         diskScan(diskEntry("Data/SKSE/plugin.dll")),
+        options,
       ),
     ).toThrow(`${GAME_DIR}/Data/SKSE is a folder on disk`);
   });
@@ -137,6 +142,7 @@ describe("plan", () => {
           lockfile([makeFileSource("Data/SKSE/plugin.dll")]),
           undefined,
           diskScan(diskEntry("Data/SKSE", kind)),
+          options,
         ),
       ).toThrow(`${GAME_DIR}/Data/SKSE is a file or link on disk where a folder is needed`);
     },
@@ -148,7 +154,7 @@ describe("plan", () => {
       makeFileSource("Data/SKSE/plugin.dll"),
     ]);
 
-    expect(() => plan(lockfileWithNesting, undefined, diskScan())).toThrow(
+    expect(() => plan(lockfileWithNesting, undefined, diskScan(), options)).toThrow(
       `${GAME_DIR}/Data/SKSE/plugin.dll is inside ${GAME_DIR}/Data/SKSE, another destination`,
     );
   });
@@ -162,7 +168,12 @@ describe("planDestinations", () => {
     const keptOnDisk = diskEntry("Data/a.esp");
 
     expect(
-      planDestinations(lockfile([kept, added]), lockfile([kept, removed]), diskScan(keptOnDisk)),
+      planDestinations(
+        lockfile([kept, added]),
+        lockfile([kept, removed]),
+        diskScan(keptOnDisk),
+        options,
+      ),
     ).toEqual([
       {
         destinationPath: kept.destinationPath,
@@ -199,8 +210,109 @@ describe("planDestinations", () => {
     };
 
     expect(
-      planDestinations(lockfile([deployed]), lockfile([deployed]), diskScan(onDisk)),
+      planDestinations(lockfile([deployed]), lockfile([deployed]), diskScan(onDisk), options),
     ).toMatchObject([{ state: DestinationState.Unchanged, operations: [] }]);
+  });
+});
+
+describe("BACKUP", () => {
+  const added = makeFileSource("Data/a.esp");
+  const backupOfAdded = diskEntry("Data/a.esp.backup");
+  const operationsFor = (current: FileSource[], previous: FileSource[], disk: DiskScan) =>
+    planDestinations(lockfile(current), lockfile(previous), disk, options).flatMap(
+      ({ operations }) => operations,
+    );
+
+  test("backs up a file with one link into a free backup name", () => {
+    expect(operationsFor([added], [], diskScan(diskEntry("Data/a.esp")))).toEqual([
+      {
+        kind: OperationKind.Backup,
+        destinationPath: added.destinationPath,
+        reason: DestinationState.NewOverUnhashed,
+      },
+      { kind: OperationKind.Link, file: added, reason: DestinationState.NewOverUnhashed },
+    ]);
+  });
+
+  test("sets aside a file with another hardlink, leaving the backup name free", () => {
+    const linkedElsewhere = { ...diskEntry("Data/a.esp"), hardlinkCount: 2 };
+
+    expect(operationsFor([added], [], diskScan(linkedElsewhere))).toEqual([
+      {
+        kind: OperationKind.Backup,
+        destinationPath: added.destinationPath,
+        reason: DestinationState.NewOverUnhashed,
+        setAside: KeptReason.LinkedElsewhere,
+      },
+      { kind: OperationKind.Link, file: added, reason: DestinationState.NewOverUnhashed },
+    ]);
+  });
+
+  test("sets aside a file whose backup name holds an earlier original", () => {
+    expect(operationsFor([added], [], diskScan(diskEntry("Data/a.esp"), backupOfAdded))).toEqual([
+      {
+        kind: OperationKind.Backup,
+        destinationPath: added.destinationPath,
+        reason: DestinationState.NewOverUnhashed,
+        setAside: KeptReason.BackupTaken,
+      },
+      { kind: OperationKind.Link, file: added, reason: DestinationState.NewOverUnhashed },
+    ]);
+  });
+
+  test("restores the earlier original after setting aside a file no current file replaces", () => {
+    const removed = makeFileSource("Data/a.esp");
+    const edited: DiskEntry = {
+      ...diskEntry("Data/a.esp"),
+      contentHash: { fileHash: "edited-hash", hashType: HashType.Md5 },
+    };
+
+    expect(operationsFor([], [removed], diskScan(edited, backupOfAdded))).toEqual([
+      {
+        kind: OperationKind.Backup,
+        destinationPath: removed.destinationPath,
+        reason: DestinationState.RemovedEdited,
+        setAside: KeptReason.BackupTaken,
+      },
+      {
+        kind: OperationKind.Restore,
+        destinationPath: removed.destinationPath,
+        reason: DestinationState.RemovedEdited,
+      },
+    ]);
+  });
+});
+
+describe("RESTORE", () => {
+  const removed = makeFileSource("Data/a.esp");
+  const backup = diskEntry("Data/a.esp.backup");
+  const operationsFor = (current: FileSource[], disk: DiskScan) =>
+    planDestinations(lockfile(current), lockfile([removed]), disk, options).flatMap(
+      ({ operations }) => operations,
+    );
+
+  test("restores the original where it unlinks a removed file", () => {
+    expect(operationsFor([], diskScan(diskEntry("Data/a.esp"), backup))).toEqual([
+      { kind: OperationKind.Unlink, file: removed, reason: DestinationState.RemovedUnhashed },
+      {
+        kind: OperationKind.Restore,
+        destinationPath: removed.destinationPath,
+        reason: DestinationState.RemovedUnhashed,
+      },
+    ]);
+  });
+
+  test("leaves the original backed up where a current file needs the path as a folder", () => {
+    const inside = makeFileSource("Data/a.esp/b.esp");
+
+    expect(operationsFor([inside], diskScan(diskEntry("Data/a.esp"), backup))).toEqual([
+      { kind: OperationKind.Unlink, file: removed, reason: DestinationState.RemovedUnhashed },
+      { kind: OperationKind.Link, file: inside, reason: DestinationState.NewFile },
+    ]);
+  });
+
+  test("leaves the original backed up where the removed file is already gone", () => {
+    expect(operationsFor([], diskScan(backup))).toEqual([]);
   });
 });
 
@@ -216,10 +328,15 @@ describe("OperationKind", () => {
       },
       [OperationKind.Link]: { kind: OperationKind.Link, file, reason },
       [OperationKind.Unlink]: { kind: OperationKind.Unlink, file, reason },
+      [OperationKind.Restore]: {
+        kind: OperationKind.Restore,
+        destinationPath: file.destinationPath,
+        reason,
+      },
     };
 
     expect(inApplyOrder(Object.values(operationByKind)).map(({ kind }) => kind)).toEqual(
-      Object.values(OperationKind).filter((kind) => kind !== OperationKind.Restore),
+      Object.values(OperationKind),
     );
   });
 });

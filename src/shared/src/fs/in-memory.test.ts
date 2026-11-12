@@ -735,6 +735,24 @@ describe("InMemoryFS.createLink", () => {
     );
   });
 
+  it("counts a file's hardlinks in its status", async () => {
+    const original = QualifiedPath.fromNative("/original/data.txt");
+    const linked = QualifiedPath.fromNative("/other/data.txt");
+    const builder = new Builder();
+    builder.file(original, { type: "text", data: "one" });
+    builder.dir(QualifiedPath.fromNative("/other"));
+    const fs = builder.build();
+
+    await fs.createLink(original, linked, "hardlink");
+    const whileLinked = await fs.stat(original);
+    await fs.delete(linked);
+    const afterDelete = await fs.stat(original);
+
+    assert(whileLinked.exists && afterDelete.exists);
+    expect(whileLinked.hardlinkCount).toBe(2);
+    expect(afterDelete.hardlinkCount).toBe(1);
+  });
+
   it("rejects with fs:not-found for a missing hardlink source", async () => {
     const fs = build(() => undefined);
 

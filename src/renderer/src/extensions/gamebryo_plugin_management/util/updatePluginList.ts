@@ -8,6 +8,7 @@ import { log } from "../../../logging";
 import type { ThunkStore } from "../../../types/IExtensionContext";
 import { withActivityTracking } from "../../../util/activity";
 import { recordErrorSpan, setErrorContext } from "../../../util/errorHandling";
+import { withFileRetry } from "../../../util/fileRetry";
 import * as fs from "../../../util/fs";
 import { showError } from "../../../util/message";
 import { discoveryByGame } from "../../gamemode_management/selectors";
@@ -22,7 +23,6 @@ import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { isNativePlugin, pluginFormat, supportsBlueprintPlugins } from "./gameSupport";
 import { selectPluginFiles } from "./isPlugin";
 import type PluginPersistor from "./PluginPersistor";
-import { withFileRetry } from "./PluginPersistor";
 import { SpanAttribute } from "./spanAttributes";
 import toPluginId from "./toPluginId";
 

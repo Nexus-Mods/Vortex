@@ -1,0 +1,39 @@
+{
+  "name": "a LINK over a file that appeared since the scan rolls the run back",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI_SE.esp": "someone else's esp",
+      "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll": "SkyUI dll",
+      "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1"
+    }
+  },
+  "staged": {
+    "skyui-dll-hash": "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll",
+    "skyui-esp-v1-hash": "/fixture-root/staging/SkyUI/SkyUI_SE.esp"
+  },
+  "operations": [
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307801",
+        "fileHash": "skyui-dll-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/SkyUI.dll"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    }
+  ],
+  "expected": { "status": "rolled-back", "failedAt": 1 }
+}

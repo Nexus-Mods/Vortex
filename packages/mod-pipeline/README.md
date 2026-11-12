@@ -16,8 +16,7 @@ backend. Two rules keep it that way:
   deploy, in order, each with its origin, staged files and overridden paths.
   Anything that needs Vortex or the disk is the caller's job.
 
-The journal follows the same rule: `journal.ts` owns its format and rules, and the
-caller provides a `JournalStorage` for the disk work.
+Vortex runs the operations, in `src/renderer/src/extensions/mod_management/util/apply`.
 
 Paths are absolute and use `/` separators.
 
@@ -100,8 +99,6 @@ carry no machine's paths or user names:
 - `src/resolve.ts` - the resolver
 - `src/diskScan.ts` - `DiskScan`, the files under the deployment targets
 - `src/plan.ts` - the planner, its `Operation` contract and decision table
-- `src/journal.ts` - Apply's journal and the `JournalStorage` a caller provides
-- `src/testJournalStorage.ts` - a `JournalStorage` on the real disk, for tests
 - `src/resolverFixture.ts`, `src/plannerFixture.ts`, `src/loadFixtures.ts` - the fixture contracts and their loader
 
 ## Scripts

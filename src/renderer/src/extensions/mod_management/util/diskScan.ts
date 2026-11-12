@@ -37,8 +37,8 @@ function combineRootsFromPaths(
     .toSorted((lhs, rhs) => (lhs.path < rhs.path ? -1 : 1));
 }
 
-/** A folder's identity, shared by every path that reaches it. */
-const folderIdOf = (status: Status) => `${status.deviceId}:${status.id}`;
+/** An entry's identity, shared by every path that reaches it. */
+export const entryIdOf = (status: Status) => `${status.deviceId}:${status.id}`;
 
 /**
  * Recursively adds all files to entries parameter under a folder. Also walking into links to folders;
@@ -77,10 +77,10 @@ async function addEntriesUnder(
       if (status.isSymLink) {
         linkedFolders.push({
           linkPath: entryPath,
-          folderId: folderIdOf(status),
+          folderId: entryIdOf(status),
         });
       } else {
-        folderIdByKey.set(pathKeyOf(entryPath.path), folderIdOf(status));
+        folderIdByKey.set(pathKeyOf(entryPath.path), entryIdOf(status));
       }
       continue;
     }
@@ -115,7 +115,7 @@ async function addEntriesUnder(
 /** The ids a walk from a root starts inside: the root's own; none for a missing root. */
 async function chainAt(root: QualifiedPath): Promise<ReadonlySet<string>> {
   const status = await window.api.fs.stat(root);
-  return new Set(status.exists ? [folderIdOf(status)] : []);
+  return new Set(status.exists ? [entryIdOf(status)] : []);
 }
 
 /** Scans and returns all files in folder the mod and destination paths. Called

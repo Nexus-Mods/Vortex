@@ -1,0 +1,31 @@
+{
+  "name": "a plan that links a generated file is refused",
+  "disk": {
+    "files": { "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1" }
+  },
+  "staged": { "skyui-esp-v1-hash": "/fixture-root/staging/SkyUI/SkyUI_SE.esp" },
+  "operations": [
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "VORTEX_GENERATED",
+        "fileHash": "plugins-txt-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/localAppData/Skyrim Special Edition/plugins.txt"
+      }
+    }
+  ],
+  "expected": { "status": "refused", "reason": "generated-file" }
+}

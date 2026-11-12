@@ -1,0 +1,51 @@
+{
+  "name": "a backup stays when a LINK needs its destination as a folder",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI": "SkyUI file",
+      "/fixture-root/game/Data/SkyUI.backup": "game's own file",
+      "/fixture-root/staging/SkyUI/SkyUI/config.txt": "SkyUI config",
+      "/fixture-root/staging/SkyUIFile/SkyUI": "SkyUI file"
+    }
+  },
+  "staged": {
+    "skyui-config-hash": "/fixture-root/staging/SkyUI/SkyUI/config.txt",
+    "skyui-file-hash": "/fixture-root/staging/SkyUIFile/SkyUI"
+  },
+  "operations": [
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307812",
+        "fileHash": "skyui-file-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307811",
+        "fileHash": "skyui-config-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI/config.txt"
+      }
+    }
+  ],
+  "expected": {
+    "status": "applied",
+    "kept": [],
+    "disk": {
+      "files": {
+        "/fixture-root/game/Data/SkyUI.backup": "game's own file",
+        "/fixture-root/game/Data/SkyUI/config.txt": "SkyUI config",
+        "/fixture-root/staging/SkyUI/SkyUI/config.txt": "SkyUI config",
+        "/fixture-root/staging/SkyUIFile/SkyUI": "SkyUI file"
+      }
+    }
+  }
+}

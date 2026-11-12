@@ -14,32 +14,19 @@ export {
 } from "./ids";
 export { FileSourceKind, HashType, LockfileSchema, lockfileFiles } from "./lockfile";
 export type { FileOrigin, FileSource, GeneratedFileSource, Lockfile, FileEntry } from "./lockfile";
-export {
-  createJournal,
-  JournalPhase,
-  JournalReadStatus,
-  openJournal,
-  readJournal,
-} from "./journal";
-export type {
-  Journal,
-  JournalEntry,
-  JournalOperation,
-  JournalRead,
-  JournalStorage,
-  JournalWriter,
-} from "./journal";
-export { folderKeyOf, pathKeyOf } from "./pathKey";
+export { AbsolutePathSchema, folderKeyOf, pathKeyOf } from "./pathKey";
 export {
   DestinationState,
   inApplyOrder,
+  KeptReason,
   OperationKind,
   OperationSchema,
+  parentFolders,
   plan,
   planDestinations,
   sameOrigin,
 } from "./plan";
-export type { Operation, PlannedDestination } from "./plan";
+export type { Operation, PlannedDestination, PlanOptions, SetAsideReason } from "./plan";
 export { resolve } from "./resolve";
 export { ResolverInputSchema } from "./resolverInput";
 export type { ResolverInput, ResolverMod } from "./resolverInput";

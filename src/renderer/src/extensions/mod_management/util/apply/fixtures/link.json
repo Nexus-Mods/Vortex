@@ -1,0 +1,31 @@
+{
+  "name": "a new file is linked from staging, with the folders it needs",
+  "disk": {
+    "files": { "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll": "SkyUI dll" },
+    "folders": ["/fixture-root/game/Data"]
+  },
+  "staged": { "skyui-dll-hash": "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll" },
+  "operations": [
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307801",
+        "fileHash": "skyui-dll-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/SkyUI.dll"
+      }
+    }
+  ],
+  "expected": {
+    "status": "applied",
+    "kept": [],
+    "disk": {
+      "files": {
+        "/fixture-root/game/Data/SKSE/Plugins/SkyUI.dll": "SkyUI dll",
+        "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll": "SkyUI dll"
+      }
+    }
+  }
+}

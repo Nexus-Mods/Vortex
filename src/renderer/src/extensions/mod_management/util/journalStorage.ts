@@ -1,8 +1,14 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import type { JournalStorage } from "@nexusmods/mod-pipeline";
-import { getErrorCode } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+
+import { log } from "../../../logging";
+import { withFileRetry } from "../../../util/fileRetry";
+import type { JournalStorage } from "./apply/journal";
+
+/** About 1.5 s while a scanner or indexer holds the journal, which a run can wait for */
+const ATTEMPTS_WHILE_HELD = 16;
 
 /**
  * Apply's journal on disk, through node:fs: FileSystem's write streams can't append, and a kill can
@@ -44,7 +50,13 @@ export function journalStorageAt(journalFile: string): JournalStorage {
         }
         throw err;
       } finally {
-        await fs.rm(candidate, { force: true });
+        // the journal is settled either way, and nothing reads a leftover temporary file
+        await fs.rm(candidate, { force: true }).catch((err: unknown) =>
+          log("warn", "couldn't remove a temporary journal file", {
+            candidate,
+            error: getErrorMessageOrDefault(err),
+          }),
+        );
       }
     },
     write: async (contents) => {
@@ -52,15 +64,15 @@ export function journalStorageAt(journalFile: string): JournalStorage {
       await close();
       await fs.mkdir(path.dirname(journalFile), { recursive: true });
       await fs.writeFile(temporaryFile, contents, { flush: true });
-      await fs.rename(temporaryFile, journalFile);
+      await withFileRetry(() => fs.rename(temporaryFile, journalFile), ATTEMPTS_WHILE_HELD);
     },
     append: async (contents) => {
-      appending ??= fs.open(journalFile, "a");
+      appending ??= withFileRetry(() => fs.open(journalFile, "a"), ATTEMPTS_WHILE_HELD);
       const handle = await appending;
       await handle.appendFile(contents);
       await handle.sync();
     },
-    remove: () => fs.rm(journalFile, { force: true }),
+    remove: () => withFileRetry(() => fs.rm(journalFile, { force: true }), ATTEMPTS_WHILE_HELD),
     close,
   };
 }

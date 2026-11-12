@@ -3,12 +3,12 @@ import * as path from "node:path";
 
 import { getErrorCode } from "@vortex/shared";
 
+import { withFileRetry } from "../../../util/fileRetry";
 import type {
   IGeneratedFile,
   LockfileContribution,
 } from "../../mod_management/util/lockfileContributions";
 import { pluginPath } from "./gameSupport";
-import { withFileRetry } from "./PluginPersistor";
 
 /** Declares a Gamebryo game's loadorder.txt and plugins.txt as they are on disk. */
 export const pluginListContribution: LockfileContribution = async (_state, gameMode) => {

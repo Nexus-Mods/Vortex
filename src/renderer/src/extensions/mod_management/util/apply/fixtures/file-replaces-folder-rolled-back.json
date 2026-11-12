@@ -1,0 +1,51 @@
+{
+  "name": "a folder a file replaced goes back with its file when the run rolls back",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI/config.txt": "SkyUI config",
+      "/fixture-root/staging/SkyUI/SkyUI/config.txt": "SkyUI config",
+      "/fixture-root/staging/SkyUIFile/SkyUI": "SkyUI file"
+    }
+  },
+  "staged": {
+    "skyui-config-hash": "/fixture-root/staging/SkyUI/SkyUI/config.txt",
+    "skyui-file-hash": "/fixture-root/staging/SkyUIFile/SkyUI",
+    "missing-esp-hash": "/fixture-root/staging/Missing/Missing.esp"
+  },
+  "operations": [
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307811",
+        "fileHash": "skyui-config-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI/config.txt"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307812",
+        "fileHash": "skyui-file-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307799",
+        "fileHash": "missing-esp-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Missing.esp"
+      }
+    }
+  ],
+  "expected": { "status": "rolled-back", "failedAt": 2 }
+}

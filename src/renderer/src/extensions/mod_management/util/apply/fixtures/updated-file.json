@@ -1,0 +1,49 @@
+{
+  "name": "an updated file is linked once its older version is deleted",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI_SE.esp": "SkyUI esp v1",
+      "/fixture-root/staging/SkyUI-v1/SkyUI_SE.esp": "SkyUI esp v1",
+      "/fixture-root/staging/SkyUI-v2/SkyUI_SE.esp": "SkyUI esp v2"
+    }
+  },
+  "staged": {
+    "skyui-esp-v1-hash": "/fixture-root/staging/SkyUI-v1/SkyUI_SE.esp",
+    "skyui-esp-v2-hash": "/fixture-root/staging/SkyUI-v2/SkyUI_SE.esp"
+  },
+  "operations": [
+    {
+      "kind": "UNLINK",
+      "reason": "DBA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "DBA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307792",
+        "fileHash": "skyui-esp-v2-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    }
+  ],
+  "expected": {
+    "status": "applied",
+    "kept": [],
+    "disk": {
+      "files": {
+        "/fixture-root/game/Data/SkyUI_SE.esp": "SkyUI esp v2",
+        "/fixture-root/staging/SkyUI-v1/SkyUI_SE.esp": "SkyUI esp v1",
+        "/fixture-root/staging/SkyUI-v2/SkyUI_SE.esp": "SkyUI esp v2"
+      }
+    }
+  }
+}

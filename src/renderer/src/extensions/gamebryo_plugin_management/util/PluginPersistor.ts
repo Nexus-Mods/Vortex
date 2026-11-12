@@ -8,6 +8,7 @@ import update from "immutability-helper";
 import { log } from "../../../logging";
 import type { IErrorOptions, IPersistor } from "../../../types/IExtensionContext";
 import { recordErrorSpan } from "../../../util/errorHandling";
+import { withFileRetry } from "../../../util/fileRetry";
 import { delayed } from "../../../util/util";
 import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import {
@@ -38,34 +39,8 @@ interface IPluginMap {
 
 const retryCount = 3;
 
-/** How long to wait before another attempt. */
-const RETRY_DELAY_MS = 100;
-
 /** How long writes are collected before they go to disk together. */
 const SERIALIZE_DELAY_MS = 200;
-
-/**
- * Codes that mean another process holds the file, rather than that the operation is wrong. The
- * same set the elevated file operations retry on (symlink_activator_elevate/remoteCode.ts).
- */
-const TRANSIENT_CODES = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "UNKNOWN"]);
-
-/**
- * Runs a file operation, retrying while another process is holding the file. The game, another
- * mod manager or an antivirus scanner all touch these files, so a first failure says little.
- */
-export async function withFileRetry<T>(operation: () => Promise<T>): Promise<T> {
-  for (let attempt = 1; ; attempt += 1) {
-    try {
-      return await operation();
-    } catch (err) {
-      if (attempt >= retryCount || !TRANSIENT_CODES.has(getErrorCode(err) ?? "")) {
-        throw err;
-      }
-      await delayed(RETRY_DELAY_MS);
-    }
-  }
-}
 
 /**
  * persistor syncing to and from the gamebryo plugins.txt and loadorder.txt

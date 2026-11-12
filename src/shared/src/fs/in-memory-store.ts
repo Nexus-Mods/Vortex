@@ -269,6 +269,23 @@ export class InMemoryStore {
     return { ok: true, node };
   }
 
+  /** How many entries hold `node`: a file's hardlink count. */
+  linkCountOf(node: Node): number {
+    const countIn = (dir: DirNode): number => {
+      let count = 0;
+      for (const child of dir.children.values()) {
+        if (child === node) count += 1;
+        if (child.type === "dir") count += countIn(child);
+      }
+      return count;
+    };
+    let count = 0;
+    for (const root of this.#roots.values()) {
+      count += countIn(root);
+    }
+    return count;
+  }
+
   nextId(): bigint {
     return this.#nextId++;
   }

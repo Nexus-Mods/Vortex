@@ -1,0 +1,171 @@
+{
+  "name": "a plan with every operation and a file and a folder swapping places is applied",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/Meshes/a.nif": "old nif",
+      "/fixture-root/game/Data/RaceMenu.esp": "RaceMenu esp",
+      "/fixture-root/game/Data/Scripts": "old scripts file",
+      "/fixture-root/game/Data/SkyUI_SE.bsa": "my edited bsa",
+      "/fixture-root/game/Data/SkyUI_SE.esp": "game's own esp",
+      "/fixture-root/game/Data/Skyrim.ini": "mod ini",
+      "/fixture-root/game/Data/Skyrim.ini.backup": "game's own ini",
+      "/fixture-root/staging/IniMod/Skyrim.ini": "mod ini",
+      "/fixture-root/staging/NewMeshes/Meshes": "meshes file",
+      "/fixture-root/staging/NewScripts/Scripts/skse.pex": "skse pex",
+      "/fixture-root/staging/OldMeshes/Meshes/a.nif": "old nif",
+      "/fixture-root/staging/OldScripts/Scripts": "old scripts file",
+      "/fixture-root/staging/RaceMenu/RaceMenu.esp": "RaceMenu esp",
+      "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll": "SkyUI dll",
+      "/fixture-root/staging/SkyUI/SkyUI_SE.bsa": "SkyUI bsa",
+      "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1"
+    }
+  },
+  "staged": {
+    "meshes-file-hash": "/fixture-root/staging/NewMeshes/Meshes",
+    "mod-ini-hash": "/fixture-root/staging/IniMod/Skyrim.ini",
+    "old-nif-hash": "/fixture-root/staging/OldMeshes/Meshes/a.nif",
+    "old-scripts-hash": "/fixture-root/staging/OldScripts/Scripts",
+    "racemenu-esp-hash": "/fixture-root/staging/RaceMenu/RaceMenu.esp",
+    "skse-pex-hash": "/fixture-root/staging/NewScripts/Scripts/skse.pex",
+    "skyui-bsa-hash": "/fixture-root/staging/SkyUI/SkyUI_SE.bsa",
+    "skyui-dll-hash": "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll",
+    "skyui-esp-v1-hash": "/fixture-root/staging/SkyUI/SkyUI_SE.esp"
+  },
+  "operations": [
+    {
+      "kind": "BACKUP",
+      "reason": "DxA",
+      "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+    },
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307821",
+        "fileHash": "racemenu-esp-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/RaceMenu.esp"
+      }
+    },
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307803",
+        "fileHash": "skyui-bsa-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.bsa"
+      }
+    },
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307831",
+        "fileHash": "mod-ini-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Skyrim.ini"
+      }
+    },
+    { "kind": "RESTORE", "reason": "DAx", "destinationPath": "/fixture-root/game/Data/Skyrim.ini" },
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307841",
+        "fileHash": "old-scripts-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Scripts"
+      }
+    },
+    {
+      "kind": "UNLINK",
+      "reason": "DAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307851",
+        "fileHash": "old-nif-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Meshes/a.nif"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "DxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307791",
+        "fileHash": "skyui-esp-v1-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.esp"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307801",
+        "fileHash": "skyui-dll-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SKSE/Plugins/SkyUI.dll"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307842",
+        "fileHash": "skse-pex-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Scripts/skse.pex"
+      }
+    },
+    {
+      "kind": "LINK",
+      "reason": "xxA",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307852",
+        "fileHash": "meshes-file-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/Meshes"
+      }
+    }
+  ],
+  "expected": {
+    "status": "applied",
+    "kept": [
+      {
+        "destinationPath": "/fixture-root/game/Data/SkyUI_SE.bsa",
+        "keptPath": "/fixture-root/kept/2",
+        "reason": "not-ours"
+      }
+    ],
+    "disk": {
+      "files": {
+        "/fixture-root/game/Data/Meshes": "meshes file",
+        "/fixture-root/game/Data/SKSE/Plugins/SkyUI.dll": "SkyUI dll",
+        "/fixture-root/game/Data/Scripts/skse.pex": "skse pex",
+        "/fixture-root/game/Data/SkyUI_SE.esp": "SkyUI esp v1",
+        "/fixture-root/game/Data/SkyUI_SE.esp.backup": "game's own esp",
+        "/fixture-root/game/Data/Skyrim.ini": "game's own ini",
+        "/fixture-root/kept/2": "my edited bsa",
+        "/fixture-root/staging/IniMod/Skyrim.ini": "mod ini",
+        "/fixture-root/staging/NewMeshes/Meshes": "meshes file",
+        "/fixture-root/staging/NewScripts/Scripts/skse.pex": "skse pex",
+        "/fixture-root/staging/OldMeshes/Meshes/a.nif": "old nif",
+        "/fixture-root/staging/OldScripts/Scripts": "old scripts file",
+        "/fixture-root/staging/RaceMenu/RaceMenu.esp": "RaceMenu esp",
+        "/fixture-root/staging/SkyUI/SKSE/Plugins/SkyUI.dll": "SkyUI dll",
+        "/fixture-root/staging/SkyUI/SkyUI_SE.bsa": "SkyUI bsa",
+        "/fixture-root/staging/SkyUI/SkyUI_SE.esp": "SkyUI esp v1"
+      }
+    }
+  }
+}

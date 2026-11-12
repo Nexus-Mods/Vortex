@@ -6,18 +6,22 @@ import { PlannerFixtureSchema } from "./plannerFixture";
 
 const fixtures = loadFixtures("planner", PlannerFixtureSchema);
 
+// fixtures name a destination's backup by this suffix
+const options = { backupPathOf: (destinationPath: string) => `${destinationPath}.backup` };
+
 test("the planner fixtures are present", () => {
   expect(fixtures.length).toBeGreaterThan(0);
 });
 
 test.each(fixtures)("$name", (fixture) => {
-  const operations = plan(fixture.current, fixture.previous, fixture.disk);
+  const operations = plan(fixture.current, fixture.previous, fixture.disk, options);
 
   expect(
     plan(
       structuredClone(fixture.current),
       structuredClone(fixture.previous),
       structuredClone(fixture.disk),
+      options,
     ),
   ).toEqual(operations);
   expect(operations).toEqual(fixture.expected);

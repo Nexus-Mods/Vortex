@@ -2,9 +2,17 @@ import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import {
+  DestinationState,
+  FileSourceKind,
+  HashType,
+  NexusFileId,
+  OperationKind,
+  type FileSource,
+} from "@nexusmods/mod-pipeline";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { NexusFileId } from "./ids";
+import { journalStorageAt } from "../journalStorage";
 import {
   createJournal,
   JournalPhase,
@@ -14,9 +22,8 @@ import {
   type JournalEntry,
   type JournalStorage,
 } from "./journal";
-import { FileSourceKind, HashType, type FileSource } from "./lockfile";
-import { DestinationState, OperationKind } from "./plan";
-import { nodeJournalStorage } from "./testJournalStorage";
+
+const RUN_ID = "fixture-run";
 
 let root: string;
 let workDir: string;
@@ -27,7 +34,7 @@ beforeEach(async () => {
   root = await fs.mkdtemp(join(tmpdir(), "journal-"));
   workDir = join(root, "work");
   journalFile = join(workDir, "journal.ndjson");
-  storage = nodeJournalStorage(workDir);
+  storage = journalStorageAt(journalFile);
 });
 
 afterEach(async () => {
@@ -64,9 +71,19 @@ const makeEntries = (): JournalEntry[] => [
     operation: {
       kind: OperationKind.Restore,
       destinationPath: "/fixture-root/game/old.dll",
+      reason: DestinationState.Removed,
     },
   },
 ];
+
+/** Starts a run's journal on storage that has none. */
+async function startJournal(entries = makeEntries(), runId = RUN_ID) {
+  const writer = await createJournal(storage, entries, runId);
+  if (writer === undefined) {
+    throw new Error("a journal was already there");
+  }
+  return writer;
+}
 
 const foundJournal = async () => {
   const read = await readJournal(storage);
@@ -84,36 +101,46 @@ describe("readJournal", () => {
   test("reads back the entries of a new journal, with nothing done", async () => {
     const entries = makeEntries();
 
-    const writer = await createJournal(storage, entries);
+    const writer = await startJournal(entries);
     await writer.close();
 
     expect(await foundJournal()).toEqual({
       runId: writer.runId,
       entries,
       phase: JournalPhase.Applying,
+      changing: new Set(),
       done: new Set(),
+      kept: new Set(),
       undone: new Set(),
       createdFolders: [],
+      removedFolders: new Set(),
     });
   });
 
   test("reads back what a run recorded, without it being closed", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await startJournal();
 
     await writer.markDone(0);
+    await writer.markChanging(1);
     await writer.recordFolder(1, "/fixture-root/game/sub");
+    await writer.recordRemovedFolder(1);
     await writer.markDone(1);
+    await writer.markChanging(2);
+    await writer.markDone(2, true);
 
     expect(await foundJournal()).toMatchObject({
       phase: JournalPhase.Applying,
-      done: new Set([0, 1]),
+      changing: new Set([1, 2]),
+      done: new Set([0, 1, 2]),
+      kept: new Set([2]),
       createdFolders: [{ index: 1, path: "/fixture-root/game/sub" }],
+      removedFolders: new Set([1]),
     });
     await writer.close();
   });
 
   test("reads back a rollback's progress", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await startJournal();
     await writer.markDone(0);
     await writer.markDone(1);
 
@@ -129,7 +156,7 @@ describe("readJournal", () => {
   });
 
   test("ignores a torn last line and leaves it in the file", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await startJournal();
     await writer.markDone(0);
     await writer.close();
     await fs.appendFile(journalFile, '{"type":"done","ind');
@@ -154,7 +181,11 @@ describe("readJournal", () => {
       [
         JSON.stringify({ type: "header", version: 1, runId: "run", count: 1 }),
         JSON.stringify({
-          operation: { kind: OperationKind.Restore, destinationPath: "game/a" },
+          operation: {
+            kind: OperationKind.Restore,
+            destinationPath: "game/a",
+            reason: DestinationState.Removed,
+          },
         }),
         "",
       ].join("\n"),
@@ -194,7 +225,7 @@ describe("readJournal", () => {
       }),
     );
 
-    const writer = await createJournal(storage, entries);
+    const writer = await startJournal(entries);
     await writer.close();
     await fs.appendFile(
       journalFile,
@@ -209,21 +240,21 @@ describe("readJournal", () => {
 
 describe("createJournal", () => {
   test("refuses to replace a journal in progress", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await startJournal();
     await writer.close();
 
-    await expect(createJournal(storage, [])).rejects.toThrow("already exists");
+    expect(await createJournal(storage, [], "second-run")).toBeUndefined();
 
     expect((await foundJournal()).runId).toBe(writer.runId);
   });
 
   test("lets only one of two overlapping runs start", async () => {
-    const started = await Promise.allSettled([
-      createJournal(storage, makeEntries()),
-      createJournal(nodeJournalStorage(workDir), makeEntries()),
+    const started = await Promise.all([
+      createJournal(storage, makeEntries(), "first-run"),
+      createJournal(journalStorageAt(journalFile), makeEntries(), "second-run"),
     ]);
 
-    const writers = started.flatMap((run) => (run.status === "fulfilled" ? [run.value] : []));
+    const writers = started.filter((writer) => writer !== undefined);
     await Promise.all(writers.map((writer) => writer.close()));
 
     expect(writers).toHaveLength(1);
@@ -233,10 +264,10 @@ describe("createJournal", () => {
 
 describe("openJournal", () => {
   test("continues a journal whose writer never closed", async () => {
-    const killed = await createJournal(storage, makeEntries());
+    const killed = await startJournal();
     await killed.markDone(0);
 
-    const writer = await openJournal(nodeJournalStorage(workDir));
+    const writer = await openJournal(journalStorageAt(journalFile));
     await writer.markDone(1);
     await writer.close();
     await killed.close();
@@ -246,7 +277,7 @@ describe("openJournal", () => {
   });
 
   test("removes a torn last line before appending", async () => {
-    const earlier = await createJournal(storage, makeEntries());
+    const earlier = await startJournal();
     await earlier.markDone(0);
     await earlier.close();
     await fs.appendFile(journalFile, '{"type":"done","ind');
@@ -270,7 +301,7 @@ describe("openJournal", () => {
 
 describe("JournalWriter.finish", () => {
   test("ends the run, leaving no journal", async () => {
-    const writer = await createJournal(storage, makeEntries());
+    const writer = await startJournal();
     await writer.markDone(0);
 
     await writer.finish();
