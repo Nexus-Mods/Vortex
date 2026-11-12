@@ -263,9 +263,6 @@ catalogs:
     '@iarna/toml':
       specifier: 2.2.5
       version: 2.2.5
-    '@microsoft/api-extractor':
-      specifier: 7.58.9
-      version: 7.58.9
     '@msgpack/msgpack':
       specifier: 2.8.0
       version: 2.8.0
@@ -996,9 +993,6 @@ importers:
       '@eslint/js':
         specifier: 'catalog:'
         version: 10.0.1(eslint@10.6.0)
-      '@microsoft/api-extractor':
-        specifier: 'catalog:'
-        version: 7.58.9(@types/node@24.12.2)
       '@stylistic/eslint-plugin':
         specifier: 'catalog:'
         version: 5.10.0(eslint@10.6.0)
@@ -2438,7 +2432,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.3.0
+        version: 45.3.0(supports-color@10.2.2)
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -3109,7 +3103,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.3.0
+        version: 45.3.0(supports-color@10.2.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/3502f6ffc3f9eb55fe1c9c097b4e4772edce0c0f
@@ -3613,7 +3607,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.3.0
+        version: 45.3.0(supports-color@10.2.2)
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3835,7 +3829,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-        version: 45.3.0
+        version: 45.3.0(supports-color@10.2.2)
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -4000,9 +3994,6 @@ importers:
         specifier: 'catalog:'
         version: 0.5.0
     devDependencies:
-      '@microsoft/api-extractor':
-        specifier: 'catalog:'
-        version: 7.58.9(@types/node@24.12.2)
       '@nexusmods/nexus-api':
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/f3f9728b409dd2b6eb6c81ba5d0fbe76a0a2c914
@@ -4017,7 +4008,7 @@ importers:
         version: 3.6.0
       electron:
         specifier: 'catalog:'
-        version: 45.3.0
+        version: 45.3.0(supports-color@10.2.2)
       i18next:
         specifier: 'catalog:'
         version: 21.10.0
@@ -4552,7 +4543,7 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 45.3.0
+        version: 45.3.0(supports-color@10.2.2)
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -4579,7 +4570,7 @@ importers:
         version: link:../shared
       electron:
         specifier: 'catalog:'
-        version: 45.3.0
+        version: 45.3.0(supports-color@10.2.2)
 
   src/renderer:
     dependencies:
@@ -4614,9 +4605,6 @@ importers:
       '@headlessui/react':
         specifier: 'catalog:'
         version: 2.2.10(react-dom@18.3.1)(react@18.3.1)
-      '@microsoft/api-extractor':
-        specifier: 'catalog:'
-        version: 7.58.9(@types/node@24.12.2)
       '@msgpack/msgpack':
         specifier: 'catalog:'
         version: 2.8.0
@@ -4886,7 +4874,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 45.3.0
+        version: 45.3.0(supports-color@10.2.2)
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -6326,19 +6314,6 @@ packages:
     resolution: {integrity: sha512-9QOtNffcOF/c1seMCDnjckb3R9WHcG34tky+FHpNKKCW0wc/scYLwMtO+ptyGUfMW0/b/n4qRiALlaFHc9Oj7Q==}
     engines: {node: '>= 10.0.0'}
 
-  '@microsoft/api-extractor-model@7.33.8':
-    resolution: {integrity: sha512-aIcoQggPyer3B6Ze3usz0YWC/oBwUHfRH5ETUsr+oT2BRA6SfTJl7IKPcPZkX4UR+PohowzW4uMxsvjrn8vm+w==}
-
-  '@microsoft/api-extractor@7.58.9':
-    resolution: {integrity: sha512-S2UF4yza5GoxCmf7hJQNxJNZN9ltOVuOQv8Dy+Z21aol5ERoBNMdWcQHm4MJMPPItW4H/4rZD906iaf4mUojJA==}
-    hasBin: true
-
-  '@microsoft/tsdoc-config@0.18.1':
-    resolution: {integrity: sha512-9brPoVdfN9k9g0dcWkFeA7IH9bbcttzDJlXvkf8b2OBzd5MueR1V2wkKBL0abn0otvmkHJC6aapBOTJDDeMCZg==}
-
-  '@microsoft/tsdoc@0.16.0':
-    resolution: {integrity: sha512-xgAyonlVVS+q7Vc7qLW0UrJU7rSFcETRWsqdXZtjzRU8dF+6CkozTK4V4y1LwOX7j8r/vHphjDeMeGI4tNGeGA==}
-
   '@mixpanel/rrdom@2.0.0-alpha.18.4':
     resolution: {integrity: sha512-58sWLQDPRU0VQn8VzB1tx4ujih9X327Vr6xAzbJ4zge9GENm2L696T4TbWvrRGWPW6w99tHIHbv6SvcLhjjmcQ==}
 
@@ -6382,7 +6357,7 @@ packages:
     engines: {node: '>=22'}
 
   '@nexusmods/nexus-api@https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/f3f9728b409dd2b6eb6c81ba5d0fbe76a0a2c914':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/f3f9728b409dd2b6eb6c81ba5d0fbe76a0a2c914}
+    resolution: {gitHosted: true, integrity: sha512-N/0M4lY1Emxi5tIj23dHZfAKmNub5l6ozQwL0eh5piL7UWgHNrTNg5tgqgNlvGEhM2POLO1pQ8TMuEVziVq9ig==, tarball: https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/f3f9728b409dd2b6eb6c81ba5d0fbe76a0a2c914}
     version: 1.7.3
 
   '@nosferatu500/react-dnd-scrollzone@2.0.10':
@@ -7328,36 +7303,6 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@rushstack/node-core-library@5.23.1':
-    resolution: {integrity: sha512-wlKmIKIYCKuCASbITvOxLZXepPbwXvrv7S6ig6XNWFchSyhL/E2txmVXspHY49Wu2dzf7nI27a2k/yV5BA3EiA==}
-    peerDependencies:
-      '@types/node': 24.12.2
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-
-  '@rushstack/problem-matcher@0.2.1':
-    resolution: {integrity: sha512-gulfhBs6n+I5b7DvjKRfhMGyUejtSgOHTclF/eONr8hcgF1APEDjhxIsfdUYYMzC3rvLwGluqLjbwCFZ8nxrog==}
-    peerDependencies:
-      '@types/node': 24.12.2
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-
-  '@rushstack/rig-package@0.7.3':
-    resolution: {integrity: sha512-aAA518n6wxxjCfnTAOjQnm7ngNE0FVHxHAw2pxKlIhxrMn0XQjGcXKF0oKWpjBgJOmsaJpVob/v+zr3zxgPWuA==}
-
-  '@rushstack/terminal@0.24.0':
-    resolution: {integrity: sha512-8ZQS4MMaGsv27EXCBiH7WMPkRZrffeDoIevs6z9TM5dzqiY6+Hn4evfK/G+gvgBTjfvfkHIZPQQmalmI2sM4TQ==}
-    peerDependencies:
-      '@types/node': 24.12.2
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-
-  '@rushstack/ts-command-line@5.3.10':
-    resolution: {integrity: sha512-fwI076HYknC0IrMXdY6UmjDv+PH7NHhNJX3/pY2UblSE5XrXgndXZPiOe/6ZtuFpn6DvVDVNhtkIzQ+Qu/MhVQ==}
-
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
 
@@ -7614,9 +7559,6 @@ packages:
 
   '@types/abstract-leveldown@7.2.5':
     resolution: {integrity: sha512-/2B0nQF4UdupuxeKTJA2+Rj1D+uDemo6P4kMwKCpbfpnzeVaWSELTsAw4Lxn3VJD6APtRrZOCuYo+4nHUQfTfg==}
-
-  '@types/argparse@1.0.38':
-    resolution: {integrity: sha512-ebDJ9b0e702Yr7pWgB0jzm+CX4Srzz8RcXtLJDJB+BSccqMa36uyH/zUsSYao5+BD1ytv3k3rPYCq4mAE1hsXA==}
 
   '@types/aria-query@5.0.4':
     resolution: {integrity: sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==}
@@ -8387,14 +8329,6 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  ajv-draft-04@1.0.0:
-    resolution: {integrity: sha512-mv00Te6nmYbRp5DCwclxtt7yV/joXJPGS7nM+97GdxvuttCOfgI3K4U25zboyeX0O+myI8ERluxQe5wljMmVIw==}
-    peerDependencies:
-      ajv: ^8.5.0
-    peerDependenciesMeta:
-      ajv:
-        optional: true
-
   ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
     peerDependencies:
@@ -8498,9 +8432,6 @@ packages:
   are-we-there-yet@1.1.7:
     resolution: {integrity: sha512-nxwy40TuMiUGqMyRHgCSWZ9FM4VAoRP4xUYSTv5ImRog+h9yISPbVH7H8fASCIzYn9wlEv4zvFL7uKDMCFQm3g==}
     deprecated: This package is no longer supported.
-
-  argparse@1.0.10:
-    resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
 
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
@@ -9330,10 +9261,6 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  diff@8.0.4:
-    resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
-    engines: {node: '>=0.3.1'}
-
   dir-compare@3.3.0:
     resolution: {integrity: sha512-J7/et3WlGUCxjdnD3HAAzQ6nsnc0WL6DD7WcwJb7c39iH1+AWfg+9OqzJNaI6PkBwBvm1mhZNL9iY/nRiZXlPg==}
 
@@ -9894,10 +9821,6 @@ packages:
     resolution: {integrity: sha512-oRXApq54ETRj4eMiFzGnHWGy+zo5raudjuxN0b8H7s/RU2oW0Wvsx9O0ACRN/kRq9E8Vu/ReskGB5o3ji+FzHQ==}
     engines: {node: '>=12'}
 
-  fs-extra@11.3.4:
-    resolution: {integrity: sha512-CTXd6rk/M3/ULNQj8FBqBWHYBVYybQ3VPBw0xGKFe3tuH7ytT6ACnvzpIQ3UZtB8yvUKC2cXn1a+x+5EVQLovA==}
-    engines: {node: '>=14.14'}
-
   fs-extra@8.1.0:
     resolution: {integrity: sha512-yhlQgA6mnOJUKOsRUFsgJdQCvkKhcz8tlZG5HBQfReYZy46OwLcY+Zia0mtdHsOo9y/hP+CxMN0TU9QxoOtG4g==}
     engines: {node: '>=6 <7 || >=8'}
@@ -10184,10 +10107,6 @@ packages:
     resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
     engines: {node: '>=6'}
 
-  import-lazy@4.0.0:
-    resolution: {integrity: sha512-rKtvo6a868b5Hu3heneU+L4yEQ4jYKLtjpnPeUdK7h0yzXGmyBTypknlkCvHFBqfX9YlorEiMM6Dnq/5atfHkw==}
-    engines: {node: '>=8'}
-
   import-local@3.2.0:
     resolution: {integrity: sha512-2SPlun1JUPWoM6t3F0dw0FkCF/jWY8kttcY4f599GLTSjh2OCuuhdTkJQsEcZzBqbXZGKMK2OqW1oZsjtf/gQA==}
     engines: {node: '>=8'}
@@ -10420,9 +10339,6 @@ packages:
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
-
-  jju@1.4.0:
-    resolution: {integrity: sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==}
 
   js-levenshtein@1.1.6:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
@@ -10917,10 +10833,6 @@ packages:
   min-indent@1.0.1:
     resolution: {integrity: sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==}
     engines: {node: '>=4'}
-
-  minimatch@10.2.3:
-    resolution: {integrity: sha512-Rwi3pnapEqirPSbWbrZaa6N3nmqq4Xer/2XooiOKyV3q12ML06f7MOuc5DVH8ONZIFhwIYQ3yzPH4nt7iWHaTg==}
-    engines: {node: 18 || 20 || >=22}
 
   minimatch@10.2.5:
     resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
@@ -12337,9 +12249,6 @@ packages:
 
   space-separated-tokens@1.1.5:
     resolution: {integrity: sha512-q/JSVd1Lptzhf5bkYm4ob4iWPjx0KiRe3sRFBNrVqbJkFaBm5vbbowy1mymoPNLRa52+oadOhJ+K49wsSeSjTA==}
-
-  sprintf-js@1.0.3:
-    resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
 
   sshpk@1.18.0:
     resolution: {integrity: sha512-2p2KJZTSqQ/I3+HX42EpYOa2l3f8Erv8MWKsy2I9uf4wA7yFIkXRffYdsx86y6z4vHtV8u7g+pPlr8/4ouAxsQ==}
@@ -14205,14 +14114,14 @@ snapshots:
       glob: 7.2.3
       minimatch: 3.1.5
 
-  '@electron/get@5.0.0':
+  '@electron/get@5.0.0(supports-color@10.2.2)':
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       env-paths: 3.0.0
       graceful-fs: 4.2.11
       progress: 2.0.3
       semver: 7.8.5
-      sumchecker: 3.0.1
+      sumchecker: 3.0.1(supports-color@10.2.2)
     optionalDependencies:
       undici: 7.29.0
     transitivePeerDependencies:
@@ -14250,7 +14159,7 @@ snapshots:
 
   '@electron/remote@2.1.3(electron@45.3.0)':
     dependencies:
-      electron: 45.3.0
+      electron: 45.3.0(supports-color@10.2.2)
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -14637,41 +14546,6 @@ snapshots:
       tmp-promise: 3.0.3
     transitivePeerDependencies:
       - supports-color
-
-  '@microsoft/api-extractor-model@7.33.8(@types/node@24.12.2)':
-    dependencies:
-      '@microsoft/tsdoc': 0.16.0
-      '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.23.1(@types/node@24.12.2)
-    transitivePeerDependencies:
-      - '@types/node'
-
-  '@microsoft/api-extractor@7.58.9(@types/node@24.12.2)':
-    dependencies:
-      '@microsoft/api-extractor-model': 7.33.8(@types/node@24.12.2)
-      '@microsoft/tsdoc': 0.16.0
-      '@microsoft/tsdoc-config': 0.18.1
-      '@rushstack/node-core-library': 5.23.1(@types/node@24.12.2)
-      '@rushstack/rig-package': 0.7.3
-      '@rushstack/terminal': 0.24.0(@types/node@24.12.2)
-      '@rushstack/ts-command-line': 5.3.10(@types/node@24.12.2)
-      diff: 8.0.4
-      minimatch: 10.2.3
-      resolve: 1.22.11
-      semver: 7.7.4
-      source-map: 0.6.1
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - '@types/node'
-
-  '@microsoft/tsdoc-config@0.18.1':
-    dependencies:
-      '@microsoft/tsdoc': 0.16.0
-      ajv: 8.18.0
-      jju: 1.4.0
-      resolve: 1.22.11
-
-  '@microsoft/tsdoc@0.16.0': {}
 
   '@mixpanel/rrdom@2.0.0-alpha.18.4':
     dependencies:
@@ -15460,45 +15334,6 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rushstack/node-core-library@5.23.1(@types/node@24.12.2)':
-    dependencies:
-      ajv: 8.18.0
-      ajv-draft-04: 1.0.0(ajv@8.18.0)
-      ajv-formats: 3.0.1(ajv@8.18.0)
-      fs-extra: 11.3.4
-      import-lazy: 4.0.0
-      jju: 1.4.0
-      resolve: 1.22.11
-      semver: 7.7.4
-    optionalDependencies:
-      '@types/node': 24.12.2
-
-  '@rushstack/problem-matcher@0.2.1(@types/node@24.12.2)':
-    optionalDependencies:
-      '@types/node': 24.12.2
-
-  '@rushstack/rig-package@0.7.3':
-    dependencies:
-      jju: 1.4.0
-      resolve: 1.22.11
-
-  '@rushstack/terminal@0.24.0(@types/node@24.12.2)':
-    dependencies:
-      '@rushstack/node-core-library': 5.23.1(@types/node@24.12.2)
-      '@rushstack/problem-matcher': 0.2.1(@types/node@24.12.2)
-      supports-color: 8.1.1
-    optionalDependencies:
-      '@types/node': 24.12.2
-
-  '@rushstack/ts-command-line@5.3.10(@types/node@24.12.2)':
-    dependencies:
-      '@rushstack/terminal': 0.24.0(@types/node@24.12.2)
-      '@types/argparse': 1.0.38
-      argparse: 1.0.10
-      string-argv: 0.3.2
-    transitivePeerDependencies:
-      - '@types/node'
-
   '@sec-ant/readable-stream@0.4.1': {}
 
   '@sindresorhus/is@8.1.0': {}
@@ -15751,8 +15586,6 @@ snapshots:
       tslib: 2.8.1
 
   '@types/abstract-leveldown@7.2.5': {}
-
-  '@types/argparse@1.0.38': {}
 
   '@types/aria-query@5.0.4': {}
 
@@ -16558,10 +16391,6 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  ajv-draft-04@1.0.0(ajv@8.18.0):
-    optionalDependencies:
-      ajv: 8.18.0
-
   ajv-formats@2.1.1(ajv@8.18.0):
     optionalDependencies:
       ajv: 8.18.0
@@ -16569,6 +16398,7 @@ snapshots:
   ajv-formats@3.0.1(ajv@8.18.0):
     optionalDependencies:
       ajv: 8.18.0
+    optional: true
 
   ajv-keywords@3.5.2(ajv@6.14.0):
     dependencies:
@@ -16699,10 +16529,6 @@ snapshots:
     dependencies:
       delegates: 1.0.0
       readable-stream: 2.3.8
-
-  argparse@1.0.10:
-    dependencies:
-      sprintf-js: 1.0.3
 
   argparse@2.0.1: {}
 
@@ -17543,8 +17369,6 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  diff@8.0.4: {}
-
   dir-compare@3.3.0:
     dependencies:
       buffer-equal: 1.0.1
@@ -17695,7 +17519,7 @@ snapshots:
 
   electron-extension-installer@2.0.1(electron@45.3.0):
     dependencies:
-      electron: 45.3.0
+      electron: 45.3.0(supports-color@10.2.2)
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -17735,10 +17559,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@45.3.0:
+  electron@45.3.0(supports-color@10.2.2):
     dependencies:
       '@electron-internal/extract-zip': 1.0.4
-      '@electron/get': 5.0.0
+      '@electron/get': 5.0.0(supports-color@10.2.2)
       '@types/node': 24.12.2
     transitivePeerDependencies:
       - supports-color
@@ -18298,12 +18122,6 @@ snapshots:
       jsonfile: 6.2.0
       universalify: 2.0.1
 
-  fs-extra@11.3.4:
-    dependencies:
-      graceful-fs: 4.2.11
-      jsonfile: 6.2.0
-      universalify: 2.0.1
-
   fs-extra@8.1.0:
     dependencies:
       graceful-fs: 4.2.11
@@ -18622,8 +18440,6 @@ snapshots:
       parent-module: 1.0.1
       resolve-from: 4.0.0
 
-  import-lazy@4.0.0: {}
-
   import-local@3.2.0:
     dependencies:
       pkg-dir: 4.2.0
@@ -18809,8 +18625,6 @@ snapshots:
       supports-color: 8.1.1
 
   jiti@2.7.0: {}
-
-  jju@1.4.0: {}
 
   js-levenshtein@1.1.6: {}
 
@@ -19255,10 +19069,6 @@ snapshots:
   mimic-response@4.0.0: {}
 
   min-indent@1.0.1: {}
-
-  minimatch@10.2.3:
-    dependencies:
-      brace-expansion: 5.0.6
 
   minimatch@10.2.5:
     dependencies:
@@ -20767,8 +20577,6 @@ snapshots:
 
   space-separated-tokens@1.1.5: {}
 
-  sprintf-js@1.0.3: {}
-
   sshpk@1.18.0:
     dependencies:
       asn1: 0.2.6
@@ -20868,7 +20676,7 @@ snapshots:
     dependencies:
       inline-style-parser: 0.1.1
 
-  sumchecker@3.0.1:
+  sumchecker@3.0.1(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:

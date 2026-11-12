@@ -33,15 +33,17 @@
     "docs"
   ],
   "scripts": {
-    "typecheck": "pnpm exec tsc -p tsconfig.lib.json",
-    "api:report": "pnpm exec api-extractor run --local"
+    "typecheck": "pnpm exec tsc -p tsconfig.lib.json"
   },
   "nx": {
     "targets": {
       "build": {
         "executor": "nx:noop",
         "dependsOn": [
-          "api:report"
+          {
+            "target": "api:dts",
+            "projects": "@vortex/renderer"
+          }
         ],
         "cache": false,
         "outputs": [
@@ -59,29 +61,10 @@
           "{projectRoot}/tsconfig.lib.json"
         ],
         "outputs": []
-      },
-      "api:report": {
-        "dependsOn": [
-          {
-            "target": "api:dts",
-            "projects": "@vortex/renderer"
-          }
-        ],
-        "cache": true,
-        "inputs": [
-          "default",
-          "{projectRoot}/api-extractor.json",
-          "{projectRoot}/lib/api.d.ts"
-        ],
-        "outputs": [
-          "{workspaceRoot}/etc/vortex.api.md",
-          "{projectRoot}/lib/tsdoc-metadata.json"
-        ]
       }
     }
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "catalog:",
     "@nexusmods/nexus-api": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
