@@ -44,6 +44,7 @@ import {
   tierZeroCandidateId,
 } from "../util/detected_games/listableDetectedIds";
 import { locallyDetectedGames } from "../util/detected_games/locallyDetectedGames";
+import { byRecentlyUsed } from "../util/recentlyUsed";
 
 /**
  * A tile on the page. One for a game nothing is registered for carries the extension the
@@ -182,16 +183,6 @@ const GamePicker = ({
   const applyGameFilter = (game: IGameStored): boolean =>
     !currentFilterValue || game.name?.toLowerCase().includes(currentFilterValue.toLowerCase());
 
-  const lastUsed = (game: IGameStored): number =>
-    Math.max(
-      ...Object.values(profiles)
-        .filter((prof) => prof.gameId === game.id)
-        .map((prof) => prof.lastActivated),
-    );
-
-  const byRecentlyUsed = (lhs: IGameStored, rhs: IGameStored): number =>
-    lastUsed(rhs) - lastUsed(lhs);
-
   const lookupName = (input: string): string => {
     if (nameLookupRef.current[input] === undefined) {
       const exactMatch = nexusGames.find((i) => i.name === input);
@@ -226,7 +217,7 @@ const GamePicker = ({
 
   const sortBy = (sortMode: string) =>
     ({
-      recentlyused: byRecentlyUsed,
+      recentlyused: byRecentlyUsed(profiles),
       recent: byRecent,
       popular: byPopular,
     })[sortMode] ?? byGameName;
