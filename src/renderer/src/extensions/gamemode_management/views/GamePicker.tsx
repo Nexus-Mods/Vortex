@@ -37,6 +37,7 @@ import { catalogExtensionGameIds } from "../selectors";
 import type { IDetectedGame } from "../types/IDetectedGame";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
+import { byRecentlyUsed } from "../util/byRecentlyUsed";
 import { detectedInternalId } from "../util/detected_games/detectedInternalId";
 import { detectedStore } from "../util/detected_games/detectedStore";
 import {
@@ -182,16 +183,6 @@ const GamePicker = ({
   const applyGameFilter = (game: IGameStored): boolean =>
     !currentFilterValue || game.name?.toLowerCase().includes(currentFilterValue.toLowerCase());
 
-  const lastUsed = (game: IGameStored): number =>
-    Math.max(
-      ...Object.values(profiles)
-        .filter((prof) => prof.gameId === game.id)
-        .map((prof) => prof.lastActivated),
-    );
-
-  const byRecentlyUsed = (lhs: IGameStored, rhs: IGameStored): number =>
-    lastUsed(rhs) - lastUsed(lhs);
-
   const lookupName = (input: string): string => {
     if (nameLookupRef.current[input] === undefined) {
       const exactMatch = nexusGames.find((i) => i.name === input);
@@ -226,7 +217,7 @@ const GamePicker = ({
 
   const sortBy = (sortMode: string) =>
     ({
-      recentlyused: byRecentlyUsed,
+      recentlyused: byRecentlyUsed(profiles),
       recent: byRecent,
       popular: byPopular,
     })[sortMode] ?? byGameName;
