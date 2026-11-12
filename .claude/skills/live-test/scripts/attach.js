@@ -107,6 +107,9 @@
   };
 
   const baselineFile = path.join(os.tmpdir(), "vortex-live-test", "baseline.json");
+  // What baseline() recorded, or undefined when it was never called.
+  const readBaseline = () =>
+    fs.existsSync(baselineFile) ? JSON.parse(fs.readFileSync(baselineFile, "utf8")) : undefined;
   const inventory = () => {
     const s = store.getState();
     return {
@@ -311,8 +314,8 @@
      * A mod's state, a setting, or a game's path can differ and not show here.
      */
     changes() {
-      if (!fs.existsSync(baselineFile)) throw new Error("no baseline: call baseline() first");
-      const before = JSON.parse(fs.readFileSync(baselineFile, "utf8"));
+      const before = readBaseline();
+      if (before === undefined) throw new Error("no baseline: call baseline() first");
       const now = inventory();
       const s = store.getState();
       const label = {
@@ -353,12 +356,12 @@
     },
 
     /**
-     * Drops the fake game's location, removes every download of the game (the ones from before
-     * the test too: this is a dev profile, they can be downloaded again), deletes the fake folder,
-     * and removes the game's staging and downloads folders from the profile once they are empty.
+     * Drops the fake game's location, removes the game's downloads that were added since
+     * `baseline()`, deletes the fake folder, and removes the game's staging and downloads folders
+     * from the profile once they are empty. Downloads that were there at the baseline are the
+     * user's and stay; without a baseline there is no telling them apart, so all of them stay.
      * Refuses a game that has no location or whose location isn't a fake folder, so it can't be
-     * run twice. Read the result: anything not "removed"
-     * or "absent" is left for you.
+     * run twice. Read the result: anything not "removed" or "absent" is left for you.
      */
     async forgetFakeGame(gameId) {
       const s = store.getState();
@@ -375,9 +378,12 @@
         throw new Error(`${gameId} is at ${gamePath}, which is not a fake folder: left alone`);
       }
       const folders = profileFolders(gameId);
-      const downloads = Object.entries(s.persistent.downloads.files ?? {})
+      const ofGame = Object.entries(s.persistent.downloads.files ?? {})
         .filter(([, d]) => d.game?.[0] === gameId)
         .map(([id]) => id);
+      const before = readBaseline()?.downloads;
+      const downloads = before === undefined ? [] : ofGame.filter((id) => !before.includes(id));
+      const downloadsKept = ofGame.filter((id) => !downloads.includes(id));
       for (const id of downloads) {
         await new Promise((resolve) => {
           const timer = setTimeout(resolve, 15000);
@@ -398,6 +404,10 @@
         removed: true,
         downloadsRemoved: downloads.length - downloadsLeft.length,
         downloadsLeft,
+        downloadsKept:
+          before === undefined && downloadsKept.length > 0
+            ? `${downloadsKept.length}: no baseline() was taken, so none were removed`
+            : `${downloadsKept.length} from before the baseline`,
         stagingFolder: `${folders.staging}: ${removeIfEmpty(folders.staging)}`,
         downloadsFolder: `${folders.downloads}: ${removeIfEmpty(folders.downloads)}`,
       };

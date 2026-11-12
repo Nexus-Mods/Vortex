@@ -185,8 +185,18 @@ committed or not, and the files it adds that git doesn't track yet. All of them 
 to the base, not only the ones under `src/renderer`: a base run with half the change still in
 place proves nothing.
 
+**Find the base branch first.** It is the branch the PR targets, which isn't always `master`: a
+fix for a release goes to its release branch (`release/v2.11`), and comparing that against
+`master` tests the wrong "before". Ask GitHub when the branch has a PR. When it has none yet, ask
+the user which branch it will target; don't assume.
+
 ```sh
-git merge-base origin/master HEAD                  # <base>
+gh pr view --json baseRefName --jq .baseRefName    # <base branch>; fails when there is no PR yet
+git fetch origin <base branch>
+```
+
+```sh
+git merge-base origin/<base branch> HEAD           # <base>
 git diff --no-renames --name-only <base> HEAD      # <committed>: files the commits changed
 git status --short                                 # <uncommitted>: modified and untracked files of the change
 git stash push --include-untracked -m live-test-<branch> -- <uncommitted>   # skip when there are none

@@ -125,18 +125,61 @@ one line per file saying what it shows. The before/after table is written once, 
 Testing section below; don't repeat it in the README.
 
 GitHub only takes images and video in a PR through the web editor, so the user attaches them:
-drag the files into the PR description, under the Testing section. Write that section for them
-with a placeholder line per file, in the order a reviewer should look. It is also what you show
-the user in your report:
+select a placeholder line in the PR description and paste or drop the file over it. Write the
+Testing section for them as a template that is ready to paste into, in the order a reviewer
+should look. It is also what you show the user in your report, in a fenced block so they can
+copy it as it is:
 
 ```markdown
 ### Testing
 
 Tested live in a dev build:
 
-| Scenario                            | master                          | This PR                   |
+| Scenario                            | release/v2.11                   | This PR                   |
 | ----------------------------------- | ------------------------------- | ------------------------- |
 | Re-add a collection already on disk | "File already downloaded" error | Installs from the archive |
 
-<!-- attach: re-add-collection-before.png, re-add-collection-after-2-installed.png, re-add-collection-after.mp4 -->
+---
+
+<details>
+  <summary>Re-add Collection Before</summary>
+
+<!-- paste: re-add-collection-before.png -->
+
+<!-- paste: re-add-collection-before.mp4 -->
+
+</details>
+<details>
+  <summary>Re-add Collection After</summary>
+
+Added
+
+<!-- paste: re-add-collection-after-1-added.png -->
+
+Installed
+
+<!-- paste: re-add-collection-after-2-installed.png -->
+
+<!-- paste: re-add-collection-after.mp4 -->
+
+</details>
+
+---
 ```
+
+The rules the template follows:
+
+- The table's middle column is headed with the base branch the run compared against (see step 7
+  of the skill), not always `master`.
+- One Before and one After `<details>` block per scenario, in that order, with a `---` between
+  scenarios. The summary is the scenario's name in title case plus "Before" or "After".
+- One `<!-- paste: <file> -->` line per file in the evidence folder, named exactly as the file
+  is, so the user can match them without opening anything. Every file gets a line, and no line
+  names a file that isn't there.
+- When a block holds more than one screenshot, put a one-word caption on its own line above
+  each (the step's name from the file name: "Added", "Installed").
+- Keep the blank lines around every placeholder and after `<summary>`. GitHub only renders a
+  pasted video link as a player, and Markdown inside `<details>` at all, when it is set off by
+  blank lines.
+- Nothing else goes inside the blocks. GitHub strips scripts and styles from a PR description,
+  so a before/after slider or any other interactive comparison can't work there.

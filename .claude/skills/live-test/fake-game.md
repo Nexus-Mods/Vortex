@@ -108,17 +108,20 @@ game, so the folder has to outlive that step.
     window.__vortexLive.waitFor(
         (s) => !Object.values(s.persistent.profiles).some((p) => p.gameId === "untitledgoosegame"),
     );
-() => window.__vortexLive.forgetFakeGame("untitledgoosegame"); // location, downloads, folders
+() => window.__vortexLive.forgetFakeGame("untitledgoosegame"); // location, the test's downloads, folders
 ```
 
-`forgetFakeGame` removes every download of the game, the ones from before the test included: a
-dev profile's downloads can be fetched again. It refuses a game whose folder it didn't create
-(the folder has no `.vortex-live-test` file), and a game with no location at all (a mistyped id, or a second call), so it never removes
-downloads without a fake game to go with them. It also removes the game's staging folder (`<profile>/<gameId>/`) and downloads
-folder (`<profile>/downloads/<gameId>/`) from the dev profile, once nothing but empty folders is
-left in them. Read what it returns: `stagingFolder` and `downloadsFolder` say "removed" or
-"absent" when there is nothing left to do, and `downloadsLeft` lists downloads Vortex didn't
-remove in time. Anything else is yours to look at and delete by hand.
+`forgetFakeGame` removes the game's downloads that were added since `baseline()`. Downloads the
+profile already had at the baseline are the user's and stay, and when no baseline was taken it
+removes none, because it can't tell them apart. It refuses a game whose folder it didn't create
+(the folder has no `.vortex-live-test` file), and a game with no location at all (a mistyped id,
+or a second call), so it never removes downloads without a fake game to go with them. It also
+removes the game's staging folder (`<profile>/<gameId>/`) and downloads folder
+(`<profile>/downloads/<gameId>/`) from the dev profile, once nothing but empty folders is left
+in them. Read what it returns: `stagingFolder` and `downloadsFolder` say "removed" or "absent"
+when there is nothing left to do, `downloadsKept` counts the downloads it left alone (the
+downloads folder is then "kept: still has files", which is right), and `downloadsLeft` lists
+downloads Vortex didn't remove in time. Anything else is yours to look at and delete by hand.
 
 Three things that go wrong here:
 
