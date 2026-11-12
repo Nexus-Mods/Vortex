@@ -78,9 +78,18 @@ const domain = convertId(gameData(state), { vortexGameId }, "gameDomain");
 A query is `{ vortexGameId }`, `{ gameDomain }` or `{ gameId }`, and `convertId` targets
 `"vortexGameId"`, `"gameDomain"` or `"gameId"`.
 
+The Nexus Mods game a game is for is stored on it as `game.nexus` (`{ gameId, gameDomain }`),
+and on its installed extension as `extension.nexus` (`app.extensions`). The extension
+catalog fills the extension's, including for extensions installed before it existed, and
+`GameModeManager` copies it to the game when it stores the game, and again when the
+catalog or the Nexus Mods games list arrives late. The queries read `nexus`; a game without
+one (a bundled game that declares no `details.nexusPageId`, an extension with no Nexus Mods
+link) has no domain or `GameId`.
+
 Do:
 
 - Treat `undefined` as "not found". There is no fallback.
+- Read a game's domain or `GameId` with `convertId`, not from `details.nexusPageId`.
 - Pass `discovered` when games can share a domain (Skyrim SE and VR), so the installed
   one is preferred.
 - Add a missing join to `queries.ts`.
