@@ -215,6 +215,21 @@ describe("app_closed on unload", () => {
     );
   });
 
+  it("reads the restart flag and duration when the window unloads, not at startup", () => {
+    vi.spyOn(performance, "now").mockReturnValue(1_000);
+    const handler = startAndGetUnloadHandler();
+    relaunching.value = true;
+    vi.spyOn(performance, "now").mockReturnValue(125_400.6);
+
+    handler();
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_closed",
+      { is_relaunch: true, session_duration_ms: 125_401 },
+      expect.anything(),
+    );
+  });
+
   it("keeps the unload handler from throwing", () => {
     const handler = startAndGetUnloadHandler();
     vi.spyOn(tracker.current, "trackEventOnExit").mockImplementation(() => {
