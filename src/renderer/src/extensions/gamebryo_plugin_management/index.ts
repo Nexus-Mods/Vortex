@@ -259,6 +259,7 @@ function register(
       onRefreshPlugins: () => {
         void pluginSync.refresh();
       },
+      rescanPlugins: () => pluginSync.refresh(),
       onSetPluginGhost: makeSetPluginGhost(context.api),
       onSetPluginLight: setPluginLight,
     }),

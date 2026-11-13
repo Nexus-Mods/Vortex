@@ -6,14 +6,17 @@ import * as fs from "../../../util/fs";
 import { pluginExtensions } from "./gameSupport";
 import { unghost } from "./ghost";
 
-async function isFile(fileName: string): Promise<boolean> {
+async function isFile(filePath: string): Promise<boolean> {
   try {
-    return !(await fs.isDirectoryAsync(fileName));
+    return !(await fs.isDirectoryAsync(filePath));
   } catch (err) {
     const code = getErrorCode(err);
-    if (code === "ENOENT" || code === "UNKNOWN") {
-      // Vortex's own 'vortex.deployment.json.XXXXXX.tmp' files can vanish between readdir and
-      // stat; a missing path counts as a file since a .tmp name fails the plugin check anyway
+    if (code === "ENOENT") {
+      // gone between the directory listing and now, so there is nothing left to list
+      return false;
+    }
+    if (code === "UNKNOWN") {
+      // it is there, Windows just cannot tell what it is; the plugin name already says file
       return true;
     }
     throw err;
@@ -31,11 +34,10 @@ export async function isPlugin(
   fileName: string,
   gameMode: string,
 ): Promise<boolean> {
-  const plainName = unghost(fileName);
-  if (!isPluginName(plainName, gameMode)) {
+  if (!isPluginName(unghost(fileName), gameMode)) {
     return false;
   }
-  return isFile(path.join(filePath, plainName));
+  return isFile(path.join(filePath, fileName));
 }
 
 /** The plugin files among fileNames (checked concurrently), in their original order. */
@@ -50,4 +52,38 @@ export async function selectPluginFiles(
     ),
   );
   return kept.filter((fileName): fileName is string => fileName !== undefined);
+}
+
+/** The plugins of a mod's staging folder, by where their file is. */
+export interface IStagedPlugins {
+  /** plugin files that sit in the staging folder */
+  staged: string[];
+  /**
+   * plugins the deployment method moved into the game, by their deployed name; the staging folder
+   * only holds a differently named placeholder for each
+   */
+  movedOut: string[];
+}
+
+/**
+ * Sorts a staging folder's entries into the plugins it holds and the plugins it only holds a
+ * placeholder for. deployedName is the deployment method's getDeployedPath.
+ */
+export async function selectStagedPlugins(
+  dir: string,
+  fileNames: string[],
+  gameMode: string,
+  deployedName: (fileName: string) => string,
+): Promise<IStagedPlugins> {
+  const candidates: string[] = [];
+  const movedOut: string[] = [];
+  for (const fileName of fileNames) {
+    const deployed = deployedName(fileName);
+    if (deployed === fileName) {
+      candidates.push(fileName);
+    } else if (isPluginName(unghost(deployed), gameMode)) {
+      movedOut.push(deployed);
+    }
+  }
+  return { staged: await selectPluginFiles(dir, candidates, gameMode), movedOut };
 }
