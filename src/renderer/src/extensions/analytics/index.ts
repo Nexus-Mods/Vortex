@@ -103,7 +103,7 @@ function init(context: IExtensionContext): boolean {
         AnalyticsMixpanel.trackEventOnExit(
           new AppClosedEvent({
             is_relaunch: isRelaunching(),
-            session_duration_seconds: Math.round(performance.now() / 1000),
+            session_duration_ms: Math.round(performance.now()),
           }),
         );
       } catch (err) {

@@ -220,18 +220,18 @@ describe("AppUIModeChangedEvent", () => {
 });
 
 describe("AppClosedEvent", () => {
-  it("carries is_relaunch and session_duration_seconds and nothing else", () => {
-    const event = new AppClosedEvent({ is_relaunch: true, session_duration_seconds: 125 });
+  it("carries is_relaunch and session_duration_ms and nothing else", () => {
+    const event = new AppClosedEvent({ is_relaunch: true, session_duration_ms: 125_000 });
 
     expect(event.eventName).toBe("app_closed");
-    expect(event.properties).toEqual({ is_relaunch: true, session_duration_seconds: 125 });
+    expect(event.properties).toEqual({ is_relaunch: true, session_duration_ms: 125_000 });
   });
 });
 
 describe("MixpanelAnalytics.trackEventOnExit", () => {
   let tracker: MixpanelAnalytics;
   let consent: boolean | undefined;
-  const closed = new AppClosedEvent({ is_relaunch: false, session_duration_seconds: 60 });
+  const closed = new AppClosedEvent({ is_relaunch: false, session_duration_ms: 60_000 });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -246,7 +246,7 @@ describe("MixpanelAnalytics.trackEventOnExit", () => {
 
     expect(mp.track).toHaveBeenCalledWith(
       "app_closed",
-      { is_relaunch: false, session_duration_seconds: 60 },
+      { is_relaunch: false, session_duration_ms: 60_000 },
       { transport: "sendBeacon", send_immediately: true },
     );
   });

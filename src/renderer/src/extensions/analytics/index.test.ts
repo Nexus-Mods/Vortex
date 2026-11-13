@@ -179,7 +179,7 @@ describe("app_closed on unload", () => {
     vi.restoreAllMocks();
     tracker.current = new MixpanelAnalytics();
     relaunching.value = false;
-    vi.spyOn(performance, "now").mockReturnValue(125_400);
+    vi.spyOn(performance, "now").mockReturnValue(125_400.6);
   });
 
   // Starts analytics through the extension and returns the beforeunload handler it
@@ -198,7 +198,7 @@ describe("app_closed on unload", () => {
 
     expect(mp.track).toHaveBeenCalledWith(
       "app_closed",
-      { is_relaunch: false, session_duration_seconds: 125 },
+      { is_relaunch: false, session_duration_ms: 125_401 },
       { transport: "sendBeacon", send_immediately: true },
     );
   });

@@ -76,7 +76,7 @@ export class AppLaunchedEvent implements MixpanelEvent {
 
 export interface AppClosedProps {
   is_relaunch: boolean;
-  session_duration_seconds: number;
+  session_duration_ms: number;
 }
 
 /**
@@ -86,7 +86,7 @@ export interface AppClosedProps {
  * logging out. See docs/analytics.md, "Events at quit".
  * @param is_relaunch True when the close is an in-app restart (Settings, extension
  *   changes and so on). An auto-update install restarts from main and reports false.
- * @param session_duration_seconds How long the window was open, in whole seconds
+ * @param session_duration_ms How long the window was open, in whole milliseconds
  */
 export class AppClosedEvent implements MixpanelEvent {
   readonly eventName = "app_closed";
