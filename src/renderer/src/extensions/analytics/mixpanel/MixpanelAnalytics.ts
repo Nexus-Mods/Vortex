@@ -269,6 +269,32 @@ export class MixpanelAnalytics {
       properties: event.properties,
     });
   }
+
+  /**
+   * Track an event while the window is unloading. trackEvent's batch queue writes to
+   * localStorage behind a timer-driven lock that never runs once the page is going, so
+   * the event would be lost. This sends by beacon instead, which the browser finishes
+   * after the page has gone. Nothing is queued: with no consent or no user, it's dropped.
+   */
+  public trackEventOnExit(event: MixpanelEvent) {
+    if (!this.hasConsent() || !this.isUserSet()) {
+      analyticsServiceLog("mixpanel", "debug", "Exit event dropped (analytics not running)", {
+        eventName: event.eventName,
+      });
+      return;
+    }
+
+    mixpanel.track(event.eventName, event.properties, {
+      transport: "sendBeacon",
+      send_immediately: true,
+    });
+
+    analyticsServiceLog("mixpanel", "debug", "Event tracked", {
+      eventName: event.eventName,
+      game_id: this.registeredGameId(),
+      properties: event.properties,
+    });
+  }
 }
 
 const analyticsMixpanel = new MixpanelAnalytics();

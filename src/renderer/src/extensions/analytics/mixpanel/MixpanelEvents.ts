@@ -74,6 +74,27 @@ export class AppLaunchedEvent implements MixpanelEvent {
   }
 }
 
+export interface AppClosedProps {
+  is_relaunch: boolean;
+  session_duration_seconds: number;
+}
+
+/**
+ * Sent when Vortex shuts down cleanly, the pair to app_launched. It goes out from the
+ * renderer's beforeunload, so a crash or a killed process sends nothing: a launch with
+ * no close is a session that didn't end cleanly.
+ * @param is_relaunch True when the close is an in-app restart (Settings, extension
+ *   changes and so on). An auto-update install restarts from main and reports false.
+ * @param session_duration_seconds How long the window was open, in whole seconds
+ */
+export class AppClosedEvent implements MixpanelEvent {
+  readonly eventName = "app_closed";
+  readonly properties: Record<string, unknown>;
+  constructor(props: AppClosedProps) {
+    this.properties = { ...props };
+  }
+}
+
 /**
  * AUTO-UPDATER EVENTS
  *
