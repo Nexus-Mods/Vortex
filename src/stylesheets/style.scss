@@ -29,6 +29,29 @@
     }
 }
 
+// An extension's button in a new table's cell, such as the Mods table's Endorsed and Tracking:
+// a hover darkens it, and a click leaves it in the cell's colour rather than orange, so it goes
+// straight to its selected icon. Unlayered, as the rules above are, which a layer can't beat.
+.nxm-table-cell .btn-embed:not([disabled]) {
+    &:hover,
+    &:active,
+    &:focus {
+        color: inherit;
+    }
+    &:hover {
+        color: var(--color-neutral-weak);
+    }
+}
+
+.nxm-table-cell .icon-button:not([disabled]) {
+    cursor: pointer;
+
+    // It's dragged as well as clicked.
+    &.btn-dependency:active {
+        cursor: default;
+    }
+}
+
 // button inside a (input- or list-) line  pulled to the right
 .btn-line-right {
     position: absolute;

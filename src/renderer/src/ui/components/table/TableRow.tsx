@@ -1,5 +1,7 @@
 import React, { type HTMLAttributes, type MouseEvent, type ReactNode, useState } from "react";
 
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 import type { ITableColumn, ITableGroup } from "./Table.types";
 import { TableCell } from "./TableCell";
 import { type ITableCheckboxProps, TableCheckbox } from "./TableCheckbox";
@@ -7,6 +9,8 @@ import { TableRowEngagedContext } from "./TableRow.context";
 import type { ITableRowClick } from "./useTableSelection.hook";
 
 interface ITableRowProps<T, G extends ITableGroup<T>> {
+  /** Classes for the row, beside its own. */
+  className?: string;
   /** The table's columns, each rendering one of the row's cells. */
   columns: Array<ITableColumn<T, G>>;
   /** Its place among the table's rows, under the head. */
@@ -66,6 +70,7 @@ const EngagingRow = ({
  * it's been pointed at or focused, through `useTableRowEngaged`.
  */
 export const TableRow = <T, G extends ITableGroup<T>>({
+  className,
   columns,
   index,
   level,
@@ -80,7 +85,7 @@ export const TableRow = <T, G extends ITableGroup<T>>({
     aria-level={level}
     aria-rowindex={rowIndex}
     aria-selected={checkbox?.checked}
-    className="nxm-table-row"
+    className={joinClasses(["nxm-table-row", className])}
     data-index={index}
     selected={!!checkbox?.checked}
     role="row"

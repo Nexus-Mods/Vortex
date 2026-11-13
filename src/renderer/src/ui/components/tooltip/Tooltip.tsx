@@ -29,6 +29,7 @@ import React, {
   type ReactElement,
   type ReactNode,
   type Ref,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -58,6 +59,11 @@ export type ITooltipPlacement = Placement;
 export type ITooltipDelay = number | { close?: number; open?: number };
 
 interface ITooltipBaseProps {
+  /**
+   * What it points at, if not its whole trigger: an element inside it, such as the one whose
+   * title it shows. Hover and focus still open it from the trigger. `null` for the trigger.
+   */
+  anchor?: Element | null;
   /** The trigger. Must forward a ref to a DOM node — wrap bare text in a `span`. */
   children: ReactElement;
   /** Classes for the tooltip's box, such as one that restyles it. */
@@ -100,6 +106,7 @@ export type ITooltipProps = ITooltipBaseProps &
  * renders into the overlay host so nothing clips it.
  */
 export const Tooltip = ({
+  anchor,
   children,
   className,
   closeOnPress = true,
@@ -192,6 +199,14 @@ export const Tooltip = ({
     onOpenChange: handleOpenChange,
     whileElementsMounted: autoUpdate,
   });
+
+  // Only where it's placed moves to the anchor; the trigger keeps the hover and focus. A null
+  // anchor goes back to the trigger, as null alone would leave nothing to place it by.
+  useLayoutEffect(() => {
+    if (anchor !== undefined) {
+      refs.setPositionReference(anchor ?? referenceRef.current);
+    }
+  }, [anchor, refs]);
 
   // Inside a TooltipDelayGroup the group owns the timing once something is open,
   // so moving along a row swaps instantly. Standalone, currentId stays null.

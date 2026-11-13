@@ -48,7 +48,7 @@ describe("useModsTableColumns", () => {
     const columns = [
       column("status", { sticky: "end" }),
       column("late", { isToggleable: true, position: 110 }),
-      column("name", { position: 200 }),
+      column("name"),
       column("unplaced", { isToggleable: true }),
       column("early", { isToggleable: true, position: 50 }),
       column("tied", { isToggleable: true, position: 100 }),
@@ -70,6 +70,21 @@ describe("useModsTableColumns", () => {
       "tied",
       "late",
     ]);
+  });
+
+  // Such as an extension's column the user can't toggle, which the legacy table places too.
+  it("places a fixed column that has a position among the toggleable ones, always shown", () => {
+    const columns = [
+      column("name"),
+      column("late", { isToggleable: true, position: 110 }),
+      column("compatibility", { position: 100 }),
+      column("early", { isToggleable: true, position: 50 }),
+    ];
+
+    const result = renderColumns(columns, ["late"]);
+
+    expect(visibleIds(result.current.visibleColumns)).toEqual(["name", "compatibility", "late"]);
+    expect(result.current.toggles.map(({ id }) => id)).toEqual(["early", "late"]);
   });
 
   it("offers the columns that can group, hidden or not, in the table's order", () => {

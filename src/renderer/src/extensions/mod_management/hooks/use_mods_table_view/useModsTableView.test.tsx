@@ -19,13 +19,15 @@ import { useModsTableView } from "./useModsTableView.hook";
 
 // --- Helpers ---
 
-const renderView = () => {
+const NO_DEFAULTS: string[] = [];
+
+const renderView = (defaultShown: readonly string[] = NO_DEFAULTS) => {
   const store = makeModsTableStore();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
 
-  return renderHook(() => useModsTableView({}), { wrapper }).result;
+  return renderHook(() => useModsTableView({}, defaultShown), { wrapper }).result;
 };
 
 /** The properties of each analytics event sent with this name, in order. */
@@ -42,6 +44,44 @@ const sent = (eventName: string) =>
 describe("useModsTableView", () => {
   beforeEach(() => {
     emit.mockReset();
+  });
+
+  // Extensions' columns, which say for themselves whether they start shown.
+  describe("columns shown by default", () => {
+    const EXTENSION_COLUMNS = ["endorsed"];
+
+    it("shows them in every view, the user's own too, and the view's own choice of the rest", () => {
+      const result = renderView(EXTENSION_COLUMNS);
+
+      expect(result.current.isColumnShown("endorsed")).toBe(true);
+      expect(result.current.isColumnShown("author")).toBe(false);
+
+      act(() => result.current.select("status"));
+      expect(result.current.isColumnShown("endorsed")).toBe(true);
+
+      act(() => result.current.addView("Mine"));
+      expect(result.current.isColumnShown("endorsed")).toBe(true);
+    });
+
+    it("hides one the user hides, offering a reset that shows it again", () => {
+      const result = renderView(EXTENSION_COLUMNS);
+
+      act(() => result.current.setColumnVisible("endorsed", false));
+      expect(result.current.isColumnShown("endorsed")).toBe(false);
+      expect(result.current.canReset).toBe(true);
+
+      act(() => result.current.reset());
+      expect(result.current.isColumnShown("endorsed")).toBe(true);
+      expect(result.current.canReset).toBe(false);
+    });
+
+    it("doesn't offer a reset for one the user shows that was already shown", () => {
+      const result = renderView(EXTENSION_COLUMNS);
+
+      act(() => result.current.setColumnVisible("endorsed", true));
+
+      expect(result.current.canReset).toBe(false);
+    });
   });
 
   describe("column widths", () => {

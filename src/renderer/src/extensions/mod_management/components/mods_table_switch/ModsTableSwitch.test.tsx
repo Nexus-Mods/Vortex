@@ -7,12 +7,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   emit: vi.fn<(channel: string, event?: { eventName: string; properties: object }) => void>(),
   installMods: vi.fn(),
+  registeredColumns: [] as unknown[],
 }));
 
 // The table's analytics send through the api's events; the tests read them off this spy.
 vi.mock("@/contexts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useMainContext: () => ({ api: { events: { emit: mocks.emit } } }),
+}));
+
+// The columns extensions register on the legacy table, which the new one shows too.
+vi.mock("@/ExtensionProvider", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useExtensionObjects: () => mocks.registeredColumns,
 }));
 
 vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOriginal) => ({
@@ -810,6 +817,63 @@ describe("ModsTableSwitch", () => {
 
       await showView("modsTable::views::all");
       expect(headers()).toContain("modsTable::columns::author");
+    });
+
+    describe("an extension's column", () => {
+      afterEach(() => {
+        mocks.registeredColumns = [];
+      });
+
+      it("is shown in its place when it asks to be, unless the table has its own", () => {
+        mocks.registeredColumns = [
+          {
+            id: "endorsed",
+            name: "Endorsed",
+            placement: "table",
+            isToggleable: true,
+            position: 45,
+            calc: () => "Undecided",
+            edit: {},
+          },
+          { id: "category", name: "Category", placement: "table", edit: {} },
+          {
+            id: "tracked",
+            name: "Tracked",
+            placement: "table",
+            isToggleable: true,
+            isDefaultVisible: false,
+            edit: {},
+          },
+        ];
+
+        renderSwitch({ a: mod("a", "Alpha", true) });
+
+        expect(headers()).toEqual([
+          "modsTable::columns::name",
+          "modsTable::columns::version",
+          "Endorsed",
+          "modsTable::columns::installTime",
+          "modsTable::columns::actions",
+        ]);
+        expect(screen.getByRole("gridcell", { name: "Undecided" })).toBeInTheDocument();
+      });
+
+      it("adds its classes to a mod's row, told whether it's shown", () => {
+        mocks.registeredColumns = [
+          {
+            id: "modType",
+            placement: "both",
+            cssClass: (row: IModWithState, shown: boolean) =>
+              `mod-modtype-${row.type}${shown ? "-shown" : ""}`,
+            edit: {},
+          },
+        ];
+
+        renderSwitch({ a: mod("a", "Alpha", true, { type: "dinput" }) });
+
+        const [row] = bodyRows(screen.getByRole("grid"));
+        expect(row).toHaveClass("mod-modtype-dinput");
+      });
     });
 
     it("adds a column chosen from the display options", async () => {
