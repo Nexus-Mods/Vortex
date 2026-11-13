@@ -66,3 +66,18 @@ Check is the model: `src/renderer/src/extensions/health_check/hooks/healthCheckT
 
 The tracker file is where an extension's events are documented: comment each method with
 anything about the event that isn't obvious from its properties.
+
+## Events at quit
+
+The bus and `trackEvent` hand events to mixpanel-browser's batch queue, which writes to
+localStorage behind a lock that waits on a timer. During `beforeunload` that timer never fires, so
+an event tracked there is lost: not sent late, not sent on the next launch. Anything sent at quit
+goes through `AnalyticsMixpanel.trackEventOnExit` instead. It sends by beacon, which the browser
+finishes after the window has gone, and drops the event rather than queueing it when analytics
+isn't running. A beacon gets no response, so a rejected one fails silently.
+
+`app_closed` is the one event sent this way, from the analytics extension's `beforeunload`
+handler. A crash or a killed process sends nothing, so an `app_launched` with no `app_closed`
+is a session that didn't end cleanly. `is_relaunch` is true when the close is an in-app restart
+through `relaunch()` in `src/renderer/src/util/commandLine.ts`; an auto-update install restarts
+from main and reports false.

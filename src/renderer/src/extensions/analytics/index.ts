@@ -4,6 +4,7 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
 import { toUpdateChannel } from "@/types/IState";
+import { isRelaunching } from "@/util/commandLine";
 import { getCPUArch } from "@/util/nativeArch";
 
 import { isHidpiDisplay } from "../../contexts/WindowContext";
@@ -15,7 +16,7 @@ import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
-import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
+import { AppClosedEvent, AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
 import telemetryReducer from "./reducers/telemetry.reducer";
@@ -94,6 +95,22 @@ function init(context: IExtensionContext): boolean {
     // and would otherwise report itself as a switch the user never made.
     context.api.events.on("analytics-track-ui-mode-changed", (isLegacy: boolean) => {
       AnalyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacy }));
+    });
+
+    // app_closed has to go from here: main's window-all-closed fires after the renderer has gone.
+    window.addEventListener("beforeunload", () => {
+      try {
+        AnalyticsMixpanel.trackEventOnExit(
+          new AppClosedEvent({
+            is_relaunch: isRelaunching(),
+            session_duration_seconds: Math.round(performance.now() / 1000),
+          }),
+        );
+      } catch (err) {
+        analyticsLog("warn", "Failed to send app_closed", {
+          error: getErrorMessageOrDefault(err),
+        });
+      }
     });
 
     // Store install version telemetry; the per-game change gates make it cheap on deploys that changed nothing.
