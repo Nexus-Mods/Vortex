@@ -1,5 +1,5 @@
 import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 import { v4 as uuid } from "uuid";
 
 import { setStoreGameVersionCache } from "@/extensions/analytics/actions/telemetry.action";
@@ -208,15 +208,17 @@ export async function emitStoreGameVersions(api: IExtensionApi): Promise<void> {
     Object.values(state.persistent.profiles).map((profile) => profile.gameId),
   );
 
-  const candidates = Object.keys(discovered(state)).filter((gameId) => {
-    if (!managedGameIds.has(gameId)) {
-      return false;
-    }
-    const discovery = discoveryByGame(state, gameId);
-    return (
-      discovery?.path !== undefined && (discovery.store === "steam" || discovery.store === "gog")
-    );
-  });
+  const candidates = Object.keys(discovered(state))
+    .map(VortexGameId)
+    .filter((gameId) => {
+      if (!managedGameIds.has(gameId)) {
+        return false;
+      }
+      const discovery = discoveryByGame(state, gameId);
+      return (
+        discovery?.path !== undefined && (discovery.store === "steam" || discovery.store === "gog")
+      );
+    });
 
   // sequential on purpose
   let chain = Promise.resolve();

@@ -1,4 +1,4 @@
-import { VortexGameId } from "@vortex/shared";
+import type { VortexGameId } from "@vortex/shared";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
 
@@ -13,7 +13,7 @@ export const activeGameId = (state: IState): VortexGameId => {
   const profile = activeProfile(state);
   // a profile without a game id is corrupt; treat it as no active game rather than throw on
   // branding, this selector runs on nearly every render
-  return profile?.gameId ? VortexGameId(profile.gameId) : undefined;
+  return profile?.gameId ? profile.gameId : undefined;
 };
 
 export const gameProfiles = createSelector(

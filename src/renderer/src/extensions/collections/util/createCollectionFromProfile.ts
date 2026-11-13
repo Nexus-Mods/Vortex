@@ -1,4 +1,4 @@
-import { VortexGameId, VortexProfileId } from "@vortex/shared";
+import { VortexProfileId } from "@vortex/shared";
 import * as _ from "lodash";
 import type * as Redux from "redux";
 
@@ -171,7 +171,7 @@ export async function createCollectionFromProfile(
     wantsToUpload = result.action === uploadLabel;
 
     name = result.input["name"];
-    await createCollection(api, VortexGameId(profile.gameId), id, name, rules);
+    await createCollection(api, profile.gameId, id, name, rules);
     await createTweaksFromProfile(api, profile, state.persistent.mods[profile.gameId] ?? {}, id);
 
     const userInfo = state.persistent["nexus"]?.userInfo;

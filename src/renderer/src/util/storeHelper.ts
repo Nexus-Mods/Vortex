@@ -2,6 +2,7 @@
  * Helper functions when working with immutable state (or immutable objects in general)
  */
 
+import { VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
 
@@ -335,7 +336,7 @@ function waitUntil(predicate: () => boolean, interval: number = 100): PromiseBB<
  */
 export function currentGame(store: Redux.Store<any>): PromiseBB<IGameStored> {
   const fallback: IGameStored = {
-    id: "__placeholder",
+    id: VortexGameId("__placeholder"),
     name: "<No game>",
     requiredFiles: [],
     executable: "",

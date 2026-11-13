@@ -1,3 +1,5 @@
+import type { VortexGameId } from "@vortex/shared";
+
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import { batchDispatch } from "../../../../util/util";
 import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
@@ -63,7 +65,7 @@ const pinsVersion = (rule: IModRule): boolean =>
  */
 export function ignorePinnedCollectionRules(
   api: IExtensionApi,
-  gameId: string,
+  gameId: VortexGameId,
   modIds: string[],
 ): void {
   const mods = api.getState().persistent.mods[gameId] ?? {};

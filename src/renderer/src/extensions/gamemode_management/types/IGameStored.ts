@@ -1,4 +1,4 @@
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { GameDomain, GameId, VortexGameId } from "@vortex/shared";
 
 import type { IToolStored } from "./IToolStored";
 
@@ -9,7 +9,7 @@ import type { IToolStored } from "./IToolStored";
  *   game is discovered will not be correct
  */
 export interface IGameStored {
-  id: string;
+  id: VortexGameId;
   name: string;
   shortName?: string;
   logo?: string;

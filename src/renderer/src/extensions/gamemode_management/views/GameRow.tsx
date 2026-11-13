@@ -1,4 +1,3 @@
-import { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { ListGroupItem, Media } from "react-bootstrap";
@@ -195,7 +194,7 @@ class GameRow extends ComponentEx<IProps, {}> {
     // Discovery's store wins, as on the tile: it's the copy Vortex will manage.
     const store = discovery?.store ?? detectedStore;
     if (source === "detected_list" && store !== undefined) {
-      dispatch(setGameAddStore(VortexGameId(game.id), store));
+      dispatch(setGameAddStore(game.id, store));
     }
   };
 

@@ -3,12 +3,8 @@ import { pathToFileURL } from "url";
 
 import type * as nexusApi from "@nexusmods/nexus-api";
 import type { IRevision } from "@nexusmods/nexus-api";
-import {
-  getErrorMessageOrDefault,
-  unknownToError,
-  VortexGameId,
-  VortexProfileId,
-} from "@vortex/shared";
+import type { VortexGameId } from "@vortex/shared";
+import { getErrorMessageOrDefault, unknownToError, VortexProfileId } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
 import memoize from "memoize-one";
@@ -132,7 +128,7 @@ function makeModKey(gameId: string, modId: string): string {
 }
 
 function makeWillRemoveMods(api: IExtensionApi) {
-  return (gameId: string, modIds: string[]) => {
+  return (gameId: VortexGameId, modIds: string[]) => {
     const state = api.getState();
     const mods = state.persistent.mods[gameId];
     const collections = Object.values(mods).filter((mod) => mod.type === MOD_TYPE);
@@ -264,7 +260,7 @@ async function cloneInstalledCollection(api: IExtensionApi, collectionId: string
 
 async function createNewCollection(api: IExtensionApi, profile: IProfile, name: string) {
   const id = makeCollectionId(shortid());
-  await createCollection(api, VortexGameId(profile.gameId), id, name, []);
+  await createCollection(api, profile.gameId, id, name, []);
 
   const state = api.store.getState();
   const game = selectors.gameById(state, profile.gameId);

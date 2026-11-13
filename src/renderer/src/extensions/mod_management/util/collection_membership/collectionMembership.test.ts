@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { makeInstalledCollection, makeMod, makeRule } from "../../../../test-utils/builders";
@@ -94,7 +95,7 @@ describe("collectionNamesByMod", () => {
 });
 
 describe("ignorePinnedCollectionRules", () => {
-  const GAME = "skyrimse";
+  const GAME = VortexGameId("skyrimse");
   const memberA = makeMod({ id: "member-a", attributes: { fileMD5: "md5-a", version: "1.0.0" } });
   const memberB = makeMod({ id: "member-b", attributes: { fileMD5: "md5-b", version: "1.0.0" } });
 

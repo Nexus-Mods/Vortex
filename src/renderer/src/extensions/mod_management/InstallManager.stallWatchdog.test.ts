@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 /**
  * The collection stall watchdog. When a collection makes no progress for five minutes, it fails
  * the collection's member installs (bar any that only just started), then gives up on the
@@ -36,7 +37,7 @@ vi.mock("../../util/log", () => {
 // the poll resolves the staging folder every tick, which reads the app's user-data path
 vi.mock("../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }));
 
-const GAME = "skyrimse";
+const GAME = VortexGameId("skyrimse");
 const PROFILE = "prof-1";
 const COLLECTION = "col-1";
 const MEMBER_DOWNLOAD = "dl-member";

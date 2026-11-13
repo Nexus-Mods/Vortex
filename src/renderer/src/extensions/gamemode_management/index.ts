@@ -1,11 +1,11 @@
 import * as path from "path";
 
+import type { VortexGameId } from "@vortex/shared";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
   type GameId,
   unknownToError,
-  VortexGameId,
 } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as fsExtra from "fs-extra";
@@ -1384,7 +1384,7 @@ function init(context: IExtensionContext): boolean {
         commandLine.game === undefined &&
         commandLine.profile === undefined
       ) {
-        const gameMode = VortexGameId(profile.gameId);
+        const gameMode = profile.gameId;
         const discovery = store.getState().settings.gameMode.discovered[gameMode];
         if (discovery !== undefined && discovery.path !== undefined && isGameRegistered(gameMode)) {
           changeGameMode(undefined, gameMode, profile.id).then(() => null);

@@ -41,11 +41,14 @@ export const QuickLauncher: React.FC<React.PropsWithChildren<unknown>> = () => {
   const game = useSelector(currentGame);
   const gameDiscovery = useSelector(currentGameDiscovery);
   const discoveredTools = useSelector(
-    (state: IState) => state.settings?.gameMode?.discovered?.[gameMode ?? ""]?.tools ?? {},
+    (state: IState) =>
+      (gameMode === undefined
+        ? undefined
+        : state.settings?.gameMode?.discovered?.[gameMode]?.tools) ?? {},
     shallowEqual,
   );
-  const primaryToolId = useSelector(
-    (state: IState) => state.settings?.interface?.primaryTool?.[gameMode ?? ""],
+  const primaryToolId = useSelector((state: IState) =>
+    gameMode === undefined ? undefined : state.settings?.interface?.primaryTool?.[gameMode],
   );
   const knownGames = useSelector(knownGamesSelector);
   const profiles = useSelector((state: IState) => state.persistent?.profiles ?? {}, shallowEqual);

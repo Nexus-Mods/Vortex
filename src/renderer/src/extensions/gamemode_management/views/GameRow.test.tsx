@@ -4,6 +4,7 @@
  */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { VortexGameId } from "@vortex/shared";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -66,7 +67,7 @@ class LegacyContext extends React.Component<{ children: React.ReactNode }> {
 }
 
 const skyrim: IGameStored = {
-  id: "skyrimse",
+  id: VortexGameId("skyrimse"),
   name: "Skyrim Special Edition",
   executable: undefined,
   extensionPath: undefined,

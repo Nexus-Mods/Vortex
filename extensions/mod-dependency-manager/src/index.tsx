@@ -13,6 +13,7 @@ import {
   ToolbarIcon,
   types,
   util,
+  type VortexGameId,
 } from "@nexusmods/vortex-api";
 import { VortexModId } from "@vortex/shared";
 import Bluebird from "bluebird";
@@ -1051,7 +1052,7 @@ function setDependenciesEnabled(
 function queryEnableDependencies(
   api: types.IExtensionApi,
   modIds: string[],
-  gameMode: string,
+  gameMode: VortexGameId,
   enabled: boolean,
 ): Bluebird<void> {
   const t = api.translate;

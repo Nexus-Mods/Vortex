@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as React from "react";
 
@@ -12,7 +13,7 @@ import { isIdValid } from "../util/modUpdateState";
 
 export interface IBaseProps {
   t: TFunction;
-  gameMode: string;
+  gameMode: VortexGameId;
   mod: IModWithState;
   state: UpdateState;
   downloads: { [archiveId: string]: IDownload };

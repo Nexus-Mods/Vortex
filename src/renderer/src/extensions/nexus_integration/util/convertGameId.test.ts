@@ -1,4 +1,4 @@
-import { GameDomain } from "@vortex/shared";
+import { GameDomain, VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { makeGameStored } from "@/test-utils/builders";
@@ -8,8 +8,11 @@ import { convertGameIdReverse, convertNXMIdReverse } from "./convertGameId";
 // skyrimvr shares skyrimse's nexus page, the way the bundled extensions register them
 const known = [
   makeGameStored(),
-  makeGameStored({ id: "skyrimvr", details: { nexusPageId: "skyrimspecialedition" } }),
-  makeGameStored({ id: "stardewvalley", details: { nxmLinkId: "stardew" } }),
+  makeGameStored({
+    id: VortexGameId("skyrimvr"),
+    details: { nexusPageId: "skyrimspecialedition" },
+  }),
+  makeGameStored({ id: VortexGameId("stardewvalley"), details: { nxmLinkId: "stardew" } }),
 ];
 
 describe("convertGameIdReverse", () => {

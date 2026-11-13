@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { describe, it, expect } from "vitest";
 
 import { makeDiscoveredTool } from "../../../../test-utils/builders";
@@ -32,7 +33,7 @@ describe("setToolVisible", () => {
       toolId: "toolId1",
       value: true,
     });
-    expect(result.discovered.gameId1.tools.toolId1.hidden).toBe(true);
+    expect(result.discovered[VortexGameId("gameId1")].tools.toolId1.hidden).toBe(true);
   });
 
   it("adds the new tool and set it visible if the tool doesn't exist", () => {
@@ -46,8 +47,8 @@ describe("setToolVisible", () => {
       toolId: "toolId2",
       value: true,
     });
-    expect(result.discovered.gameId1.tools.toolId1.hidden).toBe(false);
-    expect(result.discovered.gameId1.tools.toolId2.hidden).toBe(true);
+    expect(result.discovered[VortexGameId("gameId1")].tools.toolId1.hidden).toBe(false);
+    expect(result.discovered[VortexGameId("gameId1")].tools.toolId2.hidden).toBe(true);
   });
 
   it("creates a new game and add the new visible tool under if the game doesn't exist", () => {
@@ -61,8 +62,8 @@ describe("setToolVisible", () => {
       toolId: "toolId1",
       value: true,
     });
-    expect(result.discovered.gameId1.tools.toolId1.hidden).toBe(false);
-    expect(result.discovered.gameId2.tools.toolId1.hidden).toBe(true);
+    expect(result.discovered[VortexGameId("gameId1")].tools.toolId1.hidden).toBe(false);
+    expect(result.discovered[VortexGameId("gameId2")].tools.toolId1.hidden).toBe(true);
   });
 
   it("affects only the right game", () => {
@@ -79,8 +80,8 @@ describe("setToolVisible", () => {
       toolId: "toolId1",
       value: true,
     });
-    expect(result.discovered.gameId1.tools.toolId1.hidden).toBe(true);
-    expect(result.discovered.gameId2.tools.toolId1.hidden).toBe(false);
+    expect(result.discovered[VortexGameId("gameId1")].tools.toolId1.hidden).toBe(true);
+    expect(result.discovered[VortexGameId("gameId2")].tools.toolId1.hidden).toBe(false);
   });
 });
 
@@ -93,7 +94,7 @@ describe("setGameHidden", () => {
       gameId: "gameId1",
       hidden: true,
     });
-    expect(result.discovered.gameId1.hidden).toBe(true);
+    expect(result.discovered[VortexGameId("gameId1")].hidden).toBe(true);
   });
 
   it("creates a new game and set it visible if the game doesn't exist", () => {
@@ -104,8 +105,8 @@ describe("setGameHidden", () => {
       gameId: "gameId2",
       hidden: true,
     });
-    expect(result.discovered.gameId1.hidden).toBe(false);
-    expect(result.discovered.gameId2.hidden).toBe(true);
+    expect(result.discovered[VortexGameId("gameId1")].hidden).toBe(false);
+    expect(result.discovered[VortexGameId("gameId2")].hidden).toBe(true);
   });
 
   it("affects only the right game", () => {
@@ -117,8 +118,8 @@ describe("setGameHidden", () => {
       gameId: "gameId1",
       hidden: true,
     });
-    expect(result.discovered.gameId1.hidden).toBe(true);
-    expect(result.discovered.gameId2.hidden).toBe(false);
+    expect(result.discovered[VortexGameId("gameId1")].hidden).toBe(true);
+    expect(result.discovered[VortexGameId("gameId2")].hidden).toBe(false);
   });
 });
 
@@ -136,7 +137,7 @@ describe("setGameParameters", () => {
       gameId: "gameId1",
       parameters: gameParameters,
     });
-    expect(result.discovered.gameId1.environment).toEqual({ NEW: "env" });
+    expect(result.discovered[VortexGameId("gameId1")].environment).toEqual({ NEW: "env" });
   });
 
   it("does nothing if the game doesn't exist", () => {
@@ -149,8 +150,8 @@ describe("setGameParameters", () => {
       gameId: "gameId2",
       parameters: { environment: { NEW: "env" } },
     });
-    expect(result.discovered.gameId1.environment).toEqual({ OLD: "env" });
-    expect(result.discovered.gameId2).toBeUndefined();
+    expect(result.discovered[VortexGameId("gameId1")].environment).toEqual({ OLD: "env" });
+    expect(result.discovered[VortexGameId("gameId2")]).toBeUndefined();
   });
 
   it("affects only the right game", () => {
@@ -162,8 +163,8 @@ describe("setGameParameters", () => {
       gameId: "gameId1",
       parameters: { environment: { NEW: "env" } },
     });
-    expect(result.discovered.gameId1.environment).toEqual({ NEW: "env" });
-    expect(result.discovered.gameId2.environment).toEqual({ OLD: "env" });
+    expect(result.discovered[VortexGameId("gameId1")].environment).toEqual({ NEW: "env" });
+    expect(result.discovered[VortexGameId("gameId2")].environment).toEqual({ OLD: "env" });
   });
 });
 
@@ -176,7 +177,7 @@ describe("addDiscoveredGame", () => {
       id: "gameId1",
       result: makeGame({ path: "path2" }),
     });
-    expect(result.discovered.gameId1.path).toBe("path2");
+    expect(result.discovered[VortexGameId("gameId1")].path).toBe("path2");
   });
 
   it("adds the new game if the game doesn't exist", () => {
@@ -187,8 +188,8 @@ describe("addDiscoveredGame", () => {
       id: "gameId2",
       result: makeGame({ path: "path2" }),
     });
-    expect(result.discovered.gameId1.path).toBe("path1");
-    expect(result.discovered.gameId2.path).toBe("path2");
+    expect(result.discovered[VortexGameId("gameId1")].path).toBe("path1");
+    expect(result.discovered[VortexGameId("gameId2")].path).toBe("path2");
   });
 
   it("affects only the right game", () => {
@@ -200,8 +201,8 @@ describe("addDiscoveredGame", () => {
       id: "gameId1",
       result: makeGame({ path: "path2" }),
     });
-    expect(result.discovered.gameId1.path).toBe("path2");
-    expect(result.discovered.gameId2.path).toBe("path1");
+    expect(result.discovered[VortexGameId("gameId1")].path).toBe("path2");
+    expect(result.discovered[VortexGameId("gameId2")].path).toBe("path1");
   });
 
   describe("timestamp", () => {
@@ -212,7 +213,7 @@ describe("addDiscoveredGame", () => {
         result: makeGame({ path: "path1" }),
       });
 
-      expect(result.discovered.gameId1.timestamp).toBeGreaterThanOrEqual(before);
+      expect(result.discovered[VortexGameId("gameId1")].timestamp).toBeGreaterThanOrEqual(before);
     });
 
     // Discovery re-reports every installed game on every run. Re-stamping here would make
@@ -226,7 +227,7 @@ describe("addDiscoveredGame", () => {
         result: makeGame({ path: "path1" }),
       });
 
-      expect(result.discovered.gameId1.timestamp).toBe(1_000);
+      expect(result.discovered[VortexGameId("gameId1")].timestamp).toBe(1_000);
     });
 
     it("re-stamps when the game moves", () => {
@@ -238,7 +239,7 @@ describe("addDiscoveredGame", () => {
         result: makeGame({ path: "path2" }),
       });
 
-      expect(result.discovered.gameId1.timestamp).toBeGreaterThan(1_000);
+      expect(result.discovered[VortexGameId("gameId1")].timestamp).toBeGreaterThan(1_000);
     });
 
     // Settings-only updates (a tool, a parameter) carry no path and mustn't look like a find.
@@ -248,7 +249,7 @@ describe("addDiscoveredGame", () => {
         result: makeGame({ store: "steam" }),
       });
 
-      expect(result.discovered.gameId1.timestamp).toBeUndefined();
+      expect(result.discovered[VortexGameId("gameId1")].timestamp).toBeUndefined();
     });
   });
 });
@@ -268,8 +269,8 @@ describe("addDiscoveredTool", () => {
       toolId: "toolId1",
       result: newTool,
     });
-    expect(result.discovered.gameId1.tools.toolId1.path).toBe("tool2 path");
-    expect(result.discovered.gameId1.tools.toolId1.custom).toBe(true);
+    expect(result.discovered[VortexGameId("gameId1")].tools.toolId1.path).toBe("tool2 path");
+    expect(result.discovered[VortexGameId("gameId1")].tools.toolId1.custom).toBe(true);
   });
 
   it("affects only the right game", () => {
@@ -288,7 +289,7 @@ describe("addDiscoveredTool", () => {
       toolId: "toolId1",
       result: newTool,
     });
-    expect(result.discovered.gameId1.tools.toolId1.path).toBe("tool2 path");
-    expect(result.discovered.gameId2.tools.toolId1.path).toBe("tool1 path");
+    expect(result.discovered[VortexGameId("gameId1")].tools.toolId1.path).toBe("tool2 path");
+    expect(result.discovered[VortexGameId("gameId2")].tools.toolId1.path).toBe("tool1 path");
   });
 });

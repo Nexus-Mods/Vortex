@@ -650,7 +650,7 @@ export function makeProfileMod(overrides: Partial<IProfileMod> = {}): IProfileMo
 export function makeProfile(overrides: Partial<IProfile> = {}): IProfile {
   return {
     id: "profile-1",
-    gameId: "skyrimse",
+    gameId: VortexGameId("skyrimse"),
     name: "Profile",
     modState: {},
     lastActivated: 0,
@@ -698,7 +698,7 @@ export function makeStarterInfo(overrides: Partial<IStarterInfo> = {}): IStarter
 // than its hardcoded fallback.
 export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStored {
   return {
-    id: "skyrimse",
+    id: VortexGameId("skyrimse"),
     name: "Skyrim Special Edition",
     requiredFiles: [],
     executable: "SkyrimSE.exe",
@@ -1340,7 +1340,7 @@ export function makeGameHarness(
   registerHarnessGame(gameId, { stub: opts.stub });
   const base = makeApiHarness(
     {
-      profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
+      profiles: { [profileId]: makeProfile({ id: profileId, gameId: VortexGameId(gameId) }) },
       mods: { [gameId]: opts.mods ?? {} },
       activeProfileId: profileId,
       lastActiveProfile: { [gameId]: profileId },
@@ -1624,7 +1624,7 @@ export function makeHealthCheckHarness(
   const gameId = opts.gameId ?? "skyrimse";
   const profileId = opts.profileId ?? "profile-1";
   const base = makeApiHarness({
-    profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
+    profiles: { [profileId]: makeProfile({ id: profileId, gameId: VortexGameId(gameId) }) },
     activeProfileId: profileId,
     lastActiveProfile: { [gameId]: profileId },
   });

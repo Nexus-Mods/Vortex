@@ -414,7 +414,7 @@ function genOnProfileChange(
         }
 
         if (profile !== undefined) {
-          if (!isGameRegistered(VortexGameId(profile.gameId))) {
+          if (!isGameRegistered(profile.gameId)) {
             showError(
               store.dispatch,
               "Game no longer supported, please install the game extension",
@@ -1282,7 +1282,7 @@ function init(context: IExtensionContext): boolean {
           // startQuickDiscovery in gamemode_management.once() and pops the
           // "Game not discovered" dialog even though discovery would have
           // succeeded.
-          const gameId = VortexGameId(game.id);
+          const gameId = game.id;
           discoverPickedGame(context.api, gameId, commandLine.gameStore)
             .then(() => manageGame(context.api, gameId))
             .catch((err) => {

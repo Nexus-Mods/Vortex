@@ -86,7 +86,11 @@ interface ISetupOpts {
 function setup(opts: ISetupOpts = {}) {
   const activeGameId = opts.activeGameId ?? GAME;
   const harness = makeApiHarness(
-    { profiles: { "profile-1": makeProfile({ id: "profile-1", gameId: activeGameId }) } },
+    {
+      profiles: {
+        "profile-1": makeProfile({ id: "profile-1", gameId: VortexGameId(activeGameId) }),
+      },
+    },
     [
       { path: ["settings", "gameMode"], reducer: settingsReducer },
       { path: ["settings", "interface"], reducer: starterReducer },

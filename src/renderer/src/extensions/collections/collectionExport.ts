@@ -2,6 +2,7 @@ import * as path from "path";
 
 import type { ICreateCollectionResult, IGraphErrorDetail } from "@nexusmods/nexus-api";
 import { V3ApiError } from "@vortex/nexus-api-v3";
+import type { VortexGameId } from "@vortex/shared";
 import { getErrorCode, unknownToError } from "@vortex/shared";
 import Bluebird from "bluebird";
 import * as _ from "lodash";
@@ -175,7 +176,7 @@ async function queryErrorsContinue(
 
 function renderGraphLocateError(
   api: IExtensionApi,
-  gameId: string,
+  gameId: VortexGameId,
   modId: string,
   det: IGraphErrorDetail,
 ): string {
@@ -239,7 +240,7 @@ function renderGraphErrorFallback(message: string, det: IGraphErrorDetail): stri
 
 function renderGraphErrorDetail(
   api: IExtensionApi,
-  gameId: string,
+  gameId: VortexGameId,
   modId: string,
   message: string,
   det: IGraphErrorDetail,
@@ -253,7 +254,7 @@ function renderGraphErrorDetail(
 
 export async function doExportToAPI(
   api: IExtensionApi,
-  gameId: string,
+  gameId: VortexGameId,
   modId: string,
   uploaderName: string,
 ): Promise<{ slug: string; revisionNumber: number }> {

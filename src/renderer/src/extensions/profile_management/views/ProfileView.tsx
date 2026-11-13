@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { VortexGameId } from "@vortex/shared";
+import type { VortexGameId } from "@vortex/shared";
 import { shell } from "electron";
 import update from "immutability-helper";
 import * as React from "react";
@@ -34,7 +34,7 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
-  gameId: string;
+  gameId: VortexGameId;
   currentProfile: string;
   profiles: { [id: string]: IProfile };
   language: string;
@@ -176,7 +176,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const discovered = discoveredGames[profiles[profileId].gameId];
     const available = discovered !== undefined && discovered.path !== undefined;
-    const gameAvailable = isGameRegistered(VortexGameId(profiles[profileId].gameId));
+    const gameAvailable = isGameRegistered(profiles[profileId].gameId);
     if (profileId === this.state.edit) {
       return null;
     }

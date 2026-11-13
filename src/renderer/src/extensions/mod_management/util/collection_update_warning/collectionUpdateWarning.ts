@@ -1,3 +1,5 @@
+import type { VortexGameId } from "@vortex/shared";
+
 import type { IExtensionApi } from "../../../../types/IExtensionContext";
 import {
   collectionNamesByMod,
@@ -5,7 +7,7 @@ import {
 } from "../collection_membership/collectionMembership";
 import { askCollectionUpdate } from "../collection_update_prompt/collectionUpdatePrompt";
 
-const gameMods = (api: IExtensionApi, gameId: string) =>
+const gameMods = (api: IExtensionApi, gameId: VortexGameId) =>
   api.getState().persistent.mods[gameId] ?? {};
 
 /**
@@ -15,7 +17,7 @@ const gameMods = (api: IExtensionApi, gameId: string) =>
  */
 export async function confirmCollectionModUpdate(
   api: IExtensionApi,
-  gameId: string,
+  gameId: VortexGameId,
   modId: string,
 ): Promise<boolean> {
   const collectionNames = collectionNamesByMod(gameMods(api, gameId), [modId])[modId];
@@ -41,7 +43,7 @@ export async function confirmCollectionModUpdate(
  */
 export async function selectModsToUpdate(
   api: IExtensionApi,
-  gameId: string,
+  gameId: VortexGameId,
   modIds: string[],
 ): Promise<string[]> {
   const memberships = collectionNamesByMod(gameMods(api, gameId), modIds);

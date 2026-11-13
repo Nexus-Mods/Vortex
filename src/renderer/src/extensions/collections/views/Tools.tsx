@@ -72,7 +72,7 @@ const emptyArray = [];
 function Tools(props: IToolsProps) {
   const { t, collection, onSetCollectionAttribute } = props;
 
-  const gameMode: string = useSelector(selectors.activeGameId);
+  const gameMode = useSelector(selectors.activeGameId);
 
   const includedTools: string[] = useSelector<IState, string[]>(
     (state) =>
