@@ -11,7 +11,12 @@ vi.mock("winapi-bindings", () => ({
   RegGetValue: () => {
     throw new Error("no registry in tests");
   },
-  GetProcessList: () => [],
+}));
+
+const processes = vi.hoisted(() => ({ list: [] as Array<{ name: string; cmd?: string }> }));
+
+vi.mock("@/extensions/gamemode_management/util/processProvider", () => ({
+  defaultProcessProvider: { list: () => Promise.resolve(processes.list) },
 }));
 
 const entry = (gameStoreId: string, appid: string, name: string): IGameStoreEntry => ({
@@ -43,6 +48,7 @@ describe("storeLookup.findByAppId", () => {
   let stores: IGameStore[];
 
   beforeEach(() => {
+    processes.list = [];
     stores = [
       makeStore("steam", [entry("steam", "720", "Steam Game")]),
       makeStore("epic", [entry("epic", "epic-app", "Epic Game")]),
@@ -86,6 +92,7 @@ describe("storeLookup.findByName", () => {
   let stores: IGameStore[];
 
   beforeEach(() => {
+    processes.list = [];
     stores = [
       makeStore("steam", [entry("steam", "720", "Steam Game")]),
       makeStore("epic", [entry("epic", "epic-app", "Epic Game")]),
@@ -110,6 +117,7 @@ describe("storeLookup.isGameInstalled", () => {
   let stores: IGameStore[];
 
   beforeEach(() => {
+    processes.list = [];
     stores = [
       makeStore("steam", [entry("steam", "720", "Steam Game")]),
       makeStore("epic", [entry("epic", "epic-app", "Epic Game")]),
@@ -142,6 +150,7 @@ describe("storeLookup.launchGameStore", () => {
   let stores: IGameStore[];
 
   beforeEach(() => {
+    processes.list = [];
     stores = [
       makeStore("steam", [entry("steam", "720", "Steam Game")], {
         isGameStoreInstalled: () => Promise.resolve(true),
@@ -210,6 +219,19 @@ describe("storeLookup.launchGameStore", () => {
       detach: true,
       suggestDeploy: false,
     });
+  });
+
+  it("doesn't start a store whose launcher script is already running", async () => {
+    const harness = makeApiHarness();
+    const api = harness.api;
+    const runExecutable = vi.fn().mockResolvedValue(undefined);
+    api.runExecutable = runExecutable;
+    processes.list = [{ name: "bash", cmd: "bash C:\\steam\\launcher.exe -silent" }];
+
+    await storeLookup.launchGameStore(stores, api, "steam");
+    await flush();
+
+    expect(runExecutable).not.toHaveBeenCalled();
   });
 
   it("reports a failing store launch chain via notification only", async () => {
