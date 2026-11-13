@@ -157,4 +157,13 @@ export interface ITool {
    * Vortex and 'close' will make Vortex quit as soon as the tool is started.
    */
   onStart?: "hide" | "hide_recover" | "close";
+
+  /**
+   * if true, the tool is started automatically right after the game has been launched from
+   * Vortex (through the game itself or the primary tool, e.g. a script extender). Use this for
+   * companion programs the game needs running alongside it, like an injector or an input
+   * remapper. The tool is skipped if it isn't configured or is already running.
+   * Defaults to false
+   */
+  startWithGame?: boolean;
 }

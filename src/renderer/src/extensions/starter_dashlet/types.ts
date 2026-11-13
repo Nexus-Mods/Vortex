@@ -20,4 +20,5 @@ export interface IEditStarterInfo {
   onStart?: "hide" | "hide_recover" | "close";
   defaultPrimary?: boolean;
   exclusive?: boolean;
+  startWithGame?: boolean;
 }
