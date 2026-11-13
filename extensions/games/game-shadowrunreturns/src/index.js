@@ -1,6 +1,8 @@
 const path = require("path");
 const { fs, util } = require("@nexusmods/vortex-api");
 
+const GAME_ID = "shadowrunreturns";
+
 function findGame() {
   return util.GameStoreHelper.findByName("Shadowrun Returns", "steam").then(
     (game) => game.gamePath,
@@ -12,7 +14,9 @@ function modPath() {
 }
 
 function prepareForModding(discovery) {
-  return fs.ensureDirWritableAsync(path.join(discovery.path, modPath()), () => Promise.resolve());
+  return fs
+    .ensureDirWritableAsync(path.join(discovery.path, modPath()), () => Promise.resolve())
+    .then(() => fs.ensureDirWritableAsync(path.join(discovery.path, "BepInEx", "plugins")));
 }
 const supportedTools = [
   {
@@ -26,8 +30,10 @@ const supportedTools = [
 ];
 
 function main(context) {
+  context.requireExtension("modtype-bepinex");
+
   context.registerGame({
-    id: "shadowrunreturns",
+    id: GAME_ID,
     name: "Shadowrun Returns",
     mergeMods: false,
     queryPath: findGame,
@@ -49,6 +55,30 @@ function main(context) {
         "ShadowrunEditor.exe",
       ],
     },
+  });
+
+  context.once(() => {
+    if (context.api.ext.bepinexAddGame !== undefined) {
+      context.api.ext.bepinexAddGame({
+        gameId: GAME_ID,
+        // The game's BepInEx mods bundle their own loader, so don't install
+        // a second copy automatically.
+        autoDownloadBepInEx: false,
+        architecture: "x86",
+        unityBuild: "unitymono",
+        doorstopConfig: { doorstopType: "default" },
+        // Shadowrun Returns runs Unity 4.2, where BepInEx's default
+        // Application entrypoint crashes during startup.
+        bepinexConfigObject: {
+          Preloader: {
+            Entrypoint: {
+              Type: "Camera",
+              Method: ".cctor",
+            },
+          },
+        },
+      });
+    }
   });
 
   return true;
