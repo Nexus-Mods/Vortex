@@ -284,10 +284,18 @@ export class MixpanelAnalytics {
       return;
     }
 
-    mixpanel.track(event.eventName, event.properties, {
+    // Falsy when navigator.sendBeacon refused the request, so nothing went out. The typings
+    // say void, but the library documents the return as the sent payload or false.
+    const sent: unknown = mixpanel.track(event.eventName, event.properties, {
       transport: "sendBeacon",
       send_immediately: true,
     });
+    if (!sent) {
+      analyticsServiceLog("mixpanel", "warn", "Exit event not sent (beacon refused)", {
+        eventName: event.eventName,
+      });
+      return;
+    }
 
     analyticsServiceLog("mixpanel", "debug", "Event tracked", {
       eventName: event.eventName,
