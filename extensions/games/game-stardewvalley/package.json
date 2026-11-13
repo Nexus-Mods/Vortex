@@ -14,7 +14,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Stardew Valley"
+    "game": "Stardew Valley",
+    "gameId": 1303
   },
   "dependencies": {
     "@vortex/shared": "workspace:*",

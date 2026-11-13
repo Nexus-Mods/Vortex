@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "X4: Foundations"
+    "game": "X4: Foundations",
+    "gameId": 2659
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

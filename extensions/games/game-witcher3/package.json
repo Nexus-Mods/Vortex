@@ -14,7 +14,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "The Witcher 3"
+    "game": "The Witcher 3",
+    "gameId": 952
   },
   "dependencies": {
     "semver": "catalog:"

@@ -36,6 +36,7 @@ function extractExtensionInfo(extPath) {
     version: pkgInfo.version,
     description: pkgInfo.description,
     issueTrackerURL: pkgInfo.config?.issueTracker,
+    gameId: pkgInfo.config?.gameId,
   };
 }
 

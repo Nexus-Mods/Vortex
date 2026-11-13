@@ -14,7 +14,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "X Rebirth"
+    "game": "X Rebirth",
+    "gameId": 154
   },
   "vortex": {
     "gameExtensionTest": true

@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Torchlight II"
+    "game": "Torchlight II",
+    "gameId": 251
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

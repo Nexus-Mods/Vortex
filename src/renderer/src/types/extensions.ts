@@ -55,6 +55,9 @@ export interface ExtensionInfo {
   fileId?: number;
   /** @deprecated not read from info.json anymore */
   issueTrackerURL?: string;
+
+  /** Numeric Nexus Mods game id of the game the extension is for. Single-game extensions only. */
+  gameId?: number;
 }
 
 /** @deprecated Use `ExtensionInfo` instead */

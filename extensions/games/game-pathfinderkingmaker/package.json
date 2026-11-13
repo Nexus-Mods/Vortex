@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Pathfinder: Kingmaker"
+    "game": "Pathfinder: Kingmaker",
+    "gameId": 2607
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

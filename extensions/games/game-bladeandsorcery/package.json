@@ -7,7 +7,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Blade & Sorcery"
+    "game": "Blade & Sorcery",
+    "gameId": 2673
   },
   "scripts": {
     "_assets": "copyfiles -u 1 -f ./assets/* dist",

@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Fallout 4 VR"
+    "game": "Fallout 4 VR",
+    "gameId": 1151
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

@@ -164,7 +164,7 @@ export interface IExtensionState {
   modId?: number;
   /** Nexus Mods file ID for this specific version of the extension. */
   fileId?: number;
-  /** The Nexus Mods game the extension is for, as the extension catalog names it. Game extensions only. */
+  /** The Nexus Mods game the extension is for. Game extensions only. */
   nexus?: { gameId: GameId; gameDomain: GameDomain };
   /** Nexus Mods endorsed status of the extension mod page. */
   endorsed: EndorsedStatus;

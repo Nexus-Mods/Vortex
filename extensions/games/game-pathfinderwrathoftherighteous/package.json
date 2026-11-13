@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Pathfinder: Wrath of the Righteous"
+    "game": "Pathfinder: Wrath of the Righteous",
+    "gameId": 3662
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

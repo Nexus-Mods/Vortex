@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Dragon's Dogma: Dark Arisen"
+    "game": "Dragon's Dogma: Dark Arisen",
+    "gameId": 1249
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

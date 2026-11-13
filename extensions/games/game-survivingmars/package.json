@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Surviving Mars"
+    "game": "Surviving Mars",
+    "gameId": 2347
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

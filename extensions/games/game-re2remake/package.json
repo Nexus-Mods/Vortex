@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Resident Evil 2 (2019)"
+    "game": "Resident Evil 2 (2019)",
+    "gameId": 2702
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

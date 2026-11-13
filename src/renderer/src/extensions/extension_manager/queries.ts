@@ -1,10 +1,13 @@
 import * as path from "node:path";
 
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { IGameListEntry } from "@nexusmods/nexus-api";
+import { GameId, type GameDomain } from "@vortex/shared";
 import * as semver from "semver";
 
-import type { IAvailableExtension, IRegisteredExtension } from "@/types/extensions";
+import type { ExtensionInfo, IAvailableExtension, IRegisteredExtension } from "@/types/extensions";
 import type { IExtensionOptional, IExtensionState } from "@/types/IState";
+
+import { convertId } from "../gamemode_management/queries";
 
 type CatalogQuery = { modId: number; fileId?: number };
 type InstalledQuery = { modId: number; fileId?: number } | { path: string };
@@ -84,6 +87,7 @@ export function matchesQuery(
 export function extensionStateFromScan(
   ext: IRegisteredExtension,
   recorded?: IExtensionState,
+  nexusGames: readonly IGameListEntry[] = [],
 ): IExtensionState {
   return {
     name: ext.name,
@@ -97,7 +101,20 @@ export function extensionStateFromScan(
     endorsed: recorded?.endorsed ?? "Undecided",
     remove: recorded?.remove ?? false,
     modId: recorded?.modId ?? ext.info?.modId,
+    nexus: recorded?.nexus ?? nexusDataFromInfoJson(ext.info, nexusGames),
   };
+}
+
+/** The Nexus Mods game an info.json's `gameId` names, `undefined` until the games list has it. */
+function nexusDataFromInfoJson(
+  info: ExtensionInfo | undefined,
+  nexusGames: readonly IGameListEntry[],
+): IExtensionState["nexus"] {
+  if (typeof info?.gameId !== "number") return undefined;
+
+  const gameId = GameId(info.gameId);
+  const gameDomain = convertId({ known: [], tier0: {}, nexusGames }, { gameId }, "gameDomain");
+  return gameDomain === undefined ? undefined : { gameId, gameDomain };
 }
 
 /** Find a dependency extension by its declared identifier among the installed extensions. */

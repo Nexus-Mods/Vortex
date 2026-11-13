@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "Resident Evil 3 (2020)"
+    "game": "Resident Evil 3 (2020)",
+    "gameId": 3191
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*"

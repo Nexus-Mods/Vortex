@@ -13,7 +13,8 @@
   "type": "commonjs",
   "private": true,
   "config": {
-    "game": "No Man's Sky"
+    "game": "No Man's Sky",
+    "gameId": 1634
   },
   "devDependencies": {
     "@nexusmods/vortex-api": "workspace:*",
