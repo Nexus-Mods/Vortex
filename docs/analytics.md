@@ -77,7 +77,14 @@ finishes after the window has gone, and drops the event rather than queueing it 
 isn't running. A beacon gets no response, so a rejected one fails silently.
 
 `app_closed` is the one event sent this way, from the analytics extension's `beforeunload`
-handler. A crash or a killed process sends nothing, so an `app_launched` with no `app_closed`
-is a session that didn't end cleanly. `is_relaunch` is true when the close is an in-app restart
+handler. It only goes out when the window is closed normally (the close button, an in-app
+restart) with analytics running at that moment. A crash or a killed process sends nothing, but
+neither do these clean exits:
+
+- File > Close (shown with the native title bar) and the Quit buttons on error dialogs. They go
+  through `app.exit()` in main, which closes the window without running `beforeunload`.
+- Logging out or turning analytics off before quitting.
+
+So a missing `app_closed` doesn't by itself mean the session ended badly. `is_relaunch` is true when the close is an in-app restart
 through `relaunch()` in `src/renderer/src/util/commandLine.ts`; an auto-update install restarts
 from main and reports false.
