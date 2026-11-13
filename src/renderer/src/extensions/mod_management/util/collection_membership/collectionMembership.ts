@@ -11,6 +11,8 @@ import testModReference, {
   isDependencyRule,
   isRequiredRule,
   modAttributesToLookupInfo,
+  modMatchesInstallSpec,
+  ruleInstallSpec,
 } from "../testModReference";
 
 /**
@@ -49,6 +51,42 @@ export function collectionNamesByMod(
     }
     return result;
   }, {});
+}
+
+/**
+ * Whether an installed collection other than `installingCollectionId` relies on one of `modIds`
+ * the way it is installed now: one of that collection's member rules matches the mod and asks for
+ * the install spec (installer choices / file list / patches) the mod was installed with.
+ *
+ * Replacing such a mod to give it a different install spec would silently change the other
+ * collection's install, so the caller has to install a variant next to it.
+ */
+export function isUsedByOtherCollection(
+  mods: { [modId: string]: IMod },
+  modIds: string[],
+  installingCollectionId: string | undefined,
+): boolean {
+  const memberRules = Object.values(mods)
+    .filter((mod) => mod.type === COLLECTION_TYPE && mod.id !== installingCollectionId)
+    .flatMap((collection) =>
+      (collection.rules ?? []).filter((rule) => rule.ignored !== true && isDependencyRule(rule)),
+    );
+  if (memberRules.length === 0) {
+    return false;
+  }
+
+  return modIds.some((modId) => {
+    const mod = mods[modId];
+    if (mod === undefined || mod.type === COLLECTION_TYPE) {
+      return false;
+    }
+    const lookup = modAttributesToLookupInfo(mod);
+    return memberRules.some(
+      (rule) =>
+        testModReference(lookup, rule.reference) &&
+        modMatchesInstallSpec(lookup, ruleInstallSpec(rule)),
+    );
+  });
 }
 
 /** Whether the rule requires one version of its mod, which an update no longer satisfies. */

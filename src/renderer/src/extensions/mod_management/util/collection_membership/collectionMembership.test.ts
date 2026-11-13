@@ -3,8 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { makeInstalledCollection, makeMod, makeRule } from "../../../../test-utils/builders";
 import { test } from "../../../../test-utils/harnessTest";
 import type { IApiHarness } from "../../../../test-utils/harnessTypes";
-import type { IMod, IModRule } from "../../types/IMod";
-import { collectionNamesByMod, ignorePinnedCollectionRules } from "./collectionMembership";
+import type { IChoiceType, IMod, IModRule } from "../../types/IMod";
+import {
+  collectionNamesByMod,
+  ignorePinnedCollectionRules,
+  isUsedByOtherCollection,
+} from "./collectionMembership";
 
 vi.mock("../../../../util/log", () => ({
   log: vi.fn(),
@@ -90,6 +94,69 @@ describe("collectionNamesByMod", () => {
     const mods = toMap(collection, memberA);
 
     expect(collectionNamesByMod(mods, ["missing"])).toEqual({});
+  });
+});
+
+describe("isUsedByOtherCollection", () => {
+  const choose = (name: string): IChoiceType => ({
+    type: "fomod",
+    options: [{ name: "Step", groups: [{ name: "Group", choices: [{ name, idx: 0 }] }] }],
+  });
+  const baseChoices = choose("Base");
+  const addonChoices = choose("Addon");
+  const member = makeMod({
+    id: "member-a",
+    attributes: { fileMD5: "md5-a", fileName: "a.7z", installerChoices: baseChoices },
+  });
+  const base = (rule: Partial<IModRule> = {}) =>
+    createCollection("base", "Base", [
+      makeRule({ reference: { fileMD5: "md5-a" }, installerChoices: baseChoices, ...rule }),
+    ]);
+  const addon = createCollection("addon", "Addon", [
+    makeRule({ reference: { fileMD5: "md5-a" }, installerChoices: addonChoices }),
+  ]);
+
+  it("is true when another collection asks for the mod as it is installed", () => {
+    const mods = toMap(base(), addon, member);
+
+    expect(isUsedByOtherCollection(mods, ["member-a"], "addon")).toBe(true);
+  });
+
+  it("is true when the other collection asks for no particular install spec", () => {
+    const mods = toMap(base({ installerChoices: undefined }), addon, member);
+
+    expect(isUsedByOtherCollection(mods, ["member-a"], "addon")).toBe(true);
+  });
+
+  it("is false when only the installing collection has the mod as a member", () => {
+    const mods = toMap(base(), member);
+
+    expect(isUsedByOtherCollection(mods, ["member-a"], "base")).toBe(false);
+  });
+
+  it("is false when the other collection asks for a different install spec", () => {
+    const mods = toMap(base({ installerChoices: addonChoices }), addon, member);
+
+    expect(isUsedByOtherCollection(mods, ["member-a"], "addon")).toBe(false);
+  });
+
+  it("is false when the other collection's rule is ignored", () => {
+    const mods = toMap(base({ ignored: true }), addon, member);
+
+    expect(isUsedByOtherCollection(mods, ["member-a"], "addon")).toBe(false);
+  });
+
+  it("is false when the other collection only orders the mod", () => {
+    const mods = toMap(base({ type: "before" }), addon, member);
+
+    expect(isUsedByOtherCollection(mods, ["member-a"], "addon")).toBe(false);
+  });
+
+  it("is false for a mod outside every collection", () => {
+    const standalone = makeMod({ id: "standalone", attributes: { fileMD5: "md5-x" } });
+    const mods = toMap(base(), addon, member, standalone);
+
+    expect(isUsedByOtherCollection(mods, ["standalone", "missing"], "addon")).toBe(false);
   });
 });
 
