@@ -9,16 +9,16 @@ import {
 import type { IState } from "@/types/IState";
 
 import { useSpineContext } from "../Spine/SpineContext";
-import { useGameArt } from "./GameArt.context";
+import { showsGameArt } from "./showsGameArt";
 
 /**
  * The open game's hero art, faded into the window's bottom left, behind the whole layout. The
  * spine and menu sit straight on it; a page shows it only where its own background lets it
- * through. Nothing while it's turned off, outside a game, or for a game with no Nexus art.
+ * through. Nothing while the user has it turned off, outside a game, or for a game with no Nexus art.
  */
 export const GameArt = () => {
   const { selection } = useSpineContext();
-  const { isEnabled } = useGameArt();
+  const isEnabled = useSelector(showsGameArt);
   const game = useSelector((state: IState) =>
     selection.type === "game" ? gameById(state, selection.gameId) : undefined,
   );
