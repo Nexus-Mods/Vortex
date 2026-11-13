@@ -16,11 +16,15 @@ const remove = (onClick = vi.fn()) => (
 
 describe("SplitButton", () => {
   it("shows a main part without a click handler as it is, but not as a button", () => {
-    render(<SplitButton action={remove()}>+2 more filter</SplitButton>);
+    render(
+      <SplitButton action={remove()} data-testid="split-main">
+        +2 more filter
+      </SplitButton>,
+    );
 
-    expect(screen.getByText("+2 more filter")).toBeInTheDocument();
+    expect(screen.getByTestId("split-main")).toHaveTextContent("+2 more filter");
     expect(screen.queryByRole("button", { name: "+2 more filter" })).toBeNull();
-    expect(screen.getByText("+2 more filter").closest(".nxm-button")).not.toHaveClass(
+    expect(screen.getByTestId("split-main").closest(".nxm-button")).not.toHaveClass(
       "nxm-button-disabled",
     );
   });
@@ -153,14 +157,25 @@ describe("SplitButton", () => {
     expect(screen.getByRole("button", { name: "Remove filter" })).toBeDisabled();
   });
 
+  it("turns both parts off while loading", () => {
+    render(
+      <SplitButton isLoading action={remove()} onClick={vi.fn()}>
+        Date added
+      </SplitButton>,
+    );
+
+    expect(screen.getByRole("button", { name: "Date added" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Remove filter" })).toBeDisabled();
+  });
+
   it("dims a static main part when disabled", () => {
     render(
-      <SplitButton isDisabled action={remove()}>
+      <SplitButton isDisabled action={remove()} data-testid="split-main">
         +2 more filter
       </SplitButton>,
     );
 
-    expect(screen.getByText("+2 more filter").closest(".nxm-button")).toHaveClass(
+    expect(screen.getByTestId("split-main").closest(".nxm-button")).toHaveClass(
       "nxm-button-disabled",
     );
   });

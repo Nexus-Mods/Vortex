@@ -57,6 +57,8 @@ export type ISplitButtonProps = IButtonColour &
     children?: string;
     /** The main part's accessible name, for an icon-only one. */
     "aria-label"?: string;
+    /** A `data-testid` for the main part. */
+    "data-testid"?: string;
     /** The icon before the main part's label. */
     leftIcon?: IIconProp;
     /** The icon after the main part's label. */
@@ -67,6 +69,8 @@ export type ISplitButtonProps = IButtonColour &
     action: ReactNode;
     /** Turns both parts off. */
     isDisabled?: boolean;
+    /** Shows a spinner in place of the main part's left icon, turning both parts off meanwhile. */
+    isLoading?: boolean;
     /** Classes for the whole. */
     className?: string;
   };
@@ -76,90 +80,105 @@ export type ISplitButtonProps = IButtonColour &
  * it. Each part hovers, presses and takes focus on its own, in `Button`'s brands, appearances and
  * sizes; a main part without `onClick` is static, not a button, though it isn't drawn as off.
  * With `panel` the main part opens it instead, anchored under the split button's start, as a
- * dropdown when it's a menu; the second part still runs on its own.
+ * dropdown when it's a menu; the second part still runs on its own. Its ref reaches the main part,
+ * when that's a button.
  */
-export const SplitButton = ({
-  children,
-  "aria-label": ariaLabel,
-  leftIcon,
-  rightIcon,
-  size = "md",
-  onClick,
-  panel,
-  panelRole,
-  action,
-  isDisabled = false,
-  className,
-  ...colour
-}: ISplitButtonProps) => {
-  const mainClasses = getButtonClasses({
-    colour: colour as IButtonColour,
-    size,
-    isDisabled,
-    isIconOnly: !children,
-    className: "nxm-split-button-main",
-  });
-  const content = (
-    <ButtonContent leftIcon={leftIcon} rightIcon={rightIcon}>
-      {children}
-    </ButtonContent>
-  );
+export const SplitButton = forwardRef<HTMLButtonElement, ISplitButtonProps>(
+  (
+    {
+      children,
+      "aria-label": ariaLabel,
+      "data-testid": testId,
+      leftIcon,
+      rightIcon,
+      size = "md",
+      onClick,
+      panel,
+      panelRole,
+      action,
+      isDisabled: isOff = false,
+      isLoading = false,
+      className,
+      ...colour
+    },
+    ref,
+  ) => {
+    const isDisabled = isOff || isLoading;
+    const mainClasses = getButtonClasses({
+      colour: colour as IButtonColour,
+      size,
+      isDisabled,
+      isIconOnly: !children,
+      className: "nxm-split-button-main",
+    });
+    const content = (
+      <ButtonContent isLoading={isLoading} leftIcon={leftIcon} rightIcon={rightIcon}>
+        {children}
+      </ButtonContent>
+    );
 
-  const look = { colour: colour as IButtonColour, size, isDisabled };
-  const classes = joinClasses(["nxm-split-button", className]);
+    const look = { colour: colour as IButtonColour, size, isDisabled };
+    const classes = joinClasses(["nxm-split-button", className]);
 
-  if (panel) {
+    if (panel) {
+      return (
+        <SplitButtonContext.Provider value={look}>
+          <Popover className={classes}>
+            <HeadlessPopoverButton
+              aria-haspopup={panelRole ?? "dialog"}
+              aria-label={ariaLabel}
+              className={mainClasses}
+              data-testid={testId}
+              disabled={isDisabled}
+              ref={ref}
+            >
+              {content}
+            </HeadlessPopoverButton>
+
+            {action}
+
+            <PopoverPanel
+              anchor={{ gap: 4, to: "bottom start" }}
+              className={
+                panelRole === "menu" ? "nxm-popover-panel-dropdown" : "nxm-popover-panel-controls"
+              }
+            >
+              {({ close }) => <>{panel({ close, dismiss: close })}</>}
+            </PopoverPanel>
+          </Popover>
+        </SplitButtonContext.Provider>
+      );
+    }
+
     return (
       <SplitButtonContext.Provider value={look}>
-        <Popover className={classes}>
-          <HeadlessPopoverButton
-            aria-haspopup={panelRole ?? "dialog"}
-            aria-label={ariaLabel}
-            className={mainClasses}
-            disabled={isDisabled}
-          >
-            {content}
-          </HeadlessPopoverButton>
+        <div className={classes}>
+          {onClick ? (
+            <button
+              aria-label={ariaLabel}
+              className={mainClasses}
+              data-testid={testId}
+              disabled={isDisabled}
+              ref={ref}
+              type="button"
+              onClick={onClick}
+            >
+              {content}
+            </button>
+          ) : (
+            <span aria-label={ariaLabel} className={mainClasses} data-testid={testId}>
+              {content}
+            </span>
+          )}
 
           {action}
-
-          <PopoverPanel
-            anchor={{ gap: 4, to: "bottom start" }}
-            className={
-              panelRole === "menu" ? "nxm-popover-panel-dropdown" : "nxm-popover-panel-controls"
-            }
-          >
-            {({ close }) => <>{panel({ close, dismiss: close })}</>}
-          </PopoverPanel>
-        </Popover>
+        </div>
       </SplitButtonContext.Provider>
     );
-  }
+  },
+);
 
-  return (
-    <SplitButtonContext.Provider value={look}>
-      <div className={classes}>
-        {onClick ? (
-          <button
-            aria-label={ariaLabel}
-            className={mainClasses}
-            disabled={isDisabled}
-            type="button"
-            onClick={onClick}
-          >
-            {content}
-          </button>
-        ) : (
-          <span aria-label={ariaLabel} className={mainClasses}>
-            {content}
-          </span>
-        )}
-
-        {action}
-      </div>
-    </SplitButtonContext.Provider>
-  );
-};
+SplitButton.displayName = "SplitButton";
 
 type ISplitButtonActionProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> & {
   /** Its icon, such as `close` to remove or `keyboard_arrow_down` for a menu. */

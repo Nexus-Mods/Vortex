@@ -56,6 +56,8 @@ interface IMenuActionBase {
   checked?: boolean;
   /** Marks it with a dot, such as while a filter it opens is on. */
   hasPip?: boolean;
+  /** A `data-testid` for its row. */
+  testId?: string;
 }
 
 /**
