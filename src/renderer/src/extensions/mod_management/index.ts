@@ -131,6 +131,7 @@ import {
   withActivationLock,
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
+import { exposeApplyDevHandle } from "./util/applyDevHandle";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
 import {
@@ -1767,6 +1768,7 @@ function once(api: IExtensionApi) {
   // hashes every staged file, so only dev builds resolve the lockfile for now
   if (process.env.NODE_ENV === "development") {
     deployOrchestrator = registerDeployOrchestrator(api);
+    exposeApplyDevHandle(deployOrchestrator);
   }
 
   api.events.on("profile-will-change", () => {

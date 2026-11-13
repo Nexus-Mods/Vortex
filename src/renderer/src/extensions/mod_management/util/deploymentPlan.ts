@@ -94,7 +94,7 @@ export async function seededLockfile(
   return { lockfile, stagedFiles };
 }
 
-const operationsInApplyOrder = (destinations: readonly PlannedDestination[]) =>
+export const operationsInApplyOrder = (destinations: readonly PlannedDestination[]) =>
   inApplyOrder(destinations.flatMap((destination) => destination.operations));
 
 export function planAndLogOperations(

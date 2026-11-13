@@ -171,7 +171,7 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
       fs: disk.fs,
       journal,
       keptPathOf: (_destinationPath, runId, entryIndex) =>
-        path.join(game.stagingPath, "kept", runId, String(entryIndex)),
+        toPortablePath(path.join(game.stagingPath, "kept", runId, String(entryIndex))),
     });
     await game.emitAndAwait("did-deploy", activeProfileId, {});
     return result;
