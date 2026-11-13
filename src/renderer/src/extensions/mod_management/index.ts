@@ -131,6 +131,7 @@ import {
   withActivationLock,
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
+import { exposeApplyDevHandle } from "./util/applyDevHandle";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
 import {
@@ -152,6 +153,11 @@ import {
   getSupportedActivators,
   registerDeploymentMethod,
 } from "./util/deploymentMethods";
+import {
+  registerDeployOrchestrator,
+  registerLockfileContribution,
+  type DeployOrchestrator,
+} from "./util/DeployOrchestrator";
 import { NoDeployment } from "./util/exceptions";
 import extendApi from "./util/extendAPI";
 import { dealWithExternalChanges } from "./util/externalChanges";
@@ -161,7 +167,6 @@ import { findModByRef } from "./util/findModByRef";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
-import { registerLockfileContribution, registerResolveLockFile } from "./util/resolveLockFile";
 import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
@@ -217,6 +222,8 @@ const appContext: IAppContext = {
 };
 
 let installManager: InstallManager;
+/** set in dev builds only */
+let deployOrchestrator: DeployOrchestrator | undefined;
 
 interface IInstaller {
   id: string;
@@ -856,11 +863,12 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 log("warn", "profile no longer found?", profileId);
               }
 
+              const deployingProfileId = VortexProfileId(profile.id);
               progress(t("Checking for external changes"), 5);
               await dealWithExternalChanges(
                 api,
                 activator,
-                VortexProfileId(profile.id),
+                deployingProfileId,
                 VortexStagingFolder(stagingPath),
                 modPaths,
                 lastDeployment,
@@ -883,6 +891,9 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 modPaths,
                 lastDeployment,
               );
+
+              // dev builds only; plans the disk as external changes left it
+              await deployOrchestrator?.plan(deployingProfileId);
 
               progress(t("Starting deployment"), 35);
               resetDeploymentFailures(api, game.id);
@@ -1756,7 +1767,8 @@ function once(api: IExtensionApi) {
 
   // hashes every staged file, so only dev builds resolve the lockfile for now
   if (process.env.NODE_ENV === "development") {
-    registerResolveLockFile(api);
+    deployOrchestrator = registerDeployOrchestrator(api);
+    exposeApplyDevHandle(deployOrchestrator);
   }
 
   api.events.on("profile-will-change", () => {
@@ -2195,7 +2207,7 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
-  // the planner only runs in dev builds, see registerResolveLockFile
+  // the planner only runs in dev builds, see registerDeployOrchestrator
   if (process.env.NODE_ENV === "development") {
     context.registerMainPage(
       "account_tree",
