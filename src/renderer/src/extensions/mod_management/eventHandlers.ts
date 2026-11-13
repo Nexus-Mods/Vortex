@@ -71,6 +71,7 @@ import { dropMissingMods } from "./util/dropMissingMods";
 import modName from "./util/modName";
 import queryGameId from "./util/queryGameId";
 import refreshMods from "./util/refreshMods";
+import { unavailableReasonActions, unavailableReasonText } from "./util/unavailableReason";
 
 async function checkStagingGame(
   api: IExtensionApi,
@@ -410,22 +411,23 @@ export function onGameModeActivated(
               message: safeFB.name,
             });
           } else {
+            // the reason goes into the message text: as a separate field it would only show
+            // up behind "Show Details"
             api.showErrorNotification(
               "Deployment method no longer supported",
-              {
-                message:
-                  "The deployment method you had configured ({{method}}) is no longer " +
+              api.translate(
+                "The deployment method you had configured ({{method}}) is no longer " +
                   "applicable.\n" +
                   'Please resolve the problem described below or go to "Settings" and ' +
                   "change the deployment method.",
-                reason: reason.errors[0].description(api.translate),
-              },
+                { replace: { method: oldActivator.name } },
+              ) +
+                "\n\n" +
+                unavailableReasonText(api.translate, reason.errors[0]),
               {
                 allowReport: false,
                 id: METHOD_UNAVAILABLE_NOTIFICATION_ID,
-                replace: {
-                  method: oldActivator.name,
-                },
+                actions: unavailableReasonActions(api, reason.errors[0]),
               },
             );
           }
