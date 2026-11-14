@@ -86,6 +86,28 @@ function matchesSkip(skip: ICollectionSkip, ref: IModReference): boolean {
 }
 
 /**
+ * The first item whose reference matches the skip, preferring an exact tag hit anywhere in the
+ * list over a loose (md5 / logical file name) hit on an earlier item. Generic Nexus file names
+ * like "Main File" are shared by unrelated members, so a first-loose-match scan would settle the
+ * wrong member and leave the skipped one undecided.
+ */
+function findSkipMatch<T>(
+  skip: ICollectionSkip,
+  items: T[],
+  refOf: (item: T) => IModReference | undefined,
+): T | undefined {
+  const tag = "reference" in skip ? skip.reference.tag : undefined;
+  const exact = tag ? items.find((item) => refOf(item)?.tag === tag) : undefined;
+  return (
+    exact ??
+    items.find((item) => {
+      const ref = refOf(item);
+      return ref != null && matchesSkip(skip, ref);
+    })
+  );
+}
+
+/**
  * Mark the collection member that was skipped as ignored, directly against the active install
  * session. This is the single entry point for both skip journeys (premium/automatic via
  * InstallManager, free-user via nexus_integration) - they used to emit `collection-mod-skipped`
@@ -117,9 +139,7 @@ export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectio
   // The session is keyed by each member's rule as it was when the install started, so the entry
   // is matched on its own snapshot rather than on the live rule.
   const [sessionRuleId] =
-    Object.entries(session.mods).find(([, info]) =>
-      info.rule?.reference != null ? matchesSkip(skip, info.rule.reference) : false,
-    ) ?? [];
+    findSkipMatch(skip, Object.entries(session.mods), ([, info]) => info.rule?.reference) ?? [];
 
   // The fallback scan relies on members having distinct identities; if two share the matched
   // identifier (e.g. the same logicalFileName, or two fuzzy rules on one modId), the wrong member
@@ -127,7 +147,7 @@ export function markCollectionMemberSkipped(api: IExtensionApi, skip: ICollectio
   const rule =
     (sessionRuleId !== undefined
       ? rules.find((iter) => modRuleId(iter) === sessionRuleId)
-      : undefined) ?? rules.find((iter) => matchesSkip(skip, iter.reference));
+      : undefined) ?? findSkipMatch(skip, rules, (iter) => iter.reference);
   // Only a rule the session tracks can be settled. A live rule it never saw (the collection
   // gained it after the install started) still carries the decision durably.
   const liveRuleId = rule !== undefined ? modRuleId(rule) : undefined;
