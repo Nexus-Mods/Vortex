@@ -12,6 +12,7 @@ import type { IState } from "../../../types/IState";
 import {
   generateCollectionSessionId,
   isTerminalMemberStatus,
+  modRuleId,
 } from "../../../util/collectionInstallSession";
 import {
   getCollectionActiveSession,
@@ -59,6 +60,7 @@ import {
   type CollectionInstallRef,
   emitCollectionInstallOutcome,
   emitCollectionInstallStartOrResume,
+  isCollectionInstallResume,
 } from "./collectionInstallAnalytics";
 import { isGamebryoGame } from "./gameSupport";
 import InfoCache from "./InfoCache";
@@ -1001,12 +1003,21 @@ class InstallDriver {
       }),
     );
 
-    // Default optional members to skipped so they don't block completion. Only optionals with no
-    // explicit ignored choice are defaulted - a defined ignored (a prior skip or select) wins, so
-    // decisions survive re-installs/updates. Reuses the shared skip entry point (writes the durable
-    // rule flag + session status) now that the session exists.
+    // Default optional members to skipped so they don't block completion; the optional-mods prompt
+    // at the end is where the player selects them. A resume keeps this attempt's choices, so only
+    // undecided optionals are defaulted. A fresh install also resets a selection (ignored:false)
+    // left over from an earlier, finished install: the flag lives on the collection mod, shared by
+    // every profile, so otherwise an old "yes" installs the optionals before the prompt and a "no"
+    // there can't take it back. Optionals already installed keep their flag. Reuses the shared
+    // skip entry point (writes the durable rule flag + session status) now that the session exists.
+    const isResume = isCollectionInstallResume(this.mApi, {
+      archiveId: collection.archiveId,
+      collectionModId: collection.id,
+      gameId: this.mGameId,
+    });
     for (const rule of optional) {
-      if (rule.ignored === undefined) {
+      const installed = sessionModInfo[modRuleId(rule)]?.status === "installed";
+      if (rule.ignored === undefined || (!isResume && rule.ignored === false && !installed)) {
         markCollectionMemberSkipped(this.mApi, { reference: rule.reference });
       }
     }

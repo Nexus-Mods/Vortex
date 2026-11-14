@@ -79,6 +79,15 @@ function readMarkers(api: IExtensionApi, ref: CollectionInstallRef): InstallMark
   };
 }
 
+/**
+ * Whether a start() now continues an install that was started but never finished (paused,
+ * interrupted, quit mid-install) rather than beginning a fresh one. Read it before
+ * emitCollectionInstallStartOrResume, which anchors the marker on a genuine first start.
+ */
+export function isCollectionInstallResume(api: IExtensionApi, ref: CollectionInstallRef): boolean {
+  return readMarkers(api, ref).installStartedAt !== undefined;
+}
+
 function setMarker(
   api: IExtensionApi,
   ref: CollectionInstallRef,
