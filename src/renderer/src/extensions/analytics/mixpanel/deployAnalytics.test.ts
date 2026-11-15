@@ -7,7 +7,7 @@
  */
 import { EventEmitter } from "events";
 
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -59,7 +59,7 @@ describe("deploy analytics", () => {
     const h = harness({
       persistent: { gameMode: { tier0: { 1303: { domain: "emberville" } } } },
     });
-    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1303));
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(NexusGameId(1303));
     emitModsDeployed(h.api, {
       gameId: "emberville",
       deploymentMethod: "hardlink",
@@ -74,7 +74,7 @@ describe("deploy analytics", () => {
 
   it("categorizes an extension-backed game as Tier 2 on mods_deployed", () => {
     const h = harness({ session: { extensions: { available: [{ gameId: 1704 }] } } });
-    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1704));
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(NexusGameId(1704));
     emitModsDeployed(h.api, {
       gameId: "skyrimse",
       deploymentMethod: "hardlink",

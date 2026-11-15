@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ getModFileVersionDownloadLink: vi.fn() }));
@@ -35,7 +35,7 @@ describe("modFileDownloadLinkMutation", () => {
     mocks.getModFileVersionDownloadLink.mockResolvedValue(links);
 
     const result = await run({
-      gameDomain: GameDomain("skyrimspecialedition"),
+      gameDomain: NexusGameDomain("skyrimspecialedition"),
       fileVersionId: "345678",
       collectionId: 42,
     });
@@ -53,7 +53,7 @@ describe("modFileDownloadLinkMutation", () => {
     mocks.getModFileVersionDownloadLink.mockRejectedValue(new Error("Forbidden"));
 
     await expect(
-      run({ gameDomain: GameDomain("skyrimspecialedition"), fileVersionId: "345678" }),
+      run({ gameDomain: NexusGameDomain("skyrimspecialedition"), fileVersionId: "345678" }),
     ).rejects.toThrow("Forbidden");
     expect(mocks.getModFileVersionDownloadLink).toHaveBeenCalledTimes(1);
   });

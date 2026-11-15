@@ -1,4 +1,4 @@
-import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import { describe, it, expect, vi } from "vitest";
 
 import type { IGame } from "@/types/IGame";
@@ -26,8 +26,8 @@ function makeKnownGame(id: string, overrides: Partial<IGame> = {}): IGame {
 
 function makeTierZeroEntry(domain: string) {
   return {
-    gameId: GameId(1234),
-    domain: GameDomain(domain),
+    gameId: NexusGameId(1234),
+    domain: NexusGameDomain(domain),
     name: "Some Game",
     storeIDs: { steam: [], gog: [], epic: [] },
   };
@@ -62,8 +62,8 @@ function dispatchedKnownGames(dispatched: any[]): IGameStored[] {
 
 describe("GameModeManager stored games' Nexus Mods game", () => {
   // dummy Nexus Mods games
-  const numericA = GameId(1);
-  const domainA = GameDomain("domain-a");
+  const numericA = NexusGameId(1);
+  const domainA = NexusGameDomain("domain-a");
 
   const extensionPath = "/extensions/game-a";
 

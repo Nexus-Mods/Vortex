@@ -1,4 +1,4 @@
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { IDetectedGame } from "../../types/IDetectedGame";
@@ -11,7 +11,7 @@ const EPIC = ["catalognamespace:catalogitem"];
 
 const matchedOn = (storeIDs: Partial<IDetectedGame["storeIDs"]>): IDetectedGame => ({
   gameUid: "uid-1704",
-  gameId: GameId(1704),
+  gameId: NexusGameId(1704),
   storeIDs: { steam: [], gog: [], epic: [], ...storeIDs },
 });
 

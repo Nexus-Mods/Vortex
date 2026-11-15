@@ -1,5 +1,5 @@
 import type { ICollectionRevisionMod } from "@nexusmods/nexus-api";
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import React, { useCallback, useMemo } from "react";
 import { Panel } from "react-bootstrap";
 
@@ -40,7 +40,7 @@ function CollectionModDetails(props: ICollectionModDetails) {
   const remoteDomain = remote?.file?.game?.domainName;
   const vortexGameId = local?.attributes?.gameId ?? gameId;
   const domainName = remoteDomain
-    ? GameDomain(remoteDomain)
+    ? NexusGameDomain(remoteDomain)
     : nexusGameId(getGame(vortexGameId), vortexGameId);
   const modId = local?.attributes?.modId ?? remote?.file?.modId;
 

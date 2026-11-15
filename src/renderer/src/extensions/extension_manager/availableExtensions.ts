@@ -1,5 +1,5 @@
 import type { components } from "@vortex/nexus-api-v3";
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 
 import { log } from "@/logging";
 
@@ -24,9 +24,9 @@ export function finite(value: string | null | undefined): number | undefined {
 }
 
 /** The Nexus Mods game id the endpoint names, or undefined when it names none. */
-function nexusGameIdOf(value: string | null | undefined): GameId | undefined {
+function nexusGameIdOf(value: string | null | undefined): NexusGameId | undefined {
   const parsed = finite(value);
-  return parsed === undefined ? undefined : GameId(parsed);
+  return parsed === undefined ? undefined : NexusGameId(parsed);
 }
 
 export function toAvailableExtension(

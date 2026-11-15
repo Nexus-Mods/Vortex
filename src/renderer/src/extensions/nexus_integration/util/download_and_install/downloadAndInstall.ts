@@ -1,4 +1,4 @@
-import type { GameDomain, VortexGameId } from "@vortex/shared";
+import type { NexusGameDomain, VortexGameId } from "@vortex/shared";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -7,7 +7,7 @@ import { buildNXMModUrl } from "../../NXMUrl";
 /** A file of a mod on Nexus Mods to download and install. */
 export interface INexusFile {
   /** The game's Nexus Mods domain, which the `nxm` link names. */
-  gameDomain: GameDomain;
+  gameDomain: NexusGameDomain;
   /** The game's id in Vortex, which the download is kept and installed under. */
   gameId: VortexGameId;
   /** The mod's game-scoped id. */
