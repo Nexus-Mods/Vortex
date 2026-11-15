@@ -5,7 +5,7 @@ vi.mock("../../../nexus_integration/util", () => ({
   nexusGames: () => [{ id: 4242, domain_name: "emberville", name: "Emberville" }],
 }));
 
-import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 
 import type { ITierZeroGame, IState } from "@/types/IState";
 
@@ -14,7 +14,7 @@ import { tierZeroEntry } from "./tierZeroEntry";
 
 const detected = (gameId: number, withExtension: boolean): IDetectedGame => ({
   gameUid: `uid-${gameId}`,
-  gameId: GameId(gameId),
+  gameId: NexusGameId(gameId),
   storeIDs: { steam: ["42420"], gog: [], epic: [] },
   extension: withExtension
     ? ({ name: "ext", modId: 1, fileId: 1 } as IDetectedGame["extension"])
@@ -41,8 +41,8 @@ describe("tierZeroEntry", () => {
     );
 
     expect(entry).toEqual({
-      gameId: GameId(4242),
-      domain: GameDomain("emberville"),
+      gameId: NexusGameId(4242),
+      domain: NexusGameDomain("emberville"),
       name: "Emberville",
       storeIDs: { steam: ["42420"], gog: [], epic: [] },
     });
@@ -82,6 +82,6 @@ describe("tierZeroEntry", () => {
     );
 
     expect(entry?.name).toBe("moddable");
-    expect(entry?.domain).toBe(GameDomain("moddable"));
+    expect(entry?.domain).toBe(NexusGameDomain("moddable"));
   });
 });

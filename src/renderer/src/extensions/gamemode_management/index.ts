@@ -3,7 +3,7 @@ import * as path from "path";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
-  type GameId,
+  type NexusGameId,
   unknownToError,
   VortexGameId,
 } from "@vortex/shared";
@@ -108,7 +108,7 @@ declare module "@/types/IExtensionContext" {
     "discover-game": (gameId: VortexGameId, store?: string) => string[];
     "discover-tools": (gameId: string) => void;
     "register-tier-zero-game": (entry: ITierZeroGame) => void;
-    "remove-tier-zero-game": (gameId: GameId) => void;
+    "remove-tier-zero-game": (gameId: NexusGameId) => void;
   }
 }
 

@@ -1,4 +1,4 @@
-import { GameDomain, type VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, type VortexGameId } from "@vortex/shared";
 
 import { nexusGames, numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
 import type { ITierZeroGame } from "@/types/IState";
@@ -31,7 +31,7 @@ export function tierZeroEntry(state: IState, gameId: VortexGameId): ITierZeroGam
     const nexusGame = nexusGames().find((game) => game.id === detected.gameId);
     return {
       gameId: detected.gameId,
-      domain: GameDomain(domain.toLowerCase()),
+      domain: NexusGameDomain(domain.toLowerCase()),
       name: nexusGame?.name ?? gameId,
       storeIDs: detected.storeIDs,
     };

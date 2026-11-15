@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
 import React, { type ComponentClass, useMemo, useRef, useState } from "react";
@@ -315,7 +315,7 @@ const GamePicker = ({
       const internalId = detectedInternalId(
         knownGames,
         discoveredGames,
-        GameDomain(nexusGame.domain_name),
+        NexusGameDomain(nexusGame.domain_name),
       );
       if (profileGames.has(internalId)) {
         return undefined;

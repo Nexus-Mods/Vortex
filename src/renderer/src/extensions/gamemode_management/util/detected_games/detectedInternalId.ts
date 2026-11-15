@@ -1,4 +1,4 @@
-import type { GameDomain } from "@vortex/shared";
+import type { NexusGameDomain } from "@vortex/shared";
 import { VortexGameId } from "@vortex/shared";
 
 import type { IGameStored } from "@/types/IState";
@@ -16,7 +16,7 @@ import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 export function detectedInternalId(
   knownGames: IGameStored[],
   discovered: Record<VortexGameId, IDiscoveryResult>,
-  domain: GameDomain,
+  domain: NexusGameDomain,
 ): VortexGameId {
   const lowered = domain.toLowerCase();
   const installed = knownGames.filter(

@@ -49,7 +49,7 @@ export interface IBIXPackageResolver {
 }
 
 export interface IBepInExGameConfig {
-  // Nexus Mods GameId.
+  // Nexus Mods NexusGameId.
   gameId: string;
 
   // We're able to auto download the BepInEx package
