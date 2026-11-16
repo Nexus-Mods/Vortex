@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
 import { nexusGames } from "../util";
@@ -20,18 +20,18 @@ function nexusIdForDomain(domain: string): number | undefined {
 }
 
 /** The game's numeric Nexus id, if it has one (none for non-Nexus/community games). */
-export function nexusGameIdForGame(game: IGameStored): GameId | undefined {
+export function nexusGameIdForGame(game: IGameStored): NexusGameId | undefined {
   const domain = nexusGameId(game);
   if (!domain) {
     return undefined;
   }
 
   const numericId = nexusIdForDomain(domain);
-  return numericId ? GameId(numericId) : undefined;
+  return numericId ? NexusGameId(numericId) : undefined;
 }
 
 /** The game's art named `name` on the Nexus image CDN, by its Nexus id. */
-function imageURLForGameId(gameId: GameId, name: "hero" | "tile"): string {
+function imageURLForGameId(gameId: NexusGameId, name: "hero" | "tile"): string {
   return `https://images.nexusmods.com/images/games/v2/${gameId}/${name}.jpg`;
 }
 
@@ -46,6 +46,6 @@ export function gameTileImageURL(game: IGameStored): string | undefined {
 }
 
 /** The Nexus "hero" art URL (1920x620 banner), the cover the website heads a game's page with. */
-export function heroImageURLForGameId(gameId: GameId): string {
+export function heroImageURLForGameId(gameId: NexusGameId): string {
   return imageURLForGameId(gameId, "hero");
 }

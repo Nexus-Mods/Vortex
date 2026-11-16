@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `GameUid`, the id of a game in the Nexus Mods game catalogue, with its brander. `GameId` and `GameDomain`, exported in 2.11 betas 3 and 4, are renamed `NexusGameId` and `NexusGameDomain` before stable
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
 
 ### Removed

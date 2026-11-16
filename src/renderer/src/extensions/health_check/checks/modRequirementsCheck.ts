@@ -3,7 +3,7 @@ import type { IModRequirements } from "@nexusmods/nexus-api";
  * Mod Requirements Health Check
  * Validates that all Nexus mod requirements are satisfied
  */
-import { GameId, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { NexusGameId, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
 import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
@@ -153,7 +153,9 @@ export function resolveRequirementTarget(
   }
   const requiredGameId = req.gameId ? parseInt(req.gameId, 10) : undefined;
   const domainName =
-    requiredGameId != null ? numericGameIdToDomainName(GameId(requiredGameId)) : fallbackGameId;
+    requiredGameId != null
+      ? numericGameIdToDomainName(NexusGameId(requiredGameId))
+      : fallbackGameId;
   const gameIdForStorage = domainName ?? fallbackGameId;
   const uid = makeModUID({ modId: req.modId, fileId: "0", gameId: gameIdForStorage });
 

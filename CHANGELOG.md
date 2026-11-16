@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
-- `VortexGameId`, `VortexProfileId`, `GameId` and `GameDomain` id types exposed to extensions ([#24817](https://github.com/Nexus-Mods/Vortex/pull/24817))
+- `VortexGameId`, `VortexProfileId`, `NexusGameId`, `NexusGameDomain` and `GameUid` id types exposed to extensions ([#24817](https://github.com/Nexus-Mods/Vortex/pull/24817))
 
 ### Fixed
 

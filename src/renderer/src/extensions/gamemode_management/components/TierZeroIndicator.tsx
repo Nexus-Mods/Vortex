@@ -1,4 +1,4 @@
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import React from "react";
 import { useSelector } from "react-redux";
 
@@ -19,7 +19,7 @@ export function useSupportTier(game: IGameStored): Tier | undefined {
     if (!tierZeroAllowed) {
       return undefined;
     }
-    const numericId = domainToNumericGameId(GameDomain(nexusGameId(game)));
+    const numericId = domainToNumericGameId(NexusGameDomain(nexusGameId(game)));
     return numericId === undefined ? undefined : supportTier(state, numericId);
   });
 }

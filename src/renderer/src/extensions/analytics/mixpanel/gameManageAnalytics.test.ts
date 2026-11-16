@@ -8,7 +8,7 @@
  */
 import { EventEmitter } from "events";
 
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -57,7 +57,7 @@ describe("game manage analytics", () => {
 
   it("categorizes a Tier 0 game on app_game_manage", () => {
     const h = harness({}, undefined, { 1303: { domain: "emberville" } });
-    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1303));
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(NexusGameId(1303));
     emitGameManaged(h.api, "emberville");
     expect(h.events[0].properties.support_tier).toBe("Tier 0");
     // a Tier 0 game has no support extension, so no version either
@@ -66,7 +66,7 @@ describe("game manage analytics", () => {
 
   it("categorizes an extension-backed game as Tier 2 on app_game_manage", () => {
     const h = harness({}, undefined, {}, [1704]);
-    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1704));
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(NexusGameId(1704));
     emitGameManaged(h.api, "skyrimse");
     expect(h.events[0].properties.support_tier).toBe("Tier 2");
     expect(h.events[0].properties.extension_version).toBe("2.3.4");
@@ -125,14 +125,14 @@ describe("game manage analytics", () => {
 
   it("categorizes a Tier 0 game on app_game_unmanage", () => {
     const h = harness({}, undefined, { 1303: { domain: "emberville" } });
-    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1303));
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(NexusGameId(1303));
     emitGameUnmanaged(h.api, "emberville");
     expect(h.events[0].properties.support_tier).toBe("Tier 0");
   });
 
   it("categorizes an extension-backed game as Tier 2 on app_game_unmanage", () => {
     const h = harness({}, undefined, {}, [1704]);
-    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1704));
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(NexusGameId(1704));
     emitGameUnmanaged(h.api, "skyrimse");
     expect(h.events[0].properties.support_tier).toBe("Tier 2");
   });

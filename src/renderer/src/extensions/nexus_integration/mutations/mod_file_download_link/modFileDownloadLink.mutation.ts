@@ -1,5 +1,5 @@
 import { mutationOptions } from "@tanstack/react-query";
-import type { GameDomain } from "@vortex/shared";
+import type { NexusGameDomain } from "@vortex/shared";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -8,7 +8,7 @@ import { createVortexNexusV3Client } from "../../nexusV3Client";
 /** The file version to download, and where the download started. */
 export interface IModFileDownloadLink {
   /** The game the file is for. */
-  gameDomain: GameDomain;
+  gameDomain: NexusGameDomain;
   /** The file version's game-scoped id, the `file_id` in the site's URLs. */
   fileVersionId: string;
   /** The collection the download was started from, if any. */

@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import { GameDomain, type GameId, type VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, type NexusGameId, type VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 
 import type { IGame } from "@/types/IGame";
@@ -16,9 +16,9 @@ const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
 
 /** game ids of games managed without a game extension. Provenance is kept here
  * and not on IGame so nothing about the synthesized object gives it away. */
-const tierZeroGameIds = new Set<GameId>();
+const tierZeroGameIds = new Set<NexusGameId>();
 
-export function isTierZeroGame(gameId: GameId): boolean {
+export function isTierZeroGame(gameId: NexusGameId): boolean {
   return tierZeroGameIds.has(gameId);
 }
 
@@ -31,7 +31,7 @@ export function isTierZeroManagedGame(state: IState, gameId: VortexGameId): bool
     return false;
   }
 
-  const numericId = domainToNumericGameId(GameDomain(nexusGameId(game)));
+  const numericId = domainToNumericGameId(NexusGameDomain(nexusGameId(game)));
   return numericId !== undefined && isTierZeroGame(numericId);
 }
 
@@ -43,12 +43,12 @@ export function tierZeroGameFor(state: IState, gameId: VortexGameId): ITierZeroG
     return undefined;
   }
 
-  const numericId = domainToNumericGameId(GameDomain(nexusGameId(game)));
+  const numericId = domainToNumericGameId(NexusGameDomain(nexusGameId(game)));
   return numericId !== undefined ? state.persistent.gameMode.tier0[numericId] : undefined;
 }
 
 /** the game object was dropped from the registry again (un-manage) */
-export function unregisterTierZeroGame(gameId: GameId): void {
+export function unregisterTierZeroGame(gameId: NexusGameId): void {
   tierZeroGameIds.delete(gameId);
 }
 
@@ -178,11 +178,11 @@ export function makeTierZeroGame(entry: ITierZeroGame): IGame {
  * removed entry simply no longer synthesizes.
  */
 export function synthesizePersistedTierZeroGames(
-  tier0: Record<GameId, ITierZeroGame>,
+  tier0: Record<NexusGameId, ITierZeroGame>,
   knownGames: IGame[],
   addGames: (games: IGame[]) => void,
 ): void {
-  const ownsDomain = (domain: GameDomain, games: IGame[]) =>
+  const ownsDomain = (domain: NexusGameDomain, games: IGame[]) =>
     games.some((game) => game.id === domain || game.details?.nexusPageId === domain);
 
   const synthesized: IGame[] = [];

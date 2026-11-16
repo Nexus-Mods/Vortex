@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -79,7 +79,7 @@ const makeBatch = (itemCount: number): IBatchContext => {
 
 const withPreferences = (preferences: IManualInstallerPreferences) =>
   vi.mocked(tierZeroGameFor).mockReturnValue({
-    gameId: GameId(1234),
+    gameId: NexusGameId(1234),
     manualInstallerPreferences: preferences,
   } as ITierZeroGame);
 
@@ -325,7 +325,10 @@ describe("per-game preferences", () => {
     await install(createManualInstaller(api));
 
     expect(dispatch).toHaveBeenCalledExactlyOnceWith(
-      setManualInstallerPreferences(GameId(1234), { defaultFolder: "Mods", dontAskAgain: true }),
+      setManualInstallerPreferences(NexusGameId(1234), {
+        defaultFolder: "Mods",
+        dontAskAgain: true,
+      }),
     );
   });
 
