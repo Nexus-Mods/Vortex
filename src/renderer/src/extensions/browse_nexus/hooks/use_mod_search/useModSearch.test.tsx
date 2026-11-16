@@ -184,6 +184,7 @@ describe("useModSearch", () => {
       filters: {
         games: ["skyrimspecialedition"],
         supports_mod_managers: true,
+        exclude_requirements: ["mod", "external"],
         created_at: { gte: daysBack(7) },
       },
       sort: { field: "endorsements", direction: "desc" },
@@ -202,6 +203,16 @@ describe("useModSearch", () => {
 
     for (const request of mocks.pending) {
       expect(request.search.filters.supports_mod_managers).toBe(true);
+    }
+  });
+
+  it("asks to leave out mods that require another mod or something external, for the list and its total", async () => {
+    render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+
+    for (const request of mocks.pending) {
+      expect(request.search.filters.requirements).toBeUndefined();
+      expect(request.search.filters.exclude_requirements).toEqual(["mod", "external"]);
     }
   });
 
@@ -785,6 +796,7 @@ describe("useModSearch's views", () => {
         filters: {
           games: ["skyrimspecialedition"],
           supports_mod_managers: true,
+          exclude_requirements: ["mod", "external"],
           created_at: { gte: daysBack(28) },
         },
         sort: { field: "downloads", direction: "desc" },
