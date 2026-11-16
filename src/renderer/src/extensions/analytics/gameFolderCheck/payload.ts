@@ -1,12 +1,15 @@
-import type { GameFolderFileCount, GameFolderStatePayload } from "@vortex/nexus-api-v3";
+import type {
+  GameFolderFile,
+  GameFolderFileCount,
+  GameFolderFolderCount,
+  GameFolderStateFilesPayload,
+  GameFolderStatePayload,
+} from "@vortex/nexus-api-v3";
 import type { NexusGameId } from "@vortex/shared";
 import type { GameFolderCheckCounts, GameFolderCheckResult } from "@vortex/shared/ipc";
 
 const iso = (ms: number | null | undefined): string | null =>
   ms === null || ms === undefined || !Number.isFinite(ms) ? null : new Date(ms).toISOString();
-
-type GameFolderFile = GameFolderStatePayload["files"][number];
-type GameFolderFolderCount = GameFolderStatePayload["unknown_by_folder"][number];
 
 const zero = (): GameFolderFileCount => ({ files: 0, bytes: 0 });
 
@@ -35,21 +38,82 @@ export interface IPayloadContext {
   managedAt: number;
   /** Steam's LastUpdated from the ACF */
   steamLastUpdated: number | null;
+  /** ties the state event to its file events */
+  checkId: string;
+  /** file events the check may send; 0 sends no paths */
+  maxFileParts: number;
+  /** the most bytes one event's payload may take */
+  maxEventBytes: number;
+}
+
+/** One check as it is sent: the state event's payload and those of its file events. */
+export interface IGameFolderStateEvents {
+  state: GameFolderStatePayload;
+  fileParts: GameFolderStateFilesPayload[];
 }
 
 /**
- * The API rejects an event whose payload is over 64 KiB; this leaves room under it. Only the file
- * lists are trimmed to fit, never the counts.
+ * Maps a finished check to its events. The paths go in the file events, filled in order of
+ * value: modified and missing files, then unknown files. When they don't all fit in
+ * `maxFileParts` events of `maxEventBytes` each, the unknown files that do go are a random
+ * sample. Only the lists are cut to fit, never the counts.
  */
-export const MAX_PAYLOAD_BYTES = 60 * 1024;
-
-export function toGameFolderStatePayload(
+export function toGameFolderStateEvents(
   result: GameFolderCheckResult,
   context: IPayloadContext,
   random: () => number = Math.random,
-): GameFolderStatePayload {
-  return fitPayload(buildPayload(result, context), MAX_PAYLOAD_BYTES, random);
+): IGameFolderStateEvents {
+  const gameId = String(context.nexusGameId);
+  const filesPayload = (part: number, parts: number, files: GameFolderFile[]) => ({
+    check_id: context.checkId,
+    game_id: gameId,
+    part,
+    parts,
+    files,
+  });
+
+  const files = result.status === "checked" ? result.files.map(toFile) : [];
+  const steamFiles = files.filter((file) => file.status !== "unknown");
+  const unknownFiles = files.filter((file) => file.status === "unknown");
+
+  const maxParts = context.maxFileParts;
+  // what one file event holds besides its fixed fields, sized for the widest part numbers
+  const room = context.maxEventBytes - jsonBytes(filesPayload(maxParts, maxParts, []));
+  let parts = pack([...steamFiles, ...unknownFiles], room, maxParts);
+  if (unknownFiles.length > 0 && parts.flat().length < files.length) {
+    // the unknown files arrive sorted, so cutting the list short would keep only the first folders
+    // alphabetically; take a random sample instead and sort it again
+    const sample = pack([...steamFiles, ...shuffled(unknownFiles, random)], room, maxParts)
+      .flat()
+      .filter((file) => file.status === "unknown")
+      .toSorted(byPath);
+    parts = pack([...steamFiles, ...sample], room, maxParts);
+  }
+  const sent = parts.flat();
+  const sentSteamFiles = sent.filter((file) => file.status !== "unknown").length;
+
+  const state = buildPayload(result, context);
+  return {
+    state: fitState(context.maxEventBytes, {
+      ...state,
+      file_parts: parts.length,
+      files_truncated: sentSteamFiles < steamFiles.length,
+      unknown_truncated:
+        state.unknown_truncated || sent.length - sentSteamFiles < unknownFiles.length,
+    }),
+    fileParts: parts.map((part, index) => filesPayload(index + 1, parts.length, part)),
+  };
 }
+
+const toFile = (
+  file: Extract<GameFolderCheckResult, { status: "checked" }>["files"][number],
+): GameFolderFile => ({
+  path: file.path,
+  status: file.status,
+  ...(file.detectedBy !== undefined && { detected_by: file.detectedBy }),
+  ...(file.fromBackup === true && { from_backup: true as const }),
+  ...(file.inVortexFolder === true && { in_vortex_folder: true as const }),
+});
 
 function buildPayload(
   result: GameFolderCheckResult,
@@ -59,6 +123,7 @@ function buildPayload(
   const counts = checked?.counts ?? NO_COUNTS;
   const { steamFiles } = counts;
   return {
+    check_id: context.checkId,
     game_id: String(context.nexusGameId),
     status: result.status,
     reason: result.status === "checked" ? null : result.reason,
@@ -94,13 +159,8 @@ function buildPayload(
     unknown_in_vortex_folder: counts.unknownInVortexFolder,
     vortex: counts.vortex,
     vortex_changed_since_deploy: counts.vortexChangedSinceDeploy,
-    files: (checked?.files ?? []).map((file) => ({
-      path: file.path,
-      status: file.status,
-      ...(file.detectedBy !== undefined && { detected_by: file.detectedBy }),
-      ...(file.fromBackup === true && { from_backup: true as const }),
-      ...(file.inVortexFolder === true && { in_vortex_folder: true as const }),
-    })),
+    file_parts: 0,
+    max_file_parts: context.maxFileParts,
     files_truncated: false,
     unknown_truncated: checked?.unknownTruncated ?? false,
     unknown_by_folder: checked?.unknownByFolder ?? [],
@@ -117,53 +177,73 @@ const encoder = new TextEncoder();
 const jsonBytes = (value: unknown): number => encoder.encode(JSON.stringify(value)).length;
 
 /**
- * Trims the file lists until the payload fits in `maxBytes`, filling them in order of value:
- * modified and missing files, then the unknown-file folder totals (largest first), then a random
- * sample of the unknown files.
+ * Groups events, in order, into batches whose payloads total at most `maxBytes`. An event over
+ * that on its own gets a batch to itself.
  */
-export function fitPayload(
-  payload: GameFolderStatePayload,
+export function toBatches<T extends { payload: unknown }>(
+  events: readonly T[],
   maxBytes: number,
-  random: () => number,
-): GameFolderStatePayload {
+): T[][] {
+  const batches: T[][] = [];
+  let used = 0;
+  for (const event of events) {
+    const size = jsonBytes(event.payload);
+    if (batches.length === 0 || used + size > maxBytes) {
+      batches.push([]);
+      used = 0;
+    }
+    batches.at(-1)!.push(event);
+    used += size;
+  }
+  return batches;
+}
+
+// an entry costs its own JSON plus the comma before it; counting the comma on the first entry too
+// keeps the total on the safe side
+const entryBytes = (entry: unknown): number => jsonBytes(entry) + 1;
+
+/**
+ * Splits the entries, in order, into up to `maxParts` lists of at most `room` bytes each, and
+ * stops at the first entry that no longer fits.
+ */
+function pack<T>(entries: readonly T[], room: number, maxParts: number): T[][] {
+  const parts: T[][] = [];
+  let left = 0;
+  for (const entry of entries) {
+    const cost = entryBytes(entry);
+    // too big for any event, so it can't hold up the entries behind it
+    if (cost > room) continue;
+    if (cost > left) {
+      if (parts.length >= maxParts) break;
+      parts.push([]);
+      left = room;
+    }
+    parts.at(-1)!.push(entry);
+    left -= cost;
+  }
+  return parts;
+}
+
+/** Cuts the unknown-file folder totals, smallest first, until the state event fits its limit. */
+function fitState(maxBytes: number, payload: GameFolderStatePayload): GameFolderStatePayload {
   if (jsonBytes(payload) <= maxBytes) return payload;
 
-  const empty = { ...payload, files: [], unknown_by_folder: [] };
-  // "true" is one byte shorter than "false", so the flags the trim may set can't push it over
-  let budget = maxBytes - jsonBytes(empty);
-  // an entry costs its own JSON plus the comma before it; counting the comma on the first entry too
-  // keeps the total on the safe side
-  const take = <T>(entries: readonly T[]): T[] => {
-    const kept: T[] = [];
-    for (const entry of entries) {
-      const cost = jsonBytes(entry) + 1;
-      if (cost > budget) break;
-      budget -= cost;
-      kept.push(entry);
-    }
-    return kept;
-  };
-
-  const steamFiles = payload.files.filter((file) => file.status !== "unknown");
-  const unknownFiles = payload.files.filter((file) => file.status === "unknown");
-
-  const keptSteamFiles = take(steamFiles);
-  const keptFolders = take(
-    payload.unknown_by_folder.toSorted(
-      (lhs: GameFolderFolderCount, rhs: GameFolderFolderCount) => rhs.files - lhs.files,
-    ),
+  // "true" is one byte shorter than "false", so setting the flag can't push it over
+  let budget = maxBytes - jsonBytes({ ...payload, unknown_by_folder: [] });
+  const kept: GameFolderFolderCount[] = [];
+  const largestFirst = payload.unknown_by_folder.toSorted(
+    (lhs: GameFolderFolderCount, rhs: GameFolderFolderCount) => rhs.files - lhs.files,
   );
-  // the unknown files arrive sorted, so cutting the list short would keep only the first folders
-  // alphabetically; take a fresh random sample instead and sort it again
-  const keptUnknown = take(shuffled(unknownFiles, random)).toSorted(byPath);
-
+  for (const folder of largestFirst) {
+    const cost = entryBytes(folder);
+    if (cost > budget) break;
+    budget -= cost;
+    kept.push(folder);
+  }
   return {
     ...payload,
-    files: [...keptSteamFiles, ...keptUnknown],
-    files_truncated: keptSteamFiles.length < steamFiles.length,
-    unknown_truncated: payload.unknown_truncated || keptUnknown.length < unknownFiles.length,
-    unknown_by_folder: keptFolders,
-    unknown_by_folder_truncated: keptFolders.length < payload.unknown_by_folder.length,
+    unknown_by_folder: kept,
+    unknown_by_folder_truncated: kept.length < payload.unknown_by_folder.length,
   };
 }
 

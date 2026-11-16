@@ -2,7 +2,7 @@ import { NexusGameId, VortexGameId } from "@vortex/shared";
 import type { GameFolderCheckInput, GameFolderCheckResult } from "@vortex/shared/ipc";
 import { describe, expect, it } from "vitest";
 
-import { MAX_PAYLOAD_BYTES, toGameFolderStatePayload } from "./payload";
+import { toBatches, toGameFolderStateEvents } from "./payload";
 
 const INPUT: GameFolderCheckInput = {
   gameId: VortexGameId("skyrimse"),
@@ -29,9 +29,39 @@ const CONTEXT = {
   nexusGameId: NexusGameId(1704),
   managedAt: Date.UTC(2026, 9, 29),
   steamLastUpdated: null,
+  checkId: "6f1c2e0a-4b7d-4e2a-9c1f-3d5e7a9b1c2d",
+  maxFileParts: 3,
+  maxEventBytes: 60 * 1024,
 };
 
-describe("toGameFolderStatePayload", () => {
+describe("toBatches", () => {
+  const event = (id: number, size: number) => ({ id, payload: "x".repeat(size - 2) });
+  const ids = (batches: Array<Array<{ id: number }>>) =>
+    batches.map((batch) => batch.map((entry) => entry.id));
+
+  it("keeps events that fit together in one batch", () => {
+    expect(ids(toBatches([event(1, 40), event(2, 40), event(3, 20)], 100))).toEqual([[1, 2, 3]]);
+  });
+
+  it("starts a new batch when the next event would go over, keeping the order", () => {
+    const events = [event(1, 60), event(2, 60), event(3, 30), event(4, 60)];
+    expect(ids(toBatches(events, 100))).toEqual([[1], [2, 3], [4]]);
+  });
+
+  it("gives an event over the limit a batch to itself", () => {
+    expect(ids(toBatches([event(1, 10), event(2, 500), event(3, 10)], 100))).toEqual([
+      [1],
+      [2],
+      [3],
+    ]);
+  });
+
+  it("returns no batches for no events", () => {
+    expect(toBatches([], 100)).toEqual([]);
+  });
+});
+
+describe("toGameFolderStateEvents", () => {
   it("maps a finished check", () => {
     const result: GameFolderCheckResult = {
       status: "checked",
@@ -69,8 +99,9 @@ describe("toGameFolderStatePayload", () => {
       manifestCreatedAt: { "489831_7997079406114800065": Date.UTC(2024, 0, 1) },
       cost: { durationMs: 400, filesWalked: 182, bytesRead: 1024 },
     };
-    const payload = toGameFolderStatePayload(result, CONTEXT);
-    expect(payload).toMatchObject({
+    const { state, fileParts } = toGameFolderStateEvents(result, CONTEXT);
+    expect(state).toMatchObject({
+      check_id: CONTEXT.checkId,
       game_id: "1704",
       status: "checked",
       reason: null,
@@ -93,22 +124,38 @@ describe("toGameFolderStatePayload", () => {
       unknown: count(130),
       vortex_changed_since_deploy: count(1),
       cost: { duration_ms: 400, files_walked: 182, bytes_read: 1024 },
+      file_parts: 1,
+      max_file_parts: 3,
       files_truncated: false,
       unknown_truncated: true,
       unknown_in_vortex_folder: count(129),
       unknown_by_folder: [{ folder: "SKSE", files: 130, bytes: 1300 }],
       unknown_by_folder_truncated: false,
     });
-    expect(payload.files).toEqual([
-      { path: "Data/Skyrim.esm", status: "modified", detected_by: "full_hash", from_backup: true },
-      { path: "Data/Update.esm", status: "missing" },
-      { path: "SKSE/skse64.dll", status: "unknown" },
-      { path: "mods/db.sqlite3", status: "unknown", in_vortex_folder: true },
+    expect(state).not.toHaveProperty("files");
+    expect(fileParts).toEqual([
+      {
+        check_id: CONTEXT.checkId,
+        game_id: "1704",
+        part: 1,
+        parts: 1,
+        files: [
+          {
+            path: "Data/Skyrim.esm",
+            status: "modified",
+            detected_by: "full_hash",
+            from_backup: true,
+          },
+          { path: "Data/Update.esm", status: "missing" },
+          { path: "SKSE/skse64.dll", status: "unknown" },
+          { path: "mods/db.sqlite3", status: "unknown", in_vortex_folder: true },
+        ],
+      },
     ]);
   });
 
   it("sends zero counts and the reason when there was no baseline", () => {
-    const payload = toGameFolderStatePayload(
+    const { state, fileParts } = toGameFolderStateEvents(
       {
         status: "no_baseline",
         reason: "manifest_missing",
@@ -119,13 +166,15 @@ describe("toGameFolderStatePayload", () => {
       },
       CONTEXT,
     );
-    expect(payload).toMatchObject({
+    expect(state).toMatchObject({
       status: "no_baseline",
       reason: "manifest_missing",
       verification: null,
       unknown: count(0),
       steam: { depots: [{ manifest_created_at: null }] },
+      file_parts: 0,
     });
+    expect(fileParts).toEqual([]);
   });
 
   describe("payload size", () => {
@@ -170,84 +219,166 @@ describe("toGameFolderStatePayload", () => {
     const unknown = (n: number) =>
       Array.from({ length: n }, (_, index) => ({ path: path(index), status: "unknown" as const }));
 
-    it("leaves a payload under the limit untouched", () => {
+    const modified = (n: number) =>
+      Array.from({ length: n }, (_, index) => ({
+        path: path(index),
+        status: "modified" as const,
+        detectedBy: "size" as const,
+      }));
+    const events = (result: GameFolderCheckResult, maxFileParts = CONTEXT.maxFileParts) =>
+      toGameFolderStateEvents(result, { ...CONTEXT, maxFileParts });
+    const sentFiles = (fileParts: ReturnType<typeof events>["fileParts"]) =>
+      fileParts.flatMap((part) => part.files);
+
+    it("sends a clean folder as the state event alone", () => {
+      const { state, fileParts } = events(checked([]));
+      expect(fileParts).toEqual([]);
+      expect(state).toMatchObject({
+        file_parts: 0,
+        files_truncated: false,
+        unknown_truncated: false,
+      });
+    });
+
+    it("keeps a short list in one file event, in the order it arrived", () => {
       const result = checked(unknown(10), [{ folder: "Data/meshes", files: 10, bytes: 100 }]);
-      const payload = toGameFolderStatePayload(result, CONTEXT);
-      expect(payload.files).toHaveLength(10);
-      expect(payload).toMatchObject({
+      const { state, fileParts } = events(result);
+      expect(fileParts).toHaveLength(1);
+      expect(fileParts[0]).toMatchObject({ part: 1, parts: 1 });
+      expect(fileParts[0]!.files.map((file) => file.path)).toEqual(
+        unknown(10).map((file) => file.path),
+      );
+      expect(state).toMatchObject({
+        file_parts: 1,
         files_truncated: false,
         unknown_truncated: false,
         unknown_by_folder_truncated: false,
       });
     });
 
-    it("trims a dirty folder's unknown files to fit, keeping a sorted random sample", () => {
-      const payload = toGameFolderStatePayload(checked(unknown(2000)), CONTEXT);
-      expect(bytes(payload)).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
-      expect(payload.files.length).toBeGreaterThan(0);
-      expect(payload.files.length).toBeLessThan(2000);
-      expect(payload.unknown_truncated).toBe(true);
-      expect(payload.files_truncated).toBe(false);
-      const paths = payload.files.map((file) => file.path);
-      expect(paths).toEqual(paths.toSorted());
-      // a random sample, not the alphabetical start of the list
-      expect(paths.at(-1)! > path(1500)).toBe(true);
+    it("spreads a list too long for one event over several, leaving nothing out", () => {
+      const { state, fileParts } = events(checked(unknown(1500)));
+      expect(fileParts).toHaveLength(3);
+      expect(fileParts.map(({ part, parts }) => [part, parts])).toEqual([
+        [1, 3],
+        [2, 3],
+        [3, 3],
+      ]);
+      for (const part of fileParts) {
+        expect(bytes(part)).toBeLessThanOrEqual(CONTEXT.maxEventBytes);
+        expect(part.check_id).toBe(state.check_id);
+      }
+      expect(sentFiles(fileParts).map((file) => file.path)).toEqual(
+        unknown(1500).map((file) => file.path),
+      );
+      expect(state).toMatchObject({ file_parts: 3, unknown_truncated: false });
     });
 
-    it("keeps modified and missing files and folder totals ahead of unknown files", () => {
+    it("sends a sorted random sample of the unknown files when not all of them fit", () => {
+      const { state, fileParts } = events(checked(unknown(4000)));
+      expect(fileParts).toHaveLength(3);
+      for (const part of fileParts) expect(bytes(part)).toBeLessThanOrEqual(CONTEXT.maxEventBytes);
+      const paths = sentFiles(fileParts).map((file) => file.path);
+      expect(paths.length).toBeGreaterThan(1500);
+      expect(paths.length).toBeLessThan(4000);
+      expect(paths).toEqual(paths.toSorted());
+      // a random sample, not the alphabetical start of the list
+      expect(paths.at(-1)! > path(3000)).toBe(true);
+      expect(state).toMatchObject({ files_truncated: false, unknown_truncated: true });
+    });
+
+    it("sends modified and missing files ahead of unknown files", () => {
       const steam = Array.from({ length: 100 }, (_, index) => ({
         path: `Data/${index}.bsa`,
         status: index % 2 === 0 ? ("modified" as const) : ("missing" as const),
       }));
-      const folders = Array.from({ length: 50 }, (_, index) => ({
-        folder: `Data/folder${index}`,
+      const { state, fileParts } = events(checked([...steam, ...unknown(4000)]));
+      const sent = sentFiles(fileParts);
+      expect(sent.slice(0, 100).map((file) => file.path)).toEqual(steam.map((file) => file.path));
+      expect(sent.slice(100).every((file) => file.status === "unknown")).toBe(true);
+      expect(state).toMatchObject({ files_truncated: false, unknown_truncated: true });
+    });
+
+    it("cuts modified and missing files too when they alone are too many", () => {
+      const { state, fileParts } = events(checked([...modified(4000), ...unknown(5)]));
+      expect(fileParts).toHaveLength(3);
+      for (const part of fileParts) expect(bytes(part)).toBeLessThanOrEqual(CONTEXT.maxEventBytes);
+      const sent = sentFiles(fileParts);
+      expect(sent.every((file) => file.status === "modified")).toBe(true);
+      // the start of the list, not a sample
+      expect(sent.map((file) => file.path)).toEqual(modified(sent.length).map((file) => file.path));
+      expect(state).toMatchObject({ files_truncated: true, unknown_truncated: true });
+    });
+
+    it("sends fewer file events when the limit is lower", () => {
+      const { state, fileParts } = events(checked([...modified(10), ...unknown(1500)]), 1);
+      expect(fileParts).toHaveLength(1);
+      expect(fileParts[0]).toMatchObject({ part: 1, parts: 1 });
+      expect(bytes(fileParts[0])).toBeLessThanOrEqual(CONTEXT.maxEventBytes);
+      expect(fileParts[0]!.files.filter((file) => file.status === "modified")).toHaveLength(10);
+      expect(state).toMatchObject({
+        file_parts: 1,
+        max_file_parts: 1,
+        files_truncated: false,
+        unknown_truncated: true,
+      });
+    });
+
+    it("fits each event to a smaller size limit", () => {
+      const maxEventBytes = 20 * 1024;
+      const folders = Array.from({ length: 3000 }, (_, index) => ({
+        folder: `Data/textures/folder${index}`,
         files: index,
         bytes: index * 10,
       }));
-      const payload = toGameFolderStatePayload(
-        checked([...steam, ...unknown(2000)], folders),
-        CONTEXT,
-      );
-      expect(bytes(payload)).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
-      expect(payload.files.filter((file) => file.status !== "unknown")).toHaveLength(100);
-      expect(payload.unknown_by_folder).toHaveLength(50);
-      expect(payload.unknown_by_folder[0]!.files).toBe(49);
-      expect(payload).toMatchObject({
-        files_truncated: false,
+      const { state, fileParts } = toGameFolderStateEvents(checked(unknown(1500), folders), {
+        ...CONTEXT,
+        maxEventBytes,
+      });
+      expect(fileParts).toHaveLength(3);
+      for (const part of fileParts) expect(bytes(part)).toBeLessThanOrEqual(maxEventBytes);
+      expect(bytes(state)).toBeLessThanOrEqual(maxEventBytes);
+      expect(state).toMatchObject({
         unknown_truncated: true,
-        unknown_by_folder_truncated: false,
+        unknown_by_folder_truncated: true,
       });
     });
 
-    it("cuts modified and missing files too when they alone are over the limit", () => {
-      const steam = Array.from({ length: 2000 }, (_, index) => ({
-        path: path(index),
-        status: "modified" as const,
-        detectedBy: "size" as const,
-      }));
+    it("sends no paths, only the counts, when file events are turned off", () => {
       const folders = [{ folder: "Data/meshes", files: 5, bytes: 50 }];
-      const payload = toGameFolderStatePayload(
-        checked([...steam, ...unknown(5)], folders),
-        CONTEXT,
-      );
-      expect(bytes(payload)).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
-      expect(payload.files.every((file) => file.status === "modified")).toBe(true);
-      expect(payload).toMatchObject({
+      const { state, fileParts } = events(checked([...modified(10), ...unknown(5)], folders), 0);
+      expect(fileParts).toEqual([]);
+      expect(state).toMatchObject({
+        file_parts: 0,
+        max_file_parts: 0,
         files_truncated: true,
         unknown_truncated: true,
-        // a small entry still fills the room the cut list left
         unknown_by_folder: folders,
-        unknown_by_folder_truncated: false,
       });
+    });
+
+    it("cuts the folder totals, smallest first, when the state event is over the limit", () => {
+      const folders = Array.from({ length: 3000 }, (_, index) => ({
+        folder: `Data/textures/folder${index}`,
+        files: index,
+        bytes: index * 10,
+      }));
+      const { state } = events(checked([], folders));
+      expect(bytes(state)).toBeLessThanOrEqual(CONTEXT.maxEventBytes);
+      expect(state.unknown_by_folder.length).toBeGreaterThan(0);
+      expect(state.unknown_by_folder.length).toBeLessThan(3000);
+      expect(state.unknown_by_folder[0]!.files).toBe(2999);
+      expect(state.unknown_by_folder_truncated).toBe(true);
     });
 
     it("counts bytes, not characters, for non-ASCII paths", () => {
-      const files = Array.from({ length: 2000 }, (_, index) => ({
+      const files = Array.from({ length: 4000 }, (_, index) => ({
         path: `Data/テクスチャ/模型/${String(index).padStart(8, "0")}.dds`,
         status: "unknown" as const,
       }));
-      const payload = toGameFolderStatePayload(checked(files), CONTEXT);
-      expect(bytes(payload)).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
+      const { fileParts } = events(checked(files));
+      expect(fileParts).toHaveLength(3);
+      for (const part of fileParts) expect(bytes(part)).toBeLessThanOrEqual(CONTEXT.maxEventBytes);
     });
   });
 });

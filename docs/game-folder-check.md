@@ -3,8 +3,9 @@
 When a user starts managing a Steam game in Vortex, their game folder might
 already be "dirty"—containing manually installed mods, modified executables, or
 missing vanilla files. The Game Folder Check scans the game directory in the
-background once per game and sends a single `game_folder_state` telemetry event
-summarising what it found.
+background once per game and sends a `game_folder_state` telemetry event
+summarising what it found, with the paths of the files that stood out in
+`game_folder_state_files` events alongside it.
 
 The check is completely read-only and invisible to the user. It is controlled by
 the `vortex-game-folder-check` feature flag
@@ -37,7 +38,7 @@ sequenceDiagram
     else Check completes while idle
         M-->>R: game-folder-check:submit (result)
         deactivate M
-        R->>R: Send "game_folder_state" telemetry event
+        R->>R: Send "game_folder_state" and its file events
         R->>R: Mark game "done"
     end
 ```
@@ -245,14 +246,21 @@ changes made between managing the game and running the check (for example,
 launching the game and generating save or config files) appear as if they were
 already present when the game was managed.
 
-## Telemetry Event (`game_folder_state`)
+## Telemetry Events (`game_folder_state`, `game_folder_state_files`)
 
-The `game_folder_state` (v1) schema is defined in
-`packages/nexus-api-v3/src/eventTypes.ts`. Main returns a camelCase
-`GameFolderCheckResult` (`src/shared/src/types/gameFolderCheck.ts`), which the
-renderer maps to snake_case right before sending (`payload.ts`).
+A check is sent as one `game_folder_state` event holding everything except the
+file paths, and up to `maxFileParts` `game_folder_state_files` events holding
+the paths. They share a `check_id` and go in one request, or in several when
+there are too many to fit.
 
-The event payload includes:
+Both schemas (v1) are defined in `packages/nexus-api-v3/src/eventTypes.ts`. Main
+returns a camelCase `GameFolderCheckResult`
+(`src/shared/src/types/gameFolderCheck.ts`), which the renderer maps to
+snake_case right before sending (`payload.ts`).
+
+### State Event
+
+The `game_folder_state` payload includes:
 
 - **Status and reason:** Whether the check completed, lacked a baseline, or was
   aborted (see table below).
@@ -261,20 +269,50 @@ The event payload includes:
 - **Timestamps:** `managed_at`, Steam's `LastUpdated`, install folder creation
   time, and depot manifest creation times.
 - **Performance metrics:** Total duration, files walked, and bytes read.
-- **File lists (`files`):**
-    - Every modified or missing Steam file, including `detected_by` and
-      `from_backup` where applicable.
-    - Up to `maxUnknownPaths` unknown files (sampled at random and sorted), with
-      `unknown_truncated: true` if there were more.
-    - `unknown_by_folder`: Total count of unknown files grouped by their top two
-      directory levels.
+- **Folder totals (`unknown_by_folder`):** Total count of unknown files
+  grouped by their top two directory levels.
+- **File events:** `check_id`, the number of file events sent with it
+  (`file_parts`), and the `maxFileParts` in force (`max_file_parts`).
 
-The API rejects an event whose payload is over 64 KB, so the file lists are
-trimmed until the payload fits in 60 KiB. The counts are never trimmed. The
-lists are filled in this order: modified and missing files, then
-`unknown_by_folder` (largest folders first), then a fresh random sample of the
-unknown files. `files_truncated`, `unknown_by_folder_truncated` and
-`unknown_truncated` say which lists were cut.
+### File Events
+
+The API rejects an event whose payload is over 64 KB, and a dirty folder's paths
+easily pass that, so they are spread over several events. Each
+`game_folder_state_files` payload carries the `check_id` and `game_id`, its
+`part` number (from 1), the total `parts`, and a `files` list holding as many
+paths as fit in `maxEventBytes` (60 KiB by default). The lists run on from one part to the next:
+
+1. Every modified or missing Steam file, including `detected_by` and
+   `from_backup` where applicable.
+2. Up to `maxUnknownPaths` unknown files, sorted by path.
+
+A clean folder sends no file events. When the paths don't all fit in
+`maxFileParts` events, modified and missing files go first, and the unknown
+files that still fit are a fresh random sample. The state event says what was
+left out: `files_truncated` for modified and missing files, `unknown_truncated`
+for unknown files. Setting `maxFileParts` to 0 sends the state event alone.
+
+The API also drops a whole batch whose payloads total over 256 KB, so a check's
+events are sent in batches of at most 240 KiB each: four events at the default
+size. The file events go first and the state event in the last batch. If a
+later batch fails, the earlier one leaves only file events behind, which count
+for nothing without their state event; the state event is never stored twice
+for one attempt. `maxFileParts` is capped at 20.
+
+The counts in the state event are never cut. If its `unknown_by_folder` list is
+too long to fit, the smallest folders are dropped and
+`unknown_by_folder_truncated` is set.
+
+### Reading the Events
+
+Each event is stored as its own row, and the API accepts or rejects them one by
+one, so a check's paths are only complete when all of its parts arrived. Counts
+come from `game_folder_state` alone. For paths, read
+`game_folder_state_files`, group by `check_id`, and keep the checks whose
+number of distinct parts equals `parts`.
+
+A check that fails to send, or has an event rejected, stays pending and runs
+again in a later session as a new check with a new `check_id`.
 
 All file paths in the payload are relative to the game folder using `/`
 separators. Absolute local paths (such as the Steam library path or OS username)
@@ -304,7 +342,9 @@ requiring a client release:
 | `hashConcurrency`       | 4       | Number of files hashed concurrently                                         |
 | `hashSampleExecutables` | 1000    | Maximum `.exe` and `.dll` files sampled for hashing per check               |
 | `hashSampleFiles`       | 2000    | Maximum non-executable files sampled for hashing per check                  |
-| `maxUnknownPaths`       | 2000    | Maximum unknown file paths included in a single event                       |
+| `maxUnknownPaths`       | 2000    | Maximum unknown file paths collected per check                              |
+| `maxFileParts`          | 6       | Maximum file events sent per check (at most 20); 0 sends no file paths      |
+| `maxEventBytes`         | 60 KiB  | Maximum payload size (bytes) of one event; the API's limit is 64 KB         |
 | `fullVerifyPercent`     | 2       | Percentage of checks that hash every chunk of every size-matched Steam file |
 
 Example flag config override:
@@ -354,8 +394,8 @@ Renderer process (`src/renderer/src/extensions/analytics/gameFolderCheck/`):
 
 - `scheduler.ts` - Evaluates gates, manages persistent markers, waits for settle/idle, and cancels on user activity
 - `steamInput.ts` - Locates the game's Steam installation and builds the input payload for main
-- `submit.ts` - Sends the `game_folder_state` telemetry event and marks the check `done`
-- `payload.ts` - Maps main's `GameFolderCheckResult` to the snake_case telemetry event schema
+- `submit.ts` - Sends the file events and the `game_folder_state` event in batches and marks the check `done`
+- `payload.ts` - Maps main's `GameFolderCheckResult` to the snake_case event payloads and splits the paths into file events
 - `config.ts` - Defines default limits and merges feature-flag config overrides
 - `index.ts` - Wires up startup hooks and registers the dev-only "Check Game Folder" action
 
@@ -363,4 +403,4 @@ Shared types and schemas:
 
 - `src/shared/src/types/gameFolderCheck.ts` - Input, limit, and result types shared between main and renderer
 - `src/shared/src/types/ipc.ts` - `game-folder-check:*` IPC channel definitions
-- `packages/nexus-api-v3/src/eventTypes.ts` - `game_folder_state` telemetry event schema
+- `packages/nexus-api-v3/src/eventTypes.ts` - `game_folder_state` and `game_folder_state_files` telemetry event schemas

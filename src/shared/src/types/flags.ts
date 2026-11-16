@@ -32,6 +32,8 @@ export const flagVariantSchemas = {
           hashSampleExecutables: z.number().int().nonnegative().optional(),
           hashSampleFiles: z.number().int().nonnegative().optional(),
           maxUnknownPaths: z.number().int().nonnegative().optional(),
+          maxFileParts: z.number().int().nonnegative().optional(),
+          maxEventBytes: z.number().int().positive().optional(),
           fullVerifyPercent: z.number().min(0).max(100).optional(),
         }),
       ) as z.ZodType<GameFolderCheckFlagConfig>,
@@ -46,6 +48,8 @@ export interface GameFolderCheckFlagConfig {
   hashSampleExecutables?: number;
   hashSampleFiles?: number;
   maxUnknownPaths?: number;
+  maxFileParts?: number;
+  maxEventBytes?: number;
   fullVerifyPercent?: number;
 }
 

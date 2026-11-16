@@ -1,4 +1,8 @@
-export type TelemetryEvent = EventDetectedGame | EventStoreGameVersion | EventGameFolderState;
+export type TelemetryEvent =
+  | EventDetectedGame
+  | EventStoreGameVersion
+  | EventGameFolderState
+  | EventGameFolderStateFiles;
 
 // https://github.com/Nexus-Mods/flamework/tree/master/contracts/telemetry
 export type EventDetectedGame = {
@@ -64,11 +68,20 @@ export type GogInstall = {
 };
 
 // Draft: not yet agreed in flamework contracts/telemetry (MOD-80).
+// One check is a game_folder_state event with everything but the file paths, plus up to
+// max_file_parts game_folder_state_files events holding the paths, all in one batch.
 export type EventGameFolderState = {
   type: "game_folder_state";
   version: 1;
 
   payload: GameFolderStatePayload;
+};
+
+export type EventGameFolderStateFiles = {
+  type: "game_folder_state_files";
+  version: 1;
+
+  payload: GameFolderStateFilesPayload;
 };
 
 export type GameFolderFileCount = {
@@ -82,6 +95,8 @@ export type GameFolderPartStatus = {
 };
 
 export type GameFolderStatePayload = {
+  /** shared with this check's game_folder_state_files events */
+  check_id: string;
   game_id: string;
   /** "checked" means the folder was listed; Steam verification carries its own status */
   status: "checked" | "no_baseline" | "aborted";
@@ -126,14 +141,13 @@ export type GameFolderStatePayload = {
   unknown_in_vortex_folder: GameFolderFileCount;
   vortex: GameFolderFileCount;
   vortex_changed_since_deploy: GameFolderFileCount;
-  /**
-   * every modified and missing file, and up to the cap of unknown files, as many as fit in the
-   * 64 KB payload limit
-   */
-  files: GameFolderFile[];
-  /** some modified or missing files were left out of `files` to fit the payload limit */
+  /** game_folder_state_files events sent with this one; 0 when there were no paths to send */
+  file_parts: number;
+  /** the most file events a check could send when this one ran; 0 turns the paths off */
+  max_file_parts: number;
+  /** some modified or missing files were left out of the file events for lack of room */
   files_truncated: boolean;
-  /** some unknown files were left out of `files`, past the cap or to fit the payload limit */
+  /** some unknown files were left out of the file events, past the cap or for lack of room */
   unknown_truncated: boolean;
   /** every unknown file, totalled by its first two folders; largest first when trimmed */
   unknown_by_folder: GameFolderFolderCount[];
@@ -144,6 +158,20 @@ export type GameFolderStatePayload = {
     files_walked: number;
     bytes_read: number;
   };
+};
+
+export type GameFolderStateFilesPayload = {
+  check_id: string;
+  game_id: string;
+  /** from 1 */
+  part: number;
+  /** file events in this check; its paths are complete when all of them arrived */
+  parts: number;
+  /**
+   * modified and missing files first, then unknown files, running on from the part before; each
+   * event holds as many as fit in the payload limit
+   */
+  files: GameFolderFile[];
 };
 
 export type GameFolderDepot = {
