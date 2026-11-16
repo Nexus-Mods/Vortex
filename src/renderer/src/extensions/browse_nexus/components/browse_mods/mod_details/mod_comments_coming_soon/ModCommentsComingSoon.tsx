@@ -14,7 +14,7 @@ interface IModCommentsComingSoonProps {
 }
 
 /**
- * The Comments tab until Vortex shows comments: they're coming, and the website has them. Counts
+ * The Comments tab until Vortex shows comments, which the website has for now. Counts
  * opening them there.
  */
 export const ModCommentsComingSoon = ({ commentsUrl, modUid }: IModCommentsComingSoonProps) => {
@@ -24,9 +24,9 @@ export const ModCommentsComingSoon = ({ commentsUrl, modUid }: IModCommentsComin
   return (
     <div className="rounded-sm bg-translucent-dark-200 py-8">
       <NoResults
-        icon="schedule"
-        message={t("For now, you can view comments on the Nexus Mods website.")}
-        title={t("Mod comments are coming to Vortex soon")}
+        icon="chat_bubble"
+        message={t("You can still view comments on the Nexus Mods website.")}
+        title={t("Mod comments aren't available in Vortex yet")}
       >
         <Button
           appearance="moderate"
