@@ -1,4 +1,5 @@
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
+import type { ModDetailsTab } from "@/extensions/browse_nexus/components/browse_mods/mod_details/modDetailsTabs";
 import type { EmptyStateKind } from "@/extensions/browse_nexus/util/empty_state_kind/emptyStateKind";
 import type {
   TrackedView,
@@ -184,6 +185,17 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     }) => track("browse_mods_file_picker_opened", props),
 
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
+
+    // Another of the details' tabs picked, by click or the keys; not sent for the one already open.
+    trackDetailsTabSelected: (props: {
+      mod_uid: string;
+      tab: ModDetailsTab;
+      previous_tab: ModDetailsTab;
+    }) => track("browse_mods_details_tab_selected", props),
+
+    // The Comments tab's View comments, opening the mod's comments on the website.
+    trackCommentsOpened: (props: { mod_uid: string }) =>
+      track("browse_mods_comments_opened", props),
 
     // From the details' … menu: the mod's page link copied, and its page opened to report it.
     trackModLinkCopied: (props: { mod_uid: string }) => track("browse_mods_mod_link_copied", props),

@@ -6,7 +6,10 @@ import { useTranslation } from "react-i18next";
 
 import { modQuery } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
-import { nexusModPageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
+import {
+  nexusModCommentsUrl,
+  nexusModPageUrl,
+} from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Author } from "@/ui/components/author/Author";
 import { Button } from "@/ui/components/button/Button";
@@ -25,11 +28,13 @@ import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/Browse
 import { useDescriptionImagePlaceholders } from "../../../hooks/use_description_image_placeholders/useDescriptionImagePlaceholders.hook";
 import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
 import { modStatusDisplay } from "../../../util/mod_status/modStatus";
+import { ModCommentsComingSoon } from "./mod_comments_coming_soon/ModCommentsComingSoon";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModInstallButton } from "./mod_install_button/ModInstallButton";
 import { ModMenu } from "./mod_menu/ModMenu";
 import { ModTags } from "./mod_tags/ModTags";
 import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton";
+import { isModDetailsTab, type ModDetailsTab } from "./modDetailsTabs";
 
 // const placeholderClass =
 //   "flex items-center justify-center rounded-sm border border-dashed border-stroke-moderate p-4 text-center";
@@ -61,7 +66,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const details = useQuery(modQuery(api, mod.id));
     const tags = details.data?.tags ?? [];
     const hasFailed = details.isError && !details.data;
-    const [tab, setTab] = useState("details");
+    const [tab, setTab] = useState<ModDetailsTab>("details");
     const updated = useRelativeTime(Date.parse(mod.updated_at), t);
     const created = useRelativeTime(Date.parse(mod.created_at), t);
     const tracker = useBrowseModsTracker();
@@ -113,7 +118,14 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
           tab={tab}
           tabListId="browse-mod-details-tabs"
           tabType="secondary"
-          onSetSelectedTab={setTab}
+          onSetSelectedTab={(next) => {
+            if (next === tab || !isModDetailsTab(next)) {
+              return;
+            }
+
+            setTab(next);
+            tracker.trackDetailsTabSelected({ mod_uid: mod.id, tab: next, previous_tab: tab });
+          }}
         >
           <div className="flex scrollbar-gutter-stable items-start gap-x-4 overflow-hidden px-6 pt-6 pb-3">
             <TabBar className="min-w-0 flex-1">
@@ -121,7 +133,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
 
               {/* <TabButton name={t("Files")} panelId="files" /> */}
 
-              {/* <TabButton name={t("Comments")} panelId="comments" /> */}
+              <TabButton name={t("Comments")} panelId="comments" />
             </TabBar>
 
             <div className="flex items-center gap-x-2">
@@ -152,6 +164,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
 
           <div
             className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col overflow-y-auto scroll-fade px-6 pb-9 backdrop-dim-source scroll-fade-9 focus-visible:outline-none"
+            data-testid="mod-details-scroll-area"
             ref={ref}
             tabIndex={-1}
           >
@@ -259,9 +272,12 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
               <div className={placeholderClass}>{t("The mod's files will go here")}</div>
             </TabPanel> */}
 
-            {/* <TabPanel id="comments">
-              <div className={placeholderClass}>{t("The mod's comments will go here")}</div>
-            </TabPanel> */}
+            <TabPanel id="comments">
+              <ModCommentsComingSoon
+                commentsUrl={nexusModCommentsUrl(domain, mod.game_scoped_id)}
+                modUid={mod.id}
+              />
+            </TabPanel>
           </div>
         </TabProvider>
       </div>

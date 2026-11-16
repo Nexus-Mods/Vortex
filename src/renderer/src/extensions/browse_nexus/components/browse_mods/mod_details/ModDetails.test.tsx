@@ -238,9 +238,7 @@ describe("ModDetails", () => {
 
   it("keeps its tabs and buttons above the part that scrolls, so they stay put", () => {
     renderComponent();
-    const scrollArea = screen
-      .getByRole("region", { name: "Mod details" })
-      .querySelector<HTMLElement>('[tabindex="-1"]');
+    const scrollArea = screen.getByTestId("mod-details-scroll-area");
 
     expect(scrollArea).toHaveClass("overflow-y-auto");
     expect(scrollArea).not.toContainElement(screen.getByRole("tab", { name: "Details" }));
@@ -250,12 +248,7 @@ describe("ModDetails", () => {
   it("asks to move focus back to the list on Left from the pane itself", async () => {
     const onFocusList = vi.fn();
     renderComponent(summary, onFocusList);
-    act(() =>
-      screen
-        .getByRole("region", { name: "Mod details" })
-        .querySelector<HTMLElement>('[tabindex="-1"]')!
-        .focus(),
-    );
+    act(() => screen.getByTestId("mod-details-scroll-area").focus());
 
     await userEvent.keyboard("{ArrowLeft}");
 
@@ -293,6 +286,34 @@ describe("ModDetails", () => {
     expect(openUrl).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/1");
     expect(propertiesOf("browse_mods_mod_page_opened")).toEqual([{ mod_uid: "1704-1" }]);
     vi.unstubAllGlobals();
+  });
+
+  it("counts sending the user to the mod's comments on the website from the Comments tab", async () => {
+    const openUrl = vi.fn();
+    vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+    renderComponent();
+
+    await userEvent.click(screen.getByRole("tab", { name: "Comments" }));
+    await userEvent.click(screen.getByRole("button", { name: "View comments" }));
+
+    expect(openUrl).toHaveBeenCalledWith(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=posts",
+    );
+    expect(propertiesOf("browse_mods_comments_opened")).toEqual([{ mod_uid: "1704-1" }]);
+    vi.unstubAllGlobals();
+  });
+
+  it("counts each change of tab once, with the tab it left, not a click on the open one", async () => {
+    renderComponent();
+
+    await userEvent.click(screen.getByRole("tab", { name: "Comments" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Comments" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Details" }));
+
+    expect(propertiesOf("browse_mods_details_tab_selected")).toEqual([
+      { mod_uid: "1704-1", tab: "comments", previous_tab: "details" },
+      { mod_uid: "1704-1", tab: "details", previous_tab: "comments" },
+    ]);
   });
 
   it("counts picking a picture in the gallery", async () => {

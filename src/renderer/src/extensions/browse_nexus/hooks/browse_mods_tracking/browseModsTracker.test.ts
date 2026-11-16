@@ -165,6 +165,32 @@ describe("createBrowseModsTracker", () => {
     });
   });
 
+  it("counts another of the details' tabs picked, with the one it left", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackDetailsTabSelected({
+      mod_uid: "1704-1",
+      tab: "comments",
+      previous_tab: "details",
+    });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_details_tab_selected",
+      properties: { mod_uid: "1704-1", tab: "comments", previous_tab: "details" },
+    });
+  });
+
+  it("counts opening a mod's comments on the website", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackCommentsOpened({ mod_uid: "1704-1" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_comments_opened",
+      properties: { mod_uid: "1704-1" },
+    });
+  });
+
   it("counts feedback skipped, with no reasons", () => {
     const { emit, tracker } = trackerOnSpy();
 

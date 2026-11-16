@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   nexusFilePageUrl,
+  nexusModCommentsUrl,
   nexusModFilesUrl,
   nexusModReportUrl,
   nexusModPageUrl,
@@ -45,6 +46,14 @@ describe("nexusModReportUrl", () => {
   it("is the mod's page, asking for its report dialog", () => {
     expect(nexusModReportUrl(SKYRIM, 12604)).toBe(
       "https://www.nexusmods.com/skyrimspecialedition/mods/12604?report=1",
+    );
+  });
+});
+
+describe("nexusModCommentsUrl", () => {
+  it("is the mod's Posts tab", () => {
+    expect(nexusModCommentsUrl(SKYRIM, 12604)).toBe(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?tab=posts",
     );
   });
 });
