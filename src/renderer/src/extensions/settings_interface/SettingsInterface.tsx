@@ -19,7 +19,6 @@ import { relaunch } from "@/util/commandLine";
 import { log } from "@/util/log";
 import { getPreloadApi } from "@/util/preloadAccess";
 import { useReduceMotion } from "@/util/reduceMotion";
-import { showsGameArt } from "@/views/components/game_art/showsGameArt";
 
 import { displayBcp47, isValidBcp47 } from "../../bcp47";
 import More from "../../controls/More";
@@ -46,6 +45,7 @@ import {
   setRelativeTimes,
 } from "./actions/interface";
 import { buildLanguageOptions, type ILanguage, type ILanguageOption } from "./languageOptions";
+import { showsGameArt } from "./selectors";
 import getText from "./texts";
 import { MAX_ZOOM, MIN_ZOOM, normalizeZoom, ZOOM_STEP, zoomFromState } from "./utils/zoom";
 

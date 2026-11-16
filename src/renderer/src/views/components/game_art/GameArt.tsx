@@ -6,10 +6,10 @@ import {
   heroImageURLForGameId,
   nexusGameIdForGame,
 } from "@/extensions/nexus_integration/util/gameImageURLs";
+import { showsGameArt } from "@/extensions/settings_interface/selectors";
 import type { IState } from "@/types/IState";
 
 import { useSpineContext } from "../Spine/SpineContext";
-import { showsGameArt } from "./showsGameArt";
 
 /**
  * The open game's hero art, faded into the window's bottom left, behind the whole layout. The
@@ -18,12 +18,12 @@ import { showsGameArt } from "./showsGameArt";
  */
 export const GameArt = () => {
   const { selection } = useSpineContext();
-  const isEnabled = useSelector(showsGameArt);
+  const showGameArt = useSelector(showsGameArt);
   const game = useSelector((state: IState) =>
     selection.type === "game" ? gameById(state, selection.gameId) : undefined,
   );
 
-  if (!isEnabled || selection.type !== "game") {
+  if (!showGameArt || selection.type !== "game") {
     return null;
   }
 

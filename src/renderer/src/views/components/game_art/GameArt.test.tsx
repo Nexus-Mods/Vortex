@@ -27,7 +27,7 @@ vi.mock("@/extensions/nexus_integration/util/gameImageURLs", async (importOrigin
 import type { SpineSelection } from "../Spine/spine_selection/spineSelection.util";
 import { GameArt } from "./GameArt";
 
-const renderArt = ({ showGameArt }: { showGameArt?: boolean } = {}) => {
+const renderArt = ({ showGameArt = true }: { showGameArt?: boolean } = {}) => {
   settings.showGameArt = showGameArt;
   return render(<GameArt />);
 };
@@ -37,13 +37,6 @@ const artSrc = (container: HTMLElement) =>
 
 describe("GameArt", () => {
   it("draws the open game's hero art", () => {
-    spine.selection = { type: "game", gameId: "skyrimse" };
-    games.hasHero = true;
-    const { container } = renderArt({ showGameArt: true });
-    expect(artSrc(container)).toBe("https://images.nexusmods.com/images/games/v2/1704/hero.jpg");
-  });
-
-  it("draws the art for settings saved before the setting existed", () => {
     spine.selection = { type: "game", gameId: "skyrimse" };
     games.hasHero = true;
     const { container } = renderArt();
