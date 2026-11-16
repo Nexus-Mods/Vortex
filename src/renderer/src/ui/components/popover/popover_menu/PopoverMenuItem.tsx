@@ -41,6 +41,7 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
           "nxm-dropdown-item-active": !!action.active,
           "nxm-dropdown-item-focus": hasFocus,
         })}
+        data-testid={action.testId}
         disabled={disabled && !keepsPin}
         ref={ref}
         role={action.checked === undefined ? "menuitem" : "menuitemradio"}

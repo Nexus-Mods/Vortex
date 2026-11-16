@@ -46,7 +46,7 @@ import {
   type IBrowseModsView,
   type IBrowseModsViewsState,
 } from "../../reducers/mods_views/modsViews";
-import { type IBrowseSessionState, sessionReducer } from "../../reducers/session";
+import { type IBrowseSessionState, sessionReducer } from "../../reducers/session/session";
 import { MODS_PER_PAGE, useModSearch } from "./useModSearch.hook";
 
 /** The time the tests start at, which the first time range counts back from. */
@@ -437,7 +437,7 @@ describe("useModSearch", () => {
     await respond("downloads", 12);
     vi.setSystemTime(NOW + 5 * MINUTE_MS);
 
-    act(() => result.current.selectView("popular"));
+    act(() => result.current.selectView("trending"));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search.filters).toMatchObject({
