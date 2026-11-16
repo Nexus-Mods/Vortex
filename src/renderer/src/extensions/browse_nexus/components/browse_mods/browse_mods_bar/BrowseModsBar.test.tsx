@@ -55,10 +55,14 @@ const searchWith = (
 };
 
 /** Renders the bar over the search, with a tracker whose events it returns. */
-const renderBar = (search: IModSearch) => {
+const renderBar = (
+  search: IModSearch,
+  feedback: { hasGiven: boolean; onOpen: () => void } = { hasGiven: false, onOpen: vi.fn() },
+) => {
   const tracking = browseModsTracking();
   const view = render(
     <BrowseModsBar
+      feedback={feedback}
       panelRefs={{ filters: createRef(), viewOptions: createRef() }}
       search={search}
       viewPicker={null}
@@ -73,6 +77,27 @@ const propertiesOf = (tracked: ReturnType<typeof renderBar>["tracked"], eventNam
   tracked(eventName).map(({ properties }) => properties);
 
 describe("BrowseModsBar", () => {
+  it("opens the feedback from its button", async () => {
+    const onOpen = vi.fn();
+    renderBar(searchWith({}), { hasGiven: false, onOpen });
+
+    await userEvent.click(screen.getByTestId("browse-mods-feedback"));
+
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("turns the feedback button off once it's been given, saying why", async () => {
+    const onOpen = vi.fn();
+    renderBar(searchWith({}), { hasGiven: true, onOpen });
+    const button = screen.getByTestId("browse-mods-feedback");
+
+    await userEvent.click(button);
+
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription("Thanks for your feedback");
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
   it("shows the time range that's on, and removes it to all time", async () => {
     const search = searchWith({ timeRange: "7" });
     renderBar(search);
@@ -105,22 +130,6 @@ describe("BrowseModsBar", () => {
     expect(
       screen.queryByRole("button", { name: "Remove time range filter" }),
     ).not.toBeInTheDocument();
-  });
-
-  it("marks the filter button with a pip while a filter is on", () => {
-    const { rerender } = renderBar(searchWith({ timeRange: "7" }));
-
-    expect(screen.getByRole("button", { name: "Filter" })).toHaveClass("nxm-button-pip");
-
-    rerender(
-      <BrowseModsBar
-        panelRefs={{ filters: createRef(), viewOptions: createRef() }}
-        search={searchWith({ timeRange: "all" })}
-        viewPicker={null}
-      />,
-    );
-
-    expect(screen.getByRole("button", { name: "Filter" })).not.toHaveClass("nxm-button-pip");
   });
 
   it("offers to reset the filters only once they differ from the view's own", async () => {

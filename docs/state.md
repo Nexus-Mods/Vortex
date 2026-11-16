@@ -64,8 +64,8 @@ while you are in an old reducer, converting the helpers in the parts you touch
 
 ## Looking up games and converting game IDs
 
-A game has three IDs that are different things: `VortexGameId`, `GameDomain` and
-`GameId` (`src/shared/src/types/ids.ts`). Look a game up and convert between them with
+A game has three IDs that are different things: `VortexGameId`, `NexusGameDomain` and
+`NexusGameId` (`src/shared/src/types/ids.ts`). Look a game up and convert between them with
 `findGame` and `convertId` from
 `src/renderer/src/extensions/gamemode_management/queries.ts`, on the data `gameData(state)`
 builds:
@@ -84,12 +84,12 @@ catalog fills the extension's, including for extensions installed before it exis
 `GameModeManager` copies it to the game when it stores the game, and again when the
 catalog or the Nexus Mods games list arrives late. The queries read `nexus`; a game without
 one (a bundled game that declares no `details.nexusPageId`, an extension with no Nexus Mods
-link) has no domain or `GameId`.
+link) has no domain or `NexusGameId`.
 
 Do:
 
 - Treat `undefined` as "not found". There is no fallback.
-- Read a game's domain or `GameId` with `convertId`, not from `details.nexusPageId`.
+- Read a game's domain or `NexusGameId` with `convertId`, not from `details.nexusPageId`.
 - Pass `discovered` when games can share a domain (Skyrim SE and VR), so the installed
   one is preferred.
 - Add a missing join to `queries.ts`.
@@ -98,7 +98,7 @@ Don't:
 
 - Cast between the IDs, or treat a game's ID as its domain. A guess looks like a real
   answer and is wrong for every game whose ID differs from its domain. Tier 0 games are
-  registered as `tier-0-{GameId}` so theirs never happens to match.
+  registered as `tier-0-{NexusGameId}` so theirs never happens to match.
 - Write your own `known.find(...)` over the games list.
 - Add callers of `nexusGameId`, `convertGameIdReverse` or `convertNXMIdReverse`. They
   predate this and still guess in places.

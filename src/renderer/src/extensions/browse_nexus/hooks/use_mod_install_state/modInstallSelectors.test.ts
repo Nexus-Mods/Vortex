@@ -1,4 +1,4 @@
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
@@ -7,7 +7,7 @@ import type { IState } from "@/types/IState";
 import { downloadKeys } from "./modInstallSelectors";
 
 const GAME = VortexGameId("enderalspecialedition");
-const DOMAIN = GameDomain("enderalspecialedition");
+const DOMAIN = NexusGameDomain("enderalspecialedition");
 const SKYUI = 3863;
 
 /** A finished download of SkyUI for Enderal SE. */

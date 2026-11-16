@@ -1,4 +1,4 @@
-import { GameDomain, GameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { ExtensionInfo, IRegisteredExtension } from "@/types/extensions";
@@ -21,8 +21,26 @@ import {
   getMissingOptionalExtensions,
   isAlreadyInstalled,
   isExtensionDownload,
+  isSupersededBundledExtension,
   matchesQuery,
 } from "./queries";
+
+// an update can leave the folder of an extension that moved into core behind in bundledPlugins
+describe("isSupersededBundledExtension", () => {
+  const core = new Set(["gamebryo-plugin-management", "mod_management"]);
+
+  it("recognises a leftover folder named like a core extension", () => {
+    expect(isSupersededBundledExtension("gamebryo-plugin-management", core)).toBe(true);
+  });
+
+  it("recognises a leftover folder of an extension folded into another one", () => {
+    expect(isSupersededBundledExtension("gamebryo-plugin-indexlock", core)).toBe(true);
+  });
+
+  it("leaves an extension that still ships bundled alone", () => {
+    expect(isSupersededBundledExtension("gamebryo-savegame-management", core)).toBe(false);
+  });
+});
 
 /** Helper to create extension info */
 function makeExtensionInfo(overrides: Partial<ExtensionInfo> = {}): ExtensionInfo {
@@ -437,10 +455,10 @@ describe("getMissingOptionalExtensions", () => {
 });
 
 describe("findNexusBackfill", () => {
-  const numericA = GameId(1);
-  const numericB = GameId(2);
-  const domainA = GameDomain("domain-a");
-  const domainB = GameDomain("domain-b");
+  const numericA = NexusGameId(1);
+  const numericB = NexusGameId(2);
+  const domainA = NexusGameDomain("domain-a");
+  const domainB = NexusGameDomain("domain-b");
 
   const catalogEntry = makeAvailableExtension({
     modId: 196,
@@ -516,7 +534,7 @@ describe("findLinkCandidates", () => {
     modId: 196,
     version: "0.13.1",
     type: "game",
-    gameDomain: GameDomain("cyberpunk2077"),
+    gameDomain: NexusGameDomain("cyberpunk2077"),
   });
 
   it("matches an unlinked game extension through the domain of the game it registers", () => {
@@ -555,7 +573,7 @@ describe("findLinkCandidates", () => {
       modId: 197,
       version: "1.0.0",
       type: "game",
-      gameDomain: GameDomain("cyberpunk2077demo"),
+      gameDomain: NexusGameDomain("cyberpunk2077demo"),
     });
     expect(findLinkCandidates({ "ext-1": unlinked }, twoGames, [catalogEntry, other])).toEqual([]);
   });

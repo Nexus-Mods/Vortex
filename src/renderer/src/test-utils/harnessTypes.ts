@@ -31,6 +31,7 @@ import type { HealthCheckRegistry } from "../extensions/health_check/core/Health
 import type { IHistoryEvent } from "../extensions/history_management/types";
 import type InstallContext from "../extensions/mod_management/InstallContext";
 import type InstallManager from "../extensions/mod_management/InstallManager";
+import type { IActiveInstallation } from "../extensions/mod_management/InstallManager";
 import type {
   IDeployedFile,
   IDeploymentMethod,
@@ -96,6 +97,11 @@ export interface IApiHarness {
   setState: (mutate: (draft: IState) => void) => void;
   // configure what the next showDialog call resolves to
   setNextDialog: (result: IDialogResult) => void;
+  // put a modal dialog in the state's dialog queue (state.session.notifications.dialogs), as an
+  // open prompt would be. showDialog itself resolves at once and never touches the state.
+  openModalDialog: (id?: string) => void;
+  // set the FOMOD installer dialog's active instance (state.session.fomod); null closes it
+  setFomodDialog: (activeInstanceId: string | null) => void;
   // showDialog calls, recorded in order
   dialogCalls: Array<{ type: DialogType; title: string }>;
   // showErrorNotification calls, recorded in order. allowReport matters: a false here is what
@@ -364,6 +370,10 @@ export interface IManagerInternals {
   mPendingInstalls: Map<string, unknown>;
   // the per-collection cancel callback the completion poll checks, keyed by collection mod id
   mDependencyInstalls: Record<string, () => void>;
+  // running installs, keyed by `${sourceModId}:${downloadId}` (`undefined:<id>` outside a collection)
+  mActiveInstalls: Map<string, IActiveInstallation>;
+  // the install a queued dependency runs; stubbed to model its outcome
+  installModAsync: (...args: unknown[]) => Promise<string>;
 }
 
 /** What a profile switch test arranges. */

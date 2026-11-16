@@ -1,4 +1,4 @@
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
@@ -9,8 +9,8 @@ import { downloadKeysOf, groupedModInstallState, groupModInstallSources } from "
 import { type IModInstallSources, modInstallState } from "./modInstallState";
 
 const GAME = VortexGameId("enderalspecialedition");
-const DOMAIN = GameDomain("enderalspecialedition");
-const SKYRIM = GameDomain("skyrimspecialedition");
+const DOMAIN = NexusGameDomain("enderalspecialedition");
+const SKYRIM = NexusGameDomain("skyrimspecialedition");
 const SKYUI = 3863;
 
 /** An installed SkyUI, downloaded for Enderal SE, with the update check's attributes. */
@@ -47,7 +47,7 @@ const stateOf = (
     modState,
     downloads,
     gameId: GAME,
-    domainOf: (id) => GameDomain(id === "skyrimse" ? "skyrimspecialedition" : id),
+    domainOf: (id) => NexusGameDomain(id === "skyrimse" ? "skyrimspecialedition" : id),
   };
 
   const ref = { domain: DOMAIN, modId: SKYUI };

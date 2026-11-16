@@ -1,3 +1,4 @@
+import { VortexModId } from "@vortex/shared";
 import { describe, expect } from "vitest";
 
 import {
@@ -88,6 +89,27 @@ describe("planOverrideUpdate", () => {
     });
 
     expect(shared.plan()).toEqual({
+      overrides: { [DINPUT_MOD]: [], [ENB_MOD]: [SHARED_FILE] },
+      purgeFirst: false,
+    });
+  });
+
+  test("plans for a mod record that lost its id", ({ makeSharedFile }) => {
+    const shared = makeSharedFile({ dinputOverrides: [SHARED_FILE], enbOverrides: [SHARED_FILE] });
+    shared.setState((draft) => {
+      delete draft.persistent.mods[shared.gameId][ENB_MOD].id;
+    });
+
+    expect(shared.plan()).toEqual({
+      overrides: { [DINPUT_MOD]: [SHARED_FILE], [ENB_MOD]: [] },
+      purgeFirst: true,
+    });
+  });
+
+  test("ignores an edit for a mod that is not installed", ({ makeSharedFile }) => {
+    const shared = makeSharedFile({ enbOverrides: [SHARED_FILE] });
+
+    expect(shared.plan({ [VortexModId("removed-mod")]: [SHARED_FILE] })).toEqual({
       overrides: { [DINPUT_MOD]: [], [ENB_MOD]: [SHARED_FILE] },
       purgeFirst: false,
     });

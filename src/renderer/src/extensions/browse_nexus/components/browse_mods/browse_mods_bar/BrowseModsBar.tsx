@@ -9,7 +9,6 @@ import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics
 import { Typography } from "@/ui/components/typography/Typography";
 import { PageContent } from "@/views/components/Page/PageContent";
 
-import type { FilterSource } from "../../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import type { IBrowseModsPanelRefs } from "../../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
 import { useChangeModFilters } from "../../../hooks/use_change_mod_filters/useChangeModFilters.hook";
@@ -34,6 +33,8 @@ interface IBrowseModsBarProps {
   viewPicker: ReactNode;
   /** The Filter menu and View options, for a view's menu to open. */
   panelRefs: IBrowseModsPanelRefs;
+  /** Whether feedback has been given, which turns its button off, and how to open it. */
+  feedback: { hasGiven: boolean; onOpen: () => void };
 }
 
 /**
@@ -41,7 +42,7 @@ interface IBrowseModsBarProps {
  * the mods or is locked, filter and view options, and the search box. Counts each change, and the
  * toolbar's clicks.
  */
-export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarProps) => {
+export const BrowseModsBar = ({ search, viewPicker, panelRefs, feedback }: IBrowseModsBarProps) => {
   const { t } = useTranslation();
   const tracker = useBrowseModsTracker();
   const toolbarTracking = useToolbarAnalytics("browse_mods");
@@ -57,16 +58,23 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
     changeFilters({ [key]: PRESET_FILTERS[view][key] }, "filter_reset");
   };
 
+  const feedbackAction: IToolbarAction = {
+    id: "feedback",
+    label: t("Give feedback"),
+    icon: "reviews",
+    testId: "browse-mods-feedback",
+    onClick: feedback.onOpen,
+    disabledReason: feedback.hasGiven ? t("Thanks for your feedback") : undefined,
+  };
+
   const filter: IToolbarAction = {
     id: "filter",
     panelHandle: panelRefs.filters,
     label: t("Filter"),
     icon: "filter_list",
-    hasPip: !!search.activeFilterCount,
     panelRole: "menu",
     panel: ({ dismiss }) => (
       <ModFilters
-        activeFilters={search.activeFilters}
         canSeeAdult={search.canSeeAdult}
         changedFilters={search.changedFilters}
         filters={search.filters}
@@ -159,6 +167,7 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs }: IBrowseModsBarP
             <Toolbar tracking={toolbarTracking}>
               <ToolbarGroup
                 actions={[
+                  feedbackAction,
                   filter,
                   { ...displayOptions, id: "view-options", panelHandle: panelRefs.viewOptions },
                 ]}

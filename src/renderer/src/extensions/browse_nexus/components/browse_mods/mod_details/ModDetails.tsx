@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import numeral from "numeral";
 import React, { forwardRef, type KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,6 +27,7 @@ import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
 import { modStatusDisplay } from "../../../util/mod_status/modStatus";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModInstallButton } from "./mod_install_button/ModInstallButton";
+import { ModMenu } from "./mod_menu/ModMenu";
 import { ModTags } from "./mod_tags/ModTags";
 import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton";
 
@@ -64,7 +65,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const updated = useRelativeTime(Date.parse(mod.updated_at), t);
     const created = useRelativeTime(Date.parse(mod.created_at), t);
     const tracker = useBrowseModsTracker();
-    const domain = GameDomain(mod.game.domain_name);
+    const domain = NexusGameDomain(mod.game.domain_name);
     const modPageUrl = nexusModPageUrl(domain, mod.game_scoped_id);
     const { installState, status } = useModStatus(mod);
     const statusDisplay = status && modStatusDisplay(t, status);
@@ -124,6 +125,8 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
             </TabBar>
 
             <div className="flex items-center gap-x-2">
+              <ModMenu api={api} mod={mod} modPageUrl={modPageUrl} />
+
               <Tooltip content={t("Open mod page")}>
                 <Button
                   appearance="moderate"

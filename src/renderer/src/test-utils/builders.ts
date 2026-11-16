@@ -1262,6 +1262,13 @@ export function makeApiHarness(
     lookupModMeta: () => Promise.resolve([]),
   } as unknown as IExtensionApi;
 
+  const setState = (mutate: (draft: IState) => void) => {
+    // copy-on-write
+    const draft = structuredClone(store.getState());
+    mutate(draft);
+    store.dispatch({ type: REPLACE_TYPE, payload: draft });
+  };
+
   return {
     api,
     dispatched,
@@ -1273,14 +1280,29 @@ export function makeApiHarness(
       await Promise.all(listeners.map((listener) => listener(...args)));
     },
     getState: () => store.getState(),
-    setState: (mutate: (draft: IState) => void) => {
-      // copy-on-write
-      const draft = structuredClone(store.getState());
-      mutate(draft);
-      store.dispatch({ type: REPLACE_TYPE, payload: draft });
-    },
+    setState,
     setNextDialog: (result: IDialogResult) => {
       nextDialog = result;
+    },
+    openModalDialog: (id: string = "harness-dialog") => {
+      setState((draft) => {
+        draft.session.notifications = {
+          notifications: [],
+          global_notifications: [],
+          ...draft.session.notifications,
+          dialogs: [
+            ...(draft.session.notifications?.dialogs ?? []),
+            { id, type: "question", title: "", content: {}, defaultAction: "", actions: [] },
+          ],
+        };
+      });
+    },
+    setFomodDialog: (activeInstanceId: string | null) => {
+      setState((draft) => {
+        Object.assign(draft.session, {
+          fomod: { installer: { dialog: { activeInstanceId, instances: {} } } },
+        });
+      });
     },
     dialogCalls,
     errorNotifications,

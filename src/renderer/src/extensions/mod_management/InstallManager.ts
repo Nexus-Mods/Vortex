@@ -194,9 +194,11 @@ import gatherDependencies, {
   lookupFromDownload,
   selectedOptionalRules,
 } from "./util/dependencies";
+import { InstallationTimeoutError } from "./util/exceptions";
 import filterModInfo from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
 import { toPosixSeparators } from "./util/installerHelpers";
+import { InstallListeners } from "./util/installListeners";
 import { InstallPhaseTracker, type IDeploymentDetails } from "./util/InstallPhaseTracker";
 import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
@@ -205,6 +207,7 @@ import queryGameId from "./util/queryGameId";
 import { reconcileOrphanedArchive } from "./util/reconcileOrphanedArchive";
 import { selectRequeueCandidates } from "./util/requeueCandidates";
 import { OPTIONAL_PHASE, rulePhase } from "./util/rulePhase";
+import { createUserWaitTracker, selectStalledMemberInstalls } from "./util/stallWatchdog";
 import testModReference, {
   completeModRef,
   downloadHasReferenceTag,
@@ -222,15 +225,22 @@ import testModReference, {
 } from "./util/testModReference";
 
 // Interface for tracking active installation information
-interface IActiveInstallation {
+export interface IActiveInstallation {
   installId: string;
   archiveId: string;
   archivePath: string;
   modId: string;
   gameId: string;
-  callback: (error: Error, id: string) => void;
+  // who hears what happens to the install: the caller's callback, the slot it holds on
+  // mInstallLimit, and for a collection member its orchestration
+  listeners: InstallListeners;
   startTime: number;
   baseName: string;
+  // set when the stall watchdog failed this install: its listeners have been told, but the work
+  // wasn't cancelled and may still finish
+  abandoned?: boolean;
+  // set on the entry a collection member's orchestration tracks until install() takes it over
+  awaitingInstall?: boolean;
 }
 
 interface IInvalidInstruction {
@@ -984,32 +994,39 @@ class InstallManager {
   }
 
   /**
-   * Force cleanup of stuck installations (for debugging)
-   * @param maxAgeMinutes - installations older than this will be force-cleaned
+   * Fail the member installs of a stalled collection. The underlying work can't be cancelled, so
+   * each install is marked abandoned and its listeners are told: the caller gets the failure and
+   * the install slot is given back. If the install finishes later it doesn't report a second
+   * outcome (its listeners hear of a late success instead).
+   * @param sourceModId - the collection whose stall this is; other installs are left alone
+   * @param minAgeMs - installs younger than this are left alone
    */
-  public forceCleanupStuckInstalls(api: IExtensionApi, maxAgeMinutes: number = 10): number {
+  public forceCleanupStuckInstalls(
+    api: IExtensionApi,
+    sourceModId: string,
+    minAgeMs: number,
+  ): number {
     const now = Date.now();
-    const maxAgeMs = maxAgeMinutes * 60 * 1000;
-    const stuckInstalls: IActiveInstallation[] = [];
+    const stuckInstalls = selectStalledMemberInstalls(
+      this.mActiveInstalls.values(),
+      sourceModId,
+      minAgeMs,
+      now,
+    );
 
-    this.mActiveInstalls.forEach((install, installId) => {
-      const age = now - install.startTime;
-      if (age > maxAgeMs) {
-        stuckInstalls.push(install);
-      }
-    });
-
-    // Force cleanup of stuck installations
     stuckInstalls.forEach((install) => {
-      const { installId, modId, callback } = install;
+      const { installId, modId, listeners } = install;
+      install.abandoned = true;
       this.mActiveInstalls.delete(installId);
+      const timeoutError = new InstallationTimeoutError(now - install.startTime);
       try {
-        const timeoutError = new Error(`Installation timed out after ${maxAgeMinutes} minutes`);
-        timeoutError.name = "InstallationTimeoutError";
-        callback(timeoutError, modId);
+        // this also gives the install's slot back. A hung install would otherwise hold it forever,
+        // and once every slot is held nothing else can install for the rest of the session.
+        listeners.emit({ type: "abandoned", error: timeoutError, modId });
         log("info", "InstallManager: Called callback for stuck installation", {
           installId,
           modId,
+          waitedMs: now - install.startTime,
         });
       } catch (callbackError) {
         log("error", "InstallManager: Error calling callback for stuck installation", {
@@ -1206,40 +1223,69 @@ class InstallManager {
     const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || "EMPTY_NAME";
     const installId = this.generateDependencyInstallKey(sourceModId, archiveId);
     const dummyArchiveId = archiveId || "direct-install-" + shortid();
+    // a collection member's orchestration tracks the member under this key before its install
+    // starts. The install takes the entry over, and the orchestration keeps listening.
+    const tracked = this.mActiveInstalls.get(installId);
+    const listeners = tracked?.awaitingInstall ? tracked.listeners : new InstallListeners();
+    listeners.add((event) => {
+      // a late success isn't a second outcome for the caller, who was already told of the failure
+      if (event.type !== "late-success") {
+        callback?.(event.error, event.modId);
+      }
+    });
     const installInfo: IActiveInstallation = {
       installId,
       archiveId: archiveId || dummyArchiveId,
       archivePath,
       modId: baseName, // Will be updated when final modId is determined
       gameId: "", // Will be updated when gameId is determined
-      callback,
+      listeners,
       startTime: Date.now(),
       baseName,
     };
     this.mActiveInstalls.set(installId, installInfo);
 
+    // The key isn't unique: a retry of the same member reuses it, and every install without an
+    // archive id shares one. So an install only removes the entry while it is still its own, and
+    // never reads its own details back out of the map.
+    const ownsEntry = () => this.mActiveInstalls.get(installId) === installInfo;
+    let callbackFired = false;
+
     // Wrap callback to ensure proper cleanup and tracking
     const trackedCallback = (err: Error, id: string) => {
-      const activeInstall = this.mActiveInstalls.get(installId);
-      if (activeInstall) {
-        activeInstall.modId = id || activeInstall.modId;
-        if (!err) {
-          log("info", "Installation completed successfully", {
-            installId,
-            modId: id,
-            duration: Date.now() - activeInstall.startTime,
-          });
-          if (id) {
-            this.markRecentInstall(id, activeInstall.gameId);
-          }
+      if (installInfo.abandoned) {
+        // the stall watchdog already failed this install and told its listeners; the work kept
+        // running and has now finished. Reporting it as finished would be a second outcome.
+        log("info", "Install finished after the stall watchdog gave up on it", {
+          installId,
+          modId: id,
+          error: err?.message,
+        });
+        if (!err && id) {
+          this.markRecentInstall(id, installInfo.gameId);
+          listeners.emit({ type: "late-success", modId: id });
+        }
+        return;
+      }
+      callbackFired = true;
+      installInfo.modId = id || installInfo.modId;
+      if (!err) {
+        log("info", "Installation completed successfully", {
+          installId,
+          modId: id,
+          duration: Date.now() - installInfo.startTime,
+        });
+        if (id) {
+          this.markRecentInstall(id, installInfo.gameId);
         }
       }
 
-      // Call the original callback
-      callback?.(err, id);
+      listeners.emit({ type: "finished", error: err, modId: id });
 
       // Clean up tracking
-      this.mActiveInstalls.delete(installId);
+      if (ownsEntry()) {
+        this.mActiveInstalls.delete(installId);
+      }
     };
 
     if (archiveId != null) {
@@ -1276,14 +1322,20 @@ class InstallManager {
           let overrides: string[] = [];
           let destinationPath: string;
           let tempPath: string;
-          // Use the already-created installation tracking
-          const activeInstall = this.mActiveInstalls.get(installId);
-          if (!activeInstall) {
+          // Don't start an install whose tracking was dropped while it waited for a slot. The
+          // entry under the key may be another install's (the key isn't unique), which is fine.
+          if (installInfo.abandoned || !this.mActiveInstalls.has(installId)) {
             const error = new Error("Installation tracking lost");
             trackedCallback(error, undefined);
             reject(error);
             return;
           }
+          // gives the slot back without waiting for the work to end
+          listeners.add((event) => {
+            if (event.type === "abandoned") {
+              reject(event.error);
+            }
+          });
 
           api.dismissNotification(`ready-to-install-${archiveId ?? dummyArchiveId}`);
           let installProfile = currentProfile;
@@ -1296,11 +1348,8 @@ class InstallManager {
           // Update the callback to also handle promise resolution
           const promiseCallback = (err: Error, id: string) => {
             // Update the installation info with final details before calling tracked callback
-            const activeInstall = this.mActiveInstalls.get(installId);
-            if (activeInstall) {
-              activeInstall.modId = id || modId;
-              activeInstall.gameId = installGameId || "";
-            }
+            installInfo.modId = id || modId;
+            installInfo.gameId = installGameId || "";
             trackedCallback(err, id);
             if (err) {
               reject(err);
@@ -1843,7 +1892,7 @@ class InstallManager {
                     ).then((result) => {
                       const endTime = Date.now();
                       log("debug", "processed instructions", {
-                        installId: activeInstall.installId,
+                        installId: installInfo.installId,
                         duration: endTime - startTime,
                       });
                       return result;
@@ -2140,7 +2189,7 @@ class InstallManager {
             .then(() => {
               // Installation completed successfully - the callback should have been called
               // If we reach here without the callback being called, something went wrong
-              if (this.mActiveInstalls.has(installId)) {
+              if (!callbackFired && !installInfo.abandoned) {
                 log("warn", "Installation completed but callback was not called", {
                   installId,
                   modId,
@@ -2173,25 +2222,33 @@ class InstallManager {
                     });
                   }
                 }
-                this.mActiveInstalls.delete(installId);
+                if (ownsEntry()) {
+                  this.mActiveInstalls.delete(installId);
+                }
                 resolve(modId);
               }
             })
             .catch((unknownErr) => {
               const installError = unknownToError(unknownErr);
-              if (this.mActiveInstalls.has(installId)) {
+              if (!callbackFired && !installInfo.abandoned) {
                 log("warn", "Installation failed", {
                   installId,
                   error: installError.message,
                 });
-                this.mActiveInstalls.delete(installId);
+                if (ownsEntry()) {
+                  this.mActiveInstalls.delete(installId);
+                }
                 reject(installError);
               }
             });
         });
       })
       .catch((err) => {
-        trackedCallback?.(unknownToError(err), null);
+        // an abandoned install has already reported its failure, and its slot was released by
+        // rejecting with the watchdog's own error
+        if (!installInfo.abandoned) {
+          trackedCallback?.(unknownToError(err), null);
+        }
       });
   }
 
@@ -2464,6 +2521,103 @@ class InstallManager {
     return `${sourceModId}:${downloadId}`;
   }
 
+  /**
+   * Record a collection member as installed: mark it on the session, apply the rule's extra
+   * attributes and enable it in the target profile (disabling the variants it supersedes).
+   * @param reused - the mod was already installed and is being reused, not freshly installed
+   */
+  private settleInstalledDependency(
+    api: IExtensionApi,
+    dep: IDependency,
+    downloadId: string,
+    gameId: string,
+    sourceModId: string,
+    modId: string,
+    reused: boolean,
+  ): void {
+    const installKey = this.generateDependencyInstallKey(sourceModId, downloadId);
+
+    // record the successful install on the collection session (no-op outside an
+    // active collection session). This is the sole writer of the "installed"
+    // status, covering both a freshly installed mod and a reused existing one.
+    this.writeCollectionSession(
+      dep.reference,
+      { type: "installed", modId },
+      dep.sessionRuleId,
+      sourceModId,
+    );
+
+    // Apply any extra attributes
+    this.applyExtraFromRule(api, gameId, modId, {
+      ...dep.extra,
+      fileList: dep.fileList ?? dep.extra?.fileList,
+      installerChoices: dep.installerChoices,
+      patches: dep.patches ?? dep.extra?.patches,
+    });
+
+    const state = api.getState();
+
+    const batchedActions = [];
+    // Enable the mod only for the target profile to avoid affecting other profiles
+    const batchContext = getBatchContext(
+      ["install-dependencies", "install-collections", "install-recommendations"],
+      "",
+    );
+    const targetProfileId = batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
+    const targetProfile = targetProfileId ? profileById(state, targetProfileId) : undefined;
+
+    // Superseded variants disabled here; the same set is disabled in every affected
+    // profile, so it's computed once for both the dispatch and the analytics emit.
+    const supersededVariantIds = this.checkModVariantsExist(api, gameId, downloadId);
+    if (targetProfile) {
+      // Only modify the target profile - disable other variants and enable this one
+      for (const otherModId of supersededVariantIds) {
+        batchedActions.push(setModEnabled(targetProfile.id, otherModId, false));
+      }
+      batchedActions.push(setModEnabled(targetProfile.id, modId, true));
+    } else {
+      // Fallback: enable in profiles where source mod is enabled (original behavior)
+      const profiles = Object.values(api.getState().persistent.profiles).filter(
+        (prof) => prof.gameId === gameId && prof.modState?.[sourceModId]?.enabled,
+      );
+      profiles.forEach((prof) => {
+        for (const otherModId of supersededVariantIds) {
+          batchedActions.push(setModEnabled(prof.id, otherModId, false));
+        }
+        batchedActions.push(setModEnabled(prof.id, modId, true));
+      });
+    }
+
+    // Mark as installed as dependency
+    batchedActions.push(setModAttribute(gameId, modId, "installedAsDependency", true));
+    batchDispatch(api.store, batchedActions);
+
+    // Disabling superseded variants bypasses the mods-enabled event; emit directly.
+    // checkModVariantsExist includes modId itself (it shares the archive) - exclude it,
+    // since it ends up enabled and its enable is covered by mods_installation_completed.
+    supersededVariantIds
+      .filter((id) => id !== modId)
+      .forEach((id) => emitModStateChanged(api, gameId, id, "disabled", "variant_replace"));
+
+    // Clear retry counter on successful installation
+    this.mDependencyRetryCount.delete(installKey);
+
+    // When the mod was already installed (reused), we still
+    // need to signal completion so session tracking updates its status
+    // from "downloaded" to "installed". Without this, retained mods get
+    // stuck in "downloaded" state and are requeued indefinitely.
+    // Skip for newly-installed mods — installModAsync already emits.
+    if (reused) {
+      api.events.emit(
+        "did-install-mod",
+        gameId,
+        downloadId,
+        modId,
+        api.getState().persistent.mods[gameId]?.[modId]?.attributes,
+      );
+    }
+  }
+
   // Starts a queued installation task and wires up phase accounting
   private startQueuedInstallation(
     api: IExtensionApi,
@@ -2493,6 +2647,29 @@ class InstallManager {
       .do(async () => {
         const startTime = Date.now();
 
+        let failMember: (err: Error) => void;
+        const memberFailed = new Promise<never>((_resolve, reject) => {
+          failMember = reject;
+        });
+        // only raced against the install below; unobserved when the watchdog fires at another time
+        memberFailed.catch(() => undefined);
+
+        // the install of this member, once started, and what to do if it succeeds only after the
+        // stall watchdog has failed the member
+        let memberInstall: Promise<string> | undefined;
+        let adoptLateInstall: ((lateModId: string) => void) | undefined;
+
+        const memberListeners = new InstallListeners();
+        memberListeners.add((event) => {
+          if (event.type === "abandoned") {
+            // the stall watchdog failed the member. That has to end the orchestration itself,
+            // which may be stuck before the install starts.
+            failMember(event.error);
+          } else if (event.type === "late-success") {
+            adoptLateInstall?.(event.modId);
+          }
+        });
+
         // Track this dependency installation
         const depInstallInfo: IActiveInstallation = {
           installId: installKey,
@@ -2500,7 +2677,8 @@ class InstallManager {
           archivePath: "", // Will be updated when known
           modId: renderModReference(dep.reference),
           gameId,
-          callback: () => {}, // Dependencies use different completion mechanism
+          listeners: memberListeners,
+          awaitingInstall: true,
           startTime,
           baseName: renderModReference(dep.reference),
         };
@@ -2560,121 +2738,88 @@ class InstallManager {
               sourceModId,
             );
           }
+          if (existingMod == null) {
+            adoptLateInstall = (lateModId: string) => {
+              log("info", "Member installed after the stall watchdog failed it, settling it", {
+                installKey,
+                modId: lateModId,
+              });
+              try {
+                this.settleInstalledDependency(
+                  api,
+                  currentDep,
+                  downloadId,
+                  gameId,
+                  sourceModId,
+                  lateModId,
+                  false,
+                );
+              } catch (lateError) {
+                log("error", "Failed to settle a member that installed late", {
+                  installKey,
+                  error: getErrorMessageOrDefault(lateError),
+                });
+              }
+            };
+            memberInstall = this.withInstructions(
+              api,
+              modName(sourceMod),
+              renderModReference(currentDep.reference),
+              currentDep.reference?.tag ?? downloadId,
+              currentDep.extra?.["instructions"],
+              recommended,
+              () =>
+                this.installModAsync(
+                  currentDep.reference,
+                  api,
+                  downloadId,
+                  {
+                    choices: currentDep.installerChoices,
+                    patches: currentDep.patches,
+                  },
+                  currentDep.fileList,
+                  gameId,
+                  true,
+                  sourceModId,
+                ),
+            );
+          }
           const modId =
             existingMod != null
               ? existingMod.id
-              : await this.withInstructions(
-                  api,
-                  modName(sourceMod),
-                  renderModReference(currentDep.reference),
-                  currentDep.reference?.tag ?? downloadId,
-                  currentDep.extra?.["instructions"],
-                  recommended,
-                  () =>
-                    this.installModAsync(
-                      currentDep.reference,
-                      api,
-                      downloadId,
-                      {
-                        choices: currentDep.installerChoices,
-                        patches: currentDep.patches,
-                      },
-                      currentDep.fileList,
-                      gameId,
-                      true,
-                      sourceModId,
-                    ),
-                );
+              : await Promise.race([memberInstall, memberFailed]);
 
           if (modId) {
             this.mActiveInstalls.delete(installKey);
-
-            // record the successful install on the collection session (no-op outside an
-            // active collection session). This is the sole writer of the "installed"
-            // status, covering both a freshly installed mod and a reused existing one.
-            this.writeCollectionSession(
-              currentDep.reference,
-              { type: "installed", modId },
-              currentDep.sessionRuleId,
+            this.settleInstalledDependency(
+              api,
+              currentDep,
+              downloadId,
+              gameId,
               sourceModId,
+              modId,
+              existingMod != null,
             );
-
-            // Apply any extra attributes
-            this.applyExtraFromRule(api, gameId, modId, {
-              ...currentDep.extra,
-              fileList: currentDep.fileList ?? currentDep.extra?.fileList,
-              installerChoices: currentDep.installerChoices,
-              patches: currentDep.patches ?? currentDep.extra?.patches,
-            });
-
-            const state = api.getState();
-
-            const batchedActions = [];
-            // Enable the mod only for the target profile to avoid affecting other profiles
-            const batchContext = getBatchContext(
-              ["install-dependencies", "install-collections", "install-recommendations"],
-              "",
-            );
-            const targetProfileId =
-              batchContext?.get<string>("profileId") ?? activeProfile(state)?.id;
-            const targetProfile = targetProfileId ? profileById(state, targetProfileId) : undefined;
-
-            // Superseded variants disabled here; the same set is disabled in every affected
-            // profile, so it's computed once for both the dispatch and the analytics emit.
-            const supersededVariantIds = this.checkModVariantsExist(api, gameId, downloadId);
-            if (targetProfile) {
-              // Only modify the target profile - disable other variants and enable this one
-              for (const otherModId of supersededVariantIds) {
-                batchedActions.push(setModEnabled(targetProfile.id, otherModId, false));
-              }
-              batchedActions.push(setModEnabled(targetProfile.id, modId, true));
-            } else {
-              // Fallback: enable in profiles where source mod is enabled (original behavior)
-              const profiles = Object.values(api.getState().persistent.profiles).filter(
-                (prof) => prof.gameId === gameId && prof.modState?.[sourceModId]?.enabled,
-              );
-              profiles.forEach((prof) => {
-                for (const otherModId of supersededVariantIds) {
-                  batchedActions.push(setModEnabled(prof.id, otherModId, false));
-                }
-                batchedActions.push(setModEnabled(prof.id, modId, true));
-              });
-            }
-
-            // Mark as installed as dependency
-            batchedActions.push(setModAttribute(gameId, modId, "installedAsDependency", true));
-            batchDispatch(api.store, batchedActions);
-
-            // Disabling superseded variants bypasses the mods-enabled event; emit directly.
-            // checkModVariantsExist includes modId itself (it shares the archive) - exclude it,
-            // since it ends up enabled and its enable is covered by mods_installation_completed.
-            supersededVariantIds
-              .filter((id) => id !== modId)
-              .forEach((id) => emitModStateChanged(api, gameId, id, "disabled", "variant_replace"));
-
-            // Clear retry counter on successful installation
-            this.mDependencyRetryCount.delete(installKey);
-
-            // When the mod was already installed (existingMod found), we still
-            // need to signal completion so session tracking updates its status
-            // from "downloaded" to "installed". Without this, retained mods get
-            // stuck in "downloaded" state and are requeued indefinitely.
-            // Skip for newly-installed mods — installModAsync already emits.
-            if (existingMod != null) {
-              api.events.emit(
-                "did-install-mod",
-                gameId,
-                downloadId,
-                modId,
-                api.getState().persistent.mods[gameId]?.[modId]?.attributes,
-              );
-            }
           }
 
           this.mActiveInstalls.delete(installKey);
         } catch (unknownError) {
           const err = unknownToError(unknownError);
           this.mActiveInstalls.delete(installKey);
+          if (unknownError instanceof InstallationTimeoutError) {
+            // Reached when the watchdog failed the member before install() took its tracking
+            // over, which leaves the work pending: it can still go on to install the mod. (An
+            // install it failed later has already rejected, and reports a late success to the
+            // member's listeners.)
+            memberInstall?.then(
+              (lateModId) => {
+                if (lateModId) {
+                  adoptLateInstall?.(lateModId);
+                }
+              },
+              () => undefined,
+            );
+          }
           const currentRetryCount = this.mDependencyRetryCount.get(installKey) || 0;
           // A missing mDependencyInstalls entry means the whole install was torn down
           // externally (cancel-dependency-install / clearQueued / pause). Treat the late
@@ -2702,8 +2847,11 @@ class InstallManager {
           // install, and a requeue never re-drives it, so the member sits stuck on "installing" and
           // stalls the collection. Settle it failed. A whole-install teardown is excluded here
           // (installCanceled -> "leave", handled first in planDependencyErrorRecovery).
+          // A member the stall watchdog gave up on may still be installing (the watchdog doesn't
+          // cancel it): a retry would start a second install of the same archive alongside it.
           const nonRetryable =
             unknownError instanceof InsufficientDiskSpace ||
+            unknownError instanceof InstallationTimeoutError ||
             (unknownError instanceof ProcessCanceled && !installCanceled);
           // UserCanceled(true) is the "skipped" flavour - the user declined this member at a
           // prompt (the instructions dialog's Skip), as opposed to cancelling the whole install
@@ -2818,11 +2966,15 @@ class InstallManager {
     // If no progress (new mods reaching terminal state) is made for this
     // duration, attempt a rescue (force-clean stuck installs + requeue).
     const STALL_TIMEOUT_MS = 5 * 60 * 1000;
+    // The rescue leaves installs younger than this alone. Members that started after the last
+    // progress are younger than the stall itself, so this can't be the stall duration.
+    const RESCUE_MIN_AGE_MS = 60 * 1000;
 
     return new Promise<void>((resolve) => {
       let lastProgressTime = Date.now();
       let lastTerminalCount = this.getTerminalModCount(api, sourceModId);
       let rescueAttempted = false;
+      const isWaitingOnUser = createUserWaitTracker();
 
       const poll = () => {
         const phaseState = this.mPhaseTracker.get(sourceModId);
@@ -2846,6 +2998,11 @@ class InstallManager {
           lastProgressTime = Date.now();
           rescueAttempted = false;
         }
+        // an open installer or prompt dialog is waiting on the user, not stuck: don't count that
+        // time towards a stall
+        if (isWaitingOnUser(api)) {
+          lastProgressTime = Date.now();
+        }
 
         const stallDuration = Date.now() - lastProgressTime;
         if (stallDuration > STALL_TIMEOUT_MS) {
@@ -2858,7 +3015,7 @@ class InstallManager {
               activeInstalls: this.mActiveInstalls.size,
               pendingInstalls: this.mPendingInstalls.size,
             });
-            this.forceCleanupStuckInstalls(api, 1);
+            this.forceCleanupStuckInstalls(api, sourceModId, RESCUE_MIN_AGE_MS);
             const status = this.checkCollectionPhaseStatus(
               api,
               sourceModId,
@@ -2885,6 +3042,11 @@ class InstallManager {
               activeInstalls: this.mActiveInstalls.size,
               pendingInstalls: this.mPendingInstalls.size,
             });
+            // Every member still installing is about to be settled as failed. Abandon those
+            // installs first, or one that finishes later would call back into an orchestration
+            // that has already reported its outcome. (A late success still settles the member
+            // as installed.)
+            this.forceCleanupStuckInstalls(api, sourceModId, 0);
             // cleanupPendingInstalls resyncs the session from reality, so it must run before the
             // settle or it would overwrite it
             this.cleanupPendingInstalls(sourceModId, true);
@@ -3009,6 +3171,7 @@ class InstallManager {
     return new Promise<void>((resolve) => {
       let lastProgressTime = Date.now();
       let lastTerminalCount = this.getTerminalModCount(api, sourceModId);
+      const isWaitingOnUser = createUserWaitTracker();
 
       const poll = () => {
         const phaseState = this.mPhaseTracker.get(sourceModId);
@@ -3030,6 +3193,10 @@ class InstallManager {
         const currentTerminalCount = this.getTerminalModCount(api, sourceModId);
         if (currentTerminalCount > lastTerminalCount) {
           lastTerminalCount = currentTerminalCount;
+          lastProgressTime = Date.now();
+        }
+        // same as the collection watchdog: time spent waiting on the user isn't a stall
+        if (isWaitingOnUser(api)) {
           lastProgressTime = Date.now();
         }
 

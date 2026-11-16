@@ -235,6 +235,37 @@ export const ListingDemo = () => {
 
       <div className="space-y-4">
         <Typography as="h3" typographyType="heading-xs">
+          Load More Footer
+        </Typography>
+
+        <Typography appearance="subdued" typographyType="body-sm">
+          While paused, loadMoreFooter is drawn under the Load more button, such as a prompt for
+          feedback.
+        </Typography>
+
+        <div className="rounded-sm border border-stroke-weak p-4">
+          <Listing
+            className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-4"
+            entityCount={3}
+            loadMoreFooter={
+              <Typography appearance="subdued" typographyType="body-sm">
+                How&apos;s the browsing experience?
+              </Typography>
+            }
+            loadMoreSummary="Showing 3 of 30 items"
+            SkeletonTile={SkeletonTile}
+            status="paused"
+            onLoadMore={() => undefined}
+          >
+            {items.slice(0, 3).map((title) => (
+              <ExampleTile key={title} title={title} />
+            ))}
+          </Listing>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Typography as="h3" typographyType="heading-xs">
           Skeleton Count
         </Typography>
 

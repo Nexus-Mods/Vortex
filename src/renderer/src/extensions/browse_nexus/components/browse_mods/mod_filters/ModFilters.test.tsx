@@ -19,7 +19,6 @@ const openFilters = async (
   filters: Partial<IModFilters>,
   changedFilters: Array<keyof IModFilters> = [],
   canSeeAdult = true,
-  activeFilters = Object.keys(filters) as Array<keyof IModFilters>,
   isLoggedIn = true,
 ) => {
   const onChange = vi.fn();
@@ -33,7 +32,6 @@ const openFilters = async (
       <PopoverPanel className="nxm-popover-panel-dropdown">
         {({ close }) => (
           <ModFilters
-            activeFilters={activeFilters}
             canSeeAdult={canSeeAdult}
             changedFilters={changedFilters}
             filters={{ ...NO_FILTERS, ...filters }}
@@ -109,22 +107,6 @@ describe("ModFilters", () => {
     expect(screen.queryByRole("button", { name: /^Reset/ })).not.toBeInTheDocument();
   });
 
-  it("marks Dates with a pip while a time range is on", async () => {
-    await openFilters({ timeRange: "7" });
-
-    expect(
-      screen.getByRole("menuitem", { name: "Dates" }).querySelector(".nxm-icon-pip"),
-    ).toBeInTheDocument();
-  });
-
-  it("leaves Dates unmarked over all time", async () => {
-    await openFilters({});
-
-    expect(
-      screen.getByRole("menuitem", { name: "Dates" }).querySelector(".nxm-icon-pip"),
-    ).not.toBeInTheDocument();
-  });
-
   it("offers to put the time range back from Dates while it differs from the view's", async () => {
     const { onResetFilter } = await openFilters({ timeRange: "28" }, ["timeRange"]);
 
@@ -176,16 +158,8 @@ describe("ModFilters", () => {
     expect(onResetFilter).toHaveBeenCalledWith("adult");
   });
 
-  it("marks Adult content with a pip while it narrows the mods", async () => {
-    await openFilters({ adult: "exclude" }, ["adult"]);
-
-    expect(
-      screen.getByRole("menuitem", { name: "Adult content" }).querySelector(".nxm-icon-pip"),
-    ).toBeInTheDocument();
-  });
-
   it("locks adult content on hiding it for a user who can't see it", async () => {
-    const { onChange } = await openFilters({ adult: "exclude" }, [], false, []);
+    const { onChange } = await openFilters({ adult: "exclude" }, [], false);
 
     await userEvent.click(screen.getByRole("menuitem", { name: "Adult content" }));
     const choices = screen.getAllByRole("menuitemradio");

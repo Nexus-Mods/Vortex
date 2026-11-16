@@ -32,6 +32,12 @@ typecheck` and `pnpm run lint`, plus `pnpm exec vitest run <file>` from inside
 the owning project directory for a single test. `pnpm run format` is safe. Save
 `verify` for the end.
 
+When a change is something a user can see or trigger, offer to test it in the
+running app with the `live-test` skill, which collects screenshots or video for
+the PR's reviewers and sets up a fake game folder, so no real game install is
+needed. Offer it once when the change is done; run it only when the user says
+yes or asked for it up front.
+
 Formatting, import order and Tailwind class order are owned by oxfmt and oxlint.
 Don't hand-fix them; let the formatter win.
 
@@ -57,21 +63,26 @@ adding temporary logging, which tends to get committed by accident.
 
 ## Game IDs
 
-`GameId` is the numeric Nexus Mods id (e.g. 1303), `GameDomain` the nexus
+`NexusGameId` is the numeric Nexus Mods id (e.g. 1303), `NexusGameDomain` the nexus
 domain slug (e.g. `stardewvalley`), and `VortexGameId` the id Vortex gives a
 game internally; all three are branded types in `src/shared/src/types/ids.ts`. They are
 different concepts even where their values coincide, so don't interchange
 them.
 
+The prefix says whose thing the id identifies: `Vortex*` is a thing on the Vortex side,
+`Nexus*` is the Nexus Mods game on the site (one of which can host mods for several
+games, e.g. 1704 hosts Skyrim Special Edition and Skyrim VR). `GameUid` is the game's own
+id in the Nexus Mods game catalogue; it is opaque, so compare it and never parse it.
+
 - Every field, parameter, return type and action payload that holds a game id, domain or
-  Vortex game id is typed with its brand (`GameId`, `GameDomain`, `VortexGameId`). This
+  Vortex game id is typed with its brand (`NexusGameId`, `NexusGameDomain`, `VortexGameId`). This
   includes state interfaces, action creators, tests, and the plans and tickets you write. A
   new field next to a raw `number` or `string` is still branded: existing raw fields are
   debt, not precedent. Brand once where the value enters from outside, from data that
   genuinely is that kind, then keep the brand flowing.
 - Before finishing a change or a plan, grep it for `gameId: number`, `gameDomain: string` and
   `gameId: string`. Each hit is a bug unless it is the boundary that brands the value.
-- Don't cast across brands (`GameDomain(someVortexGameId)`). A branded type says where the value came from; guessing the origin defeats it.
+- Don't cast across brands (`NexusGameDomain(someVortexGameId)`). A branded type says where the value came from; guessing the origin defeats it.
 - Comparisons between different brands are a type error **on purpose**. When you hit one, it means "find the real join", not "cast it", the type checker is pointing at data you don't actually have.
 - Look games up and convert between the three with `findGame` and `convertId` (`src/renderer/src/extensions/gamemode_management/queries.ts`, see `docs/state.md`). Don't write ad-hoc lookups over the games list; if a join is missing, add it there.
 

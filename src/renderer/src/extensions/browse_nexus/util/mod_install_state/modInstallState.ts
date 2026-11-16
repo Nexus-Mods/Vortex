@@ -1,4 +1,4 @@
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId } from "@vortex/shared";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "@/extensions/collections/constants";
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
@@ -37,7 +37,7 @@ export type ModInstallState =
 /** The mod to look for: its Nexus Mods id, and the domain that id belongs to. */
 export interface INexusModRef {
   /** The game's Nexus Mods domain, which the mod's id is scoped to. */
-  domain: GameDomain;
+  domain: NexusGameDomain;
   /** The mod's game-scoped id on Nexus Mods. */
   modId: number;
 }
@@ -53,14 +53,14 @@ export interface IModInstallSources {
   /** The active game, which downloads must be for. */
   gameId: VortexGameId;
   /** The Nexus Mods domain of a Vortex game, as the update check resolves a mod's. */
-  domainOf: (gameId: VortexGameId) => GameDomain | undefined;
+  domainOf: (gameId: VortexGameId) => NexusGameDomain | undefined;
 }
 
 /** Whether the Mods page offers an update in this state, as `offersUpdate` says. */
 const isOffered = (state: UpdateState): state is "update" | "update-site" => offersUpdate(state);
 
 /** The key a Nexus Mods mod is known by: its domain and id. */
-export const modKey = (domain: GameDomain, modId: number) => `${domain}/${modId}`;
+export const modKey = (domain: NexusGameDomain, modId: number) => `${domain}/${modId}`;
 
 /**
  * The Nexus Mods mod a download is of, by its Nexus ids; none for one without them. A download
@@ -78,7 +78,7 @@ export const downloadKey = (
   }
 
   const [game] = download.game ?? [];
-  const domain = ids.gameId ? GameDomain(ids.gameId) : game && domainOf(VortexGameId(game));
+  const domain = ids.gameId ? NexusGameDomain(ids.gameId) : game && domainOf(VortexGameId(game));
 
   return domain ? modKey(domain, Number(ids.modId)) : undefined;
 };

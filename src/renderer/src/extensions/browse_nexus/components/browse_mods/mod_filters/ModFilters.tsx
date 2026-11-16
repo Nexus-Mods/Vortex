@@ -12,8 +12,6 @@ import { ModFilterMenu } from "./ModFilterMenu";
 interface IModFiltersProps {
   /** Which mods the open view shows. */
   filters: IModFilters;
-  /** Which of them narrow the mods, which their rows mark. */
-  activeFilters: Array<keyof IModFilters>;
   /** Which of them differ from the view's own, which the resets put back. */
   changedFilters: Array<keyof IModFilters>;
   /** Whether the user's content preferences show adult content. */
@@ -31,13 +29,11 @@ interface IModFiltersProps {
 }
 
 /**
- * The filter button's menu for Browse's mods: a row for each filter, with a pip while it narrows
- * the mods, opening its submenu; a note that more are coming; and, while any differs from the
- * view's own, a reset that puts them back.
+ * The filter button's menu for Browse's mods: a row for each filter, opening its submenu; a note
+ * that more are coming; and, while any differs from the view's own, a reset that puts them back.
  */
 export const ModFilters = ({
   filters,
-  activeFilters,
   changedFilters,
   canSeeAdult,
   isLoggedIn,
@@ -56,7 +52,6 @@ export const ModFilters = ({
           MOD_FILTERS.map((filter) => ({
             label: filter.label(t),
             icon: filter.icon,
-            hasPip: activeFilters.includes(filter.key),
             panelRole: "menu",
             panel: ({ close, dismiss }) => (
               <ModFilterMenu

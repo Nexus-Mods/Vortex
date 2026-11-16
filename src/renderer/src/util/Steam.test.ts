@@ -325,4 +325,12 @@ describe("Steam.allGames", () => {
 
     expect(entries[0]?.installData).toBeUndefined();
   });
+
+  it("records the manifest each entry was read from", async () => {
+    const entries = await scanAllGames();
+
+    expect(entries[0]?.manifestPath).toBe(
+      path.join(BASE_FOLDER, "steamapps", "appmanifest_42.acf"),
+    );
+  });
 });

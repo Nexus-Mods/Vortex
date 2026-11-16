@@ -1,4 +1,4 @@
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { makeMod, makeProfile, makeProfileMod } from "../../../test-utils/builders";
@@ -140,7 +140,7 @@ describe("emitModListSnapshot", () => {
     vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
       submitModLists,
     } as unknown as ReturnType<typeof createVortexNexusV3InternalClient>);
-    vi.mocked(numericNexusGameId).mockReturnValue(GameId(1704));
+    vi.mocked(numericNexusGameId).mockReturnValue(NexusGameId(1704));
   });
 
   test("builds and posts the snapshot when consented and logged in", async ({ makeApi }) => {

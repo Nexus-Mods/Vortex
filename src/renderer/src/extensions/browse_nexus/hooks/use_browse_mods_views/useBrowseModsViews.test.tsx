@@ -203,7 +203,7 @@ describe("useBrowseModsViews", () => {
       const search = edited();
       const { tracked } = renderBar(search);
 
-      await userEvent.click(screen.getByRole("button", { name: "Save view" }));
+      await userEvent.click(screen.getByRole("button", { name: "Save as new view" }));
       await userEvent.type(screen.getByRole("textbox", { name: "Name view" }), "Monthly{Enter}");
 
       expect(search.addView).toHaveBeenCalledWith("Monthly");

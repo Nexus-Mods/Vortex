@@ -26,6 +26,9 @@ import type {
 
 const LNK_EXT = ".vortex_lnk";
 
+/** How many links a purge restores at once. */
+const PURGE_CONCURRENCY = 100;
+
 interface ILinkData {
   target: string;
 }
@@ -251,7 +254,13 @@ class DeploymentMethod extends LinkingDeployment {
       {
         details: true,
       },
-    ).then(() => PromiseBB.map(links, (entry) => this.restoreLink(entry.filePath)));
+    ).then(() =>
+      // each restore opens its link file; unbounded, a large setup runs the whole process out
+      // of file handles for as long as the purge takes
+      PromiseBB.map(links, (entry) => this.restoreLink(entry.filePath), {
+        concurrency: PURGE_CONCURRENCY,
+      }),
+    );
   }
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {

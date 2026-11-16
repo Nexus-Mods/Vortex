@@ -1,4 +1,4 @@
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { makeGameStored } from "@/test-utils/builders";

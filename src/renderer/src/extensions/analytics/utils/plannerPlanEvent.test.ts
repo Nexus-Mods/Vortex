@@ -1,4 +1,4 @@
-import { GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameId, VortexGameId } from "@vortex/shared";
 import { beforeEach, describe, expect, onTestFinished, vi } from "vitest";
 
 import { FlagService } from "../../../FlagService";
@@ -17,7 +17,7 @@ vi.mock("../../nexus_integration/nexusV3Client", () => ({
 vi.mock("../mixpanel/numericGameId", () => ({ numericNexusGameId: vi.fn() }));
 
 const SKYRIM_SE = VortexGameId("skyrimse");
-const SKYRIM_SE_NEXUS_ID = GameId(1704);
+const SKYRIM_SE_NEXUS_ID = NexusGameId(1704);
 
 // analytics consent; the harness starts logged in
 const ANALYTICS_BINDING: IHarnessReducerBinding = {

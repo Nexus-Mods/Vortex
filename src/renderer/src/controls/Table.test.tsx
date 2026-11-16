@@ -367,3 +367,24 @@ describe("SuperTable smooth scroll completion", () => {
     },
   );
 });
+
+describe("SuperTable scroll retry", () => {
+  it("drops the pending retry when unmounted", async () => {
+    const { container, page, pane, instance, unmount } = renderTable(true);
+    const rows = await rowsOf(container);
+    layOut(page, { top: 0, height: 500 });
+    layOut(pane, { top: 0, height: 1600 });
+    rows.forEach((row, idx) => layOut(row, { top: 800 + idx * 50, height: 40 }, page));
+    vi.useFakeTimers();
+    try {
+      instance().scrollToItem(rows[2], false);
+      const retry = vi.spyOn(instance(), "scrollToItem");
+      unmount();
+      vi.advanceTimersByTime(500);
+
+      expect(retry).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

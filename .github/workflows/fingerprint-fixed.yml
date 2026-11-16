@@ -30,7 +30,7 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event.pull_request.merged == true &&
       !startsWith(github.event.pull_request.head.ref, 'cherry-pick/'))
-    runs-on: platform-cluster-public
+    runs-on: vortex-e2e-linux
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/fingerprints

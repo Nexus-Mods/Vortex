@@ -1,4 +1,3 @@
-import type { GogInstall } from "@vortex/nexus-api-v3";
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 
@@ -6,52 +5,54 @@ import { log } from "@/logging";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
 import { gogGameProductId } from "@/util/GOGLauncher";
 
+import { cachedFileParser, type ParsedFile } from "./cachedFileParser";
 import type { InstallRecord } from "./storeInstall";
 
+/** What a goggame-<productId>.info says about the install. */
+interface GogInfo {
+  /** The game the file belongs to: itself for a game, the game for a DLC. */
+  rootGameId: string | undefined;
+  /** Undefined when the file names no build. */
+  buildId: string | undefined;
+  language: string;
+}
+
 /**
- * The gog install block from the raw goggame-<productId>.info content. The fields
- * are regexed off the raw text rather than passed through JSON.parse because build
- * ids exceed 2^53 and would be corrupted as JS numbers (per the contract notes).
+ * The fields of a goggame-<productId>.info's raw content. They are regexed off the raw
+ * text rather than passed through JSON.parse because build ids exceed 2^53 and would be
+ * corrupted as JS numbers (per the contract notes).
  */
-export function gogInstallFromInfo(raw: string, productId: string): GogInstall | null {
-  const buildId = /"buildId"\s*:\s*"?(\d+)"?/.exec(raw)?.[1];
-  if (buildId === undefined) return null;
-
-  // GOG writes the requested languages as a list of locale tags ("languages"); some
-  // installers instead carry a scalar "language". Prefer the tag list.
-  const language =
-    /"languages"\s*:\s*\[\s*"([^"]+)"/.exec(raw)?.[1] ??
-    /"language"\s*:\s*"([^"]+)"/.exec(raw)?.[1];
-
-  return { product_id: productId, build_id: buildId, install_language: language ?? "" };
+export function parseGogInfo(raw: string): GogInfo {
+  return {
+    rootGameId: /"rootGameId"\s*:\s*"?(\d+)"?/.exec(raw)?.[1],
+    buildId: /"buildId"\s*:\s*"?(\d+)"?/.exec(raw)?.[1],
+    // GOG writes the requested languages as a list of locale tags ("languages"); some
+    // installers instead carry a scalar "language". Prefer the tag list.
+    language:
+      /"languages"\s*:\s*\[\s*"([^"]+)"/.exec(raw)?.[1] ??
+      /"language"\s*:\s*"([^"]+)"/.exec(raw)?.[1] ??
+      "",
+  };
 }
 
-/** The game a goggame-<productId>.info belongs to: itself for a game, the game for a DLC. */
-function gogRootGameId(raw: string): string | undefined {
-  return /"rootGameId"\s*:\s*"?(\d+)"?/.exec(raw)?.[1];
+const readInfo = cachedFileParser(parseGogInfo);
+
+/** The goggame-<productId>.info in the game folder. */
+function readGogInfo(gamePath: string, productId: string): Promise<ParsedFile<GogInfo>> {
+  return readInfo(QualifiedPath.fromNative(gamePath).join(`goggame-${productId}.info`));
 }
 
-/** The raw goggame-<productId>.info in the game folder; undefined when unreadable. */
-async function readGogInfo(gamePath: string, productId: string): Promise<string | undefined> {
-  try {
-    const blob = await window.api.fs.readFile(
-      QualifiedPath.fromNative(gamePath).join(`goggame-${productId}.info`),
-    );
-    return new TextDecoder().decode(blob);
-  } catch (err) {
-    // a missing file just means Galaxy never wrote metadata for this install
-    log("debug", "store-game-version: gog info file unreadable", {
-      gamePath,
-      error: getErrorMessageOrDefault(err),
-    });
-    return undefined;
-  }
-}
+/** Per folder the registry doesn't list, the product id its .info files name (undefined
+    for none): listed once per session, and again when that .info disappears. */
+const folderProductIds = new Map<string, string | undefined>();
 
 /** The product id of a goggame-<productId>.info in the folder, for a game the registry
     doesn't list: Galaxy was uninstalled, or Windows reset, and the game kept working
     without it. Undefined when the folder has none. */
 async function gogInfoProductIdIn(folder: string): Promise<string | undefined> {
+  if (folderProductIds.has(folder)) {
+    return folderProductIds.get(folder);
+  }
   try {
     const files = await window.api.fs.enumerateDirectory(QualifiedPath.fromNative(folder), {
       types: "files",
@@ -60,9 +61,11 @@ async function gogInfoProductIdIn(folder: string): Promise<string | undefined> {
     for await (const file of files) {
       const productId = /^goggame-(\d+)\.info$/i.exec(file.basename)?.[1];
       if (productId !== undefined) {
+        folderProductIds.set(folder, productId);
         return productId;
       }
     }
+    folderProductIds.set(folder, undefined);
   } catch (err) {
     log("debug", "store-game-version: gog folder unreadable", {
       folder,
@@ -86,18 +89,29 @@ export async function scanGogInstall(
   }
 
   let productId = startId;
-  let raw = await readGogInfo(folder, productId);
-  const rootGameId = raw === undefined ? undefined : gogRootGameId(raw);
+  let read = await readGogInfo(folder, productId);
+  if (entry === undefined && read.status === "missing") {
+    // the .info the folder named is gone: list the folder again next time
+    folderProductIds.delete(folder);
+  }
+  const rootGameId = read.status === "parsed" ? read.value.rootGameId : undefined;
   if (rootGameId !== undefined && rootGameId !== productId) {
     productId = rootGameId;
-    raw = await readGogInfo(folder, productId);
+    read = await readGogInfo(folder, productId);
   }
-  if (raw === undefined) {
+  if (read.status === "missing") {
     return { storeId: "gog", install: null, failureReason: "info-missing" };
   }
-  const info = gogInstallFromInfo(raw, productId);
-  if (info === null) {
+  if (read.status === "unreadable") {
+    return { storeId: "gog", install: null, failureReason: "info-unreadable" };
+  }
+  const info = read.value;
+  if (info.buildId === undefined) {
     return { storeId: "gog", install: null, failureReason: "info-no-build-id" };
   }
-  return { storeId: "gog", install: info, failureReason: null };
+  return {
+    storeId: "gog",
+    install: { product_id: productId, build_id: info.buildId, install_language: info.language },
+    failureReason: null,
+  };
 }

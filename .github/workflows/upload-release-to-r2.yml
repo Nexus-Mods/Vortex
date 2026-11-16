@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   upload:
-    runs-on: platform-cluster-public
+    runs-on: ubuntu-latest
     steps:
       - name: Install tools
         run: |

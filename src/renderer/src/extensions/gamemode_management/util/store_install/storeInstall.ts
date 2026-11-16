@@ -30,8 +30,8 @@ const normPath = (value: string): string =>
 const inFolder = (entry: IGameStoreEntry, folder: string): boolean =>
   entry.gamePath !== undefined && normPath(entry.gamePath) === normPath(folder);
 
-/** Collect the store install identity for one game, from data that is cheap to
-    read per deploy: store snapshots, manifest install data, GOG .info files. */
+/** Collect the store install identity for one game, from the store's own files (the
+    Steam appmanifest, the GOG .info), read again only when they changed. */
 export async function scanInstall(
   internalGameId: string,
   discovery: IDiscoveryResult,

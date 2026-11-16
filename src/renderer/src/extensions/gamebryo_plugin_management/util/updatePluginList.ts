@@ -186,7 +186,8 @@ async function updatePluginListImpl(
       }
     }
   }
-  persistor.setKnownPlugins(fileNameByPluginId, blueprintIds);
+  const modPluginIds = new Set(pluginIds.filter((pluginId) => pluginStates[pluginId].modId !== ""));
+  persistor.setKnownPlugins(fileNameByPluginId, blueprintIds, modPluginIds);
   // rides on every error span for the rest of the session.
   setErrorContext(SpanAttribute.PluginCount, String(pluginIds.length));
   setErrorContext(SpanAttribute.PluginFormat, pluginFormat(gameId));

@@ -9,6 +9,7 @@ import type { IToolbarStates } from "@/types/IState";
 
 import { Toolbar } from "./Toolbar";
 import type { IToolbarAnalytics } from "./Toolbar.context";
+import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarGroup, type IToolbarAction } from "./ToolbarGroup";
 import { fitVisibleActions, type IToolbarGroupMetrics } from "./useToolbarOverflow.hook";
 
@@ -249,6 +250,52 @@ describe("ToolbarGroup", () => {
       const button = screen.getByRole("button", { name: "Nope" });
       expect(button).toBeDisabled();
       await userEvent.click(button);
+      expect(onClick).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("an action that's off with a reason", () => {
+    it("stays hoverable, says why, and runs nothing", async () => {
+      const onClick = vi.fn();
+      render(
+        <ToolbarGroup
+          actions={[
+            {
+              label: "Give feedback",
+              icon: { path: "mdi-test" },
+              onClick,
+              disabledReason: "Thanks for your feedback",
+              description: "Tell us what you think",
+            },
+          ]}
+        />,
+      );
+      const button = screen.getByRole("button", { name: "Give feedback" });
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveAccessibleDescription("Thanks for your feedback");
+      await userEvent.click(button);
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it("runs nothing on a ToolbarButton used on its own", async () => {
+      const onClick = vi.fn();
+      render(<ToolbarButton disabledReason="Thanks" label="Give feedback" onClick={onClick} />);
+      await userEvent.click(screen.getByRole("button", { name: "Give feedback" }));
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it("is a disabled row once overflowed", async () => {
+      const onClick = vi.fn();
+      const actions = [
+        ...makeActions(7),
+        { label: "Give feedback", icon: { path: "mdi-test" }, onClick, disabledReason: "Thanks" },
+      ];
+      render(<ToolbarGroup actions={actions} maxVisible={7} />);
+      await userEvent.click(getKebab());
+      const row = screen.getByRole("menuitem", { name: "Give feedback" });
+      expect(row).toBeDisabled();
+      await userEvent.click(row);
       expect(onClick).not.toHaveBeenCalled();
     });
   });
