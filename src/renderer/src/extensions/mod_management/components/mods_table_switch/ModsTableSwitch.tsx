@@ -17,6 +17,7 @@ import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
+import { LegacyTitleTooltips } from "@/ui/components/tooltip/legacy_title_tooltips/LegacyTitleTooltips";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { useCollectionGroupActions } from "../../hooks/use_collection_group_actions/useCollectionGroupActions.hook";
@@ -329,6 +330,10 @@ export const ModsTableSwitch = ({
     () => [...columns, ...registered.columns],
     [columns, registered.columns],
   );
+  const columnIds = useMemo(
+    () => new Set([...ownIds, ...registered.columns.map(({ id }) => id)]),
+    [ownIds, registered.columns],
+  );
 
   const {
     views,
@@ -346,7 +351,7 @@ export const ModsTableSwitch = ({
     addView,
     renameView,
     removeView,
-  } = useModsTableView(mods, registered.defaultShown);
+  } = useModsTableView(mods, registered.defaultShown, columnIds);
 
   const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
 
@@ -362,6 +367,7 @@ export const ModsTableSwitch = ({
       selected,
       setSelected,
       onSearchStarted: analytics.onSearchStarted,
+      textChanges: registered.textChanges,
     });
 
   const { focusGroupId, onGroupFocused, focusModId, onModFocused } = useModsTableFocusRequest({
@@ -496,7 +502,10 @@ export const ModsTableSwitch = ({
   return (
     <>
       <RegisteredModsInputsProvider value={registered.inputs}>
-        <Table {...tableProps} {...data} />
+        {/* One for every extension cell's titles, as only one shows at a time. */}
+        <LegacyTitleTooltips>
+          <Table {...tableProps} {...data} />
+        </LegacyTitleTooltips>
       </RegisteredModsInputsProvider>
 
       <DisableSharedModsModal

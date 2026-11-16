@@ -113,4 +113,60 @@ describe("RegisteredValues", () => {
     expect(values.forSearch(content, a).value).toBe("Textures");
     expect(calc).toHaveBeenCalledTimes(2);
   });
+
+  // So a search over the values runs again when they change, not only when the rows do.
+  it("tells its listeners each time its values change, until they stop listening", async () => {
+    const values = new RegisteredValues(t);
+    const listener = vi.fn();
+    const stop = values.subscribe(listener);
+    const start = values.revision();
+
+    values.invalidate("extra");
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    const ready = values.get(
+      attribute({ calc: () => Promise.resolve("Compatible") }),
+      mod(),
+      NO_MODS,
+    );
+    expect(listener).toHaveBeenCalledTimes(1);
+    await ready.pending;
+    expect(listener).toHaveBeenCalledTimes(2);
+
+    const failed = values.get(
+      attribute({ id: "rejects", calc: () => Promise.reject(new Error("broken")) }),
+      mod(),
+      NO_MODS,
+    );
+    await failed.pending;
+    expect(listener).toHaveBeenCalledTimes(3);
+    expect(values.revision()).toBe(start + 3);
+
+    stop();
+    values.invalidate("extra");
+    expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  it("forgets the values of mods that are gone, and volatile ones worked out with other mods", () => {
+    const calc = vi.fn(() => "Textures");
+    const values = new RegisteredValues(t);
+    const content = attribute({ id: "content", calc });
+    const volatile = attribute({ id: "volatile", isVolatile: true, calc });
+    const a = mod("a");
+    const b = mod("b");
+    const before: ModsById = { a, b };
+    values.get(content, a, before);
+    values.get(content, b, before);
+    values.get(volatile, a, before);
+    calc.mockClear();
+
+    const after: ModsById = { a };
+    values.prune(after);
+    values.get(content, a, after);
+    expect(calc).not.toHaveBeenCalled();
+
+    values.get(content, b, before);
+    values.get(volatile, a, before);
+    expect(calc).toHaveBeenCalledTimes(2);
+  });
 });

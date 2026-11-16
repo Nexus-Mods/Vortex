@@ -38,10 +38,14 @@ const viewsState = (state: IState) => state.settings.modsTableViews;
  *
  * @param defaultShown Columns every view shows until the user hides them: the extensions'
  *   columns that ask to be shown by default.
+ * @param columnIds The columns the table has: its own and those extensions offer for the game.
+ *   A reset is offered for, and resets, only the user's choice of these, keeping their choice of
+ *   a column another game offers.
  */
 export const useModsTableView = (
   mods: { [id: string]: IModWithState },
   defaultShown: readonly string[],
+  columnIds: ReadonlySet<string>,
 ) => {
   const dispatch = useDispatch();
   const analytics = useModsTableAnalytics();
@@ -85,7 +89,7 @@ export const useModsTableView = (
     !view.isCustom &&
     (grouping !== view.defaults.grouping ||
       Object.entries(changes.columns ?? {}).some(
-        ([columnId, shown]) => shown !== isShownByDefault(columnId),
+        ([columnId, shown]) => columnIds.has(columnId) && shown !== isShownByDefault(columnId),
       ));
 
   const select = useCallback(
@@ -127,8 +131,8 @@ export const useModsTableView = (
 
   const reset = useCallback(() => {
     analytics.onViewChanged("reset");
-    dispatch(resetModsTableView(view.id));
-  }, [analytics, dispatch, view.id]);
+    dispatch(resetModsTableView(view.id, [...columnIds]));
+  }, [analytics, columnIds, dispatch, view.id]);
 
   const addView = useCallback(
     (name: string) => {

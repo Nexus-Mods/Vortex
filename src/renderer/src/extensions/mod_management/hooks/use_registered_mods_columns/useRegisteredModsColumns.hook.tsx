@@ -15,12 +15,14 @@ import { useSelector } from "react-redux";
 import ExtensionGate from "@/controls/ExtensionGate";
 import { registerTableAttribute } from "@/controls/table/registerTableAttribute";
 import { useExtensionObjects } from "@/ExtensionProvider";
+import type { IState } from "@/types/IState";
 import type { ICustomProps, ITableAttribute } from "@/types/ITableAttribute";
 import { Icon } from "@/ui/components/icon/Icon";
-import { LegacyTitleTooltips } from "@/ui/components/tooltip/legacy_title_tooltips/LegacyTitleTooltips";
+import { LegacyTitled } from "@/ui/components/tooltip/legacy_title_tooltips/LegacyTitleTooltips";
 import { getCurrentLanguage, preT, type TFunction } from "@/util/i18n";
 import { activeGameId } from "@/util/selectors";
 
+import { ValueText } from "../../components/value_text/ValueText";
 import type { IModWithState } from "../../types/IModProps";
 import type { IModRow } from "../../util/mods_table_views/modsTableViews";
 import {
@@ -53,7 +55,7 @@ const valueCell = (value: unknown, header: string): ReactNode => {
     return <Icon name="check" size="sm" title={header} />;
   }
   const text = valueText(value);
-  return text ? <span className="truncate">{text}</span> : null;
+  return text ? <ValueText>{text}</ValueText> : null;
 };
 
 /** What registered cells are drawn from outside their own mod. */
@@ -89,13 +91,15 @@ const RegisteredValue = ({ attribute, mod, header, values }: IRegisteredValuePro
   const { mods } = useContext(RegisteredModsInputs);
   const entry = values.get(attribute, mod, mods);
   const [, settled] = useReducer((count: number) => count + 1, 0);
+  // Taken as it's drawn, as the value can be ready, and `entry.pending` gone, before effects run.
+  const { pending } = entry;
 
   useEffect(() => {
-    if (entry.pending === undefined) {
+    if (pending === undefined) {
       return undefined;
     }
     let current = true;
-    void entry.pending.then(() => {
+    void pending.then(() => {
       if (current) {
         settled();
       }
@@ -103,7 +107,7 @@ const RegisteredValue = ({ attribute, mod, header, values }: IRegisteredValuePro
     return () => {
       current = false;
     };
-  }, [entry]);
+  }, [pending]);
 
   return valueCell(entry.value, header);
 };
@@ -135,11 +139,11 @@ const CustomCell = memo(({ attribute, mod, t }: ICustomCellProps) => {
   } catch (err) {
     logAttributeFailure("failed to render attribute", attribute, mod, err);
   }
-  // Legacy controls name themselves with a title, shown here in the table's own tooltip.
+  // Legacy controls name themselves with a title, shown in the tooltip around the table.
   return control === null ? null : (
-    <LegacyTitleTooltips>
+    <LegacyTitled>
       <ExtensionGate id={`extension-${mod.id}-${attribute.id}`}>{control}</ExtensionGate>
-    </LegacyTitleTooltips>
+    </LegacyTitled>
   );
 });
 
@@ -160,13 +164,23 @@ const isInTable = ({ placement }: ITableAttribute) => placement === "table" || p
 /** Whether the legacy table shows an attribute's column before the user, or the extension, says. */
 const isDefaultVisible = (attribute: ITableAttribute) => attribute.isDefaultVisible ?? true;
 
+type LegacyColumnStates = { [attributeId: string]: { enabled?: boolean } } | undefined;
+
+/** The legacy Mods table's column choices, which extensions also set with `setAttributeVisible`. */
+const legacyColumnStates = (state: IState): LegacyColumnStates =>
+  state.settings.tables?.mods?.attributes;
+
 /**
- * Whether it's a column here: one the user can't toggle shows only if it does by default, as
- * the legacy table leaves one that doesn't for its extension to show, such as the script
- * extender's error column.
+ * Whether the legacy table shows an attribute's column: as last set, by the user or, for one
+ * they can't toggle, its extension, such as the script extender's error column while there are
+ * errors; otherwise as it does by default.
  */
-const isOffered = (attribute: ITableAttribute) =>
-  isInTable(attribute) && (attribute.isToggleable === true || isDefaultVisible(attribute));
+const isLegacyShown = (attribute: ITableAttribute, states: LegacyColumnStates) =>
+  states?.[attribute.id]?.enabled ?? isDefaultVisible(attribute);
+
+/** Whether it's a column here: one the user can't toggle only while the legacy table shows it. */
+const isOffered = (attribute: ITableAttribute, states: LegacyColumnStates) =>
+  isInTable(attribute) && (attribute.isToggleable === true || isLegacyShown(attribute, states));
 
 /**
  * How many times each offered attribute's `externalData` has said the data it's from changed,
@@ -226,19 +240,25 @@ export const useRegisteredModsColumns = (
     "mods",
   );
 
+  const legacyStates = useSelector(legacyColumnStates);
+
   const offered = useMemo(
     () =>
       attributes.filter(
         (attribute) =>
-          isOffered(attribute) && !ownIds.has(attribute.id) && (attribute.condition?.() ?? true),
+          isOffered(attribute, legacyStates) &&
+          !ownIds.has(attribute.id) &&
+          (attribute.condition?.() ?? true),
       ),
     // A condition is mostly which game is active, so it's asked again when that changes.
-    [attributes, gameId, ownIds],
+    [attributes, gameId, legacyStates, ownIds],
   );
 
   // Kept apart from the columns, which a mod changing doesn't change; anew for a new language.
   const values = useMemo(() => new RegisteredValues(t), [attributes, t]);
   const versions = useExternalDataVersions(offered, isNewTable, values);
+
+  useEffect(() => values.prune(mods), [mods, values]);
 
   const columns = useMemo(
     () =>
@@ -280,7 +300,7 @@ export const useRegisteredModsColumns = (
   /**
    * The classes extensions add to a row: from every attribute, as the legacy table asks them,
    * each told whether its column is shown: as the view says, for one the user toggles, and
-   * otherwise whether it is by default.
+   * otherwise whether the legacy table shows it.
    */
   const rowClassName = useCallback(
     ({ mod }: IModRow, isColumnShown: (columnId: string) => boolean) =>
@@ -290,13 +310,13 @@ export const useRegisteredModsColumns = (
             mod,
             ownIds.has(attribute.id) || toggleableIds.has(attribute.id)
               ? isColumnShown(attribute.id)
-              : isDefaultVisible(attribute),
+              : isLegacyShown(attribute, legacyStates),
           ),
         )
         .filter(Boolean)
         .join(" ") || undefined,
-    [attributes, ownIds, toggleableIds],
+    [attributes, legacyStates, ownIds, toggleableIds],
   );
 
-  return { columns, defaultShown, rowClassName, inputs };
+  return { columns, defaultShown, rowClassName, inputs, textChanges: values };
 };

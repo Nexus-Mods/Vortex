@@ -19,15 +19,15 @@ import { ApplicationData } from "./src/applicationData.js";
 // returning the key. The source strings in this repo are the keys, so that fallback is
 // already what the assertions read — this just makes it the stated behaviour instead of a
 // side effect, and drops the warning. A test that needs real translations mocks over this.
+const { t } = vi.hoisted(() => ({ t: (key: string) => key }));
+
 vi.mock("react-i18next", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   // react-i18next hands back an array that also carries the same values as properties, so
   // both `const { t } = useTranslation()` and `const [t] = useTranslation()` work. The repo
-  // uses both, so the stub keeps that shape.
-  useTranslation: () => {
-    const t = (key: string) => key;
-    return Object.assign([t, undefined, true], { t, i18n: undefined, ready: true });
-  },
+  // uses both, so the stub keeps that shape. The same `t` each time, as the app's is until the
+  // language changes, so a memo keyed on it holds across renders.
+  useTranslation: () => Object.assign([t, undefined, true], { t, i18n: undefined, ready: true }),
 }));
 
 // Every path keyed off a single absolute test root so getVortexPath-backed selectors

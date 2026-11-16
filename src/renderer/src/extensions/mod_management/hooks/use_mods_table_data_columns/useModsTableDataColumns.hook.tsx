@@ -10,6 +10,7 @@ import { activeGameId } from "@/util/selectors";
 import { bytesToString } from "@/util/util";
 
 import { getModType } from "../../../gamemode_management/util/modTypeExtensions";
+import { ValueText } from "../../components/value_text/ValueText";
 import type { IMod } from "../../types/IMod";
 import { displayName, type IModRow } from "../../util/mods_table_views/modsTableViews";
 import { getModSources } from "../../util/modSource";
@@ -25,13 +26,6 @@ const categoryId = (category: string | number | undefined) =>
 
 const timeOf = (value: string | number | Date | undefined) =>
   value === undefined ? undefined : new Date(value).getTime() || undefined;
-
-/** A value in the Version column's grey, so none stands out beside it; brighter while sorted by. */
-const ValueText = ({ children }: { children: string }) => (
-  <span className="truncate text-translucent-subdued in-data-sorted:text-neutral-moderate">
-    {children}
-  </span>
-);
 
 /**
  * A toggleable column showing a line of text, sorted, grouped and searched by it; `noValue`

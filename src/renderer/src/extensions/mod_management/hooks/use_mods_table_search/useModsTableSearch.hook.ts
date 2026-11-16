@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 import type { IModGroup, IModRow } from "../../util/mods_table_views/modsTableViews";
 import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
@@ -18,6 +18,17 @@ const searchFilter = (columns: IModsTableColumn[], search: string) => {
     columns.some((column) => column.searchText?.(row).toLocaleLowerCase().includes(query));
 };
 
+/** Says when columns' search texts change apart from their rows, such as an extension's values. */
+export interface ISearchTextChanges {
+  /** Calls `onChange` as the texts change, until the function it returns is called. */
+  subscribe: (onChange: () => void) => () => void;
+  /** A number that moves on with each change. */
+  revision: () => number;
+}
+
+const NOT_LISTENING = () => () => undefined;
+const NO_REVISION = () => 0;
+
 interface IModsTableSearchOptions {
   /** Every mod's row, for the flat list. */
   rows: IModRow[];
@@ -31,6 +42,8 @@ interface IModsTableSearchOptions {
   setSelected: (ids: ReadonlySet<string>) => void;
   /** Called as a search starts from an empty box. */
   onSearchStarted: () => void;
+  /** Says when the columns' texts change apart from the rows, to search again. */
+  textChanges?: ISearchTextChanges;
 }
 
 /**
@@ -44,14 +57,26 @@ export const useModsTableSearch = ({
   selected,
   setSelected,
   onSearchStarted,
+  textChanges,
 }: IModsTableSearchOptions) => {
   const [search, setSearch] = useState("");
+  const isQuery = search.trim() !== "";
+
+  // Only while searching, as nothing else reads the texts.
+  const textRevision = useSyncExternalStore(
+    isQuery && textChanges ? textChanges.subscribe : NOT_LISTENING,
+    textChanges?.revision ?? NO_REVISION,
+  );
 
   const searchColumns = useMemo(
     () => visibleColumns.filter((column) => column.searchText !== undefined),
     [visibleColumns],
   );
-  const matches = useMemo(() => searchFilter(searchColumns, search), [search, searchColumns]);
+  const matches = useMemo(
+    () => searchFilter(searchColumns, search),
+    // With the revision too, as the columns read texts that change apart from them.
+    [search, searchColumns, textRevision],
+  );
   const shownRows = useMemo(() => (matches ? rows.filter(matches) : rows), [matches, rows]);
   const shownGroups = useMemo(
     () =>

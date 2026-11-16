@@ -858,6 +858,31 @@ describe("ModsTableSwitch", () => {
         expect(screen.getByRole("gridcell", { name: "Undecided" })).toBeInTheDocument();
       });
 
+      // Extensions' legacy controls name themselves with a title, which the browser would show.
+      it("shows its controls' titles in the table's own tooltip", async () => {
+        mocks.registeredColumns = [
+          {
+            id: "endorsed",
+            name: "Endorsed",
+            placement: "table",
+            isToggleable: true,
+            customRenderer: () => (
+              <button title="Undecided" type="button">
+                <svg />
+              </button>
+            ),
+            edit: {},
+          },
+        ];
+        renderSwitch({ a: mod("a", "Alpha", true) });
+        const endorse = screen.getByRole("button", { name: "Undecided" });
+
+        await userEvent.hover(endorse);
+
+        expect(await screen.findByRole("tooltip")).toHaveTextContent("Undecided");
+        expect(endorse).not.toHaveAttribute("title");
+      });
+
       it("adds its classes to a mod's row, told whether it's shown", () => {
         mocks.registeredColumns = [
           {
@@ -1306,6 +1331,10 @@ describe("ModsTableSwitch", () => {
 
     const names = () => bodyRows(screen.getByRole("grid")).map(cellText);
 
+    afterEach(() => {
+      mocks.registeredColumns = [];
+    });
+
     it("lists only the mods whose cells show the text, whatever its case", async () => {
       renderSwitch({
         a: mod("a", "Alpha", true),
@@ -1350,6 +1379,35 @@ describe("ModsTableSwitch", () => {
           .filter((row) => row.getAttribute("aria-level") === "2")
           .map(cellText),
       ).toEqual(["Alpha"]);
+    });
+
+    // As a value worked out asynchronously settles with none of the hidden rows drawn.
+    it("finds a mod by an extension's value once it's worked out", async () => {
+      const resolvers: { [modId: string]: (value: string) => void } = {};
+      mocks.registeredColumns = [
+        {
+          id: "compatibility",
+          name: "Compatibility",
+          placement: "table",
+          isToggleable: true,
+          calc: (row: IModWithState) =>
+            new Promise<string>((resolve) => {
+              resolvers[row.id] = resolve;
+            }),
+          edit: {},
+        },
+      ];
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+
+      await searchFor("broken");
+      expect(screen.getByText("modsTable::noResults")).toBeInTheDocument();
+
+      await act(async () => {
+        resolvers.a("Works");
+        resolvers.b("Broken");
+      });
+
+      expect(names()).toEqual(["Beta"]);
     });
 
     it("deselects a selected mod the search hides", async () => {

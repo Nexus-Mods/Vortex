@@ -21,13 +21,19 @@ import { useModsTableView } from "./useModsTableView.hook";
 
 const NO_DEFAULTS: string[] = [];
 
-const renderView = (defaultShown: readonly string[] = NO_DEFAULTS) => {
+/** The columns the table has, its own and the extensions' the game offers. */
+const TABLE_COLUMNS: ReadonlySet<string> = new Set(["name", "version", "author", "endorsed"]);
+
+const renderView = (
+  defaultShown: readonly string[] = NO_DEFAULTS,
+  columnIds: ReadonlySet<string> = TABLE_COLUMNS,
+) => {
   const store = makeModsTableStore();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
 
-  return renderHook(() => useModsTableView({}, defaultShown), { wrapper }).result;
+  return renderHook(() => useModsTableView({}, defaultShown, columnIds), { wrapper }).result;
 };
 
 /** The properties of each analytics event sent with this name, in order. */
@@ -81,6 +87,49 @@ describe("useModsTableView", () => {
       act(() => result.current.setColumnVisible("endorsed", true));
 
       expect(result.current.canReset).toBe(false);
+    });
+  });
+
+  // As an extension's column, such as Dependencies, is offered for some games and not others.
+  describe("a column the table doesn't have", () => {
+    const storeWrapper = () => {
+      const store = makeModsTableStore();
+      return ({ children }: { children: ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+    };
+
+    it("doesn't offer a reset for the user's choice of it", () => {
+      const wrapper = storeWrapper();
+      let columnIds: ReadonlySet<string> = new Set([...TABLE_COLUMNS, "dependencies"]);
+      const { result, rerender } = renderHook(() => useModsTableView({}, NO_DEFAULTS, columnIds), {
+        wrapper,
+      });
+      act(() => result.current.setColumnVisible("dependencies", true));
+
+      columnIds = TABLE_COLUMNS;
+      rerender();
+
+      expect(result.current.canReset).toBe(false);
+    });
+
+    it("keeps the user's choice of it through a reset", () => {
+      const wrapper = storeWrapper();
+      let columnIds: ReadonlySet<string> = new Set([...TABLE_COLUMNS, "dependencies"]);
+      const { result, rerender } = renderHook(() => useModsTableView({}, NO_DEFAULTS, columnIds), {
+        wrapper,
+      });
+      act(() => result.current.setColumnVisible("dependencies", true));
+      columnIds = TABLE_COLUMNS;
+      rerender();
+
+      act(() => result.current.setColumnVisible("author", true));
+      act(() => result.current.reset());
+      expect(result.current.isColumnShown("author")).toBe(false);
+
+      columnIds = new Set([...TABLE_COLUMNS, "dependencies"]);
+      rerender();
+      expect(result.current.isColumnShown("dependencies")).toBe(true);
     });
   });
 

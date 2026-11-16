@@ -1,6 +1,6 @@
 import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import React, { type ReactNode } from "react";
+import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -18,18 +18,9 @@ vi.mock("@/controls/ExtensionGate", () => ({
   ),
 }));
 
-// The same `t` on every render, as the app's is until the language changes, so a redraw
-// alone doesn't work a value out again. The shared stub makes a new one each time.
-vi.mock("react-i18next", async (importOriginal) => {
-  const t = (key: string) => key;
-  return {
-    ...(await importOriginal<object>()),
-    useTranslation: () => Object.assign([t, undefined, true], { t, i18n: undefined, ready: true }),
-  };
-});
-
 import { VortexGameId } from "@vortex/shared";
 
+import { setAttributeVisible } from "@/actions/tables";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { ITableAttribute } from "@/types/ITableAttribute";
 
@@ -86,21 +77,27 @@ const CellHarness = ({ modRow, mods }: { modRow: IModRow; mods: Mods }) => {
   );
 };
 
+/** The mods, the row's own among them, as the table's always are. */
+const withOwn = (modRow: IModRow, others: Mods = NO_MODS): Mods => ({
+  ...others,
+  [modRow.mod.id]: modRow.mod,
+});
+
 /** Renders a registered column's cell, and draws it again as the table would. */
 const renderCell = (modRow: IModRow = row()) => {
   const store = makeModsTableStore();
   const view = render(
     <Provider store={store}>
-      <CellHarness modRow={modRow} mods={NO_MODS} />
+      <CellHarness modRow={modRow} mods={withOwn(modRow)} />
     </Provider>,
   );
   return {
     cell: () => screen.getByTestId("cell"),
-    /** Draws it again, for these mods, as the table does when any of them changes. */
-    redraw: (mods: Mods = NO_MODS, drawn: IModRow = modRow) =>
+    /** Draws it again, beside these other mods, as the table does when any mod changes. */
+    redraw: (others: Mods, drawn: IModRow = modRow) =>
       view.rerender(
         <Provider store={store}>
-          <CellHarness modRow={drawn} mods={mods} />
+          <CellHarness modRow={drawn} mods={withOwn(drawn, others)} />
         </Provider>,
       ),
   };
@@ -210,6 +207,51 @@ describe("useRegisteredModsColumns", () => {
     expect(defaultShown).toEqual([]);
   });
 
+  // As the script extender shows Extender Error while the game's log has load errors.
+  it("shows a column the user can't toggle while its extension says to, as the legacy table does", () => {
+    const errorColumn = attribute({
+      id: "script-extender-error-check",
+      isToggleable: false,
+      isDefaultVisible: false,
+      cssClass: (_mod, enabled) => (enabled ? "has-error-column" : undefined),
+    });
+    registered.attributes = [errorColumn];
+    const store = makeModsTableStore();
+    const { result } = renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+      wrapper: storeWrapper(store),
+    });
+
+    act(() => {
+      store.dispatch(setAttributeVisible("mods", "script-extender-error-check", true));
+    });
+
+    expect(result.current.columns).toMatchObject([
+      { id: "script-extender-error-check", isToggleable: false },
+    ]);
+    expect(result.current.defaultShown).toEqual([]);
+    expect(result.current.rowClassName(row(), () => false)).toBe("has-error-column");
+
+    act(() => {
+      store.dispatch(setAttributeVisible("mods", "script-extender-error-check", false));
+    });
+
+    expect(result.current.columns).toEqual([]);
+    expect(result.current.rowClassName(row(), () => true)).toBeUndefined();
+  });
+
+  it("leaves out a column the user can't toggle once its extension hides it", () => {
+    registered.attributes = [attribute({ id: "fixed", isToggleable: false })];
+    const store = makeModsTableStore({
+      tables: { mods: { attributes: { fixed: { enabled: false } } } },
+    });
+
+    const { result } = renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+      wrapper: storeWrapper(store),
+    });
+
+    expect(result.current.columns).toEqual([]);
+  });
+
   // As in the legacy table, a column is shown unless it says not to be.
   it("names the columns to show until the user hides them", () => {
     registered.attributes = [
@@ -295,6 +337,28 @@ describe("useRegisteredModsColumns", () => {
     expect(result.current.inputs).not.toBe(before.inputs);
   });
 
+  // Over a long session, the values of mods since removed would otherwise add up.
+  it("forgets a mod's values once the mod is gone", () => {
+    const calc = vi.fn(() => "Textures");
+    registered.attributes = [attribute({ calc })];
+    const alpha = row();
+    const beta = row({ id: "b" });
+    let mods: Mods = { a: alpha.mod, b: beta.mod };
+    const { result, rerender } = renderHook(() => useRegisteredModsColumns(NO_IDS, mods, true), {
+      wrapper: storeWrapper(),
+    });
+    const searchBeta = () => result.current.columns[0].searchText?.(beta);
+
+    searchBeta();
+    mods = { a: alpha.mod };
+    rerender();
+    mods = { a: alpha.mod, b: beta.mod };
+    rerender();
+    searchBeta();
+
+    expect(calc).toHaveBeenCalledTimes(2);
+  });
+
   // Some extensions keep only the last listener, so one for no column would take theirs.
   it("listens for changes only to the data of the columns it offers", () => {
     const externalData = vi.fn();
@@ -370,27 +434,6 @@ describe("useRegisteredModsColumns", () => {
       expect(
         within(within(cell()).getByTestId("gate-extension-a-endorsed")).getByRole("button"),
       ).toBeInTheDocument();
-    });
-
-    // Extensions' legacy controls name themselves with a title, which the browser would show.
-    it("shows its controls' titles in the table's own tooltip", async () => {
-      registered.attributes = [
-        attribute({
-          customRenderer: () => (
-            <button title="Undecided" type="button">
-              <svg />
-            </button>
-          ),
-        }),
-      ];
-
-      const { cell } = renderCell();
-      await userEvent.hover(within(cell()).getByRole("button"));
-
-      expect(await screen.findByRole("tooltip")).toHaveTextContent("Undecided");
-      expect(within(cell()).getByRole("button", { name: "Undecided" })).not.toHaveAttribute(
-        "title",
-      );
     });
 
     // A renderer that throws as it's called, which in the legacy table takes the page down.
@@ -489,13 +532,36 @@ describe("useRegisteredModsColumns", () => {
       await waitFor(() => expect(cell()).toHaveTextContent("Compatible"));
     });
 
+    // Outside act, as in the app, where effects run after the calc's promise has settled.
+    it("shows a value worked out asynchronously that's ready before the cell's effects run", async () => {
+      registered.attributes = [attribute({ calc: () => Promise.resolve("Compatible") })];
+      const actEnvironment = globalThis.IS_REACT_ACT_ENVIRONMENT;
+      globalThis.IS_REACT_ACT_ENVIRONMENT = false;
+      const container = document.createElement("div");
+      const root = createRoot(container);
+
+      try {
+        root.render(
+          <Provider store={makeModsTableStore()}>
+            <CellHarness modRow={row()} mods={withOwn(row())} />
+          </Provider>,
+        );
+
+        await waitFor(() => expect(container).toHaveTextContent("Compatible"));
+      } finally {
+        root.unmount();
+        globalThis.IS_REACT_ACT_ENVIRONMENT = actEnvironment;
+      }
+    });
+
     // As the table draws only the rows in sight, a row scrolled back in shows it at once.
     it("isn't worked out again for a row drawn again after leaving the page", async () => {
       const calc = vi.fn(() => Promise.resolve("Compatible"));
       registered.attributes = [attribute({ calc })];
       const store = makeModsTableStore();
       const modRow = row();
-      const { result } = renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+      const mods = withOwn(modRow);
+      const { result } = renderHook(() => useRegisteredModsColumns(NO_IDS, mods, true), {
         wrapper: storeWrapper(store),
       });
       const drawCell = () =>

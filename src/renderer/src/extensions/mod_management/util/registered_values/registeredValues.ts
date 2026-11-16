@@ -51,6 +51,8 @@ const CALC_FAILED = "failed to calculate attribute value";
 export class RegisteredValues {
   private readonly mEntries = new Map<string, Map<string, IEntry>>();
   private readonly mGenerations = new Map<string, number>();
+  private readonly mListeners = new Set<() => void>();
+  private mRevision = 0;
   private readonly mT: TFunction;
 
   constructor(t: TFunction) {
@@ -77,6 +79,37 @@ export class RegisteredValues {
   /** Has an attribute's values worked out again, as they're next asked for. */
   public invalidate(attributeId: string) {
     this.mGenerations.set(attributeId, this.generation(attributeId) + 1);
+    this.changed();
+  }
+
+  /**
+   * Drops the values of mods that are gone, and volatile ones worked out with other mods, which
+   * would be worked out again anyway, so it keeps no more than the mods shown.
+   */
+  public prune(mods: ModsById) {
+    for (const byMod of this.mEntries.values()) {
+      for (const [modId, entry] of byMod) {
+        if (mods[modId] === undefined || (entry.mods !== undefined && entry.mods !== mods)) {
+          byMod.delete(modId);
+        }
+      }
+    }
+  }
+
+  /** Counts its values' changes: each `invalidate`, and each asynchronous value as it's ready. */
+  public readonly revision = () => this.mRevision;
+
+  /** Calls `listener` as its values change, until the function it returns is called. */
+  public readonly subscribe = (listener: () => void) => {
+    this.mListeners.add(listener);
+    return () => {
+      this.mListeners.delete(listener);
+    };
+  };
+
+  private changed() {
+    this.mRevision += 1;
+    this.mListeners.forEach((listener) => listener());
   }
 
   private generation(attributeId: string) {
@@ -109,10 +142,12 @@ export class RegisteredValues {
         (value) => {
           entry.value = value;
           entry.pending = undefined;
+          this.changed();
         },
         (err: unknown) => {
           logAttributeFailure(CALC_FAILED, attribute, mod, err);
           entry.pending = undefined;
+          this.changed();
         },
       );
     } else {
