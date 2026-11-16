@@ -1,4 +1,4 @@
-import type { TelemetryEventEntry } from "@vortex/nexus-api-v3";
+import { V3ApiError, type TelemetryEventEntry } from "@vortex/nexus-api-v3";
 import { NexusGameId, VortexGameId } from "@vortex/shared";
 import type { GameFolderCheckResult } from "@vortex/shared/ipc";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,6 +13,7 @@ vi.mock("../../nexus_integration/nexusV3Client", () => ({
   createVortexNexusV3InternalClient: vi.fn(),
 }));
 vi.mock("../mixpanel/numericGameId", () => ({ numericNexusGameId: () => NexusGameId(1704) }));
+vi.mock("../../../util/log", () => ({ log: vi.fn() }));
 vi.mock("./steamInput", () => ({ steamEntryFor: () => undefined }));
 vi.mock("./scheduler", () => ({
   gameFolderCheckMarkers: () => ({ skyrimse: { state: "pending", managedAt: 0 } }),
@@ -82,6 +83,7 @@ describe("submitGameFolderCheck", () => {
   const telemetryEvents = vi.fn<(events: TelemetryEventEntry[]) => Promise<unknown>>();
   const dispatch = vi.fn();
   const api = { getState: () => ({}), store: { dispatch } } as unknown as IExtensionApi;
+  const markers = () => dispatch.mock.calls.map(([action]) => action.payload.marker);
   const sentTypes = () =>
     telemetryEvents.mock.calls.map(([events]) => events.map((entry) => entry.event.type));
 
@@ -96,7 +98,7 @@ describe("submitGameFolderCheck", () => {
   it("sends a clean folder as one request holding the state event", async () => {
     await submitGameFolderCheck(api, checked(0));
     expect(sentTypes()).toEqual([["game_folder_state"]]);
-    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(markers()).toEqual([{ state: "done", status: "checked", at: expect.any(Number) }]);
   });
 
   it("sends a small check's file events and state event in one request, state last", async () => {
@@ -129,10 +131,27 @@ describe("submitGameFolderCheck", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("leaves the check pending when an event is rejected", async () => {
-    telemetryEvents.mockResolvedValueOnce({ accepted: 3, rejected: [{ index: 0 }] });
-    await expect(submitGameFolderCheck(api, checked(2800))).rejects.toThrow("rejected");
-    expect(telemetryEvents).toHaveBeenCalledTimes(1);
+  it("leaves the check pending when the API is unavailable", async () => {
+    telemetryEvents.mockRejectedValueOnce(new V3ApiError({ status: 503, title: "Unavailable" }));
+    await expect(submitGameFolderCheck(api, checked(0))).rejects.toThrow("Unavailable");
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("drops the check when the API rejects an event, without sending the rest", async () => {
+    telemetryEvents.mockResolvedValueOnce({ accepted: 3, rejected: [{ index: 0 }] });
+    await submitGameFolderCheck(api, checked(2800));
+    expect(telemetryEvents).toHaveBeenCalledTimes(1);
+    expect(markers()).toEqual([
+      { state: "dropped", reason: "events_rejected", at: expect.any(Number) },
+    ]);
+  });
+
+  it.each([413, 422])("drops the check when the API refuses a batch with %i", async (status) => {
+    telemetryEvents.mockRejectedValueOnce(new V3ApiError({ status, title: "Refused" }));
+    await submitGameFolderCheck(api, checked(2800));
+    expect(telemetryEvents).toHaveBeenCalledTimes(1);
+    expect(markers()).toEqual([
+      { state: "dropped", reason: `http_${status}`, at: expect.any(Number) },
+    ]);
   });
 });

@@ -84,6 +84,11 @@ by `VortexGameId`), so a pending check survives app restarts. If a check errors
 out or telemetry submission fails, the marker stays `pending` and is retried on
 the next session rather than looping in the current one.
 
+The exception is a send the API refuses: an event it rejects, or a batch it
+answers with `413` or `422`. Sending the same data again would be refused
+again, and each retry would re-read the game folder, so the marker becomes
+`dropped` (with the reason) and the game is not checked again.
+
 Main runs at most one check at a time and tracks at most one active job per
 game. If a second `start` request arrives for the same game (for instance, after
 a renderer reload), it attaches to the already-running job.
@@ -311,8 +316,10 @@ come from `game_folder_state` alone. For paths, read
 `game_folder_state_files`, group by `check_id`, and keep the checks whose
 number of distinct parts equals `parts`.
 
-A check that fails to send, or has an event rejected, stays pending and runs
-again in a later session as a new check with a new `check_id`.
+A check that fails to send stays pending and runs again in a later session as a
+new check with a new `check_id`. A check the API refuses is dropped and never
+sent again; if it was refused part-way, its earlier file events remain stored
+without a state event.
 
 All file paths in the payload are relative to the game folder using `/`
 separators. Absolute local paths (such as the Steam library path or OS username)

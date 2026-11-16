@@ -67,9 +67,9 @@ export type GogInstall = {
   install_language: string;
 };
 
-// Draft: not yet agreed in flamework contracts/telemetry (MOD-80).
+// https://github.com/Nexus-Mods/flamework/tree/master/contracts/telemetry
 // One check is a game_folder_state event with everything but the file paths, plus up to
-// max_file_parts game_folder_state_files events holding the paths, all in one batch.
+// max_file_parts game_folder_state_files events holding the paths.
 export type EventGameFolderState = {
   type: "game_folder_state";
   version: 1;
