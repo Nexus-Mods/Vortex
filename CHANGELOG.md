@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0-beta.5] - 2026-11-16
+
+### Changed
+
+- Renamed the extension API's `GameId` and `GameDomain` to `NexusGameId` and `NexusGameDomain` ([#24911](https://github.com/Nexus-Mods/Vortex/pull/24911))
+
+### Fixed
+
+- Declined optional collection mods installing anyway ([#24904](https://github.com/Nexus-Mods/Vortex/pull/24904))
+- Adding a collection or downloading a tool requirement failing with "File already downloaded" when its archive was already on disk ([#24854](https://github.com/Nexus-Mods/Vortex/pull/24854))
+- Deploy and conflict detection failing on mod records missing their `id` ([#24853](https://github.com/Nexus-Mods/Vortex/pull/24853))
+- Bethesda load orders: an empty `plugins.txt` wiping the load order; "Too many open files" when writing load order files during move deployment; and leftover `bundledPlugins` folders loading old extensions after an update ([#24852](https://github.com/Nexus-Mods/Vortex/pull/24852))
+- Collection installs failing mods that weren't stuck and installing the same mod twice ([#24850](https://github.com/Nexus-Mods/Vortex/pull/24850))
+
 ## [2.11.0-beta.4] - 2026-11-11
 
 ### Fixed
@@ -2729,6 +2743,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.11.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.5
 [2.11.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.4
 [2.11.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.3
 [2.11.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.2
