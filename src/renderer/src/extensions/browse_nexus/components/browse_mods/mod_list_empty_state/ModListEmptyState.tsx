@@ -115,7 +115,7 @@ export const ModListEmptyState = ({
       footnote={
         <>
           <span data-testid="mod-list-hidden-mods-note">
-            {t("Mods that don't support mod managers or use legacy requirements are hidden.")}
+            {t("Mods without mod manager support or using legacy requirements aren’t included.")}
           </span>
 
           {!!LEARN_MORE_URL && (
