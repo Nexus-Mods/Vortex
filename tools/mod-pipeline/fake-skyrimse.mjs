@@ -4,7 +4,7 @@
  * manages them. Nothing touches a real game install or the usual dev state.
  *
  * Usage:
- *   node tools/mod-pipeline/fake-skyrimse.mjs [setup] [--root dir] [--port 9222] [--files N] [--reset] [--no-launch]
+ *   node tools/mod-pipeline/fake-skyrimse.mjs [setup] [--root dir] [--port 9222] [--files N] [--mod id] [--reset] [--no-launch]
  *   node tools/mod-pipeline/fake-skyrimse.mjs tamper [--root dir]
  *   node tools/mod-pipeline/fake-skyrimse.mjs rollback [--root dir] [--port 9222] [--profile id] [--fail-at path] [--call name]
  *
@@ -14,6 +14,7 @@
  *   --root       where everything goes (default: <temp>/vortex-fake-skyrimse); game and staging
  *                share it, so hardlink deployment works
  *   --files N    also stage a "bulk" mod of N files, for timing
+ *   --mod id     stage only this mod, by the id listed below
  *   --reset      delete <root> first; setup stops when <root> exists without it
  *   --no-launch  only build the folders
  *
@@ -190,7 +191,16 @@ function stagedMods() {
     }
     mods.push({ id: "bulk", files });
   }
-  return mods;
+  const onlyId = option("mod");
+  if (onlyId === undefined) {
+    return mods;
+  }
+  const only = mods.find(({ id }) => id === onlyId);
+  if (only === undefined) {
+    throw new Error(`--mod is one of ${mods.map(({ id }) => id).join(", ")}`);
+  }
+  // the mod its rule names is not staged
+  return [{ ...only, after: undefined }];
 }
 
 async function buildFolders(mods) {
