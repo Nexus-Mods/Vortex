@@ -131,12 +131,12 @@
 
             &.nxm-tab-button-selected {
                 color: var(--color-neutral-moderate);
-                background-color: var(--color-surface-mid);
+                background-color: var(--color-surface-translucent-low);
             }
 
             &:is(a, :enabled):not(.nxm-button-disabled):hover {
                 color: var(--color-neutral-strong);
-                background-color: var(--color-surface-high);
+                background-color: var(--color-surface-translucent-mid);
             }
         }
     }
