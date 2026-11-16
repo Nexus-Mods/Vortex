@@ -23,11 +23,17 @@ const mp = vi.hoisted(() => ({
   reset: vi.fn(),
 }));
 
+const serviceLog = vi.hoisted(() => vi.fn());
+
 vi.mock("mixpanel-browser", () => ({ default: mp }));
+vi.mock("../utils/analyticsLog", () => ({
+  analyticsLog: vi.fn(),
+  analyticsServiceLog: serviceLog,
+}));
 vi.mock("../../../util/application", () => ({ getApplication: () => ({ version: "1.2.3" }) }));
 
 import analyticsMixpanel, { MixpanelAnalytics } from "./MixpanelAnalytics";
-import { AppLaunchedEvent, AppUIModeChangedEvent } from "./MixpanelEvents";
+import { AppClosedEvent, AppLaunchedEvent, AppUIModeChangedEvent } from "./MixpanelEvents";
 
 analyticsMixpanel.setConsentGetter(() => true);
 
@@ -216,6 +222,90 @@ describe("AppUIModeChangedEvent", () => {
     const event = new AppUIModeChangedEvent({ is_legacy_ui: true });
 
     expect(Object.keys(event.properties)).toEqual(["is_legacy_ui"]);
+  });
+});
+
+describe("AppClosedEvent", () => {
+  it("carries is_relaunch and session_duration_ms and nothing else", () => {
+    const event = new AppClosedEvent({ is_relaunch: true, session_duration_ms: 125_000 });
+
+    expect(event.eventName).toBe("app_closed");
+    expect(event.properties).toEqual({ is_relaunch: true, session_duration_ms: 125_000 });
+  });
+});
+
+describe("MixpanelAnalytics.trackEventOnExit", () => {
+  let tracker: MixpanelAnalytics;
+  let consent: boolean | undefined;
+  const closed = new AppClosedEvent({ is_relaunch: false, session_duration_ms: 60_000 });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    tracker = new MixpanelAnalytics();
+    consent = true;
+    tracker.setConsentGetter(() => consent);
+  });
+
+  it("sends by beacon, skipping the batch queue", () => {
+    tracker.start(userInfo, false);
+    tracker.trackEventOnExit(closed);
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_closed",
+      { is_relaunch: false, session_duration_ms: 60_000 },
+      { transport: "sendBeacon", send_immediately: true },
+    );
+  });
+
+  it("logs the event as tracked when the browser takes the beacon", () => {
+    mp.track.mockReturnValueOnce({ event: "app_closed" });
+    tracker.start(userInfo, false);
+    tracker.trackEventOnExit(closed);
+
+    expect(serviceLog).toHaveBeenCalledWith(
+      "mixpanel",
+      "debug",
+      "Event tracked",
+      expect.objectContaining({ eventName: "app_closed" }),
+    );
+  });
+
+  it("warns instead of logging it as tracked when the browser refuses the beacon", () => {
+    // mixpanel.track returns false when navigator.sendBeacon does.
+    mp.track.mockReturnValueOnce(false);
+    tracker.start(userInfo, false);
+    tracker.trackEventOnExit(closed);
+
+    expect(serviceLog).toHaveBeenCalledWith(
+      "mixpanel",
+      "warn",
+      "Exit event not sent (beacon refused)",
+      {
+        eventName: "app_closed",
+      },
+    );
+    expect(serviceLog).not.toHaveBeenCalledWith(
+      "mixpanel",
+      "debug",
+      "Event tracked",
+      expect.anything(),
+    );
+  });
+
+  it("drops the exit event when analytics hasn't started", () => {
+    // start() sends anything queued, so a queued exit event would show up here.
+    tracker.trackEventOnExit(closed);
+    tracker.start(userInfo, false);
+
+    expect(mp.track).not.toHaveBeenCalled();
+  });
+
+  it("drops the exit event without consent", () => {
+    tracker.start(userInfo, false);
+    consent = false;
+    tracker.trackEventOnExit(closed);
+
+    expect(mp.track).not.toHaveBeenCalled();
   });
 });
 

@@ -33,6 +33,9 @@ vi.mock("../../util/selectors", () => ({
 vi.mock("../nexus_integration/util", () => ({ nexusGamesProm: () => Promise.resolve() }));
 vi.mock("./utils/storeGameVersionEvent", () => ({ emitStoreGameVersions: vi.fn() }));
 
+const relaunching = vi.hoisted(() => ({ value: false }));
+vi.mock("@/util/commandLine", () => ({ isRelaunching: () => relaunching.value }));
+
 // The real tracker is a singleton whose startup queue closes for good, so the default export
 // forwards to a fresh real instance per test.
 const tracker = vi.hoisted((): { current?: TrackerModule.MixpanelAnalytics } => ({}));
@@ -167,5 +170,72 @@ describe("analytics extension consent wiring", () => {
     AnalyticsMixpanel.start({ ...savedUser, userId: 43 }, false);
 
     expect(mp.track).not.toHaveBeenCalled();
+  });
+});
+
+describe("app_closed on unload", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+    tracker.current = new MixpanelAnalytics();
+    relaunching.value = false;
+    vi.spyOn(performance, "now").mockReturnValue(125_400.6);
+  });
+
+  // Starts analytics through the extension and returns the beforeunload handler it
+  // registered. Calling it directly skips the handlers earlier tests left on window.
+  function startAndGetUnloadHandler(): () => void {
+    const addListener = vi.spyOn(window, "addEventListener");
+    const harness = makeContext(true);
+    init(harness.context);
+    harness.runOnce();
+    const call = addListener.mock.calls.find(([type]) => type === "beforeunload");
+    return call[1] as () => void;
+  }
+
+  it("sends app_closed by beacon when the window unloads", () => {
+    startAndGetUnloadHandler()();
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_closed",
+      { is_relaunch: false, session_duration_ms: 125_401 },
+      { transport: "sendBeacon", send_immediately: true },
+    );
+  });
+
+  it("marks the close as a relaunch when Vortex asked to restart", () => {
+    relaunching.value = true;
+
+    startAndGetUnloadHandler()();
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_closed",
+      expect.objectContaining({ is_relaunch: true }),
+      expect.anything(),
+    );
+  });
+
+  it("reads the restart flag and duration when the window unloads, not at startup", () => {
+    vi.spyOn(performance, "now").mockReturnValue(1_000);
+    const handler = startAndGetUnloadHandler();
+    relaunching.value = true;
+    vi.spyOn(performance, "now").mockReturnValue(125_400.6);
+
+    handler();
+
+    expect(mp.track).toHaveBeenCalledWith(
+      "app_closed",
+      { is_relaunch: true, session_duration_ms: 125_401 },
+      expect.anything(),
+    );
+  });
+
+  it("keeps the unload handler from throwing", () => {
+    const handler = startAndGetUnloadHandler();
+    vi.spyOn(tracker.current, "trackEventOnExit").mockImplementation(() => {
+      throw new Error("boom");
+    });
+
+    expect(() => handler()).not.toThrow();
   });
 });
