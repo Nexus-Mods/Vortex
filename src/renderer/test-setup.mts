@@ -17,20 +17,20 @@ import { ApplicationData } from "./src/applicationData.js";
 
 // A React update outside act() fails the test it happened in; "React warnings" in docs/testing.md
 // says how to fix one. console.error is assigned rather than spied on so vi.restoreAllMocks()
-// leaves it be, and the check runs after testing-library's cleanup (hooks run last-registered
-// first), so an update that lands while a test is torn down still counts.
-let actWarnings: unknown[] = [];
-const consoleError = console.error;
+// leaves it be, and the check runs after testing-library's cleanup (vitest.config.mts runs hooks
+// last-registered first), so an update that lands while a test is torn down still counts.
+let componentsUpdatedOutsideAct = new Set<string>();
+const originalConsoleError = console.error;
 console.error = (...args: unknown[]) => {
   if (typeof args[0] === "string" && args[0].includes("not wrapped in act")) {
     // React passes the component's name after the message
-    actWarnings.push(typeof args[1] === "string" ? args[1] : "a component");
+    componentsUpdatedOutsideAct.add(typeof args[1] === "string" ? args[1] : "a component");
   }
-  consoleError.apply(console, args);
+  originalConsoleError.apply(console, args);
 };
 const failOnActWarnings = () => {
-  const components = actWarnings;
-  actWarnings = [];
+  const components = [...componentsUpdatedOutsideAct];
+  componentsUpdatedOutsideAct = new Set();
   if (components.length > 0) {
     throw new Error(
       `React updated ${components.join(", ")} outside act(); see "React warnings" in docs/testing.md`,
