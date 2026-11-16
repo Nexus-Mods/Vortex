@@ -5,7 +5,7 @@
  */
 import { EventEmitter } from "events";
 
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
@@ -71,7 +71,7 @@ describe("createGamesPageTracker", () => {
       layout: "list",
       placement: "primary",
       action: "add_game",
-      game_id: GameId(1704),
+      game_id: NexusGameId(1704),
       game_store: "steam",
     });
     expect(events[0].eventName).toBe("app_game_tile_action_clicked");

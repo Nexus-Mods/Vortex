@@ -25,7 +25,12 @@ import type {
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import { NexusError, TimeoutError } from "@nexusmods/nexus-api";
-import { GameDomain, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
+import {
+  NexusGameDomain,
+  getErrorMessageOrDefault,
+  parseError,
+  unknownToError,
+} from "@vortex/shared";
 import { AlreadyDownloaded } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import * as semver from "semver";
@@ -1219,7 +1224,7 @@ function extractLatestModInfo(state: IState, gameId: string, input: IModInfo): I
     category: resolveCategoryName(input.category_id.toString(), state),
     summary: input.summary,
     imageUrl: input.picture_url,
-    link: nexusModPageUrl(GameDomain(input.domain_name), input.mod_id),
+    link: nexusModPageUrl(NexusGameDomain(input.domain_name), input.mod_id),
     extra: [
       { id: "endorsements", value: input.endorsement_count },
       { id: "downloads", value: input.mod_downloads },

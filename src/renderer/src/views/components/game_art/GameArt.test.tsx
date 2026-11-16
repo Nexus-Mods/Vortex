@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 import React, { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -19,7 +19,7 @@ vi.mock("@/extensions/gamemode_management/selectors", () => ({
 }));
 vi.mock("@/extensions/nexus_integration/util/gameImageURLs", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  nexusGameIdForGame: () => (games.hasHero ? GameId(1704) : undefined),
+  nexusGameIdForGame: () => (games.hasHero ? NexusGameId(1704) : undefined),
 }));
 
 import type { SpineSelection } from "../Spine/spine_selection/spineSelection.util";

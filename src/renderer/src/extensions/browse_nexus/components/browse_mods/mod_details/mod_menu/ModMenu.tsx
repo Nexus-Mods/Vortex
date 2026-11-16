@@ -1,4 +1,4 @@
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -32,7 +32,7 @@ interface IModMenuProps {
 export const ModMenu = ({ api, mod, modPageUrl }: IModMenuProps) => {
   const { t } = useTranslation();
   const tracker = useBrowseModsTracker();
-  const domain = GameDomain(mod.game.domain_name);
+  const domain = NexusGameDomain(mod.game.domain_name);
 
   return (
     <Dropdown>

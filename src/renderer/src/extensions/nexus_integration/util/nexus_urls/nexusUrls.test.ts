@@ -1,4 +1,4 @@
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,7 +9,7 @@ import {
   nexusSiteModPageUrl,
 } from "./nexusUrls";
 
-const SKYRIM = GameDomain("skyrimspecialedition");
+const SKYRIM = NexusGameDomain("skyrimspecialedition");
 
 describe("nexusModPageUrl", () => {
   it("is the mod's page", () => {

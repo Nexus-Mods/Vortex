@@ -1,5 +1,5 @@
 import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { NexusGameDomain, NexusGameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -165,7 +165,7 @@ export interface IExtensionState {
   /** Nexus Mods file ID for this specific version of the extension. */
   fileId?: number;
   /** The Nexus Mods game the extension is for, as the extension catalog names it. Game extensions only. */
-  nexus?: { gameId: GameId; gameDomain: GameDomain };
+  nexus?: { gameId: NexusGameId; gameDomain: NexusGameDomain };
   /** Nexus Mods endorsed status of the extension mod page. */
   endorsed: EndorsedStatus;
   /** Set when the user declined linking this unlinked extension to its Nexus Mods page. */
@@ -374,9 +374,9 @@ export interface IGameInfoEntry {
 
 export interface ITierZeroGame {
   /** numeric Nexus Mods game id (e.g. 1303) */
-  gameId: GameId;
+  gameId: NexusGameId;
   /** the nexus domain the game is managed under; the synthesized game's id */
-  domain: GameDomain;
+  domain: NexusGameDomain;
   name: string;
   storeIDs: {
     steam: string[];
@@ -403,7 +403,7 @@ export interface IStateGameMode {
 
   /** games managed without a game extension, keyed by numeric nexus game id
    * (immutable across domain renames; the entry also carries the domain) */
-  tier0: Record<GameId, ITierZeroGame>;
+  tier0: Record<NexusGameId, ITierZeroGame>;
 }
 
 export interface IBrowserState {

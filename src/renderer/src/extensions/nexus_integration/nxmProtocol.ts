@@ -1,7 +1,7 @@
 import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { HTTPError as NexusHTTPError, NexusError } from "@nexusmods/nexus-api";
-import { type GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
+import { type NexusGameDomain, getErrorMessageOrDefault } from "@vortex/shared";
 import { parseError } from "@vortex/shared";
 import type { Action } from "redux";
 
@@ -47,7 +47,7 @@ interface IQueuedDownload {
   input: string;
   url: NXMUrl;
   /** The domain the url's game resolved to, which its link id need not be. */
-  pageId: GameDomain;
+  pageId: NexusGameDomain;
   resolve: (res: IResolvedURL) => void;
   reject: (err: Error) => void;
   /** The file's update chain, used to describe what a skip is skipping. */
@@ -391,7 +391,7 @@ export class NxmProtocol {
    * Park the download until the user brings back an authorised link from the website (or cancels
    * or skips it). FreeUserDLDialog renders off the redux queue this dispatches into.
    */
-  #websiteDownload(input: string, url: NXMUrl, pageId: GameDomain): Promise<IResolvedURL> {
+  #websiteDownload(input: string, url: NXMUrl, pageId: NexusGameDomain): Promise<IResolvedURL> {
     // a promise settles once and #dequeue tolerates a repeat, so cancelling after a skip is safe
     return new Promise<IResolvedURL>((resolve, reject) => {
       this.#freeQueue.push({
@@ -418,7 +418,7 @@ export class NxmProtocol {
    * dependency may reference an older or newer file than the one being skipped and the nxm url
    * alone can't tell us which.
    */
-  async #relevantUpdates(url: NXMUrl, pageId: GameDomain): Promise<IFileUpdate[]> {
+  async #relevantUpdates(url: NXMUrl, pageId: NexusGameDomain): Promise<IFileUpdate[]> {
     const files = await this.#nexus.getModFiles(url.modId, pageId);
 
     const previous = new Map<number, IFileUpdate>(); // new_file_id -> update

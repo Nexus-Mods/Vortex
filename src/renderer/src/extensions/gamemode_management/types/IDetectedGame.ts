@@ -1,4 +1,4 @@
-import type { GameId } from "@vortex/shared";
+import type { NexusGameId } from "@vortex/shared";
 
 import type { IAvailableExtension } from "@/types/extensions";
 
@@ -10,7 +10,7 @@ export interface IDetectedGame {
   /** The game's id in the games catalogue/spine. */
   gameUid: string;
   /** The Nexus Mods game ID. */
-  gameId: GameId;
+  gameId: NexusGameId;
 
   /** Cover art for the game, undefined when unavailable. */
   imageUrl?: string;

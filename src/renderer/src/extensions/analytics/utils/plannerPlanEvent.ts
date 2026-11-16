@@ -1,5 +1,5 @@
 import type { EventPlannerPlan, PlannerPlanPayload } from "@vortex/nexus-api-v3";
-import { getErrorMessageOrDefault, type GameId, type VortexGameId } from "@vortex/shared";
+import { getErrorMessageOrDefault, type NexusGameId, type VortexGameId } from "@vortex/shared";
 
 import { FlagService } from "../../../FlagService";
 import { log } from "../../../logging";
@@ -15,7 +15,7 @@ export type PlannerPlanFigures = Partial<Omit<PlannerPlanPayload, "game_id">>;
 
 /** The planner_plan payload for a plan run; figures it did not measure are null. */
 export function plannerPlanPayload(
-  nexusGameId: GameId,
+  nexusGameId: NexusGameId,
   figures: PlannerPlanFigures,
 ): PlannerPlanPayload {
   return {

@@ -1,4 +1,4 @@
-import { GameDomain, GameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import * as actions from "../actions/app";
@@ -6,8 +6,8 @@ import { makeExtensionState, makeLegacyExtensionState } from "../test-utils/buil
 import { appReducer } from "./app";
 
 // A dummy game's Nexus Mods domain and numeric id.
-const domainA = GameDomain("domain-a");
-const numericA = GameId(1);
+const domainA = NexusGameDomain("domain-a");
+const numericA = NexusGameId(1);
 
 describe("app reducer extension field writes", () => {
   const base = { ...appReducer.defaults, extensions: { abc123: makeExtensionState() } };

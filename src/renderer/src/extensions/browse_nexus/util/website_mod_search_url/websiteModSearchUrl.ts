@@ -1,4 +1,4 @@
-import type { GameDomain } from "@vortex/shared";
+import type { NexusGameDomain } from "@vortex/shared";
 
 import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
 
@@ -29,7 +29,7 @@ const WEBSITE_SORTS: Record<ModSortField, string> = {
  * Vortex aren't left out, so the site can show what Browse hides.
  */
 export const websiteModSearchUrl = (
-  domain: GameDomain,
+  domain: NexusGameDomain,
   { text, sort, filters }: IWebsiteModSearch,
 ) => {
   const query = new URLSearchParams();

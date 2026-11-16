@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import numeral from "numeral";
 import React, { forwardRef, type KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -65,7 +65,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const updated = useRelativeTime(Date.parse(mod.updated_at), t);
     const created = useRelativeTime(Date.parse(mod.created_at), t);
     const tracker = useBrowseModsTracker();
-    const domain = GameDomain(mod.game.domain_name);
+    const domain = NexusGameDomain(mod.game.domain_name);
     const modPageUrl = nexusModPageUrl(domain, mod.game_scoped_id);
     const { installState, status } = useModStatus(mod);
     const statusDisplay = status && modStatusDisplay(t, status);

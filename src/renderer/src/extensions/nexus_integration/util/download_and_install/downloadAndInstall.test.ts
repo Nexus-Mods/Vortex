@@ -1,4 +1,4 @@
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -6,7 +6,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { downloadAndInstallNexusFile, downloadNexusFile } from "./downloadAndInstall";
 
 const file = {
-  gameDomain: GameDomain("skyrimspecialedition"),
+  gameDomain: NexusGameDomain("skyrimspecialedition"),
   gameId: VortexGameId("skyrimse"),
   modId: "3863",
   fileId: "1000172397",
