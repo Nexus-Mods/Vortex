@@ -30,7 +30,7 @@ export type ModInstallState =
       kind: "downloaded";
       /** One of its downloads, none of them installed. */
       downloadId: string;
-      /** How many of its Main files are downloaded; one of unknown category or file id counts. */
+      /** Its downloaded Main files; one of unknown category counts, one with no file id doesn't. */
       downloadCount: number;
       /** When that download finished, in ms; none if it wasn't recorded. */
       downloadedAt?: number;
@@ -172,10 +172,8 @@ export const modInstallState = (
   const files = new Set(
     finished
       .filter((id) => isMainFile(downloads[id].modInfo?.nexus?.fileInfo?.category_name))
-      .map((id) => {
-        const fileId = downloads[id].modInfo?.nexus?.ids?.fileId;
-        return fileId ? `file:${fileId}` : `download:${id}`;
-      }),
+      .map((id) => downloads[id].modInfo?.nexus?.ids?.fileId)
+      .filter((fileId) => !!fileId),
   );
 
   return {

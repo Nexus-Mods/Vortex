@@ -10,7 +10,6 @@ import { useSelector } from "react-redux";
 import { MainFilePicker } from "@/extensions/browse_nexus/components/browse_mods/mod_details/main_file_picker/MainFilePicker";
 import type { FilePickerSource } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/BrowseModsTracking.context";
-import { modFilesQuery } from "@/extensions/browse_nexus/queries/mod_files/modFiles.query";
 import { fileUidOf } from "@/extensions/browse_nexus/util/file_uid/fileUid";
 import {
   installNexusFile,
@@ -27,6 +26,7 @@ import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_
 import { updateMod } from "@/extensions/mod_management/util/update_mod/updateMod";
 import { PremiumUpsellModal } from "@/extensions/nexus_integration/components/premium_upsell_modal/PremiumUpsellModal";
 import type { ModMainFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
+import { modFilesQuery } from "@/extensions/nexus_integration/queries/mod_files/modFiles.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { isPremium } from "@/extensions/nexus_integration/selectors";
 import { nexusModFilesUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";

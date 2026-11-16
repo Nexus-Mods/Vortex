@@ -71,11 +71,11 @@ describe("otherFilesOf", () => {
       {
         category: "OPTIONAL",
         files: [
-          { rowId: "eyes", name: "Eyes" },
-          { rowId: "patch", name: "Patch" },
+          { downloadId: "eyes", name: "Eyes" },
+          { modId: "patch", name: "Patch" },
         ],
       },
-      { category: "ARCHIVED", files: [{ rowId: "old", name: "Old" }] },
+      { category: "ARCHIVED", files: [{ downloadId: "old", name: "Old" }] },
     ]);
   });
 
@@ -83,7 +83,7 @@ describe("otherFilesOf", () => {
     const mods = { patch: installed("patch", 2, { fileType: "OPTIONAL" }) };
 
     expect(groupsOf([site(2, "ARCHIVED", "Patch")], mods)).toEqual([
-      { category: "ARCHIVED", files: [{ rowId: "patch", name: "Patch" }] },
+      { category: "ARCHIVED", files: [{ modId: "patch", name: "Patch" }] },
     ]);
   });
 
@@ -94,8 +94,8 @@ describe("otherFilesOf", () => {
     const downloads = { misc: downloaded(3, { category_name: "MISCELLANEOUS", name: "Extras" }) };
 
     expect(groupsOf([], mods, downloads)).toEqual([
-      { category: "OPTIONAL", files: [{ rowId: "patch", name: "Patch" }] },
-      { category: "MISCELLANEOUS", files: [{ rowId: "misc", name: "Extras" }] },
+      { category: "OPTIONAL", files: [{ modId: "patch", name: "Patch" }] },
+      { category: "MISCELLANEOUS", files: [{ downloadId: "misc", name: "Extras" }] },
     ]);
   });
 
@@ -107,7 +107,7 @@ describe("otherFilesOf", () => {
     const mods = { patch: { ...installed("patch", 2), archiveId: "dl" } };
 
     expect(groupsOf([site(2, "OPTIONAL", "Patch")], mods, { dl: downloaded(2) })).toEqual([
-      { category: "OPTIONAL", files: [{ rowId: "patch", name: "Patch" }] },
+      { category: "OPTIONAL", files: [{ modId: "patch", name: "Patch" }] },
     ]);
   });
 

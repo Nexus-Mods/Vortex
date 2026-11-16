@@ -100,7 +100,7 @@ describe("MainFileCard", () => {
     window.api.shell = { openUrl } as unknown as typeof window.api.shell;
   });
 
-  it("installs its own file with 1-click, counting it by the file's uid", async () => {
+  it("installs its own file with 1-click, counting it by the file's uid, and closes", async () => {
     mocks.install.mockReturnValue(new Promise(() => undefined));
     renderCards(file(42));
 
@@ -108,7 +108,7 @@ describe("MainFileCard", () => {
 
     await waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1));
     expect(mocks.install.mock.calls[0][1]).toMatchObject({ modId: "1", fileId: "42" });
-    expect(onLeave).not.toHaveBeenCalled();
+    expect(onLeave).toHaveBeenCalled();
     expect(tracking.tracked("browse_mods_one_click_clicked").map((e) => e.properties)).toEqual([
       { mod_uid: "7340033", file_uid: "1704-42", action: "install" },
     ]);
@@ -125,14 +125,14 @@ describe("MainFileCard", () => {
     expect(mocks.install).not.toHaveBeenCalled();
   });
 
-  it("installs a downloaded file from its download", async () => {
+  it("installs a downloaded file from its download, and closes", async () => {
     mocks.states = { 42: { kind: "downloaded", downloadId: "dl1", downloadCount: 1 } };
     renderCards(file(42));
 
     await userEvent.click(action(42));
 
     expect(emit).toHaveBeenCalledWith("start-install-download", "dl1");
-    expect(onLeave).not.toHaveBeenCalled();
+    expect(onLeave).toHaveBeenCalled();
     expect(tracking.tracked("browse_mods_install_clicked")).toHaveLength(1);
   });
 
@@ -162,16 +162,6 @@ describe("MainFileCard", () => {
     renderCards(file(42));
 
     expect(screen.getByTestId("main-file-card-downloaded-42")).toBeInTheDocument();
-  });
-
-  it("leaves another card usable while one installs", async () => {
-    mocks.install.mockReturnValue(new Promise(() => undefined));
-    renderCards(file(42), file(43));
-
-    await userEvent.click(action(42));
-
-    await waitFor(() => expect(action(42)).toBeDisabled());
-    expect(action(43)).toBeEnabled();
   });
 
   it("labels its action by its file for a screen reader", () => {

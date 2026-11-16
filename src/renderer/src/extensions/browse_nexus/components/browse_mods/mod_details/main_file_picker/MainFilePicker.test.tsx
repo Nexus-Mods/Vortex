@@ -115,12 +115,12 @@ describe("MainFilePicker", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("stays open when a card's action runs", async () => {
+  it("closes once a card's action starts, so an install's dialogs aren't behind it", async () => {
     mocks.install.mockReturnValue(new Promise(() => undefined));
     const { onClose } = renderPicker();
 
     await userEvent.click(screen.getByTestId("main-file-card-action-1"));
 
-    expect(onClose).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
   });
 });

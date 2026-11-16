@@ -27,54 +27,9 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { nxmModOutline } from "@/ui/icon-paths";
-import type { TFunction } from "@/util/i18n";
 import { activeGameId } from "@/util/selectors";
-import { useRelativeTime } from "@/util/useRelativeTime";
 
-/** What a file's date is of. */
-type FileDateKind = "uploaded" | "installed" | "downloaded";
-
-/** A date said as how long ago it was, after what it's of. */
-const fileDateText = (t: TFunction, kind: FileDateKind, time: string) => {
-  if (kind === "installed") {
-    return t("Installed {{time}}", { time });
-  }
-
-  if (kind === "downloaded") {
-    return t("Downloaded {{time}}", { time });
-  }
-
-  return t("Uploaded {{time}}", { time });
-};
-
-interface IFileDateProps {
-  /** What it's the date of. */
-  kind: FileDateKind;
-  /** When, in ms. */
-  timestamp: number;
-  /** Which file it's of, for its test id. */
-  fileId: number;
-}
-
-/** A file's date, how long ago, with the exact date on hover; its own component as it ages. */
-const FileDate = ({ kind, timestamp, fileId }: IFileDateProps) => {
-  const { t, i18n } = useTranslation();
-  const ago = useRelativeTime(timestamp, t) ?? "";
-  const exact = new Intl.DateTimeFormat(i18n.language, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(timestamp);
-
-  return (
-    <Tooltip content={exact}>
-      <span data-testid={`main-file-card-${kind}-${fileId}`}>
-        <Typography appearance="subdued" as="span" typographyType="body-sm">
-          {fileDateText(t, kind, ago)}
-        </Typography>
-      </span>
-    </Tooltip>
-  );
-};
+import { FileDate } from "./file_date/FileDate";
 
 /** When the user got a file: installed, by its mod's install time, or downloaded; none if unknown. */
 const gotAt = (state: ModInstallState) => {
@@ -97,7 +52,7 @@ interface IMainFileCardProps {
   mod: ModSummary;
   /** The file to show, and install. */
   file: IFileInfo;
-  /** Closes the picker, for an action that takes the user elsewhere. */
+  /** Closes the picker, as each action starts something outside it, like an install's dialogs. */
   onLeave: () => void;
 }
 
@@ -148,9 +103,12 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
       leftIcon="install_desktop"
       size="sm"
       onClick={() => {
-        if (gameId) {
-          install.mutate(gameId);
+        if (!gameId) {
+          return;
         }
+
+        install.mutate(gameId);
+        onLeave();
       }}
     >
       {t("1-click install")}
@@ -207,6 +165,7 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
           onClick={() => {
             tracker.trackInstallClicked({ mod_uid: mod.id });
             api.events.emit("start-install-download", downloadId);
+            onLeave();
           }}
         >
           {t("Install")}

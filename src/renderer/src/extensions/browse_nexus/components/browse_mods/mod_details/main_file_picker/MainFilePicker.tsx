@@ -21,7 +21,7 @@ interface IMainFilePickerProps {
   modFiles: IFileInfo[];
   /** Whether the dialog is showing. */
   isOpen: boolean;
-  /** Called when the user closes it; a card's action doesn't. */
+  /** Called when the user closes it, or when a card's action starts. */
   onClose: () => void;
 }
 

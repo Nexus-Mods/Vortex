@@ -167,7 +167,7 @@ describe("modInstallState", () => {
     expect(stateOf({}, { dl: download() })).toEqual({
       kind: "downloaded",
       downloadId: "dl",
-      downloadCount: 1,
+      downloadCount: 0,
     });
   });
 
@@ -177,7 +177,7 @@ describe("modInstallState", () => {
     expect(stateOf({}, { dl: fresh })).toEqual({
       kind: "downloaded",
       downloadId: "dl",
-      downloadCount: 1,
+      downloadCount: 0,
     });
   });
 
@@ -239,8 +239,12 @@ describe("modInstallState for one file", () => {
     expect(stateOf({}, { one: file(1), two: file(2) })).toMatchObject({ downloadCount: 2 });
   });
 
-  it("counts each download without a file id as its own", () => {
-    expect(stateOf({}, { a: download(), b: download() })).toMatchObject({ downloadCount: 2 });
+  it("doesn't count downloads without a file id, as no card is theirs", () => {
+    expect(stateOf({}, { a: download(), b: download() })).toMatchObject({
+      kind: "downloaded",
+      downloadCount: 0,
+    });
+    expect(stateOf({}, { one: file(1), unknown: download() })).toMatchObject({ downloadCount: 1 });
   });
 
   it("counts only Main files' downloads, and files of unknown category", () => {

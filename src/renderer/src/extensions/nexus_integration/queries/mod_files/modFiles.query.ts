@@ -10,10 +10,18 @@ interface IModFilesQueryArgs {
   mod: ModSummary;
 }
 
+/** Query keys for mods' file lists. */
+export const modFilesKeys = {
+  /** Every mod's files. */
+  all: ["nexus", "mods", "files"] as const,
+  /** One mod's files, by its composite mod UID. */
+  files: (id: string) => [...modFilesKeys.all, id] as const,
+};
+
 /** All of a mod's files, fetched from the v1 API only when run with `fetchQuery`. */
 export const modFilesQuery = (api: IExtensionApi, { mod }: IModFilesQueryArgs) =>
   queryOptions({
-    queryKey: ["browse", "mod-files", mod.id] as const,
+    queryKey: modFilesKeys.files(mod.id),
     queryFn: async () => {
       const fetchModFiles = api.ext.nexusFetchModFiles;
       if (!fetchModFiles) {

@@ -14,9 +14,11 @@ const mocks = vi.hoisted(() => ({
   mods: {} as Record<string, IMod>,
   downloads: {} as Record<string, IDownload>,
   show: vi.fn(),
+  showDownload: vi.fn(),
 }));
 
-vi.mock("react-redux", () => ({
+vi.mock("react-redux", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   useSelector: (selector: (state: unknown) => unknown) =>
     selector({
       persistent: { mods: { skyrimse: mocks.mods }, downloads: { files: mocks.downloads } },
@@ -25,9 +27,17 @@ vi.mock("react-redux", () => ({
 vi.mock("@/util/selectors", () => ({ activeGameId: () => "skyrimse" }));
 vi.mock("@/extensions/browse_nexus/hooks/use_mod_install_state/modInstallSelectors", () => ({
   gameDomains: () => () => NexusGameDomain("skyrimspecialedition"),
+  modInstallGroups: () =>
+    new Map([
+      [
+        "skyrimspecialedition/1",
+        { mods: Object.keys(mocks.mods), downloads: Object.keys(mocks.downloads) },
+      ],
+    ]),
 }));
 vi.mock("@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage", () => ({
   showModOnModsPage: mocks.show,
+  showDownloadOnModsPage: mocks.showDownload,
 }));
 
 import { OtherFiles } from "./OtherFiles";
@@ -73,6 +83,7 @@ describe("OtherFiles", () => {
     mocks.mods = {};
     mocks.downloads = {};
     mocks.show.mockReset();
+    mocks.showDownload.mockReset();
   });
 
   it("shows nothing when the user has only Main files", () => {
@@ -106,12 +117,13 @@ describe("OtherFiles", () => {
     expect(mocks.show).toHaveBeenCalledWith(api, "patch");
   });
 
-  it("shows a file that's only downloaded by its download's row", async () => {
+  it("shows a file that's only downloaded by its download", async () => {
     mocks.downloads = { eyes: downloaded(3) };
     renderFiles();
 
     await userEvent.click(screen.getByTestId("other-file-eyes"));
 
-    expect(mocks.show).toHaveBeenCalledWith(api, "eyes");
+    expect(mocks.showDownload).toHaveBeenCalledWith(api, "eyes");
+    expect(mocks.show).not.toHaveBeenCalled();
   });
 });
