@@ -14,7 +14,7 @@ import {
   installsWhenDownloaded,
   reportInstallFailure,
 } from "@/extensions/browse_nexus/util/install_nexus_file/installNexusFile";
-import { modStatusDisplay } from "@/extensions/browse_nexus/util/mod_status/modStatus";
+import type { ModInstallState } from "@/extensions/browse_nexus/util/mod_install_state/modInstallState";
 import { oneClickFileInstallKey } from "@/extensions/browse_nexus/util/one_click_install/oneClickInstall";
 import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -22,14 +22,74 @@ import { nexusFilePageUrl } from "@/extensions/nexus_integration/util/nexus_urls
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
-import { Pill } from "@/ui/components/pill/Pill";
 import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { nxmModOutline } from "@/ui/icon-paths";
+import type { TFunction } from "@/util/i18n";
 import { activeGameId } from "@/util/selectors";
 import { useRelativeTime } from "@/util/useRelativeTime";
+
+/** What a file's date is of. */
+type FileDateKind = "uploaded" | "installed" | "downloaded";
+
+/** A date said as how long ago it was, after what it's of. */
+const fileDateText = (t: TFunction, kind: FileDateKind, time: string) => {
+  if (kind === "installed") {
+    return t("Installed {{time}}", { time });
+  }
+
+  if (kind === "downloaded") {
+    return t("Downloaded {{time}}", { time });
+  }
+
+  return t("Uploaded {{time}}", { time });
+};
+
+interface IFileDateProps {
+  /** What it's the date of. */
+  kind: FileDateKind;
+  /** When, in ms. */
+  timestamp: number;
+  /** Which file it's of, for its test id. */
+  fileId: number;
+}
+
+/** A file's date, how long ago, with the exact date on hover; its own component as it ages. */
+const FileDate = ({ kind, timestamp, fileId }: IFileDateProps) => {
+  const { t, i18n } = useTranslation();
+  const ago = useRelativeTime(timestamp, t) ?? "";
+  const exact = new Intl.DateTimeFormat(i18n.language, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(timestamp);
+
+  return (
+    <Tooltip content={exact}>
+      <span data-testid={`main-file-card-${kind}-${fileId}`}>
+        <Typography appearance="subdued" as="span" typographyType="body-sm">
+          {fileDateText(t, kind, ago)}
+        </Typography>
+      </span>
+    </Tooltip>
+  );
+};
+
+/** When the user got a file: installed, by its mod's install time, or downloaded; none if unknown. */
+const gotAt = (state: ModInstallState) => {
+  if (state.kind === "downloaded" && state.downloadedAt) {
+    return { kind: "downloaded" as const, timestamp: state.downloadedAt };
+  }
+
+  if (state.kind !== "installed" || !state.mod.attributes?.installTime) {
+    return undefined;
+  }
+
+  const timestamp = new Date(state.mod.attributes.installTime).getTime();
+
+  return Number.isNaN(timestamp) ? undefined : { kind: "installed" as const, timestamp };
+};
 
 interface IMainFileCardProps {
   api: IExtensionApi;
@@ -46,7 +106,7 @@ interface IMainFileCardProps {
  * acts on this file only. Its progress is its own, so other cards stay usable.
  */
 export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const tracker = useBrowseModsTracker();
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
@@ -54,16 +114,13 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
   const domain = NexusGameDomain(mod.game.domain_name);
   const installKey = oneClickFileInstallKey({ modId: mod.id, fileId: file.file_id });
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
-  const uploaded = useRelativeTime(file.uploaded_timestamp * 1000, t);
-  const uploadedAt = new Intl.DateTimeFormat(i18n.language, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(file.uploaded_timestamp * 1000);
   const state = useModInstallState({
     domain,
     modId: Number(mod.game_scoped_id),
     fileId: file.file_id,
   });
+
+  const got = gotAt(state);
 
   const install = useMutation({
     mutationKey: installKey,
@@ -82,11 +139,6 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
       }),
     onError: (error) => reportInstallFailure(api, { t, mod, shouldInstall, error }),
   });
-
-  const statusDisplay =
-    (state.kind === "installed" && modStatusDisplay(t, "installed")) ||
-    (state.kind === "downloaded" && modStatusDisplay(t, "downloaded")) ||
-    undefined;
 
   const oneClick = () => (
     <Button
@@ -173,30 +225,6 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
       role="group"
     >
       <div className="flex flex-col gap-2 p-4">
-        {(file.is_primary || !!statusDisplay) && (
-          <div className="flex flex-wrap items-center gap-2">
-            {file.is_primary && (
-              <Pill
-                brand="primary"
-                data-testid={`main-file-card-primary-${file.file_id}`}
-                icon={{ name: "star", filled: true }}
-              >
-                {t("Primary file")}
-              </Pill>
-            )}
-
-            {!!statusDisplay && (
-              <Pill
-                brand={statusDisplay.brand}
-                data-testid={`main-file-card-status-${state.kind}-${file.file_id}`}
-                icon={statusDisplay.icon}
-              >
-                {statusDisplay.label}
-              </Pill>
-            )}
-          </div>
-        )}
-
         <div className="flex items-baseline justify-between gap-4">
           <Typography appearance="moderate" id={nameId} typographyType="body-sm">
             {file.name}
@@ -248,13 +276,13 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
             </span>
           </Tooltip>
 
-          <Tooltip content={t("Uploaded {{date}}", { date: uploadedAt })}>
-            <span data-testid="main-file-card-uploaded">
-              <Typography appearance="subdued" as="span" typographyType="body-sm">
-                {uploaded}
-              </Typography>
-            </span>
-          </Tooltip>
+          <FileDate
+            fileId={file.file_id}
+            kind="uploaded"
+            timestamp={file.uploaded_timestamp * 1000}
+          />
+
+          {!!got && <FileDate fileId={file.file_id} kind={got.kind} timestamp={got.timestamp} />}
         </div>
 
         {action()}

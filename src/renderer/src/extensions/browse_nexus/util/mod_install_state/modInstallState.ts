@@ -32,6 +32,8 @@ export type ModInstallState =
       downloadId: string;
       /** How many of its Main files are downloaded; one of unknown category or file id counts. */
       downloadCount: number;
+      /** When that download finished, in ms; none if it wasn't recorded. */
+      downloadedAt?: number;
     }
   | {
       /** Neither downloaded nor installed. */
@@ -176,5 +178,10 @@ export const modInstallState = (
       }),
   );
 
-  return { kind: "downloaded", downloadId: finished[0], downloadCount: files.size };
+  return {
+    kind: "downloaded",
+    downloadId: finished[0],
+    downloadCount: files.size,
+    downloadedAt: downloads[finished[0]].fileTime || undefined,
+  };
 };

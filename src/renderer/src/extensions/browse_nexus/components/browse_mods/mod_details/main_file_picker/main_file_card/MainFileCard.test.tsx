@@ -147,19 +147,21 @@ describe("MainFileCard", () => {
     expect(tracking.tracked("browse_mods_view_installed_clicked")).toHaveLength(1);
   });
 
-  it("badges a primary file that's installed with both", () => {
-    mocks.states = { 42: { kind: "installed", mod: { id: "m1" } as never, installedCount: 1 } };
-    renderCards(file(42, { is_primary: true }));
-
-    expect(screen.getByTestId("main-file-card-primary-42")).toBeInTheDocument();
-    expect(screen.getByTestId("main-file-card-status-installed-42")).toBeInTheDocument();
-  });
-
-  it("badges a downloaded file", () => {
-    mocks.states = { 42: { kind: "downloaded", downloadId: "dl1", downloadCount: 1 } };
+  it("says when an installed file was installed", () => {
+    const mod = { id: "m1", attributes: { installTime: "2026-11-16T10:00:00Z" } } as never;
+    mocks.states = { 42: { kind: "installed", mod, installedCount: 1 } };
     renderCards(file(42));
 
-    expect(screen.getByTestId("main-file-card-status-downloaded-42")).toBeInTheDocument();
+    expect(screen.getByTestId("main-file-card-installed-42")).toBeInTheDocument();
+  });
+
+  it("says when a downloaded file was downloaded", () => {
+    mocks.states = {
+      42: { kind: "downloaded", downloadId: "dl1", downloadCount: 1, downloadedAt: 1_700_000_000 },
+    };
+    renderCards(file(42));
+
+    expect(screen.getByTestId("main-file-card-downloaded-42")).toBeInTheDocument();
   });
 
   it("leaves another card usable while one installs", async () => {
@@ -210,7 +212,7 @@ describe("MainFileCard", () => {
   it("says when the file was uploaded, on hover", async () => {
     renderCards(file(42));
 
-    await userEvent.hover(screen.getByTestId("main-file-card-uploaded"));
+    await userEvent.hover(screen.getByTestId("main-file-card-uploaded-42"));
 
     expect(await screen.findByRole("tooltip")).toBeInTheDocument();
   });

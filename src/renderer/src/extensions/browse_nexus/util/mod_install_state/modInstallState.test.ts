@@ -224,6 +224,13 @@ describe("modInstallState for one file", () => {
     });
   });
 
+  it("says when its download finished", () => {
+    expect(stateOf({}, { dl: download({ fileTime: 1_700_000_000 }) })).toMatchObject({
+      kind: "downloaded",
+      downloadedAt: 1_700_000_000,
+    });
+  });
+
   it("counts repeat downloads of a file once", () => {
     expect(stateOf({}, { one: file(1), again: file(1) })).toMatchObject({ downloadCount: 1 });
   });
