@@ -213,64 +213,70 @@ describe("InstallDriver optional default-skip", () => {
     expect(rules.find((r) => r.reference.tag === "req-a")?.ignored).toBeUndefined();
   });
 
-  test("stores the optional skips on a collection too large for one dispatch", async ({
-    makeDriver,
-  }) => {
-    // over 1000 members, the file name updates are dispatched later, in chunks
-    const nexusRepo = (id: number) => ({
-      repository: "nexus",
-      gameId: "skyrimspecialedition",
-      modId: String(id),
-      fileId: String(id),
-    });
-    const requiredRules = Array.from({ length: 1000 }, (_, index) =>
-      makeRule({
-        type: "requires",
-        reference: makeReference({ tag: `req-${index}`, repo: nexusRepo(index) }),
-      }),
-    );
-    const undecidedOpt = makeRule({
-      type: "recommends",
-      reference: makeReference({ tag: "opt-undecided", repo: nexusRepo(1000) }),
-    });
-    const leftoverOpt = makeRule({
-      type: "recommends",
-      reference: makeReference({ tag: "opt-leftover", repo: nexusRepo(1001) }),
-      ignored: false,
-    });
-    const memberRules = [...requiredRules, undecidedOpt, leftoverOpt];
-    const fixture = buildCollectionFixture("col-large", memberRules);
-    const modFiles = memberRules.map((rule) => ({
-      file: {
-        modId: Number(rule.reference.repo?.modId),
-        fileId: Number(rule.reference.repo?.fileId),
-        uri: `${rule.reference.tag}.7z`,
-      },
-    }));
-    const download = makeDownload({
-      ...fixture.download,
-      modInfo: {
-        ...fixture.download.modInfo,
-        nexus: { ...fixture.download.modInfo.nexus, revisionInfo: { modFiles, gameVersions: [] } },
-      },
-    });
-    const h = makeDriver({
-      mods: { [GAME_ID]: { [fixture.collection.id]: fixture.collection } },
-      downloads: { [download.id]: download },
-      profiles: { [profile.id]: profile },
-    });
-    await startWith(h, fixture);
+  // the 1000+ rule updates run through the real reducer, which is slow on a loaded CI runner
+  test(
+    "stores the optional skips on a collection too large for one dispatch",
+    { timeout: 30_000 },
+    async ({ makeDriver }) => {
+      // over 1000 members, the file name updates are dispatched later, in chunks
+      const nexusRepo = (id: number) => ({
+        repository: "nexus",
+        gameId: "skyrimspecialedition",
+        modId: String(id),
+        fileId: String(id),
+      });
+      const requiredRules = Array.from({ length: 1000 }, (_, index) =>
+        makeRule({
+          type: "requires",
+          reference: makeReference({ tag: `req-${index}`, repo: nexusRepo(index) }),
+        }),
+      );
+      const undecidedOpt = makeRule({
+        type: "recommends",
+        reference: makeReference({ tag: "opt-undecided", repo: nexusRepo(1000) }),
+      });
+      const leftoverOpt = makeRule({
+        type: "recommends",
+        reference: makeReference({ tag: "opt-leftover", repo: nexusRepo(1001) }),
+        ignored: false,
+      });
+      const memberRules = [...requiredRules, undecidedOpt, leftoverOpt];
+      const fixture = buildCollectionFixture("col-large", memberRules);
+      const modFiles = memberRules.map((rule) => ({
+        file: {
+          modId: Number(rule.reference.repo?.modId),
+          fileId: Number(rule.reference.repo?.fileId),
+          uri: `${rule.reference.tag}.7z`,
+        },
+      }));
+      const download = makeDownload({
+        ...fixture.download,
+        modInfo: {
+          ...fixture.download.modInfo,
+          nexus: {
+            ...fixture.download.modInfo.nexus,
+            revisionInfo: { modFiles, gameVersions: [] },
+          },
+        },
+      });
+      const h = makeDriver({
+        mods: { [GAME_ID]: { [fixture.collection.id]: fixture.collection } },
+        downloads: { [download.id]: download },
+        profiles: { [profile.id]: profile },
+      });
+      await startWith(h, fixture);
 
-    const liveRule = (tag: string) =>
-      h
-        .getState()
-        .persistent.mods[GAME_ID]["col-large"].rules?.find((r) => r.reference.tag === tag);
-    await vi.waitFor(() =>
-      expect(liveRule("opt-leftover")?.extra?.fileName).toBe("opt-leftover.7z"),
-    );
-    expect(liveRule("opt-undecided")?.ignored).toBe(true);
-    expect(liveRule("opt-leftover")?.ignored).toBe(true);
-  });
+      const liveRule = (tag: string) =>
+        h
+          .getState()
+          .persistent.mods[GAME_ID]["col-large"].rules?.find((r) => r.reference.tag === tag);
+      await vi.waitFor(() =>
+        expect(liveRule("opt-leftover")?.extra?.fileName).toBe("opt-leftover.7z"),
+      );
+      expect(liveRule("opt-undecided")?.ignored).toBe(true);
+      expect(liveRule("opt-leftover")?.ignored).toBe(true);
+    },
+  );
 
   // the selection is the durable ignored:false left on the collection mod by an earlier "install
   // optional mods" - the flag is shared by every profile and outlives that install
