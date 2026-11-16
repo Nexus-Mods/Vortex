@@ -1,17 +1,20 @@
+import { VortexGameId } from "@vortex/shared";
+
+import { setCurrentProfile } from "@/extensions/profile_management/actions/settings";
 import { actionsToReducerSpec } from "@/reducers/builder";
 
 import {
   resetBrowseModsView,
   selectBrowseModsView,
   setBrowseModsViewSearch,
-} from "../actions/modsViews";
-import { setBrowseModSearchText, setBrowseSection } from "../actions/session";
-import type { BrowseSection } from "../util/browseSection";
-import { type IModViewChange, isPreset, type ModPreset } from "../util/mod_views/modViews";
+} from "../../actions/modsViews";
+import { setBrowseModSearchText, setBrowseSection } from "../../actions/session";
+import type { BrowseSection } from "../../util/browseSection";
+import { type IModViewChange, isPreset, type ModPreset } from "../../util/mod_views/modViews";
 
 /**
  * session.browse: Browse's open section, the changes to its presets, and the text its mods are
- * searched for, kept until a restart.
+ * searched for, kept until a restart or, for the text, until another game is active.
  */
 export interface IBrowseSessionState {
   /** The open section; none for Browse's default. */
@@ -20,6 +23,8 @@ export interface IBrowseSessionState {
   presetChanges?: Partial<Record<ModPreset, IModViewChange>>;
   /** The text its mods' names are searched for, as entered, whatever the view; none for none. */
   modSearchText?: string;
+  /** The active game, so activating another clears the search text. */
+  activeGameId?: VortexGameId;
 }
 
 declare module "@/types/IState" {
@@ -34,6 +39,7 @@ const actions = {
   setBrowseModsViewSearch,
   resetBrowseModsView,
   selectBrowseModsView,
+  setCurrentProfile,
 };
 
 /** Changes a preset's changes, leaving a view of the user's own to its own reducer. */
@@ -56,6 +62,15 @@ export const sessionReducer = actionsToReducerSpec<IBrowseSessionState, typeof a
   {
     setBrowseSection: (state, payload) => ({ ...state, section: payload }),
     setBrowseModSearchText: (state, payload) => ({ ...state, modSearchText: payload }),
+    setCurrentProfile: (state, { gameId }) => {
+      const activeGameId = gameId ? VortexGameId(gameId) : undefined;
+
+      if (activeGameId === state.activeGameId) {
+        return state;
+      }
+
+      return { ...state, activeGameId, modSearchText: undefined };
+    },
     setBrowseModsViewSearch: (state, { viewId, change }) =>
       changePreset(state, viewId, (previous) => ({
         sort: { ...previous.sort, ...change.sort },

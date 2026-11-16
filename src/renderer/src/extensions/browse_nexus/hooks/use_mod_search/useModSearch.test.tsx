@@ -46,7 +46,7 @@ import {
   type IBrowseModsView,
   type IBrowseModsViewsState,
 } from "../../reducers/mods_views/modsViews";
-import { type IBrowseSessionState, sessionReducer } from "../../reducers/session";
+import { type IBrowseSessionState, sessionReducer } from "../../reducers/session/session";
 import { MODS_PER_PAGE, useModSearch } from "./useModSearch.hook";
 
 /** The time the tests start at, which the first time range counts back from. */
