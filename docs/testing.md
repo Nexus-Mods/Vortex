@@ -58,7 +58,7 @@ logs one, the test that logged it fails with
 The check is there because nothing else surfaces these warnings. Vitest's
 default reporter hides a test's console output, so a run that logs dozens of
 warnings still looks clean, and a passing CI log doesn't get read. The suite was
-cleared of them once and had 52 again two months later.
+cleared of them once, in September 2026, and they were back within two months.
 
 ### Seeing them
 
@@ -91,8 +91,9 @@ The usual sources:
   `userEvent` or a `findBy…` don't need it.
 - **Direct calls that update state.** `element.focus()`, a hook's callback
   called from the test, or a timer or observer callback fired by hand. Wrap the
-  call in `act(() => …)`. A test that waits on something nothing on screen
-  reflects waits inside `act()` too:
+  call in `act(() => …)`. Waiting for something nothing on screen reflects is a
+  last resort, since a fixed wait can be too short on a slow machine; when
+  there's no other way, wait inside `act()` so the update lands in it:
   `await act(() => new Promise((resolve) => setTimeout(resolve, 20)))`.
 - **An update queued as a microtask.** Closing a Headless UI dialog with a
   `rerender` queues its leave as a microtask, which runs as soon as the test's
@@ -103,9 +104,10 @@ The usual sources:
 ### What the check can't see
 
 - `waitFor`, the `findBy…` queries and `userEvent` turn React's `act()` checks
-  off while they wait, so an update during one of them logs nothing. That hides
-  the problem rather than fixing it: the same update can warn once a test stops
-  awaiting there.
+  off while they wait, so an update during one of them logs nothing. Waiting
+  until the work has finished, as `settleTransitions` does, is the fix. What
+  hides a problem is an update that happens to land during a wait for something
+  else: it warns again once the test stops awaiting there.
 - A test that silences `console.error` itself, with
   `vi.spyOn(console, "error").mockImplementation(…)`, hides warnings while the
   spy is in place. Restore it straight after the call that's expected to error.
@@ -113,8 +115,10 @@ The usual sources:
   the file, or the file's `afterAll` after its last test, rather than the test
   that caused it.
 - Only `act()` warnings fail a test. The deprecation warnings still in the log
-  (`findDOMNode`, `defaultProps`, legacy `childContextTypes`) come from
-  dependencies and need upgrades, not test changes.
+  (`findDOMNode`, `defaultProps`, legacy `contextTypes`) come from older code:
+  class components built on `ComponentEx` in `src/renderer/src/controls/`, and
+  old dependencies such as `react-bootstrap` 0.33. Clearing them means changing
+  that code, not the tests.
 
 ## Extension tests
 

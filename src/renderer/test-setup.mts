@@ -23,7 +23,8 @@ let actWarnings: unknown[] = [];
 const consoleError = console.error;
 console.error = (...args: unknown[]) => {
   if (typeof args[0] === "string" && args[0].includes("not wrapped in act")) {
-    actWarnings.push(args[1]); // the component's name
+    // React passes the component's name after the message
+    actWarnings.push(typeof args[1] === "string" ? args[1] : "a component");
   }
   consoleError.apply(console, args);
 };
